@@ -1,0 +1,25 @@
+#created on: Jan 4, 2008
+package org.jboss.dna.tools.rules.sequencer
+
+#list any import classes here.
+#import org.jboss.dna.rules.sequencer.ContentInfo
+
+expander sequencer.dsl
+
+#declare any global variables here
+global java.util.Set sequencers
+
+rule "A"
+	when
+		mime type is text
+		before A
+	then
+		use A
+end
+
+rule "B"
+	when
+		file name matches ".*\.dsl"
+	then
+		use B
+end

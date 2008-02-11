@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?><project>
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>org.jboss.dna</groupId>
+    <artifactId>dna</artifactId>
+    <version>0.1-SNAPSHOT</version>
+  </parent>
+  <!-- The groupId and version values are inherited from parent -->
+  <artifactId>dna-common</artifactId>
+  <packaging>jar</packaging>
+  <name>JBoss DNA Common</name>
+  <description>JBoss DNA Common Library and Utilities</description>
+  <url>http://labs.jboss.org/dna</url>
+  <!--
+  Define the dependencies.  Note that all version and scopes default to those 
+  defined in the dependencyManagement section of the parent pom.
+  -->
+  <dependencies>
+    <!-- 
+    Testing (note the scope)
+    -->
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+    </dependency>
+    <!-- 
+    Logging (require SLF4J API for compiling, but use Log4J and its SLF4J binding for testing) 
+    -->
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-log4j12</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>log4j</groupId>
+      <artifactId>log4j</artifactId>
+    </dependency>
+  </dependencies>
+  <reporting>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-report-plugin</artifactId>
+      </plugin>
+    </plugins>
+  </reporting>
+</project>
