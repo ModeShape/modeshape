@@ -5,8 +5,8 @@
 ]>
 <book lang="en">
   <bookinfo>
-    <title>Getting Started with JBoss DNA</title>
-    <subtitle>A guide for content developers</subtitle>
+    <title>JBoss DNA</title>
+    <subtitle>Getting Started Guide</subtitle>
     <releaseinfo>0.1</releaseinfo>
   </bookinfo>
   <toc/>
@@ -17,8 +17,7 @@
   </preface>
   <preface id="preface" revision="1">
     <title>Preface</title>
-    <para>This document introduces the  unified DocBook system for JBoss.org
-            documentation based on Maven2. Using this system provides the following benefits:</para>
+    <para>This document introduces the JBoss DNA project.</para>
     <itemizedlist>
       <listitem>
         <para>The build process is simplified and standardized. Just
