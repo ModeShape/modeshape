@@ -1,0 +1,31 @@
+<?xml version='1.0' encoding='ISO-8859-1'?>
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.3CR3//EN" "../../../../docbook-support/support/docbook-dtd/docbookx.dtd" [
+<!ENTITY introduction          SYSTEM "modules/introduction.xml">
+<!ENTITY styles                SYSTEM "modules/styles.xml">
+]>
+<book lang="en">
+  <bookinfo>
+    <title>Getting Started with JBoss DNA</title>
+    <subtitle>A guide for content developers</subtitle>
+    <releaseinfo>0.1</releaseinfo>
+  </bookinfo>
+  <toc/>
+  <preface id="target" revision="1">
+    <title>Target Audience</title>
+    <para>This guide is for anybody who is new to JBoss DNA, and will help you learn the ins and outs of 
+          configuring and using JBoss DNA. </para>
+  </preface>
+  <preface id="preface" revision="1">
+    <title>Preface</title>
+    <para>This document introduces the  unified DocBook system for JBoss.org
+            documentation based on Maven2. Using this system provides the following benefits:</para>
+    <itemizedlist>
+      <listitem>
+        <para>The build process is simplified and standardized. Just
+                follow the instructions in this guide to setup your <literal>docs</literal>
+                directory and copy a very simple  <literal>pom.xml</literal> file. </para>
+      </listitem>
+    </itemizedlist>
+    <para> If you have any questions, please feel free to contact <ulink url="mailto:rhauch@jboss.org">Randall Hauch</ulink> (Project Lead) for more information. </para>
+  </preface>
+&introduction;&howto;&styles;</book>
