@@ -143,4 +143,24 @@ public class MavenIdTest {
         MavenId any = new MavenId(that.getGroupId(), that.getArtifactId(), null, that.getClassifier());
         assertThat(any.equals(that), is(true));
     }
+
+    @Test
+    public void shouldParseNullOrEmptyStringOfCommanSeparatedCoordinates() {
+        checkParsing("org.jboss.dna:dna-maven", new MavenId("org.jboss.dna", "dna-maven"));
+        checkParsing("org.jboss.dna:dna-maven:", new MavenId("org.jboss.dna", "dna-maven"));
+        checkParsing("org.jboss.dna:dna-maven::jdk1.4", new MavenId("org.jboss.dna", "dna-maven", null, "jdk1.4"));
+        checkParsing("org.jboss.dna:dna-maven:1.0:jdk1.4", new MavenId("org.jboss.dna", "dna-maven", "1.0", "jdk1.4"));
+        checkParsing("org.jboss.dna:dna-maven:1.0:jdk1.4,net.jcip:jcip-annotations:1.0", new MavenId("org.jboss.dna", "dna-maven", "1.0", "jdk1.4"), new MavenId("net.jcip", "jcip-annotations", "1.0"));
+        checkParsing("org.jboss.dna:dna-maven:1.0:jdk1.4,,net.jcip:jcip-annotations:1.0,", new MavenId("org.jboss.dna", "dna-maven", "1.0", "jdk1.4"), new MavenId("net.jcip", "jcip-annotations",
+                                                                                                                                                                   "1.0"));
+        checkParsing(",,org.jboss.dna:dna-maven:1.0:jdk1.4,, net.jcip: jcip-annotations:1.0 ,,", new MavenId("org.jboss.dna", "dna-maven", "1.0", "jdk1.4"), new MavenId("net.jcip",
+                                                                                                                                                                         "jcip-annotations", "1.0"));
+    }
+
+    public void checkParsing( String commaSeparatedCoordinates, MavenId... mavenIds ) {
+        MavenId[] results = MavenId.parse(commaSeparatedCoordinates);
+        assertThat(results, is(notNullValue()));
+        assertThat(results.length, is(mavenIds.length));
+        assertThat(results, is(mavenIds));
+    }
 }

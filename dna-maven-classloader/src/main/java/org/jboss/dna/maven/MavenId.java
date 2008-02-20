@@ -21,6 +21,8 @@
  */
 package org.jboss.dna.maven;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.jboss.dna.common.text.ITextEncoder;
@@ -34,11 +36,51 @@ import org.jboss.dna.common.util.StringUtil;
  */
 public class MavenId implements Comparable<MavenId>, Cloneable {
 
+    /**
+     * Parse the supplied string containing comma-separated Maven artifact coordinates, and return the array of Maven IDs for
+     * these coordinates.
+     * @param commaSeparatedCoordinates the string of Maven artifact coordinates
+     * @return the array of {@link MavenId} instances created from the list of coordinates
+     */
+    public static MavenId[] parse( String commaSeparatedCoordinates ) {
+        if (commaSeparatedCoordinates == null) return new MavenId[] {};
+        String[] coordinates = commaSeparatedCoordinates.split(",");
+        List<MavenId> result = new ArrayList<MavenId>();
+        for (int i = 0; i < coordinates.length; i++) {
+            String coordinateStr = coordinates[i].trim();
+            if (coordinateStr.length() != 0) {
+                result.add(new MavenId(coordinateStr));
+            }
+        }
+        return result.toArray(new MavenId[result.size()]);
+    }
+
     private final String groupId;
     private final String artifactId;
     private final Version version;
     private final String classifier;
 
+    /**
+     * Create an Maven ID from the supplied string containing the coordinates for a Maven artifact. Coordinates are of the form:
+     * 
+     * <pre>
+     *         groupId:artifactId[:version[:classifier]]
+     * </pre>
+     * 
+     * where
+     * <dl>
+     * <dt>groupId</dt>
+     * <dd> is the group identifier (e.g., <code>org.jboss.dna</code>), which may not be empty
+     * <dt>artifactId</dt>
+     * <dd> is the artifact identifier (e.g., <code>dna-maven</code>), which may not be empty
+     * <dt>version</dt>
+     * <dd> is the optional version (e.g., <code>org.jboss.dna</code>)
+     * <dt>classifier</dt>
+     * <dd> is the optional classifier (e.g., <code>test</code> or <code>jdk1.4</code>)
+     * </dl>
+     * @param coordinates the string containing the Maven coordinates
+     * @throws IllegalArgumentException if the supplied string is null or if the string does not match the expected format
+     */
     public MavenId( String coordinates ) {
         if (coordinates == null) throw new IllegalArgumentException("The coordinates reference may not be null");
         coordinates = coordinates.trim();
@@ -52,7 +94,7 @@ public class MavenId implements Comparable<MavenId>, Cloneable {
         // 5) version
         // 6) :classifier
         // 7) classifier
-        Pattern urlPattern = Pattern.compile("([^:]+)(:([^:]+)(:([^:]+)(:([^:]+))?)?)?");
+        Pattern urlPattern = Pattern.compile("([^:]+)(:([^:]+)(:([^:]*)(:([^:]*))?)?)?");
         Matcher matcher = urlPattern.matcher(coordinates);
         if (!matcher.find()) {
             throw new IllegalArgumentException("Unsupported format: " + coordinates);
@@ -69,14 +111,35 @@ public class MavenId implements Comparable<MavenId>, Cloneable {
         this.version = version != null ? new Version(version) : new Version("");
     }
 
+    /**
+     * Create a Maven ID from the supplied group and artifact IDs.
+     * @param groupId the group identifier
+     * @param artifactId the artifact identifier
+     * @throws IllegalArgumentException if the group or artifact identifiers are null, empty or blank
+     */
     public MavenId( String groupId, String artifactId ) {
         this(groupId, artifactId, null, null);
     }
 
+    /**
+     * Create a Maven ID from the supplied group and artifact IDs and the version.
+     * @param groupId the group identifier
+     * @param artifactId the artifact identifier
+     * @param version the version; may be null or empty
+     * @throws IllegalArgumentException if the group or artifact identifiers are null, empty or blank
+     */
     public MavenId( String groupId, String artifactId, String version ) {
         this(groupId, artifactId, version, null);
     }
 
+    /**
+     * Create a Maven ID from the supplied group ID, artifact ID, version, and classifier.
+     * @param groupId the group identifier
+     * @param artifactId the artifact identifier
+     * @param version the version; may be null or empty
+     * @param classifier the classifier; may be null or empty
+     * @throws IllegalArgumentException if the group or artifact identifiers are null, empty or blank
+     */
     public MavenId( String groupId, String artifactId, String version, String classifier ) {
         ArgCheck.isNotEmpty(groupId, "groupId");
         ArgCheck.isNotEmpty(artifactId, "artifactId");
