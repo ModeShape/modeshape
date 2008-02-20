@@ -21,6 +21,7 @@
  */
 package org.jboss.dna.common.stats;
 
+import net.jcip.annotations.NotThreadSafe;
 import org.jboss.dna.common.math.Duration;
 import org.jboss.dna.common.math.DurationOperations;
 
@@ -28,6 +29,7 @@ import org.jboss.dna.common.math.DurationOperations;
  * Provides a mechanism to measure time in the same was as a physical stopwatch.
  * @author Randall Hauch
  */
+@NotThreadSafe
 public class Stopwatch implements Comparable<Stopwatch> {
 
     private long lastStarted;

@@ -24,6 +24,7 @@ package org.jboss.dna.common.stats;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import net.jcip.annotations.ThreadSafe;
 import org.jboss.dna.common.math.IMathOperations;
 import org.jboss.dna.common.text.Inflector;
 import org.jboss.dna.common.util.StringUtil;
@@ -40,6 +41,7 @@ import org.jboss.dna.common.util.StringUtil;
  * @param <T> the number type used in these statistics
  * @author Randall Hauch
  */
+@ThreadSafe
 public class SimpleStatistics<T extends Number> {
 
     protected final IMathOperations<T> math;

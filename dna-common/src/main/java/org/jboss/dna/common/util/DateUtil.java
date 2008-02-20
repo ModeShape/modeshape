@@ -30,6 +30,7 @@ import java.util.GregorianCalendar;
 import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import net.jcip.annotations.ThreadSafe;
 
 /**
  * Utilities for working with dates.
@@ -58,6 +59,7 @@ import java.util.regex.Pattern;
  * </p>
  * @author Randall Hauch
  */
+@ThreadSafe
 public class DateUtil {
 
     public static final String ISO_8601_2004_FORMAT = "yyyy-MM-dd'T'HH:mm:ss.SSSZ";

@@ -26,6 +26,7 @@ import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.locks.Lock;
+import net.jcip.annotations.ThreadSafe;
 import org.jboss.dna.common.math.IMathOperations;
 import org.jboss.dna.common.text.Inflector;
 import org.jboss.dna.common.util.StringUtil;
@@ -63,6 +64,7 @@ import org.jboss.dna.common.util.StringUtil;
  * </p>
  * @param <T> the number type for these statistics
  */
+@ThreadSafe
 public class DetailedStatistics<T extends Number> extends SimpleStatistics<T> {
 
     private T median;
