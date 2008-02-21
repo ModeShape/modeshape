@@ -21,8 +21,8 @@
  */
 package org.jboss.dna.maven;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.LinkedHashSet;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.jboss.dna.common.text.ITextEncoder;
@@ -37,20 +37,48 @@ import org.jboss.dna.common.util.StringUtil;
 public class MavenId implements Comparable<MavenId>, Cloneable {
 
     /**
-     * Parse the supplied string containing comma-separated Maven artifact coordinates, and return the array of Maven IDs for
-     * these coordinates.
+     * Build a classpath of {@link MavenId}s by parsing the supplied string containing comma-separated Maven artifact
+     * coordinates. Any duplicates in the classpath are excluded.
      * @param commaSeparatedCoordinates the string of Maven artifact coordinates
-     * @return the array of {@link MavenId} instances created from the list of coordinates
+     * @return the array of {@link MavenId} instances representing the classpath
      */
-    public static MavenId[] parse( String commaSeparatedCoordinates ) {
+    public static MavenId[] createClasspath( String commaSeparatedCoordinates ) {
         if (commaSeparatedCoordinates == null) return new MavenId[] {};
         String[] coordinates = commaSeparatedCoordinates.split(",");
-        List<MavenId> result = new ArrayList<MavenId>();
-        for (int i = 0; i < coordinates.length; i++) {
-            String coordinateStr = coordinates[i].trim();
+        return createClasspath(coordinates);
+    }
+
+    /**
+     * Build a classpath of {@link MavenId}s by parsing the supplied Maven artifact coordinates. Any duplicates in the classpath
+     * are excluded.
+     * @param mavenCoordinates the array of Maven artifact coordinates
+     * @return the array of {@link MavenId} instances representing the classpath
+     */
+    public static MavenId[] createClasspath( String... mavenCoordinates ) {
+        if (mavenCoordinates == null) return new MavenId[] {};
+        // Use a linked set that maintains order and adds no duplicates ...
+        Set<MavenId> result = new LinkedHashSet<MavenId>();
+        for (int i = 0; i < mavenCoordinates.length; i++) {
+            String coordinateStr = mavenCoordinates[i];
+            if (coordinateStr == null) continue;
+            coordinateStr = coordinateStr.trim();
             if (coordinateStr.length() != 0) {
                 result.add(new MavenId(coordinateStr));
             }
+        }
+        return result.toArray(new MavenId[result.size()]);
+    }
+
+    /**
+     * Create a classpath of {@link MavenId}s by examining the supplied IDs and removing any duplicates.
+     * @param mavenIds the Maven IDs
+     * @return the array of {@link MavenId} instances representing the classpath
+     */
+    public static MavenId[] createClasspath( MavenId... mavenIds ) {
+        // Use a linked set that maintains order and adds no duplicates ...
+        Set<MavenId> result = new LinkedHashSet<MavenId>();
+        for (MavenId mavenId : mavenIds) {
+            if (mavenId != null) result.add(mavenId);
         }
         return result.toArray(new MavenId[result.size()]);
     }

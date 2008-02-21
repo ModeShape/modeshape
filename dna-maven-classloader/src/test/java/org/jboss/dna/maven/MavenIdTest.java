@@ -145,22 +145,42 @@ public class MavenIdTest {
     }
 
     @Test
-    public void shouldParseNullOrEmptyStringOfCommanSeparatedCoordinates() {
-        checkParsing("org.jboss.dna:dna-maven", new MavenId("org.jboss.dna", "dna-maven"));
-        checkParsing("org.jboss.dna:dna-maven:", new MavenId("org.jboss.dna", "dna-maven"));
-        checkParsing("org.jboss.dna:dna-maven::jdk1.4", new MavenId("org.jboss.dna", "dna-maven", null, "jdk1.4"));
-        checkParsing("org.jboss.dna:dna-maven:1.0:jdk1.4", new MavenId("org.jboss.dna", "dna-maven", "1.0", "jdk1.4"));
-        checkParsing("org.jboss.dna:dna-maven:1.0:jdk1.4,net.jcip:jcip-annotations:1.0", new MavenId("org.jboss.dna", "dna-maven", "1.0", "jdk1.4"), new MavenId("net.jcip", "jcip-annotations", "1.0"));
-        checkParsing("org.jboss.dna:dna-maven:1.0:jdk1.4,,net.jcip:jcip-annotations:1.0,", new MavenId("org.jboss.dna", "dna-maven", "1.0", "jdk1.4"), new MavenId("net.jcip", "jcip-annotations",
-                                                                                                                                                                   "1.0"));
-        checkParsing(",,org.jboss.dna:dna-maven:1.0:jdk1.4,, net.jcip: jcip-annotations:1.0 ,,", new MavenId("org.jboss.dna", "dna-maven", "1.0", "jdk1.4"), new MavenId("net.jcip",
-                                                                                                                                                                         "jcip-annotations", "1.0"));
+    public void shouldBuildClasspathFromCommaSeparatedCoordinatesIncludingEmptyOrNullValues() {
+        assertThat(MavenId.createClasspath(""), is(new MavenId[] {}));
+        assertThat(MavenId.createClasspath((String)null), is(new MavenId[] {}));
+
+        assertThat(MavenId.createClasspath("org.jboss.dna:dna-maven"), is(new MavenId[] {new MavenId("org.jboss.dna", "dna-maven")}));
+        assertThat(MavenId.createClasspath("  org.jboss.dna:dna-maven  "), is(new MavenId[] {new MavenId("org.jboss.dna", "dna-maven")}));
+        assertThat(MavenId.createClasspath("  org.jboss.dna : dna-maven  "), is(new MavenId[] {new MavenId("org.jboss.dna", "dna-maven")}));
+        assertThat(MavenId.createClasspath("org.jboss.dna:dna-maven:"), is(new MavenId[] {new MavenId("org.jboss.dna", "dna-maven")}));
+        assertThat(MavenId.createClasspath("org.jboss.dna:dna-maven::jdk1.4"), is(new MavenId[] {new MavenId("org.jboss.dna", "dna-maven", null, "jdk1.4")}));
+        assertThat(MavenId.createClasspath("org.jboss.dna:dna-maven:1.0:jdk1.4"), is(new MavenId[] {new MavenId("org.jboss.dna", "dna-maven", "1.0", "jdk1.4")}));
+        assertThat(MavenId.createClasspath("org.jboss.dna:dna-maven:1.0:jdk1.4,net.jcip:jcip-annotations:1.0"), is(new MavenId[] {new MavenId("org.jboss.dna", "dna-maven", "1.0", "jdk1.4"),
+                                                                                                                                  new MavenId("net.jcip", "jcip-annotations", "1.0")}));
+        assertThat(MavenId.createClasspath("org.jboss.dna:dna-maven:1.0:jdk1.4,,net.jcip:jcip-annotations:1.0,"), is(new MavenId[] {new MavenId("org.jboss.dna", "dna-maven", "1.0", "jdk1.4"),
+                                                                                                                                    new MavenId("net.jcip", "jcip-annotations", "1.0")}));
+        assertThat(MavenId.createClasspath(",,org.jboss.dna:dna-maven:1.0:jdk1.4,, net.jcip: jcip-annotations:1.0 ,,"), is(new MavenId[] {new MavenId("org.jboss.dna", "dna-maven", "1.0", "jdk1.4"),
+                                                                                                                                          new MavenId("net.jcip", "jcip-annotations", "1.0")}));
     }
 
-    public void checkParsing( String commaSeparatedCoordinates, MavenId... mavenIds ) {
-        MavenId[] results = MavenId.parse(commaSeparatedCoordinates);
-        assertThat(results, is(notNullValue()));
-        assertThat(results.length, is(mavenIds.length));
-        assertThat(results, is(mavenIds));
+    @Test
+    public void shouldBuildClasspathFromMultipleCoordinatesIncludingEmptyOrNullValues() {
+        assertThat(MavenId.createClasspath("", "", ""), is(new MavenId[] {}));
+        assertThat(MavenId.createClasspath((String[])null), is(new MavenId[] {}));
+        assertThat(MavenId.createClasspath(new String[] {null, null}), is(new MavenId[] {}));
+
+        assertThat(MavenId.createClasspath("org.jboss.dna:dna-maven:1.0:jdk1.4", "net.jcip:jcip-annotations:1.0"), is(new MavenId[] {new MavenId("org.jboss.dna", "dna-maven", "1.0", "jdk1.4"),
+                                                                                                                                     new MavenId("net.jcip", "jcip-annotations", "1.0")}));
+        assertThat(MavenId.createClasspath("org.jboss.dna:dna-maven:1.0:jdk1.4", "", "net.jcip:jcip-annotations:1.0", ""),
+                   is(new MavenId[] {new MavenId("org.jboss.dna", "dna-maven", "1.0", "jdk1.4"), new MavenId("net.jcip", "jcip-annotations", "1.0")}));
+        assertThat(MavenId.createClasspath(" org.jboss.dna:dna-maven:1.0:jdk1.4", " net.jcip: jcip-annotations:1.0"), is(new MavenId[] {new MavenId("org.jboss.dna", "dna-maven", "1.0", "jdk1.4"),
+                                                                                                                                        new MavenId("net.jcip", "jcip-annotations", "1.0")}));
+    }
+
+    @Test
+    public void shouldBuildClasspathFromMavenIdsAndRemoveDuplicatesAndNulls() {
+        MavenId id1 = new MavenId("org.jboss.dna", "dna-maven", "1.0", "jdk1.4");
+        MavenId id2 = new MavenId("org.jboss.dna", "dna-maven", "1.0");
+        assertThat(MavenId.createClasspath(id1, null, id2, id1, id2, null), is(new MavenId[] {id1, id2}));
     }
 }
