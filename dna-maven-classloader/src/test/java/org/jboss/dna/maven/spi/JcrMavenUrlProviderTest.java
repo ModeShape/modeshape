@@ -32,7 +32,7 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.util.Properties;
 import javax.jcr.SimpleCredentials;
-import org.jboss.dna.common.jcr.JackrabbitRepositoryTest;
+import org.jboss.dna.common.jcr.AbstractJcrRepositoryTest;
 import org.jboss.dna.common.util.StringUtil;
 import org.jboss.dna.maven.ArtifactType;
 import org.jboss.dna.maven.MavenId;
@@ -43,7 +43,7 @@ import org.junit.Test;
 /**
  * @author Randall Hauch
  */
-public class JcrMavenUrlProviderTest extends JackrabbitRepositoryTest {
+public class JcrMavenUrlProviderTest extends AbstractJcrRepositoryTest {
 
     private JcrMavenUrlProvider provider;
     private Properties validProperties;

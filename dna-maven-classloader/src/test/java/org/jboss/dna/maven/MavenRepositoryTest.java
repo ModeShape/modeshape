@@ -33,7 +33,7 @@ import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
-import org.jboss.dna.common.jcr.JackrabbitRepositoryTest;
+import org.jboss.dna.common.jcr.AbstractJcrRepositoryTest;
 import org.jboss.dna.common.util.IoUtil;
 import org.jboss.dna.common.util.StringUtil;
 import org.jboss.dna.maven.spi.JcrMavenUrlProvider;
@@ -43,7 +43,7 @@ import org.junit.Test;
 /**
  * @author Randall Hauch
  */
-public class MavenRepositoryTest extends JackrabbitRepositoryTest {
+public class MavenRepositoryTest extends AbstractJcrRepositoryTest {
 
     public static final String MAVEN_PATH = "/maven";
     public static final String PATH_TO_TEST_POM_A = "testPomA.xml";
