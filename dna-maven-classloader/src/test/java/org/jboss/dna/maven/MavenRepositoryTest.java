@@ -33,6 +33,7 @@ import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
+import org.jboss.dna.common.jcr.JackrabbitRepositoryTest;
 import org.jboss.dna.common.util.IoUtil;
 import org.jboss.dna.common.util.StringUtil;
 import org.jboss.dna.maven.spi.JcrMavenUrlProvider;

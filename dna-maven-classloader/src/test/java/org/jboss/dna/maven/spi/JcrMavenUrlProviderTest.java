@@ -32,12 +32,11 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.util.Properties;
 import javax.jcr.SimpleCredentials;
+import org.jboss.dna.common.jcr.JackrabbitRepositoryTest;
 import org.jboss.dna.common.util.StringUtil;
 import org.jboss.dna.maven.ArtifactType;
-import org.jboss.dna.maven.JackrabbitRepositoryTest;
 import org.jboss.dna.maven.MavenId;
 import org.jboss.dna.maven.SignatureType;
-import org.jboss.dna.maven.spi.JcrMavenUrlProvider;
 import org.junit.Before;
 import org.junit.Test;
 
