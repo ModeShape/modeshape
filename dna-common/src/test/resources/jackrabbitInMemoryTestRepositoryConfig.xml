@@ -23,7 +23,7 @@
         virtual file system where the repository stores global state
         (e.g. registered namespaces, custom node types, etc.)
     -->
-    <FileSystem class="org.apache.jackrabbit.core.fs.local.LocalFileSystem">
+    <FileSystem class="org.apache.jackrabbit.core.fs.mem.MemoryFileSystem">
         <param name="path" value="${rep.home}/repository"/>
     </FileSystem>
 
@@ -63,7 +63,7 @@
             virtual file system of the workspace:
             class: FQN of class implementing the FileSystem interface
         -->
-        <FileSystem class="org.apache.jackrabbit.core.fs.local.LocalFileSystem">
+        <FileSystem class="org.apache.jackrabbit.core.fs.mem.MemoryFileSystem">
             <param name="path" value="${wsp.home}"/>
         </FileSystem>
         <!--
@@ -90,7 +90,7 @@
             Configures the filesystem to use for versioning for the respective
             persistence manager
         -->
-        <FileSystem class="org.apache.jackrabbit.core.fs.local.LocalFileSystem">
+        <FileSystem class="org.apache.jackrabbit.core.fs.mem.MemoryFileSystem">
             <param name="path" value="${rep.home}/version" />
         </FileSystem>
 
