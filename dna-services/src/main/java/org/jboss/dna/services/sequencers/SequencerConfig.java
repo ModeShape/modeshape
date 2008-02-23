@@ -22,8 +22,12 @@
 package org.jboss.dna.services.sequencers;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
+import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.util.ArgCheck;
 import org.jboss.dna.common.util.ClassUtil;
 import org.jboss.dna.common.util.StringUtil;
@@ -32,20 +36,55 @@ import org.jboss.dna.maven.MavenId;
 /**
  * @author Randall Hauch
  */
-public class SequencerConfig implements ISequencerConfig {
+@Immutable
+public class SequencerConfig implements Comparable<SequencerConfig> {
 
     private final String name;
-    private final List<String> runRules;
-    private String description;
-    private String sequencerClassname;
+    private final Set<String> runRules;
+    private final String description;
+    private final String sequencerClassname;
     private final List<MavenId> classpath;
+    private final long timestamp;
 
-    public SequencerConfig( String name, String classname ) {
+    public SequencerConfig( String name, String description, String classname, MavenId[] classpath, String... runRules ) {
+        this(name, description, System.currentTimeMillis(), classname, classpath, runRules);
+    }
+
+    public SequencerConfig( String name, String description, long timestamp, String classname, MavenId[] classpath, String... runRules ) {
         ArgCheck.isNotEmpty(name, "name");
-        this.setClassname(classname);
         this.name = name;
-        this.runRules = new ArrayList<String>();
-        this.classpath = new ArrayList<MavenId>();
+        this.description = description != null ? description.trim() : "";
+        this.sequencerClassname = classname;
+        this.classpath = buildClasspath(classpath);
+        this.runRules = buildRunRuleSet(runRules);
+        this.timestamp = timestamp;
+        // Check the classname is a valid classname ...
+        if (!ClassUtil.isFullyQualifiedClassname(classname)) {
+            String msg = "The classname {1} specified for sequencer {2} is not a valid Java classname";
+            msg = StringUtil.createString(msg, classname, name);
+            throw new IllegalArgumentException(msg);
+        }
+    }
+
+    /* package */static Set<String> buildRunRuleSet( String... runRules ) {
+        Set<String> result = new LinkedHashSet<String>();
+        for (String runRule : runRules) {
+            if (runRule == null) continue;
+            runRule = runRule.trim();
+            if (runRule.length() == 0) continue;
+            result.add(runRule);
+        }
+        return Collections.unmodifiableSet(result);
+    }
+
+    /* package */static List<MavenId> buildClasspath( MavenId... mavenIds ) {
+        List<MavenId> classpath = new ArrayList<MavenId>();
+        if (mavenIds != null && mavenIds.length != 0) {
+            for (MavenId mavenId : mavenIds) {
+                if (!classpath.contains(mavenId)) classpath.add(mavenId);
+            }
+        }
+        return Collections.unmodifiableList(classpath);
     }
 
     public String getName() {
@@ -61,59 +100,36 @@ public class SequencerConfig implements ISequencerConfig {
     }
 
     public List<MavenId> getSequencerClasspath() {
-        return Collections.unmodifiableList(this.classpath);
+        return this.classpath;
     }
 
-    public List<String> getRunRules() {
-        return Collections.unmodifiableList(this.runRules);
+    public MavenId[] getSequencerClasspathArray() {
+        // Always return a copy to not care about modification of the array ...
+        List<MavenId> ids = getSequencerClasspath();
+        return ids.toArray(new MavenId[ids.size()]);
     }
 
-    public SequencerConfig setDescription( String description ) {
-        this.description = description != null ? description.trim() : null;
-        return this;
+    public Collection<String> getRunRules() {
+        return Collections.unmodifiableSet(this.runRules);
     }
 
-    public SequencerConfig setClassname( String classname ) {
-        ArgCheck.isNotEmpty(sequencerClassname, "sequencerClassname");
-        if (!ClassUtil.isFullyQualifiedClassname(sequencerClassname)) {
-            String msg = "The classname {1} specified for sequencer {2} is not a valid Java classname";
-            msg = StringUtil.createString(msg, sequencerClassname, name);
-            throw new IllegalArgumentException(msg);
-        }
-        return this;
-    }
-
-    public SequencerConfig setClasspath( MavenId... ids ) {
-        this.classpath.clear();
-        if (ids != null && ids.length != 0) {
-            for (MavenId mavenId : ids) {
-                if (!this.classpath.contains(mavenId)) this.classpath.add(mavenId);
-            }
-        }
-        return this;
-    }
-
-    public SequencerConfig addRunRule( String runRule ) {
-        if (runRule != null && runRule.trim().length() != 0) this.runRules.add(runRule);
-        return this;
-    }
-
-    public SequencerConfig setRunRules( String... runRules ) {
-        this.runRules.clear();
-        if (runRules != null && runRules.length != 0) {
-            for (String runRule : runRules) {
-                addRunRule(runRule);
-            }
-        }
-        return this;
+    /**
+     * Get the system timestamp when this configuration object was created.
+     * @return timestamp
+     */
+    public long getTimestamp() {
+        return this.timestamp;
     }
 
     /**
      * {@inheritDoc}
      */
-    public int compareTo( ISequencerConfig that ) {
-        if (that == this) return 00;
-        return this.getName().compareToIgnoreCase(that.getName());
+    public int compareTo( SequencerConfig that ) {
+        if (that == this) return 0;
+        int diff = this.getName().compareToIgnoreCase(that.getName());
+        if (diff != 0) return diff;
+        diff = (int)(this.getTimestamp() - that.getTimestamp());
+        return diff;
     }
 
     /**
@@ -132,10 +148,29 @@ public class SequencerConfig implements ISequencerConfig {
         if (obj == this) return true;
         if (obj instanceof SequencerConfig) {
             SequencerConfig that = (SequencerConfig)obj;
-            if (this.getName().equalsIgnoreCase(that.getName())) {
+            if (this.isSame(that)) {
                 return true;
             }
         }
+        return false;
+    }
+
+    /**
+     * Determine whether this configuration represents the same configuration as that supplied.
+     * @param that the other configuration to be compared with this
+     * @return true if this configuration and the supplied configuration
+     */
+    public boolean isSame( SequencerConfig that ) {
+        if (that == this) return true;
+        if (that == null) return false;
+        return this.getName().equalsIgnoreCase(that.getName());
+    }
+
+    public boolean hasChanged( SequencerConfig that ) {
+        assert this.isSame(that);
+        if (!this.getSequencerClassname().equals(that.getSequencerClassname())) return true;
+        if (!this.getSequencerClasspath().equals(that.getSequencerClasspath())) return true;
+        if (!this.getRunRules().equals(that.getRunRules())) return true;
         return false;
     }
 

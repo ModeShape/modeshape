@@ -19,19 +19,58 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
+
 package org.jboss.dna.services.sequencers;
 
-import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 import javax.jcr.Node;
-import org.jboss.dna.common.util.Logger;
+import net.jcip.annotations.ThreadSafe;
 
 /**
+ * A sequencer that can be used for basic unit testing.
  * @author Randall Hauch
  */
-public interface ISequencerProvider {
+@ThreadSafe
+public class MockSequencerA implements ISequencer {
 
-    List<ISequencer> getSequencersToProcess( Node node, Logger logger );
+    private SequencerConfig config;
+    private AtomicInteger counter = new AtomicInteger();
 
-    ISequencerConfig getConfigurationFor( ISequencer sequencer );
+    /**
+     * {@inheritDoc}
+     */
+    public void setConfiguration( SequencerConfig sequencerConfiguration ) {
+        this.config = sequencerConfiguration;
+    }
 
+    /**
+     * {@inheritDoc}
+     */
+    public void execute( Node node ) {
+        // increment the counter
+        this.counter.incrementAndGet();
+    }
+
+    public int getCounter() {
+        return this.counter.get();
+    }
+
+    public boolean isConfigured() {
+        return this.config != null;
+    }
+
+    /**
+     * @return config
+     */
+    public SequencerConfig getConfiguration() {
+        return this.config;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String toString() {
+        return (this.config != null ? this.config.getName() : "SampleSequencer") + " [" + this.getCounter() + "]";
+    }
 }

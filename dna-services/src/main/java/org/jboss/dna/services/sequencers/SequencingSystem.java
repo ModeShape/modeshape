@@ -27,6 +27,10 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import javax.jcr.Node;
 import javax.jcr.PathNotFoundException;
 import javax.jcr.Repository;
@@ -38,6 +42,7 @@ import javax.jcr.observation.Event;
 import javax.jcr.observation.EventIterator;
 import javax.jcr.observation.EventListener;
 import javax.jcr.observation.ObservationManager;
+import net.jcip.annotations.GuardedBy;
 import org.jboss.dna.common.util.Logger;
 
 /**
@@ -46,6 +51,21 @@ import org.jboss.dna.common.util.Logger;
  * @author Randall Hauch
  */
 public class SequencingSystem {
+
+    /**
+     * Interface used to select the set of {@link ISequencer} instances that should be run.
+     * @author Randall Hauch
+     */
+    public static interface Selector {
+
+        /**
+         * Select the sequencers that should be used to sequence the supplied node.
+         * @param sequencers the list of all sequencers available at the moment; never null
+         * @param node the node to be sequenced; never null
+         * @return the list of sequencers that should be used; may not be null
+         */
+        List<ISequencer> selectSequencers( List<ISequencer> sequencers, Node node );
+    }
 
     /**
      * Interface that is used by the {@link SequencingSystem#setEventReviewer(SequencingSystem.EventReviewer) SequencingSystem} to
@@ -59,7 +79,19 @@ public class SequencingSystem {
          * @param event the event being considered; never null
          * @return true if the event is interesting and should be sequenced
          */
-        public boolean isEventInteresting( SequencingEvent event );
+        boolean isEventInteresting( SequencingEvent event );
+    }
+
+    /**
+     * The default {@link Selector} implementation that selects every sequencer every time it's called, regardless of the node (or
+     * logger) supplied.
+     * @author Randall Hauch
+     */
+    protected static class DefaultSelector implements Selector {
+
+        public List<ISequencer> selectSequencers( List<ISequencer> sequencers, Node node ) {
+            return sequencers;
+        }
     }
 
     /**
@@ -79,7 +111,7 @@ public class SequencingSystem {
      */
     public static interface ProblemLog {
 
-        public void error( Event event, Throwable t );
+        void error( Event event, Throwable t );
     }
 
     protected class DefaultProblemLog implements ProblemLog {
@@ -100,6 +132,12 @@ public class SequencingSystem {
     }
 
     /**
+     * The default {@link Selector} that considers every {@link ISequencer} to be used for every node.
+     * @see SequencingSystem#setSequencerSelector(org.jboss.dna.services.sequencers.SequencingSystem.Selector)
+     */
+    public static final Selector DEFAULT_SEQUENCER_SELECTOR = new DefaultSelector();
+
+    /**
      * The default {@link EventReviewer} that considers every event to be interesting.
      * @see SequencingSystem#setEventReviewer(SequencingSystem.EventReviewer)
      */
@@ -113,11 +151,12 @@ public class SequencingSystem {
 
     private State state = State.PAUSED;
     private EventReviewer reviewer = DEFAULT_EVENT_REVIEWER;
-    private ClassLoader parentClassLoader;
-    private ISequencerProvider sequencerProvider;
+    private SequencerLibrary sequencerLibrary = new SequencerLibrary();
+    private Selector sequencerSelector = DEFAULT_SEQUENCER_SELECTOR;
     private ExecutorService executorService;
     private Logger logger = Logger.getLogger(this.getClass());
     private ProblemLog problemLog = new DefaultProblemLog();
+    private final Statistics statistics = new Statistics();
 
     /**
      * Create a new sequencing system, configured with no sequencers and not {@link #monitor(Workspace) monitoring} any
@@ -125,31 +164,29 @@ public class SequencingSystem {
      * {@link #start() started}.
      */
     public SequencingSystem() {
-        this.setParentClassLoader(null);
     }
 
     /**
-     * Get the parent class loader that's used when obtaining the class loader for each sequencer.
-     * @return the parent class loader; never null
+     * Get the statistics for this system.
+     * @return statistics
      */
-    public ClassLoader getParentClassLoader() {
-        return this.parentClassLoader;
+    public Statistics getStatistics() {
+        return this.statistics;
     }
 
     /**
-     * Set the parent class loader that's used when obtaining the class loader for each sequencer.
-     * @param parentClassLoader the parent class loader, or null if the class loader should be obtained from the
-     * {@link Thread#getContextClassLoader() current thread's context class loader} or, if that's null, this class'
-     * {@link Class#getClassLoader() class loader}.
+     * Get the library that is managing the {@link ISequencer sequencer} instances.
+     * @return the sequencer library
      */
-    public void setParentClassLoader( ClassLoader parentClassLoader ) {
-        if (this.isPaused()) {
-            throw new IllegalStateException("Unable to set the class loader when the sequencing system is running");
-        }
-        if (parentClassLoader == null) parentClassLoader = Thread.currentThread().getContextClassLoader();
-        if (parentClassLoader == null) parentClassLoader = this.getClass().getClassLoader();
-        assert parentClassLoader != null;
-        this.parentClassLoader = parentClassLoader;
+    public SequencerLibrary getSequencerLibrary() {
+        return this.sequencerLibrary;
+    }
+
+    /**
+     * @param sequencerLibrary Sets sequencerLibrary to the specified value.
+     */
+    public void setSequencerLibrary( SequencerLibrary sequencerLibrary ) {
+        this.sequencerLibrary = sequencerLibrary != null ? sequencerLibrary : new SequencerLibrary();
     }
 
     /**
@@ -171,45 +208,67 @@ public class SequencingSystem {
     /**
      * Get the executor service used to run the sequencers.
      * @return the executor service
+     * @see #setExecutorService(ExecutorService)
      */
     public ExecutorService getExecutorService() {
         return this.executorService;
     }
 
     /**
+     * Set the executor service that should be used by this system. By default, the system is set up with a
+     * {@link Executors#newSingleThreadExecutor() executor that uses a single thread}.
      * @param executorService the executor service
+     * @see #getExecutorService()
+     * @see Executors#newCachedThreadPool()
+     * @see Executors#newCachedThreadPool(java.util.concurrent.ThreadFactory)
+     * @see Executors#newFixedThreadPool(int)
+     * @see Executors#newFixedThreadPool(int, java.util.concurrent.ThreadFactory)
+     * @see Executors#newScheduledThreadPool(int)
+     * @see Executors#newScheduledThreadPool(int, java.util.concurrent.ThreadFactory)
+     * @see Executors#newSingleThreadExecutor()
+     * @see Executors#newSingleThreadExecutor(java.util.concurrent.ThreadFactory)
+     * @see Executors#newSingleThreadScheduledExecutor()
+     * @see Executors#newSingleThreadScheduledExecutor(java.util.concurrent.ThreadFactory)
      */
     public void setExecutorService( ExecutorService executorService ) {
-        if (this.isPaused()) {
-            throw new IllegalStateException("Unable to set the executor service when the sequencing system is running");
+        if (sequencerLibrary == null) {
+            throw new IllegalArgumentException("The executor service parameter may not be null");
+        }
+        if (this.isStarted()) {
+            throw new IllegalStateException("Unable to change the executor service while running");
         }
         this.executorService = executorService;
     }
 
     /**
-     * @return the provider of sequencers
+     * Override this method to creates a different kind of default executor service. This method is called when the system is
+     * {@link #start() started} without an executor service being {@link #setExecutorService(ExecutorService) set}.
+     * <p>
+     * This method creates a {@link Executors#newSingleThreadExecutor() single-threaded executor}.
+     * </p>
+     * @return
      */
-    public ISequencerProvider getSequencerSelectors() {
-        return this.sequencerProvider;
+    protected ExecutorService createDefaultExecutorService() {
+        return Executors.newSingleThreadExecutor();
     }
 
     /**
-     * @param sequencerProvider the provider of sequencers
-     */
-    public void setSequencerSelectors( ISequencerProvider sequencerProvider ) {
-        if (this.isPaused()) {
-            throw new IllegalStateException("Unable to set the sequencer selector when the sequencing system is running");
-        }
-        this.sequencerProvider = sequencerProvider;
-    }
-
-    /**
-     * @return state
+     * Return the current state of this system.
+     * @return the current state
      */
     public State getState() {
         return this.state;
     }
 
+    /**
+     * Set the state of the system. This method does nothing if the desired state matches the current state.
+     * @param state the desired state
+     * @return this object for method chaining purposes
+     * @see #setState(String)
+     * @see #start()
+     * @see #pause()
+     * @see #shutdown()
+     */
     public SequencingSystem setState( State state ) {
         switch (state) {
             case STARTED:
@@ -222,10 +281,23 @@ public class SequencingSystem {
         return this;
     }
 
+    /**
+     * Set the state of the system. This method does nothing if the desired state matches the current state.
+     * @param state the desired state in string form
+     * @return this object for method chaining purposes
+     * @throws IllegalArgumentException if the specified state string is null or does not match one of the predefined
+     * {@link State predefined enumerated values}
+     * @see #setState(org.jboss.dna.services.sequencers.SequencingSystem.State)
+     * @see #start()
+     * @see #pause()
+     * @see #shutdown()
+     */
     public SequencingSystem setState( String state ) {
-        State newState = State.valueOf(state);
-        setState(newState);
-        return this;
+        State newState = state == null ? null : State.valueOf(state.toUpperCase());
+        if (newState == null) {
+            throw new IllegalArgumentException("Invalid state parameter");
+        }
+        return setState(newState);
     }
 
     /**
@@ -237,21 +309,17 @@ public class SequencingSystem {
      * @see #shutdown()
      * @see #isStarted()
      */
-    public SequencingSystem start() {
-        if (this.state == State.SHUTDOWN) {
-            String msg = "The sequencing system cannot be restarted after being shutdown";
-            throw new IllegalStateException(msg);
+    public synchronized SequencingSystem start() {
+        if (this.state != State.STARTED) {
+            if (this.executorService == null) {
+                this.executorService = createDefaultExecutorService();
+            }
+            assert this.executorService != null;
+            assert this.reviewer != null;
+            assert this.sequencerSelector != null;
+            assert this.sequencerLibrary != null;
+            this.state = State.STARTED;
         }
-        if (this.executorService == null) {
-            throw new IllegalStateException("The sequencing system cannot be started without an executor service");
-        }
-        if (this.reviewer == null) {
-            throw new IllegalStateException("The sequencing system cannot be started without a reviewer");
-        }
-        if (this.sequencerProvider == null) {
-            throw new IllegalStateException("The sequencing system cannot be started without a sequencer provider");
-        }
-        this.state = State.STARTED;
         return this;
     }
 
@@ -264,7 +332,7 @@ public class SequencingSystem {
      * @see #shutdown()
      * @see #isPaused()
      */
-    public SequencingSystem pause() {
+    public synchronized SequencingSystem pause() {
         this.state = State.PAUSED;
         return this;
     }
@@ -277,7 +345,10 @@ public class SequencingSystem {
      * @see #pause()
      * @see #isShutdown()
      */
-    public SequencingSystem shutdown() {
+    public synchronized SequencingSystem shutdown() {
+        if (this.executorService != null) {
+            this.executorService.shutdown();
+        }
         this.state = State.SHUTDOWN;
         return this;
     }
@@ -318,6 +389,7 @@ public class SequencingSystem {
     }
 
     /**
+     * Get the event reviewer used by this system.
      * @return reviewer
      */
     public EventReviewer getEventReviewer() {
@@ -325,10 +397,27 @@ public class SequencingSystem {
     }
 
     /**
-     * @param reviewer Sets reviewer to the specified value.
+     * Set the event reviewer, or null if the {@link #DEFAULT_EVENT_REVIEWER default event reviewer} should be used.
+     * @param reviewer the even reviewer
      */
     public void setEventReviewer( EventReviewer reviewer ) {
         this.reviewer = reviewer != null ? reviewer : DEFAULT_EVENT_REVIEWER;
+    }
+
+    /**
+     * Get the sequencing selector used by this system.
+     * @return sequencerSelector
+     */
+    public Selector getSequencerSelector() {
+        return this.sequencerSelector;
+    }
+
+    /**
+     * Set the sequencer selector, or null if the {@link #DEFAULT_SEQUENCER_SELECTOR default sequencer selector} should be used.
+     * @param sequencerSelector the selector
+     */
+    public void setSequencerSelector( Selector sequencerSelector ) {
+        this.sequencerSelector = sequencerSelector != null ? sequencerSelector : DEFAULT_SEQUENCER_SELECTOR;
     }
 
     /**
@@ -347,6 +436,29 @@ public class SequencingSystem {
     public WorkspaceListener monitor( Workspace workspace ) throws RepositoryException {
         if (workspace == null) throw new IllegalArgumentException("The workspace parameter may not be null");
         WorkspaceListener listener = new WorkspaceListener(workspace);
+        listener.register();
+        return listener;
+    }
+
+    /**
+     * Monitor the supplied workspace for events of the given type on any node in the workspace. Monitoring is accomplished by
+     * registering a listener on the workspace, so this monitoring only has access to the information that the
+     * {@link Session#getUserID() workspace user} has permission and authorization to see. For more information, see
+     * {@link ObservationManager}.
+     * <p>
+     * The listener returned from this method is not managed by this SequencingSystem instance. If the listener is no longer
+     * needed, it simply must be {@link ObservationManager#removeEventListener(EventListener) removed} as a listener of the
+     * workspace and garbage collected.
+     * </p>
+     * @param workspace the workspace
+     * @param eventTypes the bitmask of the {@link Event} types that are to be monitored in the workspace are to be monitored
+     * @return the listener that was created and registered to perform the monitoring
+     * @throws RepositoryException if there is a problem registering the listener
+     */
+    public WorkspaceListener monitor( Workspace workspace, int eventTypes ) throws RepositoryException {
+        if (workspace == null) throw new IllegalArgumentException("The workspace parameter may not be null");
+        WorkspaceListener listener = new WorkspaceListener(workspace);
+        listener.setEventTypes(eventTypes);
         listener.register();
         return listener;
     }
@@ -455,16 +567,24 @@ public class SequencingSystem {
      * @param listener
      */
     protected void enqueueEvents( EventIterator eventIterator, WorkspaceListener listener ) {
-        if (eventIterator == null || this.state != State.STARTED) return;
-        if (this.state == State.SHUTDOWN) {
-            throw new IllegalStateException("The sequencing system has been shutdown and cannot be used");
+        if (eventIterator == null) return;
+        if (this.state != State.STARTED) {
+            int count = 0;
+            // HACK: getSize() appears to return -1, so we have to loop ...
+            // count = eventIterator.getSize();
+            while (eventIterator.hasNext()) {
+                eventIterator.next();
+                ++count;
+            }
+            this.statistics.recordEventsIgnored(count);
+            return;
         }
-        if (this.executorService == null) {
-            throw new IllegalStateException("The sequencing system does not have an executor service");
-        }
+        assert this.executorService != null;
         Workspace workspace = listener.getWorkspace();
         // Accumulate the list of changed nodes. Any event which has a path to a node that has already been seen
         // (according to the ChangedNode.hashCode() and ChangedNode.equals() methods) will not be added to this set.
+        long interestingCount = 0l;
+        long uninterestingCount = 0l;
         Set<ChangedNode> nodesToProcess = new LinkedHashSet<ChangedNode>();
         while (eventIterator.hasNext()) {
             Event event = eventIterator.nextEvent();
@@ -472,11 +592,15 @@ public class SequencingSystem {
             try {
                 if (this.reviewer.isEventInteresting(seqEvent)) {
                     nodesToProcess.add(new ChangedNode(seqEvent.getNode(), seqEvent.getPath(), workspace));
+                    ++interestingCount;
+                } else {
+                    ++uninterestingCount;
                 }
             } catch (Throwable t) {
                 this.problemLog.error(seqEvent, t);
             }
         }
+        this.statistics.recordEvents(interestingCount, uninterestingCount);
 
         for (ChangedNode changedNode : nodesToProcess) {
             this.executorService.execute(changedNode);
@@ -491,23 +615,28 @@ public class SequencingSystem {
     protected void processNode( Node node ) {
         try {
             // Figure out which sequencers should run ...
-            List<ISequencer> sequencers = this.sequencerProvider.getSequencersToProcess(node, this.logger);
+            List<ISequencer> sequencers = this.sequencerLibrary.getSequencers();
+            sequencers = this.sequencerSelector.selectSequencers(sequencers, node);
             // Run each of those sequencers ...
-            if (this.logger.isDebugEnabled()) {
-                if (sequencers.isEmpty()) {
+            if (sequencers.isEmpty()) {
+                this.statistics.recordNodeSkipped();
+                if (this.logger.isDebugEnabled()) {
                     this.logger.debug("Skipping '{}': no sequencers matched this condition", node.getPath());
                 }
-            }
-            for (ISequencer sequencer : sequencers) {
-                if (this.logger.isDebugEnabled()) {
-                    String sequencerName = sequencer.getClass().getName();
-                    ISequencerConfig config = this.sequencerProvider.getConfigurationFor(sequencer);
-                    if (config != null) {
-                        sequencerName = config.getName();
+            } else {
+                for (ISequencer sequencer : sequencers) {
+                    if (this.logger.isDebugEnabled()) {
+                        String sequencerName = sequencer.getClass().getName();
+                        SequencerConfig config = sequencer.getConfiguration();
+                        if (config != null) {
+                            sequencerName = config.getName();
+                        }
+                        String sequencerClassname = sequencer.getClass().getName();
+                        this.logger.debug("Sequencing '{}' with {} ({})", node.getPath(), sequencerName, sequencerClassname);
                     }
-                    this.logger.debug("Sequencing '{}' with ", node.getPath(), sequencerName);
+                    sequencer.execute(node);
                 }
-                sequencer.execute(node);
+                this.statistics.recordNodeSequenced();
             }
         } catch (RepositoryException e) {
             String msg = "Error while sequencing node '{}'";
@@ -637,11 +766,11 @@ public class SequencingSystem {
          */
         public Node getNode() throws PathNotFoundException, RepositoryException {
             if (this.node == null) {
-                this.node = this.workspace.getSession().getRootNode().getNode(this.getPath());
+                String path = this.getPath().replaceAll("^/+", "");
+                this.node = this.workspace.getSession().getRootNode().getNode(path);
             }
             return this.node;
         }
-
     }
 
     /**
@@ -652,7 +781,7 @@ public class SequencingSystem {
 
         public static final boolean DEFAULT_IS_DEEP = true;
         public static final boolean DEFAULT_NO_LOCAL = false;
-        public static final int DEFAULT_EVENT_TYPES = Event.NODE_ADDED & Event.NODE_REMOVED & Event.PROPERTY_ADDED & Event.PROPERTY_CHANGED & Event.PROPERTY_REMOVED;
+        public static final int DEFAULT_EVENT_TYPES = Event.NODE_ADDED | Event.NODE_REMOVED | Event.PROPERTY_ADDED | Event.PROPERTY_CHANGED | Event.PROPERTY_REMOVED;
         public static final String DEFAULT_ABSOLUTE_PATH = "/";
 
         private final Workspace workspace;
@@ -662,6 +791,8 @@ public class SequencingSystem {
         private String absolutePath = DEFAULT_ABSOLUTE_PATH;
         private boolean deep = DEFAULT_IS_DEEP;
         private boolean noLocal = DEFAULT_NO_LOCAL;
+        @GuardedBy( "this" )
+        private boolean registered = false;
 
         protected WorkspaceListener( Workspace workspace ) {
             this.workspace = workspace;
@@ -810,18 +941,25 @@ public class SequencingSystem {
             }
         }
 
-        public WorkspaceListener register() throws UnsupportedRepositoryOperationException, RepositoryException {
-            this.workspace.getObservationManager().addEventListener(this, eventTypes, absolutePath, deep, uuids.toArray(new String[uuids.size()]),
-                                                                    nodeTypeNames.toArray(new String[nodeTypeNames.size()]), noLocal);
+        public boolean isRegistered() {
+            return this.registered;
+        }
+
+        public synchronized WorkspaceListener register() throws UnsupportedRepositoryOperationException, RepositoryException {
+            String[] uuids = this.uuids.isEmpty() ? null : this.uuids.toArray(new String[this.uuids.size()]);
+            String[] nodeTypeNames = this.nodeTypeNames.isEmpty() ? null : this.nodeTypeNames.toArray(new String[this.nodeTypeNames.size()]);
+            this.workspace.getObservationManager().addEventListener(this, eventTypes, absolutePath, deep, uuids, nodeTypeNames, noLocal);
+            this.registered = true;
             return this;
         }
 
-        public WorkspaceListener unregister() throws UnsupportedRepositoryOperationException, RepositoryException {
+        public synchronized WorkspaceListener unregister() throws UnsupportedRepositoryOperationException, RepositoryException {
             this.workspace.getObservationManager().removeEventListener(this);
+            this.registered = false;
             return this;
         }
 
-        public WorkspaceListener reregister() throws UnsupportedRepositoryOperationException, RepositoryException {
+        public synchronized WorkspaceListener reregister() throws UnsupportedRepositoryOperationException, RepositoryException {
             unregister();
             register();
             return this;
@@ -832,19 +970,187 @@ public class SequencingSystem {
          */
         public void onEvent( EventIterator events ) {
             if (events != null) {
-                try {
-                    SequencingSystem.this.enqueueEvents(events, this);
-                } catch (IllegalStateException e) {
-                    if (SequencingSystem.this.isShutdown()) {
-                        // This sequencing system has been shutdown and can't be restarted, so unregister this listener
-                        try {
-                            unregister();
-                        } catch (RepositoryException re) {
-                            String msg = "Error unregistering workspace listener after sequencing system has been shutdow.";
-                            Logger.getLogger(this.getClass()).debug(re, msg);
-                        }
+                if (SequencingSystem.this.isShutdown()) {
+                    // This sequencing system has been shutdown, so unregister this listener
+                    try {
+                        unregister();
+                    } catch (RepositoryException re) {
+                        String msg = "Error unregistering workspace listener after sequencing system has been shutdow.";
+                        Logger.getLogger(this.getClass()).debug(re, msg);
                     }
+                } else {
+                    SequencingSystem.this.enqueueEvents(events, this);
                 }
+            }
+        }
+    }
+
+    /**
+     * The statistics for the system.
+     * @author Randall Hauch
+     */
+    public class Statistics {
+
+        private long numberOfEventsIgnored;
+        private long numberOfEventsEnqueued;
+        private long numberOfEventsSkipped;
+        private long numberOfEventSetsIgnored;
+        private long numberOfEventSetsEnqueued;
+        private long numberOfNodesSequenced;
+        private long numberOfNodesSkipped;
+        private final AtomicLong startTime;
+        private final ReadWriteLock lock = new ReentrantReadWriteLock();
+
+        protected Statistics() {
+            startTime = new AtomicLong(System.currentTimeMillis());
+        }
+
+        public Statistics reset() {
+            try {
+                lock.writeLock().lock();
+                this.startTime.set(System.currentTimeMillis());
+                this.numberOfEventsIgnored = 0;
+                this.numberOfEventsEnqueued = 0;
+                this.numberOfEventsSkipped = 0;
+                this.numberOfEventSetsIgnored = 0;
+                this.numberOfEventSetsEnqueued = 0;
+                this.numberOfNodesSequenced = 0;
+                this.numberOfNodesSkipped = 0;
+            } finally {
+                lock.writeLock().unlock();
+            }
+            return this;
+        }
+
+        /**
+         * @return the system time when the statistics were started
+         */
+        public long getStartTime() {
+            return this.startTime.get();
+        }
+
+        /**
+         * @return the number of nodes that were sequenced
+         */
+        public long getNumberOfNodesSequenced() {
+            try {
+                lock.readLock().lock();
+                return this.numberOfNodesSequenced;
+            } finally {
+                lock.readLock().unlock();
+            }
+        }
+
+        /**
+         * @return the number of nodes that were skipped because no sequencers applied
+         */
+        public long getNumberOfNodesSkipped() {
+            try {
+                lock.readLock().lock();
+                return this.numberOfNodesSkipped;
+            } finally {
+                lock.readLock().unlock();
+            }
+        }
+
+        /**
+         * @return the number of events that were ignored because the system was not running
+         */
+        public long getNumberOfEventsIgnored() {
+            try {
+                lock.readLock().lock();
+                return this.numberOfEventsIgnored;
+            } finally {
+                lock.readLock().unlock();
+            }
+        }
+
+        /**
+         * @return the number of events that were enqueued for processing
+         */
+        public long getNumberOfEventsEnqueued() {
+            try {
+                lock.readLock().lock();
+                return this.numberOfEventsEnqueued;
+            } finally {
+                lock.readLock().unlock();
+            }
+        }
+
+        /**
+         * @return the number of events that were skipped (not enqueued) because they were not
+         * {@link SequencingSystem#getEventReviewer() interesting}
+         */
+        public long getNumberOfEventsSkipped() {
+            try {
+                lock.readLock().lock();
+                return this.numberOfEventsSkipped;
+            } finally {
+                lock.readLock().unlock();
+            }
+        }
+
+        /**
+         * @return the number of event sets (transactions) that were enqueued for processing
+         */
+        public long getNumberOfEventSetsEnqueued() {
+            try {
+                lock.readLock().lock();
+                return this.numberOfEventSetsEnqueued;
+            } finally {
+                lock.readLock().unlock();
+            }
+        }
+
+        /**
+         * @return the number of event sets (transactions) that were ignored because the system was not running
+         */
+        public long getNumberOfEventSetsIgnored() {
+            try {
+                lock.readLock().lock();
+                return this.numberOfEventSetsIgnored;
+            } finally {
+                lock.readLock().unlock();
+            }
+        }
+
+        protected void recordNodeSequenced() {
+            try {
+                lock.writeLock().lock();
+                ++this.numberOfNodesSequenced;
+            } finally {
+                lock.writeLock().unlock();
+            }
+        }
+
+        protected void recordNodeSkipped() {
+            try {
+                lock.writeLock().lock();
+                ++this.numberOfNodesSkipped;
+            } finally {
+                lock.writeLock().unlock();
+            }
+        }
+
+        protected void recordEvents( long enqueued, long skipped ) {
+            try {
+                lock.writeLock().lock();
+                this.numberOfEventsEnqueued += enqueued;
+                this.numberOfEventsSkipped += enqueued;
+                ++this.numberOfEventSetsEnqueued;
+            } finally {
+                lock.writeLock().unlock();
+            }
+        }
+
+        protected void recordEventsIgnored( long count ) {
+            try {
+                lock.writeLock().lock();
+                this.numberOfEventsIgnored += count;
+                this.numberOfEventSetsIgnored += 1;
+                ++this.numberOfEventSetsEnqueued;
+            } finally {
+                lock.writeLock().unlock();
             }
         }
     }

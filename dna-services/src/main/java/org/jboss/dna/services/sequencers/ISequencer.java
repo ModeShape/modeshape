@@ -24,6 +24,7 @@ package org.jboss.dna.services.sequencers;
 import javax.jcr.Node;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
+import net.jcip.annotations.ThreadSafe;
 
 /**
  * The interface for a DNA sequencer, which sequences nodes and their content to extract additional information from the
@@ -33,11 +34,14 @@ import javax.jcr.Session;
  * </p>
  * @author Randall Hauch
  */
+@ThreadSafe
 public interface ISequencer {
 
     /**
      * This method allows the implementation to initialize and configure itself using the supplied {@link SequencerConfig}
-     * information, and is called prior to {@link #execute(Node) execute}.
+     * information, and is called prior to any calls to {@link #execute(Node) execute}. When this method is called, the
+     * implementation must maintain a reference to the supplied configuration (which should then be returned in
+     * {@link #getConfiguration()}.
      * <p>
      * Sequencers are always configured before they are executed, and {@link #execute(Node) execute} is called on the return value
      * of the <code>configure</code> method. This provide maximims flexibility: most implementations can simply return
@@ -45,10 +49,16 @@ public interface ISequencer {
      * implementation based upon the configuration information. Thus, this <code>configure</code> method is analogous to a
      * factory method, but no separate factory interface is required.
      * </p>
+     * <p>
      * @param sequencerConfiguration the configuration for the sequencer
-     * @return the configured sequencer; may not be null
      */
-    ISequencer configure( SequencerConfig sequencerConfiguration );
+    void setConfiguration( SequencerConfig sequencerConfiguration );
+
+    /**
+     * Return the configuration for this sequencer, as supplied to the last {@link #setConfiguration(SequencerConfig)} invocation.
+     * @return the configuration, or null if not yet configured
+     */
+    SequencerConfig getConfiguration();
 
     /**
      * Execute the sequencing operation on the supplied node, which has recently been created or changed. The implementation of
