@@ -991,12 +991,19 @@ public class SequencingSystem {
      */
     public class Statistics {
 
+        @GuardedBy( "lock" )
         private long numberOfEventsIgnored;
+        @GuardedBy( "lock" )
         private long numberOfEventsEnqueued;
+        @GuardedBy( "lock" )
         private long numberOfEventsSkipped;
+        @GuardedBy( "lock" )
         private long numberOfEventSetsIgnored;
+        @GuardedBy( "lock" )
         private long numberOfEventSetsEnqueued;
+        @GuardedBy( "lock" )
         private long numberOfNodesSequenced;
+        @GuardedBy( "lock" )
         private long numberOfNodesSkipped;
         private final AtomicLong startTime;
         private final ReadWriteLock lock = new ReentrantReadWriteLock();
