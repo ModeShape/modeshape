@@ -79,6 +79,13 @@
       <artifactId>log4j</artifactId>
     </dependency>
     <!-- 
+    Java Concurrency in Practice annotations
+    -->
+	<dependency>
+	  <groupId>net.jcip</groupId>
+	  <artifactId>jcip-annotations</artifactId>
+	</dependency>
+    <!-- 
       Java Content Repository API 
     -->
     <dependency>
