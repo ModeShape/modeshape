@@ -157,6 +157,13 @@
 				<version>1.2.14</version>
 				<scope>test</scope>
 			</dependency>
+			<!-- Java Concurrency in Practice annotations -->
+			<dependency>
+				<groupId>net.jcip</groupId>
+				<artifactId>jcip-annotations</artifactId>
+				<version>1.0</version>
+				<scope>compile</scope>
+			</dependency>
 			<!-- Java Content Repository API -->
 			<dependency>
 				<groupId>javax.jcr</groupId>
