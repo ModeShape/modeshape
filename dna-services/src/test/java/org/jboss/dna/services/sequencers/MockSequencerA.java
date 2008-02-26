@@ -24,6 +24,7 @@ package org.jboss.dna.services.sequencers;
 
 import java.util.concurrent.atomic.AtomicInteger;
 import javax.jcr.Node;
+import org.jboss.dna.common.monitor.ProgressMonitor;
 import net.jcip.annotations.ThreadSafe;
 
 /**
@@ -46,9 +47,15 @@ public class MockSequencerA implements Sequencer {
     /**
      * {@inheritDoc}
      */
-    public void execute( Node node ) {
-        // increment the counter
-        this.counter.incrementAndGet();
+    public void execute( Node node, ProgressMonitor progressMonitor ) {
+        try {
+            progressMonitor.beginTask("Incrementing counter", 1);
+            // increment the counter and record the progress ...
+            this.counter.incrementAndGet();
+            progressMonitor.worked(1);
+        } finally {
+            progressMonitor.done();
+        }
     }
 
     public int getCounter() {

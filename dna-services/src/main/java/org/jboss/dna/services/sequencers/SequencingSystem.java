@@ -43,8 +43,12 @@ import javax.jcr.observation.ObservationManager;
 import net.jcip.annotations.GuardedBy;
 import net.jcip.annotations.Immutable;
 import net.jcip.annotations.ThreadSafe;
+import org.jboss.dna.common.monitor.LoggingProgressMonitor;
+import org.jboss.dna.common.monitor.ProgressMonitor;
+import org.jboss.dna.common.monitor.SimpleProgressMonitor;
 import org.jboss.dna.common.util.HashCodeUtil;
 import org.jboss.dna.common.util.Logger;
+import org.jboss.dna.common.util.StringUtil;
 import org.jboss.dna.services.util.SessionFactory;
 
 /**
@@ -656,22 +660,32 @@ public class SequencingSystem {
                         this.logger.debug("Skipping '{}': no sequencers matched this condition", changedNode);
                     }
                 } else {
-                    for (Sequencer sequencer : sequencers) {
-                        if (this.logger.isDebugEnabled()) {
-                            String sequencerName = sequencer.getClass().getName();
-                            SequencerConfig config = sequencer.getConfiguration();
-                            if (config != null) {
-                                sequencerName = config.getName();
-                            }
-                            String sequencerClassname = sequencer.getClass().getName();
-                            this.logger.debug("Sequencing '{}' with {} ({})", changedNode, sequencerName, sequencerClassname);
-                        }
-                        sequencer.execute(node);
-
-                        // Save the changes made by the sequencer ...
-                        session.save();
+                    String activityName = StringUtil.createString("Sequencing {1}", changedNode);
+                    ProgressMonitor progressMonitor = new SimpleProgressMonitor(activityName);
+                    if (this.logger.isTraceEnabled()) {
+                        progressMonitor = new LoggingProgressMonitor(progressMonitor, this.logger, Logger.Level.TRACE);
                     }
-                    this.statistics.recordNodeSequenced();
+                    try {
+                        for (Sequencer sequencer : sequencers) {
+                            // final String sequencerClassname = sequencer.getClass().getName();
+                            final SequencerConfig config = sequencer.getConfiguration();
+                            final String sequencerName = config != null ? config.getName() : sequencer.getClass().getName();
+
+                            final ProgressMonitor sequenceMonitor = progressMonitor.createSubtask(1);
+                            String subtaskName = StringUtil.createString("running {}", sequencerName);
+                            sequenceMonitor.beginTask(subtaskName, 100);
+                            try {
+                                sequencer.execute(node, sequenceMonitor.createSubtask(80));
+                            } finally {
+                                sequenceMonitor.done();
+                            }
+                            // Save the changes made by the sequencer ...
+                            session.save();
+                        }
+                        this.statistics.recordNodeSequenced();
+                    } finally {
+                        progressMonitor.done();
+                    }
                 }
             } finally {
                 session.logout();
@@ -836,9 +850,9 @@ public class SequencingSystem {
         public static final boolean DEFAULT_IS_DEEP = true;
         public static final boolean DEFAULT_NO_LOCAL = false;
         public static final int DEFAULT_EVENT_TYPES = Event.NODE_ADDED | /* Event.NODE_REMOVED | */Event.PROPERTY_ADDED | Event.PROPERTY_CHANGED /*
-         * |
-         * Event.PROPERTY_REMOVED
-         */;
+                                                                                                                                                     * |
+                                                                                                                                                     * Event.PROPERTY_REMOVED
+                                                                                                                                                     */;
         public static final String DEFAULT_ABSOLUTE_PATH = "/";
 
         private final String repositoryWorkspaceName;

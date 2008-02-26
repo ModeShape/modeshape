@@ -33,6 +33,8 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.List;
 import javax.jcr.Node;
+import org.jboss.dna.common.monitor.NullProgressMonitor;
+import org.jboss.dna.common.monitor.ProgressMonitor;
 import org.jboss.dna.maven.MavenId;
 import org.jboss.dna.maven.MavenRepository;
 import org.jboss.dna.maven.spi.JcrMavenUrlProvider;
@@ -54,6 +56,7 @@ public class SequencerLibraryTest {
     private String[] validRunRules;
     private MavenId[] validMavenIds;
     private Mockery context = new Mockery();
+    private ProgressMonitor nullMonitor = new NullProgressMonitor(SequencerLibraryTest.class.getName());
 
     @Before
     public void beforeEach() throws Exception {
@@ -181,19 +184,19 @@ public class SequencerLibraryTest {
         // The very first sequencer instance should still be runnable ...
         final Node mockNode = context.mock(Node.class);
         for (int i = 0; i != 10; ++i) {
-            firstSequencer.execute(mockNode);
+            firstSequencer.execute(mockNode, nullMonitor);
         }
         assertThat(firstSequencer.getCounter(), is(10));
 
         // The second sequencer instance should still be runnable ...
         for (int i = 0; i != 10; ++i) {
-            secondSequencerA.execute(mockNode);
+            secondSequencerA.execute(mockNode, nullMonitor);
         }
         assertThat(secondSequencerA.getCounter(), is(10));
 
         // The third sequencer instance should still be runnable ...
         for (int i = 0; i != 10; ++i) {
-            firstSequencerB.execute(mockNode);
+            firstSequencerB.execute(mockNode, nullMonitor);
         }
         assertThat(firstSequencerB.getCounter(), is(10));
     }
