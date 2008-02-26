@@ -81,6 +81,36 @@ public class StringUtil {
     }
 
     /**
+     * Create a string by substituting the parameters into all key occurrences in the supplied format. The pattern consists of
+     * zero or more keys of the form <code>{}</code>. Therefore, the first parameter replaces the first occurrence of "{}", the
+     * second parameter replaces the second occurrences of "{}", etc.
+     * <p>
+     * If any parameter is null, the corresponding key is replaced with the string "null". Therefore, consider using an empty
+     * string when keys are to be removed altogether.
+     * </p>
+     * <p>
+     * If there are no parameters, this method does nothing and returns the supplied pattern as is.
+     * </p>
+     * @param pattern the pattern
+     * @param parameters the parameters used to replace keys
+     * @return the string with all keys replaced (or removed)
+     */
+    public static String createLogString( String pattern, Object... parameters ) {
+        if (pattern.length() == 0) return "";
+        if (parameters == null || parameters.length == 0) {
+            return pattern;
+            // return pattern.replaceAll("\\{\\d+\\}","");
+        }
+        int index = 1;
+        String result = pattern;
+        for (Object object : parameters) {
+            result = result.replace("\\{\\}", object != null ? object.toString() : "null");
+            ++index;
+        }
+        return result;
+    }
+
+    /**
      * Create a new string containing the specified character repeated a specific number of times.
      * @param charToRepeat the character to repeat
      * @param numberOfRepeats the number of times the character is to repeat in the result; must be greater than 0

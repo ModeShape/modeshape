@@ -74,6 +74,134 @@ public class Logger {
     }
 
     /**
+     * Log a message at the suplied level according to the specified format and (optional) parameters. The message should contain
+     * a pair of empty curly braces for each of the parameter, which should be passed in the correct order. This method is
+     * efficient and avoids superfluous object creation when the logger is disabled for the desired level.
+     * @param level the level at which to log
+     * @param message the message string
+     * @param params the parameter values that are to replace the variables in the format string
+     */
+    public void log( Level level, String message, Object... params ) {
+        if (message == null) return;
+        if (params == null || params.length == 0) {
+            switch (level) {
+                case DEBUG:
+                    this.delegate.debug(message);
+                    break;
+                case ERROR:
+                    this.delegate.error(message);
+                    break;
+                case INFO:
+                    this.delegate.info(message);
+                    break;
+                case TRACE:
+                    this.delegate.trace(message);
+                    break;
+                case WARNING:
+                    this.delegate.warn(message);
+                    break;
+                case OFF:
+                    break;
+            }
+        } else {
+            switch (level) {
+                case DEBUG:
+                    this.delegate.debug(message, params);
+                    break;
+                case ERROR:
+                    this.delegate.error(message, params);
+                    break;
+                case INFO:
+                    this.delegate.info(message, params);
+                    break;
+                case TRACE:
+                    this.delegate.trace(message, params);
+                    break;
+                case WARNING:
+                    this.delegate.warn(message, params);
+                    break;
+                case OFF:
+                    break;
+            }
+        }
+    }
+
+    /**
+     * Log an exception (throwable) at the supplied level with an accompanying message. If the exception is null, then this method
+     * calls {@link #debug(String, Object...)}.
+     * @param level the level at which to log
+     * @param t the exception (throwable) to log
+     * @param message the message accompanying the exception
+     * @param params the parameter values that are to replace the variables in the format string
+     */
+    public void log( Level level, Throwable t, String message, Object... params ) {
+        if (t == null) {
+            switch (level) {
+                case DEBUG:
+                    this.delegate.debug(message, params);
+                    break;
+                case ERROR:
+                    this.delegate.error(message, params);
+                    break;
+                case INFO:
+                    this.delegate.info(message, params);
+                    break;
+                case TRACE:
+                    this.delegate.trace(message, params);
+                    break;
+                case WARNING:
+                    this.delegate.warn(message, params);
+                    break;
+                case OFF:
+                    break;
+            }
+            return;
+        }
+        if (message == null) {
+            switch (level) {
+                case DEBUG:
+                    this.delegate.debug(null, t);
+                    break;
+                case ERROR:
+                    this.delegate.error(null, t);
+                    break;
+                case INFO:
+                    this.delegate.info(null, t);
+                    break;
+                case TRACE:
+                    this.delegate.trace(null, t);
+                    break;
+                case WARNING:
+                    this.delegate.warn(null, t);
+                    break;
+                case OFF:
+                    break;
+            }
+            return;
+        }
+        message = StringUtil.createLogString(message, params);
+        switch (level) {
+            case DEBUG:
+                this.delegate.debug(message, t);
+                break;
+            case ERROR:
+                this.delegate.error(message, t);
+                break;
+            case INFO:
+                this.delegate.info(message, t);
+                break;
+            case TRACE:
+                this.delegate.trace(message, t);
+                break;
+            case WARNING:
+                this.delegate.warn(message, t);
+                break;
+            case OFF:
+                break;
+        }
+    }
+
+    /**
      * Log a message at the DEBUG level according to the specified format and (optional) parameters. The message should contain a
      * pair of empty curly braces for each of the parameter, which should be passed in the correct order. This method is efficient
      * and avoids superfluous object creation when the logger is disabled for the DEBUG level.
@@ -105,7 +233,7 @@ public class Logger {
             this.delegate.debug(null, t);
             return;
         }
-        this.delegate.debug(StringUtil.createString(message, params), t);
+        this.delegate.debug(StringUtil.createLogString(message, params), t);
     }
 
     /**
@@ -140,7 +268,7 @@ public class Logger {
             this.delegate.error(null, t);
             return;
         }
-        this.delegate.error(StringUtil.createString(message, params), t);
+        this.delegate.error(StringUtil.createLogString(message, params), t);
     }
 
     /**
@@ -175,7 +303,7 @@ public class Logger {
             this.delegate.info(null, t);
             return;
         }
-        this.delegate.info(StringUtil.createString(message, params), t);
+        this.delegate.info(StringUtil.createLogString(message, params), t);
     }
 
     /**
@@ -210,7 +338,7 @@ public class Logger {
             this.delegate.trace(null, t);
             return;
         }
-        this.delegate.trace(StringUtil.createString(message, params), t);
+        this.delegate.trace(StringUtil.createLogString(message, params), t);
     }
 
     /**
@@ -245,7 +373,7 @@ public class Logger {
             this.delegate.warn(null, t);
             return;
         }
-        this.delegate.warn(StringUtil.createString(message, params), t);
+        this.delegate.warn(StringUtil.createLogString(message, params), t);
     }
 
     /**
