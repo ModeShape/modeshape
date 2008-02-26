@@ -140,7 +140,8 @@ public class ProgressStatus implements Serializable, Comparable<ProgressStatus> 
     public String toString() {
         String percentage = new DecimalFormat(PERCENTAGE_PATTERN).format(getPercentWorked());
         percentage = StringUtil.justifyRight(percentage, PERCENTAGE_PATTERN.length(), ' ');
-        return this.activityName + " (" + this.message + ") " + percentage + " %";
+        String cancelled = this.isCancelled() ? " (cancelled)" : "";
+        return this.activityName + " (" + this.message + ") " + percentage + " %" + cancelled;
     }
 
     /**

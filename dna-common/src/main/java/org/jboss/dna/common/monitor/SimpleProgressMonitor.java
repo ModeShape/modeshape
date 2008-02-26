@@ -41,6 +41,8 @@ public class SimpleProgressMonitor implements ProgressMonitor {
     private double totalWork;
     @GuardedBy( "lock" )
     private double worked;
+    @GuardedBy( "lock" )
+    private boolean done;
 
     private final String activityName;
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
@@ -84,12 +86,18 @@ public class SimpleProgressMonitor implements ProgressMonitor {
      * {@inheritDoc}
      */
     public void done() {
+        boolean alreadyDone = false;
         try {
-            this.lock.readLock().lock();
-            this.worked = this.totalWork;
+            this.lock.writeLock().lock();
+            if (!this.done) {
+                this.worked = this.totalWork;
+            } else {
+                alreadyDone = true;
+            }
         } finally {
-            this.lock.readLock().unlock();
+            this.lock.writeLock().unlock();
         }
+        if (!alreadyDone) notifyProgress();
     }
 
     /**
@@ -138,13 +146,13 @@ public class SimpleProgressMonitor implements ProgressMonitor {
 
     /**
      * Method that is called in {@link #worked(double)} (which is called by {@link #createSubtask(double) subtasks}) when there
-     * has been some positive work.
+     * has been some positive work, or when the monitor is first marked as {@link #done()}.
      * <p>
      * This method implementation does nothing, but subclasses can easily override this method if they want to be updated with the
      * latest progress.
      * </p>
      */
     protected void notifyProgress() {
-
+        // do nothing
     }
 }
