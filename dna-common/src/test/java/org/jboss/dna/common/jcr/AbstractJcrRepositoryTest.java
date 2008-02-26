@@ -23,6 +23,7 @@ package org.jboss.dna.common.jcr;
 
 import javax.jcr.Credentials;
 import javax.jcr.Repository;
+import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.SimpleCredentials;
 import org.apache.jackrabbit.api.JackrabbitRepository;
@@ -96,10 +97,10 @@ public abstract class AbstractJcrRepositoryTest {
      * <p>
      * The repository can be started and {@link #shutdownRepository() shutdown} repeatedly during a single test.
      * </p>
-     * @throws Exception if there is a problem starting the repository
+     * @throws RepositoryException if there is a problem starting the repository
      * @see #shutdownRepository()
      */
-    public synchronized void startRepository() throws Exception {
+    public synchronized void startRepository() throws RepositoryException {
         if (keepAliveSession == null) {
             keepAliveSession = repository.login();
         }
@@ -108,10 +109,9 @@ public abstract class AbstractJcrRepositoryTest {
     /**
      * Shutdown the repository. This method is automatically called after every test, and does nothing if the repository has not
      * yet been started.
-     * @throws Exception if there is a problem shutting down the repository
      */
     @After
-    public synchronized void shutdownRepository() throws Exception {
+    public synchronized void shutdownRepository() {
         if (keepAliveSession != null) {
             try {
                 Logger.getLogger(this.getClass()).info("Shutting down repository");
@@ -129,9 +129,9 @@ public abstract class AbstractJcrRepositoryTest {
     /**
      * Get the repository. This will start the repository if necessary.
      * @return repository
-     * @throws Exception if there is a problem obtaining the repository
+     * @throws RepositoryException if there is a problem obtaining the repository
      */
-    public Repository getRepository() throws Exception {
+    public Repository getRepository() throws RepositoryException {
         startRepository();
         return repository;
     }
