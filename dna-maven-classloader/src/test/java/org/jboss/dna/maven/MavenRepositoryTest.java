@@ -33,6 +33,7 @@ import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
+import javax.jcr.RepositoryException;
 import org.jboss.dna.common.jcr.AbstractJcrRepositoryTest;
 import org.jboss.dna.common.util.IoUtil;
 import org.jboss.dna.common.util.StringUtil;
@@ -134,7 +135,7 @@ public class MavenRepositoryTest extends AbstractJcrRepositoryTest {
      * {@inheritDoc}
      */
     @Override
-    public void startRepository() throws Exception {
+    public void startRepository() throws RepositoryException {
         super.startRepository();
         this.urlProvider.configure(urlProviderProperties);
 
