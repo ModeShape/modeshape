@@ -35,7 +35,7 @@ import net.jcip.annotations.ThreadSafe;
  * @author Randall Hauch
  */
 @ThreadSafe
-public interface ISequencer {
+public interface Sequencer {
 
     /**
      * This method allows the implementation to initialize and configure itself using the supplied {@link SequencerConfig}
@@ -45,7 +45,7 @@ public interface ISequencer {
      * <p>
      * Sequencers are always configured before they are executed, and {@link #execute(Node) execute} is called on the return value
      * of the <code>configure</code> method. This provide maximims flexibility: most implementations can simply return
-     * <code>this</code>, but more complicated implementations can actually return a different {@link ISequencer}
+     * <code>this</code>, but more complicated implementations can actually return a different {@link Sequencer}
      * implementation based upon the configuration information. Thus, this <code>configure</code> method is analogous to a
      * factory method, but no separate factory interface is required.
      * </p>

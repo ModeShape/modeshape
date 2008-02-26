@@ -28,7 +28,7 @@ import javax.jcr.Session;
 /**
  * @author Randall Hauch
  */
-public interface ISessionFactory {
+public interface SessionFactory {
 
     Session createSession( String name ) throws RepositoryException;
 

@@ -45,7 +45,7 @@ import net.jcip.annotations.Immutable;
 import net.jcip.annotations.ThreadSafe;
 import org.jboss.dna.common.util.HashCodeUtil;
 import org.jboss.dna.common.util.Logger;
-import org.jboss.dna.services.util.ISessionFactory;
+import org.jboss.dna.services.util.SessionFactory;
 
 /**
  * A sequencing system is used to monitor changes in the content of {@link Repository JCR repositories} and to sequence the
@@ -55,7 +55,7 @@ import org.jboss.dna.services.util.ISessionFactory;
 public class SequencingSystem {
 
     /**
-     * Interface used to select the set of {@link ISequencer} instances that should be run.
+     * Interface used to select the set of {@link Sequencer} instances that should be run.
      * @author Randall Hauch
      */
     public static interface Selector {
@@ -66,7 +66,7 @@ public class SequencingSystem {
          * @param node the node to be sequenced; never null
          * @return the list of sequencers that should be used; may not be null
          */
-        List<ISequencer> selectSequencers( List<ISequencer> sequencers, Node node );
+        List<Sequencer> selectSequencers( List<Sequencer> sequencers, Node node );
     }
 
     /**
@@ -91,7 +91,7 @@ public class SequencingSystem {
      */
     protected static class DefaultSelector implements Selector {
 
-        public List<ISequencer> selectSequencers( List<ISequencer> sequencers, Node node ) {
+        public List<Sequencer> selectSequencers( List<Sequencer> sequencers, Node node ) {
             return sequencers;
         }
     }
@@ -151,7 +151,7 @@ public class SequencingSystem {
     }
 
     /**
-     * The default {@link Selector} that considers every {@link ISequencer} to be used for every node.
+     * The default {@link Selector} that considers every {@link Sequencer} to be used for every node.
      * @see SequencingSystem#setSequencerSelector(org.jboss.dna.services.sequencers.SequencingSystem.Selector)
      */
     public static final Selector DEFAULT_SEQUENCER_SELECTOR = new DefaultSelector();
@@ -169,7 +169,7 @@ public class SequencingSystem {
     }
 
     private State state = State.PAUSED;
-    private ISessionFactory sessionFactory;
+    private SessionFactory sessionFactory;
     private EventFilter eventFilter = DEFAULT_EVENT_FILTER;
     private SequencerLibrary sequencerLibrary = new SequencerLibrary();
     private Selector sequencerSelector = DEFAULT_SEQUENCER_SELECTOR;
@@ -194,7 +194,7 @@ public class SequencingSystem {
     }
 
     /**
-     * Get the library that is managing the {@link ISequencer sequencer} instances.
+     * Get the library that is managing the {@link Sequencer sequencer} instances.
      * @return the sequencer library
      */
     public SequencerLibrary getSequencerLibrary() {
@@ -227,14 +227,14 @@ public class SequencingSystem {
     /**
      * @return sessionFactory
      */
-    public ISessionFactory getSessionFactory() {
+    public SessionFactory getSessionFactory() {
         return this.sessionFactory;
     }
 
     /**
      * @param sessionFactory Sets sessionFactory to the specified value.
      */
-    public void setSessionFactory( ISessionFactory sessionFactory ) {
+    public void setSessionFactory( SessionFactory sessionFactory ) {
         if (sessionFactory == null) {
             throw new IllegalArgumentException("The session factory parameter may not be null");
         }
@@ -647,7 +647,7 @@ public class SequencingSystem {
                 Node node = session.getRootNode().getNode(relPath);
 
                 // Figure out which sequencers should run ...
-                List<ISequencer> sequencers = this.sequencerLibrary.getSequencers();
+                List<Sequencer> sequencers = this.sequencerLibrary.getSequencers();
                 sequencers = this.sequencerSelector.selectSequencers(sequencers, node);
                 // Run each of those sequencers ...
                 if (sequencers.isEmpty()) {
@@ -656,7 +656,7 @@ public class SequencingSystem {
                         this.logger.debug("Skipping '{}': no sequencers matched this condition", changedNode);
                     }
                 } else {
-                    for (ISequencer sequencer : sequencers) {
+                    for (Sequencer sequencer : sequencers) {
                         if (this.logger.isDebugEnabled()) {
                             String sequencerName = sequencer.getClass().getName();
                             SequencerConfig config = sequencer.getConfiguration();

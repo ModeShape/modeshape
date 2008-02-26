@@ -35,7 +35,7 @@ import org.jboss.dna.maven.MavenId;
 import org.jboss.dna.maven.MavenRepository;
 
 /**
- * Maintains the list of {@link ISequencer sequencers} for the system. This class does not actively update the sequencer
+ * Maintains the list of {@link Sequencer sequencers} for the system. This class does not actively update the sequencer
  * configurations, but is designed to properly maintain the sequencer instances when those configurations are changed by other
  * callers.
  * <p>
@@ -48,7 +48,7 @@ import org.jboss.dna.maven.MavenRepository;
 public class SequencerLibrary {
 
     /**
-     * The parent class loader that will be used when loading {@link ISequencer} instances. This may never be null, and will be
+     * The parent class loader that will be used when loading {@link Sequencer} instances. This may never be null, and will be
      * initialized in the constructor to be the first non-null class loader from:
      * <ol>
      * <li><code>Thread.currentThread().getContextClassLoader()</code></li>
@@ -63,7 +63,7 @@ public class SequencerLibrary {
      * {@link #configurations}
      */
     @GuardedBy( value = "lock" )
-    private final List<ISequencer> sequencerInstances = new CopyOnWriteArrayList<ISequencer>();
+    private final List<Sequencer> sequencerInstances = new CopyOnWriteArrayList<Sequencer>();
     private final Lock lock = new ReentrantLock();
 
     /**
@@ -141,7 +141,7 @@ public class SequencerLibrary {
             int index = findIndexOfMatchingConfiguration(config);
             if (index >= 0) {
                 // See if the matching configuration has changed ...
-                ISequencer existingSequencer = this.sequencerInstances.get(index);
+                Sequencer existingSequencer = this.sequencerInstances.get(index);
                 if (existingSequencer.getConfiguration().hasChanged(config)) {
                     // It has changed, so we need to replace it ...
                     this.sequencerInstances.set(index, newSequencer(config));
@@ -199,7 +199,7 @@ public class SequencerLibrary {
      * Return the list of sequencers.
      * @return the unmodifiable list of sequencers; never null
      */
-    public List<ISequencer> getSequencers() {
+    public List<Sequencer> getSequencers() {
         return Collections.unmodifiableList(this.sequencerInstances);
     }
 
@@ -210,17 +210,17 @@ public class SequencerLibrary {
      * @return the new sequencer, or null if the sequencer could not be successfully configured
      * @throws IllegalArgumentException if the sequencer could not be configured properly
      */
-    protected ISequencer newSequencer( SequencerConfig config ) {
+    protected Sequencer newSequencer( SequencerConfig config ) {
         ClassLoader classLoader = this.getParentClassLoader();
         if (this.mavenRepository != null) {
             MavenId[] mavenIds = config.getSequencerClasspathArray();
             classLoader = this.mavenRepository.getClassLoader(classLoader, mavenIds);
         }
         assert classLoader != null;
-        ISequencer newSequencer = null;
+        Sequencer newSequencer = null;
         try {
             Class<?> sequencerClass = classLoader.loadClass(config.getSequencerClassname());
-            newSequencer = (ISequencer)sequencerClass.newInstance();
+            newSequencer = (Sequencer)sequencerClass.newInstance();
             newSequencer.setConfiguration(config);
         } catch (Throwable e) {
             throw new SystemFailureException(e);

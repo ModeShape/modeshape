@@ -31,7 +31,7 @@ import net.jcip.annotations.ThreadSafe;
  * @author Randall Hauch
  */
 @ThreadSafe
-public class MockSequencerA implements ISequencer {
+public class MockSequencerA implements Sequencer {
 
     private SequencerConfig config;
     private AtomicInteger counter = new AtomicInteger();

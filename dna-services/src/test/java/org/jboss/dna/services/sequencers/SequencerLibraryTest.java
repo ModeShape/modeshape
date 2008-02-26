@@ -142,7 +142,7 @@ public class SequencerLibraryTest {
     public void shouldInstantiateAndConfigureSequencerWhenConfigurationAddedOrUpdated() {
         assertThat(library.getSequencers().size(), is(0));
         library.addSequencer(configA);
-        List<ISequencer> sequencers = library.getSequencers();
+        List<Sequencer> sequencers = library.getSequencers();
         assertThat(sequencers.size(), is(1));
         MockSequencerA firstSequencer = (MockSequencerA)sequencers.get(0);
         assertThat(firstSequencer.isConfigured(), is(true));
@@ -174,7 +174,7 @@ public class SequencerLibraryTest {
         sequencers = library.getSequencers();
         assertThat(sequencers.size(), is(2));
         assertThat(sequencers.get(0), instanceOf(MockSequencerA.class));
-        assertThat(sequencers.get(0), is(sameInstance((ISequencer)secondSequencerA)));
+        assertThat(sequencers.get(0), is(sameInstance((Sequencer)secondSequencerA)));
         assertThat(sequencers.get(1), instanceOf(MockSequencerB.class));
         MockSequencerB firstSequencerB = (MockSequencerB)sequencers.get(1);
 

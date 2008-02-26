@@ -31,7 +31,7 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsSame.sameInstance;
 import static org.junit.Assert.assertThat;
 import org.jboss.dna.common.jcr.AbstractJcrRepositoryTest;
-import org.jboss.dna.services.util.ISessionFactory;
+import org.jboss.dna.services.util.SessionFactory;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -44,7 +44,7 @@ public class SequencingSystemTest extends AbstractJcrRepositoryTest {
     public static final String REPOSITORY_WORKSPACE_NAME = "testRepository-Workspace";
 
     private SequencingSystem system;
-    private ISessionFactory sessionFactory = new ISessionFactory() {
+    private SessionFactory sessionFactory = new SessionFactory() {
 
         public Session createSession( String name ) throws RepositoryException {
             assertThat(name, is(REPOSITORY_WORKSPACE_NAME));
