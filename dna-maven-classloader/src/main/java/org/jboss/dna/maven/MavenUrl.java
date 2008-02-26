@@ -26,7 +26,7 @@ import java.net.URL;
 import java.net.URLStreamHandler;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import org.jboss.dna.common.text.ITextEncoder;
+import org.jboss.dna.common.text.TextEncoder;
 import org.jboss.dna.common.text.UrlEncoder;
 
 /**
@@ -130,7 +130,7 @@ public class MavenUrl {
      * @return the URL
      * @throws MalformedURLException if the resulting URL would be malformed
      */
-    public URL getUrl( URLStreamHandler handler, ITextEncoder encoder ) throws MalformedURLException {
+    public URL getUrl( URLStreamHandler handler, TextEncoder encoder ) throws MalformedURLException {
         if (encoder == null) {
             encoder = new UrlEncoder().setSlashEncoded(false);
         }
@@ -200,7 +200,7 @@ public class MavenUrl {
      * @param decoder the text encoder that should be used to decode the URL; may be null if no decoding should be done
      * @return the object representing the JCR information contained in the URL
      */
-    public static MavenUrl parse( String url, ITextEncoder decoder ) {
+    public static MavenUrl parse( String url, TextEncoder decoder ) {
         if (decoder == null) decoder = new UrlEncoder();
         // This regular expression has the following groups:
         // 1) //hostname:port
@@ -234,9 +234,9 @@ public class MavenUrl {
      * @param url the URL to be parsed
      * @param decoder the text encoder that should be used to decode the URL; may be null if no decoding should be done
      * @return the object representing the JCR information contained in the URL
-     * @see #parse(String,ITextEncoder)
+     * @see #parse(String,TextEncoder)
      */
-    public static MavenUrl parse( URL url, ITextEncoder decoder ) {
+    public static MavenUrl parse( URL url, TextEncoder decoder ) {
         if (url == null) return null;
         return parse(url.toExternalForm(), decoder);
     }

@@ -25,7 +25,7 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import org.jboss.dna.common.text.ITextEncoder;
+import org.jboss.dna.common.text.TextEncoder;
 import org.jboss.dna.common.text.NoOpEncoder;
 import org.jboss.dna.common.util.ArgCheck;
 import org.jboss.dna.common.util.HashCodeUtil;
@@ -225,7 +225,7 @@ public class MavenId implements Comparable<MavenId>, Cloneable {
      * @param escapingStrategy the strategy to use for escaping characters that are not allowed in JCR names.
      * @return the path; never null
      */
-    public String getRelativePath( ITextEncoder escapingStrategy ) {
+    public String getRelativePath( TextEncoder escapingStrategy ) {
         return getRelativePath(NoOpEncoder.getInstance(), true);
     }
 
@@ -246,7 +246,7 @@ public class MavenId implements Comparable<MavenId>, Cloneable {
      * @param includeVersion true if the version is to be included in the path
      * @return the path; never null
      */
-    public String getRelativePath( ITextEncoder escapingStrategy, boolean includeVersion ) {
+    public String getRelativePath( TextEncoder escapingStrategy, boolean includeVersion ) {
         StringBuilder sb = new StringBuilder();
         String[] groupComponents = this.getGroupId().split("[\\.]");
         for (String groupComponent : groupComponents) {

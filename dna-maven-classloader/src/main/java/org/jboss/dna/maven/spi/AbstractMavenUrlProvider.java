@@ -27,7 +27,7 @@ import org.jboss.dna.common.collection.UnmodifiableProperties;
 /**
  * @author Randall Hauch
  */
-public abstract class AbstractMavenUrlProvider implements IMavenUrlProvider {
+public abstract class AbstractMavenUrlProvider implements MavenUrlProvider {
 
     private Properties properties = new Properties();
 

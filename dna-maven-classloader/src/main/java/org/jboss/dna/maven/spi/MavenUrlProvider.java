@@ -34,7 +34,7 @@ import org.jboss.dna.maven.SignatureType;
 /**
  * @author Randall Hauch
  */
-public interface IMavenUrlProvider {
+public interface MavenUrlProvider {
 
     /**
      * Configure this provider given the configuration properties. This method is intended to be called by the

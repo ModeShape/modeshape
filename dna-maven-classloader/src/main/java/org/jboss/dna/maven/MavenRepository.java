@@ -45,7 +45,7 @@ import javax.xml.xpath.XPathFactory;
 import org.jboss.dna.common.util.ArgCheck;
 import org.jboss.dna.common.util.Logger;
 import org.jboss.dna.common.xml.SimpleNamespaceContext;
-import org.jboss.dna.maven.spi.IMavenUrlProvider;
+import org.jboss.dna.maven.spi.MavenUrlProvider;
 import org.jboss.dna.maven.spi.JcrMavenUrlProvider;
 import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;
@@ -56,7 +56,7 @@ import org.xml.sax.SAXException;
  * This class understands Maven 2 Project Object Model (POM) files, and thus is able to analyze dependencies and provide a
  * {@link ClassLoader class loader} that accesses libraries using these transitive dependencies.
  * <p>
- * Instances are initialized with an authenticated {@link IMavenUrlProvider Maven URL provider}, which is typically a
+ * Instances are initialized with an authenticated {@link MavenUrlProvider Maven URL provider}, which is typically a
  * {@link JcrMavenUrlProvider} instance configured with a {@link Repository JCR Repository} and path to the root of the repository
  * subtree in that workspace. The repository can either already exist and contain the required artifacts, or it will be created as
  * artifacts are loaded. Then to use libraries that are in the repository, simply obtain the
@@ -67,11 +67,11 @@ import org.xml.sax.SAXException;
  */
 public class MavenRepository {
 
-    private final IMavenUrlProvider urlProvider;
+    private final MavenUrlProvider urlProvider;
     private final MavenClassLoaders classLoaders;
     private final Logger logger;
 
-    public MavenRepository( final IMavenUrlProvider urlProvider ) {
+    public MavenRepository( final MavenUrlProvider urlProvider ) {
         if (urlProvider == null) throw new IllegalArgumentException("The URL provider reference may not be null");
         this.urlProvider = urlProvider;
         this.classLoaders = new MavenClassLoaders(this);

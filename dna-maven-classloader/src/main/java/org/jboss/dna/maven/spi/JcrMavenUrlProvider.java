@@ -52,7 +52,7 @@ import javax.jcr.lock.LockException;
 import javax.jcr.nodetype.ConstraintViolationException;
 import javax.jcr.nodetype.NoSuchNodeTypeException;
 import javax.jcr.version.VersionException;
-import org.jboss.dna.common.text.ITextEncoder;
+import org.jboss.dna.common.text.TextEncoder;
 import org.jboss.dna.common.text.UrlEncoder;
 import org.jboss.dna.common.util.Logger;
 import org.jboss.dna.maven.ArtifactType;
@@ -95,7 +95,7 @@ public class JcrMavenUrlProvider extends AbstractMavenUrlProvider {
     public static final String CONTENT_PROPERTY_NAME = "jcr:data";
 
     private final URLStreamHandler urlStreamHandler = new JcrUrlStreamHandler();
-    private final ITextEncoder urlEncoder = new UrlEncoder().setSlashEncoded(false);
+    private final TextEncoder urlEncoder = new UrlEncoder().setSlashEncoded(false);
     private Repository repository;
     private String workspaceName;
     private Credentials credentials;
@@ -297,7 +297,7 @@ public class JcrMavenUrlProvider extends AbstractMavenUrlProvider {
         return sb.toString();
     }
 
-    protected ITextEncoder getUrlEncoder() {
+    protected TextEncoder getUrlEncoder() {
         return this.urlEncoder;
     }
 
