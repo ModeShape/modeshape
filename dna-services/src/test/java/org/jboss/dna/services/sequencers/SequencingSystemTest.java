@@ -22,6 +22,7 @@
 
 package org.jboss.dna.services.sequencers;
 
+import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.observation.Event;
 import static org.hamcrest.core.IsNull.nullValue;
@@ -30,6 +31,7 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsSame.sameInstance;
 import static org.junit.Assert.assertThat;
 import org.jboss.dna.common.jcr.AbstractJcrRepositoryTest;
+import org.jboss.dna.services.util.ISessionFactory;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -39,11 +41,21 @@ import org.junit.Test;
  */
 public class SequencingSystemTest extends AbstractJcrRepositoryTest {
 
+    public static final String REPOSITORY_WORKSPACE_NAME = "testRepository-Workspace";
+
     private SequencingSystem system;
+    private ISessionFactory sessionFactory = new ISessionFactory() {
+
+        public Session createSession( String name ) throws RepositoryException {
+            assertThat(name, is(REPOSITORY_WORKSPACE_NAME));
+            return SequencingSystemTest.this.getRepository().login(getTestCredentials());
+        }
+    };
 
     @Before
     public void beforeEach() throws Exception {
         this.system = new SequencingSystem();
+        this.system.setSessionFactory(this.sessionFactory);
     }
 
     @After
@@ -52,8 +64,8 @@ public class SequencingSystemTest extends AbstractJcrRepositoryTest {
     }
 
     @Test
-    public void shouldHaveTheDefaultEventReviewerUponConstruction() {
-        assertThat(system.getEventReviewer(), is(sameInstance(SequencingSystem.DEFAULT_EVENT_REVIEWER)));
+    public void shouldHaveTheDefaultEventFilterUponConstruction() {
+        assertThat(system.getEventFilter(), is(sameInstance(SequencingSystem.DEFAULT_EVENT_FILTER)));
     }
 
     @Test
@@ -166,7 +178,7 @@ public class SequencingSystemTest extends AbstractJcrRepositoryTest {
 
         // Try when paused ...
         assertThat(system.isPaused(), is(true));
-        SequencingSystem.WorkspaceListener listener = system.monitor(session.getWorkspace(), Event.NODE_ADDED);
+        SequencingSystem.WorkspaceListener listener = system.monitor(REPOSITORY_WORKSPACE_NAME, Event.NODE_ADDED);
         assertThat(listener, is(notNullValue()));
         assertThat(listener.getAbsolutePath(), is("/"));
         assertThat(listener.getEventTypes(), is(Event.NODE_ADDED));
@@ -185,7 +197,7 @@ public class SequencingSystemTest extends AbstractJcrRepositoryTest {
 
         // Start the sequencing system and try monitoring the workspace ...
         assertThat(system.start().isStarted(), is(true));
-        SequencingSystem.WorkspaceListener listener2 = system.monitor(session.getWorkspace(), Event.NODE_ADDED);
+        SequencingSystem.WorkspaceListener listener2 = system.monitor(REPOSITORY_WORKSPACE_NAME, Event.NODE_ADDED);
         assertThat(listener2.isRegistered(), is(true));
         assertThat(listener2, is(notNullValue()));
         assertThat(listener2.getAbsolutePath(), is("/"));
@@ -222,7 +234,7 @@ public class SequencingSystemTest extends AbstractJcrRepositoryTest {
 
         // Start the sequencing system and try monitoring the workspace ...
         assertThat(system.start().isStarted(), is(true));
-        SequencingSystem.WorkspaceListener listener = system.monitor(session.getWorkspace(), Event.NODE_ADDED);
+        SequencingSystem.WorkspaceListener listener = system.monitor(REPOSITORY_WORKSPACE_NAME, Event.NODE_ADDED);
         assertThat(listener.isRegistered(), is(true));
         assertThat(listener, is(notNullValue()));
         assertThat(listener.getAbsolutePath(), is("/"));
