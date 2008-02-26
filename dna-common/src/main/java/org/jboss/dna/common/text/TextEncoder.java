@@ -25,7 +25,7 @@ package org.jboss.dna.common.text;
  * Interface for components that can encode and unencode text.
  * @author Randall Hauch
  */
-public interface ITextEncoder {
+public interface TextEncoder {
 
     /**
      * Returns the encoded version of a string.

@@ -25,7 +25,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import net.jcip.annotations.ThreadSafe;
-import org.jboss.dna.common.math.IMathOperations;
+import org.jboss.dna.common.math.MathOperations;
 import org.jboss.dna.common.text.Inflector;
 import org.jboss.dna.common.util.StringUtil;
 
@@ -44,7 +44,7 @@ import org.jboss.dna.common.util.StringUtil;
 @ThreadSafe
 public class SimpleStatistics<T extends Number> {
 
-    protected final IMathOperations<T> math;
+    protected final MathOperations<T> math;
     private int count = 0;
     private T total;
     private T maximum;
@@ -53,7 +53,7 @@ public class SimpleStatistics<T extends Number> {
     private Double meanValue;
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
 
-    public SimpleStatistics( IMathOperations<T> operations ) {
+    public SimpleStatistics( MathOperations<T> operations ) {
         this.math = operations;
         this.total = this.math.createZeroValue();
         this.maximum = this.math.createZeroValue();
@@ -202,7 +202,7 @@ public class SimpleStatistics<T extends Number> {
         }
     }
 
-    public IMathOperations<T> getMathOperations() {
+    public MathOperations<T> getMathOperations() {
         return math;
     }
 

@@ -25,7 +25,7 @@ import java.math.BigDecimal;
 import java.util.Comparator;
 import java.util.Random;
 
-public class FloatOperations implements IMathOperations<Float>, Comparator<Float> {
+public class FloatOperations implements MathOperations<Float>, Comparator<Float> {
 
     public Class<Float> getOperandClass() {
         return Float.class;

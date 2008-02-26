@@ -59,7 +59,7 @@ import java.text.StringCharacterIterator;
  * </p>
  * @author Randall Hauch
  */
-public class Jsr283Encoder implements ITextEncoder {
+public class Jsr283Encoder implements TextEncoder {
 
     /**
      * {@inheritDoc}

@@ -29,7 +29,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import org.jboss.dna.common.math.IMathOperations;
+import org.jboss.dna.common.math.MathOperations;
 import org.jboss.dna.common.util.StringUtil;
 
 public class Histogram<T extends Number> {
@@ -37,7 +37,7 @@ public class Histogram<T extends Number> {
     public static final int DEFAULT_BUCKET_COUNT = 10;
     public static final int DEFAULT_SIGNIFICANT_FIGURES = 4;
 
-    protected final IMathOperations<T> math;
+    protected final MathOperations<T> math;
     protected final List<T> values;
     private int bucketCount = DEFAULT_BUCKET_COUNT;
     private int significantFigures = DEFAULT_SIGNIFICANT_FIGURES;
@@ -46,7 +46,7 @@ public class Histogram<T extends Number> {
     private BucketingStrategy actualValueStrategy = new DefaultBucketingStrategy();
     private BucketingStrategy bucketingStrategy = actualValueStrategy;
 
-    public Histogram( IMathOperations<T> operations, List<T> values ) {
+    public Histogram( MathOperations<T> operations, List<T> values ) {
         this.math = operations;
         this.values = new LinkedList<T>(values);
         this.buckets = new LinkedList<Bucket>();
@@ -55,7 +55,7 @@ public class Histogram<T extends Number> {
         Collections.sort(this.values, this.math.getComparator());
     }
 
-    public Histogram( IMathOperations<T> operations, T... values ) {
+    public Histogram( MathOperations<T> operations, T... values ) {
         this(operations, Arrays.asList(values));
     }
 
@@ -66,7 +66,7 @@ public class Histogram<T extends Number> {
     /**
      * @return math
      */
-    public IMathOperations<T> getMathOperations() {
+    public MathOperations<T> getMathOperations() {
         return this.math;
     }
 
@@ -256,7 +256,7 @@ public class Histogram<T extends Number> {
         return result;
     }
 
-    protected static <T> List<T> getBucketBoundaries( IMathOperations<T> math, T lowerBound, T upperBound, T actualMinimum, T actualMaximum, int bucketCount, int bucketWidthSigFigs ) {
+    protected static <T> List<T> getBucketBoundaries( MathOperations<T> math, T lowerBound, T upperBound, T actualMinimum, T actualMaximum, int bucketCount, int bucketWidthSigFigs ) {
         lowerBound = math.compare(lowerBound, actualMinimum) < 0 ? actualMinimum : lowerBound;
         upperBound = math.compare(actualMaximum, upperBound) < 0 ? actualMaximum : upperBound;
         if (math.compare(lowerBound, upperBound) == 0) {

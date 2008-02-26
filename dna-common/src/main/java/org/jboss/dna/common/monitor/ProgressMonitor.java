@@ -22,129 +22,67 @@
 
 package org.jboss.dna.common.monitor;
 
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
-import net.jcip.annotations.GuardedBy;
-import net.jcip.annotations.ThreadSafe;
-
 /**
- * A basic progress monitor
+ * A basic progress monitor that facilitates the monitoring of an activity.
+ * <p>
+ * The progress of each activity is started when {@link #beginTask(String, double)} is called, continues with a mixture of work ({@link #worked(double)})
+ * and subtasks ({@link #createSubtask(double)}), and finishes when the activity is completed ({@link #done()}) or cancelled ({@link #setCancelled(boolean)}).
+ * </p>
  * @author Randall Hauch
  */
-@ThreadSafe
-public class ProgressMonitor implements IProgressMonitor {
-
-    @GuardedBy( "lock" )
-    private String taskName;
-    @GuardedBy( "lock" )
-    private double totalWork;
-    @GuardedBy( "lock" )
-    private double worked;
-
-    private final String activityName;
-    private final ReadWriteLock lock = new ReentrantReadWriteLock();
-    private final AtomicBoolean cancelled = new AtomicBoolean(false);
-
-    public ProgressMonitor( String activityName ) {
-        this.activityName = activityName != null ? activityName.trim() : "";
-        this.taskName = "";
-    }
+public interface ProgressMonitor {
 
     /**
-     * {@inheritDoc}
+     * Get the name of the activity. This should never change for a progress monitor, and all
+     * {@link #createSubtask(double) subtasks} should have the same name.
+     * @return the activity's name
      */
-    public String getActivityName() {
-        return this.activityName;
-    }
+    String getActivityName();
 
     /**
-     * {@inheritDoc}
+     * Start work on the task, specifying the total amount of work that this task constitutes.
+     * @param name the name of the task
+     * @param totalWork the total number of work units for the task
      */
-    public void beginTask( String name, double totalWork ) {
-        assert totalWork > 0;
-        try {
-            this.lock.writeLock().lock();
-            this.taskName = name;
-            this.totalWork = totalWork;
-            this.worked = 0.0d;
-        } finally {
-            this.lock.writeLock().unlock();
-        }
-    }
+    void beginTask( String name, double totalWork );
 
     /**
-     * {@inheritDoc}
+     * Report work completed for this task.
+     * @param work the number of work units that have been worked
      */
-    public IProgressMonitor createSubtask( double subtaskWork ) {
-        return new SubProgressMonitor(this, subtaskWork);
-    }
+    void worked( double work );
 
     /**
-     * {@inheritDoc}
+     * Create a subtask with the given about of work. The resulting monitor must be started ({@link #beginTask(String, double)})
+     * and finished ({@link #done()}).
+     * @param subtaskWork the number of work units for this subtask
+     * @return the progress monitor for the subtask
      */
-    public void done() {
-        try {
-            this.lock.readLock().lock();
-            this.worked = this.totalWork;
-        } finally {
-            this.lock.readLock().unlock();
-        }
-    }
+    ProgressMonitor createSubtask( double subtaskWork );
 
     /**
-     * {@inheritDoc}
+     * Mark this task as being completed. This method must be called for the task to be properly completed.
      */
-    public boolean isCancelled() {
-        return this.cancelled.get();
-    }
+    void done();
 
     /**
-     * {@inheritDoc}
+     * Set the cancelled state of this activity. Cancelling the activity must be considered a request that can be denied by
+     * setting the cancelled state to <code>false</code>.
+     * @param value true if requesting the activity be cancelled.
      */
-    public void setCancelled( boolean value ) {
-        this.cancelled.set(value);
-    }
+    void setCancelled( boolean value );
 
     /**
-     * {@inheritDoc}
+     * Returned whether this activity has been {@link #setCancelled(boolean) cancelled}.
+     * @return true if this activity has been requested to be cancelled, or false otherwise.
      */
-    public void worked( double work ) {
-        if (work > 0) {
-            try {
-                this.lock.writeLock().lock();
-                if (this.worked < this.totalWork) {
-                    this.worked += work;
-                    if (this.worked > this.totalWork) this.worked = this.totalWork;
-                }
-            } finally {
-                this.lock.writeLock().unlock();
-            }
-            notifyProgress();
-        }
-    }
+    boolean isCancelled();
 
     /**
-     * {@inheritDoc}
+     * Return the current status of this activity. This method returns an immutable but consistent snapshot of the status for this
+     * activity. Note that if this instance is a {@link #createSubtask(double) subtask}, this method returns the status of the
+     * subtask.
+     * @return the status of this activity
      */
-    public ProgressStatus getStatus() {
-        try {
-            this.lock.readLock().lock();
-            return new ProgressStatus(this.getActivityName(), this.taskName, this.worked, this.totalWork, this.isCancelled());
-        } finally {
-            this.lock.readLock().unlock();
-        }
-    }
-
-    /**
-     * Method that is called in {@link #worked(double)} (which is called by {@link #createSubtask(double) subtasks}) when there
-     * has been some positive work.
-     * <p>
-     * This method implementation does nothing, but subclasses can easily override this method if they want to be updated with the
-     * latest progress.
-     * </p>
-     */
-    protected void notifyProgress() {
-
-    }
+    ProgressStatus getStatus();
 }

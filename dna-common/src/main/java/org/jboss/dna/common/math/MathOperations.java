@@ -30,7 +30,7 @@ import java.util.Random;
  * of the {@link Number} subclasses.
  * @param <T> the numeric class, usually a subclass of {@link Number} (although this is not required)
  */
-public interface IMathOperations<T> {
+public interface MathOperations<T> {
 
     /**
      * Return the class that these operations operate upon.

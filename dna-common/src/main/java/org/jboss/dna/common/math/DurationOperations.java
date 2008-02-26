@@ -26,7 +26,7 @@ import java.util.Comparator;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
-public class DurationOperations implements IMathOperations<Duration>, Comparator<Duration> {
+public class DurationOperations implements MathOperations<Duration>, Comparator<Duration> {
 
     public Class<Duration> getOperandClass() {
         return Duration.class;

@@ -31,7 +31,7 @@ import java.util.BitSet;
  * and {@link java.net.URLDecoder} should be used for such purposes).
  * @author Randall Hauch
  */
-public class UrlEncoder implements ITextEncoder {
+public class UrlEncoder implements TextEncoder {
 
     /**
      * Data characters that are allowed in a URI but do not have a reserved purpose are called unreserved. These include upper and

@@ -16,7 +16,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
 import org.jboss.dna.common.math.FloatOperations;
-import org.jboss.dna.common.math.IMathOperations;
+import org.jboss.dna.common.math.MathOperations;
 import org.jboss.dna.common.stats.Histogram;
 import org.jboss.dna.common.text.Inflector;
 import org.jboss.dna.common.util.Logger;
@@ -32,7 +32,7 @@ public class HistogramTest {
     public void beforeEach() throws Exception {
     }
 
-    public static <T extends Number> Histogram<T> createRandomHistogram( T minimum, T maximum, int numberOfValues, IMathOperations<T> ops ) {
+    public static <T extends Number> Histogram<T> createRandomHistogram( T minimum, T maximum, int numberOfValues, MathOperations<T> ops ) {
         List<T> values = new ArrayList<T>();
         Random rng = new Random();
         for (int i = 0; i != numberOfValues; ++i) {

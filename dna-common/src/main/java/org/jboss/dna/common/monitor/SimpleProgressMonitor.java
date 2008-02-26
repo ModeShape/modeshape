@@ -22,49 +22,40 @@
 
 package org.jboss.dna.common.monitor;
 
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import net.jcip.annotations.GuardedBy;
-import net.jcip.annotations.NotThreadSafe;
+import net.jcip.annotations.ThreadSafe;
 
 /**
+ * A basic progress monitor
  * @author Randall Hauch
  */
-@NotThreadSafe
-public class SubProgressMonitor implements ProgressMonitor {
+@ThreadSafe
+public class SimpleProgressMonitor implements ProgressMonitor {
 
     @GuardedBy( "lock" )
     private String taskName;
     @GuardedBy( "lock" )
     private double totalWork;
     @GuardedBy( "lock" )
-    private double parentWorkScaleFactor;
-    @GuardedBy( "lock" )
-    private double submittedToParent;
+    private double worked;
 
-    private final double subtaskTotalInParent;
-    private final ProgressMonitor parent;
+    private final String activityName;
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
+    private final AtomicBoolean cancelled = new AtomicBoolean(false);
 
-    public SubProgressMonitor( final ProgressMonitor parent, final double subtaskTotalInParent ) {
-        assert subtaskTotalInParent > 0;
-        assert parent != null;
-        this.parent = parent;
-        this.subtaskTotalInParent = subtaskTotalInParent;
+    public SimpleProgressMonitor( String activityName ) {
+        this.activityName = activityName != null ? activityName.trim() : "";
+        this.taskName = "";
     }
 
     /**
      * {@inheritDoc}
      */
     public String getActivityName() {
-        return this.parent.getActivityName();
-    }
-
-    /**
-     * @return parent
-     */
-    public ProgressMonitor getParent() {
-        return this.parent;
+        return this.activityName;
     }
 
     /**
@@ -76,7 +67,7 @@ public class SubProgressMonitor implements ProgressMonitor {
             this.lock.writeLock().lock();
             this.taskName = name;
             this.totalWork = totalWork;
-            this.parentWorkScaleFactor = ((float)subtaskTotalInParent) / ((float)totalWork);
+            this.worked = 0.0d;
         } finally {
             this.lock.writeLock().unlock();
         }
@@ -93,49 +84,43 @@ public class SubProgressMonitor implements ProgressMonitor {
      * {@inheritDoc}
      */
     public void done() {
-        // Compute the total work for this task in terms of the parent ...
-        double workInParentRemaining = 0.0d;
         try {
-            this.lock.writeLock().lock();
-            double totalWorkInParent = this.totalWork * this.parentWorkScaleFactor;
-            workInParentRemaining = totalWorkInParent - this.submittedToParent;
+            this.lock.readLock().lock();
+            this.worked = this.totalWork;
         } finally {
-            this.lock.writeLock().unlock();
+            this.lock.readLock().unlock();
         }
-        // Don't do this in the lock: it's incremental, but doing so might cause deadlock with future changes
-        this.parent.worked(workInParentRemaining);
     }
 
     /**
      * {@inheritDoc}
      */
     public boolean isCancelled() {
-        return this.parent.isCancelled();
+        return this.cancelled.get();
     }
 
     /**
      * {@inheritDoc}
      */
     public void setCancelled( boolean value ) {
-        this.parent.setCancelled(value);
+        this.cancelled.set(value);
     }
 
     /**
      * {@inheritDoc}
      */
     public void worked( double work ) {
-        if (this.isCancelled()) return;
         if (work > 0) {
-            double workInParent = 0.0d;
             try {
                 this.lock.writeLock().lock();
-                workInParent = work * parentWorkScaleFactor;
-                this.submittedToParent += workInParent;
+                if (this.worked < this.totalWork) {
+                    this.worked += work;
+                    if (this.worked > this.totalWork) this.worked = this.totalWork;
+                }
             } finally {
                 this.lock.writeLock().unlock();
             }
-            // Don't do this in the lock: it's incremental, but doing so might cause deadlock with future changes
-            this.parent.worked(workInParent);
+            notifyProgress();
         }
     }
 
@@ -145,9 +130,21 @@ public class SubProgressMonitor implements ProgressMonitor {
     public ProgressStatus getStatus() {
         try {
             this.lock.readLock().lock();
-            return new ProgressStatus(this.getActivityName(), this.taskName, this.submittedToParent, this.subtaskTotalInParent, this.isCancelled());
+            return new ProgressStatus(this.getActivityName(), this.taskName, this.worked, this.totalWork, this.isCancelled());
         } finally {
             this.lock.readLock().unlock();
         }
+    }
+
+    /**
+     * Method that is called in {@link #worked(double)} (which is called by {@link #createSubtask(double) subtasks}) when there
+     * has been some positive work.
+     * <p>
+     * This method implementation does nothing, but subclasses can easily override this method if they want to be updated with the
+     * latest progress.
+     * </p>
+     */
+    protected void notifyProgress() {
+
     }
 }

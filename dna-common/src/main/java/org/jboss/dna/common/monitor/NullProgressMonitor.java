@@ -30,7 +30,7 @@ import net.jcip.annotations.ThreadSafe;
  * @author Randall Hauch
  */
 @ThreadSafe
-public class NullProgressMonitor implements IProgressMonitor {
+public class NullProgressMonitor implements ProgressMonitor {
 
     private final AtomicBoolean cancelled = new AtomicBoolean(false);
     private final String activityName;
@@ -56,7 +56,7 @@ public class NullProgressMonitor implements IProgressMonitor {
     /**
      * {@inheritDoc}
      */
-    public IProgressMonitor createSubtask( double subtaskWork ) {
+    public ProgressMonitor createSubtask( double subtaskWork ) {
         return this;
     }
 

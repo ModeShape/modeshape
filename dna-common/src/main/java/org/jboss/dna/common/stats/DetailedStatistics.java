@@ -27,7 +27,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.locks.Lock;
 import net.jcip.annotations.ThreadSafe;
-import org.jboss.dna.common.math.IMathOperations;
+import org.jboss.dna.common.math.MathOperations;
 import org.jboss.dna.common.text.Inflector;
 import org.jboss.dna.common.util.StringUtil;
 
@@ -75,7 +75,7 @@ public class DetailedStatistics<T extends Number> extends SimpleStatistics<T> {
     private final List<T> unmodifiableValues = Collections.unmodifiableList(this.values);
     private Histogram<T> histogram;
 
-    public DetailedStatistics( IMathOperations<T> operations ) {
+    public DetailedStatistics( MathOperations<T> operations ) {
         super(operations);
         this.medianValue = 0.0d;
         this.median = this.math.createZeroValue();

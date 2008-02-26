@@ -22,11 +22,11 @@
 package org.jboss.dna.common.text;
 
 /**
- * An encoder implementation that does nothing. This is useful when a {@link ITextEncoder encoder} is optional but the code is
+ * An encoder implementation that does nothing. This is useful when a {@link TextEncoder encoder} is optional but the code is
  * easier to write when there is always an encoder.
  * @author Randall Hauch
  */
-public class NoOpEncoder implements ITextEncoder {
+public class NoOpEncoder implements TextEncoder {
 
     private static final NoOpEncoder INSTANCE = new NoOpEncoder();
 

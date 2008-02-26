@@ -34,9 +34,9 @@ import org.junit.Test;
 /**
  * @author Randall Hauch
  */
-public class ProgressMonitorTest {
+public class SimpleProgressMonitorTest {
 
-    private IProgressMonitor monitor;
+    private ProgressMonitor monitor;
     private String validActivityName;
     private String validTaskName;
 
@@ -44,7 +44,7 @@ public class ProgressMonitorTest {
     public void beforeEach() throws Exception {
         this.validActivityName = "Reading from file X";
         this.validTaskName = "Checking for file";
-        this.monitor = new ProgressMonitor(this.validActivityName);
+        this.monitor = new SimpleProgressMonitor(this.validActivityName);
     }
 
     @Test
@@ -110,7 +110,7 @@ public class ProgressMonitorTest {
 
         // Create subtasks ...
         for (int i = 1; i <= 9; ++i) {
-            IProgressMonitor subtask = monitor.createSubtask(100);
+            ProgressMonitor subtask = monitor.createSubtask(100);
             assertThat(subtask, is(notNullValue()));
             assertThat(subtask, is(instanceOf(SubProgressMonitor.class)));
             assertThat(((SubProgressMonitor)subtask).getParent(), is(sameInstance(monitor)));
