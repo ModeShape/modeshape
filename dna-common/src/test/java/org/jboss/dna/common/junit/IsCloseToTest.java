@@ -34,13 +34,13 @@ public class IsCloseToTest {
 
     @Test( expected = AssertionError.class )
     public void shouldFailWhenNumberIsNotCloserToValue() {
-        assertThat(100.0001d, is(closeTo(100.0d, 0.1d)));
+        assertThat(100.1d, is(closeTo(100.0d, 0.001d)));
     }
 
     @Test
     public void shouldPassWhenNumberIsCloserToValue() {
-        assertThat(100.0001d, is(closeTo(100.0d, 0.0000999d)));
-        assertThat(-100.0001d, is(closeTo(-100.0d, 0.0000999d)));
+        assertThat(100.0001d, is(closeTo(100.0d, 0.001d)));
+        assertThat(-100.0001d, is(closeTo(-100.0d, 0.001d)));
     }
 
 }
