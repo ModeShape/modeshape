@@ -39,22 +39,22 @@ import org.junit.Test;
 /**
  * @author Randall Hauch
  */
-public class SequencingSystemTest extends AbstractJcrRepositoryTest {
+public class SequencingServiceTest extends AbstractJcrRepositoryTest {
 
     public static final String REPOSITORY_WORKSPACE_NAME = "testRepository-Workspace";
 
-    private SequencingSystem system;
+    private SequencingService system;
     private SessionFactory sessionFactory = new SessionFactory() {
 
         public Session createSession( String name ) throws RepositoryException {
             assertThat(name, is(REPOSITORY_WORKSPACE_NAME));
-            return SequencingSystemTest.this.getRepository().login(getTestCredentials());
+            return SequencingServiceTest.this.getRepository().login(getTestCredentials());
         }
     };
 
     @Before
     public void beforeEach() throws Exception {
-        this.system = new SequencingSystem();
+        this.system = new SequencingService();
         this.system.setSessionFactory(this.sessionFactory);
     }
 
@@ -65,7 +65,7 @@ public class SequencingSystemTest extends AbstractJcrRepositoryTest {
 
     @Test
     public void shouldHaveTheDefaultSelectorUponConstruction() {
-        assertThat(system.getSequencerSelector(), is(sameInstance(SequencingSystem.DEFAULT_SEQUENCER_SELECTOR)));
+        assertThat(system.getSequencerSelector(), is(sameInstance(SequencingService.DEFAULT_SEQUENCER_SELECTOR)));
     }
 
     @Test
@@ -120,7 +120,7 @@ public class SequencingSystemTest extends AbstractJcrRepositoryTest {
     @Test
     public void shouldBePausedUponConstruction() {
         assertThat(system.isPaused(), is(true));
-        assertThat(system.getState(), is(SequencingSystem.State.PAUSED));
+        assertThat(system.getState(), is(SequencingService.State.PAUSED));
         assertThat(system.isShutdown(), is(false));
         assertThat(system.isStarted(), is(false));
     }
@@ -132,7 +132,7 @@ public class SequencingSystemTest extends AbstractJcrRepositoryTest {
             assertThat(system.shutdown().isShutdown(), is(true));
             assertThat(system.isPaused(), is(false));
             assertThat(system.isStarted(), is(false));
-            assertThat(system.getState(), is(SequencingSystem.State.SHUTDOWN));
+            assertThat(system.getState(), is(SequencingService.State.SHUTDOWN));
         }
     }
 
@@ -144,25 +144,25 @@ public class SequencingSystemTest extends AbstractJcrRepositoryTest {
             assertThat(system.shutdown().isShutdown(), is(true));
             assertThat(system.isPaused(), is(false));
             assertThat(system.isStarted(), is(false));
-            assertThat(system.getState(), is(SequencingSystem.State.SHUTDOWN));
+            assertThat(system.getState(), is(SequencingService.State.SHUTDOWN));
 
             // Now start it back up ...
             assertThat(system.start().isStarted(), is(true));
             assertThat(system.isPaused(), is(false));
             assertThat(system.isShutdown(), is(false));
-            assertThat(system.getState(), is(SequencingSystem.State.STARTED));
+            assertThat(system.getState(), is(SequencingService.State.STARTED));
 
             // Now pause it ...
             assertThat(system.pause().isPaused(), is(true));
             assertThat(system.isStarted(), is(false));
             assertThat(system.isShutdown(), is(false));
-            assertThat(system.getState(), is(SequencingSystem.State.PAUSED));
+            assertThat(system.getState(), is(SequencingService.State.PAUSED));
 
             // Now start it back up ...
             assertThat(system.start().isStarted(), is(true));
             assertThat(system.isPaused(), is(false));
             assertThat(system.isShutdown(), is(false));
-            assertThat(system.getState(), is(SequencingSystem.State.STARTED));
+            assertThat(system.getState(), is(SequencingService.State.STARTED));
         }
     }
 
@@ -173,7 +173,7 @@ public class SequencingSystemTest extends AbstractJcrRepositoryTest {
 
         // Try when paused ...
         assertThat(system.isPaused(), is(true));
-        SequencingSystem.WorkspaceListener listener = system.monitor(REPOSITORY_WORKSPACE_NAME, Event.NODE_ADDED);
+        SequencingService.WorkspaceListener listener = system.monitor(REPOSITORY_WORKSPACE_NAME, Event.NODE_ADDED);
         assertThat(listener, is(notNullValue()));
         assertThat(listener.getAbsolutePath(), is("/"));
         assertThat(listener.getEventTypes(), is(Event.NODE_ADDED));
@@ -192,7 +192,7 @@ public class SequencingSystemTest extends AbstractJcrRepositoryTest {
 
         // Start the sequencing system and try monitoring the workspace ...
         assertThat(system.start().isStarted(), is(true));
-        SequencingSystem.WorkspaceListener listener2 = system.monitor(REPOSITORY_WORKSPACE_NAME, Event.NODE_ADDED);
+        SequencingService.WorkspaceListener listener2 = system.monitor(REPOSITORY_WORKSPACE_NAME, Event.NODE_ADDED);
         assertThat(listener2.isRegistered(), is(true));
         assertThat(listener2, is(notNullValue()));
         assertThat(listener2.getAbsolutePath(), is("/"));
@@ -229,7 +229,7 @@ public class SequencingSystemTest extends AbstractJcrRepositoryTest {
 
         // Start the sequencing system and try monitoring the workspace ...
         assertThat(system.start().isStarted(), is(true));
-        SequencingSystem.WorkspaceListener listener = system.monitor(REPOSITORY_WORKSPACE_NAME, Event.NODE_ADDED);
+        SequencingService.WorkspaceListener listener = system.monitor(REPOSITORY_WORKSPACE_NAME, Event.NODE_ADDED);
         assertThat(listener.isRegistered(), is(true));
         assertThat(listener, is(notNullValue()));
         assertThat(listener.getAbsolutePath(), is("/"));

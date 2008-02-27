@@ -56,7 +56,7 @@ import org.jboss.dna.services.util.SessionFactory;
  * content to extract or to generate structured information.
  * @author Randall Hauch
  */
-public class SequencingSystem {
+public class SequencingService {
 
     /**
      * Interface used to select the set of {@link Sequencer} instances that should be run.
@@ -130,7 +130,7 @@ public class SequencingSystem {
 
     /**
      * The default {@link Selector} that considers every {@link Sequencer} to be used for every node.
-     * @see SequencingSystem#setSequencerSelector(org.jboss.dna.services.sequencers.SequencingSystem.Selector)
+     * @see SequencingService#setSequencerSelector(org.jboss.dna.services.sequencers.SequencingService.Selector)
      */
     public static final Selector DEFAULT_SEQUENCER_SELECTOR = new DefaultSelector();
 
@@ -153,7 +153,7 @@ public class SequencingSystem {
      * Create a new sequencing system, configured with no sequencers and not monitoring any workspaces. Upon construction, the
      * system is {@link #isPaused() paused} and must be configured and then {@link #start() started}.
      */
-    public SequencingSystem() {
+    public SequencingService() {
     }
 
     /**
@@ -279,7 +279,7 @@ public class SequencingSystem {
      * @see #pause()
      * @see #shutdown()
      */
-    public SequencingSystem setState( State state ) {
+    public SequencingService setState( State state ) {
         switch (state) {
             case STARTED:
                 return start();
@@ -297,12 +297,12 @@ public class SequencingSystem {
      * @return this object for method chaining purposes
      * @throws IllegalArgumentException if the specified state string is null or does not match one of the predefined
      * {@link State predefined enumerated values}
-     * @see #setState(org.jboss.dna.services.sequencers.SequencingSystem.State)
+     * @see #setState(org.jboss.dna.services.sequencers.SequencingService.State)
      * @see #start()
      * @see #pause()
      * @see #shutdown()
      */
-    public SequencingSystem setState( String state ) {
+    public SequencingService setState( String state ) {
         State newState = state == null ? null : State.valueOf(state.toUpperCase());
         if (newState == null) {
             throw new IllegalArgumentException("Invalid state parameter");
@@ -319,7 +319,7 @@ public class SequencingSystem {
      * @see #shutdown()
      * @see #isStarted()
      */
-    public synchronized SequencingSystem start() {
+    public synchronized SequencingService start() {
         if (this.state != State.STARTED) {
             if (this.executorService == null) {
                 this.executorService = createDefaultExecutorService();
@@ -344,7 +344,7 @@ public class SequencingSystem {
      * @see #shutdown()
      * @see #isPaused()
      */
-    public synchronized SequencingSystem pause() {
+    public synchronized SequencingService pause() {
         this.state = State.PAUSED;
         return this;
     }
@@ -357,7 +357,7 @@ public class SequencingSystem {
      * @see #pause()
      * @see #isShutdown()
      */
-    public synchronized SequencingSystem shutdown() {
+    public synchronized SequencingService shutdown() {
         if (this.executorService != null) {
             this.executorService.shutdown();
         }
@@ -424,7 +424,7 @@ public class SequencingSystem {
      * repository and workspace name.
      * </p>
      * <p>
-     * The listener returned from this method is not managed by this SequencingSystem instance. If the listener is no longer
+     * The listener returned from this method is not managed by this SequencingService instance. If the listener is no longer
      * needed, it simply must be {@link ObservationManager#removeEventListener(EventListener) removed} as a listener of the
      * workspace and garbage collected. If this service is {@link #shutdown() shutdown} while there are still active listeners,
      * those listeners will disconnect themselves from this service and the workspace with which they're registered when they
@@ -490,7 +490,7 @@ public class SequencingSystem {
      * repository and workspace name.
      * </p>
      * <p>
-     * The listener returned from this method is not managed by this SequencingSystem instance. If the listener is no longer
+     * The listener returned from this method is not managed by this SequencingService instance. If the listener is no longer
      * needed, it simply must be {@link ObservationManager#removeEventListener(EventListener) removed} as a listener of the
      * workspace and garbage collected.
      * </p>
@@ -515,7 +515,7 @@ public class SequencingSystem {
      * repository and workspace name.
      * </p>
      * <p>
-     * The listener returned from this method is not managed by this SequencingSystem instance. If the listener is no longer
+     * The listener returned from this method is not managed by this SequencingService instance. If the listener is no longer
      * needed, it simply must be {@link ObservationManager#removeEventListener(EventListener) removed} as a listener of the
      * workspace and garbage collected.
      * </p>
@@ -818,8 +818,8 @@ public class SequencingSystem {
         /**
          * @return sequencingSystem
          */
-        public SequencingSystem getSequencingSystem() {
-            return SequencingSystem.this;
+        public SequencingService getSequencingSystem() {
+            return SequencingService.this;
         }
 
         public synchronized boolean isRegistered() {
@@ -828,7 +828,7 @@ public class SequencingSystem {
 
         public synchronized WorkspaceListener register() throws UnsupportedRepositoryOperationException, RepositoryException {
             if (this.isRegistered()) return this;
-            this.session = SequencingSystem.this.getSessionFactory().createSession(this.repositoryWorkspaceName);
+            this.session = SequencingService.this.getSessionFactory().createSession(this.repositoryWorkspaceName);
             String[] uuids = this.uuids.isEmpty() ? null : this.uuids.toArray(new String[this.uuids.size()]);
             String[] nodeTypeNames = this.nodeTypeNames.isEmpty() ? null : this.nodeTypeNames.toArray(new String[this.nodeTypeNames.size()]);
             this.session.getWorkspace().getObservationManager().addEventListener(this, eventTypes, absolutePath, deep, uuids, nodeTypeNames, noLocal);
@@ -857,7 +857,7 @@ public class SequencingSystem {
          */
         public void onEvent( EventIterator events ) {
             if (events != null) {
-                if (SequencingSystem.this.isShutdown()) {
+                if (SequencingService.this.isShutdown()) {
                     // This sequencing system has been shutdown, so unregister this listener
                     try {
                         unregister();
@@ -866,7 +866,7 @@ public class SequencingSystem {
                         Logger.getLogger(this.getClass()).debug(re, msg);
                     }
                 } else {
-                    SequencingSystem.this.enqueueEvents(events, this);
+                    SequencingService.this.enqueueEvents(events, this);
                 }
             }
         }
