@@ -142,7 +142,6 @@ public class HistogramTest {
         assertBucketValueCount(gram, 1, 1, 7, 1, 1, 5);
     }
 
-    @SuppressWarnings( "unchecked" )
     @Test
     public void shouldCorrectlyPlace1000RandomFloatValues() {
         Histogram<Float> gram = createRandomHistogram(10.0f, 100.0f, 1000, new FloatOperations());

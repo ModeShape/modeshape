@@ -398,12 +398,10 @@ public class Histogram<T extends Number> {
             return 0;
         }
 
-        @SuppressWarnings( "unchecked" )
         protected Class<T> getNumberClass() {
             return Histogram.this.math.getOperandClass();
         }
 
-        @SuppressWarnings( "unchecked" )
         @Override
         public boolean equals( Object obj ) {
             if (obj != null && obj.getClass() == this.getClass()) {
