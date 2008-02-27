@@ -74,21 +74,6 @@ public class SequencingSystem {
     }
 
     /**
-     * Interface that is used by the {@link SequencingSystem#setEventFilter(SequencingSystem.EventFilter) SequencingSystem} to
-     * filter observed events
-     * @author Randall Hauch
-     */
-    public static interface EventFilter {
-
-        /**
-         * Determine whether the supplied event is considered interesting and signals that the node should be sequenced.
-         * @param event the event being considered; never null
-         * @return true if the event is interesting and should be sequenced
-         */
-        boolean includeEvent( Event event );
-    }
-
-    /**
      * The default {@link Selector} implementation that selects every sequencer every time it's called, regardless of the node (or
      * logger) supplied.
      * @author Randall Hauch
@@ -97,17 +82,6 @@ public class SequencingSystem {
 
         public List<Sequencer> selectSequencers( List<Sequencer> sequencers, Node node ) {
             return sequencers;
-        }
-    }
-
-    /**
-     * The default {@link EventFilter} implementation that considers every event to be interesting.
-     * @author Randall Hauch
-     */
-    protected static class DefaultEventFilter implements EventFilter {
-
-        public boolean includeEvent( Event event ) {
-            return true;
         }
     }
 
@@ -160,12 +134,6 @@ public class SequencingSystem {
      */
     public static final Selector DEFAULT_SEQUENCER_SELECTOR = new DefaultSelector();
 
-    /**
-     * The default {@link EventFilter} that considers every event to be interesting.
-     * @see SequencingSystem#setEventFilter(SequencingSystem.EventFilter)
-     */
-    public static final EventFilter DEFAULT_EVENT_FILTER = new DefaultEventFilter();
-
     public static enum State {
         STARTED,
         PAUSED,
@@ -174,7 +142,6 @@ public class SequencingSystem {
 
     private State state = State.PAUSED;
     private SessionFactory sessionFactory;
-    private EventFilter eventFilter = DEFAULT_EVENT_FILTER;
     private SequencerLibrary sequencerLibrary = new SequencerLibrary();
     private Selector sequencerSelector = DEFAULT_SEQUENCER_SELECTOR;
     private ExecutorService executorService;
@@ -361,7 +328,6 @@ public class SequencingSystem {
                 throw new IllegalStateException("Unable to start the sequencing system without a session factory");
             }
             assert this.executorService != null;
-            assert this.eventFilter != null;
             assert this.sequencerSelector != null;
             assert this.sequencerLibrary != null;
             this.state = State.STARTED;
@@ -432,22 +398,6 @@ public class SequencingSystem {
      */
     public boolean isShutdown() {
         return this.state == State.SHUTDOWN;
-    }
-
-    /**
-     * Get the event filter used by this system.
-     * @return the event filter
-     */
-    public EventFilter getEventFilter() {
-        return this.eventFilter;
-    }
-
-    /**
-     * Set the event filter, or null if the {@link #DEFAULT_EVENT_FILTER default event filter} should be used.
-     * @param filter the event filter
-     */
-    public void setEventFilter( EventFilter filter ) {
-        this.eventFilter = filter != null ? filter : DEFAULT_EVENT_FILTER;
     }
 
     /**
@@ -602,7 +552,7 @@ public class SequencingSystem {
                 eventIterator.next();
                 ++count;
             }
-            this.statistics.recordEventsIgnored(count);
+            this.statistics.recordIgnoredEventSet(count);
             return;
         }
         assert this.executorService != null;
@@ -611,24 +561,19 @@ public class SequencingSystem {
         // Accumulate the list of changed nodes. Any event which has a path to a node that has already been seen in this
         // transaction or event list (according to the ChangedNode.hashCode() and ChangedNode.equals() methods) will not be added
         // to this set.
-        long interestingCount = 0l;
-        long uninterestingCount = 0l;
+        int eventCount = 0;
         Set<ChangedNode> nodesToProcess = new LinkedHashSet<ChangedNode>();
         while (eventIterator.hasNext()) {
             Event event = eventIterator.nextEvent();
             try {
-                if (this.eventFilter.includeEvent(event)) {
-                    final String absolutePath = event.getPath();
-                    nodesToProcess.add(new ChangedNode(repositoryWorkspaceName, absolutePath));
-                    ++interestingCount;
-                } else {
-                    ++uninterestingCount;
-                }
+                final String absolutePath = event.getPath();
+                nodesToProcess.add(new ChangedNode(repositoryWorkspaceName, absolutePath));
+                ++eventCount;
             } catch (Throwable t) {
                 this.problemLog.error(repositoryWorkspaceName, event, t);
             }
         }
-        this.statistics.recordEvents(interestingCount, uninterestingCount);
+        this.statistics.recordEventSet(eventCount);
 
         for (ChangedNode changedNode : nodesToProcess) {
             this.executorService.execute(changedNode);
@@ -772,74 +717,6 @@ public class SequencingSystem {
         }
     }
 
-    // /**
-    // * An event that has been observed that may be interesting for sequencing.
-    // * @author Randall Hauch
-    // */
-    // @Immutable
-    // public static class SequencingEvent implements Event {
-    //
-    // private final Event wrappedEvent;
-    // private final String repositoryWorkspaceName;
-    // private final String absolutePath;
-    //
-    // protected SequencingEvent( Event wrappedEvent, String repositoryWorkspaceName, String absolutePath ) {
-    // assert wrappedEvent != null;
-    // assert repositoryWorkspaceName != null;
-    // assert absolutePath != null;
-    // this.wrappedEvent = wrappedEvent;
-    // this.repositoryWorkspaceName = repositoryWorkspaceName;
-    // this.absolutePath = absolutePath.trim();
-    // }
-    //        
-    // public
-    //        
-    // /**
-    // * @return absolutePath
-    // */
-    // public String getAbsolutePath() {
-    // return this.absolutePath;
-    // }
-    //
-    // /**
-    // * {@inheritDoc}
-    // */
-    // public String getPath() throws RepositoryException {
-    // return this.wrappedEvent.getPath();
-    // }
-    //
-    // /**
-    // * {@inheritDoc}
-    // */
-    // public int getType() {
-    // return this.wrappedEvent.getType();
-    // }
-    //
-    // public String getTypeString() {
-    // final int type = this.wrappedEvent.getType();
-    // switch (type) {
-    // case Event.NODE_ADDED:
-    // return "NODE_ADDED";
-    // case Event.NODE_REMOVED:
-    // return "NODE_REMOVED";
-    // case Event.PROPERTY_ADDED:
-    // return "PROPERTY_ADDED";
-    // case Event.PROPERTY_CHANGED:
-    // return "PROPERTY_CHANGED";
-    // case Event.PROPERTY_REMOVED:
-    // return "PROPERTY_REMOVED";
-    // }
-    // return "unknown event type " + type;
-    // }
-    //
-    // /**
-    // * {@inheritDoc}
-    // */
-    // public String getUserID() {
-    // return this.wrappedEvent.getUserID();
-    // }
-    // }
-    //
     /**
      * Implementation of the {@link EventListener JCR EventListener} interface, returned by the sequencing system.
      * @author Randall Hauch
@@ -1007,8 +884,6 @@ public class SequencingSystem {
         @GuardedBy( "lock" )
         private long numberOfEventsEnqueued;
         @GuardedBy( "lock" )
-        private long numberOfEventsSkipped;
-        @GuardedBy( "lock" )
         private long numberOfEventSetsIgnored;
         @GuardedBy( "lock" )
         private long numberOfEventSetsEnqueued;
@@ -1029,7 +904,6 @@ public class SequencingSystem {
                 this.startTime.set(System.currentTimeMillis());
                 this.numberOfEventsIgnored = 0;
                 this.numberOfEventsEnqueued = 0;
-                this.numberOfEventsSkipped = 0;
                 this.numberOfEventSetsIgnored = 0;
                 this.numberOfEventSetsEnqueued = 0;
                 this.numberOfNodesSequenced = 0;
@@ -1096,19 +970,6 @@ public class SequencingSystem {
         }
 
         /**
-         * @return the number of events that were skipped (not enqueued) because they were not
-         * {@link SequencingSystem#getEventFilter() interesting}
-         */
-        public long getNumberOfEventsSkipped() {
-            try {
-                lock.readLock().lock();
-                return this.numberOfEventsSkipped;
-            } finally {
-                lock.readLock().unlock();
-            }
-        }
-
-        /**
          * @return the number of event sets (transactions) that were enqueued for processing
          */
         public long getNumberOfEventSetsEnqueued() {
@@ -1150,21 +1011,20 @@ public class SequencingSystem {
             }
         }
 
-        protected void recordEvents( long enqueued, long skipped ) {
+        protected void recordEventSet( long eventsInSet ) {
             try {
                 lock.writeLock().lock();
-                this.numberOfEventsEnqueued += enqueued;
-                this.numberOfEventsSkipped += enqueued;
+                this.numberOfEventsEnqueued += eventsInSet;
                 ++this.numberOfEventSetsEnqueued;
             } finally {
                 lock.writeLock().unlock();
             }
         }
 
-        protected void recordEventsIgnored( long count ) {
+        protected void recordIgnoredEventSet( long eventsInSet ) {
             try {
                 lock.writeLock().lock();
-                this.numberOfEventsIgnored += count;
+                this.numberOfEventsIgnored += eventsInSet;
                 this.numberOfEventSetsIgnored += 1;
                 ++this.numberOfEventSetsEnqueued;
             } finally {

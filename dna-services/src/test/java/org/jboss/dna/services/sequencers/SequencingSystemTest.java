@@ -64,11 +64,6 @@ public class SequencingSystemTest extends AbstractJcrRepositoryTest {
     }
 
     @Test
-    public void shouldHaveTheDefaultEventFilterUponConstruction() {
-        assertThat(system.getEventFilter(), is(sameInstance(SequencingSystem.DEFAULT_EVENT_FILTER)));
-    }
-
-    @Test
     public void shouldHaveTheDefaultSelectorUponConstruction() {
         assertThat(system.getSequencerSelector(), is(sameInstance(SequencingSystem.DEFAULT_SEQUENCER_SELECTOR)));
     }
