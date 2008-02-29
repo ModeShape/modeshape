@@ -112,12 +112,14 @@
 		    <dependency>
 		      <groupId>org.drools</groupId>
 		      <artifactId>drools-jsr94</artifactId>
-		      <version>4.0.3</version>
+		      <version>4.0.4</version>
+			  <scope>test</scope>
 		    </dependency>
 		    <dependency>
 		      <groupId>org.drools</groupId>
 		      <artifactId>drools-compiler</artifactId>
-		      <version>4.0.3</version>
+		      <version>4.0.4</version>
+			  <scope>test</scope>
 		    </dependency>
 			<!-- Testing (note the scope) -->
 			<dependency>
