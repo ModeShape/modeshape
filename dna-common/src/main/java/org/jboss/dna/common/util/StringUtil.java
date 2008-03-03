@@ -27,8 +27,11 @@ import java.io.OutputStream;
 import java.io.Reader;
 import java.io.Writer;
 import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Utilities for string processing and manipulation.
@@ -343,6 +346,77 @@ public class StringUtil {
      */
     public static void write( String content, Writer writer ) throws IOException {
         IoUtil.write(content, writer);
+    }
+
+    public static String readableString( Object obj ) {
+        if (obj == null) return "null";
+        if (obj instanceof Object[]) return readableString((Object[])obj);
+        if (obj instanceof Number) return obj.toString();
+        if (obj instanceof Map) return readableString((Map)obj);
+        if (obj instanceof Collection) return readableString((Collection)obj);
+        if (obj instanceof String) return "\"" + obj.toString() + "\"";
+        if (obj instanceof Calendar) return DateUtil.getDateAsStandardString((Calendar)obj);
+        if (obj instanceof java.util.Date) return DateUtil.getDateAsStandardString((java.util.Date)obj);
+        if (obj instanceof java.sql.Date) return DateUtil.getDateAsStandardString((java.sql.Date)obj);
+        return obj.toString();
+    }
+
+    public static String readableString( Object[] array ) {
+        if (array == null) return "null";
+        StringBuilder sb = new StringBuilder();
+        boolean first = true;
+        sb.append("[");
+        for (Object value : array) {
+            if (first) {
+                sb.append(" ");
+            } else {
+                sb.append(", ");
+                first = false;
+            }
+            sb.append(readableString(value));
+        }
+        sb.append("]");
+        return sb.toString();
+    }
+
+    public static String readableString( Collection<?> collection ) {
+        if (collection == null) return "null";
+        StringBuilder sb = new StringBuilder();
+        boolean first = true;
+        sb.append("[");
+        for (Object value : collection) {
+            if (first) {
+                sb.append(" ");
+            } else {
+                sb.append(", ");
+                first = false;
+            }
+            sb.append(readableString(value));
+        }
+        sb.append("]");
+        return sb.toString();
+    }
+
+    public static String readableString( Map<?, ?> map ) {
+        if (map == null) return "null";
+        StringBuilder sb = new StringBuilder();
+        boolean first = true;
+        sb.append("{");
+        for (Map.Entry<?, ?> entry : map.entrySet()) {
+            Object key = entry.getKey();
+            Object value = entry.getValue();
+            if (first) {
+                sb.append(" ");
+            } else {
+                sb.append(", ");
+                first = false;
+            }
+            sb.append(readableString(key));
+            sb.append(" => ");
+            sb.append(readableString(value));
+        }
+        sb.append("}");
+        return sb.toString();
     }
 
     private StringUtil() {
