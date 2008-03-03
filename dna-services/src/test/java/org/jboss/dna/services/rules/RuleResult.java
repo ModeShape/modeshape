@@ -19,17 +19,17 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.jboss.dna.services.rules.sequencer;
+package org.jboss.dna.services.rules;
 
 /**
  * @author John Verhaeg
  */
-public final class SequencerInfo {
+public final class RuleResult {
 
     String name;
 
-    public SequencerInfo( String name ) {
-        this.name = name;
+    public RuleResult( String name ) {
+        this.name = name != null ? name : "";
     }
 
     /**

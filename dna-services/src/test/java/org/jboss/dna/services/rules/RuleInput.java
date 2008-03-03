@@ -19,16 +19,13 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.jboss.dna.services.rules.sequencer;
+package org.jboss.dna.services.rules;
 
-/**
- * @author John Verhaeg
- */
-public final class ContentInfo {
+public final class RuleInput {
 
-    String mimeType;
-    String header;
-    String fileName;
+    String mimeType = "";
+    String header = "";
+    String fileName = "";
 
     /**
      * @return fileName
@@ -70,5 +67,13 @@ public final class ContentInfo {
      */
     public void setMimeType( String mimeType ) {
         this.mimeType = mimeType;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String toString() {
+        return this.fileName + " (" + this.mimeType + ") => " + this.header;
     }
 }
