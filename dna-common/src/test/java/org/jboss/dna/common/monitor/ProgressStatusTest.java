@@ -23,7 +23,7 @@
 package org.jboss.dna.common.monitor;
 
 import static org.hamcrest.core.Is.is;
-import static org.jboss.dna.common.junit.IsCloseTo.closeTo;
+import static org.hamcrest.number.IsCloseTo.closeTo;
 import static org.junit.Assert.assertThat;
 import org.junit.Before;
 import org.junit.Test;
