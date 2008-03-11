@@ -31,7 +31,8 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsSame.sameInstance;
 import static org.junit.Assert.assertThat;
 import org.jboss.dna.common.jcr.AbstractJcrRepositoryTest;
-import org.jboss.dna.services.util.SessionFactory;
+import org.jboss.dna.services.SessionFactory;
+import org.jboss.dna.services.observation.ObservationService;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -43,19 +44,23 @@ public class SequencingServiceTest extends AbstractJcrRepositoryTest {
 
     public static final String REPOSITORY_WORKSPACE_NAME = "testRepository-Workspace";
 
+    private ObservationService observationService;
     private SequencingService system;
-    private SessionFactory sessionFactory = new SessionFactory() {
-
-        public Session createSession( String name ) throws RepositoryException {
-            assertThat(name, is(REPOSITORY_WORKSPACE_NAME));
-            return SequencingServiceTest.this.getRepository().login(getTestCredentials());
-        }
-    };
+    private SessionFactory sessionFactory;
 
     @Before
     public void beforeEach() throws Exception {
+        this.sessionFactory = new SessionFactory() {
+
+            public Session createSession( String name ) throws RepositoryException {
+                assertThat(name, is(REPOSITORY_WORKSPACE_NAME));
+                return SequencingServiceTest.this.getRepository().login(getTestCredentials());
+            }
+        };
         this.system = new SequencingService();
         this.system.setSessionFactory(this.sessionFactory);
+        this.observationService = new ObservationService(this.sessionFactory);
+        this.observationService.addListener(this.system);
     }
 
     @After
@@ -107,11 +112,17 @@ public class SequencingServiceTest extends AbstractJcrRepositoryTest {
         assertThat(system.setState("started").isStarted(), is(true));
         assertThat(system.setState("paused").isPaused(), is(true));
         assertThat(system.setState("shutdown").isShutdown(), is(true));
+    }
 
+    @Test
+    public void shouldSetStateUsingMixedCaseString() {
         assertThat(system.setState("StarTeD").isStarted(), is(true));
         assertThat(system.setState("PauSed").isPaused(), is(true));
         assertThat(system.setState("ShuTDowN").isShutdown(), is(true));
+    }
 
+    @Test
+    public void shouldSetStateUsingUppercasString() {
         assertThat(system.setState("STARTED").isStarted(), is(true));
         assertThat(system.setState("PAUSED").isPaused(), is(true));
         assertThat(system.setState("SHUTDOWN").isShutdown(), is(true));
@@ -137,21 +148,9 @@ public class SequencingServiceTest extends AbstractJcrRepositoryTest {
     }
 
     @Test
-    public void shouldBeAbleToBeRestartedAfterBeingShutdown() {
+    public void shouldBeAbleToBePauseAndRestarted() {
         assertThat(system.isShutdown(), is(false));
         for (int i = 0; i != 3; ++i) {
-            // Shut it down ...
-            assertThat(system.shutdown().isShutdown(), is(true));
-            assertThat(system.isPaused(), is(false));
-            assertThat(system.isStarted(), is(false));
-            assertThat(system.getState(), is(SequencingService.State.SHUTDOWN));
-
-            // Now start it back up ...
-            assertThat(system.start().isStarted(), is(true));
-            assertThat(system.isPaused(), is(false));
-            assertThat(system.isShutdown(), is(false));
-            assertThat(system.getState(), is(SequencingService.State.STARTED));
-
             // Now pause it ...
             assertThat(system.pause().isPaused(), is(true));
             assertThat(system.isStarted(), is(false));
@@ -166,6 +165,19 @@ public class SequencingServiceTest extends AbstractJcrRepositoryTest {
         }
     }
 
+    @Test( expected = IllegalStateException.class )
+    public void shouldNotBeAbleToBeRestartedAfterBeingShutdown() {
+        assertThat(system.isShutdown(), is(false));
+        // Shut it down ...
+        assertThat(system.shutdown().isShutdown(), is(true));
+        assertThat(system.isPaused(), is(false));
+        assertThat(system.isStarted(), is(false));
+        assertThat(system.getState(), is(SequencingService.State.SHUTDOWN));
+
+        // Now start it back up ... this will fail
+        system.start();
+    }
+
     @Test
     public void shouldBeAbleToMonitorWorkspaceWhenPausedOrStarted() throws Exception {
         startRepository();
@@ -173,7 +185,8 @@ public class SequencingServiceTest extends AbstractJcrRepositoryTest {
 
         // Try when paused ...
         assertThat(system.isPaused(), is(true));
-        SequencingService.WorkspaceListener listener = system.monitor(REPOSITORY_WORKSPACE_NAME, Event.NODE_ADDED);
+        assertThat(observationService.pause().isPaused(), is(true));
+        ObservationService.WorkspaceListener listener = observationService.monitor(REPOSITORY_WORKSPACE_NAME, Event.NODE_ADDED);
         assertThat(listener, is(notNullValue()));
         assertThat(listener.getAbsolutePath(), is("/"));
         assertThat(listener.getEventTypes(), is(Event.NODE_ADDED));
@@ -182,17 +195,19 @@ public class SequencingServiceTest extends AbstractJcrRepositoryTest {
         session.getRootNode().addNode("testnodeA", "nt:unstructured");
         session.save();
         Thread.sleep(100); // let the events be handled ...
-        assertThat(system.getStatistics().getNumberOfEventsIgnored(), is((long)1));
+        assertThat(observationService.getStatistics().getNumberOfEventsIgnored(), is((long)1));
 
         // Reset the statistics and remove the listener ...
         system.getStatistics().reset();
+        observationService.getStatistics().reset();
         assertThat(listener.isRegistered(), is(true));
         listener.unregister();
         assertThat(listener.isRegistered(), is(false));
 
         // Start the sequencing system and try monitoring the workspace ...
         assertThat(system.start().isStarted(), is(true));
-        SequencingService.WorkspaceListener listener2 = system.monitor(REPOSITORY_WORKSPACE_NAME, Event.NODE_ADDED);
+        assertThat(observationService.start().isStarted(), is(true));
+        ObservationService.WorkspaceListener listener2 = observationService.monitor(REPOSITORY_WORKSPACE_NAME, Event.NODE_ADDED);
         assertThat(listener2.isRegistered(), is(true));
         assertThat(listener2, is(notNullValue()));
         assertThat(listener2.getAbsolutePath(), is("/"));
@@ -204,11 +219,13 @@ public class SequencingServiceTest extends AbstractJcrRepositoryTest {
         Thread.sleep(100); // let the events be handled ...
 
         // Check the results: nothing ignored, and 1 node skipped (since no sequencers apply)
-        assertThat(system.getStatistics().getNumberOfEventsIgnored(), is((long)0));
+        assertThat(observationService.getStatistics().getNumberOfEventsIgnored(), is((long)0));
         assertThat(system.getStatistics().getNumberOfNodesSkipped(), is((long)1));
 
         system.shutdown();
         system.getStatistics().reset();
+        observationService.shutdown();
+        observationService.getStatistics().reset();
 
         // Cause another event ...
         session.getRootNode().addNode("testnodeC", "nt:unstructured");
@@ -218,7 +235,7 @@ public class SequencingServiceTest extends AbstractJcrRepositoryTest {
         assertThat(listener2.isRegistered(), is(false));
 
         // Check the results: nothing ignored, and nothing skipped
-        assertThat(system.getStatistics().getNumberOfEventsIgnored(), is((long)0));
+        assertThat(observationService.getStatistics().getNumberOfEventsIgnored(), is((long)0));
         assertThat(system.getStatistics().getNumberOfNodesSkipped(), is((long)0));
     }
 
@@ -229,7 +246,7 @@ public class SequencingServiceTest extends AbstractJcrRepositoryTest {
 
         // Start the sequencing system and try monitoring the workspace ...
         assertThat(system.start().isStarted(), is(true));
-        SequencingService.WorkspaceListener listener = system.monitor(REPOSITORY_WORKSPACE_NAME, Event.NODE_ADDED);
+        ObservationService.WorkspaceListener listener = observationService.monitor(REPOSITORY_WORKSPACE_NAME, Event.NODE_ADDED);
         assertThat(listener.isRegistered(), is(true));
         assertThat(listener, is(notNullValue()));
         assertThat(listener.getAbsolutePath(), is("/"));
@@ -247,6 +264,7 @@ public class SequencingServiceTest extends AbstractJcrRepositoryTest {
         assertThat(listener.isRegistered(), is(true));
 
         system.shutdown();
+        observationService.shutdown();
 
         // Cause another event ...
         session.getRootNode().addNode("testnodeC", "nt:unstructured");

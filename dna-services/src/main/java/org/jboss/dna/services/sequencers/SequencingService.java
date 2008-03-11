@@ -21,42 +21,33 @@
  */
 package org.jboss.dna.services.sequencers;
 
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 import javax.jcr.Node;
 import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
-import javax.jcr.UnsupportedRepositoryOperationException;
 import javax.jcr.observation.Event;
-import javax.jcr.observation.EventIterator;
-import javax.jcr.observation.EventListener;
-import javax.jcr.observation.ObservationManager;
-import net.jcip.annotations.GuardedBy;
-import net.jcip.annotations.Immutable;
 import net.jcip.annotations.ThreadSafe;
+import org.jboss.dna.common.component.ComponentLibrary;
 import org.jboss.dna.common.monitor.LoggingProgressMonitor;
 import org.jboss.dna.common.monitor.ProgressMonitor;
 import org.jboss.dna.common.monitor.SimpleProgressMonitor;
-import org.jboss.dna.common.util.HashCodeUtil;
 import org.jboss.dna.common.util.Logger;
 import org.jboss.dna.common.util.StringUtil;
-import org.jboss.dna.services.util.SessionFactory;
+import org.jboss.dna.services.ManagedService;
+import org.jboss.dna.services.SessionFactory;
+import org.jboss.dna.services.observation.NodeChange;
+import org.jboss.dna.services.observation.NodeChangeListener;
 
 /**
  * A sequencing system is used to monitor changes in the content of {@link Repository JCR repositories} and to sequence the
  * content to extract or to generate structured information.
  * @author Randall Hauch
  */
-public class SequencingService {
+public class SequencingService extends ManagedService implements NodeChangeListener {
 
     /**
      * Interface used to select the set of {@link Sequencer} instances that should be run.
@@ -86,45 +77,28 @@ public class SequencingService {
     }
 
     /**
-     * Interface to which problems with particular events are logged.
+     * Interface used to determine whether a {@link NodeChange} should be processed.
      * @author Randall Hauch
      */
-    public static interface ProblemLog {
-
-        void error( String repositoryWorkspaceName, Event event, Throwable t );
-    }
-
-    public class DefaultProblemLog implements ProblemLog {
+    public static interface NodeFilter {
 
         /**
-         * {@inheritDoc}
+         * Determine whether the node represented by the supplied change should be submitted for sequencing.
+         * @param nodeChange the node change event
+         * @return true if the node should be submitted for sequencing, or false if the change should be ignored
          */
-        public void error( String repositoryWorkspaceName, Event event, Throwable t ) {
-            String type = getEventTypeString(event);
-            String path = "<unable-to-get-path>";
-            try {
-                path = event.getPath();
-            } catch (RepositoryException e) {
-                getLogger().error(e, "Unable to get node path from {} event from repository workspace {}", type, repositoryWorkspaceName);
-            }
-            getLogger().error(t, "Error processing {} event on node {}=>{}", type, repositoryWorkspaceName, path);
-        }
+        boolean accept( NodeChange nodeChange );
+    }
 
-        protected String getEventTypeString( Event event ) {
-            assert event != null;
-            switch (event.getType()) {
-                case Event.NODE_ADDED:
-                    return "NODE_ADDED";
-                case Event.NODE_REMOVED:
-                    return "NODE_REMOVED";
-                case Event.PROPERTY_ADDED:
-                    return "PROPERTY_ADDED";
-                case Event.PROPERTY_CHANGED:
-                    return "PROPERTY_CHANGED";
-                case Event.PROPERTY_REMOVED:
-                    return "PROPERTY_REMOVED";
-            }
-            return "unknown event type " + event.getType();
+    /**
+     * The default filter implementation, which accepts only new nodes or nodes that have new or changed properties.
+     * @author Randall Hauch
+     */
+    protected static class DefaultNodeFilter implements NodeFilter {
+
+        public boolean accept( NodeChange nodeChange ) {
+            // Only care about new nodes or nodes that have new/changed properies ...
+            return nodeChange.includesEventTypes(Event.NODE_ADDED, Event.PROPERTY_ADDED, Event.PROPERTY_CHANGED);
         }
     }
 
@@ -133,20 +107,18 @@ public class SequencingService {
      * @see SequencingService#setSequencerSelector(org.jboss.dna.services.sequencers.SequencingService.Selector)
      */
     public static final Selector DEFAULT_SEQUENCER_SELECTOR = new DefaultSelector();
+    /**
+     * The default {@link NodeFilter} that accepts new nodes or nodes that have new/changed properties.
+     * @see SequencingService#setSequencerSelector(org.jboss.dna.services.sequencers.SequencingService.Selector)
+     */
+    public static final NodeFilter DEFAULT_NODE_FILTER = new DefaultNodeFilter();
 
-    public static enum State {
-        STARTED,
-        PAUSED,
-        SHUTDOWN;
-    }
-
-    private State state = State.PAUSED;
     private SessionFactory sessionFactory;
-    private SequencerLibrary sequencerLibrary = new SequencerLibrary();
+    private ComponentLibrary<Sequencer> sequencerLibrary = new ComponentLibrary<Sequencer>();
     private Selector sequencerSelector = DEFAULT_SEQUENCER_SELECTOR;
+    private NodeFilter nodeFilter = DEFAULT_NODE_FILTER;
     private ExecutorService executorService;
     private Logger logger = Logger.getLogger(this.getClass());
-    private ProblemLog problemLog = new DefaultProblemLog();
     private final Statistics statistics = new Statistics();
 
     /**
@@ -154,6 +126,15 @@ public class SequencingService {
      * system is {@link #isPaused() paused} and must be configured and then {@link #start() started}.
      */
     public SequencingService() {
+        super(State.PAUSED);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    protected String serviceName() {
+        return "SequencingService";
     }
 
     /**
@@ -168,15 +149,15 @@ public class SequencingService {
      * Get the library that is managing the {@link Sequencer sequencer} instances.
      * @return the sequencer library
      */
-    public SequencerLibrary getSequencerLibrary() {
+    public ComponentLibrary<Sequencer> getSequencerLibrary() {
         return this.sequencerLibrary;
     }
 
     /**
      * @param sequencerLibrary Sets sequencerLibrary to the specified value.
      */
-    public void setSequencerLibrary( SequencerLibrary sequencerLibrary ) {
-        this.sequencerLibrary = sequencerLibrary != null ? sequencerLibrary : new SequencerLibrary();
+    public void setSequencerLibrary( ComponentLibrary<Sequencer> sequencerLibrary ) {
+        this.sequencerLibrary = sequencerLibrary != null ? sequencerLibrary : new ComponentLibrary<Sequencer>();
     }
 
     /**
@@ -263,146 +244,37 @@ public class SequencingService {
     }
 
     /**
-     * Return the current state of this system.
-     * @return the current state
+     * {@inheritDoc}
      */
-    public State getState() {
-        return this.state;
-    }
-
-    /**
-     * Set the state of the system. This method does nothing if the desired state matches the current state.
-     * @param state the desired state
-     * @return this object for method chaining purposes
-     * @see #setState(String)
-     * @see #start()
-     * @see #pause()
-     * @see #shutdown()
-     */
-    public SequencingService setState( State state ) {
-        switch (state) {
-            case STARTED:
-                return start();
-            case PAUSED:
-                return pause();
-            case SHUTDOWN:
-                return shutdown();
+    @Override
+    protected void doStart( org.jboss.dna.services.ManagedService.State fromState ) {
+        super.doStart(fromState);
+        if (this.getSessionFactory() == null) {
+            throw new IllegalStateException("Unable to start the sequencing system without a session factory");
         }
-        return this;
-    }
-
-    /**
-     * Set the state of the system. This method does nothing if the desired state matches the current state.
-     * @param state the desired state in string form
-     * @return this object for method chaining purposes
-     * @throws IllegalArgumentException if the specified state string is null or does not match one of the predefined
-     * {@link State predefined enumerated values}
-     * @see #setState(org.jboss.dna.services.sequencers.SequencingService.State)
-     * @see #start()
-     * @see #pause()
-     * @see #shutdown()
-     */
-    public SequencingService setState( String state ) {
-        State newState = state == null ? null : State.valueOf(state.toUpperCase());
-        if (newState == null) {
-            throw new IllegalArgumentException("Invalid state parameter");
+        if (this.executorService == null) {
+            this.executorService = createDefaultExecutorService();
         }
-        return setState(newState);
+        assert this.executorService != null;
+        assert this.sequencerSelector != null;
+        assert this.nodeFilter != null;
+        assert this.sequencerLibrary != null;
     }
 
     /**
-     * Start monitoring and sequence the events. This method can be called multiple times, including after the system is
-     * {@link #pause() paused}. However, once the system is {@link #shutdown() shutdown}, it cannot be started or paused.
-     * @return this object for method chaining purposes
-     * @throws IllegalStateException if called when the system has been {@link #shutdown() shutdown}.
-     * @see #pause()
-     * @see #shutdown()
-     * @see #isStarted()
+     * {@inheritDoc}
      */
-    public synchronized SequencingService start() {
-        if (this.state != State.STARTED) {
-            if (this.executorService == null) {
-                this.executorService = createDefaultExecutorService();
-            }
-            if (this.getSessionFactory() == null) {
-                throw new IllegalStateException("Unable to start the sequencing system without a session factory");
-            }
-            assert this.executorService != null;
-            assert this.sequencerSelector != null;
-            assert this.sequencerLibrary != null;
-            this.state = State.STARTED;
-        }
-        return this;
-    }
-
-    /**
-     * Temporarily stop monitoring and sequencing events. This method can be called multiple times, including after the system is
-     * {@link #start() started}. However, once the system is {@link #shutdown() shutdown}, it cannot be started or paused.
-     * @return this object for method chaining purposes
-     * @throws IllegalStateException if called when the system has been {@link #shutdown() shutdown}.
-     * @see #start()
-     * @see #shutdown()
-     * @see #isPaused()
-     */
-    public synchronized SequencingService pause() {
-        this.state = State.PAUSED;
-        return this;
-    }
-
-    /**
-     * Permanently stop monitoring and sequencing events. This method can be called multiple times, but only the first call has an
-     * effect. Once the system has been shutdown, it may not be {@link #start() restarted} or {@link #pause() paused}.
-     * @return this object for method chaining purposes
-     * @see #start()
-     * @see #pause()
-     * @see #isShutdown()
-     */
-    public synchronized SequencingService shutdown() {
+    @Override
+    protected void doShutdown( org.jboss.dna.services.ManagedService.State fromState ) {
+        super.doShutdown(fromState);
         if (this.executorService != null) {
             this.executorService.shutdown();
         }
-        this.state = State.SHUTDOWN;
-        return this;
-    }
-
-    /**
-     * Return whether this system has been started and is currently running.
-     * @return true if started and currently running, or false otherwise
-     * @see #start()
-     * @see #pause()
-     * @see #isPaused()
-     * @see #isShutdown()
-     */
-    public boolean isStarted() {
-        return this.state == State.STARTED;
-    }
-
-    /**
-     * Return whether this system is currently paused.
-     * @return true if currently paused, or false otherwise
-     * @see #pause()
-     * @see #start()
-     * @see #isStarted()
-     * @see #isShutdown()
-     */
-    public boolean isPaused() {
-        return this.state == State.PAUSED;
-    }
-
-    /**
-     * Return whether this system is stopped and unable to be restarted.
-     * @return true if currently shutdown, or false otherwise
-     * @see #shutdown()
-     * @see #isPaused()
-     * @see #isStarted()
-     */
-    public boolean isShutdown() {
-        return this.state == State.SHUTDOWN;
     }
 
     /**
      * Get the sequencing selector used by this system.
-     * @return sequencerSelector
+     * @return the sequencing selector
      */
     public Selector getSequencerSelector() {
         return this.sequencerSelector;
@@ -417,166 +289,37 @@ public class SequencingService {
     }
 
     /**
-     * Monitor the supplied workspace for events of the given type on any node at or under the supplied path.
-     * <p>
-     * Monitoring is accomplished by registering a listener on the workspace, so this monitoring only has access to the
-     * information that visible to the session created by the {@link #getSessionFactory() session factory} for the given
-     * repository and workspace name.
-     * </p>
-     * <p>
-     * The listener returned from this method is not managed by this SequencingService instance. If the listener is no longer
-     * needed, it simply must be {@link ObservationManager#removeEventListener(EventListener) removed} as a listener of the
-     * workspace and garbage collected. If this service is {@link #shutdown() shutdown} while there are still active listeners,
-     * those listeners will disconnect themselves from this service and the workspace with which they're registered when they
-     * attempt to forward the next events.
-     * </p>
-     * <p>
-     * The set of events that are monitored can be filtered by specifying restrictions based on characteristics of the node
-     * associated with the event. In the case of event types {@link Event#NODE_ADDED NODE_ADDED} and
-     * {@link Event#NODE_REMOVED NODE_REMOVED}, the node associated with an event is the node at (or formerly at) the path
-     * returned by {@link Event#getPath() Event.getPath()}. In the case of event types
-     * {@link Event#PROPERTY_ADDED PROPERTY_ADDED}, {@link Event#PROPERTY_REMOVED PROPERTY_REMOVED} and
-     * {@link Event#PROPERTY_CHANGED PROPERTY_CHANGED}, the node associated with an event is the parent node of the property at
-     * (or formerly at) the path returned by <code>Event.getPath</code>:
-     * <ul>
-     * <li> <code>absolutePath</code>, <code>isDeep</code>: Only events whose associated node is at
-     * <code>absolutePath</code> (or within its subtree, if <code>isDeep</code> is <code>true</code>) will be received. It
-     * is permissible to register a listener for a path where no node currently exists. </li>
-     * <li> <code>uuids</code>: Only events whose associated node has one of the UUIDs in this list will be received. If his
-     * parameter is <code>null</code> then no UUID-related restriction is placed on events received. </li>
-     * <li> <code>nodeTypeNames</code>: Only events whose associated node has one of the node types (or a subtype of one of the
-     * node types) in this list will be received. If this parameter is <code>null</code> then no node type-related restriction
-     * is placed on events received. </li>
-     * </ul>
-     * The restrictions are "ANDed" together. In other words, for a particular node to be "listened to" it must meet all the
-     * restrictions.
-     * </p>
-     * <p>
-     * Additionally, if <code>noLocal</code> is <code>true</code>, then events generated by the session through which the
-     * listener was registered are ignored. Otherwise, they are not ignored.
-     * </p>
-     * <p>
-     * The filters of an already-registered {@link WorkspaceListener} can be changed at runtime by changing the attributes and
-     * {@link WorkspaceListener#reregister() registering}.
-     * </p>
-     * @param repositoryWorkspaceName the name to be used with the session factory to obtain a session to the repository and
-     * workspace that is to be monitored
-     * @param absolutePath the absolute path of the node at or below which changes are to be monitored; may be null if all nodes
-     * in the workspace are to be monitored
-     * @param eventTypes the bitmask of the {@link Event} types that are to be monitored
-     * @param isDeep true if events below the node given by the <code>absolutePath</code> or by the <code>uuids</code> are to
-     * be processed, or false if only the events at the node
-     * @param uuids array of UUIDs of nodes that are to be monitored; may be null or empty if the UUIDs are not known
-     * @param nodeTypeNames array of node type names that are to be monitored; may be null or empty if the monitoring has no node
-     * type restrictions
-     * @param noLocal true if the events originating in the supplied workspace are to be ignored, or false if they are also to be
-     * processed.
-     * @return the listener that was created and registered to perform the monitoring
-     * @throws RepositoryException if there is a problem registering the listener
+     * Get the node filter used by this system.
+     * @return the node filter
      */
-    public WorkspaceListener monitor( String repositoryWorkspaceName, String absolutePath, int eventTypes, boolean isDeep, String[] uuids, String[] nodeTypeNames, boolean noLocal )
-        throws RepositoryException {
-        WorkspaceListener listener = new WorkspaceListener(repositoryWorkspaceName, eventTypes, absolutePath, isDeep, uuids, nodeTypeNames, noLocal);
-        listener.register();
-        return listener;
+    public NodeFilter getNodeFilter() {
+        return this.nodeFilter;
     }
 
     /**
-     * Monitor the supplied workspace for {@link WorkspaceListener#DEFAULT_EVENT_TYPES default event types} on any node at or
-     * under the supplied path.
-     * <p>
-     * Monitoring is accomplished by registering a listener on the workspace, so this monitoring only has access to the
-     * information that visible to the session created by the {@link #getSessionFactory() session factory} for the given
-     * repository and workspace name.
-     * </p>
-     * <p>
-     * The listener returned from this method is not managed by this SequencingService instance. If the listener is no longer
-     * needed, it simply must be {@link ObservationManager#removeEventListener(EventListener) removed} as a listener of the
-     * workspace and garbage collected.
-     * </p>
-     * @param repositoryWorkspaceName the name to be used with the session factory to obtain a session to the repository and
-     * workspace that is to be monitored
-     * @param absolutePath the absolute path of the node at or below which changes are to be monitored; may be null if all nodes
-     * in the workspace are to be monitored
-     * @param nodeTypeNames the names of the node types that are to be monitored; may be null or empty if the monitoring has no
-     * node type restrictions
-     * @return the listener that was created and registered to perform the monitoring
-     * @throws RepositoryException if there is a problem registering the listener
+     * Set the filter that checks which nodes are to be sequenced, or null if the {@link #DEFAULT_NODE_FILTER default node filter}
+     * should be used.
+     * @param nodeFilter the new node filter
      */
-    public WorkspaceListener monitor( String repositoryWorkspaceName, String absolutePath, String... nodeTypeNames ) throws RepositoryException {
-        return monitor(repositoryWorkspaceName, absolutePath, WorkspaceListener.DEFAULT_EVENT_TYPES, WorkspaceListener.DEFAULT_IS_DEEP, null, nodeTypeNames, WorkspaceListener.DEFAULT_NO_LOCAL);
+    public void setNodeFilter( NodeFilter nodeFilter ) {
+        this.nodeFilter = nodeFilter != null ? nodeFilter : DEFAULT_NODE_FILTER;
     }
 
     /**
-     * Monitor the supplied workspace for the supplied event types on any node in the workspace.
-     * <p>
-     * Monitoring is accomplished by registering a listener on the workspace, so this monitoring only has access to the
-     * information that visible to the session created by the {@link #getSessionFactory() session factory} for the given
-     * repository and workspace name.
-     * </p>
-     * <p>
-     * The listener returned from this method is not managed by this SequencingService instance. If the listener is no longer
-     * needed, it simply must be {@link ObservationManager#removeEventListener(EventListener) removed} as a listener of the
-     * workspace and garbage collected.
-     * </p>
-     * @param repositoryWorkspaceName the name to be used with the session factory to obtain a session to the repository and
-     * workspace that is to be monitored
-     * @param eventTypes the bitmask of the {@link Event} types that are to be monitored
-     * @param nodeTypeNames the names of the node types that are to be monitored; may be null or empty if the monitoring has no
-     * node type restrictions
-     * @return the listener that was created and registered to perform the monitoring
-     * @throws RepositoryException if there is a problem registering the listener
+     * {@inheritDoc}
      */
-    public WorkspaceListener monitor( String repositoryWorkspaceName, int eventTypes, String... nodeTypeNames ) throws RepositoryException {
-        return monitor(repositoryWorkspaceName, WorkspaceListener.DEFAULT_ABSOLUTE_PATH, eventTypes, WorkspaceListener.DEFAULT_IS_DEEP, null, nodeTypeNames, WorkspaceListener.DEFAULT_NO_LOCAL);
-    }
+    public void onNodeChanges( Iterable<NodeChange> changes ) {
+        NodeFilter filter = this.getNodeFilter();
+        for (final NodeChange changedNode : changes) {
+            // Only care about new nodes or nodes that have new/changed properies ...
+            if (filter.accept(changedNode)) {
+                this.executorService.execute(new Runnable() {
 
-    /**
-     * From section 2.8.8 of the JSR-170 specification:
-     * <p>
-     * On each persistent change, those listeners that are entitled to receive one or more events will have their onEvent method
-     * called and be passed an EventIterator. The EventIterator will contain the event bundle reflecting the persistent changes
-     * made but excluding those to which that particular listener is not entitled, according to the listeners access permissions
-     * and filters.
-     * </p>
-     * @param events
-     * @param listener
-     */
-    protected void enqueueEvents( EventIterator eventIterator, WorkspaceListener listener ) {
-        if (eventIterator == null) return;
-        if (this.state != State.STARTED) {
-            int count = 0;
-            // HACK: getSize() appears to return -1, so we have to loop ...
-            // count = eventIterator.getSize();
-            while (eventIterator.hasNext()) {
-                eventIterator.next();
-                ++count;
+                    public void run() {
+                        processChangedNode(changedNode);
+                    }
+                });
             }
-            this.statistics.recordIgnoredEventSet(count);
-            return;
-        }
-        assert this.executorService != null;
-        final String repositoryWorkspaceName = listener.getRepositoryWorkspaceName();
-
-        // Accumulate the list of changed nodes. Any event which has a path to a node that has already been seen in this
-        // transaction or event list (according to the ChangedNode.hashCode() and ChangedNode.equals() methods) will not be added
-        // to this set.
-        int eventCount = 0;
-        Set<ChangedNode> nodesToProcess = new LinkedHashSet<ChangedNode>();
-        while (eventIterator.hasNext()) {
-            Event event = eventIterator.nextEvent();
-            try {
-                final String absolutePath = event.getPath();
-                nodesToProcess.add(new ChangedNode(repositoryWorkspaceName, absolutePath));
-                ++eventCount;
-            } catch (Throwable t) {
-                this.problemLog.error(repositoryWorkspaceName, event, t);
-            }
-        }
-        this.statistics.recordEventSet(eventCount);
-
-        for (ChangedNode changedNode : nodesToProcess) {
-            this.executorService.execute(changedNode);
         }
     }
 
@@ -585,7 +328,7 @@ public class SequencingService {
      * when it performs it's work on the enqueued {@link ChangedNode ChangedNode runnable objects}.
      * @param node the node to be processed.
      */
-    protected void processChangedNode( ChangedNode changedNode ) {
+    protected void processChangedNode( NodeChange changedNode ) {
         try {
             // Create a session that we'll use for all sequencing ...
             final Session session = this.getSessionFactory().createSession(changedNode.getRepositoryWorkspaceName());
@@ -596,7 +339,7 @@ public class SequencingService {
                 Node node = session.getRootNode().getNode(relPath);
 
                 // Figure out which sequencers should run ...
-                List<Sequencer> sequencers = this.sequencerLibrary.getSequencers();
+                List<Sequencer> sequencers = this.sequencerLibrary.getInstances();
                 sequencers = this.sequencerSelector.selectSequencers(sequencers, node);
                 // Run each of those sequencers ...
                 if (sequencers.isEmpty()) {
@@ -645,253 +388,14 @@ public class SequencingService {
     }
 
     /**
-     * An enqueued notification that a node has changed.
-     * @author Randall Hauch
-     */
-    @Immutable
-    public class ChangedNode implements Runnable {
-
-        private final String repositoryWorkspaceName;
-        private final String absolutePath;
-        private final int hc;
-
-        protected ChangedNode( String repositoryWorkspaceName, String absolutePath ) {
-            assert repositoryWorkspaceName != null;
-            assert absolutePath != null;
-            this.repositoryWorkspaceName = repositoryWorkspaceName;
-            this.absolutePath = absolutePath.trim();
-            this.hc = HashCodeUtil.computeHash(this.repositoryWorkspaceName, this.absolutePath);
-        }
-
-        /**
-         * @return absolutePath
-         */
-        public String getAbsolutePath() {
-            return this.absolutePath;
-        }
-
-        /**
-         * @return repositoryWorkspaceName
-         */
-        public String getRepositoryWorkspaceName() {
-            return this.repositoryWorkspaceName;
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public int hashCode() {
-            return this.hc;
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public boolean equals( Object obj ) {
-            if (obj == this) return true;
-            if (obj instanceof ChangedNode) {
-                ChangedNode that = (ChangedNode)obj;
-                if (this.hc != that.hc) return false;
-                if (!this.repositoryWorkspaceName.equals(that.repositoryWorkspaceName)) return false;
-                if (!this.absolutePath.equals(that.absolutePath)) return false;
-                return true;
-            }
-            return false;
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        public void run() {
-            processChangedNode(this);
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public String toString() {
-            return this.repositoryWorkspaceName + "=>" + this.absolutePath;
-        }
-    }
-
-    /**
-     * Implementation of the {@link EventListener JCR EventListener} interface, returned by the sequencing system.
-     * @author Randall Hauch
-     */
-    @ThreadSafe
-    public class WorkspaceListener implements EventListener {
-
-        public static final boolean DEFAULT_IS_DEEP = true;
-        public static final boolean DEFAULT_NO_LOCAL = false;
-        public static final int DEFAULT_EVENT_TYPES = Event.NODE_ADDED | /* Event.NODE_REMOVED | */Event.PROPERTY_ADDED | Event.PROPERTY_CHANGED /*
-                                                                                                                                                     * |
-                                                                                                                                                     * Event.PROPERTY_REMOVED
-                                                                                                                                                     */;
-        public static final String DEFAULT_ABSOLUTE_PATH = "/";
-
-        private final String repositoryWorkspaceName;
-        private final Set<String> uuids;
-        private final Set<String> nodeTypeNames;
-        private final int eventTypes;
-        private final String absolutePath;
-        private final boolean deep;
-        private final boolean noLocal;
-        @GuardedBy( "this" )
-        private transient Session session;
-
-        protected WorkspaceListener( String repositoryWorkspaceName, int eventTypes, String absPath, boolean isDeep, String[] uuids, String[] nodeTypeNames, boolean noLocal ) {
-            this.repositoryWorkspaceName = repositoryWorkspaceName;
-            this.eventTypes = eventTypes;
-            this.deep = isDeep;
-            this.noLocal = noLocal;
-            this.absolutePath = absPath != null && absPath.trim().length() != 0 ? absPath.trim() : null;
-            // Set the UUIDs ...
-            Set<String> newUuids = new HashSet<String>();
-            if (uuids != null) {
-                for (String uuid : uuids) {
-                    if (uuid != null && uuid.trim().length() != 0) newUuids.add(uuid.trim());
-                }
-            }
-            this.uuids = Collections.unmodifiableSet(newUuids);
-            // Set the node type names
-            Set<String> newNodeTypeNames = new HashSet<String>();
-            if (nodeTypeNames != null) {
-                for (String nodeTypeName : nodeTypeNames) {
-                    if (nodeTypeName != null && nodeTypeName.trim().length() != 0) newNodeTypeNames.add(nodeTypeName.trim());
-                }
-            }
-            this.nodeTypeNames = Collections.unmodifiableSet(newNodeTypeNames);
-        }
-
-        /**
-         * @return repositoryWorkspaceName
-         */
-        public String getRepositoryWorkspaceName() {
-            return this.repositoryWorkspaceName;
-        }
-
-        /**
-         * @return eventTypes
-         */
-        public int getEventTypes() {
-            return this.eventTypes;
-        }
-
-        /**
-         * @return absolutePath
-         */
-        public String getAbsolutePath() {
-            return this.absolutePath;
-        }
-
-        /**
-         * @return deep
-         */
-        public boolean isDeep() {
-            return this.deep;
-        }
-
-        /**
-         * @return noLocal
-         */
-        public boolean isNoLocal() {
-            return this.noLocal;
-        }
-
-        /**
-         * @return uuids
-         */
-        public Set<String> getUuids() {
-            return this.uuids;
-        }
-
-        /**
-         * @return nodeTypeNames
-         */
-        public Set<String> getNodeTypeNames() {
-            return this.nodeTypeNames;
-        }
-
-        /**
-         * @return sequencingSystem
-         */
-        public SequencingService getSequencingSystem() {
-            return SequencingService.this;
-        }
-
-        public synchronized boolean isRegistered() {
-            return this.session != null;
-        }
-
-        public synchronized WorkspaceListener register() throws UnsupportedRepositoryOperationException, RepositoryException {
-            if (this.isRegistered()) return this;
-            this.session = SequencingService.this.getSessionFactory().createSession(this.repositoryWorkspaceName);
-            String[] uuids = this.uuids.isEmpty() ? null : this.uuids.toArray(new String[this.uuids.size()]);
-            String[] nodeTypeNames = this.nodeTypeNames.isEmpty() ? null : this.nodeTypeNames.toArray(new String[this.nodeTypeNames.size()]);
-            this.session.getWorkspace().getObservationManager().addEventListener(this, eventTypes, absolutePath, deep, uuids, nodeTypeNames, noLocal);
-            return this;
-        }
-
-        public synchronized WorkspaceListener unregister() throws UnsupportedRepositoryOperationException, RepositoryException {
-            if (!this.isRegistered()) return this;
-            try {
-                this.session.getWorkspace().getObservationManager().removeEventListener(this);
-                this.session.logout();
-            } finally {
-                this.session = null;
-            }
-            return this;
-        }
-
-        public synchronized WorkspaceListener reregister() throws UnsupportedRepositoryOperationException, RepositoryException {
-            unregister();
-            register();
-            return this;
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        public void onEvent( EventIterator events ) {
-            if (events != null) {
-                if (SequencingService.this.isShutdown()) {
-                    // This sequencing system has been shutdown, so unregister this listener
-                    try {
-                        unregister();
-                    } catch (RepositoryException re) {
-                        String msg = "Error unregistering workspace listener after sequencing system has been shutdow.";
-                        Logger.getLogger(this.getClass()).debug(re, msg);
-                    }
-                } else {
-                    SequencingService.this.enqueueEvents(events, this);
-                }
-            }
-        }
-    }
-
-    /**
      * The statistics for the system. Each sequencing system has an instance of this class that is updated.
      * @author Randall Hauch
      */
     @ThreadSafe
     public class Statistics {
 
-        @GuardedBy( "lock" )
-        private long numberOfEventsIgnored;
-        @GuardedBy( "lock" )
-        private long numberOfEventsEnqueued;
-        @GuardedBy( "lock" )
-        private long numberOfEventSetsIgnored;
-        @GuardedBy( "lock" )
-        private long numberOfEventSetsEnqueued;
-        @GuardedBy( "lock" )
-        private long numberOfNodesSequenced;
-        @GuardedBy( "lock" )
-        private long numberOfNodesSkipped;
-        private final ReadWriteLock lock = new ReentrantReadWriteLock();
+        private final AtomicLong numberOfNodesSequenced = new AtomicLong(0);
+        private final AtomicLong numberOfNodesSkipped = new AtomicLong(0);
         private final AtomicLong startTime;
 
         protected Statistics() {
@@ -899,18 +403,9 @@ public class SequencingService {
         }
 
         public Statistics reset() {
-            try {
-                lock.writeLock().lock();
-                this.startTime.set(System.currentTimeMillis());
-                this.numberOfEventsIgnored = 0;
-                this.numberOfEventsEnqueued = 0;
-                this.numberOfEventSetsIgnored = 0;
-                this.numberOfEventSetsEnqueued = 0;
-                this.numberOfNodesSequenced = 0;
-                this.numberOfNodesSkipped = 0;
-            } finally {
-                lock.writeLock().unlock();
-            }
+            this.startTime.set(System.currentTimeMillis());
+            this.numberOfNodesSequenced.set(0);
+            this.numberOfNodesSkipped.set(0);
             return this;
         }
 
@@ -925,111 +420,22 @@ public class SequencingService {
          * @return the number of nodes that were sequenced
          */
         public long getNumberOfNodesSequenced() {
-            try {
-                lock.readLock().lock();
-                return this.numberOfNodesSequenced;
-            } finally {
-                lock.readLock().unlock();
-            }
+            return this.numberOfNodesSequenced.get();
         }
 
         /**
          * @return the number of nodes that were skipped because no sequencers applied
          */
         public long getNumberOfNodesSkipped() {
-            try {
-                lock.readLock().lock();
-                return this.numberOfNodesSkipped;
-            } finally {
-                lock.readLock().unlock();
-            }
-        }
-
-        /**
-         * @return the number of events that were ignored because the system was not running
-         */
-        public long getNumberOfEventsIgnored() {
-            try {
-                lock.readLock().lock();
-                return this.numberOfEventsIgnored;
-            } finally {
-                lock.readLock().unlock();
-            }
-        }
-
-        /**
-         * @return the number of events that were enqueued for processing
-         */
-        public long getNumberOfEventsEnqueued() {
-            try {
-                lock.readLock().lock();
-                return this.numberOfEventsEnqueued;
-            } finally {
-                lock.readLock().unlock();
-            }
-        }
-
-        /**
-         * @return the number of event sets (transactions) that were enqueued for processing
-         */
-        public long getNumberOfEventSetsEnqueued() {
-            try {
-                lock.readLock().lock();
-                return this.numberOfEventSetsEnqueued;
-            } finally {
-                lock.readLock().unlock();
-            }
-        }
-
-        /**
-         * @return the number of event sets (transactions) that were ignored because the system was not running
-         */
-        public long getNumberOfEventSetsIgnored() {
-            try {
-                lock.readLock().lock();
-                return this.numberOfEventSetsIgnored;
-            } finally {
-                lock.readLock().unlock();
-            }
+            return this.numberOfNodesSkipped.get();
         }
 
         protected void recordNodeSequenced() {
-            try {
-                lock.writeLock().lock();
-                ++this.numberOfNodesSequenced;
-            } finally {
-                lock.writeLock().unlock();
-            }
+            this.numberOfNodesSequenced.incrementAndGet();
         }
 
         protected void recordNodeSkipped() {
-            try {
-                lock.writeLock().lock();
-                ++this.numberOfNodesSkipped;
-            } finally {
-                lock.writeLock().unlock();
-            }
-        }
-
-        protected void recordEventSet( long eventsInSet ) {
-            try {
-                lock.writeLock().lock();
-                this.numberOfEventsEnqueued += eventsInSet;
-                ++this.numberOfEventSetsEnqueued;
-            } finally {
-                lock.writeLock().unlock();
-            }
-        }
-
-        protected void recordIgnoredEventSet( long eventsInSet ) {
-            try {
-                lock.writeLock().lock();
-                this.numberOfEventsIgnored += eventsInSet;
-                this.numberOfEventSetsIgnored += 1;
-                ++this.numberOfEventSetsEnqueued;
-            } finally {
-                lock.writeLock().unlock();
-            }
+            this.numberOfNodesSkipped.incrementAndGet();
         }
     }
 }

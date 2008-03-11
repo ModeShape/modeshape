@@ -20,7 +20,7 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.jboss.dna.services.util;
+package org.jboss.dna.services;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;

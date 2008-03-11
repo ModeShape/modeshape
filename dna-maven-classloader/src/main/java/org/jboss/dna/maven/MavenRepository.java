@@ -42,6 +42,7 @@ import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpression;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
+import org.jboss.dna.common.component.ClassLoaderFactory;
 import org.jboss.dna.common.util.ArgCheck;
 import org.jboss.dna.common.util.Logger;
 import org.jboss.dna.common.xml.SimpleNamespaceContext;
@@ -65,7 +66,7 @@ import org.xml.sax.SAXException;
  * </p>
  * @author Randall Hauch
  */
-public class MavenRepository {
+public class MavenRepository implements ClassLoaderFactory {
 
     private final MavenUrlProvider urlProvider;
     private final MavenClassLoaders classLoaders;
@@ -83,8 +84,9 @@ public class MavenRepository {
     /**
      * Get a class loader that has as its classpath the JARs for the libraries identified by the supplied IDs. This method always
      * returns a class loader, even when none of the specified libraries {@link #exists(MavenId) exist} in this repository.
-     * @param parent the parent class loader that will be consulted before any project class loaders; may be null if the system
-     * class loader should be used
+     * @param parent the parent class loader that will be consulted before any project class loaders; may be null if the
+     * {@link Thread#getContextClassLoader() current thread's context class loader} or the class loader that loaded this class
+     * should be used
      * @param mavenIds the IDs of the libraries in this Maven repository
      * @return the class loader
      * @see #exists(MavenId)
@@ -95,6 +97,38 @@ public class MavenRepository {
         ArgCheck.isNotEmpty(mavenIds, "mavenIds");
         ArgCheck.containsNoNulls(mavenIds, "mavenIds");
         return this.classLoaders.getClassLoader(parent, mavenIds);
+    }
+
+    /**
+     * Get a class loader that has as its classpath the JARs for the libraries identified by the supplied IDs. This method always
+     * returns a class loader, even when none of the specified libraries {@link #exists(MavenId) exist} in this repository.
+     * @param coordinates the IDs of the libraries in this Maven repository
+     * @return the class loader
+     * @throws IllegalArgumentException if no coordinates are passed in or if any of the coordinate references is null
+     */
+    public ClassLoader getClassLoader( String... coordinates ) {
+        return getClassLoader(null, coordinates);
+    }
+
+    /**
+     * Get a class loader that has as its classpath the JARs for the libraries identified by the supplied IDs. This method always
+     * returns a class loader, even when none of the specified libraries {@link #exists(MavenId) exist} in this repository.
+     * @param parent the parent class loader that will be consulted before any project class loaders; may be null if the
+     * {@link Thread#getContextClassLoader() current thread's context class loader} or the class loader that loaded this class
+     * should be used
+     * @param coordinates the IDs of the libraries in this Maven repository
+     * @return the class loader
+     * @throws IllegalArgumentException if no coordinates are passed in or if any of the coordinate references is null
+     */
+    public ClassLoader getClassLoader( ClassLoader parent, String... coordinates ) {
+        ArgCheck.isNotEmpty(coordinates, "coordinates");
+        ArgCheck.containsNoNulls(coordinates, "coordinates");
+        MavenId[] mavenIds = new MavenId[coordinates.length];
+        for (int i = 0; i < coordinates.length; i++) {
+            String coordinate = coordinates[i];
+            mavenIds[i] = new MavenId(coordinate);
+        }
+        return getClassLoader(parent, mavenIds); // parent may be null
     }
 
     /**

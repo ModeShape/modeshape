@@ -98,6 +98,8 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
     }
 
     public ProjectClassLoader getClassLoader( ClassLoader parent, MavenId... mavenIds ) {
+        if (parent == null) parent = Thread.currentThread().getContextClassLoader();
+        if (parent == null) parent = this.getClass().getClassLoader();
         ProjectClassLoader result = new ProjectClassLoader(parent);
         // Create a dependencies list for the desired projects ...
         List<MavenDependency> dependencies = new ArrayList<MavenDependency>();

@@ -24,8 +24,9 @@ package org.jboss.dna.services.sequencers;
 import javax.jcr.Node;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
-import org.jboss.dna.common.monitor.ProgressMonitor;
 import net.jcip.annotations.ThreadSafe;
+import org.jboss.dna.common.component.Component;
+import org.jboss.dna.common.monitor.ProgressMonitor;
 
 /**
  * The interface for a DNA sequencer, which sequences nodes and their content to extract additional information from the
@@ -36,30 +37,7 @@ import net.jcip.annotations.ThreadSafe;
  * @author Randall Hauch
  */
 @ThreadSafe
-public interface Sequencer {
-
-    /**
-     * This method allows the implementation to initialize and configure itself using the supplied {@link SequencerConfig}
-     * information, and is called prior to any calls to {@link #execute(Node, ProgressMonitor) execute}. When this method is
-     * called, the implementation must maintain a reference to the supplied configuration (which should then be returned in
-     * {@link #getConfiguration()}.
-     * <p>
-     * Sequencers are always configured before they are executed, and {@link #execute(Node, ProgressMonitor) execute} is called on
-     * the return value of the <code>configure</code> method. This provide maximims flexibility: most implementations can simply
-     * return <code>this</code>, but more complicated implementations can actually return a different {@link Sequencer}
-     * implementation based upon the configuration information. Thus, this <code>configure</code> method is analogous to a
-     * factory method, but no separate factory interface is required.
-     * </p>
-     * <p>
-     * @param sequencerConfiguration the configuration for the sequencer
-     */
-    void setConfiguration( SequencerConfig sequencerConfiguration );
-
-    /**
-     * Return the configuration for this sequencer, as supplied to the last {@link #setConfiguration(SequencerConfig)} invocation.
-     * @return the configuration, or null if not yet configured
-     */
-    SequencerConfig getConfiguration();
+public interface Sequencer extends Component<SequencerConfig> {
 
     /**
      * Execute the sequencing operation on the supplied node, which has recently been created or changed. The implementation of

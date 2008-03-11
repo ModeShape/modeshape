@@ -204,7 +204,7 @@ public class MavenRepositoryTest extends AbstractJcrRepositoryTest {
 
     @Test( expected = IllegalArgumentException.class )
     public void shouldNotAllowZeroIdsWhenGettingClassLoader() {
-        maven.getClassLoader(parentLoader);
+        maven.getClassLoader(parentLoader, (MavenId[])null);
     }
 
     @Test( expected = IllegalArgumentException.class )

@@ -19,17 +19,27 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-
-package org.jboss.dna.services.util;
-
-import javax.jcr.RepositoryException;
-import javax.jcr.Session;
+package org.jboss.dna.common.component;
 
 /**
  * @author Randall Hauch
  */
-public interface SessionFactory {
+public class SampleComponentConfig extends ComponentConfig {
 
-    Session createSession( String name ) throws RepositoryException;
+    public SampleComponentConfig( String name, String description, String classname, String... classpath ) {
+        super(name, description, classname, classpath);
+    }
+
+    /**
+     * @param name
+     * @param description
+     * @param timestamp
+     * @param classname
+     * @param classpath
+     */
+    public SampleComponentConfig( String name, String description, long timestamp, String classname, String[] classpath ) {
+        super(name, description, timestamp, classname, classpath);
+
+    }
 
 }

@@ -21,49 +21,28 @@
  */
 package org.jboss.dna.services.sequencers;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.Set;
 import net.jcip.annotations.Immutable;
-import org.jboss.dna.common.util.ArgCheck;
-import org.jboss.dna.common.util.ClassUtil;
-import org.jboss.dna.common.util.StringUtil;
-import org.jboss.dna.maven.MavenId;
+import org.jboss.dna.common.component.ComponentConfig;
 
 /**
  * @author Randall Hauch
  */
 @Immutable
-public class SequencerConfig implements Comparable<SequencerConfig> {
+public class SequencerConfig extends ComponentConfig {
 
-    private final String name;
     private final Set<String> runRules;
-    private final String description;
-    private final String sequencerClassname;
-    private final List<MavenId> classpath;
-    private final long timestamp;
 
-    public SequencerConfig( String name, String description, String classname, MavenId[] classpath, String... runRules ) {
+    public SequencerConfig( String name, String description, String classname, String[] classpath, String... runRules ) {
         this(name, description, System.currentTimeMillis(), classname, classpath, runRules);
     }
 
-    public SequencerConfig( String name, String description, long timestamp, String classname, MavenId[] classpath, String... runRules ) {
-        ArgCheck.isNotEmpty(name, "name");
-        this.name = name;
-        this.description = description != null ? description.trim() : "";
-        this.sequencerClassname = classname;
-        this.classpath = buildClasspath(classpath);
+    public SequencerConfig( String name, String description, long timestamp, String classname, String[] classpath, String... runRules ) {
+        super(name, description, timestamp, classname, classpath);
         this.runRules = buildRunRuleSet(runRules);
-        this.timestamp = timestamp;
-        // Check the classname is a valid classname ...
-        if (!ClassUtil.isFullyQualifiedClassname(classname)) {
-            String msg = "The classname {1} specified for sequencer {2} is not a valid Java classname";
-            msg = StringUtil.createString(msg, classname, name);
-            throw new IllegalArgumentException(msg);
-        }
     }
 
     /* package */static Set<String> buildRunRuleSet( String... runRules ) {
@@ -77,67 +56,8 @@ public class SequencerConfig implements Comparable<SequencerConfig> {
         return Collections.unmodifiableSet(result);
     }
 
-    /* package */static List<MavenId> buildClasspath( MavenId... mavenIds ) {
-        List<MavenId> classpath = new ArrayList<MavenId>();
-        if (mavenIds != null && mavenIds.length != 0) {
-            for (MavenId mavenId : mavenIds) {
-                if (!classpath.contains(mavenId)) classpath.add(mavenId);
-            }
-        }
-        return Collections.unmodifiableList(classpath);
-    }
-
-    public String getName() {
-        return this.name;
-    }
-
-    public String getDescription() {
-        return this.description;
-    }
-
-    public String getSequencerClassname() {
-        return this.sequencerClassname;
-    }
-
-    public List<MavenId> getSequencerClasspath() {
-        return this.classpath;
-    }
-
-    public MavenId[] getSequencerClasspathArray() {
-        // Always return a copy to not care about modification of the array ...
-        List<MavenId> ids = getSequencerClasspath();
-        return ids.toArray(new MavenId[ids.size()]);
-    }
-
     public Collection<String> getRunRules() {
         return Collections.unmodifiableSet(this.runRules);
-    }
-
-    /**
-     * Get the system timestamp when this configuration object was created.
-     * @return timestamp
-     */
-    public long getTimestamp() {
-        return this.timestamp;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public int compareTo( SequencerConfig that ) {
-        if (that == this) return 0;
-        int diff = this.getName().compareToIgnoreCase(that.getName());
-        if (diff != 0) return diff;
-        diff = (int)(this.getTimestamp() - that.getTimestamp());
-        return diff;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public int hashCode() {
-        return this.getName().hashCode();
     }
 
     /**
@@ -155,21 +75,8 @@ public class SequencerConfig implements Comparable<SequencerConfig> {
         return false;
     }
 
-    /**
-     * Determine whether this configuration represents the same configuration as that supplied.
-     * @param that the other configuration to be compared with this
-     * @return true if this configuration and the supplied configuration
-     */
-    public boolean isSame( SequencerConfig that ) {
-        if (that == this) return true;
-        if (that == null) return false;
-        return this.getName().equalsIgnoreCase(that.getName());
-    }
-
     public boolean hasChanged( SequencerConfig that ) {
-        assert this.isSame(that);
-        if (!this.getSequencerClassname().equals(that.getSequencerClassname())) return true;
-        if (!this.getSequencerClasspath().equals(that.getSequencerClasspath())) return true;
+        if (super.hasChanged(that)) return true;
         if (!this.getRunRules().equals(that.getRunRules())) return true;
         return false;
     }

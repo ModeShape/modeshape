@@ -20,7 +20,7 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.jboss.dna.services.sequencers;
+package org.jboss.dna.common.component;
 
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
@@ -30,62 +30,60 @@ import org.junit.Test;
 /**
  * @author Randall Hauch
  */
-public class SequencerConfigTest {
+public class ComponentConfigTest {
 
-    private SequencerConfig configA;
-    private SequencerConfig configB;
-    private SequencerConfig configA2;
+    private ComponentConfig configA;
+    private ComponentConfig configB;
+    private ComponentConfig configA2;
     private String validName;
     private String validDescription;
     private String validClassname;
-    private String[] validRunRules;
-    private String[] validMavenIds;
+    private String[] validClasspath;
 
     @Before
     public void beforeEach() throws Exception {
         this.validName = "valid configuration name";
-        this.validDescription = "a sequencer";
-        this.validClassname = MockSequencerA.class.getName();
-        this.validRunRules = new String[] {"mime type is 'text/plain'"};
-        this.validMavenIds = new String[] {"com.acme:configA:1.0,com.acme:configB:1.0"};
-        this.configA = new SequencerConfig("configA", validDescription, MockSequencerA.class.getName(), validMavenIds, validRunRules);
-        this.configB = new SequencerConfig("configB", validDescription, MockSequencerB.class.getName(), validMavenIds, validRunRules);
-        this.configA2 = new SequencerConfig("conFigA", validDescription, MockSequencerA.class.getName(), validMavenIds, validRunRules);
+        this.validDescription = "a Component";
+        this.validClassname = "org.jboss.dna.acme.GenericComponent";
+        this.validClasspath = new String[] {"com.acme:configA:1.0,com.acme:configB:1.0"};
+        this.configA = new ComponentConfig("configA", validDescription, "org.jboss.dna.acme.GenericComponent", validClasspath);
+        this.configB = new ComponentConfig("configB", validDescription, "org.jboss.dna.acme.GenericComponentB", validClasspath);
+        this.configA2 = new ComponentConfig("conFigA", validDescription, "org.jboss.dna.acme.GenericComponent", validClasspath);
     }
 
     @Test( expected = IllegalArgumentException.class )
     public void shouldNotAllowNullNameInConstructor() {
-        new SequencerConfig(null, validDescription, validClassname, validMavenIds, validRunRules);
+        new ComponentConfig(null, validDescription, validClassname, validClasspath);
     }
 
     @Test( expected = IllegalArgumentException.class )
     public void shouldNotAllowEmptyNameInConstructor() {
-        new SequencerConfig("", validDescription, validClassname, validMavenIds, validRunRules);
+        new ComponentConfig("", validDescription, validClassname, validClasspath);
     }
 
     @Test( expected = IllegalArgumentException.class )
     public void shouldNotAllowBlankNameInConstructor() {
-        new SequencerConfig("   \t", validDescription, validClassname, validMavenIds, validRunRules);
+        new ComponentConfig("   \t", validDescription, validClassname, validClasspath);
     }
 
     @Test( expected = IllegalArgumentException.class )
     public void shouldNotAllowNullClassNameInConstructor() {
-        new SequencerConfig(validName, validDescription, null, validMavenIds, validRunRules);
+        new ComponentConfig(validName, validDescription, null, validClasspath);
     }
 
     @Test( expected = IllegalArgumentException.class )
     public void shouldNotAllowEmptyClassNameInConstructor() {
-        new SequencerConfig(validName, validDescription, "", validMavenIds, validRunRules);
+        new ComponentConfig(validName, validDescription, "", validClasspath);
     }
 
     @Test( expected = IllegalArgumentException.class )
     public void shouldNotAllowBlankClassNameInConstructor() {
-        new SequencerConfig(validName, validDescription, "   \t", validMavenIds, validRunRules);
+        new ComponentConfig(validName, validDescription, "   \t", validClasspath);
     }
 
     @Test( expected = IllegalArgumentException.class )
     public void shouldNotAllowInvalidClassNameInConstructor() {
-        new SequencerConfig(validName, validDescription, "12.this is not a valid classname", validMavenIds, validRunRules);
+        new ComponentConfig(validName, validDescription, "12.this is not a valid classname", validClasspath);
     }
 
     @Test
@@ -99,30 +97,14 @@ public class SequencerConfigTest {
     }
 
     @Test
-    public void shouldNotAddNullOrBlankRunRule() {
-        assertThat(SequencerConfig.buildRunRuleSet(null, "", "   ", validRunRules[0]).size(), is(1));
-    }
-
-    @Test
-    public void shouldNotAddSameRunRuleMoreThanOnce() {
-        assertThat(SequencerConfig.buildRunRuleSet(validRunRules[0], validRunRules[0], validRunRules[0]).size(), is(1));
-    }
-
-    @Test
-    public void shouldHaveNonNullRunRuleCollectionWhenThereAreNoRunRules() {
-        configA = new SequencerConfig("configA", validDescription, validClassname, validMavenIds);
-        assertThat(configA.getRunRules().size(), is(0));
-    }
-
-    @Test
     public void shouldSetClasspathWithValidMavenIds() {
-        assertThat(configA.getComponentClasspath().size(), is(validMavenIds.length));
-        assertThat(configA.getComponentClasspathArray(), is(validMavenIds));
+        assertThat(configA.getComponentClasspath().size(), is(validClasspath.length));
+        assertThat(configA.getComponentClasspathArray(), is(validClasspath));
     }
 
     @Test
-    public void shouldGetNonNullSequencerClasspathWhenEmpty() {
-        configA = new SequencerConfig("configA", validDescription, validClassname, null, validRunRules);
+    public void shouldGetNonNullComponentClasspathWhenEmpty() {
+        configA = new ComponentConfig("configA", validDescription, validClassname, (String[])null);
         assertThat(configA.getComponentClasspath().size(), is(0));
         assertThat(configA.getComponentClasspathArray().length, is(0));
     }
