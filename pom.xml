@@ -10,15 +10,15 @@
 	<description>JBoss DNA (aggregator)</description>
 	<modules>
 		<module>dna-common</module>
-        <module>dna-maven-classloader</module>
-        <module>dna-services</module>
-        <module>dna-integration-tests</module>
+		<module>dna-maven-classloader</module>
+		<module>dna-services</module>
+		<module>dna-integration-tests</module>
 	</modules>
 	<build>
 		<!-- This section defines the default plugin settings inherited by child projects. -->
 		<pluginManagement>
-    		<plugins>
-               <!-- Fixes how test resources of a project can be used in projects dependent on it  -->
+			<plugins>
+				<!-- Fixes how test resources of a project can be used in projects dependent on it  -->
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-jar-plugin</artifactId>
@@ -38,19 +38,18 @@
 					<showWarnings>false</showWarnings>
 				</configuration>
 			</plugin>
-            <plugin>
-                <artifactId>maven-surefire-plugin</artifactId>
-                <configuration>
-                  <includes>
-                    <include>**/*TestCase.java</include>
-                    <include>**/*Test.java</include>
-                  </includes>
-                  <excludes>
-                    <exclude>**/Abstract*TestCase.java</exclude>
-                  </excludes>
-                </configuration>
-            </plugin>
-      
+			<plugin>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<configuration>
+					<includes>
+						<include>**/*TestCase.java</include>
+						<include>**/*Test.java</include>
+					</includes>
+					<excludes>
+						<exclude>**/Abstract*TestCase.java</exclude>
+					</excludes>
+				</configuration>
+			</plugin>
 			<!-- 
            Build a test-jar for each project, so that src/test/* resources and classes can be used
            in other projects.  Also customize how the jar files are assembled.
@@ -101,26 +100,26 @@
 				<artifactId>dna-services</artifactId>
 				<version>0.1-SNAPSHOT</version>
 			</dependency>
-		    <!-- 
+			<!-- 
 		    Rules
 		    -->
-		    <dependency>
-		      <groupId>jsr94</groupId>
-		      <artifactId>jsr94</artifactId>
-		      <version>1.1</version>
-		    </dependency>
-		    <dependency>
-		      <groupId>org.drools</groupId>
-		      <artifactId>drools-jsr94</artifactId>
-		      <version>4.0.4</version>
-			  <scope>test</scope>
-		    </dependency>
-		    <dependency>
-		      <groupId>org.drools</groupId>
-		      <artifactId>drools-compiler</artifactId>
-		      <version>4.0.4</version>
-			  <scope>test</scope>
-		    </dependency>
+			<dependency>
+				<groupId>jsr94</groupId>
+				<artifactId>jsr94</artifactId>
+				<version>1.1</version>
+			</dependency>
+			<dependency>
+				<groupId>org.drools</groupId>
+				<artifactId>drools-jsr94</artifactId>
+				<version>4.0.4</version>
+				<scope>test</scope>
+			</dependency>
+			<dependency>
+				<groupId>org.drools</groupId>
+				<artifactId>drools-compiler</artifactId>
+				<version>4.0.4</version>
+				<scope>test</scope>
+			</dependency>
 			<!-- Testing (note the scope) -->
 			<dependency>
 				<groupId>junit</groupId>
@@ -129,17 +128,23 @@
 				<scope>test</scope>
 			</dependency>
 			<dependency>
+				<groupId>org.hamcrest</groupId>
+				<artifactId>hamcrest-library</artifactId>
+				<version>1.1</version>
+				<scope>test</scope>
+			</dependency>
+			<dependency>
 				<groupId>org.jmock</groupId>
 				<artifactId>jmock</artifactId>
 				<version>2.4.0</version>
 				<scope>test</scope>
 			</dependency>
-           <dependency>
-               <groupId>org.jmock</groupId>
-               <artifactId>jmock-junit4</artifactId>
-               <version>2.4.0</version>
-               <scope>test</scope>
-           </dependency>
+			<dependency>
+				<groupId>org.jmock</groupId>
+				<artifactId>jmock-junit4</artifactId>
+				<version>2.4.0</version>
+				<scope>test</scope>
+			</dependency>
 			<!-- Logging (require SLF4J API for compiling, but use Log4J and its SLF4J binding for testing) -->
 			<dependency>
 				<groupId>org.slf4j</groupId>
@@ -208,27 +213,27 @@
 					</exclusion>
 				</exclusions>
 			</dependency>
-		    <!-- Databases and JDBC Drivers -->
-		    <dependency>
-		      <groupId>mysql</groupId>
-		      <artifactId>mysql-connector-java</artifactId>
-		      <version>5.0.7</version>
-		      <scope>test</scope>
-		    </dependency>
-		    <dependency>
-		      <groupId>org.apache.derby</groupId>
-		      <artifactId>derby</artifactId>
-		      <version>10.2.1.6</version>
-		      <scope>test</scope>
-		    </dependency>
+			<!-- Databases and JDBC Drivers -->
+			<dependency>
+				<groupId>mysql</groupId>
+				<artifactId>mysql-connector-java</artifactId>
+				<version>5.0.7</version>
+				<scope>test</scope>
+			</dependency>
+			<dependency>
+				<groupId>org.apache.derby</groupId>
+				<artifactId>derby</artifactId>
+				<version>10.2.1.6</version>
+				<scope>test</scope>
+			</dependency>
 		</dependencies>
 	</dependencyManagement>
-    <reporting>
-      <plugins>
-        <plugin>
-          <groupId>org.apache.maven.plugins</groupId>
-          <artifactId>maven-surefire-report-plugin</artifactId>
-        </plugin>
-      </plugins>
-    </reporting>
+	<reporting>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-surefire-report-plugin</artifactId>
+			</plugin>
+		</plugins>
+	</reporting>
 </project>
