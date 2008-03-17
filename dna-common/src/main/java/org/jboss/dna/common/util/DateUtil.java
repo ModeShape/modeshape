@@ -31,7 +31,6 @@ import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import net.jcip.annotations.ThreadSafe;
-import org.jboss.dna.common.annotations.Issue;
 
 /**
  * Utilities for working with dates.
@@ -120,7 +119,6 @@ public class DateUtil {
      * @return the parsed date as a {@link Calendar} object.
      * @throws ParseException if there is a problem parsing the string
      */
-    @Issue( "DNA-20" )
     public static Calendar getCalendarFromStandardString( final String dateString ) throws ParseException {
         // Example: 2008-02-16T12:30:45.123-0600
         // Example: 2008-W06-6

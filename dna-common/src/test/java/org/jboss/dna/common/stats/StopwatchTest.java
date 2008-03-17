@@ -30,7 +30,6 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import java.util.concurrent.TimeUnit;
-import org.jboss.dna.common.annotations.Issue;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -109,7 +108,6 @@ public class StopwatchTest {
         assertEquals(3, stopwatch.getCount());
     }
 
-    @Issue( "DNA-20" )
     @Test
     public void shouldReportTotalTime() {
         for (int i = 0; i != 4; ++i) {
@@ -120,7 +118,6 @@ public class StopwatchTest {
         assertThat((double)stopwatch.getTotalDuration().getDuration(TimeUnit.MILLISECONDS), is(closeTo(40, 10)));
     }
 
-    @Issue( "DNA-20" )
     @Test
     public void shouldReportAverageTime() {
         for (int i = 0; i != 4; ++i) {
@@ -131,7 +128,6 @@ public class StopwatchTest {
         assertThat((double)stopwatch.getAverageDuration().getDuration(TimeUnit.MILLISECONDS), is(closeTo(10, 5)));
     }
 
-    @Issue( "DNA-20" )
     @Test
     public void shouldReportMinimumTime() {
         for (int i = 0; i != 3; ++i) {
@@ -142,7 +138,6 @@ public class StopwatchTest {
         assertThat((double)stopwatch.getMinimumDuration().getDuration(TimeUnit.MILLISECONDS), is(closeTo(10, 5)));
     }
 
-    @Issue( "DNA-20" )
     @Test
     public void shouldReportMaximumTime() {
         for (int i = 0; i != 3; ++i) {
