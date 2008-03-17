@@ -31,6 +31,7 @@ import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import net.jcip.annotations.ThreadSafe;
+import org.jboss.dna.common.annotations.Issue;
 
 /**
  * Utilities for working with dates.
@@ -119,6 +120,7 @@ public class DateUtil {
      * @return the parsed date as a {@link Calendar} object.
      * @throws ParseException if there is a problem parsing the string
      */
+    @Issue( "DNA-20" )
     public static Calendar getCalendarFromStandardString( final String dateString ) throws ParseException {
         // Example: 2008-02-16T12:30:45.123-0600
         // Example: 2008-W06-6
@@ -147,10 +149,12 @@ public class DateUtil {
         // 19 yes 123 1, 2 or 3 digit milliseconds as a number (000-999)
         // 20 yes -0600
         // 21 yes Z The letter 'Z' if in UTC
-        // 22 yes -06 1 or 2 digit time zone hour offset as a number (00-29)
-        // 23 yes 00 1 or 2 digit time zone minute offset as a number (00-59)
+        // 22 yes -06 1 or 2 digit time zone hour offset as a signed number
+        // 23 yes + the plus or minus in the time zone offset
+        // 24 yes 00 1 or 2 digit time zone hour offset as an unsigned number (00-29)
+        // 25 yes 00 1 or 2 digit time zone minute offset as a number (00-59)
         final String regex =
-            "^(\\d{4})-?(([wW]([012345]\\d)-?([1234567])?)|(([01]\\d)(-([0123]\\d))?)|([01]\\d)([0123]\\d)|([0123]\\d\\d))?(T([012]\\d):?([012345]\\d)(:?([012345]\\d)(.(\\d{1,3}))?)?((Z)|([+-]\\d{2}):?(\\d{2})?)?)?$";
+            "^(\\d{4})-?(([wW]([012345]\\d)-?([1234567])?)|(([01]\\d)(-([0123]\\d))?)|([01]\\d)([0123]\\d)|([0123]\\d\\d))?(T([012]\\d):?([012345]\\d)(:?([012345]\\d)(.(\\d{1,3}))?)?((Z)|(([+-])(\\d{2})):?(\\d{2})?)?)?$";
         final Pattern pattern = Pattern.compile(regex);
         final Matcher matcher = pattern.matcher(dateString);
         if (!matcher.matches()) {
@@ -168,8 +172,9 @@ public class DateUtil {
         String minutesOfHour = matcher.group(15);
         String seconds = matcher.group(17);
         String milliseconds = matcher.group(19);
-        String timeZoneHour = matcher.group(22);
-        String timeZoneMinutes = matcher.group(23);
+        String timeZoneSign = matcher.group(23);
+        String timeZoneHour = matcher.group(24);
+        String timeZoneMinutes = matcher.group(25);
         if (matcher.group(21) != null) {
             timeZoneHour = "00";
             timeZoneMinutes = "00";
@@ -197,6 +202,7 @@ public class DateUtil {
         if (milliseconds != null) calendar.set(Calendar.MILLISECOND, Integer.parseInt(milliseconds));
         if (timeZoneHour != null) {
             int zoneOffsetInMillis = Integer.parseInt(timeZoneHour) * 60 * 60 * 1000;
+            if ("-".equals(timeZoneSign)) zoneOffsetInMillis *= -1;
             if (timeZoneMinutes != null) {
                 int minuteOffsetInMillis = Integer.parseInt(timeZoneMinutes) * 60 * 1000;
                 if (zoneOffsetInMillis < 0) {

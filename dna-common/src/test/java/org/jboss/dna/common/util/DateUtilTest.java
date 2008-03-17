@@ -151,6 +151,23 @@ public class DateUtilTest {
     }
 
     @Test
+    public void shouldConvertStringToDateWithDelimitersAndPositiveHourAndMinuteTimeZone() throws Exception {
+        Calendar cal = DateUtil.getCalendarFromStandardString("2008-02-03T14:22:49.111+0622");
+        assertThat(cal.isSet(Calendar.ZONE_OFFSET), is(true));
+        assertThat(cal.isSet(Calendar.WEEK_OF_YEAR), is(false));
+        assertThat(cal.isSet(Calendar.DAY_OF_YEAR), is(false));
+        assertThat(cal.isSet(Calendar.DAY_OF_WEEK), is(false));
+        assertThat(cal.get(Calendar.YEAR), is(2008));
+        assertThat(cal.get(Calendar.MONTH), is(2 - 1)); // zero-based month!
+        assertThat(cal.get(Calendar.DAY_OF_MONTH), is(3));
+        assertThat(cal.get(Calendar.HOUR_OF_DAY), is(14));
+        assertThat(cal.get(Calendar.MINUTE), is(22));
+        assertThat(cal.get(Calendar.SECOND), is(49));
+        assertThat(cal.get(Calendar.MILLISECOND), is(111));
+        assertThat(cal.get(Calendar.ZONE_OFFSET), is((+6 * 60 + 22) * 60 * 1000)); // in milliseconds
+    }
+
+    @Test
     public void shouldConvertDateStringsToCalendar() throws Exception {
         assertThat(DateUtil.getCalendarFromStandardString("2008").get(Calendar.YEAR), is(2008));
         assertThat(DateUtil.getCalendarFromStandardString("2008-02").get(Calendar.MONTH), is(2 - 1));

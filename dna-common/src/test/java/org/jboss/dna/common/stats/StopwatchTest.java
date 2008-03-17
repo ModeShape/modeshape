@@ -21,36 +21,27 @@
  */
 package org.jboss.dna.common.stats;
 
-import static org.junit.Assert.*;
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.number.IsCloseTo.closeTo;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import java.util.concurrent.TimeUnit;
-import org.jboss.dna.common.stats.Stopwatch;
+import org.jboss.dna.common.annotations.Issue;
 import org.junit.Before;
 import org.junit.Test;
 
 public class StopwatchTest {
 
     private Stopwatch stopwatch;
-    private int totalPauseTimeInMillis;
+    private long totalPauseTimeInMillis;
 
     @Before
     public void beforeEach() throws Exception {
         this.stopwatch = new Stopwatch();
-    }
-
-    private double getTotalPauseTime( TimeUnit unit ) {
-        switch (unit) {
-            case MILLISECONDS:
-                return this.totalPauseTimeInMillis;
-            case MICROSECONDS:
-                return this.totalPauseTimeInMillis * 1000;
-            case NANOSECONDS:
-                return this.totalPauseTimeInMillis * 1000 * 1000;
-            case SECONDS:
-                double time = this.totalPauseTimeInMillis;
-                return time / 1000.0d;
-        }
-        fail("Unexpected time unit -- this should not be possible");
-        return 0;
     }
 
     private void pause( int numberOfMilliseconds ) {
@@ -118,6 +109,7 @@ public class StopwatchTest {
         assertEquals(3, stopwatch.getCount());
     }
 
+    @Issue( "DNA-20" )
     @Test
     public void shouldReportTotalTime() {
         for (int i = 0; i != 4; ++i) {
@@ -125,9 +117,10 @@ public class StopwatchTest {
             pause(10);
             stopwatch.stop();
         }
-        assertEquals(this.getTotalPauseTime(TimeUnit.MILLISECONDS), stopwatch.getTotalDuration().getDuration(TimeUnit.MILLISECONDS), 0.000001f);
+        assertThat((double)stopwatch.getTotalDuration().getDuration(TimeUnit.MILLISECONDS), is(closeTo(40, 10)));
     }
 
+    @Issue( "DNA-20" )
     @Test
     public void shouldReportAverageTime() {
         for (int i = 0; i != 4; ++i) {
@@ -135,9 +128,10 @@ public class StopwatchTest {
             pause(10);
             stopwatch.stop();
         }
-        assertEquals(10, stopwatch.getAverageDuration().getDuration(TimeUnit.MILLISECONDS));
+        assertThat((double)stopwatch.getAverageDuration().getDuration(TimeUnit.MILLISECONDS), is(closeTo(10, 5)));
     }
 
+    @Issue( "DNA-20" )
     @Test
     public void shouldReportMinimumTime() {
         for (int i = 0; i != 3; ++i) {
@@ -145,9 +139,10 @@ public class StopwatchTest {
             pause(10 * (i + 1));
             stopwatch.stop();
         }
-        assertEquals(10, stopwatch.getMinimumDuration().getDuration(TimeUnit.MILLISECONDS));
+        assertThat((double)stopwatch.getMinimumDuration().getDuration(TimeUnit.MILLISECONDS), is(closeTo(10, 5)));
     }
 
+    @Issue( "DNA-20" )
     @Test
     public void shouldReportMaximumTime() {
         for (int i = 0; i != 3; ++i) {
@@ -155,7 +150,7 @@ public class StopwatchTest {
             pause(10 * (i + 1));
             stopwatch.stop();
         }
-        assertEquals(30, stopwatch.getMaximumDuration().getDuration(TimeUnit.MILLISECONDS));
+        assertThat((double)stopwatch.getMaximumDuration().getDuration(TimeUnit.MILLISECONDS), is(closeTo(30, 5)));
     }
 
     @Test
