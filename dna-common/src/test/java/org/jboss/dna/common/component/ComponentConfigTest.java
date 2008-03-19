@@ -88,12 +88,12 @@ public class ComponentConfigTest {
 
     @Test
     public void shouldConsiderSameIfNamesAreEqualIgnoringCase() {
-        assertThat(configA.isSame(configA2), is(true));
+        assertThat(configA.equals(configA2), is(true));
     }
 
     @Test
     public void shouldConsiderNotSameIfNamesAreNotEqualIgnoringCase() {
-        assertThat(configA.isSame(configB), is(false));
+        assertThat(configA.equals(configB), is(false));
     }
 
     @Test

@@ -27,6 +27,7 @@ import javax.jcr.Session;
 import net.jcip.annotations.ThreadSafe;
 import org.jboss.dna.common.component.Component;
 import org.jboss.dna.common.monitor.ProgressMonitor;
+import org.jboss.dna.services.ExecutionContext;
 
 /**
  * The interface for a DNA sequencer, which sequences nodes and their content to extract additional information from the
@@ -43,26 +44,28 @@ public interface Sequencer extends Component<SequencerConfig> {
      * Execute the sequencing operation on the supplied node, which has recently been created or changed. The implementation of
      * this method is responsible for {@link Session#save() saving} any changes made by this sequencer to the repository content.
      * <p>
-     * This operation should report progress to the supplied {@link ProgressMonitor}. This includes the following:
-     * <ol>
-     * <li>Call {@link ProgressMonitor#beginTask(String, double)} at the beginning of the operation, supplying a useful message
-     * describing the operation and a total for the amount of work that will be done by this operation.</li>
-     * <li>Report {@link ProgressMonitor#worked(double) work} as work progresses and/or create a
-     * {@link ProgressMonitor#createSubtask(double) subtask} and use the ProgressMonitor for the subtask.</li>
-     * <li>When finished (whether successfully or not), this operation must call {@link ProgressMonitor#done()}.</li>
-     * </ol>
-     * The units of work used in these operation is completely up to the implementation.
+     * This operation should report progress to the supplied {@link ProgressMonitor}. At the beginning of the operation, call
+     * {@link ProgressMonitor#beginTask(String, double)} with a meaningful message describing the operation and a total for the
+     * amount of work that will be done by this sequencer. Then perform the sequencing work, periodically reporting work by
+     * specifying the {@link ProgressMonitor#worked(double) amount of work} that has was just completed or by
+     * {@link ProgressMonitor#createSubtask(double) creating a subtask} and reporting work against that subtask monitor.
      * </p>
      * <p>
-     * In addition to reporting progress, this operation should also frequently check whether some other caller has requested that
-     * the operation be cancelled by calling the {@link ProgressMonitor#isCancelled()} method. If this method returns true, this
-     * operation should respect the request by aborting all activities and closing all opened resources.
+     * The implementation should also periodically check whether the operation has been
+     * {@link ProgressMonitor#isCancelled() cancelled}. If this method returns true, the implementation should abort all work as
+     * soon as possible and close any resources that were acquired or opened.
      * </p>
-     * @param node the node that has recently been created or changed; never null
+     * <p>
+     * Finally, the implementation should call {@link ProgressMonitor#done()} when the operation has finished.
+     * </p>
+     * @param input the node that has recently been created or changed; never null
+     * @param output the node at which the sequencing content should be placed; never null, but possible the same as
+     * <code>input</code>
+     * @param context the context in which this sequencer is executing; never null
      * @param progress the progress monitor that should be kept updated with the sequencer's progress and that should be
      * frequently consulted as to whether this operation has been {@link ProgressMonitor#isCancelled() cancelled}.
      * @throws RepositoryException
      */
-    void execute( Node node, ProgressMonitor progress ) throws RepositoryException;
+    void execute( Node input, Node output, ExecutionContext context, ProgressMonitor progress ) throws RepositoryException;
 
 }

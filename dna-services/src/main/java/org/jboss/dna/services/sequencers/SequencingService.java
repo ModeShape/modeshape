@@ -21,9 +21,12 @@
  */
 package org.jboss.dna.services.sequencers;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import javax.jcr.Node;
 import javax.jcr.Repository;
@@ -31,12 +34,15 @@ import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.observation.Event;
 import net.jcip.annotations.ThreadSafe;
+import org.jboss.dna.common.component.ClassLoaderFactory;
 import org.jboss.dna.common.component.ComponentLibrary;
+import org.jboss.dna.common.component.StandardClassLoaderFactory;
 import org.jboss.dna.common.monitor.LoggingProgressMonitor;
 import org.jboss.dna.common.monitor.ProgressMonitor;
 import org.jboss.dna.common.monitor.SimpleProgressMonitor;
 import org.jboss.dna.common.util.Logger;
 import org.jboss.dna.common.util.StringUtil;
+import org.jboss.dna.services.ExecutionContext;
 import org.jboss.dna.services.ManagedService;
 import org.jboss.dna.services.SessionFactory;
 import org.jboss.dna.services.observation.NodeChange;
@@ -113,8 +119,15 @@ public class SequencingService extends ManagedService implements NodeChangeListe
      */
     public static final NodeFilter DEFAULT_NODE_FILTER = new DefaultNodeFilter();
 
+    /**
+     * Class loader factory instance that always returns the
+     * {@link Thread#getContextClassLoader() current thread's context class loader} (if not null) or component library's class
+     * loader.
+     */
+    protected static final ClassLoaderFactory DEFAULT_CLASSLOADER_FACTORY = new StandardClassLoaderFactory(SequencingService.class.getClassLoader());
+
     private SessionFactory sessionFactory;
-    private ComponentLibrary<Sequencer> sequencerLibrary = new ComponentLibrary<Sequencer>();
+    private ComponentLibrary<Sequencer, SequencerConfig> sequencerLibrary = new ComponentLibrary<Sequencer, SequencerConfig>();
     private Selector sequencerSelector = DEFAULT_SEQUENCER_SELECTOR;
     private NodeFilter nodeFilter = DEFAULT_NODE_FILTER;
     private ExecutorService executorService;
@@ -127,6 +140,7 @@ public class SequencingService extends ManagedService implements NodeChangeListe
      */
     public SequencingService() {
         super(State.PAUSED);
+        this.sequencerLibrary.setClassLoaderFactory(DEFAULT_CLASSLOADER_FACTORY);
     }
 
     /**
@@ -146,18 +160,65 @@ public class SequencingService extends ManagedService implements NodeChangeListe
     }
 
     /**
-     * Get the library that is managing the {@link Sequencer sequencer} instances.
-     * @return the sequencer library
+     * Get the class loader factory that should be used to load sequencers. By default, this service uses a factory that will
+     * return either the {@link Thread#getContextClassLoader() current thread's context class loader} (if not null) or the class
+     * loader that loaded this class.
+     * @return the class loader factory; never null
+     * @see #setClassLoaderFactory(ClassLoaderFactory)
      */
-    public ComponentLibrary<Sequencer> getSequencerLibrary() {
-        return this.sequencerLibrary;
+    public ClassLoaderFactory getClassLoaderFactory() {
+        return this.sequencerLibrary.getClassLoaderFactory();
     }
 
     /**
-     * @param sequencerLibrary Sets sequencerLibrary to the specified value.
+     * Set the Maven Repository that should be used to load the sequencer classes. By default, this service uses a class loader
+     * factory that will return either the {@link Thread#getContextClassLoader() current thread's context class loader} (if not
+     * null) or the class loader that loaded this class.
+     * @param classLoaderFactory the class loader factory reference, or null if the default class loader factory should be used.
+     * @see #getClassLoaderFactory()
      */
-    public void setSequencerLibrary( ComponentLibrary<Sequencer> sequencerLibrary ) {
-        this.sequencerLibrary = sequencerLibrary != null ? sequencerLibrary : new ComponentLibrary<Sequencer>();
+    public void setClassLoaderFactory( ClassLoaderFactory classLoaderFactory ) {
+        this.sequencerLibrary.setClassLoaderFactory(classLoaderFactory != null ? classLoaderFactory : DEFAULT_CLASSLOADER_FACTORY);
+    }
+
+    /**
+     * Add the configuration for a sequencer, or update any existing one that represents the
+     * {@link SequencerConfig#equals(Object) same configuration}
+     * @param config the new configuration
+     * @return true if the sequencer was added, or false if there already was an existing and
+     * {@link SequencerConfig#hasChanged(SequencerConfig) unchanged} sequencer configuration
+     * @throws IllegalArgumentException if <code>config</code> is null
+     * @see #updateSequencer(SequencerConfig)
+     * @see #removeSequencer(SequencerConfig)
+     */
+    public boolean addSequencer( SequencerConfig config ) {
+        return this.sequencerLibrary.add(config);
+    }
+
+    /**
+     * Update the configuration for a sequencer, or add it if there is no
+     * {@link SequencerConfig#equals(Object) matching configuration}.
+     * @param config the updated (or new) configuration
+     * @return true if the sequencer was updated, or false if there already was an existing and
+     * {@link SequencerConfig#hasChanged(SequencerConfig) unchanged} sequencer configuration
+     * @throws IllegalArgumentException if <code>config</code> is null
+     * @see #addSequencer(SequencerConfig)
+     * @see #removeSequencer(SequencerConfig)
+     */
+    public boolean updateSequencer( SequencerConfig config ) {
+        return this.sequencerLibrary.update(config);
+    }
+
+    /**
+     * Remove the configuration for a sequencer.
+     * @param config the configuration to be removed
+     * @return true if the sequencer was removed, or false if there was no existing sequencer
+     * @throws IllegalArgumentException if <code>config</code> is null
+     * @see #addSequencer(SequencerConfig)
+     * @see #updateSequencer(SequencerConfig)
+     */
+    public boolean removeSequencer( SequencerConfig config ) {
+        return this.sequencerLibrary.remove(config);
     }
 
     /**
@@ -354,21 +415,33 @@ public class SequencingService extends ManagedService implements NodeChangeListe
                         progressMonitor = new LoggingProgressMonitor(progressMonitor, this.logger, Logger.Level.TRACE);
                     }
                     try {
+                        progressMonitor.beginTask(activityName, sequencers.size());
                         for (Sequencer sequencer : sequencers) {
-                            // final String sequencerClassname = sequencer.getClass().getName();
                             final SequencerConfig config = sequencer.getConfiguration();
                             final String sequencerName = config != null ? config.getName() : sequencer.getClass().getName();
 
+                            // Create a new execution context for each sequencer
+                            final Context executionContext = new Context();
                             final ProgressMonitor sequenceMonitor = progressMonitor.createSubtask(1);
-                            String subtaskName = StringUtil.createString("running {}", sequencerName);
-                            sequenceMonitor.beginTask(subtaskName, 100);
                             try {
-                                sequencer.execute(node, sequenceMonitor.createSubtask(80));
+                                String subtaskName = StringUtil.createString("running {}", sequencerName);
+                                sequenceMonitor.beginTask(subtaskName, 100);
+                                sequencer.execute(node, node, executionContext, sequenceMonitor.createSubtask(80)); // 80%
                             } finally {
-                                sequenceMonitor.done();
+                                try {
+                                    // Save the changes made by the sequencer ...
+                                    session.save();
+                                    sequenceMonitor.worked(10); // 90% of sequenceMonitor
+                                } finally {
+                                    try {
+                                        // And always close the context.
+                                        // This closes all sessions that may have been created by the sequencer.
+                                        executionContext.close();
+                                    } finally {
+                                        sequenceMonitor.done(); // 100% of sequenceMonitor
+                                    }
+                                }
                             }
-                            // Save the changes made by the sequencer ...
-                            session.save();
                         }
                         this.statistics.recordNodeSequenced();
                     } finally {
@@ -384,6 +457,45 @@ public class SequencingService extends ManagedService implements NodeChangeListe
         } catch (Exception e) {
             String msg = "Error while finding sequencers to run against {}";
             this.logger.error(e, msg, changedNode);
+        }
+    }
+
+    protected class Context implements ExecutionContext {
+
+        protected final SessionFactory factory;
+        private final Set<Session> sessions = new HashSet<Session>();
+        protected final AtomicBoolean closed = new AtomicBoolean(false);
+
+        protected Context() {
+            final SessionFactory delegate = SequencingService.this.getSessionFactory();
+            this.factory = new SessionFactory() {
+
+                public Session createSession( String name ) throws RepositoryException {
+                    if (closed.get()) throw new IllegalStateException("This execution context has been closed and may not be used to create another session");
+                    Session session = delegate.createSession(name);
+                    recordSession(session);
+                    return session;
+                }
+            };
+        }
+
+        protected synchronized void recordSession( Session session ) {
+            if (session != null) sessions.add(session);
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        public SessionFactory getSessionFactory() {
+            return this.factory;
+        }
+
+        public synchronized void close() {
+            if (this.closed.get()) return;
+            this.closed.set(true);
+            for (Session session : sessions) {
+                if (session != null) session.logout();
+            }
         }
     }
 

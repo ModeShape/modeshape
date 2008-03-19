@@ -458,10 +458,7 @@ public class ObservationService extends ManagedService {
 
         public static final boolean DEFAULT_IS_DEEP = true;
         public static final boolean DEFAULT_NO_LOCAL = false;
-        public static final int DEFAULT_EVENT_TYPES = Event.NODE_ADDED | /* Event.NODE_REMOVED | */Event.PROPERTY_ADDED | Event.PROPERTY_CHANGED /*
-                                                                                                                                                     * |
-                                                                                                                                                     * Event.PROPERTY_REMOVED
-                                                                                                                                                     */;
+        public static final int DEFAULT_EVENT_TYPES = Event.NODE_ADDED | /* Event.NODE_REMOVED| */Event.PROPERTY_ADDED | Event.PROPERTY_CHANGED /* |Event.PROPERTY_REMOVED */;
         public static final String DEFAULT_ABSOLUTE_PATH = "/";
 
         private final String repositoryWorkspaceName;

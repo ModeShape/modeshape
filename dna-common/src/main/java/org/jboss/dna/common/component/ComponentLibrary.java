@@ -35,33 +35,26 @@ import org.jboss.dna.common.util.StringUtil;
 
 /**
  * Maintains the list of component instances for the system. This class does not actively update the component configurations, but
- * is designed to properly maintain the sequencer instances when those configurations are changed by other callers.
+ * is designed to properly maintain the sequencer instances when those configurations are changed by other callers. If the
+ * components are subclasses of {@link Component}, then they will be
+ * {@link Component#setConfiguration(ComponentConfig) configured} with the appropriate configuration.
  * <p>
  * Therefore, this library does guarantee that the {@link #getInstances() instances} at the time they are
  * {@link #getInstances() obtained} are always reflected by the configurations.
  * </p>
  * @author Randall Hauch
- * @param <T> the type of the component
+ * @param <ComponentType> the type of component being managed, which may be a subclass of {@link Component}
+ * @param <ConfigType> the configuration type describing the components
  */
 @ThreadSafe
-public class ComponentLibrary<T extends Component> {
+public class ComponentLibrary<ComponentType, ConfigType extends ComponentConfig> {
 
     /**
      * Class loader factory instance that always returns the
      * {@link Thread#getContextClassLoader() current thread's context class loader} (if not null) or component library's class
      * loader.
      */
-    public static final ClassLoaderFactory DEFAULT = new ClassLoaderFactory() {
-
-        /**
-         * {@inheritDoc}
-         */
-        public ClassLoader getClassLoader( String... classpath ) {
-            ClassLoader result = Thread.currentThread().getContextClassLoader();
-            if (result == null) result = this.getClass().getClassLoader();
-            return result;
-        }
-    };
+    public static final ClassLoaderFactory DEFAULT = new StandardClassLoaderFactory(ComponentLibrary.class.getClassLoader());
 
     /**
      * The class loader factory
@@ -73,7 +66,9 @@ public class ComponentLibrary<T extends Component> {
      * {@link #configurations}
      */
     @GuardedBy( value = "lock" )
-    private final List<T> instances = new CopyOnWriteArrayList<T>();
+    private final List<ComponentType> instances = new CopyOnWriteArrayList<ComponentType>();
+    private final List<ConfigType> configs = new CopyOnWriteArrayList<ConfigType>();
+    private final List<ComponentType> unmodifiableInstances = Collections.unmodifiableList(instances);
     private final Lock lock = new ReentrantLock();
 
     /**
@@ -99,25 +94,25 @@ public class ComponentLibrary<T extends Component> {
      * {@link #DEFAULT default} class loader factory, which uses the
      * {@link Thread#getContextClassLoader() current thread's context class loader} if not null or the class loader that loaded
      * the library class.
-     * @param classLoaderFactory the class loader factory reference
+     * @param classLoaderFactory the class loader factory reference, or null if the {@link #DEFAULT default class loader factory}
+     * should be used
      * @see #getClassLoaderFactory()
-     * @throws IllegalArgumentException if the reference is null
      */
     public void setClassLoaderFactory( ClassLoaderFactory classLoaderFactory ) {
-        if (classLoaderFactory == null) throw new IllegalArgumentException("The class loader factory reference may not be null");
-        this.classLoaderFactory.set(classLoaderFactory);
+        this.classLoaderFactory.set(classLoaderFactory != null ? classLoaderFactory : DEFAULT);
     }
 
     /**
      * Add the configuration for a sequencer, or update any existing one that represents the
-     * {@link ComponentConfig#isSame(ComponentConfig) same configuration}
+     * {@link ConfigType#equals(Object) same configuration}
      * @param config the new configuration
-     * @return this object for method chaining purposes
+     * @return true if the component was added, or false if there already was an existing and
+     * {@link ComponentConfig#hasChanged(ComponentConfig) unchanged} component configuration
      * @throws IllegalArgumentException if <code>config</code> is null
-     * @see #updateComponent(ComponentConfig)
-     * @see #removeComponent(ComponentConfig)
+     * @see #update(ComponentConfig)
+     * @see #remove(ComponentConfig)
      */
-    public ComponentLibrary addComponent( ComponentConfig config ) {
+    public boolean add( ConfigType config ) {
         if (config == null) {
             throw new IllegalArgumentException("A non-null component configuration is required");
         }
@@ -127,43 +122,45 @@ public class ComponentLibrary<T extends Component> {
             int index = findIndexOfMatchingConfiguration(config);
             if (index >= 0) {
                 // See if the matching configuration has changed ...
-                T existingInstance = this.instances.get(index);
-                if (existingInstance.getConfiguration().hasChanged(config)) {
+                ConfigType existingConfig = this.configs.get(index);
+                if (existingConfig.hasChanged(config)) {
                     // It has changed, so we need to replace it ...
+                    this.configs.set(index, config);
                     this.instances.set(index, newInstance(config));
                 }
-            } else {
-                // Didn't find one, so add it ...
-                this.instances.add(newInstance(config));
+                return false;
             }
+            // Didn't find one, so add it ...
+            this.configs.add(config);
+            this.instances.add(newInstance(config));
+            return true;
         } finally {
             this.lock.unlock();
         }
-        return this;
     }
 
     /**
-     * Update the configuration for a sequencer, or add it if there is no
-     * {@link ComponentConfig#isSame(ComponentConfig) matching configuration}.
+     * Update the configuration for a sequencer, or add it if there is no {@link ConfigType#equals(Object) matching configuration}.
      * @param config the updated (or new) configuration
-     * @return this object for method chaining purposes
+     * @return true if the component was updated, or false if there already was an existing and
+     * {@link ComponentConfig#hasChanged(ComponentConfig) unchanged} component configuration
      * @throws IllegalArgumentException if <code>config</code> is null
-     * @see #addComponent(ComponentConfig)
-     * @see #removeComponent(ComponentConfig)
+     * @see #add(ComponentConfig)
+     * @see #remove(ComponentConfig)
      */
-    public ComponentLibrary updateComponent( ComponentConfig config ) {
-        return addComponent(config);
+    public boolean update( ConfigType config ) {
+        return add(config);
     }
 
     /**
      * Remove the configuration for a sequencer.
      * @param config the configuration to be removed
-     * @return this object for method chaining purposes
+     * @return true if the component was remove, or false if there was no existing configuration
      * @throws IllegalArgumentException if <code>config</code> is null
-     * @see #addComponent(ComponentConfig)
-     * @see #updateComponent(ComponentConfig)
+     * @see #add(ComponentConfig)
+     * @see #update(ComponentConfig)
      */
-    public ComponentLibrary removeComponent( ComponentConfig config ) {
+    public boolean remove( ConfigType config ) {
         if (config == null) {
             throw new IllegalArgumentException("A non-null sequencer configuration is required");
         }
@@ -173,20 +170,22 @@ public class ComponentLibrary<T extends Component> {
             int index = findIndexOfMatchingConfiguration(config);
             if (index >= 0) {
                 // Remove the configuration and the sequencer instance ...
+                this.configs.remove(index);
                 this.instances.remove(index);
+                return true;
             }
+            return false;
         } finally {
             this.lock.unlock();
         }
-        return this;
     }
 
     /**
      * Return the list of sequencers.
      * @return the unmodifiable list of sequencers; never null
      */
-    public List<T> getInstances() {
-        return Collections.unmodifiableList(this.instances);
+    public List<ComponentType> getInstances() {
+        return this.unmodifiableInstances;
     }
 
     /**
@@ -197,19 +196,23 @@ public class ComponentLibrary<T extends Component> {
      * @throws IllegalArgumentException if the sequencer could not be configured properly
      */
     @SuppressWarnings( "unchecked" )
-    protected T newInstance( ComponentConfig config ) {
+    protected ComponentType newInstance( ConfigType config ) {
         String[] classpath = config.getComponentClasspathArray();
         final ClassLoader classLoader = this.getClassLoaderFactory().getClassLoader(classpath);
         assert classLoader != null;
-        T newInstance = null;
+        ComponentType newInstance = null;
         try {
-            Class<?> componentClass = classLoader.loadClass(config.getComponentClassname());
-            newInstance = (T)componentClass.newInstance();
-            newInstance.setConfiguration(config);
+            // Don't use ClassLoader.loadClass(String), as it doesn't properly initialize the class
+            // (specifically static initializers may not be called)
+            Class<?> componentClass = Class.forName(config.getComponentClassname(), true, classLoader);
+            newInstance = (ComponentType)componentClass.newInstance();
+            if (newInstance instanceof Component) {
+                ((Component<ConfigType>)newInstance).setConfiguration(config);
+            }
         } catch (Throwable e) {
             throw new SystemFailureException(e);
         }
-        if (newInstance.getConfiguration() == null) {
+        if (newInstance instanceof Component && ((Component<ConfigType>)newInstance).getConfiguration() == null) {
             String msg = "The component {1} was not configured and will not be used";
             msg = StringUtil.createString(msg, config.getName());
             throw new SystemFailureException(msg);
@@ -223,12 +226,12 @@ public class ComponentLibrary<T extends Component> {
      * @return the index, or -1 if not found
      */
     @GuardedBy( value = "lock" )
-    protected int findIndexOfMatchingConfiguration( ComponentConfig config ) {
+    protected int findIndexOfMatchingConfiguration( ConfigType config ) {
         // Iterate through the configurations and look for an existing one that matches
-        for (int i = 0, length = this.instances.size(); i != length; i++) {
-            ComponentConfig existingConfig = this.instances.get(i).getConfiguration();
+        for (int i = 0, length = this.configs.size(); i != length; i++) {
+            ConfigType existingConfig = this.configs.get(i);
             assert existingConfig != null;
-            if (existingConfig.isSame(config)) {
+            if (existingConfig.equals(config)) {
                 return i;
             }
         }

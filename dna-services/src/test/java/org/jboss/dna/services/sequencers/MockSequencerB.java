@@ -26,6 +26,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import javax.jcr.Node;
 import net.jcip.annotations.ThreadSafe;
 import org.jboss.dna.common.monitor.ProgressMonitor;
+import org.jboss.dna.services.ExecutionContext;
 
 /**
  * A sequencer that can be used for basic unit testing.
@@ -47,7 +48,7 @@ public class MockSequencerB implements Sequencer {
     /**
      * {@inheritDoc}
      */
-    public void execute( Node node, ProgressMonitor progressMonitor ) {
+    public void execute( Node input, Node output, ExecutionContext context, ProgressMonitor progressMonitor ) {
         try {
             progressMonitor.beginTask("Incrementing counter", 1);
             // increment the counter and record the progress ...

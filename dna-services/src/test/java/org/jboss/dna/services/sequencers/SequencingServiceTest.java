@@ -74,11 +74,6 @@ public class SequencingServiceTest extends AbstractJcrRepositoryTest {
     }
 
     @Test
-    public void shouldHaveSequencingLibraryUponConstruction() {
-        assertThat(system.getSequencerLibrary(), is(notNullValue()));
-    }
-
-    @Test
     public void shouldHaveNoExecutorServiceUponConstruction() {
         assertThat(system.getExecutorService(), is(nullValue()));
     }

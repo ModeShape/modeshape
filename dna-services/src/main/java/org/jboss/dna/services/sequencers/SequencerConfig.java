@@ -60,21 +60,6 @@ public class SequencerConfig extends ComponentConfig {
         return Collections.unmodifiableSet(this.runRules);
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public boolean equals( Object obj ) {
-        if (obj == this) return true;
-        if (obj instanceof SequencerConfig) {
-            SequencerConfig that = (SequencerConfig)obj;
-            if (this.isSame(that)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
     public boolean hasChanged( SequencerConfig that ) {
         if (super.hasChanged(that)) return true;
         if (!this.getRunRules().equals(that.getRunRules())) return true;

@@ -38,7 +38,7 @@ import org.junit.Test;
  */
 public class ComponentLibraryTest {
 
-    private ComponentLibrary<SampleComponent> library;
+    private ComponentLibrary<SampleComponent, SampleComponentConfig> library;
     private SampleComponentConfig configA;
     private SampleComponentConfig configB;
     private SampleComponentConfig configA2;
@@ -48,7 +48,7 @@ public class ComponentLibraryTest {
 
     @Before
     public void beforeEach() throws Exception {
-        this.library = new ComponentLibrary<SampleComponent>();
+        this.library = new ComponentLibrary<SampleComponent, SampleComponentConfig>();
         this.validDescription = "a Component";
         this.validClasspath = new String[] {"com.acme:configA:1.0,com.acme:configB:1.0"};
         this.configA = new SampleComponentConfig("configA", validDescription, MockComponentA.class.getName(), validClasspath);
@@ -66,42 +66,43 @@ public class ComponentLibraryTest {
         assertThat(this.library.getClassLoaderFactory(), is(ComponentLibrary.DEFAULT));
     }
 
-    @Test( expected = IllegalArgumentException.class )
-    public void shouldNotAllowSettingClassLoaderFactoryToNull() {
+    @Test
+    public void shouldSetClassLoaderFactoryToDefaultIfSettingClassLoaderFactoryToNull() {
         library.setClassLoaderFactory(null);
+        assertThat(this.library.getClassLoaderFactory(), is(ComponentLibrary.DEFAULT));
     }
 
     @Test
     public void shouldAddComponentWhenNoneExists() {
         assertThat(library.getInstances().size(), is(0));
-        library.addComponent(configA);
+        library.add(configA);
         assertThat(library.getInstances().size(), is(1));
     }
 
     @Test
     public void shouldAddComponentWhenMatchingConfigAlreadyExistsUnlessNotChanged() {
         assertThat(library.getInstances().size(), is(0));
-        library.addComponent(configA);
+        library.add(configA);
         assertThat(library.getInstances().size(), is(1));
         assertThat(library.getInstances().get(0).getConfiguration(), is(sameInstance(configA)));
 
-        library.addComponent(configA);
+        library.add(configA);
         assertThat(library.getInstances().size(), is(1));
         assertThat(library.getInstances().get(0).getConfiguration(), is(sameInstance(configA)));
 
         // Add another, but this isn't changed ...
-        library.addComponent(configA2);
+        library.add(configA2);
         assertThat(library.getInstances().size(), is(1));
         assertThat(library.getInstances().get(0).getConfiguration(), is(sameInstance(configA)));
 
         // Change the configuration, then add another ...
         configA2 = new SampleComponentConfig("conFigA", "Config A v2", MockComponentA.class.getName(), validClasspath);
-        library.addComponent(configA2);
+        library.add(configA2);
         assertThat(library.getInstances().size(), is(1));
         assertThat(library.getInstances().get(0).getConfiguration(), is(sameInstance(configA2)));
 
         // Add a second that isn't there
-        library.addComponent(configB);
+        library.add(configB);
         assertThat(library.getInstances().size(), is(2));
         assertThat(library.getInstances().get(1).getConfiguration(), is(sameInstance(configB)));
     }
@@ -109,14 +110,14 @@ public class ComponentLibraryTest {
     @Test
     public void shouldInstantiateAndConfigureComponentWhenConfigurationAddedOrUpdated() {
         assertThat(library.getInstances().size(), is(0));
-        library.addComponent(configA);
+        library.add(configA);
         List<SampleComponent> components = library.getInstances();
         assertThat(components.size(), is(1));
         MockComponentA firstComponent = (MockComponentA)components.get(0);
         assertThat(firstComponent.isConfigured(), is(true));
 
         // Update the configuration, and a new component should be instantiated ...
-        library.addComponent(configA);
+        library.add(configA);
         components = library.getInstances();
         assertThat(components.size(), is(1));
         assertThat(components.get(0), instanceOf(MockComponentA.class));
@@ -128,7 +129,7 @@ public class ComponentLibraryTest {
 
         // The current component should not be the same instance since it was just changed ...
         configA = new SampleComponentConfig("conFigA", "Config A v2", MockComponentA.class.getName(), validClasspath);
-        library.addComponent(configA);
+        library.add(configA);
         components = library.getInstances();
         assertThat(components.size(), is(1));
         assertThat(components.get(0), instanceOf(MockComponentA.class));
@@ -137,7 +138,7 @@ public class ComponentLibraryTest {
         assertThat(secondComponentA, is(not(sameInstance(firstComponent))));
 
         // Add a second component config, and the first component should not be changed
-        library.addComponent(configB);
+        library.add(configB);
         components = library.getInstances();
         assertThat(components.size(), is(2));
         assertThat(components.get(0), instanceOf(MockComponentA.class));
