@@ -21,6 +21,7 @@
  */
 package org.jboss.dna.services.rules;
 
+import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
 import java.rmi.RemoteException;
@@ -42,6 +43,7 @@ import javax.rules.StatelessRuleSession;
 import javax.rules.admin.LocalRuleExecutionSetProvider;
 import javax.rules.admin.RuleAdministrator;
 import javax.rules.admin.RuleExecutionSet;
+import javax.rules.admin.RuleExecutionSetCreateException;
 import javax.rules.admin.RuleExecutionSetDeregistrationException;
 import net.jcip.annotations.GuardedBy;
 import net.jcip.annotations.ThreadSafe;
@@ -169,6 +171,8 @@ public class RuleService implements AdministeredService {
      * @param ruleSet the new rule set
      * @return true if the rule set was added, or false if the rule set was not added (because it wasn't necessary)
      * @throws IllegalArgumentException if <code>ruleSet</code> is null
+     * @throws InvalidRuleSetException if the supplied rule set is invalid, incomplete, incorrectly defined, or uses a JSR-94
+     * service provider that cannot be found
      * @see #updateRuleSet(RuleSet)
      * @see #removeRuleSet(RuleSet)
      */
@@ -190,9 +194,9 @@ public class RuleService implements AdministeredService {
             // Now register a new execution set ...
             RuleAdministrator ruleAdmin = ruleServiceProvider.getRuleAdministrator();
             if (ruleAdmin == null) {
-                String msg = "Unable to obtain the rule administrator for JSR-94 service provider {1} ({2})";
-                msg = StringUtil.createString(msg, providerUri, ruleSet.getComponentClassname());
-                throw new SystemFailureException(msg);
+                String msg = "Unable to obtain the rule administrator for JSR-94 service provider {1} ({2}) while adding/updating rule set {3}";
+                msg = StringUtil.createString(msg, providerUri, ruleSet.getComponentClassname(), ruleSetName);
+                throw new InvalidRuleSetException(msg);
             }
 
             // Is there is an existing rule set and, if so, whether it has changed ...
@@ -206,9 +210,10 @@ public class RuleService implements AdministeredService {
             boolean shouldAdd = existing == null || ruleSet.hasChanged(existing);
             if (existing != null && shouldAdd) {
                 // There is an existing execution set and it needs to be updated, so deregister it ...
-                ruleServiceProvider = deregister(ruleServiceProvider, ruleSet);
+                ruleServiceProvider = deregister(ruleSet);
             }
             if (shouldAdd) {
+                boolean rollback = false;
                 try {
                     // Now register the new execution set and update the rule set managed by this service ...
                     ruleAdmin.registerRuleExecutionSet(ruleSetName, executionSet, null);
@@ -216,31 +221,55 @@ public class RuleService implements AdministeredService {
                     this.ruleSets.put(ruleSet.getName(), ruleSet);
                     updatedRuleSets = true;
                 } catch (Throwable t) {
-                    try {
-                        // There was a problem, so re-register the original existing rule set ...
-                        if (existing != null) {
-                            final String oldRules = existing.getRules();
-                            final Map<?, ?> oldProperties = existing.getExecutionSetProperties();
-                            final Reader oldRuleReader = new StringReader(oldRules);
-                            ruleServiceProvider = findRuleServiceProvider(existing);
-                            assert ruleServiceProvider != null;
-                            executionSet = ruleExecutionSetProvider.createRuleExecutionSet(oldRuleReader, oldProperties);
-                            ruleAdmin.registerRuleExecutionSet(ruleSetName, executionSet, null);
-                            this.ruleSets.remove(ruleSetName);
-                            this.ruleSets.put(ruleSetName, existing);
+                    rollback = true;
+                    String msg = "Error adding/updating rule set '{1}'";
+                    msg = StringUtil.createString(msg, ruleSet.getName());
+                    throw new InvalidRuleSetException(msg, t);
+                } finally {
+                    if (rollback) {
+                        try {
+                            // There was a problem, so re-register the original existing rule set ...
+                            if (existing != null) {
+                                final String oldRules = existing.getRules();
+                                final Map<?, ?> oldProperties = existing.getExecutionSetProperties();
+                                final Reader oldRuleReader = new StringReader(oldRules);
+                                ruleServiceProvider = findRuleServiceProvider(existing);
+                                assert ruleServiceProvider != null;
+                                executionSet = ruleExecutionSetProvider.createRuleExecutionSet(oldRuleReader, oldProperties);
+                                ruleAdmin.registerRuleExecutionSet(ruleSetName, executionSet, null);
+                                this.ruleSets.remove(ruleSetName);
+                                this.ruleSets.put(ruleSetName, existing);
+                            }
+                        } catch (Throwable rollbackError) {
+                            // There was a problem rolling back to the existing rule set, and we're going to throw the
+                            // exception associated with the updated/new rule set, so just log this problem
+                            this.logger.error(rollbackError, "Error rolling back rule set {} after new rule set failed", ruleSetName);
                         }
-                    } catch (Throwable rollbackError) {
-                        // There was a problem rolling back to the existing rule set, and we're going to throw the
-                        // exception associated with the updated/new rule set, so just log this problem
-                        this.logger.error(rollbackError, "Error rolling back rule set {} after new rule set failed", ruleSetName);
                     }
-                    throw t;
                 }
             }
-        } catch (Throwable t) {
-            String msg = "Error adding rule set '{1}'";
-            msg = StringUtil.createString(msg, ruleSet.getName());
-            throw new SystemFailureException(msg, t);
+        } catch (InvalidRuleSetException e) {
+            throw e;
+        } catch (ConfigurationException t) {
+            String msg = "Error while trying to obtain the rule administrator for JSR-94 service provider {1} ({2}) while adding/updating rule set {3}";
+            msg = StringUtil.createString(msg, providerUri, ruleSet.getComponentClassname(), ruleSetName);
+            throw new InvalidRuleSetException(msg);
+        } catch (RemoteException t) {
+            String msg = "Error using rule administrator for JSR-94 service provider {1} ({2}) while adding/updating rule set {3}";
+            msg = StringUtil.createString(msg, providerUri, ruleSet.getComponentClassname(), ruleSetName);
+            throw new InvalidRuleSetException(msg);
+        } catch (IOException t) {
+            String msg = "Error reading the rules and properties while adding/updating rule set {1}";
+            msg = StringUtil.createString(msg, ruleSetName);
+            throw new InvalidRuleSetException(msg);
+        } catch (RuleExecutionSetDeregistrationException t) {
+            String msg = "Error deregistering the existing rule set {1} before updating it";
+            msg = StringUtil.createString(msg, ruleSetName);
+            throw new InvalidRuleSetException(msg);
+        } catch (RuleExecutionSetCreateException t) {
+            String msg = "Error (re)creating the rule set {1}";
+            msg = StringUtil.createString(msg, ruleSetName);
+            throw new InvalidRuleSetException(msg);
         } finally {
             this.lock.writeLock().unlock();
         }
@@ -251,7 +280,8 @@ public class RuleService implements AdministeredService {
      * Update the configuration for a sequencer, or add it if there is no {@link RuleSet#equals(Object) matching configuration}.
      * @param ruleSet the rule set to be updated
      * @return true if the rule set was updated, or false if the rule set was not updated (because it wasn't necessary)
-     * @throws IllegalArgumentException if <code>ruleSet</code> is null
+     * @throws InvalidRuleSetException if the supplied rule set is invalid, incomplete, incorrectly defined, or uses a JSR-94
+     * service provider that cannot be found
      * @see #addRuleSet(RuleSet)
      * @see #removeRuleSet(RuleSet)
      */
@@ -264,6 +294,7 @@ public class RuleService implements AdministeredService {
      * @param ruleSet the rule set to be removed
      * @return true if the rule set was removed, or if it was not an existing rule set
      * @throws IllegalArgumentException if <code>ruleSet</code> is null
+     * @throws SystemFailureException if the rule set was found but there was a problem removing it
      * @see #addRuleSet(RuleSet)
      * @see #updateRuleSet(RuleSet)
      */
@@ -273,7 +304,7 @@ public class RuleService implements AdministeredService {
         try {
             this.lock.writeLock().lock();
             try {
-                deregister(null, ruleSet);
+                deregister(ruleSet);
             } finally {
                 // No matter what, remove the rule set from this service ...
                 found = this.ruleSets.remove(ruleSet.getName()) != null;
@@ -364,7 +395,7 @@ public class RuleService implements AdministeredService {
             lock.writeLock().lock();
             for (RuleSet ruleSet : ruleSets.values()) {
                 try {
-                    deregister(null, ruleSet);
+                    deregister(ruleSet);
                 } catch (Throwable t) {
                     logger.error(t, "Error removing rule set '{}' upon rule service shutdown", ruleSet.getName());
                 }
@@ -379,7 +410,7 @@ public class RuleService implements AdministeredService {
      * @param ruleSet the rule set for which the service provider is to be found; may not be null
      * @return the rule service provider; never null
      * @throws ConfigurationException if there is a problem loading the service provider
-     * @throws SystemFailureException if the service provider could not be found
+     * @throws InvalidRuleSetException if the service provider could not be found
      */
     private RuleServiceProvider findRuleServiceProvider( RuleSet ruleSet ) throws ConfigurationException {
         assert ruleSet != null;
@@ -396,16 +427,18 @@ public class RuleService implements AdministeredService {
                 Class.forName(ruleSet.getComponentClassname(), true, loader);
                 ruleServiceProvider = RuleServiceProviderManager.getRuleServiceProvider(providerUri);
                 this.logger.debug("Loaded the rule service provider {} ({})", providerUri, ruleSet.getComponentClassname());
+            } catch (ConfigurationException ce) {
+                throw ce;
             } catch (Throwable t) {
                 String msg = "Unable to find or load the JSR-94 service provider {1} ({2})";
                 msg = StringUtil.createString(msg, providerUri, ruleSet.getComponentClassname());
-                throw new SystemFailureException(msg, t);
+                throw new InvalidRuleSetException(msg, t);
             }
         }
         if (ruleServiceProvider == null) {
             String msg = "Unable to find or load the JSR-94 service provider {1} ({2})";
             msg = StringUtil.createString(msg, providerUri, ruleSet.getComponentClassname());
-            throw new SystemFailureException(msg);
+            throw new InvalidRuleSetException(msg);
         }
         return ruleServiceProvider;
     }
@@ -413,23 +446,20 @@ public class RuleService implements AdministeredService {
     /**
      * Deregister the supplied rule set, if it could be found. This method does nothing if any of the service provider components
      * could not be found.
-     * @param ruleServiceProvider the service provider reference if known; if null, it will be found
      * @param ruleSet the rule set to be deregistered; may not be null
      * @return the service provider reference, or null if the service provider could not be found ...
      * @throws ConfigurationException
      * @throws RuleExecutionSetDeregistrationException
      * @throws RemoteException
      */
-    private RuleServiceProvider deregister( RuleServiceProvider ruleServiceProvider, RuleSet ruleSet ) throws ConfigurationException, RuleExecutionSetDeregistrationException, RemoteException {
+    private RuleServiceProvider deregister( RuleSet ruleSet ) throws ConfigurationException, RuleExecutionSetDeregistrationException, RemoteException {
         assert ruleSet != null;
         // Look up the provider ...
         String providerUri = ruleSet.getProviderUri();
         assert providerUri != null;
 
-        // Look for the provider if it is not known ...
-        if (ruleServiceProvider == null) {
-            ruleServiceProvider = RuleServiceProviderManager.getRuleServiceProvider(providerUri);
-        }
+        // Look for the provider ...
+        RuleServiceProvider ruleServiceProvider = RuleServiceProviderManager.getRuleServiceProvider(providerUri);
         if (ruleServiceProvider != null) {
             // Deregister the rule set ...
             RuleAdministrator ruleAdmin = ruleServiceProvider.getRuleAdministrator();

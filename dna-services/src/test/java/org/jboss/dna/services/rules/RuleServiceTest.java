@@ -28,6 +28,7 @@ import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsSame.sameInstance;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import java.io.IOException;
 import java.net.URL;
 import java.util.HashMap;
@@ -35,7 +36,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import org.jboss.dna.common.SystemFailureException;
 import org.jboss.dna.common.component.ClassLoaderFactory;
 import org.jboss.dna.common.component.StandardClassLoaderFactory;
 import org.jboss.dna.common.util.IoUtil;
@@ -73,7 +73,7 @@ public class RuleServiceTest {
     }
 
     protected RuleSet createRuleSetWithInvalidProvider() throws IOException {
-        String name = "SampleRuleSet";
+        String name = "SampleRuleSet"; // same name as Drools rule set
         String description = "This is a sample rule set that uses Drools";
         String providerClassname = DROOLS_PROVIDER_CLASSNAME;
         String providerUri = DROOLS_PROVIDER_URI + "this/is/incorrect";
@@ -144,7 +144,7 @@ public class RuleServiceTest {
         assertThat(ruleService.getLogger(), is(not(orgLogger)));
     }
 
-    @Test( expected = SystemFailureException.class )
+    @Test( expected = InvalidRuleSetException.class )
     public void shouldNotAddInvalidRuleSet() throws Exception {
         ruleService.addRuleSet(createRuleSetWithInvalidProvider());
 
@@ -156,6 +156,34 @@ public class RuleServiceTest {
         RuleSet validRuleSet = createDroolsRuleSet(null);
         assertThat(ruleService.addRuleSet(validRuleSet), is(true));
         assertThat(ruleService.getRuleSets().size(), is(numRuleSetsBefore + 1));
+    }
+
+    @Test
+    public void shouldNotUpdateValidRuleSetWithInvalidRuleSet() throws Exception {
+        RuleSet validRuleSet = createDroolsRuleSet(null);
+        final String ruleSetName = validRuleSet.getName();
+
+        assertThat(ruleService.addRuleSet(validRuleSet), is(true));
+        assertThat(ruleService.getRuleSets().size(), is(1));
+        assertThat(ruleService.getRuleSets().iterator().next(), is(validRuleSet));
+        // Verify this rule set works ...
+        executeRuleSet(ruleSetName);
+
+        // Try to update the rule set with something that's invalid ...
+        RuleSet invalidRuleSet = createRuleSetWithInvalidProvider();
+        assertThat(invalidRuleSet.getName(), is(ruleSetName));
+        assertThat(invalidRuleSet.getName(), is(validRuleSet.getName()));
+        try {
+            ruleService.addRuleSet(invalidRuleSet);
+            fail("Should not get here");
+        } catch (InvalidRuleSetException e) {
+            // This is expected since it was a bad rule set ...
+        }
+
+        // Verify the original rule set is still there and still works ...
+        assertThat(ruleService.getRuleSets().size(), is(1));
+        assertThat(ruleService.getRuleSets().iterator().next(), is(validRuleSet));
+        executeRuleSet(ruleSetName);
     }
 
     @Test
@@ -183,6 +211,13 @@ public class RuleServiceTest {
         RuleSet validRuleSet = createDroolsRuleSet(null);
         assertThat(ruleService.addRuleSet(validRuleSet), is(true));
 
+        executeRuleSet(validRuleSet.getName());
+    }
+
+    /**
+     * @param validRuleSet
+     */
+    protected void executeRuleSet( String ruleSetName ) {
         // Create some simple fact objects ...
         RuleInput info = new RuleInput();
         info.setFileName("someOtherInput.dsl");
@@ -194,7 +229,7 @@ public class RuleServiceTest {
         Map<String, Object> globals = new HashMap<String, Object>();
         globals.put("output", output);
 
-        List<?> results = ruleService.executeRules(validRuleSet.getRuleSetUri(), globals, info);
+        List<?> results = ruleService.executeRules(ruleSetName, globals, info);
         assertThat(results, is(notNullValue()));
         assertThat(results.isEmpty(), is(false));
         assertThat(results.size(), is(2));
