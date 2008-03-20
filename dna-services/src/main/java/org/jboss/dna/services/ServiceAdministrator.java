@@ -21,33 +21,30 @@
  */
 package org.jboss.dna.services;
 
-import net.jcip.annotations.GuardedBy;
+import net.jcip.annotations.ThreadSafe;
 
 /**
+ * Contract defining an administrative interface for controlling the running state of a service.
  * @author Randall Hauch
  */
-public abstract class ManagedService {
+@ThreadSafe
+public interface ServiceAdministrator {
 
+    /**
+     * The available states.
+     * @author Randall Hauch
+     */
     public static enum State {
         STARTED,
         PAUSED,
         SHUTDOWN;
     }
 
-    private volatile State state;
-
-    protected ManagedService( State initialState ) {
-        assert initialState != null;
-        this.state = initialState;
-    }
-
     /**
      * Return the current state of this system.
      * @return the current state
      */
-    public State getState() {
-        return this.state;
-    }
+    public State getState();
 
     /**
      * Set the state of the system. This method does nothing if the desired state matches the current state.
@@ -58,21 +55,7 @@ public abstract class ManagedService {
      * @see #pause()
      * @see #shutdown()
      */
-    @GuardedBy( "this" )
-    public synchronized ManagedService setState( State state ) {
-        switch (state) {
-            case STARTED:
-                start();
-                break;
-            case PAUSED:
-                pause();
-                break;
-            case SHUTDOWN:
-                shutdown();
-                break;
-        }
-        return this;
-    }
+    public ServiceAdministrator setState( State state );
 
     /**
      * Set the state of the system. This method does nothing if the desired state matches the current state.
@@ -85,13 +68,7 @@ public abstract class ManagedService {
      * @see #pause()
      * @see #shutdown()
      */
-    public ManagedService setState( String state ) {
-        State newState = state == null ? null : State.valueOf(state.toUpperCase());
-        if (newState == null) {
-            throw new IllegalArgumentException("Invalid state parameter");
-        }
-        return setState(newState);
-    }
+    public ServiceAdministrator setState( String state );
 
     /**
      * Start monitoring and sequence the events. This method can be called multiple times, including after the system is
@@ -102,25 +79,7 @@ public abstract class ManagedService {
      * @see #shutdown()
      * @see #isStarted()
      */
-    public synchronized ManagedService start() {
-        if (isShutdown()) throw new IllegalStateException("The " + serviceName() + " has been shutdown and may not be (re)started");
-        if (this.state != State.STARTED) {
-            doStart(this.state);
-            this.state = State.STARTED;
-        }
-        return this;
-    }
-
-    /**
-     * Implementation of the functionality to switch to the started state. This method is only called if the state from which the
-     * service is transitioning is appropriate ({@link State#PAUSED}). This method does nothing by default, and should be
-     * overridden if needed.
-     * @param fromState the state from which this service is transitioning; never null
-     * @throws IllegalStateException if the service is such that it cannot be transitioned from the supplied state
-     */
-    @GuardedBy( "this" )
-    protected void doStart( State fromState ) {
-    }
+    public ServiceAdministrator start();
 
     /**
      * Temporarily stop monitoring and sequencing events. This method can be called multiple times, including after the system is
@@ -131,25 +90,7 @@ public abstract class ManagedService {
      * @see #shutdown()
      * @see #isPaused()
      */
-    public synchronized ManagedService pause() {
-        if (isShutdown()) throw new IllegalStateException("The " + serviceName() + " has been shutdown and may not be paused");
-        if (this.state != State.PAUSED) {
-            doPause(this.state);
-            this.state = State.PAUSED;
-        }
-        return this;
-    }
-
-    /**
-     * Implementation of the functionality to switch to the paused state. This method is only called if the state from which the
-     * service is transitioning is appropriate ({@link State#STARTED}). This method does nothing by default, and should be
-     * overridden if needed.
-     * @param fromState the state from which this service is transitioning; never null
-     * @throws IllegalStateException if the service is such that it cannot be transitioned from the supplied state
-     */
-    @GuardedBy( "this" )
-    protected void doPause( State fromState ) {
-    }
+    public ServiceAdministrator pause();
 
     /**
      * Permanently stop monitoring and sequencing events. This method can be called multiple times, but only the first call has an
@@ -159,24 +100,7 @@ public abstract class ManagedService {
      * @see #pause()
      * @see #isShutdown()
      */
-    public synchronized ManagedService shutdown() {
-        if (this.state != State.SHUTDOWN) {
-            doShutdown(this.state);
-            this.state = State.SHUTDOWN;
-        }
-        return this;
-    }
-
-    /**
-     * Implementation of the functionality to switch to the shutdown state. This method is only called if the state from which the
-     * service is transitioning is appropriate ({@link State#STARTED} or {@link State#PAUSED}). This method does nothing by
-     * default, and should be overridden if needed.
-     * @param fromState the state from which this service is transitioning; never null
-     * @throws IllegalStateException if the service is such that it cannot be transitioned from the supplied state
-     */
-    @GuardedBy( "this" )
-    protected void doShutdown( State fromState ) {
-    }
+    public ServiceAdministrator shutdown();
 
     /**
      * Return whether this system has been started and is currently running.
@@ -186,9 +110,7 @@ public abstract class ManagedService {
      * @see #isPaused()
      * @see #isShutdown()
      */
-    public boolean isStarted() {
-        return this.state == State.STARTED;
-    }
+    public boolean isStarted();
 
     /**
      * Return whether this system is currently paused.
@@ -198,9 +120,7 @@ public abstract class ManagedService {
      * @see #isStarted()
      * @see #isShutdown()
      */
-    public boolean isPaused() {
-        return this.state == State.PAUSED;
-    }
+    public boolean isPaused();
 
     /**
      * Return whether this system is stopped and unable to be restarted.
@@ -209,9 +129,5 @@ public abstract class ManagedService {
      * @see #isPaused()
      * @see #isStarted()
      */
-    public boolean isShutdown() {
-        return this.state == State.SHUTDOWN;
-    }
-
-    protected abstract String serviceName();
+    public boolean isShutdown();
 }

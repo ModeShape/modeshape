@@ -44,13 +44,15 @@ import javax.jcr.observation.ObservationManager;
 import net.jcip.annotations.GuardedBy;
 import net.jcip.annotations.ThreadSafe;
 import org.jboss.dna.common.util.Logger;
-import org.jboss.dna.services.ManagedService;
+import org.jboss.dna.services.AbstractServiceAdministrator;
+import org.jboss.dna.services.AdministeredService;
+import org.jboss.dna.services.ServiceAdministrator;
 import org.jboss.dna.services.SessionFactory;
 
 /**
  * @author Randall Hauch
  */
-public class ObservationService extends ManagedService {
+public class ObservationService implements AdministeredService {
 
     /**
      * Interface to which problems with particular events are logged.
@@ -111,17 +113,44 @@ public class ObservationService extends ManagedService {
 
     public static final ProblemLog NO_OP_PROBLEM_LOG = new NoOpProblemLog();
 
+    /**
+     * The administrative component for this service.
+     * @author Randall Hauch
+     */
+    protected class Administrator extends AbstractServiceAdministrator {
+
+        protected Administrator() {
+            super(State.STARTED);
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        protected String serviceName() {
+            return "ObservationService service";
+        }
+
+    }
+
     private Logger logger = Logger.getLogger(this.getClass());
     private ProblemLog problemLog = new DefaultProblemLog();
     private final Statistics statistics = new Statistics();
     private final SessionFactory sessionFactory;
     private final CopyOnWriteArrayList<EventListener> eventListeners = new CopyOnWriteArrayList<EventListener>();
     private final CopyOnWriteArrayList<NodeChangeListener> nodeChangeListeners = new CopyOnWriteArrayList<NodeChangeListener>();
+    private final Administrator administrator = new Administrator();
 
     public ObservationService( SessionFactory sessionFactory ) {
-        super(State.STARTED);
         if (sessionFactory == null) throw new IllegalArgumentException("The sessionFactory reference may not be null");
         this.sessionFactory = sessionFactory;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public ServiceAdministrator getAdministrator() {
+        return this.administrator;
     }
 
     /**
@@ -199,9 +228,9 @@ public class ObservationService extends ManagedService {
      * <p>
      * The listener returned from this method is not managed by this SequencingService instance. If the listener is no longer
      * needed, it simply must be {@link ObservationManager#removeEventListener(EventListener) removed} as a listener of the
-     * workspace and garbage collected. If this service is {@link #shutdown() shutdown} while there are still active listeners,
-     * those listeners will disconnect themselves from this service and the workspace with which they're registered when they
-     * attempt to forward the next events.
+     * workspace and garbage collected. If this service is {@link ServiceAdministrator#shutdown() shutdown} while there are still
+     * active listeners, those listeners will disconnect themselves from this service and the workspace with which they're
+     * registered when they attempt to forward the next events.
      * </p>
      * <p>
      * The set of events that are monitored can be filtered by specifying restrictions based on characteristics of the node
@@ -322,7 +351,7 @@ public class ObservationService extends ManagedService {
         while (eventIterator.hasNext()) {
             events.add((Event)eventIterator.next());
         }
-        if (!this.isStarted()) {
+        if (!getAdministrator().isStarted()) {
             this.statistics.recordIgnoredEventSet(events.size());
             return;
         }
@@ -439,14 +468,6 @@ public class ObservationService extends ManagedService {
             // does nothing
         }
 
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    protected String serviceName() {
-        return "ObservationService service";
     }
 
     /**
@@ -579,7 +600,7 @@ public class ObservationService extends ManagedService {
          */
         public void onEvent( EventIterator events ) {
             if (events != null) {
-                if (ObservationService.this.isShutdown()) {
+                if (getAdministrator().isShutdown()) {
                     // This sequencing system has been shutdown, so unregister this listener
                     try {
                         unregister();

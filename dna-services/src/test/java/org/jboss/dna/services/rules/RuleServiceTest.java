@@ -97,7 +97,7 @@ public class RuleServiceTest {
 
     @After
     public void afterEach() throws Exception {
-        this.ruleService.shutdown();
+        this.ruleService.getAdministrator().shutdown();
     }
 
     @Test

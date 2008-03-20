@@ -42,8 +42,10 @@ import org.jboss.dna.common.monitor.ProgressMonitor;
 import org.jboss.dna.common.monitor.SimpleProgressMonitor;
 import org.jboss.dna.common.util.Logger;
 import org.jboss.dna.common.util.StringUtil;
+import org.jboss.dna.services.AbstractServiceAdministrator;
+import org.jboss.dna.services.AdministeredService;
 import org.jboss.dna.services.ExecutionContext;
-import org.jboss.dna.services.ManagedService;
+import org.jboss.dna.services.ServiceAdministrator;
 import org.jboss.dna.services.SessionFactory;
 import org.jboss.dna.services.observation.NodeChange;
 import org.jboss.dna.services.observation.NodeChangeListener;
@@ -53,7 +55,7 @@ import org.jboss.dna.services.observation.NodeChangeListener;
  * content to extract or to generate structured information.
  * @author Randall Hauch
  */
-public class SequencingService extends ManagedService implements NodeChangeListener {
+public class SequencingService implements AdministeredService, NodeChangeListener {
 
     /**
      * Interface used to select the set of {@link Sequencer} instances that should be run.
@@ -126,6 +128,44 @@ public class SequencingService extends ManagedService implements NodeChangeListe
      */
     protected static final ClassLoaderFactory DEFAULT_CLASSLOADER_FACTORY = new StandardClassLoaderFactory(SequencingService.class.getClassLoader());
 
+    /**
+     * The administrative component for this service.
+     * @author Randall Hauch
+     */
+    protected class Administrator extends AbstractServiceAdministrator {
+
+        protected Administrator() {
+            super(State.PAUSED);
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        protected String serviceName() {
+            return "SequencingService";
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        protected void doStart( State fromState ) {
+            super.doStart(fromState);
+            startService();
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        protected void doShutdown( State fromState ) {
+            super.doShutdown(fromState);
+            shutdownService();
+        }
+
+    }
+
     private SessionFactory sessionFactory;
     private ComponentLibrary<Sequencer, SequencerConfig> sequencerLibrary = new ComponentLibrary<Sequencer, SequencerConfig>();
     private Selector sequencerSelector = DEFAULT_SEQUENCER_SELECTOR;
@@ -133,22 +173,23 @@ public class SequencingService extends ManagedService implements NodeChangeListe
     private ExecutorService executorService;
     private Logger logger = Logger.getLogger(this.getClass());
     private final Statistics statistics = new Statistics();
+    private final Administrator administrator = new Administrator();
 
     /**
      * Create a new sequencing system, configured with no sequencers and not monitoring any workspaces. Upon construction, the
-     * system is {@link #isPaused() paused} and must be configured and then {@link #start() started}.
+     * system is {@link ServiceAdministrator#isPaused() paused} and must be configured and then
+     * {@link ServiceAdministrator#start() started}.
      */
     public SequencingService() {
-        super(State.PAUSED);
         this.sequencerLibrary.setClassLoaderFactory(DEFAULT_CLASSLOADER_FACTORY);
     }
 
     /**
-     * {@inheritDoc}
+     * Return the administrative component for this service.
+     * @return the administrative component; never null
      */
-    @Override
-    protected String serviceName() {
-        return "SequencingService";
+    public ServiceAdministrator getAdministrator() {
+        return this.administrator;
     }
 
     /**
@@ -251,7 +292,7 @@ public class SequencingService extends ManagedService implements NodeChangeListe
         if (sessionFactory == null) {
             throw new IllegalArgumentException("The session factory parameter may not be null");
         }
-        if (this.isStarted()) {
+        if (this.getAdministrator().isStarted()) {
             throw new IllegalStateException("Unable to change the session factory while running");
         }
         this.sessionFactory = sessionFactory;
@@ -286,7 +327,7 @@ public class SequencingService extends ManagedService implements NodeChangeListe
         if (sequencerLibrary == null) {
             throw new IllegalArgumentException("The executor service parameter may not be null");
         }
-        if (this.isStarted()) {
+        if (this.getAdministrator().isStarted()) {
             throw new IllegalStateException("Unable to change the executor service while running");
         }
         this.executorService = executorService;
@@ -304,12 +345,7 @@ public class SequencingService extends ManagedService implements NodeChangeListe
         return Executors.newSingleThreadExecutor();
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    protected void doStart( org.jboss.dna.services.ManagedService.State fromState ) {
-        super.doStart(fromState);
+    protected void startService() {
         if (this.getSessionFactory() == null) {
             throw new IllegalStateException("Unable to start the sequencing system without a session factory");
         }
@@ -322,12 +358,7 @@ public class SequencingService extends ManagedService implements NodeChangeListe
         assert this.sequencerLibrary != null;
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    protected void doShutdown( org.jboss.dna.services.ManagedService.State fromState ) {
-        super.doShutdown(fromState);
+    protected void shutdownService() {
         if (this.executorService != null) {
             this.executorService.shutdown();
         }

@@ -51,7 +51,9 @@ import org.jboss.dna.common.component.StandardClassLoaderFactory;
 import org.jboss.dna.common.util.ArgCheck;
 import org.jboss.dna.common.util.Logger;
 import org.jboss.dna.common.util.StringUtil;
-import org.jboss.dna.services.ManagedService;
+import org.jboss.dna.services.AbstractServiceAdministrator;
+import org.jboss.dna.services.AdministeredService;
+import org.jboss.dna.services.ServiceAdministrator;
 
 /**
  * A rule service that is capable of executing rule sets using one or more JSR-94 rule engines. Sets of rules are
@@ -66,31 +68,61 @@ import org.jboss.dna.services.ManagedService;
  * @author Randall Hauch
  */
 @ThreadSafe
-public class RuleService extends ManagedService {
+public class RuleService implements AdministeredService {
 
     protected static final ClassLoaderFactory DEFAULT_CLASSLOADER_FACTORY = new StandardClassLoaderFactory(RuleService.class.getClassLoader());
 
+    /**
+     * The administrative component for this service.
+     * @author Randall Hauch
+     */
+    protected class Administrator extends AbstractServiceAdministrator {
+
+        protected Administrator() {
+            super(State.PAUSED);
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        protected String serviceName() {
+            return "RuleService";
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        protected void doShutdown( State fromState ) {
+            super.doShutdown(fromState);
+            // Remove all rule sets ...
+            removeAllRuleSets();
+        }
+
+    }
+
     private Logger logger;
     private ClassLoaderFactory classLoaderFactory = DEFAULT_CLASSLOADER_FACTORY;
+    private final Administrator administrator = new Administrator();
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
     @GuardedBy( "lock" )
     private final Map<String, RuleSet> ruleSets = new HashMap<String, RuleSet>();
 
     /**
-     * Create a new rule service, configured with no rule sets. Upon construction, the system is {@link #isPaused() paused} and
-     * must be configured and then {@link #start() started}.
+     * Create a new rule service, configured with no rule sets. Upon construction, the system is
+     * {@link ServiceAdministrator#isPaused() paused} and must be configured and then {@link ServiceAdministrator#start() started}.
      */
     public RuleService() {
-        super(State.PAUSED);
         this.logger = Logger.getLogger(this.getClass());
     }
 
     /**
-     * {@inheritDoc}
+     * Return the administrative component for this service.
+     * @return the administrative component; never null
      */
-    @Override
-    protected String serviceName() {
-        return "RuleService";
+    public ServiceAdministrator getAdministrator() {
+        return this.administrator;
     }
 
     /**
@@ -155,8 +187,20 @@ public class RuleService extends ManagedService {
             RuleServiceProvider ruleServiceProvider = findRuleServiceProvider(ruleSet);
             assert ruleServiceProvider != null;
 
+            // Now register a new execution set ...
+            RuleAdministrator ruleAdmin = ruleServiceProvider.getRuleAdministrator();
+            if (ruleAdmin == null) {
+                String msg = "Unable to obtain the rule administrator for JSR-94 service provider {1} ({2})";
+                msg = StringUtil.createString(msg, providerUri, ruleSet.getComponentClassname());
+                throw new SystemFailureException(msg);
+            }
+
             // Is there is an existing rule set and, if so, whether it has changed ...
             RuleSet existing = this.ruleSets.get(ruleSetName);
+
+            // Create the rule execution set (do this before deregistering, in case there is a problem)...
+            LocalRuleExecutionSetProvider ruleExecutionSetProvider = ruleAdmin.getLocalRuleExecutionSetProvider(null);
+            RuleExecutionSet executionSet = ruleExecutionSetProvider.createRuleExecutionSet(ruleReader, properties);
 
             // We should add the execiting rule set if there wasn't one or if the rule set has changed ...
             boolean shouldAdd = existing == null || ruleSet.hasChanged(existing);
@@ -165,22 +209,33 @@ public class RuleService extends ManagedService {
                 ruleServiceProvider = deregister(ruleServiceProvider, ruleSet);
             }
             if (shouldAdd) {
-                // Now register a new execution set ...
-                RuleAdministrator ruleAdmin = ruleServiceProvider.getRuleAdministrator();
-                if (ruleAdmin == null) {
-                    String msg = "Unable to obtain the rule administrator for JSR-94 service provider {1} ({2})";
-                    msg = StringUtil.createString(msg, providerUri, ruleSet.getComponentClassname());
-                    throw new SystemFailureException(msg);
+                try {
+                    // Now register the new execution set and update the rule set managed by this service ...
+                    ruleAdmin.registerRuleExecutionSet(ruleSetName, executionSet, null);
+                    this.ruleSets.remove(ruleSet.getName());
+                    this.ruleSets.put(ruleSet.getName(), ruleSet);
+                    updatedRuleSets = true;
+                } catch (Throwable t) {
+                    try {
+                        // There was a problem, so re-register the original existing rule set ...
+                        if (existing != null) {
+                            final String oldRules = existing.getRules();
+                            final Map<?, ?> oldProperties = existing.getExecutionSetProperties();
+                            final Reader oldRuleReader = new StringReader(oldRules);
+                            ruleServiceProvider = findRuleServiceProvider(existing);
+                            assert ruleServiceProvider != null;
+                            executionSet = ruleExecutionSetProvider.createRuleExecutionSet(oldRuleReader, oldProperties);
+                            ruleAdmin.registerRuleExecutionSet(ruleSetName, executionSet, null);
+                            this.ruleSets.remove(ruleSetName);
+                            this.ruleSets.put(ruleSetName, existing);
+                        }
+                    } catch (Throwable rollbackError) {
+                        // There was a problem rolling back to the existing rule set, and we're going to throw the
+                        // exception associated with the updated/new rule set, so just log this problem
+                        this.logger.error(rollbackError, "Error rolling back rule set {} after new rule set failed", ruleSetName);
+                    }
+                    throw t;
                 }
-                // Create and register the rule execution set (do this before deregistering, in case there is a problem)...
-                LocalRuleExecutionSetProvider ruleExecutionSetProvider = ruleAdmin.getLocalRuleExecutionSetProvider(null);
-                RuleExecutionSet executionSet = ruleExecutionSetProvider.createRuleExecutionSet(ruleReader, properties);
-                ruleAdmin.registerRuleExecutionSet(ruleSetName, executionSet, null);
-
-                // Now update the rule set managed by this service ...
-                this.ruleSets.remove(ruleSet.getName());
-                this.ruleSets.put(ruleSet.getName(), ruleSet);
-                updatedRuleSets = true;
             }
         } catch (Throwable t) {
             String msg = "Error adding rule set '{1}'";
@@ -304,24 +359,18 @@ public class RuleService extends ManagedService {
         return result;
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    protected void doShutdown( State fromState ) {
-        super.doShutdown(fromState);
-        // Remove all rule sets ...
+    protected void removeAllRuleSets() {
         try {
-            this.lock.writeLock().lock();
-            for (RuleSet ruleSet : this.ruleSets.values()) {
+            lock.writeLock().lock();
+            for (RuleSet ruleSet : ruleSets.values()) {
                 try {
                     deregister(null, ruleSet);
                 } catch (Throwable t) {
-                    this.logger.error(t, "Error removing rule set '{}' upon rule service shutdown", ruleSet.getName());
+                    logger.error(t, "Error removing rule set '{}' upon rule service shutdown", ruleSet.getName());
                 }
             }
         } finally {
-            this.lock.writeLock().unlock();
+            lock.writeLock().unlock();
         }
     }
 

@@ -31,6 +31,7 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsSame.sameInstance;
 import static org.junit.Assert.assertThat;
 import org.jboss.dna.common.jcr.AbstractJcrRepositoryTest;
+import org.jboss.dna.services.ServiceAdministrator;
 import org.jboss.dna.services.SessionFactory;
 import org.jboss.dna.services.observation.ObservationService;
 import org.junit.After;
@@ -65,7 +66,7 @@ public class SequencingServiceTest extends AbstractJcrRepositoryTest {
 
     @After
     public void afterEach() throws Exception {
-        this.system.shutdown();
+        this.system.getAdministrator().shutdown();
     }
 
     @Test
@@ -81,96 +82,96 @@ public class SequencingServiceTest extends AbstractJcrRepositoryTest {
     @Test
     public void shouldCreateDefaultExecutorServiceWhenStartedIfNoExecutorServiceHasBeenSet() {
         assertThat(system.getExecutorService(), is(nullValue()));
-        system.start();
+        system.getAdministrator().start();
         assertThat(system.getExecutorService(), is(notNullValue()));
     }
 
     @Test
     public void shouldCreateExecutorServiceWhenStarted() {
         assertThat(system.getExecutorService(), is(nullValue()));
-        system.start();
+        system.getAdministrator().start();
         assertThat(system.getExecutorService(), is(notNullValue()));
     }
 
     @Test( expected = IllegalArgumentException.class )
     public void shouldFailToSetStateToUnknownString() {
-        system.setState("asdf");
+        system.getAdministrator().setState("asdf");
     }
 
     @Test( expected = IllegalArgumentException.class )
     public void shouldFailToSetStateToNullString() {
-        system.setState((String)null);
+        system.getAdministrator().setState((String)null);
     }
 
     @Test
     public void shouldSetStateUsingLowercaseString() {
-        assertThat(system.setState("started").isStarted(), is(true));
-        assertThat(system.setState("paused").isPaused(), is(true));
-        assertThat(system.setState("shutdown").isShutdown(), is(true));
+        assertThat(system.getAdministrator().setState("started").isStarted(), is(true));
+        assertThat(system.getAdministrator().setState("paused").isPaused(), is(true));
+        assertThat(system.getAdministrator().setState("shutdown").isShutdown(), is(true));
     }
 
     @Test
     public void shouldSetStateUsingMixedCaseString() {
-        assertThat(system.setState("StarTeD").isStarted(), is(true));
-        assertThat(system.setState("PauSed").isPaused(), is(true));
-        assertThat(system.setState("ShuTDowN").isShutdown(), is(true));
+        assertThat(system.getAdministrator().setState("StarTeD").isStarted(), is(true));
+        assertThat(system.getAdministrator().setState("PauSed").isPaused(), is(true));
+        assertThat(system.getAdministrator().setState("ShuTDowN").isShutdown(), is(true));
     }
 
     @Test
     public void shouldSetStateUsingUppercasString() {
-        assertThat(system.setState("STARTED").isStarted(), is(true));
-        assertThat(system.setState("PAUSED").isPaused(), is(true));
-        assertThat(system.setState("SHUTDOWN").isShutdown(), is(true));
+        assertThat(system.getAdministrator().setState("STARTED").isStarted(), is(true));
+        assertThat(system.getAdministrator().setState("PAUSED").isPaused(), is(true));
+        assertThat(system.getAdministrator().setState("SHUTDOWN").isShutdown(), is(true));
     }
 
     @Test
     public void shouldBePausedUponConstruction() {
-        assertThat(system.isPaused(), is(true));
-        assertThat(system.getState(), is(SequencingService.State.PAUSED));
-        assertThat(system.isShutdown(), is(false));
-        assertThat(system.isStarted(), is(false));
+        assertThat(system.getAdministrator().isPaused(), is(true));
+        assertThat(system.getAdministrator().getState(), is(ServiceAdministrator.State.PAUSED));
+        assertThat(system.getAdministrator().isShutdown(), is(false));
+        assertThat(system.getAdministrator().isStarted(), is(false));
     }
 
     @Test
     public void shouldBeAbleToShutdownWhenNotStarted() {
-        assertThat(system.isShutdown(), is(false));
+        assertThat(system.getAdministrator().isShutdown(), is(false));
         for (int i = 0; i != 3; ++i) {
-            assertThat(system.shutdown().isShutdown(), is(true));
-            assertThat(system.isPaused(), is(false));
-            assertThat(system.isStarted(), is(false));
-            assertThat(system.getState(), is(SequencingService.State.SHUTDOWN));
+            assertThat(system.getAdministrator().shutdown().isShutdown(), is(true));
+            assertThat(system.getAdministrator().isPaused(), is(false));
+            assertThat(system.getAdministrator().isStarted(), is(false));
+            assertThat(system.getAdministrator().getState(), is(ServiceAdministrator.State.SHUTDOWN));
         }
     }
 
     @Test
     public void shouldBeAbleToBePauseAndRestarted() {
-        assertThat(system.isShutdown(), is(false));
+        assertThat(system.getAdministrator().isShutdown(), is(false));
         for (int i = 0; i != 3; ++i) {
             // Now pause it ...
-            assertThat(system.pause().isPaused(), is(true));
-            assertThat(system.isStarted(), is(false));
-            assertThat(system.isShutdown(), is(false));
-            assertThat(system.getState(), is(SequencingService.State.PAUSED));
+            assertThat(system.getAdministrator().pause().isPaused(), is(true));
+            assertThat(system.getAdministrator().isStarted(), is(false));
+            assertThat(system.getAdministrator().isShutdown(), is(false));
+            assertThat(system.getAdministrator().getState(), is(ServiceAdministrator.State.PAUSED));
 
             // Now start it back up ...
-            assertThat(system.start().isStarted(), is(true));
-            assertThat(system.isPaused(), is(false));
-            assertThat(system.isShutdown(), is(false));
-            assertThat(system.getState(), is(SequencingService.State.STARTED));
+            assertThat(system.getAdministrator().start().isStarted(), is(true));
+            assertThat(system.getAdministrator().isPaused(), is(false));
+            assertThat(system.getAdministrator().isShutdown(), is(false));
+            assertThat(system.getAdministrator().getState(), is(ServiceAdministrator.State.STARTED));
         }
     }
 
     @Test( expected = IllegalStateException.class )
     public void shouldNotBeAbleToBeRestartedAfterBeingShutdown() {
-        assertThat(system.isShutdown(), is(false));
+        assertThat(system.getAdministrator().isShutdown(), is(false));
         // Shut it down ...
-        assertThat(system.shutdown().isShutdown(), is(true));
-        assertThat(system.isPaused(), is(false));
-        assertThat(system.isStarted(), is(false));
-        assertThat(system.getState(), is(SequencingService.State.SHUTDOWN));
+        assertThat(system.getAdministrator().shutdown().isShutdown(), is(true));
+        assertThat(system.getAdministrator().isPaused(), is(false));
+        assertThat(system.getAdministrator().isStarted(), is(false));
+        assertThat(system.getAdministrator().getState(), is(ServiceAdministrator.State.SHUTDOWN));
 
         // Now start it back up ... this will fail
-        system.start();
+        system.getAdministrator().start();
     }
 
     @Test
@@ -179,8 +180,8 @@ public class SequencingServiceTest extends AbstractJcrRepositoryTest {
         Session session = getRepository().login(getTestCredentials());
 
         // Try when paused ...
-        assertThat(system.isPaused(), is(true));
-        assertThat(observationService.pause().isPaused(), is(true));
+        assertThat(system.getAdministrator().isPaused(), is(true));
+        assertThat(observationService.getAdministrator().pause().isPaused(), is(true));
         ObservationService.WorkspaceListener listener = observationService.monitor(REPOSITORY_WORKSPACE_NAME, Event.NODE_ADDED);
         assertThat(listener, is(notNullValue()));
         assertThat(listener.getAbsolutePath(), is("/"));
@@ -200,8 +201,8 @@ public class SequencingServiceTest extends AbstractJcrRepositoryTest {
         assertThat(listener.isRegistered(), is(false));
 
         // Start the sequencing system and try monitoring the workspace ...
-        assertThat(system.start().isStarted(), is(true));
-        assertThat(observationService.start().isStarted(), is(true));
+        assertThat(system.getAdministrator().start().isStarted(), is(true));
+        assertThat(observationService.getAdministrator().start().isStarted(), is(true));
         ObservationService.WorkspaceListener listener2 = observationService.monitor(REPOSITORY_WORKSPACE_NAME, Event.NODE_ADDED);
         assertThat(listener2.isRegistered(), is(true));
         assertThat(listener2, is(notNullValue()));
@@ -217,9 +218,9 @@ public class SequencingServiceTest extends AbstractJcrRepositoryTest {
         assertThat(observationService.getStatistics().getNumberOfEventsIgnored(), is((long)0));
         assertThat(system.getStatistics().getNumberOfNodesSkipped(), is((long)1));
 
-        system.shutdown();
+        system.getAdministrator().shutdown();
         system.getStatistics().reset();
-        observationService.shutdown();
+        observationService.getAdministrator().shutdown();
         observationService.getStatistics().reset();
 
         // Cause another event ...
@@ -240,7 +241,7 @@ public class SequencingServiceTest extends AbstractJcrRepositoryTest {
         Session session = getRepository().login(getTestCredentials());
 
         // Start the sequencing system and try monitoring the workspace ...
-        assertThat(system.start().isStarted(), is(true));
+        assertThat(system.getAdministrator().start().isStarted(), is(true));
         ObservationService.WorkspaceListener listener = observationService.monitor(REPOSITORY_WORKSPACE_NAME, Event.NODE_ADDED);
         assertThat(listener.isRegistered(), is(true));
         assertThat(listener, is(notNullValue()));
@@ -253,13 +254,13 @@ public class SequencingServiceTest extends AbstractJcrRepositoryTest {
         assertThat(listener.isRegistered(), is(true));
 
         // Pause the system, can cause an event ...
-        system.pause();
+        system.getAdministrator().pause();
         session.getRootNode().addNode("testnodeB", "nt:unstructured");
         session.save();
         assertThat(listener.isRegistered(), is(true));
 
-        system.shutdown();
-        observationService.shutdown();
+        system.getAdministrator().shutdown();
+        observationService.getAdministrator().shutdown();
 
         // Cause another event ...
         session.getRootNode().addNode("testnodeC", "nt:unstructured");
