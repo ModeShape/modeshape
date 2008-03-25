@@ -27,6 +27,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.Reader;
+import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -34,6 +35,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import org.jboss.dna.common.SystemFailureException;
 
 /**
  * Utilities for string processing and manipulation.
@@ -350,20 +352,59 @@ public class StringUtil {
         IoUtil.write(content, writer);
     }
 
+    /**
+     * Create a human-readable form of the supplied object by choosing the representation format based upon the object type.
+     * <p>
+     * <ul>
+     * <li>A null reference results in the "null" string.</li>
+     * <li>A string is written wrapped by double quotes.</li>
+     * <li>A boolean is written using {@link Boolean#toString()}.</li>
+     * <li>A {@link Number number} is written using the standard {@link Number#toString() toString()} method.</li>
+     * <li>A {@link java.util.Date date} is written using the the {@link DateUtil#getDateAsStandardString(java.util.Date)}
+     * utility method.</li>
+     * <li>A {@link java.sql.Date SQL date} is written using the the {@link DateUtil#getDateAsStandardString(java.util.Date)}
+     * utility method.</li>
+     * <li>A {@link Calendar Calendar instance} is written using the the {@link DateUtil#getDateAsStandardString(Calendar)}
+     * utility method.</li>
+     * <li>An array of bytes is written with a leading "[ " and trailing " ]" surrounding the bytes written as UTF-8.
+     * <li>An array of objects is written with a leading "[ " and trailing " ]", and with all objects sent through
+     * {@link #readableString(Object)} and separated by ", ".</li>
+     * <li>A collection of objects (e.g, <code>Collection<?></code>) is written with a leading "[ " and trailing " ]", and
+     * with all objects sent through {@link #readableString(Object)} and separated by ", ".</li>
+     * <li>A map of objects (e.g, <code>Map<?></code>) is written with a leading "{ " and trailing " }", and with all map
+     * entries written in the form "key => value" and separated by ", ". All key and value objects are sent through the
+     * {@link #readableString(Object)} method.</li>
+     * <li>Any other object is written using the object's {@link Object#toString() toString()} method.</li>
+     * </ul>
+     * </p>
+     * <p>
+     * This method is capable of generating strings for nested objects. For example, a <code>Map<Date,Object[]></code> would be
+     * written in the form:
+     * 
+     * <pre>
+     *    { 2008-02-03T14:22:49 =&gt; [ &quot;description&quot;, 3, [ 003459de7389g23aef, true ] ] }
+     * </pre>
+     * 
+     * </p>
+     * @param obj the object that is to be converted to a string.
+     * @return the string representation that is to be human readable
+     */
     public static String readableString( Object obj ) {
         if (obj == null) return "null";
-        if (obj instanceof Object[]) return readableString((Object[])obj);
+        if (obj instanceof Boolean) return ((Boolean)obj).toString();
+        if (obj instanceof String) return "\"" + obj.toString() + "\"";
         if (obj instanceof Number) return obj.toString();
         if (obj instanceof Map) return readableString((Map)obj);
         if (obj instanceof Collection) return readableString((Collection)obj);
-        if (obj instanceof String) return "\"" + obj.toString() + "\"";
+        if (obj instanceof byte[]) return readableString((byte[])obj);
+        if (obj instanceof Object[]) return readableString((Object[])obj);
         if (obj instanceof Calendar) return DateUtil.getDateAsStandardString((Calendar)obj);
         if (obj instanceof java.util.Date) return DateUtil.getDateAsStandardString((java.util.Date)obj);
         if (obj instanceof java.sql.Date) return DateUtil.getDateAsStandardString((java.sql.Date)obj);
         return obj.toString();
     }
 
-    public static String readableString( Object[] array ) {
+    protected static String readableString( Object[] array ) {
         if (array == null) return "null";
         StringBuilder sb = new StringBuilder();
         boolean first = true;
@@ -381,7 +422,20 @@ public class StringUtil {
         return sb.toString();
     }
 
-    public static String readableString( Collection<?> collection ) {
+    protected static String readableString( byte[] array ) {
+        if (array == null) return "null";
+        StringBuilder sb = new StringBuilder();
+        sb.append("[ ");
+        try {
+            sb.append(new String(array, "UTF-8"));
+        } catch (UnsupportedEncodingException e) {
+            throw new SystemFailureException(e);
+        }
+        sb.append(" ]");
+        return sb.toString();
+    }
+
+    protected static String readableString( Collection<?> collection ) {
         if (collection == null) return "null";
         StringBuilder sb = new StringBuilder();
         boolean first = true;
@@ -399,7 +453,7 @@ public class StringUtil {
         return sb.toString();
     }
 
-    public static String readableString( Map<?, ?> map ) {
+    protected static String readableString( Map<?, ?> map ) {
         if (map == null) return "null";
         StringBuilder sb = new StringBuilder();
         boolean first = true;
