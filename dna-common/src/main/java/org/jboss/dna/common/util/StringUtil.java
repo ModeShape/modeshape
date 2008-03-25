@@ -21,9 +21,11 @@
  */
 package org.jboss.dna.common.util;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.PrintWriter;
 import java.io.Reader;
 import java.io.Writer;
 import java.util.Arrays;
@@ -417,6 +419,20 @@ public class StringUtil {
         }
         sb.append("}");
         return sb.toString();
+    }
+
+    /**
+     * Get the stack trace of the supplied exception.
+     * @param t the exception for which the stack trace is to be returned
+     * @return the stack trace, or null if the supplied exception is null
+     */
+    public static String getStackTrace( Throwable t ) {
+        if (t == null) return null;
+        final ByteArrayOutputStream bas = new ByteArrayOutputStream();
+        final PrintWriter pw = new PrintWriter(bas);
+        t.printStackTrace(pw);
+        pw.close();
+        return bas.toString();
     }
 
     private StringUtil() {

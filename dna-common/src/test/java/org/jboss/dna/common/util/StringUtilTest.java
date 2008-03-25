@@ -26,6 +26,7 @@ import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
+import static org.junit.matchers.JUnitMatchers.containsString;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -284,6 +285,15 @@ public class StringUtilTest {
         assertThat(wrapper.isClosed(), is(false));
         assertThat(StringUtil.read(wrapper), is(content));
         assertThat(wrapper.isClosed(), is(true));
+    }
+
+    @Test
+    public void getStackTraceShouldReturnStackTrace() {
+        String msg = "This is the message for a test exception";
+        Throwable t = new IllegalArgumentException(msg);
+        String trace = StringUtil.getStackTrace(t);
+        assertThat(trace, containsString(msg));
+        assertThat(trace, containsString(this.getClass().getName()));
     }
 
     protected class InputStreamWrapper extends InputStream {
