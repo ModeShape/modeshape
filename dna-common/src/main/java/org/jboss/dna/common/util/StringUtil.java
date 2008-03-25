@@ -397,6 +397,12 @@ public class StringUtil {
         if (obj instanceof Map) return readableString((Map)obj);
         if (obj instanceof Collection) return readableString((Collection)obj);
         if (obj instanceof byte[]) return readableString((byte[])obj);
+        if (obj instanceof boolean[]) return readableString((boolean[])obj);
+        if (obj instanceof short[]) return readableString((short[])obj);
+        if (obj instanceof int[]) return readableString((int[])obj);
+        if (obj instanceof long[]) return readableString((long[])obj);
+        if (obj instanceof float[]) return readableString((float[])obj);
+        if (obj instanceof double[]) return readableString((double[])obj);
         if (obj instanceof Object[]) return readableString((Object[])obj);
         if (obj instanceof Calendar) return DateUtil.getDateAsStandardString((Calendar)obj);
         if (obj instanceof java.util.Date) return DateUtil.getDateAsStandardString((java.util.Date)obj);
@@ -404,26 +410,142 @@ public class StringUtil {
         return obj.toString();
     }
 
+    protected static String readableEmptyArray( Class arrayClass ) {
+        assert arrayClass != null;
+        Class componentType = arrayClass.getComponentType();
+        if (componentType.isArray()) return "[" + readableEmptyArray(componentType) + "]";
+        return "[]";
+    }
+
     protected static String readableString( Object[] array ) {
-        if (array == null) return "null";
+        assert array != null;
+        if (array.length == 0) return readableEmptyArray(array.getClass());
         StringBuilder sb = new StringBuilder();
         boolean first = true;
-        sb.append("[");
+        sb.append("[ ");
         for (Object value : array) {
             if (first) {
-                sb.append(" ");
+                first = false;
             } else {
                 sb.append(", ");
-                first = false;
             }
             sb.append(readableString(value));
         }
-        sb.append("]");
+        sb.append(" ]");
+        return sb.toString();
+    }
+
+    protected static String readableString( int[] array ) {
+        assert array != null;
+        if (array.length == 0) return readableEmptyArray(array.getClass());
+        StringBuilder sb = new StringBuilder();
+        boolean first = true;
+        sb.append("[ ");
+        for (int value : array) {
+            if (first) {
+                first = false;
+            } else {
+                sb.append(", ");
+            }
+            sb.append(readableString(value));
+        }
+        sb.append(" ]");
+        return sb.toString();
+    }
+
+    protected static String readableString( short[] array ) {
+        assert array != null;
+        if (array.length == 0) return readableEmptyArray(array.getClass());
+        StringBuilder sb = new StringBuilder();
+        boolean first = true;
+        sb.append("[ ");
+        for (short value : array) {
+            if (first) {
+                first = false;
+            } else {
+                sb.append(", ");
+            }
+            sb.append(readableString(value));
+        }
+        sb.append(" ]");
+        return sb.toString();
+    }
+
+    protected static String readableString( long[] array ) {
+        assert array != null;
+        if (array.length == 0) return readableEmptyArray(array.getClass());
+        StringBuilder sb = new StringBuilder();
+        boolean first = true;
+        sb.append("[ ");
+        for (long value : array) {
+            if (first) {
+                first = false;
+            } else {
+                sb.append(", ");
+            }
+            sb.append(readableString(value));
+        }
+        sb.append(" ]");
+        return sb.toString();
+    }
+
+    protected static String readableString( boolean[] array ) {
+        assert array != null;
+        if (array.length == 0) return readableEmptyArray(array.getClass());
+        StringBuilder sb = new StringBuilder();
+        boolean first = true;
+        sb.append("[ ");
+        for (boolean value : array) {
+            if (first) {
+                first = false;
+            } else {
+                sb.append(", ");
+            }
+            sb.append(readableString(value));
+        }
+        sb.append(" ]");
+        return sb.toString();
+    }
+
+    protected static String readableString( float[] array ) {
+        assert array != null;
+        if (array.length == 0) return readableEmptyArray(array.getClass());
+        StringBuilder sb = new StringBuilder();
+        boolean first = true;
+        sb.append("[ ");
+        for (float value : array) {
+            if (first) {
+                first = false;
+            } else {
+                sb.append(", ");
+            }
+            sb.append(readableString(value));
+        }
+        sb.append(" ]");
+        return sb.toString();
+    }
+
+    protected static String readableString( double[] array ) {
+        assert array != null;
+        if (array.length == 0) return readableEmptyArray(array.getClass());
+        StringBuilder sb = new StringBuilder();
+        boolean first = true;
+        sb.append("[ ");
+        for (double value : array) {
+            if (first) {
+                first = false;
+            } else {
+                sb.append(", ");
+            }
+            sb.append(readableString(value));
+        }
+        sb.append(" ]");
         return sb.toString();
     }
 
     protected static String readableString( byte[] array ) {
-        if (array == null) return "null";
+        assert array != null;
+        if (array.length == 0) return readableEmptyArray(array.getClass());
         StringBuilder sb = new StringBuilder();
         sb.append("[ ");
         try {
@@ -436,42 +558,42 @@ public class StringUtil {
     }
 
     protected static String readableString( Collection<?> collection ) {
-        if (collection == null) return "null";
+        assert collection != null;
+        if (collection.isEmpty()) return "[]";
         StringBuilder sb = new StringBuilder();
         boolean first = true;
-        sb.append("[");
+        sb.append("[ ");
         for (Object value : collection) {
             if (first) {
-                sb.append(" ");
+                first = false;
             } else {
                 sb.append(", ");
-                first = false;
             }
             sb.append(readableString(value));
         }
-        sb.append("]");
+        sb.append(" ]");
         return sb.toString();
     }
 
     protected static String readableString( Map<?, ?> map ) {
-        if (map == null) return "null";
+        assert map != null;
+        if (map.isEmpty()) return "{}";
         StringBuilder sb = new StringBuilder();
         boolean first = true;
-        sb.append("{");
+        sb.append("{ ");
         for (Map.Entry<?, ?> entry : map.entrySet()) {
             Object key = entry.getKey();
             Object value = entry.getValue();
             if (first) {
-                sb.append(" ");
+                first = false;
             } else {
                 sb.append(", ");
-                first = false;
             }
             sb.append(readableString(key));
             sb.append(" => ");
             sb.append(readableString(value));
         }
-        sb.append("}");
+        sb.append(" }");
         return sb.toString();
     }
 
