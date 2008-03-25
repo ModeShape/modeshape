@@ -94,6 +94,28 @@ public class NodeChange {
     }
 
     /**
+     * Return whether this node change occurs on a node on the supplied path.
+     * @param absolutePath the path
+     * @return true if the node is on the supplied absolute path, or false otherwise
+     * @see #isNotOnPath(String)
+     */
+    public boolean isOnPath( String absolutePath ) {
+        if (absolutePath == null) return false;
+        if (this.getAbsolutePath().startsWith(absolutePath)) return true;
+        return false;
+    }
+
+    /**
+     * Return whether this node change occurs on a node on a different path than that supplied.
+     * @param absolutePath the path
+     * @return true if the node is on a different path, or false if it is on the same path
+     * @see #isOnPath(String)
+     */
+    public boolean isNotOnPath( String absolutePath ) {
+        return !isOnPath(absolutePath);
+    }
+
+    /**
      * {@inheritDoc}
      */
     @Override

@@ -40,6 +40,7 @@ import org.jboss.dna.common.component.StandardClassLoaderFactory;
 import org.jboss.dna.common.monitor.LoggingProgressMonitor;
 import org.jboss.dna.common.monitor.ProgressMonitor;
 import org.jboss.dna.common.monitor.SimpleProgressMonitor;
+import org.jboss.dna.common.util.ArgCheck;
 import org.jboss.dna.common.util.Logger;
 import org.jboss.dna.common.util.StringUtil;
 import org.jboss.dna.services.AbstractServiceAdministrator;
@@ -49,6 +50,7 @@ import org.jboss.dna.services.ServiceAdministrator;
 import org.jboss.dna.services.SessionFactory;
 import org.jboss.dna.services.observation.NodeChange;
 import org.jboss.dna.services.observation.NodeChangeListener;
+import org.jboss.dna.services.util.JcrTools;
 
 /**
  * A sequencing system is used to monitor changes in the content of {@link Repository JCR repositories} and to sequence the
@@ -166,7 +168,7 @@ public class SequencingService implements AdministeredService, NodeChangeListene
 
     }
 
-    private SessionFactory sessionFactory;
+    private ExecutionContext executionContext;
     private ComponentLibrary<Sequencer, SequencerConfig> sequencerLibrary = new ComponentLibrary<Sequencer, SequencerConfig>();
     private Selector sequencerSelector = DEFAULT_SEQUENCER_SELECTOR;
     private NodeFilter nodeFilter = DEFAULT_NODE_FILTER;
@@ -279,23 +281,21 @@ public class SequencingService implements AdministeredService, NodeChangeListene
     }
 
     /**
-     * @return sessionFactory
+     * @return executionContext
      */
-    public SessionFactory getSessionFactory() {
-        return this.sessionFactory;
+    public ExecutionContext getExecutionContext() {
+        return this.executionContext;
     }
 
     /**
-     * @param sessionFactory Sets sessionFactory to the specified value.
+     * @param executionContext Sets executionContext to the specified value.
      */
-    public void setSessionFactory( SessionFactory sessionFactory ) {
-        if (sessionFactory == null) {
-            throw new IllegalArgumentException("The session factory parameter may not be null");
-        }
+    public void setExecutionContext( ExecutionContext executionContext ) {
+        ArgCheck.isNotNull(executionContext, "execution context");
         if (this.getAdministrator().isStarted()) {
-            throw new IllegalStateException("Unable to change the session factory while running");
+            throw new IllegalStateException("Unable to change the execution context while running");
         }
-        this.sessionFactory = sessionFactory;
+        this.executionContext = executionContext;
     }
 
     /**
@@ -346,8 +346,8 @@ public class SequencingService implements AdministeredService, NodeChangeListene
     }
 
     protected void startService() {
-        if (this.getSessionFactory() == null) {
-            throw new IllegalStateException("Unable to start the sequencing system without a session factory");
+        if (this.getExecutionContext() == null) {
+            throw new IllegalStateException("Unable to start the sequencing system without an execution context");
         }
         if (this.executorService == null) {
             this.executorService = createDefaultExecutorService();
@@ -423,7 +423,7 @@ public class SequencingService implements AdministeredService, NodeChangeListene
     protected void processChangedNode( NodeChange changedNode ) {
         try {
             // Create a session that we'll use for all sequencing ...
-            final Session session = this.getSessionFactory().createSession(changedNode.getRepositoryWorkspaceName());
+            final Session session = this.getExecutionContext().getSessionFactory().createSession(changedNode.getRepositoryWorkspaceName());
 
             try {
                 // Find the changed node ...
@@ -498,7 +498,7 @@ public class SequencingService implements AdministeredService, NodeChangeListene
         protected final AtomicBoolean closed = new AtomicBoolean(false);
 
         protected Context() {
-            final SessionFactory delegate = SequencingService.this.getSessionFactory();
+            final SessionFactory delegate = SequencingService.this.getExecutionContext().getSessionFactory();
             this.factory = new SessionFactory() {
 
                 public Session createSession( String name ) throws RepositoryException {
@@ -519,6 +519,13 @@ public class SequencingService implements AdministeredService, NodeChangeListene
          */
         public SessionFactory getSessionFactory() {
             return this.factory;
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        public JcrTools getTools() {
+            return SequencingService.this.getExecutionContext().getTools();
         }
 
         public synchronized void close() {

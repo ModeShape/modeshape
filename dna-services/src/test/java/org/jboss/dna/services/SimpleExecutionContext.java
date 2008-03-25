@@ -21,26 +21,39 @@
  */
 package org.jboss.dna.services;
 
+import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.assertThat;
+import javax.jcr.RepositoryException;
 import javax.jcr.Session;
+import org.jboss.dna.common.jcr.AbstractJcrRepositoryTest;
 import org.jboss.dna.services.util.JcrTools;
 
 /**
- * The context of an execution.
  * @author Randall Hauch
  */
-public interface ExecutionContext {
+public class SimpleExecutionContext implements ExecutionContext {
+
+    private JcrTools tools = new JcrTools();
+    private SessionFactory sessionFactory;
+
+    public SimpleExecutionContext( final AbstractJcrRepositoryTest test, final String repositoryName ) {
+        this.sessionFactory = new SessionFactory() {
+
+            public Session createSession( String name ) throws RepositoryException {
+                assertThat(name, is(repositoryName));
+                return test.getRepository().login(test.getTestCredentials());
+            }
+        };
+    }
+
+    public SessionFactory getSessionFactory() {
+        return sessionFactory;
+    }
 
     /**
-     * Get the session factory, which can be used to obtain sessions temporarily for this context. Any session obtained from this
-     * factory should be {@link Session#logout() closed} before the execution finishes.
-     * @return the session factory
+     * {@inheritDoc}
      */
-    SessionFactory getSessionFactory();
-
-    /**
-     * Get a set of utilities for working with JCR.
-     * @return the tools
-     */
-    JcrTools getTools();
-
+    public JcrTools getTools() {
+        return tools;
+    }
 }

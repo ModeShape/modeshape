@@ -59,13 +59,13 @@ import org.jboss.dna.services.ServiceAdministrator;
 
 /**
  * A rule service that is capable of executing rule sets using one or more JSR-94 rule engines. Sets of rules are
- * {@link #addRuleSet(RuleSet) added}, {@link #updateRuleSet(RuleSet) updated}, and {@link #removeRuleSet(RuleSet) removed}
+ * {@link #addRuleSet(RuleSet) added}, {@link #updateRuleSet(RuleSet) updated}, and {@link #removeRuleSet(String) removed}
  * (usually by some other component), and then these named rule sets can be {@link #executeRules(String, Map, Object...) run} with
  * inputs and facts to obtain output.
  * <p>
  * This service is thread safe. While multiple rule sets can be safely {@link #executeRules(String, Map, Object...) executed} at
  * the same time, all executions will be properly synchronized with methods to {@link #addRuleSet(RuleSet) add},
- * {@link #updateRuleSet(RuleSet) update}, and {@link #removeRuleSet(RuleSet) remove} rule sets.
+ * {@link #updateRuleSet(RuleSet) update}, and {@link #removeRuleSet(String) remove} rule sets.
  * </p>
  * @author Randall Hauch
  */
@@ -166,18 +166,17 @@ public class RuleService implements AdministeredService {
     }
 
     /**
-     * Add the configuration for a sequencer, or update any existing one that represents the
-     * {@link RuleSet#equals(Object) same rule set}
+     * Add a rule set, or update any existing one that represents the {@link RuleSet#equals(Object) same rule set}
      * @param ruleSet the new rule set
      * @return true if the rule set was added, or false if the rule set was not added (because it wasn't necessary)
      * @throws IllegalArgumentException if <code>ruleSet</code> is null
      * @throws InvalidRuleSetException if the supplied rule set is invalid, incomplete, incorrectly defined, or uses a JSR-94
      * service provider that cannot be found
      * @see #updateRuleSet(RuleSet)
-     * @see #removeRuleSet(RuleSet)
+     * @see #removeRuleSet(String)
      */
     public boolean addRuleSet( RuleSet ruleSet ) {
-        if (ruleSet == null) throw new IllegalArgumentException("The rule set reference may not be null");
+        ArgCheck.isNotNull(ruleSet, "rule set");
         final String providerUri = ruleSet.getProviderUri();
         final String ruleSetName = ruleSet.getName();
         final String rules = ruleSet.getRules();
@@ -283,40 +282,43 @@ public class RuleService implements AdministeredService {
      * @throws InvalidRuleSetException if the supplied rule set is invalid, incomplete, incorrectly defined, or uses a JSR-94
      * service provider that cannot be found
      * @see #addRuleSet(RuleSet)
-     * @see #removeRuleSet(RuleSet)
+     * @see #removeRuleSet(String)
      */
     public boolean updateRuleSet( RuleSet ruleSet ) {
         return addRuleSet(ruleSet);
     }
 
     /**
-     * Remove the configuration for a sequencer.
-     * @param ruleSet the rule set to be removed
+     * Remove a rule set.
+     * @param ruleSetName the name of the rule set to be removed
      * @return true if the rule set was removed, or if it was not an existing rule set
-     * @throws IllegalArgumentException if <code>ruleSet</code> is null
+     * @throws IllegalArgumentException if <code>ruleSetName</code> is null or empty
      * @throws SystemFailureException if the rule set was found but there was a problem removing it
      * @see #addRuleSet(RuleSet)
      * @see #updateRuleSet(RuleSet)
      */
-    public boolean removeRuleSet( RuleSet ruleSet ) {
-        if (ruleSet == null) throw new IllegalArgumentException("The rule set reference may not be null");
-        boolean found = false;
+    public boolean removeRuleSet( String ruleSetName ) {
+        ArgCheck.isNotEmpty(ruleSetName, "rule set");
         try {
             this.lock.writeLock().lock();
-            try {
-                deregister(ruleSet);
-            } finally {
-                // No matter what, remove the rule set from this service ...
-                found = this.ruleSets.remove(ruleSet.getName()) != null;
+            RuleSet ruleSet = this.ruleSets.remove(ruleSetName);
+            if (ruleSet != null) {
+                try {
+                    deregister(ruleSet);
+                } catch (Throwable t) {
+                    // There was a problem deregistering the rule set, so put it back ...
+                    this.ruleSets.put(ruleSetName, ruleSet);
+                }
+                return true;
             }
         } catch (Throwable t) {
             String msg = "Error removing rule set '{1}'";
-            msg = StringUtil.createString(msg, ruleSet.getName());
+            msg = StringUtil.createString(msg, ruleSetName);
             throw new SystemFailureException(msg, t);
         } finally {
             this.lock.writeLock().unlock();
         }
-        return found;
+        return false;
     }
 
     /**
@@ -338,7 +340,7 @@ public class RuleService implements AdministeredService {
     /**
      * Execute the set of rules defined by the supplied rule set name. This method is safe to be concurrently called by multiple
      * threads, and is properly synchronized with the methods to {@link #addRuleSet(RuleSet) add},
-     * {@link #updateRuleSet(RuleSet) update}, and {@link #removeRuleSet(RuleSet) remove} rule sets.
+     * {@link #updateRuleSet(RuleSet) update}, and {@link #removeRuleSet(String) remove} rule sets.
      * @param ruleSetName the {@link RuleSet#getName() name} of the {@link RuleSet} that should be used
      * @param globals the global variables
      * @param facts the facts
