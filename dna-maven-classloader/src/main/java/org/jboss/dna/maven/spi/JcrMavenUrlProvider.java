@@ -218,7 +218,7 @@ public class JcrMavenUrlProvider extends AbstractMavenUrlProvider {
                     }
                 }
                 session.save();
-                this.logger.debug("Created Maven repository node for {0}", mavenUrl);
+                this.logger.trace("Created Maven repository node for {0}", mavenUrl);
             } catch (LoginException err) {
                 throw new MavenRepositoryException(MavenI18n.unableToOpenSessiontoRepositoryWhenCreatingNode.text(mavenUrl, err.getMessage()), err);
             } catch (NoSuchWorkspaceException err) {

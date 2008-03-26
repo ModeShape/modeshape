@@ -269,7 +269,7 @@ public class MavenRepository implements ClassLoaderFactory {
 
                 // Extract the Maven dependency ...
                 if (depGroupId == null || depArtifactId == null || depVersion == null) {
-                    this.logger.debug("Skipping dependency of {1} due to missing groupId, artifactId or version: {2}", mavenId, dependencyNode);
+                    this.logger.trace("Skipping dependency of {1} due to missing groupId, artifactId or version: {2}", mavenId, dependencyNode);
                     continue; // not enough information, so skip
                 }
                 MavenDependency dependency = new MavenDependency(depGroupId, depArtifactId, depVersion, depClassifier);
@@ -288,7 +288,7 @@ public class MavenRepository implements ClassLoaderFactory {
                     String excludedArtifactId = (String)artifactIdExpression.evaluate(exclusionNode, XPathConstants.STRING);
 
                     if (excludedGroupId == null || excludedArtifactId == null) {
-                        this.logger.debug("Skipping exclusion in dependency of {1} due to missing exclusion groupId or artifactId: {2} ", mavenId, exclusionNode);
+                        this.logger.trace("Skipping exclusion in dependency of {1} due to missing exclusion groupId or artifactId: {2} ", mavenId, exclusionNode);
                         continue; // not enough information, so skip
                     }
                     MavenId excludedId = new MavenId(excludedGroupId, excludedArtifactId);

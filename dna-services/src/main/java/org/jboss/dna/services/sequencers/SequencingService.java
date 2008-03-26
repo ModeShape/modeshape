@@ -435,7 +435,7 @@ public class SequencingService implements AdministeredService, NodeChangeListene
                 if (sequencers.isEmpty()) {
                     this.statistics.recordNodeSkipped();
                     if (this.logger.isDebugEnabled()) {
-                        this.logger.debug("Skipping '{}': no sequencers matched this condition", changedNode);
+                        this.logger.trace("Skipping '{}': no sequencers matched this condition", changedNode);
                     }
                 } else {
                     ProgressMonitor progressMonitor = new SimpleProgressMonitor(ServicesI18n.sequencerTask.text(changedNode));
