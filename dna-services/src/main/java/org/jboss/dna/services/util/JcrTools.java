@@ -36,6 +36,7 @@ import javax.jcr.ValueFormatException;
 import org.jboss.dna.common.util.IoUtil;
 import org.jboss.dna.common.util.Logger;
 import org.jboss.dna.common.util.StringUtil;
+import org.jboss.dna.services.ServicesI18n;
 
 /**
  * @author Randall Hauch
@@ -60,7 +61,7 @@ public class JcrTools {
                     }
                 }
             } catch (RepositoryException e) {
-                problems.addError(e, "Error reading properties from property container node {1}", getReadable(propertyContainer));
+                problems.addError(e, ServicesI18n.errorReadingPropertiesFromContainerNode, getReadable(propertyContainer));
             }
         }
 
@@ -103,7 +104,7 @@ public class JcrTools {
             // - dna:location (string) copy
             // - dna:trace (string) copy
             problemNode.setProperty("dna:status", problem.getStatus().name());
-            problemNode.setProperty("dna:message", problem.getMessage());
+            problemNode.setProperty("dna:message", problem.getMessageString());
             if (problem.getCode() != Problem.DEFAULT_CODE) {
                 problemNode.setProperty("dna:code", Integer.toString(problem.getCode()));
             }
@@ -144,12 +145,22 @@ public class JcrTools {
             Property property = node.getProperty(propertyName);
             return property.getString();
         } catch (ValueFormatException e) {
-            problems.addError(e, "The {1} {2} property on node {3} was expected to be a string value", required ? "required" : "optional", propertyName, getReadable(node));
+            if (required) {
+                problems.addError(e, ServicesI18n.requiredPropertyOnNodeWasExpectedToBeStringValue, propertyName, getReadable(node));
+            } else {
+                problems.addError(e, ServicesI18n.optionalPropertyOnNodeWasExpectedToBeStringValue, propertyName, getReadable(node));
+            }
         } catch (PathNotFoundException e) {
-            if (required) problems.addError(e, "The required {1} property is missing from node {2}", propertyName, getReadable(node));
+            if (required) {
+                problems.addError(e, ServicesI18n.requiredPropertyIsMissingFromNode, propertyName, getReadable(node));
+            }
             if (!required) return defaultValue;
         } catch (RepositoryException err) {
-            problems.addError(err, "Error while getting the {1} property {2} on node {3}", required ? "required" : "optional", propertyName, getReadable(node));
+            if (required) {
+                problems.addError(err, ServicesI18n.errorGettingRequiredPropertyFromNode, propertyName, getReadable(node));
+            } else {
+                problems.addError(err, ServicesI18n.errorGettingOptionalPropertyFromNode, propertyName, getReadable(node));
+            }
         }
         return null;
     }
@@ -169,7 +180,7 @@ public class JcrTools {
                                 stream.close();
                             } catch (IOException e) {
                                 // Log ...
-                                Logger.getLogger(this.getClass()).error(e, "Error while closing the binary stream for property {} on node {}", propertyName, node.getPath());
+                                Logger.getLogger(this.getClass()).error(e, ServicesI18n.errorClosingBinaryStreamForPropertyFromNode, propertyName, node.getPath());
                             }
                         }
                     }
@@ -179,11 +190,21 @@ public class JcrTools {
                 }
             }
         } catch (IOException e) {
-            problems.addError(e, "The {1} {2} property on node {3} could not be read", required ? "required" : "optional", propertyName, getReadable(node));
+            if (required) {
+                problems.addError(e, ServicesI18n.requiredPropertyOnNodeCouldNotBeRead, propertyName, getReadable(node));
+            } else {
+                problems.addError(e, ServicesI18n.optionalPropertyOnNodeCouldNotBeRead, propertyName, getReadable(node));
+            }
         } catch (PathNotFoundException e) {
-            if (required) problems.addError(e, "The required {1} property is missing from node {2}", propertyName, getReadable(node));
+            if (required) {
+                problems.addError(e, ServicesI18n.requiredPropertyIsMissingFromNode, propertyName, getReadable(node));
+            }
         } catch (RepositoryException err) {
-            problems.addError(err, "Error while getting the {1} property {2} on node {3}", required ? "required" : "optional", propertyName, getReadable(node));
+            if (required) {
+                problems.addError(err, ServicesI18n.errorGettingRequiredPropertyFromNode, propertyName, getReadable(node));
+            } else {
+                problems.addError(err, ServicesI18n.errorGettingOptionalPropertyFromNode, propertyName, getReadable(node));
+            }
         }
         return null;
     }
@@ -203,11 +224,21 @@ public class JcrTools {
                 result = new String[] {property.getString()};
             }
         } catch (ValueFormatException e) {
-            problems.addError(e, "The {1} {2} property on node {3} was expected to be an array of string values", required ? "required" : "optional", propertyName, getReadable(node));
+            if (required) {
+                problems.addError(e, ServicesI18n.requiredPropertyOnNodeWasExpectedToBeStringArrayValue, propertyName, getReadable(node));
+            } else {
+                problems.addError(e, ServicesI18n.optionalPropertyOnNodeWasExpectedToBeStringArrayValue, propertyName, getReadable(node));
+            }
         } catch (PathNotFoundException e) {
-            if (required) problems.addError(e, "The required {1} property is missing from node {2}", propertyName, getReadable(node));
+            if (required) {
+                problems.addError(e, ServicesI18n.requiredPropertyIsMissingFromNode, propertyName, getReadable(node));
+            }
         } catch (RepositoryException err) {
-            problems.addError(err, "Error while getting the {1} property {2} on node {3}", required ? "required" : "optional", propertyName, getReadable(node));
+            if (required) {
+                problems.addError(err, ServicesI18n.errorGettingRequiredPropertyFromNode, propertyName, getReadable(node));
+            } else {
+                problems.addError(err, ServicesI18n.errorGettingOptionalPropertyFromNode, propertyName, getReadable(node));
+            }
         }
         return result;
     }
@@ -217,9 +248,9 @@ public class JcrTools {
         try {
             result = node.getNode(relativePath);
         } catch (PathNotFoundException e) {
-            if (required) problems.addError(e, "The required node {1} does not exist relative to {2}", relativePath, getReadable(node));
+            if (required) problems.addError(e, ServicesI18n.requiredNodeDoesNotExistRelativeToNode, relativePath, getReadable(node));
         } catch (RepositoryException err) {
-            problems.addError(err, "Error while getting the {1} node {2} (relative to {3})", relativePath, getReadable(node));
+            problems.addError(err, ServicesI18n.errorGettingNodeRelativeToNode, relativePath, getReadable(node));
         }
         return result;
     }

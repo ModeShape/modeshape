@@ -45,10 +45,11 @@ public interface Sequencer extends Component<SequencerConfig> {
      * this method is responsible for {@link Session#save() saving} any changes made by this sequencer to the repository content.
      * <p>
      * This operation should report progress to the supplied {@link ProgressMonitor}. At the beginning of the operation, call
-     * {@link ProgressMonitor#beginTask(String, double)} with a meaningful message describing the operation and a total for the
-     * amount of work that will be done by this sequencer. Then perform the sequencing work, periodically reporting work by
-     * specifying the {@link ProgressMonitor#worked(double) amount of work} that has was just completed or by
-     * {@link ProgressMonitor#createSubtask(double) creating a subtask} and reporting work against that subtask monitor.
+     * {@link ProgressMonitor#beginTask(double, org.jboss.dna.common.i18n.I18n, Object...)} with a meaningful message describing
+     * the operation and a total for the amount of work that will be done by this sequencer. Then perform the sequencing work,
+     * periodically reporting work by specifying the {@link ProgressMonitor#worked(double) amount of work} that has was just
+     * completed or by {@link ProgressMonitor#createSubtask(double) creating a subtask} and reporting work against that subtask
+     * monitor.
      * </p>
      * <p>
      * The implementation should also periodically check whether the operation has been

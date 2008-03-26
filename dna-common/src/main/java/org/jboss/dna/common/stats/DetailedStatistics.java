@@ -240,7 +240,7 @@ public class DetailedStatistics<T extends Number> extends SimpleStatistics<T> {
     public String toString() {
         int count = this.getCount();
         String samples = Inflector.getInstance().pluralize("sample", count);
-        return StringUtil.createString("{1} {2}: min={3}; avg={4}; median={5}; stddev={6}; max={7}", count, samples, this.getMinimum(), this.getMean(), this.getMedian(), this.getStandardDeviation(),
+        return StringUtil.createString("{0} {1}: min={2}; avg={3}; median={4}; stddev={5}; max={6}", count, samples, this.getMinimum(), this.getMean(), this.getMedian(), this.getStandardDeviation(),
                                        this.getMaximum());
     }
 

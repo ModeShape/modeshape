@@ -36,8 +36,8 @@ import javax.jcr.Session;
 import net.jcip.annotations.ThreadSafe;
 import org.jboss.dna.common.util.ArgCheck;
 import org.jboss.dna.common.util.Logger;
-import org.jboss.dna.common.util.StringUtil;
 import org.jboss.dna.services.ExecutionContext;
+import org.jboss.dna.services.ServicesI18n;
 import org.jboss.dna.services.observation.NodeChange;
 import org.jboss.dna.services.observation.NodeChangeListener;
 import org.jboss.dna.services.observation.ObservationService;
@@ -94,9 +94,7 @@ public class RuleSetRepositoryMonitor implements NodeChangeListener {
             if (!leadingPath.endsWith(JCR_PATH_DELIM)) leadingPath = leadingPath + JCR_PATH_DELIM;
             this.ruleSetNamePattern = Pattern.compile(leadingPath + "([^/]+)/?.*");
         } catch (PatternSyntaxException e) {
-            String msg = "Unable to build the rule set name pattern (\"{1}\") using the supplied absolute path (\"{2}\"): {3}";
-            msg = StringUtil.createString(msg, e.getPattern(), jcrAbsolutePath, e.getDescription());
-            throw new IllegalArgumentException(msg);
+            throw new IllegalArgumentException(ServicesI18n.unableToBuildRuleSetRegularExpressionPattern.text(e.getPattern(), jcrAbsolutePath, e.getDescription()));
         }
     }
 
@@ -191,7 +189,7 @@ public class RuleSetRepositoryMonitor implements NodeChangeListener {
                     }
                 }
             } catch (RepositoryException e) {
-                getLogger().error(e, "Error obtaining a session to {}", workspaceName);
+                getLogger().error(e, ServicesI18n.errorObtainingSessionToRepositoryWorkspace, workspaceName);
             } finally {
                 if (session != null) session.logout();
             }
@@ -242,7 +240,7 @@ public class RuleSetRepositoryMonitor implements NodeChangeListener {
             try {
                 if (tools.storeProblems(ruleSetNode, problems)) ruleSetNode.save();
             } catch (RepositoryException e) {
-                this.logger.error(e, "Error while writing problems on rule set node node {}", tools.getReadable(ruleSetNode));
+                this.logger.error(e, ServicesI18n.errorWritingProblemsOnRuleSet, tools.getReadable(ruleSetNode));
             }
             return null;
         }
@@ -250,7 +248,7 @@ public class RuleSetRepositoryMonitor implements NodeChangeListener {
         try {
             if (tools.removeProblems(ruleSetNode)) ruleSetNode.save();
         } catch (RepositoryException e) {
-            this.logger.error(e, "Error while writing problems on rule set node node {}", tools.getReadable(ruleSetNode));
+            this.logger.error(e, ServicesI18n.errorWritingProblemsOnRuleSet, tools.getReadable(ruleSetNode));
         }
         return new RuleSet(name, description, classname, classpath, providerUri, ruleSetUri, rules, properties);
     }

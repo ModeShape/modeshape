@@ -21,6 +21,8 @@
  */
 package org.jboss.dna.common.util;
 
+import net.jcip.annotations.ThreadSafe;
+import org.jboss.dna.common.i18n.I18n;
 import org.slf4j.ILoggerFactory;
 import org.slf4j.LoggerFactory;
 
@@ -29,6 +31,7 @@ import org.slf4j.LoggerFactory;
  * of the variable arguments and autoboxing features in Java 5, reducing the number of methods that are necessary and allowing
  * callers to supply primitive values as parameters.
  */
+@ThreadSafe
 public class Logger {
 
     public enum Level {
@@ -59,9 +62,9 @@ public class Logger {
         return new Logger(LoggerFactory.getLogger(name));
     }
 
-    private org.slf4j.Logger delegate;
+    protected final org.slf4j.Logger delegate;
 
-    private Logger( org.slf4j.Logger delegate ) {
+    /* package */Logger( org.slf4j.Logger delegate ) {
         this.delegate = delegate;
     }
 
@@ -78,51 +81,29 @@ public class Logger {
      * a pair of empty curly braces for each of the parameter, which should be passed in the correct order. This method is
      * efficient and avoids superfluous object creation when the logger is disabled for the desired level.
      * @param level the level at which to log
-     * @param message the message string
+     * @param message the (localized) message string
      * @param params the parameter values that are to replace the variables in the format string
      */
-    public void log( Level level, String message, Object... params ) {
+    public void log( Level level, I18n message, Object... params ) {
         if (message == null) return;
-        if (params == null || params.length == 0) {
-            switch (level) {
-                case DEBUG:
-                    this.delegate.debug(message);
-                    break;
-                case ERROR:
-                    this.delegate.error(message);
-                    break;
-                case INFO:
-                    this.delegate.info(message);
-                    break;
-                case TRACE:
-                    this.delegate.trace(message);
-                    break;
-                case WARNING:
-                    this.delegate.warn(message);
-                    break;
-                case OFF:
-                    break;
-            }
-        } else {
-            switch (level) {
-                case DEBUG:
-                    this.delegate.debug(message, params);
-                    break;
-                case ERROR:
-                    this.delegate.error(message, params);
-                    break;
-                case INFO:
-                    this.delegate.info(message, params);
-                    break;
-                case TRACE:
-                    this.delegate.trace(message, params);
-                    break;
-                case WARNING:
-                    this.delegate.warn(message, params);
-                    break;
-                case OFF:
-                    break;
-            }
+        switch (level) {
+            case DEBUG:
+                debug(message.text(params));
+                break;
+            case ERROR:
+                error(message, params);
+                break;
+            case INFO:
+                info(message, params);
+                break;
+            case TRACE:
+                trace(message.text(params));
+                break;
+            case WARNING:
+                warn(message, params);
+                break;
+            case OFF:
+                break;
         }
     }
 
@@ -134,67 +115,23 @@ public class Logger {
      * @param message the message accompanying the exception
      * @param params the parameter values that are to replace the variables in the format string
      */
-    public void log( Level level, Throwable t, String message, Object... params ) {
-        if (t == null) {
-            switch (level) {
-                case DEBUG:
-                    this.delegate.debug(message, params);
-                    break;
-                case ERROR:
-                    this.delegate.error(message, params);
-                    break;
-                case INFO:
-                    this.delegate.info(message, params);
-                    break;
-                case TRACE:
-                    this.delegate.trace(message, params);
-                    break;
-                case WARNING:
-                    this.delegate.warn(message, params);
-                    break;
-                case OFF:
-                    break;
-            }
-            return;
-        }
-        if (message == null) {
-            switch (level) {
-                case DEBUG:
-                    this.delegate.debug(null, t);
-                    break;
-                case ERROR:
-                    this.delegate.error(null, t);
-                    break;
-                case INFO:
-                    this.delegate.info(null, t);
-                    break;
-                case TRACE:
-                    this.delegate.trace(null, t);
-                    break;
-                case WARNING:
-                    this.delegate.warn(null, t);
-                    break;
-                case OFF:
-                    break;
-            }
-            return;
-        }
-        message = StringUtil.createLogString(message, params);
+    public void log( Level level, Throwable t, I18n message, Object... params ) {
+        if (message == null) return;
         switch (level) {
             case DEBUG:
-                this.delegate.debug(message, t);
+                debug(t, message.text(params));
                 break;
             case ERROR:
-                this.delegate.error(message, t);
+                error(t, message, params);
                 break;
             case INFO:
-                this.delegate.info(message, t);
+                info(t, message, params);
                 break;
             case TRACE:
-                this.delegate.trace(message, t);
+                trace(t, message.text(params));
                 break;
             case WARNING:
-                this.delegate.warn(message, t);
+                warn(t, message, params);
                 break;
             case OFF:
                 break;
@@ -210,11 +147,7 @@ public class Logger {
      */
     public void debug( String message, Object... params ) {
         if (message == null) return;
-        if (params == null || params.length == 0) {
-            this.delegate.debug(message);
-        } else {
-            this.delegate.debug(message, params);
-        }
+        this.delegate.debug(I18n.replaceParameters(message, params));
     }
 
     /**
@@ -226,14 +159,14 @@ public class Logger {
      */
     public void debug( Throwable t, String message, Object... params ) {
         if (t == null) {
-            this.debug(message, params);
+            debug(message, params);
             return;
         }
         if (message == null) {
             this.delegate.debug(null, t);
             return;
         }
-        this.delegate.debug(StringUtil.createLogString(message, params), t);
+        this.delegate.debug(I18n.replaceParameters(message, params), t);
     }
 
     /**
@@ -243,32 +176,28 @@ public class Logger {
      * @param message the message string
      * @param params the parameter values that are to replace the variables in the format string
      */
-    public void error( String message, Object... params ) {
+    public void error( I18n message, Object... params ) {
         if (message == null) return;
-        if (params == null || params.length == 0) {
-            this.delegate.error(message);
-        } else {
-            this.delegate.error(message, params);
-        }
+        this.delegate.error(message.text(params));
     }
 
     /**
      * Log an exception (throwable) at the ERROR level with an accompanying message. If the exception is null, then this method
-     * calls {@link #error(String, Object...)}.
+     * calls {@link #error(I18n, Object...)}.
      * @param t the exception (throwable) to log
      * @param message the message accompanying the exception
      * @param params the parameter values that are to replace the variables in the format string
      */
-    public void error( Throwable t, String message, Object... params ) {
+    public void error( Throwable t, I18n message, Object... params ) {
         if (t == null) {
-            this.error(message, params);
+            error(message, params);
             return;
         }
         if (message == null) {
             this.delegate.error(null, t);
             return;
         }
-        this.delegate.error(StringUtil.createLogString(message, params), t);
+        this.delegate.error(message.text(params), t);
     }
 
     /**
@@ -278,32 +207,28 @@ public class Logger {
      * @param message the message string
      * @param params the parameter values that are to replace the variables in the format string
      */
-    public void info( String message, Object... params ) {
+    public void info( I18n message, Object... params ) {
         if (message == null) return;
-        if (params == null || params.length == 0) {
-            this.delegate.info(message);
-        } else {
-            this.delegate.info(message, params);
-        }
+        this.delegate.info(message.text(params));
     }
 
     /**
      * Log an exception (throwable) at the INFO level with an accompanying message. If the exception is null, then this method
-     * calls {@link #info(String, Object...)}.
+     * calls {@link #info(I18n, Object...)}.
      * @param t the exception (throwable) to log
      * @param message the message accompanying the exception
      * @param params the parameter values that are to replace the variables in the format string
      */
-    public void info( Throwable t, String message, Object... params ) {
+    public void info( Throwable t, I18n message, Object... params ) {
         if (t == null) {
-            this.info(message, params);
+            info(message, params);
             return;
         }
         if (message == null) {
             this.delegate.info(null, t);
             return;
         }
-        this.delegate.info(StringUtil.createLogString(message, params), t);
+        this.delegate.info(message.text(params), t);
     }
 
     /**
@@ -315,11 +240,7 @@ public class Logger {
      */
     public void trace( String message, Object... params ) {
         if (message == null) return;
-        if (params == null || params.length == 0) {
-            this.delegate.trace(message);
-        } else {
-            this.delegate.trace(message, params);
-        }
+        this.delegate.trace(I18n.replaceParameters(message, params));
     }
 
     /**
@@ -338,7 +259,7 @@ public class Logger {
             this.delegate.trace(null, t);
             return;
         }
-        this.delegate.trace(StringUtil.createLogString(message, params), t);
+        this.delegate.trace(I18n.replaceParameters(message, params), t);
     }
 
     /**
@@ -348,32 +269,28 @@ public class Logger {
      * @param message the message string
      * @param params the parameter values that are to replace the variables in the format string
      */
-    public void warn( String message, Object... params ) {
+    public void warn( I18n message, Object... params ) {
         if (message == null) return;
-        if (params == null || params.length == 0) {
-            this.delegate.warn(message);
-        } else {
-            this.delegate.warn(message, params);
-        }
+        this.delegate.warn(message.text(params));
     }
 
     /**
      * Log an exception (throwable) at the WARNING level with an accompanying message. If the exception is null, then this method
-     * calls {@link #warn(String, Object...)}.
+     * calls {@link #warn(I18n, Object...)}.
      * @param t the exception (throwable) to log
      * @param message the message accompanying the exception
      * @param params the parameter values that are to replace the variables in the format string
      */
-    public void warn( Throwable t, String message, Object... params ) {
+    public void warn( Throwable t, I18n message, Object... params ) {
         if (t == null) {
-            this.warn(message, params);
+            warn(message, params);
             return;
         }
         if (message == null) {
             this.delegate.warn(null, t);
             return;
         }
-        this.delegate.warn(StringUtil.createLogString(message, params), t);
+        this.delegate.warn(message.text(params), t);
     }
 
     /**

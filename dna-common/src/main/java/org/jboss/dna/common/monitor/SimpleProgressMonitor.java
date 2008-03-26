@@ -25,6 +25,8 @@ package org.jboss.dna.common.monitor;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import org.jboss.dna.common.CoreI18n;
+import org.jboss.dna.common.i18n.I18n;
 import net.jcip.annotations.GuardedBy;
 import net.jcip.annotations.ThreadSafe;
 
@@ -36,7 +38,9 @@ import net.jcip.annotations.ThreadSafe;
 public class SimpleProgressMonitor implements ProgressMonitor {
 
     @GuardedBy( "lock" )
-    private String taskName;
+    private I18n taskName;
+    @GuardedBy( "lock" )
+    private Object[] params;
     @GuardedBy( "lock" )
     private double totalWork;
     @GuardedBy( "lock" )
@@ -50,7 +54,7 @@ public class SimpleProgressMonitor implements ProgressMonitor {
 
     public SimpleProgressMonitor( String activityName ) {
         this.activityName = activityName != null ? activityName.trim() : "";
-        this.taskName = "";
+        this.taskName = CoreI18n.empty;
     }
 
     /**
@@ -63,11 +67,12 @@ public class SimpleProgressMonitor implements ProgressMonitor {
     /**
      * {@inheritDoc}
      */
-    public void beginTask( String name, double totalWork ) {
+    public void beginTask( double totalWork, I18n name, Object... params ) {
         assert totalWork > 0;
         try {
             this.lock.writeLock().lock();
             this.taskName = name;
+            this.params = params;
             this.totalWork = totalWork;
             this.worked = 0.0d;
         } finally {
@@ -138,7 +143,7 @@ public class SimpleProgressMonitor implements ProgressMonitor {
     public ProgressStatus getStatus() {
         try {
             this.lock.readLock().lock();
-            return new ProgressStatus(this.getActivityName(), this.taskName, this.worked, this.totalWork, this.isCancelled());
+            return new ProgressStatus(this.getActivityName(), this.taskName.text(this.params), this.worked, this.totalWork, this.isCancelled());
         } finally {
             this.lock.readLock().unlock();
         }

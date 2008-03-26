@@ -24,6 +24,7 @@ package org.jboss.dna.common.monitor;
 
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import org.jboss.dna.common.i18n.I18n;
 import net.jcip.annotations.GuardedBy;
 import net.jcip.annotations.NotThreadSafe;
 
@@ -34,7 +35,9 @@ import net.jcip.annotations.NotThreadSafe;
 public class SubProgressMonitor implements ProgressMonitor {
 
     @GuardedBy( "lock" )
-    private String taskName;
+    private I18n taskName;
+    @GuardedBy( "lock" )
+    private Object[] params;
     @GuardedBy( "lock" )
     private double totalWork;
     @GuardedBy( "lock" )
@@ -70,11 +73,12 @@ public class SubProgressMonitor implements ProgressMonitor {
     /**
      * {@inheritDoc}
      */
-    public void beginTask( String name, double totalWork ) {
+    public void beginTask( double totalWork, I18n name, Object... params ) {
         assert totalWork > 0;
         try {
             this.lock.writeLock().lock();
             this.taskName = name;
+            this.params = params;
             this.totalWork = totalWork;
             this.parentWorkScaleFactor = ((float)subtaskTotalInParent) / ((float)totalWork);
         } finally {
@@ -145,7 +149,7 @@ public class SubProgressMonitor implements ProgressMonitor {
     public ProgressStatus getStatus() {
         try {
             this.lock.readLock().lock();
-            return new ProgressStatus(this.getActivityName(), this.taskName, this.submittedToParent, this.subtaskTotalInParent, this.isCancelled());
+            return new ProgressStatus(this.getActivityName(), this.taskName.text(this.params), this.submittedToParent, this.subtaskTotalInParent, this.isCancelled());
         } finally {
             this.lock.readLock().unlock();
         }

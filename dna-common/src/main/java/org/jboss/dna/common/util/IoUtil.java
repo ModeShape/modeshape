@@ -99,7 +99,7 @@ public class IoUtil {
      * @throws IllegalArgumentException if the stream is null
      */
     public static void write( String content, OutputStream stream ) throws IOException {
-        if (stream == null) throw new IllegalArgumentException("The stream parameter may not be null");
+        ArgCheck.isNotNull(stream, "destination stream");
         try {
             if (content != null) {
                 byte[] bytes = content.getBytes();
@@ -123,7 +123,7 @@ public class IoUtil {
      * @throws IllegalArgumentException if the writer is null
      */
     public static void write( String content, Writer writer ) throws IOException {
-        if (writer == null) throw new IllegalArgumentException("The writer parameter may not be null");
+        ArgCheck.isNotNull(writer, "destination writer");
         try {
             if (content != null) {
                 writer.write(content);
@@ -146,7 +146,7 @@ public class IoUtil {
      * @throws IllegalArgumentException if the stream is null
      */
     public static void write( InputStream input, OutputStream stream ) throws IOException {
-        if (stream == null) throw new IllegalArgumentException("The stream parameter may not be null");
+        ArgCheck.isNotNull(stream, "destination stream");
         try {
             if (input != null) {
                 byte[] buffer = new byte[1024];
@@ -177,7 +177,7 @@ public class IoUtil {
      * @throws IllegalArgumentException if the writer is null
      */
     public static void write( Reader input, Writer writer ) throws IOException {
-        if (writer == null) throw new IllegalArgumentException("The writer parameter may not be null");
+        ArgCheck.isNotNull(writer, "destination writer");
         try {
             if (input != null) {
                 char[] buffer = new char[1024];

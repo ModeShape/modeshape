@@ -28,6 +28,7 @@ import static org.hamcrest.core.IsSame.sameInstance;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.number.IsCloseTo.closeTo;
 import static org.junit.Assert.assertThat;
+import org.jboss.dna.common.CoreI18n;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -63,7 +64,7 @@ public class SimpleProgressMonitorTest {
 
     @Test
     public void shouldHaveProgressOfZeroPercentUponBeginningTask() {
-        this.monitor.beginTask(validTaskName, 1000);
+        this.monitor.beginTask(100, CoreI18n.passthrough, validTaskName);
         ProgressStatus status = monitor.getStatus();
         assertThat(status, is(notNullValue()));
         assertThat(status.getActivityName(), is(sameInstance(monitor.getActivityName())));
@@ -73,7 +74,7 @@ public class SimpleProgressMonitorTest {
 
     @Test
     public void shouldShowProperProgress() {
-        this.monitor.beginTask(validTaskName, 1000);
+        this.monitor.beginTask(1000, CoreI18n.passthrough, validTaskName);
         ProgressStatus status = monitor.getStatus();
         assertThat(status, is(notNullValue()));
         assertThat(status.getActivityName(), is(sameInstance(monitor.getActivityName())));
@@ -101,7 +102,7 @@ public class SimpleProgressMonitorTest {
 
     @Test
     public void shouldShowProperProgressUsingSubtasks() {
-        monitor.beginTask(validTaskName, 1000);
+        monitor.beginTask(1000, CoreI18n.passthrough, validTaskName);
         ProgressStatus status = monitor.getStatus();
         assertThat(status, is(notNullValue()));
         assertThat(status.getActivityName(), is(sameInstance(monitor.getActivityName())));
@@ -116,7 +117,7 @@ public class SimpleProgressMonitorTest {
             assertThat(((SubProgressMonitor)subtask).getParent(), is(sameInstance(monitor)));
 
             String subtaskName = "Subtask " + i;
-            subtask.beginTask(subtaskName, 10); // note the different total work for the subtask
+            subtask.beginTask(10, CoreI18n.passthrough, subtaskName); // note the different total work for the subtask
             for (int j = 1; j <= 10; ++j) {
                 // Work the subtask
                 subtask.worked(1);
@@ -154,7 +155,7 @@ public class SimpleProgressMonitorTest {
 
     @Test
     public void shouldAllowDoneToBeCalledEvenAfterFinished() {
-        monitor.beginTask(validTaskName, 1000);
+        monitor.beginTask(1000, CoreI18n.passthrough, validTaskName);
         ProgressStatus status = monitor.getStatus();
         assertThat(status, is(notNullValue()));
         assertThat(status.getActivityName(), is(sameInstance(monitor.getActivityName())));
@@ -183,7 +184,7 @@ public class SimpleProgressMonitorTest {
 
     @Test
     public void shouldAllowCancelToBeRejected() {
-        monitor.beginTask(validTaskName, 1000);
+        monitor.beginTask(1000, CoreI18n.passthrough, validTaskName);
         ProgressStatus status = monitor.getStatus();
         assertThat(status, is(notNullValue()));
         assertThat(status.getActivityName(), is(sameInstance(monitor.getActivityName())));
@@ -217,7 +218,7 @@ public class SimpleProgressMonitorTest {
 
     @Test
     public void shouldContinueToRecordWorkEvenWhenCancelled() {
-        monitor.beginTask(validTaskName, 1000);
+        monitor.beginTask(1000, CoreI18n.passthrough, validTaskName);
         ProgressStatus status = monitor.getStatus();
         assertThat(status, is(notNullValue()));
         assertThat(status.getActivityName(), is(sameInstance(monitor.getActivityName())));

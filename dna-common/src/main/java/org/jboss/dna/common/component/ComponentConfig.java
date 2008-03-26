@@ -25,9 +25,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import net.jcip.annotations.Immutable;
+import org.jboss.dna.common.CoreI18n;
 import org.jboss.dna.common.util.ArgCheck;
 import org.jboss.dna.common.util.ClassUtil;
-import org.jboss.dna.common.util.StringUtil;
 
 /**
  * @author Randall Hauch
@@ -73,9 +73,7 @@ public class ComponentConfig implements Comparable<ComponentConfig> {
         this.timestamp = timestamp;
         // Check the classname is a valid classname ...
         if (!ClassUtil.isFullyQualifiedClassname(classname)) {
-            String msg = "The classname {1} specified for {2} is not a valid Java classname";
-            msg = StringUtil.createString(msg, classname, name);
-            throw new IllegalArgumentException(msg);
+            throw new IllegalArgumentException(CoreI18n.componentClassnameNotValid.text(classname, name));
         }
     }
 
@@ -173,20 +171,18 @@ public class ComponentConfig implements Comparable<ComponentConfig> {
     /**
      * Determine whether this component has changed with respect to the supplied component. This method basically checks all
      * attributes, whereas {@link #equals(Object) equals} only checks the {@link #getClass() type} and {@link #getName()}.
-     * @param that the component to be compared with this one
+     * @param component the component to be compared with this one
      * @return true if this componet and the supplied component have some changes, or false if they are exactly equivalent
      * @throws IllegalArgumentException if the supplied component reference is null or is not the same {@link #getClass() type} as
      * this object
      */
-    public boolean hasChanged( ComponentConfig that ) {
-        if (that == null) throw new IllegalArgumentException("A null component configuration reference is not allowed");
-        if (!this.getClass().equals(that.getClass())) {
-            throw new IllegalArgumentException("Expected " + this.getClass().getName() + " but got " + that.getClass().getName());
-        }
-        if (!this.getName().equalsIgnoreCase(that.getName())) return true;
-        if (!this.getDescription().equals(that.getDescription())) return true;
-        if (!this.getComponentClassname().equals(that.getComponentClassname())) return true;
-        if (!this.getComponentClasspath().equals(that.getComponentClasspath())) return true;
+    public boolean hasChanged( ComponentConfig component ) {
+        ArgCheck.isNotNull(component, "component");
+        ArgCheck.isInstanceOf(component, this.getClass(), "component");
+        if (!this.getName().equalsIgnoreCase(component.getName())) return true;
+        if (!this.getDescription().equals(component.getDescription())) return true;
+        if (!this.getComponentClassname().equals(component.getComponentClassname())) return true;
+        if (!this.getComponentClasspath().equals(component.getComponentClasspath())) return true;
         return false;
     }
 

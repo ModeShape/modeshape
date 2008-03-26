@@ -86,7 +86,7 @@ public abstract class AbstractServiceAdministrator implements ServiceAdministrat
     public ServiceAdministrator setState( String state ) {
         State newState = state == null ? null : State.valueOf(state.toUpperCase());
         if (newState == null) {
-            throw new IllegalArgumentException("Invalid state parameter");
+            throw new IllegalArgumentException(ServicesI18n.invalidStateString.text(state));
         }
         return setState(newState);
     }
@@ -101,7 +101,7 @@ public abstract class AbstractServiceAdministrator implements ServiceAdministrat
      * @see #isStarted()
      */
     public synchronized ServiceAdministrator start() {
-        if (isShutdown()) throw new IllegalStateException("The " + serviceName() + " has been shutdown and may not be (re)started");
+        if (isShutdown()) throw new IllegalStateException(ServicesI18n.serviceShutdowAndMayNotBeStarted.text(serviceName()));
         if (this.state != State.STARTED) {
             doStart(this.state);
             this.state = State.STARTED;
@@ -130,7 +130,7 @@ public abstract class AbstractServiceAdministrator implements ServiceAdministrat
      * @see #isPaused()
      */
     public synchronized ServiceAdministrator pause() {
-        if (isShutdown()) throw new IllegalStateException("The " + serviceName() + " has been shutdown and may not be paused");
+        if (isShutdown()) throw new IllegalStateException(ServicesI18n.serviceShutdowAndMayNotBePaused.text(serviceName()));
         if (this.state != State.PAUSED) {
             doPause(this.state);
             this.state = State.PAUSED;

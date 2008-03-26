@@ -24,6 +24,7 @@ package org.jboss.dna.maven;
 import java.util.EnumSet;
 import java.util.LinkedHashSet;
 import java.util.Set;
+import org.jboss.dna.common.util.ArgCheck;
 
 /**
  * The cornerstone of Maven is its dependency list. Most every project depends upon others to build and run correctly, and if all
@@ -88,7 +89,7 @@ public class MavenDependency {
     }
 
     public MavenDependency( MavenId id ) {
-        if (id == null) throw new IllegalArgumentException("The id reference may not be null");
+        ArgCheck.isNotNull(id, "id");
         this.id = id;
     }
 

@@ -22,6 +22,7 @@
 
 package org.jboss.dna.common.util;
 
+import org.jboss.dna.common.CoreI18n;
 import org.jboss.dna.common.util.LogContext;
 import org.jboss.dna.common.util.Logger;
 import org.junit.After;
@@ -45,8 +46,8 @@ public class LogContextTest {
     @Test
     public void shouldAcceptValidKeys() {
         LogContext.set("username", "jsmith");
-        logger.info("tracking activity for username");
-        logger.info("A second log message");
+        logger.info(CoreI18n.passthrough, "tracking activity for username");
+        logger.info(CoreI18n.passthrough, "A second log message");
     }
 
 }

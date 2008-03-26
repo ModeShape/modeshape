@@ -43,10 +43,12 @@ import javax.jcr.observation.EventListener;
 import javax.jcr.observation.ObservationManager;
 import net.jcip.annotations.GuardedBy;
 import net.jcip.annotations.ThreadSafe;
+import org.jboss.dna.common.util.ArgCheck;
 import org.jboss.dna.common.util.Logger;
 import org.jboss.dna.services.AbstractServiceAdministrator;
 import org.jboss.dna.services.AdministeredService;
 import org.jboss.dna.services.ServiceAdministrator;
+import org.jboss.dna.services.ServicesI18n;
 import org.jboss.dna.services.SessionFactory;
 
 /**
@@ -78,9 +80,9 @@ public class ObservationService implements AdministeredService {
             try {
                 path = event.getPath();
             } catch (RepositoryException e) {
-                getLogger().error(e, "Unable to get node path from {} event from repository workspace {}", type, repositoryWorkspaceName);
+                getLogger().error(e, ServicesI18n.uableToGetNodePathFromEventOriginatingFromRepository, type, repositoryWorkspaceName);
             }
-            getLogger().error(t, "Error processing {} event on node {}=>{}", type, repositoryWorkspaceName, path);
+            getLogger().error(t, ServicesI18n.errorProcessingEventOnNode, type, repositoryWorkspaceName, path);
         }
 
         protected String getEventTypeString( Event event ) {
@@ -128,7 +130,7 @@ public class ObservationService implements AdministeredService {
          */
         @Override
         protected String serviceName() {
-            return "ObservationService service";
+            return "ObservationService";
         }
 
     }
@@ -142,7 +144,7 @@ public class ObservationService implements AdministeredService {
     private final Administrator administrator = new Administrator();
 
     public ObservationService( SessionFactory sessionFactory ) {
-        if (sessionFactory == null) throw new IllegalArgumentException("The sessionFactory reference may not be null");
+        ArgCheck.isNotNull(sessionFactory, "session factory");
         this.sessionFactory = sessionFactory;
     }
 

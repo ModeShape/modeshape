@@ -30,8 +30,9 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import net.jcip.annotations.GuardedBy;
 import net.jcip.annotations.ThreadSafe;
+import org.jboss.dna.common.CoreI18n;
 import org.jboss.dna.common.SystemFailureException;
-import org.jboss.dna.common.util.StringUtil;
+import org.jboss.dna.common.util.ArgCheck;
 
 /**
  * Maintains the list of component instances for the system. This class does not actively update the component configurations, but
@@ -113,9 +114,7 @@ public class ComponentLibrary<ComponentType, ConfigType extends ComponentConfig>
      * @see #remove(ComponentConfig)
      */
     public boolean add( ConfigType config ) {
-        if (config == null) {
-            throw new IllegalArgumentException("A non-null component configuration is required");
-        }
+        ArgCheck.isNotNull(config, "component configuration");
         try {
             this.lock.lock();
             // Find an existing configuration that matches ...
@@ -161,9 +160,7 @@ public class ComponentLibrary<ComponentType, ConfigType extends ComponentConfig>
      * @see #update(ComponentConfig)
      */
     public boolean remove( ConfigType config ) {
-        if (config == null) {
-            throw new IllegalArgumentException("A non-null sequencer configuration is required");
-        }
+        ArgCheck.isNotNull(config, "component configuration");
         try {
             this.lock.lock();
             // Find an existing configuration that matches ...
@@ -213,9 +210,7 @@ public class ComponentLibrary<ComponentType, ConfigType extends ComponentConfig>
             throw new SystemFailureException(e);
         }
         if (newInstance instanceof Component && ((Component<ConfigType>)newInstance).getConfiguration() == null) {
-            String msg = "The component {1} was not configured and will not be used";
-            msg = StringUtil.createString(msg, config.getName());
-            throw new SystemFailureException(msg);
+            throw new SystemFailureException(CoreI18n.componentNotConfigured.text(config.getName()));
         }
         return newInstance;
     }

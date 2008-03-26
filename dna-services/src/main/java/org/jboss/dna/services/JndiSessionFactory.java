@@ -33,7 +33,7 @@ import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import org.jboss.dna.common.SystemFailureException;
-import org.jboss.dna.common.util.StringUtil;
+import org.jboss.dna.common.util.ArgCheck;
 
 /**
  * A SessionFactory implementation that creates {@link Session} instances using {@link Repository} instances registered in JNDI.
@@ -103,7 +103,7 @@ public class JndiSessionFactory implements SessionFactory {
      * @throws IllegalArgumentException if the context parameter is null
      */
     public JndiSessionFactory( Context context, char... workspaceDelimiters ) {
-        if (context == null) throw new IllegalArgumentException("An initial context reference must be provided");
+        ArgCheck.isNotNull(context, "initial context");
         this.context = context;
         this.workspaceDelims = (workspaceDelimiters == null || workspaceDelimiters.length == 0) ? DEFAULT_DELIMITERS : workspaceDelimiters;
         StringBuilder sb = new StringBuilder();
@@ -199,7 +199,7 @@ public class JndiSessionFactory implements SessionFactory {
      * {@inheritDoc}
      */
     public Session createSession( String name ) throws RepositoryException {
-        if (context == null) throw new IllegalArgumentException("A name must be provided to create a Session.");
+        ArgCheck.isNotNull(name, "session name");
         name = name.trim();
         // Look up the Repository object in JNDI ...
         String repositoryName = getRepositoryName(name);
@@ -207,8 +207,7 @@ public class JndiSessionFactory implements SessionFactory {
         try {
             repository = (Repository)this.context.lookup(repositoryName);
         } catch (NamingException err) {
-            String msg = StringUtil.createString("Unable to find a repository in JNDI at '{1}'", repositoryName);
-            throw new SystemFailureException(msg);
+            throw new SystemFailureException(ServicesI18n.unableToFindRepositoryInJndi.text(repositoryName));
         }
 
         // Determine the name of the workspace ...

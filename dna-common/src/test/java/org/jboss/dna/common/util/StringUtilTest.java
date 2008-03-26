@@ -62,7 +62,7 @@ public class StringUtilTest {
 
     @Test
     public void createStringShouldCreateStringFromPattern() {
-        String pattern = "This {1} is {2} should {3} not {4} last {5}";
+        String pattern = "This {0} is {1} should {2} not {3} last {4}";
         assertEquals("This one is two should three not four last five", StringUtil.createString(pattern, "one", "two", "three", "four", "five"));
     }
 

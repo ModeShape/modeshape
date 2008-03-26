@@ -22,6 +22,8 @@
 
 package org.jboss.dna.common.monitor;
 
+import org.jboss.dna.common.i18n.I18n;
+
 /**
  * @author Randall Hauch
  */
@@ -43,8 +45,8 @@ public class ProgressMonitorWrapper implements ProgressMonitor {
     /**
      * {@inheritDoc}
      */
-    public void beginTask( String name, double totalWork ) {
-        this.delegate.beginTask(name, totalWork);
+    public void beginTask( double totalWork, I18n name, Object... params ) {
+        this.delegate.beginTask(totalWork, name, params);
     }
 
     /**

@@ -56,6 +56,7 @@ import org.jboss.dna.common.util.StringUtil;
 import org.jboss.dna.services.AbstractServiceAdministrator;
 import org.jboss.dna.services.AdministeredService;
 import org.jboss.dna.services.ServiceAdministrator;
+import org.jboss.dna.services.ServicesI18n;
 
 /**
  * A rule service that is capable of executing rule sets using one or more JSR-94 rule engines. Sets of rules are
@@ -193,9 +194,7 @@ public class RuleService implements AdministeredService {
             // Now register a new execution set ...
             RuleAdministrator ruleAdmin = ruleServiceProvider.getRuleAdministrator();
             if (ruleAdmin == null) {
-                String msg = "Unable to obtain the rule administrator for JSR-94 service provider {1} ({2}) while adding/updating rule set {3}";
-                msg = StringUtil.createString(msg, providerUri, ruleSet.getComponentClassname(), ruleSetName);
-                throw new InvalidRuleSetException(msg);
+                throw new InvalidRuleSetException(ServicesI18n.unableToObtainJsr94RuleAdministrator.text(providerUri, ruleSet.getComponentClassname(), ruleSetName));
             }
 
             // Is there is an existing rule set and, if so, whether it has changed ...
@@ -221,9 +220,7 @@ public class RuleService implements AdministeredService {
                     updatedRuleSets = true;
                 } catch (Throwable t) {
                     rollback = true;
-                    String msg = "Error adding/updating rule set '{1}'";
-                    msg = StringUtil.createString(msg, ruleSet.getName());
-                    throw new InvalidRuleSetException(msg, t);
+                    throw new InvalidRuleSetException(ServicesI18n.errorAddingOrUpdatingRuleSet.text(ruleSet.getName()), t);
                 } finally {
                     if (rollback) {
                         try {
@@ -242,7 +239,7 @@ public class RuleService implements AdministeredService {
                         } catch (Throwable rollbackError) {
                             // There was a problem rolling back to the existing rule set, and we're going to throw the
                             // exception associated with the updated/new rule set, so just log this problem
-                            this.logger.error(rollbackError, "Error rolling back rule set {} after new rule set failed", ruleSetName);
+                            this.logger.error(rollbackError, ServicesI18n.errorRollingBackRuleSetAfterUpdateFailed, ruleSetName);
                         }
                     }
                 }
@@ -250,25 +247,15 @@ public class RuleService implements AdministeredService {
         } catch (InvalidRuleSetException e) {
             throw e;
         } catch (ConfigurationException t) {
-            String msg = "Error while trying to obtain the rule administrator for JSR-94 service provider {1} ({2}) while adding/updating rule set {3}";
-            msg = StringUtil.createString(msg, providerUri, ruleSet.getComponentClassname(), ruleSetName);
-            throw new InvalidRuleSetException(msg);
+            throw new InvalidRuleSetException(ServicesI18n.unableToObtainJsr94RuleAdministrator.text(providerUri, ruleSet.getComponentClassname(), ruleSetName));
         } catch (RemoteException t) {
-            String msg = "Error using rule administrator for JSR-94 service provider {1} ({2}) while adding/updating rule set {3}";
-            msg = StringUtil.createString(msg, providerUri, ruleSet.getComponentClassname(), ruleSetName);
-            throw new InvalidRuleSetException(msg);
+            throw new InvalidRuleSetException(ServicesI18n.errorUsingJsr94RuleAdministrator.text(providerUri, ruleSet.getComponentClassname(), ruleSetName));
         } catch (IOException t) {
-            String msg = "Error reading the rules and properties while adding/updating rule set {1}";
-            msg = StringUtil.createString(msg, ruleSetName);
-            throw new InvalidRuleSetException(msg);
+            throw new InvalidRuleSetException(ServicesI18n.errorReadingRulesAndProperties.text(ruleSetName));
         } catch (RuleExecutionSetDeregistrationException t) {
-            String msg = "Error deregistering the existing rule set {1} before updating it";
-            msg = StringUtil.createString(msg, ruleSetName);
-            throw new InvalidRuleSetException(msg);
+            throw new InvalidRuleSetException(ServicesI18n.errorDeregisteringRuleSetBeforeUpdatingIt.text(ruleSetName));
         } catch (RuleExecutionSetCreateException t) {
-            String msg = "Error (re)creating the rule set {1}";
-            msg = StringUtil.createString(msg, ruleSetName);
-            throw new InvalidRuleSetException(msg);
+            throw new InvalidRuleSetException(ServicesI18n.errorRecreatingRuleSet.text(ruleSetName));
         } finally {
             this.lock.writeLock().unlock();
         }
@@ -312,9 +299,7 @@ public class RuleService implements AdministeredService {
                 return true;
             }
         } catch (Throwable t) {
-            String msg = "Error removing rule set '{1}'";
-            msg = StringUtil.createString(msg, ruleSetName);
-            throw new SystemFailureException(msg, t);
+            throw new SystemFailureException(ServicesI18n.errorRemovingRuleSet.text(ruleSetName), t);
         } finally {
             this.lock.writeLock().unlock();
         }
@@ -360,7 +345,7 @@ public class RuleService implements AdministeredService {
             // Find the rule set ...
             RuleSet ruleSet = this.ruleSets.get(ruleSetName);
             if (ruleSet == null) {
-                throw new IllegalArgumentException("Unable to find rule set with name \"" + ruleSetName + "\"");
+                throw new IllegalArgumentException(ServicesI18n.unableToFindRuleSet.text(ruleSetName));
             }
 
             // Look up the provider ...
@@ -379,13 +364,10 @@ public class RuleService implements AdministeredService {
             }
             if (this.logger.isTraceEnabled()) {
                 String msg = "Executed rule set '{1}' with globals {2} and facts {3} resulting in {4}";
-                msg = StringUtil.createString(msg, ruleSetName, StringUtil.readableString(globals), StringUtil.readableString(facts), StringUtil.readableString(result));
-                this.logger.trace(msg);
+                this.logger.trace(msg, ruleSetName, StringUtil.readableString(globals), StringUtil.readableString(facts), StringUtil.readableString(result));
             }
         } catch (Throwable t) {
-            String msg = "Error executing rule set '{1}' and with globals {2} and facts {3}";
-            msg = StringUtil.createString(msg, ruleSetName, StringUtil.readableString(globals), StringUtil.readableString(facts));
-            throw new SystemFailureException(msg, t);
+            throw new SystemFailureException(ServicesI18n.errorExecutingRuleSetWithGlobalsAndFacts.text(ruleSetName, StringUtil.readableString(globals), StringUtil.readableString(facts)), t);
         } finally {
             this.lock.readLock().unlock();
         }
@@ -399,7 +381,7 @@ public class RuleService implements AdministeredService {
                 try {
                     deregister(ruleSet);
                 } catch (Throwable t) {
-                    logger.error(t, "Error removing rule set '{}' upon rule service shutdown", ruleSet.getName());
+                    logger.error(t, ServicesI18n.errorRemovingRuleSetUponShutdown, ruleSet.getName());
                 }
             }
         } finally {
@@ -428,19 +410,15 @@ public class RuleService implements AdministeredService {
                 // Don't call ClassLoader.loadClass(String), as this doesn't initialize the class!!
                 Class.forName(ruleSet.getComponentClassname(), true, loader);
                 ruleServiceProvider = RuleServiceProviderManager.getRuleServiceProvider(providerUri);
-                this.logger.debug("Loaded the rule service provider {} ({})", providerUri, ruleSet.getComponentClassname());
+                this.logger.debug("Loaded the rule service provider {0} ({1})", providerUri, ruleSet.getComponentClassname());
             } catch (ConfigurationException ce) {
                 throw ce;
             } catch (Throwable t) {
-                String msg = "Unable to find or load the JSR-94 service provider {1} ({2})";
-                msg = StringUtil.createString(msg, providerUri, ruleSet.getComponentClassname());
-                throw new InvalidRuleSetException(msg, t);
+                throw new InvalidRuleSetException(ServicesI18n.unableToObtainJsr94ServiceProvider.text(providerUri, ruleSet.getComponentClassname()), t);
             }
         }
         if (ruleServiceProvider == null) {
-            String msg = "Unable to find or load the JSR-94 service provider {1} ({2})";
-            msg = StringUtil.createString(msg, providerUri, ruleSet.getComponentClassname());
-            throw new InvalidRuleSetException(msg);
+            throw new InvalidRuleSetException(ServicesI18n.unableToObtainJsr94ServiceProvider.text(providerUri, ruleSet.getComponentClassname()));
         }
         return ruleServiceProvider;
     }

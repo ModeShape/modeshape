@@ -73,7 +73,7 @@ public class MavenRepository implements ClassLoaderFactory {
     private final Logger logger;
 
     public MavenRepository( final MavenUrlProvider urlProvider ) {
-        if (urlProvider == null) throw new IllegalArgumentException("The URL provider reference may not be null");
+        ArgCheck.isNotNull(urlProvider, "urlProvider");
         this.urlProvider = urlProvider;
         this.classLoaders = new MavenClassLoaders(this);
         this.logger = Logger.getLogger(this.getClass());
@@ -172,7 +172,7 @@ public class MavenRepository implements ClassLoaderFactory {
                 if (!exists) iter.remove();
             }
         } catch (MalformedURLException err) {
-            throw new MavenRepositoryException("Unable to create a URL given the supplied Maven ID " + lastMavenId + ": " + err.getMessage());
+            throw new MavenRepositoryException(MavenI18n.errorCreatingUrlForMavenId.text(lastMavenId, err.getMessage()));
         }
         return nonNullIds;
     }
@@ -193,8 +193,7 @@ public class MavenRepository implements ClassLoaderFactory {
             pomUrl = getUrl(mavenId, ArtifactType.POM, null);
             return getDependencies(mavenId, pomUrl.openStream());
         } catch (IOException e) {
-            String msg = "Error getting the POM file for " + mavenId + " at " + pomUrl;
-            throw new MavenRepositoryException(msg, e);
+            throw new MavenRepositoryException(MavenI18n.errorGettingPomFileForMavenIdAtUrl.text(mavenId, pomUrl), e);
         }
     }
 
@@ -213,8 +212,8 @@ public class MavenRepository implements ClassLoaderFactory {
      * @throws MavenRepositoryException if there is a problem reading the POM file given the supplied stream and MavenId
      */
     protected List<MavenDependency> getDependencies( MavenId mavenId, InputStream pomStream, MavenDependency.Scope... allowedScopes ) throws IOException {
-        if (mavenId == null) throw new IllegalArgumentException("The mavenId parameter may not be null");
-        if (pomStream == null) throw new IllegalArgumentException("The pomStream parameter may not be null");
+        ArgCheck.isNotNull(mavenId, "mavenId");
+        ArgCheck.isNotNull(pomStream, "pomStream");
         EnumSet<MavenDependency.Scope> includedScopes = MavenDependency.Scope.getRuntimeScopes();
         if (allowedScopes != null && allowedScopes.length > 0) includedScopes = EnumSet.of(allowedScopes[0], allowedScopes);
         List<MavenDependency> results = new ArrayList<MavenDependency>();
@@ -249,11 +248,11 @@ public class MavenRepository implements ClassLoaderFactory {
             String version = (String)versionExpression.evaluate(projectNode, XPathConstants.STRING);
             String classifier = (String)classifierExpression.evaluate(projectNode, XPathConstants.STRING);
             if (groupId == null || artifactId == null || version == null) {
-                throw new IllegalArgumentException("Unable to find groupId, artifactId and/or version in POM file for " + mavenId);
+                throw new IllegalArgumentException(MavenI18n.pomFileIsInvalid.text(mavenId));
             }
             MavenId actualMavenId = new MavenId(groupId, artifactId, version, classifier);
             if (!mavenId.equals(actualMavenId)) {
-                throw new IllegalArgumentException("The POM file is for " + actualMavenId + " but was expected to be " + mavenId);
+                throw new IllegalArgumentException(MavenI18n.pomFileContainsUnexpectedId.text(actualMavenId, mavenId));
             }
 
             // Evaluate the XPath expression and iterate over the "dependency" nodes ...
@@ -299,20 +298,16 @@ public class MavenRepository implements ClassLoaderFactory {
                 results.add(dependency);
             }
         } catch (XPathExpressionException err) {
-            String msg = "Error creating XPath statements to evaluate the POM file for " + mavenId;
-            throw new MavenRepositoryException(msg, err);
+            throw new MavenRepositoryException(MavenI18n.errorCreatingXpathStatementsToEvaluatePom.text(mavenId), err);
         } catch (ParserConfigurationException err) {
-            String msg = "Error creating the XPath parser when evaluating the POM file for " + mavenId;
-            throw new MavenRepositoryException(msg, err);
+            throw new MavenRepositoryException(MavenI18n.errorCreatingXpathParserToEvaluatePom.text(mavenId), err);
         } catch (SAXException err) {
-            String msg = "Error reading the XML document when evaluating the POM file for " + mavenId;
-            throw new MavenRepositoryException(msg, err);
+            throw new MavenRepositoryException(MavenI18n.errorReadingXmlDocumentToEvaluatePom.text(mavenId), err);
         } finally {
             try {
                 pomStream.close();
             } catch (IOException e) {
-                String msg = "Error closing the URL stream to " + mavenId;
-                this.logger.error(e, msg);
+                this.logger.error(e, MavenI18n.errorClosingUrlStreamToPom, mavenId);
             }
         }
         return results;

@@ -22,6 +22,8 @@
 package org.jboss.dna.services.util;
 
 import net.jcip.annotations.Immutable;
+import org.jboss.dna.common.i18n.I18n;
+import org.jboss.dna.common.util.ArgCheck;
 
 /**
  * @author Randall Hauch
@@ -38,35 +40,24 @@ public class Problem {
     }
 
     private final Status status;
-    private final String message;
+    private final I18n message;
+    private final Object[] parameters;
     private final Throwable throwable;
     private final int code;
     private final String resource;
     private final String location;
 
-    public Problem( Status status, int code, String message ) {
-        this(status, code, message, null, null, null);
+    public Problem( Status status, int code, I18n message, Object... params ) {
+        this(status, code, message, params, null, null, null);
     }
 
-    public Problem( Status status, int code, String message, String resource, String location ) {
-        this(status, code, message, resource, location, null);
-    }
-
-    public Problem( Status status, int code, String message, String resource, String location, Throwable throwable ) {
-        if (status == null) {
-            throw new IllegalArgumentException("The status parameter may not be null");
-        }
+    public Problem( Status status, int code, I18n message, Object[] params, String resource, String location, Throwable throwable ) {
+        ArgCheck.isNotNull(status, "status");
+        ArgCheck.isNotNull(message, "message");
         this.status = status;
         this.code = code;
-        if (message != null) message = message.trim();
-        if (message == null) {
-            if (throwable != null) {
-                message = throwable.getMessage();
-            } else {
-                message = "";
-            }
-        }
         this.message = message;
+        this.parameters = params;
         this.resource = resource != null ? resource.trim() : null;
         this.location = location != null ? location.trim() : null;
         this.throwable = throwable;
@@ -87,10 +78,22 @@ public class Problem {
     }
 
     /**
+     * Get the message written in the current locale.
+     * @return the message
+     */
+    public String getMessageString() {
+        return this.message.text(this.parameters);
+    }
+
+    /**
      * @return message
      */
-    public String getMessage() {
+    public I18n getMessage() {
         return this.message;
+    }
+
+    public Object[] getParameters() {
+        return this.parameters;
     }
 
     /**

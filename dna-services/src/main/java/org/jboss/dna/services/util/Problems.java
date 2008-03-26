@@ -24,8 +24,8 @@ package org.jboss.dna.services.util;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import org.jboss.dna.common.util.StringUtil;
 import net.jcip.annotations.NotThreadSafe;
+import org.jboss.dna.common.i18n.I18n;
 
 /**
  * @author Randall Hauch
@@ -38,123 +38,99 @@ public class Problems implements Iterable<Problem> {
     public Problems() {
     }
 
-    public void addError( String message, Object... params ) {
-        message = params != null && params.length > 0 ? StringUtil.createString(message, params) : message;
-        addProblem(new Problem(Problem.Status.ERROR, Problem.DEFAULT_CODE, message));
+    public void addError( I18n message, Object... params ) {
+        addProblem(new Problem(Problem.Status.ERROR, Problem.DEFAULT_CODE, message, params));
     }
 
-    public void addError( Throwable throwable, String message, Object... params ) {
-        message = params != null && params.length > 0 ? StringUtil.createString(message, params) : message;
+    public void addError( Throwable throwable, I18n message, Object... params ) {
         addProblem(new Problem(Problem.Status.ERROR, Problem.DEFAULT_CODE, message, null, null, throwable));
     }
 
-    public void addError( String message, String resource, String location, Object... params ) {
-        message = params != null && params.length > 0 ? StringUtil.createString(message, params) : message;
+    public void addError( I18n message, String resource, String location, Object... params ) {
         addProblem(new Problem(Problem.Status.ERROR, Problem.DEFAULT_CODE, message, resource, location));
     }
 
-    public void addError( Throwable throwable, String message, String resource, String location, Object... params ) {
-        message = params != null && params.length > 0 ? StringUtil.createString(message, params) : message;
+    public void addError( Throwable throwable, I18n message, String resource, String location, Object... params ) {
         addProblem(new Problem(Problem.Status.ERROR, Problem.DEFAULT_CODE, message, resource, location, throwable));
     }
 
-    public void addError( int code, String message, Object... params ) {
-        message = params != null && params.length > 0 ? StringUtil.createString(message, params) : message;
+    public void addError( int code, I18n message, Object... params ) {
         addProblem(new Problem(Problem.Status.ERROR, code, message));
     }
 
-    public void addError( Throwable throwable, int code, String message, Object... params ) {
-        message = params != null && params.length > 0 ? StringUtil.createString(message, params) : message;
+    public void addError( Throwable throwable, int code, I18n message, Object... params ) {
         addProblem(new Problem(Problem.Status.ERROR, code, message, null, null, throwable));
     }
 
-    public void addError( int code, String message, String resource, String location, Object... params ) {
-        message = params != null && params.length > 0 ? StringUtil.createString(message, params) : message;
+    public void addError( int code, I18n message, String resource, String location, Object... params ) {
         addProblem(new Problem(Problem.Status.ERROR, code, message, resource, location));
     }
 
-    public void addError( Throwable throwable, int code, String message, String resource, String location, Object... params ) {
-        message = params != null && params.length > 0 ? StringUtil.createString(message, params) : message;
+    public void addError( Throwable throwable, int code, I18n message, String resource, String location, Object... params ) {
         addProblem(new Problem(Problem.Status.ERROR, code, message, resource, location, throwable));
     }
 
-    public void addWarning( String message, Object... params ) {
-        message = params != null && params.length > 0 ? StringUtil.createString(message, params) : message;
+    public void addWarning( I18n message, Object... params ) {
         addProblem(new Problem(Problem.Status.WARNING, Problem.DEFAULT_CODE, message));
     }
 
-    public void addWarning( Throwable throwable, String message, Object... params ) {
-        message = params != null && params.length > 0 ? StringUtil.createString(message, params) : message;
+    public void addWarning( Throwable throwable, I18n message, Object... params ) {
         addProblem(new Problem(Problem.Status.WARNING, Problem.DEFAULT_CODE, message, null, null, throwable));
     }
 
-    public void addWarning( String message, String resource, String location, Object... params ) {
-        message = params != null && params.length > 0 ? StringUtil.createString(message, params) : message;
+    public void addWarning( I18n message, String resource, String location, Object... params ) {
         addProblem(new Problem(Problem.Status.WARNING, Problem.DEFAULT_CODE, message, resource, location));
     }
 
-    public void addWarning( Throwable throwable, String message, String resource, String location, Object... params ) {
-        message = params != null && params.length > 0 ? StringUtil.createString(message, params) : message;
+    public void addWarning( Throwable throwable, I18n message, String resource, String location, Object... params ) {
         addProblem(new Problem(Problem.Status.WARNING, Problem.DEFAULT_CODE, message, resource, location, throwable));
     }
 
-    public void addWarning( int code, String message, Object... params ) {
-        message = params != null && params.length > 0 ? StringUtil.createString(message, params) : message;
+    public void addWarning( int code, I18n message, Object... params ) {
         addProblem(new Problem(Problem.Status.WARNING, code, message));
     }
 
-    public void addWarning( Throwable throwable, int code, String message, Object... params ) {
-        message = params != null && params.length > 0 ? StringUtil.createString(message, params) : message;
+    public void addWarning( Throwable throwable, int code, I18n message, Object... params ) {
         addProblem(new Problem(Problem.Status.WARNING, code, message, null, null, throwable));
     }
 
-    public void addWarning( int code, String message, String resource, String location, Object... params ) {
-        message = params != null && params.length > 0 ? StringUtil.createString(message, params) : message;
+    public void addWarning( int code, I18n message, String resource, String location, Object... params ) {
         addProblem(new Problem(Problem.Status.WARNING, code, message, resource, location));
     }
 
-    public void addWarning( Throwable throwable, int code, String message, String resource, String location, Object... params ) {
-        message = params != null && params.length > 0 ? StringUtil.createString(message, params) : message;
+    public void addWarning( Throwable throwable, int code, I18n message, String resource, String location, Object... params ) {
         addProblem(new Problem(Problem.Status.WARNING, code, message, resource, location, throwable));
     }
 
-    public void addInfo( String message, Object... params ) {
-        message = params != null && params.length > 0 ? StringUtil.createString(message, params) : message;
+    public void addInfo( I18n message, Object... params ) {
         addProblem(new Problem(Problem.Status.INFO, Problem.DEFAULT_CODE, message));
     }
 
-    public void addInfo( Throwable throwable, String message, Object... params ) {
-        message = params != null && params.length > 0 ? StringUtil.createString(message, params) : message;
+    public void addInfo( Throwable throwable, I18n message, Object... params ) {
         addProblem(new Problem(Problem.Status.INFO, Problem.DEFAULT_CODE, message, null, null, throwable));
     }
 
-    public void addInfo( String message, String resource, String location, Object... params ) {
-        message = params != null && params.length > 0 ? StringUtil.createString(message, params) : message;
+    public void addInfo( I18n message, String resource, String location, Object... params ) {
         addProblem(new Problem(Problem.Status.INFO, Problem.DEFAULT_CODE, message, resource, location));
     }
 
-    public void addInfo( Throwable throwable, String message, String resource, String location, Object... params ) {
-        message = params != null && params.length > 0 ? StringUtil.createString(message, params) : message;
+    public void addInfo( Throwable throwable, I18n message, String resource, String location, Object... params ) {
         addProblem(new Problem(Problem.Status.INFO, Problem.DEFAULT_CODE, message, resource, location, throwable));
     }
 
-    public void addInfo( int code, String message, Object... params ) {
-        message = params != null && params.length > 0 ? StringUtil.createString(message, params) : message;
+    public void addInfo( int code, I18n message, Object... params ) {
         addProblem(new Problem(Problem.Status.INFO, code, message));
     }
 
-    public void addInfo( Throwable throwable, int code, String message, Object... params ) {
-        message = params != null && params.length > 0 ? StringUtil.createString(message, params) : message;
+    public void addInfo( Throwable throwable, int code, I18n message, Object... params ) {
         addProblem(new Problem(Problem.Status.INFO, code, message, null, null, throwable));
     }
 
-    public void addInfo( int code, String message, String resource, String location, Object... params ) {
-        message = params != null && params.length > 0 ? StringUtil.createString(message, params) : message;
+    public void addInfo( int code, I18n message, String resource, String location, Object... params ) {
         addProblem(new Problem(Problem.Status.INFO, code, message, resource, location));
     }
 
-    public void addInfo( Throwable throwable, int code, String message, String resource, String location, Object... params ) {
-        message = params != null && params.length > 0 ? StringUtil.createString(message, params) : message;
+    public void addInfo( Throwable throwable, int code, I18n message, String resource, String location, Object... params ) {
         addProblem(new Problem(Problem.Status.INFO, code, message, resource, location, throwable));
     }
 

@@ -56,6 +56,7 @@ import org.jboss.dna.common.text.TextEncoder;
 import org.jboss.dna.common.text.UrlEncoder;
 import org.jboss.dna.common.util.Logger;
 import org.jboss.dna.maven.ArtifactType;
+import org.jboss.dna.maven.MavenI18n;
 import org.jboss.dna.maven.MavenId;
 import org.jboss.dna.maven.MavenRepositoryException;
 import org.jboss.dna.maven.MavenUrl;
@@ -217,15 +218,15 @@ public class JcrMavenUrlProvider extends AbstractMavenUrlProvider {
                     }
                 }
                 session.save();
-                this.logger.debug("Created Maven repository node for {}", mavenUrl);
+                this.logger.debug("Created Maven repository node for {0}", mavenUrl);
             } catch (LoginException err) {
-                throw new MavenRepositoryException("Unable to open session to repository when attempting to create \"" + mavenUrl + "\": " + err.getMessage(), err);
+                throw new MavenRepositoryException(MavenI18n.unableToOpenSessiontoRepositoryWhenCreatingNode.text(mavenUrl, err.getMessage()), err);
             } catch (NoSuchWorkspaceException err) {
-                throw new MavenRepositoryException("Workspace \"" + this.getWorkspaceName() + "\" was not found in repository when attempting to create \"" + mavenUrl + "\": " + err.getMessage(), err);
+                throw new MavenRepositoryException(MavenI18n.unableToFindWorkspaceWhenCreatingNode.text(this.getWorkspaceName(), mavenUrl, err.getMessage()), err);
             } catch (PathNotFoundException err) {
                 return null;
             } catch (RepositoryException err) {
-                throw new MavenRepositoryException("Repository error when creating \"" + mavenUrl + "\": " + err.getMessage(), err);
+                throw new MavenRepositoryException(MavenI18n.errorCreatingNode.text(mavenUrl, err.getMessage()), err);
             } finally {
                 if (session != null) session.logout();
             }
@@ -249,7 +250,7 @@ public class JcrMavenUrlProvider extends AbstractMavenUrlProvider {
             }
         }
         if (created) {
-            this.logger.debug("Created Maven repository folders {}", current.getPath());
+            this.logger.debug("Created Maven repository folders {0}", current.getPath());
         }
         return current;
     }
@@ -335,13 +336,13 @@ public class JcrMavenUrlProvider extends AbstractMavenUrlProvider {
             result = new MavenInputStream(session, result);
             return result;
         } catch (LoginException err) {
-            throw new IOException("Unable to open session to repository when reading from \"" + mavenUrl + "\": " + err.getMessage());
+            throw new MavenRepositoryException(MavenI18n.unableToOpenSessiontoRepositoryWhenReadingNode.text(mavenUrl, err.getMessage()), err);
         } catch (NoSuchWorkspaceException err) {
-            throw new IOException("Workspace \"" + this.getWorkspaceName() + "\" was not found in repository when reading from \"" + mavenUrl + "\": " + err.getMessage());
+            throw new MavenRepositoryException(MavenI18n.unableToFindWorkspaceWhenReadingNode.text(this.getWorkspaceName(), mavenUrl, err.getMessage()), err);
         } catch (PathNotFoundException err) {
             return null;
         } catch (RepositoryException err) {
-            throw new IOException("Repository error when reading from \"" + mavenUrl + "\": " + err.getMessage());
+            throw new MavenRepositoryException(MavenI18n.errorReadingNode.text(mavenUrl, err.getMessage()), err);
         } finally {
             if (session != null) {
                 session.logout();
@@ -369,11 +370,11 @@ public class JcrMavenUrlProvider extends AbstractMavenUrlProvider {
             }
             return result;
         } catch (LoginException err) {
-            throw new IOException("Unable to open session to repository when reading from \"" + mavenUrl + "\": " + err.getMessage());
+            throw new MavenRepositoryException(MavenI18n.unableToOpenSessiontoRepositoryWhenReadingNode.text(mavenUrl, err.getMessage()), err);
         } catch (NoSuchWorkspaceException err) {
-            throw new IOException("Workspace \"" + this.getWorkspaceName() + "\" was not found in repository when reading from \"" + mavenUrl + "\": " + err.getMessage());
+            throw new MavenRepositoryException(MavenI18n.unableToFindWorkspaceWhenReadingNode.text(this.getWorkspaceName(), mavenUrl, err.getMessage()), err);
         } catch (RepositoryException err) {
-            throw new IOException("Repository error when reading from \"" + mavenUrl + "\"");
+            throw new MavenRepositoryException(MavenI18n.errorReadingNode.text(mavenUrl, err.getMessage()), err);
         }
     }
 
@@ -389,12 +390,11 @@ public class JcrMavenUrlProvider extends AbstractMavenUrlProvider {
             contentNode.setProperty(CONTENT_PROPERTY_NAME, content);
             session.save();
         } catch (LoginException err) {
-            throw new IOException("Unable to open session to repository when writing to \"" + mavenUrl + "\": " + err.getMessage());
+            throw new IOException(MavenI18n.unableToOpenSessiontoRepositoryWhenWritingNode.text(mavenUrl, err.getMessage()));
         } catch (NoSuchWorkspaceException err) {
-            throw new IOException("Workspace \"" + this.getWorkspaceName() + "\" was not found in repository when writing to \"" + mavenUrl + "\": " + err.getMessage());
+            throw new IOException(MavenI18n.unableToFindWorkspaceWhenWritingNode.text(this.getWorkspaceName(), mavenUrl, err.getMessage()));
         } catch (RepositoryException err) {
-            this.logger.error(err, "Repository error when writing to \"{1}\"", mavenUrl);
-            throw new IOException("Repository error when writing to \"" + mavenUrl + "\"");
+            throw new IOException(MavenI18n.errorWritingNode.text(mavenUrl, err.getMessage()));
         } finally {
             if (session != null) {
                 session.logout();
@@ -451,7 +451,7 @@ public class JcrMavenUrlProvider extends AbstractMavenUrlProvider {
          */
         @Override
         public void write( int b ) throws IOException {
-            if (stream == null) throw new IOException("Unable to write to a closed stream");
+            if (stream == null) throw new IOException(MavenI18n.unableToWriteToClosedStream.text());
             stream.write(b);
         }
 
@@ -460,7 +460,7 @@ public class JcrMavenUrlProvider extends AbstractMavenUrlProvider {
          */
         @Override
         public void write( byte[] b ) throws IOException {
-            if (stream == null) throw new IOException("Unable to write to a closed stream");
+            if (stream == null) throw new IOException(MavenI18n.unableToWriteToClosedStream.text());
             stream.write(b);
         }
 
@@ -469,7 +469,7 @@ public class JcrMavenUrlProvider extends AbstractMavenUrlProvider {
          */
         @Override
         public void write( byte[] b, int off, int len ) throws IOException {
-            if (stream == null) throw new IOException("Unable to write to a closed stream");
+            if (stream == null) throw new IOException(MavenI18n.unableToWriteToClosedStream.text());
             stream.write(b, off, len);
         }
 
@@ -493,14 +493,12 @@ public class JcrMavenUrlProvider extends AbstractMavenUrlProvider {
                         try {
                             inputStream.close();
                         } catch (IOException ioe) {
-                            String msg = "Error closing the input stream to temporary file after writing content to \"" + mavenUrl + "\" because " + ioe.getMessage();
-                            Logger.getLogger(this.getClass()).error(ioe, msg);
+                            Logger.getLogger(this.getClass()).error(ioe, MavenI18n.errorClosingTempFileStreamAfterWritingContent, mavenUrl, ioe.getMessage());
                         } finally {
                             try {
                                 file.delete();
                             } catch (SecurityException se) {
-                                String msg = "Error deleting temporary file after writing content to \"" + mavenUrl + "\" because " + se.getMessage();
-                                Logger.getLogger(this.getClass()).error(se, msg);
+                                Logger.getLogger(this.getClass()).error(se, MavenI18n.errorDeletingTempFileStreamAfterWritingContent, mavenUrl, se.getMessage());
                             } finally {
                                 stream = null;
                             }

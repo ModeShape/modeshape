@@ -110,7 +110,7 @@ public class MavenId implements Comparable<MavenId>, Cloneable {
      * @throws IllegalArgumentException if the supplied string is null or if the string does not match the expected format
      */
     public MavenId( String coordinates ) {
-        if (coordinates == null) throw new IllegalArgumentException("The coordinates reference may not be null");
+        ArgCheck.isNotNull(coordinates, "coordinates");
         coordinates = coordinates.trim();
         ArgCheck.isNotEmpty(coordinates, "coordinates");
 
@@ -125,7 +125,7 @@ public class MavenId implements Comparable<MavenId>, Cloneable {
         Pattern urlPattern = Pattern.compile("([^:]+)(:([^:]+)(:([^:]*)(:([^:]*))?)?)?");
         Matcher matcher = urlPattern.matcher(coordinates);
         if (!matcher.find()) {
-            throw new IllegalArgumentException("Unsupported format: " + coordinates);
+            throw new IllegalArgumentException(MavenI18n.unsupportedMavenCoordinateFormat.text(coordinates));
         }
         String groupId = matcher.group(1);
         String artifactId = matcher.group(3);
@@ -261,7 +261,7 @@ public class MavenId implements Comparable<MavenId>, Cloneable {
     }
 
     public String getCoordinates() {
-        return StringUtil.createString("{1}:{2}:{3}:{4}", this.groupId, this.artifactId, this.version, this.classifier);
+        return StringUtil.createString("{0}:{1}:{2}:{3}", this.groupId, this.artifactId, this.version, this.classifier);
     }
 
     public static MavenId createFromCoordinates( String coordinates ) {

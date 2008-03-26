@@ -36,9 +36,11 @@ import org.apache.log4j.SimpleLayout;
 import org.apache.log4j.WriterAppender;
 import org.apache.log4j.spi.LoggingEvent;
 import org.apache.log4j.spi.ThrowableInformation;
+import org.jboss.dna.common.i18n.I18n;
 import org.jboss.dna.common.util.Logger;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 /**
@@ -58,10 +60,30 @@ import org.junit.Test;
  */
 public class LoggerTest {
 
+    public static I18n errorMessageWithNoParameters;
+    public static I18n warningMessageWithNoParameters;
+    public static I18n infoMessageWithNoParameters;
+    public static I18n errorMessageWithTwoParameters;
+    public static I18n warningMessageWithTwoParameters;
+    public static I18n infoMessageWithTwoParameters;
+    public static I18n errorMessageWithException;
+    public static I18n warningMessageWithException;
+    public static I18n infoMessageWithException;
+    public static I18n errorMessageWithNullException;
+    public static I18n warningMessageWithNullException;
+    public static I18n infoMessageWithNullException;
+    public static I18n someMessage;
+
     private LogRecorder log;
     private Logger logger;
     private org.apache.log4j.Logger log4jLogger;
     private Map<String, List<Appender>> existingAppendersByLoggerName = new HashMap<String, List<Appender>>();
+
+    @BeforeClass
+    public static void beforeAll() throws Exception {
+        // Initialize the I18n static fields ...
+        I18n.initialize(LoggerTest.class);
+    }
 
     @Before
     public void beforeEach() {
@@ -108,9 +130,9 @@ public class LoggerTest {
     @Test
     public void shouldLogAppropriateMessagesIfSetToAllLevel() {
         log4jLogger.setLevel(Level.ALL);
-        logger.error("This is an error message with no parameters");
-        logger.warn("This is a warning message with no parameters");
-        logger.info("This is an info message with no parameters");
+        logger.error(errorMessageWithNoParameters);
+        logger.warn(warningMessageWithNoParameters);
+        logger.info(infoMessageWithNoParameters);
         logger.debug("This is a debug message with no parameters");
         logger.trace("This is a trace message with no parameters");
 
@@ -125,9 +147,9 @@ public class LoggerTest {
     @Test
     public void shouldLogAppropriateMessagesIfLog4jSetToTraceLevel() {
         log4jLogger.setLevel(Level.TRACE);
-        logger.error("This is an error message with no parameters");
-        logger.warn("This is a warning message with no parameters");
-        logger.info("This is an info message with no parameters");
+        logger.error(errorMessageWithNoParameters);
+        logger.warn(warningMessageWithNoParameters);
+        logger.info(infoMessageWithNoParameters);
         logger.debug("This is a debug message with no parameters");
         logger.trace("This is a trace message with no parameters");
 
@@ -142,9 +164,9 @@ public class LoggerTest {
     @Test
     public void shouldLogAppropriateMessagesIfLog4jSetToDebugLevel() {
         log4jLogger.setLevel(Level.DEBUG);
-        logger.error("This is an error message with no parameters");
-        logger.warn("This is a warning message with no parameters");
-        logger.info("This is an info message with no parameters");
+        logger.error(errorMessageWithNoParameters);
+        logger.warn(warningMessageWithNoParameters);
+        logger.info(infoMessageWithNoParameters);
         logger.debug("This is a debug message with no parameters");
         logger.trace("This is a trace message with no parameters");
 
@@ -158,9 +180,9 @@ public class LoggerTest {
     @Test
     public void shouldLogAppropriateMessagesIfLog4jSetToInfoLevel() {
         log4jLogger.setLevel(Level.INFO);
-        logger.error("This is an error message with no parameters");
-        logger.warn("This is a warning message with no parameters");
-        logger.info("This is an info message with no parameters");
+        logger.error(errorMessageWithNoParameters);
+        logger.warn(warningMessageWithNoParameters);
+        logger.info(infoMessageWithNoParameters);
         logger.debug("This is a debug message with no parameters");
         logger.trace("This is a trace message with no parameters");
 
@@ -173,9 +195,9 @@ public class LoggerTest {
     @Test
     public void shouldLogAppropriateMessagesIfLog4jSetToWarningLevel() {
         log4jLogger.setLevel(Level.WARN);
-        logger.error("This is an error message with no parameters");
-        logger.warn("This is a warning message with no parameters");
-        logger.info("This is an info message with no parameters");
+        logger.error(errorMessageWithNoParameters);
+        logger.warn(warningMessageWithNoParameters);
+        logger.info(infoMessageWithNoParameters);
         logger.debug("This is a debug message with no parameters");
         logger.trace("This is a trace message with no parameters");
 
@@ -187,9 +209,9 @@ public class LoggerTest {
     @Test
     public void shouldLogAppropriateMessagesIfLog4jSetToErrorLevel() {
         log4jLogger.setLevel(Level.ERROR);
-        logger.error("This is an error message with no parameters");
-        logger.warn("This is a warning message with no parameters");
-        logger.info("This is an info message with no parameters");
+        logger.error(errorMessageWithNoParameters);
+        logger.warn(warningMessageWithNoParameters);
+        logger.info(infoMessageWithNoParameters);
         logger.debug("This is a debug message with no parameters");
         logger.trace("This is a trace message with no parameters");
 
@@ -200,9 +222,9 @@ public class LoggerTest {
     @Test
     public void shouldLogNoMessagesIfLog4jSetToOffLevel() {
         log4jLogger.setLevel(Level.OFF);
-        logger.error("This is an error message with no parameters");
-        logger.warn("This is a warning message with no parameters");
-        logger.info("This is an info message with no parameters");
+        logger.error(errorMessageWithNoParameters);
+        logger.warn(warningMessageWithNoParameters);
+        logger.info(infoMessageWithNoParameters);
         logger.debug("This is a debug message with no parameters");
         logger.trace("This is a trace message with no parameters");
 
@@ -210,12 +232,12 @@ public class LoggerTest {
     }
 
     @Test
-    public void shouldAcceptMessageWithNonNullAndNullParameters() {
-        logger.error("This is an error message with a {} parameter and the {} parameter", "first", null);
-        logger.warn("This is a warning message with a {} parameter and the {} parameter", "first", null);
-        logger.info("This is an info message with a {} parameter and the {} parameter", "first", null);
-        logger.debug("This is a debug message with a {} parameter and the {} parameter", "first", null);
-        logger.trace("This is a trace message with a {} parameter and the {} parameter", "first", null);
+    public void shouldNotAcceptMessageWithNonNullAndNullParameters() {
+        logger.error(errorMessageWithTwoParameters, "first", null);
+        logger.warn(warningMessageWithTwoParameters, "first", null);
+        logger.info(infoMessageWithTwoParameters, "first", null);
+        logger.debug("This is a debug message with a {0} parameter and the {1} parameter", "first", null);
+        logger.trace("This is a trace message with a {0} parameter and the {1} parameter", "first", null);
 
         log.removeFirst(Logger.Level.ERROR, "This is an error message with a first parameter and the null parameter");
         log.removeFirst(Logger.Level.WARNING, "This is a warning message with a first parameter and the null parameter");
@@ -225,27 +247,36 @@ public class LoggerTest {
         assertEquals(false, log.hasEvents());
     }
 
-    @Test
-    public void shouldAcceptMessageWithNullParameters() {
-        logger.error("This is an error message with a {} parameter and the {} parameter", (Object[])null);
-        logger.warn("This is a warning message with a {} parameter and the {} parameter", (Object[])null);
-        logger.info("This is an info message with a {} parameter and the {} parameter", (Object[])null);
-        logger.debug("This is a debug message with a {} parameter and the {} parameter", (Object[])null);
-        logger.trace("This is a trace message with a {} parameter and the {} parameter", (Object[])null);
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldNotAcceptErrorMessageWithTooFewParameters() {
+        logger.error(errorMessageWithTwoParameters, (Object[])null);
+    }
 
-        log.removeFirst(Logger.Level.ERROR, "This is an error message with a \\{\\} parameter and the \\{\\} parameter");
-        log.removeFirst(Logger.Level.WARNING, "This is a warning message with a \\{\\} parameter and the \\{\\} parameter");
-        log.removeFirst(Logger.Level.INFO, "This is an info message with a \\{\\} parameter and the \\{\\} parameter");
-        log.removeFirst(Logger.Level.DEBUG, "This is a debug message with a \\{\\} parameter and the \\{\\} parameter");
-        log.removeFirst(Logger.Level.TRACE, "This is a trace message with a \\{\\} parameter and the \\{\\} parameter");
-        assertEquals(false, log.hasEvents());
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldNotAcceptWarningMessageWithTooFewParameters() {
+        logger.warn(warningMessageWithTwoParameters, (Object[])null);
+    }
+
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldNotAcceptInfoMessageWithTooFewParameters() {
+        logger.info(infoMessageWithTwoParameters, (Object[])null);
+    }
+
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldNotAcceptDebugMessageWithTooFewParameters() {
+        logger.debug("This is a debug message with a {0} parameter and the {1} parameter", (Object[])null);
+    }
+
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldNotAcceptTraceMessageWithTooFewParameters() {
+        logger.trace("This is a trace message with a {0} parameter and the {1} parameter", (Object[])null);
     }
 
     @Test
     public void shouldAcceptMessageWithNoParameters() {
-        logger.error("This is an error message with no parameters");
-        logger.warn("This is a warning message with no parameters");
-        logger.info("This is an info message with no parameters");
+        logger.error(errorMessageWithNoParameters);
+        logger.warn(warningMessageWithNoParameters);
+        logger.info(infoMessageWithNoParameters);
         logger.debug("This is a debug message with no parameters");
         logger.trace("This is a trace message with no parameters");
 
@@ -259,11 +290,11 @@ public class LoggerTest {
 
     @Test
     public void shouldAcceptMessageWithObjectAndPrimitiveParameters() {
-        logger.error("This is an error message with a {} parameter and the {} parameter", "first", 2);
-        logger.warn("This is a warning message with a {} parameter and the {} parameter", "first", 2);
-        logger.info("This is an info message with a {} parameter and the {} parameter", "first", 2);
-        logger.debug("This is a debug message with a {} parameter and the {} parameter", "first", 2);
-        logger.trace("This is a trace message with a {} parameter and the {} parameter", "first", 2);
+        logger.error(errorMessageWithTwoParameters, "first", 2);
+        logger.warn(warningMessageWithTwoParameters, "first", 2);
+        logger.info(infoMessageWithTwoParameters, "first", 2);
+        logger.debug("This is a debug message with a {0} parameter and the {1} parameter", "first", 2);
+        logger.trace("This is a trace message with a {0} parameter and the {1} parameter", "first", 2);
 
         log.removeFirst(Logger.Level.ERROR, "This is an error message with a first parameter and the 2 parameter");
         log.removeFirst(Logger.Level.WARNING, "This is a warning message with a first parameter and the 2 parameter");
@@ -276,9 +307,9 @@ public class LoggerTest {
     @Test
     public void shouldAcceptMessageAndThrowable() {
         Throwable t = new RuntimeException("This is the runtime exception message");
-        logger.error(t, "This is an error message with an exception");
-        logger.warn(t, "This is a warning message with an exception");
-        logger.info(t, "This is an info message with an exception");
+        logger.error(t, errorMessageWithException);
+        logger.warn(t, warningMessageWithException);
+        logger.info(t, infoMessageWithException);
         logger.debug(t, "This is a debug message with an exception");
         logger.trace(t, "This is a trace message with an exception");
 
@@ -293,11 +324,11 @@ public class LoggerTest {
     @Test
     public void shouldAcceptMessageAndNullThrowable() {
         Throwable t = null;
-        logger.error("This is an error message with a null exception", t);
-        logger.warn("This is a warning message with a null exception", t);
-        logger.info("This is an info message with a null exception", t);
-        logger.debug("This is a debug message with a null exception", t);
-        logger.trace("This is a trace message with a null exception", t);
+        logger.error(t, errorMessageWithNullException);
+        logger.warn(t, warningMessageWithNullException);
+        logger.info(t, infoMessageWithNullException);
+        logger.debug(t, "This is a debug message with a null exception");
+        logger.trace(t, "This is a trace message with a null exception");
 
         log.removeFirst(Logger.Level.ERROR, "This is an error message with a null exception");
         log.removeFirst(Logger.Level.WARNING, "This is a warning message with a null exception");
@@ -336,9 +367,9 @@ public class LoggerTest {
 
     @Test
     public void shouldAcceptNullThrowableInError() {
-        logger.error((Throwable)null, "some message");
-        logger.warn((Throwable)null, "some message");
-        logger.info((Throwable)null, "some message");
+        logger.error((Throwable)null, someMessage);
+        logger.warn((Throwable)null, someMessage);
+        logger.info((Throwable)null, someMessage);
         logger.debug((Throwable)null, "some message");
         logger.trace((Throwable)null, "some message");
 

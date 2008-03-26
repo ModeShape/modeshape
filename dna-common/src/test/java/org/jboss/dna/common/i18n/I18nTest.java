@@ -20,24 +20,26 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.jboss.dna.common.util;
+package org.jboss.dna.common.i18n;
 
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsInstanceOf.instanceOf;
+import static org.hamcrest.core.IsNull.nullValue;
+import static org.junit.Assert.assertThat;
 import java.util.Locale;
-import static org.hamcrest.core.IsInstanceOf.*;
-import static org.hamcrest.core.IsNull.*;
-import static org.hamcrest.core.Is.*;
-import static org.junit.Assert.*;
 import org.jboss.dna.common.CoreI18n;
-import org.junit.BeforeClass;
+import org.jboss.dna.common.SystemFailureException;
+import org.junit.Before;
 import org.junit.Test;
 
 /**
  * @author John Verhaeg
+ * @author Randall Hauch
  */
 public final class I18nTest {
 
-    @BeforeClass
-    public static void beforeClass() {
+    @Before
+    public void beforeEach() {
         I18n.initialize(TestI18n.class);
     }
 
@@ -91,11 +93,11 @@ public final class I18nTest {
         assertThat(TestI18n.nonI18n, is(nullValue()));
     }
 
-    @Test( expected = RuntimeException.class )
+    @Test( expected = SystemFailureException.class )
     public void initializeShouldFailIfI18nFieldIsFinal() {
         try {
             I18n.initialize(TestI18nFinalField.class);
-        } catch (RuntimeException err) {
+        } catch (SystemFailureException err) {
             assertThat(err.getMessage(), is(CoreI18n.i18nFieldFinal.text("testMessage", TestI18nFinalField.class)));
             System.err.println(err);
             throw err;
@@ -204,7 +206,7 @@ public final class I18nTest {
         try {
             TestI18n.testMessage1.text();
         } catch (IllegalArgumentException err) {
-            assertThat(err.getMessage(), is(CoreI18n.i18nArgumentMismatch.text("0 arguments were", "testMessage1", "1 is", "{0}", "{0}")));
+            assertThat(err.getMessage(), is(CoreI18n.i18nArgumentsMismatchedParameter.text(0, "testMessage1", 1, "{0}", "{0}")));
             System.err.println(err);
             throw err;
         }
@@ -215,7 +217,7 @@ public final class I18nTest {
         try {
             TestI18n.testMessage1.text("Test", "Message");
         } catch (IllegalArgumentException err) {
-            assertThat(err.getMessage(), is(CoreI18n.i18nArgumentMismatch.text("2 arguments were", "testMessage1", "1 is", "{0}", "Test")));
+            assertThat(err.getMessage(), is(CoreI18n.i18nArgumentsMismatchedParameter.text(2, "testMessage1", 1, "{0}", "Test")));
             System.err.println(err);
             throw err;
         }

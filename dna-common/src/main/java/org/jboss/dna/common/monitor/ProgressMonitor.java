@@ -22,11 +22,14 @@
 
 package org.jboss.dna.common.monitor;
 
+import org.jboss.dna.common.i18n.I18n;
+
 /**
  * A basic progress monitor that facilitates the monitoring of an activity.
  * <p>
- * The progress of each activity is started when {@link #beginTask(String, double)} is called, continues with a mixture of work ({@link #worked(double)})
- * and subtasks ({@link #createSubtask(double)}), and finishes when the activity is completed ({@link #done()}) or cancelled ({@link #setCancelled(boolean)}).
+ * The progress of each activity is started when {@link #beginTask(double, I18n, Object...)} is called, continues with a mixture
+ * of work ({@link #worked(double)}) and subtasks ({@link #createSubtask(double)}), and finishes when the activity is
+ * completed ({@link #done()}) or cancelled ({@link #setCancelled(boolean)}).
  * </p>
  * @author Randall Hauch
  */
@@ -41,10 +44,11 @@ public interface ProgressMonitor {
 
     /**
      * Start work on the task, specifying the total amount of work that this task constitutes.
-     * @param name the name of the task
      * @param totalWork the total number of work units for the task
+     * @param name the name of the task
+     * @param params the parameters for localization
      */
-    void beginTask( String name, double totalWork );
+    void beginTask( double totalWork, I18n name, Object... params );
 
     /**
      * Report work completed for this task.
@@ -53,7 +57,7 @@ public interface ProgressMonitor {
     void worked( double work );
 
     /**
-     * Create a subtask with the given about of work. The resulting monitor must be started ({@link #beginTask(String, double)})
+     * Create a subtask with the given about of work. The resulting monitor must be started ({@link #beginTask(double, I18n, Object...)})
      * and finished ({@link #done()}).
      * @param subtaskWork the number of work units for this subtask
      * @return the progress monitor for the subtask

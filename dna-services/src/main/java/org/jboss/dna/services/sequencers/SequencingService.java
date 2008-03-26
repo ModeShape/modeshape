@@ -42,11 +42,11 @@ import org.jboss.dna.common.monitor.ProgressMonitor;
 import org.jboss.dna.common.monitor.SimpleProgressMonitor;
 import org.jboss.dna.common.util.ArgCheck;
 import org.jboss.dna.common.util.Logger;
-import org.jboss.dna.common.util.StringUtil;
 import org.jboss.dna.services.AbstractServiceAdministrator;
 import org.jboss.dna.services.AdministeredService;
 import org.jboss.dna.services.ExecutionContext;
 import org.jboss.dna.services.ServiceAdministrator;
+import org.jboss.dna.services.ServicesI18n;
 import org.jboss.dna.services.SessionFactory;
 import org.jboss.dna.services.observation.NodeChange;
 import org.jboss.dna.services.observation.NodeChangeListener;
@@ -145,7 +145,7 @@ public class SequencingService implements AdministeredService, NodeChangeListene
          */
         @Override
         protected String serviceName() {
-            return "SequencingService";
+            return ServicesI18n.sequencingServiceName.text();
         }
 
         /**
@@ -293,7 +293,7 @@ public class SequencingService implements AdministeredService, NodeChangeListene
     public void setExecutionContext( ExecutionContext executionContext ) {
         ArgCheck.isNotNull(executionContext, "execution context");
         if (this.getAdministrator().isStarted()) {
-            throw new IllegalStateException("Unable to change the execution context while running");
+            throw new IllegalStateException(ServicesI18n.unableToChangeExecutionContextWhileRunning.text());
         }
         this.executionContext = executionContext;
     }
@@ -324,11 +324,9 @@ public class SequencingService implements AdministeredService, NodeChangeListene
      * @see Executors#newSingleThreadScheduledExecutor(java.util.concurrent.ThreadFactory)
      */
     public void setExecutorService( ExecutorService executorService ) {
-        if (sequencerLibrary == null) {
-            throw new IllegalArgumentException("The executor service parameter may not be null");
-        }
+        ArgCheck.isNotNull(executorService, "executor service");
         if (this.getAdministrator().isStarted()) {
-            throw new IllegalStateException("Unable to change the executor service while running");
+            throw new IllegalStateException(ServicesI18n.unableToChangeExecutionContextWhileRunning.text());
         }
         this.executorService = executorService;
     }
@@ -347,7 +345,7 @@ public class SequencingService implements AdministeredService, NodeChangeListene
 
     protected void startService() {
         if (this.getExecutionContext() == null) {
-            throw new IllegalStateException("Unable to start the sequencing system without an execution context");
+            throw new IllegalStateException(ServicesI18n.unableToStartSequencingServiceWithoutExecutionContext.text());
         }
         if (this.executorService == null) {
             this.executorService = createDefaultExecutorService();
@@ -440,13 +438,12 @@ public class SequencingService implements AdministeredService, NodeChangeListene
                         this.logger.debug("Skipping '{}': no sequencers matched this condition", changedNode);
                     }
                 } else {
-                    String activityName = StringUtil.createString("Sequencing {1}", changedNode);
-                    ProgressMonitor progressMonitor = new SimpleProgressMonitor(activityName);
+                    ProgressMonitor progressMonitor = new SimpleProgressMonitor(ServicesI18n.sequencerTask.text(changedNode));
                     if (this.logger.isTraceEnabled()) {
                         progressMonitor = new LoggingProgressMonitor(progressMonitor, this.logger, Logger.Level.TRACE);
                     }
                     try {
-                        progressMonitor.beginTask(activityName, sequencers.size());
+                        progressMonitor.beginTask(sequencers.size(), ServicesI18n.sequencerTask, changedNode);
                         for (Sequencer sequencer : sequencers) {
                             final SequencerConfig config = sequencer.getConfiguration();
                             final String sequencerName = config != null ? config.getName() : sequencer.getClass().getName();
@@ -455,8 +452,7 @@ public class SequencingService implements AdministeredService, NodeChangeListene
                             final Context executionContext = new Context();
                             final ProgressMonitor sequenceMonitor = progressMonitor.createSubtask(1);
                             try {
-                                String subtaskName = StringUtil.createString("running {}", sequencerName);
-                                sequenceMonitor.beginTask(subtaskName, 100);
+                                sequenceMonitor.beginTask(100, ServicesI18n.sequencerSubtask, sequencerName);
                                 sequencer.execute(node, node, executionContext, sequenceMonitor.createSubtask(80)); // 80%
                             } finally {
                                 try {
@@ -483,11 +479,9 @@ public class SequencingService implements AdministeredService, NodeChangeListene
                 session.logout();
             }
         } catch (RepositoryException e) {
-            String msg = "Error while sequencing {}";
-            this.logger.error(e, msg, changedNode);
+            this.logger.error(e, ServicesI18n.errorWhileSequencingNode, changedNode);
         } catch (Exception e) {
-            String msg = "Error while finding sequencers to run against {}";
-            this.logger.error(e, msg, changedNode);
+            this.logger.error(e, ServicesI18n.errorFindingSequencersToRunAgainstNode, changedNode);
         }
     }
 
@@ -502,7 +496,7 @@ public class SequencingService implements AdministeredService, NodeChangeListene
             this.factory = new SessionFactory() {
 
                 public Session createSession( String name ) throws RepositoryException {
-                    if (closed.get()) throw new IllegalStateException("This execution context has been closed and may not be used to create another session");
+                    if (closed.get()) throw new IllegalStateException(ServicesI18n.executionContextHasBeenClosed.text());
                     Session session = delegate.createSession(name);
                     recordSession(session);
                     return session;

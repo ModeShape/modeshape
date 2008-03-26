@@ -23,6 +23,7 @@
 package org.jboss.dna.common.monitor;
 
 import java.util.concurrent.atomic.AtomicBoolean;
+import org.jboss.dna.common.i18n.I18n;
 import net.jcip.annotations.ThreadSafe;
 
 /**
@@ -49,7 +50,7 @@ public class NullProgressMonitor implements ProgressMonitor {
     /**
      * {@inheritDoc}
      */
-    public void beginTask( String name, double totalWork ) {
+    public void beginTask( double totalWork, I18n name, Object... params ) {
         // do nothing
     }
 

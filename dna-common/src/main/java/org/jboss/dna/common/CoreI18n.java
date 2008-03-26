@@ -21,10 +21,11 @@
  */
 package org.jboss.dna.common;
 
-import org.jboss.dna.common.util.I18n;
+import org.jboss.dna.common.i18n.I18n;
 
 /**
  * @author John Verhaeg
+ * @author Randall Hauch
  */
 public final class CoreI18n {
 
@@ -39,7 +40,12 @@ public final class CoreI18n {
     // Make sure the following I18n.java-related fields are defined before all other fields to ensure a valid error message is
     // produced in the event of a missing/duplicate/unused property
 
-    public static I18n i18nArgumentMismatch;
+    public static I18n i18nArgumentsMismatchedParameter;
+    public static I18n i18nArgumentMismatchedParameters;
+    public static I18n i18nArgumentsMismatchedParameters;
+    public static I18n i18nReplaceArgumentsMismatchedParameter;
+    public static I18n i18nReplaceArgumentMismatchedParameters;
+    public static I18n i18nReplaceArgumentsMismatchedParameters;
     public static I18n i18nClassInterface;
     public static I18n i18nFieldFinal;
     public static I18n i18nFieldNotPublic;
@@ -50,4 +56,32 @@ public final class CoreI18n {
     public static I18n i18nPropertyUnused;
 
     // Core-related fields
+    public static I18n componentClassnameNotValid;
+    public static I18n componentNotConfigured;
+    public static I18n progressMonitorBeginTask;
+    public static I18n progressMonitorStatus;
+
+    public static I18n argumentMayNotBeNegative;
+    public static I18n argumentMayNotBePositive;
+    public static I18n argumentMustBeNegative;
+    public static I18n argumentMustBePositive;
+    public static I18n argumentMustBeNumber;
+    public static I18n argumentMayNotBeNullOrZeroLength;
+    public static I18n argumentMayNotBeNullOrZeroLengthOrEmpty;
+    public static I18n argumentMayNotBeNull;
+    public static I18n argumentMustBeNull;
+    public static I18n argumentMustBeInstanceOf;
+    public static I18n argumentMustBeSameAs;
+    public static I18n argumentMustNotBeSameAs;
+    public static I18n argumentMustBeEquals;
+    public static I18n argumentMustNotBeEquals;
+    public static I18n argumentMayNotBeEmpty;
+    public static I18n argumentDidNotContainObject;
+    public static I18n argumentDidNotContainKey;
+    public static I18n argumentMayNotContainNullValue;
+
+    public static I18n dateParsingFailure;
+
+    public static I18n passthrough;
+    public static I18n empty;
 }

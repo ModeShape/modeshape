@@ -227,7 +227,7 @@ public class SimpleStatistics<T extends Number> {
     public String toString() {
         int count = this.getCount();
         String samples = Inflector.getInstance().pluralize("sample", count);
-        return StringUtil.createString("{1} {2}: min={3}; avg={4}; max={5}", count, samples, this.minimum, this.mean, this.maximum);
+        return StringUtil.createString("{0} {1}: min={2}; avg={3}; max={4}", count, samples, this.minimum, this.mean, this.maximum);
     }
 
 }

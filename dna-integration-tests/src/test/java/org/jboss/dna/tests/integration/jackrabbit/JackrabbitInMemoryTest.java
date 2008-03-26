@@ -27,6 +27,7 @@ import javax.jcr.Repository;
 import javax.jcr.Session;
 import javax.jcr.SimpleCredentials;
 import org.apache.jackrabbit.core.TransientRepository;
+import org.jboss.dna.common.CoreI18n;
 import org.jboss.dna.common.stats.HistogramTest;
 import org.jboss.dna.common.stats.Stopwatch;
 import org.jboss.dna.common.util.FileUtil;
@@ -63,7 +64,7 @@ public class JackrabbitInMemoryTest {
         logger = Logger.getLogger(JackrabbitInMemoryTest.class);
 
         // Set up the transient repository ...
-        logger.info("Creating test repository for stress test and logging in with user {}", USERNAME);
+        logger.info(CoreI18n.passthrough, "Creating test repository for stress test and logging in with user " + USERNAME);
         this.repository = new TransientRepository(REPOSITORY_CONFIG_PATH, REPOSITORY_DIRECTORY_PATH);
 
         SimpleCredentials creds = new SimpleCredentials(USERNAME, PASSWORD);
@@ -118,7 +119,7 @@ public class JackrabbitInMemoryTest {
         }
         rootNode.save();
         HistogramTest.writeHistogramToLog(logger, nodeStopwatch.getHistogram(3).setBucketCount(50), 80, "create 100 nodes with no children and no properties");
-        this.logger.info(nodeStopwatch.toString());
+        this.logger.info(CoreI18n.passthrough, nodeStopwatch.toString());
     }
 
     @Test
@@ -132,8 +133,8 @@ public class JackrabbitInMemoryTest {
 
         HistogramTest.writeHistogramToLog(logger, nodeStopwatch.getHistogram(3).setBucketCount(50), 80, "create tree of " + numNodes + " nodes (2 deep, 10 children at every node)");
         HistogramTest.writeHistogramToLog(logger, saveStopwatch.getHistogram(3).setBucketCount(50), 80, "1 save of 2x10 tree of " + numNodes + " nodes");
-        this.logger.info("Node operation times: " + nodeStopwatch.toString());
-        this.logger.info("Save times: " + saveStopwatch.toString());
+        this.logger.info(CoreI18n.passthrough, "Node operation times: " + nodeStopwatch.toString());
+        this.logger.info(CoreI18n.passthrough, "Save times: " + saveStopwatch.toString());
     }
 
     @Test

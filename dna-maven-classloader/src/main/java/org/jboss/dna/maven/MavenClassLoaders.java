@@ -36,6 +36,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import org.jboss.dna.common.SystemFailureException;
 
 /**
  * A managed collection of {@link ClassLoader class loaders} that access JARs in a JCR repository, processing dependencies
@@ -89,8 +90,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
             }
         } catch (MalformedURLException e) {
             // This really should never happen, but if it does ...
-            String msg = "System failure: error while getting the URL for a Maven project";
-            throw new RuntimeException(msg, e);
+            throw new SystemFailureException(MavenI18n.errorGettingUrlForMavenProject.text(mavenId), e);
         } finally {
             this.lock.unlock();
         }

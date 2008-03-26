@@ -28,6 +28,7 @@ import javax.jcr.Session;
 import javax.jcr.SimpleCredentials;
 import org.apache.jackrabbit.api.JackrabbitRepository;
 import org.apache.jackrabbit.core.TransientRepository;
+import org.jboss.dna.common.CoreI18n;
 import org.jboss.dna.common.util.FileUtil;
 import org.jboss.dna.common.util.Logger;
 import org.junit.After;
@@ -114,7 +115,7 @@ public abstract class AbstractJcrRepositoryTest {
     public synchronized void shutdownRepository() {
         if (keepAliveSession != null) {
             try {
-                Logger.getLogger(this.getClass()).info("Shutting down repository");
+                Logger.getLogger(this.getClass()).info(CoreI18n.passthrough, "Shutting down repository");
                 keepAliveSession.logout();
             } finally {
                 keepAliveSession = null;
