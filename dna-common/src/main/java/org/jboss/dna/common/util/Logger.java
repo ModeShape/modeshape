@@ -21,6 +21,8 @@
  */
 package org.jboss.dna.common.util;
 
+import java.util.Locale;
+import java.util.concurrent.atomic.AtomicReference;
 import net.jcip.annotations.ThreadSafe;
 import org.jboss.dna.common.i18n.I18n;
 import org.slf4j.ILoggerFactory;
@@ -32,7 +34,7 @@ import org.slf4j.LoggerFactory;
  * callers to supply primitive values as parameters.
  */
 @ThreadSafe
-public class Logger {
+public final class Logger {
 
     public enum Level {
         OFF,
@@ -41,6 +43,28 @@ public class Logger {
         INFO,
         DEBUG,
         TRACE;
+    }
+
+    private static final AtomicReference<Locale> LOGGING_LOCALE = new AtomicReference<Locale>(null);
+
+    /**
+     * Get the locale used for the logs. If null, the {@link Locale#getDefault() default locale} is used.
+     * @return the current locale used for logging, or null if the system locale is used
+     * @see #setLoggingLocale(Locale)
+     */
+    public static Locale getLoggingLocale() {
+        return LOGGING_LOCALE.get();
+    }
+
+    /**
+     * Set the locale used for the logs. This should be used when the logs are to be written is a specific locale, independent of
+     * the {@link Locale#getDefault() default locale}. To use the default locale, call this method with a null value.
+     * @param locale the desired locale to use for the logs, or null if the system locale should be used
+     * @return the previous locale
+     * @see #getLoggingLocale()
+     */
+    public static Locale setLoggingLocale( Locale locale ) {
+        return LOGGING_LOCALE.getAndSet(locale != null ? locale : Locale.getDefault());
     }
 
     /**
@@ -62,9 +86,9 @@ public class Logger {
         return new Logger(LoggerFactory.getLogger(name));
     }
 
-    protected final org.slf4j.Logger delegate;
+    private final org.slf4j.Logger delegate;
 
-    /* package */Logger( org.slf4j.Logger delegate ) {
+    private Logger( org.slf4j.Logger delegate ) {
         this.delegate = delegate;
     }
 
@@ -88,7 +112,7 @@ public class Logger {
         if (message == null) return;
         switch (level) {
             case DEBUG:
-                debug(message.text(params));
+                debug(message.text(LOGGING_LOCALE.get(), params));
                 break;
             case ERROR:
                 error(message, params);
@@ -97,7 +121,7 @@ public class Logger {
                 info(message, params);
                 break;
             case TRACE:
-                trace(message.text(params));
+                trace(message.text(LOGGING_LOCALE.get(), params));
                 break;
             case WARNING:
                 warn(message, params);
@@ -119,7 +143,7 @@ public class Logger {
         if (message == null) return;
         switch (level) {
             case DEBUG:
-                debug(t, message.text(params));
+                debug(t, message.text(LOGGING_LOCALE.get(), params));
                 break;
             case ERROR:
                 error(t, message, params);
@@ -128,7 +152,7 @@ public class Logger {
                 info(t, message, params);
                 break;
             case TRACE:
-                trace(t, message.text(params));
+                trace(t, message.text(LOGGING_LOCALE.get(), params));
                 break;
             case WARNING:
                 warn(t, message, params);
@@ -146,6 +170,7 @@ public class Logger {
      * @param params the parameter values that are to replace the variables in the format string
      */
     public void debug( String message, Object... params ) {
+        if (!isDebugEnabled()) return;
         if (message == null) return;
         this.delegate.debug(I18n.replaceParameters(message, params));
     }
@@ -158,6 +183,7 @@ public class Logger {
      * @param params the parameter values that are to replace the variables in the format string
      */
     public void debug( Throwable t, String message, Object... params ) {
+        if (!isDebugEnabled()) return;
         if (t == null) {
             debug(message, params);
             return;
@@ -177,8 +203,9 @@ public class Logger {
      * @param params the parameter values that are to replace the variables in the format string
      */
     public void error( I18n message, Object... params ) {
+        if (!isErrorEnabled()) return;
         if (message == null) return;
-        this.delegate.error(message.text(params));
+        this.delegate.error(message.text(LOGGING_LOCALE.get(), params));
     }
 
     /**
@@ -189,6 +216,7 @@ public class Logger {
      * @param params the parameter values that are to replace the variables in the format string
      */
     public void error( Throwable t, I18n message, Object... params ) {
+        if (!isErrorEnabled()) return;
         if (t == null) {
             error(message, params);
             return;
@@ -197,7 +225,7 @@ public class Logger {
             this.delegate.error(null, t);
             return;
         }
-        this.delegate.error(message.text(params), t);
+        this.delegate.error(message.text(LOGGING_LOCALE.get(), params), t);
     }
 
     /**
@@ -208,8 +236,9 @@ public class Logger {
      * @param params the parameter values that are to replace the variables in the format string
      */
     public void info( I18n message, Object... params ) {
+        if (!isInfoEnabled()) return;
         if (message == null) return;
-        this.delegate.info(message.text(params));
+        this.delegate.info(message.text(LOGGING_LOCALE.get(), params));
     }
 
     /**
@@ -220,6 +249,7 @@ public class Logger {
      * @param params the parameter values that are to replace the variables in the format string
      */
     public void info( Throwable t, I18n message, Object... params ) {
+        if (!isInfoEnabled()) return;
         if (t == null) {
             info(message, params);
             return;
@@ -228,7 +258,7 @@ public class Logger {
             this.delegate.info(null, t);
             return;
         }
-        this.delegate.info(message.text(params), t);
+        this.delegate.info(message.text(LOGGING_LOCALE.get(), params), t);
     }
 
     /**
@@ -239,6 +269,7 @@ public class Logger {
      * @param params the parameter values that are to replace the variables in the format string
      */
     public void trace( String message, Object... params ) {
+        if (!isTraceEnabled()) return;
         if (message == null) return;
         this.delegate.trace(I18n.replaceParameters(message, params));
     }
@@ -251,6 +282,7 @@ public class Logger {
      * @param params the parameter values that are to replace the variables in the format string
      */
     public void trace( Throwable t, String message, Object... params ) {
+        if (!isTraceEnabled()) return;
         if (t == null) {
             this.trace(message, params);
             return;
@@ -270,8 +302,9 @@ public class Logger {
      * @param params the parameter values that are to replace the variables in the format string
      */
     public void warn( I18n message, Object... params ) {
+        if (!isWarnEnabled()) return;
         if (message == null) return;
-        this.delegate.warn(message.text(params));
+        this.delegate.warn(message.text(LOGGING_LOCALE.get(), params));
     }
 
     /**
@@ -282,6 +315,7 @@ public class Logger {
      * @param params the parameter values that are to replace the variables in the format string
      */
     public void warn( Throwable t, I18n message, Object... params ) {
+        if (!isWarnEnabled()) return;
         if (t == null) {
             warn(message, params);
             return;
@@ -290,7 +324,7 @@ public class Logger {
             this.delegate.warn(null, t);
             return;
         }
-        this.delegate.warn(message.text(params), t);
+        this.delegate.warn(message.text(LOGGING_LOCALE.get(), params), t);
     }
 
     /**

@@ -26,7 +26,6 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsInstanceOf.instanceOf;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.Assert.assertThat;
-import java.util.Locale;
 import org.jboss.dna.common.CoreI18n;
 import org.jboss.dna.common.SystemFailureException;
 import org.junit.Before;
@@ -41,46 +40,6 @@ public final class I18nTest {
     @Before
     public void beforeEach() {
         I18n.initialize(TestI18n.class);
-    }
-
-    @Test
-    public void getLocaleShouldReturnDefaultLocale() {
-        assertThat(I18n.getLocale(), is(Locale.getDefault()));
-    }
-
-    @Test
-    public void setLocaleShouldChangeReturnValueOfGetLocale() {
-        I18n.setLocale(Locale.ITALY);
-        assertThat(I18n.getLocale(), is(Locale.ITALY));
-    }
-
-    @Test
-    public void setLocaleShouldUseTheDefaultLocaleIfArgumentIsNull() {
-        setLocaleShouldChangeReturnValueOfGetLocale();
-        I18n.setLocale(null);
-        assertThat(I18n.getLocale(), is(Locale.getDefault()));
-    }
-
-    @Test
-    public void getLocaleShouldReturnLocaleSetOnThread() throws Exception {
-        final Exception[] errs = new Exception[1];
-        Thread thread = new Thread() {
-
-            @Override
-            public void run() {
-                try {
-                    setLocaleShouldChangeReturnValueOfGetLocale();
-                } catch (Exception err) {
-                    errs[0] = err;
-                }
-            }
-        };
-        if (errs[0] != null) {
-            throw errs[0];
-        }
-        thread.start();
-        thread.join();
-        assertThat(I18n.getLocale(), is(Locale.getDefault()));
     }
 
     @Test( expected = IllegalArgumentException.class )

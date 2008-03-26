@@ -36,6 +36,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import net.jcip.annotations.ThreadSafe;
 import org.jboss.dna.common.CoreI18n;
 import org.jboss.dna.common.SystemFailureException;
 import org.jboss.dna.common.util.ArgCheck;
@@ -47,28 +48,13 @@ import org.jboss.dna.common.util.ClassUtil;
  * @author John Verhaeg
  * @author Randall Hauch
  */
+@ThreadSafe
 public final class I18n {
 
     private static final Pattern PARAMETER_COUNT_PATTERN = Pattern.compile("\\{(\\d+)\\}");
     private static final Object[] EMPTY_ARGUMENTS = new Object[] {};
     private static final LocalizationRepository DEFAULT_LOCALIZATION_REPOSITORY = new ClasspathLocalizationRepository();
     private static LocalizationRepository localizationRepository = DEFAULT_LOCALIZATION_REPOSITORY;
-
-    private static ThreadLocal<Locale> locale = new ThreadLocal<Locale>() {
-
-        @Override
-        protected Locale initialValue() {
-            return Locale.getDefault();
-        }
-    };
-
-    /**
-     * @return The locale for the current thread, or the default locale if none has been set.
-     * @see #setLocale(Locale)
-     */
-    public static Locale getLocale() {
-        return locale.get();
-    }
 
     /**
      * Get the repository of localized messages. By default, this instance uses a {@link ClasspathLocalizationRepository} that
@@ -134,14 +120,6 @@ public final class I18n {
         }
     }
 
-    /**
-     * @param locale The locale to set for the current thread. The default locale will be set for the thread if this argument is
-     * <code>null</code>.
-     */
-    public static void setLocale( Locale locale ) {
-        I18n.locale.set(locale == null ? Locale.getDefault() : locale);
-    }
-
     public final String id;
     /* package */final Class i18nClass;
     private final ConcurrentMap<Locale, Map<String, String>> locale2Id2TextMap;
@@ -153,8 +131,8 @@ public final class I18n {
         this.locale2Id2TextMap = new ConcurrentHashMap<Locale, Map<String, String>>();
     }
 
-    protected String rawText() {
-        Locale locale = getLocale();
+    protected String rawText( Locale locale ) {
+        assert locale != null;
         Map<String, String> id2TextMap = null;
         id2TextMap = locale2Id2TextMap.get(locale);
         if (id2TextMap == null) {
@@ -248,8 +226,25 @@ public final class I18n {
         return text;
     }
 
+    /**
+     * Get the internationalized text localized to the {@link Locale#getDefault() current (default) locale}, replacing the
+     * parameters in the text with those supplied.
+     * @param arguments the arguments for the parameter replacement; may be null or empty
+     * @return the localized text
+     */
     public String text( Object... arguments ) {
-        String rawText = rawText();
+        String rawText = rawText(Locale.getDefault());
+        return replaceParameters(id, rawText, arguments);
+    }
+
+    /**
+     * Get the internationalized text localized to the supplied locale, replacing the parameters in the text with those supplied.
+     * @param locale the locale, or null if the {@link Locale#getDefault() current (default) locale} should be used
+     * @param arguments the arguments for the parameter replacement; may be null or empty
+     * @return the localized text
+     */
+    public String text( Locale locale, Object... arguments ) {
+        String rawText = rawText(locale != null ? locale : Locale.getDefault());
         return replaceParameters(id, rawText, arguments);
     }
 
@@ -258,7 +253,7 @@ public final class I18n {
      */
     @Override
     public String toString() {
-        return rawText();
+        return rawText(Locale.getDefault());
     }
 
     /**
