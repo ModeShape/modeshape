@@ -78,13 +78,17 @@ public class ComponentConfig implements Comparable<ComponentConfig> {
     }
 
     /* package */static List<String> buildList( String... classpathElements ) {
-        List<String> classpath = new ArrayList<String>();
-        if (classpathElements != null && classpathElements.length != 0) {
+        List<String> classpath = null;
+        if (classpathElements != null) {
+            classpath = new ArrayList<String>();
             for (String classpathElement : classpathElements) {
                 if (!classpath.contains(classpathElement)) classpath.add(classpathElement);
             }
+            classpath = Collections.unmodifiableList(classpath);
+        } else {
+            classpath = Collections.emptyList(); // already immutable
         }
-        return Collections.unmodifiableList(classpath);
+        return classpath;
     }
 
     /**
