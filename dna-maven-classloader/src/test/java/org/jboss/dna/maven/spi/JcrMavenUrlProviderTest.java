@@ -50,7 +50,7 @@ public class JcrMavenUrlProviderTest extends AbstractJcrRepositoryTest {
     private MavenId mavenId1;
 
     @Before
-    public void beforeEach() {
+    public void beforeEach() throws Exception {
         File tmpFolder = new File("target/testdata/tmp");
         tmpFolder.mkdirs();
         System.setProperty("java.io.tmpdir", tmpFolder.getAbsolutePath());
@@ -65,7 +65,7 @@ public class JcrMavenUrlProviderTest extends AbstractJcrRepositoryTest {
 
         // Configure the JCR URL provider to use the repository ...
         provider = new JcrMavenUrlProvider();
-        provider.setRepository(repository);
+        provider.setRepository(getRepository());
     }
 
     @Test

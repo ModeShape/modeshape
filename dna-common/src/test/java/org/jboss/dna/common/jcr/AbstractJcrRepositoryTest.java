@@ -21,6 +21,7 @@
  */
 package org.jboss.dna.common.jcr;
 
+import java.io.IOException;
 import javax.jcr.Credentials;
 import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
@@ -64,7 +65,7 @@ public abstract class AbstractJcrRepositoryTest {
 
     public static final String WORKSPACE_NAME = "default";
 
-    protected static Repository repository;
+    private static Repository repository;
 
     @BeforeClass
     public static void beforeAll() throws Exception {
@@ -77,12 +78,15 @@ public abstract class AbstractJcrRepositoryTest {
 
     @AfterClass
     public static void afterAll() throws Exception {
-        try {
-            JackrabbitRepository jackrabbit = (JackrabbitRepository)repository;
-            jackrabbit.shutdown();
-        } finally {
-            // Clean up the test data ...
-            FileUtil.delete(JACKRABBIT_DATA_PATH);
+        if (repository != null) {
+            try {
+                JackrabbitRepository jackrabbit = (JackrabbitRepository)repository;
+                jackrabbit.shutdown();
+            } finally {
+                repository = null;
+                // Clean up the test data ...
+                FileUtil.delete(JACKRABBIT_DATA_PATH);
+            }
         }
     }
 
@@ -98,9 +102,18 @@ public abstract class AbstractJcrRepositoryTest {
      * The repository can be started and {@link #shutdownRepository() shutdown} repeatedly during a single test.
      * </p>
      * @throws RepositoryException if there is a problem starting the repository
+     * @throws IOException if there's a problem reading the repository configuration
      * @see #shutdownRepository()
      */
-    public synchronized void startRepository() throws RepositoryException {
+    public synchronized void startRepository() throws RepositoryException, IOException {
+        if (repository == null) {
+            // Clean up the test data ...
+            FileUtil.delete(JACKRABBIT_DATA_PATH);
+
+            // Set up the transient repository (this shouldn't do anything yet)...
+            repository = new TransientRepository(REPOSITORY_CONFIG_PATH, REPOSITORY_DIRECTORY_PATH);
+
+        }
         if (keepAliveSession == null) {
             keepAliveSession = repository.login();
         }
@@ -118,6 +131,16 @@ public abstract class AbstractJcrRepositoryTest {
                 keepAliveSession.logout();
             } finally {
                 keepAliveSession = null;
+                if (repository != null) {
+                    try {
+                        JackrabbitRepository jackrabbit = (JackrabbitRepository)repository;
+                        jackrabbit.shutdown();
+                    } finally {
+                        repository = null;
+                        // Clean up the test data ...
+                        FileUtil.delete(JACKRABBIT_DATA_PATH);
+                    }
+                }
             }
         }
     }
@@ -130,8 +153,10 @@ public abstract class AbstractJcrRepositoryTest {
      * Get the repository. This will start the repository if necessary.
      * @return repository
      * @throws RepositoryException if there is a problem obtaining the repository
+     * @throws IOException if the repository has not yet been {@link #startRepository() started} and there's a problem reading the
+     * repository configuration
      */
-    public Repository getRepository() throws RepositoryException {
+    public Repository getRepository() throws RepositoryException, IOException {
         startRepository();
         return repository;
     }
