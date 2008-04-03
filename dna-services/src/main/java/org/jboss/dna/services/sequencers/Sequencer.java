@@ -21,6 +21,7 @@
  */
 package org.jboss.dna.services.sequencers;
 
+import java.util.Set;
 import javax.jcr.Node;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
@@ -28,6 +29,10 @@ import net.jcip.annotations.ThreadSafe;
 import org.jboss.dna.common.component.Component;
 import org.jboss.dna.common.monitor.ProgressMonitor;
 import org.jboss.dna.services.ExecutionContext;
+import org.jboss.dna.services.observation.NodeChange;
+import org.jboss.dna.services.observation.NodeChangeListener;
+import org.jboss.dna.services.observation.NodeChanges;
+import org.jboss.dna.services.observation.ObservationService;
 
 /**
  * The interface for a DNA sequencer, which sequences nodes and their content to extract additional information from the
@@ -42,7 +47,24 @@ public interface Sequencer extends Component<SequencerConfig> {
 
     /**
      * Execute the sequencing operation on the supplied node, which has recently been created or changed. The implementation of
-     * this method is responsible for {@link Session#save() saving} any changes made by this sequencer to the repository content.
+     * this method is responsible for {@link ExecutionContext#getSessionFactory() getting sessions}, modifying the appropriate
+     * nodes, {@link Session#save() saving} any changes made by this sequencer, and {@link Session#logout() closing} all sessions
+     * (and any other acquired resources), even in the case of {@link ProgressMonitor#isCancelled() cancellation} or exceptions.
+     * <p>
+     * The {@link SequencingService} determines the sequencers that should be executed by monitoring the changes to one or more
+     * workspaces (it is a {@link NodeChangeListener} registered with the {@link ObservationService}). Changes in those
+     * workspaces are aggregated for each transaction, and organized into {@link NodeChanges changes for each node}. The
+     * SequencingService then determines for each {@link NodeChange set of changes to a node} the set of full paths to the
+     * properties that have changed and whether those paths {@link SequencerPathExpression#matches(String) match} the sequencer's
+     * {@link SequencerConfig#getPathExpressions() path expressions}. Each path expression produces the path to the output node,
+     * and these output paths are accumulated and (with the original node that changed, the node change summary, and other
+     * information) supplied to the sequencer via this method.
+     * <p>
+     * It is possible that a sequencer is configured to apply to multiple properties on a node. So, in cases where multiple
+     * properties are changed on a single node (within a single repository transaction), the sequencer will only be executed once.
+     * Also, in such cases the sequencer's configuration may imply multiple output nodes, so it is left to the sequencer to define
+     * the behavior in such cases.
+     * </p>
      * <p>
      * This operation should report progress to the supplied {@link ProgressMonitor}. At the beginning of the operation, call
      * {@link ProgressMonitor#beginTask(double, org.jboss.dna.common.i18n.I18n, Object...)} with a meaningful message describing
@@ -60,13 +82,15 @@ public interface Sequencer extends Component<SequencerConfig> {
      * Finally, the implementation should call {@link ProgressMonitor#done()} when the operation has finished.
      * </p>
      * @param input the node that has recently been created or changed; never null
-     * @param output the node at which the sequencing content should be placed; never null, but possible the same as
-     * <code>input</code>
+     * @param changes the immutable summary of changes that occurred on the <code>input</code> node within the transaction;
+     * never null
+     * @param outputPaths the paths to the nodes where the sequencing content should be placed; never null, but the set may be
+     * empty and the any of the paths may represent non-existant nodes or the <code>input</code> node
      * @param context the context in which this sequencer is executing; never null
      * @param progress the progress monitor that should be kept updated with the sequencer's progress and that should be
      * frequently consulted as to whether this operation has been {@link ProgressMonitor#isCancelled() cancelled}.
      * @throws RepositoryException
      */
-    void execute( Node input, Node output, ExecutionContext context, ProgressMonitor progress ) throws RepositoryException;
+    void execute( Node input, NodeChange changes, Set<String> outputPaths, ExecutionContext context, ProgressMonitor progress ) throws RepositoryException;
 
 }

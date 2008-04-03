@@ -21,6 +21,7 @@
  */
 package org.jboss.dna.services;
 
+import java.util.concurrent.TimeUnit;
 import net.jcip.annotations.ThreadSafe;
 
 /**
@@ -101,6 +102,16 @@ public interface ServiceAdministrator {
      * @see #isShutdown()
      */
     public ServiceAdministrator shutdown();
+
+    /**
+     * Blocks until all work has completed execution after a shutdown request, or the timeout occurs, or the current thread is
+     * interrupted, whichever happens first.
+     * @param timeout the maximum time to wait
+     * @param unit the time unit of the timeout argument
+     * @return <tt>true</tt> if this service terminated and <tt>false</tt> if the timeout elapsed before termination
+     * @throws InterruptedException if interrupted while waiting
+     */
+    boolean awaitTermination( long timeout, TimeUnit unit ) throws InterruptedException;
 
     /**
      * Return whether this system has been started and is currently running.

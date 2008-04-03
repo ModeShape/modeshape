@@ -34,35 +34,41 @@ import org.jboss.dna.common.component.ComponentConfig;
 @Immutable
 public class SequencerConfig extends ComponentConfig {
 
-    private final Set<String> runRules;
+    private final Set<SequencerPathExpression> pathExpressions;
 
-    public SequencerConfig( String name, String description, String classname, String[] classpath, String... runRules ) {
-        this(name, description, System.currentTimeMillis(), classname, classpath, runRules);
+    public SequencerConfig( String name, String description, String classname, String[] classpath, String... pathExpressions ) {
+        this(name, description, System.currentTimeMillis(), classname, classpath, pathExpressions);
     }
 
-    public SequencerConfig( String name, String description, long timestamp, String classname, String[] classpath, String... runRules ) {
+    public SequencerConfig( String name, String description, long timestamp, String classname, String[] classpath, String... pathExpressions ) {
         super(name, description, timestamp, classname, classpath);
-        this.runRules = buildRunRuleSet(runRules);
+        this.pathExpressions = buildPathExpressionSet(pathExpressions);
     }
 
-    /* package */static Set<String> buildRunRuleSet( String... runRules ) {
-        Set<String> result = new LinkedHashSet<String>();
-        for (String runRule : runRules) {
-            if (runRule == null) continue;
-            runRule = runRule.trim();
-            if (runRule.length() == 0) continue;
-            result.add(runRule);
+    /* package */static Set<SequencerPathExpression> buildPathExpressionSet( String... pathExpressions ) {
+        Set<SequencerPathExpression> result = null;
+        if (pathExpressions != null) {
+            result = new LinkedHashSet<SequencerPathExpression>();
+            for (String pathExpression : pathExpressions) {
+                if (pathExpression == null) continue;
+                pathExpression = pathExpression.trim();
+                if (pathExpression.length() == 0) continue;
+                result.add(new SequencerPathExpression(pathExpression));
+            }
+            result = Collections.unmodifiableSet(result);
+        } else {
+            result = Collections.emptySet(); // already immutable
         }
-        return Collections.unmodifiableSet(result);
+        return result;
     }
 
-    public Collection<String> getRunRules() {
-        return Collections.unmodifiableSet(this.runRules);
+    public Collection<SequencerPathExpression> getPathExpressions() {
+        return Collections.unmodifiableSet(this.pathExpressions);
     }
 
     public boolean hasChanged( SequencerConfig that ) {
         if (super.hasChanged(that)) return true;
-        if (!this.getRunRules().equals(that.getRunRules())) return true;
+        if (!this.getPathExpressions().equals(that.getPathExpressions())) return true;
         return false;
     }
 

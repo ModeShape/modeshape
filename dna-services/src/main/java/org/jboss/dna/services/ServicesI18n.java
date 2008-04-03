@@ -40,8 +40,11 @@ public final class ServicesI18n {
     public static I18n serviceShutdowAndMayNotBeStarted;
     public static I18n serviceShutdowAndMayNotBePaused;
     public static I18n unableToFindRepositoryInJndi;
-    public static I18n uableToGetNodePathFromEventOriginatingFromRepository;
-    public static I18n errorProcessingEventOnNode;
+    public static I18n errorProcessingEvents;
+    public static I18n errorFindingPropertyNameInPropertyAddedEvent;
+    public static I18n errorFindingPropertyNameInPropertyChangedEvent;
+    public static I18n errorFindingPropertyNameInPropertyRemovedEvent;
+
     public static I18n unableToObtainJsr94RuleAdministrator;
     public static I18n errorUsingJsr94RuleAdministrator;
     public static I18n unableToObtainJsr94ServiceProvider;
@@ -81,4 +84,8 @@ public final class ServicesI18n {
     public static I18n errorClosingBinaryStreamForPropertyFromNode;
     public static I18n requiredNodeDoesNotExistRelativeToNode;
     public static I18n errorGettingNodeRelativeToNode;
+
+    public static I18n pathExpressionIsInvalid;
+    public static I18n pathExpressionMayNotBeBlank;
+
 }

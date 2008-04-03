@@ -22,11 +22,14 @@
 
 package org.jboss.dna.services.sequencers;
 
+import java.util.concurrent.TimeUnit;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.hamcrest.core.IsSame.sameInstance;
 import static org.junit.Assert.assertThat;
+import static org.junit.matchers.JUnitMatchers.hasItem;
+import javax.jcr.Node;
 import javax.jcr.Session;
 import javax.jcr.observation.Event;
 import org.jboss.dna.common.jcr.AbstractJcrRepositoryTest;
@@ -43,129 +46,131 @@ import org.junit.Test;
  */
 public class SequencingServiceTest extends AbstractJcrRepositoryTest {
 
+    public static final int ALL_EVENT_TYPES = Event.NODE_ADDED | Event.NODE_REMOVED | Event.PROPERTY_ADDED | Event.PROPERTY_CHANGED | Event.PROPERTY_REMOVED;
     public static final String REPOSITORY_WORKSPACE_NAME = "testRepository-Workspace";
 
     private ObservationService observationService;
-    private SequencingService system;
+    private SequencingService sequencingService;
     private ExecutionContext executionContext;
 
     @Before
     public void beforeEach() throws Exception {
         this.executionContext = new SimpleExecutionContext(this, REPOSITORY_WORKSPACE_NAME);
-        this.system = new SequencingService();
-        this.system.setExecutionContext(this.executionContext);
+        this.sequencingService = new SequencingService();
+        this.sequencingService.setExecutionContext(this.executionContext);
         this.observationService = new ObservationService(this.executionContext.getSessionFactory());
-        this.observationService.addListener(this.system);
+        this.observationService.addListener(this.sequencingService);
     }
 
     @After
     public void afterEach() throws Exception {
-        this.system.getAdministrator().shutdown();
+        super.shutdownRepository();
+        this.sequencingService.getAdministrator().shutdown();
     }
 
     @Test
     public void shouldHaveTheDefaultSelectorUponConstruction() {
-        assertThat(system.getSequencerSelector(), is(sameInstance(SequencingService.DEFAULT_SEQUENCER_SELECTOR)));
+        assertThat(sequencingService.getSequencerSelector(), is(sameInstance(SequencingService.DEFAULT_SEQUENCER_SELECTOR)));
     }
 
     @Test
     public void shouldHaveNoExecutorServiceUponConstruction() {
-        assertThat(system.getExecutorService(), is(nullValue()));
+        assertThat(sequencingService.getExecutorService(), is(nullValue()));
     }
 
     @Test
     public void shouldCreateDefaultExecutorServiceWhenStartedIfNoExecutorServiceHasBeenSet() {
-        assertThat(system.getExecutorService(), is(nullValue()));
-        system.getAdministrator().start();
-        assertThat(system.getExecutorService(), is(notNullValue()));
+        assertThat(sequencingService.getExecutorService(), is(nullValue()));
+        sequencingService.getAdministrator().start();
+        assertThat(sequencingService.getExecutorService(), is(notNullValue()));
     }
 
     @Test
     public void shouldCreateExecutorServiceWhenStarted() {
-        assertThat(system.getExecutorService(), is(nullValue()));
-        system.getAdministrator().start();
-        assertThat(system.getExecutorService(), is(notNullValue()));
+        assertThat(sequencingService.getExecutorService(), is(nullValue()));
+        sequencingService.getAdministrator().start();
+        assertThat(sequencingService.getExecutorService(), is(notNullValue()));
     }
 
     @Test( expected = IllegalArgumentException.class )
     public void shouldFailToSetStateToUnknownString() {
-        system.getAdministrator().setState("asdf");
+        sequencingService.getAdministrator().setState("asdf");
     }
 
     @Test( expected = IllegalArgumentException.class )
     public void shouldFailToSetStateToNullString() {
-        system.getAdministrator().setState((String)null);
+        sequencingService.getAdministrator().setState((String)null);
     }
 
     @Test
     public void shouldSetStateUsingLowercaseString() {
-        assertThat(system.getAdministrator().setState("started").isStarted(), is(true));
-        assertThat(system.getAdministrator().setState("paused").isPaused(), is(true));
-        assertThat(system.getAdministrator().setState("shutdown").isShutdown(), is(true));
+        assertThat(sequencingService.getAdministrator().setState("started").isStarted(), is(true));
+        assertThat(sequencingService.getAdministrator().setState("paused").isPaused(), is(true));
+        assertThat(sequencingService.getAdministrator().setState("shutdown").isShutdown(), is(true));
     }
 
     @Test
     public void shouldSetStateUsingMixedCaseString() {
-        assertThat(system.getAdministrator().setState("StarTeD").isStarted(), is(true));
-        assertThat(system.getAdministrator().setState("PauSed").isPaused(), is(true));
-        assertThat(system.getAdministrator().setState("ShuTDowN").isShutdown(), is(true));
+        assertThat(sequencingService.getAdministrator().setState("StarTeD").isStarted(), is(true));
+        assertThat(sequencingService.getAdministrator().setState("PauSed").isPaused(), is(true));
+        assertThat(sequencingService.getAdministrator().setState("ShuTDowN").isShutdown(), is(true));
     }
 
     @Test
     public void shouldSetStateUsingUppercasString() {
-        assertThat(system.getAdministrator().setState("STARTED").isStarted(), is(true));
-        assertThat(system.getAdministrator().setState("PAUSED").isPaused(), is(true));
-        assertThat(system.getAdministrator().setState("SHUTDOWN").isShutdown(), is(true));
+        assertThat(sequencingService.getAdministrator().setState("STARTED").isStarted(), is(true));
+        assertThat(sequencingService.getAdministrator().setState("PAUSED").isPaused(), is(true));
+        assertThat(sequencingService.getAdministrator().setState("SHUTDOWN").isShutdown(), is(true));
     }
 
     @Test
     public void shouldBePausedUponConstruction() {
-        assertThat(system.getAdministrator().isPaused(), is(true));
-        assertThat(system.getAdministrator().getState(), is(ServiceAdministrator.State.PAUSED));
-        assertThat(system.getAdministrator().isShutdown(), is(false));
-        assertThat(system.getAdministrator().isStarted(), is(false));
+        assertThat(sequencingService.getAdministrator().isPaused(), is(true));
+        assertThat(sequencingService.getAdministrator().getState(), is(ServiceAdministrator.State.PAUSED));
+        assertThat(sequencingService.getAdministrator().isShutdown(), is(false));
+        assertThat(sequencingService.getAdministrator().isStarted(), is(false));
     }
 
     @Test
     public void shouldBeAbleToShutdownWhenNotStarted() {
-        assertThat(system.getAdministrator().isShutdown(), is(false));
+        assertThat(sequencingService.getAdministrator().isShutdown(), is(false));
         for (int i = 0; i != 3; ++i) {
-            assertThat(system.getAdministrator().shutdown().isShutdown(), is(true));
-            assertThat(system.getAdministrator().isPaused(), is(false));
-            assertThat(system.getAdministrator().isStarted(), is(false));
-            assertThat(system.getAdministrator().getState(), is(ServiceAdministrator.State.SHUTDOWN));
+            assertThat(sequencingService.getAdministrator().shutdown().isShutdown(), is(true));
+            assertThat(sequencingService.getAdministrator().isPaused(), is(false));
+            assertThat(sequencingService.getAdministrator().isStarted(), is(false));
+            assertThat(sequencingService.getAdministrator().getState(), is(ServiceAdministrator.State.SHUTDOWN));
         }
     }
 
     @Test
     public void shouldBeAbleToBePauseAndRestarted() {
-        assertThat(system.getAdministrator().isShutdown(), is(false));
+        assertThat(sequencingService.getAdministrator().isShutdown(), is(false));
         for (int i = 0; i != 3; ++i) {
             // Now pause it ...
-            assertThat(system.getAdministrator().pause().isPaused(), is(true));
-            assertThat(system.getAdministrator().isStarted(), is(false));
-            assertThat(system.getAdministrator().isShutdown(), is(false));
-            assertThat(system.getAdministrator().getState(), is(ServiceAdministrator.State.PAUSED));
+            assertThat(sequencingService.getAdministrator().pause().isPaused(), is(true));
+            assertThat(sequencingService.getAdministrator().isStarted(), is(false));
+            assertThat(sequencingService.getAdministrator().isShutdown(), is(false));
+            assertThat(sequencingService.getAdministrator().getState(), is(ServiceAdministrator.State.PAUSED));
 
             // Now start it back up ...
-            assertThat(system.getAdministrator().start().isStarted(), is(true));
-            assertThat(system.getAdministrator().isPaused(), is(false));
-            assertThat(system.getAdministrator().isShutdown(), is(false));
-            assertThat(system.getAdministrator().getState(), is(ServiceAdministrator.State.STARTED));
+            assertThat(sequencingService.getAdministrator().start().isStarted(), is(true));
+            assertThat(sequencingService.getAdministrator().isPaused(), is(false));
+            assertThat(sequencingService.getAdministrator().isShutdown(), is(false));
+            assertThat(sequencingService.getAdministrator().getState(), is(ServiceAdministrator.State.STARTED));
         }
     }
 
     @Test( expected = IllegalStateException.class )
     public void shouldNotBeAbleToBeRestartedAfterBeingShutdown() {
-        assertThat(system.getAdministrator().isShutdown(), is(false));
+        assertThat(sequencingService.getAdministrator().isShutdown(), is(false));
         // Shut it down ...
-        assertThat(system.getAdministrator().shutdown().isShutdown(), is(true));
-        assertThat(system.getAdministrator().isPaused(), is(false));
-        assertThat(system.getAdministrator().isStarted(), is(false));
-        assertThat(system.getAdministrator().getState(), is(ServiceAdministrator.State.SHUTDOWN));
+        assertThat(sequencingService.getAdministrator().shutdown().isShutdown(), is(true));
+        assertThat(sequencingService.getAdministrator().isPaused(), is(false));
+        assertThat(sequencingService.getAdministrator().isStarted(), is(false));
+        assertThat(sequencingService.getAdministrator().getState(), is(ServiceAdministrator.State.SHUTDOWN));
 
         // Now start it back up ... this will fail
-        system.getAdministrator().start();
+        sequencingService.getAdministrator().start();
     }
 
     @Test
@@ -174,7 +179,7 @@ public class SequencingServiceTest extends AbstractJcrRepositoryTest {
         Session session = getRepository().login(getTestCredentials());
 
         // Try when paused ...
-        assertThat(system.getAdministrator().isPaused(), is(true));
+        assertThat(sequencingService.getAdministrator().isPaused(), is(true));
         assertThat(observationService.getAdministrator().pause().isPaused(), is(true));
         ObservationService.WorkspaceListener listener = observationService.monitor(REPOSITORY_WORKSPACE_NAME, Event.NODE_ADDED);
         assertThat(listener, is(notNullValue()));
@@ -188,14 +193,14 @@ public class SequencingServiceTest extends AbstractJcrRepositoryTest {
         assertThat(observationService.getStatistics().getNumberOfEventsIgnored(), is((long)1));
 
         // Reset the statistics and remove the listener ...
-        system.getStatistics().reset();
+        sequencingService.getStatistics().reset();
         observationService.getStatistics().reset();
         assertThat(listener.isRegistered(), is(true));
         listener.unregister();
         assertThat(listener.isRegistered(), is(false));
 
-        // Start the sequencing system and try monitoring the workspace ...
-        assertThat(system.getAdministrator().start().isStarted(), is(true));
+        // Start the sequencing sequencingService and try monitoring the workspace ...
+        assertThat(sequencingService.getAdministrator().start().isStarted(), is(true));
         assertThat(observationService.getAdministrator().start().isStarted(), is(true));
         ObservationService.WorkspaceListener listener2 = observationService.monitor(REPOSITORY_WORKSPACE_NAME, Event.NODE_ADDED);
         assertThat(listener2.isRegistered(), is(true));
@@ -210,10 +215,10 @@ public class SequencingServiceTest extends AbstractJcrRepositoryTest {
 
         // Check the results: nothing ignored, and 1 node skipped (since no sequencers apply)
         assertThat(observationService.getStatistics().getNumberOfEventsIgnored(), is((long)0));
-        assertThat(system.getStatistics().getNumberOfNodesSkipped(), is((long)1));
+        assertThat(sequencingService.getStatistics().getNumberOfNodesSkipped(), is((long)1));
 
-        system.getAdministrator().shutdown();
-        system.getStatistics().reset();
+        sequencingService.getAdministrator().shutdown();
+        sequencingService.getStatistics().reset();
         observationService.getAdministrator().shutdown();
         observationService.getStatistics().reset();
 
@@ -226,7 +231,7 @@ public class SequencingServiceTest extends AbstractJcrRepositoryTest {
 
         // Check the results: nothing ignored, and nothing skipped
         assertThat(observationService.getStatistics().getNumberOfEventsIgnored(), is((long)0));
-        assertThat(system.getStatistics().getNumberOfNodesSkipped(), is((long)0));
+        assertThat(sequencingService.getStatistics().getNumberOfNodesSkipped(), is((long)0));
     }
 
     @Test
@@ -234,8 +239,8 @@ public class SequencingServiceTest extends AbstractJcrRepositoryTest {
         startRepository();
         Session session = getRepository().login(getTestCredentials());
 
-        // Start the sequencing system and try monitoring the workspace ...
-        assertThat(system.getAdministrator().start().isStarted(), is(true));
+        // Start the sequencing sequencingService and try monitoring the workspace ...
+        assertThat(sequencingService.getAdministrator().start().isStarted(), is(true));
         ObservationService.WorkspaceListener listener = observationService.monitor(REPOSITORY_WORKSPACE_NAME, Event.NODE_ADDED);
         assertThat(listener.isRegistered(), is(true));
         assertThat(listener, is(notNullValue()));
@@ -247,14 +252,17 @@ public class SequencingServiceTest extends AbstractJcrRepositoryTest {
         session.save();
         assertThat(listener.isRegistered(), is(true));
 
-        // Pause the system, can cause an event ...
-        system.getAdministrator().pause();
+        // Pause the sequencingService, can cause an event ...
+        sequencingService.getAdministrator().pause();
         session.getRootNode().addNode("testnodeB", "nt:unstructured");
         session.save();
         assertThat(listener.isRegistered(), is(true));
 
-        system.getAdministrator().shutdown();
+        // Shut down the services and await termination ...
+        sequencingService.getAdministrator().shutdown();
         observationService.getAdministrator().shutdown();
+        sequencingService.getAdministrator().awaitTermination(2, TimeUnit.SECONDS);
+        observationService.getAdministrator().awaitTermination(2, TimeUnit.SECONDS);
 
         // Cause another event ...
         session.getRootNode().addNode("testnodeC", "nt:unstructured");
@@ -262,5 +270,59 @@ public class SequencingServiceTest extends AbstractJcrRepositoryTest {
 
         // The listener should no longer be registered ...
         assertThat(listener.isRegistered(), is(false));
+    }
+
+    @Test
+    public void shouldExecuteSequencersUponChangesToRepositoryThatMatchSequencerPathExpressions() throws Exception {
+        // Add configurations for a sequencer ...
+        String name = "MockSequencerA";
+        String desc = "A mock sequencer that accumulates the number of times it's called";
+        String classname = MockSequencerA.class.getName();
+        String[] classpath = null;
+        String[] pathExpressions = {"/testnodeC/testnodeD/@description"};
+        SequencerConfig configA = new SequencerConfig(name, desc, classname, classpath, pathExpressions);
+        sequencingService.addSequencer(configA);
+
+        // Start the repository and get a session ...
+        startRepository();
+        Session session = getRepository().login(getTestCredentials());
+
+        // Start the sequencing sequencingService and try monitoring the workspace ...
+        assertThat(sequencingService.getAdministrator().start().isStarted(), is(true));
+        ObservationService.WorkspaceListener listener = observationService.monitor(REPOSITORY_WORKSPACE_NAME, ALL_EVENT_TYPES);
+        assertThat(listener.isRegistered(), is(true));
+        assertThat(listener, is(notNullValue()));
+        assertThat(listener.getAbsolutePath(), is("/"));
+        assertThat(listener.getEventTypes(), is(ALL_EVENT_TYPES));
+
+        // The sequencer should not yet have run ...
+        MockSequencerA sequencerA = (MockSequencerA)sequencingService.getSequencerLibrary().getInstances().get(0);
+        assertThat(sequencerA, is(notNullValue()));
+        assertThat(sequencerA.getCounter(), is(0));
+        assertThat(sequencingService.getSequencerLibrary().getInstances(), hasItem((Sequencer)sequencerA));
+
+        // Cause an event, but not one that the sequencer cares about ...
+        Node nodeC = session.getRootNode().addNode("testnodeC", "nt:unstructured");
+        assertThat(nodeC, is(notNullValue()));
+        session.save();
+        assertThat(sequencerA.getCounter(), is(0));
+        assertThat(sequencingService.getSequencerLibrary().getInstances(), hasItem((Sequencer)sequencerA));
+
+        // Cause another event, but again one that the sequencer does not care about ...
+        Node nodeD = nodeC.addNode("testnodeD", "nt:unstructured");
+        assertThat(nodeD, is(notNullValue()));
+        session.save();
+        assertThat(sequencerA.getCounter(), is(0));
+        assertThat(sequencingService.getSequencerLibrary().getInstances(), hasItem((Sequencer)sequencerA));
+
+        // Now set the property that the sequencer DOES care about ...
+        sequencerA.setExpectedCount(1);
+        nodeD.setProperty("description", "This is the value");
+        session.save();
+
+        // Wait for the event to be processed and the sequencer to be called ...
+        sequencerA.awaitExecution(4, TimeUnit.SECONDS); // wait for the sequencer to be called
+        assertThat(sequencerA.getCounter(), is(1));
+        assertThat(sequencingService.getSequencerLibrary().getInstances(), hasItem((Sequencer)sequencerA));
     }
 }

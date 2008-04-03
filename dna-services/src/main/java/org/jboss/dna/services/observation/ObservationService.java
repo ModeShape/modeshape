@@ -22,15 +22,13 @@
 package org.jboss.dna.services.observation;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -62,7 +60,7 @@ public class ObservationService implements AdministeredService {
      */
     public static interface ProblemLog {
 
-        void error( String repositoryWorkspaceName, Event event, Throwable t );
+        void error( String repositoryWorkspaceName, Throwable t );
     }
 
     /**
@@ -74,34 +72,9 @@ public class ObservationService implements AdministeredService {
         /**
          * {@inheritDoc}
          */
-        public void error( String repositoryWorkspaceName, Event event, Throwable t ) {
-            String type = getEventTypeString(event);
-            String path = "<unable-to-get-path>";
-            try {
-                path = event.getPath();
-            } catch (RepositoryException e) {
-                getLogger().error(e, ServicesI18n.uableToGetNodePathFromEventOriginatingFromRepository, type, repositoryWorkspaceName);
-            }
-            getLogger().error(t, ServicesI18n.errorProcessingEventOnNode, type, repositoryWorkspaceName, path);
+        public void error( String repositoryWorkspaceName, Throwable t ) {
+            getLogger().error(t, ServicesI18n.errorProcessingEvents, repositoryWorkspaceName);
         }
-
-        protected String getEventTypeString( Event event ) {
-            assert event != null;
-            switch (event.getType()) {
-                case Event.NODE_ADDED:
-                    return "NODE_ADDED";
-                case Event.NODE_REMOVED:
-                    return "NODE_REMOVED";
-                case Event.PROPERTY_ADDED:
-                    return "PROPERTY_ADDED";
-                case Event.PROPERTY_CHANGED:
-                    return "PROPERTY_CHANGED";
-                case Event.PROPERTY_REMOVED:
-                    return "PROPERTY_REMOVED";
-            }
-            return "unknown event type " + event.getType();
-        }
-
     }
 
     protected static class NoOpProblemLog implements ProblemLog {
@@ -109,7 +82,7 @@ public class ObservationService implements AdministeredService {
         /**
          * {@inheritDoc}
          */
-        public void error( String arg0, Event arg1, Throwable arg2 ) {
+        public void error( String repositoryWorkspaceName, Throwable t ) {
         }
     }
 
@@ -131,6 +104,13 @@ public class ObservationService implements AdministeredService {
         @Override
         protected String serviceName() {
             return "ObservationService";
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        public boolean awaitTermination( long timeout, TimeUnit unit ) {
+            return true;
         }
 
     }
@@ -373,29 +353,17 @@ public class ObservationService implements AdministeredService {
         List<NodeChangeListener> nodeChangeListeners = this.nodeChangeListeners; // use one consistent snapshot
         if (!nodeChangeListeners.isEmpty()) {
             final String repositoryWorkspaceName = listener.getRepositoryWorkspaceName();
-            Map<String, NodeChange> nodeChangesByLocation = new HashMap<String, NodeChange>();
-            for (Event event : events) {
-                try {
-                    final String absolutePath = event.getPath();
-                    String fullPath = repositoryWorkspaceName + absolutePath;
-                    NodeChange nodeChange = nodeChangesByLocation.get(fullPath);
-                    if (nodeChange == null) {
-                        nodeChange = new NodeChange(repositoryWorkspaceName, absolutePath, event.getType());
-                        nodeChangesByLocation.put(fullPath, nodeChange);
-                    } else {
-                        nodeChange.setEventType(event.getType());
-                    }
-                } catch (Throwable t) {
-                    getProblemLog().error(repositoryWorkspaceName, event, t);
-                }
-            }
+            try {
+                NodeChanges nodeChanges = NodeChanges.create(repositoryWorkspaceName, events);
 
-            // And notify the node change listeners ...
-            Collection<NodeChange> nodeChanges = nodeChangesByLocation.values();
-            int nodeChangeCount = nodeChanges.size();
-            this.statistics.recordNodesChanged(nodeChangeCount);
-            for (NodeChangeListener nodeChangeListener : nodeChangeListeners) {
-                nodeChangeListener.onNodeChanges(nodeChanges);
+                // And notify the node change listeners ...
+                int nodeChangeCount = nodeChanges.size();
+                this.statistics.recordNodesChanged(nodeChangeCount);
+                for (NodeChangeListener nodeChangeListener : nodeChangeListeners) {
+                    nodeChangeListener.onNodeChanges(nodeChanges);
+                }
+            } catch (Throwable t) {
+                getProblemLog().error(repositoryWorkspaceName, t);
             }
             notifiedSomebody = true;
         }

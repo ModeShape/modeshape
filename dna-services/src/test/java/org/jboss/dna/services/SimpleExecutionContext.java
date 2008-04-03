@@ -23,8 +23,10 @@ package org.jboss.dna.services;
 
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
+import java.io.IOException;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
+import org.jboss.dna.common.SystemFailureException;
 import org.jboss.dna.common.jcr.AbstractJcrRepositoryTest;
 import org.jboss.dna.services.util.JcrTools;
 
@@ -41,7 +43,11 @@ public class SimpleExecutionContext implements ExecutionContext {
 
             public Session createSession( String name ) throws RepositoryException {
                 assertThat(name, is(repositoryName));
-                return test.getRepository().login(test.getTestCredentials());
+                try {
+                    return test.getRepository().login(test.getTestCredentials());
+                } catch (IOException e) {
+                    throw new SystemFailureException(e);
+                }
             }
         };
     }

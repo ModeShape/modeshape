@@ -21,11 +21,15 @@
  */
 package org.jboss.dna.services.sequencers;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import javax.jcr.Node;
@@ -50,6 +54,7 @@ import org.jboss.dna.services.ServicesI18n;
 import org.jboss.dna.services.SessionFactory;
 import org.jboss.dna.services.observation.NodeChange;
 import org.jboss.dna.services.observation.NodeChangeListener;
+import org.jboss.dna.services.observation.NodeChanges;
 import org.jboss.dna.services.util.JcrTools;
 
 /**
@@ -69,9 +74,10 @@ public class SequencingService implements AdministeredService, NodeChangeListene
          * Select the sequencers that should be used to sequence the supplied node.
          * @param sequencers the list of all sequencers available at the moment; never null
          * @param node the node to be sequenced; never null
+         * @param nodeChange the set of node changes; never null
          * @return the list of sequencers that should be used; may not be null
          */
-        List<Sequencer> selectSequencers( List<Sequencer> sequencers, Node node );
+        List<Sequencer> selectSequencers( List<Sequencer> sequencers, Node node, NodeChange nodeChange );
     }
 
     /**
@@ -81,7 +87,7 @@ public class SequencingService implements AdministeredService, NodeChangeListene
      */
     protected static class DefaultSelector implements Selector {
 
-        public List<Sequencer> selectSequencers( List<Sequencer> sequencers, Node node ) {
+        public List<Sequencer> selectSequencers( List<Sequencer> sequencers, Node node, NodeChange nodeChange ) {
             return sequencers;
         }
     }
@@ -166,6 +172,13 @@ public class SequencingService implements AdministeredService, NodeChangeListene
             shutdownService();
         }
 
+        /**
+         * {@inheritDoc}
+         */
+        public boolean awaitTermination( long timeout, TimeUnit unit ) throws InterruptedException {
+            return doAwaitTermination(timeout, unit);
+        }
+
     }
 
     private ExecutionContext executionContext;
@@ -200,6 +213,13 @@ public class SequencingService implements AdministeredService, NodeChangeListene
      */
     public Statistics getStatistics() {
         return this.statistics;
+    }
+
+    /**
+     * @return sequencerLibrary
+     */
+    protected ComponentLibrary<Sequencer, SequencerConfig> getSequencerLibrary() {
+        return this.sequencerLibrary;
     }
 
     /**
@@ -362,6 +382,11 @@ public class SequencingService implements AdministeredService, NodeChangeListene
         }
     }
 
+    protected boolean doAwaitTermination( long timeout, TimeUnit unit ) throws InterruptedException {
+        if (this.executorService.isShutdown()) return true;
+        return this.executorService.awaitTermination(timeout, unit);
+    }
+
     /**
      * Get the sequencing selector used by this system.
      * @return the sequencing selector
@@ -398,7 +423,7 @@ public class SequencingService implements AdministeredService, NodeChangeListene
     /**
      * {@inheritDoc}
      */
-    public void onNodeChanges( Iterable<NodeChange> changes ) {
+    public void onNodeChanges( NodeChanges changes ) {
         NodeFilter filter = this.getNodeFilter();
         for (final NodeChange changedNode : changes) {
             // Only care about new nodes or nodes that have new/changed properies ...
@@ -420,24 +445,53 @@ public class SequencingService implements AdministeredService, NodeChangeListene
      */
     protected void processChangedNode( NodeChange changedNode ) {
         try {
-            // Create a session that we'll use for all sequencing ...
-            final Session session = this.getExecutionContext().getSessionFactory().createSession(changedNode.getRepositoryWorkspaceName());
-
+            Session session = null;
             try {
-                // Find the changed node ...
-                String relPath = changedNode.getAbsolutePath().replaceAll("^/+", "");
-                Node node = session.getRootNode().getNode(relPath);
+                // Figure out which sequencers accept this path,
+                // and track which output nodes should be passed to each sequencer...
+                final String nodePath = changedNode.getAbsolutePath();
+                Map<String, Set<String>> outputPathsBySequencerName = new HashMap<String, Set<String>>();
+                List<Sequencer> allSequencers = this.sequencerLibrary.getInstances();
+                List<Sequencer> sequencers = new ArrayList<Sequencer>(allSequencers.size());
+                for (Sequencer sequencer : allSequencers) {
+                    SequencerConfig config = sequencer.getConfiguration();
+                    for (SequencerPathExpression pathExpression : config.getPathExpressions()) {
+                        for (String propertyName : changedNode.getModifiedProperties()) {
+                            String path = nodePath + "/@" + propertyName;
+                            String outputPath = pathExpression.matches(path);
+                            if (outputPath != null) {
+                                Set<String> outputPaths = outputPathsBySequencerName.get(config.getName());
+                                if (outputPaths == null) {
+                                    outputPaths = new HashSet<String>();
+                                    outputPathsBySequencerName.put(config.getName(), outputPaths);
+                                }
+                                outputPaths.add(outputPath);
+                                sequencers.add(sequencer);
+                                break;
+                            }
+                        }
+                    }
+                }
 
-                // Figure out which sequencers should run ...
-                List<Sequencer> sequencers = this.sequencerLibrary.getInstances();
-                sequencers = this.sequencerSelector.selectSequencers(sequencers, node);
-                // Run each of those sequencers ...
+                Node node = null;
+                if (!sequencers.isEmpty()) {
+                    // Create a session that we'll use for all sequencing ...
+                    session = this.getExecutionContext().getSessionFactory().createSession(changedNode.getRepositoryWorkspaceName());
+
+                    // Find the changed node ...
+                    String relPath = changedNode.getAbsolutePath().replaceAll("^/+", "");
+                    node = session.getRootNode().getNode(relPath);
+
+                    // Figure out which sequencers should run ...
+                    sequencers = this.sequencerSelector.selectSequencers(sequencers, node, changedNode);
+                }
                 if (sequencers.isEmpty()) {
                     this.statistics.recordNodeSkipped();
                     if (this.logger.isDebugEnabled()) {
                         this.logger.trace("Skipping '{}': no sequencers matched this condition", changedNode);
                     }
                 } else {
+                    // Run each of those sequencers ...
                     ProgressMonitor progressMonitor = new SimpleProgressMonitor(ServicesI18n.sequencerTask.text(changedNode));
                     if (this.logger.isTraceEnabled()) {
                         progressMonitor = new LoggingProgressMonitor(progressMonitor, this.logger, Logger.Level.TRACE);
@@ -446,18 +500,22 @@ public class SequencingService implements AdministeredService, NodeChangeListene
                         progressMonitor.beginTask(sequencers.size(), ServicesI18n.sequencerTask, changedNode);
                         for (Sequencer sequencer : sequencers) {
                             final SequencerConfig config = sequencer.getConfiguration();
-                            final String sequencerName = config != null ? config.getName() : sequencer.getClass().getName();
+                            final String sequencerName = config.getName();
+
+                            // Get the paths to the nodes where the sequencer should write it's output ...
+                            Set<String> outputPaths = outputPathsBySequencerName.get(sequencerName);
+                            assert outputPaths != null && outputPaths.size() != 0;
 
                             // Create a new execution context for each sequencer
                             final Context executionContext = new Context();
                             final ProgressMonitor sequenceMonitor = progressMonitor.createSubtask(1);
                             try {
                                 sequenceMonitor.beginTask(100, ServicesI18n.sequencerSubtask, sequencerName);
-                                sequencer.execute(node, node, executionContext, sequenceMonitor.createSubtask(80)); // 80%
+                                sequencer.execute(node, changedNode, outputPaths, executionContext, sequenceMonitor.createSubtask(80)); // 80%
                             } finally {
                                 try {
-                                    // Save the changes made by the sequencer ...
-                                    session.save();
+                                    // Save the changes made by each sequencer ...
+                                    if (session != null) session.save();
                                     sequenceMonitor.worked(10); // 90% of sequenceMonitor
                                 } finally {
                                     try {
@@ -476,7 +534,7 @@ public class SequencingService implements AdministeredService, NodeChangeListene
                     }
                 }
             } finally {
-                session.logout();
+                if (session != null) session.logout();
             }
         } catch (RepositoryException e) {
             this.logger.error(e, ServicesI18n.errorWhileSequencingNode, changedNode);

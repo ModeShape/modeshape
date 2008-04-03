@@ -21,11 +21,13 @@
  */
 package org.jboss.dna.services.observation;
 
+import java.util.Collections;
+import java.util.Set;
 import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.util.HashCodeUtil;
 
 /**
- * An enqueued notification that a node has changed.
+ * A notification of changes to a node.
  * @author Randall Hauch
  */
 @Immutable
@@ -33,16 +35,20 @@ public class NodeChange {
 
     private final String repositoryWorkspaceName;
     private final String absolutePath;
-    private int eventTypes;
+    private final int eventTypes;
+    private final Set<String> modifiedProperties;
+    private final Set<String> removedProperties;
     private final int hc;
 
-    public NodeChange( String repositoryWorkspaceName, String absolutePath, int eventTypes ) {
+    public NodeChange( String repositoryWorkspaceName, String absolutePath, int eventTypes, Set<String> modifiedProperties, Set<String> removedProperties ) {
         assert repositoryWorkspaceName != null;
         assert absolutePath != null;
         this.repositoryWorkspaceName = repositoryWorkspaceName;
         this.absolutePath = absolutePath.trim();
         this.hc = HashCodeUtil.computeHash(this.repositoryWorkspaceName, this.absolutePath);
         this.eventTypes = eventTypes;
+        this.modifiedProperties = Collections.unmodifiableSet(modifiedProperties);
+        this.removedProperties = Collections.unmodifiableSet(removedProperties);
     }
 
     /**
@@ -57,6 +63,20 @@ public class NodeChange {
      */
     public String getRepositoryWorkspaceName() {
         return this.repositoryWorkspaceName;
+    }
+
+    /**
+     * @return modifiedProperties
+     */
+    public Set<String> getModifiedProperties() {
+        return this.modifiedProperties;
+    }
+
+    /**
+     * @return removedProperties
+     */
+    public Set<String> getRemovedProperties() {
+        return this.removedProperties;
     }
 
     /**
@@ -79,10 +99,6 @@ public class NodeChange {
             if ((this.eventTypes & jcrEventType) != 0) return true;
         }
         return false;
-    }
-
-    /* package */void setEventType( int jcrEventType ) {
-        this.eventTypes |= jcrEventType;
     }
 
     public boolean isSameNode( NodeChange that ) {
@@ -113,6 +129,24 @@ public class NodeChange {
      */
     public boolean isNotOnPath( String absolutePath ) {
         return !isOnPath(absolutePath);
+    }
+
+    /**
+     * Determine whether this node change includes the setting of new value(s) for the supplied property.
+     * @param property the name of the property
+     * @return true if the named property has a new value on this node, or false otherwise
+     */
+    public boolean isPropertyModified( String property ) {
+        return this.modifiedProperties.contains(property);
+    }
+
+    /**
+     * Determine whether this node change includes the removal of the supplied property.
+     * @param property the name of the property
+     * @return true if the named property was removed from this node, or false otherwise
+     */
+    public boolean isPropertyRemoved( String property ) {
+        return this.removedProperties.contains(property);
     }
 
     /**

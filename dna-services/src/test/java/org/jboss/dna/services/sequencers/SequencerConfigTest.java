@@ -38,7 +38,7 @@ public class SequencerConfigTest {
     private String validName;
     private String validDescription;
     private String validClassname;
-    private String[] validRunRules;
+    private String[] validPathExpressions;
     private String[] validMavenIds;
 
     @Before
@@ -46,46 +46,46 @@ public class SequencerConfigTest {
         this.validName = "valid configuration name";
         this.validDescription = "a sequencer";
         this.validClassname = MockSequencerA.class.getName();
-        this.validRunRules = new String[] {"mime type is 'text/plain'"};
+        this.validPathExpressions = new String[] {"/a/b/c/d[e/@attribute]"};
         this.validMavenIds = new String[] {"com.acme:configA:1.0,com.acme:configB:1.0"};
-        this.configA = new SequencerConfig("configA", validDescription, MockSequencerA.class.getName(), validMavenIds, validRunRules);
-        this.configB = new SequencerConfig("configB", validDescription, MockSequencerB.class.getName(), validMavenIds, validRunRules);
-        this.configA2 = new SequencerConfig("conFigA", validDescription, MockSequencerA.class.getName(), validMavenIds, validRunRules);
+        this.configA = new SequencerConfig("configA", validDescription, MockSequencerA.class.getName(), validMavenIds, validPathExpressions);
+        this.configB = new SequencerConfig("configB", validDescription, MockSequencerB.class.getName(), validMavenIds, validPathExpressions);
+        this.configA2 = new SequencerConfig("conFigA", validDescription, MockSequencerA.class.getName(), validMavenIds, validPathExpressions);
     }
 
     @Test( expected = IllegalArgumentException.class )
     public void shouldNotAllowNullNameInConstructor() {
-        new SequencerConfig(null, validDescription, validClassname, validMavenIds, validRunRules);
+        new SequencerConfig(null, validDescription, validClassname, validMavenIds, validPathExpressions);
     }
 
     @Test( expected = IllegalArgumentException.class )
     public void shouldNotAllowEmptyNameInConstructor() {
-        new SequencerConfig("", validDescription, validClassname, validMavenIds, validRunRules);
+        new SequencerConfig("", validDescription, validClassname, validMavenIds, validPathExpressions);
     }
 
     @Test( expected = IllegalArgumentException.class )
     public void shouldNotAllowBlankNameInConstructor() {
-        new SequencerConfig("   \t", validDescription, validClassname, validMavenIds, validRunRules);
+        new SequencerConfig("   \t", validDescription, validClassname, validMavenIds, validPathExpressions);
     }
 
     @Test( expected = IllegalArgumentException.class )
     public void shouldNotAllowNullClassNameInConstructor() {
-        new SequencerConfig(validName, validDescription, null, validMavenIds, validRunRules);
+        new SequencerConfig(validName, validDescription, null, validMavenIds, validPathExpressions);
     }
 
     @Test( expected = IllegalArgumentException.class )
     public void shouldNotAllowEmptyClassNameInConstructor() {
-        new SequencerConfig(validName, validDescription, "", validMavenIds, validRunRules);
+        new SequencerConfig(validName, validDescription, "", validMavenIds, validPathExpressions);
     }
 
     @Test( expected = IllegalArgumentException.class )
     public void shouldNotAllowBlankClassNameInConstructor() {
-        new SequencerConfig(validName, validDescription, "   \t", validMavenIds, validRunRules);
+        new SequencerConfig(validName, validDescription, "   \t", validMavenIds, validPathExpressions);
     }
 
     @Test( expected = IllegalArgumentException.class )
     public void shouldNotAllowInvalidClassNameInConstructor() {
-        new SequencerConfig(validName, validDescription, "12.this is not a valid classname", validMavenIds, validRunRules);
+        new SequencerConfig(validName, validDescription, "12.this is not a valid classname", validMavenIds, validPathExpressions);
     }
 
     @Test
@@ -99,19 +99,19 @@ public class SequencerConfigTest {
     }
 
     @Test
-    public void shouldNotAddNullOrBlankRunRule() {
-        assertThat(SequencerConfig.buildRunRuleSet(null, "", "   ", validRunRules[0]).size(), is(1));
+    public void shouldNotAddNullOrBlankPathExpressions() {
+        assertThat(SequencerConfig.buildPathExpressionSet(null, "", "   ", validPathExpressions[0]).size(), is(1));
     }
 
     @Test
-    public void shouldNotAddSameRunRuleMoreThanOnce() {
-        assertThat(SequencerConfig.buildRunRuleSet(validRunRules[0], validRunRules[0], validRunRules[0]).size(), is(1));
+    public void shouldNotAddSamePathExpressionMoreThanOnce() {
+        assertThat(SequencerConfig.buildPathExpressionSet(validPathExpressions[0], validPathExpressions[0], validPathExpressions[0]).size(), is(1));
     }
 
     @Test
-    public void shouldHaveNonNullRunRuleCollectionWhenThereAreNoRunRules() {
+    public void shouldHaveNonNullPathExpressionCollectionWhenThereAreNoPathExpressions() {
         configA = new SequencerConfig("configA", validDescription, validClassname, validMavenIds);
-        assertThat(configA.getRunRules().size(), is(0));
+        assertThat(configA.getPathExpressions().size(), is(0));
     }
 
     @Test
@@ -122,7 +122,7 @@ public class SequencerConfigTest {
 
     @Test
     public void shouldGetNonNullSequencerClasspathWhenEmpty() {
-        configA = new SequencerConfig("configA", validDescription, validClassname, null, validRunRules);
+        configA = new SequencerConfig("configA", validDescription, validClassname, null, validPathExpressions);
         assertThat(configA.getComponentClasspath().size(), is(0));
         assertThat(configA.getComponentClasspathArray().length, is(0));
     }

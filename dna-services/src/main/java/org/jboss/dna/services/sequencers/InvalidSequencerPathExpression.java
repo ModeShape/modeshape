@@ -19,13 +19,44 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.jboss.dna.services.observation;
+package org.jboss.dna.services.sequencers;
+
 
 /**
+ * 
  * @author Randall Hauch
  */
-public interface NodeChangeListener {
+public class InvalidSequencerPathExpression extends RuntimeException {
 
-    void onNodeChanges( NodeChanges changes );
+    /**
+     * 
+     */
+    public InvalidSequencerPathExpression() {
+    }
+
+    /**
+     * @param message
+     */
+    public InvalidSequencerPathExpression( String message ) {
+        super(message);
+
+    }
+
+    /**
+     * @param cause
+     */
+    public InvalidSequencerPathExpression( Throwable cause ) {
+        super(cause);
+
+    }
+
+    /**
+     * @param message
+     * @param cause
+     */
+    public InvalidSequencerPathExpression( String message, Throwable cause ) {
+        super(message, cause);
+
+    }
 
 }

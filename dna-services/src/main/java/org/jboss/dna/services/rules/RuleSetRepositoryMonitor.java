@@ -40,6 +40,7 @@ import org.jboss.dna.services.ExecutionContext;
 import org.jboss.dna.services.ServicesI18n;
 import org.jboss.dna.services.observation.NodeChange;
 import org.jboss.dna.services.observation.NodeChangeListener;
+import org.jboss.dna.services.observation.NodeChanges;
 import org.jboss.dna.services.observation.ObservationService;
 import org.jboss.dna.services.util.JcrTools;
 import org.jboss.dna.services.util.Problems;
@@ -129,7 +130,7 @@ public class RuleSetRepositoryMonitor implements NodeChangeListener {
     /**
      * {@inheritDoc}
      */
-    public void onNodeChanges( Iterable<NodeChange> changes ) {
+    public void onNodeChanges( NodeChanges changes ) {
         final Map<String, Set<String>> ruleSetNamesByWorkspaceName = new HashMap<String, Set<String>>();
         for (NodeChange nodeChange : changes) {
             if (nodeChange.isNotOnPath(this.jcrAbsolutePath)) continue;

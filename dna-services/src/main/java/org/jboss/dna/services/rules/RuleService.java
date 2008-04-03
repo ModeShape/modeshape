@@ -32,6 +32,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import javax.rules.ConfigurationException;
@@ -103,6 +105,13 @@ public class RuleService implements AdministeredService {
             removeAllRuleSets();
         }
 
+        /**
+         * {@inheritDoc}
+         */
+        public boolean awaitTermination( long timeout, TimeUnit unit ) throws InterruptedException {
+            return doAwaitTermination(timeout, unit);
+        }
+
     }
 
     private Logger logger;
@@ -111,6 +120,7 @@ public class RuleService implements AdministeredService {
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
     @GuardedBy( "lock" )
     private final Map<String, RuleSet> ruleSets = new HashMap<String, RuleSet>();
+    private final CountDownLatch shutdownLatch = new CountDownLatch(1);
 
     /**
      * Create a new rule service, configured with no rule sets. Upon construction, the system is
@@ -387,6 +397,11 @@ public class RuleService implements AdministeredService {
         } finally {
             lock.writeLock().unlock();
         }
+        this.shutdownLatch.countDown();
+    }
+
+    protected boolean doAwaitTermination( long timeout, TimeUnit unit ) throws InterruptedException {
+        return this.shutdownLatch.await(timeout, unit);
     }
 
     /**

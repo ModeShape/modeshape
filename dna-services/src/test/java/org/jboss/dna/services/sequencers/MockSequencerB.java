@@ -22,12 +22,16 @@
 
 package org.jboss.dna.services.sequencers;
 
+import java.util.Set;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import javax.jcr.Node;
 import net.jcip.annotations.ThreadSafe;
 import org.jboss.dna.common.CoreI18n;
 import org.jboss.dna.common.monitor.ProgressMonitor;
 import org.jboss.dna.services.ExecutionContext;
+import org.jboss.dna.services.observation.NodeChange;
 
 /**
  * A sequencer that can be used for basic unit testing.
@@ -38,6 +42,15 @@ public class MockSequencerB implements Sequencer {
 
     private SequencerConfig config;
     private AtomicInteger counter = new AtomicInteger();
+    private CountDownLatch latch = new CountDownLatch(0);
+
+    public void setExpectedCount( int numExpected ) {
+        this.latch = new CountDownLatch(numExpected);
+    }
+
+    public boolean awaitExecution( long timeout, TimeUnit unit ) throws InterruptedException {
+        return this.latch.await(timeout, unit);
+    }
 
     /**
      * {@inheritDoc}
@@ -49,14 +62,15 @@ public class MockSequencerB implements Sequencer {
     /**
      * {@inheritDoc}
      */
-    public void execute( Node input, Node output, ExecutionContext context, ProgressMonitor progressMonitor ) {
+    public void execute( Node input, NodeChange changes, Set<String> outputPaths, ExecutionContext context, ProgressMonitor progress ) {
         try {
-            progressMonitor.beginTask(1, CoreI18n.passthrough, "Incrementing counter");
+            progress.beginTask(1, CoreI18n.passthrough, "Incrementing counter");
             // increment the counter and record the progress ...
             this.counter.incrementAndGet();
-            progressMonitor.worked(1);
+            this.latch.countDown();
+            progress.worked(1);
         } finally {
-            progressMonitor.done();
+            progress.done();
         }
     }
 
