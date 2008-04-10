@@ -46,7 +46,7 @@ public class SequencerConfigTest {
         this.validName = "valid configuration name";
         this.validDescription = "a sequencer";
         this.validClassname = MockSequencerA.class.getName();
-        this.validPathExpressions = new String[] {"/a/b/c/d[e/@attribute]"};
+        this.validPathExpressions = new String[] {"/a/b/c/d[e/@attribute] => ."};
         this.validMavenIds = new String[] {"com.acme:configA:1.0,com.acme:configB:1.0"};
         this.configA = new SequencerConfig("configA", validDescription, MockSequencerA.class.getName(), validMavenIds, validPathExpressions);
         this.configB = new SequencerConfig("configB", validDescription, MockSequencerB.class.getName(), validMavenIds, validPathExpressions);

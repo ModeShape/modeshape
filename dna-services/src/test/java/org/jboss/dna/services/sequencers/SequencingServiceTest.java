@@ -279,7 +279,7 @@ public class SequencingServiceTest extends AbstractJcrRepositoryTest {
         String desc = "A mock sequencer that accumulates the number of times it's called";
         String classname = MockSequencerA.class.getName();
         String[] classpath = null;
-        String[] pathExpressions = {"/testnodeC/testnodeD/@description"};
+        String[] pathExpressions = {"/testnodeC/testnodeD/@description => ."};
         SequencerConfig configA = new SequencerConfig(name, desc, classname, classpath, pathExpressions);
         sequencingService.addSequencer(configA);
 

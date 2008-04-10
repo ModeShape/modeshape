@@ -55,7 +55,7 @@ public interface Sequencer extends Component<SequencerConfig> {
      * workspaces (it is a {@link NodeChangeListener} registered with the {@link ObservationService}). Changes in those
      * workspaces are aggregated for each transaction, and organized into {@link NodeChanges changes for each node}. The
      * SequencingService then determines for each {@link NodeChange set of changes to a node} the set of full paths to the
-     * properties that have changed and whether those paths {@link SequencerPathExpression#matches(String) match} the sequencer's
+     * properties that have changed and whether those paths {@link SequencerPathExpression#matcher(String) match} the sequencer's
      * {@link SequencerConfig#getPathExpressions() path expressions}. Each path expression produces the path to the output node,
      * and these output paths are accumulated and (with the original node that changed, the node change summary, and other
      * information) supplied to the sequencer via this method.

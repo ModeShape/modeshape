@@ -22,6 +22,8 @@
 package org.jboss.dna.services.sequencers;
 
 import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsNull.notNullValue;
+import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.Assert.assertThat;
 import org.junit.Before;
 import org.junit.Test;
@@ -31,271 +33,322 @@ import org.junit.Test;
  */
 public class SequencerPathExpressionTest {
 
-    protected static final String NO_MATCH = null;
     private SequencerPathExpression expr;
 
     @Before
     public void beforeEach() throws Exception {
+        expr = new SequencerPathExpression(".*", "/output");
+    }
+
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldNotCompileNullExpression() {
+        SequencerPathExpression.compile(null);
+    }
+
+    @Test( expected = InvalidSequencerPathExpression.class )
+    public void shouldNotCompileZeroLengthExpression() {
+        SequencerPathExpression.compile("");
+    }
+
+    @Test( expected = InvalidSequencerPathExpression.class )
+    public void shouldNotCompileBlankExpression() {
+        SequencerPathExpression.compile("    ");
     }
 
     @Test
-    public void shouldReplacePatterns() {
-        assertThat(SequencerPathExpression.replacePatterns("/a/b/c/d/"), is("/a(?:\\[\\d+\\])?/b(?:\\[\\d+\\])?/c(?:\\[\\d+\\])?/d(?:\\[\\d+\\])?/"));
-        assertThat(SequencerPathExpression.replacePatterns("/a/*/c/d/"), is("/a(?:\\[\\d+\\])?/[^/]*/c(?:\\[\\d+\\])?/d(?:\\[\\d+\\])?/"));
+    public void shouldCompileExpressionWithOnlySelectionExpression() {
+        expr = SequencerPathExpression.compile("/a/b/c");
+        assertThat(expr, is(notNullValue()));
+        assertThat(expr.getSelectExpression(), is("/a/b/c"));
+        assertThat(expr.getOutputExpression(), is(SequencerPathExpression.DEFAULT_OUTPUT_EXPRESSION));
+    }
+
+    @Test( expected = InvalidSequencerPathExpression.class )
+    public void shouldNotCompileExpressionWithSelectionExpressionAndDelimiterAndNoOutputExpression() {
+        SequencerPathExpression.compile("/a/b/c=>");
     }
 
     @Test
-    public void shouldNotRequireMatchExpression() {
-        expr = new SequencerPathExpression("/a/b/c/d/e/@something");
-        assertThat(expr.matches("/a/b/c/d/e/@something"), is("/a/b/c/d/e/@something"));
-        assertThat(expr.matches("/a/b/c/d/e"), is(NO_MATCH));
+    public void shouldCompileExpressionWithSelectionExpressionAndDelimiterAndOutputExpression() {
+        expr = SequencerPathExpression.compile("/a/b/c=>.");
+        assertThat(expr, is(notNullValue()));
+        assertThat(expr.getSelectExpression(), is("/a/b/c"));
+        assertThat(expr.getOutputExpression(), is("."));
 
-        expr = new SequencerPathExpression("/a/b/c/d/e/");
-        assertThat(expr.matches("/a/b/c/d/e/@something"), is("/a/b/c/d/e/@something"));
-        assertThat(expr.matches("/a/b/c/d/e"), is("/a/b/c/d/e"));
+        expr = SequencerPathExpression.compile("/a/b/c=>/x/y");
+        assertThat(expr, is(notNullValue()));
+        assertThat(expr.getSelectExpression(), is("/a/b/c"));
+        assertThat(expr.getOutputExpression(), is("/x/y"));
+    }
+
+    @Test
+    public void shouldCompileExpressionWithExtraWhitespace() {
+        expr = SequencerPathExpression.compile(" /a/b/c => . ");
+        assertThat(expr, is(notNullValue()));
+        assertThat(expr.getSelectExpression(), is("/a/b/c"));
+        assertThat(expr.getOutputExpression(), is("."));
+
+        expr = SequencerPathExpression.compile("  /a/b/c => /x/y ");
+        assertThat(expr, is(notNullValue()));
+        assertThat(expr.getSelectExpression(), is("/a/b/c"));
+        assertThat(expr.getOutputExpression(), is("/x/y"));
+    }
+
+    @Test
+    public void shouldCompileExpressionWithIndexes() {
+        assertThat(SequencerPathExpression.compile("/a/b[0]/c[1]/d/e"), is(notNullValue()));
+        assertThat(SequencerPathExpression.compile("/a/b[0]/c[1]/d/e[2]"), is(notNullValue()));
+    }
+
+    @Test
+    public void shouldNotRemoveUsedPredicates() {
+        assertThat(expr.removeUnusedPredicates("/a/b/c"), is("/a/b/c"));
+        assertThat(expr.removeUnusedPredicates("/a/b[0]/c"), is("/a/b[0]/c"));
+        assertThat(expr.removeUnusedPredicates("/a/b[1]/c"), is("/a/b[1]/c"));
+        assertThat(expr.removeUnusedPredicates("/a/b[10]/c"), is("/a/b[10]/c"));
+        assertThat(expr.removeUnusedPredicates("/a/b[100]/c"), is("/a/b[100]/c"));
+        assertThat(expr.removeUnusedPredicates("/a/b[1000]/c"), is("/a/b[1000]/c"));
+        assertThat(expr.removeUnusedPredicates("/a/b[]/c"), is("/a/b[]/c"));
+        assertThat(expr.removeUnusedPredicates("/a/b[*]/c"), is("/a/b[*]/c"));
+        assertThat(expr.removeUnusedPredicates("/a/b[1,2]/c"), is("/a/b[1,2]/c"));
+        assertThat(expr.removeUnusedPredicates("/a/b[1,2,3,4,5]/c"), is("/a/b[1,2,3,4,5]/c"));
+        assertThat(expr.removeUnusedPredicates("/a/b/c[@title]"), is("/a/b/c[@title]"));
+        assertThat(expr.removeUnusedPredicates("/a/b/c[d/e/@title]"), is("/a/b/c[d/e/@title]"));
+        assertThat(expr.removeUnusedPredicates("/a/(b/c)[(d|e)/(f|g)/@something]"), is("/a/(b/c)[(d|e)/(f|g)/@something]"));
+        // These are legal, but aren't really useful ...
+        assertThat(expr.removeUnusedPredicates("/a/b[1][2][3]/c"), is("/a/b[1][2][3]/c"));
+    }
+
+    @Test
+    public void shouldRemoveUnusedPredicates() {
+        assertThat(expr.removeUnusedPredicates("/a/b[-1]/c"), is("/a/b/c"));
+        assertThat(expr.removeUnusedPredicates("/a/b[@name='wacky']/c"), is("/a/b/c"));
+        assertThat(expr.removeUnusedPredicates("/a/b[3][@name='wacky']/c"), is("/a/b[3]/c"));
+        assertThat(expr.removeUnusedPredicates("/a/b[3][@name]/c"), is("/a/b[3]/c"));
+        assertThat(expr.removeUnusedPredicates("/a/b[length(@name)=3]/c"), is("/a/b/c"));
+    }
+
+    @Test
+    public void shouldRemoveAllPredicates() {
+        assertThat(expr.removeAllPredicatesExceptIndexes("/a/b/c"), is("/a/b/c"));
+        assertThat(expr.removeAllPredicatesExceptIndexes("/a/b[0]/c"), is("/a/b[0]/c"));
+        assertThat(expr.removeAllPredicatesExceptIndexes("/a/b[1]/c"), is("/a/b[1]/c"));
+        assertThat(expr.removeAllPredicatesExceptIndexes("/a/b[10]/c"), is("/a/b[10]/c"));
+        assertThat(expr.removeAllPredicatesExceptIndexes("/a/b[100]/c"), is("/a/b[100]/c"));
+        assertThat(expr.removeAllPredicatesExceptIndexes("/a/b[1000]/c"), is("/a/b[1000]/c"));
+        assertThat(expr.removeAllPredicatesExceptIndexes("/a/b[]/c"), is("/a/b[]/c"));
+        assertThat(expr.removeAllPredicatesExceptIndexes("/a/b[*]/c"), is("/a/b[*]/c"));
+        assertThat(expr.removeAllPredicatesExceptIndexes("/a/b/c[@title]"), is("/a/b/c"));
+        // These are legal, but aren't really useful ...
+        assertThat(expr.removeAllPredicatesExceptIndexes("/a/b[1][2][3]/c"), is("/a/b[1][2][3]/c"));
+
+        assertThat(expr.removeAllPredicatesExceptIndexes("/a/b[-1]/c"), is("/a/b/c"));
+        assertThat(expr.removeAllPredicatesExceptIndexes("/a/b[@name='wacky']/c"), is("/a/b/c"));
+        assertThat(expr.removeAllPredicatesExceptIndexes("/a/b[3][@name='wacky']/c"), is("/a/b[3]/c"));
+        assertThat(expr.removeAllPredicatesExceptIndexes("/a/b[3][@name]/c"), is("/a/b[3]/c"));
+        assertThat(expr.removeAllPredicatesExceptIndexes("/a/b[length(@name)=3]/c"), is("/a/b/c"));
+    }
+
+    @Test
+    public void shouldReplaceAllXPathPatterns() {
+        assertThat(expr.replaceXPathPatterns("/a/b[3]/c"), is("/a/b\\[3\\]/c"));
+        assertThat(expr.replaceXPathPatterns("/a/b[*]/c"), is("/a/b(?:\\[\\d+\\])?/c"));
+        assertThat(expr.replaceXPathPatterns("/a/b[]/c"), is("/a/b(?:\\[\\d+\\])?/c"));
+        assertThat(expr.replaceXPathPatterns("/a/b[0]/c"), is("/a/b(?:\\[0\\])?/c"));
+        assertThat(expr.replaceXPathPatterns("/a/b[0,1,2,4]/c"), is("/a/b(?:\\[(?:1|2|4)\\])?/c"));
+        assertThat(expr.replaceXPathPatterns("/a/b[1,2,4,0]/c"), is("/a/b(?:\\[(?:1|2|4)\\])?/c"));
+        assertThat(expr.replaceXPathPatterns("/a/b[1,2,0,4]/c"), is("/a/b(?:\\[(?:1|2|4)\\])?/c"));
+        assertThat(expr.replaceXPathPatterns("/a/b[0,1,2,0,4,0]/c"), is("/a/b(?:\\[(?:1|2|4)\\])?/c"));
+        assertThat(expr.replaceXPathPatterns("/a/b[1,2,4]/c"), is("/a/b\\[(?:1|2|4)\\]/c"));
+        assertThat(expr.replaceXPathPatterns("/a/b[@param]"), is("/a/b/@param"));
+        assertThat(expr.replaceXPathPatterns("/a/b[3][@param]"), is("/a/b\\[3\\]/@param"));
+        assertThat(expr.replaceXPathPatterns("/a/b[c/d/@param]"), is("/a/b/c/d/@param"));
+
+        assertThat(expr.replaceXPathPatterns("/a/(b|c|d)/e"), is("/a/(b|c|d)/e"));
+        assertThat(expr.replaceXPathPatterns("/a/(b||c|d)/e"), is("/a/(b|c|d)/e"));
+        assertThat(expr.replaceXPathPatterns("/a/(b|||c|d)/e"), is("/a/(b|c|d)/e"));
+        assertThat(expr.replaceXPathPatterns("/a/(|b|c|d)/e"), is("/a(/(b|c|d))?/e"));
+        assertThat(expr.replaceXPathPatterns("/a/(b|c|d|)/e"), is("/a(/(b|c|d))?/e"));
+        assertThat(expr.replaceXPathPatterns("/a/(b|c|d)[]/e"), is("/a/(b|c|d)(?:\\[\\d+\\])?/e"));
+        assertThat(expr.replaceXPathPatterns("/a/(b|c[2]|d[])/e"), is("/a/(b|c\\[2\\]|d(?:\\[\\d+\\])?)/e"));
+        assertThat(expr.replaceXPathPatterns("/a/(b|c/d|e)/f"), is("/a/(b|c/d|e)/f"));
+        assertThat(expr.replaceXPathPatterns("/a/(b/c)[(d|e)/(f|g)/@something]"), is("/a/(b/c)/(d|e)/(f|g)/@something"));
+
+        assertThat(expr.replaceXPathPatterns("/a/*/f"), is("/a/[^/]*/f"));
+        assertThat(expr.replaceXPathPatterns("/a//f"), is("/a(/[^/]*)*/f"));
+        assertThat(expr.replaceXPathPatterns("/a///f"), is("/a(/[^/]*)*/f"));
+        assertThat(expr.replaceXPathPatterns("/a/////f"), is("/a(/[^/]*)*/f"));
+    }
+
+    protected void assertNotMatches( SequencerPathExpression.Matcher matcher ) {
+        assertThat(matcher, is(notNullValue()));
+        assertThat(matcher.getSelectedPath(), is(nullValue()));
+        assertThat(matcher.getOutputPath(), is(nullValue()));
+        assertThat(matcher.matches(), is(false));
+    }
+
+    protected void assertMatches( SequencerPathExpression.Matcher matcher, String selectedPath, String outputPath ) {
+        assertThat(matcher, is(notNullValue()));
+        assertThat(matcher.getSelectedPath(), is(selectedPath));
+        assertThat(matcher.getOutputPath(), is(outputPath));
+        if (selectedPath == null) {
+            assertThat(matcher.matches(), is(false));
+        } else {
+            assertThat(matcher.matches(), is(true));
+        }
     }
 
     @Test
     public void shouldMatchExpressionsWithoutRegardToCase() {
-        expr = new SequencerPathExpression("/a/b/c/d/e[@something]");
-        assertThat(expr.matches("/a/b/c/d/e/@something"), is("/a/b/c/d/e"));
-        assertThat(expr.matches("/a/b/c/d/E/@something"), is("/a/b/c/d/E"));
-        assertThat(expr.matches("/a/b/c[3]/d/E/@something"), is("/a/b/c[3]/d/E"));
+        expr = SequencerPathExpression.compile("/a/b/c/d/e[@something] => .");
+        assertMatches(expr.matcher("/a/b/c/d/e/@something"), "/a/b/c/d/e", "/a/b/c/d/e");
+        assertMatches(expr.matcher("/a/b/c/d/E/@something"), "/a/b/c/d/E", "/a/b/c/d/E");
     }
 
     @Test
     public void shouldMatchExpressionsWithExactFullPath() {
-        expr = new SequencerPathExpression("/a/b/c/d/e[@something]");
-        assertThat(expr.matches("/a/b/c/d/e/@something"), is("/a/b/c/d/e"));
-        assertThat(expr.matches("/a/b/c/d/e/@something2"), is(NO_MATCH));
-        assertThat(expr.matches("/a/b/c/d/Ex/@something"), is(NO_MATCH));
+        expr = SequencerPathExpression.compile("/a/b/c/d/e[@something] => .");
+        assertMatches(expr.matcher("/a/b/c/d/e/@something"), "/a/b/c/d/e", "/a/b/c/d/e");
+        assertNotMatches(expr.matcher("/a/b/c/d/E/@something2"));
+        assertNotMatches(expr.matcher("/a/b/c/d/ex/@something"));
+        assertNotMatches(expr.matcher("/a/b[1]/c/d/e/@something"));
     }
 
     @Test
     public void shouldMatchExpressionsWithExactFullPathAndExtraPathInsideMatch() {
-        expr = new SequencerPathExpression("/a/b/c[d/e/@something]");
-        assertThat(expr.matches("/a/b/c/d/e/@something"), is("/a/b/c"));
-        assertThat(expr.matches("/a/b/c/e/@something"), is(NO_MATCH));
-        assertThat(expr.matches("/a/b/c/d/e/@something2"), is(NO_MATCH));
+        expr = SequencerPathExpression.compile("/a/b/c[d/e/@something] => .");
+        assertMatches(expr.matcher("/a/b/c/d/e/@something"), "/a/b/c", "/a/b/c");
+        assertNotMatches(expr.matcher("/a/b/c/d/E/@something2"));
+        assertNotMatches(expr.matcher("/a/b/c/d/ex/@something"));
+        assertNotMatches(expr.matcher("/a/b[1]/c/d/e/@something"));
     }
 
     @Test
-    public void shouldMatchExpressionsWithTrailingSlashesInPath() {
-        expr = new SequencerPathExpression("/a/b/c/[d/e/@something]");
-        assertThat(expr.matches("/a/b/c/d/e/@something"), is("/a/b/c"));
-        assertThat(expr.matches("/a/b/c/e/@something"), is(NO_MATCH));
-        assertThat(expr.matches("/a/b/c/d/e/@something2"), is(NO_MATCH));
+    public void shouldMatchExpressionsWithWildcardSelection() {
+        expr = SequencerPathExpression.compile("/a/*/c[d/e/@something] => .");
+        assertMatches(expr.matcher("/a/b/c/d/e/@something"), "/a/b/c", "/a/b/c");
+        assertMatches(expr.matcher("/a/b[2]/c/d/e/@something"), "/a/b[2]/c", "/a/b[2]/c");
+        assertMatches(expr.matcher("/a/rt/c/d/e/@something"), "/a/rt/c", "/a/rt/c");
+        assertNotMatches(expr.matcher("/ac/d/e/@something"));
     }
 
     @Test
-    public void shouldMatchExpressionsUsingAbsolutePathsInMatches() {
-        expr = new SequencerPathExpression("/a/b/c[/a/b/c/d/e/@something]");
-        assertThat(expr.matches("/a/b/c/d/e/@something"), is("/a/b/c"));
-        assertThat(expr.matches("/a/b/c/e/@something"), is(NO_MATCH));
-        assertThat(expr.matches("/a/b/c/d/e/@something2"), is(NO_MATCH));
-
-        expr = new SequencerPathExpression("/a/b/c/[/d/e/@something]");
-        assertThat(expr.matches("/d/e/@something"), is("/a/b/c"));
-        assertThat(expr.matches("/a/b/c/d/e/@something"), is(NO_MATCH));
-        assertThat(expr.matches("/a/b/c/e/@something"), is(NO_MATCH));
-        assertThat(expr.matches("/a/b/c/d/e/@something2"), is(NO_MATCH));
+    public void shouldMatchExpressionsWithSegmentWildcardSelection() {
+        expr = SequencerPathExpression.compile("/a//c[d/e/@something] => .");
+        assertMatches(expr.matcher("/a/c/d/e/@something"), "/a/c", "/a/c");
+        assertMatches(expr.matcher("/a/b/c/d/e/@something"), "/a/b/c", "/a/b/c");
+        assertMatches(expr.matcher("/a/b[2]/c/d/e/@something"), "/a/b[2]/c", "/a/b[2]/c");
+        assertMatches(expr.matcher("/a/rt/c/d/e/@something"), "/a/rt/c", "/a/rt/c");
+        assertMatches(expr.matcher("/a/r/s/t/c/d/e/@something"), "/a/r/s/t/c", "/a/r/s/t/c");
+        assertMatches(expr.matcher("/a/r[1]/s[2]/t[33]/c/d/e/@something"), "/a/r[1]/s[2]/t[33]/c", "/a/r[1]/s[2]/t[33]/c");
+        assertNotMatches(expr.matcher("/a[3]/c/d/e/@something"));
     }
 
     @Test
-    public void shouldMatchExpressionsWithWildcard() {
-        expr = new SequencerPathExpression("/a/*/*/d/e[@something]");
-        assertThat(expr.matches("/a/b/c/d/e/@something"), is("/a/b/c/d/e"));
-        assertThat(expr.matches("/a/x/c/d/e/@something"), is("/a/x/c/d/e"));
-        assertThat(expr.matches("/a/bbb/xxx/d/e/@something"), is("/a/bbb/xxx/d/e"));
-        assertThat(expr.matches("/a/bbb/d/e/@something"), is(NO_MATCH));
+    public void shouldMatchExpressionsWithIndexesInSelectionPaths() {
+        expr = SequencerPathExpression.compile("/a/b[2,3,4,5]/c/d/e[@something] => /x/y");
+        assertMatches(expr.matcher("/a/b[2]/c/d/e/@something"), "/a/b[2]/c/d/e", "/x/y");
+        assertMatches(expr.matcher("/a/b[3]/c/d/e/@something"), "/a/b[3]/c/d/e", "/x/y");
+        assertMatches(expr.matcher("/a/b[4]/c/d/e/@something"), "/a/b[4]/c/d/e", "/x/y");
+        assertMatches(expr.matcher("/a/b[5]/c/d/e/@something"), "/a/b[5]/c/d/e", "/x/y");
+        assertNotMatches(expr.matcher("/a/b[1]/c/d/e/@something"));
+        assertNotMatches(expr.matcher("/a/b/c/d/e/@something"));
+        assertNotMatches(expr.matcher("/a[1]/b/c/d/e/@something"));
+
+        expr = SequencerPathExpression.compile("/a/b[0,2,3,4,5]/c/d/e[@something] => /x/y");
+        assertMatches(expr.matcher("/a/b/c/d/e/@something"), "/a/b/c/d/e", "/x/y");
+        assertMatches(expr.matcher("/a/b[2]/c/d/e/@something"), "/a/b[2]/c/d/e", "/x/y");
+        assertMatches(expr.matcher("/a/b[3]/c/d/e/@something"), "/a/b[3]/c/d/e", "/x/y");
+        assertMatches(expr.matcher("/a/b[4]/c/d/e/@something"), "/a/b[4]/c/d/e", "/x/y");
+        assertMatches(expr.matcher("/a/b[5]/c/d/e/@something"), "/a/b[5]/c/d/e", "/x/y");
+        assertNotMatches(expr.matcher("/a/b[1]/c/d/e/@something"));
+        assertNotMatches(expr.matcher("/a[1]/b/c/d/e/@something"));
     }
 
     @Test
-    public void shouldMatchExpressionsWithWildcardAndFilenameExtension() {
-        expr = new SequencerPathExpression("/a/*/*.java/d/e[@something]");
-        assertThat(expr.matches("/a/b/c.java/d/e/@something"), is("/a/b/c.java/d/e"));
-        assertThat(expr.matches("/a/x/c.java/d/e/@something"), is("/a/x/c.java/d/e"));
-        assertThat(expr.matches("/a/x/.java/d/e/@something"), is("/a/x/.java/d/e"));
-        assertThat(expr.matches("/a/bbb/xxx.java/d/e/@something"), is("/a/bbb/xxx.java/d/e"));
-        assertThat(expr.matches("/a/bbb/d/e/@something"), is(NO_MATCH));
+    public void shouldMatchExpressionsWithAnyIndexesInSelectionPaths() {
+        expr = SequencerPathExpression.compile("/a/b[*]/c[]/d/e[@something] => /x/y");
+        assertMatches(expr.matcher("/a/b[2]/c/d/e/@something"), "/a/b[2]/c/d/e", "/x/y");
+        assertMatches(expr.matcher("/a/b[3]/c/d/e/@something"), "/a/b[3]/c/d/e", "/x/y");
+        assertMatches(expr.matcher("/a/b[4]/c/d/e/@something"), "/a/b[4]/c/d/e", "/x/y");
+        assertMatches(expr.matcher("/a/b[5]/c/d/e/@something"), "/a/b[5]/c/d/e", "/x/y");
+        assertMatches(expr.matcher("/a/b[1]/c/d/e/@something"), "/a/b[1]/c/d/e", "/x/y");
+        assertMatches(expr.matcher("/a/b[6]/c/d/e/@something"), "/a/b[6]/c/d/e", "/x/y");
+        assertMatches(expr.matcher("/a/b[6]/c[1]/d/e/@something"), "/a/b[6]/c[1]/d/e", "/x/y");
+        assertMatches(expr.matcher("/a/b/c/d/e/@something"), "/a/b/c/d/e", "/x/y");
     }
 
     @Test
-    public void shouldMatchExpressionsWithAnyDepthWildcard() {
-        expr = new SequencerPathExpression("/a//d/e[@something]");
-        assertThat(expr.matches("/a/d/e/@something"), is("/a/d/e"));
-        assertThat(expr.matches("/a/b/d/e/@something"), is("/a/b/d/e"));
-        assertThat(expr.matches("/a/b/c/d/e/@something"), is("/a/b/c/d/e"));
-        assertThat(expr.matches("/a/b/c/d/d/d/e/@something"), is("/a/b/c/d/d/d/e"));
-        assertThat(expr.matches("/a/e/@something"), is(NO_MATCH));
+    public void shouldMatchExpressionsWithFullOutputPath() {
+        expr = SequencerPathExpression.compile("/a/b/c[d/e/@something] => /x/y");
+        assertMatches(expr.matcher("/a/b/c/d/e/@something"), "/a/b/c", "/x/y");
     }
 
     @Test
-    public void shouldMatchExpressionsWithOrs() {
-        expr = new SequencerPathExpression("/a/(bcd|c)/d/e[@something]");
-        assertThat(expr.matches("/a/d/e/@something"), is(NO_MATCH));
-        assertThat(expr.matches("/a/bcd/d/e/@something"), is("/a/bcd/d/e"));
-        assertThat(expr.matches("/a/c/d/e/@something"), is("/a/c/d/e"));
-        assertThat(expr.matches("/a/a/d/e/@something"), is(NO_MATCH));
+    public void shouldMatchExpressionsWithRepositoryInSelectionPath() {
+        expr = SequencerPathExpression.compile("reposA:/a/b/c[d/e/@something] => /x/y");
+        assertMatches(expr.matcher("reposA:/a/b/c/d/e/@something"), "reposA:/a/b/c", "/x/y");
     }
 
     @Test
-    public void shouldMatchExpressionsWithMultipleOrs() {
-        expr = new SequencerPathExpression("/a/(bc|d|c)/d/e[@something]");
-        assertThat(expr.matches("/a/d/e/@something"), is(NO_MATCH));
-        assertThat(expr.matches("/a/bc/d/e/@something"), is("/a/bc/d/e"));
-        assertThat(expr.matches("/a/d/d/e/@something"), is("/a/d/d/e"));
-        assertThat(expr.matches("/a/c/d/e/@something"), is("/a/c/d/e"));
-        assertThat(expr.matches("/a/a/d/e/@something"), is(NO_MATCH));
+    public void shouldMatchExpressionsWithRepositoryInFullOutputPath() {
+        expr = SequencerPathExpression.compile("/a/b/c[d/e/@something] => reposA:/x/y");
+        assertMatches(expr.matcher("/a/b/c/d/e/@something"), "/a/b/c", "reposA:/x/y");
     }
 
     @Test
-    public void shouldMatchExpressionsWithEmptySubexpressionInOr() {
-        expr = new SequencerPathExpression("/a/(bcd|)/d/e[@something]");
-        assertThat(expr.matches("/a/bcd/d/e/@something"), is("/a/bcd/d/e"));
-        assertThat(expr.matches("/a//d/e/@something"), is("/a//d/e"));
-        assertThat(expr.matches("/a/d/e/@something"), is("/a/d/e"));
+    public void shouldMatchExpressionsWithNamedGroupsInOutputPath() {
+        expr = SequencerPathExpression.compile("/a(//c)[d/e/@something] => $1/y/z");
+        assertMatches(expr.matcher("/a/b/c/d/e/@something"), "/a/b/c", "/b/c/y/z");
+
+        expr = SequencerPathExpression.compile("/a(/(b|c|d|)/e)[f/g/@something] => $1/y/z");
+        assertMatches(expr.matcher("/a/b/e/f/g/@something"), "/a/b/e", "/b/e/y/z");
+        assertMatches(expr.matcher("/a/c/e/f/g/@something"), "/a/c/e", "/c/e/y/z");
+        assertMatches(expr.matcher("/a/d/e/f/g/@something"), "/a/d/e", "/d/e/y/z");
+        assertMatches(expr.matcher("/a/e/f/g/@something"), "/a/e", "/e/y/z");
+        assertNotMatches(expr.matcher("/a/t/e/f/g/@something"));
+
+        expr = SequencerPathExpression.compile("/a/(b/c)[(d|e)/(f|g)/@something] => /u/$1/y/z/$2/$3");
+        assertMatches(expr.matcher("/a/b/c/d/f/@something"), "/a/b/c", "/u/b/c/y/z/d/f");
+        assertMatches(expr.matcher("/a/b/c/e/f/@something"), "/a/b/c", "/u/b/c/y/z/e/f");
+        assertMatches(expr.matcher("/a/b/c/d/g/@something"), "/a/b/c", "/u/b/c/y/z/d/g");
+        assertMatches(expr.matcher("/a/b/c/e/g/@something"), "/a/b/c", "/u/b/c/y/z/e/g");
+
+        expr = SequencerPathExpression.compile("/a/(b/c)/(d|e)/(f|g)/@something => /u/$1/y/z/$2/$3");
+        assertMatches(expr.matcher("/a/b/c/d/f/@something"), "/a/b/c/d/f", "/u/b/c/y/z/d/f");
+        assertMatches(expr.matcher("/a/b/c/e/f/@something"), "/a/b/c/e/f", "/u/b/c/y/z/e/f");
+        assertMatches(expr.matcher("/a/b/c/d/g/@something"), "/a/b/c/d/g", "/u/b/c/y/z/d/g");
+        assertMatches(expr.matcher("/a/b/c/e/g/@something"), "/a/b/c/e/g", "/u/b/c/y/z/e/g");
     }
 
     @Test
-    public void shouldMatchExpressionsWithMultipleEmptySubexpressionsInOr() {
-        expr = new SequencerPathExpression("/a/(bcd|||)/d/e[@something]");
-        assertThat(expr.matches("/a/d/e/@something"), is("/a/d/e"));
-        assertThat(expr.matches("/a//d/e/@something"), is("/a//d/e"));
-        assertThat(expr.matches("/a/bcd/d/e/@something"), is("/a/bcd/d/e"));
-
-        expr = new SequencerPathExpression("/a/(|bcd|)/d/e[@something]");
-        assertThat(expr.matches("/a/d/e/@something"), is("/a/d/e"));
-        assertThat(expr.matches("/a//d/e/@something"), is("/a//d/e"));
-        assertThat(expr.matches("/a/bcd/d/e/@something"), is("/a/bcd/d/e"));
-
-        expr = new SequencerPathExpression("/a/(|bcd|||bcd|)/d/e[@something]");
-        assertThat(expr.matches("/a/d/e/@something"), is("/a/d/e"));
-        assertThat(expr.matches("/a//d/e/@something"), is("/a//d/e"));
-        assertThat(expr.matches("/a/bcd/d/e/@something"), is("/a/bcd/d/e"));
-    }
-
-    @Test( expected = IllegalArgumentException.class )
-    public void shouldNotAllowMatchExpressionsThatAreNull() {
-        new SequencerPathExpression(null);
-    }
-
-    @Test( expected = InvalidSequencerPathExpression.class )
-    public void shouldNotAllowMatchExpressionsThatAreEmpty() {
-        new SequencerPathExpression("");
-    }
-
-    @Test( expected = InvalidSequencerPathExpression.class )
-    public void shouldNotAllowMatchExpressionsThatAreBlank() {
-        new SequencerPathExpression("  ");
+    public void shouldMatchExpressionWithReoccurringNamedGroupsDollarsInOutputPath() {
+        expr = SequencerPathExpression.compile("/a/(b/c)[(d|e)/(f|g)/@something] => /u/$1/y/z/$2/$3/$1/$1");
+        assertMatches(expr.matcher("/a/b/c/d/f/@something"), "/a/b/c", "/u/b/c/y/z/d/f/b/c/b/c");
     }
 
     @Test
-    public void shouldMatchExpressionsWithReplacementVariablesInPathAndRelativeMatchPath() {
-        expr = new SequencerPathExpression("/a/b/$1/c/[d/(b|e)/@something]");
-        assertThat(expr.matches("/a/b/$1/c/d/e/@something"), is("/a/b/$1/c"));
-        assertThat(expr.matches("/a/b/$2/c/d/e/@something"), is(NO_MATCH));
-        assertThat(expr.matches("/a/b/$a/c/d/e/@something"), is(NO_MATCH));
-        assertThat(expr.matches("/a/b/c/d/e/@something"), is(NO_MATCH));
+    public void shouldMatchExpressionWithNamedGroupsAndEscapedDollarsInOutputPath() {
+        expr = SequencerPathExpression.compile("/a/(b/c)[(d|e)/(f|g)/@something] => /\\$2u/$1/y/z/$2/$3");
+        assertMatches(expr.matcher("/a/b/c/d/f/@something"), "/a/b/c", "/\\$2u/b/c/y/z/d/f");
     }
 
     @Test
-    public void shouldMatchExpressionsWithAbsoluteMatchCriteria() {
-        expr = new SequencerPathExpression("/something/x/y/z[/a/b/c/d/e/@something]");
-        assertThat(expr.matches("/a/b/c/d/e/@something"), is("/something/x/y/z"));
+    public void shouldMatchExpressionWithParentReferencesInOutputPath() {
+        expr = SequencerPathExpression.compile("/a/b/c[d/e/@something] => /x/y/z/../..");
+        assertMatches(expr.matcher("/a/b/c/d/e/@something"), "/a/b/c", "/x");
+
+        expr = SequencerPathExpression.compile("/a/(b/c)[d/e/@something] => /x/$1/z/../../v");
+        assertMatches(expr.matcher("/a/b/c/d/e/@something"), "/a/b/c", "/x/b/v");
     }
 
     @Test
-    public void shouldMatchExpressionsWithAbsoluteMatchCriteriaAndRepositoryOutput() {
-        expr = new SequencerPathExpression("reposA:/something/x/y/z[/a/b/c/d/e/@something]");
-        assertThat(expr.matches("/a/b/c/d/e/@something"), is("reposA:/something/x/y/z"));
-    }
+    public void shouldMatchExpressionWithSelfReferencesInOutputPath() {
+        expr = SequencerPathExpression.compile("/a/b/c[d/e/@something] => /x/y/./z/.");
+        assertMatches(expr.matcher("/a/b/c/d/e/@something"), "/a/b/c", "/x/y/z");
 
-    @Test
-    public void shouldMatchExpressionsWithAbsoluteMatchCriteriaAndCapturedRepository() {
-        expr = new SequencerPathExpression("$1_2:/something/x/y/z[(reposA):/a/b/c/d/e/@something]");
-        assertThat(expr.matches("reposA:/a/b/c/d/e/@something"), is("reposA_2:/something/x/y/z"));
-    }
-
-    @Test(expected = InvalidSequencerPathExpression.class )
-    public void shouldNotAllowMatchCriteriaWithCaptureSpanningRepositoryAndPath() {
-        expr = new SequencerPathExpression("$1_2:/something/x/y/z[(reposA:/a/b)/c/d/e/@something]");
-    }
-
-    @Test
-    public void shouldMatchExpressionsWithAbsoluteMatchCriteriaAndTransformOutputUsingSingleCapturingParentheses() {
-        expr = new SequencerPathExpression("/something$1[(/a/b/c/d/e/)@something]");
-        assertThat(expr.matches("/a/b/c/d/e/@something"), is("/something/a/b/c/d/e"));
-
-        expr = new SequencerPathExpression("/something/$1[(/a/b/c/d/e/)@something]");
-        assertThat(expr.matches("/a/b/c/d/e/@something"), is("/something//a/b/c/d/e"));
-
-        expr = new SequencerPathExpression("/something$1[/a/b(/c/d/e/)@something]");
-        assertThat(expr.matches("/a/b/c/d/e/@something"), is("/something/c/d/e"));
-    }
-
-    @Test
-    public void shouldMatchExpressionsWithAbsoluteMatchCriteriaAndTransformOutputUsingMultipleCapturingParentheses() {
-        expr = new SequencerPathExpression("/something/$1/$2[/(a/b)/c/(d)/e/@something]");
-        assertThat(expr.matches("/a/b/c/d/e/@something"), is("/something/a/b/d"));
-    }
-
-    @Test
-    public void shouldMatchExpressionsWithAbsoluteMatchCriteriaAndTransformOutputUsingCapturingParenthesesWithWildcards() {
-        expr = new SequencerPathExpression("/something$1[(//d)/e/@something]");
-        assertThat(expr.matches("/a/b/c/d/e/@something"), is("/something/a/b/c/d"));
-
-        expr = new SequencerPathExpression("/something$1[/a(//d)/e/@something]");
-        assertThat(expr.matches("/a/b/c/d/e/@something"), is("/something/b/c/d"));
-    }
-
-    @Test
-    public void shouldMatchExpressionsWithExplicitSiblingIndexesIfSuppliedPathUsesSameIndexes() {
-        expr = new SequencerPathExpression("/a/b[2]/c/d/e[@something]");
-        assertThat(expr.matches("/a/b[2]/c/d/e/@something"), is("/a/b[2]/c/d/e"));
-    }
-
-    @Test
-    public void shouldMatchExpressionsWithExplicitSiblingIndexRangeIfSuppliedPathUsesIndexInRange() {
-        expr = new SequencerPathExpression("/a/b[2,3,4,5]/c/d/e[@something]");
-        assertThat(expr.matches("/a/b[1]/c/d/e/@something"), is(NO_MATCH));
-        assertThat(expr.matches("/a/b[2]/c/d/e/@something"), is("/a/b[2]/c/d/e"));
-        assertThat(expr.matches("/a/b[3]/c/d/e/@something"), is("/a/b[3]/c/d/e"));
-        assertThat(expr.matches("/a/b[4]/c/d/e/@something"), is("/a/b[4]/c/d/e"));
-        assertThat(expr.matches("/a/b[5]/c/d/e/@something"), is("/a/b[5]/c/d/e"));
-        assertThat(expr.matches("/a/b[6]/c/d/e/@something"), is(NO_MATCH));
-
-        expr = new SequencerPathExpression("/a/b[0,1,2,3,4,5]/c/d/e[@something]");
-        assertThat(expr.matches("/a/b/c/d/e/@something"), is("/a/b/c/d/e"));
-        assertThat(expr.matches("/a/b[0]/c/d/e/@something"), is("/a/b[0]/c/d/e"));
-        assertThat(expr.matches("/a/b[1]/c/d/e/@something"), is("/a/b[1]/c/d/e"));
-        assertThat(expr.matches("/a/b[2]/c/d/e/@something"), is("/a/b[2]/c/d/e"));
-        assertThat(expr.matches("/a/b[3]/c/d/e/@something"), is("/a/b[3]/c/d/e"));
-        assertThat(expr.matches("/a/b[4]/c/d/e/@something"), is("/a/b[4]/c/d/e"));
-        assertThat(expr.matches("/a/b[5]/c/d/e/@something"), is("/a/b[5]/c/d/e"));
-        assertThat(expr.matches("/a/b[6]/c/d/e/@something"), is(NO_MATCH));
-    }
-
-    @Test
-    public void shouldNotMatchExpressionsThatDontMatchExplicitSiblingIndexes() {
-        expr = new SequencerPathExpression("/a/b[2]/c/d/e[@something]");
-        assertThat(expr.matches("/a/b/c/d/e/@something"), is(NO_MATCH));
-        assertThat(expr.matches("/a/b[0]/c/d/e/@something"), is(NO_MATCH));
-        assertThat(expr.matches("/a/b[1]/c/d/e/@something"), is(NO_MATCH));
-        assertThat(expr.matches("/a/b[3]/c/d/e/@something"), is(NO_MATCH));
-    }
-
-    @Test
-    public void shouldMatchExpressionsWithExplicitlyExcludedSiblingIndexesIfSuppliedPathHasNoIndex() {
-        expr = new SequencerPathExpression("/a/b[]/c/d/e[@something]");
-        assertThat(expr.matches("/a/b/c/d/e/@something"), is("/a/b/c/d/e"));
-        assertThat(expr.matches("/a[0]/b/c[1]/d[2]/e[3]/@something"), is("/a[0]/b/c[1]/d[2]/e[3]"));
-        assertThat(expr.matches("/a/b[2]/c/d/e/@something"), is(NO_MATCH));
-
-        expr = new SequencerPathExpression("/a/b[]/c/d/e[][@something]");
-        assertThat(expr.matches("/a/b/c/d/e/@something"), is("/a/b/c/d/e"));
-        assertThat(expr.matches("/a[0]/b/c[1]/d[2]/e/@something"), is("/a[0]/b/c[1]/d[2]/e"));
-        assertThat(expr.matches("/a[0]/b/c[1]/d[2]/e[3]/@something"), is(NO_MATCH));
+        expr = SequencerPathExpression.compile("/a/(b/c)[d/e/@something] => /x/$1/./z");
+        assertMatches(expr.matcher("/a/b/c/d/e/@something"), "/a/b/c", "/x/b/c/z");
     }
 
 }

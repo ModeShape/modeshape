@@ -87,5 +87,7 @@ public final class ServicesI18n {
 
     public static I18n pathExpressionIsInvalid;
     public static I18n pathExpressionMayNotBeBlank;
+    public static I18n pathExpressionHasInvalidSelect;
+    public static I18n pathExpressionHasInvalidMatch;
 
 }

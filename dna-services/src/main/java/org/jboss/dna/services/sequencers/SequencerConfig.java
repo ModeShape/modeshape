@@ -53,7 +53,7 @@ public class SequencerConfig extends ComponentConfig {
                 if (pathExpression == null) continue;
                 pathExpression = pathExpression.trim();
                 if (pathExpression.length() == 0) continue;
-                result.add(new SequencerPathExpression(pathExpression));
+                result.add(SequencerPathExpression.compile(pathExpression));
             }
             result = Collections.unmodifiableSet(result);
         } else {

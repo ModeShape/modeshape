@@ -458,8 +458,10 @@ public class SequencingService implements AdministeredService, NodeChangeListene
                     for (SequencerPathExpression pathExpression : config.getPathExpressions()) {
                         for (String propertyName : changedNode.getModifiedProperties()) {
                             String path = nodePath + "/@" + propertyName;
-                            String outputPath = pathExpression.matches(path);
-                            if (outputPath != null) {
+                            SequencerPathExpression.Matcher matcher = pathExpression.matcher(path);
+                            if (matcher.matches()) {
+                                // String selectedPath = matcher.getSelectedPath();
+                                String outputPath = matcher.getOutputPath();
                                 Set<String> outputPaths = outputPathsBySequencerName.get(config.getName());
                                 if (outputPaths == null) {
                                     outputPaths = new HashSet<String>();
