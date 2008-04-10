@@ -536,11 +536,20 @@ public class ObservationService implements AdministeredService {
         }
 
         public synchronized boolean isRegistered() {
+            if (this.session != null && getAdministrator().isShutdown()) {
+                // This sequencing system has been shutdown, so unregister this listener
+                try {
+                    unregister();
+                } catch (RepositoryException re) {
+                    String msg = "Error unregistering workspace listener after sequencing system has been shutdow.";
+                    Logger.getLogger(this.getClass()).debug(re, msg);
+                }
+            }
             return this.session != null;
         }
 
         public synchronized WorkspaceListener register() throws UnsupportedRepositoryOperationException, RepositoryException {
-            if (this.isRegistered()) return this;
+            if (this.session != null) return this;
             this.session = ObservationService.this.getSessionFactory().createSession(this.repositoryWorkspaceName);
             String[] uuids = this.uuids.isEmpty() ? null : this.uuids.toArray(new String[this.uuids.size()]);
             String[] nodeTypeNames = this.nodeTypeNames.isEmpty() ? null : this.nodeTypeNames.toArray(new String[this.nodeTypeNames.size()]);
@@ -549,7 +558,7 @@ public class ObservationService implements AdministeredService {
         }
 
         public synchronized WorkspaceListener unregister() throws UnsupportedRepositoryOperationException, RepositoryException {
-            if (!this.isRegistered()) return this;
+            if (this.session == null) return this;
             try {
                 this.session.getWorkspace().getObservationManager().removeEventListener(this);
                 this.session.logout();
