@@ -28,7 +28,7 @@ import java.util.regex.Pattern;
 import org.jboss.dna.common.text.TextEncoder;
 import org.jboss.dna.common.text.NoOpEncoder;
 import org.jboss.dna.common.util.ArgCheck;
-import org.jboss.dna.common.util.HashCodeUtil;
+import org.jboss.dna.common.util.HashCode;
 import org.jboss.dna.common.util.StringUtil;
 
 /**
@@ -287,7 +287,7 @@ public class MavenId implements Comparable<MavenId>, Cloneable {
     @Override
     public int hashCode() {
         // The version is excluded from the hash code so that the 'any version' will be in the same bucket of a hash table
-        return HashCodeUtil.computeHash(this.groupId, this.artifactId, this.classifier);
+        return HashCode.compute(this.groupId, this.artifactId, this.classifier);
     }
 
     /**

@@ -25,7 +25,7 @@ package org.jboss.dna.common.util;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNot.not;
 import static org.junit.Assert.assertThat;
-import org.jboss.dna.common.util.HashCodeUtil;
+import org.jboss.dna.common.util.HashCode;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -45,30 +45,30 @@ public class HashCodeUtilTest {
 
     @Test
     public void shouldComputeHashCodeForOnePrimitive() {
-        assertThat(HashCodeUtil.computeHash(1), is(not(0)));
-        assertThat(HashCodeUtil.computeHash((long)8), is(not(0)));
-        assertThat(HashCodeUtil.computeHash((short)3), is(not(0)));
-        assertThat(HashCodeUtil.computeHash(1.0f), is(not(0)));
-        assertThat(HashCodeUtil.computeHash(1.0d), is(not(0)));
-        assertThat(HashCodeUtil.computeHash(true), is(not(0)));
+        assertThat(HashCode.compute(1), is(not(0)));
+        assertThat(HashCode.compute((long)8), is(not(0)));
+        assertThat(HashCode.compute((short)3), is(not(0)));
+        assertThat(HashCode.compute(1.0f), is(not(0)));
+        assertThat(HashCode.compute(1.0d), is(not(0)));
+        assertThat(HashCode.compute(true), is(not(0)));
     }
 
     @Test
     public void shouldComputeHashCodeForMultiplePrimitives() {
-        assertThat(HashCodeUtil.computeHash(1, 2, 3), is(not(0)));
-        assertThat(HashCodeUtil.computeHash((long)8, (long)22, 33), is(not(0)));
-        assertThat(HashCodeUtil.computeHash((short)3, (long)22, true), is(not(0)));
+        assertThat(HashCode.compute(1, 2, 3), is(not(0)));
+        assertThat(HashCode.compute((long)8, (long)22, 33), is(not(0)));
+        assertThat(HashCode.compute((short)3, (long)22, true), is(not(0)));
     }
 
     @Test
     public void shouldAcceptNoArguments() {
-        assertThat(HashCodeUtil.computeHash(), is(0));
+        assertThat(HashCode.compute(), is(0));
     }
 
     @Test
     public void shouldAcceptNullArguments() {
-        assertThat(HashCodeUtil.computeHash((Object)null), is(0));
-        assertThat(HashCodeUtil.computeHash("abc", (Object)null), is(not(0))); //$NON-NLS-1$
+        assertThat(HashCode.compute((Object)null), is(0));
+        assertThat(HashCode.compute("abc", (Object)null), is(not(0))); //$NON-NLS-1$
     }
 
 }

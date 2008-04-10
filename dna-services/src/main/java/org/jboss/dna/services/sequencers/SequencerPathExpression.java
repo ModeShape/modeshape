@@ -28,7 +28,7 @@ import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.util.ArgCheck;
-import org.jboss.dna.common.util.HashCodeUtil;
+import org.jboss.dna.common.util.HashCode;
 import org.jboss.dna.services.ServicesI18n;
 
 /**
@@ -124,7 +124,7 @@ public class SequencerPathExpression implements Serializable {
         ArgCheck.isNotNull(selectExpression, "select expression");
         this.selectExpression = selectExpression.trim();
         this.outputExpression = outputExpression != null ? outputExpression.trim() : DEFAULT_OUTPUT_EXPRESSION;
-        this.hc = HashCodeUtil.computeHash(this.selectExpression, this.outputExpression);
+        this.hc = HashCode.compute(this.selectExpression, this.outputExpression);
 
         // Build the match pattern, which determines whether a path matches the condition ...
         String matchString = this.selectExpression;
@@ -412,7 +412,7 @@ public class SequencerPathExpression implements Serializable {
             this.inputPath = inputPath;
             this.selectedPath = selectedPath;
             this.outputPath = outputPath;
-            this.hc = HashCodeUtil.computeHash(this.inputPath, this.selectedPath, this.outputPath);
+            this.hc = HashCode.compute(this.inputPath, this.selectedPath, this.outputPath);
         }
 
         public boolean matches() {

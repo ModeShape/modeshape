@@ -28,7 +28,7 @@ import java.util.Arrays;
  * containers or collections, but as expected does always result in repeatable hash codes given the inputs.
  * @author Randall Hauch
  */
-public class HashCodeUtil {
+public class HashCode {
 
     // Prime number used in improving distribution: 1,000,003
     private static final int PRIME = 103;
@@ -38,8 +38,8 @@ public class HashCodeUtil {
      * @param objects the objects that should be used to compute the hash code
      * @return the hash code
      */
-    public static int computeHash( Object... objects ) {
-        return computeHash(0, objects);
+    public static int compute( Object... objects ) {
+        return compute(0, objects);
     }
 
     /**
@@ -48,14 +48,14 @@ public class HashCodeUtil {
      * @param objects the objects that should be used to compute the hash code
      * @return the hash code
      */
-    protected static int computeHash( int seed, Object... objects ) {
+    protected static int compute( int seed, Object... objects ) {
         if (objects == null || objects.length == 0) {
-            return seed * HashCodeUtil.PRIME;
+            return seed * HashCode.PRIME;
         }
         // Compute the hash code for all of the objects ...
         int hc = seed;
         for (Object object : objects) {
-            hc = HashCodeUtil.PRIME * hc;
+            hc = HashCode.PRIME * hc;
             if (object instanceof byte[]) {
                 hc += Arrays.hashCode((byte[])object);
             } else if (object instanceof boolean[]) {

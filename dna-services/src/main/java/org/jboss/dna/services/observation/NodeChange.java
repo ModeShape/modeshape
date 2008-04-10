@@ -24,7 +24,7 @@ package org.jboss.dna.services.observation;
 import java.util.Collections;
 import java.util.Set;
 import net.jcip.annotations.Immutable;
-import org.jboss.dna.common.util.HashCodeUtil;
+import org.jboss.dna.common.util.HashCode;
 
 /**
  * A notification of changes to a node.
@@ -45,7 +45,7 @@ public class NodeChange {
         assert absolutePath != null;
         this.repositoryWorkspaceName = repositoryWorkspaceName;
         this.absolutePath = absolutePath.trim();
-        this.hc = HashCodeUtil.computeHash(this.repositoryWorkspaceName, this.absolutePath);
+        this.hc = HashCode.compute(this.repositoryWorkspaceName, this.absolutePath);
         this.eventTypes = eventTypes;
         this.modifiedProperties = Collections.unmodifiableSet(modifiedProperties);
         this.removedProperties = Collections.unmodifiableSet(removedProperties);
