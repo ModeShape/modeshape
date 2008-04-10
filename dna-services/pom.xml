@@ -8,7 +8,7 @@
   <!-- The groupId and version values are inherited from parent -->
   <artifactId>dna-services</artifactId>
   <packaging>jar</packaging>
-  <name>JBoss DNA Engine</name>
+  <name>JBoss DNA Services</name>
   <description>JBoss DNA Engine library with main service components</description>
   <url>http://labs.jboss.org/dna</url>
   <!--
