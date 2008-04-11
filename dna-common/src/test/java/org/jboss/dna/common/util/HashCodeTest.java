@@ -33,7 +33,7 @@ import org.junit.Test;
 /**
  * @author Randall Hauch
  */
-public class HashCodeUtilTest {
+public class HashCodeTest {
 
     @Before
     public void beforeEach() throws Exception {
