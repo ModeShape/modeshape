@@ -31,6 +31,7 @@ import javax.jcr.PathNotFoundException;
 import javax.jcr.Property;
 import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
+import javax.jcr.Session;
 import javax.jcr.Value;
 import javax.jcr.ValueFormatException;
 import org.jboss.dna.common.util.IoUtil;
@@ -262,6 +263,36 @@ public class JcrTools {
         } catch (RepositoryException err) {
             return node.toString();
         }
+    }
+
+    public Node findOrCreateNode( Session session, String path ) throws RepositoryException {
+        Node root = session.getRootNode();
+        // Remove leading and trailing slashes ...
+        String relPath = path.replaceAll("^/+", "").replaceAll("/+$", "");
+
+        // Look for the node first ...
+        try {
+            return root.getNode(relPath);
+        } catch (PathNotFoundException e) {
+            // continue
+        }
+        // Create the node, which has to be done segment by segment ...
+        String[] pathSegments = relPath.split("/");
+        Node node = root;
+        for (String pathSegment : pathSegments) {
+            pathSegment = pathSegment.trim();
+            if (pathSegment.length() == 0) continue;
+            if (node.hasNode(pathSegment)) {
+                // Find the existing node ...
+                node = node.getNode(pathSegment);
+            } else {
+                // Make sure there is no index on the final segment ...
+                String pathSegmentWithNoIndex = pathSegment.replaceAll("(\\[\\d+\\])+$", "");
+                // Create the node ...
+                node = node.addNode(pathSegmentWithNoIndex);
+            }
+        }
+        return node;
     }
 
 }

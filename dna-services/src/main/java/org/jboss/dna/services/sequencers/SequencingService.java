@@ -37,6 +37,7 @@ import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.observation.Event;
+import net.jcip.annotations.Immutable;
 import net.jcip.annotations.ThreadSafe;
 import org.jboss.dna.common.component.ClassLoaderFactory;
 import org.jboss.dna.common.component.ComponentLibrary;
@@ -45,10 +46,12 @@ import org.jboss.dna.common.monitor.LoggingProgressMonitor;
 import org.jboss.dna.common.monitor.ProgressMonitor;
 import org.jboss.dna.common.monitor.SimpleProgressMonitor;
 import org.jboss.dna.common.util.ArgCheck;
+import org.jboss.dna.common.util.HashCode;
 import org.jboss.dna.common.util.Logger;
 import org.jboss.dna.services.AbstractServiceAdministrator;
 import org.jboss.dna.services.AdministeredService;
 import org.jboss.dna.services.ExecutionContext;
+import org.jboss.dna.services.RepositoryNodePath;
 import org.jboss.dna.services.ServiceAdministrator;
 import org.jboss.dna.services.ServicesI18n;
 import org.jboss.dna.services.SessionFactory;
@@ -445,27 +448,30 @@ public class SequencingService implements AdministeredService, NodeChangeListene
      */
     protected void processChangedNode( NodeChange changedNode ) {
         try {
+            final String repositoryWorkspaceName = changedNode.getRepositoryWorkspaceName();
             Session session = null;
             try {
                 // Figure out which sequencers accept this path,
                 // and track which output nodes should be passed to each sequencer...
                 final String nodePath = changedNode.getAbsolutePath();
-                Map<String, Set<String>> outputPathsBySequencerName = new HashMap<String, Set<String>>();
+                Map<SequencerCall, Set<RepositoryNodePath>> sequencerCalls = new HashMap<SequencerCall, Set<RepositoryNodePath>>();
                 List<Sequencer> allSequencers = this.sequencerLibrary.getInstances();
                 List<Sequencer> sequencers = new ArrayList<Sequencer>(allSequencers.size());
                 for (Sequencer sequencer : allSequencers) {
-                    SequencerConfig config = sequencer.getConfiguration();
+                    final SequencerConfig config = sequencer.getConfiguration();
                     for (SequencerPathExpression pathExpression : config.getPathExpressions()) {
                         for (String propertyName : changedNode.getModifiedProperties()) {
                             String path = nodePath + "/@" + propertyName;
                             SequencerPathExpression.Matcher matcher = pathExpression.matcher(path);
                             if (matcher.matches()) {
                                 // String selectedPath = matcher.getSelectedPath();
-                                String outputPath = matcher.getOutputPath();
-                                Set<String> outputPaths = outputPathsBySequencerName.get(config.getName());
+                                RepositoryNodePath outputPath = RepositoryNodePath.parse(matcher.getOutputPath(), repositoryWorkspaceName);
+                                SequencerCall call = new SequencerCall(sequencer, propertyName);
+                                // Record the output path ...
+                                Set<RepositoryNodePath> outputPaths = sequencerCalls.get(call);
                                 if (outputPaths == null) {
-                                    outputPaths = new HashSet<String>();
-                                    outputPathsBySequencerName.put(config.getName(), outputPaths);
+                                    outputPaths = new HashSet<RepositoryNodePath>();
+                                    sequencerCalls.put(call, outputPaths);
                                 }
                                 outputPaths.add(outputPath);
                                 sequencers.add(sequencer);
@@ -478,7 +484,7 @@ public class SequencingService implements AdministeredService, NodeChangeListene
                 Node node = null;
                 if (!sequencers.isEmpty()) {
                     // Create a session that we'll use for all sequencing ...
-                    session = this.getExecutionContext().getSessionFactory().createSession(changedNode.getRepositoryWorkspaceName());
+                    session = this.getExecutionContext().getSessionFactory().createSession(repositoryWorkspaceName);
 
                     // Find the changed node ...
                     String relPath = changedNode.getAbsolutePath().replaceAll("^/+", "");
@@ -499,13 +505,15 @@ public class SequencingService implements AdministeredService, NodeChangeListene
                         progressMonitor = new LoggingProgressMonitor(progressMonitor, this.logger, Logger.Level.TRACE);
                     }
                     try {
-                        progressMonitor.beginTask(sequencers.size(), ServicesI18n.sequencerTask, changedNode);
-                        for (Sequencer sequencer : sequencers) {
-                            final SequencerConfig config = sequencer.getConfiguration();
-                            final String sequencerName = config.getName();
+                        progressMonitor.beginTask(sequencerCalls.size(), ServicesI18n.sequencerTask, changedNode);
+                        for (Map.Entry<SequencerCall, Set<RepositoryNodePath>> entry : sequencerCalls.entrySet()) {
+                            final SequencerCall sequencerCall = entry.getKey();
+                            final Set<RepositoryNodePath> outputPaths = entry.getValue();
+                            final Sequencer sequencer = sequencerCall.getSequencer();
+                            final String sequencerName = sequencer.getConfiguration().getName();
+                            final String propertyName = sequencerCall.getSequencedPropertyName();
 
                             // Get the paths to the nodes where the sequencer should write it's output ...
-                            Set<String> outputPaths = outputPathsBySequencerName.get(sequencerName);
                             assert outputPaths != null && outputPaths.size() != 0;
 
                             // Create a new execution context for each sequencer
@@ -513,7 +521,11 @@ public class SequencingService implements AdministeredService, NodeChangeListene
                             final ProgressMonitor sequenceMonitor = progressMonitor.createSubtask(1);
                             try {
                                 sequenceMonitor.beginTask(100, ServicesI18n.sequencerSubtask, sequencerName);
-                                sequencer.execute(node, changedNode, outputPaths, executionContext, sequenceMonitor.createSubtask(80)); // 80%
+                                sequencer.execute(node, propertyName, changedNode, outputPaths, executionContext, sequenceMonitor.createSubtask(80)); // 80%
+                            } catch (RepositoryException e) {
+                                this.logger.error(e, ServicesI18n.errorInRepositoryWhileSequencingNode, sequencerName, changedNode);
+                            } catch (SequencerException e) {
+                                this.logger.error(e, ServicesI18n.errorWhileSequencingNode, sequencerName, changedNode);
                             } finally {
                                 try {
                                     // Save the changes made by each sequencer ...
@@ -539,7 +551,7 @@ public class SequencingService implements AdministeredService, NodeChangeListene
                 if (session != null) session.logout();
             }
         } catch (RepositoryException e) {
-            this.logger.error(e, ServicesI18n.errorWhileSequencingNode, changedNode);
+            this.logger.error(e, ServicesI18n.errorInRepositoryWhileFindingSequencersToRunAgainstNode, changedNode);
         } catch (Exception e) {
             this.logger.error(e, ServicesI18n.errorFindingSequencersToRunAgainstNode, changedNode);
         }
@@ -640,6 +652,59 @@ public class SequencingService implements AdministeredService, NodeChangeListene
 
         protected void recordNodeSkipped() {
             this.numberOfNodesSkipped.incrementAndGet();
+        }
+    }
+
+    @Immutable
+    protected class SequencerCall {
+
+        private final Sequencer sequencer;
+        private final String sequencerName;
+        private final String sequencedPropertyName;
+        private final int hc;
+
+        protected SequencerCall( Sequencer sequencer, String sequencedPropertyName ) {
+            this.sequencer = sequencer;
+            this.sequencerName = sequencer.getConfiguration().getName();
+            this.sequencedPropertyName = sequencedPropertyName;
+            this.hc = HashCode.compute(this.sequencerName, this.sequencedPropertyName);
+        }
+
+        /**
+         * @return sequencer
+         */
+        public Sequencer getSequencer() {
+            return this.sequencer;
+        }
+
+        /**
+         * @return sequencedPropertyName
+         */
+        public String getSequencedPropertyName() {
+            return this.sequencedPropertyName;
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public int hashCode() {
+            return this.hc;
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public boolean equals( Object obj ) {
+            if (obj == this) return true;
+            if (obj instanceof SequencerCall) {
+                SequencerCall that = (SequencerCall)obj;
+                if (!this.sequencerName.equals(that.sequencerName)) return false;
+                if (!this.sequencedPropertyName.equals(that.sequencedPropertyName)) return false;
+                return true;
+            }
+            return false;
         }
     }
 }

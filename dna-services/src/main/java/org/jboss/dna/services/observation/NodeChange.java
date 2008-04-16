@@ -47,6 +47,8 @@ public class NodeChange {
         this.absolutePath = absolutePath.trim();
         this.hc = HashCode.compute(this.repositoryWorkspaceName, this.absolutePath);
         this.eventTypes = eventTypes;
+        if (modifiedProperties == null) modifiedProperties = Collections.emptySet();
+        if (removedProperties == null) removedProperties = Collections.emptySet();
         this.modifiedProperties = Collections.unmodifiableSet(modifiedProperties);
         this.removedProperties = Collections.unmodifiableSet(removedProperties);
     }

@@ -66,10 +66,15 @@ public final class ServicesI18n {
     public static I18n unableToChangeExecutionContextWhileRunning;
     public static I18n unableToStartSequencingServiceWithoutExecutionContext;
     public static I18n errorWhileSequencingNode;
+    public static I18n errorInRepositoryWhileSequencingNode;
     public static I18n errorFindingSequencersToRunAgainstNode;
+    public static I18n errorInRepositoryWhileFindingSequencersToRunAgainstNode;
     public static I18n executionContextHasBeenClosed;
     public static I18n sequencerTask;
     public static I18n sequencerSubtask;
+    public static I18n unableToFindPropertyForSequencing;
+    public static I18n sequencingPropertyOnNode;
+    public static I18n writingOutputSequencedFromPropertyOnNodes;
 
     public static I18n errorReadingPropertiesFromContainerNode;
     public static I18n requiredPropertyOnNodeWasExpectedToBeStringValue;
@@ -89,5 +94,7 @@ public final class ServicesI18n {
     public static I18n pathExpressionMayNotBeBlank;
     public static I18n pathExpressionHasInvalidSelect;
     public static I18n pathExpressionHasInvalidMatch;
+
+    public static I18n invalidRepositoryNodePath;
 
 }

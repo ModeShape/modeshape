@@ -29,6 +29,7 @@ import net.jcip.annotations.ThreadSafe;
 import org.jboss.dna.common.component.Component;
 import org.jboss.dna.common.monitor.ProgressMonitor;
 import org.jboss.dna.services.ExecutionContext;
+import org.jboss.dna.services.RepositoryNodePath;
 import org.jboss.dna.services.observation.NodeChange;
 import org.jboss.dna.services.observation.NodeChangeListener;
 import org.jboss.dna.services.observation.NodeChanges;
@@ -82,15 +83,18 @@ public interface Sequencer extends Component<SequencerConfig> {
      * Finally, the implementation should call {@link ProgressMonitor#done()} when the operation has finished.
      * </p>
      * @param input the node that has recently been created or changed; never null
+     * @param sequencedPropertyName the name of the property that caused this sequencer to be executed; never null and never empty
      * @param changes the immutable summary of changes that occurred on the <code>input</code> node within the transaction;
      * never null
-     * @param outputPaths the paths to the nodes where the sequencing content should be placed; never null, but the set may be
-     * empty and the any of the paths may represent non-existant nodes or the <code>input</code> node
+     * @param outputPaths the paths to the nodes where the sequencing content should be placed; never null and never empty, but
+     * the set may contain paths for non-existant nodes or may reference the <code>input</code> node
      * @param context the context in which this sequencer is executing; never null
      * @param progress the progress monitor that should be kept updated with the sequencer's progress and that should be
      * frequently consulted as to whether this operation has been {@link ProgressMonitor#isCancelled() cancelled}.
-     * @throws RepositoryException
+     * @throws RepositoryException if there is a problem while working with the repository
+     * @throws SequencerException if there is an error in this sequencer
      */
-    void execute( Node input, NodeChange changes, Set<String> outputPaths, ExecutionContext context, ProgressMonitor progress ) throws RepositoryException;
+    void execute( Node input, String sequencedPropertyName, NodeChange changes, Set<RepositoryNodePath> outputPaths, ExecutionContext context, ProgressMonitor progress )
+        throws RepositoryException, SequencerException;
 
 }

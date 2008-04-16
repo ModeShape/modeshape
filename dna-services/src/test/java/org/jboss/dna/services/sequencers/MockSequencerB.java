@@ -31,6 +31,7 @@ import net.jcip.annotations.ThreadSafe;
 import org.jboss.dna.common.CoreI18n;
 import org.jboss.dna.common.monitor.ProgressMonitor;
 import org.jboss.dna.services.ExecutionContext;
+import org.jboss.dna.services.RepositoryNodePath;
 import org.jboss.dna.services.observation.NodeChange;
 
 /**
@@ -62,7 +63,7 @@ public class MockSequencerB implements Sequencer {
     /**
      * {@inheritDoc}
      */
-    public void execute( Node input, NodeChange changes, Set<String> outputPaths, ExecutionContext context, ProgressMonitor progress ) {
+    public void execute( Node input, String sequencedPropertyName, NodeChange changes, Set<RepositoryNodePath> outputPaths, ExecutionContext context, ProgressMonitor progress ) {
         try {
             progress.beginTask(1, CoreI18n.passthrough, "Incrementing counter");
             // increment the counter and record the progress ...

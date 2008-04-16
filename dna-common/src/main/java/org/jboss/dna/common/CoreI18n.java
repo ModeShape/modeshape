@@ -82,6 +82,12 @@ public final class CoreI18n {
 
     public static I18n dateParsingFailure;
 
+    public static I18n pathAncestorDegreeIsInvalid;
+    public static I18n pathIsAlreadyAbsolute;
+    public static I18n pathIsNotAbsolute;
+    public static I18n pathIsNotRelative;
+    public static I18n pathCannotBeNormalized;
+
     public static I18n passthrough;
     public static I18n empty;
 }

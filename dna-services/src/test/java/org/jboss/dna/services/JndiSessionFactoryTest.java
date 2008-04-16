@@ -34,7 +34,6 @@ import javax.naming.NamingException;
 import org.jboss.dna.common.SystemFailureException;
 import org.jboss.dna.common.jcr.AbstractJcrRepositoryTest;
 import org.jboss.dna.common.naming.MockInitialContext;
-import org.jboss.dna.services.JndiSessionFactory;
 import org.jmock.Mockery;
 import org.junit.After;
 import org.junit.Before;
