@@ -33,8 +33,6 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import javax.jcr.Node;
-import javax.jcr.Property;
-import javax.jcr.PropertyIterator;
 import javax.jcr.Session;
 import javax.jcr.observation.Event;
 import org.jboss.dna.common.jcr.AbstractJcrRepositoryTest;
