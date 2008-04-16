@@ -77,14 +77,23 @@ public class PathTest {
     }
 
     @Test
-    public void shouldConstructPathWithoutLeadingDelimiter() {
-        assertThat(new Path("a").toString(), is("/a"));
+    public void shouldConstructRelativePathIfSuppliedPathHasNoLeadingDelimiter() {
+        assertThat(new Path("a").toString(), is("a"));
     }
 
     @Test
     public void shouldConstructRootPathFromStringWithSingleDelimiter() {
         assertThat(new Path("/"), is(Path.ROOT));
         assertThat(new Path("/").isRoot(), is(true));
+    }
+
+    @Test
+    public void shouldConstructRelativePath() {
+        assertThat(new Path("a/b/c").isAbsolute(), is(false));
+        assertThat(new Path("a/b/c").isNormalized(), is(true));
+        assertThat(new Path("a/b/c").size(), is(3));
+        assertThat(new Path("a/b/c").getString(), is("a/b/c"));
+        assertThat(new Path("a/b/c").toStringArray(), is(new String[] {"a", "b", "c"}));
     }
 
     @Test
@@ -371,47 +380,27 @@ public class PathTest {
     }
 
     @Test
-    public void shouldOrderPathsWithSpecialNamesCorrectly() {
-        assertThat(new Path("/a/b/alpha").compareTo(new Path("/a/b/beta")), is(-1));
-        assertThat(new Path("/a/b/jcr:name").compareTo(new Path("/a/b/alpha")) < 0, is(true));
-        assertThat(new Path("/a/b/jcr:name").compareTo(new Path("/a/b/jcr:alpha")) < 0, is(true));
-        assertThat(new Path("/a/b/alpha").compareTo(new Path("/a/b/jcr:name")) > 0, is(true));
-        assertThat(new Path("/a/b/jcr:name").compareTo(new Path("/a/b/jcr:name")), is(0));
-
-        assertThat(new Path("/a/b/jcr:primaryType").compareTo(new Path("/a/b/alpha")) < 0, is(true));
-        assertThat(new Path("/a/b/jcr:name").compareTo(new Path("/a/b/jcr:primaryType")) < 0, is(true));
-        assertThat(new Path("/a/b/jcr:primaryType").compareTo(new Path("/a/b/jcr:name")) > 0, is(true));
-
-        assertThat(new Path("/a/b/jcr:mixinTypes").compareTo(new Path("/a/b/alpha")) < 0, is(true));
-        assertThat(new Path("/a/b/jcr:name").compareTo(new Path("/a/b/jcr:mixinTypes")) < 0, is(true));
-        assertThat(new Path("/a/b/jcr:mixinTypes").compareTo(new Path("/a/b/jcr:name")) > 0, is(true));
-
-        assertThat(new Path("/a/b/jcr:primaryType").compareTo(new Path("/a/b/jcr:mixinTypes")) < 0, is(true));
-        assertThat(new Path("/a/b/jcr:mixinTypes").compareTo(new Path("/a/b/jcr:primaryType")) > 0, is(true));
-    }
-
-    @Test
     public void shouldOrderPathsCorrectly() {
         List<Path> paths = new ArrayList<Path>();
         paths.add(new Path("/a"));
         paths.add(new Path("/a/b"));
-        paths.add(new Path("/a/b/jcr:name"));
-        paths.add(new Path("/a/b/jcr:primaryType"));
-        paths.add(new Path("/a/b/jcr:mixinTypes"));
         paths.add(new Path("/a/b/alpha"));
         paths.add(new Path("/a/b/beta"));
+        paths.add(new Path("/a/b/jcr:mixinTypes"));
+        paths.add(new Path("/a/b/jcr:name"));
+        paths.add(new Path("/a/b/jcr:primaryType"));
         paths.add(new Path("/a/c[1]"));
-        paths.add(new Path("/a/c[1]/jcr:name"));
-        paths.add(new Path("/a/c[1]/jcr:primaryType"));
-        paths.add(new Path("/a/c[1]/jcr:mixinTypes"));
         paths.add(new Path("/a/c[1]/alpha"));
         paths.add(new Path("/a/c[1]/beta"));
+        paths.add(new Path("/a/c[1]/jcr:mixinTypes"));
+        paths.add(new Path("/a/c[1]/jcr:name"));
+        paths.add(new Path("/a/c[1]/jcr:primaryType"));
         paths.add(new Path("/a/c[2]"));
-        paths.add(new Path("/a/c[2]/jcr:name"));
-        paths.add(new Path("/a/c[2]/jcr:primaryType"));
-        paths.add(new Path("/a/c[2]/jcr:mixinTypes"));
         paths.add(new Path("/a/c[2]/alpha"));
         paths.add(new Path("/a/c[2]/beta"));
+        paths.add(new Path("/a/c[2]/jcr:mixinTypes"));
+        paths.add(new Path("/a/c[2]/jcr:name"));
+        paths.add(new Path("/a/c[2]/jcr:primaryType"));
 
         // Randomize the list of paths, so we have something to sort ...
         List<Path> randomizedPaths = new ArrayList<Path>(paths);

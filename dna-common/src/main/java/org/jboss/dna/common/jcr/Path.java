@@ -74,10 +74,6 @@ import org.jboss.dna.common.util.StringUtil;
  * {@link #isAncestorOf(Path) ancestor} or {@link #isDecendantOf(Path) decendent} of another path, and creating
  * {@link #append(String) subpaths}.
  * </p>
- * <p>
- * Path ordering is done in a natural way, except that the following segment names (which have special meaning in JCR) are
- * considered to be first: <code>jcr:name</code>, <code>jcr:primaryType</code>, <code>jcr:mixinTypes</code>
- * </p>
  * @author Randall Hauch
  */
 @Immutable
@@ -111,8 +107,6 @@ public class Path implements Cloneable, Comparable<Path>, Iterable<Path.Segment>
     protected static final Pattern SEGMENT_PATTERN = Pattern.compile("([^:/]+)(:([^/\\[\\]]+))?(\\[(\\d+)])?");
 
     protected static final int NO_INDEX = -1;
-
-    protected static final String[][] ORDER_FIRST_NAMES = { {"jcr", "name"}, {"jcr", "primaryType"}, {"jcr", "mixinTypes"}};
 
     protected static final Segment PARENT_SEGMENT = new Segment("", PARENT, NO_INDEX);
     protected static final Segment SELF_SEGMENT = new Segment("", SELF, NO_INDEX);
@@ -215,30 +209,10 @@ public class Path implements Cloneable, Comparable<Path>, Iterable<Path.Segment>
          */
         public int compareTo( Segment that ) {
             if (this == that) return 0;
-            int prefixDiff = this.prefix.compareTo(that.prefix);
-            int nameDiff = this.name.compareTo(that.name);
-            if (prefixDiff != 0 || nameDiff != 0) {
-                int thisOrderIndex = Integer.MAX_VALUE;
-                int thatOrderIndex = Integer.MAX_VALUE;
-                for (int i = 0; i != ORDER_FIRST_NAMES.length; ++i) {
-                    if (ORDER_FIRST_NAMES[i][0].equals(this.prefix) && ORDER_FIRST_NAMES[i][1].equals(this.name)) {
-                        thisOrderIndex = i;
-                        break;
-                    }
-                }
-                for (int i = 0; i != ORDER_FIRST_NAMES.length; ++i) {
-                    if (ORDER_FIRST_NAMES[i][0].equals(that.prefix) && ORDER_FIRST_NAMES[i][1].equals(that.name)) {
-                        thatOrderIndex = i;
-                        break;
-                    }
-                }
-                if (thisOrderIndex == Integer.MAX_VALUE && thatOrderIndex == Integer.MAX_VALUE) {
-                    // Neither is one of the 'order first names'
-                    return prefixDiff != 0 ? prefixDiff : nameDiff;
-                }
-                // Otherwise one of them is a special name ...
-                return thisOrderIndex - thatOrderIndex;
-            }
+            int diff = this.prefix.compareTo(that.prefix);
+            if (diff != 0) return diff;
+            diff = this.name.compareTo(that.name);
+            if (diff != 0) return diff;
             return this.index - that.index;
         }
 
@@ -926,7 +900,7 @@ public class Path implements Cloneable, Comparable<Path>, Iterable<Path.Segment>
         // Since the segments are immutable, this code need not be synchronized because concurrent threads
         // may just compute the same value (with no harm done)
         StringBuilder sb = new StringBuilder();
-        sb.append(DELIMITER);
+        if (this.isAbsolute()) sb.append(DELIMITER);
         boolean first = true;
         for (Segment segment : this.segments) {
             if (first) {
