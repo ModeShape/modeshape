@@ -12,8 +12,8 @@
 		<module>dna-common</module>
 		<module>dna-maven-classloader</module>
 		<module>dna-services</module>
-		<module>dna-integration-tests</module>
 		<module>sequencers/dna-sequencer-images</module>
+		<module>dna-integration-tests</module>
 	</modules>
 	<build>
 		<!-- This section defines the default plugin settings inherited by child projects. -->
