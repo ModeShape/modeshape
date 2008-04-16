@@ -30,15 +30,14 @@ import static org.junit.Assert.fail;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
 import javax.jcr.Node;
+import javax.jcr.Property;
+import javax.jcr.PropertyIterator;
 import javax.jcr.Session;
 import javax.jcr.observation.Event;
 import org.jboss.dna.common.jcr.AbstractJcrRepositoryTest;
-import org.jboss.dna.common.jcr.Path;
 import org.jboss.dna.common.monitor.ProgressMonitor;
 import org.jboss.dna.common.monitor.RecordingProgressMonitor;
 import org.jboss.dna.services.ExecutionContext;
@@ -60,7 +59,7 @@ public class StreamSequencerTest extends AbstractJcrRepositoryTest {
     private SequencerConfig validConfig = new SequencerConfig("name", "desc", "something.class", null, validExpressions);
     private JcrTools tools;
     private Session session;
-    private Map<Path, Object> sequencerOutput;
+    private SequencerOutputMap sequencerOutput;
     private String sampleData = "The little brown fox didn't something bad.";
     private ExecutionContext context;
     private RecordingProgressMonitor progressMonitor;
@@ -70,7 +69,7 @@ public class StreamSequencerTest extends AbstractJcrRepositoryTest {
     public void beforeEach() throws Exception {
         final JcrTools tools = new JcrTools();
         this.tools = tools;
-        sequencerOutput = new HashMap<Path, Object>();
+        sequencerOutput = new SequencerOutputMap();
         progressMonitor = new RecordingProgressMonitor(StreamSequencerTest.class.getName());
         final SessionFactory sessionFactory = new SessionFactory() {
 
@@ -88,7 +87,7 @@ public class StreamSequencerTest extends AbstractJcrRepositoryTest {
                 return tools;
             }
         };
-        final Map<Path, Object> finalOutput = sequencerOutput;
+        final SequencerOutputMap finalOutput = sequencerOutput;
         sequencer = new StreamSequencer() {
 
             /**
@@ -96,9 +95,13 @@ public class StreamSequencerTest extends AbstractJcrRepositoryTest {
              * does nothing else with any of the other parameters.
              */
             @Override
-            protected void sequence( InputStream stream, Map<Path, Object> output, ExecutionContext context, ProgressMonitor progressMonitor ) {
-                output.clear();
-                output.putAll(finalOutput);
+            protected void sequence( InputStream stream, SequencerOutput output, ExecutionContext context, ProgressMonitor progressMonitor ) {
+                for (SequencerOutputMap.Entry entry : finalOutput) {
+                    String nodePath = entry.getPath().getString();
+                    for (SequencerOutputMap.PropertyValue property : entry.getPropertyValues()) {
+                        output.setProperty(nodePath, property.getName(), property.getValue());
+                    }
+                }
             }
         };
     }
@@ -177,7 +180,7 @@ public class StreamSequencerTest extends AbstractJcrRepositoryTest {
         outputPaths.add(new RepositoryNodePath(repositoryWorkspaceName, nodeE.getPath()));
 
         // Generate the output data that the sequencer subclass will produce and that should be saved to the repository ...
-        sequencerOutput.put(new Path("alpha/beta/isSomething"), true);
+        sequencerOutput.setProperty("alpha/beta", "isSomething", true);
 
         // Call the sequencer ...
         sequencer.execute(nodeC, "sequencedProperty", nodeChange, outputPaths, context, progressMonitor);
@@ -209,7 +212,7 @@ public class StreamSequencerTest extends AbstractJcrRepositoryTest {
         outputPaths.add(new RepositoryNodePath(repositoryWorkspaceName, nodeE.getPath()));
 
         // Generate the output data that the sequencer subclass will produce and that should be saved to the repository ...
-        sequencerOutput.put(new Path("alpha/beta/isSomething"), true);
+        sequencerOutput.setProperty("alpha/beta", "isSomething", true);
 
         // Call the sequencer, which should cause the exception ...
         sequencer.execute(nodeC, "sequencedProperty", nodeChange, outputPaths, context, progressMonitor);
@@ -241,7 +244,7 @@ public class StreamSequencerTest extends AbstractJcrRepositoryTest {
         outputPaths.add(new RepositoryNodePath(repositoryWorkspaceName, "/x/y/z"));
 
         // Generate the output data that the sequencer subclass will produce and that should be saved to the repository ...
-        sequencerOutput.put(new Path("alpha/beta/isSomething"), true);
+        sequencerOutput.setProperty("alpha/beta", "isSomething", true);
 
         // Call the sequencer ...
         sequencer.execute(nodeC, "sequencedProperty", nodeChange, outputPaths, context, progressMonitor);
@@ -272,7 +275,7 @@ public class StreamSequencerTest extends AbstractJcrRepositoryTest {
         outputPaths.add(new RepositoryNodePath(repositoryWorkspaceName, "/d/e"));
 
         // Generate the output data that the sequencer subclass will produce and that should be saved to the repository ...
-        sequencerOutput.put(new Path("alpha/beta/isSomething"), true);
+        sequencerOutput.setProperty("alpha/beta", "isSomething", true);
 
         // Call the sequencer ...
         sequencer.execute(nodeC, "sequencedProperty", nodeChange, outputPaths, context, progressMonitor);
@@ -305,7 +308,7 @@ public class StreamSequencerTest extends AbstractJcrRepositoryTest {
         outputPaths.add(new RepositoryNodePath(repositoryWorkspaceName, "/x/z"));
 
         // Generate the output data that the sequencer subclass will produce and that should be saved to the repository ...
-        sequencerOutput.put(new Path("alpha/beta/isSomething"), true);
+        sequencerOutput.setProperty("alpha/beta", "isSomething", true);
 
         // Call the sequencer ...
         sequencer.execute(nodeC, "sequencedProperty", nodeChange, outputPaths, context, progressMonitor);
@@ -316,10 +319,13 @@ public class StreamSequencerTest extends AbstractJcrRepositoryTest {
         assertThat(session.getRootNode().hasNode("x/z"), is(true));
 
         // Check to see that the sequencer-generated nodes have been created ...
-        for (RepositoryNodePath outputPath : outputPaths) {
-            String relPath = outputPath.getNodePath().replaceFirst("/", "");
-            assertThat(session.getRootNode().hasNode(relPath), is(true));
-            // assertThat(session.getRootNode().hasNode(relPath + "/alpha/beta"), is(true));
-        }
+        // Node beta = session.getRootNode().getNode("d/e/alpha/beta");
+        // for (PropertyIterator iter = beta.getProperties(); iter.hasNext();) {
+        // Property property = iter.nextProperty();
+        // System.out.println("Property on " + beta.getPath() + " ===> " + property.getName() + " = " + property.getValue());
+        // }
+        assertThat(session.getRootNode().getNode("d/e/alpha/beta").getProperty("isSomething").getBoolean(), is(true));
+        assertThat(session.getRootNode().getNode("x/y/z/alpha/beta").getProperty("isSomething").getBoolean(), is(true));
+        assertThat(session.getRootNode().getNode("x/z/alpha/beta").getProperty("isSomething").getBoolean(), is(true));
     }
 }

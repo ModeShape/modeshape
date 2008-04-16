@@ -22,10 +22,9 @@
 package org.jboss.dna.sequencer.images;
 
 import java.io.InputStream;
-import java.util.Map;
-import org.jboss.dna.common.jcr.Path;
 import org.jboss.dna.common.monitor.ProgressMonitor;
 import org.jboss.dna.services.ExecutionContext;
+import org.jboss.dna.services.sequencers.SequencerOutput;
 import org.jboss.dna.services.sequencers.StreamSequencer;
 
 /**
@@ -65,27 +64,27 @@ import org.jboss.dna.services.sequencers.StreamSequencer;
  */
 public class ImageMetadataSequencer extends StreamSequencer {
 
-    public static final Path METADATA_NODE = new Path("image:metadata");
-    public static final Path IMAGE_PRIMARY_TYPE = METADATA_NODE.append("jcr:primaryType");
-    public static final Path IMAGE_MIXINS = METADATA_NODE.append("jcr:mixinTypes");
-    public static final Path IMAGE_MIME_TYPE = METADATA_NODE.append("jcr:mimeType");
-    public static final Path IMAGE_ENCODING = METADATA_NODE.append("jcr:encoding");
-    public static final Path IMAGE_FORMAT_NAME = METADATA_NODE.append("image:formatName");
-    public static final Path IMAGE_WIDTH = METADATA_NODE.append("image:width");
-    public static final Path IMAGE_HEIGHT = METADATA_NODE.append("image:height");
-    public static final Path IMAGE_BITS_PER_PIXEL = METADATA_NODE.append("image:bitsPerPixel");
-    public static final Path IMAGE_PROGRESSIVE = METADATA_NODE.append("image:progressive");
-    public static final Path IMAGE_NUMBER_OF_IMAGES = METADATA_NODE.append("image:numberOfImages");
-    public static final Path IMAGE_PHYSICAL_WIDTH_DPI = METADATA_NODE.append("image:physicalWidthDpi");
-    public static final Path IMAGE_PHYSICAL_HEIGHT_DPI = METADATA_NODE.append("image:physicalHeightDpi");
-    public static final Path IMAGE_PHYSICAL_WIDTH_INCHES = METADATA_NODE.append("image:physicalWidthInches");
-    public static final Path IMAGE_PHYSICAL_HEIGHT_INCHES = METADATA_NODE.append("image:physicalHeightInches");
+    public static final String METADATA_NODE = "image:metadata";
+    public static final String IMAGE_PRIMARY_TYPE = "jcr:primaryType";
+    public static final String IMAGE_MIXINS = "jcr:mixinTypes";
+    public static final String IMAGE_MIME_TYPE = "jcr:mimeType";
+    public static final String IMAGE_ENCODING = "jcr:encoding";
+    public static final String IMAGE_FORMAT_NAME = "image:formatName";
+    public static final String IMAGE_WIDTH = "image:width";
+    public static final String IMAGE_HEIGHT = "image:height";
+    public static final String IMAGE_BITS_PER_PIXEL = "image:bitsPerPixel";
+    public static final String IMAGE_PROGRESSIVE = "image:progressive";
+    public static final String IMAGE_NUMBER_OF_IMAGES = "image:numberOfImages";
+    public static final String IMAGE_PHYSICAL_WIDTH_DPI = "image:physicalWidthDpi";
+    public static final String IMAGE_PHYSICAL_HEIGHT_DPI = "image:physicalHeightDpi";
+    public static final String IMAGE_PHYSICAL_WIDTH_INCHES = "image:physicalWidthInches";
+    public static final String IMAGE_PHYSICAL_HEIGHT_INCHES = "image:physicalHeightInches";
 
     /**
      * {@inheritDoc}
      */
     @Override
-    protected void sequence( InputStream stream, Map<Path, Object> output, ExecutionContext context, ProgressMonitor progressMonitor ) {
+    protected void sequence( InputStream stream, SequencerOutput output, ExecutionContext context, ProgressMonitor progressMonitor ) {
         ImageMetadata metadata = new ImageMetadata();
         metadata.setInput(stream);
         metadata.setDetermineImageNumber(true);
@@ -98,20 +97,20 @@ public class ImageMetadataSequencer extends StreamSequencer {
 
         if (metadata != null) {
             // Place the image metadata into the output map ...
-            output.put(IMAGE_PRIMARY_TYPE, "image:metadata");
-            // output.put(IMAGE_MIXINS, "");
-            output.put(IMAGE_MIME_TYPE, metadata.getMimeType());
-            // output.put(IMAGE_ENCODING, "");
-            output.put(IMAGE_FORMAT_NAME, metadata.getFormatName());
-            output.put(IMAGE_WIDTH, metadata.getWidth());
-            output.put(IMAGE_HEIGHT, metadata.getHeight());
-            output.put(IMAGE_BITS_PER_PIXEL, metadata.getBitsPerPixel());
-            output.put(IMAGE_PROGRESSIVE, metadata.isProgressive());
-            output.put(IMAGE_NUMBER_OF_IMAGES, metadata.getNumberOfImages());
-            output.put(IMAGE_PHYSICAL_WIDTH_DPI, metadata.getPhysicalWidthDpi());
-            output.put(IMAGE_PHYSICAL_HEIGHT_DPI, metadata.getPhysicalHeightDpi());
-            output.put(IMAGE_PHYSICAL_WIDTH_INCHES, metadata.getPhysicalWidthInch());
-            output.put(IMAGE_PHYSICAL_HEIGHT_INCHES, metadata.getPhysicalHeightInch());
+            output.setProperty(METADATA_NODE, IMAGE_PRIMARY_TYPE, "image:metadata");
+            // output.psetProperty(METADATA_NODE, IMAGE_MIXINS, "");
+            output.setProperty(METADATA_NODE, IMAGE_MIME_TYPE, metadata.getMimeType());
+            // output.setProperty(METADATA_NODE, IMAGE_ENCODING, "");
+            output.setProperty(METADATA_NODE, IMAGE_FORMAT_NAME, metadata.getFormatName());
+            output.setProperty(METADATA_NODE, IMAGE_WIDTH, metadata.getWidth());
+            output.setProperty(METADATA_NODE, IMAGE_HEIGHT, metadata.getHeight());
+            output.setProperty(METADATA_NODE, IMAGE_BITS_PER_PIXEL, metadata.getBitsPerPixel());
+            output.setProperty(METADATA_NODE, IMAGE_PROGRESSIVE, metadata.isProgressive());
+            output.setProperty(METADATA_NODE, IMAGE_NUMBER_OF_IMAGES, metadata.getNumberOfImages());
+            output.setProperty(METADATA_NODE, IMAGE_PHYSICAL_WIDTH_DPI, metadata.getPhysicalWidthDpi());
+            output.setProperty(METADATA_NODE, IMAGE_PHYSICAL_HEIGHT_DPI, metadata.getPhysicalHeightDpi());
+            output.setProperty(METADATA_NODE, IMAGE_PHYSICAL_WIDTH_INCHES, metadata.getPhysicalWidthInch());
+            output.setProperty(METADATA_NODE, IMAGE_PHYSICAL_HEIGHT_INCHES, metadata.getPhysicalHeightInch());
         }
     }
 }

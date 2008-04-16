@@ -22,10 +22,7 @@
 package org.jboss.dna.services.sequencers;
 
 import java.io.InputStream;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.Map;
+import java.util.Calendar;
 import java.util.Set;
 import javax.jcr.Node;
 import javax.jcr.PathNotFoundException;
@@ -34,6 +31,7 @@ import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import org.jboss.dna.common.jcr.Path;
 import org.jboss.dna.common.monitor.ProgressMonitor;
+import org.jboss.dna.common.util.Logger;
 import org.jboss.dna.services.ExecutionContext;
 import org.jboss.dna.services.RepositoryNodePath;
 import org.jboss.dna.services.ServicesI18n;
@@ -83,7 +81,7 @@ public abstract class StreamSequencer implements Sequencer {
             progressMonitor.worked(10);
 
             // Get the binary property with the image content, and build the image metadata from the image ...
-            Map<Path, Object> output = new HashMap<Path, Object>();
+            SequencerOutputMap output = new SequencerOutputMap();
             InputStream stream = null;
             Throwable firstError = null;
             ProgressMonitor sequencingMonitor = progressMonitor.createSubtask(50);
@@ -114,7 +112,6 @@ public abstract class StreamSequencer implements Sequencer {
             // Find each output node and save the image metadata there ...
             ProgressMonitor writingProgress = progressMonitor.createSubtask(40);
             writingProgress.beginTask(outputPaths.size(), ServicesI18n.writingOutputSequencedFromPropertyOnNodes, sequencedPropertyName, input.getPath(), outputPaths.size());
-            Map<Path, Object> immutableOutput = Collections.unmodifiableMap(output);
             for (RepositoryNodePath outputPath : outputPaths) {
                 Session session = null;
                 try {
@@ -129,7 +126,7 @@ public abstract class StreamSequencer implements Sequencer {
                     Node outputNode = context.getTools().findOrCreateNode(session, nodePath);
 
                     // Now save the image metadata to the output node ...
-                    if (saveOutput(outputNode, immutableOutput)) {
+                    if (saveOutput(outputNode, output, context)) {
                         session.save();
                     }
                 } finally {
@@ -147,117 +144,98 @@ public abstract class StreamSequencer implements Sequencer {
     /**
      * Save the sequencing output to the supplied node. This method does not need to save the output, as that is done by the
      * caller of this method.
-     * @param node the existing node onto (or below) which the output is to be written; never null
+     * @param outputNode the existing node onto (or below) which the output is to be written; never null
      * @param outputProperties the (immutable) sequencing output; never null
+     * @param context the execution context for this sequencing operation; never null
      * @return true if the output was written to the node, or false if no information was written
      * @throws RepositoryException
      */
-    protected boolean saveOutput( Node node, Map<Path, Object> outputProperties ) throws RepositoryException {
-        if (outputProperties.isEmpty()) return false;
+    protected boolean saveOutput( Node outputNode, SequencerOutputMap output, ExecutionContext context ) throws RepositoryException {
+        if (output.isEmpty()) return false;
+        final Path outputNodePath = new Path(outputNode.getPath());
 
-        // Get the paths and sort them in Path's natural order (which puts "jcr:name", "jcr:primaryType", and "jcr:mixinTypes"
-        // first) ...
-        LinkedList<Path> paths = new LinkedList<Path>(outputProperties.keySet());
-        Collections.sort(paths);
+        // Iterate over the entries in the output, in Path's natural order (shorter paths first and in lexicographical order by
+        // prefix and name)
+        for (SequencerOutputMap.Entry entry : output) {
+            Path targetNodePath = entry.getPath();
+            String primaryType = entry.getPrimaryTypeValue();
 
-        final Path nodePath = new Path(node.getPath());
+            // Resolve this path relative to the output node path, handling any parent or self references ...
+            Path absolutePath = targetNodePath.isAbsolute() ? targetNodePath : outputNodePath.resolve(targetNodePath);
+            Path relativePath = absolutePath.relativeTo(outputNodePath);
 
-        // Iterate over the paths in the correct order, with the shortest path being first.
-        //
-        // This logic is somewhat complicated, because it looks for "jcr:primaryType" and "jcr:mixinType"
-        // properties (which appear before the others on the same node). These are not only optional
-        // but they may be the only properties on a node before the properties on another node.
-        //
-        // Another complication is that the paths may have more than one segment, which means
-        // that intermediate nodes need to be found (or created if they don't exist) using the
-        // default primaryType.
-        // 
-        // Therefore, this logic iterates over the path, and for each path checks to see whether
-        // it is one of the special properties. Then the referenced node is found
-        //
-        String primaryType = null;
-        String[] mixinTypes = null;
-        Node targetNode = null;
-        Path targetNodePath = null;
-        while (!paths.isEmpty()) {
-            Path relativePath = paths.remove();
+            // Find or add the node (which may involve adding intermediate nodes) ...
+            Node targetNode = outputNode;
+            for (int i = 0, max = relativePath.size(); i != max; ++i) {
+                Path.Segment segment = relativePath.getSegment(i);
+                String qualifiedName = segment.getQualifiedName(true);
+                if (targetNode.hasNode(qualifiedName)) {
+                    targetNode = targetNode.getNode(qualifiedName);
+                } else {
+                    // It doesn't exist, so create it ...
+                    if (segment.hasIndex()) {
+                        // Use a name without an index ...
+                        qualifiedName = segment.getQualifiedName(false);
+                    }
+                    // We only have the primary type for the final one ...
+                    if (i == (max - 1) && primaryType != null) {
+                        targetNode = targetNode.addNode(qualifiedName, primaryType);
+                    } else {
+                        targetNode = targetNode.addNode(qualifiedName);
+                    }
+                }
+                assert targetNode != null;
+            }
+            assert targetNode != null;
 
-            // Resolve this relative path to an absolute path
-            // Path resolvedRelativePath = resolveRelativePath(nodePath, relativePath);
-            //
-            // if (false) {
-            // // If this path represents the "jcr:name", "jcr:primaryType" or "jcr:mixinTypes" properties ...
-            // Path.Segment propertySegment = resolvedRelativePath.getLastSegment();
-            // if (propertySegment.getPrefix().equals("jcr")) {
-            // String segmentName = propertySegment.getName();
-            // if (segmentName.equals("name")) {
-            // primaryType = null;
-            // mixinTypes = null;
-            // // Do nothing special with the name, so go on to the next path ...
-            // continue;
-            // }
-            // if (segmentName.equals("primaryType")) {
-            // // Record the primary type, and reset the mixinTypes (which should be next if there is one) ...
-            // primaryType = (String)outputProperties.get(relativePath);
-            // mixinTypes = null;
-            // // Peek at the next path, which may be a different node altogether ...
-            // Path next = resolveRelativePath(nodePath, paths.peek());
-            // if (next != null && next.hasSameAncestor(resolvedRelativePath) && next.endsWith("jcr:mixinTypes")) {
-            // // The next node is the mixinTypes for the same node as the primary type, so get it ...
-            // Path originalNext = paths.remove();
-            // Object value = outputProperties.get(originalNext);
-            // mixinTypes = extractMixinTypes(value);
-            // }
-            // } else if (segmentName.equals("mixinTypes")) {
-            // // There was no primary type, so record the mixin type ...
-            // primaryType = null;
-            // Object value = outputProperties.get(relativePath);
-            // mixinTypes = extractMixinTypes(value);
-            // }
-            //
-            // // If there is no target node, we need to resolve it ...
-            // if (targetNode != null) {
-            //
-            // }
-            //
-            // // Find/create the node given the primary type and optional mixin types ...
-            // Path relativePathToNode = resolvedRelativePath.getAncestor();
-            // targetNode = node;
-            // if (relativePathToNode.size() > 1) {
-            // // Find/create the nodes down to the node we're interested in
-            // // and we don't have values for primaryType or mixinTypes for these ...
-            // for (Path.Segment segment : relativePathToNode.getAncestor()) {
-            // Node child = targetNode.getNode(segment.getQualifiedName(true));
-            // if (child == null) {
-            // child = targetNode.addNode(segment.getQualifiedName(false));
-            // }
-            // targetNode = child;
-            // }
-            // }
-            // // Find/create the node for the last segment of the path, for which we have a primaryType and/or mixinType ...
-            // Path.Segment segmentToNode = relativePathToNode.getLastSegment();
-            // Node existingNode = targetNode.getNode(segmentToNode.getQualifiedName(true));
-            // if (existingNode == null) {
-            // existingNode = targetNode.addNode(segmentToNode.getQualifiedName(false), primaryType);
-            // }
-            // targetNode = existingNode;
-            //
-            // // Continue to grab the next path ...
-            // continue;
-            // }
-            // }
-
+            // Set all of the properties on this
+            for (SequencerOutputMap.PropertyValue property : entry.getPropertyValues()) {
+                String propertyName = property.getName();
+                Object value = property.getValue();
+                Logger.getLogger(this.getClass()).trace("Writing property {0}/{1}={2}", targetNode.getPath(), propertyName, value);
+                if (value instanceof Boolean) {
+                    targetNode.setProperty(propertyName, ((Boolean)value).booleanValue());
+                } else if (value instanceof String) {
+                    targetNode.setProperty(propertyName, (String)value);
+                } else if (value instanceof Integer) {
+                    targetNode.setProperty(propertyName, ((Integer)value).intValue());
+                } else if (value instanceof Short) {
+                    targetNode.setProperty(propertyName, ((Short)value).shortValue());
+                } else if (value instanceof Long) {
+                    targetNode.setProperty(propertyName, ((Long)value).longValue());
+                } else if (value instanceof Float) {
+                    targetNode.setProperty(propertyName, ((Float)value).floatValue());
+                } else if (value instanceof Double) {
+                    targetNode.setProperty(propertyName, ((Double)value).doubleValue());
+                } else if (value instanceof Calendar) {
+                    targetNode.setProperty(propertyName, (Calendar)value);
+                } else if (value instanceof Path) {
+                    // Find the path to reference node ...
+                    Path pathToReferencedNode = (Path)value;
+                    if (!pathToReferencedNode.isAbsolute()) {
+                        // Resolve the path relative to the output node ...
+                        pathToReferencedNode = outputNodePath.resolve(pathToReferencedNode);
+                    }
+                    // Find the referenced node ...
+                    try {
+                        Node referencedNode = outputNode.getNode(pathToReferencedNode.getString());
+                        targetNode.setProperty(propertyName, referencedNode);
+                    } catch (PathNotFoundException e) {
+                        String msg = ServicesI18n.errorGettingNodeRelativeToNode.text(value, outputNode.getPath());
+                        throw new SequencerException(msg, e);
+                    }
+                } else if (value == null) {
+                    // Remove the property ...
+                    targetNode.setProperty(propertyName, (String)null);
+                } else {
+                    String msg = ServicesI18n.unknownPropertyValueType.text(value, value.getClass().getName());
+                    throw new SequencerException(msg);
+                }
+            }
         }
 
         return true;
     }
-
-    // protected Path resolveRelativePath( Path startingNode, Path pathToProperty ) {
-    // Path absolutePath = pathToProperty.isAbsolute() ? pathToProperty : startingNode.resolve(pathToProperty); // always
-    // // normalized
-    // Path resolvedRelativePath = absolutePath.relativeTo(startingNode);
-    // return resolvedRelativePath;
-    // }
 
     protected String[] extractMixinTypes( Object value ) {
         if (value instanceof String[]) return (String[])value;
@@ -268,11 +246,11 @@ public abstract class StreamSequencer implements Sequencer {
     /**
      * Sequence the data found in the supplied stream, placing the output information into the supplied map.
      * @param stream the stream with the data to be sequenced; never null
-     * @param output the map into which should be placed the sequencing output
+     * @param output the output from the sequencing operation; never null
      * @param context the context in which this sequencer is executing; never null
      * @param progress the progress monitor that should be kept updated with the sequencer's progress and that should be
      * frequently consulted as to whether this operation has been {@link ProgressMonitor#isCancelled() cancelled}.
      */
-    protected abstract void sequence( InputStream stream, Map<Path, Object> output, ExecutionContext context, ProgressMonitor progressMonitor );
+    protected abstract void sequence( InputStream stream, SequencerOutput output, ExecutionContext context, ProgressMonitor progressMonitor );
 
 }

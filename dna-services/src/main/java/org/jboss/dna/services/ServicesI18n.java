@@ -89,6 +89,7 @@ public final class ServicesI18n {
     public static I18n errorClosingBinaryStreamForPropertyFromNode;
     public static I18n requiredNodeDoesNotExistRelativeToNode;
     public static I18n errorGettingNodeRelativeToNode;
+    public static I18n unknownPropertyValueType;
 
     public static I18n pathExpressionIsInvalid;
     public static I18n pathExpressionMayNotBeBlank;
