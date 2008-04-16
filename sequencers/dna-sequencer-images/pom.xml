@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?><project>
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>org.jboss.dna</groupId>
+    <artifactId>dna</artifactId>
+    <version>0.1-SNAPSHOT</version>
+    <relativePath>../..</relativePath>
+  </parent>
+  <!-- The groupId and version values are inherited from parent -->
+  <artifactId>dna-sequencer-images</artifactId>
+  <packaging>jar</packaging>
+  <name>JBoss DNA Image Sequencer</name>
+  <description>JBoss DNA Sequencer that processes PNG, JPEG, GIF and other image files</description>
+  <url>http://labs.jboss.org/dna</url>
+  <!--
+  Define the dependencies.  Note that all version and scopes default to those 
+  defined in the dependencyManagement section of the parent pom.
+  -->
+  <dependencies>
+    <!-- 
+    Common
+    -->
+    <dependency>
+      <groupId>org.jboss.dna</groupId>
+      <artifactId>dna-common</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.jboss.dna</groupId>
+      <artifactId>dna-common</artifactId>
+      <version>0.1-SNAPSHOT</version>
+      <type>test-jar</type>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.jboss.dna</groupId>
+      <artifactId>dna-services</artifactId>
+    </dependency>
+    <!-- 
+    Testing (note the scope)
+    -->
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.hamcrest</groupId>
+      <artifactId>hamcrest-library</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.jmock</groupId>
+      <artifactId>jmock</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.jmock</groupId>
+      <artifactId>jmock-junit4</artifactId>
+    </dependency>
+    <!-- 
+    Logging (require SLF4J API for compiling, but use Log4J and its SLF4J binding for testing) 
+    -->
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-log4j12</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>log4j</groupId>
+      <artifactId>log4j</artifactId>
+    </dependency>
+    <!-- 
+    Java Concurrency in Practice annotations
+    -->
+	<dependency>
+	  <groupId>net.jcip</groupId>
+	  <artifactId>jcip-annotations</artifactId>
+	</dependency>
+    <!-- 
+      Java Content Repository API 
+    -->
+    <dependency>
+      <groupId>javax.jcr</groupId>
+      <artifactId>jcr</artifactId>
+    </dependency>
+    <!-- 
+      Apache Jackrabbit (JCR Implementation) for testing purposes
+    -->
+    <dependency>
+      <groupId>org.apache.jackrabbit</groupId>
+      <artifactId>jackrabbit-api</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.jackrabbit</groupId>
+      <artifactId>jackrabbit-core</artifactId>
+    </dependency>
+  </dependencies>
+  <reporting>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-report-plugin</artifactId>
+      </plugin>
+    </plugins>
+  </reporting>
+</project>
