@@ -41,7 +41,6 @@ import org.jboss.dna.services.ServicesI18n;
 import org.jboss.dna.services.observation.NodeChange;
 import org.jboss.dna.services.observation.NodeChangeListener;
 import org.jboss.dna.services.observation.NodeChanges;
-import org.jboss.dna.services.observation.ObservationService;
 import org.jboss.dna.services.util.JcrTools;
 import org.jboss.dna.services.util.Problems;
 

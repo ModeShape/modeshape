@@ -25,7 +25,6 @@ import java.util.Locale;
 import java.util.concurrent.atomic.AtomicReference;
 import net.jcip.annotations.ThreadSafe;
 import org.jboss.dna.common.i18n.I18n;
-import org.slf4j.ILoggerFactory;
 import org.slf4j.LoggerFactory;
 
 /**

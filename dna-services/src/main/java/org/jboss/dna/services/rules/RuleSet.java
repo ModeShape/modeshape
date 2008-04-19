@@ -23,15 +23,10 @@ package org.jboss.dna.services.rules;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStreamReader;
-import java.io.Reader;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import javax.rules.RuleServiceProvider;
-import javax.rules.admin.RuleExecutionSet;
-import javax.rules.admin.RuleExecutionSetProvider;
 import net.jcip.annotations.Immutable;
-import org.jboss.dna.common.component.ClassLoaderFactory;
 import org.jboss.dna.common.component.ComponentConfig;
 import org.jboss.dna.common.util.ArgCheck;
 

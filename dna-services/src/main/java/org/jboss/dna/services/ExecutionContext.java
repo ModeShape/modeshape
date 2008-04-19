@@ -21,7 +21,6 @@
  */
 package org.jboss.dna.services;
 
-import javax.jcr.Session;
 import org.jboss.dna.services.util.JcrTools;
 
 /**

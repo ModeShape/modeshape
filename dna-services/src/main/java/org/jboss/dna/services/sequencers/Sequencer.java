@@ -24,16 +24,12 @@ package org.jboss.dna.services.sequencers;
 import java.util.Set;
 import javax.jcr.Node;
 import javax.jcr.RepositoryException;
-import javax.jcr.Session;
 import net.jcip.annotations.ThreadSafe;
 import org.jboss.dna.common.component.Component;
 import org.jboss.dna.common.monitor.ProgressMonitor;
 import org.jboss.dna.services.ExecutionContext;
 import org.jboss.dna.services.RepositoryNodePath;
 import org.jboss.dna.services.observation.NodeChange;
-import org.jboss.dna.services.observation.NodeChangeListener;
-import org.jboss.dna.services.observation.NodeChanges;
-import org.jboss.dna.services.observation.ObservationService;
 
 /**
  * The interface for a DNA sequencer, which sequences nodes and their content to extract additional information from the
