@@ -2,7 +2,7 @@
  * JBoss, Home of Professional Open Source.
  * Copyright 2008, Red Hat Middleware LLC, and individual contributors
  * as indicated by the @author tags. See the copyright.txt file in the
- * distribution for a full listing of individual contributors. 
+ * distribution for a full listing of individual contributors.
  *
  * This is free software; you can redistribute it and/or modify it
  * under the terms of the GNU Lesser General Public License as
@@ -23,10 +23,15 @@ package org.jboss.dna.services.rules;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStreamReader;
+import java.io.Reader;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import javax.rules.RuleServiceProvider;
+import javax.rules.admin.RuleExecutionSet;
+import javax.rules.admin.RuleExecutionSetProvider;
 import net.jcip.annotations.Immutable;
+import org.jboss.dna.common.component.ClassLoaderFactory;
 import org.jboss.dna.common.component.ComponentConfig;
 import org.jboss.dna.common.util.ArgCheck;
 

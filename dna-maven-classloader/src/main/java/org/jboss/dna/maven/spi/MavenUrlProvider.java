@@ -23,9 +23,11 @@ package org.jboss.dna.maven.spi;
 
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URLConnection;
 import java.util.Properties;
 import org.jboss.dna.maven.ArtifactType;
 import org.jboss.dna.maven.MavenId;
+import org.jboss.dna.maven.MavenRepository;
 import org.jboss.dna.maven.MavenRepositoryException;
 import org.jboss.dna.maven.SignatureType;
 

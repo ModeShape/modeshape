@@ -21,6 +21,9 @@
  */
 package org.jboss.dna.services.sequencers;
 
+import java.io.InputStream;
+import java.util.Calendar;
+
 /**
  * Interface for sequencers to use to generate their output.
  *
