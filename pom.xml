@@ -10,9 +10,10 @@
 	<description>JBoss DNA (aggregator)</description>
 	<modules>
 		<module>dna-common</module>
-		<module>dna-maven-classloader</module>
+		<module>dna-spi</module>
 		<module>dna-repository</module>
 		<module>sequencers/dna-sequencer-images</module>
+		<module>dna-maven-classloader</module>
 		<module>dna-integration-tests</module>
 	</modules>
 	<build>
