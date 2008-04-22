@@ -2,7 +2,7 @@
  * JBoss, Home of Professional Open Source.
  * Copyright 2008, Red Hat Middleware LLC, and individual contributors
  * as indicated by the @author tags. See the copyright.txt file in the
- * distribution for a full listing of individual contributors. 
+ * distribution for a full listing of individual contributors.
  *
  * This is free software; you can redistribute it and/or modify it
  * under the terms of the GNU Lesser General Public License as
@@ -24,6 +24,8 @@ package org.jboss.dna.common.i18n;
 
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsInstanceOf.instanceOf;
+import static org.hamcrest.core.IsNot.not;
+import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.Assert.assertThat;
 import org.jboss.dna.common.CoreI18n;
@@ -41,6 +43,21 @@ public final class I18nTest {
     public void beforeEach() {
         I18n.initialize(TestI18n.class);
     }
+
+    @Test( expected = IllegalArgumentException.class )
+	public void getErrorsForDefaultLocaleShouldFailIfClassIsNull() {
+		I18n.getErrorsForDefaultLocale(null);
+	}
+
+    @Test
+	public void getErrorsForLocaleShouldAllNullLocale() {
+		I18n.getErrorsForLocale(TestI18n.class, null);
+	}
+
+	@Test
+	public void getErrorsForDefaultLocaleShouldNotReturnNull() {
+		assertThat(I18n.getErrorsForDefaultLocale(TestI18n.class), notNullValue());
+	}
 
     @Test( expected = IllegalArgumentException.class )
     public void initializeShouldFailIfClassIsNull() {
@@ -122,37 +139,31 @@ public final class I18nTest {
         assertThat(TestI18n.testMessage.id, is("testMessage"));
     }
 
-    @Test( expected = RuntimeException.class )
-    public void i18nTextShouldFailIfPropertyDuplicate() throws Exception {
+    @Test
+    public void i18nTextShouldHandleIfPropertyDuplicate() throws Exception {
         I18n.initialize(TestI18nDuplicateProperty.class);
-        try {
-            TestI18nDuplicateProperty.testMessage.text();
-        } catch (RuntimeException err) {
-            System.err.println(err);
-            throw err;
-        }
+        String text = TestI18nDuplicateProperty.testMessage.text("test");
+		assertThat(text.charAt(0), not('<'));
+		assertThat(I18n.getErrorsForDefaultLocale(TestI18nDuplicateProperty.class).size(), is(1));
+		System.out.println(text);
     }
 
-    @Test( expected = RuntimeException.class )
-    public void i18nTextShouldFailIfPropertyMissing() throws Exception {
+    @Test
+    public void i18nTextShouldHandleIfPropertyMissing() throws Exception {
         I18n.initialize(TestI18nMissingProperty.class);
-        try {
-            TestI18nMissingProperty.testMessage.text();
-        } catch (RuntimeException err) {
-            System.err.println(err);
-            throw err;
-        }
+        String text = TestI18nMissingProperty.testMessage1.text();
+		assertThat(text.charAt(0), is('<'));
+		assertThat(I18n.getErrorsForDefaultLocale(TestI18nDuplicateProperty.class).size(), is(1));
+		System.out.println(text);
     }
 
-    @Test( expected = RuntimeException.class )
-    public void i18nTextShouldFailIfPropertyUnused() throws Exception {
+    @Test
+	public void i18nTextShouldHandleIfPropertyUnused() throws Exception {
         I18n.initialize(TestI18nUnusedProperty.class);
-        try {
-            TestI18nUnusedProperty.testMessage.text();
-        } catch (RuntimeException err) {
-            System.err.println(err);
-            throw err;
-        }
+        String text = TestI18nUnusedProperty.testMessage.text("test");
+		assertThat(text.charAt(0), not('<'));
+		assertThat(I18n.getErrorsForDefaultLocale(TestI18nDuplicateProperty.class).size(), is(1));
+		System.out.println(text);
     }
 
     @Test
