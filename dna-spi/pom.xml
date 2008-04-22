@@ -1,7 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<?xml version="1.0" encoding="UTF-8"?><project>
   <modelVersion>4.0.0</modelVersion>
   <parent>
     <groupId>org.jboss.dna</groupId>
@@ -9,10 +6,10 @@
     <version>0.1-SNAPSHOT</version>
   </parent>
   <!-- The groupId and version values are inherited from parent -->
-  <artifactId>dna-integration-tests</artifactId>
+  <artifactId>dna-spi</artifactId>
+  <description>The JBoss DNA Service Provider Interface (SPI) used to create extensions</description>
   <packaging>jar</packaging>
-  <version>0.1-SNAPSHOT</version>
-  <name>JBoss DNA Integration Tests</name>
+  <name>JBoss DNA Service Provider Interface (SPI)</name>
   <url>http://labs.jboss.org/dna</url>
   <!--
   Define the dependencies.  Note that all version and scopes default to those 
@@ -26,38 +23,31 @@
     </dependency>
     <dependency>
       <groupId>org.jboss.dna</groupId>
-      <artifactId>dna-maven-classloader</artifactId>
-      <version>0.1-SNAPSHOT</version>
-    </dependency>
-    <dependency>
-      <groupId>org.jboss.dna</groupId>
-      <artifactId>dna-repository</artifactId>
-      <version>0.1-SNAPSHOT</version>
-    </dependency>
-    <dependency>
-      <groupId>org.jboss.dna</groupId>
       <artifactId>dna-common</artifactId>
       <version>0.1-SNAPSHOT</version>
       <type>test-jar</type>
       <scope>test</scope>
     </dependency>
     <!-- 
-      Testing (note the scope)
+    Testing (note the scope)
     -->
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
+      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.jmock</groupId>
       <artifactId>jmock</artifactId>
+      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.jmock</groupId>
       <artifactId>jmock-junit4</artifactId>
+      <scope>test</scope>
     </dependency>
     <!-- 
-      Logging (require SLF4J API for compiling, but use Log4J and its SLF4J binding for testing) 
+    Logging (require SLF4J API for compiling, but use Log4J and its SLF4J binding for testing) 
     -->
     <dependency>
       <groupId>org.slf4j</groupId>
@@ -66,37 +56,19 @@
     <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-log4j12</artifactId>
+      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>log4j</groupId>
       <artifactId>log4j</artifactId>
+      <scope>test</scope>
     </dependency>
     <!-- 
-      Java Content Repository API 
+    Java Concurrency in Practice annotations
     -->
     <dependency>
-      <groupId>javax.jcr</groupId>
-      <artifactId>jcr</artifactId>
-      <version>1.0.1</version>
-      <scope>compile</scope>
-    </dependency>
-    <!-- 
-      Apache Jackrabbit (JCR Implementation)
-    -->
-    <dependency>
-      <groupId>org.apache.jackrabbit</groupId>
-      <artifactId>jackrabbit-api</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.jackrabbit</groupId>
-      <artifactId>jackrabbit-core</artifactId>
-    </dependency>
-    <!-- 
-      Databases and JDBC Drivers
-    -->
-    <dependency>
-      <groupId>org.apache.derby</groupId>
-      <artifactId>derby</artifactId>
+      <groupId>net.jcip</groupId>
+      <artifactId>jcip-annotations</artifactId>
     </dependency>
   </dependencies>
 </project>

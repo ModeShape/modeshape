@@ -11,7 +11,7 @@
 	<modules>
 		<module>dna-common</module>
 		<module>dna-maven-classloader</module>
-		<module>dna-services</module>
+		<module>dna-repository</module>
 		<module>sequencers/dna-sequencer-images</module>
 		<module>dna-integration-tests</module>
 	</modules>
@@ -98,7 +98,12 @@
 			</dependency>
 			<dependency>
 				<groupId>org.jboss.dna</groupId>
-				<artifactId>dna-services</artifactId>
+				<artifactId>dna-spi</artifactId>
+				<version>0.1-SNAPSHOT</version>
+			</dependency>
+			<dependency>
+				<groupId>org.jboss.dna</groupId>
+				<artifactId>dna-repository</artifactId>
 				<version>0.1-SNAPSHOT</version>
 			</dependency>
 			<!-- 

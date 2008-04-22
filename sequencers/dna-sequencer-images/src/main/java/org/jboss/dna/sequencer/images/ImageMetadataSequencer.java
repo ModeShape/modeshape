@@ -23,9 +23,8 @@ package org.jboss.dna.sequencer.images;
 
 import java.io.InputStream;
 import org.jboss.dna.common.monitor.ProgressMonitor;
-import org.jboss.dna.services.ExecutionContext;
-import org.jboss.dna.services.sequencers.SequencerOutput;
-import org.jboss.dna.services.sequencers.StreamSequencer;
+import org.jboss.dna.spi.sequencers.SequencerOutput;
+import org.jboss.dna.spi.sequencers.StreamSequencer;
 
 /**
  * A sequencer that processes the binary content of an image file, extracts the metadata for the image, and then writes that image
@@ -62,7 +61,7 @@ import org.jboss.dna.services.sequencers.StreamSequencer;
  * </p>
  * @author Randall Hauch
  */
-public class ImageMetadataSequencer extends StreamSequencer {
+public class ImageMetadataSequencer implements StreamSequencer {
 
     public static final String METADATA_NODE = "image:metadata";
     public static final String IMAGE_PRIMARY_TYPE = "jcr:primaryType";
@@ -83,8 +82,7 @@ public class ImageMetadataSequencer extends StreamSequencer {
     /**
      * {@inheritDoc}
      */
-    @Override
-    protected void sequence( InputStream stream, SequencerOutput output, ExecutionContext context, ProgressMonitor progressMonitor ) {
+    public void sequence( InputStream stream, SequencerOutput output, ProgressMonitor progressMonitor ) {
         ImageMetadata metadata = new ImageMetadata();
         metadata.setInput(stream);
         metadata.setDetermineImageNumber(true);

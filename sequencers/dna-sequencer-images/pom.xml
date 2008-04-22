@@ -33,7 +33,7 @@
     </dependency>
     <dependency>
       <groupId>org.jboss.dna</groupId>
-      <artifactId>dna-services</artifactId>
+      <artifactId>dna-spi</artifactId>
     </dependency>
     <!-- 
     Testing (note the scope)
