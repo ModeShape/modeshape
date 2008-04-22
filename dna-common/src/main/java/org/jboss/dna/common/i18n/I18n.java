@@ -355,9 +355,7 @@ public final class I18n {
 			id2TextMap = initializeIdToTextMap(localization);
 		}
 
-		String text = id2TextMap.get(id);
-		assert text != null;
-		return text;
+		return id2TextMap.get(id);
 	}
 
 	/**
