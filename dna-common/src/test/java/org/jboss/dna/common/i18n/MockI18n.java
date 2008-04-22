@@ -19,33 +19,20 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
+package org.jboss.dna.common.i18n;
 
-package org.jboss.dna.common.util;
+/**
+ * @author Randall Hauch
+ */
+public class MockI18n {
 
-import org.jboss.dna.common.i18n.MockI18n;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-
-public class LogContextTest {
-
-    private Logger logger;
-
-    @Before
-    public void beforeEach() {
-        logger = Logger.getLogger(LoggerTest.class);
+    static {
+        try {
+            I18n.initialize(MockI18n.class);
+        } catch (final Exception err) {
+            System.err.println(err);
+        }
     }
 
-    @After
-    public void afterEach() {
-        LogContext.clear();
-    }
-
-    @Test
-    public void shouldAcceptValidKeys() {
-        LogContext.set("username", "jsmith");
-        logger.info(MockI18n.passthrough, "tracking activity for username");
-        logger.info(MockI18n.passthrough, "A second log message");
-    }
-
+    public static I18n passthrough;
 }

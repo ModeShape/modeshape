@@ -27,7 +27,7 @@ import javax.jcr.Repository;
 import javax.jcr.Session;
 import javax.jcr.SimpleCredentials;
 import org.apache.jackrabbit.core.TransientRepository;
-import org.jboss.dna.common.CommonI18n;
+import org.jboss.dna.common.i18n.MockI18n;
 import org.jboss.dna.common.stats.HistogramTest;
 import org.jboss.dna.common.stats.Stopwatch;
 import org.jboss.dna.common.util.FileUtil;
@@ -65,7 +65,7 @@ public class JackrabbitDerbyStressTest {
         logger = Logger.getLogger(JackrabbitDerbyStressTest.class);
 
         // Set up the transient repository ...
-        logger.info(CommonI18n.passthrough, "Creating test repository for stress test and logging in with user " + USERNAME);
+        logger.info(MockI18n.passthrough, "Creating test repository for stress test and logging in with user " + USERNAME);
         this.repository = new TransientRepository(REPOSITORY_CONFIG_PATH, REPOSITORY_DIRECTORY_PATH);
 
         SimpleCredentials creds = new SimpleCredentials(USERNAME, PASSWORD);
@@ -95,7 +95,7 @@ public class JackrabbitDerbyStressTest {
         }
         rootNode.save();
         HistogramTest.writeHistogramToLog(logger, stopwatch.getHistogram(3).setBucketCount(50), 80, "create 100 nodes with no children and no properties");
-        this.logger.info(CommonI18n.passthrough, stopwatch.toString());
+        this.logger.info(MockI18n.passthrough, stopwatch.toString());
     }
 
     @Test
@@ -109,7 +109,7 @@ public class JackrabbitDerbyStressTest {
         }
         rootNode.save();
         HistogramTest.writeHistogramToLog(logger, stopwatch.getHistogram(1).setBucketCount(50), 80, "create 1000 nodes with no children and no properties");
-        this.logger.info(CommonI18n.passthrough, stopwatch.toString());
+        this.logger.info(MockI18n.passthrough, stopwatch.toString());
     }
 
     @Test
@@ -123,7 +123,7 @@ public class JackrabbitDerbyStressTest {
         }
         rootNode.save();
         HistogramTest.writeHistogramToLog(logger, stopwatch.getHistogram(1).setBucketCount(50), 80, "create 5000 nodes with no children and no properties");
-        this.logger.info(CommonI18n.passthrough, stopwatch.toString());
+        this.logger.info(MockI18n.passthrough, stopwatch.toString());
     }
 
     @Test
@@ -137,7 +137,7 @@ public class JackrabbitDerbyStressTest {
         }
         rootNode.save();
         HistogramTest.writeHistogramToLog(logger, stopwatch.getHistogram(1).setBucketCount(50), 80, "create 10000 nodes with no children and no properties");
-        this.logger.info(CommonI18n.passthrough, stopwatch.toString());
+        this.logger.info(MockI18n.passthrough, stopwatch.toString());
     }
 
     @Test
@@ -153,7 +153,7 @@ public class JackrabbitDerbyStressTest {
         }
         rootNode.save();
         HistogramTest.writeHistogramToLog(logger, stopwatch.getHistogram(3).setBucketCount(50), 80, "create 100 nodes with no children and several properties");
-        this.logger.info(CommonI18n.passthrough, stopwatch.toString());
+        this.logger.info(MockI18n.passthrough, stopwatch.toString());
     }
     //	
     // @Test

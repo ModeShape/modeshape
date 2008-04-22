@@ -19,33 +19,27 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
+package org.jboss.dna.common.i18n;
 
-package org.jboss.dna.common.util;
-
-import org.jboss.dna.common.i18n.MockI18n;
-import org.junit.After;
-import org.junit.Before;
+import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.assertThat;
 import org.junit.Test;
 
-public class LogContextTest {
+/**
+ * @author Randall Hauch
+ */
+public class MockI18nTest {
 
-    private Logger logger;
-
-    @Before
-    public void beforeEach() {
-        logger = Logger.getLogger(LoggerTest.class);
-    }
-
-    @After
-    public void afterEach() {
-        LogContext.clear();
+    @Test
+    public void shouldPassthroughText() {
+        String str = "This is some string to be passed through";
+        assertThat(MockI18n.passthrough.text(str), is(str));
     }
 
     @Test
-    public void shouldAcceptValidKeys() {
-        LogContext.set("username", "jsmith");
-        logger.info(MockI18n.passthrough, "tracking activity for username");
-        logger.info(MockI18n.passthrough, "A second log message");
+    public void shouldPassthroughTextWithoutReplacingParameters() {
+        String str = "This is some string to be passed through with {1} parameters";
+        assertThat(MockI18n.passthrough.text(str), is(str));
     }
 
 }

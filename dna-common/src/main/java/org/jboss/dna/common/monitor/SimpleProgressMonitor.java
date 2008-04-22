@@ -54,7 +54,7 @@ public class SimpleProgressMonitor implements ProgressMonitor {
 
     public SimpleProgressMonitor( String activityName ) {
         this.activityName = activityName != null ? activityName.trim() : "";
-        this.taskName = CommonI18n.empty;
+        this.taskName = CommonI18n.initialProgressMonitorTaskName;
     }
 
     /**

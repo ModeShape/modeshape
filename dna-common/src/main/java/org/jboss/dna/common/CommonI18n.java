@@ -47,7 +47,7 @@ public final class CommonI18n {
     public static I18n i18nReplaceArgumentMismatchedParameters;
     public static I18n i18nReplaceArgumentsMismatchedParameters;
     public static I18n i18nClassInterface;
-	public static I18n i18nClassNotPublic;
+    public static I18n i18nClassNotPublic;
     public static I18n i18nFieldFinal;
     public static I18n i18nFieldInvalidType;
     public static I18n i18nFieldNotPublic;
@@ -62,6 +62,7 @@ public final class CommonI18n {
     public static I18n componentNotConfigured;
     public static I18n progressMonitorBeginTask;
     public static I18n progressMonitorStatus;
+    public static I18n initialProgressMonitorTaskName;
 
     public static I18n argumentMayNotBeNegative;
     public static I18n argumentMayNotBePositive;
@@ -89,7 +90,4 @@ public final class CommonI18n {
     public static I18n pathIsNotAbsolute;
     public static I18n pathIsNotRelative;
     public static I18n pathCannotBeNormalized;
-
-    public static I18n passthrough;
-    public static I18n empty;
 }

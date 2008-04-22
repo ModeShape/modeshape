@@ -21,15 +21,17 @@
  */
 package org.jboss.dna.common.stats;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
-import org.jboss.dna.common.CommonI18n;
+import org.jboss.dna.common.i18n.MockI18n;
 import org.jboss.dna.common.math.FloatOperations;
 import org.jboss.dna.common.math.MathOperations;
-import org.jboss.dna.common.stats.Histogram;
 import org.jboss.dna.common.text.Inflector;
 import org.jboss.dna.common.util.Logger;
 import org.junit.Before;
@@ -55,7 +57,7 @@ public class HistogramTest {
     }
 
     public static <T extends Number> void writeHistogramToLog( Logger logger, Histogram<T> histogram, int barLength, String description ) {
-        logger.info(CommonI18n.passthrough, description != null ? description : "Histogram:");
+        logger.info(MockI18n.passthrough, description != null ? description : "Histogram:");
         List<String> barGraph = histogram.getTextGraph(barLength);
         for (String line : barGraph) {
             logger.debug("  " + line);
