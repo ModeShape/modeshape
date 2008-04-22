@@ -99,4 +99,29 @@
       <artifactId>derby</artifactId>
     </dependency>
   </dependencies>
+  <!--
+	Build configuration - run integration tests only in 'integration' phase
+  -->
+  <build>
+	<plugins>
+		<plugin>
+			<artifactId>maven-surefire-plugin</artifactId>
+			<configuration>
+				<skip>true</skip>
+			</configuration>
+            <executions>
+               <execution>
+                  <id>integration-test</id>
+                  <phase>integration-test</phase>
+                  <goals>
+                     <goal>test</goal>
+                  </goals>
+                  <configuration>
+					<skip>false</skip>
+                  </configuration>
+               </execution>
+            </executions>
+		</plugin>
+	</plugins>
+  </build>
 </project>
