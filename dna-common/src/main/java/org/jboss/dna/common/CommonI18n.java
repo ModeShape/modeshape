@@ -27,11 +27,11 @@ import org.jboss.dna.common.i18n.I18n;
  * @author John Verhaeg
  * @author Randall Hauch
  */
-public final class CoreI18n {
+public final class CommonI18n {
 
     static {
         try {
-            I18n.initialize(CoreI18n.class);
+            I18n.initialize(CommonI18n.class);
         } catch (final Exception err) {
             System.err.println(err);
         }

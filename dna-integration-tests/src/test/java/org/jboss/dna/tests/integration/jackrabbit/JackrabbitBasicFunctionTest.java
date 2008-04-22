@@ -31,7 +31,7 @@ import javax.jcr.Repository;
 import javax.jcr.Session;
 import javax.jcr.SimpleCredentials;
 import org.apache.jackrabbit.core.TransientRepository;
-import org.jboss.dna.common.CoreI18n;
+import org.jboss.dna.common.CommonI18n;
 import org.jboss.dna.common.util.FileUtil;
 import org.jboss.dna.common.util.Logger;
 import org.junit.After;
@@ -76,7 +76,7 @@ public class JackrabbitBasicFunctionTest {
             assertNotNull(session);
             String username = session.getUserID();
             String name = repository.getDescriptor(Repository.REP_NAME_DESC);
-            logger.info(CoreI18n.passthrough, "Logged in as " + username + " to a " + name + " repository");
+            logger.info(CommonI18n.passthrough, "Logged in as " + username + " to a " + name + " repository");
         } finally {
             if (session != null) session.logout();
         }
@@ -91,7 +91,7 @@ public class JackrabbitBasicFunctionTest {
             assertNotNull(session);
             String username = session.getUserID();
             String name = repository.getDescriptor(Repository.REP_NAME_DESC);
-            logger.info(CoreI18n.passthrough, "Logged in as " + username + " to a " + name + " repository");
+            logger.info(CommonI18n.passthrough, "Logged in as " + username + " to a " + name + " repository");
         } finally {
             if (session != null) session.logout();
         }
@@ -106,7 +106,7 @@ public class JackrabbitBasicFunctionTest {
                 Session session = this.repository.login(creds);
                 assertNotNull(session);
                 sessions.add(session);
-                logger.info(CoreI18n.passthrough, "Logged in as " + session.getUserID());
+                logger.info(CommonI18n.passthrough, "Logged in as " + session.getUserID());
             }
         } finally {
             while (!sessions.isEmpty()) {
@@ -150,8 +150,8 @@ public class JackrabbitBasicFunctionTest {
 
             // Retrieve content ...
             Node node = root.getNode("hello/world");
-            this.logger.info(CoreI18n.passthrough, "Node 'hello/world' has path: " + node.getPath());
-            this.logger.info(CoreI18n.passthrough, "Node 'hello/world' has 'message' property: " + node.getProperty("message").getString());
+            this.logger.info(CommonI18n.passthrough, "Node 'hello/world' has path: " + node.getPath());
+            this.logger.info(CommonI18n.passthrough, "Node 'hello/world' has 'message' property: " + node.getProperty("message").getString());
         } finally {
             if (session != null) session.logout();
         }
@@ -163,11 +163,11 @@ public class JackrabbitBasicFunctionTest {
 
             // Retrieve content
             Node node = root.getNode("hello/world");
-            this.logger.info(CoreI18n.passthrough, "Node 'hello/world' has path: " + node.getPath());
-            this.logger.info(CoreI18n.passthrough, "Node 'hello/world' has 'message' property: " + node.getProperty("message").getString());
+            this.logger.info(CommonI18n.passthrough, "Node 'hello/world' has path: " + node.getPath());
+            this.logger.info(CommonI18n.passthrough, "Node 'hello/world' has 'message' property: " + node.getProperty("message").getString());
 
             // Remove content
-            this.logger.info(CoreI18n.passthrough, "Node 'hello' is being removed");
+            this.logger.info(CommonI18n.passthrough, "Node 'hello' is being removed");
             root.getNode("hello").remove();
             session.save();
         } finally {

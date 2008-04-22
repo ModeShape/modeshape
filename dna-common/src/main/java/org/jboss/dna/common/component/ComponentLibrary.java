@@ -30,7 +30,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import net.jcip.annotations.GuardedBy;
 import net.jcip.annotations.ThreadSafe;
-import org.jboss.dna.common.CoreI18n;
+import org.jboss.dna.common.CommonI18n;
 import org.jboss.dna.common.SystemFailureException;
 import org.jboss.dna.common.util.ArgCheck;
 
@@ -210,7 +210,7 @@ public class ComponentLibrary<ComponentType, ConfigType extends ComponentConfig>
             throw new SystemFailureException(e);
         }
         if (newInstance instanceof Component && ((Component<ConfigType>)newInstance).getConfiguration() == null) {
-            throw new SystemFailureException(CoreI18n.componentNotConfigured.text(config.getName()));
+            throw new SystemFailureException(CommonI18n.componentNotConfigured.text(config.getName()));
         }
         return newInstance;
     }

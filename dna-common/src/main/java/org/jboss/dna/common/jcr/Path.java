@@ -30,7 +30,7 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import net.jcip.annotations.Immutable;
-import org.jboss.dna.common.CoreI18n;
+import org.jboss.dna.common.CommonI18n;
 import org.jboss.dna.common.text.Inflector;
 import org.jboss.dna.common.text.Jsr283Encoder;
 import org.jboss.dna.common.text.NoOpEncoder;
@@ -449,7 +449,7 @@ public class Path implements Cloneable, Comparable<Path>, Iterable<Path.Segment>
             if (segment.equals(PARENT_SEGMENT)) {
                 if (newSegments.size() <= 0) {
                     if (this.isAbsolute()) {
-                        throw new InvalidPathException(CoreI18n.pathCannotBeNormalized.text(this));
+                        throw new InvalidPathException(CommonI18n.pathCannotBeNormalized.text(this));
                     }
                 }
                 if (newSegments.size() > 0 && !newSegments.getLast().equals(PARENT_SEGMENT)) {
@@ -474,7 +474,7 @@ public class Path implements Cloneable, Comparable<Path>, Iterable<Path.Segment>
      */
     public Path getCanonicalPath() {
         if (!this.isAbsolute()) {
-            String msg = CoreI18n.pathIsNotAbsolute.text(this);
+            String msg = CommonI18n.pathIsNotAbsolute.text(this);
             throw new InvalidPathException(msg);
         }
         if (this.isNormalized()) return this;
@@ -491,11 +491,11 @@ public class Path implements Cloneable, Comparable<Path>, Iterable<Path.Segment>
     public Path relativeTo( Path startingPath ) {
         ArgCheck.isNotNull(startingPath, "to");
         if (!this.isAbsolute()) {
-            String msg = CoreI18n.pathIsNotAbsolute.text(this);
+            String msg = CommonI18n.pathIsNotAbsolute.text(this);
             throw new InvalidPathException(msg);
         }
         if (!startingPath.isAbsolute()) {
-            String msg = CoreI18n.pathIsNotAbsolute.text(startingPath);
+            String msg = CommonI18n.pathIsNotAbsolute.text(startingPath);
             throw new InvalidPathException(msg);
         }
 
@@ -540,11 +540,11 @@ public class Path implements Cloneable, Comparable<Path>, Iterable<Path.Segment>
     public Path resolve( Path relativePath ) {
         ArgCheck.isNotNull(relativePath, "relative path");
         if (!this.isAbsolute()) {
-            String msg = CoreI18n.pathIsAlreadyAbsolute.text(this.path);
+            String msg = CommonI18n.pathIsAlreadyAbsolute.text(this.path);
             throw new InvalidPathException(msg);
         }
         if (relativePath.isAbsolute()) {
-            String msg = CoreI18n.pathIsNotRelative.text(relativePath);
+            String msg = CommonI18n.pathIsNotRelative.text(relativePath);
             throw new InvalidPathException(msg);
         }
         // If the relative path is the self or parent reference ...
@@ -655,7 +655,7 @@ public class Path implements Cloneable, Comparable<Path>, Iterable<Path.Segment>
         if (this.isRoot()) return this;
         int endIndex = this.segments.size() - degree;
         if (endIndex < 0) {
-            String msg = CoreI18n.pathAncestorDegreeIsInvalid.text(this.path, Inflector.getInstance().ordinalize(degree));
+            String msg = CommonI18n.pathAncestorDegreeIsInvalid.text(this.path, Inflector.getInstance().ordinalize(degree));
             throw new PathNotFoundException(msg);
         }
         return createPath(this.segments.subList(0, endIndex), this.isAbsolute());

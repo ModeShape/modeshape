@@ -37,7 +37,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import net.jcip.annotations.Immutable;
 import net.jcip.annotations.ThreadSafe;
-import org.jboss.dna.common.CoreI18n;
+import org.jboss.dna.common.CommonI18n;
 import org.jboss.dna.common.SystemFailureException;
 import org.jboss.dna.common.util.ArgCheck;
 import org.jboss.dna.common.util.ClassUtil;
@@ -119,7 +119,7 @@ public final class I18n {
 	public static void initialize( Class i18nClass ) {
 		ArgCheck.isNotNull(i18nClass, "i18nClass");
 		if (i18nClass.isInterface()) {
-			throw new IllegalArgumentException(CoreI18n.i18nClassInterface.text(i18nClass.getName()));
+			throw new IllegalArgumentException(CommonI18n.i18nClassInterface.text(i18nClass.getName()));
 		}
 
 		// Find all public static non-final String fields in the specified class and instantiate an I18n object for each.
@@ -131,17 +131,17 @@ public final class I18n {
 
 					// Ensure field is not final
 					if ((fld.getModifiers() & Modifier.FINAL) == Modifier.FINAL) {
-						throw new SystemFailureException(CoreI18n.i18nFieldFinal.text(fld.getName(), i18nClass));
+						throw new SystemFailureException(CommonI18n.i18nFieldFinal.text(fld.getName(), i18nClass));
 					}
 
 					// Ensure field is public
 					if ((fld.getModifiers() & Modifier.PUBLIC) != Modifier.PUBLIC) {
-						throw new SystemFailureException(CoreI18n.i18nFieldNotPublic.text(fld.getName(), i18nClass));
+						throw new SystemFailureException(CommonI18n.i18nFieldNotPublic.text(fld.getName(), i18nClass));
 					}
 
 					// Ensure field is static
 					if ((fld.getModifiers() & Modifier.STATIC) != Modifier.STATIC) {
-						throw new SystemFailureException(CoreI18n.i18nFieldNotStatic.text(fld.getName(), i18nClass));
+						throw new SystemFailureException(CommonI18n.i18nFieldNotStatic.text(fld.getName(), i18nClass));
 					}
 
 					// Ensure we can access field even if it's in a private class
@@ -152,7 +152,7 @@ public final class I18n {
 				}
 			}
 		} catch (IllegalAccessException err) {
-			throw new IllegalArgumentException(CoreI18n.i18nClassNotPublic.text(i18nClass.getName()));
+			throw new IllegalArgumentException(CommonI18n.i18nClassNotPublic.text(i18nClass.getName()));
 		}
 	}
 
@@ -193,7 +193,7 @@ public final class I18n {
 		String bundleMsg = null;
 		if (url == null) {
 			// Record no variant of the i18n properties file for the specified class found
-			bundleMsg = CoreI18n.i18nPropertiesFileNotFound.text(bundleName);
+			bundleMsg = CommonI18n.i18nPropertiesFileNotFound.text(bundleName);
 		} else {
 			// Initialize i18n map
 			final Map<String, String> finalMap = id2TextMap;
@@ -210,18 +210,18 @@ public final class I18n {
 						Field fld = localization.i18nClass.getDeclaredField(id);
 						if (fld.getType() != I18n.class) {
 							// Invalid field type
-							mapErrorMessage(localization, id, CoreI18n.i18nFieldInvalidType.text(id,
+							mapErrorMessage(localization, id, CommonI18n.i18nFieldInvalidType.text(id,
 							                                                                     finalUrl,
 							                                                                     getClass().getName()));
 						}
 					} catch (NoSuchFieldException err) {
 						// No corresponding field exists
-						mapErrorMessage(localization, id, CoreI18n.i18nPropertyUnused.text(id, finalUrl));
+						mapErrorMessage(localization, id, CommonI18n.i18nPropertyUnused.text(id, finalUrl));
 					}
 
 					if (finalMap.put(id, text) != null) {
 						// Duplicate id encountered
-						mapErrorMessage(localization, id, CoreI18n.i18nPropertyDuplicate.text(id, finalUrl));
+						mapErrorMessage(localization, id, CommonI18n.i18nPropertyDuplicate.text(id, finalUrl));
 					}
 
 					return null;
@@ -245,7 +245,7 @@ public final class I18n {
 			if (fld.getType() == I18n.class && id2TextMap.get(fld.getName()) == null) {
 				mapErrorMessage(localization,
 				                fld.getName(),
-				                bundleMsg == null ? CoreI18n.i18nPropertyMissing.text(fld.getName(), url) : bundleMsg);
+				                bundleMsg == null ? CommonI18n.i18nPropertyMissing.text(fld.getName(), url) : bundleMsg);
 			}
 		}
 
@@ -302,20 +302,20 @@ public final class I18n {
 			I18n msg = null;
 			if (id != null) {
 				if (arguments.length == 1) {
-					msg = CoreI18n.i18nArgumentMismatchedParameters;
+					msg = CommonI18n.i18nArgumentMismatchedParameters;
 				} else if (argCount == 1) {
-					msg = CoreI18n.i18nArgumentsMismatchedParameter;
+					msg = CommonI18n.i18nArgumentsMismatchedParameter;
 				} else {
-					msg = CoreI18n.i18nArgumentsMismatchedParameters;
+					msg = CommonI18n.i18nArgumentsMismatchedParameters;
 				}
 				throw new IllegalArgumentException(msg.text(arguments.length, id, argCount, text, newText.toString()));
 			}
 			if (arguments.length == 1) {
-				msg = CoreI18n.i18nReplaceArgumentMismatchedParameters;
+				msg = CommonI18n.i18nReplaceArgumentMismatchedParameters;
 			} else if (argCount == 1) {
-				msg = CoreI18n.i18nReplaceArgumentsMismatchedParameter;
+				msg = CommonI18n.i18nReplaceArgumentsMismatchedParameter;
 			} else {
-				msg = CoreI18n.i18nReplaceArgumentsMismatchedParameters;
+				msg = CommonI18n.i18nReplaceArgumentsMismatchedParameters;
 			}
 			throw new IllegalArgumentException(msg.text(arguments.length, argCount, text, newText.toString()));
 		}

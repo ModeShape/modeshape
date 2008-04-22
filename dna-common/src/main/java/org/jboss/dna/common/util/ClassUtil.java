@@ -118,7 +118,7 @@ public final class ClassUtil {
      */
     public static String nonPackageQualifiedName( final Class clazz ) {
         // if (clazz == null) {
-        // throw new IllegalArgumentException(I18n.format(CoreI18n.mustNotBeNull, "Class")); //$NON-NLS-1$
+        // throw new IllegalArgumentException(I18n.format(CommonI18n.mustNotBeNull, "Class")); //$NON-NLS-1$
         // }
         String name = clazz.getName();
         return name.substring(name.lastIndexOf('.') + 1);
@@ -131,7 +131,7 @@ public final class ClassUtil {
      */
     public static String nonPackageQualifiedName( final Object object ) {
         // if (object == null) {
-        // throw new IllegalArgumentException(I18n.format(CoreI18n.mustNotBeNull, "Object")); //$NON-NLS-1$
+        // throw new IllegalArgumentException(I18n.format(CommonI18n.mustNotBeNull, "Object")); //$NON-NLS-1$
         // }
         return nonPackageQualifiedName(object.getClass());
     }

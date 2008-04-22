@@ -25,7 +25,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import net.jcip.annotations.Immutable;
-import org.jboss.dna.common.CoreI18n;
+import org.jboss.dna.common.CommonI18n;
 import org.jboss.dna.common.util.ArgCheck;
 import org.jboss.dna.common.util.ClassUtil;
 
@@ -73,7 +73,7 @@ public class ComponentConfig implements Comparable<ComponentConfig> {
         this.timestamp = timestamp;
         // Check the classname is a valid classname ...
         if (!ClassUtil.isFullyQualifiedClassname(classname)) {
-            throw new IllegalArgumentException(CoreI18n.componentClassnameNotValid.text(classname, name));
+            throw new IllegalArgumentException(CommonI18n.componentClassnameNotValid.text(classname, name));
         }
     }
 

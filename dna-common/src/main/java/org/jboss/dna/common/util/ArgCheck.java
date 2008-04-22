@@ -24,7 +24,7 @@ package org.jboss.dna.common.util;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
-import org.jboss.dna.common.CoreI18n;
+import org.jboss.dna.common.CommonI18n;
 
 /**
  * Utility class that checks arguments to methods. This class is to be used only in API methods, where failure to supply correct
@@ -42,7 +42,7 @@ public final class ArgCheck {
      */
     public static void isNonNegative( int argument, String name ) {
         if (argument < 0) {
-            throw new IllegalArgumentException(CoreI18n.argumentMayNotBeNegative.text(name, argument));
+            throw new IllegalArgumentException(CommonI18n.argumentMayNotBeNegative.text(name, argument));
         }
     }
 
@@ -54,7 +54,7 @@ public final class ArgCheck {
      */
     public static void isNonPositive( int argument, String name ) {
         if (argument > 0) {
-            throw new IllegalArgumentException(CoreI18n.argumentMayNotBePositive.text(name, argument));
+            throw new IllegalArgumentException(CommonI18n.argumentMayNotBePositive.text(name, argument));
         }
     }
 
@@ -66,7 +66,7 @@ public final class ArgCheck {
      */
     public static void isNegative( int argument, String name ) {
         if (argument >= 0) {
-            throw new IllegalArgumentException(CoreI18n.argumentMustBeNegative.text(name, argument));
+            throw new IllegalArgumentException(CommonI18n.argumentMustBeNegative.text(name, argument));
         }
     }
 
@@ -78,7 +78,7 @@ public final class ArgCheck {
      */
     public static void isPositive( int argument, String name ) {
         if (argument <= 0) {
-            throw new IllegalArgumentException(CoreI18n.argumentMustBePositive.text(name, argument));
+            throw new IllegalArgumentException(CommonI18n.argumentMustBePositive.text(name, argument));
         }
     }
 
@@ -92,7 +92,7 @@ public final class ArgCheck {
      */
     public static void isNonNegative( long argument, String name ) {
         if (argument < 0) {
-            throw new IllegalArgumentException(CoreI18n.argumentMayNotBeNegative.text(name, argument));
+            throw new IllegalArgumentException(CommonI18n.argumentMayNotBeNegative.text(name, argument));
         }
     }
 
@@ -104,7 +104,7 @@ public final class ArgCheck {
      */
     public static void isNonPositive( long argument, String name ) {
         if (argument > 0) {
-            throw new IllegalArgumentException(CoreI18n.argumentMayNotBePositive.text(name, argument));
+            throw new IllegalArgumentException(CommonI18n.argumentMayNotBePositive.text(name, argument));
         }
     }
 
@@ -116,7 +116,7 @@ public final class ArgCheck {
      */
     public static void isNegative( long argument, String name ) {
         if (argument >= 0) {
-            throw new IllegalArgumentException(CoreI18n.argumentMustBeNegative.text(name, argument));
+            throw new IllegalArgumentException(CommonI18n.argumentMustBeNegative.text(name, argument));
         }
     }
 
@@ -128,7 +128,7 @@ public final class ArgCheck {
      */
     public static void isPositive( long argument, String name ) {
         if (argument <= 0) {
-            throw new IllegalArgumentException(CoreI18n.argumentMustBePositive.text(name, argument));
+            throw new IllegalArgumentException(CommonI18n.argumentMustBePositive.text(name, argument));
         }
     }
 
@@ -142,7 +142,7 @@ public final class ArgCheck {
      */
     public static void isNonNegative( double argument, String name ) {
         if (argument < 0.0) {
-            throw new IllegalArgumentException(CoreI18n.argumentMayNotBeNegative.text(name, argument));
+            throw new IllegalArgumentException(CommonI18n.argumentMayNotBeNegative.text(name, argument));
         }
     }
 
@@ -154,7 +154,7 @@ public final class ArgCheck {
      */
     public static void isNonPositive( double argument, String name ) {
         if (argument > 0.0) {
-            throw new IllegalArgumentException(CoreI18n.argumentMayNotBePositive.text(name, argument));
+            throw new IllegalArgumentException(CommonI18n.argumentMayNotBePositive.text(name, argument));
         }
     }
 
@@ -166,7 +166,7 @@ public final class ArgCheck {
      */
     public static void isNegative( double argument, String name ) {
         if (argument >= 0.0) {
-            throw new IllegalArgumentException(CoreI18n.argumentMustBeNegative.text(name, argument));
+            throw new IllegalArgumentException(CommonI18n.argumentMustBeNegative.text(name, argument));
         }
     }
 
@@ -178,7 +178,7 @@ public final class ArgCheck {
      */
     public static void isPositive( double argument, String name ) {
         if (argument <= 0.0) {
-            throw new IllegalArgumentException(CoreI18n.argumentMustBePositive.text(name, argument));
+            throw new IllegalArgumentException(CommonI18n.argumentMustBePositive.text(name, argument));
         }
     }
 
@@ -190,7 +190,7 @@ public final class ArgCheck {
      */
     public static void isNotNan( double argument, String name ) {
         if (Double.isNaN(argument)) {
-            throw new IllegalArgumentException(CoreI18n.argumentMustBeNumber.text(name));
+            throw new IllegalArgumentException(CommonI18n.argumentMustBeNumber.text(name));
         }
     }
 
@@ -205,7 +205,7 @@ public final class ArgCheck {
     public static void isNotZeroLength( String argument, String name ) {
         isNotNull(argument, name);
         if (argument.length() <= 0) {
-            throw new IllegalArgumentException(CoreI18n.argumentMayNotBeNullOrZeroLength.text(name));
+            throw new IllegalArgumentException(CommonI18n.argumentMayNotBeNullOrZeroLength.text(name));
         }
     }
 
@@ -218,7 +218,7 @@ public final class ArgCheck {
     public static void isNotEmpty( String argument, String name ) {
         isNotZeroLength(argument, name);
         if (argument != null && argument.trim().length() == 0) {
-            throw new IllegalArgumentException(CoreI18n.argumentMayNotBeNullOrZeroLengthOrEmpty.text(name));
+            throw new IllegalArgumentException(CommonI18n.argumentMayNotBeNullOrZeroLengthOrEmpty.text(name));
         }
     }
 
@@ -232,7 +232,7 @@ public final class ArgCheck {
      */
     public static void isNotNull( Object argument, String name ) {
         if (argument == null) {
-            throw new IllegalArgumentException(CoreI18n.argumentMayNotBeNull.text(name));
+            throw new IllegalArgumentException(CommonI18n.argumentMayNotBeNull.text(name));
         }
     }
 
@@ -257,7 +257,7 @@ public final class ArgCheck {
      */
     public static void isNull( Object argument, String name ) {
         if (argument != null) {
-            throw new IllegalArgumentException(CoreI18n.argumentMustBeNull.text(name));
+            throw new IllegalArgumentException(CommonI18n.argumentMustBeNull.text(name));
         }
     }
 
@@ -271,7 +271,7 @@ public final class ArgCheck {
     public static void isInstanceOf( Object argument, Class expectedClass, String name ) {
         isNotNull(argument, name);
         if (!expectedClass.isInstance(argument)) {
-            throw new IllegalArgumentException(CoreI18n.argumentMustBeInstanceOf.text(name, argument.getClass(), expectedClass.getName()));
+            throw new IllegalArgumentException(CommonI18n.argumentMustBeInstanceOf.text(name, argument.getClass(), expectedClass.getName()));
         }
     }
 
@@ -305,7 +305,7 @@ public final class ArgCheck {
     public static <T> void isSame( final T argument, String argumentName, final T object, String objectName ) {
         if (argument != object) {
             if (objectName == null) objectName = getObjectName(object);
-            throw new IllegalArgumentException(CoreI18n.argumentMustBeSameAs.text(argumentName, objectName));
+            throw new IllegalArgumentException(CommonI18n.argumentMustBeSameAs.text(argumentName, objectName));
         }
     }
 
@@ -323,7 +323,7 @@ public final class ArgCheck {
     public static <T> void isNotSame( final T argument, String argumentName, final T object, String objectName ) {
         if (argument == object) {
             if (objectName == null) objectName = getObjectName(object);
-            throw new IllegalArgumentException(CoreI18n.argumentMustNotBeSameAs.text(argumentName, objectName));
+            throw new IllegalArgumentException(CommonI18n.argumentMustNotBeSameAs.text(argumentName, objectName));
         }
     }
 
@@ -341,7 +341,7 @@ public final class ArgCheck {
     public static <T> void isEquals( final T argument, String argumentName, final T object, String objectName ) {
         if (!argument.equals(object)) {
             if (objectName == null) objectName = getObjectName(object);
-            throw new IllegalArgumentException(CoreI18n.argumentMustBeEquals.text(argumentName, objectName));
+            throw new IllegalArgumentException(CommonI18n.argumentMustBeEquals.text(argumentName, objectName));
         }
     }
 
@@ -359,7 +359,7 @@ public final class ArgCheck {
     public static <T> void isNotEquals( final T argument, String argumentName, final T object, String objectName ) {
         if (argument.equals(object)) {
             if (objectName == null) objectName = getObjectName(object);
-            throw new IllegalArgumentException(CoreI18n.argumentMustNotBeEquals.text(argumentName, objectName));
+            throw new IllegalArgumentException(CommonI18n.argumentMustNotBeEquals.text(argumentName, objectName));
         }
     }
 
@@ -374,7 +374,7 @@ public final class ArgCheck {
     public static void isNotEmpty( Iterator argument, String name ) {
         isNotNull(argument, name);
         if (!argument.hasNext()) {
-            throw new IllegalArgumentException(CoreI18n.argumentMayNotBeEmpty.text(name));
+            throw new IllegalArgumentException(CommonI18n.argumentMayNotBeEmpty.text(name));
         }
     }
 
@@ -389,7 +389,7 @@ public final class ArgCheck {
     public static void isNotEmpty( Collection argument, String name ) {
         isNotNull(argument, name);
         if (argument.isEmpty()) {
-            throw new IllegalArgumentException(CoreI18n.argumentMayNotBeEmpty.text(name));
+            throw new IllegalArgumentException(CommonI18n.argumentMayNotBeEmpty.text(name));
         }
     }
 
@@ -402,7 +402,7 @@ public final class ArgCheck {
     public static void isNotEmpty( Map argument, String name ) {
         isNotNull(argument, name);
         if (argument.isEmpty()) {
-            throw new IllegalArgumentException(CoreI18n.argumentMayNotBeEmpty.text(name));
+            throw new IllegalArgumentException(CommonI18n.argumentMayNotBeEmpty.text(name));
         }
     }
 
@@ -415,7 +415,7 @@ public final class ArgCheck {
     public static void isNotEmpty( Object[] argument, String name ) {
         isNotNull(argument, name);
         if (argument.length == 0) {
-            throw new IllegalArgumentException(CoreI18n.argumentMayNotBeEmpty.text(name));
+            throw new IllegalArgumentException(CommonI18n.argumentMayNotBeEmpty.text(name));
         }
     }
 
@@ -433,7 +433,7 @@ public final class ArgCheck {
     public static void contains( Collection argument, Object value, String name ) {
         isNotNull(argument, name);
         if (!argument.contains(value)) {
-            throw new IllegalArgumentException(CoreI18n.argumentDidNotContainObject.text(name, getObjectName(value)));
+            throw new IllegalArgumentException(CommonI18n.argumentDidNotContainObject.text(name, getObjectName(value)));
         }
     }
 
@@ -447,7 +447,7 @@ public final class ArgCheck {
     public static void containsKey( Map argument, Object key, String name ) {
         isNotNull(argument, name);
         if (!argument.containsKey(key)) {
-            throw new IllegalArgumentException(CoreI18n.argumentDidNotContainKey.text(name, getObjectName(key)));
+            throw new IllegalArgumentException(CommonI18n.argumentDidNotContainKey.text(name, getObjectName(key)));
         }
     }
 
@@ -462,7 +462,7 @@ public final class ArgCheck {
         int i = 0;
         for (Object object : argument) {
             if (object == null) {
-                throw new IllegalArgumentException(CoreI18n.argumentMayNotContainNullValue.text(name, i));
+                throw new IllegalArgumentException(CommonI18n.argumentMayNotContainNullValue.text(name, i));
             }
             ++i;
         }
@@ -479,7 +479,7 @@ public final class ArgCheck {
         int i = 0;
         for (Object object : argument) {
             if (object == null) {
-                throw new IllegalArgumentException(CoreI18n.argumentMayNotContainNullValue.text(name, i));
+                throw new IllegalArgumentException(CommonI18n.argumentMayNotContainNullValue.text(name, i));
             }
             ++i;
         }

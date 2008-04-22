@@ -24,7 +24,7 @@ package org.jboss.dna.common.component;
 
 import java.util.concurrent.atomic.AtomicInteger;
 import net.jcip.annotations.ThreadSafe;
-import org.jboss.dna.common.CoreI18n;
+import org.jboss.dna.common.CommonI18n;
 import org.jboss.dna.common.monitor.ProgressMonitor;
 
 /**
@@ -49,7 +49,7 @@ public class MockComponentA implements SampleComponent {
      */
     public void doSomething( ProgressMonitor progressMonitor ) {
         try {
-            progressMonitor.beginTask(1, CoreI18n.passthrough, "Incrementing counter");
+            progressMonitor.beginTask(1, CommonI18n.passthrough, "Incrementing counter");
             // increment the counter and record the progress ...
             this.counter.incrementAndGet();
             progressMonitor.worked(1);

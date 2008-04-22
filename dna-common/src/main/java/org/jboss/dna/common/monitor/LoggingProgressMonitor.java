@@ -22,7 +22,7 @@
 
 package org.jboss.dna.common.monitor;
 
-import org.jboss.dna.common.CoreI18n;
+import org.jboss.dna.common.CommonI18n;
 import org.jboss.dna.common.i18n.I18n;
 import org.jboss.dna.common.util.Logger;
 
@@ -48,7 +48,7 @@ public class LoggingProgressMonitor extends ProgressMonitorWrapper {
     @Override
     public void beginTask( double totalWork, I18n name, Object... params ) {
         super.beginTask(totalWork, name, params);
-        this.logger.log(level, CoreI18n.progressMonitorBeginTask, getActivityName(), name.text(params));
+        this.logger.log(level, CommonI18n.progressMonitorBeginTask, getActivityName(), name.text(params));
     }
 
     /**
@@ -57,7 +57,7 @@ public class LoggingProgressMonitor extends ProgressMonitorWrapper {
     @Override
     public void done() {
         super.done();
-        this.logger.log(level, CoreI18n.progressMonitorStatus, super.getStatus());
+        this.logger.log(level, CommonI18n.progressMonitorStatus, super.getStatus());
     }
 
     /**
@@ -66,7 +66,7 @@ public class LoggingProgressMonitor extends ProgressMonitorWrapper {
     @Override
     public void setCancelled( boolean value ) {
         super.setCancelled(value);
-        this.logger.log(level, CoreI18n.progressMonitorStatus, super.getStatus());
+        this.logger.log(level, CommonI18n.progressMonitorStatus, super.getStatus());
     }
 
     /**
@@ -75,7 +75,7 @@ public class LoggingProgressMonitor extends ProgressMonitorWrapper {
     @Override
     public void worked( double work ) {
         super.worked(work);
-        this.logger.log(level, CoreI18n.progressMonitorStatus, super.getStatus());
+        this.logger.log(level, CommonI18n.progressMonitorStatus, super.getStatus());
     }
 
 }

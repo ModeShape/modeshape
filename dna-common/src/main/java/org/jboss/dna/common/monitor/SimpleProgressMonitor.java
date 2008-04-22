@@ -25,7 +25,7 @@ package org.jboss.dna.common.monitor;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-import org.jboss.dna.common.CoreI18n;
+import org.jboss.dna.common.CommonI18n;
 import org.jboss.dna.common.i18n.I18n;
 import net.jcip.annotations.GuardedBy;
 import net.jcip.annotations.ThreadSafe;
@@ -54,7 +54,7 @@ public class SimpleProgressMonitor implements ProgressMonitor {
 
     public SimpleProgressMonitor( String activityName ) {
         this.activityName = activityName != null ? activityName.trim() : "";
-        this.taskName = CoreI18n.empty;
+        this.taskName = CommonI18n.empty;
     }
 
     /**

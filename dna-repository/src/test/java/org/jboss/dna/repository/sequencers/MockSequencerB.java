@@ -28,7 +28,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import javax.jcr.Node;
 import net.jcip.annotations.ThreadSafe;
-import org.jboss.dna.common.CoreI18n;
+import org.jboss.dna.common.CommonI18n;
 import org.jboss.dna.common.monitor.ProgressMonitor;
 import org.jboss.dna.repository.observation.NodeChange;
 import org.jboss.dna.repository.sequencers.Sequencer;
@@ -67,7 +67,7 @@ public class MockSequencerB implements Sequencer {
      */
     public void execute( Node input, String sequencedPropertyName, NodeChange changes, Set<RepositoryNodePath> outputPaths, ExecutionContext context, ProgressMonitor progress ) {
         try {
-            progress.beginTask(1, CoreI18n.passthrough, "Incrementing counter");
+            progress.beginTask(1, CommonI18n.passthrough, "Incrementing counter");
             // increment the counter and record the progress ...
             this.counter.incrementAndGet();
             this.latch.countDown();

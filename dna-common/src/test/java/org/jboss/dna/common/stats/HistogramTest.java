@@ -26,7 +26,7 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
-import org.jboss.dna.common.CoreI18n;
+import org.jboss.dna.common.CommonI18n;
 import org.jboss.dna.common.math.FloatOperations;
 import org.jboss.dna.common.math.MathOperations;
 import org.jboss.dna.common.stats.Histogram;
@@ -55,7 +55,7 @@ public class HistogramTest {
     }
 
     public static <T extends Number> void writeHistogramToLog( Logger logger, Histogram<T> histogram, int barLength, String description ) {
-        logger.info(CoreI18n.passthrough, description != null ? description : "Histogram:");
+        logger.info(CommonI18n.passthrough, description != null ? description : "Histogram:");
         List<String> barGraph = histogram.getTextGraph(barLength);
         for (String line : barGraph) {
             logger.debug("  " + line);

@@ -30,7 +30,7 @@ import java.util.GregorianCalendar;
 import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import org.jboss.dna.common.CoreI18n;
+import org.jboss.dna.common.CommonI18n;
 import net.jcip.annotations.ThreadSafe;
 
 /**
@@ -157,7 +157,7 @@ public class DateUtil {
         final Pattern pattern = Pattern.compile(regex);
         final Matcher matcher = pattern.matcher(dateString);
         if (!matcher.matches()) {
-            throw new ParseException(CoreI18n.dateParsingFailure.text(dateString), 0);
+            throw new ParseException(CommonI18n.dateParsingFailure.text(dateString), 0);
         }
         String year = matcher.group(1);
         String week = matcher.group(4);
