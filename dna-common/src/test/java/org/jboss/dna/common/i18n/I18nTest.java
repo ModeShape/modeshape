@@ -28,6 +28,13 @@ import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.Assert.assertThat;
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
+import java.util.Iterator;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
+import java.util.Map.Entry;
 import org.jboss.dna.common.CommonI18n;
 import org.jboss.dna.common.SystemFailureException;
 import org.junit.Before;
@@ -39,222 +46,409 @@ import org.junit.Test;
  */
 public final class I18nTest {
 
-    @Before
-    public void beforeEach() {
-        I18n.initialize(TestI18n.class);
-    }
-
-    @Test( expected = IllegalArgumentException.class )
-	public void getErrorsForDefaultLocaleShouldFailIfClassIsNull() {
-		I18n.getErrorsForDefaultLocale(null);
+	@Before
+	public void beforeEach() throws Exception {
+		clearFields(TestI18n.class);
+		clearFields(TestI18nDuplicateProperty.class);
+		clearFields(TestI18nFinal.class);
+		clearFields(TestI18nFinalField.class);
+		clearFields(TestI18nInterface.class);
+		clearFields(TestI18nMissingLocalization.class);
+		clearFields(TestI18nMissingProperty.class);
+		clearFields(TestI18nNotPublicField.class);
+		clearFields(TestI18nNotStaticField.class);
+		clearFields(TestI18nPrivate.class);
+		clearFields(TestI18nUnusedProperty.class);
+		for (Entry<Locale, Map<Class, Set<String>>> localeToMapEntry : I18n.LOCALE_TO_CLASS_TO_PROBLEMS_MAP.entrySet()) {
+			for (Iterator<Entry<Class, Set<String>>> iter = localeToMapEntry.getValue().entrySet().iterator(); iter.hasNext();) {
+				if (iter.next().getKey() != CommonI18n.class) {
+					iter.remove();
+				}
+			}
+		}
 	}
 
-    @Test
-	public void getErrorsForLocaleShouldAllNullLocale() {
-		I18n.getErrorsForLocale(TestI18n.class, null);
+	private void clearFields( Class i18nClass ) throws Exception {
+		for (Field fld : i18nClass.getDeclaredFields()) {
+			if (fld.getType() == I18n.class && (fld.getModifiers() & Modifier.PUBLIC) == Modifier.PUBLIC
+			    && (fld.getModifiers() & Modifier.STATIC) == Modifier.STATIC
+			    && (fld.getModifiers() & Modifier.FINAL) != Modifier.FINAL) {
+				fld.set(null, null);
+			}
+		}
+	}
+
+	@Test( expected = IllegalArgumentException.class )
+	public void shouldFailToGetLocalizationProblemLocalesIfNoClassSupplied() {
+		I18n.getLocalizationProblemLocales(null);
 	}
 
 	@Test
-	public void getErrorsForDefaultLocaleShouldNotReturnNull() {
-		assertThat(I18n.getErrorsForDefaultLocale(TestI18n.class), notNullValue());
+	public void shouldNeverReturnNullWhenGettingLocalizationProblemLocales() {
+		assertThat(I18n.getLocalizationProblemLocales(TestI18n.class), notNullValue());
 	}
 
-    @Test( expected = IllegalArgumentException.class )
-    public void initializeShouldFailIfClassIsNull() {
-        I18n.initialize(null);
-    }
+	@Test( expected = IllegalArgumentException.class )
+	public void shouldFailToGetLocalizationProblemsForDefaultLocaleIfNoClassSupplied() {
+		I18n.getLocalizationProblems(null);
+	}
 
-    @Test
-    public void initializeShouldSkipNonI18nFields() {
-        assertThat(TestI18n.nonI18n, is(nullValue()));
-    }
+	@Test( expected = IllegalArgumentException.class )
+	public void shouldFailToGetLocalizationProblemsForSuppliedLocaleIfNoClassSupplied() {
+		I18n.getLocalizationProblems(null, Locale.US);
+	}
 
-    @Test( expected = SystemFailureException.class )
-    public void initializeShouldFailIfI18nFieldIsFinal() {
-        try {
-            I18n.initialize(TestI18nFinalField.class);
-        } catch (SystemFailureException err) {
-            assertThat(err.getMessage(), is(CommonI18n.i18nFieldFinal.text("testMessage", TestI18nFinalField.class)));
-            System.err.println(err);
-            throw err;
-        }
-    }
+	@Test
+	public void shouldNeverReturnNullWhenGettingLocalizationProblemsForDefaultLocale() {
+		assertThat(I18n.getLocalizationProblems(TestI18n.class), notNullValue());
+	}
 
-    @Test( expected = RuntimeException.class )
-    public void initializeShouldFailIfI18nFieldIsNotPublic() {
-        try {
-            I18n.initialize(TestI18nNotPublicField.class);
-        } catch (RuntimeException err) {
-            assertThat(err.getMessage(), is(CommonI18n.i18nFieldNotPublic.text("testMessage", TestI18nNotPublicField.class)));
-            System.err.println(err);
-            throw err;
-        }
-    }
+	@Test
+	public void shouldNeverReturnNullWhenGettingLocalizationProblemsForSuppliedLocale() {
+		assertThat(I18n.getLocalizationProblems(TestI18n.class, Locale.US), notNullValue());
+	}
 
-    @Test( expected = RuntimeException.class )
-    public void initializeShouldFailIfI18nFieldIsNotStatic() {
-        try {
-            I18n.initialize(TestI18nNotStaticField.class);
-        } catch (RuntimeException err) {
-            assertThat(err.getMessage(), is(CommonI18n.i18nFieldNotStatic.text("testMessage", TestI18nNotStaticField.class)));
-            System.err.println(err);
-            throw err;
-        }
-    }
+	@Test
+	public void shouldNotHaveLocalizationProblemsAfterInitializationButBeforeLocalization() {
+		I18n.initialize(TestI18nUnusedProperty.class);
+		assertThat(I18n.getLocalizationProblems(TestI18nUnusedProperty.class, null).isEmpty(), is(true));
+		assertThat(I18n.getLocalizationProblemLocales(TestI18nUnusedProperty.class).isEmpty(), is(true));
+	}
 
-    @Test
-    public void initializeShouldAllowFinalClass() {
-        I18n.initialize(TestI18nFinal.class);
-    }
+	@Test
+	public void shouldGetLocalizationProblemsForDefaultLocaleIfNoLocaleSupplied() {
+		I18n.initialize(TestI18nUnusedProperty.class);
+		TestI18nUnusedProperty.testMessage.text("test");
+		assertThat(I18n.getLocalizationProblems(TestI18nUnusedProperty.class, null).isEmpty(), is(false));
+	}
 
-    @Test
-    public void initializeShouldAllowPrivateClasses() {
-        I18n.initialize(TestI18nPrivate.class);
-        assertThat(TestI18nPrivate.testMessage, instanceOf(I18n.class));
-    }
+	@Test( expected = IllegalArgumentException.class )
+	public void shouldFailToInitializeIfNoClassSupplied() {
+		I18n.initialize(null);
+	}
 
-    @Test
-    public void initializeShouldAssignI18nInstanceToI18nFields() {
-        assertThat(TestI18n.testMessage, instanceOf(I18n.class));
-    }
+	@Test( expected = SystemFailureException.class )
+	public void shouldFailToInitializeFinalI18nField() {
+		try {
+			I18n.initialize(TestI18nFinalField.class);
+		} catch (SystemFailureException err) {
+			assertThat(err.getMessage(), is(CommonI18n.i18nFieldFinal.text("testMessage", TestI18nFinalField.class)));
+			System.err.println(err);
+			throw err;
+		}
+	}
 
-    @Test( expected = IllegalArgumentException.class )
-    public void initializeShouldFailIfClassIsInterface() {
-        try {
-            I18n.initialize(TestI18nInterface.class);
-        } catch (IllegalArgumentException err) {
-            assertThat(err.getMessage(), is(CommonI18n.i18nClassInterface.text(TestI18nInterface.class.getName())));
-            System.err.println(err);
-            throw err;
-        }
-    }
+	@Test( expected = SystemFailureException.class )
+	public void shouldFailToInitializeNonPublicI18nField() {
+		try {
+			I18n.initialize(TestI18nNotPublicField.class);
+		} catch (SystemFailureException err) {
+			assertThat(err.getMessage(), is(CommonI18n.i18nFieldNotPublic.text("testMessage", TestI18nNotPublicField.class)));
+			System.err.println(err);
+			throw err;
+		}
+	}
 
-    @Test
-    public void initializeShouldBeIdempotent() {
-        I18n.initialize(TestI18n.class);
-    }
+	@Test( expected = SystemFailureException.class )
+	public void shouldFailToInitializeNonStaticI18nField() {
+		try {
+			I18n.initialize(TestI18nNotStaticField.class);
+		} catch (SystemFailureException err) {
+			assertThat(err.getMessage(), is(CommonI18n.i18nFieldNotStatic.text("testMessage", TestI18nNotStaticField.class)));
+			System.err.println(err);
+			throw err;
+		}
+	}
 
-    @Test
-    public void i18nIdShouldMatchFieldName() throws Exception {
-        assertThat(TestI18n.testMessage.id, is("testMessage"));
-    }
+	@Test
+	public void shouldInitializeFinalClasses() {
+		I18n.initialize(TestI18nFinal.class);
+		assertThat(TestI18nFinal.testMessage, instanceOf(I18n.class));
+	}
 
-    @Test
-    public void i18nTextShouldHandleIfPropertyDuplicate() throws Exception {
-        I18n.initialize(TestI18nDuplicateProperty.class);
-        String text = TestI18nDuplicateProperty.testMessage.text("test");
+	@Test
+	public void shouldInitializePrivateClasses() {
+		I18n.initialize(TestI18nPrivate.class);
+		assertThat(TestI18nPrivate.testMessage, instanceOf(I18n.class));
+	}
+
+	@Test
+	public void shouldInitializeI18nFields() {
+		I18n.initialize(TestI18n.class);
+		assertThat(TestI18n.testMessage, instanceOf(I18n.class));
+	}
+
+	@Test
+	public void shouldNotInitializeNonI18nFields() {
+		I18n.initialize(TestI18n.class);
+		assertThat(TestI18n.nonI18n, nullValue());
+	}
+
+	@Test( expected = IllegalArgumentException.class )
+	public void shouldFailToInitializeInterfaces() {
+		try {
+			I18n.initialize(TestI18nInterface.class);
+		} catch (IllegalArgumentException err) {
+			assertThat(err.getMessage(), is(CommonI18n.i18nClassInterface.text(TestI18nInterface.class.getName())));
+			System.err.println(err);
+			throw err;
+		}
+	}
+
+	@Test
+	public void shouldProvideIdempotentInitialization() {
+		I18n.initialize(TestI18n.class);
+		assertThat(TestI18n.testMessage1.text("test"), is("test"));
+		I18n.initialize(TestI18n.class);
+		assertThat(TestI18n.testMessage1.text("test"), is("test"));
+	}
+
+	@Test
+	public void shouldNotBeLocalizedAfterInitialization() {
+		I18n.initialize(TestI18nDuplicateProperty.class);
+		assertThat(TestI18nDuplicateProperty.testMessage.localeToTextMap.get(Locale.getDefault()), nullValue());
+		assertThat(TestI18nDuplicateProperty.testMessage.localeToProblemMap.get(Locale.getDefault()), nullValue());
+	}
+
+	@Test
+	public void shouldHaveIdThatMatchesFieldName() throws Exception {
+		I18n.initialize(TestI18n.class);
+		assertThat(TestI18n.testMessage.id(), is("testMessage"));
+	}
+
+	@Test
+	public void shouldNotBeLocalizedIfAskedForId() {
+		I18n.initialize(TestI18nDuplicateProperty.class);
+		TestI18nDuplicateProperty.testMessage.id();
+		assertThat(TestI18nDuplicateProperty.testMessage.localeToTextMap.get(Locale.getDefault()), nullValue());
+		assertThat(TestI18nDuplicateProperty.testMessage.localeToProblemMap.get(Locale.getDefault()), nullValue());
+	}
+
+	@Test
+	public void shouldBeLocalizedIfAskedIfHasProblem() {
+		I18n.initialize(TestI18nDuplicateProperty.class);
+		TestI18nDuplicateProperty.testMessage.hasProblem();
+		assertThat(TestI18nDuplicateProperty.testMessage.localeToTextMap.get(Locale.getDefault()), notNullValue());
+		assertThat(TestI18nDuplicateProperty.testMessage.localeToProblemMap.get(Locale.getDefault()), notNullValue());
+	}
+
+	@Test
+	public void shouldBeLocalizedIfAskedForProblem() {
+		I18n.initialize(TestI18nDuplicateProperty.class);
+		TestI18nDuplicateProperty.testMessage.problem();
+		assertThat(TestI18nDuplicateProperty.testMessage.localeToTextMap.get(Locale.getDefault()), notNullValue());
+		assertThat(TestI18nDuplicateProperty.testMessage.localeToProblemMap.get(Locale.getDefault()), notNullValue());
+	}
+
+	@Test
+	public void shouldBeLocalizedIfConvertedToString() {
+		I18n.initialize(TestI18nDuplicateProperty.class);
+		TestI18nDuplicateProperty.testMessage.toString();
+		assertThat(TestI18nDuplicateProperty.testMessage.localeToTextMap.get(Locale.getDefault()), notNullValue());
+		assertThat(TestI18nDuplicateProperty.testMessage.localeToProblemMap.get(Locale.getDefault()), notNullValue());
+	}
+
+	@Test
+	public void shouldContainAngleBracketedProblemInTextIfMissingLocalization() throws Exception {
+		I18n.initialize(TestI18nMissingLocalization.class);
+		String text = TestI18nMissingLocalization.testMessage.text();
+		assertThat(text,
+		           is('<' + CommonI18n.i18nLocalizationProblems.text(TestI18nMissingLocalization.class, Locale.getDefault()) + '>'));
+		System.out.println("Text: " + text);
+	}
+
+	@Test
+	public void shouldHaveProblemIfMissingLocalization() throws Exception {
+		I18n.initialize(TestI18nMissingLocalization.class);
+		assertThat(TestI18nMissingLocalization.testMessage.hasProblem(), is(true));
+		String problem = TestI18nMissingLocalization.testMessage.problem();
+		assertThat(problem, is(CommonI18n.i18nLocalizationProblems.text(TestI18nMissingLocalization.class, Locale.getDefault())));
+		System.out.println("Problem: " + problem);
+	}
+
+	@Test
+	public void shouldHaveLocalicationProblemIfMissingLocalization() throws Exception {
+		I18n.initialize(TestI18nMissingLocalization.class);
+		TestI18nMissingLocalization.testMessage.text();
+		assertThat(I18n.getLocalizationProblems(TestI18nMissingLocalization.class).size(), is(1));
+		assertThat(I18n.getLocalizationProblems(TestI18nMissingLocalization.class).iterator().next(),
+		           is(CommonI18n.i18nLocalizationFileNotFound.text(TestI18nMissingLocalization.class.getName())));
+		assertThat(I18n.getLocalizationProblemLocales(TestI18nMissingLocalization.class).size(), is(1));
+		assertThat(I18n.getLocalizationProblemLocales(TestI18nMissingLocalization.class).iterator().next(),
+		           is(Locale.getDefault()));
+	}
+
+	@Test
+	public void shouldHaveTextIfPropertyDuplicate() throws Exception {
+		I18n.initialize(TestI18nDuplicateProperty.class);
+		String text = TestI18nDuplicateProperty.testMessage.text("test");
 		assertThat(text.charAt(0), not('<'));
-		assertThat(I18n.getErrorsForDefaultLocale(TestI18nDuplicateProperty.class).size(), is(1));
-		System.out.println(text);
-    }
+		System.out.println("Text: " + text);
+	}
 
-    @Test
-    public void i18nTextShouldHandleIfPropertyMissing() throws Exception {
-        I18n.initialize(TestI18nMissingProperty.class);
-        String text = TestI18nMissingProperty.testMessage1.text();
+	@Test
+	public void shouldHaveProblemIfPropertyDuplicate() throws Exception {
+		I18n.initialize(TestI18nDuplicateProperty.class);
+		assertThat(TestI18nDuplicateProperty.testMessage.hasProblem(), is(true));
+		String problem = TestI18nDuplicateProperty.testMessage.problem();
+		assertThat(problem, notNullValue());
+		System.out.println("Problem: " + problem);
+	}
+
+	@Test
+	public void shouldNotHaveLocalicationProblemIfPropertyDuplicate() throws Exception {
+		I18n.initialize(TestI18nDuplicateProperty.class);
+		TestI18nDuplicateProperty.testMessage.text("test");
+		assertThat(I18n.getLocalizationProblems(TestI18nDuplicateProperty.class).isEmpty(), is(true));
+		assertThat(I18n.getLocalizationProblemLocales(TestI18nDuplicateProperty.class).isEmpty(), is(true));
+	}
+
+	@Test
+	public void shouldContainAngleBracketedProblemInTextIfPropertyMissing() throws Exception {
+		I18n.initialize(TestI18nMissingProperty.class);
+		String text = TestI18nMissingProperty.testMessage1.text("test");
 		assertThat(text.charAt(0), is('<'));
-		assertThat(I18n.getErrorsForDefaultLocale(TestI18nDuplicateProperty.class).size(), is(1));
-		System.out.println(text);
-    }
+		System.out.println("Text: " + text);
+	}
 
-    @Test
-	public void i18nTextShouldHandleIfPropertyUnused() throws Exception {
-        I18n.initialize(TestI18nUnusedProperty.class);
-        String text = TestI18nUnusedProperty.testMessage.text("test");
-		assertThat(text.charAt(0), not('<'));
-		assertThat(I18n.getErrorsForDefaultLocale(TestI18nDuplicateProperty.class).size(), is(1));
-		System.out.println(text);
-    }
+	@Test
+	public void shouldHaveProblemIfPropertyMissing() throws Exception {
+		I18n.initialize(TestI18nMissingProperty.class);
+		assertThat(TestI18nMissingProperty.testMessage1.hasProblem(), is(true));
+		String problem = TestI18nMissingProperty.testMessage1.problem();
+		assertThat(problem, notNullValue());
+		System.out.println("Problem: " + problem);
+	}
 
-    @Test
-    public void i18nTextShouldMatchPropertiesFile() throws Exception {
-        assertThat(TestI18n.testMessage.text(), is("Test Message"));
-    }
+	@Test
+	public void shouldNotHaveLocalicationProblemIfPropertyMissing() throws Exception {
+		I18n.initialize(TestI18nMissingProperty.class);
+		TestI18nMissingProperty.testMessage1.text("test");
+		assertThat(I18n.getLocalizationProblems(TestI18nMissingProperty.class).isEmpty(), is(true));
+		assertThat(I18n.getLocalizationProblemLocales(TestI18nMissingProperty.class).isEmpty(), is(true));
+	}
 
-    @Test( expected = IllegalArgumentException.class )
-    public void i18nTextShouldFailIfTooFewArgumentsSpecified() throws Exception {
-        try {
-            TestI18n.testMessage1.text();
-        } catch (IllegalArgumentException err) {
-            assertThat(err.getMessage(), is(CommonI18n.i18nArgumentsMismatchedParameter.text(0, "testMessage1", 1, "{0}", "{0}")));
-            System.err.println(err);
-            throw err;
-        }
-    }
+	@Test
+	public void shouldHaveLocalicationProblemIfPropertyUnused() throws Exception {
+		I18n.initialize(TestI18nUnusedProperty.class);
+		TestI18nUnusedProperty.testMessage.text("test");
+		assertThat(I18n.getLocalizationProblems(TestI18nUnusedProperty.class).size(), is(1));
+		assertThat(I18n.getLocalizationProblemLocales(TestI18nUnusedProperty.class).size(), is(1));
+		assertThat(I18n.getLocalizationProblemLocales(TestI18nUnusedProperty.class).iterator().next(), is(Locale.getDefault()));
+	}
 
-    @Test( expected = IllegalArgumentException.class )
-    public void i18nTextShouldFailIfTooManyArgumentsSpecified() throws Exception {
-        try {
-            TestI18n.testMessage1.text("Test", "Message");
-        } catch (IllegalArgumentException err) {
-            assertThat(err.getMessage(), is(CommonI18n.i18nArgumentsMismatchedParameter.text(2, "testMessage1", 1, "{0}", "Test")));
-            System.err.println(err);
-            throw err;
-        }
-    }
+	@Test
+	public void shouldHaveTextMatchingLocalizationFilePropertyValue() throws Exception {
+		I18n.initialize(TestI18n.class);
+		assertThat(TestI18n.testMessage.text(), is("Test Message"));
+	}
 
-    @Test
-    public void i18nTextShouldContainArgumentsInRightOrder() throws Exception {
-        assertThat(TestI18n.testMessage2.text("Test", "Message"), is("Message Test"));
-    }
+	@Test( expected = IllegalArgumentException.class )
+	public void shouldFailIfTooFewArgumentsSuppliedToText() throws Exception {
+		I18n.initialize(TestI18n.class);
+		try {
+			TestI18n.testMessage1.text();
+		} catch (IllegalArgumentException err) {
+			assertThat(err.getMessage(), is(CommonI18n.i18nArgumentsMismatchedParameter.text(0, "testMessage1", 1, "{0}", "{0}")));
+			System.err.println(err);
+			throw err;
+		}
+	}
 
-    @Test
-    public void i18nTextShouldAllowReuseOfArguments() throws Exception {
-        assertThat(TestI18n.testMessage3.text("Test", "Message"), is("Message Test Message"));
-    }
+	@Test( expected = IllegalArgumentException.class )
+	public void shouldFailIfTooManyArgumentsSuppliedToText() throws Exception {
+		I18n.initialize(TestI18n.class);
+		try {
+			TestI18n.testMessage1.text("Test", "Message");
+		} catch (IllegalArgumentException err) {
+			assertThat(err.getMessage(),
+			           is(CommonI18n.i18nArgumentsMismatchedParameter.text(2, "testMessage1", 1, "{0}", "Test")));
+			System.err.println(err);
+			throw err;
+		}
+	}
 
-    public static class TestI18n {
+	@Test
+	public void shouldContainArgumentsInRightOrderInText() throws Exception {
+		I18n.initialize(TestI18n.class);
+		assertThat(TestI18n.testMessage2.text("Test", "Message"), is("Message Test"));
+	}
 
-        public static I18n testMessage;
-        public static I18n testMessage1;
-        public static I18n testMessage2;
-        public static I18n testMessage3;
-        public static Object nonI18n;
-    }
+	@Test
+	public void shouldAllowReuseOfArgumentsInText() throws Exception {
+		I18n.initialize(TestI18n.class);
+		assertThat(TestI18n.testMessage3.text("Test", "Message"), is("Message Test Message"));
+	}
 
-    private static class TestI18nDuplicateProperty {
+	@Test
+	public void shouldContainLocaleSpecificText() {
+		I18n.initialize(TestI18n.class);
+		assertThat(TestI18n.testMessage.text(Locale.FRENCH), is("Message de Test"));
+	}
 
-        public static I18n testMessage;
-    }
+	@Test
+	public void shouldContainTextForDefaultLocaleIfMissingLocalizationForSuppliedLocale() {
+		I18n.initialize(TestI18n.class);
+		assertThat(TestI18n.testMessage.text(Locale.CHINESE), is("Test Message"));
+	}
 
-    public static final class TestI18nFinal {
+	public static class TestI18n {
 
-        public static I18n testMessage;
-    }
+		public static I18n testMessage;
+		public static I18n testMessage1;
+		public static I18n testMessage2;
+		public static I18n testMessage3;
+		public static Object nonI18n;
+	}
 
-    public static class TestI18nFinalField {
+	private static class TestI18nDuplicateProperty {
 
-        public static final I18n testMessage = null;
-    }
+		public static I18n testMessage;
+	}
 
-    public static interface TestI18nInterface {
+	public static final class TestI18nFinal {
 
-        I18n testMessage = null;
-    }
+		public static I18n testMessage;
+	}
 
-    private static class TestI18nMissingProperty {
+	public static class TestI18nFinalField {
 
-        public static I18n testMessage;
-        public static I18n testMessage1;
-    }
+		public static final I18n testMessage = null;
+	}
 
-    public static class TestI18nNotPublicField {
+	public static interface TestI18nInterface {
 
-        static I18n testMessage;
-    }
+		I18n testMessage = null;
+	}
 
-    public static class TestI18nNotStaticField {
+	private static class TestI18nMissingProperty {
 
-        public I18n testMessage;
-    }
+		public static I18n testMessage;
+		public static I18n testMessage1;
+	}
 
-    private static class TestI18nPrivate {
+	public static class TestI18nNotPublicField {
 
-        public static I18n testMessage;
-    }
+		static I18n testMessage;
+	}
 
-    private static class TestI18nUnusedProperty {
+	public static class TestI18nNotStaticField {
 
-        public static I18n testMessage;
-    }
+		public I18n testMessage;
+	}
+
+	private static class TestI18nPrivate {
+
+		public static I18n testMessage;
+	}
+
+	private static class TestI18nUnusedProperty {
+
+		public static I18n testMessage;
+	}
+
+	private static class TestI18nMissingLocalization {
+
+		public static I18n testMessage;
+	}
 }

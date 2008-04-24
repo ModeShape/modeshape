@@ -21,6 +21,8 @@
  */
 package org.jboss.dna.common;
 
+import java.util.Locale;
+import java.util.Set;
 import org.jboss.dna.common.i18n.I18n;
 
 /**
@@ -29,17 +31,18 @@ import org.jboss.dna.common.i18n.I18n;
  */
 public final class CommonI18n {
 
-    static {
-        try {
-            I18n.initialize(CommonI18n.class);
-        } catch (final Exception err) {
-            System.err.println(err);
-        }
-    }
-
     // Make sure the following I18n.java-related fields are defined before all other fields to ensure a valid error message is
     // produced in the event of a missing/duplicate/unused property
 
+	/**
+	 * Parameters:
+	 * <ol>
+	 * <li>{@link I18n#id() ID}</li>
+	 * <li>Number of supplied arguments</li>
+	 * <li>Localized text before parameter substitution</li>
+	 * <li>Localized text after parameter substitution</li>
+	 * </ol>
+	 */
     public static I18n i18nArgumentsMismatchedParameter;
     public static I18n i18nArgumentMismatchedParameters;
     public static I18n i18nArgumentsMismatchedParameters;
@@ -52,7 +55,16 @@ public final class CommonI18n {
     public static I18n i18nFieldInvalidType;
     public static I18n i18nFieldNotPublic;
     public static I18n i18nFieldNotStatic;
-    public static I18n i18nPropertiesFileNotFound;
+    public static I18n i18nLocalizationFileNotFound;
+	public static I18n i18nLocalizationProblems;
+
+	/**
+	 * Parameters:
+	 * <ol>
+	 * <li>{@link I18n#id() Property}</li>
+	 * <li>Localization file URL</li>
+	 * </ol>
+	 */
     public static I18n i18nPropertyDuplicate;
     public static I18n i18nPropertyMissing;
     public static I18n i18nPropertyUnused;
@@ -90,4 +102,24 @@ public final class CommonI18n {
     public static I18n pathIsNotAbsolute;
     public static I18n pathIsNotRelative;
     public static I18n pathCannotBeNormalized;
+
+    static {
+        try {
+            I18n.initialize(CommonI18n.class);
+        } catch (final Exception err) {
+            System.err.println(err);
+        }
+    }
+
+    public static Set<Locale> getLocalizationProblemLocales() {
+		return I18n.getLocalizationProblemLocales(CommonI18n.class);
+	}
+
+    public static Set<String> getLocalizationProblems() {
+		return I18n.getLocalizationProblems(CommonI18n.class);
+	}
+
+    public static Set<String> getLocalizationProblems( Locale locale ) {
+		return I18n.getLocalizationProblems(CommonI18n.class, locale);
+	}
 }

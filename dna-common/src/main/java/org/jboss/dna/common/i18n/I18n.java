@@ -27,21 +27,22 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.net.URL;
 import java.util.Collections;
-import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
+import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import net.jcip.annotations.Immutable;
 import net.jcip.annotations.ThreadSafe;
 import org.jboss.dna.common.CommonI18n;
 import org.jboss.dna.common.SystemFailureException;
 import org.jboss.dna.common.util.ArgCheck;
 import org.jboss.dna.common.util.ClassUtil;
-import org.jboss.dna.common.util.HashCode;
 
 /**
  * Manages the initialization of internationalization (i18n) files, substitution of values within i18n message placeholders, and
@@ -56,37 +57,68 @@ public final class I18n {
 	private static final Pattern PARAMETER_COUNT_PATTERN = Pattern.compile("\\{(\\d+)\\}");
 	private static final Object[] EMPTY_ARGUMENTS = new Object[] {};
 	private static final LocalizationRepository DEFAULT_LOCALIZATION_REPOSITORY = new ClasspathLocalizationRepository();
-	private static final ConcurrentMap<Localization, Map<String, String>> LOCALIZATION_2_ID_2_ERROR_MAP = new ConcurrentHashMap<Localization, Map<String, String>>();
-	private static final ConcurrentMap<Localization, Map<String, String>> LOCALIZATION_2_ID_2_TEXT_MAP = new ConcurrentHashMap<Localization, Map<String, String>>();
+
+	/**
+	 * The first level of this map indicates whether an i18n class has been localized to a particular locale. The second level
+	 * contains any problems encountered during localization.
+	 */
+	static final ConcurrentMap<Locale, Map<Class, Set<String>>> LOCALE_TO_CLASS_TO_PROBLEMS_MAP = new ConcurrentHashMap<Locale, Map<Class, Set<String>>>();
 
 	private static LocalizationRepository localizationRepository = DEFAULT_LOCALIZATION_REPOSITORY;
 
 	/**
-	 * @param i18nClass An internalization class for which errors should be returned.
-	 * @return The errors encountered while initializing the specified internationalization class for the default locale mapped to
-	 *         the applicable internalization IDs; never <code>null</code>.
+	 * Note, calling this method will <em>not</em> trigger localization of the supplied internationalization class.
+	 *
+	 * @param i18nClass The internalization class for which localization problem locales should be returned.
+	 * @return The locales for which localization problems were encountered while localizing the supplied internationalization
+	 *         class; never <code>null</code>.
 	 */
-	public static Map<String, String> getErrorsForDefaultLocale( Class i18nClass ) {
-		return getErrorsForLocale(i18nClass, null);
+	public static Set<Locale> getLocalizationProblemLocales( Class i18nClass ) {
+		ArgCheck.isNotNull(i18nClass, "i18nClass");
+		Set<Locale> locales = new HashSet<Locale>(LOCALE_TO_CLASS_TO_PROBLEMS_MAP.size());
+		for (Entry<Locale, Map<Class, Set<String>>> localeEntry : LOCALE_TO_CLASS_TO_PROBLEMS_MAP.entrySet()) {
+			for (Entry<Class, Set<String>> classEntry : localeEntry.getValue().entrySet()) {
+				if (!classEntry.getValue().isEmpty()) {
+					locales.add(localeEntry.getKey());
+					break;
+				}
+			}
+		}
+		return locales;
 	}
 
 	/**
-	 * @param i18nClass An internalization class for which errors should be returned.
-	 * @param locale The locale for which errors should be returned. If <code>null</code>, errors for the the default locale
-	 *        will be returned.
-	 * @return The errors encountered while initializing the specified internationalization class for the specified locale mapped
-	 *         to the applicable internalization IDs; never <code>null</code>.
+	 * Note, calling this method will <em>not</em> trigger localization of the supplied internationalization class.
+	 *
+	 * @param i18nClass The internalization class for which localization problems should be returned.
+	 * @return The localization problems encountered while localizing the supplied internationalization class to the default
+	 *         locale; never <code>null</code>.
 	 */
-	public static Map<String, String> getErrorsForLocale( Class i18nClass,
-	                                                      Locale locale ) {
+	public static Set<String> getLocalizationProblems( Class i18nClass ) {
+		return getLocalizationProblems(i18nClass, null);
+	}
+
+	/**
+	 * Note, calling this method will <em>not</em> trigger localization of the supplied internationalization class.
+	 *
+	 * @param i18nClass The internalization class for which localization problems should be returned.
+	 * @param locale The locale for which localization problems should be returned. If <code>null</code>, the default locale
+	 *        will be used.
+	 * @return The localization problems encountered while localizing the supplied internationalization class to the supplied
+	 *         locale; never <code>null</code>.
+	 */
+	public static Set<String> getLocalizationProblems( Class i18nClass,
+	                                                   Locale locale ) {
 		ArgCheck.isNotNull(i18nClass, "i18nClass");
-		Map<String, String> errors = LOCALIZATION_2_ID_2_ERROR_MAP.get(new Localization(
-		                                                                                locale == null ? Locale.getDefault() : locale,
-		                                                                                i18nClass));
-		if (errors == null) {
-			errors = Collections.emptyMap();
+		Map<Class, Set<String>> classToProblemsMap = LOCALE_TO_CLASS_TO_PROBLEMS_MAP.get(locale == null ? Locale.getDefault() : locale);
+		if (classToProblemsMap == null) {
+			return Collections.emptySet();
 		}
-		return errors;
+		Set<String> problems = classToProblemsMap.get(i18nClass);
+		if (problems == null) {
+			return Collections.emptySet();
+		}
+		return problems;
 	}
 
 	/**
@@ -100,18 +132,19 @@ public final class I18n {
 	}
 
 	/**
-	 * Set the repository of localized messages. If null, a {@link ClasspathLocalizationRepository} instance that uses this class
-	 * loader will be used.
+	 * Set the repository of localized messages. If <code>null</code>, a {@link ClasspathLocalizationRepository} instance that
+	 * uses this class loader will be used.
 	 *
-	 * @param localizationRepository the localization repository to use; may be null if the default repository should be used.
+	 * @param localizationRepository the localization repository to use; may be <code>null</code> if the default repository
+	 *        should be used.
 	 */
 	public static void setLocalizationRepository( LocalizationRepository localizationRepository ) {
 		I18n.localizationRepository = localizationRepository != null ? localizationRepository : DEFAULT_LOCALIZATION_REPOSITORY;
 	}
 
 	/**
-	 * Initializes the internationalization fields declared on the specified class. Internationalization fields must be public,
-	 * static, not final, and of type <code>I18n</code>. The specified class must not be an interface (of course), but has no
+	 * Initializes the internationalization fields declared on the supplied class. Internationalization fields must be public,
+	 * static, not final, and of type <code>I18n</code>. The supplied class must not be an interface (of course), but has no
 	 * restrictions as to what class it may extend or what interfaces it must implement.
 	 *
 	 * @param i18nClass A class declaring one or more public, static, non-final fields of type <code>I18n</code>.
@@ -122,82 +155,98 @@ public final class I18n {
 			throw new IllegalArgumentException(CommonI18n.i18nClassInterface.text(i18nClass.getName()));
 		}
 
-		// Find all public static non-final String fields in the specified class and instantiate an I18n object for each.
-		try {
-			for (Field fld : i18nClass.getDeclaredFields()) {
+		synchronized (i18nClass) {
+			// Find all public static non-final String fields in the supplied class and instantiate an I18n object for each.
+			try {
+				for (Field fld : i18nClass.getDeclaredFields()) {
 
-				// Ensure field is of type I18n
-				if (fld.getType() == I18n.class) {
+					// Ensure field is of type I18n
+					if (fld.getType() == I18n.class) {
 
-					// Ensure field is not final
-					if ((fld.getModifiers() & Modifier.FINAL) == Modifier.FINAL) {
-						throw new SystemFailureException(CommonI18n.i18nFieldFinal.text(fld.getName(), i18nClass));
+						// Ensure field is public
+						if ((fld.getModifiers() & Modifier.PUBLIC) != Modifier.PUBLIC) {
+							throw new SystemFailureException(CommonI18n.i18nFieldNotPublic.text(fld.getName(), i18nClass));
+						}
+
+						// Ensure field is static
+						if ((fld.getModifiers() & Modifier.STATIC) != Modifier.STATIC) {
+							throw new SystemFailureException(CommonI18n.i18nFieldNotStatic.text(fld.getName(), i18nClass));
+						}
+
+						// Ensure field is not final
+						if ((fld.getModifiers() & Modifier.FINAL) == Modifier.FINAL) {
+							throw new SystemFailureException(CommonI18n.i18nFieldFinal.text(fld.getName(), i18nClass));
+						}
+
+						// Ensure we can access field even if it's in a private class
+						ClassUtil.makeAccessible(fld);
+
+						// Initialize field. Do this every time the class is initialized (or re-initialized)
+						fld.set(null, new I18n(fld.getName(), i18nClass));
 					}
-
-					// Ensure field is public
-					if ((fld.getModifiers() & Modifier.PUBLIC) != Modifier.PUBLIC) {
-						throw new SystemFailureException(CommonI18n.i18nFieldNotPublic.text(fld.getName(), i18nClass));
-					}
-
-					// Ensure field is static
-					if ((fld.getModifiers() & Modifier.STATIC) != Modifier.STATIC) {
-						throw new SystemFailureException(CommonI18n.i18nFieldNotStatic.text(fld.getName(), i18nClass));
-					}
-
-					// Ensure we can access field even if it's in a private class
-					ClassUtil.makeAccessible(fld);
-
-					// Initialize field. Do this every time the class is initialized (or re-initialized)
-					fld.set(null, new I18n(fld.getName(), i18nClass));
 				}
+
+				// Remove all entries for the supplied i18n class to indicate it has not been localized.
+				for (Entry<Locale, Map<Class, Set<String>>> entry : LOCALE_TO_CLASS_TO_PROBLEMS_MAP.entrySet()) {
+					entry.getValue().remove(i18nClass);
+				}
+			} catch (IllegalAccessException err) {
+				// If this happens, it will happen with the first field visited in the above loop
+				throw new IllegalArgumentException(CommonI18n.i18nClassNotPublic.text(i18nClass));
 			}
-		} catch (IllegalAccessException err) {
-			throw new IllegalArgumentException(CommonI18n.i18nClassNotPublic.text(i18nClass.getName()));
 		}
 	}
 
 	/**
-	 * Synchronized on the locale being loaded (this blocks loading all other locales, but not reads for existing locales)
+	 * Synchronized on the supplied internalization class.
 	 *
-	 * @param i18nClass The internalization class being initialized
-	 * @param localization
-	 * @return
+	 * @param i18nClass The internalization class being localized
+	 * @param locale The locale to which the supplied internationalization class should be localized.
 	 */
-	private synchronized static Map<String, String> initializeIdToTextMap( final Localization localization ) {
-		Map<String, String> id2TextMap = new HashMap<String, String>();
-
-		// Put in the new map and see if there's already one there ...
-		Map<String, String> existingId2TextMap = LOCALIZATION_2_ID_2_TEXT_MAP.putIfAbsent(localization, id2TextMap);
-		// If there is already an existing map, then someone beat us to the punch and there's nothing to do ...
-		if (existingId2TextMap != null) {
-			return existingId2TextMap;
+	private static void localize( final Class i18nClass,
+	                              final Locale locale ) {
+		assert i18nClass != null;
+		assert locale != null;
+		// Create a class-to-problem map for this locale if one doesn't exist, else get the existing one.
+		Map<Class, Set<String>> classToProblemsMap = new ConcurrentHashMap<Class, Set<String>>();
+		Map<Class, Set<String>> existingClassToProblemsMap = LOCALE_TO_CLASS_TO_PROBLEMS_MAP.putIfAbsent(locale,
+		                                                                                                 classToProblemsMap);
+		if (existingClassToProblemsMap != null) {
+			classToProblemsMap = existingClassToProblemsMap;
 		}
-		// We're the first to put in the map for this locale, so populate the one we created...
-
-		// Get the URL to the localization properties file ...
-		final LocalizationRepository repos = getLocalizationRepository();
-		final String bundleName = localization.i18nClass.getName();
-		URL url = null;
-		Locale locale = new Locale(localization.language, localization.country, localization.variant);
-		url = repos.getLocalizationBundle(bundleName, locale);
-
-		// Try the default locale (if it is different than the supplied locale) ...
-		if (url == null) {
-			// Nothing was found, so try the default locale
-			Locale defaultLocale = Locale.getDefault();
-			if (!defaultLocale.equals(locale)) {
-				url = repos.getLocalizationBundle(bundleName, defaultLocale);
+		// Check if already localized outside of synchronization block for 99% use-case
+		if (classToProblemsMap.get(i18nClass) != null) {
+			return;
+		}
+		synchronized (i18nClass) {
+			// Return if the supplied i18n class has already been localized to the supplied locale, despite the check outside of
+			// the synchronization block (1% use-case), else create a class-to-problems map for the class.
+			Set<String> problems = classToProblemsMap.get(i18nClass);
+			if (problems == null) {
+				problems = new CopyOnWriteArraySet<String>();
+				classToProblemsMap.put(i18nClass, problems);
+			} else {
+				return;
 			}
-		}
-
-		String bundleMsg = null;
-		if (url == null) {
-			// Record no variant of the i18n properties file for the specified class found
-			bundleMsg = CommonI18n.i18nPropertiesFileNotFound.text(bundleName);
-		} else {
+			// Get the URL to the localization properties file ...
+			final LocalizationRepository repos = getLocalizationRepository();
+			final String localizationBaseName = i18nClass.getName();
+			URL url = repos.getLocalizationBundle(localizationBaseName, locale);
+			if (url == null) {
+				// Nothing was found, so try the default locale
+				Locale defaultLocale = Locale.getDefault();
+				if (!defaultLocale.equals(locale)) {
+					url = repos.getLocalizationBundle(localizationBaseName, defaultLocale);
+				}
+				// Return if no applicable localization file could be found
+				if (url == null) {
+					problems.add(CommonI18n.i18nLocalizationFileNotFound.text(localizationBaseName));
+					return;
+				}
+			}
 			// Initialize i18n map
-			final Map<String, String> finalMap = id2TextMap;
 			final URL finalUrl = url;
+			final Set<String> finalProblems = problems;
 			Properties props = new Properties() {
 
 				@Override
@@ -207,21 +256,26 @@ public final class I18n {
 					String text = (String)value;
 
 					try {
-						Field fld = localization.i18nClass.getDeclaredField(id);
+						Field fld = i18nClass.getDeclaredField(id);
 						if (fld.getType() != I18n.class) {
 							// Invalid field type
-							mapErrorMessage(localization, id, CommonI18n.i18nFieldInvalidType.text(id,
-							                                                                     finalUrl,
-							                                                                     getClass().getName()));
+							finalProblems.add(CommonI18n.i18nFieldInvalidType.text(id, finalUrl, getClass().getName()));
+						} else {
+							I18n i18n = (I18n)fld.get(null);
+							if (i18n.localeToTextMap.putIfAbsent(locale, text) != null) {
+								// Duplicate id encountered
+								String prevProblem = i18n.localeToProblemMap.putIfAbsent(locale,
+								                                                         CommonI18n.i18nPropertyDuplicate.text(id,
+								                                                                                               finalUrl));
+								assert prevProblem == null;
+							}
 						}
 					} catch (NoSuchFieldException err) {
 						// No corresponding field exists
-						mapErrorMessage(localization, id, CommonI18n.i18nPropertyUnused.text(id, finalUrl));
-					}
-
-					if (finalMap.put(id, text) != null) {
-						// Duplicate id encountered
-						mapErrorMessage(localization, id, CommonI18n.i18nPropertyDuplicate.text(id, finalUrl));
+						finalProblems.add(CommonI18n.i18nPropertyUnused.text(id, finalUrl));
+					} catch (IllegalAccessException notPossible) {
+						// Would have already occurred in initialize method, but allowing for the impossible...
+						finalProblems.add(notPossible.getMessage());
 					}
 
 					return null;
@@ -232,36 +286,27 @@ public final class I18n {
 				InputStream propStream = url.openStream();
 				try {
 					props.load(propStream);
+					// Check for uninitialized fields
+					for (Field fld : i18nClass.getDeclaredFields()) {
+						if (fld.getType() == I18n.class) {
+							try {
+								I18n i18n = (I18n)fld.get(null);
+								if (i18n.localeToTextMap.get(locale) == null) {
+									i18n.localeToProblemMap.put(locale, CommonI18n.i18nPropertyMissing.text(fld.getName(), url));
+								}
+							} catch (IllegalAccessException notPossible) {
+								// Would have already occurred in initialize method, but allowing for the impossible...
+								finalProblems.add(notPossible.getMessage());
+							}
+						}
+					}
 				} finally {
 					propStream.close();
 				}
 			} catch (IOException err) {
-				bundleMsg = err.getMessage();
+				finalProblems.add(err.getMessage());
 			}
 		}
-
-		// Check for uninitialized fields
-		for (Field fld : localization.i18nClass.getDeclaredFields()) {
-			if (fld.getType() == I18n.class && id2TextMap.get(fld.getName()) == null) {
-				mapErrorMessage(localization,
-				                fld.getName(),
-				                bundleMsg == null ? CommonI18n.i18nPropertyMissing.text(fld.getName(), url) : bundleMsg);
-			}
-		}
-
-		return id2TextMap;
-	}
-
-	static void mapErrorMessage( Localization localization,
-	                             String id,
-	                             String message ) {
-		Map<String, String> id2ErrorMap = new ConcurrentHashMap<String, String>();
-		Map<String, String> existingId2ErrorMap = LOCALIZATION_2_ID_2_ERROR_MAP.putIfAbsent(localization, id2ErrorMap);
-		if (existingId2ErrorMap != null) {
-			id2ErrorMap = existingId2ErrorMap;
-		}
-		message = id2ErrorMap.put(id, message);
-		assert message == null;
 	}
 
 	/**
@@ -299,25 +344,32 @@ public final class I18n {
 			}
 		}
 		if (err || argCount < arguments.length) {
-			I18n msg = null;
+			String msg = null;
 			if (id != null) {
 				if (arguments.length == 1) {
-					msg = CommonI18n.i18nArgumentMismatchedParameters;
+					msg = CommonI18n.i18nArgumentMismatchedParameters.text(id, argCount, text, newText.toString());
 				} else if (argCount == 1) {
-					msg = CommonI18n.i18nArgumentsMismatchedParameter;
+					msg = CommonI18n.i18nArgumentsMismatchedParameter.text(arguments.length, id, text, newText.toString());
 				} else {
-					msg = CommonI18n.i18nArgumentsMismatchedParameters;
+					msg = CommonI18n.i18nArgumentsMismatchedParameters.text(arguments.length,
+					                                                        id,
+					                                                        argCount,
+					                                                        text,
+					                                                        newText.toString());
 				}
-				throw new IllegalArgumentException(msg.text(arguments.length, id, argCount, text, newText.toString()));
+				throw new IllegalArgumentException(msg);
 			}
 			if (arguments.length == 1) {
-				msg = CommonI18n.i18nReplaceArgumentMismatchedParameters;
+				msg = CommonI18n.i18nReplaceArgumentMismatchedParameters.text(argCount, text, newText.toString());
 			} else if (argCount == 1) {
-				msg = CommonI18n.i18nReplaceArgumentsMismatchedParameter;
+				msg = CommonI18n.i18nReplaceArgumentsMismatchedParameter.text(arguments.length, text, newText.toString());
 			} else {
-				msg = CommonI18n.i18nReplaceArgumentsMismatchedParameters;
+				msg = CommonI18n.i18nReplaceArgumentsMismatchedParameters.text(arguments.length,
+				                                                               argCount,
+				                                                               text,
+				                                                               newText.toString());
 			}
-			throw new IllegalArgumentException(msg.text(arguments.length, argCount, text, newText.toString()));
+			throw new IllegalArgumentException(msg);
 		}
 		matcher.appendTail(newText);
 
@@ -337,8 +389,10 @@ public final class I18n {
 		return replaceParameters(null, text, arguments);
 	}
 
-	final String id;
+	private final String id;
 	private final Class i18nClass;
+	final ConcurrentHashMap<Locale, String> localeToTextMap = new ConcurrentHashMap<Locale, String>();
+	final ConcurrentHashMap<Locale, String> localeToProblemMap = new ConcurrentHashMap<Locale, String>();
 
 	private I18n( String id,
 	              Class i18nClass ) {
@@ -346,23 +400,84 @@ public final class I18n {
 		this.i18nClass = i18nClass;
 	}
 
-	private String rawText( Locale locale ) {
-		assert locale != null;
-		Map<String, String> id2TextMap = null;
-		final Localization localization = new Localization(locale, i18nClass);
-		id2TextMap = LOCALIZATION_2_ID_2_TEXT_MAP.get(localization);
-		if (id2TextMap == null) {
-			id2TextMap = initializeIdToTextMap(localization);
-		}
-
-		return id2TextMap.get(id);
+	/**
+	 * @return This internationalization object's ID, which will match both the name of the relevant static field in the
+	 *         internationalization class and the relevant property name in the associated localization files.
+	 */
+	public String id() {
+		return id;
 	}
 
 	/**
-	 * Get the internationalized text localized to the {@link Locale#getDefault() current (default) locale}, replacing the
-	 * parameters in the text with those supplied.
+	 * @return <code>true</code> if a problem was encountered while localizing this internationalization object to the default
+	 *         locale.
+	 */
+	public boolean hasProblem() {
+		return (problem() != null);
+	}
+
+	/**
+	 * @param locale The locale for which to check whether a problem was encountered.
+	 * @return <code>true</code> if a problem was encountered while localizing this internationalization object to the supplied
+	 *         locale.
+	 */
+	public boolean hasProblem( Locale locale ) {
+		return (problem(locale) != null);
+	}
+
+	/**
+	 * @return The problem encountered while localizing this internationalization object to the default locale, or
+	 *         <code>null</code> if none was encountered.
+	 */
+	public String problem() {
+		return problem(null);
+	}
+
+	/**
+	 * @param locale The locale for which to return the problem.
+	 * @return The problem encountered while localizing this internationalization object to the supplied locale, or
+	 *         <code>null</code> if none was encountered.
+	 */
+	public String problem( Locale locale ) {
+		if (locale == null) {
+			locale = Locale.getDefault();
+		}
+		localize(i18nClass, locale);
+		// Check for field/property error
+		String problem = localeToProblemMap.get(locale);
+		if (problem != null) {
+			return problem;
+		}
+		// Check if text exists
+		if (localeToTextMap.get(locale) != null) {
+			// If so, no problem exists
+			return null;
+		}
+		// If we get here, which will be at most once, there was at least one global localization error, so just return a message
+		// indicating to look them up.
+		problem = CommonI18n.i18nLocalizationProblems.text(i18nClass, locale);
+		localeToProblemMap.put(locale, problem);
+		return problem;
+	}
+
+	private String rawText( Locale locale ) {
+		assert locale != null;
+		localize(i18nClass, locale);
+		// Check if text exists
+		String text = localeToTextMap.get(locale);
+		if (text != null) {
+			return text;
+		}
+		// If not, there was a problem, so throw it within an exception so upstream callers can tell the difference between normal
+		// text and problem text.
+		throw new SystemFailureException(problem(locale));
+	}
+
+	/**
+	 * Get the localized text for the {@link Locale#getDefault() current (default) locale}, replacing the parameters in the text
+	 * with those supplied.
 	 *
-	 * @param arguments the arguments for the parameter replacement; may be null or empty
+	 * @param arguments the arguments for the parameter replacement; may be <code>null</code> or empty
 	 * @return the localized text
 	 */
 	public String text( Object... arguments ) {
@@ -370,28 +485,20 @@ public final class I18n {
 	}
 
 	/**
-	 * Get the internationalized text localized to the supplied locale, replacing the parameters in the text with those supplied.
+	 * Get the localized text for the supplied locale, replacing the parameters in the text with those supplied.
 	 *
-	 * @param locale the locale, or null if the {@link Locale#getDefault() current (default) locale} should be used
-	 * @param arguments the arguments for the parameter replacement; may be null or empty
+	 * @param locale the locale, or <code>null</code> if the {@link Locale#getDefault() current (default) locale} should be used
+	 * @param arguments the arguments for the parameter replacement; may be <code>null</code> or empty
 	 * @return the localized text
 	 */
 	public String text( Locale locale,
 	                    Object... arguments ) {
-		if (locale == null) {
-			locale = Locale.getDefault();
+		try {
+			String rawText = rawText(locale == null ? Locale.getDefault() : locale);
+			return replaceParameters(id, rawText, arguments);
+		} catch (SystemFailureException err) {
+			return '<' + err.getMessage() + '>';
 		}
-		String rawText = rawText(locale);
-		if (rawText == null) {
-			Map<String, String> id2ErrorMap = LOCALIZATION_2_ID_2_ERROR_MAP.get(new Localization(locale, i18nClass));
-			if (id2ErrorMap != null) {
-				String msg = id2ErrorMap.get(id);
-				if (msg != null) {
-					return '<' + msg + '>';
-				}
-			}
-		}
-		return replaceParameters(id, rawText, arguments);
 	}
 
 	/**
@@ -399,71 +506,10 @@ public final class I18n {
 	 */
 	@Override
 	public String toString() {
-		return rawText(Locale.getDefault());
-	}
-
-	@Immutable
-	private static class Localization {
-
-		final String language;
-		final String country;
-		final String variant;
-		final Class i18nClass;
-
-		Localization( Locale locale,
-		              Class i18nClass ) {
-			this.language = locale.getLanguage();
-			this.country = locale.getCountry();
-			this.variant = locale.getVariant();
-			this.i18nClass = i18nClass;
-		}
-
-		/**
-		 * <p>
-		 * {@inheritDoc}
-		 * </p>
-		 *
-		 * @see java.lang.Object#hashCode()
-		 */
-		@Override
-		public int hashCode() {
-			return HashCode.compute(country, i18nClass, language, variant);
-		}
-
-		/**
-		 * <p>
-		 * {@inheritDoc}
-		 * </p>
-		 *
-		 * @see java.lang.Object#equals(java.lang.Object)
-		 */
-		@Override
-		public boolean equals( Object obj ) {
-			if (this == obj) return true;
-			if (obj == null) return false;
-			if (getClass() != obj.getClass()) return false;
-			Localization other = (Localization)obj;
-			if (country == null) {
-				if (other.country != null) return false;
-			} else if (!country.equals(other.country)) {
-				return false;
-			}
-			if (i18nClass == null) {
-				if (other.i18nClass != null) return false;
-			} else if (!i18nClass.equals(other.i18nClass)) {
-				return false;
-			}
-			if (language == null) {
-				if (other.language != null) return false;
-			} else if (!language.equals(other.language)) {
-				return false;
-			}
-			if (variant == null) {
-				if (other.variant != null) return false;
-			} else if (!variant.equals(other.variant)) {
-				return false;
-			}
-			return true;
+		try {
+			return rawText(Locale.getDefault());
+		} catch (SystemFailureException err) {
+			return '<' + err.getMessage() + '>';
 		}
 	}
 }
