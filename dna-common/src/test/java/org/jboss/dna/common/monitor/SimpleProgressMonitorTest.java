@@ -76,7 +76,7 @@ public class SimpleProgressMonitorTest {
         monitor.worked(10.0d);
         ProgressStatus status = monitor.getStatus(Locale.FRANCE);
         assertThat(status, is(notNullValue()));
-        assertThat(status.getMessage(), is("tâche d'essai"));
+        assertThat(status.getMessage(), is("examinez le message"));
         assertThat(status.getPercentWorked(), is(closeTo(10.0d, 0.001d)));
 
         status = monitor.getStatus(Locale.ENGLISH);
@@ -101,7 +101,7 @@ public class SimpleProgressMonitorTest {
         monitor.worked(10.0d);
         ProgressStatus status = monitor.getStatus(Locale.FRANCE);
         assertThat(status, is(notNullValue()));
-        assertThat(status.getMessage(), is("deuxième tâche d'essai 2"));
+        assertThat(status.getMessage(), is("examinez le message 2"));
         assertThat(status.getPercentWorked(), is(closeTo(10.0d, 0.001d)));
 
         status = monitor.getStatus(Locale.ENGLISH);
