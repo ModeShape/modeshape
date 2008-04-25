@@ -22,6 +22,7 @@
 
 package org.jboss.dna.common.monitor;
 
+import java.util.Locale;
 import org.jboss.dna.common.i18n.I18n;
 
 /**
@@ -83,10 +84,12 @@ public interface ProgressMonitor {
     boolean isCancelled();
 
     /**
-     * Return the current status of this activity. This method returns an immutable but consistent snapshot of the status for this
-     * activity. Note that if this instance is a {@link #createSubtask(double) subtask}, this method returns the status of the
-     * subtask.
+     * Return the current status of this activity, localized to the specified locale. This method returns an immutable but
+     * consistent snapshot of the status for this activity. Note that if this instance is a {@link #createSubtask(double) subtask},
+     * this method returns the status of the subtask.
+     * @param locale the locale in which the status is to be represented; if null, the {@link Locale#getDefault() default locale}
+     * will be used
      * @return the status of this activity
      */
-    ProgressStatus getStatus();
+    ProgressStatus getStatus( Locale locale );
 }

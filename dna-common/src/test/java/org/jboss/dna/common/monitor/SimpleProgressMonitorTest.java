@@ -22,12 +22,16 @@
 
 package org.jboss.dna.common.monitor;
 
+import java.util.Locale;
+import java.util.Set;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsInstanceOf.instanceOf;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsSame.sameInstance;
 import static org.hamcrest.number.IsCloseTo.closeTo;
 import static org.junit.Assert.assertThat;
+import org.jboss.dna.common.CommonI18n;
+import org.jboss.dna.common.i18n.I18n;
 import org.jboss.dna.common.i18n.MockI18n;
 import org.junit.Before;
 import org.junit.Test;
@@ -54,8 +58,71 @@ public class SimpleProgressMonitorTest {
     }
 
     @Test
+    public void shouldReturnProgressStatusWithEmptyMessageBeforeTaskIsBegun() {
+        ProgressStatus status = monitor.getStatus(Locale.FRANCE);
+        assertThat(status, is(notNullValue()));
+        assertThat(status.getMessage(), is(""));
+        assertThat(status.getPercentWorked(), is(closeTo(0.0d, 0.001d)));
+
+        status = monitor.getStatus(null);
+        assertThat(status, is(notNullValue()));
+        assertThat(status.getMessage(), is(""));
+        assertThat(status.getPercentWorked(), is(closeTo(0.0d, 0.001d)));
+    }
+
+    @Test
+    public void shouldReturnProgressStatusWithCorrectMessageAfterTaskIsBegun() {
+        monitor.beginTask(100, I18nMessages.testTaskName);
+        monitor.worked(10.0d);
+        ProgressStatus status = monitor.getStatus(Locale.FRANCE);
+        assertThat(status, is(notNullValue()));
+        assertThat(status.getMessage(), is("tâche d'essai"));
+        assertThat(status.getPercentWorked(), is(closeTo(10.0d, 0.001d)));
+
+        status = monitor.getStatus(Locale.ENGLISH);
+        assertThat(status, is(notNullValue()));
+        assertThat(status.getMessage(), is("test task"));
+        assertThat(status.getPercentWorked(), is(closeTo(10.0d, 0.001d)));
+
+        status = monitor.getStatus(Locale.getDefault());
+        assertThat(status, is(notNullValue()));
+        assertThat(status.getMessage(), is("test task"));
+        assertThat(status.getPercentWorked(), is(closeTo(10.0d, 0.001d)));
+
+        status = monitor.getStatus(null);
+        assertThat(status, is(notNullValue()));
+        assertThat(status.getMessage(), is("test task"));
+        assertThat(status.getPercentWorked(), is(closeTo(10.0d, 0.001d)));
+    }
+
+    @Test
+    public void shouldReturnProgressStatusWithCorrectMessageAndSubstitutedParametersAfterTaskIsBegun() {
+        monitor.beginTask(100, I18nMessages.testTaskName2, 2);
+        monitor.worked(10.0d);
+        ProgressStatus status = monitor.getStatus(Locale.FRANCE);
+        assertThat(status, is(notNullValue()));
+        assertThat(status.getMessage(), is("deuxième tâche d'essai 2"));
+        assertThat(status.getPercentWorked(), is(closeTo(10.0d, 0.001d)));
+
+        status = monitor.getStatus(Locale.ENGLISH);
+        assertThat(status, is(notNullValue()));
+        assertThat(status.getMessage(), is("second test task 2"));
+        assertThat(status.getPercentWorked(), is(closeTo(10.0d, 0.001d)));
+
+        status = monitor.getStatus(Locale.getDefault());
+        assertThat(status, is(notNullValue()));
+        assertThat(status.getMessage(), is("second test task 2"));
+        assertThat(status.getPercentWorked(), is(closeTo(10.0d, 0.001d)));
+
+        status = monitor.getStatus(null);
+        assertThat(status, is(notNullValue()));
+        assertThat(status.getMessage(), is("second test task 2"));
+        assertThat(status.getPercentWorked(), is(closeTo(10.0d, 0.001d)));
+    }
+
+    @Test
     public void shouldHaveProgressOfZeroPercentUponCreation() {
-        ProgressStatus status = monitor.getStatus();
+        ProgressStatus status = monitor.getStatus(null);
         assertThat(status, is(notNullValue()));
         assertThat(status.getActivityName(), is(sameInstance(monitor.getActivityName())));
         assertThat(status.getMessage(), is(""));
@@ -65,7 +132,7 @@ public class SimpleProgressMonitorTest {
     @Test
     public void shouldHaveProgressOfZeroPercentUponBeginningTask() {
         this.monitor.beginTask(100, MockI18n.passthrough, validTaskName);
-        ProgressStatus status = monitor.getStatus();
+        ProgressStatus status = monitor.getStatus(null);
         assertThat(status, is(notNullValue()));
         assertThat(status.getActivityName(), is(sameInstance(monitor.getActivityName())));
         assertThat(status.getMessage(), is(validTaskName));
@@ -75,7 +142,7 @@ public class SimpleProgressMonitorTest {
     @Test
     public void shouldShowProperProgress() {
         this.monitor.beginTask(1000, MockI18n.passthrough, validTaskName);
-        ProgressStatus status = monitor.getStatus();
+        ProgressStatus status = monitor.getStatus(null);
         assertThat(status, is(notNullValue()));
         assertThat(status.getActivityName(), is(sameInstance(monitor.getActivityName())));
         assertThat(status.getMessage(), is(validTaskName));
@@ -83,7 +150,7 @@ public class SimpleProgressMonitorTest {
         for (int i = 1; i <= 9; ++i) {
             this.monitor.worked(100);
             // Check the monitor's status ...
-            status = monitor.getStatus();
+            status = monitor.getStatus(null);
             assertThat(status, is(notNullValue()));
             assertThat(status.getActivityName(), is(sameInstance(monitor.getActivityName())));
             assertThat(status.getMessage(), is(validTaskName));
@@ -92,7 +159,7 @@ public class SimpleProgressMonitorTest {
         }
         monitor.done();
         // Check the monitor's status shows 100%
-        status = monitor.getStatus();
+        status = monitor.getStatus(null);
         assertThat(status, is(notNullValue()));
         assertThat(status.getActivityName(), is(sameInstance(monitor.getActivityName())));
         assertThat(status.getMessage(), is(validTaskName));
@@ -103,7 +170,7 @@ public class SimpleProgressMonitorTest {
     @Test
     public void shouldShowProperProgressUsingSubtasks() {
         monitor.beginTask(1000, MockI18n.passthrough, validTaskName);
-        ProgressStatus status = monitor.getStatus();
+        ProgressStatus status = monitor.getStatus(null);
         assertThat(status, is(notNullValue()));
         assertThat(status.getActivityName(), is(sameInstance(monitor.getActivityName())));
         assertThat(status.getMessage(), is(validTaskName));
@@ -123,7 +190,7 @@ public class SimpleProgressMonitorTest {
                 subtask.worked(1);
 
                 // Check the submonitor's status
-                status = subtask.getStatus();
+                status = subtask.getStatus(null);
                 assertThat(status, is(notNullValue()));
                 assertThat(status.getActivityName(), is(sameInstance(monitor.getActivityName())));
                 assertThat(status.getMessage(), is(subtaskName));
@@ -135,7 +202,7 @@ public class SimpleProgressMonitorTest {
             subtask.done();
 
             // Check the main monitor's status
-            status = monitor.getStatus();
+            status = monitor.getStatus(null);
             assertThat(status, is(notNullValue()));
             assertThat(status.getActivityName(), is(sameInstance(monitor.getActivityName())));
             assertThat(status.getMessage(), is(validTaskName));
@@ -145,7 +212,7 @@ public class SimpleProgressMonitorTest {
         monitor.done();
 
         // Check the monitor's status shows 100%
-        status = monitor.getStatus();
+        status = monitor.getStatus(null);
         assertThat(status, is(notNullValue()));
         assertThat(status.getActivityName(), is(sameInstance(monitor.getActivityName())));
         assertThat(status.getMessage(), is(validTaskName));
@@ -156,7 +223,7 @@ public class SimpleProgressMonitorTest {
     @Test
     public void shouldAllowDoneToBeCalledEvenAfterFinished() {
         monitor.beginTask(1000, MockI18n.passthrough, validTaskName);
-        ProgressStatus status = monitor.getStatus();
+        ProgressStatus status = monitor.getStatus(null);
         assertThat(status, is(notNullValue()));
         assertThat(status.getActivityName(), is(sameInstance(monitor.getActivityName())));
         assertThat(status.getMessage(), is(validTaskName));
@@ -168,7 +235,7 @@ public class SimpleProgressMonitorTest {
             monitor.done();
 
             // Check the status ...
-            status = monitor.getStatus();
+            status = monitor.getStatus(null);
             assertThat(status, is(notNullValue()));
             assertThat(status.getActivityName(), is(sameInstance(monitor.getActivityName())));
             assertThat(status.getMessage(), is(validTaskName));
@@ -185,7 +252,7 @@ public class SimpleProgressMonitorTest {
     @Test
     public void shouldAllowCancelToBeRejected() {
         monitor.beginTask(1000, MockI18n.passthrough, validTaskName);
-        ProgressStatus status = monitor.getStatus();
+        ProgressStatus status = monitor.getStatus(null);
         assertThat(status, is(notNullValue()));
         assertThat(status.getActivityName(), is(sameInstance(monitor.getActivityName())));
         assertThat(status.getMessage(), is(validTaskName));
@@ -194,7 +261,7 @@ public class SimpleProgressMonitorTest {
             monitor.worked(100);
 
             // Check the monitor's status ...
-            status = monitor.getStatus();
+            status = monitor.getStatus(null);
             assertThat(status, is(notNullValue()));
             assertThat(status.getActivityName(), is(sameInstance(monitor.getActivityName())));
             assertThat(status.getMessage(), is(validTaskName));
@@ -207,7 +274,7 @@ public class SimpleProgressMonitorTest {
         }
         monitor.done();
         // Check the monitor's status shows 100%
-        status = monitor.getStatus();
+        status = monitor.getStatus(null);
         assertThat(status, is(notNullValue()));
         assertThat(status.getActivityName(), is(sameInstance(monitor.getActivityName())));
         assertThat(status.getMessage(), is(validTaskName));
@@ -219,7 +286,7 @@ public class SimpleProgressMonitorTest {
     @Test
     public void shouldContinueToRecordWorkEvenWhenCancelled() {
         monitor.beginTask(1000, MockI18n.passthrough, validTaskName);
-        ProgressStatus status = monitor.getStatus();
+        ProgressStatus status = monitor.getStatus(null);
         assertThat(status, is(notNullValue()));
         assertThat(status.getActivityName(), is(sameInstance(monitor.getActivityName())));
         assertThat(status.getMessage(), is(validTaskName));
@@ -228,7 +295,7 @@ public class SimpleProgressMonitorTest {
             monitor.worked(100);
 
             // Check the monitor's status ...
-            status = monitor.getStatus();
+            status = monitor.getStatus(null);
             assertThat(status, is(notNullValue()));
             assertThat(status.getActivityName(), is(sameInstance(monitor.getActivityName())));
             assertThat(status.getMessage(), is(validTaskName));
@@ -241,12 +308,39 @@ public class SimpleProgressMonitorTest {
         }
         monitor.done();
         // Check the monitor's status shows 100%
-        status = monitor.getStatus();
+        status = monitor.getStatus(null);
         assertThat(status, is(notNullValue()));
         assertThat(status.getActivityName(), is(sameInstance(monitor.getActivityName())));
         assertThat(status.getMessage(), is(validTaskName));
         assertThat(status.getPercentWorked(), is(closeTo(100, 0.001d)));
         assertThat(status.isDone(), is(true));
         assertThat(monitor.isCancelled(), is(true));
+    }
+
+    public static class I18nMessages {
+
+        public static I18n testTaskName;
+        public static I18n testTaskName2;
+
+        static {
+            try {
+                I18n.initialize(SimpleProgressMonitorTest.I18nMessages.class);
+            } catch (final Exception err) {
+                System.err.println(err);
+            }
+        }
+
+        public static Set<Locale> getLocalizationProblemLocales() {
+            return I18n.getLocalizationProblemLocales(CommonI18n.class);
+        }
+
+        public static Set<String> getLocalizationProblems() {
+            return I18n.getLocalizationProblems(CommonI18n.class);
+        }
+
+        public static Set<String> getLocalizationProblems( Locale locale ) {
+            return I18n.getLocalizationProblems(CommonI18n.class, locale);
+        }
+
     }
 }

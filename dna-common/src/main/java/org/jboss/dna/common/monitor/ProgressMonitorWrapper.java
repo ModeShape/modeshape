@@ -22,6 +22,7 @@
 
 package org.jboss.dna.common.monitor;
 
+import java.util.Locale;
 import org.jboss.dna.common.i18n.I18n;
 
 /**
@@ -73,8 +74,8 @@ public class ProgressMonitorWrapper implements ProgressMonitor {
     /**
      * {@inheritDoc}
      */
-    public ProgressStatus getStatus() {
-        return this.delegate.getStatus();
+    public ProgressStatus getStatus( Locale locale ) {
+        return this.delegate.getStatus(locale);
     }
 
     /**

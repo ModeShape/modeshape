@@ -22,7 +22,9 @@
 
 package org.jboss.dna.common.monitor;
 
+import java.util.Locale;
 import java.util.concurrent.atomic.AtomicBoolean;
+import org.jboss.dna.common.CommonI18n;
 import org.jboss.dna.common.i18n.I18n;
 import net.jcip.annotations.ThreadSafe;
 
@@ -92,7 +94,7 @@ public class NullProgressMonitor implements ProgressMonitor {
     /**
      * {@inheritDoc}
      */
-    public ProgressStatus getStatus() {
-        return new ProgressStatus(this.activityName, "Not available", 0.0d, cancelled.get());
+    public ProgressStatus getStatus( Locale locale ) {
+        return new ProgressStatus(this.activityName, CommonI18n.nullProgressMonitorTaskName.text(locale), 0.0d, cancelled.get());
     }
 }

@@ -22,13 +22,13 @@
 
 package org.jboss.dna.common.monitor;
 
+import java.util.Locale;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-import org.jboss.dna.common.CommonI18n;
-import org.jboss.dna.common.i18n.I18n;
 import net.jcip.annotations.GuardedBy;
 import net.jcip.annotations.ThreadSafe;
+import org.jboss.dna.common.i18n.I18n;
 
 /**
  * A basic progress monitor
@@ -40,7 +40,7 @@ public class SimpleProgressMonitor implements ProgressMonitor {
     @GuardedBy( "lock" )
     private I18n taskName;
     @GuardedBy( "lock" )
-    private Object[] params;
+    private Object[] taskNameParams;
     @GuardedBy( "lock" )
     private double totalWork;
     @GuardedBy( "lock" )
@@ -54,7 +54,8 @@ public class SimpleProgressMonitor implements ProgressMonitor {
 
     public SimpleProgressMonitor( String activityName ) {
         this.activityName = activityName != null ? activityName.trim() : "";
-        this.taskName = CommonI18n.initialProgressMonitorTaskName;
+        this.taskName = null;
+        this.taskNameParams = null;
     }
 
     /**
@@ -72,7 +73,7 @@ public class SimpleProgressMonitor implements ProgressMonitor {
         try {
             this.lock.writeLock().lock();
             this.taskName = name;
-            this.params = params;
+            this.taskNameParams = params;
             this.totalWork = totalWork;
             this.worked = 0.0d;
         } finally {
@@ -140,10 +141,11 @@ public class SimpleProgressMonitor implements ProgressMonitor {
     /**
      * {@inheritDoc}
      */
-    public ProgressStatus getStatus() {
+    public ProgressStatus getStatus( Locale locale ) {
         try {
             this.lock.readLock().lock();
-            return new ProgressStatus(this.getActivityName(), this.taskName.text(this.params), this.worked, this.totalWork, this.isCancelled());
+            String localizedTaskName = this.taskName == null ? "" : this.taskName.text(locale, this.taskNameParams);
+            return new ProgressStatus(this.getActivityName(), localizedTaskName, this.worked, this.totalWork, this.isCancelled());
         } finally {
             this.lock.readLock().unlock();
         }

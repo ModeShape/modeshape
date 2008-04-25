@@ -22,6 +22,7 @@
 
 package org.jboss.dna.common.monitor;
 
+import java.util.Locale;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import org.jboss.dna.common.i18n.I18n;
@@ -146,10 +147,10 @@ public class SubProgressMonitor implements ProgressMonitor {
     /**
      * {@inheritDoc}
      */
-    public ProgressStatus getStatus() {
+    public ProgressStatus getStatus( Locale locale ) {
         try {
             this.lock.readLock().lock();
-            return new ProgressStatus(this.getActivityName(), this.taskName.text(this.params), this.submittedToParent, this.subtaskTotalInParent, this.isCancelled());
+            return new ProgressStatus(this.getActivityName(), this.taskName.text(locale, this.params), this.submittedToParent, this.subtaskTotalInParent, this.isCancelled());
         } finally {
             this.lock.readLock().unlock();
         }

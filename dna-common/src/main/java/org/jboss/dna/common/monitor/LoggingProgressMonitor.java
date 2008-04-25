@@ -22,6 +22,7 @@
 
 package org.jboss.dna.common.monitor;
 
+import java.util.Locale;
 import org.jboss.dna.common.CommonI18n;
 import org.jboss.dna.common.i18n.I18n;
 import org.jboss.dna.common.util.Logger;
@@ -33,13 +34,19 @@ public class LoggingProgressMonitor extends ProgressMonitorWrapper {
 
     private final Logger logger;
     private final Logger.Level level;
+    private final Locale locale;
 
     public LoggingProgressMonitor( ProgressMonitor delegate, Logger logger, Logger.Level level ) {
+        this(delegate, logger, level, null);
+    }
+
+    public LoggingProgressMonitor( ProgressMonitor delegate, Logger logger, Logger.Level level, Locale locale ) {
         super(delegate);
         assert level != null;
         assert logger != null;
         this.level = level;
         this.logger = logger;
+        this.locale = locale;
     }
 
     /**
@@ -57,7 +64,7 @@ public class LoggingProgressMonitor extends ProgressMonitorWrapper {
     @Override
     public void done() {
         super.done();
-        this.logger.log(level, CommonI18n.progressMonitorStatus, super.getStatus());
+        this.logger.log(level, CommonI18n.progressMonitorStatus, super.getStatus(this.locale));
     }
 
     /**
@@ -66,7 +73,7 @@ public class LoggingProgressMonitor extends ProgressMonitorWrapper {
     @Override
     public void setCancelled( boolean value ) {
         super.setCancelled(value);
-        this.logger.log(level, CommonI18n.progressMonitorStatus, super.getStatus());
+        this.logger.log(level, CommonI18n.progressMonitorStatus, super.getStatus(this.locale));
     }
 
     /**
@@ -75,7 +82,7 @@ public class LoggingProgressMonitor extends ProgressMonitorWrapper {
     @Override
     public void worked( double work ) {
         super.worked(work);
-        this.logger.log(level, CommonI18n.progressMonitorStatus, super.getStatus());
+        this.logger.log(level, CommonI18n.progressMonitorStatus, super.getStatus(this.locale));
     }
 
 }
