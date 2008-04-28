@@ -1,25 +1,94 @@
-<?xml version='1.0' encoding='UTF-8'?><chapter id="introduction">
-  <title>Introduction to DocBook processing</title>
-  <para>DocBook is an XML format for writing documents. It allows the author to
-        focus on the content itself during the writing process instead of
-        worrying about the presentation. </para>
-  <para>Using standard DocBook tags, we can tag the content according to
-        its syntatic structure. The DocBook document is then processed using
-        XSL stylesheets so that each tagged DocBook element is transformed to a
-        corresponding element in the target output format. For example each &lt;para&gt;&lt;/para&gt; element in DocBook could be transformed into a &lt;p&gt;&lt;/p&gt; element in XHTML. </para>
-  <para>Using different XSL stylesheets, we can generate different
-        output formats. For example, we can generate both XHTML and PDF outputs from
-        a single DocBook source. We can also generate multiple versions of XHTML
-        (or PDF) files each with a different  style if necessary.</para>
-  <para>In the JBoss DocBook system, we provide XSL stylesheets to build XHTML, PDF and Eclipse Help output formats from the DocBook source. The build process is
-        illustrated in <xref linkend="build.fig"/>. </para>
-  <figure id="build.fig">
-    <title>The DocBook build process </title>
-    <mediaobject>
-      <imageobject>
-        <imagedata align="center" fileref="images/build.png"/>
-      </imageobject>
-    </mediaobject>
-  </figure>
-  <para>XHTML is used  instead of HTML as it ensures  that the content is completely separated from  its style using Cascading Style Sheets (CSS) and image files.</para>
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN"
+      "http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd">
+<chapter id="introduction">
+  <title>Introduction</title>
+  <para>There are a lot of choices for how applications can store information persistently so that it can be accessed at a
+    later time and by other processes. The challenge developers face is to use an approach that most closes matches the needs of
+    their application. This choice is more important as developers choose to focus their efforts on the application-specific
+    logic, delegating much of the responsibilities for persistence to libraries and frameworks.</para>
+  <para>
+    Perhaps one of the easiest techniques is to simply store information in
+    <emphasis>files</emphasis>
+    . The Java language makes working with files relatively easy, but Java really doesn't provide many bells and whistles. So
+    using files is an easy choice when the information is either not complicated (for example property files), or when users may
+    need to read or change the information outside of the application (for example log files or configuration files). But using
+    files to persist information becomes more difficult as the information becomes more complex, as the volume of it increases, or
+    if it needs to be accessed by multiple processes. For these situations, other techniques are often a better choice.
+  </para>
+  <para>
+    Another technique built into the Java language is
+    <emphasis>Java serialization</emphasis>
+    , which is capable of persisting the state of an object graph so that it can be read back in at a later time. However, Java
+    serialization can quickly become tricky if the classes are changed, and so its beneficial usually when the information is
+    persisted for a very short period of time. For example, serialization is sometimes used to send an object graph from one
+    process to another.
+  </para>
+  <para>
+    One of the more popular persistence technologies is the
+    <emphasis>relational database</emphasis>
+    . Relational database management systems have been around for decades and are very capable. The Java Database Connectivity
+    (JDBC) API provides a standard interface for connecting to and interacting with relational databases. However, it is a
+    low-level API that requires a lot of code to use correctly, and it still doesn't abstract away the DBMS-specific SQL grammar.
+    Also, working with relational data in an object-oriented language can feel somewhat unnatural, so many developers map this
+    data to classes that fit much more cleanly into their application. The problem is that manually creating this mapping layer
+    requires a lot of repetitive and non-trivial JDBC code.
+  </para>
+  <para>
+    <emphasis>Object-relational mapping</emphasis>
+    libraries automate the creation of this mapping layer and result in far less code that is much more maintainable with often as
+    good (if not better) performance than handwritten JDBC code. The new
+    <ulink url="http://java.sun.com/developer/technicalArticles/J2EE/jpa/">Java Persistence API (JPA)</ulink>
+    provide a standard mechanism for defining the mappings (through annotations) and working with these entity objects. Several
+    commercial and open-source libraries implement JPA, and some even offer additional capabilities and features that go beyond
+    JPA. For example,
+    <ulink url="http://www.hibernate.org">Hibernate</ulink>
+    is one of the most feature-rich JPA implementations and offers object caching, statement caching, extra association mappings,
+    and other features that help to improve performance and usefulness.
+  </para>
+  <para>
+    While relational databases and JPA are solutions that work for many applications, they become more limited in cases when the
+    information structure is highly flexible, is not known a priori, or is subject to frequent change and customization. In these
+    situations,
+    <emphasis>content repositories</emphasis>
+    may offer a better choice for persistence. Content repositories are almost a hybrid between relational databases and file
+    systems, and typically provide other capabilies as well, including versioning, indexing, search, access control, transactions,
+    and observation. Because of this, content repositories are used by content management systems (CMS), document management
+    systems (DMS), and other applications that manage electronic files (e.g., documents, images, multi-media, web content, etc.)
+    and metadata associated with them (e.g., author, date, status, security information, etc.). The
+    <ulink url="http://www.jcp.org/en/jsr/detail?id=170">Content Repository for Java technology API</ulink>
+    provides a standard Java API for working with content repositories. Abbreviated "JCR", this API was developed as part of the
+    Java Community Process under
+    <ulink url="http://www.jcp.org/en/jsr/detail?id=170">JSR-170</ulink>
+    and is being revised under
+    <ulink url="http://www.jcp.org/en/jsr/detail?id=283">JSR-283</ulink>
+    .
+  </para>
+  <para>
+    The
+    <emphasis>JBoss DNA project</emphasis>
+    is building the tooles and services that surround content repositories. Nearly all of these capabilities are to be hidden
+    below the JCR API and involve automated processing of the information in the repository. Thus, JBoss DNA can add value to
+    existing repository implementations. For example, JCR repositories offer the ability to upload files into the repository and
+    have the file content index for search purposes. JBoss DNA defines a library for also sequencing that content to extract
+    meaningful information and store it in the repository, where it can then be searched, accessed and analyzed using the JCR API.
+  </para>
+  <para> JBoss DNA is building other features as well. One goal of JBoss DNA is to create federated repositories that dynamically
+    merge the information from multiple databases, services, applications, and other JCR repositories. Another is to create
+    customized views based upon the type of data and the role of the user that is accessing the data. And yet another is to create
+    a REST-ful API to allow the JCR content to be accessed easily by other applications written in other languages.</para>
+  <para>
+    The
+    <link linkend="jboss_dna">next chapter</link>
+    in this book goes into more detail about JBoss DNA and its architecture, the different components, what's available now, and
+    what's coming in future releases.
+    <link linkend="downloading">Chapter 3</link>
+    then provides instructions for downloading and compiling the sequencer examples for the current release.
+    <link linkend="using_dna">Chapter 4</link>
+    walks through these examples, while
+    <link linkend="custom_sequencers.xml">Chapter 5</link>
+    goes over how to create custom sequencers. Finally,
+    <link linkend="future_directions">Chapter 6</link>
+    wraps things up.
+  </para>
 </chapter>

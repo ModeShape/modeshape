@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN"
+      "http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd">
+<chapter id="future_directions">
+  <title>Future directions</title>
+  <para>What's next for JBoss DNA?  Well, sequencers are just the beginning.  
+  Remember our <link linkend="jboss_dna">architecture</link>?
+  There are a lot of components on our roadmap, including federating
+  
+  </para>
+</chapter>
