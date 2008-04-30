@@ -1,41 +1,26 @@
-<?xml version='1.0' encoding='ISO-8859-1'?>
-<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN"
-      "http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd">
-<book lang="en">
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN" "http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd" [
+<!ENTITY % RH-ENTITIES SYSTEM "Common_Config/rh-entities.ent">
+]>
+<book>
   <bookinfo>
     <title>JBoss DNA</title>
     <subtitle>Getting Started Guide</subtitle>
-    <releaseinfo>0.1</releaseinfo>
+    <issuenum>0.1</issuenum>
+    <productnumber>1</productnumber>
+    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Author_Group.xml"/>
+    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Legal_Notice.xml"/>
   </bookinfo>
-  <toc>
-    <title>Table of Contents</title>
-  </toc>
   <preface id="preface" revision="1">
     <title>What this book covers</title>
     <para>The goal of this book is to help you learn about JBoss DNA and how you can use it in your own applications to get the
       most out of your JCR repositories.</para>
-    <para> The first part of the book provides some background on content repositories and the Java Content Repository (JCR) API.
-      Content repositories are an important aspect of JBoss DNA, so it's probably worth reading even if you're already familiar
-      with these technologies. Besides, it's really not that long.</para>
-    <para> The If you're already familiar with these technologies, you can probably skip this section. However, most readers will
-      probably want to</para>
-    <para> and then introduces JBoss DNA project and its relationship to JCR. The second part</para>
-    <para>
-      <link linkend="part1">Part I intr oduces JBoss DNAFeature Analysis and Design</link>
-      Part 1
+    <para>The part of the book starts out with an introduction to content repositories and an overview of the JCR API, both of which are an
+    important aspect of JBoss DNA.  This is followed by an overview of the the JBoss DNA project, it's architecture, and a basic
+    roadmap for what's coming next.</para>
+    <para>The next part of the book covers how to download and build the examples, how to use JBoss DNA with
+    existing repositories, and how to build and use custom sequencers.
     </para>
-    <para>This document introduces the JBoss DNA project.</para>
-    <itemizedlist>
-      <listitem>
-        <para>
-          The build process is simplified and standardized. Just follow the instructions in this guide to setup your
-          <literal>docs</literal>
-          directory and copy a very simple
-          <literal>pom.xml</literal>
-          file.
-        </para>
-      </listitem>
-    </itemizedlist>
     <para>
       If you have any questions or comments, please feel free to contact JBoss DNA's
       <ulink url="mailto:dna-users@jboss.org">user mailing list</ulink>
@@ -51,10 +36,518 @@
       same thing.
     </para>
   </preface>
-  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="modules/introduction.xml" xml:base="./" />
-  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="modules/jboss_dna.xml" xml:base="./" />
-  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="modules/downloading.xml" xml:base="./" />
-  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="modules/using_dna.xml" xml:base="./" />
-  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="modules/custom_sequencers.xml" xml:base="./" />
-  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="modules/future_directions.xml" xml:base="./" />
+  <chapter id="introduction">
+    <title>Introduction</title>
+    <para>There are a lot of choices for how applications can store information persistently so that it can be accessed at a
+      later time and by other processes. The challenge developers face is to use an approach that most closes matches the needs of
+      their application. This choice is more important as developers choose to focus their efforts on the application-specific
+      logic, delegating much of the responsibilities for persistence to libraries and frameworks.</para>
+    <para>
+      Perhaps one of the easiest techniques is to simply store information in
+      <emphasis>files</emphasis>
+      . The Java language makes working with files relatively easy, but Java really doesn't provide many bells and whistles. So
+      using files is an easy choice when the information is either not complicated (for example property files), or when users may
+      need to read or change the information outside of the application (for example log files or configuration files). But using
+      files to persist information becomes more difficult as the information becomes more complex, as the volume of it increases,
+      or if it needs to be accessed by multiple processes. For these situations, other techniques are often a better choice.
+    </para>
+    <para>
+      Another technique built into the Java language is
+      <emphasis>Java serialization</emphasis>
+      , which is capable of persisting the state of an object graph so that it can be read back in at a later time. However, Java
+      serialization can quickly become tricky if the classes are changed, and so its beneficial usually when the information is
+      persisted for a very short period of time. For example, serialization is sometimes used to send an object graph from one
+      process to another.
+    </para>
+    <para>
+      One of the more popular persistence technologies is the
+      <emphasis>relational database</emphasis>
+      . Relational database management systems have been around for decades and are very capable. The Java Database Connectivity
+      (JDBC) API provides a standard interface for connecting to and interacting with relational databases. However, it is a
+      low-level API that requires a lot of code to use correctly, and it still doesn't abstract away the DBMS-specific SQL
+      grammar. Also, working with relational data in an object-oriented language can feel somewhat unnatural, so many developers
+      map this data to classes that fit much more cleanly into their application. The problem is that manually creating this
+      mapping layer requires a lot of repetitive and non-trivial JDBC code.
+    </para>
+    <para>
+      <emphasis>Object-relational mapping</emphasis>
+      libraries automate the creation of this mapping layer and result in far less code that is much more maintainable with often
+      as good (if not better) performance than handwritten JDBC code. The new
+      <ulink url="http://java.sun.com/developer/technicalArticles/J2EE/jpa/">Java Persistence API (JPA)</ulink>
+      provide a standard mechanism for defining the mappings (through annotations) and working with these entity objects. Several
+      commercial and open-source libraries implement JPA, and some even offer additional capabilities and features that go beyond
+      JPA. For example,
+      <ulink url="http://www.hibernate.org">Hibernate</ulink>
+      is one of the most feature-rich JPA implementations and offers object caching, statement caching, extra association
+      mappings, and other features that help to improve performance and usefulness.
+    </para>
+    <para>
+      While relational databases and JPA are solutions that work for many applications, they become more limited in cases when the
+      information structure is highly flexible, is not known a priori, or is subject to frequent change and customization. In
+      these situations,
+      <emphasis>content repositories</emphasis>
+      may offer a better choice for persistence. Content repositories are almost a hybrid between relational databases and file
+      systems, and typically provide other capabilies as well, including versioning, indexing, search, access control,
+      transactions, and observation. Because of this, content repositories are used by content management systems (CMS), document
+      management systems (DMS), and other applications that manage electronic files (e.g., documents, images, multi-media, web
+      content, etc.) and metadata associated with them (e.g., author, date, status, security information, etc.). The
+      <ulink url="http://www.jcp.org/en/jsr/detail?id=170">Content Repository for Java technology API</ulink>
+      provides a standard Java API for working with content repositories. Abbreviated "JCR", this API was developed as part of the
+      Java Community Process under
+      <ulink url="http://www.jcp.org/en/jsr/detail?id=170">JSR-170</ulink>
+      and is being revised under
+      <ulink url="http://www.jcp.org/en/jsr/detail?id=283">JSR-283</ulink>
+      .
+    </para>
+    <para>
+      The
+      <emphasis>JBoss DNA project</emphasis>
+      is building the tooles and services that surround content repositories. Nearly all of these capabilities are to be hidden
+      below the JCR API and involve automated processing of the information in the repository. Thus, JBoss DNA can add value to
+      existing repository implementations. For example, JCR repositories offer the ability to upload files into the repository and
+      have the file content index for search purposes. JBoss DNA defines a library for also sequencing that content to extract
+      meaningful information and store it in the repository, where it can then be searched, accessed and analyzed using the JCR
+      API.
+    </para>
+    <para> JBoss DNA is building other features as well. One goal of JBoss DNA is to create federated repositories that
+      dynamically merge the information from multiple databases, services, applications, and other JCR repositories. Another is to
+      create customized views based upon the type of data and the role of the user that is accessing the data. And yet another is
+      to create a REST-ful API to allow the JCR content to be accessed easily by other applications written in other languages.
+    </para>
+    <para>
+      The
+      <link linkend="jboss_dna">next chapter</link>
+      in this book goes into more detail about JBoss DNA and its architecture, the different components, what's available now, and
+      what's coming in future releases.
+      <link linkend="downloading">Chapter 3</link>
+      then provides instructions for downloading and compiling the sequencer examples for the current release.
+      <link linkend="using_dna">Chapter 4</link>
+      walks through these examples, while
+      <link linkend="custom_sequencers">Chapter 5</link>
+      goes over how to create custom sequencers. Finally,
+      <link linkend="future_directions">Chapter 6</link>
+      wraps things up.
+    </para>
+  </chapter>
+  <chapter id="jboss_dna">
+    <title>JBoss DNA</title>
+    <sect1>
+      <title>Sequencers</title>
+      <para> The current JBoss DNA release contains a sequencing framework that is designed to sequence data (typically files)
+        stored in a JCR repository to automatically extract meaningful and useful information. This additional information is then
+        saved back into the repository, where it can be accessed and used.</para>
+      <para> In other words, you can just upload various kinds of files into a JCR repository, and DNA automatically processes
+        those files to extract meaningful structured information. For example, load DDL files into the repository, and let
+        sequencers extract the structure and metadata for the database schema. Load Hibernate configuration files into the
+        repository, and let sequencers extract the schema and mapping information. Load Java source into the repository, and let
+        sequencers extract the class structure, JavaDoc, annotations. Load a PNG, JPEG, or other image into the repository, and
+        let sequencers extract the metadata from the image and save it in the repository. The same with XSDs, WSDL, WS policies,
+        UML, MetaMatrix models, etc.</para>
+      <para>
+        JBoss DNA sequencers sit on top of existing JCR repositories (including federated repositories) - it basically extracts
+        more useful information from what's already stored in the repository. And it uses the existing JCR versioning system. Each
+        sequencer typically processes a single kind of file format. The following sequencer is included in JBoss DNA:
+        <itemizedlist>
+          <listitem>
+            <para>
+              Image sequencer - A sequencer that processes the binary content of an image file, extracts the metadata for the
+              image, and then writes that image metadata to the repository. Gets the file format, image resolution, number of bits
+              per pixel and optionally number of images, comments and physical resolution from JPEG, GIF, BMP, PCX, PNG, IFF, RAS,
+              PBM, PGM, PPM and PSD files. (This sequencer may be improved in the future to also extract EXIF metadata from JPEG
+              files; see
+              <ulink url="http://jira.jboss.org/jira/browse/DNA-26">DNA-26</ulink>
+              .)
+            </para>
+          </listitem>
+        </itemizedlist>
+      </para>
+      <para>
+        As the community develops additional sequencers, they will also be included in JBoss DNA. Some of those that have been
+        identified as being useful include:
+        <itemizedlist>
+          <listitem>
+            <para>
+              XML Schema Document (XSD) Sequencer - Process XSD files and extract the various elements, attributes, complex types,
+              simple types, and groups. (See
+              <ulink url="http://jira.jboss.org/jira/browse/DNA-32">DNA-32</ulink>
+              )
+            </para>
+          </listitem>
+          <listitem>
+            <para>
+              Web Service Definition Language (WSDL) Sequencer - Process WSDL files and extract the services, bindings, ports,
+              operations, parameters, and other information. (See
+              <ulink url="http://jira.jboss.org/jira/browse/DNA-33">DNA-33</ulink>
+              )
+            </para>
+          </listitem>
+          <listitem>
+            <para>
+              Hibernate File Sequencer - Process Hibernate configuration (cfg.xml) and mapping (hbm.xml) files to extract the
+              configuration and mapping information. (See
+              <ulink url="http://jira.jboss.org/jira/browse/DNA-61">DNA-61</ulink>
+              )
+            </para>
+          </listitem>
+          <listitem>
+            <para>
+              XML Metadata Interchange (XMI) Sequencer - Process XMI documents that contain UML models or models using another
+              metamodel, extracting the model structure into the repository. (See
+              <ulink url="http://jira.jboss.org/jira/browse/DNA-31">DNA-31</ulink>
+              )
+            </para>
+          </listitem>
+          <listitem>
+            <para>
+              ZIP Archive Sequencer - Process ZIP archive files to extract (explode) the contents into the repository. (See
+              <ulink url="http://jira.jboss.org/jira/browse/DNA-63">DNA-63</ulink>
+              )
+            </para>
+          </listitem>
+          <listitem>
+            <para>
+              Java Archive (JAR) Sequencer - Process JAR files to extract (explode) the contents into the classes and file
+              resources. (See
+              <ulink url="http://jira.jboss.org/jira/browse/DNA-64">DNA-64</ulink>
+              )
+            </para>
+          </listitem>
+          <listitem>
+            <para>
+              Java Class File Sequencer - Process Java class files (bytecode) to extract the class structure (including
+              annotations) into the repository. (See
+              <ulink url="http://jira.jboss.org/jira/browse/DNA-62">DNA-62</ulink>
+              )
+            </para>
+          </listitem>
+          <listitem>
+            <para>
+              Java Source File Sequencer - Process Java source files (bytecode) to extract the class structure (including
+              annotations) into the repository. (See
+              <ulink url="http://jira.jboss.org/jira/browse/DNA-51">DNA-51</ulink>
+              )
+            </para>
+          </listitem>
+          <listitem>
+            <para>
+              PDF Sequencer - Process PDF files to extract the document metadata, including table of contents. (See
+              <ulink url="http://jira.jboss.org/jira/browse/DNA-50">DNA-50</ulink>
+              )
+            </para>
+          </listitem>
+          <listitem>
+            <para>
+              Maven 2 POM Sequencer - Process Maven 2 Project Object Model (POM) files to extract the project information,
+              dependencies, plugins, and other content. (See
+              <ulink url="http://jira.jboss.org/jira/browse/DNA-24">DNA-24</ulink>
+              )
+            </para>
+          </listitem>
+          <listitem>
+            <para>
+              Data Definition Language (DDL) Sequencer - Process various dialects of DDL, including that from Oracle, SQL Server,
+              MySQL, PostgreSQL, and others. May need to be split up into a different sequencer for each dialect. (See
+              <ulink url="http://jira.jboss.org/jira/browse/DNA-26">DNA-26</ulink>
+              )
+            </para>
+          </listitem>
+          <listitem>
+            <para>
+              MP3 and MP4 Sequencer - Process MP3 and MP4 audio files to extract the name of the song, artist, album, track
+              number, and other metadata. (See
+              <ulink url="http://jira.jboss.org/jira/browse/DNA-30">DNA-30</ulink>
+              )
+            </para>
+          </listitem>
+        </itemizedlist>
+      </para>
+      <para>
+        The
+        <link linkend="using_dna">examples</link>
+        in this book go into more detail about how sequencers are managed and used, and
+<link linkend="custom_sequencers">Chapter 5</link> goes into detail about how to
+        write custom sequencers.
+      </para>
+    </sect1>
+    <sect1>
+      <title>Federation</title>
+      <para>There is a lot of information stored in many of different places: databases, repositories, SCM systems,
+        registries, file systems, services, etc. The purpose of the federation engine is to allow applications to use the JCR API
+        to access that information as if it were all stored in a single JCR repository, but to really leave the information where
+        it is.</para>
+      <para>Why not just move the information into a JCR repository? Most likely there are existing applications that rely upon
+        that information being where it is. If we were to move it, then all those applications would break. Or they'd have to be
+        changed to use JCR. If the information is being used, the most practical thing is to leave it where it is.</para>
+      <para>
+        Then why not just copy the information into a JCR repository? Actually, there are times when it's perfectly reasonable to
+        make a copy of the data. Perhaps the system managing the existing information cannot handle the additional load of more
+        clients. Or, perhaps the information doesn't change, or it does change and we want snapshots that don't change. But more
+        likely, the data
+        <emphasis>does</emphasis>
+        change. So if applications are to use the most current information and we make copies of the data, we have to keep the
+        copies synchronized with the master. That's generally a lot of work.
+      </para>
+      <para>The JBoss DNA federation engine lets us leave the information where it is, yet lets client applications use the JCR
+        API to access all the information without caring where the information really exists. If the underlying information
+        changes, client applications using JCR observation will be notified of the changes. If a JBoss DNA federated repository is
+        configured to allow updates, client applications can change the information in the repository and JBoss DNA will propagate
+        those changes down to the original source.</para>
+      <sect2>
+        <title>Connectors</title>
+        <para>
+          The JBoss DNA federation engine will use connectors to interact with different information sources to get at the content
+          in those systems. Some ideas for connectors include:
+          <itemizedlist>
+            <listitem>
+              <para>JCR Repository Connector - Connect to and interact with other JCR repositories.</para>
+            </listitem>
+            <listitem>
+              <para>File System Connector - Expose the files and directories on a file system through JCR.</para>
+            </listitem>
+            <listitem>
+              <para>Maven 2 Repository Connector - Access and expose the contents of a Maven 2 repository (either on the
+                local file system or via HTTP) through JCR.</para>
+            </listitem>
+            <listitem>
+              <para>JDBC Metadata Connector - Connect to relational databases via JDBC and expose their schema as content in a
+                repository.</para>
+            </listitem>
+            <listitem>
+              <para>UDDI Connector - Interact with UDDI registries to integrate their content into a repository.</para>
+            </listitem>
+            <listitem>
+              <para>
+                SVN Connector - Interact with Subversion software configuration management (SCM) repositories to expose the
+                managed resources through JCR. Consider using
+                <ulink url="http://svnkit.com/">SVNkit</ulink>
+                (dual license) library for API into Subversion.
+              </para>
+            </listitem>
+            <listitem>
+              <para>CVS Connector - Interact with CVS software configuration management (SCM) repositories, to expose the
+                managed resources through JCR.</para>
+            </listitem>
+            <listitem>
+              <para>JDBC Storage Connector - Store and access information in a relational database. Also useful for persisting
+                information in the federated repository not stored elsewhere.</para>
+            </listitem>
+            <listitem>
+              <para>
+                Distributed Database Connector - Store and access information in a
+                <ulink url="http://www.hypertable.org/">Hypertable</ulink>
+                or
+                <ulink url="http://hadoop.apache.org/hbase/">HBase</ulink>
+                distributed databases. Also useful for persisting information in the federated repository not stored elsewhere.
+              </para>
+            </listitem>
+          </itemizedlist>
+        </para>
+        <para>
+          If the connectors allow the information they contribute to be updated, they must provide an
+          <code>XAResource</code>
+          implementation that can be used with a Java Transaction Service. Connectors that provide read-only access need not
+          provide an implementation.
+        </para>
+      </sect2>
+      <sect2>
+        <title>Sources</title>
+        <para>
+          Each JBoss DNA federated repository is configured to federate and integrate information from one or more
+          <emphasis>sources</emphasis>
+          . Each source contains the configuration details (e.g., connection information, location, properties, options, etc.) for
+          working with that particular source, as well as a reference to the connector that should be used to establish
+          connections to the source. And of course, sources can be added or removed without having to stop and restart the
+          federated repository.
+        </para>
+      </sect2>
+      <sect2>
+        <title>Building the unified graph</title>
+        <para> The federation engine works by effectively building up a single graph by querying each source and merging or
+          unifying the responses. This information is cached, which improves performance, reduces the number of (potentially
+          expensive) remote calls, reduces the load on the sources, and helps mitigate problems with source availability. As
+          clients interact with the repository, this cache is consulted first. When the requested portion of the graph (or
+          "subgraph") is contained completely in the cache, it is retuned immediately. However, if any part of the requested
+          subgraph is not in the cache, each source is consulted for their contributions to that subgraph, and any results are
+          cached.</para>
+        <para> This basic flow makes it possible for the federated repository to build up a local cache of the integrated graph
+          (or at least the portions that are used by clients). In fact, the federated repository caches information in a manner
+          that is similar to that of the Domain Name System (DNS). As sources are consulted for their contributions, the source
+          also specifies whether it is the authoritative source for this information (some sources that are themselves federated
+          may not be the information's authority), whether the information may be modified, the time-to-live (TTL) value (the time
+          after which the cached information should be refreshed), and the expiration time (the time after which the cached
+          information is no longer valid). In effect, the source has complete control over how the information it contributes is
+          cached and used.</para>
+        <para>
+          The federated repository also needs to incorporate
+          <emphasis>negative caching</emphasis>
+          , which is storage of the knowledge that something does not exist. Sources can be configured to contribute information
+          only below certain paths (e.g.,
+          <code>/A/B/C</code>
+          ), and the federation engine can take advantage of this by never consulting that source for contributions to information
+          on other paths. However, below that path, any negative responses must also be cached (with appropriate TTL and expiry
+          parameters) to prevent the exclusion of that source (in case the source has information to contribute at a later time)
+          or the frequent checking with the source.
+        </para>
+      </sect2>
+      <sect2>
+        <title>Queries</title>
+        <para> The JBoss DNA federated repository will also support queries against the integrated and unified graph. In some
+          situations the query can be determined to apply to a single source, but in most situations the query must be planned
+          (and possibly rewritten) such that it can be pushed down to all the appropriate sources. Also, the cached results must
+          be consulted prior to returning the query results, as the results from one source might have contributions from another
+          source.</para>
+        <para> It is hoped that the MetaMatrix query engine can be used for this purpose, after it is open sourced. This engine
+          implements sophisticated query planning and optimization techniques for working efficiently with multiple sources.
+        </para>
+      </sect2>
+      <sect2>
+        <title>Updates</title>
+        <para>
+          The JBoss DNA federated repositories also make it possible for client applications to make changes to the unified graph
+          within the context of distributed transactions. According to the JCR API, client applications use the Java Transaction
+          API (JTA) to control the boundaries of their transactions. Meanwhile, the federated repository uses a
+          <ulink url="http://www.jboss.org/jbosstm/">distributed transaction service</ulink>
+          to coordinate the XA resources provided by the connectors.
+        </para>
+        <para> It is quite possible that clients add properties to nodes in the unified graph, and that this information cannot be
+          handled by the same underlying source that contributed to the node. In this case, the federated repository can be
+          configured with a fallback source that will be used used to store this "extra" information.</para>
+        <para>
+          It is a goal that non-XA sources (i.e., sources that use connectors without XA resources) can participate in distributed
+          transactions through the use of
+          <emphasis>compensating transactions</emphasis>
+          . Because the JBoss DNA federation engine implements the JCR observation system, it is capable of recording all of the
+          changes made to the distributed graph (and those changes sent to each updatable source). Therefore, if a non-XA source
+          is involved in a distributed transaction that must be rolled back, any changes made to non-XA sources can be undone. (Of
+          course, this does not make the underlying source transactional: non-transactional sources still may expose the interim
+          changes to other clients.)
+        </para>
+      </sect2>
+      <sect2>
+        <title>Events</title>
+        <para> The JCR API supports observing a repository to receive notifications of additions, changes and deletions of nodes
+          and properties. The JBoss DNA federated repository will support this API through two primary means.</para>
+        <para> When the changes are made through the federated repository, the JBoss DNA federation engine is well aware of the
+          set of changes that have been (or are being) made to the unified graph. These events are directly propagated to
+          listeners.</para>
+        <para> Sources have the ability to publish events, making it possible for the JBoss DNA federation engine and clients that
+          have registered listeners to be notified of changes in the information managed by that source. These events are first
+          processed by the federation engine and possibly altered based upon contributions from other sources. (The federation
+          engine also uses these events to update or purge information in the cache, which may add to the event set.) The
+          resulting (and possibly altered) event set is then sent to all client listeners.</para>
+      </sect2>
+    </sect1>
+  </chapter>
+  <!--  ====================================================================================================
+                                                   Chapter 
+        ====================================================================================================   -->
+  <chapter id="downloading">
+    <title>Downloading the examples</title>
+    <para>JBoss DNA is built using Maven 2, so it's much easier to following along with the examples in this document if you
+      install and configure Maven. Once this is done, you can very easily build the examples or even create a maven project that
+      depends on the JBoss DNA JARs. Maven will automatically download the right versions of the JARs, including those other
+      libraries on which JBoss DNA depends. Maven also makes it very easy to create an assembly of your final application so that
+      you can package into a distributable form.</para>
+    <para>
+      The examples created for this User Guide use Maven2 to achieve exactly this so it is highly recommended that you
+      <ulink url="http://labs.jboss.com/file-access/default/members/jbossmc/downloads/userGuide-examples-13112007.zip">download</ulink>
+      these first and take a look at how they work.
+    </para>
+    <note>
+      <para>
+        To build and run the examples you first need to install and configure Maven 2.0.7 available from
+        <ulink url="http://maven.apache.org/">http://maven.apache.org/</ulink>
+      </para>
+      <para>Installation is performed by downloading and unzipping the maven-2.0.7-bin.zip file to a convenient
+        location on your local disk. Configuration consists of adding $MAVEN_HOME/bin to your path and adding the following
+        profile to your ~/.m2/settings.xml file:</para>
+      <programlisting role="XML">&lt;settings&gt;
+  &lt;profiles&gt;
+    &lt;profile&gt;
+      &lt;id&gt;jboss.repository&lt;/id&gt;
+      &lt;activation&gt;
+        &lt;property&gt;          
+          &lt;name&gt;!jboss.repository.off&lt;/name&gt;
+        &lt;/property&gt;
+      &lt;/activation&gt;
+      &lt;repositories&gt;
+        &lt;repository&gt;
+          &lt;id&gt;snapshots.jboss.org&lt;/id&gt;
+          &lt;url&gt;http://snapshots.jboss.org/maven2&lt;/url&gt;
+          &lt;snapshots&gt;
+            &lt;enabled&gt;true&lt;/enabled&gt;
+          &lt;/snapshots&gt;
+        &lt;/repository&gt;
+        &lt;repository&gt;
+          &lt;id&gt;repository.jboss.org&lt;/id&gt;
+          &lt;url&gt;http://repository.jboss.org/maven2&lt;/url&gt;
+          &lt;snapshots&gt;
+            &lt;enabled&gt;false&lt;/enabled&gt;
+          &lt;/snapshots&gt;
+        &lt;/repository&gt;
+      &lt;/repositories&gt;
+      &lt;pluginRepositories&gt;
+        &lt;pluginRepository&gt;
+          &lt;id&gt;repository.jboss.org&lt;/id&gt;
+          &lt;url&gt;http://repository.jboss.org/maven2&lt;/url&gt;
+          &lt;snapshots&gt;
+            &lt;enabled&gt;false&lt;/enabled&gt;
+          &lt;/snapshots&gt;
+        &lt;/pluginRepository&gt;
+        &lt;pluginRepository&gt;
+          &lt;id&gt;snapshots.jboss.org&lt;/id&gt;
+          &lt;url&gt;http://snapshots.jboss.org/maven2&lt;/url&gt;
+          &lt;snapshots&gt;
+            &lt;enabled&gt;true&lt;/enabled&gt;
+          &lt;/snapshots&gt;
+        &lt;/pluginRepository&gt;
+      &lt;/pluginRepositories&gt;
+    &lt;/profile&gt;
+  &lt;/profiles&gt;
+&lt;/settings&gt;</programlisting>
+        <para>This profile informs maven of the two JBoss repositories (snapshots and releases) that are needed to download the JBoss Microcontainer and dependant JARs.</para>
+      </note>
+      <para>Once you have configured Maven and downloaded the examples then you can go to one of the following subdirectories in the <code>examples/User_Guide</code> directory and enter <code>mvn install</code> to perform a build:</para>
+      <itemizedlist>
+        <listitem>
+          <para>gettingStarted -  projects for creating and using a service together with AOP</para>
+        </listitem>
+        <listitem>
+          <para>pojoDevelopment -  examples of creating and configuring POJOs using XML and annotations</para>
+        </listitem>
+        <listitem>
+          <para>aopDevelopment - examples of using AOP to add behaviour to POJOs</para>
+        </listitem>
+        <listitem>
+          <para>extending - examples of how we  created various extensions to the microcontainer by creating new dependencies</para>
+        </listitem>
+      </itemizedlist>
+      <para>Instructions on how to run the individual examples can be found in the corresponding parts of this guide.</para>
+  </chapter>
+<chapter id="using_dna">
+  <title>Using JBoss DNA</title>
+  <para></para>
+</chapter>
+<chapter id="custom_sequencers">
+  <title>Custom sequencers</title>
+  <para></para>
+</chapter>
+<chapter id="future_directions">
+  <title>Future directions</title>
+  <para>What's next for JBoss DNA?  Well, sequencers are just the beginning.  
+  Remember our <link linkend="jboss_dna">architecture</link>?
+  There are a lot of components on our roadmap, including federating
+  
+  </para>
+      <para> Roadmap: We'll start on the federation engine as soon as 0.1 is out. The 0.1 release will contain the sequencing
+      system, and while there will be one sequencer, we hope the community will help build the ones they need. Serge has started
+      on a Java sequencer, and MetaMatrix is starting on a sequencer for MetaMatrix models. Check out JIRA for the list of the
+      ones we've thought of.</para>
+    <para> Your need for a web UI is very typical, which is why we also want to create a web interface (and RESTful service) that
+      presents data using "domain-specific" views - that is, views that are specific to the type of data and user role. For
+      example, if a user is viewing database information, the views should be structured to show all the information for a table
+      and its columns, keys, and indexes. (This is in contrast with a "generic" node-based view where there is one page that shows
+      the table and only links to the other columns, keys, etc. See http://www.jcr-explorer.org/screenshots.html for an example of
+      a "generic" web UI.)</para>
+</chapter>
 </book>

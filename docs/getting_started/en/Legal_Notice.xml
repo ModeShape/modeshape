@@ -1,0 +1,16 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE authorgroup PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+]>
+<legalnotice id="Book-Legal_Notice">
+  <title>Legal Notice</title>
+  <para>
+    <address>
+      <street>1801 Varsity Drive</street>
+      <city>Raleigh</city>, <state>NC</state> <postcode>27606-2072</postcode> <country>USA</country>
+      <phone>Phone: +1 919 754 3700</phone>
+      <phone>Phone: 888 733 4281</phone>
+      <fax>Fax: +1 919 754 3701</fax>
+      <pob>PO Box 13588</pob>, <city>Research Triangle Park</city>, <state>NC</state> <postcode>27709</postcode> <country>USA</country>
+    </address>
+  </para>
+</legalnotice>
