@@ -24,6 +24,11 @@
     </dependency>
     <dependency>
       <groupId>org.jboss.dna</groupId>
+      <artifactId>dna-common</artifactId>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.jboss.dna</groupId>
       <artifactId>dna-sequencer-images</artifactId>
       <scope>runtime</scope>
     </dependency>

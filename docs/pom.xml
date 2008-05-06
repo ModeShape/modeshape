@@ -1,0 +1,17 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <parent>
+    <groupId>org.jboss.dna</groupId>
+    <artifactId>dna</artifactId>
+    <version>0.1-SNAPSHOT</version>
+  </parent>
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>org.jboss.dna.docs</groupId>
+  <artifactId>dna-docs</artifactId>
+  <packaging>pom</packaging>
+  <name>JBoss DNA Documents</name>
+  <url>http://www.jboss.org/dna</url>
+  <description>JBoss DNA Documentation</description>
+  <modules>
+    <module>gettingstarted</module>
+  </modules>
+</project>

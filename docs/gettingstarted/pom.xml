@@ -14,6 +14,6 @@
     <artifactId>getting-started-${translation}</artifactId>
     <version>0.1-SNAPSHOT</version>
     <packaging>jdocbook</packaging>
-    <name>Getting_Started_(${translation})</name>
+    <name>JBoss DNA Getting Started Document (${translation})</name>
 
 </project>

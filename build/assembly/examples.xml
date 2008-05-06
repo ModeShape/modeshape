@@ -1,0 +1,31 @@
+<assembly>
+  <id>examples</id>
+  <includeBaseDirectory>false</includeBaseDirectory>
+  <formats>
+    <!--<format>tar.gz</format>
+    <format>tar.bz2</format-->
+    <format>zip</format>
+  </formats>
+  <fileSets>
+	<fileSet>
+	  <!--
+		Gather into the distribution the various text files for inclusion
+	  -->
+	  <directory>build</directory>
+	  <outputDirectory></outputDirectory>
+	  <includes>
+		<include>README*</include>
+		<include>LICENSE*</include>
+		<include>NOTICE*</include>
+		<include>*.txt</include>
+	  </includes>
+	</fileSet>
+	<fileSet>
+	  <!--
+		Gather into the distribution the examples
+	  -->
+	  <directory>docs/examples/gettingstarted/sequencers/target/dna-example-sequencers-basic.dir/</directory>
+	  <outputDirectory>examples/sequencers</outputDirectory>
+	</fileSet>
+  </fileSets>
+</assembly>

@@ -1,0 +1,18 @@
+<assembly>
+  <id>javadoc</id>
+  <includeBaseDirectory>false</includeBaseDirectory>
+  <formats>
+    <!--<format>tar.gz</format>
+    <format>tar.bz2</format-->
+    <format>zip</format>
+  </formats>
+  <fileSets>
+	<fileSet>
+	  <!--
+		Gather into the distribution the JavaDoc for all projects
+	  -->
+	  <directory>target/site/apidocs</directory>
+	  <outputDirectory>apidocs</outputDirectory>
+	</fileSet>
+  </fileSets>
+</assembly>

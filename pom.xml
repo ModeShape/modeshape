@@ -5,17 +5,104 @@
 	<artifactId>dna</artifactId>
 	<version>0.1-SNAPSHOT</version>
 	<packaging>pom</packaging>
-	<name>JBoss DNA Parent POM</name>
-	<url>http://labs.jboss.org/dna</url>
-	<description>JBoss DNA (aggregator)</description>
+	<name>JBoss DNA</name>
+	<url>http://www.jboss.org/dna</url>
+	<description>JBoss DNA provides tools for working with JCR repositories.</description>
+	<scm>
+		<connection>scm:svn:https://svn.jboss.org/repos/dna/trunk</connection>
+	</scm>
 	<modules>
 		<module>dna-common</module>
 		<module>dna-spi</module>
 		<module>dna-repository</module>
 		<module>sequencers/dna-sequencer-images</module>
 		<module>dna-maven-classloader</module>
-		<module>dna-integration-tests</module>
 	</modules>
+	<properties>
+		<dna-version>0.1-SNAPSHOT</dna-version>
+	</properties>
+	<profiles>
+		<profile>
+		    <!-- 
+			This profile is activated when the "integration.tests" property is set,
+			as in "mvn ... -Dintegration.tests=true ..."
+		    -->
+	      <id>integration-tests</id>
+	      <activation>
+	        <property>
+	          <name>integration.tests</name>
+	        </property>
+	      </activation>
+	      <modules>
+	        <module>dna-integration-tests</module>
+	      </modules>
+	    </profile>
+		<profile>
+		    <!-- 
+			This profile is activated when the "generate.docs" property is set,
+			as in "mvn ... -Dgenerate.docs=true ..."
+		    -->
+	      <id>docs</id>
+	      <activation>
+	        <property>
+	          <name>generate.docs</name>
+	        </property>
+	      </activation>
+	      <modules>
+	        <module>docs</module>
+	      </modules>
+		  <reporting>
+		    <plugins>
+		      <plugin>
+		        <groupId>org.apache.maven.plugins</groupId>
+		        <artifactId>maven-javadoc-plugin</artifactId>
+		        <configuration>
+		          <aggregate>true</aggregate>
+				  <show>public</show>
+				  <title>JBoss DNA ${project.version}</title>
+		        </configuration>
+		      </plugin>
+		    </plugins>
+		  </reporting>
+	    </profile>
+		<profile>
+		  <!-- 
+          This profile is activated manually, as in "mvn ... -P assembly ..."
+		  -->
+	      <id>assembly</id>
+	      <build>
+	        <plugins>
+	          <plugin>
+	            <artifactId>maven-assembly-plugin</artifactId>
+	            <inherited>false</inherited>
+	            <executions>
+	              <execution>
+	                <id>make-assembly</id>
+	                <phase>install</phase>
+	                <goals>
+	                  <goal>assembly</goal>
+	                </goals>
+	              </execution>
+	            </executions>
+	            <configuration>
+	              <finalName>jboss-dna-${project.version}</finalName>
+	              <descriptors>
+	                <descriptor>build/assembly/examples.xml</descriptor>
+	                <descriptor>build/assembly/javadoc.xml</descriptor>
+	                <descriptor>build/assembly/dist.xml</descriptor>
+	                <descriptor>build/assembly/src.xml</descriptor>
+	              </descriptors>
+	            </configuration>
+	          </plugin>
+	        </plugins>
+	      </build>
+	      <modules>
+	        <module>dna-integration-tests</module>
+	        <module>docs</module>
+	        <module>docs/examples/gettingstarted</module>
+	      </modules>
+	    </profile>
+	</profiles>
 	<build>
 		<!-- This section defines the default plugin settings inherited by child projects. -->
 		<pluginManagement>
@@ -25,6 +112,14 @@
 					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-jar-plugin</artifactId>
 					<version>2.2</version>
+				</plugin>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-javadoc-plugin</artifactId>
+					<version>2.2</version>
+					<configuration>
+						<aggregate>true</aggregate>
+					</configuration>
 				</plugin>
 			</plugins>
 		</pluginManagement>
@@ -92,22 +187,22 @@
 			<dependency>
 				<groupId>org.jboss.dna</groupId>
 				<artifactId>dna-common</artifactId>
-				<version>0.1-SNAPSHOT</version>
+				<version>${dna-version}</version>
 			</dependency>
 			<dependency>
 				<groupId>org.jboss.dna</groupId>
 				<artifactId>dna-maven-classloader</artifactId>
-				<version>0.1-SNAPSHOT</version>
+				<version>${dna-version}</version>
 			</dependency>
 			<dependency>
 				<groupId>org.jboss.dna</groupId>
 				<artifactId>dna-spi</artifactId>
-				<version>0.1-SNAPSHOT</version>
+				<version>${dna-version}</version>
 			</dependency>
 			<dependency>
 				<groupId>org.jboss.dna</groupId>
 				<artifactId>dna-repository</artifactId>
-				<version>0.1-SNAPSHOT</version>
+				<version>${dna-version}</version>
 			</dependency>
 			<!-- 
 		    Rules
@@ -243,6 +338,6 @@
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-surefire-report-plugin</artifactId>
 			</plugin>
-		</plugins>
+	    </plugins>
 	</reporting>
 </project>
