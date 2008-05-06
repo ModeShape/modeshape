@@ -177,9 +177,9 @@ public class SequencerPathExpressionTest {
         assertThat(expr.replaceXPathPatterns("/a/(b/c)[(d|e)/(f|g)/@something]"), is("/a/(b/c)/(d|e)/(f|g)/@something"));
 
         assertThat(expr.replaceXPathPatterns("/a/*/f"), is("/a/[^/]*/f"));
-        assertThat(expr.replaceXPathPatterns("/a//f"), is("/a(/[^/]*)*/f"));
-        assertThat(expr.replaceXPathPatterns("/a///f"), is("/a(/[^/]*)*/f"));
-        assertThat(expr.replaceXPathPatterns("/a/////f"), is("/a(/[^/]*)*/f"));
+        assertThat(expr.replaceXPathPatterns("/a//f"), is("/a(?:/[^/]*)*/f"));
+        assertThat(expr.replaceXPathPatterns("/a///f"), is("/a(?:/[^/]*)*/f"));
+        assertThat(expr.replaceXPathPatterns("/a/////f"), is("/a(?:/[^/]*)*/f"));
     }
 
     protected void assertNotMatches( SequencerPathExpression.Matcher matcher ) {
@@ -232,6 +232,21 @@ public class SequencerPathExpressionTest {
         assertMatches(expr.matcher("/a/b[2]/c/d/e/@something"), "/a/b[2]/c", "/a/b[2]/c");
         assertMatches(expr.matcher("/a/rt/c/d/e/@something"), "/a/rt/c", "/a/rt/c");
         assertNotMatches(expr.matcher("/ac/d/e/@something"));
+    }
+
+    @Test
+    public void shouldMatchExpressionsWithFilenameLikeWildcardSelection() {
+        expr = SequencerPathExpression.compile("/a/*.txt[@something] => .");
+        assertMatches(expr.matcher("/a/b.txt/@something"), "/a/b.txt", "/a/b.txt");
+        assertNotMatches(expr.matcher("/a/b.tx/@something"));
+
+        expr = SequencerPathExpression.compile("/a/*.txt/c[@something] => .");
+        assertMatches(expr.matcher("/a/b.txt/c/@something"), "/a/b.txt/c", "/a/b.txt/c");
+        assertNotMatches(expr.matcher("/a/b.tx/c/@something"));
+
+        expr = SequencerPathExpression.compile("//*.txt[*]/c[@something] => .");
+        assertMatches(expr.matcher("/a/b.txt/c/@something"), "/a/b.txt/c", "/a/b.txt/c");
+        assertNotMatches(expr.matcher("/a/b.tx/c/@something"));
     }
 
     @Test
@@ -351,6 +366,12 @@ public class SequencerPathExpressionTest {
 
         expr = SequencerPathExpression.compile("/a/(b/c)[d/e/@something] => /x/$1/./z");
         assertMatches(expr.matcher("/a/b/c/d/e/@something"), "/a/b/c", "/x/b/c/z");
+    }
+
+    @Test
+    public void shouldMatchExpressionWithFilenamePatternAndChildProperty() {
+        expr = SequencerPathExpression.compile("//(*.(jpeg|gif|bmp|pcx|png|iff|ras|pbm|pgm|ppm|psd))[*]/jcr:content[@jcr:data]=>/images/$1");
+        assertMatches(expr.matcher("/a/b/caution.png/jcr:content/@jcr:data"), "/a/b/caution.png/jcr:content", "/images/caution.png");
     }
 
 }

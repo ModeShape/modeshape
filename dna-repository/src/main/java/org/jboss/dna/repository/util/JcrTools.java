@@ -268,20 +268,33 @@ public class JcrTools {
     }
 
     public Node findOrCreateNode( Session session, String path ) throws RepositoryException {
+        return findOrCreateNode(session, path, null, null);
+    }
+
+    public Node findOrCreateNode( Session session, String path, String nodeType ) throws RepositoryException {
+        return findOrCreateNode(session, path, nodeType, nodeType);
+    }
+
+    public Node findOrCreateNode( Session session, String path, String defaultNodeType, String finalNodeType ) throws RepositoryException {
         Node root = session.getRootNode();
+        return findOrCreateNode(session, root, path, defaultNodeType, finalNodeType);
+    }
+
+    public Node findOrCreateNode( Session session, Node parentNode, String path, String defaultNodeType, String finalNodeType ) throws RepositoryException {
         // Remove leading and trailing slashes ...
         String relPath = path.replaceAll("^/+", "").replaceAll("/+$", "");
 
         // Look for the node first ...
         try {
-            return root.getNode(relPath);
+            return parentNode.getNode(relPath);
         } catch (PathNotFoundException e) {
             // continue
         }
         // Create the node, which has to be done segment by segment ...
         String[] pathSegments = relPath.split("/");
-        Node node = root;
-        for (String pathSegment : pathSegments) {
+        Node node = parentNode;
+        for (int i = 0, len = pathSegments.length; i != len; ++i) {
+            String pathSegment = pathSegments[i];
             pathSegment = pathSegment.trim();
             if (pathSegment.length() == 0) continue;
             if (node.hasNode(pathSegment)) {
@@ -291,10 +304,24 @@ public class JcrTools {
                 // Make sure there is no index on the final segment ...
                 String pathSegmentWithNoIndex = pathSegment.replaceAll("(\\[\\d+\\])+$", "");
                 // Create the node ...
-                node = node.addNode(pathSegmentWithNoIndex);
+                String nodeType = defaultNodeType;
+                if (i == len - 1 && finalNodeType != null) nodeType = finalNodeType;
+                if (nodeType != null) {
+                    node = node.addNode(pathSegmentWithNoIndex, nodeType);
+                } else {
+                    node = node.addNode(pathSegmentWithNoIndex);
+                }
             }
         }
         return node;
+    }
+
+    public Node findOrCreateChild( Session session, Node parent, String name ) throws RepositoryException {
+        return findOrCreateChild(session, parent, name, null);
+    }
+
+    public Node findOrCreateChild( Session session, Node parent, String name, String nodeType ) throws RepositoryException {
+        return findOrCreateNode(session, parent, name, nodeType, nodeType);
     }
 
 }

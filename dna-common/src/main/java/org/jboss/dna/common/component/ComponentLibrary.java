@@ -202,7 +202,7 @@ public class ComponentLibrary<ComponentType, ConfigType extends ComponentConfig>
             // Don't use ClassLoader.loadClass(String), as it doesn't properly initialize the class
             // (specifically static initializers may not be called)
             Class<?> componentClass = Class.forName(config.getComponentClassname(), true, classLoader);
-            newInstance = (ComponentType)componentClass.newInstance();
+            newInstance = doCreateInstance(componentClass);
             if (newInstance instanceof Component) {
                 ((Component<ConfigType>)newInstance).setConfiguration(config);
             }
@@ -213,6 +213,19 @@ public class ComponentLibrary<ComponentType, ConfigType extends ComponentConfig>
             throw new SystemFailureException(CommonI18n.componentNotConfigured.text(config.getName()));
         }
         return newInstance;
+    }
+
+    /**
+     * Method that instantiates the supplied class. This method can be overridden by subclasses that may need to wrap or adapt the
+     * instance to be a ComponentType.
+     * @param componentClass
+     * @return
+     * @throws InstantiationException
+     * @throws IllegalAccessException
+     */
+    @SuppressWarnings( "unchecked" )
+    protected ComponentType doCreateInstance( Class<?> componentClass ) throws InstantiationException, IllegalAccessException {
+        return (ComponentType)componentClass.newInstance();
     }
 
     /**

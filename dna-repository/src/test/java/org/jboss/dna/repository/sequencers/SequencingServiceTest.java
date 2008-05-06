@@ -39,7 +39,7 @@ import org.jboss.dna.repository.sequencers.SequencerConfig;
 import org.jboss.dna.repository.sequencers.SequencingService;
 import org.jboss.dna.repository.services.ServiceAdministrator;
 import org.jboss.dna.repository.util.ExecutionContext;
-import org.jboss.dna.repository.util.SimpleExecutionContext;
+import org.jboss.dna.repository.util.MockExecutionContext;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -58,7 +58,7 @@ public class SequencingServiceTest extends AbstractJcrRepositoryTest {
 
     @Before
     public void beforeEach() throws Exception {
-        this.executionContext = new SimpleExecutionContext(this, REPOSITORY_WORKSPACE_NAME);
+        this.executionContext = new MockExecutionContext(this, REPOSITORY_WORKSPACE_NAME);
         this.sequencingService = new SequencingService();
         this.sequencingService.setExecutionContext(this.executionContext);
         this.observationService = new ObservationService(this.executionContext.getSessionFactory());
@@ -69,6 +69,7 @@ public class SequencingServiceTest extends AbstractJcrRepositoryTest {
     public void afterEach() throws Exception {
         super.shutdownRepository();
         this.sequencingService.getAdministrator().shutdown();
+        this.observationService.getAdministrator().shutdown();
     }
 
     @Test

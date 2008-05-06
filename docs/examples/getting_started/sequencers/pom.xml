@@ -1,0 +1,95 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+
+  <parent>
+    <groupId>org.jboss.dna.examples</groupId>
+    <artifactId>getting_started</artifactId>
+    <version>0.1</version>
+    <relativePath>..</relativePath>
+  </parent>
+
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>org.jboss.dna.examples</groupId>
+  <artifactId>dna-example-sequencers</artifactId>
+  <version>0.1-SNAPSHOT</version>
+  <packaging>jar</packaging>
+  <name>Sequencer Examples</name>
+  <description>Examples that showcase how to use sequencers with a JCR repository.</description>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.jboss.dna</groupId>
+      <artifactId>dna-repository</artifactId>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.jboss.dna</groupId>
+      <artifactId>dna-sequencer-images</artifactId>
+      <scope>runtime</scope>
+    </dependency>
+    <!-- 
+    Logging (require SLF4J API for compiling, but use Log4J and its SLF4J binding for testing) 
+    -->
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-log4j12</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>log4j</groupId>
+      <artifactId>log4j</artifactId>
+    </dependency>
+    <!-- 
+      Java Content Repository API 
+    -->
+    <dependency>
+      <groupId>javax.jcr</groupId>
+      <artifactId>jcr</artifactId>
+    </dependency>
+    <!-- 
+      Apache Jackrabbit (JCR Implementation) for repository implementation
+    -->
+    <dependency>
+      <groupId>org.apache.jackrabbit</groupId>
+      <artifactId>jackrabbit-api</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.jackrabbit</groupId>
+      <artifactId>jackrabbit-core</artifactId>
+    </dependency>
+    <!-- 
+      Test cases use JUnit
+    -->
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <artifactId>maven-assembly-plugin</artifactId>
+        <configuration>
+          <descriptors>
+            <descriptor>src/main/assembly/basic.xml</descriptor>
+          </descriptors>
+          <finalName>${pom.artifactId}</finalName>
+        </configuration>
+        <executions>
+          <execution>
+            <phase>package</phase>
+            <goals>
+              <goal>directory-inline</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+
+</project>

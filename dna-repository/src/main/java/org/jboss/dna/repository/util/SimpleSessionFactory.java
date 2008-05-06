@@ -22,14 +22,13 @@
 
 package org.jboss.dna.repository.util;
 
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import javax.jcr.Credentials;
 import javax.jcr.Repository;
 import javax.jcr.Session;
-import javax.naming.Context;
 import javax.naming.InitialContext;
-import javax.naming.NamingException;
 import org.jboss.dna.common.SystemFailureException;
-import org.jboss.dna.common.util.ArgCheck;
 import org.jboss.dna.repository.RepositoryI18n;
 
 /**
@@ -54,50 +53,24 @@ import org.jboss.dna.repository.RepositoryI18n;
  * </p>
  * @author Randall Hauch
  */
-public class JndiSessionFactory extends AbstractSessionFactory {
+public class SimpleSessionFactory extends AbstractSessionFactory {
 
-    private final Context context;
+    private final Map<String, Repository> repositories = new ConcurrentHashMap<String, Repository>();
 
     /**
-     * Create an instance of the factory by creating a new {@link InitialContext}. This is equivalent to calling
-     * <code>new JndiSessionFactory(new InitialContext())</code>.
-     * @throws NamingException if there is a problem creating the InitialContext.
+     * Create an instance of the factory by creating a new {@link InitialContext}.
      */
-    public JndiSessionFactory() throws NamingException {
-        this(new InitialContext());
+    public SimpleSessionFactory() {
+        super();
     }
 
     /**
      * Create an instance of the factory by supplying the characters that may be used to delimit the workspace name from the
-     * repository name. This constructor initializes the factory with a new {@link InitialContext}, and is equivalent to calling
-     * <code>new JndiSessionFactory(new InitialContext(),workspaceDelimiters)</code>.
+     * repository name.
      * @param workspaceDelimiters the delimiters, or null/empty if the default delimiter of '/' should be used.
-     * @throws NamingException if there is a problem creating the InitialContext.
      */
-    public JndiSessionFactory( char... workspaceDelimiters ) throws NamingException {
-        this(new InitialContext(), workspaceDelimiters);
-    }
-
-    /**
-     * Create an instance of the factory using the supplied JNDI context.
-     * @param context the naming context
-     * @throws IllegalArgumentException if the context parameter is null
-     */
-    public JndiSessionFactory( Context context ) {
-        this(context, DEFAULT_DELIMITERS);
-    }
-
-    /**
-     * Create an instance of the factory by supplying naming context and the characters that may be used to delimit the workspace
-     * name from the repository name.
-     * @param context the naming context
-     * @param workspaceDelimiters the delimiters, or null/empty if the default delimiter of '/' should be used.
-     * @throws IllegalArgumentException if the context parameter is null
-     */
-    public JndiSessionFactory( Context context, char... workspaceDelimiters ) {
+    public SimpleSessionFactory( char... workspaceDelimiters ) {
         super(workspaceDelimiters);
-        ArgCheck.isNotNull(context, "initial context");
-        this.context = context;
     }
 
     /**
@@ -105,11 +78,7 @@ public class JndiSessionFactory extends AbstractSessionFactory {
      */
     @Override
     protected void doRegisterRepository( String name, Repository repository ) throws SystemFailureException {
-        try {
-            this.context.bind(name, repository);
-        } catch (NamingException e) {
-            throw new SystemFailureException(RepositoryI18n.unableToRegisterRepositoryInJndi.text(name));
-        }
+        this.repositories.put(name, repository);
     }
 
     /**
@@ -117,10 +86,8 @@ public class JndiSessionFactory extends AbstractSessionFactory {
      */
     @Override
     protected void doUnregisterRepository( String name ) throws SystemFailureException {
-        try {
-            this.context.unbind(name);
-        } catch (NamingException e) {
-            throw new SystemFailureException(RepositoryI18n.unableToUnregisterRepositoryInJndi.text(name));
+        if (this.repositories.remove(name) == null) {
+            throw new SystemFailureException(RepositoryI18n.unableToRemoveRepository.text(name));
         }
     }
 
@@ -129,10 +96,11 @@ public class JndiSessionFactory extends AbstractSessionFactory {
      */
     @Override
     protected Repository findRegisteredRepository( String name ) throws SystemFailureException {
-        try {
-            return (Repository)this.context.lookup(name);
-        } catch (NamingException e) {
-            throw new SystemFailureException(RepositoryI18n.unableToFindRepositoryInJndi.text(name));
+        Repository repository = this.repositories.get(name);
+        if (repository == null) {
+            throw new SystemFailureException(RepositoryI18n.unableToFindRepositoryWithName.text(name));
         }
+        return repository;
     }
+
 }

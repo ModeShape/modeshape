@@ -21,47 +21,29 @@
  */
 package org.jboss.dna.repository.util;
 
-import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.assertThat;
-import java.io.IOException;
-import javax.jcr.RepositoryException;
-import javax.jcr.Session;
-import org.jboss.dna.common.SystemFailureException;
-import org.jboss.dna.common.jcr.AbstractJcrRepositoryTest;
-import org.jboss.dna.repository.util.ExecutionContext;
-import org.jboss.dna.repository.util.JcrTools;
-import org.jboss.dna.repository.util.SessionFactory;
-
 /**
  * @author Randall Hauch
  */
-public class SimpleExecutionContext implements ExecutionContext {
+public class SimpleExecutionContext extends SimpleSessionFactory implements ExecutionContext {
 
-    private JcrTools tools = new JcrTools();
-    private SessionFactory sessionFactory;
+    private final JcrTools tools = new JcrTools();
 
-    public SimpleExecutionContext( final AbstractJcrRepositoryTest test, final String repositoryName ) {
-        this.sessionFactory = new SessionFactory() {
-
-            public Session createSession( String name ) throws RepositoryException {
-                assertThat(name, is(repositoryName));
-                try {
-                    return test.getRepository().login(test.getTestCredentials());
-                } catch (IOException e) {
-                    throw new SystemFailureException(e);
-                }
-            }
-        };
+    public SimpleExecutionContext() {
+        super();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public SessionFactory getSessionFactory() {
-        return sessionFactory;
+        return this;
     }
 
     /**
      * {@inheritDoc}
      */
     public JcrTools getTools() {
-        return tools;
+        return this.tools;
     }
+
 }

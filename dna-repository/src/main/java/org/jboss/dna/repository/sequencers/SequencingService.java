@@ -29,6 +29,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
@@ -185,7 +186,7 @@ public class SequencingService implements AdministeredService, NodeChangeListene
     }
 
     private ExecutionContext executionContext;
-    private ComponentLibrary<Sequencer, SequencerConfig> sequencerLibrary = new ComponentLibrary<Sequencer, SequencerConfig>();
+    private SequencerLibrary sequencerLibrary = new SequencerLibrary();
     private Selector sequencerSelector = DEFAULT_SEQUENCER_SELECTOR;
     private NodeFilter nodeFilter = DEFAULT_NODE_FILTER;
     private ExecutorService executorService;
@@ -431,12 +432,16 @@ public class SequencingService implements AdministeredService, NodeChangeListene
         for (final NodeChange changedNode : changes) {
             // Only care about new nodes or nodes that have new/changed properies ...
             if (filter.accept(changedNode)) {
-                this.executorService.execute(new Runnable() {
+                try {
+                    this.executorService.execute(new Runnable() {
 
-                    public void run() {
-                        processChangedNode(changedNode);
-                    }
-                });
+                        public void run() {
+                            processChangedNode(changedNode);
+                        }
+                    });
+                } catch (RejectedExecutionException e) {
+                    // The executor service has been shut down, so do nothing with this set of changes
+                }
             }
         }
     }

@@ -265,8 +265,9 @@ public class SequencerPathExpression implements Serializable {
         }
 
         // Order is important here
-        expression = expression.replaceAll("[*]", "[^/]*");
-        expression = expression.replaceAll("[/]{2,}", "(/[^/]*)*/");
+        expression = expression.replaceAll("[*]([^/])", "[^/$1]*$1");
+        expression = expression.replaceAll("(?<!\\[\\^/\\])[*]", "[^/]*");
+        expression = expression.replaceAll("[/]{2,}", "(?:/[^/]*)*/");
         return expression;
     }
 

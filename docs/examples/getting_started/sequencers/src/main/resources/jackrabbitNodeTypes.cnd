@@ -1,0 +1,37 @@
+<jcr='http://www.jcp.org/jcr/1.0'>
+<nt='http://www.jcp.org/jcr/nt/1.0'>
+<mix='http://www.jcp.org/jcr/mix/1.0'>
+<image='http://jboss.org/dna/images/1.0'>
+
+// ----------------------------------------------------------
+// JCR Pre-defined Mixin Types that are not loaded by default
+// ----------------------------------------------------------
+
+[mix:mimeType] mixin 
+  - jcr:mimeType (string)  
+  - jcr:encoding (string)
+
+
+// -------------------
+// DNA Image Sequencer
+// -------------------
+
+/**
+ * Marker mixin that defines the root of a Maven 2 repository.
+ */
+[image:metadata] > nt:unstructured
+  - image:mimeType (string)  
+  - image:encoding (string)
+  - image:formatName (string) mandatory
+  - image:width (long)
+  - image:height (long)
+  - image:bitsPerPixel (long)
+  - image:progressive (boolean)
+  - image:numberOfImages (long)
+  - image:physicalWidthDpi (long)
+  - image:physicalHeightDpi (long)
+  - image:physicalWidthInches (long)
+  - image:physicalHeightInches (long)
+
+
+

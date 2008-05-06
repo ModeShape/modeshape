@@ -109,6 +109,15 @@ public class ObservationService implements AdministeredService {
         /**
          * {@inheritDoc}
          */
+        @Override
+        protected void doShutdown( State fromState ) {
+            super.doShutdown(fromState);
+            shutdownService();
+        }
+
+        /**
+         * {@inheritDoc}
+         */
         public boolean awaitTermination( long timeout, TimeUnit unit ) {
             return true;
         }
@@ -119,6 +128,7 @@ public class ObservationService implements AdministeredService {
     private ProblemLog problemLog = new DefaultProblemLog();
     private final Statistics statistics = new Statistics();
     private final SessionFactory sessionFactory;
+    private final CopyOnWriteArrayList<WorkspaceListener> workspaceListeners = new CopyOnWriteArrayList<WorkspaceListener>();
     private final CopyOnWriteArrayList<EventListener> eventListeners = new CopyOnWriteArrayList<EventListener>();
     private final CopyOnWriteArrayList<NodeChangeListener> nodeChangeListeners = new CopyOnWriteArrayList<NodeChangeListener>();
     private final Administrator administrator = new Administrator();
@@ -200,6 +210,17 @@ public class ObservationService implements AdministeredService {
         return this.nodeChangeListeners.remove(listener);
     }
 
+    protected void shutdownService() {
+        // Unregister all listeners ...
+        for (WorkspaceListener listener : this.workspaceListeners) {
+            try {
+                listener.unregister();
+            } catch (RepositoryException e) {
+                this.logger.error(RepositoryI18n.errorUnregisteringWorkspaceListenerWhileShuttingDownObservationService);
+            }
+        }
+    }
+
     /**
      * Monitor the supplied workspace for events of the given type on any node at or under the supplied path.
      * <p>
@@ -262,6 +283,7 @@ public class ObservationService implements AdministeredService {
         throws RepositoryException {
         WorkspaceListener listener = new WorkspaceListener(repositoryWorkspaceName, eventTypes, absolutePath, isDeep, uuids, nodeTypeNames, noLocal);
         listener.register();
+        this.workspaceListeners.add(listener);
         return listener;
     }
 
@@ -313,6 +335,10 @@ public class ObservationService implements AdministeredService {
      */
     public WorkspaceListener monitor( String repositoryWorkspaceName, int eventTypes, String... nodeTypeNames ) throws RepositoryException {
         return monitor(repositoryWorkspaceName, WorkspaceListener.DEFAULT_ABSOLUTE_PATH, eventTypes, WorkspaceListener.DEFAULT_IS_DEEP, null, nodeTypeNames, WorkspaceListener.DEFAULT_NO_LOCAL);
+    }
+
+    protected void unregisterListener( WorkspaceListener listener ) {
+        if (listener != null) this.workspaceListeners.remove(listener);
     }
 
     /**
@@ -564,6 +590,7 @@ public class ObservationService implements AdministeredService {
                 this.session.logout();
             } finally {
                 this.session = null;
+                unregisterListener(this);
             }
             return this;
         }
