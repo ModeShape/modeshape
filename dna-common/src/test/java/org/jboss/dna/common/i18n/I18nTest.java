@@ -349,7 +349,6 @@ public final class I18nTest {
 		try {
 			TestI18n.testMessage1.text();
 		} catch (IllegalArgumentException err) {
-			assertThat(err.getMessage(), is(CommonI18n.i18nArgumentsMismatchedParameter.text(0, "testMessage1", 1, "{0}", "{0}")));
 			System.err.println(err);
 			throw err;
 		}
@@ -361,8 +360,6 @@ public final class I18nTest {
 		try {
 			TestI18n.testMessage1.text("Test", "Message");
 		} catch (IllegalArgumentException err) {
-			assertThat(err.getMessage(),
-			           is(CommonI18n.i18nArgumentsMismatchedParameter.text(2, "testMessage1", 1, "{0}", "Test")));
 			System.err.println(err);
 			throw err;
 		}

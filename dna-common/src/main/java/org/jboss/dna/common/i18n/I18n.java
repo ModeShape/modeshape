@@ -36,13 +36,12 @@ import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArraySet;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import net.jcip.annotations.ThreadSafe;
 import org.jboss.dna.common.CommonI18n;
 import org.jboss.dna.common.SystemFailureException;
 import org.jboss.dna.common.util.ArgCheck;
 import org.jboss.dna.common.util.ClassUtil;
+import org.jboss.dna.common.util.StringUtil;
 
 /**
  * Manages the initialization of internationalization (i18n) files, substitution of values within i18n message placeholders, and
@@ -54,8 +53,6 @@ import org.jboss.dna.common.util.ClassUtil;
 @ThreadSafe
 public final class I18n {
 
-	private static final Pattern PARAMETER_COUNT_PATTERN = Pattern.compile("\\{(\\d+)\\}");
-	private static final Object[] EMPTY_ARGUMENTS = new Object[] {};
 	private static final LocalizationRepository DEFAULT_LOCALIZATION_REPOSITORY = new ClasspathLocalizationRepository();
 
 	/**
@@ -309,86 +306,6 @@ public final class I18n {
 		}
 	}
 
-	/**
-	 * Substitute the arguments into the message, ensuring that the number of arguments matches the number of parameters in the
-	 * text.
-	 *
-	 * @param id the id of the internationalization object
-	 * @param text
-	 * @param arguments
-	 * @return the text with parameters replaced
-	 */
-	protected static String replaceParameters( String id,
-	                                           String text,
-	                                           Object... arguments ) {
-		if (arguments == null) arguments = EMPTY_ARGUMENTS;
-		Matcher matcher = PARAMETER_COUNT_PATTERN.matcher(text);
-		StringBuffer newText = new StringBuffer();
-		int argCount = 0;
-		boolean err = false;
-		while (matcher.find()) {
-			int ndx = Integer.valueOf(matcher.group(1));
-			if (argCount <= ndx) {
-				argCount = ndx + 1;
-			}
-			if (ndx >= arguments.length) {
-				err = true;
-				matcher.appendReplacement(newText, matcher.group());
-			} else {
-				Object arg = arguments[ndx];
-				if (arg != null) {
-					matcher.appendReplacement(newText, Matcher.quoteReplacement(arg.toString()));
-				} else {
-					matcher.appendReplacement(newText, Matcher.quoteReplacement("null"));
-				}
-			}
-		}
-		if (err || argCount < arguments.length) {
-			String msg = null;
-			if (id != null) {
-				if (arguments.length == 1) {
-					msg = CommonI18n.i18nArgumentMismatchedParameters.text(id, argCount, text, newText.toString());
-				} else if (argCount == 1) {
-					msg = CommonI18n.i18nArgumentsMismatchedParameter.text(arguments.length, id, text, newText.toString());
-				} else {
-					msg = CommonI18n.i18nArgumentsMismatchedParameters.text(arguments.length,
-					                                                        id,
-					                                                        argCount,
-					                                                        text,
-					                                                        newText.toString());
-				}
-				throw new IllegalArgumentException(msg);
-			}
-			if (arguments.length == 1) {
-				msg = CommonI18n.i18nReplaceArgumentMismatchedParameters.text(argCount, text, newText.toString());
-			} else if (argCount == 1) {
-				msg = CommonI18n.i18nReplaceArgumentsMismatchedParameter.text(arguments.length, text, newText.toString());
-			} else {
-				msg = CommonI18n.i18nReplaceArgumentsMismatchedParameters.text(arguments.length,
-				                                                               argCount,
-				                                                               text,
-				                                                               newText.toString());
-			}
-			throw new IllegalArgumentException(msg);
-		}
-		matcher.appendTail(newText);
-
-		return newText.toString();
-	}
-
-	/**
-	 * Substitute the arguments into the message, ensuring that the number of arguments matches the number of parameters in the
-	 * text.
-	 *
-	 * @param text
-	 * @param arguments
-	 * @return the text with parameters replaced
-	 */
-	public static String replaceParameters( String text,
-	                                        Object... arguments ) {
-		return replaceParameters(null, text, arguments);
-	}
-
 	private final String id;
 	private final Class i18nClass;
 	final ConcurrentHashMap<Locale, String> localeToTextMap = new ConcurrentHashMap<Locale, String>();
@@ -495,7 +412,11 @@ public final class I18n {
 	                    Object... arguments ) {
 		try {
 			String rawText = rawText(locale == null ? Locale.getDefault() : locale);
-			return replaceParameters(id, rawText, arguments);
+			return StringUtil.createString(rawText, arguments);
+		} catch (IllegalArgumentException err) {
+			throw new IllegalArgumentException(CommonI18n.i18nRequiredToSuppliedParameterMismatch.text(id,
+			                                                                                           i18nClass,
+			                                                                                           err.getMessage()));
 		} catch (SystemFailureException err) {
 			return '<' + err.getMessage() + '>';
 		}
