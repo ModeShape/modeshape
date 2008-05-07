@@ -24,8 +24,11 @@
 	  <!--
 		Gather into the distribution the examples
 	  -->
-	  <directory>docs/examples/gettingstarted/sequencers/target/dna-example-sequencers-basic.dir/</directory>
+	  <directory>docs/examples/gettingstarted/sequencers</directory>
 	  <outputDirectory>examples/sequencers</outputDirectory>
+      <excludes>
+        <exclude>target/**</exclude>
+      </excludes>
 	</fileSet>
   </fileSets>
 </assembly>
