@@ -19,7 +19,7 @@
 		<module>dna-maven-classloader</module>
 	</modules>
 	<properties>
-		<dna-version>0.1-SNAPSHOT</dna-version>
+		<dna-version>${project.version}</dna-version>
 	</properties>
 	<profiles>
 		<profile>
@@ -135,6 +135,20 @@
 					<showDeprecation>false</showDeprecation>
 					<showWarnings>false</showWarnings>
 				</configuration>
+			</plugin>
+			<!-- Produce source jars during the 'verify' phase -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-source-plugin</artifactId>
+				<executions>
+					<execution>
+						<id>attach-sources</id>
+						<phase>verify</phase>
+						<goals>
+							<goal>jar</goal>
+						</goals>
+					</execution>
+				</executions>
 			</plugin>
 			<plugin>
 				<artifactId>maven-surefire-plugin</artifactId>
