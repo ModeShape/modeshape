@@ -1,5 +1,5 @@
 <assembly>
-  <id>examples</id>
+  <id>gettingstarted-examples</id>
   <includeBaseDirectory>false</includeBaseDirectory>
   <formats>
     <!--<format>tar.gz</format>

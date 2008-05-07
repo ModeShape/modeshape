@@ -21,18 +21,46 @@
  */
 package org.jboss.example.dna.sequencers;
 
-import java.io.IOException;
+import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.assertThat;
 import java.net.URL;
 import java.util.List;
 
 /**
  * @author Randall Hauch
  */
-public interface UserInterface {
+public class MockUserInterface implements UserInterface {
 
-    public URL getFileToUpload() throws IllegalArgumentException, IOException;
+    private final String repositoryPath;
+    private final URL fileToUpload;
 
-    public String getRepositoryPath( String defaultPath ) throws IllegalArgumentException, IOException;
+    public MockUserInterface( URL fileToUpload, String repositoryPath ) {
+        this.repositoryPath = repositoryPath;
+        this.fileToUpload = fileToUpload;
+    }
 
-    public void displaySearchResults( List<ImageInfo> images ) throws IOException;
+    /**
+     * {@inheritDoc}
+     */
+    public void displaySearchResults( List<ImageInfo> images ) {
+        assertThat(images.size(), is(1));
+        for (ImageInfo image : images) {
+            System.out.println("Image: " + image);
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public URL getFileToUpload() throws IllegalArgumentException {
+        return this.fileToUpload;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public String getRepositoryPath( String defaultPath ) {
+        return this.repositoryPath != null ? this.repositoryPath : defaultPath;
+    }
+
 }

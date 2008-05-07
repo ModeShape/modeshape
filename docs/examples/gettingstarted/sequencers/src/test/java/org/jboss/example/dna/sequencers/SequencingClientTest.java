@@ -24,7 +24,6 @@ package org.jboss.example.dna.sequencers;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
 import java.net.URL;
-import java.util.List;
 import org.jboss.dna.common.util.FileUtil;
 import org.junit.After;
 import org.junit.Before;
@@ -71,19 +70,21 @@ public class SequencingClientTest {
 
     @Test
     public void shouldUploadFile() throws Exception {
+        client.setUserInterface(new MockUserInterface(this.file, "/a/b/caution.png"));
         client.startRepository();
         client.startDnaServices();
-        client.uploadFile(file.openStream(), "/a/b/caution.png", "image/png");
+        client.uploadFile();
 
-        // Let the sequencing start ...
+        // Use a trick to wait until the sequencing has been done by sleeping (to give the sequencing time to start)
+        // and to then shut down the DNA services (which will block until all sequencing has been completed) ...
         Thread.sleep(1000);
-        client.shutdownDnaServices(); // this will block untill all processing has been done ...
+        client.shutdownDnaServices();
 
-        List<ImageInfo> images = client.getImages();
-        assertThat(images.size(), is(1));
-        for (ImageInfo image : images) {
-            System.out.println("Image: " + image);
-        }
+        // The sequencers should have run, so perform the search.
+        // The mock user interface checks the results.
+        client.search();
+
+        assertThat(client.getStatistics().getNumberOfNodesSequenced(), is(1l));
     }
 
 }

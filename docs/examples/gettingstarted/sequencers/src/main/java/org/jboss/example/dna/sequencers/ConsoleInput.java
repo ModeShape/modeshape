@@ -25,6 +25,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.net.URL;
 import java.util.List;
 import java.util.Map;
 import org.jboss.dna.repository.sequencers.SequencingService;
@@ -134,7 +135,10 @@ public class ConsoleInput implements UserInterface {
         return buffer.toString();
     }
 
-    public File getPathOfFileToUpload() throws IllegalArgumentException, IOException {
+    /**
+     * {@inheritDoc}
+     */
+    public URL getFileToUpload() throws IllegalArgumentException, IOException {
         System.out.println("Please enter the file to upload:");
         String path = in.readLine();
         File file = new File(path);
@@ -147,7 +151,7 @@ public class ConsoleInput implements UserInterface {
         if (!file.isFile()) {
             throw new IllegalArgumentException("Please specify a file.  The file \"" + file.getAbsolutePath() + "\" is a directory.");
         }
-        return file;
+        return file.toURL();
     }
 
     public String getRepositoryPath( String defaultPath ) throws IllegalArgumentException, IOException {

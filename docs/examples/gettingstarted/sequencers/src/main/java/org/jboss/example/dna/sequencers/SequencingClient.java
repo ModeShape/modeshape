@@ -22,8 +22,6 @@
 package org.jboss.example.dna.sequencers;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.InputStream;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -50,6 +48,7 @@ import org.jboss.dna.repository.sequencers.SequencerConfig;
 import org.jboss.dna.repository.sequencers.SequencingService;
 import org.jboss.dna.repository.util.ExecutionContext;
 import org.jboss.dna.repository.util.JcrTools;
+import org.jboss.dna.repository.util.SessionFactory;
 import org.jboss.dna.repository.util.SimpleExecutionContext;
 
 /**
@@ -90,10 +89,6 @@ public class SequencingClient {
         setRepositoryInformation(DEFAULT_REPOSITORY_NAME, DEFAULT_WORKSPACE_NAME, DEFAULT_USERNAME, DEFAULT_PASSWORD);
     }
 
-    public void setUserInterface( UserInterface userInterface ) {
-        this.userInterface = userInterface;
-    }
-
     protected void setWorkingDirectory( String workingDirectoryPath ) {
         this.workingDirectory = workingDirectoryPath != null ? workingDirectoryPath : DEFAULT_WORKING_DIRECTORY;
     }
@@ -112,6 +107,18 @@ public class SequencingClient {
         this.password = password;
     }
 
+    /**
+     * Set the user interface that this client should use.
+     * @param userInterface
+     */
+    public void setUserInterface( UserInterface userInterface ) {
+        this.userInterface = userInterface;
+    }
+
+    /**
+     * Start up the JCR repository. This method only operates using the JCR API and Jackrabbit-specific API.
+     * @throws Exception
+     */
     public void startRepository() throws Exception {
         if (this.repository == null) {
             try {
@@ -163,6 +170,10 @@ public class SequencingClient {
         }
     }
 
+    /**
+     * Shutdown the repository. This method only uses the JCR API.
+     * @throws Exception
+     */
     public void shutdownRepository() throws Exception {
         if (this.repository != null) {
             try {
@@ -174,93 +185,125 @@ public class SequencingClient {
         }
     }
 
+    /**
+     * Start the DNA services.
+     * @throws Exception
+     */
     public void startDnaServices() throws Exception {
         if (this.repository == null) {
             this.startRepository();
         }
-        if (this.sequencingService != null) {
-            return;
+        if (this.sequencingService == null) {
+
+            // Create an execution context for the sequencing service. This execution context provides an environment
+            // for the DNA services which knows about the JCR repositories, workspaces, and credentials used to
+            // establish sessions to these workspaces. This example uses the SimpleExecutionContext, but there is
+            // implementation for use with JCR repositories registered in JNDI.
+            SimpleExecutionContext executionContext = new SimpleExecutionContext();
+            executionContext.registerRepository(this.repositoryName, this.repository);
+            if (this.username != null) {
+                Credentials credentials = new SimpleCredentials(this.username, this.password);
+                executionContext.registerCredentials(this.repositoryName + "/" + this.workspaceName, credentials);
+            }
+            this.executionContext = executionContext;
+
+            // Create the sequencing service, passing in the execution context ...
+            this.sequencingService = new SequencingService();
+            this.sequencingService.setExecutionContext(executionContext);
+
+            // Configure the sequencers. In this example, we only use a single sequencer that processes image files.
+            // So create a configuration. Note that the sequencing service expects the class to be on the thread's current context
+            // classloader, or if that's null the classloader that loaded the SequencingService class.
+            //
+            // Part of the configuration includes telling DNA which JCR paths should be processed by the sequencer.
+            // These path expressions tell the service that this sequencer should be invoked on the "jcr:data" property
+            // on the "jcr:content" child node of any node uploaded to the repository whose name ends with one of the
+            // supported extensions, and the sequencer should place the generated output metadata in a node with the same name as
+            // the file but immediately below the "/images" node. Path expressions can be fairly complex, and can even
+            // specify that the generated information be placed in a different repository.
+            // 
+            // Sequencer configurations can be added before or after the service is started, but here we do it before the service
+            // is running.
+            String name = "Image Sequencer";
+            String desc = "Sequences image files to extract the characteristics of the image";
+            String classname = "org.jboss.dna.sequencer.images.ImageMetadataSequencer";
+            String[] classpath = null; // Use the current classpath
+            String[] pathExpressions = {"//(*.(jpg|jpeg|gif|bmp|pcx|png|iff|ras|pbm|pgm|ppm|psd))[*]/jcr:content[@jcr:data] => /images/$1"};
+            SequencerConfig imageSequencerConfig = new SequencerConfig(name, desc, classname, classpath, pathExpressions);
+            this.sequencingService.addSequencer(imageSequencerConfig);
+
+            // Use the DNA observation service to listen to the JCR repository (or multiple ones), and
+            // then register the sequencing service as a listener to this observation service...
+            this.observationService = new ObservationService(this.executionContext.getSessionFactory());
+            this.observationService.getAdministrator().start();
+            this.observationService.addListener(this.sequencingService);
+            this.observationService.monitor(this.repositoryName + "/" + this.workspaceName, Event.NODE_ADDED | Event.PROPERTY_ADDED | Event.PROPERTY_CHANGED);
         }
-        // Create an execution context for the sequencing service.
-        // The repository instances and workspace names are registered, and that the service will reference.
-        // the repository ...
-        SimpleExecutionContext executionContext = new SimpleExecutionContext();
-        // Register the JCR repository ...
-        executionContext.registerRepository(this.repositoryName, this.repository);
-        if (this.username != null) {
-            Credentials credentials = new SimpleCredentials(this.username, this.password);
-            executionContext.registerCredentials(this.repositoryName + "/" + this.workspaceName, credentials);
-        }
-        this.executionContext = executionContext;
-
-        // Create the sequencing service ...
-        this.sequencingService = new SequencingService();
-        this.sequencingService.setExecutionContext(executionContext);
-
-        // Add the configuration for the image sequencer. This sequencer class should be on the thread's current context class
-        // loader, or if that's null the classloader that loaded the SequencingService class.
-        //
-        // The path expressions tell the service that this sequencer should be invoked on the "jcr:data" property
-        // on the "jcr:content" child node of any node uploaded to the repository whose name ends with one of the
-        // supported extensions, and it should place the output metadata in a node with the same name as the file
-        // but immediately below the "/images" node. Path expressions can be fairly complex, and can even
-        // specify that the generated information be placed in a different repository.
-        // 
-        // Sequencers can be added before or after the service is started.
-        String name = "Image Sequencer";
-        String desc = "Sequences image files to extract the characteristics of the image";
-        String classname = "org.jboss.dna.sequencer.images.ImageMetadataSequencer";
-        String[] classpath = null; // Use the current classpath
-        String[] pathExpressions = {"//(*.(jpeg|gif|bmp|pcx|png|iff|ras|pbm|pgm|ppm|psd))[*]/jcr:content[@jcr:data] => /images/$1"};
-        SequencerConfig imageSequencerConfig = new SequencerConfig(name, desc, classname, classpath, pathExpressions);
-        this.sequencingService.addSequencer(imageSequencerConfig);
-
         // Start up the sequencing service ...
         this.sequencingService.getAdministrator().start();
-
-        // Register the sequencing service as a listener using the observation service ...
-        this.observationService = new ObservationService(this.executionContext.getSessionFactory());
-        this.observationService.getAdministrator().start();
-        this.observationService.addListener(this.sequencingService);
-        this.observationService.monitor(this.repositoryName + "/" + this.workspaceName, Event.NODE_ADDED | Event.PROPERTY_ADDED | Event.PROPERTY_CHANGED);
     }
 
+    /**
+     * Shut down the DNA services.
+     * @throws Exception
+     */
     public void shutdownDnaServices() throws Exception {
         if (this.sequencingService == null) return;
 
-        try {
-            // Shut down the service and wait until it's all shut down ...
-            this.sequencingService.getAdministrator().shutdown();
-            this.sequencingService.getAdministrator().awaitTermination(5, TimeUnit.SECONDS);
+        // Shut down the service and wait until it's all shut down ...
+        this.sequencingService.getAdministrator().shutdown();
+        this.sequencingService.getAdministrator().awaitTermination(5, TimeUnit.SECONDS);
 
-            // Shut down the observation service ...
-            this.observationService.getAdministrator().shutdown();
-            this.observationService.getAdministrator().awaitTermination(5, TimeUnit.SECONDS);
-
-        } finally {
-            this.sequencingService = null;
-            this.observationService = null;
-        }
+        // Shut down the observation service ...
+        this.observationService.getAdministrator().shutdown();
+        this.observationService.getAdministrator().awaitTermination(5, TimeUnit.SECONDS);
     }
 
+    /**
+     * Get the sequencing statistics.
+     * @return the statistics; never null
+     */
     public SequencingService.Statistics getStatistics() {
         return this.sequencingService.getStatistics();
     }
 
+    /**
+     * Prompt the user interface for the file to upload into the JCR repository, then upload it using the JCR API.
+     * @throws Exception
+     */
     public void uploadFile() throws Exception {
-        File file = this.userInterface.getPathOfFileToUpload();
-        String nodePath = this.userInterface.getRepositoryPath("/a/b/" + file.getName());
-        String mimeType = getMimeType(file);
-        uploadFile(new FileInputStream(file), nodePath, mimeType);
+        URL url = this.userInterface.getFileToUpload();
+        // Grab the last segment of the URL path, using it as the filename
+        String filename = url.getPath().replaceAll("([^/]*/)*", "");
+        String nodePath = this.userInterface.getRepositoryPath("/a/b/" + filename);
+        String mimeType = getMimeType(url);
+
+        // Now use the JCR API to upload the file ...
+        Session session = createSession();
+        JcrTools tools = this.executionContext.getTools();
+        try {
+            // Create the node at the supplied path ...
+            Node node = tools.findOrCreateNode(session, nodePath, "nt:folder", "nt:file");
+
+            // Upload the file to that node ...
+            Node contentNode = tools.findOrCreateChild(session, node, "jcr:content", "nt:resource");
+            contentNode.setProperty("jcr:mimeType", mimeType);
+            contentNode.setProperty("jcr:lastModified", Calendar.getInstance());
+            contentNode.setProperty("jcr:data", url.openStream());
+
+            // Save the session ...
+            session.save();
+        } finally {
+            session.logout();
+        }
     }
 
+    /**
+     * Perform a search of the repository for all image metadata automatically created by the image sequencer.
+     * @throws Exception
+     */
     public void search() throws Exception {
-        List<ImageInfo> images = getImages();
-        // Display the search results ...
-        this.userInterface.displaySearchResults(images);
-    }
-
-    protected List<ImageInfo> getImages() throws Exception {
+        // Use JCR to search the repository for image metadata ...
         List<ImageInfo> images = new ArrayList<ImageInfo>();
         Session session = createSession();
         try {
@@ -308,45 +351,31 @@ public class SequencingClient {
         } finally {
             session.logout();
         }
-        return images;
+
+        // Display the search results ...
+        this.userInterface.displaySearchResults(images);
     }
 
+    /**
+     * Utility method to create a new JCR session from the execution context's {@link SessionFactory}.
+     * @return the session
+     * @throws RepositoryException
+     */
     protected Session createSession() throws RepositoryException {
         return this.executionContext.getSessionFactory().createSession(this.repositoryName + "/" + this.workspaceName);
     }
 
-    protected boolean uploadFile( InputStream content, String nodePath, String mimeType ) throws Exception {
-        Session session = createSession();
-        JcrTools tools = this.executionContext.getTools();
-        try {
-            // Create the node at the supplied path ...
-            Node node = tools.findOrCreateNode(session, nodePath, "nt:folder", "nt:file");
-
-            // Upload the file to that node ...
-            Node contentNode = tools.findOrCreateChild(session, node, "jcr:content", "nt:resource");
-            contentNode.setProperty("jcr:mimeType", mimeType);
-            contentNode.setProperty("jcr:lastModified", Calendar.getInstance());
-            contentNode.setProperty("jcr:data", content);
-
-            // Save the session ...
-            session.save();
-        } finally {
-            session.logout();
-        }
-        return true;
-    }
-
-    protected String getMimeType( File file ) {
-        String extension = file.getName().toLowerCase();
-        if (extension.endsWith(".gif")) return "image/gif";
-        if (extension.endsWith(".png")) return "image/png";
-        if (extension.endsWith(".pict")) return "image/x-pict";
-        if (extension.endsWith(".bmp")) return "image/bmp";
-        if (extension.endsWith(".jpg")) return "image/jpeg";
-        if (extension.endsWith(".jpe")) return "image/jpeg";
-        if (extension.endsWith(".jpeg")) return "image/jpeg";
-        if (extension.endsWith(".ras")) return "image/x-cmu-raster";
-        throw new SystemFailureException("Unknown mime type for file " + file);
+    protected String getMimeType( URL file ) {
+        String filename = file.getPath().toLowerCase();
+        if (filename.endsWith(".gif")) return "image/gif";
+        if (filename.endsWith(".png")) return "image/png";
+        if (filename.endsWith(".pict")) return "image/x-pict";
+        if (filename.endsWith(".bmp")) return "image/bmp";
+        if (filename.endsWith(".jpg")) return "image/jpeg";
+        if (filename.endsWith(".jpe")) return "image/jpeg";
+        if (filename.endsWith(".jpeg")) return "image/jpeg";
+        if (filename.endsWith(".ras")) return "image/x-cmu-raster";
+        throw new SystemFailureException("Unknown mime type for " + file);
     }
 
 }
