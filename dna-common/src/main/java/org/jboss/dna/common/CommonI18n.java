@@ -34,21 +34,6 @@ public final class CommonI18n {
     // Make sure the following I18n.java-related fields are defined before all other fields to ensure a valid error message is
     // produced in the event of a missing/duplicate/unused property
 
-    /**
-     * Parameters:
-     * <ol>
-     * <li>{@link I18n#id() ID}</li>
-     * <li>Number of supplied arguments</li>
-     * <li>Localized text before parameter substitution</li>
-     * <li>Localized text after parameter substitution</li>
-     * </ol>
-     */
-    public static I18n i18nArgumentsMismatchedParameter;
-    public static I18n i18nArgumentMismatchedParameters;
-    public static I18n i18nArgumentsMismatchedParameters;
-    public static I18n i18nReplaceArgumentsMismatchedParameter;
-    public static I18n i18nReplaceArgumentMismatchedParameters;
-    public static I18n i18nReplaceArgumentsMismatchedParameters;
     public static I18n i18nClassInterface;
     public static I18n i18nClassNotPublic;
     public static I18n i18nFieldFinal;
@@ -56,26 +41,21 @@ public final class CommonI18n {
     public static I18n i18nFieldNotPublic;
     public static I18n i18nFieldNotStatic;
     public static I18n i18nLocalizationFileNotFound;
-    public static I18n i18nLocalizationProblems;
+	public static I18n i18nLocalizationProblems;
+	public static I18n i18nRequiredToSuppliedParameterMismatch;
 
-    /**
-     * Parameters:
-     * <ol>
-     * <li>{@link I18n#id() Property}</li>
-     * <li>Localization file URL</li>
-     * </ol>
-     */
+	/**
+	 * Parameters:
+	 * <ol>
+	 * <li>{@link I18n#id() Property}</li>
+	 * <li>Localization file URL</li>
+	 * </ol>
+	 */
     public static I18n i18nPropertyDuplicate;
     public static I18n i18nPropertyMissing;
     public static I18n i18nPropertyUnused;
 
     // Core-related fields
-    public static I18n componentClassnameNotValid;
-    public static I18n componentNotConfigured;
-    public static I18n progressMonitorBeginTask;
-    public static I18n progressMonitorStatus;
-    public static I18n nullProgressMonitorTaskName;
-
     public static I18n argumentMayNotBeNegative;
     public static I18n argumentMayNotBePositive;
     public static I18n argumentMustBeNegative;
@@ -94,14 +74,19 @@ public final class CommonI18n {
     public static I18n argumentDidNotContainObject;
     public static I18n argumentDidNotContainKey;
     public static I18n argumentMayNotContainNullValue;
-
+    public static I18n componentClassnameNotValid;
+	public static I18n componentNotConfigured;
     public static I18n dateParsingFailure;
-
+    public static I18n initialProgressMonitorTaskName;
+    public static I18n nullProgressMonitorTaskName;
     public static I18n pathAncestorDegreeIsInvalid;
     public static I18n pathIsAlreadyAbsolute;
     public static I18n pathIsNotAbsolute;
     public static I18n pathIsNotRelative;
     public static I18n pathCannotBeNormalized;
+    public static I18n progressMonitorBeginTask;
+	public static I18n progressMonitorStatus;
+    public static I18n requiredToSuppliedParameterMismatch;
 
     static {
         try {
@@ -112,14 +97,14 @@ public final class CommonI18n {
     }
 
     public static Set<Locale> getLocalizationProblemLocales() {
-        return I18n.getLocalizationProblemLocales(CommonI18n.class);
-    }
+		return I18n.getLocalizationProblemLocales(CommonI18n.class);
+	}
 
     public static Set<String> getLocalizationProblems() {
-        return I18n.getLocalizationProblems(CommonI18n.class);
-    }
+		return I18n.getLocalizationProblems(CommonI18n.class);
+	}
 
     public static Set<String> getLocalizationProblems( Locale locale ) {
-        return I18n.getLocalizationProblems(CommonI18n.class, locale);
-    }
+		return I18n.getLocalizationProblems(CommonI18n.class, locale);
+	}
 }
