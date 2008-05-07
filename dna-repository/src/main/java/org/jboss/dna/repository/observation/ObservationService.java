@@ -216,7 +216,7 @@ public class ObservationService implements AdministeredService {
             try {
                 listener.unregister();
             } catch (RepositoryException e) {
-                this.logger.error(RepositoryI18n.errorUnregisteringWorkspaceListenerWhileShuttingDownObservationService);
+                this.logger.error(e, RepositoryI18n.errorUnregisteringWorkspaceListenerWhileShuttingDownObservationService);
             }
         }
     }
@@ -586,8 +586,10 @@ public class ObservationService implements AdministeredService {
         public synchronized WorkspaceListener unregister() throws UnsupportedRepositoryOperationException, RepositoryException {
             if (this.session == null) return this;
             try {
-                this.session.getWorkspace().getObservationManager().removeEventListener(this);
-                this.session.logout();
+                if (this.session.isLive()) {
+                    this.session.getWorkspace().getObservationManager().removeEventListener(this);
+                    this.session.logout();
+                }
             } finally {
                 this.session = null;
                 unregisterListener(this);
