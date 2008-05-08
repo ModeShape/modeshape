@@ -43,7 +43,7 @@ public class MockSequencerA implements Sequencer {
 
     private SequencerConfig config;
     private AtomicInteger counter = new AtomicInteger();
-    private CountDownLatch latch = new CountDownLatch(0);
+    private volatile CountDownLatch latch = new CountDownLatch(0);
 
     public void setExpectedCount( int numExpected ) {
         this.latch = new CountDownLatch(numExpected);

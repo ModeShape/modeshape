@@ -22,21 +22,18 @@
 
 package org.jboss.dna.repository.sequencers;
 
-import java.util.concurrent.TimeUnit;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.hamcrest.core.IsSame.sameInstance;
 import static org.junit.Assert.assertThat;
 import static org.junit.matchers.JUnitMatchers.hasItem;
+import java.util.concurrent.TimeUnit;
 import javax.jcr.Node;
 import javax.jcr.Session;
 import javax.jcr.observation.Event;
 import org.jboss.dna.common.jcr.AbstractJcrRepositoryTest;
 import org.jboss.dna.repository.observation.ObservationService;
-import org.jboss.dna.repository.sequencers.Sequencer;
-import org.jboss.dna.repository.sequencers.SequencerConfig;
-import org.jboss.dna.repository.sequencers.SequencingService;
 import org.jboss.dna.repository.services.ServiceAdministrator;
 import org.jboss.dna.repository.util.ExecutionContext;
 import org.jboss.dna.repository.util.MockExecutionContext;
@@ -67,9 +64,11 @@ public class SequencingServiceTest extends AbstractJcrRepositoryTest {
 
     @After
     public void afterEach() throws Exception {
-        super.shutdownRepository();
-        this.sequencingService.getAdministrator().shutdown();
         this.observationService.getAdministrator().shutdown();
+        this.observationService.getAdministrator().awaitTermination(5, TimeUnit.SECONDS);
+        this.sequencingService.getAdministrator().shutdown();
+        this.sequencingService.getAdministrator().awaitTermination(5, TimeUnit.SECONDS);
+        super.shutdownRepository();
     }
 
     @Test
@@ -303,6 +302,7 @@ public class SequencingServiceTest extends AbstractJcrRepositoryTest {
         MockSequencerA sequencerA = (MockSequencerA)sequencingService.getSequencerLibrary().getInstances().get(0);
         assertThat(sequencerA, is(notNullValue()));
         assertThat(sequencerA.getCounter(), is(0));
+        sequencerA.setExpectedCount(1);
         assertThat(sequencingService.getSequencerLibrary().getInstances(), hasItem((Sequencer)sequencerA));
 
         // Cause an event, but not one that the sequencer cares about ...
@@ -320,7 +320,6 @@ public class SequencingServiceTest extends AbstractJcrRepositoryTest {
         assertThat(sequencingService.getSequencerLibrary().getInstances(), hasItem((Sequencer)sequencerA));
 
         // Now set the property that the sequencer DOES care about ...
-        sequencerA.setExpectedCount(1);
         nodeD.setProperty("description", "This is the value");
         session.save();
 

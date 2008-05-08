@@ -387,7 +387,7 @@ public class SequencingService implements AdministeredService, NodeChangeListene
     }
 
     protected boolean doAwaitTermination( long timeout, TimeUnit unit ) throws InterruptedException {
-        if (this.executorService.isShutdown()) return true;
+        if (this.executorService == null || this.executorService.isTerminated()) return true;
         return this.executorService.awaitTermination(timeout, unit);
     }
 
