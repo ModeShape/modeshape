@@ -30,25 +30,27 @@
   <bookinfo>
     <title>JBoss DNA</title>
     <subtitle>Getting Started Guide</subtitle>
-    <releaseinfo>&versionNumber;</releaseinfo>
-    <productnumber>&versionNumber;</productnumber>
+    <releaseinfo>&versionNumber;
+    </releaseinfo>
+    <productnumber>&versionNumber;
+    </productnumber>
     <issuenum>1</issuenum>
     <mediaobject>
-        <imageobject role="fo">
-            <imagedata fileref="images/dna-logo.png" align="center" />
-        </imageobject>
-        <imageobject role="pdf">
-            <imagedata fileref="images/dna-logo.png" scale="75" align="center" />
-        </imageobject>
-        <imageobject role="html">
-            <imagedata fileref="images/dna-logo.png" depth="3cm" />
-        </imageobject>
-        <imageobject role="xhtml">
-            <imagedata fileref="images/dna-logo.png" depth="3cm" />
-        </imageobject>
-        <imageobject role="xhtml_single">
-            <imagedata fileref="images/dna-logo.png" depth="3cm" />
-        </imageobject>
+      <imageobject role="fo">
+        <imagedata fileref="images/dna-logo.png" align="center" />
+      </imageobject>
+      <imageobject role="pdf">
+        <imagedata fileref="images/dna-logo.png" scale="75" align="center" />
+      </imageobject>
+      <imageobject role="html">
+        <imagedata fileref="images/dna-logo.png" depth="3cm" />
+      </imageobject>
+      <imageobject role="xhtml">
+        <imagedata fileref="images/dna-logo.png" depth="3cm" />
+      </imageobject>
+      <imageobject role="xhtml_single">
+        <imagedata fileref="images/dna-logo.png" depth="3cm" />
+      </imageobject>
     </mediaobject>
     <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Author_Group.xml" />
     <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Legal_Notice.xml" />
@@ -57,9 +59,9 @@
     <title>What this book covers</title>
     <para>The goal of this book is to help you learn about JBoss DNA and how you can use it in your own applications to get the
       most out of your JCR repositories.</para>
-    <para>The first part of the book starts out with an introduction to content repositories and an overview of the JCR API, both of
-      which are an important aspect of JBoss DNA. This is followed by an overview of the JBoss DNA project, it's architecture,
-      and a basic roadmap for what's coming next.</para>
+    <para>The first part of the book starts out with an introduction to content repositories and an overview of the JCR API,
+      both of which are an important aspect of JBoss DNA. This is followed by an overview of the JBoss DNA project, it's
+      architecture, and a basic roadmap for what's coming next.</para>
     <para>The next part of the book covers how to download and build the examples, how to use JBoss DNA with existing
       repositories, and how to build and use custom sequencers.</para>
     <para>
@@ -80,8 +82,8 @@
   <chapter id="introduction">
     <title>Introduction</title>
     <para>There are a lot of choices for how applications can store information persistently so that it can be accessed at a
-      later time and by other processes. The challenge developers face is to use an approach that most closely matches the needs of
-      their application. This choice is more important as developers choose to focus their efforts on the application-specific
+      later time and by other processes. The challenge developers face is to use an approach that most closely matches the needs
+      of their application. This choice is more important as developers choose to focus their efforts on the application-specific
       logic, delegating much of the responsibilities for persistence to libraries and frameworks.</para>
     <para>
       Perhaps one of the easiest techniques is to simply store information in
@@ -399,8 +401,7 @@
           <listitem>
             <para>
               <emphasis role="strong">Java Source File Sequencer</emphasis>
-              - Process Java source files to extract the class structure (including annotations) into the repository.
-              (See
+              - Process Java source files to extract the class structure (including annotations) into the repository. (See
               <ulink url="http://jira.jboss.org/jira/browse/DNA-51">DNA-51</ulink>
               )
             </para>
@@ -784,135 +785,161 @@ org/jboss/example/dna/sequencers/SequencingClientTest.java
                                 /MockUserInterface.java
   </programlisting>
   </para>
-  <para>
-  As mentioned in the <ulink url="downloading">previous chapter</ulink>, simply type <code>mvn package</code> from the <code>example/sequencer</code>
-  directory to compile the source code, run the unit tests, build a client JAR and assemble a distribution containing all of the necessary files. 
-  </para>
-  <para>If you successfully built the examples, there will be a <code>examples/sequencers/target/dna-example-sequencers-basic.dir/</code>
-  directory that contains the following:
-  <itemizedlist>
-	<listitem>
-	  <para><emphasis role="strong"><code>run.sh</code></emphasis> is the *nix shell script that will run the example.</para>
+  <sect1 id="running_examples">
+    <title>Running the example</title>
+    <para>
+    As mentioned in the <ulink url="downloading">previous chapter</ulink>, simply type <code>mvn package</code> from the <code>example/sequencer</code>
+    directory to compile the source code, run the unit tests, build a client JAR and assemble a distribution containing all of the necessary files. 
+    </para>
+    <para>If you successfully built the examples, there will be a <code>examples/sequencers/target/dna-example-sequencers-basic.dir/</code>
+    directory that contains the following:
+    <itemizedlist>
+  	<listitem>
+  	  <para><emphasis role="strong"><code>run.sh</code></emphasis> is the *nix shell script that will run the example.</para>
+      </listitem>
+    <listitem>
+      <para>
+        <emphasis role="strong">
+          <code>log4j.properties</code>
+        </emphasis>
+        is the Log4J configuration file.
+      </para>
     </listitem>
-  <listitem>
+    <listitem>
+      <para>
+        <emphasis role="strong">
+          <code>jackrabbitConfig.xml</code>
+        </emphasis>
+        is the Jackrabbit configuration file, which is set up to use a transient in-memory repository.
+      </para>
+    </listitem>
+    <listitem>
+      <para>
+        <emphasis role="strong">
+          <code>jackrabbitNodeTypes.cnd</code>
+        </emphasis>
+        defines the additional JCR node types used by this example.
+      </para>
+    </listitem>
+    <listitem>
+      <para>
+        <emphasis role="strong">
+          <code>caution.gif</code>
+        </emphasis>, <emphasis role="strong">
+          <code>caution.png</code>
+        </emphasis>, and <emphasis role="strong">
+          <code>caution.jpg</code>
+        </emphasis>
+        are images that you'll use later and upload into the repository.
+      </para>
+    </listitem>
+    <listitem>
+      <para>
+        <emphasis role="strong">
+          <code>lib</code>
+        </emphasis>
+        subdirectory contains the JARs for all of the JBoss DNA artifacts as well as those for other libraries required
+    by JBoss DNA and the example.
+      </para>
+    </listitem>
+    </itemizedlist>
+    <note>
+      <para>JBoss DNA 0.1 and the examples are currently tested with <ulink url="http://jackrabbit.apache.org/">Apache Jackrabbit</ulink> version 1.3.3.  
+      This version is stable and used by a number of other projects and applications.  However, you should be able to use a newer
+      version of Jackrabbit, as long as that version uses the same JCR API.  For example, version 1.4.2 was released on March 26, 2008 and
+      should be compatible.
+      </para>
+      <para>Just remember, if the version of Jackrabbit you want to use for these examples is not in the Maven repository,
+      you'll have to either add it or add it locally.  For more information, see the <ulink url="http://maven.apache.org/">Maven documentation</ulink>.
+      </para>
+    </note>
+    </para>
     <para>
-      <emphasis role="strong">
-        <code>log4j.properties</code>
-      </emphasis>
-      is the Log4J configuration file.
+    To run the client application, go to the <code>examples/sequencers/target/dna-example-sequencers-basic.dir/</code>
+    directory and type <code>./run.sh</code>.  You should see the command line client and its menus in your terminal:
+    <figure id="xample-sequencer-cli-client">
+      <title>Example Client</title>
+      <graphic align="center" scale="100" fileref="images/example-sequencer-cli-client.png" />
+    </figure>
+    From this menu, you can upload a file into the repository, search for images in the repository, print sequencing statistics, or quit the application.
     </para>
-  </listitem>
-  <listitem>
     <para>
-      <emphasis role="strong">
-        <code>jackrabbitConfig.xml</code>
-      </emphasis>
-      is the Jackrabbit configuration file, which is set up to use a transient in-memory repository.
+    The first step is to upload one of the example images.  If you type 'u' and press return, you'll be prompted
+    to supply the path to the file you want to upload.  Since the application is running from within the 
+    <code>examples/sequencers/target/dna-example-sequencers-basic.dir/</code> directory, you can specify any 
+    of the files in that directory without specifying the path:
+    <figure id="example-sequencer-upload">
+      <title>Uploading an image using the Example Client</title>
+      <graphic align="center" scale="100" fileref="images/example-sequencer-upload.png" />
+    </figure>
+    However, you can specify any fully-qualified or relative path.  The application will notify you if it cannot
+    find the file you specified.  The example client configures JBoss DNA to sequence image files with one of the following
+    file extensions:  <code>jpg</code>, <code>jpeg</code>, <code>pict</code>, <code>gif</code>, <code>bmp</code>, 
+    <code>pcx</code>, <code>png</code>, <code>iff</code>, <code>ras</code>, <code>pbm</code>, <code>pgm</code>, <code>ppm</code>, and <code>psd</code>.
+    Files with any other extension will be ignored.
     </para>
-  </listitem>
-  <listitem>
     <para>
-      <emphasis role="strong">
-        <code>jackrabbitNodeTypes.cnd</code>
-      </emphasis>
-      defines the additional JCR node types used by this example.
+    After you specified the file you want to upload, the example application asks you where in the repository you'd
+    like to place the file.  (If you want to use the suggested location, just press <code>return</code>.)
+    The client application uses the JCR API to upload the file to that location in the repository, creating any nodes (of type <code>nt:folder</code>) 
+    for any directories that don't exist, and creating a node (of type <code>nt:file</code>) for the file.  And,
+    per the JCR specification, the application creates a <code>jcr:content</code> node (of type <code>nt:resource</code>)
+    under the file node.  The file contents are placed on this <code>jcr:content</code> node in the <code>jcr:data</code> property.
+    For example, if you specify <code>/a/b/caution.png</code>, the following structure will be created in the repository:
+    <programlisting>
+    /a   (nt:folder)
+      /b   (nt:folder)
+        /caution.png   (nt:file)
+                    /jcr:content    (nt:resource)
+                                @jcr:data = {contents of the file}
+                                @jcr:mimeType = {mime type of the file}
+                                @jcr:lastModified = {now}
+    </programlisting>
     </para>
-  </listitem>
-  <listitem>
     <para>
-      <emphasis role="strong">
-        <code>caution.gif</code>
-      </emphasis>, <emphasis role="strong">
-        <code>caution.png</code>
-      </emphasis>, and <emphasis role="strong">
-        <code>caution.jpg</code>
-      </emphasis>
-      are images that you'll use later and upload into the repository.
+    When the client uploads the file using the JCR API, DNA gets notified of the changes, consults the sequencers
+    to see whether any of them are interested in the new or updated content, and if so runs the sequencers.  The image
+    sequencer processes image files for metadata, and any metadata found is stored under the <code>/images</code>
+    branch of the repository.  All of this happens asynchronously, so any DNA activity doesn't impede or slow
+    down the client activities.
     </para>
-  </listitem>
-  <listitem>
     <para>
-      <emphasis role="strong">
-        <code>lib</code>
-      </emphasis>
-      subdirectory contains the JARs for all of the JBoss DNA artifacts as well as those for other libraries required
-  by JBoss DNA and the example.
+    So, after the file is uploaded, you can search the repository for the image metadata using the "s" menu option:
+    <figure id="example-sequencer-search">
+      <title>Uploading an image using the Example Client</title>
+      <graphic align="center" scale="100" fileref="images/example-sequencer-search.png" />
+    </figure>
+    You can also display the sequencing statistics using the "d" menu option:
+    <figure id="example-sequencer-statistics">
+      <title>Uploading an image using the Example Client</title>
+      <graphic align="center" scale="100" fileref="images/example-sequencer-statistics.png" />
+    </figure>
+    These stats show how many nodes were sequenced, and how many nodes were skipped because they didn't apply to the
+    sequencer's criteria.</para>
+    <note>
+    <para>There will probably be more nodes skipped than sequenced, since there are more <code>nt:folder</code>
+    and <code>nt:resource</code> nodes than there are <code>nt:file</code> nodes with acceptible names.  
     </para>
-  </listitem>
-  </itemizedlist>
-  <note>
-    <para>JBoss DNA 0.1 and the examples are currently tested with <ulink url="http://jackrabbit.apache.org/">Apache Jackrabbit</ulink> version 1.3.3.  
-    This version is stable and used by a number of other projects and applications.  However, you should be able to use a newer
-    version of Jackrabbit, as long as that version uses the same JCR API.  For example, version 1.4.2 was released on March 26, 2008 and
-    should be compatible.
+    </note>
+    <para>
+    You can repeat this process with other files.  Any file that isn't an image (as recognized by the sequencing configuration
+    described later) will not be sequenced.
     </para>
-    <para>Just remember, if the version of Jackrabbit you want to use for these examples is not in the Maven repository,
-    you'll have to either add it or add it locally.  For more information, see the <ulink url="http://maven.apache.org/">Maven documentation</ulink>.
+  </sect1>
+  <sect1 id="example_java_code">
+    <title>Reviewing the Java code</title>
+    <para>The example you just ran demonstrated that JBoss DNA does sequence image files.  It does everything
+    necessary to set up and configure JBoss DNA to use a JCR repository, so reviewing that code can help understand
+    what's involved.
     </para>
-  </note>
-  </para>
-  <para>
-  To run the client application, go to the <code>examples/sequencers/target/dna-example-sequencers-basic.dir/</code>
-  directory and type <code>./run.sh</code>.  You should see the command line client and its menus in your terminal:
-  <figure id="xample-sequencer-cli-client">
-    <title>Example Client</title>
-    <graphic align="center" scale="100" fileref="images/example-sequencer-cli-client.png" />
-  </figure>
-  From this menu, you can upload a file into the repository, search for images in the repository, print sequencing statistics, or quit the application.
-  </para>
-  <para>
-  The first step is to upload one of the example images.  If you type 'u' and press return, you'll be prompted
-  to supply the path to the file you want to upload.  Since the application is running from within the 
-  <code>examples/sequencers/target/dna-example-sequencers-basic.dir/</code> directory, you can specify any 
-  of the files in that directory without specifying the path:
-  <figure id="example-sequencer-upload">
-    <title>Uploading an image using the Example Client</title>
-    <graphic align="center" scale="100" fileref="images/example-sequencer-upload.png" />
-  </figure>
-  However, you can specify any fully-qualified or relative path.  The application will notify you if it cannot
-  find the file you specified.
-  </para>
-  <para>
-  After you specified the file you want to upload, the example application asks you where in the repository you'd
-  like to place the file.  (If you want to use the suggested location, just press <code>return</code>.)
-  The client application uses the JCR API to upload the file to that location in the repository, creating any nodes (of type <code>nt:folder</code>) 
-  for any directories that don't exist, and creating a node (of type <code>nt:file</code>) for the file.  And,
-  per the JCR specification, the application creates a <code>jcr:content</code> node (of type <code>nt:resource</code>)
-  under the file node.  The file contents are placed on this <code>jcr:content</code> node in the <code>jcr:data</code> property.
-  For example, if you specify <code>/a/b/caution.png</code>, the following structure will be created in the repository:
-  <programlisting>
-  /a   (nt:folder)
-    /b   (nt:folder)
-      /caution.png   (nt:file)
-                  /jcr:content    (nt:resource)
-                              @jcr:data = {contents of the file}
-                              @jcr:mimeType = {mime type of the file}
-                              @jcr:lastModified = {now}
-  </programlisting>
-  </para>
-  <para>
-  When the client uploads the file using the JCR API, DNA gets notified of the changes, consults the sequencers
-  to see whether any of them are interested in the new or updated content, and if so runs the sequencers.  The image
-  sequencer processes image files for metadata, and any metadata found is stored under the <code>/images</code>
-  branch of the repository.
-  </para>
-  <para>
-  So, very soon after the file is uploaded, DNA will sequence the image file and store the metadata.  
-  You can search the repository for this metadata using the "s" menu option:
-  <figure id="example-sequencer-search">
-    <title>Uploading an image using the Example Client</title>
-    <graphic align="center" scale="100" fileref="images/example-sequencer-search.png" />
-  </figure>
-  You can also print the statistics for the sequencer using the "p" menu option:
-  <figure id="example-sequencer-statistics">
-    <title>Uploading an image using the Example Client</title>
-    <graphic align="center" scale="100" fileref="images/example-sequencer-statistics.png" />
-  </figure>
-  </para>
-  <para>
-  You can repeat this process with other files.  Any file that isn't an image (as recognized by the sequencing configuration
-  described later) will not be sequenced.
-  </para>
+    <para>
+    Most of the Java classes in the example really have nothing in particular to do with JBoss DNA.  The <code>UserInterface</code>,
+    <code>ConsoleInput</code>, and <code>ImageInfo</code> classes
+    
+    but this was a pretty
+    simple example.  Let's look at the Java source codeUnderstanding how you can use JBoss DNA in your application
+    </para>
+  </sect1>
 
 
 

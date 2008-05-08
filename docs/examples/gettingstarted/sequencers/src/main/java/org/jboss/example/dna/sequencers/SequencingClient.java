@@ -226,7 +226,7 @@ public class SequencingClient {
             String desc = "Sequences image files to extract the characteristics of the image";
             String classname = "org.jboss.dna.sequencer.images.ImageMetadataSequencer";
             String[] classpath = null; // Use the current classpath
-            String[] pathExpressions = {"//(*.(jpg|jpeg|gif|bmp|pcx|png|iff|ras|pbm|pgm|ppm|psd))[*]/jcr:content[@jcr:data] => /images/$1"};
+            String[] pathExpressions = {"//(*.(jpg|jpeg|pict|gif|bmp|pcx|png|iff|ras|pbm|pgm|ppm|psd))[*]/jcr:content[@jcr:data] => /images/$1"};
             SequencerConfig imageSequencerConfig = new SequencerConfig(name, desc, classname, classpath, pathExpressions);
             this.sequencingService.addSequencer(imageSequencerConfig);
 

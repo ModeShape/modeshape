@@ -72,9 +72,11 @@ public class ConsoleInput implements UserInterface {
                                         client.search();
                                         break;
                                     case 'm':
+                                    case '?':
+                                    case 'h':
                                         System.out.println(getMenu());
                                         break;
-                                    case 'p':
+                                    case 'd':
                                         System.out.println(getStatistics(client.getStatistics()));
                                         break;
                                     case 'q':
@@ -128,9 +130,9 @@ public class ConsoleInput implements UserInterface {
         buffer.append("u) Upload a file to the repository\n");
         buffer.append("s) Search the repository using extracted metadata\n");
         buffer.append("\n");
-        buffer.append("p) Print statistics\n");
+        buffer.append("d) Display statistics\n");
         buffer.append("\n");
-        buffer.append("m) Display menu\n");
+        buffer.append("?) Show this menu\n");
         buffer.append("q) Quit");
         return buffer.toString();
     }
