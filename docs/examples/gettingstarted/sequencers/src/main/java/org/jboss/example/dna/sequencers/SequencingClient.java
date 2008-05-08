@@ -39,7 +39,6 @@ import javax.jcr.Session;
 import javax.jcr.SimpleCredentials;
 import javax.jcr.Value;
 import javax.jcr.observation.Event;
-import net.jcip.annotations.NotThreadSafe;
 import org.apache.jackrabbit.api.JackrabbitNodeTypeManager;
 import org.apache.jackrabbit.core.TransientRepository;
 import org.jboss.dna.common.SystemFailureException;
@@ -54,7 +53,6 @@ import org.jboss.dna.repository.util.SimpleExecutionContext;
 /**
  * @author Randall Hauch
  */
-@NotThreadSafe
 public class SequencingClient {
 
     public static final String DEFAULT_JACKRABBIT_CONFIG_PATH = "jackrabbitConfig.xml";
