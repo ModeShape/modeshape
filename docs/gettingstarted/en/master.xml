@@ -1,13 +1,55 @@
-<?xml version='1.0' encoding='UTF-8'?>
+<!--
+  ~ JBoss, Home of Professional Open Source.
+  ~
+  ~ Copyright (c) 2008, Red Hat Middleware LLC or third-party contributors as
+  ~ indicated by the @author tags or express copyright attribution
+  ~ statements applied by the authors.  All third-party contributions are
+  ~ distributed under license by Red Hat Middleware LLC.
+  ~
+  ~ This copyrighted material is made available to anyone wishing to use, modify,
+  ~ copy, or redistribute it subject to the terms and conditions of the GNU
+  ~ Lesser General Public License, as published by the Free Software Foundation.
+  ~
+  ~ This program is distributed in the hope that it will be useful,
+  ~ but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+  ~ or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License
+  ~ for more details.
+  ~
+  ~ You should have received a copy of the GNU Lesser General Public License
+  ~ along with this distribution; if not, write to:
+  ~ Free Software Foundation, Inc.
+  ~ 51 Franklin Street, Fifth Floor
+  ~ Boston, MA  02110-1301  USA
+  -->
 <!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN" "http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd" [
 <!ENTITY % RH-ENTITIES SYSTEM "Common_Config/rh-entities.ent">
-]>
+<!ENTITY versionNumber "0.1">
+<!ENTITY copyrightYear "2008">
+<!ENTITY copyrightHolder "Red Hat Middleware, LLC.">]>
 <book>
   <bookinfo>
     <title>JBoss DNA</title>
     <subtitle>Getting Started Guide</subtitle>
-    <issuenum>0.1</issuenum>
-    <productnumber>1</productnumber>
+    <releaseinfo>&versionNumber;</releaseinfo>
+    <productnumber>&versionNumber;</productnumber>
+    <issuenum>1</issuenum>
+    <mediaobject>
+        <imageobject role="fo">
+            <imagedata fileref="images/dna-logo.png" align="center" />
+        </imageobject>
+        <imageobject role="pdf">
+            <imagedata fileref="images/dna-logo.png" scale="75" align="center" />
+        </imageobject>
+        <imageobject role="html">
+            <imagedata fileref="images/dna-logo.png" depth="3cm" />
+        </imageobject>
+        <imageobject role="xhtml">
+            <imagedata fileref="images/dna-logo.png" depth="3cm" />
+        </imageobject>
+        <imageobject role="xhtml_single">
+            <imagedata fileref="images/dna-logo.png" depth="3cm" />
+        </imageobject>
+    </mediaobject>
     <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Author_Group.xml" />
     <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Legal_Notice.xml" />
   </bookinfo>
@@ -15,8 +57,8 @@
     <title>What this book covers</title>
     <para>The goal of this book is to help you learn about JBoss DNA and how you can use it in your own applications to get the
       most out of your JCR repositories.</para>
-    <para>The part of the book starts out with an introduction to content repositories and an overview of the JCR API, both of
-      which are an important aspect of JBoss DNA. This is followed by an overview of the the JBoss DNA project, it's architecture,
+    <para>The first part of the book starts out with an introduction to content repositories and an overview of the JCR API, both of
+      which are an important aspect of JBoss DNA. This is followed by an overview of the JBoss DNA project, it's architecture,
       and a basic roadmap for what's coming next.</para>
     <para>The next part of the book covers how to download and build the examples, how to use JBoss DNA with existing
       repositories, and how to build and use custom sequencers.</para>
@@ -38,7 +80,7 @@
   <chapter id="introduction">
     <title>Introduction</title>
     <para>There are a lot of choices for how applications can store information persistently so that it can be accessed at a
-      later time and by other processes. The challenge developers face is to use an approach that most closes matches the needs of
+      later time and by other processes. The challenge developers face is to use an approach that most closely matches the needs of
       their application. This choice is more important as developers choose to focus their efforts on the application-specific
       logic, delegating much of the responsibilities for persistence to libraries and frameworks.</para>
     <para>
@@ -357,7 +399,7 @@
           <listitem>
             <para>
               <emphasis role="strong">Java Source File Sequencer</emphasis>
-              - Process Java source files (bytecode) to extract the class structure (including annotations) into the repository.
+              - Process Java source files to extract the class structure (including annotations) into the repository.
               (See
               <ulink url="http://jira.jboss.org/jira/browse/DNA-51">DNA-51</ulink>
               )
@@ -699,7 +741,7 @@ $ </programlisting>
 <chapter id="using_dna">
   <title>Using JBoss DNA</title>
   <para>With this release, JBoss DNA is able to monitor existing JCR repositories and automatically sequence newly upload files and updated content.
-  The information produced by the sequencers are saved to the repository, making it available to any repository client.
+  The information produced by the sequencers is saved to the repository, making it available to any repository client.
   Using JBoss DNA, therefore, consists of setting up the DNA Java components and connecting them to the JCR repositories.
   This chapter walks you through this process, using the examples downloaded in the <link linkend="downloading">previous chapter</link>.
   </para>
