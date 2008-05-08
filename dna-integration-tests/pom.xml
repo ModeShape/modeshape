@@ -77,8 +77,6 @@
     <dependency>
       <groupId>javax.jcr</groupId>
       <artifactId>jcr</artifactId>
-      <version>1.0.1</version>
-      <scope>compile</scope>
     </dependency>
     <!-- 
       Apache Jackrabbit (JCR Implementation)
