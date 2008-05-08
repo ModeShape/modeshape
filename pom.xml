@@ -17,26 +17,12 @@
 		<module>dna-repository</module>
 		<module>sequencers/dna-sequencer-images</module>
 		<module>dna-maven-classloader</module>
+        <module>dna-integration-tests</module>
 	</modules>
 	<properties>
 		<dna-version>${project.version}</dna-version>
 	</properties>
 	<profiles>
-		<profile>
-		    <!-- 
-			This profile is activated when the "integration.tests" property is set,
-			as in "mvn ... -Dintegration.tests=true ..."
-		    -->
-	      <id>integration-tests</id>
-	      <activation>
-	        <property>
-	          <name>integration.tests</name>
-	        </property>
-	      </activation>
-	      <modules>
-	        <module>dna-integration-tests</module>
-	      </modules>
-	    </profile>
 		<profile>
 		    <!-- 
 			This profile is activated when the "generate.docs" property is set,
@@ -97,7 +83,6 @@
 	        </plugins>
 	      </build>
 	      <modules>
-	        <module>dna-integration-tests</module>
 	        <module>docs</module>
 	        <module>docs/examples/gettingstarted</module>
 	      </modules>
