@@ -30,5 +30,15 @@
         <exclude>target/**</exclude>
       </excludes>
 	</fileSet>
+	<fileSet>
+	  <!--
+		Gather into the distribution the examples
+	  -->
+	  <directory>docs/examples/gettingstarted</directory>
+	  <outputDirectory>examples</outputDirectory>
+      <includes>
+        <include>pom.xml</include>
+      </includes>
+	</fileSet>
   </fileSets>
 </assembly>
