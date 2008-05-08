@@ -872,11 +872,14 @@ org/jboss/example/dna/sequencers/SequencingClientTest.java
       <title>Uploading an image using the Example Client</title>
       <graphic align="center" scale="100" fileref="images/example-sequencer-upload.png" />
     </figure>
-    However, you can specify any fully-qualified or relative path.  The application will notify you if it cannot
-    find the file you specified.  The example client configures JBoss DNA to sequence image files with one of the following
-    file extensions:  <code>jpg</code>, <code>jpeg</code>, <code>pict</code>, <code>gif</code>, <code>bmp</code>, 
+    You can specify any fully-qualified or relative path.  The application will notify you if it cannot
+    find the file you specified.  The example client configures JBoss DNA to sequence image files (technically nodes that have names) 
+    with one of the following
+    extensions:  <code>jpg</code>, <code>jpeg</code>, <code>gif</code>, <code>bmp</code>, 
     <code>pcx</code>, <code>png</code>, <code>iff</code>, <code>ras</code>, <code>pbm</code>, <code>pgm</code>, <code>ppm</code>, and <code>psd</code>.
-    Files with any other extension will be ignored.
+    Files with other extensions in the repository path will be ignored.  For your convenience, the example provides
+    several files that will be sequenced (<code>caution.png</code>, <code>caution.jpg</code> and <code>caution.gif</code>)
+    and one image that will not be sequenced (<code>caution.pict</code>).  Feel free to try other files.
     </para>
     <para>
     After you specified the file you want to upload, the example application asks you where in the repository you'd
@@ -934,10 +937,11 @@ org/jboss/example/dna/sequencers/SequencingClientTest.java
     </para>
     <para>
     Most of the Java classes in the example really have nothing in particular to do with JBoss DNA.  The <code>UserInterface</code>,
-    <code>ConsoleInput</code>, and <code>ImageInfo</code> classes
-    
-    but this was a pretty
-    simple example.  Let's look at the Java source codeUnderstanding how you can use JBoss DNA in your application
+    <code>ConsoleInput</code>, and <code>ImageInfo</code> classes are there to just make the example easy to run.
+    The interesting code is in <code>SequencingClient</code>.
+    </para>
+
+    <para>
     </para>
   </sect1>
 

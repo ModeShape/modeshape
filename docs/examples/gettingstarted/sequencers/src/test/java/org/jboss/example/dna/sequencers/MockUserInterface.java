@@ -33,17 +33,19 @@ public class MockUserInterface implements UserInterface {
 
     private final String repositoryPath;
     private final URL fileToUpload;
+    private final int numberOfSearchResults;
 
-    public MockUserInterface( URL fileToUpload, String repositoryPath ) {
+    public MockUserInterface( URL fileToUpload, String repositoryPath, int numSearchResults ) {
         this.repositoryPath = repositoryPath;
         this.fileToUpload = fileToUpload;
+        this.numberOfSearchResults = numSearchResults;
     }
 
     /**
      * {@inheritDoc}
      */
     public void displaySearchResults( List<ImageInfo> images ) {
-        assertThat(images.size(), is(1));
+        assertThat(images.size(), is(this.numberOfSearchResults));
         for (ImageInfo image : images) {
             System.out.println("Image: " + image);
         }
