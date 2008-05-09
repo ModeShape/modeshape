@@ -162,10 +162,10 @@
       <link linkend="jboss_dna">next chapter</link>
       in this book goes into more detail about JBoss DNA and its architecture, the different components, what's available now, and
       what's coming in future releases.
-      <link linkend="downloading">Chapter 3</link>
-      then provides instructions for downloading and compiling the sequencer examples for the current release.
+      <link linkend="downloading_and_running">Chapter 3</link>
+      then provides instructions for downloading and running the sequencer examples for the current release.
       <link linkend="using_dna">Chapter 4</link>
-      walks through these examples, while
+      walks through how to use JBoss DNA in your applications, while
       <link linkend="custom_sequencers">Chapter 5</link>
       goes over how to create custom sequencers. Finally,
       <link linkend="future_directions">Chapter 6</link>
@@ -195,15 +195,14 @@
       <para>The architecture for JBoss DNA consists of several major components that will be built on top of standard APIs,
         including JCR, JDBC, JNDI and HTTP. The goal is to allow these components to be assembled as needed and add value on top
         of other DNA components or third-party systems that support the standard APIs.</para>
-      <!-- mediaobject>
-        <imageobject>
+      <mediaobject>
+        <imageobject role="fo">
           <imagedata align="center" fileref="images/dna-architecture.png"/>
         </imageobject>
-      </mediaobject -->
-      <figure id="dna-architecture">
-        <title>JBoss DNA Architecture</title>
-        <graphic align="center" scale="60" fileref="images/dna-architecture.png" />
-      </figure>
+        <imageobject role="html">
+          <imagedata align="center" fileref="images/dna-architecture.png"/>
+        </imageobject>
+      </mediaobject>
       <para>
         As shown in the diagram above, the major components are (starting at the top):
         <itemizedlist>
@@ -304,8 +303,20 @@
           </listitem>
         </itemizedlist>
       </para>
+      <para>
+        Continue reading the rest of this chapter for more detail about the
+        <link linkend="sequencers">sequencing framework</link>
+        available in this release, or the
+        <link linkend="federation">federation engine</link>
+        and
+        <link linkend="federation_connectors">connectors</link>
+        that will be the focus of the next release. Or, skip to the
+        <link linkend="downloading_and_running">examples</link>
+        to see how to start using JBoss DNA &versionNumber;
+        today. 
+      </para>
     </sect1>
-    <sect1>
+    <sect1 id="sequencers">
       <title>Sequencers</title>
       <para> The current JBoss DNA release contains a sequencing framework that is designed to sequence data (typically files)
         stored in a JCR repository to automatically extract meaningful and useful information. This additional information is then
@@ -451,7 +462,7 @@
         goes into detail about how to write custom sequencers.
       </para>
     </sect1>
-    <sect1>
+    <sect1 id="federation">
       <title>Federation</title>
       <para>There is a lot of information stored in many of different places: databases, repositories, SCM systems,
         registries, file systems, services, etc. The purpose of the federation engine is to allow applications to use the JCR API
@@ -474,7 +485,7 @@
         changes, client applications using JCR observation will be notified of the changes. If a JBoss DNA federated repository is
         configured to allow updates, client applications can change the information in the repository and JBoss DNA will propagate
         those changes down to the original source.</para>
-      <sect2>
+      <sect2 id="federation_connectors">
         <title>Connectors</title>
         <para>
           The JBoss DNA federation engine will use connectors to interact with different information sources to get at the content
@@ -553,7 +564,7 @@
           provide an implementation.
         </para>
       </sect2>
-      <sect2>
+      <sect2 id="federation_sources">
         <title>Sources</title>
         <para>
           Each JBoss DNA federated repository is configured to federate and integrate information from one or more
@@ -564,7 +575,7 @@
           federated repository.
         </para>
       </sect2>
-      <sect2>
+      <sect2 id="federation_graph">
         <title>Building the unified graph</title>
         <para> The federation engine works by effectively building up a single graph by querying each source and merging or
           unifying the responses. This information is cached, which improves performance, reduces the number of (potentially
@@ -593,7 +604,7 @@
           or the frequent checking with the source.
         </para>
       </sect2>
-      <sect2>
+      <sect2 id="federation_queries">
         <title>Queries</title>
         <para> The JBoss DNA federated repository will also support queries against the integrated and unified graph. In some
           situations the query can be determined to apply to a single source, but in most situations the query must be planned
@@ -604,7 +615,7 @@
           implements sophisticated query planning and optimization techniques for working efficiently with multiple sources.
         </para>
       </sect2>
-      <sect2>
+      <sect2 id="federation_updates">
         <title>Updates</title>
         <para>
           The JBoss DNA federated repositories also make it possible for client applications to make changes to the unified graph
@@ -627,7 +638,7 @@
           changes to other clients.)
         </para>
       </sect2>
-      <sect2>
+      <sect2 id="federation_events">
         <title>Events</title>
         <para> The JCR API supports observing a repository to receive notifications of additions, changes and deletions of nodes
           and properties. The JBoss DNA federated repository will support this API through two primary means.</para>
@@ -645,27 +656,26 @@
   <!--  ====================================================================================================
                                                    Chapter 
         ====================================================================================================   -->
-  <chapter id="downloading">
-    <title>Downloading the examples</title>
+  <chapter id="downloading_and_running">
+    <title>Example application</title>
     <para>JBoss DNA is built using Maven 2, so it's much easier to following along with the examples in this document if you
       install and configure Maven. Once this is done, you can very easily build the examples or even create a maven project that
       depends on the JBoss DNA JARs. Maven will automatically download the right versions of the JARs, including those other
       libraries on which JBoss DNA depends. Maven also makes it very easy to create an assembly of your final application so that
       you can package into a distributable form.</para>
-    <para>
-      The examples created for this User Guide use Maven2 to achieve exactly this so it is highly recommended that you
-      <ulink url="http://www.jboss.org/file-access/default/members/dna/downloads/0.1/jboss-dna-0.1-gettingstarted-examples.zip">download</ulink>
-      these first and take a look at how they work.
-    </para>
     <note>
       <para>
-        To build and run the examples you first need to install and configure Maven 2.0.7 (or higher), available from
+        To use Maven with JBoss DNA, you'll first need to install
+        <ulink url="http://java.sun.com/javase/downloads/index_jdk5.jsp">JDK 5</ulink>
+        and Maven 2.0.7 (or higher), which is available from
         <ulink url="http://maven.apache.org/">http://maven.apache.org/</ulink>
+        .
       </para>
-      <para>Installation is performed by downloading and unzipping the maven-2.0.7-bin.zip file to a convenient
-        location on your local disk. Configuration consists of adding $MAVEN_HOME/bin to your path and adding the following
-        profile to your ~/.m2/settings.xml file:</para>
-      <programlisting role="XML" language="xml">&lt;settings&gt;
+      <para>
+        Maven is installed by downloading and unzipping the maven-2.0.7-bin.zip file to a convenient location on your local disk.
+        Configuration consists of adding $MAVEN_HOME/bin to your path and adding the following profile to your ~/.m2/settings.xml
+        file:
+        <programlisting role="XML" language="xml">&lt;settings&gt;
   &lt;profiles&gt;
     &lt;profile&gt;
       &lt;id&gt;jboss.repository&lt;/id&gt;
@@ -709,14 +719,35 @@
     &lt;/profile&gt;
   &lt;/profiles&gt;
 &lt;/settings&gt;</programlisting>
-        <para>This profile informs Maven of the two JBoss repositories (snapshots and releases) that are needed to download the JARs for JBoss DNA and all dependent libraries.</para>
+        This profile informs Maven of the two JBoss repositories (snapshots and releases) that contain 
+        all of the JARs for JBoss DNA and all dependent libraries.</para>
       </note>
-      <para>After you have configured Maven and extracted the examples to a working folder, you can go to the <code>examples</code>
-           subdirectory and enter <code>mvn install</code> to perform a build.  Maven will automatically download all of the libraries
-           that are needed by the build, saving them to your local machine.  (This means the next time you run <code>mvn install</code>,
-           all the libraries will be local, and the build will run much faster.)
+    <sect1 id="downloading">
+      <title>Downloading and compiling</title>
+      <para>The next step is to <ulink url="http://www.jboss.org/file-access/default/members/dna/downloads/0.1/jboss-dna-0.1-gettingstarted-examples.zip">download</ulink>
+      the example for this Getting Started guide, and extract the contents to a convenient location on your local disk.
+      You'll find the example contains the following files, which are organized according to the standard Maven directory structure:
+  <programlisting>
+examples/pom.xml
+         sequencers/pom.xml
+                   /src/main/assembly
+                            /config
+                            /java
+                            /resources
+                       /test/java
+                            /resources
+  </programlisting>
       </para>
-      <para>The build is successful if you see the following:</para>
+      <para>There are essentially two Maven projects: a <code>sequencers</code> project and a parent project.  All of the source
+      for the examples are located in the <code>sequencers</code> subdirectory.  And you may have noticed that none
+      of the JBoss DNA libraries are there.  This is where Maven comes in.  The two <code>pom.xml</code> files tell
+      Maven everything it needs to know about what libraries are required and how to build the example.</para>
+      <para>In a terminal, go to the <code>examples</code> directory and run <emphasis role="strong"><code>mvn install</code></emphasis>.  
+      This command downloads all of the JARs necessary to compile and build the example, including the JBoss DNA libraries,
+      the libraries they depend on, and any missing Maven components.  (These are downloaded from the JBoss repositories
+      only once, and saved on your machine.  This means that the next time you run Maven, all the libraries will
+      already be available locally, and the build will run much faster.)  The command then continues by compiling the example's source
+      code (and unit tests) and running the unit tests.  The build is successful if you see the following:
            <programlisting language="bash">$ mvn install
 ...
 [INFO] ------------------------------------------------------------------------
@@ -733,64 +764,8 @@
 [INFO] Final Memory: 14M/28M
 [INFO] ------------------------------------------------------------------------
 $ </programlisting>
-           <para>If there are errors, check whether you have the correct version of Maven installed and that you've correctly updated
+      If there are errors, check whether you have the correct version of Maven installed and that you've correctly updated
            your Maven settings as described above.</para>
-           <para>
-           The <link linkend="using_dna">next chapter</link> shows you how to run the examples and walks through the source code to
-           show you how to use JBoss DNA.</para>
-  </chapter>
-<chapter id="using_dna">
-  <title>Using JBoss DNA</title>
-  <para>With this release, JBoss DNA is able to monitor existing JCR repositories and automatically sequence newly upload files and updated content.
-  The information produced by the sequencers is saved to the repository, making it available to any repository client.
-  Using JBoss DNA, therefore, consists of setting up the DNA Java components and connecting them to the JCR repositories.
-  This chapter walks you through this process, using the examples downloaded in the <link linkend="downloading">previous chapter</link>.
-  </para>
-  <para>You will find all of the necessary files for the example in the <code>examples/sequencers</code> directory, which follows the 
-  Maven Standard Directory Layout:
-  <programlisting>
-sequencers/pom.xml
-          /src/main/assembly
-                   /config
-                   /java
-                   /resources
-              /test/java
-                   /resources
-  </programlisting>
-  </para>
-  <para>This example consists of a client application that sets up an in-memory JCR repository and that allows a user
-  to upload files into that repository.  The client also sets up the DNA services with an image sequencer so that
-  if any of the uploaded files are PNG, JPEG, GIF, BMP or other images, DNA will automatically extract the image's
-  metadata (e.g., image format, physical size, pixel density, etc.) and store that in the repository.
-  </para>
-  <para>The example is comprised of 3 classes and 1 interface, located in the <code>src/main/java</code> directory:
-  <programlisting>
-org/jboss/example/dna/sequencers/ConsoleInput.java
-                                /ImageInfo.java
-                                /SequencingClient.java
-                                /UserInterface.java
-  </programlisting>
-  </para>
-  <para>
-  <code>SequencingClient</code> is the class that contains the main application.  <code>ImageInfo</code> is a simple
-  Java object that encapsulates metadata about an image (as generated by the sequencer), and used by the client to pass 
-  information to the <code>UserInterface</code>, which is an interface with methods that will be called at
-  runtime to request data from the user.  <code>ConsoleInput</code> is an implementation of this that creates a text user interface, 
-  allowing the user to operate the client from the command line. We can easily create a graphical implementation of 
-  <code>UserInterface</code> at a later date. We can also create a mock implementation for 
-  testing purposes that simulates a user entering data. This allows us to check the behaviour of the client automatically using conventional 
-  JUnit test cases, as demonstrated by the code in the <code>src/test/java</code> directory:
-  <programlisting>
-org/jboss/example/dna/sequencers/SequencingClientTest.java
-                                /MockUserInterface.java
-  </programlisting>
-  </para>
-  <sect1 id="running_examples">
-    <title>Running the example</title>
-    <para>
-    As mentioned in the <ulink url="downloading">previous chapter</ulink>, simply type <code>mvn package</code> from the <code>example/sequencer</code>
-    directory to compile the source code, run the unit tests, build a client JAR and assemble a distribution containing all of the necessary files. 
-    </para>
     <para>If you successfully built the examples, there will be a <code>examples/sequencers/target/dna-example-sequencers-basic.dir/</code>
     directory that contains the following:
     <itemizedlist>
@@ -854,42 +829,94 @@ org/jboss/example/dna/sequencers/SequencingClientTest.java
       </para>
     </note>
     </para>
+  </sect1>
+  <sect1 id="running">
+    <title>Running the example</title>
+    <para>This example consists of a client application that sets up an in-memory JCR repository and that allows a user to
+      upload files into that repository. The client also sets up the DNA services with an image sequencer so that if any of the
+      uploaded files are PNG, JPEG, GIF, BMP or other images, DNA will automatically extract the image's metadata (e.g., image
+      format, physical size, pixel density, etc.) and store that in the repository.</para>
     <para>
-    To run the client application, go to the <code>examples/sequencers/target/dna-example-sequencers-basic.dir/</code>
-    directory and type <code>./run.sh</code>.  You should see the command line client and its menus in your terminal:
-    <figure id="xample-sequencer-cli-client">
-      <title>Example Client</title>
-      <graphic align="center" scale="100" fileref="images/example-sequencer-cli-client.png" />
-    </figure>
-    From this menu, you can upload a file into the repository, search for images in the repository, print sequencing statistics, or quit the application.
+      To run the client application, go to the
+      <code>examples/sequencers/target/dna-example-sequencers-basic.dir/
+      </code>
+      directory and type
+      <code>./run.sh</code>
+      . You should see the command line client and its menus in your terminal:
+      <figure id="xample-sequencer-cli-client">
+        <title>Example Client</title>
+        <graphic align="center" scale="100" fileref="images/example-sequencer-cli-client.png" />
+      </figure>
+      From this menu, you can upload a file into the repository, search for images in the repository, print sequencing statistics,
+      or quit the application.
     </para>
     <para>
-    The first step is to upload one of the example images.  If you type 'u' and press return, you'll be prompted
-    to supply the path to the file you want to upload.  Since the application is running from within the 
-    <code>examples/sequencers/target/dna-example-sequencers-basic.dir/</code> directory, you can specify any 
-    of the files in that directory without specifying the path:
-    <figure id="example-sequencer-upload">
-      <title>Uploading an image using the Example Client</title>
-      <graphic align="center" scale="100" fileref="images/example-sequencer-upload.png" />
-    </figure>
-    You can specify any fully-qualified or relative path.  The application will notify you if it cannot
-    find the file you specified.  The example client configures JBoss DNA to sequence image files (technically nodes that have names) 
-    with one of the following
-    extensions:  <code>jpg</code>, <code>jpeg</code>, <code>gif</code>, <code>bmp</code>, 
-    <code>pcx</code>, <code>png</code>, <code>iff</code>, <code>ras</code>, <code>pbm</code>, <code>pgm</code>, <code>ppm</code>, and <code>psd</code>.
-    Files with other extensions in the repository path will be ignored.  For your convenience, the example provides
-    several files that will be sequenced (<code>caution.png</code>, <code>caution.jpg</code> and <code>caution.gif</code>)
-    and one image that will not be sequenced (<code>caution.pict</code>).  Feel free to try other files.
+      The first step is to upload one of the example images. If you type 'u' and press return, you'll be prompted to supply the
+      path to the file you want to upload. Since the application is running from within the
+      <code>examples/sequencers/target/dna-example-sequencers-basic.dir/
+      </code>
+      directory, you can specify any of the files in that directory without specifying the path:
+      <figure id="example-sequencer-upload">
+        <title>Uploading an image using the Example Client</title>
+        <graphic align="center" scale="100" fileref="images/example-sequencer-upload.png" />
+      </figure>
+      You can specify any fully-qualified or relative path. The application will notify you if it cannot find the file you
+      specified. The example client configures JBoss DNA to sequence image files (technically nodes that have names) with one of
+      the following extensions:
+      <code>jpg</code>
+      ,
+      <code>jpeg</code>
+      ,
+      <code>gif</code>
+      ,
+      <code>bmp</code>
+      ,
+      <code>pcx</code>
+      ,
+      <code>png</code>
+      ,
+      <code>iff</code>
+      ,
+      <code>ras</code>
+      ,
+      <code>pbm</code>
+      ,
+      <code>pgm</code>
+      ,
+      <code>ppm</code>
+      , and
+      <code>psd</code>
+      . Files with other extensions in the repository path will be ignored. For your convenience, the example provides several
+      files that will be sequenced (
+      <code>caution.png</code>
+      ,
+      <code>caution.jpg</code>
+      and
+      <code>caution.gif</code>
+      ) and one image that will not be sequenced (
+      <code>caution.pict</code>
+      ). Feel free to try other files.
     </para>
     <para>
-    After you specified the file you want to upload, the example application asks you where in the repository you'd
-    like to place the file.  (If you want to use the suggested location, just press <code>return</code>.)
-    The client application uses the JCR API to upload the file to that location in the repository, creating any nodes (of type <code>nt:folder</code>) 
-    for any directories that don't exist, and creating a node (of type <code>nt:file</code>) for the file.  And,
-    per the JCR specification, the application creates a <code>jcr:content</code> node (of type <code>nt:resource</code>)
-    under the file node.  The file contents are placed on this <code>jcr:content</code> node in the <code>jcr:data</code> property.
-    For example, if you specify <code>/a/b/caution.png</code>, the following structure will be created in the repository:
-    <programlisting>
+      After you specified the file you want to upload, the example application asks you where in the repository you'd like to
+      place the file. (If you want to use the suggested location, just press
+      <code>return</code>
+      .) The client application uses the JCR API to upload the file to that location in the repository, creating any nodes (of
+      type
+      <code>nt:folder</code>
+      ) for any directories that don't exist, and creating a node (of type
+      <code>nt:file</code>
+      ) for the file. And, per the JCR specification, the application creates a
+      <code>jcr:content</code>
+      node (of type
+      <code>nt:resource</code>
+      ) under the file node. The file contents are placed on this
+      <code>jcr:content</code>
+      node in the
+      <code>jcr:data</code>
+      property. For example, if you specify
+      <code>/a/b/caution.png</code>
+      , the following structure will be created in the repository:<programlisting>
     /a   (nt:folder)
       /b   (nt:folder)
         /caution.png   (nt:file)
@@ -899,14 +926,15 @@ org/jboss/example/dna/sequencers/SequencingClientTest.java
                                 @jcr:lastModified = {now}
     </programlisting>
     </para>
-    <para>
-    When the client uploads the file using the JCR API, DNA gets notified of the changes, consults the sequencers
-    to see whether any of them are interested in the new or updated content, and if so runs the sequencers.  The image
-    sequencer processes image files for metadata, and any metadata found is stored under the <code>/images</code>
-    branch of the repository.  All of this happens asynchronously, so any DNA activity doesn't impede or slow
-    down the client activities.
-    </para>
-    <para>
+  <para>
+    When the client uploads the file using the JCR API, DNA gets notified of the changes, consults the sequencers to see whether
+    any of them are interested in the new or updated content, and if so runs the sequencers. The image sequencer processes image
+    files for metadata, and any metadata found is stored under the
+    <code>/images</code>
+    branch of the repository. All of this happens asynchronously, so any DNA activity doesn't impede or slow down the client
+    activities.
+  </para>
+  <para>
     So, after the file is uploaded, you can search the repository for the image metadata using the "s" menu option:
     <figure id="example-sequencer-search">
       <title>Uploading an image using the Example Client</title>
@@ -917,20 +945,71 @@ org/jboss/example/dna/sequencers/SequencingClientTest.java
       <title>Uploading an image using the Example Client</title>
       <graphic align="center" scale="100" fileref="images/example-sequencer-statistics.png" />
     </figure>
-    These stats show how many nodes were sequenced, and how many nodes were skipped because they didn't apply to the
-    sequencer's criteria.</para>
-    <note>
-    <para>There will probably be more nodes skipped than sequenced, since there are more <code>nt:folder</code>
-    and <code>nt:resource</code> nodes than there are <code>nt:file</code> nodes with acceptible names.  
-    </para>
-    </note>
+    These stats show how many nodes were sequenced, and how many nodes were skipped because they didn't apply to the sequencer's
+    criteria.
+  </para>
+  <note>
     <para>
-    You can repeat this process with other files.  Any file that isn't an image (as recognized by the sequencing configuration
-    described later) will not be sequenced.
+      There will probably be more nodes skipped than sequenced, since there are more
+      <code>nt:folder</code>
+      and
+      <code>nt:resource</code>
+      nodes than there are
+      <code>nt:file</code>
+      nodes with acceptible names.
     </para>
+  </note>
+  <para>You can repeat this process with other files. Any file that isn't an image (as recognized by the sequencing configuration
+    that we'll describe later) will not be sequenced.</para>
   </sect1>
-  <sect1 id="example_java_code">
-    <title>Reviewing the Java code</title>
+  </chapter>
+  
+  
+  
+  
+  
+  <!--  ====================================================================================================
+                                                   Chapter 
+        ====================================================================================================   -->
+<chapter id="using_dna">
+  <title>Using JBoss DNA</title>
+    <para></para>
+  
+  
+  <para>This example consists of a client application that sets up an in-memory JCR repository and that allows a user
+  to upload files into that repository.  The client also sets up the DNA services with an image sequencer so that
+  if any of the uploaded files are PNG, JPEG, GIF, BMP or other images, DNA will automatically extract the image's
+  metadata (e.g., image format, physical size, pixel density, etc.) and store that in the repository.
+  </para>
+  <para>The example is comprised of 3 classes and 1 interface, located in the <code>src/main/java</code> directory:
+  <programlisting>
+org/jboss/example/dna/sequencers/ConsoleInput.java
+                                /ImageInfo.java
+                                /SequencingClient.java
+                                /UserInterface.java
+  </programlisting>
+  </para>
+  <para><code>SequencingClient</code> is the class that contains the main application.  <code>ImageInfo</code> is a simple
+  Java object that encapsulates metadata about an image (as generated by the sequencer), and used by the client to pass 
+  information to the <code>UserInterface</code>, which is an interface with methods that will be called at
+  runtime to request data from the user.  <code>ConsoleInput</code> is an implementation of this that creates a text user interface, 
+  allowing the user to operate the client from the command line. We can easily create a graphical implementation of 
+  <code>UserInterface</code> at a later date. We can also create a mock implementation for 
+  testing purposes that simulates a user entering data. This allows us to check the behaviour of the client automatically using conventional 
+  JUnit test cases, as demonstrated by the code in the <code>src/test/java</code> directory:
+  <programlisting>
+org/jboss/example/dna/sequencers/SequencingClientTest.java
+                                /MockUserInterface.java
+  </programlisting>
+  </para>
+
+<!--  Reviewing the code -->
+    <para>The example application you just used demonstrated how JBoss DNA sequencing responds
+    to the changes in a repository.  This example doesn't do much, but the con </para>
+    
+    <para>The example application you just used demonstrated how JBoss DNA sequencing responds
+    to the changes in a repository.  This example was pretty simple, but </para>
+    
     <para>The example you just ran demonstrated that JBoss DNA does sequence image files.  It does everything
     necessary to set up and configure JBoss DNA to use a JCR repository, so reviewing that code can help understand
     what's involved.
@@ -940,10 +1019,38 @@ org/jboss/example/dna/sequencers/SequencingClientTest.java
     <code>ConsoleInput</code>, and <code>ImageInfo</code> classes are there to just make the example easy to run.
     The interesting code is in <code>SequencingClient</code>.
     </para>
-
     <para>
+    The <code>SequencingClient</code> class contains several methods that work with the JBoss DNA components.
+    One of these is the <code>ObservationService</code> that monitors JCR workspaces and serves as a broker
+    for events describing sets of changes to those JCR workspaces.
     </para>
-  </sect1>
+
+  
+  <para>Three of the most important concepts in the JCR API are the <emphasis>repository</emphasis> (represented
+  by the <code>javax.jcr.Repository</code> interface), the <emphasis>workspace</emphasis> (represented by the
+  <code>javax.jcr.Workspace</code> interface), and a <emphasis>session</emphasis> (represented by the 
+  <code>javax.jcr.Session</code> interface).  A single repository can contain multiple workspaces, each of which
+  contains a tree of nodes with properties and relationships that form a graph.  A client connects to the repository
+  by providing credentials and the name of the workspace they wish to use.  If the client's credentials are
+  authenticated, the repository returns a session that provides access to all the nodes in the workspace and
+  methods for adding, changing or deleting nodes.
+  </para>
+  <para>A session in the JCR API is not thread-safe.  In other words, it is designed to be used by a single thread.
+  If multiple threads in an application are to concurrently use a single session, that application is responsible
+  for ensuring that all access to the session is properly synchronized and controlled.  Separate sessions,
+  on the other hand, may be used concurrently and in isolation, although all committed changes to the workspace's
+  nodes are immediately visible to all sessions using that workspace.</para>
+  <note>
+  <para>This design follows a very common pattern: establish a connection to a resource, use that connection,
+  then close the connection.  If you need to use the resource again, you must establish a new connection, use it,
+  and close the connection.  The Java Database Connectivity (JDBC) API uses a similar pattern
+  with it's <code>java.sql.Connection</code> interface.
+  </para>
+  </note>
+  <para>The challenge with this approach in JCR, however, is that the credentials must be used every time a
+  session is to be created.
+  session</para>
+
 
 
 
