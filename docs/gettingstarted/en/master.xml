@@ -174,7 +174,7 @@
   </chapter>
   <chapter id="jboss_dna">
     <title>JBoss DNA</title>
-    <sect1>
+    <sect1 id="jboss_dna_overview">
       <title>Overview</title>
       <para>JBoss DNA is a repository and set of tools that make it easy to capture, version, analyze, and understand the
         fundamental building blocks of information. As models, service and process definitions, schemas, source code, and other
@@ -197,10 +197,10 @@
         of other DNA components or third-party systems that support the standard APIs.</para>
       <mediaobject>
         <imageobject role="fo">
-          <imagedata align="center" fileref="images/dna-architecture.png"/>
+          <imagedata align="center" fileref="images/dna-architecture.png" />
         </imageobject>
         <imageobject role="html">
-          <imagedata align="center" fileref="images/dna-architecture.png"/>
+          <imagedata align="center" fileref="images/dna-architecture.png" />
         </imageobject>
       </mediaobject>
       <para>
@@ -658,22 +658,32 @@
         ====================================================================================================   -->
   <chapter id="downloading_and_running">
     <title>Example application</title>
-    <para>JBoss DNA is built using Maven 2, so it's much easier to following along with the examples in this document if you
-      install and configure Maven. Once this is done, you can very easily build the examples or even create a maven project that
-      depends on the JBoss DNA JARs. Maven will automatically download the right versions of the JARs, including those other
-      libraries on which JBoss DNA depends. Maven also makes it very easy to create an assembly of your final application so that
-      you can package into a distributable form.</para>
+    <para>
+      This chapter provides instructions for downloading and running a sample application that demonstrates how JBoss DNA works
+      with a JCR repository to automatically sequence changing content to extract useful information. So read on to get the simple
+      application running, and then in the
+      <link linkend="using_dna">next chapter</link>
+      we'll we'll dive into the source code for the example and show how to use JBoss DNA in your own applications.
+    </para>
+    <para>JBoss DNA uses Maven 2 for its build system, as is this example. Using Maven 2 has several advantages, including
+      the ability to manage dependencies. If a library is needed, Maven automatically finds and downloads that library, plus
+      everything that library needs. This means that its very easy to build the examples - or even create a maven project that
+      depends on the JBoss DNA JARs.</para>
     <note>
       <para>
-        To use Maven with JBoss DNA, you'll first need to install
-        <ulink url="http://java.sun.com/javase/downloads/index_jdk5.jsp">JDK 5</ulink>
-        and Maven 2.0.7 (or higher), which is available from
-        <ulink url="http://maven.apache.org/">http://maven.apache.org/</ulink>
-        .
+        To use Maven with JBoss DNA, you'll need to have
+        <ulink url="http://java.sun.com/javase/downloads/index_jdk5.jsp">JDK 5 or 6</ulink>
+        and Maven 2.0.7 (or higher).
       </para>
       <para>
-        Maven is installed by downloading and unzipping the maven-2.0.7-bin.zip file to a convenient location on your local disk.
-        Configuration consists of adding $MAVEN_HOME/bin to your path and adding the following profile to your ~/.m2/settings.xml
+        Maven can be downloaded from
+        <ulink url="http://maven.apache.org/">http://maven.apache.org/</ulink>
+        , and is installed by unzipping the
+        <code>maven-2.0.7-bin.zip</code>
+        file to a convenient location on your local disk. Simply add
+        <code>$MAVEN_HOME/bin</code>
+        to your path and adding the following profile to your
+        <code>~/.m2/settings.xml</code>
         file:
         <programlisting role="XML" language="xml">&lt;settings&gt;
   &lt;profiles&gt;
@@ -962,121 +972,596 @@ $ </programlisting>
   <para>You can repeat this process with other files. Any file that isn't an image (as recognized by the sequencing configuration
     that we'll describe later) will not be sequenced.</para>
   </sect1>
+  <sect1 id="downloading_and_running_review">
+    <title>Review</title>
+    <para>In this chapter you downloaded and installed the example application and used it to upload files into a
+    JCR repository.  JBoss DNA automatically sequenced the image files you uploaded, extracted the metadata from the
+    files, and stored that metadata inside the repository.  The application allowed you to see this metadata
+    and the sequencing statistics.</para>
+    <para>This application was very simplistic.  In fact, running through the example probably only took you a minute or two.
+    So while this application won't win any awards, it does show the basics of what JBoss DNA can do.</para>
+    <para>In the <link linkend="using_dna">next chapter</link> we'll venture into the code to get an understanding
+    of how JBoss DNA actually works and how you can use it in your own applications.</para>
+  </sect1>
   </chapter>
-  
-  
-  
-  
   
   <!--  ====================================================================================================
                                                    Chapter 
         ====================================================================================================   -->
 <chapter id="using_dna">
   <title>Using JBoss DNA</title>
-    <para></para>
-  
-  
-  <para>This example consists of a client application that sets up an in-memory JCR repository and that allows a user
-  to upload files into that repository.  The client also sets up the DNA services with an image sequencer so that
-  if any of the uploaded files are PNG, JPEG, GIF, BMP or other images, DNA will automatically extract the image's
-  metadata (e.g., image format, physical size, pixel density, etc.) and store that in the repository.
-  </para>
-  <para>The example is comprised of 3 classes and 1 interface, located in the <code>src/main/java</code> directory:
-  <programlisting>
-org/jboss/example/dna/sequencers/ConsoleInput.java
-                                /ImageInfo.java
-                                /SequencingClient.java
-                                /UserInterface.java
-  </programlisting>
-  </para>
-  <para><code>SequencingClient</code> is the class that contains the main application.  <code>ImageInfo</code> is a simple
-  Java object that encapsulates metadata about an image (as generated by the sequencer), and used by the client to pass 
-  information to the <code>UserInterface</code>, which is an interface with methods that will be called at
-  runtime to request data from the user.  <code>ConsoleInput</code> is an implementation of this that creates a text user interface, 
-  allowing the user to operate the client from the command line. We can easily create a graphical implementation of 
-  <code>UserInterface</code> at a later date. We can also create a mock implementation for 
-  testing purposes that simulates a user entering data. This allows us to check the behaviour of the client automatically using conventional 
-  JUnit test cases, as demonstrated by the code in the <code>src/test/java</code> directory:
-  <programlisting>
-org/jboss/example/dna/sequencers/SequencingClientTest.java
-                                /MockUserInterface.java
-  </programlisting>
-  </para>
-
-<!--  Reviewing the code -->
-    <para>The example application you just used demonstrated how JBoss DNA sequencing responds
-    to the changes in a repository.  This example doesn't do much, but the con </para>
-    
-    <para>The example application you just used demonstrated how JBoss DNA sequencing responds
-    to the changes in a repository.  This example was pretty simple, but </para>
-    
-    <para>The example you just ran demonstrated that JBoss DNA does sequence image files.  It does everything
-    necessary to set up and configure JBoss DNA to use a JCR repository, so reviewing that code can help understand
-    what's involved.
-    </para>
-    <para>
-    Most of the Java classes in the example really have nothing in particular to do with JBoss DNA.  The <code>UserInterface</code>,
-    <code>ConsoleInput</code>, and <code>ImageInfo</code> classes are there to just make the example easy to run.
-    The interesting code is in <code>SequencingClient</code>.
-    </para>
-    <para>
-    The <code>SequencingClient</code> class contains several methods that work with the JBoss DNA components.
-    One of these is the <code>ObservationService</code> that monitors JCR workspaces and serves as a broker
-    for events describing sets of changes to those JCR workspaces.
-    </para>
-
-  
-  <para>Three of the most important concepts in the JCR API are the <emphasis>repository</emphasis> (represented
-  by the <code>javax.jcr.Repository</code> interface), the <emphasis>workspace</emphasis> (represented by the
-  <code>javax.jcr.Workspace</code> interface), and a <emphasis>session</emphasis> (represented by the 
-  <code>javax.jcr.Session</code> interface).  A single repository can contain multiple workspaces, each of which
-  contains a tree of nodes with properties and relationships that form a graph.  A client connects to the repository
-  by providing credentials and the name of the workspace they wish to use.  If the client's credentials are
-  authenticated, the repository returns a session that provides access to all the nodes in the workspace and
-  methods for adding, changing or deleting nodes.
-  </para>
-  <para>A session in the JCR API is not thread-safe.  In other words, it is designed to be used by a single thread.
-  If multiple threads in an application are to concurrently use a single session, that application is responsible
-  for ensuring that all access to the session is properly synchronized and controlled.  Separate sessions,
-  on the other hand, may be used concurrently and in isolation, although all committed changes to the workspace's
-  nodes are immediately visible to all sessions using that workspace.</para>
+  <para>As we've mentioned before, JBoss DNA is able to work with existing JCR repositories.  Your client applications
+  make changes to the information in those repositories, and JBoss DNA automatically uses its sequencers to extract
+  additional information from the uploaded files.</para>
   <note>
-  <para>This design follows a very common pattern: establish a connection to a resource, use that connection,
-  then close the connection.  If you need to use the resource again, you must establish a new connection, use it,
-  and close the connection.  The Java Database Connectivity (JDBC) API uses a similar pattern
-  with it's <code>java.sql.Connection</code> interface.
-  </para>
+    <para>Configuring JBoss DNA sequencers is a bit more manual than is ideal. As you'll see, JBoss DNA uses dependency
+      injection to allow a great deal of flexibility in how it can be configured and customized. However, the next release will
+      provide a much easier mechanism for configuring not only the sequencer service but also the upcoming federation engine and
+      JCR implementation.</para>
   </note>
-  <para>The challenge with this approach in JCR, however, is that the credentials must be used every time a
-  session is to be created.
-  session</para>
+  <sect1 id="sequencing_service">
+    <title>Sequencing Service</title>
+    <para>
+      The JBoss DNA <emphasis>sequencing service</emphasis> is the component that manages the <emphasis>sequencers</emphasis>
+      and that reacts to changes in JCR repositories and then running the appropriate sequencers.
+      This involves processing the changes on a node, determinine which (if any) sequencer should be run on that node,
+      and for each sequencer constructing the execution environment, calling the sequencer, and saving the information
+      generated by the sequencer.</para>
+    <para>To set up the sequencing service, an instance is created and dependent components are injected into
+      the object.  This includes among other things:
+      <itemizedlist>
+        <listitem>
+          <para>An <emphasis>execution context</emphasis> that defines the context in which the service runs, including
+        a factory for JCR sessions given names of the repository and workspace.  This factory must be configured,
+        and is how JBoss DNA knows about your JCR repositories and how to connect to them.  More on this a bit later.</para>
+        </listitem>
+        <listitem>
+          <para>An optional <emphasis>factory for class loaders</emphasis> used to load sequencers.  If no factory is supplied,
+        the service uses the current thread's context class loader (or if that is null the class loader that loaded the
+        sequencing service class).</para>
+        </listitem>
+        <listitem>
+          <para>An <code>java.util.concurrent.ExecutorService</code> used to execute the sequencing activites.  If none
+        is supplied, a new single-threaded executor is created by calling <code>Executors.newSingleThreadExecutor()</code>.
+        (This can easily be changed by subclassing and overriding the <code>SequencerService.createDefaultExecutorService()</code> method.)</para>
+        </listitem>
+        <listitem>
+          <para>Filters for sequencers and events.  By default, all sequencers are considered for "node added", "property added"
+        and "property changed" events.</para>
+        </listitem>
+      </itemizedlist>
+      </para>
+      <para>As mentioned above, the <code>ExecutionContext</code> provides access to a <code>SessionFactory</code> that is used
+      by JBoss DNA to establish sessions to your JCR repositories.  Two implementations are available:
+      <itemizedlist>
+        <listitem>
+          <para>The <code>JndiSessionFactory</code> looks up JCR <code>Repository</code> instances in JNDI using
+          names that are supplied when creating sessions.  This implementation also has methods to set the
+          JCR <code>Credentials</code> for a given workspace name.</para>
+        </listitem>
+        <listitem>
+          <para>The <code>SimpleSessionFactory</code> has methods to register the JCR <code>Repository</code> instances
+          with names, as well as methods to set the JCR <code>Credentials</code> for a given workspace name.</para>
+        </listitem>
+      </itemizedlist>
+      You can use the <code>SimpleExecutionContext</code> implementation of <code>ExecutionContext</code> and supply
+      a <code>SessionFactory</code> instance, or you can provide your own implementation.
+      </para>
+      <para>Here's an example of how to instantiate and configure the SequencingService:
+      <programlisting>
+SimpleSessionFactory sessionFactory = new SimpleSessionFactory();
+sessionFactory.registerRepository("Main Repository", this.repository);
+Credentials credentials = new SimpleCredentials("jsmith", "secret".toCharArray());
+sessionFactory.registerCredentials("Main Repository/Workspace1", credentials);
+ExecutionContext executionContext = new SimpleExecutionContext(sessionFactory);
 
+// Create the sequencing service, passing in the execution context ...
+SequencingService sequencingService = new SequencingService();
+sequencingService.setExecutionContext(executionContext);</programlisting>
+      </para>
+      <para>After the sequencing service is created and configured, it must be started.  The SequencingService
+      has an <emphasis>administration object</emphasis> (that is an instance of <code>ServiceAdministrator</code>)
+      with <code>start()</code>, <code>pause()</code>, and <code>shutdown()</code> methods.  The latter method will 
+      close the queue for sequencing, but will allow sequencing operations already running to complete normally.
+      To wait until all sequencing operations have completed, simply call the <code>awaitTermination</code> method
+      and pass it the maximum amount of time you want to wait.</para>
+      <para>
+      <programlisting>
+sequencingService.getAdministrator().start();</programlisting>
+      </para>
+      <para>The sequencing service must also be configured with the sequencers that it will use.  This is done using the
+      <code>addSequencer(SequencerConfig)</code> method and passing a <code>SequencerConfig</code> instance that
+      can create.  Here's an example:
+      <programlisting>
+String name = "Image Sequencer";
+String desc = "Sequences image files to extract the characteristics of the image";
+String classname = "org.jboss.dna.sequencer.images.ImageMetadataSequencer";
+String[] classpath = null; // Use the current classpath
+String[] pathExpressions = {"//(*.(jpg|jpeg|gif|bmp|pcx|png))[*]/jcr:content[@jcr:data] => /images/$1"};
+SequencerConfig imageSequencerConfig = new SequencerConfig(name, desc, classname, classpath, pathExpressions);
+SesequencingService.addSequencer(imageSequencerConfig);</programlisting>
+      This is pretty self-explanatory, except for the <code>classpath</code> and <code>pathExpression</code> parameters.
+      The classpath parameter defines the classpath that is passed to the class loader factory mentioned above.
+      Our sequencer is on the classpath, so we can simply use <code>null</code> here.
+      </para>
+      <para>The path expression is more complicated.  Sequencer path expressions are used by the sequencing service to
+      determine whether a particular changed node should be sequenced.  The expressions consist of two parts: a selection
+      criteria and an output expression.  Here's a simple example:
+      <programlisting>
+/a/b/c@title =&gt; /d/e/f</programlisting>
+      Here, the <code>/a/b/c@title</code> is the selection criteria that applies when the <code>/a/b/c</code> node has a <code>title</code> property
+      that is added or changed.  When the selection criteria matches a change event, the sequencer will be run
+      and any generated output will be inserted into the repository described by the output expression.  In this example,
+      the generated output would be placed at the <code>/d/e/f</code> node.
+      </para>
+      <note>
+        <para>Sequencer path expressions can be fairly complex and may use wildcards, specificy same-name sibling indexes,
+        provide optional and choice elements, and may capture parts of the selection criteria for use in the output expression.
+        The path expression used in the sequencer configuration example above shows a more complex example:
+        <programlisting>
+//(*.(jpg|jpeg|gif|bmp|pcx|png))[*]/jcr:content[@jcr:data] => /images/$1</programlisting>
+        This uses "//" to select any node at any level in the repository whose name ends with "." and one of the extensions (e.g., ".jpg", ".jpeg", etc.)
+        and that has a child node named "jcr:content" that has a "jcr:data" property.  It also selects the file name
+        as the first capture group (the first set of parentheses) for use in the output expression.
+        In this example, any sequencer output is placed on a node with that same file name under the "/images" node.
+        </para>
+        <para></para>
+        <para>Other things are possible, too.  For example, the name of the repository/workspace (as used by the <code>SessionFactory</code>)
+        may be specified at the beginning of the select criteria and/or the output expression.  This means it's possible to place
+        the sequencer output in a different repository than the node being sequenced.</para>
+        <para>For more detail about sequencer path expressions, see the <code>org.jboss.dna.repository.sequencer.SequencerPathExpression</code>
+        class and the corresponding <code>org.jboss.dna.repository.sequencer.SequencerPathExpressionTest</code> test case.</para>
+      </note>
+      <para>After the service is started, it is ready to start reacting to changes in the repository.  But it first
+      must be wired to the repositories using listener.  This is accomplished using the <code>ObservationService</code>
+      described in the <link linkend="observation_service">next section</link>.</para>
+  </sect1>
+  <sect1 id="observation_service">
+    <title>Observation Service</title>
+    <para>The JBoss DNA <code>ObservationService</code> is responsible for listening to one or more JCR repositories
+    and multiplexing the events to its listeners.  Unlike JCR events, this framework embeds in the events the
+    name of the repository and workspace that can be passed to a <code>SessionFactory</code> to obtain a session
+    to the repository in which the change occurred.  This simple design makes it very easy for JBoss DNA to
+    concurrently work with multiple JCR repositories.</para>
+    <para>Configuring an ObservationService is pretty easy, especially if you reuse the same <code>SessionFactory</code>
+    supplied to the SequencingService.  Here's an example:
+    <programlisting>
+this.observationService = new ObservationService(sessionFactory);
+this.observationService.getAdministrator().start();</programlisting>
+    </para> 
+    <note>
+    <para>Both the ObservationService implement <code>AdministeredService</code>, which has a <code>ServiceAdministrator</code> used to 
+    start, pause, and shutdown the service.  In other words, the lifecycle of the services are managed in the same way.</para>
+    </note>
+    <para>
+    After the observation service is started, listeners can be added.  The <code>SequencingService</code> implements the required
+    interface, and so it may be registered directly:
+    <programlisting>
+observationService.addListener(sequencingService);</programlisting>
+    </para>
+    <para>Finally, the observation service must be wired to monitor one or your JCR repositories.  This is done with
+    one of the <code>monitor(...)</code> methods:
+    <programlisting>
+int eventTypes = Event.NODE_ADDED | Event.PROPERTY_ADDED | Event.PROPERTY_CHANGED;
+observationService.monitor("Main Repository/Workspace1", eventTypes);</programlisting>
+    </para>
+    <para>At this point, the observation service is listening to a JCR repository, and forwarding the appropriate events
+    to the sequencing service, which will asynchronously process the changes and sequence the information added to or changed in the repository.
+    </para>
+  </sect1>
+  <sect1 id="shutting_down">
+    <title>Shutting down JBoss DNA services</title>
+    <para>The JBoss DNA services are utilizing resources and threads that must be released your application is ready to shut down.
+    The safe way to do this is to simply obtain the <code>ServiceAdministrator</code> for each service (via the <code>getServiceAdministrator()</code> method)
+    and call <code>shutdown()</code>.  As previously mentioned, the shutdown method will simply prevent new work from being process
+    and will not wait for existing work to be completed.  If you want to wait until the service completes all its work, you must wait
+    until the service terminates.  Here's an example that shows how this is done:
+    <programlisting>
+// Shut down the service and wait until it's all shut down ...
+sequencingService.getAdministrator().shutdown();
+sequencingService.getAdministrator().awaitTermination(5, TimeUnit.SECONDS);
 
+// Shut down the observation service ...
+observationService.getAdministrator().shutdown();
+observationService.getAdministrator().awaitTermination(5, TimeUnit.SECONDS);</programlisting>
+    </para>
+    <para>At this point, we've covered how to configure and use the JBoss DNA services in your application.
+    The next chapter goes back to the <link linkend="downloading_and_running">sample application</link> to show how all these pieces fit together.</para>
+  </sect1>
+  <sect1 id="example_application_review">
+    <title>Example Application</title>
+    <para>Recall that the example application consists of a client application that sets up an in-memory JCR repository and
+      that allows a user to upload files into that repository. The client also sets up the DNA services with an image sequencer so
+      that if any of the uploaded files are PNG, JPEG, GIF, BMP or other images, DNA will automatically extract the image's
+      metadata (e.g., image format, physical size, pixel density, etc.) and store that in the repository.</para>
+    <para>
+      The example is comprised of 3 classes and 1 interface, located in the
+      <code>src/main/java</code>
+      directory:
+      <programlisting>
+  org/jboss/example/dna/sequencers/ConsoleInput.java
+                                  /ImageInfo.java
+                                  /SequencingClient.java
+                                  /UserInterface.java</programlisting>
+    </para>
+    <para>
+      <code>SequencingClient</code>
+      is the class that contains the main application.
+      <code>ImageInfo</code>
+      is a simple Java object that encapsulates metadata about an image (as generated by the sequencer), and used by the client to
+      pass information to the
+      <code>UserInterface</code>
+      , which is an interface with methods that will be called at runtime to request data from the user.
+      <code>ConsoleInput</code>
+      is an implementation of this that creates a text user interface, allowing the user to operate the client from the command
+      line. We can easily create a graphical implementation of
+      <code>UserInterface</code>
+      at a later date. We can also create a mock implementation for testing purposes that simulates a user entering data. This
+      allows us to check the behaviour of the client automatically using conventional JUnit test cases, as demonstrated by the
+      code in the
+      <code>src/test/java</code>
+      directory:
+      <programlisting>
+  org/jboss/example/dna/sequencers/SequencingClientTest.java
+                                  /MockUserInterface.java</programlisting>
+    </para>
+    <para>
+      If we look at the
+      <code>SequencingClient</code>
+      code, there are a handful of methods that encapsulate the various activities.
+    </para>
+    <note>
+      <para>To keep the code shown in this book as readable as possible, some of the comments and error handling
+      have been removed.</para>
+    </note>
+    <para>
+      The
+      <code>startRepository()</code>
+      method starts up an in-memory Jackrabbit JCR repository. The bulk of this method is simply gathering and passing the
+      information required by Jackrabbit. Because Jackrabbit's
+      <code>TransientRepository</code>
+      implementation shuts down after the last session is closed, the application maintains a session to ensure that the
+      repository remains open throughout the application's lifetime. And finally, the node type needed by the image sequencer is
+      registered with Jackrabbit.
+    </para>
+    <programlisting>
+public void startRepository() throws Exception {
+    if (this.repository == null) {
+        try {
 
+            // Load the Jackrabbit configuration ...
+            File configFile = new File(this.jackrabbitConfigPath);
+            String pathToConfig = configFile.getAbsolutePath();
 
+            // Find the directory where the Jackrabbit repository data will be stored ...
+            File workingDirectory = new File(this.workingDirectory);
+            String workingDirectoryPath = workingDirectory.getAbsolutePath();
 
+            // Get the Jackrabbit custom node definition (CND) file ...
+            URL cndFile = Thread.currentThread().getContextClassLoader().getResource("jackrabbitNodeTypes.cnd");
 
+            // Create the Jackrabbit repository instance and establish a session to keep the repository alive ...
+            this.repository = new TransientRepository(pathToConfig, workingDirectoryPath);
+            if (this.username != null) {
+                Credentials credentials = new SimpleCredentials(this.username, this.password);
+                this.keepAliveSession = this.repository.login(credentials, this.workspaceName);
+            } else {
+                this.keepAliveSession = this.repository.login();
+            }
+
+            try {
+                // Register the node types (only valid the first time) ...
+                JackrabbitNodeTypeManager mgr = (JackrabbitNodeTypeManager)this.keepAliveSession.getWorkspace().getNodeTypeManager();
+                mgr.registerNodeTypes(cndFile.openStream(), JackrabbitNodeTypeManager.TEXT_X_JCR_CND);
+            } catch (RepositoryException e) {
+                if (!e.getMessage().contains("already exists")) throw e;
+            }
+
+        } catch (Exception e) {
+            this.repository = null;
+            this.keepAliveSession = null;
+            throw e;
+        }
+    }
+}</programlisting>
+    <para>As you can see, this method really has nothing to do with JBoss DNA, other than setting up a JCR repository that JBoss
+      DNA will use.</para>
+    <para>
+      The
+      <code>shutdownRepository()</code>
+      method shuts down the Jackrabbit transient repository by closing the "keep alive session". Again, this method really does
+      nothing specifically with JBoss DNA, but is needed to manage the JCR repository that JBoss DNA uses.
+      <programlisting>
+public void shutdownRepository() throws Exception {
+    if (this.repository != null) {
+        try {
+            this.keepAliveSession.logout();
+        } finally {
+            this.repository = null;
+            this.keepAliveSession = null;
+        }
+    }
+}</programlisting>
+    </para>
+    <para>
+      The
+      <code>startDnaServices()</code>
+      method first starts the JCR repository (if it were not already started), and proceeds to create and configure the
+      <code>SequencingService</code>
+      as described
+      <link linkend="sequencing_service">earlier</link>
+      . This involes setting up the
+      <code>SessionFactory</code>
+      ,
+      <code>ExecutionContext</code>
+      , creating the
+      <code>SequencingService</code>
+      instance, and configuring the image sequencer. The method then continues by setting up the
+      <code>ObservationService</code>
+      as described
+      <link linkend="observation_service">earlier</link>
+      and starting the service.
+      <programlisting>
+public void startDnaServices() throws Exception {
+    if (this.repository == null) this.startRepository();
+    if (this.sequencingService == null) {
+
+        SimpleSessionFactory sessionFactory = new SimpleSessionFactory();
+        sessionFactory.registerRepository(this.repositoryName, this.repository);
+        if (this.username != null) {
+            Credentials credentials = new SimpleCredentials(this.username, this.password);
+            sessionFactory.registerCredentials(this.repositoryName + "/" + this.workspaceName, credentials);
+        }
+        this.executionContext = new SimpleExecutionContext(sessionFactory);
+
+        // Create the sequencing service, passing in the execution context ...
+        this.sequencingService = new SequencingService();
+        this.sequencingService.setExecutionContext(executionContext);
+
+        // Configure the sequencers.
+        String name = "Image Sequencer";
+        String desc = "Sequences image files to extract the characteristics of the image";
+        String classname = "org.jboss.dna.sequencer.images.ImageMetadataSequencer";
+        String[] classpath = null; // Use the current classpath
+        String[] pathExpressions = {"//(*.(jpg|jpeg|gif|bmp|pcx|png|iff|ras|pbm|pgm|ppm|psd))[*]/jcr:content[@jcr:data] => /images/$1"};
+        SequencerConfig imageSequencerConfig = new SequencerConfig(name, desc, classname, classpath, pathExpressions);
+        this.sequencingService.addSequencer(imageSequencerConfig);
+
+        // Use the DNA observation service to listen to the JCR repository (or multiple ones), and
+        // then register the sequencing service as a listener to this observation service...
+        this.observationService = new ObservationService(this.executionContext.getSessionFactory());
+        this.observationService.getAdministrator().start();
+        this.observationService.addListener(this.sequencingService);
+        this.observationService.monitor(this.repositoryName + "/" + this.workspaceName, Event.NODE_ADDED | Event.PROPERTY_ADDED | Event.PROPERTY_CHANGED);
+    }
+    // Start up the sequencing service ...
+    this.sequencingService.getAdministrator().start();
+}</programlisting>
+    </para>
+    <para>
+      The
+      <code>shutdownDnaServices()</code>
+      method is pretty straightforward: it just calls shutdown on each of the services and waits until they terminate.
+      <programlisting>
+public void shutdownDnaServices() throws Exception {
+    if (this.sequencingService == null) return;
+
+    // Shut down the service and wait until it's all shut down ...
+    this.sequencingService.getAdministrator().shutdown();
+    this.sequencingService.getAdministrator().awaitTermination(5, TimeUnit.SECONDS);
+
+    // Shut down the observation service ...
+    this.observationService.getAdministrator().shutdown();
+    this.observationService.getAdministrator().awaitTermination(5, TimeUnit.SECONDS);
+}</programlisting>
+    </para>
+    <para>None of the other methods really do anything with JBoss DNA per se. Instead, they merely work with the repository
+      using the JCR API.</para>
+    <para>
+      The <code>main</code> method of the <code>SequencingClient</code> class creates a <code>SequencingClient</code> instance,
+      and passes a new <code>ConsoleInput</code> instance:
+      <programlisting>
+public static void main( String[] args ) throws Exception {
+    SequencingClient client = new SequencingClient();
+    client.setRepositoryInformation("repo", "default", "jsmith", "secret".toCharArray());
+    client.setUserInterface(new ConsoleInput(client));
+}</programlisting>
+      </para>
+      <para>If we look at the
+      <code>ConsoleInput</code>
+      constructor, it starts the repository, the DNA services, and a thread for the user interface. At this point, the constructor
+      returns, but the main application continues under the user interface thread.  When the user requests to quit,
+      the user interface thread also shuts down the DNA services and JCR repository.
+      <programlisting>
+public ConsoleInput( SequencerClient client ) {
+  try {
+      client.startRepository();
+      client.startDnaServices();
+  
+      System.out.println(getMenu());
+      Thread eventThread = new Thread(new Runnable() {
+          private boolean quit = false;
+          public void run() {
+              try {
+                  while (!quit) {
+                      // Display the prompt and process the requested operation ...
+                  }
+              } finally {
+                  try {
+                      // Terminate ...
+                      client.shutdownDnaServices();
+                      client.shutdownRepository();
+                  } catch (Exception err) {
+                      System.out.println("Error shutting down sequencing service and repository: " + err.getLocalizedMessage());
+                      err.printStackTrace(System.err);
+                  }
+              }
+          }
+      });
+      eventThread.start();
+  } catch (Exception err) {
+      System.out.println("Error: " + err.getLocalizedMessage());
+      err.printStackTrace(System.err);
+  }
+}</programlisting>
+    </para>
+    <para>At this point, we've reviewed all of the interesting code in the example application.  However, feel free
+    to play with the application, trying different things.
+    </para>
+  </sect1>
+  <sect1 id="using_dna_review">
+    <title>Review</title>
+    <para>In this chapter we covered the different JBoss DNA components and how they can be used in your application.
+      Specifically, we described how the <code>SequencingService</code> and <code>ObservationService</code> can 
+      be configured and used.  And we ended the chapter by reviewing the example application, which not only uses
+      JBoss DNA, but also the repository via the JCR API.
+    </para>
+  </sect1>
 </chapter>
+  
+<!--  ====================================================================================================
+                                               Chapter 
+      ====================================================================================================   -->
 <chapter id="custom_sequencers">
   <title>Custom sequencers</title>
-  <para></para>
+  <para>The current release of JBoss DNA comes with a single sequencer that extracts metadata from image files.
+  If you create your own sequencer implementation, 
+  </para>
+  <note>
+    <para>The <code>dna-sequencer-images</code> project is a small, self-contained sequencer implementation that
+    has only the minimal dependencies.  Starting with the source can modifying it may be the easiest way to get started.
+    See the subversion repository: <ulink url="http://anonsvn.jboss.org/repos/dna/trunk/sequencers/dna-sequencer-images/">http://anonsvn.jboss.org/repos/dna/trunk/sequencers/dna-sequencer-images/</ulink>
+    </para>
+  </note>
+  <para>The first step is to <ulink url="http://maven.apache.org/guides/getting-started/index.html#How_do_I_make_my_first_Maven_project">create a new Maven 2 project</ulink>
+  for your sequencer, and specify the following in your project's <code>pom.xml</code> dependencies section:
+  <programlisting>
+&lt;dependency&gt;
+  &lt;groupId&gt;org.jboss.dna&lt;/groupId&gt;
+  &lt;artifactId&gt;dna-common&lt;/artifactId&gt;
+  &lt;version&gt;0.1&lt;/version&gt;
+&lt;/dependency&gt;
+&lt;dependency&gt;
+  &lt;groupId&gt;org.jboss.dna&lt;/groupId&gt;
+  &lt;artifactId&gt;dna-spi&lt;/artifactId&gt;
+  &lt;version&gt;0.1&lt;/version&gt;
+&lt;/dependency&gt;
+&lt;dependency&gt;
+  &lt;groupId&gt;org.slf4j&lt;/groupId&gt;
+  &lt;artifactId&gt;slf4j-api&lt;/artifactId&gt;
+&lt;/dependency&gt;
+</programlisting>
+  These are minimum dependencies required for compiling a sequencer.  Of course, you'll have to add
+  other dependencies that your sequencer needs.</para>
+  <para>As for testing, you probably will want to add more dependencies.  Here are some dependencies you may need,
+  depending upon how you want to test:
+<programlisting>
+&lt;dependency&gt;
+  &lt;groupId&gt;junit&lt;/groupId&gt;
+  &lt;artifactId&gt;junit&lt;/artifactId&gt;
+  &lt;version&gt;4.4&lt;/version&gt;
+  &lt;scope&gt;test&lt;/scope&gt;
+&lt;/dependency&gt;
+&lt;dependency&gt;
+  &lt;groupId&gt;org.hamcrest&lt;/groupId&gt;
+  &lt;artifactId&gt;hamcrest-library&lt;/artifactId&gt;
+  &lt;version&gt;1.1&lt;/version&gt;
+  &lt;scope&gt;test&lt;/scope&gt;
+&lt;/dependency&gt;
+&lt;!-- Logging with Log4J --&gt;
+&lt;dependency&gt;
+  &lt;groupId&gt;org.slf4j&lt;/groupId&gt;
+  &lt;artifactId&gt;slf4j-log4j12&lt;/artifactId&gt;
+  &lt;version&gt;1.4.3&lt;/version&gt;
+  &lt;scope&gt;test&lt;/scope&gt;
+&lt;/dependency&gt;
+&lt;dependency&gt;
+  &lt;groupId&gt;log4j&lt;/groupId&gt;
+  &lt;artifactId&gt;log4j&lt;/artifactId&gt;
+  &lt;version&gt;1.2.14&lt;/version&gt;
+  &lt;scope&gt;test&lt;/scope&gt;
+&lt;/dependency&gt;
+</programlisting>
+  If you want to test with JCR and with JBoss DNA, you'll need additional dependencies for these libraries.
+  Strictly speaking, the sequencers do not actually use JCR.  Instead, they use interfaces defined in the <code>dna-spi</code> project.
+  This not only simplifies the sequencer implementation, it also dramatically simplifies testing.
+<programlisting>
+&lt;dependency&gt;
+  &lt;groupId&gt;org.jboss.dna&lt;/groupId&gt;
+  &lt;artifactId&gt;dna-repository&lt;/artifactId&gt;
+  &lt;version&gt;0.1&lt;/version&gt;
+  &lt;scope&gt;test&lt;/scope&gt;
+&lt;/dependency&gt;
+&lt;!-- Java Content Repository API --&gt;
+&lt;dependency&gt;
+  &lt;groupId&gt;javax.jcr&lt;/groupId&gt;
+  &lt;artifactId&gt;jcr&lt;/artifactId&gt;
+  &lt;version&gt;1.0.1&lt;/version&gt;
+  &lt;scope&gt;test&lt;/scope&gt;
+&lt;/dependency&gt;
+&lt;!-- Apache Jackrabbit (JCR Implementation) --&gt;
+&lt;dependency&gt;
+  &lt;groupId&gt;org.apache.jackrabbit&lt;/groupId&gt;
+  &lt;artifactId&gt;jackrabbit-api&lt;/artifactId&gt;
+  &lt;version&gt;1.3.3&lt;/version&gt;
+  &lt;scope&gt;test&lt;/scope&gt;
+  &lt;!-- Exclude these since they are included in JDK 1.5 --&gt;
+  &lt;exclusions&gt;
+    &lt;exclusion&gt;
+      &lt;groupId&gt;xml-apis&lt;/groupId&gt;
+      &lt;artifactId&gt;xml-apis&lt;/artifactId&gt;
+    &lt;/exclusion&gt;
+    &lt;exclusion&gt;
+      &lt;groupId&gt;xerces&lt;/groupId&gt;
+      &lt;artifactId&gt;xercesImpl&lt;/artifactId&gt;
+    &lt;/exclusion&gt;
+  &lt;/exclusions&gt;
+&lt;/dependency&gt;
+&lt;dependency&gt;
+  &lt;groupId&gt;org.apache.jackrabbit&lt;/groupId&gt;
+  &lt;artifactId&gt;jackrabbit-core&lt;/artifactId&gt;
+  &lt;version&gt;1.3.3&lt;/version&gt;
+  &lt;scope&gt;test&lt;/scope&gt;
+  &lt;!-- Exclude these since they are included in JDK 1.5 --&gt;
+  &lt;exclusions&gt;
+    &lt;exclusion&gt;
+      &lt;groupId&gt;xml-apis&lt;/groupId&gt;
+      &lt;artifactId&gt;xml-apis&lt;/artifactId&gt;
+    &lt;/exclusion&gt;
+    &lt;exclusion&gt;
+      &lt;groupId&gt;xerces&lt;/groupId&gt;
+      &lt;artifactId&gt;xercesImpl&lt;/artifactId&gt;
+    &lt;/exclusion&gt;
+  &lt;/exclusions&gt;
+&lt;/dependency&gt;
+</programlisting>
+  </para>
+  <sect1 id="custom_sequencer_implementation">
+    <title>Implementing the StreamSequencer interface</title>
+    <para></para>
+  </sect1>
 </chapter>
+  
+<!--  ====================================================================================================
+                                               Chapter 
+      ====================================================================================================   -->
 <chapter id="future_directions">
   <title>Future directions</title>
-  <para>What's next for JBoss DNA?  Well, sequencers are just the beginning.  
-  Remember our <link linkend="architecture">architecture</link>?
-  There are a lot of components on our roadmap, including federating
-  
+  <para>What's next for JBoss DNA?  Well, the sequencing system is just the beginning.  With this release, the sequencing system
+  is stable enough so that more <link linkend="sequencers">sequencers</link> can be developed and used within your own applications.
+  If you're interested in getting involved with the JBoss DNA project, consider picking up one of the sequencers on our
+  <ulink url="http://jira.jboss.org/jira/browse/DNA?report=com.atlassian.jira.plugin.system.project:roadmap-panel">roadmap</ulink>.
+  Or, check out <ulink url="http://jira.jboss.org/jira/secure/IssueNavigator.jspa?reset=true&amp;mode=hide&amp;pid=12310520&amp;sorter/order=DESC&amp;sorter/field=priority&amp;resolution=-1&amp;component=12311436">JIRA</ulink>
+  for the list of sequencers we've thought of.  If you think of one that's not there, please add it to JIRA!
   </para>
-      <para> Roadmap: We'll start on the federation engine as soon as 0.1 is out. The 0.1 release will contain the sequencing
-      system, and while there will be one sequencer, we hope the community will help build the ones they need. Serge has started
-      on a Java sequencer, and MetaMatrix is starting on a sequencer for MetaMatrix models. Check out JIRA for the list of the
-      ones we've thought of.</para>
-    <para> Your need for a web UI is very typical, which is why we also want to create a web interface (and RESTful service) that
-      presents data using "domain-specific" views - that is, views that are specific to the type of data and user role. For
-      example, if a user is viewing database information, the views should be structured to show all the information for a table
-      and its columns, keys, and indexes. (This is in contrast with a "generic" node-based view where there is one page that shows
-      the table and only links to the other columns, keys, etc. See http://www.jcr-explorer.org/screenshots.html for an example of
-      a "generic" web UI.)</para>
+  <para>
+  Other components on our roadmap include a web user interface, a REST-ful server, and a view system that allows domain-specific
+  views of information in the repository.  These components are farter out on our roadmap, and at this time have not been
+  targeted to a particular release.  If any of these are of interest to you, please get involved in the community.
+  </para>
+  <para>
+  Finally, during the early part of the next release, the JBoss DNA project will switch to use JDK 6.  Java 5 is being
+  end-of-lifed, so we want to move to a supported JDK. However, a number of JBoss projects and products continue to
+  require Java 5, so our next release will most likely use JDK 6 with Java 5 compatibility.</para>
 </chapter>
 </book>
