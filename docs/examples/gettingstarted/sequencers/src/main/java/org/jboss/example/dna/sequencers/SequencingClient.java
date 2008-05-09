@@ -49,6 +49,7 @@ import org.jboss.dna.repository.util.ExecutionContext;
 import org.jboss.dna.repository.util.JcrTools;
 import org.jboss.dna.repository.util.SessionFactory;
 import org.jboss.dna.repository.util.SimpleExecutionContext;
+import org.jboss.dna.repository.util.SimpleSessionFactory;
 
 /**
  * @author Randall Hauch
@@ -64,7 +65,7 @@ public class SequencingClient {
 
     public static void main( String[] args ) throws Exception {
         SequencingClient client = new SequencingClient();
-        client.setRepositoryInformation(DEFAULT_REPOSITORY_NAME, DEFAULT_WORKSPACE_NAME, "jsmith", "secret".toCharArray());
+        client.setRepositoryInformation(DEFAULT_REPOSITORY_NAME, DEFAULT_WORKSPACE_NAME, DEFAULT_USERNAME, DEFAULT_PASSWORD);
         client.setUserInterface(new ConsoleInput(client));
     }
 
@@ -197,13 +198,13 @@ public class SequencingClient {
             // for the DNA services which knows about the JCR repositories, workspaces, and credentials used to
             // establish sessions to these workspaces. This example uses the SimpleExecutionContext, but there is
             // implementation for use with JCR repositories registered in JNDI.
-            SimpleExecutionContext executionContext = new SimpleExecutionContext();
-            executionContext.registerRepository(this.repositoryName, this.repository);
+            SimpleSessionFactory sessionFactory = new SimpleSessionFactory();
+            sessionFactory.registerRepository(this.repositoryName, this.repository);
             if (this.username != null) {
                 Credentials credentials = new SimpleCredentials(this.username, this.password);
-                executionContext.registerCredentials(this.repositoryName + "/" + this.workspaceName, credentials);
+                sessionFactory.registerCredentials(this.repositoryName + "/" + this.workspaceName, credentials);
             }
-            this.executionContext = executionContext;
+            this.executionContext = new SimpleExecutionContext(sessionFactory);
 
             // Create the sequencing service, passing in the execution context ...
             this.sequencingService = new SequencingService();
