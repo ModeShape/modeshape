@@ -21,22 +21,26 @@
  */
 package org.jboss.dna.repository.util;
 
+import org.jboss.dna.common.util.ArgCheck;
+
 /**
  * @author Randall Hauch
  */
-public class SimpleExecutionContext extends SimpleSessionFactory implements ExecutionContext {
+public class SimpleExecutionContext implements ExecutionContext {
 
     private final JcrTools tools = new JcrTools();
+    private final SessionFactory sessionFactory;
 
-    public SimpleExecutionContext() {
-        super();
+    public SimpleExecutionContext( SessionFactory sessionFactory ) {
+        ArgCheck.isNotNull(sessionFactory, "session factory");
+        this.sessionFactory = sessionFactory;
     }
 
     /**
      * {@inheritDoc}
      */
     public SessionFactory getSessionFactory() {
-        return this;
+        return this.sessionFactory;
     }
 
     /**
