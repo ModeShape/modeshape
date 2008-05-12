@@ -31,6 +31,7 @@ import java.util.concurrent.TimeUnit;
 import javax.jcr.Credentials;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
+import javax.jcr.PathNotFoundException;
 import javax.jcr.Property;
 import javax.jcr.PropertyIterator;
 import javax.jcr.Repository;
@@ -38,6 +39,7 @@ import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.SimpleCredentials;
 import javax.jcr.Value;
+import javax.jcr.ValueFormatException;
 import javax.jcr.observation.Event;
 import org.apache.jackrabbit.api.JackrabbitNodeTypeManager;
 import org.apache.jackrabbit.core.TransientRepository;
@@ -210,8 +212,9 @@ public class SequencingClient {
             this.sequencingService = new SequencingService();
             this.sequencingService.setExecutionContext(executionContext);
 
-            // Configure the sequencers. In this example, we only use a single sequencer that processes image files.
-            // So create a configuration. Note that the sequencing service expects the class to be on the thread's current context
+            // Configure the sequencers. In this example, we only two sequencers that processes image and mp3 files.
+            // So create a configurations. Note that the sequencing service expects the class to be on the thread's current
+            // context
             // classloader, or if that's null the classloader that loaded the SequencingService class.
             //
             // Part of the configuration includes telling DNA which JCR paths should be processed by the sequencer.
@@ -230,6 +233,13 @@ public class SequencingClient {
             String[] pathExpressions = {"//(*.(jpg|jpeg|gif|bmp|pcx|png|iff|ras|pbm|pgm|ppm|psd))[*]/jcr:content[@jcr:data] => /images/$1"};
             SequencerConfig imageSequencerConfig = new SequencerConfig(name, desc, classname, classpath, pathExpressions);
             this.sequencingService.addSequencer(imageSequencerConfig);
+
+            name = "Mp3 Sequencer";
+            desc = "Sequences mp3 files to extract the id3 tags of the audio file";
+            classname = "org.jboss.dna.sequencer.mp3.Mp3MetadataSequencer";
+            String[] mp3PathExpressions = {"//(*.(mp3))[*]/jcr:content[@jcr:data] => /mp3s/$1"};
+            SequencerConfig mp3SequencerConfig = new SequencerConfig(name, desc, classname, classpath, mp3PathExpressions);
+            this.sequencingService.addSequencer(mp3SequencerConfig);
 
             // Use the DNA observation service to listen to the JCR repository (or multiple ones), and
             // then register the sequencing service as a listener to this observation service...
@@ -303,56 +313,81 @@ public class SequencingClient {
      */
     public void search() throws Exception {
         // Use JCR to search the repository for image metadata ...
-        List<ImageInfo> images = new ArrayList<ImageInfo>();
+        List<MediaInfo> medias = new ArrayList<MediaInfo>();
         Session session = createSession();
         try {
             // Find the image node ...
             Node root = session.getRootNode();
-            if (root.hasNode("images")) {
-                Node imagesNode = root.getNode("images");
 
-                // Iterate over each child ...
-                for (NodeIterator iter = imagesNode.getNodes(); iter.hasNext();) {
-                    Node imageNode = iter.nextNode();
-                    String nodePath = imageNode.getPath();
-                    String nodeName = imageNode.getName();
-                    if (imageNode.hasNode("image:metadata")) {
-                        imageNode = imageNode.getNode("image:metadata");
+            if (root.hasNode("images") || root.hasNode("mp3s")) {
+                Node mediasNode;
+                if (root.hasNode("images")) {
+                    mediasNode = root.getNode("images");
 
-                        // Create a Properties object containing the properties for this node; ignore any children ...
-                        Properties props = new Properties();
-                        for (PropertyIterator propertyIter = imageNode.getProperties(); propertyIter.hasNext();) {
-                            Property property = propertyIter.nextProperty();
-                            String name = property.getName();
-                            String stringValue = null;
-                            if (property.getDefinition().isMultiple()) {
-                                StringBuilder sb = new StringBuilder();
-                                boolean first = true;
-                                for (Value value : property.getValues()) {
-                                    if (!first) {
-                                        sb.append(", ");
-                                        first = false;
-                                    }
-                                    sb.append(value.getString());
-                                }
-                                stringValue = sb.toString();
-                            } else {
-                                stringValue = property.getValue().getString();
-                            }
-                            props.put(name, stringValue);
+                    for (NodeIterator iter = mediasNode.getNodes(); iter.hasNext();) {
+                        Node mediaNode = iter.nextNode();
+                        if (mediaNode.hasNode("image:metadata")) {
+                            medias.add(extractMediaInfo("image:metadata", "image", mediaNode));
                         }
-                        // Create the image information object, and add it to the collection ...
-                        ImageInfo info = new ImageInfo(nodePath, nodeName, props);
-                        images.add(info);
                     }
                 }
+                if (root.hasNode("mp3s")) {
+                    mediasNode = root.getNode("mp3s");
+
+                    for (NodeIterator iter = mediasNode.getNodes(); iter.hasNext();) {
+                        Node mediaNode = iter.nextNode();
+                        if (mediaNode.hasNode("mp3:metadata")) {
+                            medias.add(extractMediaInfo("mp3:metadata", "mp3", mediaNode));
+                        }
+                    }
+                }
+
             }
         } finally {
             session.logout();
         }
 
         // Display the search results ...
-        this.userInterface.displaySearchResults(images);
+        this.userInterface.displaySearchResults(medias);
+    }
+
+    /**
+     * @param metadataNodeName
+     * @param mediaType
+     * @param mediaNode media node
+     * @throws RepositoryException
+     * @throws PathNotFoundException
+     * @throws ValueFormatException
+     */
+    private MediaInfo extractMediaInfo( String metadataNodeName, String mediaType, Node mediaNode ) throws RepositoryException, PathNotFoundException, ValueFormatException {
+        String nodePath = mediaNode.getPath();
+        String nodeName = mediaNode.getName();
+        mediaNode = mediaNode.getNode(metadataNodeName);
+
+        // Create a Properties object containing the properties for this node; ignore any children ...
+        Properties props = new Properties();
+        for (PropertyIterator propertyIter = mediaNode.getProperties(); propertyIter.hasNext();) {
+            Property property = propertyIter.nextProperty();
+            String name = property.getName();
+            String stringValue = null;
+            if (property.getDefinition().isMultiple()) {
+                StringBuilder sb = new StringBuilder();
+                boolean first = true;
+                for (Value value : property.getValues()) {
+                    if (!first) {
+                        sb.append(", ");
+                        first = false;
+                    }
+                    sb.append(value.getString());
+                }
+                stringValue = sb.toString();
+            } else {
+                stringValue = property.getValue().getString();
+            }
+            props.put(name, stringValue);
+        }
+        // Create the image information object, and add it to the collection ...
+        return new MediaInfo(nodePath, nodeName, mediaType, props);
     }
 
     /**
@@ -374,6 +409,7 @@ public class SequencingClient {
         if (filename.endsWith(".jpe")) return "image/jpeg";
         if (filename.endsWith(".jpeg")) return "image/jpeg";
         if (filename.endsWith(".ras")) return "image/x-cmu-raster";
+        if (filename.endsWith(".mp3")) return "audio/mpeg";
         throw new SystemFailureException("Unknown mime type for " + file);
     }
 

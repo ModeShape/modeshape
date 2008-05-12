@@ -1,5 +1,7 @@
-<?xml version="1.0"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<?xml version="1.0" encoding="UTF-8"?>
+<project
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.jboss.dna</groupId>
 	<artifactId>dna</artifactId>
@@ -7,18 +9,24 @@
 	<packaging>pom</packaging>
 	<name>JBoss DNA</name>
 	<url>http://www.jboss.org/dna</url>
-	<description>JBoss DNA provides tools for working with JCR repositories.</description>
+	<description>
+		JBoss DNA provides tools for working with JCR repositories.
+	</description>
 	<scm>
-		<connection>scm:svn:https://svn.jboss.org/repos/dna/trunk</connection>
+		<connection>
+			scm:svn:https://svn.jboss.org/repos/dna/trunk
+		</connection>
 	</scm>
 	<modules>
 		<module>dna-common</module>
 		<module>dna-spi</module>
 		<module>dna-repository</module>
-		<module>sequencers/dna-sequencer-images</module>
 		<module>dna-maven-classloader</module>
+		<module>sequencers/dna-sequencer-images</module>
+		<module>sequencers/dna-sequencer-mp3</module>
         <module>dna-integration-tests</module>
 	</modules>
+
 	<properties>
 		<dna-version>${project.version}</dna-version>
 	</properties>
@@ -71,12 +79,22 @@
 	              </execution>
 	            </executions>
 	            <configuration>
-	              <finalName>jboss-dna-${project.version}</finalName>
+							<finalName>
+								jboss-dna-${project.version}
+							</finalName>
 	              <descriptors>
-	                <descriptor>build/assembly/examples.xml</descriptor>
-	                <descriptor>build/assembly/javadoc.xml</descriptor>
-	                <descriptor>build/assembly/dist.xml</descriptor>
-	                <descriptor>build/assembly/src.xml</descriptor>
+								<descriptor>
+									build/assembly/examples.xml
+								</descriptor>
+								<descriptor>
+									build/assembly/javadoc.xml
+								</descriptor>
+								<descriptor>
+									build/assembly/dist.xml
+								</descriptor>
+								<descriptor>
+									build/assembly/src.xml
+								</descriptor>
 	              </descriptors>
 	            </configuration>
 	          </plugin>
@@ -166,11 +184,17 @@
 				<configuration>
 					<archive>
 						<manifest>
-							<addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
-							<addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+							<addDefaultSpecificationEntries>
+								true
+							</addDefaultSpecificationEntries>
+							<addDefaultImplementationEntries>
+								true
+							</addDefaultImplementationEntries>
 						</manifest>
 						<manifestEntries>
-							<Implementation-URL>${pom.url}</Implementation-URL>
+							<Implementation-URL>
+								${pom.url}
+							</Implementation-URL>
 						</manifestEntries>
 					</archive>
 				</configuration>

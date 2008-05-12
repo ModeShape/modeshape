@@ -171,24 +171,25 @@ public class ConsoleInput implements UserInterface {
         return path;
     }
 
-    public void displaySearchResults( List<ImageInfo> images ) {
+    public void displaySearchResults( List<MediaInfo> medias ) {
         System.out.println();
-        if (images.isEmpty()) {
+        if (medias.isEmpty()) {
             System.out.println("No results were found.");
             System.out.println();
             return;
         }
-        if (images.size() == 1) {
+        if (medias.size() == 1) {
             System.out.println("1 image was found:");
         } else {
-            System.out.println("" + images.size() + " images were found:");
+            System.out.println("" + medias.size() + " images were found:");
         }
         int counter = 1;
-        for (ImageInfo image : images) {
-            System.out.println(" Image " + counter++);
-            System.out.println("   Name: " + image.getName());
-            System.out.println("   Path: " + image.getPath());
-            for (Map.Entry<Object, Object> entry : image.getProperties().entrySet()) {
+        for (MediaInfo media : medias) {
+            System.out.println(" Media " + counter++);
+            System.out.println("   Name: " + media.getName());
+            System.out.println("   Path: " + media.getPath());
+            System.out.println("   Type: " + media.getMediaType());
+            for (Map.Entry<Object, Object> entry : media.getProperties().entrySet()) {
                 System.out.println("   " + entry.getKey() + ": " + entry.getValue());
             }
         }

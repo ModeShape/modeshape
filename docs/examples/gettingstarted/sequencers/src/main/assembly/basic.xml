@@ -20,6 +20,7 @@
         <include>*.gif</include>
         <include>*.jpg</include>
         <include>*.pict</include>
+        <include>*.mp3</include>
       </includes>
     </fileSet>
   </fileSets>

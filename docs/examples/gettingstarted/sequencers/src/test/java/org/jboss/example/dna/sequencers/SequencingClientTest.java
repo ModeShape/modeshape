@@ -38,6 +38,7 @@ public class SequencingClientTest {
     private URL pngImageUrl;
     private URL pictImageUrl;
     private URL jpegImageUrl;
+    private URL mp3Url;
     private SequencingClient client;
 
     @Before
@@ -45,6 +46,7 @@ public class SequencingClientTest {
         this.pngImageUrl = Thread.currentThread().getContextClassLoader().getResource("caution.png");
         this.pictImageUrl = Thread.currentThread().getContextClassLoader().getResource("caution.pict");
         this.jpegImageUrl = Thread.currentThread().getContextClassLoader().getResource("caution.jpg");
+        this.mp3Url = Thread.currentThread().getContextClassLoader().getResource("sample1.mp3");
         client = new SequencingClient();
         client.setWorkingDirectory("target/repositoryData");
         client.setJackrabbitConfigPath("src/main/resources/jackrabbitConfig.xml");
@@ -59,10 +61,11 @@ public class SequencingClientTest {
     }
 
     @Test
-    public void shouldFindImages() {
+    public void shouldFindMedias() {
         assertThat(this.pictImageUrl, is(notNullValue()));
         assertThat(this.pngImageUrl, is(notNullValue()));
         assertThat(this.jpegImageUrl, is(notNullValue()));
+        assertThat(this.mp3Url, is(notNullValue()));
     }
 
     @Test
@@ -135,6 +138,25 @@ public class SequencingClientTest {
         client.search();
 
         assertThat(client.getStatistics().getNumberOfNodesSequenced(), is(0l));
+    }
+
+    @Test
+    public void shouldUploadAndSequenceMp3File() throws Exception {
+        client.setUserInterface(new MockUserInterface(this.mp3Url, "/a/b/test.mp3", 1));
+        client.startRepository();
+        client.startDnaServices();
+        client.uploadFile();
+
+        // Use a trick to wait until the sequencing has been done by sleeping (to give the sequencing time to start)
+        // and to then shut down the DNA services (which will block until all sequencing has been completed) ...
+        Thread.sleep(1000);
+        client.shutdownDnaServices();
+
+        // The sequencers should have run, so perform the search.
+        // The mock user interface checks the results.
+        client.search();
+
+        assertThat(client.getStatistics().getNumberOfNodesSequenced(), is(1l));
     }
 
 }

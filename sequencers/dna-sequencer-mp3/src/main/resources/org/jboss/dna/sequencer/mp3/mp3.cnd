@@ -19,20 +19,33 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.jboss.example.dna.sequencers;
+ 
+//------------------------------------------------------------------------------
+// N A M E S P A C E S
+//------------------------------------------------------------------------------
+<jcr='http://www.jcp.org/jcr/1.0'>
+<nt='http://www.jcp.org/jcr/nt/1.0'>
+<mix='http://www.jcp.org/jcr/mix/1.0'>
+<mp3='http://jboss.org/dna/mp3/1.0'>
 
-import java.io.IOException;
-import java.net.URL;
-import java.util.List;
+// ----------------------------------------------------------
+// JCR Pre-defined Mixin Types that are not loaded by default
+// ----------------------------------------------------------
 
-/**
- * @author Randall Hauch
- */
-public interface UserInterface {
+[mix:mimeType] mixin 
+  - jcr:mimeType (string)  
+  - jcr:encoding (string)
 
-    public URL getFileToUpload() throws IllegalArgumentException, IOException;
 
-    public String getRepositoryPath( String defaultPath ) throws IllegalArgumentException, IOException;
+//------------------------------------------------------------------------------
+// N O D E T Y P E S
+//------------------------------------------------------------------------------
 
-    public void displaySearchResults( List<MediaInfo> images ) throws IOException;
-}
+[mp3:metadata] > nt:unstructured, mix:mimeTyped
+  - mp3:title (string)
+  - mp3:author (string)
+  - mp3:album (string)
+  - mp3:year (long)
+  - mp3:comment (string)
+ 
+ 

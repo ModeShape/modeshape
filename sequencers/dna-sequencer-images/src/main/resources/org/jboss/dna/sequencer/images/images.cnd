@@ -23,30 +23,39 @@
 //------------------------------------------------------------------------------
 // N A M E S P A C E S
 //------------------------------------------------------------------------------
-<dna = 'http://www.jboss.org/dna-repository/1.0'>
-<image = 'http://www.jboss.org/dna-repository/images/1.0'>
+<jcr='http://www.jcp.org/jcr/1.0'>
 <nt='http://www.jcp.org/jcr/nt/1.0'>
 <mix='http://www.jcp.org/jcr/mix/1.0'>
+<image='http://jboss.org/dna/images/1.0'>
+
+// ----------------------------------------------------------
+// JCR Pre-defined Mixin Types that are not loaded by default
+// ----------------------------------------------------------
+
+[mix:mimeType] mixin 
+  - jcr:mimeType (string)  
+  - jcr:encoding (string)
+
 
 //------------------------------------------------------------------------------
 // N O D E T Y P E S
 //------------------------------------------------------------------------------
 
-[image:metadata] > nt:unstructured, mix:mimeTyped
-  //Inherited from 'mix:mimeTyped'
-  //- jcr:mimeType (string)  
-  //- jcr:encoding (string)
+/**
+ * Mixin that defines the metadata for an image
+ */
+[image:metadata] > nt:unstructured, mix:mimeType
   - image:formatName (string) mandatory
     < 'JPEG', 'GIF', 'PNG', 'BMP', 'PCX', 'IFF', 'RAS', 'PBM', 'PGM', 'PPM', 'PSD'
-  - image:width (int)
-  - image:height (int)
-  - image:bitsPerPixel (int)
+  - image:width (long)
+  - image:height (long)
+  - image:bitsPerPixel (long)
   - image:progressive (boolean)
-  - image:imageCount (int)
-  - image:physicalWidthDpi (int)
-  - image:physicalHeightDpi (int)
-  - image:physicalWidthInches (double)
-  - image:physicalHeightInches (double)
-  - image:comments (string) multiple
- 
+  - image:numberOfImages (long)
+  - image:physicalWidthDpi (long)
+  - image:physicalHeightDpi (long)
+  - image:physicalWidthInches (long)
+  - image:physicalHeightInches (long)
+
+
  

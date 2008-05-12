@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <artifactId>dna</artifactId>
+    <groupId>org.jboss.dna</groupId>
+    <version>0.1-SNAPSHOT</version>
+    <relativePath>../..</relativePath>
+  </parent>
+  <!-- The groupId and version values are inherited from parent -->
+  <artifactId>dna-sequencer-mp3</artifactId>
+  <packaging>jar</packaging>
+  <name>JBoss DNA MP3 Sequencer</name>
+  <description>JBoss DNA Sequencer that processes MP3 audio files</description>
+  <url>http://labs.jboss.org/dna</url>
+  <dependencies>
+    <dependency>
+      <groupId>org.jboss.dna</groupId>
+      <artifactId>dna-common</artifactId>
+      <version>0.1-SNAPSHOT</version>
+    </dependency>
+    <dependency>
+      <groupId>org.jboss.dna</groupId>
+      <artifactId>dna-spi</artifactId>
+      <version>0.1-SNAPSHOT</version>
+    </dependency>
+    <dependency>
+      <groupId>org.jaudiotagger</groupId>
+      <artifactId>jaudiotagger</artifactId>
+      <version>1.0.8</version>
+   </dependency>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit-dep</artifactId>
+      <version>4.4</version>
+    </dependency>
+  </dependencies>
+</project>

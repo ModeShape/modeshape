@@ -27,15 +27,17 @@ import java.util.Properties;
 /**
  * @author Randall Hauch
  */
-public class ImageInfo {
+public class MediaInfo {
 
     private final Properties properties = new Properties();
     private final String name;
     private final String path;
+    private final String mediaType;
 
-    protected ImageInfo( String path, String name, Properties props ) {
+    protected MediaInfo( String path, String name, String mediaType, Properties props ) {
         this.name = name;
         this.path = path;
+        this.mediaType = mediaType;
         if (props != null) this.properties.putAll(props);
     }
 
@@ -45,6 +47,10 @@ public class ImageInfo {
 
     public String getPath() {
         return this.path;
+    }
+
+    public String getMediaType() {
+        return this.mediaType;
     }
 
     public Properties getProperties() {
@@ -63,7 +69,7 @@ public class ImageInfo {
                 sb.append(", ");
             }
         }
-        return this.name + " (at " + this.path + ") with properties {" + sb.toString() + "}";
+        return this.name + " (at " + this.path + ") of type \"" + this.mediaType + "\" with properties {" + sb.toString() + "}";
     }
 
 }
