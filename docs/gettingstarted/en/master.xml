@@ -540,15 +540,15 @@
               <para>
                 <emphasis role="strong">SVN Connector</emphasis>
                 - Interact with Subversion software configuration management (SCM) repositories to expose the managed resources
-                through JCR. Consider using
+                through JCR. Consider using the
                 <ulink url="http://svnkit.com/">SVNkit</ulink>
-                (dual license) library for API into Subversion.
+                (dual license) library for an API into Subversion.
               </para>
             </listitem>
             <listitem>
               <para>
                 <emphasis role="strong">CVS Connector</emphasis>
-                - Interact with CVS software configuration management (SCM) repositories, to expose the managed resources through
+                - Interact with CVS software configuration management (SCM) repositories to expose the managed resources through
                 JCR.
               </para>
             </listitem>
@@ -623,7 +623,7 @@
           be consulted prior to returning the query results, as the results from one source might have contributions from another
           source.</para>
         <note>
-          <para> It is hoped that the MetaMatrix query engine can be used for this purpose, after it is open sourced. This engine
+          <para> It is hoped that the MetaMatrix query engine can be used for this purpose after it is open-sourced. This engine
             implements sophisticated query planning and optimization techniques for working efficiently with multiple sources.
           </para>
         </note>
@@ -683,11 +683,11 @@
       with a JCR repository to automatically sequence changing content to extract useful information. So read on to get the simple
       application running, and then in the
       <link linkend="using_dna">next chapter</link>
-      we'll we'll dive into the source code for the example and show how to use JBoss DNA in your own applications.
+      we'll dive into the source code for the example and show how to use JBoss DNA in your own applications.
     </para>
     <para>JBoss DNA uses Maven 2 for its build system, as is this example. Using Maven 2 has several advantages, including
       the ability to manage dependencies. If a library is needed, Maven automatically finds and downloads that library, plus
-      everything that library needs. This means that its very easy to build the examples - or even create a maven project that
+      everything that library needs. This means that it's very easy to build the examples - or even create a maven project that
       depends on the JBoss DNA JARs.</para>
     <note>
       <para>
@@ -702,7 +702,7 @@
         <code>maven-2.0.7-bin.zip</code>
         file to a convenient location on your local disk. Simply add
         <code>$MAVEN_HOME/bin</code>
-        to your path and adding the following profile to your
+        to your path and add the following profile to your
         <code>~/.m2/settings.xml</code>
         file:
         <programlisting role="XML" language="xml">&lt;settings&gt;
@@ -769,13 +769,13 @@ examples/pom.xml
   </programlisting>
       </para>
       <para>There are essentially two Maven projects: a <code>sequencers</code> project and a parent project.  All of the source
-      for the examples are located in the <code>sequencers</code> subdirectory.  And you may have noticed that none
+      for the example is located in the <code>sequencers</code> subdirectory.  And you may have noticed that none
       of the JBoss DNA libraries are there.  This is where Maven comes in.  The two <code>pom.xml</code> files tell
       Maven everything it needs to know about what libraries are required and how to build the example.</para>
       <para>In a terminal, go to the <code>examples</code> directory and run <emphasis role="strong"><code>mvn install</code></emphasis>.  
       This command downloads all of the JARs necessary to compile and build the example, including the JBoss DNA libraries,
       the libraries they depend on, and any missing Maven components.  (These are downloaded from the JBoss repositories
-      only once, and saved on your machine.  This means that the next time you run Maven, all the libraries will
+      only once and saved on your machine.  This means that the next time you run Maven, all the libraries will
       already be available locally, and the build will run much faster.)  The command then continues by compiling the example's source
       code (and unit tests) and running the unit tests.  The build is successful if you see the following:
            <programlisting language="bash">$ mvn install
@@ -796,7 +796,7 @@ examples/pom.xml
 $ </programlisting>
       If there are errors, check whether you have the correct version of Maven installed and that you've correctly updated
            your Maven settings as described above.</para>
-    <para>If you successfully built the examples, there will be a <code>examples/sequencers/target/dna-example-sequencers-basic.dir/</code>
+    <para>If you've successfully built the examples, there will be a <code>examples/sequencers/target/dna-example-sequencers-basic.dir/</code>
     directory that contains the following:
     <itemizedlist>
   	<listitem>
@@ -864,7 +864,7 @@ $ </programlisting>
     <title>Running the example</title>
     <para>This example consists of a client application that sets up an in-memory JCR repository and that allows a user to
       upload files into that repository. The client also sets up the DNA services with an image sequencer so that if any of the
-      uploaded files are PNG, JPEG, GIF, BMP or other images, DNA will automatically extract the image's metadata (e.g., image
+      uploaded files are PNG, JPEG, GIF, BMP, or other images, DNA will automatically extract the image's metadata (e.g., image
       format, physical size, pixel density, etc.) and store that in the repository.</para>
     <para>
       To run the client application, go to the
@@ -872,7 +872,7 @@ $ </programlisting>
       </code>
       directory and type
       <code>./run.sh</code>
-      . You should see the command line client and its menus in your terminal:
+      . You should see the command-line client and its menus in your terminal:
       <figure id="xample-sequencer-cli-client">
         <title>Example Client</title>
         <graphic align="center" scale="100" fileref="images/example-sequencer-cli-client.png" />
@@ -891,8 +891,8 @@ $ </programlisting>
         <graphic align="center" scale="100" fileref="images/example-sequencer-upload.png" />
       </figure>
       You can specify any fully-qualified or relative path. The application will notify you if it cannot find the file you
-      specified. The example client configures JBoss DNA to sequence image files (technically nodes that have names) with one of
-      the following extensions:
+      specified. The example client configures JBoss DNA to sequence image files with one of
+      the following extensions (technically, nodes that have names ending in the following):
       <code>jpg</code>
       ,
       <code>jpeg</code>
@@ -928,7 +928,7 @@ $ </programlisting>
       ). Feel free to try other files.
     </para>
     <para>
-      After you specified the file you want to upload, the example application asks you where in the repository you'd like to
+      After you have specified the file you want to upload, the example application asks you where in the repository you'd like to
       place the file. (If you want to use the suggested location, just press
       <code>return</code>
       .) The client application uses the JCR API to upload the file to that location in the repository, creating any nodes (of
@@ -958,7 +958,7 @@ $ </programlisting>
     </para>
   <para>
     When the client uploads the file using the JCR API, DNA gets notified of the changes, consults the sequencers to see whether
-    any of them are interested in the new or updated content, and if so runs the sequencers. The image sequencer processes image
+    any of them are interested in the new or updated content, and if so runs those sequencers. The image sequencer processes image
     files for metadata, and any metadata found is stored under the
     <code>/images</code>
     branch of the repository. All of this happens asynchronously, so any DNA activity doesn't impede or slow down the client
@@ -986,7 +986,7 @@ $ </programlisting>
       <code>nt:resource</code>
       nodes than there are
       <code>nt:file</code>
-      nodes with acceptible names.
+      nodes with acceptable names.
     </para>
   </note>
   <para>You can repeat this process with other files. Any file that isn't an image (as recognized by the sequencing configuration
