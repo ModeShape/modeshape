@@ -105,8 +105,8 @@
     <para>
       One of the more popular persistence technologies is the
       <emphasis>relational database</emphasis>
-      . Relational DataBase Management Systems (RDBMS) have been around for decades and are very capable. The Java Database
-      Connectivity (JDBC) API provides a standard interface for connecting to and interacting with relational databases. However, it is a
+      . Relational database management systems have been around for decades and are very capable. The Java Database Connectivity
+      (JDBC) API provides a standard interface for connecting to and interacting with relational databases. However, it is a
       low-level API that requires a lot of code to use correctly, and it still doesn't abstract away the DBMS-specific SQL
       grammar. Also, working with relational data in an object-oriented language can feel somewhat unnatural, so many developers
       map this data to classes that fit much more cleanly into their application. The problem is that manually creating this
@@ -602,15 +602,25 @@
         </para>
       </sect2>
       <sect2 id="federation_queries">
-        <title>Querying the unified graph</title>
-        <para> The JBoss DNA federated repository will also support queries against the integrated and unified graph. In some
+        <title>Searching and querying</title>
+        <para>The JBoss DNA federated repository will also support queries against the integrated and unified graph. In some
           situations the query can be determined to apply to a single source, but in most situations the query must be planned
           (and possibly rewritten) such that it can be pushed down to all the appropriate sources. Also, the cached results must
           be consulted prior to returning the query results, as the results from one source might have contributions from another
           source.</para>
+        <note>
         <para> It is hoped that the MetaMatrix query engine can be used for this purpose, after it is open sourced. This engine
           implements sophisticated query planning and optimization techniques for working efficiently with multiple sources.
         </para>
+        </note>
+        <para>Searching the whole federated repository is also important.  This allows users to simply supply a handful of search
+          terms, and to get results that are ranked based upon how close each result is to the search terms.  (Searching is very
+          different from querying, which involves specifying the exact semantics of what is to be searched and how the information
+          is to be compared.)  JBoss DNA will incorporate a search
+          engine (e.g., likely to be Lucene) and will populate the engine's indexes using the federated content and the cached
+          information.  Notifications of changing information will be reflected in the indexes, but some sources may want to explicitly
+          allow or disallow periodic crawling of their content.
+         </para>
       </sect2>
       <sect2 id="federation_updates">
         <title>Updating content</title>
