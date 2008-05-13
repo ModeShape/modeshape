@@ -28,7 +28,7 @@
 	</modules>
 
 	<properties>
-		<dna-version>${project.version}</dna-version>
+		<dna-version>0.1-SNAPSHOT</dna-version>
 	</properties>
 	<profiles>
 		<profile>
