@@ -325,7 +325,7 @@
         those files to extract meaningful structured information. For example, load DDL files into the repository, and let
         sequencers extract the structure and metadata for the database schema. Load Hibernate configuration files into the
         repository, and let sequencers extract the schema and mapping information. Load Java source into the repository, and let
-        sequencers extract the class structure, JavaDoc, annotations. Load a PNG, JPEG, or other image into the repository, and
+        sequencers extract the class structure, JavaDoc, and annotations. Load a PNG, JPEG, or other image into the repository, and
         let sequencers extract the metadata from the image and save it in the repository. The same with XSDs, WSDL, WS policies,
         UML, MetaMatrix models, etc.</para>
       <para>
@@ -337,8 +337,8 @@
             <para>
               <emphasis role="strong">Image sequencer</emphasis>
               - A sequencer that processes the binary content of an image file, extracts the metadata for the image, and then
-              writes that image metadata to the repository. Gets the file format, image resolution, number of bits per pixel and
-              optionally number of images, comments and physical resolution from JPEG, GIF, BMP, PCX, PNG, IFF, RAS, PBM, PGM, PPM
+              writes that image metadata to the repository. It gets the file format, image resolution, number of bits per pixel (and
+              optionally number of images), comments and physical resolution from JPEG, GIF, BMP, PCX, PNG, IFF, RAS, PBM, PGM, PPM,
               and PSD files. (This sequencer may be improved in the future to also extract EXIF metadata from JPEG files; see
               <ulink url="http://jira.jboss.org/jira/browse/DNA-26">DNA-26</ulink>
               .)
@@ -353,8 +353,8 @@
           <listitem>
             <para>
               <emphasis role="strong">XML Schema Document (XSD) Sequencer</emphasis>
-              - Process XSD files and extract the various elements, attributes, complex types, simple types, and groups. (See
-              <ulink url="http://jira.jboss.org/jira/browse/DNA-32">DNA-32</ulink>
+              - Process XSD files and extract the various elements, attributes, complex types, simple types, groups, and other information.
+              (See <ulink url="http://jira.jboss.org/jira/browse/DNA-32">DNA-32</ulink>
               )
             </para>
           </listitem>
@@ -603,7 +603,7 @@
       </sect2>
       <sect2 id="federation_queries">
         <title>Searching and querying</title>
-        <para>The JBoss DNA federated repository will also support queries against the integrated and unified graph. In some
+        <para> The JBoss DNA federated repository will also support queries against the integrated and unified graph. In some
           situations the query can be determined to apply to a single source, but in most situations the query must be planned
           (and possibly rewritten) such that it can be pushed down to all the appropriate sources. Also, the cached results must
           be consulted prior to returning the query results, as the results from one source might have contributions from another
