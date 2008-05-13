@@ -32,6 +32,13 @@
 	</properties>
 	<profiles>
 		<profile>
+			<id>release</id>
+			<modules>
+				<module>docs</module>
+		        <module>docs/examples/gettingstarted</module>
+			</modules>
+		</profile>
+		<profile>
 		    <!-- 
 			This profile is activated when the "generate.docs" property is set,
 			as in "mvn ... -Dgenerate.docs=true ..."

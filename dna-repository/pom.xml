@@ -22,19 +22,19 @@
     <dependency>
       <groupId>org.jboss.dna</groupId>
       <artifactId>dna-common</artifactId>
-      <version>${project.version}</version>
+      <version>${dna-version}</version>
     </dependency>
     <dependency>
       <groupId>org.jboss.dna</groupId>
       <artifactId>dna-common</artifactId>
-      <version>${project.version}</version>
+      <version>${dna-version}</version>
       <type>test-jar</type>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.jboss.dna</groupId>
       <artifactId>dna-spi</artifactId>
-      <version>${project.version}</version>
+      <version>${dna-version}</version>
     </dependency>
     <!-- 
     Rules
