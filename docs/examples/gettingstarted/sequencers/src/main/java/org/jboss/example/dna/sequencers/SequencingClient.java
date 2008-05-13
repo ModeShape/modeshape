@@ -234,10 +234,11 @@ public class SequencingClient {
             SequencerConfig imageSequencerConfig = new SequencerConfig(name, desc, classname, classpath, pathExpressions);
             this.sequencingService.addSequencer(imageSequencerConfig);
 
+            // Set up the MP3 sequencer ...
             name = "Mp3 Sequencer";
             desc = "Sequences mp3 files to extract the id3 tags of the audio file";
             classname = "org.jboss.dna.sequencer.mp3.Mp3MetadataSequencer";
-            String[] mp3PathExpressions = {"//(*.(mp3))[*]/jcr:content[@jcr:data] => /mp3s/$1"};
+            String[] mp3PathExpressions = {"//(*.mp3)[*]/jcr:content[@jcr:data] => /mp3s/$1"};
             SequencerConfig mp3SequencerConfig = new SequencerConfig(name, desc, classname, classpath, mp3PathExpressions);
             this.sequencingService.addSequencer(mp3SequencerConfig);
 
