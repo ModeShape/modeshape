@@ -60,7 +60,7 @@
     <para>The goal of this book is to help you learn about JBoss DNA and how you can use it in your own applications to get the
       most out of your JCR repositories.</para>
     <para>The first part of the book starts out with an introduction to content repositories and an overview of the JCR API,
-      both of which are an important aspect of JBoss DNA. This is followed by an overview of the JBoss DNA project, it's
+      both of which are important aspects of JBoss DNA. This is followed by an overview of the JBoss DNA project, its
       architecture, and a basic roadmap for what's coming next.</para>
     <para>The next part of the book covers how to download and build the examples, how to use JBoss DNA with existing
       repositories, and how to build and use custom sequencers.</para>
@@ -82,8 +82,8 @@
   <chapter id="introduction">
     <title>Introduction</title>
     <para>There are a lot of choices for how applications can store information persistently so that it can be accessed at a
-      later time and by other processes. The challenge developers face is to use an approach that most closely matches the needs
-      of their application. This choice is more important as developers choose to focus their efforts on the application-specific
+      later time and by other processes. The challenge developers face is how to use an approach that most closely matches the needs
+      of their application. This choice becomes more important as developers choose to focus their efforts on application-specific
       logic, delegating much of the responsibilities for persistence to libraries and frameworks.</para>
     <para>
       Perhaps one of the easiest techniques is to simply store information in
@@ -92,21 +92,21 @@
       using files is an easy choice when the information is either not complicated (for example property files), or when users may
       need to read or change the information outside of the application (for example log files or configuration files). But using
       files to persist information becomes more difficult as the information becomes more complex, as the volume of it increases,
-      or if it needs to be accessed by multiple processes. For these situations, other techniques are often a better choice.
+      or if it needs to be accessed by multiple processes. For these situations, other techniques often offer better choices.
     </para>
     <para>
       Another technique built into the Java language is
       <emphasis>Java serialization</emphasis>
       , which is capable of persisting the state of an object graph so that it can be read back in at a later time. However, Java
-      serialization can quickly become tricky if the classes are changed, and so its beneficial usually when the information is
+      serialization can quickly become tricky if the classes are changed, and so it's beneficial usually when the information is
       persisted for a very short period of time. For example, serialization is sometimes used to send an object graph from one
       process to another.
     </para>
     <para>
       One of the more popular persistence technologies is the
       <emphasis>relational database</emphasis>
-      . Relational database management systems have been around for decades and are very capable. The Java Database Connectivity
-      (JDBC) API provides a standard interface for connecting to and interacting with relational databases. However, it is a
+      . Relational DataBase Management Systems (RDBMS) have been around for decades and are very capable. The Java Database
+      Connectivity (JDBC) API provides a standard interface for connecting to and interacting with relational databases. However, it is a
       low-level API that requires a lot of code to use correctly, and it still doesn't abstract away the DBMS-specific SQL
       grammar. Also, working with relational data in an object-oriented language can feel somewhat unnatural, so many developers
       map this data to classes that fit much more cleanly into their application. The problem is that manually creating this
@@ -114,8 +114,8 @@
     </para>
     <para>
       <emphasis>Object-relational mapping</emphasis>
-      libraries automate the creation of this mapping layer and result in far less code that is much more maintainable with often
-      as good (if not better) performance than handwritten JDBC code. The new
+      libraries automate the creation of this mapping layer and result in far less code that is much more maintainable with performance
+      that is often as good as (if not better than) handwritten JDBC code. The new
       <ulink url="http://java.sun.com/developer/technicalArticles/J2EE/jpa/">Java Persistence API (JPA)</ulink>
       provide a standard mechanism for defining the mappings (through annotations) and working with these entity objects. Several
       commercial and open-source libraries implement JPA, and some even offer additional capabilities and features that go beyond
@@ -126,11 +126,11 @@
     </para>
     <para>
       While relational databases and JPA are solutions that work for many applications, they become more limited in cases when the
-      information structure is highly flexible, is not known a priori, or is subject to frequent change and customization. In
-      these situations,
+      information structure is highly flexible, is not known <emphasis>a priori</emphasis>, or is subject to frequent change and
+      customization. In these situations,
       <emphasis>content repositories</emphasis>
       may offer a better choice for persistence. Content repositories are almost a hybrid between relational databases and file
-      systems, and typically provide other capabilies as well, including versioning, indexing, search, access control,
+      systems, and typically provide other capabilities as well, including versioning, indexing, search, access control,
       transactions, and observation. Because of this, content repositories are used by content management systems (CMS), document
       management systems (DMS), and other applications that manage electronic files (e.g., documents, images, multi-media, web
       content, etc.) and metadata associated with them (e.g., author, date, status, security information, etc.). The
@@ -145,7 +145,7 @@
     <para>
       The
       <emphasis>JBoss DNA project</emphasis>
-      is building the tooles and services that surround content repositories. Nearly all of these capabilities are to be hidden
+      is building the tools and services that surround content repositories. Nearly all of these capabilities are to be hidden
       below the JCR API and involve automated processing of the information in the repository. Thus, JBoss DNA can add value to
       existing repository implementations. For example, JCR repositories offer the ability to upload files into the repository and
       have the file content index for search purposes. JBoss DNA defines a library for also sequencing that content to extract
