@@ -829,6 +829,14 @@ $ </programlisting>
     <listitem>
       <para>
         <emphasis role="strong">
+          <code>sample1.mp3</code>
+        </emphasis>
+        is a sample MP3 audio file you'll use later to upload into the repository.
+      </para>
+    </listitem>
+    <listitem>
+      <para>
+        <emphasis role="strong">
           <code>caution.gif</code>
         </emphasis>, <emphasis role="strong">
           <code>caution.png</code>
@@ -863,9 +871,11 @@ $ </programlisting>
   <sect1 id="running">
     <title>Running the example</title>
     <para>This example consists of a client application that sets up an in-memory JCR repository and that allows a user to
-      upload files into that repository. The client also sets up the DNA services with an image sequencer so that if any of the
-      uploaded files are PNG, JPEG, GIF, BMP, or other images, DNA will automatically extract the image's metadata (e.g., image
-      format, physical size, pixel density, etc.) and store that in the repository.</para>
+      upload files into that repository. The client also sets up the DNA services with two sequencers so that if any of the
+      uploaded files are PNG, JPEG, GIF, BMP or other images, DNA will automatically extract the image's metadata (e.g., image
+      format, physical size, pixel density, etc.) and store that in the repository.  Alternatively, if the uploaded file 
+      is an MP3 audio file, DNA will extract some of the ID3 metadata (e.g., the author, title, album, year and comment)
+      and store that in the repository.</para>
     <para>
       To run the client application, go to the
       <code>examples/sequencers/target/dna-example-sequencers-basic.dir/
@@ -877,7 +887,7 @@ $ </programlisting>
         <title>Example Client</title>
         <graphic align="center" scale="100" fileref="images/example-sequencer-cli-client.png" />
       </figure>
-      From this menu, you can upload a file into the repository, search for images in the repository, print sequencing statistics,
+      From this menu, you can upload a file into the repository, search for media in the repository, print sequencing statistics,
       or quit the application.
     </para>
     <para>
@@ -891,7 +901,7 @@ $ </programlisting>
         <graphic align="center" scale="100" fileref="images/example-sequencer-upload.png" />
       </figure>
       You can specify any fully-qualified or relative path. The application will notify you if it cannot find the file you
-      specified. The example client configures JBoss DNA to sequence image files with one of
+      specified. The example client configures JBoss DNA to sequence and MP3 audio files and image files with one of
       the following extensions (technically, nodes that have names ending in the following):
       <code>jpg</code>
       ,
@@ -921,8 +931,10 @@ $ </programlisting>
       <code>caution.png</code>
       ,
       <code>caution.jpg</code>
-      and
+      ,
       <code>caution.gif</code>
+      , and
+      <code>sample1.mp3</code>
       ) and one image that will not be sequenced (
       <code>caution.pict</code>
       ). Feel free to try other files.
@@ -955,24 +967,27 @@ $ </programlisting>
                                 @jcr:mimeType = {mime type of the file}
                                 @jcr:lastModified = {now}
     </programlisting>
+    Other kinds of files are treated in a similar way.
     </para>
   <para>
     When the client uploads the file using the JCR API, DNA gets notified of the changes, consults the sequencers to see whether
     any of them are interested in the new or updated content, and if so runs those sequencers. The image sequencer processes image
     files for metadata, and any metadata found is stored under the
     <code>/images</code>
-    branch of the repository. All of this happens asynchronously, so any DNA activity doesn't impede or slow down the client
+    branch of the repository. The MP3 sequencer processes MP3 audio files for metadata, and any metadata found is stored under the
+    <code>/mp3s</code>
+    branch of the repository.  All of this happens asynchronously, so any DNA activity doesn't impede or slow down the client
     activities.
   </para>
   <para>
     So, after the file is uploaded, you can search the repository for the image metadata using the "s" menu option:
     <figure id="example-sequencer-search">
-      <title>Uploading an image using the Example Client</title>
+      <title>Searching for media using the Example Client</title>
       <graphic align="center" scale="100" fileref="images/example-sequencer-search.png" />
     </figure>
     You can also display the sequencing statistics using the "d" menu option:
     <figure id="example-sequencer-statistics">
-      <title>Uploading an image using the Example Client</title>
+      <title>Sequencing statistics using the Example Client</title>
       <graphic align="center" scale="100" fileref="images/example-sequencer-statistics.png" />
     </figure>
     These stats show how many nodes were sequenced, and how many nodes were skipped because they didn't apply to the sequencer's
@@ -989,13 +1004,13 @@ $ </programlisting>
       nodes with acceptable names.
     </para>
   </note>
-  <para>You can repeat this process with other files. Any file that isn't an image (as recognized by the sequencing configuration
+  <para>You can repeat this process with other files. Any file that isn't an image or MP3 files (as recognized by the sequencing configurations
     that we'll describe later) will not be sequenced.</para>
   </sect1>
   <sect1 id="downloading_and_running_review">
     <title>Summarizing what we just did</title>
     <para>In this chapter you downloaded and installed the example application and used it to upload files into a
-    JCR repository.  JBoss DNA automatically sequenced the image files you uploaded, extracted the metadata from the
+    JCR repository.  JBoss DNA automatically sequenced the image and/or MP3 files you uploaded, extracted the metadata from the
     files, and stored that metadata inside the repository.  The application allowed you to see this metadata
     and the sequencing statistics.</para>
     <para>This application was very simplistic.  In fact, running through the example probably only took you a minute or two.
@@ -1099,7 +1114,14 @@ String classname = "org.jboss.dna.sequencer.images.ImageMetadataSequencer";
 String[] classpath = null; // Use the current classpath
 String[] pathExpressions = {"//(*.(jpg|jpeg|gif|bmp|pcx|png))[*]/jcr:content[@jcr:data] => /images/$1"};
 SequencerConfig imageSequencerConfig = new SequencerConfig(name, desc, classname, classpath, pathExpressions);
-SesequencingService.addSequencer(imageSequencerConfig);</programlisting>
+sequencingService.addSequencer(imageSequencerConfig);
+
+name = "Mp3 Sequencer";
+desc = "Sequences mp3 files to extract the id3 tags of the audio file";
+classname = "org.jboss.dna.sequencer.mp3.Mp3MetadataSequencer";
+String[] mp3PathExpressions = {"//(*.mp3)[*]/jcr:content[@jcr:data] => /mp3s/$1"};
+SequencerConfig mp3SequencerConfig = new SequencerConfig(name, desc, classname, classpath, mp3PathExpressions);
+sequencingService.addSequencer(mp3SequencerConfig);</programlisting>
       This is pretty self-explanatory, except for the <code>classpath</code> and <code>pathExpression</code> parameters.
       The classpath parameter defines the classpath that is passed to the class loader factory mentioned above.
       Our sequencer is on the classpath, so we can simply use <code>null</code> here.
@@ -1117,7 +1139,7 @@ SesequencingService.addSequencer(imageSequencerConfig);</programlisting>
       <note>
         <para>Sequencer path expressions can be fairly complex and may use wildcards, specificy same-name sibling indexes,
         provide optional and choice elements, and may capture parts of the selection criteria for use in the output expression.
-        The path expression used in the sequencer configuration example above shows a more complex example:
+        The path expression used in the image sequencer configuration example above shows a more complex example:
         <programlisting>
 //(*.(jpg|jpeg|gif|bmp|pcx|png))[*]/jcr:content[@jcr:data] => /images/$1</programlisting>
         This uses "//" to select any node at any level in the repository whose name ends with "." and one of the extensions (e.g., ".jpg", ".jpeg", etc.)
@@ -1193,22 +1215,23 @@ observationService.getAdministrator().awaitTermination(5, TimeUnit.SECONDS);</pr
     <para>Recall that the example application consists of a client application that sets up an in-memory JCR repository and
       that allows a user to upload files into that repository. The client also sets up the DNA services with an image sequencer so
       that if any of the uploaded files are PNG, JPEG, GIF, BMP or other images, DNA will automatically extract the image's
-      metadata (e.g., image format, physical size, pixel density, etc.) and store that in the repository.</para>
+      metadata (e.g., image format, physical size, pixel density, etc.) and store that in the repository.  Or, if the client uploads
+      MP3 audio files, the title, author, album, year, and comment are extract from the audio file and stored in the repository.</para>
     <para>
       The example is comprised of 3 classes and 1 interface, located in the
       <code>src/main/java</code>
       directory:
       <programlisting>
   org/jboss/example/dna/sequencers/ConsoleInput.java
-                                  /ImageInfo.java
+                                  /MediaInfo.java
                                   /SequencingClient.java
                                   /UserInterface.java</programlisting>
     </para>
     <para>
       <code>SequencingClient</code>
       is the class that contains the main application.
-      <code>ImageInfo</code>
-      is a simple Java object that encapsulates metadata about an image (as generated by the sequencer), and used by the client to
+      <code>MediaInfo</code>
+      is a simple Java object that encapsulates metadata about a media file (as generated by the sequencer), and used by the client to
       pass information to the
       <code>UserInterface</code>
       , which is an interface with methods that will be called at runtime to request data from the user.
@@ -1346,6 +1369,14 @@ public void startDnaServices() throws Exception {
         String[] pathExpressions = {"//(*.(jpg|jpeg|gif|bmp|pcx|png|iff|ras|pbm|pgm|ppm|psd))[*]/jcr:content[@jcr:data] => /images/$1"};
         SequencerConfig imageSequencerConfig = new SequencerConfig(name, desc, classname, classpath, pathExpressions);
         this.sequencingService.addSequencer(imageSequencerConfig);
+
+        // Set up the MP3 sequencer ...
+        name = "Mp3 Sequencer";
+        desc = "Sequences mp3 files to extract the id3 tags of the audio file";
+        classname = "org.jboss.dna.sequencer.mp3.Mp3MetadataSequencer";
+        String[] mp3PathExpressions = {"//(*.mp3)[*]/jcr:content[@jcr:data] => /mp3s/$1"};
+        SequencerConfig mp3SequencerConfig = new SequencerConfig(name, desc, classname, classpath, mp3PathExpressions);
+        this.sequencingService.addSequencer(mp3SequencerConfig);
 
         // Use the DNA observation service to listen to the JCR repository (or multiple ones), and
         // then register the sequencing service as a listener to this observation service...
