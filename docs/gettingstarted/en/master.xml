@@ -105,8 +105,8 @@
     <para>
       One of the more popular persistence technologies is the
       <emphasis>relational database</emphasis>
-      . Relational database management systems (RDBMS) have been around for decades and are very capable. The Java Database Connectivity
-      (JDBC) API provides a standard interface for connecting to and interacting with relational databases. However, it is a
+      . Relational DataBase Management Systems (RDBMS) have been around for decades and are very capable. The Java Database
+      Connectivity (JDBC) API provides a standard interface for connecting to and interacting with relational databases. However, it is a
       low-level API that requires a lot of code to use correctly, and it still doesn't abstract away the DBMS-specific SQL
       grammar. Also, working with relational data in an object-oriented language can feel somewhat unnatural, so many developers
       map this data to classes that fit much more cleanly into their application. The problem is that manually creating this
@@ -148,9 +148,9 @@
       is building the tools and services that surround content repositories. Nearly all of these capabilities are to be hidden
       below the JCR API and involve automated processing of the information in the repository. Thus, JBoss DNA can add value to
       existing repository implementations. For example, JCR repositories offer the ability to upload files into the repository and
-      have the file content index for search purposes. JBoss DNA defines a library for also sequencing that content to extract
-      meaningful information and store it in the repository, where it can then be searched, accessed and analyzed using the JCR
-      API.
+      have the file content indexed for search purposes. JBoss DNA also defines a library for "sequencing" content - to extract
+      meaningful information from that content and store it in the repository, where it can then be searched, accessed, and analyzed
+      using the JCR API.
     </para>
     <para> JBoss DNA is building other features as well. One goal of JBoss DNA is to create federated repositories that
       dynamically merge the information from multiple databases, services, applications, and other JCR repositories. Another is to
@@ -169,7 +169,7 @@
       <link linkend="custom_sequencers">Chapter 5</link>
       goes over how to create custom sequencers. Finally,
       <link linkend="future_directions">Chapter 6</link>
-      wraps things up.
+      wraps things up with a discussion about the future of JBoss DNA.
     </para>
   </chapter>
   <chapter id="jboss_dna">
@@ -194,7 +194,7 @@
       <title>Architecture</title>
       <para>The architecture for JBoss DNA consists of several major components that will be built on top of standard APIs,
         including JCR, JDBC, JNDI and HTTP. The goal is to allow these components to be assembled as needed and add value on top
-        of other DNA components or third-party systems that support the standard APIs.</para>
+        of other DNA components or third-party systems that support these standard APIs.</para>
       <mediaobject>
         <imageobject role="fo">
           <imagedata align="center" fileref="images/dna-architecture.png" />
@@ -230,23 +230,23 @@
               is used by end users and domain experts to visualize, search, edit, change and tag the repository content. The web
               application uses views to define how different types of information are to be presented and edited in
               domain-specific ways. The goal is that this web application is easily customized and branded for inclusion into
-              other solutions and application systems. The DNA Web Application operate upon any JCR-compliant repository, although
+              other solutions and application systems. The DNA Web Application operates upon any JCR-compliant repository, although
               it does rely upon the DNA analysis and templating services.
             </para>
           </listitem>
           <listitem>
             <para>
               <emphasis role="strong">DNA Publishing Server</emphasis>
-              allows content to be downloaded, uploaded and edited using the Atom Publishing Protocol. With the DNA Publishing
-              Server, the content of the repository can easily be created, read, edited and deleted using the standard HTTP
-              operations of POST, GET, PUT and DELETE (respectively). More and more tools are being created that support working
+              allows content to be downloaded, uploaded, and edited using the Atom Publishing Protocol. With the DNA Publishing
+              Server, the content of the repository can easily be created, read, edited, and deleted using the standard HTTP
+              operations of POST, GET, PUT, and DELETE (respectively). More and more tools are being created that support working
               with Atom Publishing servers. The DNA Publishing Server operates upon any JCR-compliant repository.
             </para>
           </listitem>
           <listitem>
             <para>
               <emphasis role="strong">DNA WebDAV Server</emphasis>
-              allows clients such as Microsoft Windows and Apple OS X to connect to, read and edit the content in the repository
+              allows clients such as Microsoft Windows and Apple OS X to connect to, read, and edit the content in the repository
               using the WebDAV standard. Since WebDAV is an extension of HTTP, web browsers are able to read (but not modify) the
               content served by a WebDAV compliant server. The DNA WebDAV Server operates upon any JCR-compliant repository.
             </para>
@@ -263,7 +263,7 @@
           <listitem>
             <para>
               <emphasis role="strong">DNA Analyses</emphasis>
-              are pluggable components that analyze the content and the relationships between the content to generate reports or
+              are pluggable components that analyze content and the relationships between content to generate reports or
               to answer queries. DNA will include some standard analyzers, like dependency analysis and similarity analysis, that
               are commonly needed by many different solutions. DNA analyzers operate upon any JCR-compliant repository.
             </para>
@@ -280,7 +280,7 @@
             <para>
               <emphasis role="strong">DNA Federation</emphasis>
               is an implementation of the JCR API that builds the content within the repository by accessing and integrating
-              information from multiple sources. DNA Federation allows the integration of external system, like other JCR
+              information from multiple sources. DNA Federation allows the integration of external systems, like other JCR
               repositories, databases, applications, and services.
             </para>
           </listitem>
