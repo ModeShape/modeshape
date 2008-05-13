@@ -83,16 +83,21 @@ public class ImageMetadataSequencer implements StreamSequencer {
      * {@inheritDoc}
      */
     public void sequence( InputStream stream, SequencerOutput output, ProgressMonitor progressMonitor ) {
+        progressMonitor.beginTask(10, ImageSequencerI18n.sequencerTaskName);
+
         ImageMetadata metadata = new ImageMetadata();
         metadata.setInput(stream);
         metadata.setDetermineImageNumber(true);
         metadata.setCollectComments(true);
 
-        // Process the image ...
+        // Process the image stream and extract the metadata ...
         if (!metadata.check()) {
             metadata = null;
         }
+        progressMonitor.worked(5);
+        if (progressMonitor.isCancelled()) return;
 
+        // Generate the output graph if we found useful metadata ...
         if (metadata != null) {
             // Place the image metadata into the output map ...
             output.setProperty(METADATA_NODE, IMAGE_PRIMARY_TYPE, "image:metadata");
@@ -110,5 +115,7 @@ public class ImageMetadataSequencer implements StreamSequencer {
             output.setProperty(METADATA_NODE, IMAGE_PHYSICAL_WIDTH_INCHES, metadata.getPhysicalWidthInch());
             output.setProperty(METADATA_NODE, IMAGE_PHYSICAL_HEIGHT_INCHES, metadata.getPhysicalHeightInch());
         }
+
+        progressMonitor.done();
     }
 }
