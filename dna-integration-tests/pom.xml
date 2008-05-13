@@ -14,6 +14,10 @@
   <version>0.1-SNAPSHOT</version>
   <name>JBoss DNA Integration Tests</name>
   <url>http://labs.jboss.org/dna</url>
+  
+  <properties>
+    <dna-version>0.1-SNAPSHOT</dna-version>
+  </properties>
   <!--
   Define the dependencies.  Note that all version and scopes default to those 
   defined in the dependencyManagement section of the parent pom.
