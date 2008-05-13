@@ -22,22 +22,19 @@
     <dependency>
       <groupId>org.jboss.dna</groupId>
       <artifactId>dna-common</artifactId>
-      <version>${dna-version}</version>
     </dependency>
     <dependency>
       <groupId>org.jboss.dna</groupId>
       <artifactId>dna-maven-classloader</artifactId>
-      <version>${dna-version}</version>
     </dependency>
     <dependency>
       <groupId>org.jboss.dna</groupId>
       <artifactId>dna-repository</artifactId>
-      <version>${dna-version}</version>
     </dependency>
     <dependency>
       <groupId>org.jboss.dna</groupId>
       <artifactId>dna-common</artifactId>
-      <version>${dna-version}</version>
+      <version>0.1-SNAPSHOT</version>
       <type>test-jar</type>
       <scope>test</scope>
     </dependency>
