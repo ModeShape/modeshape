@@ -985,6 +985,11 @@ $ </programlisting>
       <title>Searching for media using the Example Client</title>
       <graphic align="center" scale="100" fileref="images/example-sequencer-search.png" />
     </figure>
+    Here are the search results after the <code>sample1.mp3</code> audio file has been uploaded (to the <code>/a/b/sample1.mp3</code> location):
+    <figure id="example-sequencer-search-with-mp3">
+      <title>Searching for media using the Example Client</title>
+      <graphic align="center" scale="100" fileref="images/example-sequencer-search-with-mp3.png" />
+    </figure>
     You can also display the sequencing statistics using the "d" menu option:
     <figure id="example-sequencer-statistics">
       <title>Sequencing statistics using the Example Client</title>
