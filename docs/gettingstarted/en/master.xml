@@ -105,8 +105,8 @@
     <para>
       One of the more popular persistence technologies is the
       <emphasis>relational database</emphasis>
-      . Relational DataBase Management Systems (RDBMS) have been around for decades and are very capable. The Java Database
-      Connectivity (JDBC) API provides a standard interface for connecting to and interacting with relational databases. However, it is a
+      . Relational database management systems (RDBMS) have been around for decades and are very capable. The Java Database Connectivity
+      (JDBC) API provides a standard interface for connecting to and interacting with relational databases. However, it is a
       low-level API that requires a lot of code to use correctly, and it still doesn't abstract away the DBMS-specific SQL
       grammar. Also, working with relational data in an object-oriented language can feel somewhat unnatural, so many developers
       map this data to classes that fit much more cleanly into their application. The problem is that manually creating this
@@ -317,7 +317,7 @@
       </para>
     </sect1>
     <sect1 id="sequencers">
-      <title>Sequencers</title>
+      <title>Sequencing content</title>
       <para> The current JBoss DNA release contains a sequencing framework that is designed to sequence data (typically files)
         stored in a JCR repository to automatically extract meaningful and useful information. This additional information is then
         saved back into the repository, where it can be accessed and used.</para>
@@ -463,7 +463,7 @@
       </para>
     </sect1>
     <sect1 id="federation">
-      <title>Federation</title>
+      <title>Federating content</title>
       <para>There is a lot of information stored in many of different places: databases, repositories, SCM systems,
         registries, file systems, services, etc. The purpose of the federation engine is to allow applications to use the JCR API
         to access that information as if it were all stored in a single JCR repository, but to really leave the information where
@@ -486,7 +486,7 @@
         configured to allow updates, client applications can change the information in the repository and JBoss DNA will propagate
         those changes down to the original source.</para>
       <sect2 id="federation_connectors">
-        <title>Connectors</title>
+        <title>Connecting to information sources</title>
         <para>
           The JBoss DNA federation engine will use connectors to interact with different information sources to get at the content
           in those systems. Some ideas for connectors include:
@@ -563,13 +563,10 @@
           implementation that can be used with a Java Transaction Service. Connectors that provide read-only access need not
           provide an implementation.
         </para>
-      </sect2>
-      <sect2 id="federation_sources">
-        <title>Sources</title>
         <para>
-          Each JBoss DNA federated repository is configured to federate and integrate information from one or more
-          <emphasis>sources</emphasis>
-          . Each source contains the configuration details (e.g., connection information, location, properties, options, etc.) for
+          Also, connectors talk to <emphasis>sources</emphasis> of information, and it's quite likely that the same
+          connector is used to talk to different sources.  Each source contains the configuration details 
+          (e.g., connection information, location, properties, options, etc.) for
           working with that particular source, as well as a reference to the connector that should be used to establish
           connections to the source. And of course, sources can be added or removed without having to stop and restart the
           federated repository.
@@ -605,7 +602,7 @@
         </para>
       </sect2>
       <sect2 id="federation_queries">
-        <title>Queries</title>
+        <title>Querying the unified graph</title>
         <para> The JBoss DNA federated repository will also support queries against the integrated and unified graph. In some
           situations the query can be determined to apply to a single source, but in most situations the query must be planned
           (and possibly rewritten) such that it can be pushed down to all the appropriate sources. Also, the cached results must
@@ -616,7 +613,7 @@
         </para>
       </sect2>
       <sect2 id="federation_updates">
-        <title>Updates</title>
+        <title>Updating content</title>
         <para>
           The JBoss DNA federated repositories also make it possible for client applications to make changes to the unified graph
           within the context of distributed transactions. According to the JCR API, client applications use the Java Transaction
@@ -639,7 +636,7 @@
         </para>
       </sect2>
       <sect2 id="federation_events">
-        <title>Events</title>
+        <title>Observing for changes</title>
         <para> The JCR API supports observing a repository to receive notifications of additions, changes and deletions of nodes
           and properties. The JBoss DNA federated repository will support this API through two primary means.</para>
         <para> When the changes are made through the federated repository, the JBoss DNA federation engine is well aware of the
@@ -657,7 +654,7 @@
                                                    Chapter 
         ====================================================================================================   -->
   <chapter id="downloading_and_running">
-    <title>Example application</title>
+    <title>Running the example application</title>
     <para>
       This chapter provides instructions for downloading and running a sample application that demonstrates how JBoss DNA works
       with a JCR repository to automatically sequence changing content to extract useful information. So read on to get the simple
@@ -973,7 +970,7 @@ $ </programlisting>
     that we'll describe later) will not be sequenced.</para>
   </sect1>
   <sect1 id="downloading_and_running_review">
-    <title>Review</title>
+    <title>Summarizing what we just did</title>
     <para>In this chapter you downloaded and installed the example application and used it to upload files into a
     JCR repository.  JBoss DNA automatically sequenced the image files you uploaded, extracted the metadata from the
     files, and stored that metadata inside the repository.  The application allowed you to see this metadata
@@ -1000,7 +997,7 @@ $ </programlisting>
       JCR implementation.</para>
   </note>
   <sect1 id="sequencing_service">
-    <title>Sequencing Service</title>
+    <title>Configuring the Sequencing Service</title>
     <para>
       The JBoss DNA <emphasis>sequencing service</emphasis> is the component that manages the <emphasis>sequencers</emphasis>
       and that reacts to changes in JCR repositories and then running the appropriate sequencers.
@@ -1117,7 +1114,7 @@ SesequencingService.addSequencer(imageSequencerConfig);</programlisting>
       described in the <link linkend="observation_service">next section</link>.</para>
   </sect1>
   <sect1 id="observation_service">
-    <title>Observation Service</title>
+    <title>Configuring the Observation Service</title>
     <para>The JBoss DNA <code>ObservationService</code> is responsible for listening to one or more JCR repositories
     and multiplexing the events to its listeners.  Unlike JCR events, this framework embeds in the events the
     name of the repository and workspace that can be passed to a <code>SessionFactory</code> to obtain a session
@@ -1169,7 +1166,7 @@ observationService.getAdministrator().awaitTermination(5, TimeUnit.SECONDS);</pr
     The next chapter goes back to the <link linkend="downloading_and_running">sample application</link> to show how all these pieces fit together.</para>
   </sect1>
   <sect1 id="example_application_review">
-    <title>Example Application</title>
+    <title>Reviewing the example application</title>
     <para>Recall that the example application consists of a client application that sets up an in-memory JCR repository and
       that allows a user to upload files into that repository. The client also sets up the DNA services with an image sequencer so
       that if any of the uploaded files are PNG, JPEG, GIF, BMP or other images, DNA will automatically extract the image's
@@ -1410,7 +1407,7 @@ public ConsoleInput( SequencerClient client ) {
     </para>
   </sect1>
   <sect1 id="using_dna_review">
-    <title>Review</title>
+    <title>Summarizing what we just did</title>
     <para>In this chapter we covered the different JBoss DNA components and how they can be used in your application.
       Specifically, we described how the <code>SequencingService</code> and <code>ObservationService</code> can 
       be configured and used.  And we ended the chapter by reviewing the example application, which not only uses
@@ -1423,7 +1420,7 @@ public ConsoleInput( SequencerClient client ) {
                                                Chapter 
       ====================================================================================================   -->
 <chapter id="custom_sequencers">
-  <title>Custom sequencers</title>
+  <title>Creating custom sequencers</title>
   <para>The current release of JBoss DNA comes with a single sequencer that extracts metadata from image files.
   If you create your own sequencer implementation, 
   </para>
@@ -1546,7 +1543,7 @@ public ConsoleInput( SequencerClient client ) {
                                                Chapter 
       ====================================================================================================   -->
 <chapter id="future_directions">
-  <title>Future directions</title>
+  <title>Future Directions</title>
   <para>What's next for JBoss DNA?  Well, the sequencing system is just the beginning.  With this release, the sequencing system
   is stable enough so that more <link linkend="sequencers">sequencers</link> can be developed and used within your own applications.
   If you're interested in getting involved with the JBoss DNA project, consider picking up one of the sequencers on our
