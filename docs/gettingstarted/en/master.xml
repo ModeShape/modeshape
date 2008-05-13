@@ -330,9 +330,10 @@
         and let sequencers extract the metadata from the image and save it in the repository. The same with XSDs, WSDL, WS
         policies, UML, MetaMatrix models, etc.</para>
       <para>
-        JBoss DNA sequencers sit on top of existing JCR repositories (including federated repositories) - it basically extracts
-        more useful information from what's already stored in the repository. And it uses the existing JCR versioning system. Each
-        sequencer typically processes a single kind of file format. The following sequencer is included in JBoss DNA:
+        JBoss DNA sequencers sit on top of existing JCR repositories (including federated repositories) - they basically extract
+        more useful information from what's already stored in the repository. And they use the existing JCR versioning system. Each
+        sequencer typically processes a single kind of file format or a single kind of content. </para>
+      <para>The following sequencers are included in JBoss DNA:
         <itemizedlist>
           <listitem>
             <para>
@@ -343,6 +344,16 @@
               PGM, PPM, and PSD files. (This sequencer may be improved in the future to also extract EXIF metadata from JPEG
               files; see
               <ulink url="http://jira.jboss.org/jira/browse/DNA-26">DNA-26</ulink>
+              .)
+            </para>
+          </listitem>
+          <listitem>
+            <para>
+              <emphasis role="strong">MP3 sequencer</emphasis>
+              - A sequencer that processes the contents of an MP3 audio file, extracts the metadata for the file, and then
+              writes that image metadata to the repository. It gets the title, author, album, year, and comment.  
+              (This sequencer may be improved in the future to also extract other ID3 metadata from other audio file formats; see
+              <ulink url="http://jira.jboss.org/jira/browse/DNA-66">DNA-26</ulink>
               .)
             </para>
           </listitem>
