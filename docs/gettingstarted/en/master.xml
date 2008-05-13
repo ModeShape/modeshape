@@ -173,7 +173,7 @@
     </para>
   </chapter>
   <chapter id="jboss_dna">
-    <title>JBoss DNA</title>
+    <title>Understanding JBoss DNA</title>
     <sect1 id="jboss_dna_overview">
       <title>Overview</title>
       <para>JBoss DNA is a repository and set of tools that make it easy to capture, version, analyze, and understand the
@@ -646,7 +646,7 @@
         </para>
       </sect2>
       <sect2 id="federation_events">
-        <title>Observing for changes</title>
+        <title>Observing changes</title>
         <para> The JCR API supports observing a repository to receive notifications of additions, changes and deletions of nodes
           and properties. The JBoss DNA federated repository will support this API through two primary means.</para>
         <para> When the changes are made through the federated repository, the JBoss DNA federation engine is well aware of the
@@ -1547,13 +1547,29 @@ public ConsoleInput( SequencerClient client ) {
     <title>Implementing the StreamSequencer interface</title>
     <para></para>
   </sect1>
+  <sect1 id="testing_custom_sequencers">
+    <title>Testing custom sequencers</title>
+    <para></para>
+  </sect1>
+  <sect1 id="deploying_custom_sequencers">
+    <title>Deploying custom sequencers</title>
+    <para>At this time, the JAR containing your new sequencer, as well as any JARs that your sequencer depends on, should be placed
+      on your application classpath.</para>
+    <note>
+      <para>A future goal of JBoss DNA is to allow sequencers, connectors and other extensions to be easily deployed into
+        a runtime repository.  JBoss DNA will then create and use the appropriate class loaders for each extension.
+        This will prevent the pollution of the common classpath, allow for easy upgrades, enable separation of 
+        the extensions in their own environment, and may even allow for hot redeployment of newer versions of extensions.
+      </para>
+    </note>
+  </sect1>
 </chapter>
   
 <!--  ====================================================================================================
                                                Chapter 
       ====================================================================================================   -->
 <chapter id="future_directions">
-  <title>Future Directions</title>
+  <title>Looking to the future</title>
   <para>What's next for JBoss DNA?  Well, the sequencing system is just the beginning.  With this release, the sequencing system
   is stable enough so that more <link linkend="sequencers">sequencers</link> can be developed and used within your own applications.
   If you're interested in getting involved with the JBoss DNA project, consider picking up one of the sequencers on our
