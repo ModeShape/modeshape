@@ -23,7 +23,7 @@
 	</modules>
 
 	<properties>
-		<dna-version>0.1</dna-version>
+		<dna-version>0.2-SNAPSHOT</dna-version>
 	</properties>
 	<profiles>
 		<profile>

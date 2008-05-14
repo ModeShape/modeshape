@@ -14,7 +14,7 @@
   <url>http://labs.jboss.org/dna</url>
   
   <properties>
-    <dna-version>0.1</dna-version>
+    <dna-version>0.2-SNAPSHOT</dna-version>
   </properties>
   <!--
   Define the dependencies.  Note that all version and scopes default to those 
