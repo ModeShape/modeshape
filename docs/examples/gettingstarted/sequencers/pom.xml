@@ -1,5 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 
   <parent>
     <groupId>org.jboss.dna.examples</groupId>
@@ -11,13 +10,13 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.jboss.dna.examples</groupId>
   <artifactId>dna-example-sequencers</artifactId>
-  <version>0.1-SNAPSHOT</version>
+  <version>0.1</version>
   <packaging>jar</packaging>
   <name>Sequencer Examples</name>
   <description>Examples that showcase how to use sequencers with a JCR repository.</description>
 
   <properties>
-    <dna-version>0.1-SNAPSHOT</dna-version>
+    <dna-version>0.1</dna-version>
   </properties>
 
   <dependencies>

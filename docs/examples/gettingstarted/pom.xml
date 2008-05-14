@@ -1,5 +1,4 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.jboss.dna.examples</groupId>
@@ -7,14 +6,14 @@
   <packaging>pom</packaging>
   <version>0.1</version>
   <name>Getting Started examples</name>
-  <description></description>
+  <description />
 
   <modules>
     <module>sequencers</module>
   </modules>
 
   <properties>
-    <dna-version>0.1-SNAPSHOT</dna-version>
+    <dna-version>0.1</dna-version>
   </properties>
 
   <dependencyManagement>
