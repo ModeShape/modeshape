@@ -1,12 +1,9 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <parent>
     <groupId>org.jboss.dna</groupId>
     <artifactId>dna</artifactId>
-    <version>0.1-SNAPSHOT</version>
+    <version>0.1</version>
   </parent>
   <!-- The groupId and version values are inherited from parent -->
   <artifactId>dna-repository</artifactId>
@@ -14,6 +11,10 @@
   <name>JBoss DNA Repository</name>
   <description>JBoss DNA Repository library</description>
   <url>http://labs.jboss.org/dna</url>
+  
+  <properties>
+    <dna-version>0.1</dna-version>
+  </properties>
   <!--
   Define the dependencies.  Note that all version and scopes default to those 
   defined in the dependencyManagement section of the parent pom.
@@ -22,7 +23,6 @@
     <dependency>
       <groupId>org.jboss.dna</groupId>
       <artifactId>dna-common</artifactId>
-      <version>${dna-version}</version>
     </dependency>
     <dependency>
       <groupId>org.jboss.dna</groupId>
@@ -34,7 +34,6 @@
     <dependency>
       <groupId>org.jboss.dna</groupId>
       <artifactId>dna-spi</artifactId>
-      <version>${dna-version}</version>
     </dependency>
     <!-- 
     Rules
