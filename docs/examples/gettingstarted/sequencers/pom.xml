@@ -16,6 +16,10 @@
   <name>Sequencer Examples</name>
   <description>Examples that showcase how to use sequencers with a JCR repository.</description>
 
+  <properties>
+    <dna-version>0.1-SNAPSHOT</dna-version>
+  </properties>
+
   <dependencies>
     <dependency>
       <groupId>org.jboss.dna</groupId>
