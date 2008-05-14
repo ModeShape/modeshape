@@ -15,6 +15,10 @@
   <name>JBoss DNA Image Sequencer</name>
   <description>JBoss DNA Sequencer that processes PNG, JPEG, GIF and other image files</description>
   <url>http://labs.jboss.org/dna</url>
+  
+  <properties>
+    <dna-version>0.1-SNAPSHOT</dna-version>
+  </properties>
   <!--
   Define the dependencies.  Note that all version and scopes default to those 
   defined in the dependencyManagement section of the parent pom.
@@ -34,14 +38,14 @@
     <dependency>
       <groupId>org.jboss.dna</groupId>
       <artifactId>dna-common</artifactId>
-      <version>0.1-SNAPSHOT</version>
+      <version>${dna-version}</version>
       <type>test-jar</type>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.jboss.dna</groupId>
       <artifactId>dna-spi</artifactId>
-      <version>0.1-SNAPSHOT</version>
+      <version>${dna-version}</version>
       <type>test-jar</type>
       <scope>test</scope>
     </dependency>

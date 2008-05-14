@@ -20,25 +20,25 @@
     <dependency>
       <groupId>org.jboss.dna</groupId>
       <artifactId>dna-repository</artifactId>
-      <version>0.1-SNAPSHOT</version>
+      <version>${dna-version}</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>org.jboss.dna</groupId>
       <artifactId>dna-common</artifactId>
-      <version>0.1-SNAPSHOT</version>
+      <version>${dna-version}</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>org.jboss.dna</groupId>
       <artifactId>dna-sequencer-images</artifactId>
-      <version>0.1-SNAPSHOT</version>
+      <version>${dna-version}</version>
       <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>org.jboss.dna</groupId>
       <artifactId>dna-sequencer-mp3</artifactId>
-      <version>0.1-SNAPSHOT</version>
+      <version>${dna-version}</version>
       <scope>runtime</scope>
     </dependency>
     <!-- 
