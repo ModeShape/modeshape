@@ -34,8 +34,6 @@ import org.jboss.dna.spi.sequencers.StreamSequencer;
  * <ul>
  * <li><strong>mp3:metadata</strong> node of type <code>mp3:metadata</code>
  * <ul>
- * <li><strong>jcr:mimeType</strong> - optional string property for the mime type of the image</li>
- * <li><strong>jcr:encoding</strong> - optional string property for the encoding of the image</li>
  * <li><strong>mp3:title</strong> - optional string property for the name of the audio file or recording</li>
  * <li><strong>mp3:author</strong> - optional string property for the author of the recording</li>
  * <li><strong>mp3:album</strong> - optional string property for the name of the album</li>
@@ -67,9 +65,7 @@ public class Mp3MetadataSequencer implements StreamSequencer {
         if (metadata != null) {
             // Place the image metadata into the output map ...
             output.setProperty(METADATA_NODE, MP3_PRIMARY_TYPE, "mp3:metadata");
-            // output.psetProperty(METADATA_NODE, IMAGE_MIXINS, "");
             output.setProperty(METADATA_NODE, MP3_TITLE, metadata.getTitle());
-            // output.setProperty(METADATA_NODE, IMAGE_ENCODING, "");
             output.setProperty(METADATA_NODE, MP3_AUTHOR, metadata.getAuthor());
             output.setProperty(METADATA_NODE, MP3_ALBUM, metadata.getAlbum());
             output.setProperty(METADATA_NODE, MP3_YEAR, metadata.getYear());
