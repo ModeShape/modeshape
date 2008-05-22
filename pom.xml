@@ -12,6 +12,48 @@
 	<scm>
 		<connection>scm:svn:https://svn.jboss.org/repos/dna/trunk</connection>
 	</scm>
+	<developers>
+		<developer>
+			<name>Randall Hauch</name>
+			<id>randall</id>
+			<email>rhauch@redhat.com</email>
+			<organization>Red Hat</organization>
+			<roles>
+				<role>Project Lead</role>
+				<role>Developer</role>
+			</roles>
+			<timezone>-6</timezone>
+		</developer>
+		<developer>
+			<name>John Verhaeg</name>
+			<id>johnny</id>
+			<email>jverhaeg@redhat.com</email>
+			<organization>Red Hat</organization>
+			<roles>
+				<role>Developer</role>
+			</roles>
+			<timezone>-6</timezone>
+		</developer>
+		<developer>
+			<name>Dan Florian</name>
+			<id>dan</id>
+			<email>dflorian@redhat.com</email>
+			<organization>Red Hat</organization>
+			<roles>
+				<role>Developer</role>
+			</roles>
+			<timezone>-6</timezone>
+		</developer>
+		<developer>
+			<name>Stefano Maestri</name>
+			<id>stefano</id>
+			<email>stefano.maestri@javalinux.it</email>
+			<roles>
+				<role>Developer</role>
+			</roles>
+			<timezone>-6</timezone>
+		</developer>
+	</developers>
 	<modules>
 		<module>dna-common</module>
 		<module>dna-spi</module>
@@ -25,6 +67,7 @@
 	<properties>
 		<dna-version>0.2-SNAPSHOT</dna-version>
 	</properties>
+	
 	<profiles>
 		<profile>
 			<id>release</id>
@@ -81,23 +124,23 @@
 	              </execution>
 	            </executions>
 	            <configuration>
-							<finalName>
-								jboss-dna-${project.version}
-							</finalName>
-	              <descriptors>
-								<descriptor>
-									build/assembly/examples.xml
-								</descriptor>
-								<descriptor>
-									build/assembly/javadoc.xml
-								</descriptor>
-								<descriptor>
-									build/assembly/dist.xml
-								</descriptor>
-								<descriptor>
-									build/assembly/src.xml
-								</descriptor>
-	              </descriptors>
+					<finalName>
+						jboss-dna-${project.version}
+					</finalName>
+             			<descriptors>
+						<descriptor>
+							build/assembly/examples.xml
+						</descriptor>
+						<descriptor>
+							build/assembly/javadoc.xml
+						</descriptor>
+						<descriptor>
+							build/assembly/dist.xml
+						</descriptor>
+						<descriptor>
+							build/assembly/src.xml
+						</descriptor>
+					</descriptors>
 	            </configuration>
 	          </plugin>
 	        </plugins>
@@ -366,12 +409,24 @@
 			</plugin>
 	    </plugins>
 	</reporting>
-  <distributionManagement>
-    <repository>
-      <!-- Copy the distribution jar file to a local checkout of the maven repository 
-        -  This variable can be set in $MAVEN_HOME/conf/settings.xml -->
-      <id>repository.jboss.org</id>
-      <url>file://${jboss.repository.root}</url>
-    </repository>
-  </distributionManagement>
+	
+	<repositories>
+		<repository>
+			<id>jboss</id>
+			<url>http://repository.jboss.com/maven2/</url>
+		</repository>
+		
+		<repository>
+			<id>jboss-snapshot</id>
+			<url>http://snapshots.jboss.org/maven2</url>
+		</repository>
+	</repositories>
+	<distributionManagement>
+		<repository>
+			<!-- Copy the distribution jar file to a local checkout of the maven repository 
+ 			  -  This variable can be set in $MAVEN_HOME/conf/settings.xml -->
+			<id>repository.jboss.org</id>
+			<url>file://${jboss.repository.root}</url>
+		</repository>
+	</distributionManagement>
 </project>
