@@ -51,7 +51,7 @@
 			<roles>
 				<role>Developer</role>
 			</roles>
-			<timezone>-6</timezone>
+			<timezone>+1</timezone>
 		</developer>
 	</developers>
 	<modules>
