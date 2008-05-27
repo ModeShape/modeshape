@@ -22,7 +22,9 @@
 package org.jboss.dna.repository.sequencers;
 
 import java.io.InputStream;
+import java.math.BigDecimal;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.Set;
 import javax.jcr.Node;
 import javax.jcr.PathNotFoundException;
@@ -35,6 +37,8 @@ import org.jboss.dna.repository.RepositoryI18n;
 import org.jboss.dna.repository.observation.NodeChange;
 import org.jboss.dna.repository.util.ExecutionContext;
 import org.jboss.dna.repository.util.RepositoryNodePath;
+import org.jboss.dna.spi.graph.Binary;
+import org.jboss.dna.spi.graph.DateTime;
 import org.jboss.dna.spi.graph.Name;
 import org.jboss.dna.spi.graph.NamespaceRegistry;
 import org.jboss.dna.spi.graph.Path;
@@ -209,6 +213,8 @@ public class StreamSequencerAdapter implements Sequencer {
                     targetNode.setProperty(propertyName, ((Boolean)value).booleanValue());
                 } else if (value instanceof String) {
                     targetNode.setProperty(propertyName, (String)value);
+                } else if (value instanceof String[]) {
+                    targetNode.setProperty(propertyName, (String[])value);
                 } else if (value instanceof Integer) {
                     targetNode.setProperty(propertyName, ((Integer)value).intValue());
                 } else if (value instanceof Short) {
@@ -219,8 +225,27 @@ public class StreamSequencerAdapter implements Sequencer {
                     targetNode.setProperty(propertyName, ((Float)value).floatValue());
                 } else if (value instanceof Double) {
                     targetNode.setProperty(propertyName, ((Double)value).doubleValue());
+                } else if (value instanceof Binary) {
+                    Binary binaryValue = (Binary)value;
+                    try {
+                        binaryValue.acquire();
+                        targetNode.setProperty(propertyName, binaryValue.getStream());
+                    } finally {
+                        binaryValue.release();
+                    }
+                } else if (value instanceof BigDecimal) {
+                    targetNode.setProperty(propertyName, ((BigDecimal)value).doubleValue());
+                } else if (value instanceof DateTime) {
+                    targetNode.setProperty(propertyName, ((DateTime)value).toCalendar());
+                } else if (value instanceof Date) {
+                    DateTime instant = context.getValueFactories().getDateFactory().create((Date)value);
+                    targetNode.setProperty(propertyName, instant.toCalendar());
                 } else if (value instanceof Calendar) {
                     targetNode.setProperty(propertyName, (Calendar)value);
+                } else if (value instanceof Name) {
+                    Name nameValue = (Name)value;
+                    String stringValue = nameValue.getString(namespaceRegistry);
+                    targetNode.setProperty(propertyName, stringValue);
                 } else if (value instanceof Path) {
                     // Find the path to reference node ...
                     Path pathToReferencedNode = (Path)value;
