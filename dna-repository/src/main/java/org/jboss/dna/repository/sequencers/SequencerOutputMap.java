@@ -32,8 +32,10 @@ import net.jcip.annotations.Immutable;
 import net.jcip.annotations.NotThreadSafe;
 import org.jboss.dna.common.util.ArgCheck;
 import org.jboss.dna.common.util.StringUtil;
+import org.jboss.dna.spi.graph.Name;
 import org.jboss.dna.spi.graph.Path;
 import org.jboss.dna.spi.graph.PathFactory;
+import org.jboss.dna.spi.graph.ValueFactories;
 import org.jboss.dna.spi.sequencers.SequencerOutput;
 
 /**
@@ -48,37 +50,45 @@ public class SequencerOutputMap implements SequencerOutput, Iterable<SequencerOu
     private static final String JCR_NAME_PROPERTY_NAME = "jcr:name";
 
     private final Map<Path, List<PropertyValue>> data;
-    private boolean valuesSorted = true;
-    private final PathFactory pathFactory;
+    private transient boolean valuesSorted = true;
+    private final ValueFactories factories;
+    private final Name jcrName;
 
-    public SequencerOutputMap( PathFactory pathFactory ) {
-        ArgCheck.isNotNull(pathFactory, "pathFactory");
+    public SequencerOutputMap( ValueFactories factories ) {
+        ArgCheck.isNotNull(factories, "factories");
         this.data = new HashMap<Path, List<PropertyValue>>();
-        this.pathFactory = pathFactory;
+        this.factories = factories;
+        this.jcrName = this.factories.getNameFactory().create(JCR_NAME_PROPERTY_NAME);
     }
 
     /**
      * {@inheritDoc}
      */
-    public void setProperty( String nodePath, String property, Object... values ) {
-        property = property.trim();
-        if (JCR_NAME_PROPERTY_NAME.equals(property)) return; // ignore the "jcr:name" property
-        nodePath = nodePath.trim();
-        if (nodePath.endsWith("/")) nodePath = nodePath.replaceFirst("/+$", "");
+    public ValueFactories getFactories() {
+        return this.factories;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public void setProperty( Path nodePath, Name propertyName, Object... values ) {
+        ArgCheck.isNotNull(nodePath, "nodePath");
+        ArgCheck.isNotNull(propertyName, "property");
+        // Ignore the "jcr:name" property, as that's handled by the path ...
+        if (this.jcrName.equals(propertyName)) return;
 
         // Find or create the entry for this node ...
-        Path path = pathFactory.create(nodePath);
-        List<PropertyValue> properties = this.data.get(path);
+        List<PropertyValue> properties = this.data.get(nodePath);
         if (properties == null) {
             if (values == null || values.length == 0) return; // do nothing
             properties = new ArrayList<PropertyValue>();
-            this.data.put(path, properties);
+            this.data.put(nodePath, properties);
         }
         if (values == null || values.length == 0) {
-            properties.remove(new PropertyValue(property, null));
+            properties.remove(new PropertyValue(propertyName, null));
         } else {
             Object propValue = values.length == 1 ? values[0] : values;
-            PropertyValue value = new PropertyValue(property, propValue);
+            PropertyValue value = new PropertyValue(propertyName, propValue);
             properties.add(value);
             valuesSorted = false;
         }
@@ -87,18 +97,30 @@ public class SequencerOutputMap implements SequencerOutput, Iterable<SequencerOu
     /**
      * {@inheritDoc}
      */
-    public void setReference( String nodePath, String property, String... paths ) {
-        if (paths == null || paths.length == 0) {
-            setProperty(nodePath, property, (Object[])null);
-        } else if (paths.length == 1) {
-            setProperty(nodePath, property, pathFactory.create(paths[0]));
-        } else {
-            Path[] pathsArray = new Path[paths.length];
-            for (int i = 0; i != paths.length; ++i) {
-                pathsArray[i] = pathFactory.create(paths[i]);
+    public void setProperty( String nodePath, String property, Object... values ) {
+        ArgCheck.isNotEmpty(nodePath, "nodePath");
+        ArgCheck.isNotEmpty(property, "property");
+        Path path = this.factories.getPathFactory().create(nodePath);
+        Name propertyName = this.factories.getNameFactory().create(property);
+        setProperty(path, propertyName, values);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public void setReference( String nodePath, String propertyName, String... paths ) {
+        PathFactory pathFactory = this.factories.getPathFactory();
+        Path path = pathFactory.create(nodePath);
+        Name name = this.factories.getNameFactory().create(propertyName);
+        Object[] values = null;
+        if (paths != null && paths.length != 0) {
+            values = new Path[paths.length];
+            for (int i = 0, len = paths.length; i != len; ++i) {
+                String pathValue = paths[i];
+                values[i] = pathFactory.create(pathValue);
             }
-            setProperty(nodePath, property, (Object[])pathsArray);
         }
+        setProperty(path, name, values);
     }
 
     /**
@@ -167,10 +189,10 @@ public class SequencerOutputMap implements SequencerOutput, Iterable<SequencerOu
     @Immutable
     public class PropertyValue implements Comparable<PropertyValue> {
 
-        private final String name;
+        private final Name name;
         private final Object value;
 
-        protected PropertyValue( String propertyName, Object value ) {
+        protected PropertyValue( Name propertyName, Object value ) {
             this.name = propertyName;
             this.value = value;
         }
@@ -179,7 +201,7 @@ public class SequencerOutputMap implements SequencerOutput, Iterable<SequencerOu
          * Get the property name.
          * @return the property name; never null
          */
-        public String getName() {
+        public Name getName() {
             return this.name;
         }
 
@@ -241,7 +263,7 @@ public class SequencerOutputMap implements SequencerOutput, Iterable<SequencerOu
     public class Entry {
 
         private final Path path;
-        private final String primaryType;
+        private final Name primaryType;
         private final List<PropertyValue> properties;
 
         protected Entry( Path path, List<PropertyValue> properties ) {
@@ -251,7 +273,7 @@ public class SequencerOutputMap implements SequencerOutput, Iterable<SequencerOu
             this.properties = properties;
             if (this.properties.size() > 0 && this.properties.get(0).getName().equals("jcr:primaryType")) {
                 PropertyValue primaryTypeProperty = this.properties.remove(0);
-                this.primaryType = primaryTypeProperty.getValue().toString();
+                this.primaryType = getFactories().getNameFactory().create(primaryTypeProperty.getValue());
             } else {
                 this.primaryType = null;
             }
@@ -268,7 +290,7 @@ public class SequencerOutputMap implements SequencerOutput, Iterable<SequencerOu
          * Get the primary type specified for this node, or null if the type was not specified
          * @return the primary type, or null
          */
-        public String getPrimaryTypeValue() {
+        public Name getPrimaryTypeValue() {
             return this.primaryType;
         }
 

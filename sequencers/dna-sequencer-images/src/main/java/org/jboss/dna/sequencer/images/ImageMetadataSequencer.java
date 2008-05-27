@@ -23,6 +23,9 @@ package org.jboss.dna.sequencer.images;
 
 import java.io.InputStream;
 import org.jboss.dna.common.monitor.ProgressMonitor;
+import org.jboss.dna.spi.graph.NameFactory;
+import org.jboss.dna.spi.graph.Path;
+import org.jboss.dna.spi.graph.PathFactory;
 import org.jboss.dna.spi.sequencers.SequencerOutput;
 import org.jboss.dna.spi.sequencers.StreamSequencer;
 
@@ -99,21 +102,25 @@ public class ImageMetadataSequencer implements StreamSequencer {
 
         // Generate the output graph if we found useful metadata ...
         if (metadata != null) {
+            NameFactory nameFactory = output.getFactories().getNameFactory();
+            PathFactory pathFactory = output.getFactories().getPathFactory();
+            Path metadataNode = pathFactory.create(METADATA_NODE);
+
             // Place the image metadata into the output map ...
-            output.setProperty(METADATA_NODE, IMAGE_PRIMARY_TYPE, "image:metadata");
-            // output.psetProperty(METADATA_NODE, IMAGE_MIXINS, "");
-            output.setProperty(METADATA_NODE, IMAGE_MIME_TYPE, metadata.getMimeType());
-            // output.setProperty(METADATA_NODE, IMAGE_ENCODING, "");
-            output.setProperty(METADATA_NODE, IMAGE_FORMAT_NAME, metadata.getFormatName());
-            output.setProperty(METADATA_NODE, IMAGE_WIDTH, metadata.getWidth());
-            output.setProperty(METADATA_NODE, IMAGE_HEIGHT, metadata.getHeight());
-            output.setProperty(METADATA_NODE, IMAGE_BITS_PER_PIXEL, metadata.getBitsPerPixel());
-            output.setProperty(METADATA_NODE, IMAGE_PROGRESSIVE, metadata.isProgressive());
-            output.setProperty(METADATA_NODE, IMAGE_NUMBER_OF_IMAGES, metadata.getNumberOfImages());
-            output.setProperty(METADATA_NODE, IMAGE_PHYSICAL_WIDTH_DPI, metadata.getPhysicalWidthDpi());
-            output.setProperty(METADATA_NODE, IMAGE_PHYSICAL_HEIGHT_DPI, metadata.getPhysicalHeightDpi());
-            output.setProperty(METADATA_NODE, IMAGE_PHYSICAL_WIDTH_INCHES, metadata.getPhysicalWidthInch());
-            output.setProperty(METADATA_NODE, IMAGE_PHYSICAL_HEIGHT_INCHES, metadata.getPhysicalHeightInch());
+            output.setProperty(metadataNode, nameFactory.create(IMAGE_PRIMARY_TYPE), "image:metadata");
+            // output.psetProperty(metadataNode, nameFactory.create(IMAGE_MIXINS), "");
+            output.setProperty(metadataNode, nameFactory.create(IMAGE_MIME_TYPE), metadata.getMimeType());
+            // output.setProperty(metadataNode, nameFactory.create(IMAGE_ENCODING), "");
+            output.setProperty(metadataNode, nameFactory.create(IMAGE_FORMAT_NAME), metadata.getFormatName());
+            output.setProperty(metadataNode, nameFactory.create(IMAGE_WIDTH), metadata.getWidth());
+            output.setProperty(metadataNode, nameFactory.create(IMAGE_HEIGHT), metadata.getHeight());
+            output.setProperty(metadataNode, nameFactory.create(IMAGE_BITS_PER_PIXEL), metadata.getBitsPerPixel());
+            output.setProperty(metadataNode, nameFactory.create(IMAGE_PROGRESSIVE), metadata.isProgressive());
+            output.setProperty(metadataNode, nameFactory.create(IMAGE_NUMBER_OF_IMAGES), metadata.getNumberOfImages());
+            output.setProperty(metadataNode, nameFactory.create(IMAGE_PHYSICAL_WIDTH_DPI), metadata.getPhysicalWidthDpi());
+            output.setProperty(metadataNode, nameFactory.create(IMAGE_PHYSICAL_HEIGHT_DPI), metadata.getPhysicalHeightDpi());
+            output.setProperty(metadataNode, nameFactory.create(IMAGE_PHYSICAL_WIDTH_INCHES), metadata.getPhysicalWidthInch());
+            output.setProperty(metadataNode, nameFactory.create(IMAGE_PHYSICAL_HEIGHT_INCHES), metadata.getPhysicalHeightInch());
         }
 
         progressMonitor.done();

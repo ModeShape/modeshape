@@ -24,6 +24,11 @@ package org.jboss.dna.spi.sequencers;
 import java.util.HashMap;
 import java.util.Map;
 import net.jcip.annotations.NotThreadSafe;
+import org.jboss.dna.common.util.ArgCheck;
+import org.jboss.dna.spi.graph.Name;
+import org.jboss.dna.spi.graph.Path;
+import org.jboss.dna.spi.graph.PathFactory;
+import org.jboss.dna.spi.graph.ValueFactories;
 
 /**
  * @author Randall Hauch
@@ -31,22 +36,30 @@ import net.jcip.annotations.NotThreadSafe;
 @NotThreadSafe
 public class MockSequencerOutput implements SequencerOutput {
 
-    private final Map<String, Object[]> properties;
-    private final Map<String, String[]> references;
+    private final Map<Path, Object[]> properties;
+    private final ValueFactories factories;
 
     /**
-     * 
+     * @param factories the factories to be used to create output property values
      */
-    public MockSequencerOutput() {
-        this.properties = new HashMap<String, Object[]>();
-        this.references = new HashMap<String, String[]>();
+    public MockSequencerOutput( ValueFactories factories ) {
+        ArgCheck.isNotNull(factories, "factories");
+        this.properties = new HashMap<Path, Object[]>();
+        this.factories = factories;
     }
 
     /**
      * {@inheritDoc}
      */
-    public void setProperty( String nodePath, String property, Object... values ) {
-        String key = getKey(nodePath, property);
+    public ValueFactories getFactories() {
+        return this.factories;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public void setProperty( Path nodePath, Name propertyName, Object... values ) {
+        Path key = getKey(nodePath, propertyName);
         if (values == null || values.length == 0) {
             this.properties.remove(key);
         } else {
@@ -57,45 +70,52 @@ public class MockSequencerOutput implements SequencerOutput {
     /**
      * {@inheritDoc}
      */
-    public void setReference( String nodePath, String property, String... paths ) {
-        String key = getKey(nodePath, property);
-        if (paths == null || paths.length == 0) {
-            this.references.remove(key);
-        } else {
-            this.references.put(key, paths);
+    public void setProperty( String nodePath, String propertyName, Object... values ) {
+        Path path = this.factories.getPathFactory().create(nodePath);
+        Name name = this.factories.getNameFactory().create(propertyName);
+        setProperty(path, name, values);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public void setReference( String nodePath, String propertyName, String... paths ) {
+        PathFactory pathFactory = this.factories.getPathFactory();
+        Path path = pathFactory.create(nodePath);
+        Name name = this.factories.getNameFactory().create(propertyName);
+        Object[] values = null;
+        if (paths != null && paths.length != 0) {
+            values = new Path[paths.length];
+            for (int i = 0, len = paths.length; i != len; ++i) {
+                String pathValue = paths[i];
+                values[i] = pathFactory.create(pathValue);
+            }
         }
+        setProperty(path, name, values);
     }
 
     public Object[] getPropertyValues( String nodePath, String property ) {
-        String key = getKey(nodePath, property);
+        Path key = getKey(nodePath, property);
         return this.properties.get(key);
     }
 
-    public String[] getReferenceValues( String nodePath, String property ) {
-        String key = getKey(nodePath, property);
-        return this.references.get(key);
-    }
-
     public boolean hasProperty( String nodePath, String property ) {
-        String key = nodePath + "@" + property;
+        Path key = getKey(nodePath, property);
         return this.properties.containsKey(key);
-    }
-
-    public boolean hasReference( String nodePath, String property ) {
-        String key = nodePath + "@" + property;
-        return this.references.containsKey(key);
     }
 
     public boolean hasProperties() {
         return this.properties.size() > 0;
     }
 
-    public boolean hasReferences() {
-        return this.references.size() > 0;
+    protected Path getKey( String nodePath, String propertyName ) {
+        Path path = this.factories.getPathFactory().create(nodePath);
+        Name name = this.factories.getNameFactory().create(propertyName);
+        return getKey(path, name);
     }
 
-    protected String getKey( String nodePath, String property ) {
-        return nodePath + "@" + property;
+    protected Path getKey( Path nodePath, Name propertyName ) {
+        return this.factories.getPathFactory().create(nodePath, propertyName);
     }
 
 }

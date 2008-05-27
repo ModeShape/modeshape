@@ -39,16 +39,14 @@ import org.jboss.dna.common.jcr.AbstractJcrRepositoryTest;
 import org.jboss.dna.common.monitor.ProgressMonitor;
 import org.jboss.dna.common.monitor.RecordingProgressMonitor;
 import org.jboss.dna.repository.observation.NodeChange;
-import org.jboss.dna.repository.sequencers.SequencerConfig;
-import org.jboss.dna.repository.sequencers.SequencerException;
-import org.jboss.dna.repository.sequencers.SequencerOutputMap;
-import org.jboss.dna.repository.sequencers.StreamSequencerAdapter;
 import org.jboss.dna.repository.util.ExecutionContext;
+import org.jboss.dna.repository.util.JcrNamespaceRegistry;
 import org.jboss.dna.repository.util.JcrTools;
 import org.jboss.dna.repository.util.RepositoryNodePath;
 import org.jboss.dna.repository.util.SessionFactory;
 import org.jboss.dna.repository.util.SimpleExecutionContext;
-import org.jboss.dna.spi.graph.impl.BasicNamespaceRegistry;
+import org.jboss.dna.spi.graph.NamespaceRegistry;
+import org.jboss.dna.spi.graph.Path;
 import org.jboss.dna.spi.sequencers.SequencerOutput;
 import org.jboss.dna.spi.sequencers.StreamSequencer;
 import org.junit.After;
@@ -82,8 +80,9 @@ public class StreamSequencerAdapterTest extends AbstractJcrRepositoryTest {
                 return createTestSession();
             }
         };
-        this.context = new SimpleExecutionContext(sessionFactory, new BasicNamespaceRegistry(), null);
-        this.sequencerOutput = new SequencerOutputMap(this.context.getValueFactories().getPathFactory());
+        NamespaceRegistry registry = new JcrNamespaceRegistry(sessionFactory, "doesn't matter");
+        this.context = new SimpleExecutionContext(sessionFactory, registry, null);
+        this.sequencerOutput = new SequencerOutputMap(this.context.getValueFactories());
         this.progressMonitor = new RecordingProgressMonitor(StreamSequencerAdapterTest.class.getName());
         final SequencerOutputMap finalOutput = sequencerOutput;
         this.streamSequencer = new StreamSequencer() {
@@ -94,7 +93,7 @@ public class StreamSequencerAdapterTest extends AbstractJcrRepositoryTest {
              */
             public void sequence( InputStream stream, SequencerOutput output, ProgressMonitor progressMonitor ) {
                 for (SequencerOutputMap.Entry entry : finalOutput) {
-                    String nodePath = entry.getPath().getString();
+                    Path nodePath = entry.getPath();
                     for (SequencerOutputMap.PropertyValue property : entry.getPropertyValues()) {
                         output.setProperty(nodePath, property.getName(), property.getValue());
                     }

@@ -30,6 +30,9 @@ import java.io.InputStream;
 import java.net.URL;
 import org.jboss.dna.common.monitor.ProgressMonitor;
 import org.jboss.dna.common.monitor.SimpleProgressMonitor;
+import org.jboss.dna.spi.graph.NamespaceRegistry;
+import org.jboss.dna.spi.graph.impl.BasicNamespaceRegistry;
+import org.jboss.dna.spi.graph.impl.StandardValueFactories;
 import org.jboss.dna.spi.sequencers.MockSequencerOutput;
 import org.junit.After;
 import org.junit.Before;
@@ -52,7 +55,12 @@ public class ImageMetadataSequencerTest {
     @Before
     public void beforeEach() throws Exception {
         this.sequencer = new ImageMetadataSequencer();
-        this.output = new MockSequencerOutput();
+        NamespaceRegistry registry = new BasicNamespaceRegistry();
+        registry.register("image", "http://jboss.org/dna/images/1.0");
+        registry.register("jcr", "http://www.jcp.org/jcr/1.0");
+        registry.register("nt", "http://www.jcp.org/jcr/nt/1.0");
+        registry.register("mix", "http://www.jcp.org/jcr/mix/1.0");
+        this.output = new MockSequencerOutput(new StandardValueFactories(registry));
         this.progress = new SimpleProgressMonitor("Test activity");
         this.cautionGif = this.getClass().getClassLoader().getResource("caution.gif");
         this.cautionJpg = this.getClass().getClassLoader().getResource("caution.jpg");
@@ -90,7 +98,6 @@ public class ImageMetadataSequencerTest {
         assertThat(output.getPropertyValues("image:metadata", "image:physicalHeightDpi"), is(new Object[] {72}));
         assertThat(((Float)(output.getPropertyValues("image:metadata", "image:physicalWidthInches")[0])).doubleValue(), is(closeTo(0.666667d, 0.0001d)));
         assertThat(((Float)(output.getPropertyValues("image:metadata", "image:physicalHeightInches")[0])).doubleValue(), is(closeTo(0.666667d, 0.0001d)));
-        assertThat(output.hasReferences(), is(false));
     }
 
     @Test
@@ -112,7 +119,6 @@ public class ImageMetadataSequencerTest {
         assertThat(output.getPropertyValues("image:metadata", "image:physicalHeightDpi"), is(new Object[] {-1}));
         assertThat(((Float)(output.getPropertyValues("image:metadata", "image:physicalWidthInches")[0])), is(-1f));
         assertThat(((Float)(output.getPropertyValues("image:metadata", "image:physicalHeightInches")[0])), is(-1f));
-        assertThat(output.hasReferences(), is(false));
     }
 
     @Test
@@ -133,7 +139,6 @@ public class ImageMetadataSequencerTest {
         assertThat(output.getPropertyValues("image:metadata", "image:physicalHeightDpi"), is(new Object[] {-1}));
         assertThat(((Float)(output.getPropertyValues("image:metadata", "image:physicalWidthInches")[0])), is(-1f));
         assertThat(((Float)(output.getPropertyValues("image:metadata", "image:physicalHeightInches")[0])), is(-1f));
-        assertThat(output.hasReferences(), is(false));
     }
 
     @Test
@@ -144,7 +149,6 @@ public class ImageMetadataSequencerTest {
         assertThat(content, is(notNullValue()));
         sequencer.sequence(content, output, progress);
         assertThat(output.hasProperties(), is(false));
-        assertThat(output.hasReferences(), is(false));
 
     }
 }

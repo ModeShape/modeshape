@@ -35,6 +35,7 @@ import org.jboss.dna.repository.RepositoryI18n;
 import org.jboss.dna.repository.observation.NodeChange;
 import org.jboss.dna.repository.util.ExecutionContext;
 import org.jboss.dna.repository.util.RepositoryNodePath;
+import org.jboss.dna.spi.graph.Name;
 import org.jboss.dna.spi.graph.NamespaceRegistry;
 import org.jboss.dna.spi.graph.Path;
 import org.jboss.dna.spi.graph.PathFactory;
@@ -90,7 +91,7 @@ public class StreamSequencerAdapter implements Sequencer {
             progressMonitor.worked(10);
 
             // Get the binary property with the image content, and build the image metadata from the image ...
-            SequencerOutputMap output = new SequencerOutputMap(context.getValueFactories().getPathFactory());
+            SequencerOutputMap output = new SequencerOutputMap(context.getValueFactories());
             InputStream stream = null;
             Throwable firstError = null;
             ProgressMonitor sequencingMonitor = progressMonitor.createSubtask(50);
@@ -169,7 +170,7 @@ public class StreamSequencerAdapter implements Sequencer {
         // prefix and name)
         for (SequencerOutputMap.Entry entry : output) {
             Path targetNodePath = entry.getPath();
-            String primaryType = entry.getPrimaryTypeValue();
+            Name primaryType = entry.getPrimaryTypeValue();
 
             // Resolve this path relative to the output node path, handling any parent or self references ...
             Path absolutePath = targetNodePath.isAbsolute() ? targetNodePath : outputNodePath.resolve(targetNodePath);
@@ -190,7 +191,7 @@ public class StreamSequencerAdapter implements Sequencer {
                     }
                     // We only have the primary type for the final one ...
                     if (i == (max - 1) && primaryType != null) {
-                        targetNode = targetNode.addNode(qualifiedName, primaryType);
+                        targetNode = targetNode.addNode(qualifiedName, primaryType.getString(namespaceRegistry, Path.NO_OP_ENCODER));
                     } else {
                         targetNode = targetNode.addNode(qualifiedName);
                     }
@@ -201,7 +202,7 @@ public class StreamSequencerAdapter implements Sequencer {
 
             // Set all of the properties on this
             for (SequencerOutputMap.PropertyValue property : entry.getPropertyValues()) {
-                String propertyName = property.getName();
+                String propertyName = property.getName().getString(namespaceRegistry, Path.NO_OP_ENCODER);
                 Object value = property.getValue();
                 Logger.getLogger(this.getClass()).trace("Writing property {0}/{1}={2}", targetNode.getPath(), propertyName, value);
                 if (value instanceof Boolean) {

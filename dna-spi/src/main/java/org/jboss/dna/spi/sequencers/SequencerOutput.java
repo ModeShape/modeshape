@@ -21,48 +21,62 @@
  */
 package org.jboss.dna.spi.sequencers;
 
-import java.io.InputStream;
-import java.util.Calendar;
+import org.jboss.dna.spi.graph.Name;
+import org.jboss.dna.spi.graph.Path;
+import org.jboss.dna.spi.graph.ValueFactories;
 
 /**
  * Interface for sequencers to use to generate their output.
- *
  * @author Randall Hauch
  */
 public interface SequencerOutput {
 
-	/**
-	 * Set the supplied property on the supplied node.
-	 * <p>
-	 * The allowable values are any of the following:
-	 * <ul>
-	 * <li>primitives (which will be autoboxed)</li>
-	 * <li>{@link String} instances</li>
-	 * <li>{@link String} arrays</li>
-	 * <li>byte arrays</li>
-	 * <li>{@link InputStream} instances</li>
-	 * <li>{@link Calendar} instances</li>
-	 * <li></li>
-	 * </ul>
-	 * </p>
-	 *
-	 * @param nodePath the path to the node containing the property; may not be null
-	 * @param property the name of the property to be set
-	 * @param values the value(s) for the property; may be empty if any existing property is to be removed
-	 */
-	void setProperty( String nodePath,
-	                  String property,
-	                  Object... values );
+    /**
+     * Get the factories that can be used to create {@link Path paths} and other property values.
+     * @return the collection of factories; never null
+     */
+    ValueFactories getFactories();
 
-	/**
-	 * Set the supplied reference on the supplied node.
-	 *
-	 * @param nodePath the path to the node containing the property; may not be null
-	 * @param property the name of the property to be set
-	 * @param paths the paths to the referenced property, which may be absolute paths or relative to the sequencer output node;
-	 *        may be empty if any existing property is to be removed
-	 */
-	void setReference( String nodePath,
-	                   String property,
-	                   String... paths );
+    /**
+     * Set the supplied property on the supplied node.
+     * <p>
+     * The {@link #getFactories() value factories} should be used to create paths, names, and values. These factories can be used
+     * to create new values or convert values from one property type to another. (Note that each of the factories have methods
+     * that create values from all of the property types.)
+     * </p>
+     * <p>
+     * This method is provided as a convenience, but it identical to creating a {@link Path} and {@link Name} using the
+     * {@link #getFactories() factories} and calling {@link #setProperty(Path, Name, Object...)}.
+     * </p>
+     * @param nodePath the path to the node containing the property; may not be null
+     * @param propertyName the name of the property to be set
+     * @param values the value(s) for the property; may be empty if any existing property is to be removed
+     */
+    void setProperty( String nodePath, String propertyName, Object... values );
+
+    /**
+     * Set the supplied reference on the supplied node.
+     * <p>
+     * This method is provided as a convenience, but it identical to creating a {@link Path} and {@link Name} using the
+     * {@link #getFactories() factories} and calling {@link #setProperty(Path, Name, Object...)}.
+     * </p>
+     * @param nodePath the path to the node containing the property; may not be null
+     * @param propertyName the name of the property to be set
+     * @param paths the paths to the referenced property, which may be absolute paths or relative to the sequencer output node;
+     * may be empty if any existing property is to be removed
+     */
+    void setReference( String nodePath, String propertyName, String... paths );
+
+    /**
+     * Set the supplied property on the supplied node.
+     * <p>
+     * The {@link #getFactories() value factories} should be used to create paths, names, and values. These factories can be used
+     * to create new values or convert values from one property type to another. (Note that each of the factories have methods
+     * that create values from all of the property types.)
+     * </p>
+     * @param nodePath the path to the node containing the property; may not be null
+     * @param propertyName the name of the property to be set
+     * @param values the value(s) for the property; may be empty if any existing property is to be removed
+     */
+    void setProperty( Path nodePath, Name propertyName, Object... values );
 }
