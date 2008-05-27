@@ -29,13 +29,15 @@ import javax.jcr.PathNotFoundException;
 import javax.jcr.Property;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
-import org.jboss.dna.common.jcr.Path;
 import org.jboss.dna.common.monitor.ProgressMonitor;
 import org.jboss.dna.common.util.Logger;
 import org.jboss.dna.repository.RepositoryI18n;
 import org.jboss.dna.repository.observation.NodeChange;
 import org.jboss.dna.repository.util.ExecutionContext;
 import org.jboss.dna.repository.util.RepositoryNodePath;
+import org.jboss.dna.spi.graph.NamespaceRegistry;
+import org.jboss.dna.spi.graph.Path;
+import org.jboss.dna.spi.graph.PathFactory;
 import org.jboss.dna.spi.sequencers.StreamSequencer;
 
 /**
@@ -88,7 +90,7 @@ public class StreamSequencerAdapter implements Sequencer {
             progressMonitor.worked(10);
 
             // Get the binary property with the image content, and build the image metadata from the image ...
-            SequencerOutputMap output = new SequencerOutputMap();
+            SequencerOutputMap output = new SequencerOutputMap(context.getValueFactories().getPathFactory());
             InputStream stream = null;
             Throwable firstError = null;
             ProgressMonitor sequencingMonitor = progressMonitor.createSubtask(50);
@@ -159,7 +161,9 @@ public class StreamSequencerAdapter implements Sequencer {
      */
     protected boolean saveOutput( Node outputNode, SequencerOutputMap output, ExecutionContext context ) throws RepositoryException {
         if (output.isEmpty()) return false;
-        final Path outputNodePath = new Path(outputNode.getPath());
+        final PathFactory pathFactory = context.getValueFactories().getPathFactory();
+        final NamespaceRegistry namespaceRegistry = context.getNamespaceRegistry();
+        final Path outputNodePath = pathFactory.create(outputNode.getPath());
 
         // Iterate over the entries in the output, in Path's natural order (shorter paths first and in lexicographical order by
         // prefix and name)
@@ -175,14 +179,14 @@ public class StreamSequencerAdapter implements Sequencer {
             Node targetNode = outputNode;
             for (int i = 0, max = relativePath.size(); i != max; ++i) {
                 Path.Segment segment = relativePath.getSegment(i);
-                String qualifiedName = segment.getQualifiedName(true);
+                String qualifiedName = segment.getString(namespaceRegistry);
                 if (targetNode.hasNode(qualifiedName)) {
                     targetNode = targetNode.getNode(qualifiedName);
                 } else {
                     // It doesn't exist, so create it ...
                     if (segment.hasIndex()) {
                         // Use a name without an index ...
-                        qualifiedName = segment.getQualifiedName(false);
+                        qualifiedName = segment.getName().getString(namespaceRegistry);
                     }
                     // We only have the primary type for the final one ...
                     if (i == (max - 1) && primaryType != null) {

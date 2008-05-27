@@ -200,13 +200,14 @@ public class SequencingClient {
             // for the DNA services which knows about the JCR repositories, workspaces, and credentials used to
             // establish sessions to these workspaces. This example uses the SimpleExecutionContext, but there is
             // implementation for use with JCR repositories registered in JNDI.
+            final String repositoryWorkspaceName = this.repositoryName + "/" + this.workspaceName;
             SimpleSessionFactory sessionFactory = new SimpleSessionFactory();
             sessionFactory.registerRepository(this.repositoryName, this.repository);
             if (this.username != null) {
                 Credentials credentials = new SimpleCredentials(this.username, this.password);
-                sessionFactory.registerCredentials(this.repositoryName + "/" + this.workspaceName, credentials);
+                sessionFactory.registerCredentials(repositoryWorkspaceName, credentials);
             }
-            this.executionContext = new SimpleExecutionContext(sessionFactory);
+            this.executionContext = new SimpleExecutionContext(sessionFactory, repositoryWorkspaceName);
 
             // Create the sequencing service, passing in the execution context ...
             this.sequencingService = new SequencingService();
@@ -247,7 +248,7 @@ public class SequencingClient {
             this.observationService = new ObservationService(this.executionContext.getSessionFactory());
             this.observationService.getAdministrator().start();
             this.observationService.addListener(this.sequencingService);
-            this.observationService.monitor(this.repositoryName + "/" + this.workspaceName, Event.NODE_ADDED | Event.PROPERTY_ADDED | Event.PROPERTY_CHANGED);
+            this.observationService.monitor(repositoryWorkspaceName, Event.NODE_ADDED | Event.PROPERTY_ADDED | Event.PROPERTY_CHANGED);
         }
         // Start up the sequencing service ...
         this.sequencingService.getAdministrator().start();

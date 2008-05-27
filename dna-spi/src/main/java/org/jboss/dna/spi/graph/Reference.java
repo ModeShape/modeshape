@@ -19,42 +19,33 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.jboss.dna.common.jcr;
+package org.jboss.dna.spi.graph;
+
+import java.io.Serializable;
+import net.jcip.annotations.Immutable;
+import org.jboss.dna.common.text.TextEncoder;
 
 /**
+ * A representation of a reference to another node. Node references may not necessarily resolve to an existing node.
  * @author Randall Hauch
  */
-public class InvalidPathException extends RuntimeException {
+@Immutable
+public interface Reference extends Comparable<Reference>, Serializable {
 
     /**
-     * 
+     * Get the string form of the Reference. The {@link Path#DEFAULT_ENCODER default encoder} is used to encode characters in the
+     * reference.
+     * @return the encoded string
+     * @see #getString(TextEncoder)
      */
-    public InvalidPathException() {
-    }
+    public String getString();
 
     /**
-     * @param message
+     * Get the encoded string form of the Reference, using the supplied encoder to encode characters in the reference.
+     * @param encoder the encoder to use, or null if the {@link Path#DEFAULT_ENCODER default encoder} should be used
+     * @return the encoded string
+     * @see #getString()
      */
-    public InvalidPathException( String message ) {
-        super(message);
-
-    }
-
-    /**
-     * @param cause
-     */
-    public InvalidPathException( Throwable cause ) {
-        super(cause);
-
-    }
-
-    /**
-     * @param message
-     * @param cause
-     */
-    public InvalidPathException( String message, Throwable cause ) {
-        super(message, cause);
-
-    }
+    public String getString( TextEncoder encoder );
 
 }

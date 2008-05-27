@@ -47,6 +47,8 @@ import org.jboss.dna.repository.util.ExecutionContext;
 import org.jboss.dna.repository.util.JcrTools;
 import org.jboss.dna.repository.util.RepositoryNodePath;
 import org.jboss.dna.repository.util.SessionFactory;
+import org.jboss.dna.repository.util.SimpleExecutionContext;
+import org.jboss.dna.spi.graph.impl.BasicNamespaceRegistry;
 import org.jboss.dna.spi.sequencers.SequencerOutput;
 import org.jboss.dna.spi.sequencers.StreamSequencer;
 import org.junit.After;
@@ -74,26 +76,17 @@ public class StreamSequencerAdapterTest extends AbstractJcrRepositoryTest {
     public void beforeEach() throws Exception {
         final JcrTools tools = new JcrTools();
         this.tools = tools;
-        sequencerOutput = new SequencerOutputMap();
-        progressMonitor = new RecordingProgressMonitor(StreamSequencerAdapterTest.class.getName());
         final SessionFactory sessionFactory = new SessionFactory() {
 
             public Session createSession( String name ) {
                 return createTestSession();
             }
         };
-        context = new ExecutionContext() {
-
-            public SessionFactory getSessionFactory() {
-                return sessionFactory;
-            }
-
-            public JcrTools getTools() {
-                return tools;
-            }
-        };
+        this.context = new SimpleExecutionContext(sessionFactory, new BasicNamespaceRegistry(), null);
+        this.sequencerOutput = new SequencerOutputMap(this.context.getValueFactories().getPathFactory());
+        this.progressMonitor = new RecordingProgressMonitor(StreamSequencerAdapterTest.class.getName());
         final SequencerOutputMap finalOutput = sequencerOutput;
-        streamSequencer = new StreamSequencer() {
+        this.streamSequencer = new StreamSequencer() {
 
             /**
              * This method always copies the {@link StreamSequencerAdapterTest#sequencerOutput} data into the output {@inheritDoc},

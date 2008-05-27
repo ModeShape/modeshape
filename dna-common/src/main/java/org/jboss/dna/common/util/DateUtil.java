@@ -26,12 +26,11 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.GregorianCalendar;
 import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import org.jboss.dna.common.CommonI18n;
 import net.jcip.annotations.ThreadSafe;
+import org.jboss.dna.common.CommonI18n;
 
 /**
  * Utilities for working with dates.
@@ -180,7 +179,7 @@ public class DateUtil {
         }
 
         // Create the calendar object and start setting the fields ...
-        GregorianCalendar calendar = new GregorianCalendar();
+        Calendar calendar = Calendar.getInstance();
         calendar.clear();
 
         // And start setting the fields. Note that Integer.parseInt should never fail, since we're checking for null and the

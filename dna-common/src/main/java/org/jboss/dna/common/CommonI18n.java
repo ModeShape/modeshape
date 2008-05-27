@@ -41,21 +41,23 @@ public final class CommonI18n {
     public static I18n i18nFieldNotPublic;
     public static I18n i18nFieldNotStatic;
     public static I18n i18nLocalizationFileNotFound;
-	public static I18n i18nLocalizationProblems;
-	public static I18n i18nRequiredToSuppliedParameterMismatch;
+    public static I18n i18nLocalizationProblems;
+    public static I18n i18nRequiredToSuppliedParameterMismatch;
 
-	/**
-	 * Parameters:
-	 * <ol>
-	 * <li>{@link I18n#id() Property}</li>
-	 * <li>Localization file URL</li>
-	 * </ol>
-	 */
+    /**
+     * Parameters:
+     * <ol>
+     * <li>{@link I18n#id() Property}</li>
+     * <li>Localization file URL</li>
+     * </ol>
+     */
     public static I18n i18nPropertyDuplicate;
     public static I18n i18nPropertyMissing;
     public static I18n i18nPropertyUnused;
 
     // Core-related fields
+    public static I18n argumentMayNotBeLessThan;
+    public static I18n argumentMayNotBeGreaterThan;
     public static I18n argumentMayNotBeNegative;
     public static I18n argumentMayNotBePositive;
     public static I18n argumentMustBeNegative;
@@ -75,7 +77,7 @@ public final class CommonI18n {
     public static I18n argumentDidNotContainKey;
     public static I18n argumentMayNotContainNullValue;
     public static I18n componentClassnameNotValid;
-	public static I18n componentNotConfigured;
+    public static I18n componentNotConfigured;
     public static I18n dateParsingFailure;
     public static I18n initialProgressMonitorTaskName;
     public static I18n nullProgressMonitorTaskName;
@@ -85,7 +87,7 @@ public final class CommonI18n {
     public static I18n pathIsNotRelative;
     public static I18n pathCannotBeNormalized;
     public static I18n progressMonitorBeginTask;
-	public static I18n progressMonitorStatus;
+    public static I18n progressMonitorStatus;
     public static I18n requiredToSuppliedParameterMismatch;
 
     static {
@@ -97,14 +99,14 @@ public final class CommonI18n {
     }
 
     public static Set<Locale> getLocalizationProblemLocales() {
-		return I18n.getLocalizationProblemLocales(CommonI18n.class);
-	}
+        return I18n.getLocalizationProblemLocales(CommonI18n.class);
+    }
 
     public static Set<String> getLocalizationProblems() {
-		return I18n.getLocalizationProblems(CommonI18n.class);
-	}
+        return I18n.getLocalizationProblems(CommonI18n.class);
+    }
 
     public static Set<String> getLocalizationProblems( Locale locale ) {
-		return I18n.getLocalizationProblems(CommonI18n.class, locale);
-	}
+        return I18n.getLocalizationProblems(CommonI18n.class, locale);
+    }
 }

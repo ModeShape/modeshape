@@ -60,6 +60,8 @@ import org.jboss.dna.repository.util.ExecutionContext;
 import org.jboss.dna.repository.util.JcrTools;
 import org.jboss.dna.repository.util.RepositoryNodePath;
 import org.jboss.dna.repository.util.SessionFactory;
+import org.jboss.dna.spi.graph.NamespaceRegistry;
+import org.jboss.dna.spi.graph.ValueFactories;
 
 /**
  * A sequencing system is used to monitor changes in the content of {@link Repository JCR repositories} and to sequence the
@@ -564,17 +566,19 @@ public class SequencingService implements AdministeredService, NodeChangeListene
 
     protected class Context implements ExecutionContext {
 
+        protected final ExecutionContext delegate;
         protected final SessionFactory factory;
         private final Set<Session> sessions = new HashSet<Session>();
         protected final AtomicBoolean closed = new AtomicBoolean(false);
 
         protected Context() {
-            final SessionFactory delegate = SequencingService.this.getExecutionContext().getSessionFactory();
+            this.delegate = SequencingService.this.getExecutionContext();
+            final SessionFactory delegateSessionFactory = this.delegate.getSessionFactory();
             this.factory = new SessionFactory() {
 
                 public Session createSession( String name ) throws RepositoryException {
                     if (closed.get()) throw new IllegalStateException(RepositoryI18n.executionContextHasBeenClosed.text());
-                    Session session = delegate.createSession(name);
+                    Session session = delegateSessionFactory.createSession(name);
                     recordSession(session);
                     return session;
                 }
@@ -583,6 +587,20 @@ public class SequencingService implements AdministeredService, NodeChangeListene
 
         protected synchronized void recordSession( Session session ) {
             if (session != null) sessions.add(session);
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        public NamespaceRegistry getNamespaceRegistry() {
+            return this.delegate.getNamespaceRegistry();
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        public ValueFactories getValueFactories() {
+            return this.delegate.getValueFactories();
         }
 
         /**

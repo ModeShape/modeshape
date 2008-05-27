@@ -35,6 +35,32 @@ public final class ArgCheck {
     // ########################## int METHODS ###################################
 
     /**
+     * Check that the argument is not less than the supplied value
+     * @param argument The argument
+     * @param notLessThanValue the value that is to be used to check the value
+     * @param name The name of the argument
+     * @throws IllegalArgumentException If argument is negative (<0)
+     */
+    public static void isNotLessThan( int argument, int notLessThanValue, String name ) {
+        if (argument < notLessThanValue) {
+            throw new IllegalArgumentException(CommonI18n.argumentMayNotBeLessThan.text(name, argument, notLessThanValue));
+        }
+    }
+
+    /**
+     * Check that the argument is not greater than the supplied value
+     * @param argument The argument
+     * @param notGreaterThanValue the value that is to be used to check the value
+     * @param name The name of the argument
+     * @throws IllegalArgumentException If argument is negative (<0)
+     */
+    public static void isNotGreaterThan( int argument, int notGreaterThanValue, String name ) {
+        if (argument < notGreaterThanValue) {
+            throw new IllegalArgumentException(CommonI18n.argumentMayNotBeGreaterThan.text(name, argument, notGreaterThanValue));
+        }
+    }
+
+    /**
      * Check that the argument is non-negative (>=0).
      * @param argument The argument
      * @param name The name of the argument

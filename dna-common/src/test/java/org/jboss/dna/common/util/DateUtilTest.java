@@ -180,4 +180,29 @@ public class DateUtilTest {
         assertThat(DateUtil.getCalendarFromStandardString("2008-W216").get(Calendar.WEEK_OF_YEAR), is(21));
     }
 
+    @Test
+    public void shouldConvertCalendarToStringAndBackMultipleTimes() throws Exception {
+        Calendar cal1 = Calendar.getInstance();
+        String cal1Str = DateUtil.getDateAsStandardString(cal1);
+        Calendar cal2 = DateUtil.getCalendarFromStandardString(cal1Str);
+        // Force the calculation of all fields for both calendars ...
+        cal1.add(Calendar.DAY_OF_YEAR, 1);
+        cal2.add(Calendar.DAY_OF_YEAR, 1);
+        cal1.add(Calendar.DAY_OF_YEAR, -1);
+        cal2.add(Calendar.DAY_OF_YEAR, -1);
+        assertThat(cal1.getTimeInMillis(), is(cal2.getTimeInMillis()));
+        assertThat(cal1.compareTo(cal2), is(0));
+        assertThat(cal1, is(cal2));
+        String cal2Str = DateUtil.getDateAsStandardString(cal2);
+        assertThat(cal1Str, is(cal2Str));
+        Calendar cal3 = DateUtil.getCalendarFromStandardString(cal2Str);
+        cal3.add(Calendar.DAY_OF_YEAR, 1);
+        cal3.add(Calendar.DAY_OF_YEAR, -1);
+        assertThat(cal1, is(cal3));
+        assertThat(cal3, is(cal3));
+        String cal3Str = DateUtil.getDateAsStandardString(cal3);
+        assertThat(cal1Str, is(cal3Str));
+        assertThat(cal2Str, is(cal3Str));
+    }
+
 }

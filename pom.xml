@@ -206,10 +206,10 @@
 						<include>**/*TestCase.java</include>
 						<include>**/*Test.java</include>
 					</includes>
-					<excludes>
+					<!--excludes>
 						<exclude>**/Abstract*TestCase.java</exclude>
 						<exclude>**/Abstract*Test.java</exclude>
-					</excludes>
+					</excludes-->
 				</configuration>
 			</plugin>
 			<!-- 
@@ -272,6 +272,14 @@
 				<groupId>org.jboss.dna</groupId>
 				<artifactId>dna-repository</artifactId>
 				<version>${dna-version}</version>
+			</dependency>
+			<!-- 
+		    Time and Date
+		    -->
+			<dependency>
+				<groupId>joda-time</groupId>
+				<artifactId>joda-time</artifactId>
+				<version>1.4</version>
 			</dependency>
 			<!-- 
 		    Rules

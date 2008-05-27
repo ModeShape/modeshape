@@ -22,12 +22,26 @@
 package org.jboss.dna.repository.util;
 
 import javax.jcr.Session;
+import org.jboss.dna.spi.graph.NamespaceRegistry;
+import org.jboss.dna.spi.graph.ValueFactories;
 
 /**
  * The context of an execution.
  * @author Randall Hauch
  */
 public interface ExecutionContext {
+
+    /**
+     * Get the namespace registry.
+     * @return the namespace registry; never null
+     */
+    NamespaceRegistry getNamespaceRegistry();
+
+    /**
+     * Get the factories that are to be used to create property values of various types.
+     * @return the set of value factories; never null
+     */
+    ValueFactories getValueFactories();
 
     /**
      * Get the session factory, which can be used to obtain sessions temporarily for this context. Any session obtained from this

@@ -30,8 +30,10 @@ import java.util.List;
 import java.util.Map;
 import net.jcip.annotations.Immutable;
 import net.jcip.annotations.NotThreadSafe;
-import org.jboss.dna.common.jcr.Path;
+import org.jboss.dna.common.util.ArgCheck;
 import org.jboss.dna.common.util.StringUtil;
+import org.jboss.dna.spi.graph.Path;
+import org.jboss.dna.spi.graph.PathFactory;
 import org.jboss.dna.spi.sequencers.SequencerOutput;
 
 /**
@@ -47,9 +49,12 @@ public class SequencerOutputMap implements SequencerOutput, Iterable<SequencerOu
 
     private final Map<Path, List<PropertyValue>> data;
     private boolean valuesSorted = true;
+    private final PathFactory pathFactory;
 
-    public SequencerOutputMap() {
+    public SequencerOutputMap( PathFactory pathFactory ) {
+        ArgCheck.isNotNull(pathFactory, "pathFactory");
         this.data = new HashMap<Path, List<PropertyValue>>();
+        this.pathFactory = pathFactory;
     }
 
     /**
@@ -62,7 +67,7 @@ public class SequencerOutputMap implements SequencerOutput, Iterable<SequencerOu
         if (nodePath.endsWith("/")) nodePath = nodePath.replaceFirst("/+$", "");
 
         // Find or create the entry for this node ...
-        Path path = new Path(nodePath);
+        Path path = pathFactory.create(nodePath);
         List<PropertyValue> properties = this.data.get(path);
         if (properties == null) {
             if (values == null || values.length == 0) return; // do nothing
@@ -86,11 +91,11 @@ public class SequencerOutputMap implements SequencerOutput, Iterable<SequencerOu
         if (paths == null || paths.length == 0) {
             setProperty(nodePath, property, (Object[])null);
         } else if (paths.length == 1) {
-            setProperty(nodePath, property, new Path(paths[0]));
+            setProperty(nodePath, property, pathFactory.create(paths[0]));
         } else {
             Path[] pathsArray = new Path[paths.length];
             for (int i = 0; i != paths.length; ++i) {
-                pathsArray[i] = new Path(paths[i]);
+                pathsArray[i] = pathFactory.create(paths[i]);
             }
             setProperty(nodePath, property, (Object[])pathsArray);
         }

@@ -22,6 +22,9 @@
 package org.jboss.dna.repository.util;
 
 import org.jboss.dna.common.util.ArgCheck;
+import org.jboss.dna.spi.graph.NamespaceRegistry;
+import org.jboss.dna.spi.graph.ValueFactories;
+import org.jboss.dna.spi.graph.impl.StandardValueFactories;
 
 /**
  * @author Randall Hauch
@@ -30,10 +33,37 @@ public class SimpleExecutionContext implements ExecutionContext {
 
     private final JcrTools tools = new JcrTools();
     private final SessionFactory sessionFactory;
+    private final ValueFactories valueFactories;
+    private final NamespaceRegistry namespaceRegistry;
 
-    public SimpleExecutionContext( SessionFactory sessionFactory ) {
+    public SimpleExecutionContext( SessionFactory sessionFactory, String repositoryWorkspaceForNamespaceRegistry ) {
+        this(sessionFactory, new JcrNamespaceRegistry(sessionFactory, repositoryWorkspaceForNamespaceRegistry), null);
+    }
+
+    public SimpleExecutionContext( SessionFactory sessionFactory, NamespaceRegistry namespaceRegistry ) {
+        this(sessionFactory, namespaceRegistry, null);
+    }
+
+    public SimpleExecutionContext( SessionFactory sessionFactory, NamespaceRegistry namespaceRegistry, ValueFactories valueFactories ) {
         ArgCheck.isNotNull(sessionFactory, "session factory");
+        ArgCheck.isNotNull(namespaceRegistry, "namespace registry");
         this.sessionFactory = sessionFactory;
+        this.namespaceRegistry = namespaceRegistry;
+        this.valueFactories = valueFactories != null ? valueFactories : new StandardValueFactories(this.namespaceRegistry);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public NamespaceRegistry getNamespaceRegistry() {
+        return this.namespaceRegistry;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public ValueFactories getValueFactories() {
+        return this.valueFactories;
     }
 
     /**

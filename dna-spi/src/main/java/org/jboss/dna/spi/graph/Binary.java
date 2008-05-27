@@ -19,42 +19,45 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.jboss.dna.common.jcr;
+package org.jboss.dna.spi.graph;
+
+import java.io.InputStream;
+import java.io.Serializable;
+import net.jcip.annotations.Immutable;
 
 /**
+ * Value holder for binary data. Binary instances are not mutable.
  * @author Randall Hauch
  */
-public class PathNotFoundException extends RuntimeException {
+@Immutable
+public interface Binary extends Comparable<Binary>, Serializable {
 
     /**
-     * 
+     * Get the length of this binary data.
+     * @return the number of bytes in this binary data
      */
-    public PathNotFoundException() {
-    }
+    public long getSize();
 
     /**
-     * @param message
+     * Get the contents of this data as a stream.
+     * @return the stream to this data's contents
      */
-    public PathNotFoundException( String message ) {
-        super(message);
-
-    }
+    public InputStream getStream();
 
     /**
-     * @param cause
+     * Get the contents of this data as a byte array.
+     * @return the data as an array
      */
-    public PathNotFoundException( Throwable cause ) {
-        super(cause);
-
-    }
+    public byte[] getBytes();
 
     /**
-     * @param message
-     * @param cause
+     * Acquire any resources for this data. This method must be called before any other method on this object.
      */
-    public PathNotFoundException( String message, Throwable cause ) {
-        super(message, cause);
+    public void acquire();
 
-    }
+    /**
+     * Release any acquired resources. This method must be called after a client is finished with this value.
+     */
+    public void release();
 
 }

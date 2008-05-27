@@ -28,20 +28,14 @@ import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import org.jboss.dna.common.SystemFailureException;
 import org.jboss.dna.common.jcr.AbstractJcrRepositoryTest;
-import org.jboss.dna.repository.util.ExecutionContext;
-import org.jboss.dna.repository.util.JcrTools;
-import org.jboss.dna.repository.util.SessionFactory;
 
 /**
  * @author Randall Hauch
  */
-public class MockExecutionContext implements ExecutionContext {
-
-    private JcrTools tools = new JcrTools();
-    private SessionFactory sessionFactory;
+public class MockExecutionContext extends SimpleExecutionContext {
 
     public MockExecutionContext( final AbstractJcrRepositoryTest test, final String repositoryName ) {
-        this.sessionFactory = new SessionFactory() {
+        super(new SessionFactory() {
 
             public Session createSession( String name ) throws RepositoryException {
                 assertThat(name, is(repositoryName));
@@ -51,17 +45,7 @@ public class MockExecutionContext implements ExecutionContext {
                     throw new SystemFailureException(e);
                 }
             }
-        };
+        }, repositoryName);
     }
 
-    public SessionFactory getSessionFactory() {
-        return sessionFactory;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public JcrTools getTools() {
-        return tools;
-    }
 }
