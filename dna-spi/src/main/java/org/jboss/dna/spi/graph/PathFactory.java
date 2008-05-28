@@ -22,7 +22,8 @@
 package org.jboss.dna.spi.graph;
 
 /**
- * A factory for creating {@link Path paths}.
+ * A factory for creating {@link Path paths}. This interface extends the {@link ValueFactory} generic interface and adds specific
+ * methods for creating paths (and relative paths) from a series of names, segments, or combinations.
  * @author Randall Hauch
  */
 public interface PathFactory extends ValueFactory<Path> {

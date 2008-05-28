@@ -37,7 +37,24 @@ import net.jcip.annotations.Immutable;
 public interface DateTime extends Comparable<DateTime>, Serializable {
 
     /**
-     * Get the ISO-8601 representation of this instance in time.
+     * Get the ISO-8601 representation of this instance in time. The month-based ISO-8601 representation is the most common format
+     * of ISO8601, and is the format used in the XML standards for passing dates and times:
+     * 
+     * <pre>
+     * yyyy-mm-ddTHH:MM:SS.SSSZ
+     * </pre>
+     * 
+     * The fields are separated by dashes and consist of:
+     * <ul>
+     * <li>four digit year;</li>
+     * <li>two digit month, where 01 is Janurary and 12 is December;</li>
+     * <li>two digit day of month, from 01 to 31;</li>
+     * <li>two digit hour, from 00 to 23;</li>
+     * <li>two digit minute, from 00 to 59;</li>
+     * <li>two digit second, from 00 to 59;</li>
+     * <li>three decimal places for milliseconds, if required;</li>
+     * <li>time zone offset of the form <code>±HH:mm</code> (or '0' if UTC)</li>
+     * </ul>
      * @return the string representation; never null
      */
     String getString();
