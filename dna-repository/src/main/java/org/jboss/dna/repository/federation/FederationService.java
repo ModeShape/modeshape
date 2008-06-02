@@ -19,10 +19,11 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.jboss.dna.repository;
+package org.jboss.dna.repository.federation;
 
 import java.util.concurrent.TimeUnit;
 import org.jboss.dna.common.util.ArgCheck;
+import org.jboss.dna.repository.RepositoryI18n;
 import org.jboss.dna.repository.services.AbstractServiceAdministrator;
 import org.jboss.dna.repository.services.AdministeredService;
 import org.jboss.dna.repository.services.ServiceAdministrator;
