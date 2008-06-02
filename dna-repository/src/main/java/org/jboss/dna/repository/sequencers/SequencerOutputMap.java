@@ -2,7 +2,7 @@
  * JBoss, Home of Professional Open Source.
  * Copyright 2008, Red Hat Middleware LLC, and individual contributors
  * as indicated by the @author tags. See the copyright.txt file in the
- * distribution for a full listing of individual contributors. 
+ * distribution for a full listing of individual contributors.
  *
  * This is free software; you can redistribute it and/or modify it
  * under the terms of the GNU Lesser General Public License as
@@ -33,6 +33,8 @@ import net.jcip.annotations.NotThreadSafe;
 import org.jboss.dna.common.util.ArgCheck;
 import org.jboss.dna.common.util.StringUtil;
 import org.jboss.dna.spi.graph.Name;
+import org.jboss.dna.spi.graph.NameFactory;
+import org.jboss.dna.spi.graph.NamespaceRegistry;
 import org.jboss.dna.spi.graph.Path;
 import org.jboss.dna.spi.graph.PathFactory;
 import org.jboss.dna.spi.graph.ValueFactories;
@@ -41,303 +43,331 @@ import org.jboss.dna.spi.sequencers.SequencerOutput;
 /**
  * A basic {@link SequencerOutput} that records all information in-memory and which organizes the properties by
  * {@link Path node paths} and provides access to the nodes in a natural path-order.
+ *
  * @author Randall Hauch
  */
 @NotThreadSafe
 public class SequencerOutputMap implements SequencerOutput, Iterable<SequencerOutputMap.Entry> {
 
-    private static final String JCR_PRIMARY_TYPE_PROPERTY_NAME = "jcr:primaryType";
-    private static final String JCR_NAME_PROPERTY_NAME = "jcr:name";
+	private static final String JCR_NAME_PROPERTY_NAME = "jcr:name";
 
-    private final Map<Path, List<PropertyValue>> data;
-    private transient boolean valuesSorted = true;
-    private final ValueFactories factories;
-    private final Name jcrName;
+	private final Map<Path, List<PropertyValue>> data;
+	private transient boolean valuesSorted = true;
+	private final ValueFactories factories;
+	private final Name jcrName;
 
-    public SequencerOutputMap( ValueFactories factories ) {
-        ArgCheck.isNotNull(factories, "factories");
-        this.data = new HashMap<Path, List<PropertyValue>>();
-        this.factories = factories;
-        this.jcrName = this.factories.getNameFactory().create(JCR_NAME_PROPERTY_NAME);
-    }
+	public SequencerOutputMap( ValueFactories factories ) {
+		ArgCheck.isNotNull(factories, "factories");
+		this.data = new HashMap<Path, List<PropertyValue>>();
+		this.factories = factories;
+		this.jcrName = this.factories.getNameFactory().create(JCR_NAME_PROPERTY_NAME);
+	}
 
-    /**
-     * {@inheritDoc}
-     */
-    public ValueFactories getFactories() {
-        return this.factories;
-    }
+	/**
+	 * {@inheritDoc}
+	 */
+	public ValueFactories getFactories() {
+		return this.factories;
+	}
 
-    /**
-     * {@inheritDoc}
-     */
-    public void setProperty( Path nodePath, Name propertyName, Object... values ) {
-        ArgCheck.isNotNull(nodePath, "nodePath");
-        ArgCheck.isNotNull(propertyName, "property");
-        // Ignore the "jcr:name" property, as that's handled by the path ...
-        if (this.jcrName.equals(propertyName)) return;
+	/**
+	 * <p>
+	 * {@inheritDoc}
+	 * </p>
+	 *
+	 * @see org.jboss.dna.spi.sequencers.SequencerOutput#getNamespaceRegistry()
+	 */
+	public NamespaceRegistry getNamespaceRegistry() {
+		return factories.getNameFactory().getNamespaceRegistry();
+	}
 
-        // Find or create the entry for this node ...
-        List<PropertyValue> properties = this.data.get(nodePath);
-        if (properties == null) {
-            if (values == null || values.length == 0) return; // do nothing
-            properties = new ArrayList<PropertyValue>();
-            this.data.put(nodePath, properties);
-        }
-        if (values == null || values.length == 0) {
-            properties.remove(new PropertyValue(propertyName, null));
-        } else {
-            Object propValue = values.length == 1 ? values[0] : values;
-            PropertyValue value = new PropertyValue(propertyName, propValue);
-            properties.add(value);
-            valuesSorted = false;
-        }
-    }
+	/**
+	 * {@inheritDoc}
+	 */
+	public void setProperty( Path nodePath,
+	                         Name propertyName,
+	                         Object... values ) {
+		ArgCheck.isNotNull(nodePath, "nodePath");
+		ArgCheck.isNotNull(propertyName, "property");
+		// Ignore the "jcr:name" property, as that's handled by the path ...
+		if (this.jcrName.equals(propertyName)) return;
 
-    /**
-     * {@inheritDoc}
-     */
-    public void setProperty( String nodePath, String property, Object... values ) {
-        ArgCheck.isNotEmpty(nodePath, "nodePath");
-        ArgCheck.isNotEmpty(property, "property");
-        Path path = this.factories.getPathFactory().create(nodePath);
-        Name propertyName = this.factories.getNameFactory().create(property);
-        setProperty(path, propertyName, values);
-    }
+		// Find or create the entry for this node ...
+		List<PropertyValue> properties = this.data.get(nodePath);
+		if (properties == null) {
+			if (values == null || values.length == 0) return; // do nothing
+			properties = new ArrayList<PropertyValue>();
+			this.data.put(nodePath, properties);
+		}
+		if (values == null || values.length == 0) {
+			properties.remove(new PropertyValue(propertyName, null));
+		} else {
+			Object propValue = values.length == 1 ? values[0] : values;
+			PropertyValue value = new PropertyValue(propertyName, propValue);
+			properties.add(value);
+			valuesSorted = false;
+		}
+	}
 
-    /**
-     * {@inheritDoc}
-     */
-    public void setReference( String nodePath, String propertyName, String... paths ) {
-        PathFactory pathFactory = this.factories.getPathFactory();
-        Path path = pathFactory.create(nodePath);
-        Name name = this.factories.getNameFactory().create(propertyName);
-        Object[] values = null;
-        if (paths != null && paths.length != 0) {
-            values = new Path[paths.length];
-            for (int i = 0, len = paths.length; i != len; ++i) {
-                String pathValue = paths[i];
-                values[i] = pathFactory.create(pathValue);
-            }
-        }
-        setProperty(path, name, values);
-    }
+	/**
+	 * {@inheritDoc}
+	 */
+	public void setProperty( String nodePath,
+	                         String property,
+	                         Object... values ) {
+		ArgCheck.isNotEmpty(nodePath, "nodePath");
+		ArgCheck.isNotEmpty(property, "property");
+		Path path = this.factories.getPathFactory().create(nodePath);
+		Name propertyName = this.factories.getNameFactory().create(property);
+		setProperty(path, propertyName, values);
+	}
 
-    /**
-     * Return the number of node entries in this map.
-     * @return the number of entries
-     */
-    public int size() {
-        return this.data.size();
-    }
+	/**
+	 * {@inheritDoc}
+	 */
+	public void setReference( String nodePath,
+	                          String propertyName,
+	                          String... paths ) {
+		PathFactory pathFactory = this.factories.getPathFactory();
+		Path path = pathFactory.create(nodePath);
+		Name name = this.factories.getNameFactory().create(propertyName);
+		Object[] values = null;
+		if (paths != null && paths.length != 0) {
+			values = new Path[paths.length];
+			for (int i = 0, len = paths.length; i != len; ++i) {
+				String pathValue = paths[i];
+				values[i] = pathFactory.create(pathValue);
+			}
+		}
+		setProperty(path, name, values);
+	}
 
-    /**
-     * Return whether there are no entries
-     * @return true if this container is empty, or false otherwise
-     */
-    public boolean isEmpty() {
-        return this.data.isEmpty();
-    }
+	/**
+	 * Return the number of node entries in this map.
+	 *
+	 * @return the number of entries
+	 */
+	public int size() {
+		return this.data.size();
+	}
 
-    protected List<PropertyValue> removeProperties( Path nodePath ) {
-        return this.data.remove(nodePath);
-    }
+	/**
+	 * Return whether there are no entries
+	 *
+	 * @return true if this container is empty, or false otherwise
+	 */
+	public boolean isEmpty() {
+		return this.data.isEmpty();
+	}
 
-    /**
-     * Get the properties for the node given by the supplied path.
-     * @param nodePath the path to the node
-     * @return the property values, or null if there are none
-     */
-    protected List<PropertyValue> getProperties( Path nodePath ) {
-        return data.get(nodePath);
-    }
+	protected List<PropertyValue> removeProperties( Path nodePath ) {
+		return this.data.remove(nodePath);
+	}
 
-    /**
-     * Return the entries in this output in an order with shorter paths first.
-     * <p>
-     * {@inheritDoc}
-     */
-    public Iterator<Entry> iterator() {
-        LinkedList<Path> paths = new LinkedList<Path>(data.keySet());
-        Collections.sort(paths);
-        sortValues();
-        return new EntryIterator(paths.iterator());
-    }
+	/**
+	 * Get the properties for the node given by the supplied path.
+	 *
+	 * @param nodePath the path to the node
+	 * @return the property values, or null if there are none
+	 */
+	protected List<PropertyValue> getProperties( Path nodePath ) {
+		return data.get(nodePath);
+	}
 
-    protected void sortValues() {
-        if (!valuesSorted) {
-            for (List<PropertyValue> values : this.data.values()) {
-                if (values.size() > 1) Collections.sort(values);
-            }
-            valuesSorted = true;
-        }
-    }
+	/**
+	 * Return the entries in this output in an order with shorter paths first.
+	 * <p>
+	 * {@inheritDoc}
+	 */
+	public Iterator<Entry> iterator() {
+		LinkedList<Path> paths = new LinkedList<Path>(data.keySet());
+		Collections.sort(paths);
+		sortValues();
+		return new EntryIterator(paths.iterator());
+	}
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public String toString() {
-        return StringUtil.readableString(this.data);
-    }
+	protected void sortValues() {
+		if (!valuesSorted) {
+			for (List<PropertyValue> values : this.data.values()) {
+				if (values.size() > 1) Collections.sort(values);
+			}
+			valuesSorted = true;
+		}
+	}
 
-    /**
-     * A property name and value pair. PropertyValue instances have a natural order where the <code>jcr:primaryType</code> is
-     * first, followed by all other properties in ascending lexicographical order according to the {@link #getName() name}.
-     * @author Randall Hauch
-     */
-    @Immutable
-    public class PropertyValue implements Comparable<PropertyValue> {
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	public String toString() {
+		return StringUtil.readableString(this.data);
+	}
 
-        private final Name name;
-        private final Object value;
+	/**
+	 * A property name and value pair. PropertyValue instances have a natural order where the <code>jcr:primaryType</code> is
+	 * first, followed by all other properties in ascending lexicographical order according to the {@link #getName() name}.
+	 *
+	 * @author Randall Hauch
+	 */
+	@Immutable
+	public class PropertyValue implements Comparable<PropertyValue> {
 
-        protected PropertyValue( Name propertyName, Object value ) {
-            this.name = propertyName;
-            this.value = value;
-        }
+		private final Name name;
+		private final Object value;
 
-        /**
-         * Get the property name.
-         * @return the property name; never null
-         */
-        public Name getName() {
-            return this.name;
-        }
+		protected PropertyValue( Name propertyName,
+		                         Object value ) {
+			this.name = propertyName;
+			this.value = value;
+		}
 
-        /**
-         * Get the property value, which is either a single value or an array of values.
-         * @return the property value
-         */
-        public Object getValue() {
-            return this.value;
-        }
+		/**
+		 * Get the property name.
+		 *
+		 * @return the property name; never null
+		 */
+		public Name getName() {
+			return this.name;
+		}
 
-        /**
-         * {@inheritDoc}
-         */
-        public int compareTo( PropertyValue that ) {
-            if (this == that) return 0;
-            if (this.name.equals(JCR_PRIMARY_TYPE_PROPERTY_NAME)) return -1;
-            if (that.name.equals(JCR_PRIMARY_TYPE_PROPERTY_NAME)) return 1;
-            return this.name.compareTo(that.name);
-        }
+		/**
+		 * Get the property value, which is either a single value or an array of values.
+		 *
+		 * @return the property value
+		 */
+		public Object getValue() {
+			return this.value;
+		}
 
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public int hashCode() {
-            return this.name.hashCode();
-        }
+		/**
+		 * {@inheritDoc}
+		 */
+		public int compareTo( PropertyValue that ) {
+			if (this == that) return 0;
+			if (this.name.equals(NameFactory.JCR_PRIMARY_TYPE)) return -1;
+			if (that.name.equals(NameFactory.JCR_PRIMARY_TYPE)) return 1;
+			return this.name.compareTo(that.name);
+		}
 
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public boolean equals( Object obj ) {
-            if (obj == this) return true;
-            if (obj instanceof PropertyValue) {
-                PropertyValue that = (PropertyValue)obj;
-                if (!this.getName().equals(that.getName())) return false;
-                return true;
-            }
-            return false;
-        }
+		/**
+		 * {@inheritDoc}
+		 */
+		@Override
+		public int hashCode() {
+			return this.name.hashCode();
+		}
 
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public String toString() {
-            return "[" + this.name + "=" + StringUtil.readableString(value) + "]";
-        }
-    }
+		/**
+		 * {@inheritDoc}
+		 */
+		@Override
+		public boolean equals( Object obj ) {
+			if (obj == this) return true;
+			if (obj instanceof PropertyValue) {
+				PropertyValue that = (PropertyValue)obj;
+				if (!this.getName().equals(that.getName())) return false;
+				return true;
+			}
+			return false;
+		}
 
-    /**
-     * An entry in a SequencerOutputMap, which contains the path of the node and the {@link #getPropertyValues() property values}
-     * on the node.
-     * @author Randall Hauch
-     */
-    @Immutable
-    public class Entry {
+		/**
+		 * {@inheritDoc}
+		 */
+		@Override
+		public String toString() {
+			return "[" + this.name + "=" + StringUtil.readableString(value) + "]";
+		}
+	}
 
-        private final Path path;
-        private final Name primaryType;
-        private final List<PropertyValue> properties;
+	/**
+	 * An entry in a SequencerOutputMap, which contains the path of the node and the {@link #getPropertyValues() property values}
+	 * on the node.
+	 *
+	 * @author Randall Hauch
+	 */
+	@Immutable
+	public class Entry {
 
-        protected Entry( Path path, List<PropertyValue> properties ) {
-            assert path != null;
-            assert properties != null;
-            this.path = path;
-            this.properties = properties;
-            if (this.properties.size() > 0 && this.properties.get(0).getName().equals("jcr:primaryType")) {
-                PropertyValue primaryTypeProperty = this.properties.remove(0);
-                this.primaryType = getFactories().getNameFactory().create(primaryTypeProperty.getValue());
-            } else {
-                this.primaryType = null;
-            }
-        }
+		private final Path path;
+		private final Name primaryType;
+		private final List<PropertyValue> properties;
 
-        /**
-         * @return path
-         */
-        public Path getPath() {
-            return this.path;
-        }
+		protected Entry( Path path,
+		                 List<PropertyValue> properties ) {
+			assert path != null;
+			assert properties != null;
+			this.path = path;
+			this.properties = properties;
+			if (this.properties.size() > 0 && this.properties.get(0).getName().equals("jcr:primaryType")) {
+				PropertyValue primaryTypeProperty = this.properties.remove(0);
+				this.primaryType = getFactories().getNameFactory().create(primaryTypeProperty.getValue());
+			} else {
+				this.primaryType = null;
+			}
+		}
 
-        /**
-         * Get the primary type specified for this node, or null if the type was not specified
-         * @return the primary type, or null
-         */
-        public Name getPrimaryTypeValue() {
-            return this.primaryType;
-        }
+		/**
+		 * @return path
+		 */
+		public Path getPath() {
+			return this.path;
+		}
 
-        /**
-         * Get the property values, which may be empty
-         * @return value
-         */
-        public List<PropertyValue> getPropertyValues() {
-            return getProperties(path);
-        }
-    }
+		/**
+		 * Get the primary type specified for this node, or null if the type was not specified
+		 *
+		 * @return the primary type, or null
+		 */
+		public Name getPrimaryTypeValue() {
+			return this.primaryType;
+		}
 
-    protected class EntryIterator implements Iterator<Entry> {
+		/**
+		 * Get the property values, which may be empty
+		 *
+		 * @return value
+		 */
+		public List<PropertyValue> getPropertyValues() {
+			return getProperties(path);
+		}
+	}
 
-        private Path last;
-        private final Iterator<Path> iter;
+	protected class EntryIterator implements Iterator<Entry> {
 
-        protected EntryIterator( Iterator<Path> iter ) {
-            this.iter = iter;
-        }
+		private Path last;
+		private final Iterator<Path> iter;
 
-        /**
-         * {@inheritDoc}
-         */
-        public boolean hasNext() {
-            return iter.hasNext();
-        }
+		protected EntryIterator( Iterator<Path> iter ) {
+			this.iter = iter;
+		}
 
-        /**
-         * {@inheritDoc}
-         */
-        public Entry next() {
-            this.last = iter.next();
-            return new Entry(last, getProperties(last));
-        }
+		/**
+		 * {@inheritDoc}
+		 */
+		public boolean hasNext() {
+			return iter.hasNext();
+		}
 
-        /**
-         * {@inheritDoc}
-         */
-        public void remove() {
-            if (last == null) throw new IllegalStateException();
-            try {
-                removeProperties(last);
-            } finally {
-                last = null;
-            }
-        }
-    }
+		/**
+		 * {@inheritDoc}
+		 */
+		public Entry next() {
+			this.last = iter.next();
+			return new Entry(last, getProperties(last));
+		}
+
+		/**
+		 * {@inheritDoc}
+		 */
+		public void remove() {
+			if (last == null) throw new IllegalStateException();
+			try {
+				removeProperties(last);
+			} finally {
+				last = null;
+			}
+		}
+	}
 
 }
