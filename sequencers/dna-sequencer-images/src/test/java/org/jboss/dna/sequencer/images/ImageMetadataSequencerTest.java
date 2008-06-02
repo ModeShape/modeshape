@@ -2,7 +2,7 @@
  * JBoss, Home of Professional Open Source.
  * Copyright 2008, Red Hat Middleware LLC, and individual contributors
  * as indicated by the @author tags. See the copyright.txt file in the
- * distribution for a full listing of individual contributors. 
+ * distribution for a full listing of individual contributors.
  *
  * This is free software; you can redistribute it and/or modify it
  * under the terms of the GNU Lesser General Public License as
@@ -30,9 +30,6 @@ import java.io.InputStream;
 import java.net.URL;
 import org.jboss.dna.common.monitor.ProgressMonitor;
 import org.jboss.dna.common.monitor.SimpleProgressMonitor;
-import org.jboss.dna.spi.graph.NamespaceRegistry;
-import org.jboss.dna.spi.graph.impl.BasicNamespaceRegistry;
-import org.jboss.dna.spi.graph.impl.StandardValueFactories;
 import org.jboss.dna.spi.sequencers.MockSequencerOutput;
 import org.junit.After;
 import org.junit.Before;
@@ -55,12 +52,8 @@ public class ImageMetadataSequencerTest {
     @Before
     public void beforeEach() throws Exception {
         this.sequencer = new ImageMetadataSequencer();
-        NamespaceRegistry registry = new BasicNamespaceRegistry();
-        registry.register("image", "http://jboss.org/dna/images/1.0");
-        registry.register("jcr", "http://www.jcp.org/jcr/1.0");
-        registry.register("nt", "http://www.jcp.org/jcr/nt/1.0");
-        registry.register("mix", "http://www.jcp.org/jcr/mix/1.0");
-        this.output = new MockSequencerOutput(new StandardValueFactories(registry));
+        this.output = new MockSequencerOutput();
+		output.getNamespaceRegistry().register("image", "http://jboss.org/dna/images/1.0");
         this.progress = new SimpleProgressMonitor("Test activity");
         this.cautionGif = this.getClass().getClassLoader().getResource("caution.gif");
         this.cautionJpg = this.getClass().getClassLoader().getResource("caution.jpg");
