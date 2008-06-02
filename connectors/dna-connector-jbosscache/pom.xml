@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>org.jboss.dna</groupId>
+    <artifactId>dna</artifactId>
+    <version>0.2-SNAPSHOT</version>
+    <relativePath>../..</relativePath>
+  </parent>
+  <!-- The groupId and version values are inherited from parent -->
+  <artifactId>dna-connector-jbosscache</artifactId>
+  <packaging>jar</packaging>
+  <name>JBoss DNA Connector to JBoss Cache</name>
+  <description>JBoss DNA Connector that accesses an in-process JBoss Cache instance.</description>
+  <url>http://labs.jboss.org/dna</url>
+  
+  <properties>
+    <dna-version>0.2-SNAPSHOT</dna-version>
+  </properties>
+  <!--
+  Define the dependencies.  Note that all version and scopes default to those 
+  defined in the dependencyManagement section of the parent pom.
+  -->
+  <dependencies>
+    <!-- 
+    Common
+    -->
+    <dependency>
+      <groupId>org.jboss.dna</groupId>
+      <artifactId>dna-common</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.jboss.dna</groupId>
+      <artifactId>dna-spi</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.jboss.dna</groupId>
+      <artifactId>dna-common</artifactId>
+      <version>${dna-version}</version>
+      <type>test-jar</type>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.jboss.dna</groupId>
+      <artifactId>dna-spi</artifactId>
+      <version>${dna-version}</version>
+      <type>test-jar</type>
+      <scope>test</scope>
+    </dependency>
+    <!-- 
+    JBoss Cache
+    -->
+    <dependency>
+      <groupId>org.jboss.cache</groupId>
+      <artifactId>jbosscache-core</artifactId>
+      <version>2.2.0.CR1</version>
+    </dependency>
+    <!-- 
+    Testing (note the scope)
+    -->
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.hamcrest</groupId>
+      <artifactId>hamcrest-library</artifactId>
+    </dependency>
+    <!-- 
+    Logging (require SLF4J API for compiling, but use Log4J and its SLF4J binding for testing) 
+    -->
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-log4j12</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>log4j</groupId>
+      <artifactId>log4j</artifactId>
+    </dependency>
+    <!-- 
+    Java Concurrency in Practice annotations
+    -->
+  <dependency>
+    <groupId>net.jcip</groupId>
+    <artifactId>jcip-annotations</artifactId>
+  </dependency>
+  </dependencies>
+  <reporting>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-report-plugin</artifactId>
+      </plugin>
+    </plugins>
+  </reporting>
+</project>

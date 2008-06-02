@@ -95,15 +95,7 @@ public class ObservationService implements AdministeredService {
     protected class Administrator extends AbstractServiceAdministrator {
 
         protected Administrator() {
-            super(State.STARTED);
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        protected String serviceName() {
-            return "ObservationService";
+            super(RepositoryI18n.observationServiceName, State.STARTED);
         }
 
         /**

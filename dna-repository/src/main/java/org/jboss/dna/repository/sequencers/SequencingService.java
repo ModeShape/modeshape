@@ -149,15 +149,7 @@ public class SequencingService implements AdministeredService, NodeChangeListene
     protected class Administrator extends AbstractServiceAdministrator {
 
         protected Administrator() {
-            super(State.PAUSED);
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        protected String serviceName() {
-            return RepositoryI18n.sequencingServiceName.text();
+            super(RepositoryI18n.sequencingServiceName, State.PAUSED);
         }
 
         /**

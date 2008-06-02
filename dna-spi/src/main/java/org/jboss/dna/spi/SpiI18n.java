@@ -51,6 +51,11 @@ public final class SpiI18n {
 
     public static I18n invalidQualifiedNameString;
 
+    public static I18n maximumPoolSizeMayNotBeSmallerThanCorePoolSize;
+    public static I18n repositoryConnectionPoolIsNotRunning;
+    public static I18n unableToObtainValidRepositoryAfterAttempts;
+    public static I18n closedConnectionMayNotBeUsed;
+
     static {
         try {
             I18n.initialize(SpiI18n.class);

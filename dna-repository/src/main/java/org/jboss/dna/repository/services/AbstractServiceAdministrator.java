@@ -21,9 +21,11 @@
  */
 package org.jboss.dna.repository.services;
 
-import org.jboss.dna.repository.RepositoryI18n;
+import java.util.Locale;
 import net.jcip.annotations.GuardedBy;
 import net.jcip.annotations.ThreadSafe;
+import org.jboss.dna.common.i18n.I18n;
+import org.jboss.dna.repository.RepositoryI18n;
 
 /**
  * Simple abstract implementation of the service administrator interface that can be easily subclassed by services that require an
@@ -34,10 +36,13 @@ import net.jcip.annotations.ThreadSafe;
 public abstract class AbstractServiceAdministrator implements ServiceAdministrator {
 
     private volatile State state;
+    private final I18n serviceName;
 
-    protected AbstractServiceAdministrator( State initialState ) {
+    protected AbstractServiceAdministrator( I18n serviceName, State initialState ) {
         assert initialState != null;
+        assert serviceName != null;
         this.state = initialState;
+        this.serviceName = serviceName;
     }
 
     /**
@@ -102,7 +107,7 @@ public abstract class AbstractServiceAdministrator implements ServiceAdministrat
      * @see #isStarted()
      */
     public synchronized ServiceAdministrator start() {
-        if (isShutdown()) throw new IllegalStateException(RepositoryI18n.serviceShutdowAndMayNotBeStarted.text(serviceName()));
+        if (isShutdown()) throw new IllegalStateException(RepositoryI18n.serviceShutdowAndMayNotBeStarted.text(getServiceName()));
         if (this.state != State.STARTED) {
             doStart(this.state);
             this.state = State.STARTED;
@@ -131,7 +136,7 @@ public abstract class AbstractServiceAdministrator implements ServiceAdministrat
      * @see #isPaused()
      */
     public synchronized ServiceAdministrator pause() {
-        if (isShutdown()) throw new IllegalStateException(RepositoryI18n.serviceShutdowAndMayNotBePaused.text(serviceName()));
+        if (isShutdown()) throw new IllegalStateException(RepositoryI18n.serviceShutdowAndMayNotBePaused.text(getServiceName()));
         if (this.state != State.PAUSED) {
             doPause(this.state);
             this.state = State.PAUSED;
@@ -212,5 +217,20 @@ public abstract class AbstractServiceAdministrator implements ServiceAdministrat
         return this.state == State.SHUTDOWN;
     }
 
-    protected abstract String serviceName();
+    /**
+     * Get the name of this service in the current locale.
+     * @return the service name
+     */
+    public String getServiceName() {
+        return this.serviceName.text();
+    }
+
+    /**
+     * Get the name of this service in the specified locale.
+     * @param locale the locale in which the service name is to be returned; may be null if the default locale is to be used
+     * @return the service name
+     */
+    public String getServiceName( Locale locale ) {
+        return this.serviceName.text(locale);
+    }
 }

@@ -60,6 +60,10 @@ public final class RepositoryI18n {
     public static I18n errorObtainingSessionToRepositoryWorkspace;
     public static I18n errorWritingProblemsOnRuleSet;
 
+    public static I18n federationServiceName;
+    public static I18n observationServiceName;
+    public static I18n ruleServiceName;
+
     public static I18n sequencingServiceName;
     public static I18n unableToChangeExecutionContextWhileRunning;
     public static I18n unableToStartSequencingServiceWithoutExecutionContext;

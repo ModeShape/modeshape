@@ -84,15 +84,7 @@ public class RuleService implements AdministeredService {
     protected class Administrator extends AbstractServiceAdministrator {
 
         protected Administrator() {
-            super(State.PAUSED);
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        protected String serviceName() {
-            return "RuleService";
+            super(RepositoryI18n.ruleServiceName, State.PAUSED);
         }
 
         /**

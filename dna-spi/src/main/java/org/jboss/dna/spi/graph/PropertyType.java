@@ -24,6 +24,7 @@ package org.jboss.dna.spi.graph;
 import java.math.BigDecimal;
 import java.net.URI;
 import java.util.Comparator;
+import java.util.Iterator;
 import net.jcip.annotations.Immutable;
 import org.jboss.dna.spi.SpiI18n;
 
@@ -68,8 +69,23 @@ public enum PropertyType {
         return this.comparator;
     }
 
-    public boolean isInstance( Object value ) {
+    public boolean isTypeFor( Object value ) {
         return this.valueClass.isInstance(value);
+    }
+
+    public boolean isTypeForEach( Iterable<?> values ) {
+        for (Object value : values) {
+            if (!this.valueClass.isInstance(value)) return false;
+        }
+        return true;
+    }
+
+    public boolean isTypeForEach( Iterator<?> values ) {
+        while (values.hasNext()) {
+            Object value = values.next();
+            if (!this.valueClass.isInstance(value)) return false;
+        }
+        return true;
     }
 
     public static PropertyType discoverType( Object value ) {
@@ -78,7 +94,7 @@ public enum PropertyType {
         }
         for (PropertyType type : PropertyType.values()) {
             if (type == OBJECT) continue;
-            if (type.isInstance(value)) return type;
+            if (type.isTypeFor(value)) return type;
         }
         return OBJECT;
     }
