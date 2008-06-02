@@ -2,7 +2,7 @@
  * JBoss, Home of Professional Open Source.
  * Copyright 2008, Red Hat Middleware LLC, and individual contributors
  * as indicated by the @author tags. See the copyright.txt file in the
- * distribution for a full listing of individual contributors. 
+ * distribution for a full listing of individual contributors.
  *
  * This is free software; you can redistribute it and/or modify it
  * under the terms of the GNU Lesser General Public License as
@@ -325,4 +325,9 @@ public class StreamSequencerAdapterTest extends AbstractJcrRepositoryTest {
         assertThat(session.getRootNode().getNode("x/y/z/alpha/beta").getProperty("isSomething").getBoolean(), is(true));
         assertThat(session.getRootNode().getNode("x/z/alpha/beta").getProperty("isSomething").getBoolean(), is(true));
     }
+
+    @Test
+	public void shouldSequencerOutputProvideAccessToNamespaceRegistry() {
+		assertThat(sequencerOutput.getNamespaceRegistry(), notNullValue());
+	}
 }
