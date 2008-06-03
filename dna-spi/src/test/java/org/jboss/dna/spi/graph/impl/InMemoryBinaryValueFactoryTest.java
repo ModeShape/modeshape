@@ -56,13 +56,13 @@ public class InMemoryBinaryValueFactoryTest {
     @Before
     public void setUp() throws Exception {
         encoder = Path.URL_ENCODER;
-        stringFactory = new StringValueFactory(encoder);
-        factory = new InMemoryBinaryValueFactory(encoder, stringFactory);
+        stringFactory = new StringValueFactory(Path.URL_DECODER, encoder);
+        factory = new InMemoryBinaryValueFactory(Path.URL_DECODER, stringFactory);
         namespaceRegistry = new BasicNamespaceRegistry();
         namespaceRegistry.register("jboss", "http://www.jboss.org");
         namespaceRegistry.register("dna", "http://www.jboss.org/dna");
-        nameFactory = new NameValueFactory(namespaceRegistry, encoder, stringFactory);
-        pathFactory = new PathValueFactory(encoder, stringFactory, nameFactory);
+        nameFactory = new NameValueFactory(namespaceRegistry, Path.URL_DECODER, stringFactory);
+        pathFactory = new PathValueFactory(Path.URL_DECODER, stringFactory, nameFactory);
     }
 
     @Test

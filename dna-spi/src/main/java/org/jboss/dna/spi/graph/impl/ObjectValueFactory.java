@@ -29,7 +29,7 @@ import java.net.URI;
 import java.util.Calendar;
 import java.util.Date;
 import net.jcip.annotations.Immutable;
-import org.jboss.dna.common.text.TextEncoder;
+import org.jboss.dna.common.text.TextDecoder;
 import org.jboss.dna.common.util.ArgCheck;
 import org.jboss.dna.spi.graph.Binary;
 import org.jboss.dna.spi.graph.Name;
@@ -41,6 +41,7 @@ import org.jboss.dna.spi.graph.ValueFormatException;
 
 /**
  * The standard {@link ValueFactory} for {@link PropertyType#OBJECT} values.
+ * 
  * @author Randall Hauch
  */
 @Immutable
@@ -48,8 +49,8 @@ public class ObjectValueFactory extends AbstractValueFactory<Object> {
 
     private final ValueFactory<Binary> binaryValueFactory;
 
-    public ObjectValueFactory( TextEncoder encoder, ValueFactory<String> stringValueFactory, ValueFactory<Binary> binaryValueFactory ) {
-        super(PropertyType.OBJECT, encoder, stringValueFactory);
+    public ObjectValueFactory( TextDecoder decoder, ValueFactory<String> stringValueFactory, ValueFactory<Binary> binaryValueFactory ) {
+        super(PropertyType.OBJECT, decoder, stringValueFactory);
         ArgCheck.isNotNull(binaryValueFactory, "binaryValueFactory");
         this.binaryValueFactory = binaryValueFactory;
     }
@@ -71,7 +72,7 @@ public class ObjectValueFactory extends AbstractValueFactory<Object> {
     /**
      * {@inheritDoc}
      */
-    public Object create( String value, TextEncoder decoder ) {
+    public Object create( String value, TextDecoder decoder ) {
         return this.getStringValueFactory().create(value, decoder);
     }
 

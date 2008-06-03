@@ -28,7 +28,6 @@ import java.io.StringReader;
 import java.net.URI;
 import java.util.Calendar;
 import java.util.Date;
-import org.jboss.dna.common.text.TextEncoder;
 import org.jboss.dna.spi.graph.Name;
 import org.jboss.dna.spi.graph.Path;
 import org.jboss.dna.spi.graph.Reference;
@@ -51,9 +50,8 @@ public class BooleanValueFactoryTest {
      */
     @Before
     public void setUp() throws Exception {
-        TextEncoder encoder = Path.URL_ENCODER;
-        stringFactory = new StringValueFactory(encoder);
-        factory = new BooleanValueFactory(encoder, stringFactory);
+        stringFactory = new StringValueFactory(Path.URL_DECODER, Path.DEFAULT_ENCODER);
+        factory = new BooleanValueFactory(Path.URL_DECODER, stringFactory);
         context = new Mockery();
     }
 

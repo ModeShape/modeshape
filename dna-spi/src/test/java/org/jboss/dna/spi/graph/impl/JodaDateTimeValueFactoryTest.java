@@ -28,7 +28,6 @@ import java.io.StringReader;
 import java.math.BigDecimal;
 import java.net.URI;
 import java.util.Calendar;
-import org.jboss.dna.common.text.TextEncoder;
 import org.jboss.dna.spi.graph.DateTime;
 import org.jboss.dna.spi.graph.Name;
 import org.jboss.dna.spi.graph.Path;
@@ -61,9 +60,8 @@ public class JodaDateTimeValueFactoryTest {
      */
     @Before
     public void setUp() throws Exception {
-        TextEncoder encoder = Path.URL_ENCODER;
-        stringFactory = new StringValueFactory(encoder);
-        factory = new JodaDateTimeValueFactory(encoder, stringFactory);
+        stringFactory = new StringValueFactory(Path.URL_DECODER, Path.URL_ENCODER);
+        factory = new JodaDateTimeValueFactory(Path.URL_DECODER, stringFactory);
         context = new Mockery();
     }
 

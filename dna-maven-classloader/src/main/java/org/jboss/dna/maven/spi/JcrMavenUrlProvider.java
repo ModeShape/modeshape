@@ -52,6 +52,7 @@ import javax.jcr.lock.LockException;
 import javax.jcr.nodetype.ConstraintViolationException;
 import javax.jcr.nodetype.NoSuchNodeTypeException;
 import javax.jcr.version.VersionException;
+import org.jboss.dna.common.text.TextDecoder;
 import org.jboss.dna.common.text.TextEncoder;
 import org.jboss.dna.common.text.UrlEncoder;
 import org.jboss.dna.common.util.Logger;
@@ -96,12 +97,22 @@ public class JcrMavenUrlProvider extends AbstractMavenUrlProvider {
     public static final String CONTENT_PROPERTY_NAME = "jcr:data";
 
     private final URLStreamHandler urlStreamHandler = new JcrUrlStreamHandler();
-    private final TextEncoder urlEncoder = new UrlEncoder().setSlashEncoded(false);
+    private final TextEncoder urlEncoder;
+    private final TextDecoder urlDecoder;
     private Repository repository;
     private String workspaceName;
     private Credentials credentials;
     private String pathToTopOfRepository = DEFAULT_PATH_TO_TOP_OF_MAVEN_REPOSITORY;
     private final Logger logger = Logger.getLogger(JcrMavenUrlProvider.class);
+
+    /**
+     * 
+     */
+    public JcrMavenUrlProvider() {
+        UrlEncoder encoder = new UrlEncoder().setSlashEncoded(false);
+        this.urlEncoder = encoder;
+        this.urlDecoder = encoder;
+    }
 
     /**
      * {@inheritDoc}
@@ -163,6 +174,7 @@ public class JcrMavenUrlProvider extends AbstractMavenUrlProvider {
 
     /**
      * Get the JCR repository used by this provider
+     * 
      * @return the repository instance
      */
     public Repository getRepository() {
@@ -267,6 +279,7 @@ public class JcrMavenUrlProvider extends AbstractMavenUrlProvider {
     /**
      * Get the JRC path to the node in this repository and it's workspace that represents the artifact with the given type in the
      * supplied Maven project.
+     * 
      * @param mavenId the ID of the Maven project; may not be null
      * @param artifactType the type of artifact; may be null
      * @param signatureType the type of signature; may be null if the signature file is not desired
@@ -302,6 +315,10 @@ public class JcrMavenUrlProvider extends AbstractMavenUrlProvider {
         return this.urlEncoder;
     }
 
+    protected TextDecoder getUrlDecoder() {
+        return this.urlDecoder;
+    }
+
     protected Session createSession() throws LoginException, NoSuchWorkspaceException, RepositoryException {
         if (this.workspaceName != null) {
             if (this.credentials != null) {
@@ -319,6 +336,7 @@ public class JcrMavenUrlProvider extends AbstractMavenUrlProvider {
      * Obtain an input stream to the existing content at the location given by the supplied {@link MavenUrl}. The Maven URL
      * should have a path that points to the node where the content is stored in the
      * {@link #getContentProperty() content property}.
+     * 
      * @param mavenUrl the Maven URL to the content; may not be null
      * @return the input stream to the content, or null if there is no existing content
      * @throws IOException
@@ -354,6 +372,7 @@ public class JcrMavenUrlProvider extends AbstractMavenUrlProvider {
      * Obtain an output stream to the existing content at the location given by the supplied {@link MavenUrl}. The Maven URL
      * should have a path that points to the property or to the node where the content is stored in the
      * {@link #getContentProperty() content property}.
+     * 
      * @param mavenUrl the Maven URL to the content; may not be null
      * @return the input stream to the content, or null if there is no existing content
      * @throws IOException
@@ -513,6 +532,7 @@ public class JcrMavenUrlProvider extends AbstractMavenUrlProvider {
     /**
      * This {@link URLStreamHandler} specialization understands {@link URL URLs} that point to content in the JCR repository used
      * by this Maven repository.
+     * 
      * @author Randall Hauch
      */
     protected class JcrUrlStreamHandler extends URLStreamHandler {
@@ -535,6 +555,7 @@ public class JcrMavenUrlProvider extends AbstractMavenUrlProvider {
      * Each JcrUrlConnection is used to make a single request to read or write the <code>jcr:content</code> property value on
      * the {@link javax.jcr.Node node} that corresponds to the given URL. The node must already exist.
      * </p>
+     * 
      * @author Randall Hauch
      */
     protected class MavenUrlConnection extends URLConnection {
@@ -548,7 +569,7 @@ public class JcrMavenUrlProvider extends AbstractMavenUrlProvider {
          */
         protected MavenUrlConnection( URL url ) {
             super(url);
-            this.mavenUrl = MavenUrl.parse(url, JcrMavenUrlProvider.this.getUrlEncoder());
+            this.mavenUrl = MavenUrl.parse(url, JcrMavenUrlProvider.this.getUrlDecoder());
         }
 
         /**

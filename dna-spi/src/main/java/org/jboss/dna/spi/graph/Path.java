@@ -27,6 +27,7 @@ import java.util.List;
 import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.text.Jsr283Encoder;
 import org.jboss.dna.common.text.NoOpEncoder;
+import org.jboss.dna.common.text.TextDecoder;
 import org.jboss.dna.common.text.TextEncoder;
 import org.jboss.dna.common.text.UrlEncoder;
 import org.jboss.dna.spi.graph.impl.BasicName;
@@ -73,409 +74,425 @@ import org.jboss.dna.spi.graph.impl.BasicPathSegment;
 @Immutable
 public interface Path extends Comparable<Path>, Iterable<Path.Segment>, Serializable {
 
-	/**
-	 * The text encoder that does nothing.
-	 */
-	public static final TextEncoder NO_OP_ENCODER = new NoOpEncoder();
+    /**
+     * The text encoder that does nothing.
+     */
+    public static final TextEncoder NO_OP_ENCODER = new NoOpEncoder();
 
-	/**
-	 * The text encoder that encodes and decodes according to JSR-283.
-	 */
-	public static final TextEncoder JSR283_ENCODER = new Jsr283Encoder();
+    /**
+     * The text encoder that encodes according to JSR-283.
+     */
+    public static final TextEncoder JSR283_ENCODER = new Jsr283Encoder();
 
-	/**
-	 * The text encoder that encodes and decodes text according to the rules of <a href="http://www.ietf.org/rfc/rfc2396.txt">RFC
-	 * 2396</a>.
-	 */
-	public static final TextEncoder URL_ENCODER = new UrlEncoder().setSlashEncoded(true);
+    /**
+     * The text encoder that encodes text according to the rules of <a href="http://www.ietf.org/rfc/rfc2396.txt">RFC 2396</a>.
+     */
+    public static final TextEncoder URL_ENCODER = new UrlEncoder().setSlashEncoded(true);
 
-	/**
-	 * The default text encoder to be used when none is otherwise specified. This is currently the
-	 * {@link #JSR283_ENCODER JSR-283 encoder}.
-	 */
-	public static final TextEncoder DEFAULT_ENCODER = JSR283_ENCODER;
+    /**
+     * The text decoder that does nothing.
+     */
+    public static final TextDecoder NO_OP_DECODER = new NoOpEncoder();
 
-	/**
-	 * The delimiter character used to separate segments within a path.
-	 */
-	public static final char DELIMITER = '/';
+    /**
+     * The text decoder that decodes according to JSR-283.
+     */
+    public static final TextDecoder JSR283_DECODER = new Jsr283Encoder();
 
-	/**
-	 * String form of the delimiter used to separate segments within a path.
-	 */
-	public static final String DELIMITER_STR = new String(new char[] {DELIMITER});
+    /**
+     * The text decoder that decodes text according to the rules of <a href="http://www.ietf.org/rfc/rfc2396.txt">RFC 2396</a>.
+     */
+    public static final TextDecoder URL_DECODER = new UrlEncoder().setSlashEncoded(true);
 
-	/**
-	 * String representation of the segment that references a parent.
-	 */
-	public static final String PARENT = "..";
+    /**
+     * The default text encoder to be used when none is otherwise specified. This is currently the
+     * {@link #JSR283_ENCODER JSR-283 encoder}.
+     */
+    public static final TextEncoder DEFAULT_ENCODER = JSR283_ENCODER;
 
-	/**
-	 * String representation of the segment that references the same segment.
-	 */
-	public static final String SELF = ".";
+    /**
+     * The default text decoder to be used when none is otherwise specified. This is currently the
+     * {@link #JSR283_ENCODER JSR-283 encoder}.
+     */
+    public static final TextDecoder DEFAULT_DECODER = JSR283_DECODER;
 
-	/**
-	 * The index that will be returned for a {@link Segment} that {@link Segment#hasIndex() has no index}.
-	 */
-	public static final int NO_INDEX = -1;
+    /**
+     * The delimiter character used to separate segments within a path.
+     */
+    public static final char DELIMITER = '/';
 
-	/**
-	 * Representation of the segments that occur within a path.
-	 *
-	 * @author Randall Hauch
-	 */
-	@Immutable
-	public static interface Segment extends Cloneable, Comparable<Segment>, Serializable {
+    /**
+     * String form of the delimiter used to separate segments within a path.
+     */
+    public static final String DELIMITER_STR = new String(new char[] {DELIMITER});
 
-		/**
-		 * Get the name component of this segment.
-		 *
-		 * @return the segment's name
-		 */
-		public Name getName();
+    /**
+     * String representation of the segment that references a parent.
+     */
+    public static final String PARENT = "..";
 
-		/**
-		 * Get the index for this segment, which will be {@link Path#NO_INDEX 0} if this segment has no specific index.
-		 *
-		 * @return the index
-		 */
-		public int getIndex();
+    /**
+     * String representation of the segment that references the same segment.
+     */
+    public static final String SELF = ".";
 
-		/**
-		 * Return whether this segment has an index.
-		 *
-		 * @return true if this segment has an index, or false otherwise.
-		 */
-		public boolean hasIndex();
+    /**
+     * The index that will be returned for a {@link Segment} that {@link Segment#hasIndex() has no index}.
+     */
+    public static final int NO_INDEX = -1;
 
-		/**
-		 * Return whether this segment is a self-reference.
-		 *
-		 * @return true if the segment is a self-reference, or false otherwise.
-		 */
-		public boolean isSelfReference();
+    /**
+     * Representation of the segments that occur within a path.
+     * 
+     * @author Randall Hauch
+     */
+    @Immutable
+    public static interface Segment extends Cloneable, Comparable<Segment>, Serializable {
 
-		/**
-		 * Return whether this segment is a reference to a parent.
-		 *
-		 * @return true if the segment is a parent-reference, or false otherwise.
-		 */
-		public boolean isParentReference();
+        /**
+         * Get the name component of this segment.
+         * 
+         * @return the segment's name
+         */
+        public Name getName();
 
-		/**
-		 * Get the string form of the segment. The {@link #DEFAULT_ENCODER default encoder} is used to encode characters in each
-		 * of the path segments.
-		 *
-		 * @return the encoded string
-		 * @see #getString(TextEncoder)
-		 */
-		public String getString();
+        /**
+         * Get the index for this segment, which will be {@link Path#NO_INDEX 0} if this segment has no specific index.
+         * 
+         * @return the index
+         */
+        public int getIndex();
 
-		/**
-		 * Get the encoded string form of the segment, using the supplied encoder to encode characters in each of the path
-		 * segments.
-		 *
-		 * @param encoder the encoder to use, or null if the {@link #DEFAULT_ENCODER default encoder} should be used
-		 * @return the encoded string
-		 * @see #getString()
-		 */
-		public String getString( TextEncoder encoder );
+        /**
+         * Return whether this segment has an index.
+         * 
+         * @return true if this segment has an index, or false otherwise.
+         */
+        public boolean hasIndex();
 
-		/**
-		 * Get the string form of the segment, using the supplied namespace registry to convert the name's namespace URI to a
-		 * prefix. The {@link #DEFAULT_ENCODER default encoder} is used to encode characters in each of the path segments.
-		 *
-		 * @param namespaceRegistry the namespace registry that should be used to obtain the prefix for the
-		 *        {@link Name#getNamespaceUri() namespace URI} in the segment's {@link #getName() name}
-		 * @return the encoded string
-		 * @throws IllegalArgumentException if the namespace registry is null
-		 * @see #getString(NamespaceRegistry,TextEncoder)
-		 */
-		public String getString( NamespaceRegistry namespaceRegistry );
+        /**
+         * Return whether this segment is a self-reference.
+         * 
+         * @return true if the segment is a self-reference, or false otherwise.
+         */
+        public boolean isSelfReference();
 
-		/**
-		 * Get the encoded string form of the segment, using the supplied namespace registry to convert the name's namespace URI
-		 * to a prefix and the supplied encoder to encode characters in each of the path segments.
-		 *
-		 * @param namespaceRegistry the namespace registry that should be used to obtain the prefix for the
-		 *        {@link Name#getNamespaceUri() namespace URI} in the segment's {@link #getName() name}
-		 * @param encoder the encoder to use, or null if the {@link #DEFAULT_ENCODER default encoder} should be used
-		 * @return the encoded string
-		 * @throws IllegalArgumentException if the namespace registry is null
-		 * @see #getString(NamespaceRegistry)
-		 */
-		public String getString( NamespaceRegistry namespaceRegistry,
-		                         TextEncoder encoder );
-	}
+        /**
+         * Return whether this segment is a reference to a parent.
+         * 
+         * @return true if the segment is a parent-reference, or false otherwise.
+         */
+        public boolean isParentReference();
 
-	/**
-	 * Singleton instance of the name referencing a self, provided as a convenience.
-	 */
-	public static final Name SELF_NAME = new BasicName(null, SELF);
+        /**
+         * Get the string form of the segment. The {@link #DEFAULT_ENCODER default encoder} is used to encode characters in each
+         * of the path segments.
+         * 
+         * @return the encoded string
+         * @see #getString(TextEncoder)
+         */
+        public String getString();
 
-	/**
-	 * Singleton instance of the name referencing a parent, provided as a convenience.
-	 */
-	public static final Name PARENT_NAME = new BasicName(null, PARENT);
+        /**
+         * Get the encoded string form of the segment, using the supplied encoder to encode characters in each of the path
+         * segments.
+         * 
+         * @param encoder the encoder to use, or null if the {@link #DEFAULT_ENCODER default encoder} should be used
+         * @return the encoded string
+         * @see #getString()
+         */
+        public String getString( TextEncoder encoder );
 
-	/**
-	 * Singleton instance of the path segment referencing a parent, provided as a convenience.
-	 */
-	public static final Path.Segment SELF_SEGMENT = new BasicPathSegment(SELF_NAME);
+        /**
+         * Get the string form of the segment, using the supplied namespace registry to convert the name's namespace URI to a
+         * prefix. The {@link #DEFAULT_ENCODER default encoder} is used to encode characters in each of the path segments.
+         * 
+         * @param namespaceRegistry the namespace registry that should be used to obtain the prefix for the
+         * {@link Name#getNamespaceUri() namespace URI} in the segment's {@link #getName() name}
+         * @return the encoded string
+         * @throws IllegalArgumentException if the namespace registry is null
+         * @see #getString(NamespaceRegistry,TextEncoder)
+         */
+        public String getString( NamespaceRegistry namespaceRegistry );
 
-	/**
-	 * Singleton instance of the path segment referencing a parent, provided as a convenience.
-	 */
-	public static final Path.Segment PARENT_SEGMENT = new BasicPathSegment(PARENT_NAME);
+        /**
+         * Get the encoded string form of the segment, using the supplied namespace registry to convert the name's namespace URI
+         * to a prefix and the supplied encoder to encode characters in each of the path segments.
+         * 
+         * @param namespaceRegistry the namespace registry that should be used to obtain the prefix for the
+         * {@link Name#getNamespaceUri() namespace URI} in the segment's {@link #getName() name}
+         * @param encoder the encoder to use, or null if the {@link #DEFAULT_ENCODER default encoder} should be used
+         * @return the encoded string
+         * @throws IllegalArgumentException if the namespace registry is null
+         * @see #getString(NamespaceRegistry)
+         */
+        public String getString( NamespaceRegistry namespaceRegistry, TextEncoder encoder );
+    }
 
-	/**
-	 * Return the number of segments in this path.
-	 *
-	 * @return the number of path segments
-	 */
-	public int size();
+    /**
+     * Singleton instance of the name referencing a self, provided as a convenience.
+     */
+    public static final Name SELF_NAME = new BasicName(null, SELF);
 
-	/**
-	 * Return whether this path represents the root path.
-	 *
-	 * @return true if this path is the root path, or false otherwise
-	 */
-	public boolean isRoot();
+    /**
+     * Singleton instance of the name referencing a parent, provided as a convenience.
+     */
+    public static final Name PARENT_NAME = new BasicName(null, PARENT);
 
-	/**
-	 * Determine whether this path represents the same as the supplied path. This is equivalent to calling
-	 * <code>this.compareTo(other) == 0 </code>.
-	 *
-	 * @param other the other path to compare with this path
-	 * @return true if the paths are equivalent, or false otherwise
-	 */
-	public boolean isSame( Path other );
+    /**
+     * Singleton instance of the path segment referencing a parent, provided as a convenience.
+     */
+    public static final Path.Segment SELF_SEGMENT = new BasicPathSegment(SELF_NAME);
 
-	/**
-	 * Determine whether this path is an ancestor of the supplied path. A path is considered an ancestor of another path if the
-	 * the ancestor path appears in its entirety at the beginning of the decendant path, and where the decendant path contains at
-	 * least one additional segment.
-	 *
-	 * @param decendant the path that may be the decendant
-	 * @return true if this path is an ancestor of the supplied path, or false otherwise
-	 */
-	public boolean isAncestorOf( Path decendant );
+    /**
+     * Singleton instance of the path segment referencing a parent, provided as a convenience.
+     */
+    public static final Path.Segment PARENT_SEGMENT = new BasicPathSegment(PARENT_NAME);
 
-	/**
-	 * Determine whether this path is an decendant of the supplied path. A path is considered a decendant of another path if the
-	 * the decendant path starts exactly with the entire ancestor path but contains at least one additional segment.
-	 *
-	 * @param ancestor the path that may be the ancestor
-	 * @return true if this path is an decendant of the supplied path, or false otherwise
-	 */
-	public boolean isDecendantOf( Path ancestor );
+    /**
+     * Return the number of segments in this path.
+     * 
+     * @return the number of path segments
+     */
+    public int size();
 
-	/**
-	 * Return whether this path is an absolute path. A path is either relative or {@link #isAbsolute() absolute}. An absolute
-	 * path starts with a "/".
-	 *
-	 * @return true if the path is absolute, or false otherwise
-	 */
-	public boolean isAbsolute();
+    /**
+     * Return whether this path represents the root path.
+     * 
+     * @return true if this path is the root path, or false otherwise
+     */
+    public boolean isRoot();
 
-	/**
-	 * Return whether this path is normalized and contains no "." segments and as few ".." segments as possible. For example, the
-	 * path "../a" is normalized, while "/a/b/c/../d" is not normalized.
-	 *
-	 * @return true if this path is normalized, or false otherwise
-	 */
-	public boolean isNormalized();
+    /**
+     * Determine whether this path represents the same as the supplied path. This is equivalent to calling
+     * <code>this.compareTo(other) == 0 </code>.
+     * 
+     * @param other the other path to compare with this path
+     * @return true if the paths are equivalent, or false otherwise
+     */
+    public boolean isSame( Path other );
 
-	/**
-	 * Get a normalized path with as many ".." segments and all "." resolved.
-	 *
-	 * @return the normalized path, or this object if this path is already normalized
-	 * @throws InvalidPathException if the normalized form would result in a path with negative length (e.g., "/a/../../..")
-	 */
-	public Path getNormalizedPath();
+    /**
+     * Determine whether this path is an ancestor of the supplied path. A path is considered an ancestor of another path if the
+     * the ancestor path appears in its entirety at the beginning of the decendant path, and where the decendant path contains at
+     * least one additional segment.
+     * 
+     * @param decendant the path that may be the decendant
+     * @return true if this path is an ancestor of the supplied path, or false otherwise
+     */
+    public boolean isAncestorOf( Path decendant );
 
-	/**
-	 * Get the canonical form of this path. A canonical path has is {@link #isAbsolute() absolute} and {@link #isNormalized()}.
-	 *
-	 * @return the canonical path, or this object if it is already in its canonical form
-	 * @throws InvalidPathException if the path is not absolute and cannot be canonicalized
-	 */
-	public Path getCanonicalPath();
+    /**
+     * Determine whether this path is an decendant of the supplied path. A path is considered a decendant of another path if the
+     * the decendant path starts exactly with the entire ancestor path but contains at least one additional segment.
+     * 
+     * @param ancestor the path that may be the ancestor
+     * @return true if this path is an decendant of the supplied path, or false otherwise
+     */
+    public boolean isDecendantOf( Path ancestor );
 
-	/**
-	 * Get a relative path from the supplied path to this path.
-	 *
-	 * @param startingPath the path specifying the starting point for the new relative path; may not be null
-	 * @return the relative path
-	 * @throws IllegalArgumentException if the supplied path is null
-	 * @throws PathNotFoundException if both this path and the supplied path are not absolute
-	 */
-	public Path relativeTo( Path startingPath );
+    /**
+     * Return whether this path is an absolute path. A path is either relative or {@link #isAbsolute() absolute}. An absolute
+     * path starts with a "/".
+     * 
+     * @return true if the path is absolute, or false otherwise
+     */
+    public boolean isAbsolute();
 
-	/**
-	 * Get the absolute path by resolving the supplied relative (non-absolute) path against this absolute path.
-	 *
-	 * @param relativePath the relative path that is to be resolved against this path
-	 * @return the absolute and normalized path resolved from this path and the supplied absolute path
-	 * @throws IllegalArgumentException if the supplied path is null
-	 * @throws InvalidPathException if the this path is not absolute or if the supplied path is not relative.
-	 */
-	public Path resolve( Path relativePath );
+    /**
+     * Return whether this path is normalized and contains no "." segments and as few ".." segments as possible. For example, the
+     * path "../a" is normalized, while "/a/b/c/../d" is not normalized.
+     * 
+     * @return true if this path is normalized, or false otherwise
+     */
+    public boolean isNormalized();
 
-	/**
-	 * Get the absolute path by resolving this relative (non-absolute) path against the supplied absolute path.
-	 *
-	 * @param absolutePath the absolute path to which this relative path should be resolve
-	 * @return the absolute path resolved from this path and the supplied absolute path
-	 * @throws IllegalArgumentException if the supplied path is null
-	 * @throws InvalidPathException if the supplied path is not absolute or if this path is not relative.
-	 */
-	public Path resolveAgainst( Path absolutePath );
+    /**
+     * Get a normalized path with as many ".." segments and all "." resolved.
+     * 
+     * @return the normalized path, or this object if this path is already normalized
+     * @throws InvalidPathException if the normalized form would result in a path with negative length (e.g., "/a/../../..")
+     */
+    public Path getNormalizedPath();
 
-	/**
-	 * Return the path to the parent, or this path if it is the {@link #isRoot() root}. This is an efficient operation that does
-	 * not require copying any data.
-	 *
-	 * @return the parent path, or this path if it is already the root
-	 */
-	public Path getAncestor();
+    /**
+     * Get the canonical form of this path. A canonical path has is {@link #isAbsolute() absolute} and {@link #isNormalized()}.
+     * 
+     * @return the canonical path, or this object if it is already in its canonical form
+     * @throws InvalidPathException if the path is not absolute and cannot be canonicalized
+     */
+    public Path getCanonicalPath();
 
-	/**
-	 * Return the path to the ancestor of the supplied degree. An ancestor of degree <code>x</code> is the path that is
-	 * <code>x</code> levels up along the path. For example, <code>degree = 0</code> returns this path, while
-	 * <code>degree = 1</code> returns the parent of this path, <code>degree = 2</code> returns the grandparent of this path,
-	 * and so on. Note that the result may be unexpected if this path is not {@link #isNormalized() normalized}, as a
-	 * non-normalized path contains ".." and "." segments.
-	 *
-	 * @param degree
-	 * @return the ancestor of the supplied degree
-	 * @throws IllegalArgumentException if the degree is negative
-	 * @throws PathNotFoundException if the degree is greater than the {@link #size() length} of this path
-	 */
-	public Path getAncestor( int degree );
+    /**
+     * Get a relative path from the supplied path to this path.
+     * 
+     * @param startingPath the path specifying the starting point for the new relative path; may not be null
+     * @return the relative path
+     * @throws IllegalArgumentException if the supplied path is null
+     * @throws PathNotFoundException if both this path and the supplied path are not absolute
+     */
+    public Path relativeTo( Path startingPath );
 
-	/**
-	 * Determine whether this path and the supplied path have the same immediate ancestor. In other words, this method determines
-	 * whether the node represented by this path is a sibling of the node represented by the supplied path.
-	 *
-	 * @param that the other path
-	 * @return true if this path and the supplied path have the same immediate ancestor.
-	 * @throws IllegalArgumentException if the supplied path is null
-	 */
-	public boolean hasSameAncestor( Path that );
+    /**
+     * Get the absolute path by resolving the supplied relative (non-absolute) path against this absolute path.
+     * 
+     * @param relativePath the relative path that is to be resolved against this path
+     * @return the absolute and normalized path resolved from this path and the supplied absolute path
+     * @throws IllegalArgumentException if the supplied path is null
+     * @throws InvalidPathException if the this path is not absolute or if the supplied path is not relative.
+     */
+    public Path resolve( Path relativePath );
 
-	/**
-	 * Find the lowest common ancestor of this path and the supplied path.
-	 *
-	 * @param that the other path
-	 * @return the lowest common ancestor, which may be the root path if there is no other.
-	 * @throws IllegalArgumentException if the supplied path is null
-	 */
-	public Path getCommonAncestor( Path that );
+    /**
+     * Get the absolute path by resolving this relative (non-absolute) path against the supplied absolute path.
+     * 
+     * @param absolutePath the absolute path to which this relative path should be resolve
+     * @return the absolute path resolved from this path and the supplied absolute path
+     * @throws IllegalArgumentException if the supplied path is null
+     * @throws InvalidPathException if the supplied path is not absolute or if this path is not relative.
+     */
+    public Path resolveAgainst( Path absolutePath );
 
-	/**
-	 * Get the last segment in this path.
-	 *
-	 * @return the last segment, or null if the path is empty
-	 */
-	public Segment getLastSegment();
+    /**
+     * Return the path to the parent, or this path if it is the {@link #isRoot() root}. This is an efficient operation that does
+     * not require copying any data.
+     * 
+     * @return the parent path, or this path if it is already the root
+     */
+    public Path getAncestor();
 
-	/**
-	 * Get the segment at the supplied index.
-	 *
-	 * @param index the index
-	 * @return the segment
-	 * @throws IndexOutOfBoundsException if the index is out of bounds
-	 */
-	public Segment getSegment( int index );
+    /**
+     * Return the path to the ancestor of the supplied degree. An ancestor of degree <code>x</code> is the path that is
+     * <code>x</code> levels up along the path. For example, <code>degree = 0</code> returns this path, while
+     * <code>degree = 1</code> returns the parent of this path, <code>degree = 2</code> returns the grandparent of this path,
+     * and so on. Note that the result may be unexpected if this path is not {@link #isNormalized() normalized}, as a
+     * non-normalized path contains ".." and "." segments.
+     * 
+     * @param degree
+     * @return the ancestor of the supplied degree
+     * @throws IllegalArgumentException if the degree is negative
+     * @throws PathNotFoundException if the degree is greater than the {@link #size() length} of this path
+     */
+    public Path getAncestor( int degree );
 
-	/**
-	 * Return a new path consisting of the segments starting at <code>beginIndex</code> index (inclusive). This is equivalent to
-	 * calling <code>path.subpath(beginIndex,path.size()-1)</code>.
-	 *
-	 * @param beginIndex the beginning index, inclusive.
-	 * @return the specified subpath
-	 * @exception IndexOutOfBoundsException if the <code>beginIndex</code> is negative or larger than the length of this
-	 *            <code>Path</code> object
-	 */
-	public Path subpath( int beginIndex );
+    /**
+     * Determine whether this path and the supplied path have the same immediate ancestor. In other words, this method determines
+     * whether the node represented by this path is a sibling of the node represented by the supplied path.
+     * 
+     * @param that the other path
+     * @return true if this path and the supplied path have the same immediate ancestor.
+     * @throws IllegalArgumentException if the supplied path is null
+     */
+    public boolean hasSameAncestor( Path that );
 
-	/**
-	 * Return a new path consisting of the segments between the <code>beginIndex</code> index (inclusive) and the
-	 * <code>endIndex</code> index (exclusive).
-	 *
-	 * @param beginIndex the beginning index, inclusive.
-	 * @param endIndex the ending index, exclusive.
-	 * @return the specified subpath
-	 * @exception IndexOutOfBoundsException if the <code>beginIndex</code> is negative, or <code>endIndex</code> is larger
-	 *            than the length of this <code>Path</code> object, or <code>beginIndex</code> is larger than
-	 *            <code>endIndex</code>.
-	 */
-	public Path subpath( int beginIndex,
-	                     int endIndex );
+    /**
+     * Find the lowest common ancestor of this path and the supplied path.
+     * 
+     * @param that the other path
+     * @return the lowest common ancestor, which may be the root path if there is no other.
+     * @throws IllegalArgumentException if the supplied path is null
+     */
+    public Path getCommonAncestor( Path that );
 
-	/**
-	 * {@inheritDoc}
-	 */
-	public Iterator<Segment> iterator();
+    /**
+     * Get the last segment in this path.
+     * 
+     * @return the last segment, or null if the path is empty
+     */
+    public Segment getLastSegment();
 
-	/**
-	 * Obtain a copy of the segments in this path. None of the segments are encoded.
-	 *
-	 * @return the array of segments as a copy
-	 */
-	public Segment[] getSegmentsArray();
+    /**
+     * Get the segment at the supplied index.
+     * 
+     * @param index the index
+     * @return the segment
+     * @throws IndexOutOfBoundsException if the index is out of bounds
+     */
+    public Segment getSegment( int index );
 
-	/**
-	 * Get an unmodifiable list of the path segments.
-	 *
-	 * @return the unmodifiable list of path segments; never null
-	 */
-	public List<Segment> getSegmentsList();
+    /**
+     * Return a new path consisting of the segments starting at <code>beginIndex</code> index (inclusive). This is equivalent to
+     * calling <code>path.subpath(beginIndex,path.size()-1)</code>.
+     * 
+     * @param beginIndex the beginning index, inclusive.
+     * @return the specified subpath
+     * @exception IndexOutOfBoundsException if the <code>beginIndex</code> is negative or larger than the length of this
+     * <code>Path</code> object
+     */
+    public Path subpath( int beginIndex );
 
-	/**
-	 * Get the string form of the path. The {@link #DEFAULT_ENCODER default encoder} is used to encode characters in each of the
-	 * path segments.
-	 *
-	 * @return the encoded string
-	 * @see #getString(TextEncoder)
-	 */
-	public String getString();
+    /**
+     * Return a new path consisting of the segments between the <code>beginIndex</code> index (inclusive) and the
+     * <code>endIndex</code> index (exclusive).
+     * 
+     * @param beginIndex the beginning index, inclusive.
+     * @param endIndex the ending index, exclusive.
+     * @return the specified subpath
+     * @exception IndexOutOfBoundsException if the <code>beginIndex</code> is negative, or <code>endIndex</code> is larger
+     * than the length of this <code>Path</code> object, or <code>beginIndex</code> is larger than <code>endIndex</code>.
+     */
+    public Path subpath( int beginIndex, int endIndex );
 
-	/**
-	 * Get the encoded string form of the path, using the supplied encoder to encode characters in each of the path segments.
-	 *
-	 * @param encoder the encoder to use, or null if the {@link #DEFAULT_ENCODER default encoder} should be used
-	 * @return the encoded string
-	 * @see #getString()
-	 */
-	public String getString( TextEncoder encoder );
+    /**
+     * {@inheritDoc}
+     */
+    public Iterator<Segment> iterator();
 
-	/**
-	 * Get the string form of the path, using the supplied namespace registry to convert the names' namespace URIs to prefixes.
-	 * The {@link #DEFAULT_ENCODER default encoder} is used to encode characters in each of the path segments.
-	 *
-	 * @param namespaceRegistry the namespace registry that should be used to obtain the prefix for the
-	 *        {@link Name#getNamespaceUri() namespace URIs} in the segment {@link Segment#getName() names}
-	 * @return the encoded string
-	 * @throws IllegalArgumentException if the namespace registry is null
-	 * @see #getString(NamespaceRegistry,TextEncoder)
-	 */
-	public String getString( NamespaceRegistry namespaceRegistry );
+    /**
+     * Obtain a copy of the segments in this path. None of the segments are encoded.
+     * 
+     * @return the array of segments as a copy
+     */
+    public Segment[] getSegmentsArray();
 
-	/**
-	 * Get the encoded string form of the path, using the supplied namespace registry to convert the names' namespace URIs to
-	 * prefixes and the supplied encoder to encode characters in each of the path segments.
-	 *
-	 * @param namespaceRegistry the namespace registry that should be used to obtain the prefix for the
-	 *        {@link Name#getNamespaceUri() namespace URIs} in the segment {@link Segment#getName() names}
-	 * @param encoder the encoder to use, or null if the {@link #DEFAULT_ENCODER default encoder} should be used
-	 * @return the encoded string
-	 * @throws IllegalArgumentException if the namespace registry is null
-	 * @see #getString(NamespaceRegistry)
-	 */
-	public String getString( NamespaceRegistry namespaceRegistry,
-	                         TextEncoder encoder );
+    /**
+     * Get an unmodifiable list of the path segments.
+     * 
+     * @return the unmodifiable list of path segments; never null
+     */
+    public List<Segment> getSegmentsList();
+
+    /**
+     * Get the string form of the path. The {@link #DEFAULT_ENCODER default encoder} is used to encode characters in each of the
+     * path segments.
+     * 
+     * @return the encoded string
+     * @see #getString(TextEncoder)
+     */
+    public String getString();
+
+    /**
+     * Get the encoded string form of the path, using the supplied encoder to encode characters in each of the path segments.
+     * 
+     * @param encoder the encoder to use, or null if the {@link #DEFAULT_ENCODER default encoder} should be used
+     * @return the encoded string
+     * @see #getString()
+     */
+    public String getString( TextEncoder encoder );
+
+    /**
+     * Get the string form of the path, using the supplied namespace registry to convert the names' namespace URIs to prefixes.
+     * The {@link #DEFAULT_ENCODER default encoder} is used to encode characters in each of the path segments.
+     * 
+     * @param namespaceRegistry the namespace registry that should be used to obtain the prefix for the
+     * {@link Name#getNamespaceUri() namespace URIs} in the segment {@link Segment#getName() names}
+     * @return the encoded string
+     * @throws IllegalArgumentException if the namespace registry is null
+     * @see #getString(NamespaceRegistry,TextEncoder)
+     */
+    public String getString( NamespaceRegistry namespaceRegistry );
+
+    /**
+     * Get the encoded string form of the path, using the supplied namespace registry to convert the names' namespace URIs to
+     * prefixes and the supplied encoder to encode characters in each of the path segments.
+     * 
+     * @param namespaceRegistry the namespace registry that should be used to obtain the prefix for the
+     * {@link Name#getNamespaceUri() namespace URIs} in the segment {@link Segment#getName() names}
+     * @param encoder the encoder to use, or null if the {@link #DEFAULT_ENCODER default encoder} should be used
+     * @return the encoded string
+     * @throws IllegalArgumentException if the namespace registry is null
+     * @see #getString(NamespaceRegistry)
+     */
+    public String getString( NamespaceRegistry namespaceRegistry, TextEncoder encoder );
 
 }

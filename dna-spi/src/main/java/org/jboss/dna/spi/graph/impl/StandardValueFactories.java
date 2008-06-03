@@ -28,6 +28,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import net.jcip.annotations.Immutable;
+import org.jboss.dna.common.text.TextDecoder;
 import org.jboss.dna.common.text.TextEncoder;
 import org.jboss.dna.common.util.ArgCheck;
 import org.jboss.dna.spi.graph.Binary;
@@ -42,6 +43,7 @@ import org.jboss.dna.spi.graph.ValueFactory;
 
 /**
  * The standard set of {@link ValueFactory value factories}.
+ * 
  * @author Randall Hauch
  */
 @Immutable
@@ -63,28 +65,33 @@ public class StandardValueFactories implements ValueFactories {
     private final Map<PropertyType, ValueFactory<?>> factories;
 
     private final NamespaceRegistry namespaceRegistry;
+    private final TextDecoder decoder;
     private final TextEncoder encoder;
 
     /**
-     * Create a standard set of value factories, using the {@link ValueFactory#DEFAULT_ENCODER default encoder/decoder}.
+     * Create a standard set of value factories, using the {@link ValueFactory#DEFAULT_DECODER default decoder}.
+     * 
      * @param namespaceRegistry the namespace registry
      * @throws IllegalArgumentException if the namespace registry is null
      */
     public StandardValueFactories( NamespaceRegistry namespaceRegistry ) {
-        this(namespaceRegistry, null);
+        this(namespaceRegistry, null, null);
     }
 
     /**
      * Create a standard set of value factories, using the supplied encoder/decoder.
+     * 
      * @param namespaceRegistry the namespace registry
+     * @param decoder the decoder that should be used; if null, the {@link ValueFactory#DEFAULT_DECODER default decoder} is used.
      * @param encoder the encoder that should be used; if null, the {@link ValueFactory#DEFAULT_ENCODER default encoder} is used.
      * @param extraFactories any extra factories that should be used; any factory will override the standard factories based upon
      * the {@link ValueFactory#getPropertyType() factory's property type}.
      * @throws IllegalArgumentException if the namespace registry is null
      */
-    public StandardValueFactories( NamespaceRegistry namespaceRegistry, TextEncoder encoder, ValueFactory<?>... extraFactories ) {
+    public StandardValueFactories( NamespaceRegistry namespaceRegistry, TextDecoder decoder, TextEncoder encoder, ValueFactory<?>... extraFactories ) {
         ArgCheck.isNotNull(namespaceRegistry, "namespaceRegistry");
         this.namespaceRegistry = namespaceRegistry;
+        this.decoder = decoder != null ? decoder : ValueFactory.DEFAULT_DECODER;
         this.encoder = encoder != null ? encoder : ValueFactory.DEFAULT_ENCODER;
         Map<PropertyType, ValueFactory<?>> factories = new HashMap<PropertyType, ValueFactory<?>>();
 
@@ -95,18 +102,18 @@ public class StandardValueFactories implements ValueFactories {
         }
 
         // Now assign the members, using the factories in the map or (if null) the supplied default ...
-        this.stringFactory = getFactory(factories, new StringValueFactory(this.encoder));
-        this.binaryFactory = getFactory(factories, new InMemoryBinaryValueFactory(this.encoder, this.stringFactory));
-        this.booleanFactory = getFactory(factories, new BooleanValueFactory(this.encoder, this.stringFactory));
-        this.dateFactory = (DateTimeFactory)getFactory(factories, new JodaDateTimeValueFactory(this.encoder, this.stringFactory));
-        this.decimalFactory = getFactory(factories, new DecimalValueFactory(this.encoder, this.stringFactory));
-        this.doubleFactory = getFactory(factories, new DoubleValueFactory(this.encoder, this.stringFactory));
-        this.longFactory = getFactory(factories, new LongValueFactory(this.encoder, this.stringFactory));
-        this.nameFactory = (NameFactory)getFactory(factories, new NameValueFactory(this.namespaceRegistry, this.encoder, this.stringFactory));
-        this.pathFactory = (PathFactory)getFactory(factories, new PathValueFactory(this.encoder, this.stringFactory, this.nameFactory));
-        this.referenceFactory = getFactory(factories, new UuidReferenceValueFactory(this.encoder, this.stringFactory));
-        this.uriFactory = getFactory(factories, new UriValueFactory(this.namespaceRegistry, this.encoder, this.stringFactory));
-        this.objectFactory = getFactory(factories, new ObjectValueFactory(this.encoder, this.stringFactory, this.binaryFactory));
+        this.stringFactory = getFactory(factories, new StringValueFactory(this.decoder, this.encoder));
+        this.binaryFactory = getFactory(factories, new InMemoryBinaryValueFactory(this.decoder, this.stringFactory));
+        this.booleanFactory = getFactory(factories, new BooleanValueFactory(this.decoder, this.stringFactory));
+        this.dateFactory = (DateTimeFactory)getFactory(factories, new JodaDateTimeValueFactory(this.decoder, this.stringFactory));
+        this.decimalFactory = getFactory(factories, new DecimalValueFactory(this.decoder, this.stringFactory));
+        this.doubleFactory = getFactory(factories, new DoubleValueFactory(this.decoder, this.stringFactory));
+        this.longFactory = getFactory(factories, new LongValueFactory(this.decoder, this.stringFactory));
+        this.nameFactory = (NameFactory)getFactory(factories, new NameValueFactory(this.namespaceRegistry, this.decoder, this.stringFactory));
+        this.pathFactory = (PathFactory)getFactory(factories, new PathValueFactory(this.decoder, this.stringFactory, this.nameFactory));
+        this.referenceFactory = getFactory(factories, new UuidReferenceValueFactory(this.decoder, this.stringFactory));
+        this.uriFactory = getFactory(factories, new UriValueFactory(this.namespaceRegistry, this.decoder, this.stringFactory));
+        this.objectFactory = getFactory(factories, new ObjectValueFactory(this.decoder, this.stringFactory, this.binaryFactory));
 
         // Wrap the factories with an unmodifiable ...
         this.factories = Collections.unmodifiableMap(factories);
@@ -124,10 +131,10 @@ public class StandardValueFactories implements ValueFactories {
     }
 
     /**
-     * @return encoder
+     * @return decoder
      */
-    public TextEncoder getTextEncoder() {
-        return this.encoder;
+    public TextDecoder getTextDecoder() {
+        return this.decoder;
     }
 
     /**

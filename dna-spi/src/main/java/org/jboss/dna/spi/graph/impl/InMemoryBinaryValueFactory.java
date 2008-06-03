@@ -30,7 +30,7 @@ import java.net.URI;
 import java.util.Calendar;
 import java.util.Date;
 import net.jcip.annotations.Immutable;
-import org.jboss.dna.common.text.TextEncoder;
+import org.jboss.dna.common.text.TextDecoder;
 import org.jboss.dna.common.util.IoUtil;
 import org.jboss.dna.spi.SpiI18n;
 import org.jboss.dna.spi.graph.Binary;
@@ -43,6 +43,7 @@ import org.jboss.dna.spi.graph.ValueFormatException;
 
 /**
  * Teh standard {@link ValueFactory} for {@link PropertyType#BINARY} values.
+ * 
  * @author Randall Hauch
  */
 @Immutable
@@ -50,8 +51,8 @@ public class InMemoryBinaryValueFactory extends AbstractValueFactory<Binary> {
 
     private static final String CHAR_SET_NAME = "UTF-8";
 
-    public InMemoryBinaryValueFactory( TextEncoder encoder, ValueFactory<String> stringValueFactory ) {
-        super(PropertyType.BINARY, encoder, stringValueFactory);
+    public InMemoryBinaryValueFactory( TextDecoder decoder, ValueFactory<String> stringValueFactory ) {
+        super(PropertyType.BINARY, decoder, stringValueFactory);
     }
 
     /**
@@ -69,9 +70,9 @@ public class InMemoryBinaryValueFactory extends AbstractValueFactory<Binary> {
     /**
      * {@inheritDoc}
      */
-    public Binary create( String value, TextEncoder decoder ) throws ValueFormatException {
+    public Binary create( String value, TextDecoder decoder ) throws ValueFormatException {
         if (value == null) return null;
-        return create(getEncoder(decoder).decode(value));
+        return create(getDecoder(decoder).decode(value));
     }
 
     /**

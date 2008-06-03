@@ -284,7 +284,7 @@ public class ValueComparators {
     protected static final ValueFactory<String> getStringValueFactory() {
         // No locking is required, because it doesn't matter if we create several instances during initialization ...
         if (STRING_VALUE_FACTORY == null) {
-            STRING_VALUE_FACTORY = new StringValueFactory(Path.NO_OP_ENCODER);
+            STRING_VALUE_FACTORY = new StringValueFactory(Path.NO_OP_DECODER, Path.NO_OP_ENCODER);
         }
         return STRING_VALUE_FACTORY;
     }

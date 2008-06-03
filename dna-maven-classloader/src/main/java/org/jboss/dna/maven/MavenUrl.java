@@ -26,11 +26,13 @@ import java.net.URL;
 import java.net.URLStreamHandler;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import org.jboss.dna.common.text.TextDecoder;
 import org.jboss.dna.common.text.TextEncoder;
 import org.jboss.dna.common.text.UrlEncoder;
 
 /**
  * Wrapper for a URL that uses a format for referencing JCR nodes and content.
+ * 
  * @author Randall Hauch
  */
 public class MavenUrl {
@@ -46,6 +48,7 @@ public class MavenUrl {
 
     /**
      * Get the host name
+     * 
      * @return the host name
      */
     public String getHostname() {
@@ -62,6 +65,7 @@ public class MavenUrl {
 
     /**
      * Get the port. This method returns {@link #NO_PORT} if the port has not been specified.
+     * 
      * @return the port
      */
     public int getPort() {
@@ -90,6 +94,7 @@ public class MavenUrl {
 
     /**
      * Set the name of the workspace.
+     * 
      * @param workspaceName the name of the workspace
      */
     public void setWorkspaceName( String workspaceName ) {
@@ -123,6 +128,7 @@ public class MavenUrl {
 
     /**
      * Get a URL that corresponds to the information in this object.
+     * 
      * @param handler the URL stream handler that will be used to handle obtaining an input stream or an output stream on the
      * resulting URL
      * @param encoder an encoder that will be used to escape any characters that are not allowed in URLs; {@link UrlEncoder} will
@@ -196,11 +202,13 @@ public class MavenUrl {
      * <li><b>path/to/node</b> is the path of the node or property that is to be referenced</li>
      * </ul>
      * </p>
+     * 
      * @param url the URL to be parsed
      * @param decoder the text encoder that should be used to decode the URL; may be null if no decoding should be done
      * @return the object representing the JCR information contained in the URL
+     * @see #parse(URL, TextDecoder)
      */
-    public static MavenUrl parse( String url, TextEncoder decoder ) {
+    public static MavenUrl parse( String url, TextDecoder decoder ) {
         if (decoder == null) decoder = new UrlEncoder();
         // This regular expression has the following groups:
         // 1) //hostname:port
@@ -231,12 +239,13 @@ public class MavenUrl {
     /**
      * Parse the supplied URL and determine if the URL fits the JCR URL format. If it does, return a {@link MavenUrl} instance;
      * otherwise return null. If the URL is malformed or otherwise invalid, this method also returns null.
+     * 
      * @param url the URL to be parsed
      * @param decoder the text encoder that should be used to decode the URL; may be null if no decoding should be done
      * @return the object representing the JCR information contained in the URL
-     * @see #parse(String,TextEncoder)
+     * @see #parse(String,TextDecoder)
      */
-    public static MavenUrl parse( URL url, TextEncoder decoder ) {
+    public static MavenUrl parse( URL url, TextDecoder decoder ) {
         if (url == null) return null;
         return parse(url.toExternalForm(), decoder);
     }

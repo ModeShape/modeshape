@@ -30,7 +30,7 @@ import java.net.URISyntaxException;
 import java.util.Calendar;
 import java.util.Date;
 import net.jcip.annotations.Immutable;
-import org.jboss.dna.common.text.TextEncoder;
+import org.jboss.dna.common.text.TextDecoder;
 import org.jboss.dna.common.util.ArgCheck;
 import org.jboss.dna.spi.SpiI18n;
 import org.jboss.dna.spi.graph.Name;
@@ -43,6 +43,7 @@ import org.jboss.dna.spi.graph.ValueFormatException;
 
 /**
  * The standard {@link ValueFactory} for {@link PropertyType#URI} values.
+ * 
  * @author Randall Hauch
  */
 @Immutable
@@ -50,8 +51,8 @@ public class UriValueFactory extends AbstractValueFactory<URI> {
 
     private final NamespaceRegistry namespaceRegistry;
 
-    public UriValueFactory( NamespaceRegistry namespaceRegistry, TextEncoder encoder, ValueFactory<String> stringValueFactory ) {
-        super(PropertyType.URI, encoder, stringValueFactory);
+    public UriValueFactory( NamespaceRegistry namespaceRegistry, TextDecoder decoder, ValueFactory<String> stringValueFactory ) {
+        super(PropertyType.URI, decoder, stringValueFactory);
         ArgCheck.isNotNull(namespaceRegistry, "namespaceRegistry");
         this.namespaceRegistry = namespaceRegistry;
     }
@@ -71,9 +72,9 @@ public class UriValueFactory extends AbstractValueFactory<URI> {
     /**
      * {@inheritDoc}
      */
-    public URI create( String value, TextEncoder decoder ) {
+    public URI create( String value, TextDecoder decoder ) {
         // this probably doesn't really need to call the decoder, but by doing so then we don't care at all what the decoder does
-        return create(getEncoder(decoder).decode(value));
+        return create(getDecoder(decoder).decode(value));
     }
 
     /**

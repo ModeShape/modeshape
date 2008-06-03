@@ -29,7 +29,6 @@ import java.math.BigDecimal;
 import java.net.URI;
 import java.util.Calendar;
 import java.util.Date;
-import org.jboss.dna.common.text.TextEncoder;
 import org.jboss.dna.spi.graph.Name;
 import org.jboss.dna.spi.graph.Path;
 import org.jboss.dna.spi.graph.Reference;
@@ -52,9 +51,8 @@ public class DecimalValueFactoryTest {
      */
     @Before
     public void setUp() throws Exception {
-        TextEncoder encoder = Path.URL_ENCODER;
-        stringFactory = new StringValueFactory(encoder);
-        factory = new DecimalValueFactory(encoder, stringFactory);
+        stringFactory = new StringValueFactory(Path.URL_DECODER, Path.DEFAULT_ENCODER);
+        factory = new DecimalValueFactory(Path.URL_DECODER, stringFactory);
         context = new Mockery();
     }
 

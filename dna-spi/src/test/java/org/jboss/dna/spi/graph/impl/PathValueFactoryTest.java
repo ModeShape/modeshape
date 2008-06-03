@@ -44,7 +44,6 @@ public class PathValueFactoryTest {
     private ValueFactory<String> stringValueFactory;
     private NameValueFactory nameFactory;
     private PathValueFactory factory;
-    private TextEncoder encoder;
     private Path path;
     private Path path2;
 
@@ -52,10 +51,9 @@ public class PathValueFactoryTest {
     public void beforeEach() throws Exception {
         this.registry = new BasicNamespaceRegistry();
         this.registry.register("dna", "http://www.jboss.org/dna/namespace");
-        this.encoder = Path.DEFAULT_ENCODER;
-        this.stringValueFactory = new StringValueFactory(encoder);
-        this.nameFactory = new NameValueFactory(registry, encoder, stringValueFactory);
-        this.factory = new PathValueFactory(encoder, stringValueFactory, nameFactory);
+        this.stringValueFactory = new StringValueFactory(Path.DEFAULT_DECODER, Path.DEFAULT_ENCODER);
+        this.nameFactory = new NameValueFactory(registry, Path.DEFAULT_DECODER, stringValueFactory);
+        this.factory = new PathValueFactory(Path.DEFAULT_DECODER, stringValueFactory, nameFactory);
     }
 
     protected List<Path.Segment> getSegments( String... segments ) {

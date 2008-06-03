@@ -41,7 +41,6 @@ public class BasicPathSegmentTest {
     private ValueFactory<String> stringValueFactory;
     private NameValueFactory nameFactory;
     private PathValueFactory factory;
-    private TextEncoder encoder;
     private Name validName;
     private Path.Segment segment;
     private Path.Segment segment2;
@@ -50,11 +49,10 @@ public class BasicPathSegmentTest {
     public void beforeEach() throws Exception {
         this.registry = new BasicNamespaceRegistry();
         this.registry.register("dna", "http://www.jboss.org/dna/namespace");
-        this.encoder = Path.DEFAULT_ENCODER;
-        this.stringValueFactory = new StringValueFactory(encoder);
-        this.nameFactory = new NameValueFactory(registry, encoder, stringValueFactory);
+        this.stringValueFactory = new StringValueFactory(Path.DEFAULT_DECODER, Path.DEFAULT_ENCODER);
+        this.nameFactory = new NameValueFactory(registry, Path.DEFAULT_DECODER, stringValueFactory);
         this.validName = nameFactory.create("dna:something");
-        this.factory = new PathValueFactory(encoder, stringValueFactory, nameFactory);
+        this.factory = new PathValueFactory(Path.DEFAULT_DECODER, stringValueFactory, nameFactory);
     }
 
     @Test( expected = IllegalArgumentException.class )

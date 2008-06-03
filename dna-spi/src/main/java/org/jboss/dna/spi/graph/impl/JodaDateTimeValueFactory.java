@@ -29,7 +29,7 @@ import java.net.URI;
 import java.util.Calendar;
 import java.util.Date;
 import net.jcip.annotations.Immutable;
-import org.jboss.dna.common.text.TextEncoder;
+import org.jboss.dna.common.text.TextDecoder;
 import org.jboss.dna.spi.SpiI18n;
 import org.jboss.dna.spi.graph.DateTime;
 import org.jboss.dna.spi.graph.DateTimeFactory;
@@ -42,13 +42,14 @@ import org.jboss.dna.spi.graph.ValueFormatException;
 
 /**
  * The standard {@link ValueFactory} for {@link PropertyType#DATE} values.
+ * 
  * @author Randall Hauch
  */
 @Immutable
 public class JodaDateTimeValueFactory extends AbstractValueFactory<DateTime> implements DateTimeFactory {
 
-    public JodaDateTimeValueFactory( TextEncoder encoder, ValueFactory<String> stringValueFactory ) {
-        super(PropertyType.DATE, encoder, stringValueFactory);
+    public JodaDateTimeValueFactory( TextDecoder decoder, ValueFactory<String> stringValueFactory ) {
+        super(PropertyType.DATE, decoder, stringValueFactory);
     }
 
     /**
@@ -66,9 +67,9 @@ public class JodaDateTimeValueFactory extends AbstractValueFactory<DateTime> imp
     /**
      * {@inheritDoc}
      */
-    public DateTime create( String value, TextEncoder decoder ) {
+    public DateTime create( String value, TextDecoder decoder ) {
         // this probably doesn't really need to call the decoder, but by doing so then we don't care at all what the decoder does
-        return create(getEncoder(decoder).decode(value));
+        return create(getDecoder(decoder).decode(value));
     }
 
     /**

@@ -29,7 +29,7 @@ import java.net.URI;
 import java.util.Calendar;
 import java.util.Date;
 import net.jcip.annotations.Immutable;
-import org.jboss.dna.common.text.TextEncoder;
+import org.jboss.dna.common.text.TextDecoder;
 import org.jboss.dna.common.util.ArgCheck;
 import org.jboss.dna.spi.graph.Name;
 import org.jboss.dna.spi.graph.Path;
@@ -40,20 +40,21 @@ import org.jboss.dna.spi.graph.ValueFormatException;
 
 /**
  * Abstract {@link ValueFactory}.
+ * 
  * @author Randall Hauch
  * @param <T> the property type
  */
 @Immutable
 public abstract class AbstractValueFactory<T> implements ValueFactory<T> {
 
-    private final TextEncoder encoder;
+    private final TextDecoder decoder;
     private final PropertyType propertyType;
     private final ValueFactory<String> stringValueFactory;
 
-    protected AbstractValueFactory( PropertyType type, TextEncoder encoder, ValueFactory<String> stringValueFactory ) {
+    protected AbstractValueFactory( PropertyType type, TextDecoder decoder, ValueFactory<String> stringValueFactory ) {
         ArgCheck.isNotNull(type, "type");
         this.propertyType = type;
-        this.encoder = encoder != null ? encoder : DEFAULT_ENCODER;
+        this.decoder = decoder != null ? decoder : DEFAULT_DECODER;
         this.stringValueFactory = stringValueFactory;
     }
 
@@ -65,20 +66,22 @@ public abstract class AbstractValueFactory<T> implements ValueFactory<T> {
     }
 
     /**
-     * Get the text encoder/decoder.
-     * @return encoder/decoder
+     * Get the text decoder.
+     * 
+     * @return the decoder
      */
-    public TextEncoder getEncoder() {
-        return this.encoder;
+    public TextDecoder getDecoder() {
+        return this.decoder;
     }
 
     /**
-     * Utility method to obtain either the supplied encoder (if not null) or this factory's {@link #getEncoder() encoder}.
-     * @param encoder the encoder, which may be null if this factory's {@link #getEncoder() is to be used}
-     * @return the encoder; never null
+     * Utility method to obtain either the supplied decoder (if not null) or this factory's {@link #getDecoder() decoder}.
+     * 
+     * @param decoder the decoder, which may be null if this factory's {@link #getDecoder() is to be used}
+     * @return the decoder; never null
      */
-    protected TextEncoder getEncoder( TextEncoder encoder ) {
-        return encoder != null ? encoder : this.getEncoder();
+    protected TextDecoder getDecoder( TextDecoder decoder ) {
+        return decoder != null ? decoder : this.getDecoder();
     }
 
     /**

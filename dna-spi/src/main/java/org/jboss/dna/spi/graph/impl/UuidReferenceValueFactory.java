@@ -30,7 +30,7 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.UUID;
 import net.jcip.annotations.Immutable;
-import org.jboss.dna.common.text.TextEncoder;
+import org.jboss.dna.common.text.TextDecoder;
 import org.jboss.dna.spi.SpiI18n;
 import org.jboss.dna.spi.graph.Name;
 import org.jboss.dna.spi.graph.Path;
@@ -41,13 +41,14 @@ import org.jboss.dna.spi.graph.ValueFormatException;
 
 /**
  * The standard {@link ValueFactory} for {@link PropertyType#REFERENCE} values.
+ * 
  * @author Randall Hauch
  */
 @Immutable
 public class UuidReferenceValueFactory extends AbstractValueFactory<Reference> {
 
-    public UuidReferenceValueFactory( TextEncoder encoder, ValueFactory<String> stringValueFactory ) {
-        super(PropertyType.REFERENCE, encoder, stringValueFactory);
+    public UuidReferenceValueFactory( TextDecoder decoder, ValueFactory<String> stringValueFactory ) {
+        super(PropertyType.REFERENCE, decoder, stringValueFactory);
     }
 
     /**
@@ -66,9 +67,9 @@ public class UuidReferenceValueFactory extends AbstractValueFactory<Reference> {
     /**
      * {@inheritDoc}
      */
-    public Reference create( String value, TextEncoder decoder ) {
+    public Reference create( String value, TextDecoder decoder ) {
         // this probably doesn't really need to call the decoder, but by doing so then we don't care at all what the decoder does
-        return create(getEncoder(decoder).decode(value));
+        return create(getDecoder(decoder).decode(value));
     }
 
     /**

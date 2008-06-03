@@ -22,30 +22,20 @@
 package org.jboss.dna.common.text;
 
 /**
- * An encoder implementation that does nothing. This is useful when a {@link TextEncoder encoder} is optional but the code is
- * easier to write when there is always an encoder.
+ * Interface for components that can decode text. This is the counterpart to {@link TextEncoder}.
  * 
  * @author Randall Hauch
+ * @see TextEncoder
  */
-public class NoOpEncoder implements TextEncoder, TextDecoder {
-
-    private static final NoOpEncoder INSTANCE = new NoOpEncoder();
-
-    public static final NoOpEncoder getInstance() {
-        return INSTANCE;
-    }
+public interface TextDecoder {
 
     /**
-     * {@inheritDoc}
+     * Return the decoded version of an encoded string
+     * 
+     * @param encodedText the encoded text
+     * @return the unecoded form of the text, or null if the supplied node name is also null
+     * @see TextEncoder#encode(String)
      */
-    public String encode( String text ) {
-        return text;
-    }
+    public String decode( String encodedText );
 
-    /**
-     * {@inheritDoc}
-     */
-    public String decode( String encodedText ) {
-        return encodedText;
-    }
 }

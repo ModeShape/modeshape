@@ -57,9 +57,10 @@ import java.text.StringCharacterIterator;
  * </tr>
  * </table>
  * </p>
+ * 
  * @author Randall Hauch
  */
-public class Jsr283Encoder implements TextEncoder {
+public class Jsr283Encoder implements TextEncoder, TextDecoder {
 
     /**
      * {@inheritDoc}

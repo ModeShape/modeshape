@@ -28,45 +28,52 @@ import java.math.BigDecimal;
 import java.net.URI;
 import java.util.Calendar;
 import java.util.Date;
+import org.jboss.dna.common.text.TextDecoder;
 import org.jboss.dna.common.text.TextEncoder;
 
 /**
  * A factory for {@link Property} values. Some of the methods may throw a {@link ValueFormatException} if the parameter supplied
  * to the <code>create(...)</code> method cannot be converted to the {@link #getPropertyType() factory's type}.
+ * 
  * @author Randall Hauch
  * @param <T> the type of value to create
  */
 public interface ValueFactory<T> {
 
+    static final TextDecoder DEFAULT_DECODER = Path.NO_OP_DECODER;
     static final TextEncoder DEFAULT_ENCODER = Path.NO_OP_ENCODER;
 
     /**
      * Get the {@link PropertyType type} of values created by this factory.
+     * 
      * @return the value type; never null
      */
     PropertyType getPropertyType();
 
     /**
      * Create a value from a string, using no decoding.
+     * 
      * @param value the string from which the value is to be created
      * @return the value, or null if the supplied string is null
      * @throws ValueFormatException if the value could not be created from the supplied string
-     * @see #create(String, TextEncoder)
+     * @see #create(String, TextDecoder)
      */
     T create( String value ) throws ValueFormatException;
 
     /**
      * Create a value from a string, using the supplied decoder.
+     * 
      * @param value the string from which the value is to be created
-     * @param decoder the decoder that should be used; if null, the {@link #DEFAULT_ENCODER default decoder} is used
+     * @param decoder the decoder that should be used; if null, the {@link #DEFAULT_DECODER default decoder} is used
      * @return the value, or null if the supplied string is null
      * @throws ValueFormatException if the value could not be created from the supplied string
      * @see #create(String)
      */
-    T create( String value, TextEncoder decoder ) throws ValueFormatException;
+    T create( String value, TextDecoder decoder ) throws ValueFormatException;
 
     /**
      * Create a value from an integer.
+     * 
      * @param value the integer from which the value is to be created
      * @return the value; never null
      * @throws ValueFormatException if the value could not be created from the supplied integer
@@ -75,6 +82,7 @@ public interface ValueFactory<T> {
 
     /**
      * Create a long from a string.
+     * 
      * @param value the string from which the long is to be created
      * @return the value; never null
      * @throws ValueFormatException if the value could not be created from the supplied long
@@ -83,6 +91,7 @@ public interface ValueFactory<T> {
 
     /**
      * Create a boolean from a string.
+     * 
      * @param value the boolean from which the value is to be created
      * @return the value; never null
      * @throws ValueFormatException if the value could not be created from the supplied boolean
@@ -91,6 +100,7 @@ public interface ValueFactory<T> {
 
     /**
      * Create a value from a float.
+     * 
      * @param value the float from which the value is to be created
      * @return the value; never null
      * @throws ValueFormatException if the value could not be created from the supplied float
@@ -99,6 +109,7 @@ public interface ValueFactory<T> {
 
     /**
      * Create a value from a double.
+     * 
      * @param value the double from which the value is to be created
      * @return the value; never null
      * @throws ValueFormatException if the value could not be created from the supplied double
@@ -107,6 +118,7 @@ public interface ValueFactory<T> {
 
     /**
      * Create a value from a decimal.
+     * 
      * @param value the decimal from which the value is to be created
      * @return the value, or null if the supplied decimal is null
      * @throws ValueFormatException if the value could not be created from the supplied decimal
@@ -115,6 +127,7 @@ public interface ValueFactory<T> {
 
     /**
      * Create a value from a Calendar instance.
+     * 
      * @param value the Calendar instance from which the value is to be created
      * @return the value, or null if the supplied Calendar is null
      * @throws ValueFormatException if the value could not be created from the supplied Calendar object
@@ -123,6 +136,7 @@ public interface ValueFactory<T> {
 
     /**
      * Create a value from a date.
+     * 
      * @param value the date from which the value is to be created
      * @return the value, or null if the supplied date is null
      * @throws ValueFormatException if the value could not be created from the supplied date
@@ -131,6 +145,7 @@ public interface ValueFactory<T> {
 
     /**
      * Create a value from a name.
+     * 
      * @param value the name from which the value is to be created
      * @return the value, or null if the supplied name is null
      * @throws ValueFormatException if the value could not be created from the supplied name
@@ -139,6 +154,7 @@ public interface ValueFactory<T> {
 
     /**
      * Create a value from a path.
+     * 
      * @param value the path from which the value is to be created
      * @return the value, or null if the supplied path is null
      * @throws ValueFormatException if the value could not be created from the supplied path
@@ -147,6 +163,7 @@ public interface ValueFactory<T> {
 
     /**
      * Create a value from a reference.
+     * 
      * @param value the reference from which the value is to be created
      * @return the value, or null if the supplied reference is null
      * @throws ValueFormatException if the value could not be created from the supplied reference
@@ -155,6 +172,7 @@ public interface ValueFactory<T> {
 
     /**
      * Create a value from a URI.
+     * 
      * @param value the URI from which the value is to be created
      * @return the value, or null if the supplied URI is null
      * @throws ValueFormatException if the value could not be created from the supplied URI
@@ -163,6 +181,7 @@ public interface ValueFactory<T> {
 
     /**
      * Create a value from the binary content given by the supplied array.
+     * 
      * @param value the content to be used to create the value
      * @return the value, or null if the supplied stream is null
      * @throws ValueFormatException if the value could not be created from the supplied byte array
@@ -171,6 +190,7 @@ public interface ValueFactory<T> {
 
     /**
      * Create a value from the binary content given by the supplied stream.
+     * 
      * @param stream the stream containing the content to be used to create the value
      * @param approximateLength the approximate length of the content (in bytes)
      * @return the value, or null if the supplied stream is null
@@ -181,6 +201,7 @@ public interface ValueFactory<T> {
 
     /**
      * Create a value from a the binary content given by the supplied reader.
+     * 
      * @param reader the reader containing the content to be used to create the value
      * @param approximateLength the approximate length of the content (in bytes)
      * @return the value, or null if the supplied string is null
@@ -192,7 +213,8 @@ public interface ValueFactory<T> {
     /**
      * Create a value from the specified information by determining which other <code>create</code> method applies and
      * delegating to that method. Note that this method only will call <code>create</code> methods that take a single parameter;
-     * so this excludes {@link #create(InputStream, int)}, {@link #create(Reader, int)} and {@link #create(String, TextEncoder)}.
+     * so this excludes {@link #create(InputStream, int)}, {@link #create(Reader, int)} and {@link #create(String, TextDecoder)}.
+     * 
      * @param value the value
      * @return the new value, or null if the supplied parameter is null
      * @throws ValueFormatException if the value could not be created from the supplied stream

@@ -29,7 +29,7 @@ import java.net.URI;
 import java.util.Calendar;
 import java.util.Date;
 import net.jcip.annotations.Immutable;
-import org.jboss.dna.common.text.TextEncoder;
+import org.jboss.dna.common.text.TextDecoder;
 import org.jboss.dna.spi.SpiI18n;
 import org.jboss.dna.spi.graph.Name;
 import org.jboss.dna.spi.graph.Path;
@@ -40,13 +40,14 @@ import org.jboss.dna.spi.graph.ValueFormatException;
 
 /**
  * The standard {@link ValueFactory} for {@link PropertyType#BOOLEAN} values.
+ * 
  * @author Randall Hauch
  */
 @Immutable
 public class BooleanValueFactory extends AbstractValueFactory<Boolean> {
 
-    public BooleanValueFactory( TextEncoder encoder, ValueFactory<String> stringValueFactory ) {
-        super(PropertyType.BOOLEAN, encoder, stringValueFactory);
+    public BooleanValueFactory( TextDecoder decoder, ValueFactory<String> stringValueFactory ) {
+        super(PropertyType.BOOLEAN, decoder, stringValueFactory);
     }
 
     /**
@@ -60,9 +61,9 @@ public class BooleanValueFactory extends AbstractValueFactory<Boolean> {
     /**
      * {@inheritDoc}
      */
-    public Boolean create( String value, TextEncoder decoder ) {
+    public Boolean create( String value, TextDecoder decoder ) {
         // this probably doesn't really need to call the decoder, but by doing so then we don't care at all what the decoder does
-        return create(getEncoder(decoder).decode(value));
+        return create(getDecoder(decoder).decode(value));
     }
 
     /**

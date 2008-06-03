@@ -29,9 +29,10 @@ import java.util.BitSet;
  * An encoder useful for converting text to be used within a URL, as defined by Section 2.3 of <a
  * href="http://www.ietf.org/rfc/rfc2396.txt">RFC 2396</a>. Note that this class does not encode a complete URL ({@link java.net.URLEncoder}
  * and {@link java.net.URLDecoder} should be used for such purposes).
+ * 
  * @author Randall Hauch
  */
-public class UrlEncoder implements TextEncoder {
+public class UrlEncoder implements TextEncoder, TextDecoder {
 
     /**
      * Data characters that are allowed in a URI but do not have a reserved purpose are called unreserved. These include upper and

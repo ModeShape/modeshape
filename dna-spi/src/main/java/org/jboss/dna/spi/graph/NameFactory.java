@@ -21,48 +21,45 @@
  */
 package org.jboss.dna.spi.graph;
 
-import org.jboss.dna.common.text.TextEncoder;
+import org.jboss.dna.common.text.TextDecoder;
 
 /**
  * A factory for creating {@link Name names}.
- *
+ * 
  * @author Randall Hauch
  */
 public interface NameFactory extends ValueFactory<Name> {
 
-	String JCR_PRIMARY_TYPE = "jcr:primaryType";
+    String JCR_PRIMARY_TYPE = "jcr:primaryType";
 
-	/**
-	 * Create a name from the given namespace URI and local name.
-	 * <p>
-	 * This method is equivalent to calling {@link #create(String, String, TextEncoder)} with a null encoder.
-	 * </p>
-	 *
-	 * @param namespaceUri the namespace URI
-	 * @param localName the local name
-	 * @return the new name
-	 * @throws IllegalArgumentException if the local name is <code>null</code> or empty
-	 */
-	Name create( String namespaceUri,
-	             String localName );
+    /**
+     * Create a name from the given namespace URI and local name.
+     * <p>
+     * This method is equivalent to calling {@link #create(String, String, TextDecoder)} with a null encoder.
+     * </p>
+     * 
+     * @param namespaceUri the namespace URI
+     * @param localName the local name
+     * @return the new name
+     * @throws IllegalArgumentException if the local name is <code>null</code> or empty
+     */
+    Name create( String namespaceUri, String localName );
 
-	/**
-	 * Create a name from the given namespace URI and local name.
-	 *
-	 * @param namespaceUri the namespace URI
-	 * @param localName the local name
-	 * @param encoder the encoder that should be used to decode the qualified name
-	 * @return the new name
-	 * @throws IllegalArgumentException if the local name is <code>null</code> or empty
-	 */
-	Name create( String namespaceUri,
-	             String localName,
-	             TextEncoder encoder );
+    /**
+     * Create a name from the given namespace URI and local name.
+     * 
+     * @param namespaceUri the namespace URI
+     * @param localName the local name
+     * @param decoder the decoder that should be used to decode the qualified name
+     * @return the new name
+     * @throws IllegalArgumentException if the local name is <code>null</code> or empty
+     */
+    Name create( String namespaceUri, String localName, TextDecoder decoder );
 
-	/**
-	 * Get the namespace registry.
-	 *
-	 * @return the namespace registry; never <code>null</code>
-	 */
-	NamespaceRegistry getNamespaceRegistry();
+    /**
+     * Get the namespace registry.
+     * 
+     * @return the namespace registry; never <code>null</code>
+     */
+    NamespaceRegistry getNamespaceRegistry();
 }

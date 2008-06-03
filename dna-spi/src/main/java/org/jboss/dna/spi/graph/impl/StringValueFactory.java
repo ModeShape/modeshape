@@ -30,7 +30,9 @@ import java.net.URI;
 import java.util.Calendar;
 import java.util.Date;
 import net.jcip.annotations.Immutable;
+import org.jboss.dna.common.text.TextDecoder;
 import org.jboss.dna.common.text.TextEncoder;
+import org.jboss.dna.common.util.ArgCheck;
 import org.jboss.dna.common.util.IoUtil;
 import org.jboss.dna.spi.SpiI18n;
 import org.jboss.dna.spi.graph.Name;
@@ -42,13 +44,25 @@ import org.jboss.dna.spi.graph.ValueFormatException;
 
 /**
  * The standard {@link ValueFactory} for {@link PropertyType#STRING} values.
+ * 
  * @author Randall Hauch
  */
 @Immutable
 public class StringValueFactory extends AbstractValueFactory<String> {
 
-    public StringValueFactory( TextEncoder encoder ) {
-        super(PropertyType.STRING, encoder, null);
+    private final TextEncoder encoder;
+
+    public StringValueFactory( TextDecoder decoder, TextEncoder encoder ) {
+        super(PropertyType.STRING, decoder, null);
+        ArgCheck.isNotNull(encoder, "encoder");
+        this.encoder = encoder;
+    }
+
+    /**
+     * @return encoder
+     */
+    public TextEncoder getEncoder() {
+        return this.encoder;
     }
 
     /**
@@ -69,9 +83,9 @@ public class StringValueFactory extends AbstractValueFactory<String> {
     /**
      * {@inheritDoc}
      */
-    public String create( String value, TextEncoder decoder ) {
+    public String create( String value, TextDecoder decoder ) {
         if (value == null) return value;
-        if (decoder == null) decoder = getEncoder();
+        if (decoder == null) decoder = getDecoder();
         return decoder.decode(value);
     }
 

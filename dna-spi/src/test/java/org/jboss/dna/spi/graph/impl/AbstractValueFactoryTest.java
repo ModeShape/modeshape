@@ -33,7 +33,7 @@ import java.net.URI;
 import java.util.Calendar;
 import java.util.Date;
 import org.jboss.dna.common.text.NoOpEncoder;
-import org.jboss.dna.common.text.TextEncoder;
+import org.jboss.dna.common.text.TextDecoder;
 import org.jboss.dna.spi.graph.Name;
 import org.jboss.dna.spi.graph.Path;
 import org.jboss.dna.spi.graph.PropertyType;
@@ -48,19 +48,19 @@ import org.junit.Test;
  */
 public class AbstractValueFactoryTest {
 
-    public static final TextEncoder CUSTOM_ENCODER = new NoOpEncoder();
+    public static final TextDecoder CUSTOM_DECODER = new NoOpEncoder();
 
     private static class MockFactory extends AbstractValueFactory<String> {
 
-        protected MockFactory( TextEncoder encoder, StringValueFactory stringValueFactory ) {
-            super(PropertyType.STRING, encoder, stringValueFactory);
+        protected MockFactory( TextDecoder decoder, StringValueFactory stringValueFactory ) {
+            super(PropertyType.STRING, decoder, stringValueFactory);
         }
 
         public String create( String value ) throws ValueFormatException {
             return null;
         }
 
-        public String create( String value, TextEncoder decoder ) throws ValueFormatException {
+        public String create( String value, TextDecoder decoder ) throws ValueFormatException {
             return null;
         }
 
@@ -134,29 +134,29 @@ public class AbstractValueFactoryTest {
 
     @Test
     public void shouldHaveDefaultEncoderIfNullPassedIntoConstructor() {
-        assertThat(factory.getEncoder(), is(notNullValue()));
-        assertThat(factory.getEncoder(), is(sameInstance(ValueFactory.DEFAULT_ENCODER)));
+        assertThat(factory.getDecoder(), is(notNullValue()));
+        assertThat(factory.getDecoder(), is(sameInstance(ValueFactory.DEFAULT_DECODER)));
     }
 
     @Test
     public void shouldReturnTextEncoderPassedIntoConstructor() {
-        factory = new MockFactory(CUSTOM_ENCODER, null);
-        assertThat(factory.getEncoder(), is(notNullValue()));
-        assertThat(factory.getEncoder(), is(sameInstance(CUSTOM_ENCODER)));
+        factory = new MockFactory(CUSTOM_DECODER, null);
+        assertThat(factory.getDecoder(), is(notNullValue()));
+        assertThat(factory.getDecoder(), is(sameInstance(CUSTOM_DECODER)));
     }
 
     @Test
     public void shouldReturnDefaultTextEncoderWhenNullPassedToGetEncoder() {
-        assertThat(factory.getEncoder(), is(sameInstance(ValueFactory.DEFAULT_ENCODER)));
-        assertThat(factory.getEncoder(null), is(sameInstance(ValueFactory.DEFAULT_ENCODER)));
-        assertThat(factory.getEncoder(CUSTOM_ENCODER), is(sameInstance(CUSTOM_ENCODER)));
+        assertThat(factory.getDecoder(), is(sameInstance(ValueFactory.DEFAULT_DECODER)));
+        assertThat(factory.getDecoder(null), is(sameInstance(ValueFactory.DEFAULT_DECODER)));
+        assertThat(factory.getDecoder(CUSTOM_DECODER), is(sameInstance(CUSTOM_DECODER)));
     }
 
     @Test
     public void shouldReturnSuppliedTextEncoderWhenNonNullPassedToGetEncoder() {
-        assertThat(factory.getEncoder(), is(sameInstance(ValueFactory.DEFAULT_ENCODER)));
-        assertThat(factory.getEncoder(null), is(sameInstance(ValueFactory.DEFAULT_ENCODER)));
-        assertThat(factory.getEncoder(CUSTOM_ENCODER), is(sameInstance(CUSTOM_ENCODER)));
+        assertThat(factory.getDecoder(), is(sameInstance(ValueFactory.DEFAULT_DECODER)));
+        assertThat(factory.getDecoder(null), is(sameInstance(ValueFactory.DEFAULT_DECODER)));
+        assertThat(factory.getDecoder(CUSTOM_DECODER), is(sameInstance(CUSTOM_DECODER)));
     }
 
     @Test
