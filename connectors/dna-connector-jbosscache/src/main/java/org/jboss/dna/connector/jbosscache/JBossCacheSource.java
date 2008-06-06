@@ -113,7 +113,9 @@ public class JBossCacheSource implements RepositorySource, ObjectFactory {
     }
 
     /**
-     * {@inheritDoc}
+     * Get the default cache policy for this source, or null if the global default cache policy should be used
+     * 
+     * @return the default cache policy, or null if this source has no explicit default cache policy
      */
     public CachePolicy getDefaultCachePolicy() {
         return defaultCachePolicy;

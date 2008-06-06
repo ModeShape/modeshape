@@ -75,9 +75,6 @@ public class MockRepositorySource implements RepositorySource {
         this.retryLimit.set(limit);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     public CachePolicy getDefaultCachePolicy() {
         return defaultCachePolicy;
     }
@@ -165,6 +162,13 @@ public class MockRepositorySource implements RepositorySource {
          */
         public String getSourceName() {
             return MockRepositorySource.this.getName();
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        public CachePolicy getDefaultCachePolicy() {
+            return MockRepositorySource.this.getDefaultCachePolicy();
         }
 
         /**

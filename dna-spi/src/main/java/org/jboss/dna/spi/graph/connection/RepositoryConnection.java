@@ -23,6 +23,7 @@ package org.jboss.dna.spi.graph.connection;
 
 import java.util.concurrent.TimeUnit;
 import javax.transaction.xa.XAResource;
+import org.jboss.dna.spi.cache.CachePolicy;
 import org.jboss.dna.spi.graph.commands.GraphCommand;
 
 /**
@@ -31,6 +32,7 @@ import org.jboss.dna.spi.graph.commands.GraphCommand;
  * These connections need not support concurrent operations by multiple threads, since the federation engine never uses them this
  * way.
  * </p>
+ * 
  * @author Randall Hauch
  */
 public interface RepositoryConnection {
@@ -38,6 +40,7 @@ public interface RepositoryConnection {
     /**
      * Get the name for this repository source. This value should be the same as that {@link RepositorySource#getName() returned}
      * by the same {@link RepositorySource} that created this connection.
+     * 
      * @return the identifier; never null or empty
      */
     String getSourceName();
@@ -45,12 +48,14 @@ public interface RepositoryConnection {
     /**
      * Return the transactional resource associated with this connection. The transaction manager will use this resource to manage
      * the participation of this connection in a distributed transaction.
+     * 
      * @return the XA resource, or null if this connection is not aware of distributed transactions
      */
     XAResource getXAResource();
 
     /**
      * Ping the underlying system to determine if the connection is still valid and alive.
+     * 
      * @param time the length of time to wait before timing out
      * @param unit the time unit to use; may not be null
      * @return true if this connection is still valid and can still be used, or false otherwise
@@ -60,12 +65,21 @@ public interface RepositoryConnection {
 
     /**
      * Set the listener that is to receive notifications to changes to content within this source.
+     * 
      * @param listener the new listener, or null if no component is interested in the change notifications
      */
     void setListener( RepositorySourceListener listener );
 
     /**
+     * Get the default cache policy for this repository. If none is provided, a global cache policy will be used.
+     * 
+     * @return the default cache policy
+     */
+    CachePolicy getDefaultCachePolicy();
+
+    /**
      * Execute the supplied commands against this repository source.
+     * 
      * @param env the environment in which the commands are being executed; never null
      * @param commands the commands to be executed; never null
      * @throws RepositorySourceException if there is a problem loading the node data
@@ -75,6 +89,7 @@ public interface RepositoryConnection {
 
     /**
      * Close this connection to signal that it is no longer needed and that any accumulated resources are to be released.
+     * 
      * @throws InterruptedException if the thread has been interrupted while the close was in progress
      */
     void close() throws InterruptedException;

@@ -70,4 +70,12 @@ public class RepositorySourceException extends RuntimeException {
         return this.sourceName;
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String toString() {
+        return super.toString();
+    }
+
 }

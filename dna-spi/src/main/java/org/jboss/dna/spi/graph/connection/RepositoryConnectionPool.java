@@ -43,6 +43,7 @@ import org.jboss.dna.common.util.ArgCheck;
 import org.jboss.dna.common.util.LogContext;
 import org.jboss.dna.common.util.Logger;
 import org.jboss.dna.spi.SpiI18n;
+import org.jboss.dna.spi.cache.CachePolicy;
 import org.jboss.dna.spi.graph.commands.GraphCommand;
 
 /**
@@ -50,6 +51,21 @@ import org.jboss.dna.spi.graph.commands.GraphCommand;
  */
 @ThreadSafe
 public class RepositoryConnectionPool implements RepositoryConnectionFactory {
+
+    /**
+     * The core pool size for default-constructed pools is {@value}.
+     */
+    public static final int DEFAULT_CORE_POOL_SIZE = 1;
+
+    /**
+     * The maximum pool size for default-constructed pools is {@value}.
+     */
+    public static final int DEFAULT_MAXIMUM_POOL_SIZE = 10;
+
+    /**
+     * The keep-alive time for connections in default-constructed pools is {@value} seconds.
+     */
+    public static final long DEFAULT_KEEP_ALIVE_TIME_IN_SECONDS = 30;
 
     /**
      * Permission for checking shutdown
@@ -146,7 +162,20 @@ public class RepositoryConnectionPool implements RepositoryConnectionFactory {
     private final Logger logger = Logger.getLogger(this.getClass());
 
     /**
+     * Create the pool to use the supplied connection factory, which is typically a {@link RepositorySource}. This constructor
+     * uses the {@link #DEFAULT_CORE_POOL_SIZE default core pool size}, {@link #DEFAULT_MAXIMUM_POOL_SIZE default maximum pool
+     * size}, and {@link #DEFAULT_KEEP_ALIVE_TIME_IN_SECONDS default keep-alive time (in seconds)}.
+     * 
+     * @param connectionFactory the factory for connections
+     * @throws IllegalArgumentException if the connection factory is null or any of the supplied arguments are invalid
+     */
+    public RepositoryConnectionPool( RepositoryConnectionFactory connectionFactory ) {
+        this(connectionFactory, DEFAULT_CORE_POOL_SIZE, DEFAULT_MAXIMUM_POOL_SIZE, DEFAULT_KEEP_ALIVE_TIME_IN_SECONDS, TimeUnit.SECONDS);
+    }
+
+    /**
      * Create the pool to use the supplied connection factory, which is typically a {@link RepositorySource}.
+     * 
      * @param connectionFactory the factory for connections
      * @param corePoolSize the number of connections to keep in the pool, even if they are idle.
      * @param maximumPoolSize the maximum number of connections to allow in the pool.
@@ -226,6 +255,7 @@ public class RepositoryConnectionPool implements RepositoryConnectionFactory {
      * Sets the time limit for which connections may remain idle before being closed. If there are more than the core number of
      * connections currently in the pool, after waiting this amount of time without being used, excess threads will be terminated.
      * This overrides any value set in the constructor.
+     * 
      * @param time the time to wait. A time value of zero will cause excess connections to terminate immediately after being
      * returned.
      * @param unit the time unit of the time argument
@@ -240,6 +270,7 @@ public class RepositoryConnectionPool implements RepositoryConnectionFactory {
     /**
      * Returns the connection keep-alive time, which is the amount of time which connections in excess of the core pool size may
      * remain idle before being closed.
+     * 
      * @param unit the desired time unit of the result
      * @return the time limit
      * @see #setKeepAliveTime
@@ -259,6 +290,7 @@ public class RepositoryConnectionPool implements RepositoryConnectionFactory {
     /**
      * Sets the maximum allowed number of connections. This overrides any value set in the constructor. If the new value is
      * smaller than the current value, excess existing but unused connections will be closed.
+     * 
      * @param maximumPoolSize the new maximum
      * @throws IllegalArgumentException if maximumPoolSize less than zero or the {@link #getCorePoolSize() core pool size}
      * @see #getMaximumPoolSize
@@ -284,6 +316,7 @@ public class RepositoryConnectionPool implements RepositoryConnectionFactory {
 
     /**
      * Returns the core number of connections.
+     * 
      * @return the core number of connections
      * @see #setCorePoolSize(int)
      */
@@ -295,6 +328,7 @@ public class RepositoryConnectionPool implements RepositoryConnectionFactory {
      * Sets the core number of connections. This overrides any value set in the constructor. If the new value is smaller than the
      * current value, excess existing and unused connections will be closed. If larger, new connections will, if needed, be
      * created.
+     * 
      * @param corePoolSize the new core size
      * @throws RepositorySourceException if there was an error obtaining the new connection
      * @throws InterruptedException if the thread was interrupted during the operation
@@ -328,7 +362,9 @@ public class RepositoryConnectionPool implements RepositoryConnectionFactory {
     // -------------------------------------------------
 
     /**
-     * Returns the current number of connections in the pool.
+     * Returns the current number of connections in the pool, including those that are checked out (in use) and those that are not
+     * being used.
+     * 
      * @return the number of connections
      */
     public int getPoolSize() {
@@ -336,7 +372,8 @@ public class RepositoryConnectionPool implements RepositoryConnectionFactory {
     }
 
     /**
-     * Returns the approximate number of connections that have been checked out from the pool.
+     * Returns the approximate number of connections that are currently checked out from the pool.
+     * 
      * @return the number of checked-out connections
      */
     public int getInUseCount() {
@@ -351,6 +388,7 @@ public class RepositoryConnectionPool implements RepositoryConnectionFactory {
 
     /**
      * Get the total number of connections that have been created by this pool.
+     * 
      * @return the total number of connections created by this pool
      */
     public long getTotalConnectionsCreated() {
@@ -359,6 +397,7 @@ public class RepositoryConnectionPool implements RepositoryConnectionFactory {
 
     /**
      * Get the total number of times connections have been {@link #getConnection()} used.
+     * 
      * @return the total number
      */
     public long getTotalConnectionsUsed() {
@@ -371,6 +410,7 @@ public class RepositoryConnectionPool implements RepositoryConnectionFactory {
 
     /**
      * Call the supplied operation, using a connection from this pool.
+     * 
      * @param <T> the return type for the operation
      * @param operation the operation to be run using a connection in this pool
      * @return the results from the operation
@@ -378,7 +418,7 @@ public class RepositoryConnectionPool implements RepositoryConnectionFactory {
      * @throws InterruptedException if the thread was interrupted during the operation
      * @throws IllegalArgumentException if the operation is null
      * @see #callable(RepositoryOperation)
-     * @see #callables(Collection)
+     * @see #callables(Iterable)
      * @see #callables(RepositoryOperation...)
      */
     public <T> T call( RepositoryOperation<T> operation ) throws RepositorySourceException, InterruptedException {
@@ -399,11 +439,12 @@ public class RepositoryConnectionPool implements RepositoryConnectionFactory {
 
     /**
      * Return a callable object that, when run, performs the supplied repository operation against a connection in this pool.
+     * 
      * @param <T> the return type for the operation
      * @param operation the operation to be run using a connection in this pool
      * @return the callable
      * @see #call(RepositoryOperation)
-     * @see #callables(Collection)
+     * @see #callables(Iterable)
      * @see #callables(RepositoryOperation...)
      */
     public <T> Callable<T> callable( final RepositoryOperation<T> operation ) {
@@ -413,6 +454,7 @@ public class RepositoryConnectionPool implements RepositoryConnectionFactory {
 
             /**
              * Execute by getting a connection from this pool, running the client, and return the connection to the pool.
+             * 
              * @return the operation's result
              * @throws Exception
              */
@@ -425,12 +467,13 @@ public class RepositoryConnectionPool implements RepositoryConnectionFactory {
     /**
      * Return a collection of callable objects that, when run, perform the supplied repository operations against connections in
      * this pool.
+     * 
      * @param <T> the return type for the operations
      * @param operations the operations to be run using connection from this pool
      * @return the collection of callables
      * @see #call(RepositoryOperation)
      * @see #callable(RepositoryOperation)
-     * @see #callables(Collection)
+     * @see #callables(Iterable)
      */
     public <T> List<Callable<T>> callables( RepositoryOperation<T>... operations ) {
         List<Callable<T>> callables = new ArrayList<Callable<T>>();
@@ -443,6 +486,7 @@ public class RepositoryConnectionPool implements RepositoryConnectionFactory {
     /**
      * Return a collection of callable objects that, when run, perform the supplied repository operations against connections in
      * this pool.
+     * 
      * @param <T> the return type for the operations
      * @param operations the operations to be run using connection from this pool
      * @return the collection of callables
@@ -450,7 +494,7 @@ public class RepositoryConnectionPool implements RepositoryConnectionFactory {
      * @see #callable(RepositoryOperation)
      * @see #callables(RepositoryOperation...)
      */
-    public <T> List<Callable<T>> callables( Collection<RepositoryOperation<T>> operations ) {
+    public <T> List<Callable<T>> callables( Iterable<RepositoryOperation<T>> operations ) {
         List<Callable<T>> callables = new ArrayList<Callable<T>>();
         for (final RepositoryOperation<T> operation : operations) {
             callables.add(callable(operation));
@@ -466,6 +510,7 @@ public class RepositoryConnectionPool implements RepositoryConnectionFactory {
      * Starts a core connection, causing it to idly wait for use. This overrides the default policy of starting core connections
      * only when they are {@link #getConnection() needed}. This method will return <tt>false</tt> if all core connections have
      * already been started.
+     * 
      * @return true if a connection was started
      * @throws RepositorySourceException if there was an error obtaining the new connection
      * @throws InterruptedException if the thread was interrupted during the operation
@@ -483,6 +528,7 @@ public class RepositoryConnectionPool implements RepositoryConnectionFactory {
     /**
      * Starts all core connections, causing them to idly wait for use. This overrides the default policy of starting core
      * connections only when they are {@link #getConnection() needed}.
+     * 
      * @return the number of connections started.
      * @throws RepositorySourceException if there was an error obtaining the new connection
      * @throws InterruptedException if the thread was interrupted during the operation
@@ -500,9 +546,11 @@ public class RepositoryConnectionPool implements RepositoryConnectionFactory {
     /**
      * Initiates an orderly shutdown in which connections that are currently in use are allowed to be used and closed as normal,
      * but no new connections will be created. Invocation has no additional effect if already shut down.
-     * @throws SecurityException if a security manager exists and shutting down this ConnectionPool may manipulate threads that
-     * the caller is not permitted to modify because it does not hold {@link java.lang.RuntimePermission}<tt>("modifyThread")</tt>,
-     * or the security manager's <tt>checkAccess</tt> method denies access.
+     * 
+     * @throws SecurityException if a security manager exists and shutting down this pool may manipulate threads that the caller
+     * is not permitted to modify because it does not hold {@link java.lang.RuntimePermission}<tt>("modifyThread")</tt>, or
+     * the security manager's <tt>checkAccess</tt> method denies access.
+     * @see #shutdownNow()
      */
     public void shutdown() {
         // Fail if caller doesn't have modifyThread permission. We
@@ -548,14 +596,12 @@ public class RepositoryConnectionPool implements RepositoryConnectionFactory {
     }
 
     /**
-     * Attempts to stop all actively executing tasks, halts the processing of waiting tasks, and returns a list of the tasks that
-     * were awaiting execution.
-     * <p>
-     * This implementation cancels tasks via {@link Thread#interrupt}, so if any tasks mask or fail to respond to interrupts,
-     * they may never terminate.
-     * @throws SecurityException if a security manager exists and shutting down this ExecutorService may manipulate threads that
-     * the caller is not permitted to modify because it does not hold {@link java.lang.RuntimePermission}<tt>("modifyThread")</tt>,
-     * or the security manager's <tt>checkAccess</tt> method denies access.
+     * Attempts to close all connections, including those connections currently in use, and prevent the use of other connections.
+     * 
+     * @throws SecurityException if a security manager exists and shutting down this pool may manipulate threads that the caller
+     * is not permitted to modify because it does not hold {@link java.lang.RuntimePermission}<tt>("modifyThread")</tt>, or
+     * the security manager's <tt>checkAccess</tt> method denies access.
+     * @see #shutdown()
      */
     public void shutdownNow() {
         // Almost the same code as shutdown()
@@ -608,25 +654,67 @@ public class RepositoryConnectionPool implements RepositoryConnectionFactory {
         if (fullyTerminated) terminated();
     }
 
+    /**
+     * Return whether this connection pool is running and is able to {@link #getConnection() provide connections}. Note that this
+     * method is effectively <code>!isShutdown()</code>.
+     * 
+     * @return true if this pool is running, or false otherwise
+     * @see #isShutdown()
+     * @see #isTerminated()
+     * @see #isTerminating()
+     */
+    public boolean isRunning() {
+        return runState == RUNNING;
+    }
+
+    /**
+     * Return whether this connection pool is in the process of shutting down or has already been shut down. A result of
+     * <code>true</code> signals that the pool may no longer be used. Note that this method is effectively
+     * <code>!isRunning()</code>.
+     * 
+     * @return true if this pool has been shut down, or false otherwise
+     * @see #isShutdown()
+     * @see #isTerminated()
+     * @see #isTerminating()
+     */
     public boolean isShutdown() {
         return runState != RUNNING;
     }
 
     /**
-     * Returns true if this executor is in the process of terminating after <tt>shutdown</tt> or <tt>shutdownNow</tt> but has
-     * not completely terminated. This method may be useful for debugging. A return of <tt>true</tt> reported a sufficient
-     * period after shutdown may indicate that submitted tasks have ignored or suppressed interruption, causing this executor not
-     * to properly terminate.
-     * @return true if terminating but not yet terminated.
+     * Returns true if this pool is in the process of terminating after {@link #shutdown()} or {@link #shutdownNow()} has been
+     * called but has not completely terminated. This method may be useful for debugging. A return of <tt>true</tt> reported a
+     * sufficient period after shutdown may indicate that submitted tasks have ignored or suppressed interruption, causing this
+     * executor not to properly terminate.
+     * 
+     * @return true if terminating but not yet terminated, or false otherwise
+     * @see #isTerminated()
      */
     public boolean isTerminating() {
         return runState == STOP;
     }
 
+    /**
+     * Return true if this pool has completed its termination and no longer has any open connections.
+     * 
+     * @return true if terminated, or false otherwise
+     * @see #isTerminating()
+     */
     public boolean isTerminated() {
         return runState == TERMINATED;
     }
 
+    /**
+     * Method that can be called after {@link #shutdown()} or {@link #shutdownNow()} to wait until all connections in use at the
+     * time those methods were called have been closed normally. This method accepts a maximum time duration, after which it will
+     * return even if all connections have not been closed.
+     * 
+     * @param timeout the maximum time to wait for all connections to be closed and returned to the pool
+     * @param unit the time unit for <code>timeout</code>
+     * @return true if the pool was terminated in the supplied time (or was already terminated), or false if the timeout occurred
+     * before all the connections were closed
+     * @throws InterruptedException if the thread was interrupted
+     */
     public boolean awaitTermination( long timeout, TimeUnit unit ) throws InterruptedException {
         long nanos = unit.toNanos(timeout);
         final ReentrantLock mainLock = this.mainLock;
@@ -645,14 +733,14 @@ public class RepositoryConnectionPool implements RepositoryConnectionFactory {
     }
 
     /**
-     * Method invoked when the Executor has terminated. Default implementation does nothing. Note: To properly nest multiple
+     * Method invoked when the pool has terminated. Default implementation does nothing. Note: To properly nest multiple
      * overridings, subclasses should generally invoke <tt>super.terminated</tt> within this method.
      */
     protected void terminated() {
     }
 
     /**
-     * Invokes <tt>shutdown</tt> when this executor is no longer referenced.
+     * Invokes <tt>shutdown</tt> when this pool is no longer referenced.
      */
     @Override
     protected void finalize() {
@@ -743,6 +831,7 @@ public class RepositoryConnectionPool implements RepositoryConnectionFactory {
 
     /**
      * This method is automatically called by the {@link ConnectionWrapper} when it is {@link ConnectionWrapper#close() closed}.
+     * 
      * @param wrapper the wrapper to the connection that is being returned to the pool
      */
     protected void returnConnection( ConnectionWrapper wrapper ) {
@@ -786,6 +875,7 @@ public class RepositoryConnectionPool implements RepositoryConnectionFactory {
 
     /**
      * Validate the supplied connection, returning the connection if valid or null if the connection is not valid.
+     * 
      * @param connection the connection to be validated; may not be null
      * @return the validated connection, or null if the connection did not validate and was removed from the pool
      */
@@ -814,6 +904,7 @@ public class RepositoryConnectionPool implements RepositoryConnectionFactory {
      * connection would violate the {@link #maximumPoolSize maximum pool size} nor does it add the new connection to the
      * {@link #availableConnections available connections} (as the caller may want it immediately), but it does increment the
      * {@link #poolSize pool size}.
+     * 
      * @return the connection wrapper with a new connection
      * @throws RepositorySourceException if there was an error obtaining the new connection
      * @throws InterruptedException if the thread was interrupted during the operation
@@ -829,6 +920,7 @@ public class RepositoryConnectionPool implements RepositoryConnectionFactory {
     /**
      * Close a connection that is in the pool but no longer in the {@link #availableConnections available connections}. This
      * method does decrement the {@link #poolSize pool size}.
+     * 
      * @param wrapper the wrapper for the connection to be closed
      * @throws InterruptedException if the thread was interrupted during the operation
      */
@@ -952,6 +1044,14 @@ public class RepositoryConnectionPool implements RepositoryConnectionFactory {
         public XAResource getXAResource() {
             if (closed) throw new IllegalStateException(SpiI18n.closedConnectionMayNotBeUsed.text());
             return this.original.getXAResource();
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        public CachePolicy getDefaultCachePolicy() {
+            if (closed) throw new IllegalStateException(SpiI18n.closedConnectionMayNotBeUsed.text());
+            return this.original.getDefaultCachePolicy();
         }
 
         /**

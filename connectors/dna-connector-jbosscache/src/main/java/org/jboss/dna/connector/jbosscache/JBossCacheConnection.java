@@ -30,6 +30,7 @@ import javax.transaction.xa.XAResource;
 import org.jboss.cache.Cache;
 import org.jboss.cache.Fqn;
 import org.jboss.cache.Node;
+import org.jboss.dna.spi.cache.CachePolicy;
 import org.jboss.dna.spi.graph.Name;
 import org.jboss.dna.spi.graph.Path;
 import org.jboss.dna.spi.graph.Property;
@@ -92,6 +93,13 @@ public class JBossCacheConnection implements RepositoryConnection {
      */
     public String getSourceName() {
         return source.getName();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public CachePolicy getDefaultCachePolicy() {
+        return source.getDefaultCachePolicy();
     }
 
     /**

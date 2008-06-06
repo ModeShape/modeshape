@@ -23,7 +23,6 @@ package org.jboss.dna.spi.graph.connection;
 
 import java.io.Serializable;
 import javax.naming.Referenceable;
-import org.jboss.dna.spi.cache.CachePolicy;
 
 /**
  * A repository source is a description of a resource that can be used to access or store repository information. This class
@@ -39,6 +38,7 @@ import org.jboss.dna.spi.cache.CachePolicy;
  * {@link Referenceable} and {@link Serializable} so that such objects can be stored in any JNDI naming context and enable proper
  * system recovery,
  * </p>
+ * 
  * @author Randall Hauch
  */
 public interface RepositorySource extends RepositoryConnectionFactory, Referenceable, Serializable {
@@ -47,6 +47,7 @@ public interface RepositorySource extends RepositoryConnectionFactory, Reference
      * Get the maximum number of retries that may be performed on a given operation when using
      * {@link #getConnection() connections} created by this source. This value does not constitute a minimum number of retries; in
      * fact, the connection user is not required to retry any operations.
+     * 
      * @return the maximum number of allowable retries, or 0 if the source has no limit
      */
     int getRetryLimit();
@@ -55,14 +56,9 @@ public interface RepositorySource extends RepositoryConnectionFactory, Reference
      * Set the maximum number of retries that may be performed on a given operation when using
      * {@link #getConnection() connections} created by this source. This value does not constitute a minimum number of retries; in
      * fact, the connection user is not required to retry any operations.
+     * 
      * @param limit the maximum number of allowable retries, or 0 if the source has no limit
      */
     void setRetryLimit( int limit );
-
-    /**
-     * Get the default cache policy for this source. If none is provided, a global cache policy will be used.
-     * @return the default cache policy
-     */
-    CachePolicy getDefaultCachePolicy();
 
 }
