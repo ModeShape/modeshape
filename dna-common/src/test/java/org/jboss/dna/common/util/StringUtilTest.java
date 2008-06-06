@@ -415,6 +415,26 @@ public class StringUtilTest {
 		assertThat(StringUtil.readableString(list3), is("[ [ \"a1\", \"a2\" ], [ \"b1\", \"b2\" ] ]"));
 	}
 
+	@Test( expected = IllegalArgumentException.class )
+	public void normalizeShouldFailIfTextNull() {
+		StringUtil.normalize(null);
+	}
+
+	@Test
+	public void normalizeShouldRemoveLeadingTrailingWhitespace() {
+		assertThat(StringUtil.normalize(" \t\n test this \t"), is("test this"));
+	}
+
+	@Test
+	public void normalizeShouldReduceInternalWhitespace() {
+		assertThat(StringUtil.normalize("test \t\n\r this"), is("test this"));
+	}
+
+	@Test
+	public void normalizeShouldReturnEqualStringIfNothingToNormalize() {
+		assertThat(StringUtil.normalize("test this"), is("test this"));
+	}
+
 	protected class InputStreamWrapper extends InputStream {
 
 		private boolean closed = false;

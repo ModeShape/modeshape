@@ -34,6 +34,7 @@ import org.jboss.dna.spi.graph.impl.StandardValueFactories;
 
 /**
  * @author Randall Hauch
+ * @author John Verhaeg
  */
 @NotThreadSafe
 public class MockSequencerOutput implements SequencerOutput {
@@ -46,10 +47,12 @@ public class MockSequencerOutput implements SequencerOutput {
 	public MockSequencerOutput() {
 		this.properties = new HashMap<Path, Object[]>();
 		NamespaceRegistry registry = new BasicNamespaceRegistry();
-		registry.register("dna", "http://www.jboss.org/dna/1.0");
 		registry.register("jcr", "http://www.jcp.org/jcr/1.0");
 		registry.register("mix", "http://www.jcp.org/jcr/mix/1.0");
 		registry.register("nt", "http://www.jcp.org/jcr/nt/1.0");
+		registry.register("dna", "http://www.jboss.org/dna/1.0");
+		registry.register("dnadtd", "http://www.jboss.org/dna/1.0/dtd");
+		registry.register("dnaxml", "http://www.jboss.org/dna/1.0/xml");
 		factories = new StandardValueFactories(registry);
 	}
 
@@ -64,7 +67,7 @@ public class MockSequencerOutput implements SequencerOutput {
 	 * <p>
 	 * {@inheritDoc}
 	 * </p>
-	 * 
+	 *
 	 * @see org.jboss.dna.spi.sequencers.SequencerOutput#getNamespaceRegistry()
 	 */
 	public NamespaceRegistry getNamespaceRegistry() {

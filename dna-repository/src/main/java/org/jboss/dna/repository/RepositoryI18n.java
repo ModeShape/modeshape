@@ -27,6 +27,7 @@ import org.jboss.dna.common.i18n.I18n;
 
 /**
  * @author Randall Hauch
+ * @author John Verhaeg
  */
 public final class RepositoryI18n {
 
@@ -101,6 +102,11 @@ public final class RepositoryI18n {
     public static I18n errorUnregisteringWorkspaceListenerWhileShuttingDownObservationService;
 
     public static I18n invalidRepositoryNodePath;
+
+    // XML Sequencer
+	public static I18n errorSequencingXmlDocument;
+	public static I18n sequencingXmlDocument;
+	public static I18n canceledSequencingXmlDocument;
 
     static {
         try {

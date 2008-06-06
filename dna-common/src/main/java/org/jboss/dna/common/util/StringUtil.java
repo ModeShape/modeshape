@@ -46,6 +46,7 @@ import org.jboss.dna.common.SystemFailureException;
 public class StringUtil {
 
 	public static final String[] EMPTY_STRING_ARRAY = new String[0];
+	private static final Pattern NORMALIZE_PATTERN = Pattern.compile("\\s+");
 	private static final Pattern PARAMETER_COUNT_PATTERN = Pattern.compile("\\{(\\d+)\\}");
 
 	/**
@@ -623,16 +624,29 @@ public class StringUtil {
 	/**
 	 * Get the stack trace of the supplied exception.
 	 *
-	 * @param t the exception for which the stack trace is to be returned
+	 * @param throwable the exception for which the stack trace is to be returned
 	 * @return the stack trace, or null if the supplied exception is null
 	 */
-	public static String getStackTrace( Throwable t ) {
-		if (t == null) return null;
+	public static String getStackTrace( Throwable throwable ) {
+		if (throwable == null) return null;
 		final ByteArrayOutputStream bas = new ByteArrayOutputStream();
 		final PrintWriter pw = new PrintWriter(bas);
-		t.printStackTrace(pw);
+		throwable.printStackTrace(pw);
 		pw.close();
 		return bas.toString();
+	}
+
+	/**
+	 * Removes leading and trailing whitespace from the supplied text, and reduces other consecutive whitespace characters to a
+	 * single space. Whitespace includes line-feeds.
+	 *
+	 * @param text the text to be normalized
+	 * @return the normalized text
+	 */
+	public static String normalize( String text ) {
+		ArgCheck.isNotNull(text, "text");
+		// This could be much more efficient.
+		return NORMALIZE_PATTERN.matcher(text).replaceAll(" ").trim();
 	}
 
 	private StringUtil() {
