@@ -108,6 +108,12 @@ public final class RepositoryI18n {
 	public static I18n sequencingXmlDocument;
 	public static I18n canceledSequencingXmlDocument;
 
+    public static I18n interruptedWhileConnectingToFederationConfigurationRepository;
+    public static I18n interruptedWhileClosingConnectionToFederationConfigurationRepository;
+    public static I18n unableToCreateConnectionToFederatedRepository;
+    public static I18n unableToAuthenticateConnectionToFederatedRepository;
+    public static I18n repositoryHasBeenShutDown;
+
     static {
         try {
             I18n.initialize(RepositoryI18n.class);
