@@ -57,4 +57,11 @@ public class NamespaceException extends RuntimeException {
 
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String toString() {
+        return super.toString();
+    }
 }
