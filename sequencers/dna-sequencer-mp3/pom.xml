@@ -7,10 +7,10 @@
     <relativePath>../..</relativePath>
   </parent>
   <!-- The groupId and version values are inherited from parent -->
-  <artifactId>dna-sequencer-mp3</artifactId>
+  <artifactId>dna-sequencer-esbMessage</artifactId>
   <packaging>jar</packaging>
-  <name>JBoss DNA MP3 Sequencer</name>
-  <description>JBoss DNA Sequencer that processes MP3 audio files</description>
+  <name>JBoss DNA ESB Message Sequencer</name>
+  <description>JBoss DNA Sequencer that processes ESB Message</description>
   <url>http://labs.jboss.org/dna</url>
   <dependencies>
     <dependency>
@@ -22,14 +22,14 @@
       <artifactId>dna-spi</artifactId>
     </dependency>
     <dependency>
-      <groupId>org.jaudiotagger</groupId>
-      <artifactId>jaudiotagger</artifactId>
-      <version>1.0.8</version>
-   </dependency>
-    <dependency>
       <groupId>junit</groupId>
       <artifactId>junit-dep</artifactId>
       <version>4.4</version>
+    </dependency>
+    <dependency>
+      <groupId>jbossesb-rosetta.jar</groupId>
+      <artifactId>jbossesb-rosetta-dep</artifactId>
+      <version>4.3</version>
     </dependency>
   </dependencies>
 </project>
