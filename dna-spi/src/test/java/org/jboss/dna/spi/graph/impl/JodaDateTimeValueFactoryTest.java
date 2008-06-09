@@ -32,13 +32,13 @@ import org.jboss.dna.spi.graph.DateTime;
 import org.jboss.dna.spi.graph.Name;
 import org.jboss.dna.spi.graph.Path;
 import org.jboss.dna.spi.graph.Reference;
-import org.jboss.dna.spi.graph.ValueFormatException;
 import org.jmock.Mockery;
 import org.junit.Before;
 import org.junit.Test;
 
 /**
  * @author Randall Hauch
+ * @author John Verhaeg
  */
 public class JodaDateTimeValueFactoryTest {
 
@@ -65,7 +65,7 @@ public class JodaDateTimeValueFactoryTest {
         context = new Mockery();
     }
 
-    @Test( expected = ValueFormatException.class )
+    @Test( expected = UnsupportedOperationException.class )
     public void shouldNotCreateDateFromBoolean() {
         factory.create(true);
     }
@@ -82,7 +82,7 @@ public class JodaDateTimeValueFactoryTest {
         assertThat(factory.create("  " + LAST_YEAR.getString() + "  "), is(LAST_YEAR));
     }
 
-    @Test( expected = ValueFormatException.class )
+    @Test( expected = IllegalArgumentException.class )
     public void shouldNotCreateDateFromStringThatIsNotInTheStandardFormat() {
         factory.create("something");
     }
@@ -125,22 +125,22 @@ public class JodaDateTimeValueFactoryTest {
         assertThat(factory.create(value), is((DateTime)new JodaDateTime(value)));
     }
 
-    @Test( expected = ValueFormatException.class )
+    @Test( expected = UnsupportedOperationException.class )
     public void shouldNotCreateDateFromName() {
         factory.create(context.mock(Name.class));
     }
 
-    @Test( expected = ValueFormatException.class )
+    @Test( expected = UnsupportedOperationException.class )
     public void shouldNotCreateDateFromPath() {
         factory.create(context.mock(Path.class));
     }
 
-    @Test( expected = ValueFormatException.class )
+    @Test( expected = UnsupportedOperationException.class )
     public void shouldNotCreateDateFromReference() {
         factory.create(context.mock(Reference.class));
     }
 
-    @Test( expected = ValueFormatException.class )
+    @Test( expected = UnsupportedOperationException.class )
     public void shouldNotCreateDateFromUri() throws Exception {
         factory.create(new URI("http://www.jboss.org"));
     }
@@ -163,17 +163,19 @@ public class JodaDateTimeValueFactoryTest {
         assertThat(factory.create(new StringReader(LAST_YEAR.getString())), is(LAST_YEAR));
     }
 
-    @Test( expected = ValueFormatException.class )
-    public void shouldNotCreateDateFromByteArrayContainingUtf8EncodingOfStringWithContentThatIsNotWellFormedDate() throws Exception {
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldNotCreateDateFromByteArrayContainingUtf8EncodingOfStringWithContentThatIsNotWellFormedDate()
+        throws Exception {
         factory.create("something".getBytes("UTF-8"));
     }
 
-    @Test( expected = ValueFormatException.class )
-    public void shouldNotCreateDateFromInputStreamContainingUtf8EncodingOfStringWithContentThatIsNotWellFormedDate() throws Exception {
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldNotCreateDateFromInputStreamContainingUtf8EncodingOfStringWithContentThatIsNotWellFormedDate()
+        throws Exception {
         factory.create(new ByteArrayInputStream("something".getBytes("UTF-8")));
     }
 
-    @Test( expected = ValueFormatException.class )
+    @Test( expected = IllegalArgumentException.class )
     public void shouldNotCreateDateFromReaderContainingStringWithContentThatIsNotWellFormedDate() throws Exception {
         factory.create(new ByteArrayInputStream("something".getBytes("UTF-8")));
     }

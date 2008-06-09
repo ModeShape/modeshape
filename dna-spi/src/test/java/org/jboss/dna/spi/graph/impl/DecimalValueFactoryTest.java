@@ -32,13 +32,13 @@ import java.util.Date;
 import org.jboss.dna.spi.graph.Name;
 import org.jboss.dna.spi.graph.Path;
 import org.jboss.dna.spi.graph.Reference;
-import org.jboss.dna.spi.graph.ValueFormatException;
 import org.jmock.Mockery;
 import org.junit.Before;
 import org.junit.Test;
 
 /**
  * @author Randall Hauch
+ * @author John Verhaeg
  */
 public class DecimalValueFactoryTest {
 
@@ -56,7 +56,7 @@ public class DecimalValueFactoryTest {
         context = new Mockery();
     }
 
-    @Test( expected = ValueFormatException.class )
+    @Test( expected = UnsupportedOperationException.class )
     public void shouldNotCreateDecimalFromBooleanValue() {
         factory.create(true);
     }
@@ -113,22 +113,22 @@ public class DecimalValueFactoryTest {
         assertThat(factory.create(value), is(BigDecimal.valueOf(value.getTimeInMillis())));
     }
 
-    @Test( expected = ValueFormatException.class )
+    @Test( expected = UnsupportedOperationException.class )
     public void shouldNotCreateDecimalFromName() {
         factory.create(context.mock(Name.class));
     }
 
-    @Test( expected = ValueFormatException.class )
+    @Test( expected = UnsupportedOperationException.class )
     public void shouldNotCreateDecimalFromPath() {
         factory.create(context.mock(Path.class));
     }
 
-    @Test( expected = ValueFormatException.class )
+    @Test( expected = UnsupportedOperationException.class )
     public void shouldNotCreateDecimalFromReference() {
         factory.create(context.mock(Reference.class));
     }
 
-    @Test( expected = ValueFormatException.class )
+    @Test( expected = UnsupportedOperationException.class )
     public void shouldNotCreateDecimalFromUri() throws Exception {
         factory.create(new URI("http://www.jboss.org"));
     }
@@ -154,17 +154,18 @@ public class DecimalValueFactoryTest {
         assertThat(factory.create(new StringReader("100.000101")), is(BigDecimal.valueOf(100.000101d)));
     }
 
-    @Test( expected = ValueFormatException.class )
+    @Test( expected = IllegalArgumentException.class )
     public void shouldNotCreateDecimalFromByteArrayContainingUtf8EncodingOfStringWithContentsOtherThanDecimal() throws Exception {
         factory.create("something".getBytes("UTF-8"));
     }
 
-    @Test( expected = ValueFormatException.class )
-    public void shouldNotCreateDecimalFromInputStreamContainingUtf8EncodingOfStringWithContentsOtherThanDecimal() throws Exception {
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldNotCreateDecimalFromInputStreamContainingUtf8EncodingOfStringWithContentsOtherThanDecimal()
+        throws Exception {
         factory.create(new ByteArrayInputStream("something".getBytes("UTF-8")));
     }
 
-    @Test( expected = ValueFormatException.class )
+    @Test( expected = IllegalArgumentException.class )
     public void shouldNotCreateDecimalFromReaderContainingStringWithContentsOtherThanDecimal() throws Exception {
         factory.create(new StringReader("something"));
     }

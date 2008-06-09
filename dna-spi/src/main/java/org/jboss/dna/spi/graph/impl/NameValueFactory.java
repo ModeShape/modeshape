@@ -21,7 +21,6 @@
  */
 package org.jboss.dna.spi.graph.impl;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
 import java.math.BigDecimal;
@@ -42,12 +41,12 @@ import org.jboss.dna.spi.graph.Path;
 import org.jboss.dna.spi.graph.PropertyType;
 import org.jboss.dna.spi.graph.Reference;
 import org.jboss.dna.spi.graph.ValueFactory;
-import org.jboss.dna.spi.graph.ValueFormatException;
 
 /**
  * The standard {@link ValueFactory} for {@link PropertyType#NAME} values.
  * 
  * @author Randall Hauch
+ * @author John Verhaeg
  */
 @Immutable
 public class NameValueFactory extends AbstractValueFactory<Name> implements NameFactory {
@@ -62,7 +61,9 @@ public class NameValueFactory extends AbstractValueFactory<Name> implements Name
 
     private final NamespaceRegistry namespaceRegistry;
 
-    public NameValueFactory( NamespaceRegistry namespaceRegistry, TextDecoder decoder, ValueFactory<String> stringValueFactory ) {
+    public NameValueFactory( NamespaceRegistry namespaceRegistry,
+                             TextDecoder decoder,
+                             ValueFactory<String> stringValueFactory ) {
         super(PropertyType.NAME, decoder, stringValueFactory);
         ArgCheck.isNotNull(namespaceRegistry, "namespaceRegistry");
         this.namespaceRegistry = namespaceRegistry;
@@ -78,7 +79,8 @@ public class NameValueFactory extends AbstractValueFactory<Name> implements Name
     /**
      * {@inheritDoc}
      */
-    public Name create( String value, TextDecoder decoder ) throws ValueFormatException {
+    public Name create( String value,
+                        TextDecoder decoder ) {
         if (value == null) return null;
         if (decoder == null) decoder = getDecoder();
         try {
@@ -108,23 +110,30 @@ public class NameValueFactory extends AbstractValueFactory<Name> implements Name
                 }
                 return new BasicName(namespaceUri, localName);
             }
-        } catch (Throwable t) {
-            throw new ValueFormatException(SpiI18n.errorCreatingValue.text(getPropertyType().getName(), String.class.getSimpleName(), value), t);
+        } catch (NamespaceException err) {
+            throw new IllegalArgumentException(SpiI18n.errorConvertingType.text(String.class.getSimpleName(),
+                                                                                Name.class.getSimpleName(),
+                                                                                value), err);
         }
-        throw new ValueFormatException(SpiI18n.errorCreatingValue.text(getPropertyType().getName(), String.class.getSimpleName(), value));
+        throw new IllegalArgumentException(SpiI18n.errorConvertingType.text(String.class.getSimpleName(),
+                                                                            Name.class.getSimpleName(),
+                                                                            value));
     }
 
     /**
      * {@inheritDoc}
      */
-    public Name create( String namespaceUri, String localName ) {
+    public Name create( String namespaceUri,
+                        String localName ) {
         return create(namespaceUri, localName, getDecoder());
     }
 
     /**
      * {@inheritDoc}
      */
-    public Name create( String namespaceUri, String localName, TextDecoder decoder ) {
+    public Name create( String namespaceUri,
+                        String localName,
+                        TextDecoder decoder ) {
         ArgCheck.isNotEmpty(localName, "localName");
         if (decoder == null) decoder = getDecoder();
         namespaceUri = namespaceUri != null ? decoder.decode(namespaceUri.trim()) : null;
@@ -135,57 +144,73 @@ public class NameValueFactory extends AbstractValueFactory<Name> implements Name
     /**
      * {@inheritDoc}
      */
-    public Name create( int value ) throws ValueFormatException {
-        throw new ValueFormatException(SpiI18n.unableToCreateValue.text(getPropertyType().getName(), Date.class.getSimpleName(), value));
+    public Name create( int value ) {
+        throw new UnsupportedOperationException(SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
+                                                                                 Date.class.getSimpleName(),
+                                                                                 value));
     }
 
     /**
      * {@inheritDoc}
      */
-    public Name create( long value ) throws ValueFormatException {
-        throw new ValueFormatException(SpiI18n.unableToCreateValue.text(getPropertyType().getName(), Date.class.getSimpleName(), value));
+    public Name create( long value ) {
+        throw new UnsupportedOperationException(SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
+                                                                                 Date.class.getSimpleName(),
+                                                                                 value));
     }
 
     /**
      * {@inheritDoc}
      */
-    public Name create( boolean value ) throws ValueFormatException {
-        throw new ValueFormatException(SpiI18n.unableToCreateValue.text(getPropertyType().getName(), Date.class.getSimpleName(), value));
+    public Name create( boolean value ) {
+        throw new UnsupportedOperationException(SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
+                                                                                 Date.class.getSimpleName(),
+                                                                                 value));
     }
 
     /**
      * {@inheritDoc}
      */
-    public Name create( float value ) throws ValueFormatException {
-        throw new ValueFormatException(SpiI18n.unableToCreateValue.text(getPropertyType().getName(), Date.class.getSimpleName(), value));
+    public Name create( float value ) {
+        throw new UnsupportedOperationException(SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
+                                                                                 Date.class.getSimpleName(),
+                                                                                 value));
     }
 
     /**
      * {@inheritDoc}
      */
-    public Name create( double value ) throws ValueFormatException {
-        throw new ValueFormatException(SpiI18n.unableToCreateValue.text(getPropertyType().getName(), Date.class.getSimpleName(), value));
+    public Name create( double value ) {
+        throw new UnsupportedOperationException(SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
+                                                                                 Date.class.getSimpleName(),
+                                                                                 value));
     }
 
     /**
      * {@inheritDoc}
      */
-    public Name create( BigDecimal value ) throws ValueFormatException {
-        throw new ValueFormatException(SpiI18n.unableToCreateValue.text(getPropertyType().getName(), Date.class.getSimpleName(), value));
+    public Name create( BigDecimal value ) {
+        throw new UnsupportedOperationException(SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
+                                                                                 Date.class.getSimpleName(),
+                                                                                 value));
     }
 
     /**
      * {@inheritDoc}
      */
-    public Name create( Calendar value ) throws ValueFormatException {
-        throw new ValueFormatException(SpiI18n.unableToCreateValue.text(getPropertyType().getName(), Date.class.getSimpleName(), value));
+    public Name create( Calendar value ) {
+        throw new UnsupportedOperationException(SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
+                                                                                 Date.class.getSimpleName(),
+                                                                                 value));
     }
 
     /**
      * {@inheritDoc}
      */
-    public Name create( Date value ) throws ValueFormatException {
-        throw new ValueFormatException(SpiI18n.unableToCreateValue.text(getPropertyType().getName(), Date.class.getSimpleName(), value));
+    public Name create( Date value ) {
+        throw new UnsupportedOperationException(SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
+                                                                                 Date.class.getSimpleName(),
+                                                                                 value));
     }
 
     /**
@@ -198,26 +223,30 @@ public class NameValueFactory extends AbstractValueFactory<Name> implements Name
     /**
      * {@inheritDoc}
      */
-    public Name create( Path value ) throws ValueFormatException {
+    public Name create( Path value ) {
         if (value == null) return null;
         if (!value.isAbsolute() && value.size() == 1) {
             // A relative name of length 1 is converted to a name
             return value.getSegment(0).getName();
         }
-        throw new ValueFormatException(SpiI18n.errorCreatingValue.text(getPropertyType().getName(), Path.class.getSimpleName(), value));
+        throw new IllegalArgumentException(SpiI18n.errorConvertingType.text(Path.class.getSimpleName(),
+                                                                            Name.class.getSimpleName(),
+                                                                            value));
     }
 
     /**
      * {@inheritDoc}
      */
-    public Name create( Reference value ) throws ValueFormatException {
-        throw new ValueFormatException(SpiI18n.unableToCreateValue.text(getPropertyType().getName(), Reference.class.getSimpleName(), value));
+    public Name create( Reference value ) {
+        throw new UnsupportedOperationException(SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
+                                                                                 Reference.class.getSimpleName(),
+                                                                                 value));
     }
 
     /**
      * {@inheritDoc}
      */
-    public Name create( URI value ) throws ValueFormatException {
+    public Name create( URI value ) {
         if (value == null) return null;
         String asciiString = value.toASCIIString();
         // Remove any leading "./" ...
@@ -227,13 +256,15 @@ public class NameValueFactory extends AbstractValueFactory<Name> implements Name
         if (asciiString.indexOf('/') == -1) {
             return create(asciiString);
         }
-        throw new ValueFormatException(SpiI18n.errorCreatingValue.text(getPropertyType().getName(), Path.class.getSimpleName(), value));
+        throw new IllegalArgumentException(SpiI18n.errorConvertingType.text(URI.class.getSimpleName(),
+                                                                            Path.class.getSimpleName(),
+                                                                            value));
     }
 
     /**
      * {@inheritDoc}
      */
-    public Name create( byte[] value ) throws ValueFormatException {
+    public Name create( byte[] value ) {
         // First attempt to create a string from the value, then a long from the string ...
         return create(getStringValueFactory().create(value));
     }
@@ -241,7 +272,8 @@ public class NameValueFactory extends AbstractValueFactory<Name> implements Name
     /**
      * {@inheritDoc}
      */
-    public Name create( InputStream stream, int approximateLength ) throws IOException, ValueFormatException {
+    public Name create( InputStream stream,
+                        int approximateLength ) {
         // First attempt to create a string from the value, then a double from the string ...
         return create(getStringValueFactory().create(stream, approximateLength));
     }
@@ -249,7 +281,8 @@ public class NameValueFactory extends AbstractValueFactory<Name> implements Name
     /**
      * {@inheritDoc}
      */
-    public Name create( Reader reader, int approximateLength ) throws IOException, ValueFormatException {
+    public Name create( Reader reader,
+                        int approximateLength ) {
         // First attempt to create a string from the value, then a double from the string ...
         return create(getStringValueFactory().create(reader, approximateLength));
     }

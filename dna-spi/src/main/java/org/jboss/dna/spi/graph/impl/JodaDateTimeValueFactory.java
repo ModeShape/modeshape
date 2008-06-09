@@ -21,7 +21,6 @@
  */
 package org.jboss.dna.spi.graph.impl;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
 import java.math.BigDecimal;
@@ -38,36 +37,40 @@ import org.jboss.dna.spi.graph.Path;
 import org.jboss.dna.spi.graph.PropertyType;
 import org.jboss.dna.spi.graph.Reference;
 import org.jboss.dna.spi.graph.ValueFactory;
-import org.jboss.dna.spi.graph.ValueFormatException;
 
 /**
  * The standard {@link ValueFactory} for {@link PropertyType#DATE} values.
  * 
  * @author Randall Hauch
+ * @author John Verhaeg
  */
 @Immutable
 public class JodaDateTimeValueFactory extends AbstractValueFactory<DateTime> implements DateTimeFactory {
 
-    public JodaDateTimeValueFactory( TextDecoder decoder, ValueFactory<String> stringValueFactory ) {
+    public JodaDateTimeValueFactory( TextDecoder decoder,
+                                     ValueFactory<String> stringValueFactory ) {
         super(PropertyType.DATE, decoder, stringValueFactory);
     }
 
     /**
      * {@inheritDoc}
      */
-    public DateTime create( String value ) throws ValueFormatException {
+    public DateTime create( String value ) {
         if (value == null) return null;
         try {
             return new JodaDateTime(value.trim());
-        } catch (IllegalArgumentException e) {
-            throw new ValueFormatException(SpiI18n.errorCreatingValue.text(getPropertyType().getName(), String.class.getSimpleName(), value), e);
+        } catch (IllegalArgumentException err) {
+            throw new IllegalArgumentException(SpiI18n.errorConvertingType.text(String.class.getSimpleName(),
+                                                                                DateTime.class.getSimpleName(),
+                                                                                value), err);
         }
     }
 
     /**
      * {@inheritDoc}
      */
-    public DateTime create( String value, TextDecoder decoder ) {
+    public DateTime create( String value,
+                            TextDecoder decoder ) {
         // this probably doesn't really need to call the decoder, but by doing so then we don't care at all what the decoder does
         return create(getDecoder(decoder).decode(value));
     }
@@ -89,28 +92,30 @@ public class JodaDateTimeValueFactory extends AbstractValueFactory<DateTime> imp
     /**
      * {@inheritDoc}
      */
-    public DateTime create( boolean value ) throws ValueFormatException {
-        throw new ValueFormatException(SpiI18n.unableToCreateValue.text(getPropertyType().getName(), Date.class.getSimpleName(), value));
+    public DateTime create( boolean value ) {
+        throw new UnsupportedOperationException(SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
+                                                                                 Date.class.getSimpleName(),
+                                                                                 value));
     }
 
     /**
      * {@inheritDoc}
      */
-    public DateTime create( float value ) throws ValueFormatException {
+    public DateTime create( float value ) {
         return create((long)value);
     }
 
     /**
      * {@inheritDoc}
      */
-    public DateTime create( double value ) throws ValueFormatException {
+    public DateTime create( double value ) {
         return create((long)value);
     }
 
     /**
      * {@inheritDoc}
      */
-    public DateTime create( BigDecimal value ) throws ValueFormatException {
+    public DateTime create( BigDecimal value ) {
         if (value == null) return null;
         return create(value.longValue());
     }
@@ -118,7 +123,7 @@ public class JodaDateTimeValueFactory extends AbstractValueFactory<DateTime> imp
     /**
      * {@inheritDoc}
      */
-    public DateTime create( Calendar value ) throws ValueFormatException {
+    public DateTime create( Calendar value ) {
         if (value == null) return null;
         return new JodaDateTime(value);
     }
@@ -126,7 +131,7 @@ public class JodaDateTimeValueFactory extends AbstractValueFactory<DateTime> imp
     /**
      * {@inheritDoc}
      */
-    public DateTime create( Date value ) throws ValueFormatException {
+    public DateTime create( Date value ) {
         if (value == null) return null;
         return new JodaDateTime(value);
     }
@@ -134,35 +139,43 @@ public class JodaDateTimeValueFactory extends AbstractValueFactory<DateTime> imp
     /**
      * {@inheritDoc}
      */
-    public DateTime create( Name value ) throws ValueFormatException {
-        throw new ValueFormatException(SpiI18n.unableToCreateValue.text(getPropertyType().getName(), Name.class.getSimpleName(), value));
+    public DateTime create( Name value ) {
+        throw new UnsupportedOperationException(SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
+                                                                                 Name.class.getSimpleName(),
+                                                                                 value));
     }
 
     /**
      * {@inheritDoc}
      */
-    public DateTime create( Path value ) throws ValueFormatException {
-        throw new ValueFormatException(SpiI18n.unableToCreateValue.text(getPropertyType().getName(), Path.class.getSimpleName(), value));
+    public DateTime create( Path value ) {
+        throw new UnsupportedOperationException(SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
+                                                                                 Path.class.getSimpleName(),
+                                                                                 value));
     }
 
     /**
      * {@inheritDoc}
      */
-    public DateTime create( Reference value ) throws ValueFormatException {
-        throw new ValueFormatException(SpiI18n.unableToCreateValue.text(getPropertyType().getName(), Reference.class.getSimpleName(), value));
+    public DateTime create( Reference value ) {
+        throw new UnsupportedOperationException(SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
+                                                                                 Reference.class.getSimpleName(),
+                                                                                 value));
     }
 
     /**
      * {@inheritDoc}
      */
-    public DateTime create( URI value ) throws ValueFormatException {
-        throw new ValueFormatException(SpiI18n.unableToCreateValue.text(getPropertyType().getName(), URI.class.getSimpleName(), value));
+    public DateTime create( URI value ) {
+        throw new UnsupportedOperationException(SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
+                                                                                 URI.class.getSimpleName(),
+                                                                                 value));
     }
 
     /**
      * {@inheritDoc}
      */
-    public DateTime create( byte[] value ) throws ValueFormatException {
+    public DateTime create( byte[] value ) {
         // First attempt to create a string from the value, then a long from the string ...
         return create(getStringValueFactory().create(value));
     }
@@ -170,7 +183,8 @@ public class JodaDateTimeValueFactory extends AbstractValueFactory<DateTime> imp
     /**
      * {@inheritDoc}
      */
-    public DateTime create( InputStream stream, int approximateLength ) throws IOException, ValueFormatException {
+    public DateTime create( InputStream stream,
+                            int approximateLength ) {
         // First attempt to create a string from the value, then a double from the string ...
         return create(getStringValueFactory().create(stream, approximateLength));
     }
@@ -178,7 +192,8 @@ public class JodaDateTimeValueFactory extends AbstractValueFactory<DateTime> imp
     /**
      * {@inheritDoc}
      */
-    public DateTime create( Reader reader, int approximateLength ) throws IOException, ValueFormatException {
+    public DateTime create( Reader reader,
+                            int approximateLength ) {
         // First attempt to create a string from the value, then a double from the string ...
         return create(getStringValueFactory().create(reader, approximateLength));
     }
@@ -193,22 +208,43 @@ public class JodaDateTimeValueFactory extends AbstractValueFactory<DateTime> imp
     /**
      * {@inheritDoc}
      */
-    public DateTime create( int year, int monthOfYear, int dayOfMonth, int hourOfDay, int minuteOfHour, int secondOfMinute, int millisecondsOfSecond ) {
+    public DateTime create( int year,
+                            int monthOfYear,
+                            int dayOfMonth,
+                            int hourOfDay,
+                            int minuteOfHour,
+                            int secondOfMinute,
+                            int millisecondsOfSecond ) {
         return new JodaDateTime(year, monthOfYear, dayOfMonth, hourOfDay, minuteOfHour, secondOfMinute, millisecondsOfSecond);
     }
 
     /**
      * {@inheritDoc}
      */
-    public DateTime create( int year, int monthOfYear, int dayOfMonth, int hourOfDay, int minuteOfHour, int secondOfMinute, int millisecondsOfSecond, int timeZoneOffsetHours ) {
-        return new JodaDateTime(year, monthOfYear, dayOfMonth, hourOfDay, minuteOfHour, secondOfMinute, millisecondsOfSecond, timeZoneOffsetHours);
+    public DateTime create( int year,
+                            int monthOfYear,
+                            int dayOfMonth,
+                            int hourOfDay,
+                            int minuteOfHour,
+                            int secondOfMinute,
+                            int millisecondsOfSecond,
+                            int timeZoneOffsetHours ) {
+        return new JodaDateTime(year, monthOfYear, dayOfMonth, hourOfDay, minuteOfHour, secondOfMinute, millisecondsOfSecond,
+                                timeZoneOffsetHours);
     }
 
     /**
      * {@inheritDoc}
      */
-    public DateTime create( int year, int monthOfYear, int dayOfMonth, int hourOfDay, int minuteOfHour, int secondOfMinute, int millisecondsOfSecond, String timeZoneId ) {
-        return new JodaDateTime(year, monthOfYear, dayOfMonth, hourOfDay, minuteOfHour, secondOfMinute, millisecondsOfSecond, timeZoneId);
+    public DateTime create( int year,
+                            int monthOfYear,
+                            int dayOfMonth,
+                            int hourOfDay,
+                            int minuteOfHour,
+                            int secondOfMinute,
+                            int millisecondsOfSecond,
+                            String timeZoneId ) {
+        return new JodaDateTime(year, monthOfYear, dayOfMonth, hourOfDay, minuteOfHour, secondOfMinute, millisecondsOfSecond,
+                                timeZoneId);
     }
-
 }

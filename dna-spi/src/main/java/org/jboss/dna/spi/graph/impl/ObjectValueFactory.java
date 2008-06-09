@@ -21,7 +21,6 @@
  */
 package org.jboss.dna.spi.graph.impl;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
 import java.math.BigDecimal;
@@ -37,19 +36,21 @@ import org.jboss.dna.spi.graph.Path;
 import org.jboss.dna.spi.graph.PropertyType;
 import org.jboss.dna.spi.graph.Reference;
 import org.jboss.dna.spi.graph.ValueFactory;
-import org.jboss.dna.spi.graph.ValueFormatException;
 
 /**
  * The standard {@link ValueFactory} for {@link PropertyType#OBJECT} values.
  * 
  * @author Randall Hauch
+ * @author John Verhaeg
  */
 @Immutable
 public class ObjectValueFactory extends AbstractValueFactory<Object> {
 
     private final ValueFactory<Binary> binaryValueFactory;
 
-    public ObjectValueFactory( TextDecoder decoder, ValueFactory<String> stringValueFactory, ValueFactory<Binary> binaryValueFactory ) {
+    public ObjectValueFactory( TextDecoder decoder,
+                               ValueFactory<String> stringValueFactory,
+                               ValueFactory<Binary> binaryValueFactory ) {
         super(PropertyType.OBJECT, decoder, stringValueFactory);
         ArgCheck.isNotNull(binaryValueFactory, "binaryValueFactory");
         this.binaryValueFactory = binaryValueFactory;
@@ -72,7 +73,8 @@ public class ObjectValueFactory extends AbstractValueFactory<Object> {
     /**
      * {@inheritDoc}
      */
-    public Object create( String value, TextDecoder decoder ) {
+    public Object create( String value,
+                          TextDecoder decoder ) {
         return this.getStringValueFactory().create(value, decoder);
     }
 
@@ -163,21 +165,23 @@ public class ObjectValueFactory extends AbstractValueFactory<Object> {
     /**
      * {@inheritDoc}
      */
-    public Object create( byte[] value ) throws ValueFormatException {
+    public Object create( byte[] value ) {
         return getBinaryValueFactory().create(value);
     }
 
     /**
      * {@inheritDoc}
      */
-    public Object create( InputStream stream, int approximateLength ) throws IOException {
+    public Object create( InputStream stream,
+                          int approximateLength ) {
         return getBinaryValueFactory().create(stream, approximateLength);
     }
 
     /**
      * {@inheritDoc}
      */
-    public Object create( Reader reader, int approximateLength ) throws IOException {
+    public Object create( Reader reader,
+                          int approximateLength ) {
         return getBinaryValueFactory().create(reader, approximateLength);
     }
 

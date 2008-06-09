@@ -21,7 +21,6 @@
  */
 package org.jboss.dna.spi.graph.impl;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
 import java.math.BigDecimal;
@@ -36,12 +35,12 @@ import org.jboss.dna.spi.graph.Path;
 import org.jboss.dna.spi.graph.PropertyType;
 import org.jboss.dna.spi.graph.Reference;
 import org.jboss.dna.spi.graph.ValueFactory;
-import org.jboss.dna.spi.graph.ValueFormatException;
 
 /**
  * Abstract {@link ValueFactory}.
  * 
  * @author Randall Hauch
+ * @author John Verhaeg
  * @param <T> the property type
  */
 @Immutable
@@ -51,7 +50,9 @@ public abstract class AbstractValueFactory<T> implements ValueFactory<T> {
     private final PropertyType propertyType;
     private final ValueFactory<String> stringValueFactory;
 
-    protected AbstractValueFactory( PropertyType type, TextDecoder decoder, ValueFactory<String> stringValueFactory ) {
+    protected AbstractValueFactory( PropertyType type,
+                                    TextDecoder decoder,
+                                    ValueFactory<String> stringValueFactory ) {
         ArgCheck.isNotNull(type, "type");
         this.propertyType = type;
         this.decoder = decoder != null ? decoder : DEFAULT_DECODER;
@@ -94,7 +95,7 @@ public abstract class AbstractValueFactory<T> implements ValueFactory<T> {
     /**
      * {@inheritDoc}
      */
-    public T create( Object value ) throws ValueFormatException {
+    public T create( Object value ) {
         if (value == null) return null;
         if (value instanceof String) return create((String)value);
         if (value instanceof Integer) return create(((Integer)value).intValue());
@@ -110,20 +111,8 @@ public abstract class AbstractValueFactory<T> implements ValueFactory<T> {
         if (value instanceof Reference) return create((Reference)value);
         if (value instanceof URI) return create((URI)value);
         if (value instanceof byte[]) return create((byte[])value);
-        if (value instanceof InputStream) {
-            try {
-                return create((InputStream)value, 0);
-            } catch (IOException e) {
-                throw new ValueFormatException(e);
-            }
-        }
-        if (value instanceof Reader) {
-            try {
-                return create((Reader)value, 0);
-            } catch (IOException e) {
-                throw new ValueFormatException(e);
-            }
-        }
+        if (value instanceof InputStream) return create((InputStream)value, 0);
+        if (value instanceof Reader) return create((Reader)value, 0);
         return create(value.toString());
     }
 

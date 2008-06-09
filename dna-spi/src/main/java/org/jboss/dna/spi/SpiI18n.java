@@ -32,29 +32,28 @@ import org.jboss.dna.common.i18n.I18n;
  */
 public final class SpiI18n {
 
-    public static I18n errorConvertingBinaryValueToString;
-    public static I18n errorCreatingValue;
+    public static I18n closedConnectionMayNotBeUsed;
+    public static I18n errorConvertingIo;
+    public static I18n errorConvertingType;
     public static I18n errorReadingPropertyValueBytes;
-	public static I18n invalidIndexInSegmentName;
-	public static I18n invalidQualifiedNameString;
-	public static I18n missingEndBracketInSegmentName;
+    public static I18n invalidIndexInSegmentName;
+    public static I18n invalidQualifiedNameString;
+    public static I18n maximumPoolSizeMayNotBeSmallerThanCorePoolSize;
+    public static I18n missingEndBracketInSegmentName;
     public static I18n noNamespaceRegisteredForPrefix;
     public static I18n pathAncestorDegreeIsInvalid;
     public static I18n pathCannotBeNormalized;
     public static I18n pathIsAlreadyAbsolute;
     public static I18n pathIsNotAbsolute;
     public static I18n pathIsNotRelative;
+    public static I18n repositoryConnectionPoolIsNotRunning;
     public static I18n unableToCreateSubpathBeginIndexGreaterThanOrEqualToEndingIndex;
     public static I18n unableToCreateSubpathBeginIndexGreaterThanOrEqualToSize;
     public static I18n unableToCreateValue;
-	public static I18n unableToDiscoverPropertyTypeForNullValue;
-	public static I18n validPathMayNotContainEmptySegment;
-	public static I18n valueJavaTypeNotCompatibleWithPropertyType;
-
-    public static I18n maximumPoolSizeMayNotBeSmallerThanCorePoolSize;
-    public static I18n repositoryConnectionPoolIsNotRunning;
+    public static I18n unableToDiscoverPropertyTypeForNullValue;
     public static I18n unableToObtainValidRepositoryAfterAttempts;
-    public static I18n closedConnectionMayNotBeUsed;
+    public static I18n validPathMayNotContainEmptySegment;
+    public static I18n valueJavaTypeNotCompatibleWithPropertyType;
 
     static {
         try {

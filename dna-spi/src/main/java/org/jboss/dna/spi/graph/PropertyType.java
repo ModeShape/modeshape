@@ -2,7 +2,7 @@
  * JBoss, Home of Professional Open Source.
  * Copyright 2008, Red Hat Middleware LLC, and individual contributors
  * as indicated by the @author tags. See the copyright.txt file in the
- * distribution for a full listing of individual contributors. 
+ * distribution for a full listing of individual contributors.
  *
  * This is free software; you can redistribute it and/or modify it
  * under the terms of the GNU Lesser General Public License as
@@ -30,6 +30,7 @@ import org.jboss.dna.spi.SpiI18n;
 
 /**
  * @author Randall Hauch
+ * @author John Verhaeg
  */
 @Immutable
 public enum PropertyType {
@@ -51,7 +52,9 @@ public enum PropertyType {
     private final Comparator comparator;
     private final Class valueClass;
 
-    private PropertyType( String name, Comparator comparator, Class valueClass ) {
+    private PropertyType( String name,
+                          Comparator comparator,
+                          Class valueClass ) {
         this.name = name;
         this.comparator = comparator;
         this.valueClass = valueClass;
@@ -90,7 +93,7 @@ public enum PropertyType {
 
     public static PropertyType discoverType( Object value ) {
         if (value == null) {
-            throw new ValueFormatException(SpiI18n.unableToDiscoverPropertyTypeForNullValue.text());
+            throw new IllegalArgumentException(SpiI18n.unableToDiscoverPropertyTypeForNullValue.text());
         }
         for (PropertyType type : PropertyType.values()) {
             if (type == OBJECT) continue;

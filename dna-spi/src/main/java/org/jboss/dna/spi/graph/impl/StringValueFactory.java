@@ -40,19 +40,21 @@ import org.jboss.dna.spi.graph.Path;
 import org.jboss.dna.spi.graph.PropertyType;
 import org.jboss.dna.spi.graph.Reference;
 import org.jboss.dna.spi.graph.ValueFactory;
-import org.jboss.dna.spi.graph.ValueFormatException;
+import org.jboss.dna.spi.graph.IoException;
 
 /**
  * The standard {@link ValueFactory} for {@link PropertyType#STRING} values.
  * 
  * @author Randall Hauch
+ * @author John Verhaeg
  */
 @Immutable
 public class StringValueFactory extends AbstractValueFactory<String> {
 
     private final TextEncoder encoder;
 
-    public StringValueFactory( TextDecoder decoder, TextEncoder encoder ) {
+    public StringValueFactory( TextDecoder decoder,
+                               TextEncoder encoder ) {
         super(PropertyType.STRING, decoder, null);
         ArgCheck.isNotNull(encoder, "encoder");
         this.encoder = encoder;
@@ -83,7 +85,8 @@ public class StringValueFactory extends AbstractValueFactory<String> {
     /**
      * {@inheritDoc}
      */
-    public String create( String value, TextDecoder decoder ) {
+    public String create( String value,
+                          TextDecoder decoder ) {
         if (value == null) return value;
         if (decoder == null) decoder = getDecoder();
         return decoder.decode(value);
@@ -183,34 +186,49 @@ public class StringValueFactory extends AbstractValueFactory<String> {
     /**
      * {@inheritDoc}
      */
-    public String create( byte[] value ) throws ValueFormatException {
+    public String create( byte[] value ) {
         if (value == null) return null;
         try {
             return new String(value, "UTF-8");
-        } catch (UnsupportedEncodingException e) {
-            throw new ValueFormatException(SpiI18n.errorConvertingBinaryValueToString.text());
+        } catch (UnsupportedEncodingException err) {
+            throw new IllegalArgumentException(SpiI18n.errorConvertingType.text(byte[].class.getSimpleName(),
+                                                                                String.class.getSimpleName(),
+                                                                                value), err);
         }
     }
 
     /**
      * {@inheritDoc}
      */
-    public String create( InputStream stream, int approximateLength ) throws IOException {
+    public String create( InputStream stream,
+                          int approximateLength ) {
         if (stream == null) return null;
-        byte[] value = IoUtil.readBytes(stream);
+        byte[] value = null;
         try {
+            value = IoUtil.readBytes(stream);
             return new String(value, "UTF-8");
-        } catch (UnsupportedEncodingException e) {
-            throw new ValueFormatException(SpiI18n.errorConvertingBinaryValueToString.text());
+        } catch (UnsupportedEncodingException err) {
+            throw new IllegalArgumentException(SpiI18n.errorConvertingType.text(InputStream.class.getSimpleName(),
+                                                                                String.class.getSimpleName(),
+                                                                                value), err);
+        } catch (IOException err) {
+            throw new IoException(SpiI18n.errorConvertingIo.text(InputStream.class.getSimpleName(),
+                                                                          String.class.getSimpleName()), err);
         }
     }
 
     /**
      * {@inheritDoc}
      */
-    public String create( Reader reader, int approximateLength ) throws IOException {
+    public String create( Reader reader,
+                          int approximateLength ) {
         if (reader == null) return null;
-        return IoUtil.read(reader);
+        try {
+            return IoUtil.read(reader);
+        } catch (IOException err) {
+            throw new IoException(SpiI18n.errorConvertingIo.text(Reader.class.getSimpleName(),
+                                                                          String.class.getSimpleName()), err);
+        }
     }
 
 }

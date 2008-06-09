@@ -23,19 +23,20 @@ package org.jboss.dna.spi.graph;
 
 /**
  * @author Randall Hauch
+ * @author John Verhaeg
  */
-public class ValueFormatException extends RuntimeException {
+public class IoException extends RuntimeException {
 
     /**
      * 
      */
-    public ValueFormatException() {
+    public IoException() {
     }
 
     /**
      * @param message
      */
-    public ValueFormatException( String message ) {
+    public IoException( String message ) {
         super(message);
 
     }
@@ -43,7 +44,7 @@ public class ValueFormatException extends RuntimeException {
     /**
      * @param cause
      */
-    public ValueFormatException( Throwable cause ) {
+    public IoException( Throwable cause ) {
         super(cause);
 
     }
@@ -52,7 +53,8 @@ public class ValueFormatException extends RuntimeException {
      * @param message
      * @param cause
      */
-    public ValueFormatException( String message, Throwable cause ) {
+    public IoException( String message,
+                                 Throwable cause ) {
         super(message, cause);
 
     }

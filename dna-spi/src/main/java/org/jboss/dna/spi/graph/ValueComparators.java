@@ -116,7 +116,7 @@ public class ValueComparators {
                             if (numRead1 < 0) break;
                             int numRead2 = stream2.read(buffer2);
                             if (numRead1 != numRead2) {
-                                throw new ValueFormatException(SpiI18n.errorReadingPropertyValueBytes.text());
+                                throw new IoException(SpiI18n.errorReadingPropertyValueBytes.text());
                             }
                             for (int i = 0; i != numRead1; ++i) {
                                 int diff = buffer1[i] - buffer2[i];
@@ -125,7 +125,7 @@ public class ValueComparators {
                         }
                         return 0;
                     } catch (IOException e) {
-                        throw new ValueFormatException(SpiI18n.errorReadingPropertyValueBytes.text());
+                        throw new IoException(SpiI18n.errorReadingPropertyValueBytes.text());
                     } finally {
                         if (stream1 != null) {
                             try {

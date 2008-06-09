@@ -21,7 +21,6 @@
  */
 package org.jboss.dna.spi.graph.impl;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
 import java.math.BigDecimal;
@@ -36,36 +35,40 @@ import org.jboss.dna.spi.graph.Path;
 import org.jboss.dna.spi.graph.PropertyType;
 import org.jboss.dna.spi.graph.Reference;
 import org.jboss.dna.spi.graph.ValueFactory;
-import org.jboss.dna.spi.graph.ValueFormatException;
 
 /**
  * The standard {@link ValueFactory} for {@link PropertyType#DOUBLE} values.
  * 
  * @author Randall Hauch
+ * @author John Verhaeg
  */
 @Immutable
 public class DoubleValueFactory extends AbstractValueFactory<Double> {
 
-    public DoubleValueFactory( TextDecoder decoder, ValueFactory<String> stringValueFactory ) {
+    public DoubleValueFactory( TextDecoder decoder,
+                               ValueFactory<String> stringValueFactory ) {
         super(PropertyType.DOUBLE, decoder, stringValueFactory);
     }
 
     /**
      * {@inheritDoc}
      */
-    public Double create( String value ) throws ValueFormatException {
+    public Double create( String value ) {
         if (value == null) return null;
         try {
             return Double.valueOf(value.trim());
-        } catch (NumberFormatException e) {
-            throw new ValueFormatException(SpiI18n.errorCreatingValue.text(getPropertyType().getName(), String.class.getSimpleName(), value), e);
+        } catch (NumberFormatException err) {
+            throw new IllegalArgumentException(SpiI18n.errorConvertingType.text(String.class.getSimpleName(),
+                                                                                Double.class.getSimpleName(),
+                                                                                value), err);
         }
     }
 
     /**
      * {@inheritDoc}
      */
-    public Double create( String value, TextDecoder decoder ) {
+    public Double create( String value,
+                          TextDecoder decoder ) {
         // this probably doesn't really need to call the decoder, but by doing so then we don't care at all what the decoder does
         return create(getDecoder(decoder).decode(value));
     }
@@ -87,8 +90,10 @@ public class DoubleValueFactory extends AbstractValueFactory<Double> {
     /**
      * {@inheritDoc}
      */
-    public Double create( boolean value ) throws ValueFormatException {
-        throw new ValueFormatException(SpiI18n.unableToCreateValue.text(getPropertyType().getName(), Double.class.getSimpleName(), value));
+    public Double create( boolean value ) {
+        throw new UnsupportedOperationException(SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
+                                                                                 Double.class.getSimpleName(),
+                                                                                 value));
     }
 
     /**
@@ -108,11 +113,13 @@ public class DoubleValueFactory extends AbstractValueFactory<Double> {
     /**
      * {@inheritDoc}
      */
-    public Double create( BigDecimal value ) throws ValueFormatException {
+    public Double create( BigDecimal value ) {
         if (value == null) return null;
         double result = value.doubleValue();
         if (result == Double.NEGATIVE_INFINITY || result == Double.POSITIVE_INFINITY) {
-            throw new ValueFormatException(SpiI18n.errorCreatingValue.text(getPropertyType().getName(), String.class.getSimpleName(), value));
+            throw new IllegalArgumentException(SpiI18n.errorConvertingType.text(BigDecimal.class.getSimpleName(),
+                                                                                Double.class.getSimpleName(),
+                                                                                value));
         }
         return result;
     }
@@ -136,35 +143,43 @@ public class DoubleValueFactory extends AbstractValueFactory<Double> {
     /**
      * {@inheritDoc}
      */
-    public Double create( Name value ) throws ValueFormatException {
-        throw new ValueFormatException(SpiI18n.unableToCreateValue.text(getPropertyType().getName(), Name.class.getSimpleName(), value));
+    public Double create( Name value ) {
+        throw new UnsupportedOperationException(SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
+                                                                                 Name.class.getSimpleName(),
+                                                                                 value));
     }
 
     /**
      * {@inheritDoc}
      */
-    public Double create( Path value ) throws ValueFormatException {
-        throw new ValueFormatException(SpiI18n.unableToCreateValue.text(getPropertyType().getName(), Path.class.getSimpleName(), value));
+    public Double create( Path value ) {
+        throw new UnsupportedOperationException(SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
+                                                                                 Path.class.getSimpleName(),
+                                                                                 value));
     }
 
     /**
      * {@inheritDoc}
      */
-    public Double create( Reference value ) throws ValueFormatException {
-        throw new ValueFormatException(SpiI18n.unableToCreateValue.text(getPropertyType().getName(), Reference.class.getSimpleName(), value));
+    public Double create( Reference value ) {
+        throw new UnsupportedOperationException(SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
+                                                                                 Reference.class.getSimpleName(),
+                                                                                 value));
     }
 
     /**
      * {@inheritDoc}
      */
-    public Double create( URI value ) throws ValueFormatException {
-        throw new ValueFormatException(SpiI18n.unableToCreateValue.text(getPropertyType().getName(), URI.class.getSimpleName(), value));
+    public Double create( URI value ) {
+        throw new UnsupportedOperationException(SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
+                                                                                 URI.class.getSimpleName(),
+                                                                                 value));
     }
 
     /**
      * {@inheritDoc}
      */
-    public Double create( byte[] value ) throws ValueFormatException {
+    public Double create( byte[] value ) {
         // First attempt to create a string from the value, then a long from the string ...
         return create(getStringValueFactory().create(value));
     }
@@ -172,7 +187,8 @@ public class DoubleValueFactory extends AbstractValueFactory<Double> {
     /**
      * {@inheritDoc}
      */
-    public Double create( InputStream stream, int approximateLength ) throws IOException, ValueFormatException {
+    public Double create( InputStream stream,
+                          int approximateLength ) {
         // First attempt to create a string from the value, then a double from the string ...
         return create(getStringValueFactory().create(stream, approximateLength));
     }
@@ -180,7 +196,8 @@ public class DoubleValueFactory extends AbstractValueFactory<Double> {
     /**
      * {@inheritDoc}
      */
-    public Double create( Reader reader, int approximateLength ) throws IOException, ValueFormatException {
+    public Double create( Reader reader,
+                          int approximateLength ) {
         // First attempt to create a string from the value, then a double from the string ...
         return create(getStringValueFactory().create(reader, approximateLength));
     }

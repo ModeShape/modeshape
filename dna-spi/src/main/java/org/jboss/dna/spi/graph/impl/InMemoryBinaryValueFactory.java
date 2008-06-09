@@ -39,38 +39,43 @@ import org.jboss.dna.spi.graph.Path;
 import org.jboss.dna.spi.graph.PropertyType;
 import org.jboss.dna.spi.graph.Reference;
 import org.jboss.dna.spi.graph.ValueFactory;
-import org.jboss.dna.spi.graph.ValueFormatException;
+import org.jboss.dna.spi.graph.IoException;
 
 /**
  * Teh standard {@link ValueFactory} for {@link PropertyType#BINARY} values.
  * 
  * @author Randall Hauch
+ * @author John Verhaeg
  */
 @Immutable
 public class InMemoryBinaryValueFactory extends AbstractValueFactory<Binary> {
 
     private static final String CHAR_SET_NAME = "UTF-8";
 
-    public InMemoryBinaryValueFactory( TextDecoder decoder, ValueFactory<String> stringValueFactory ) {
+    public InMemoryBinaryValueFactory( TextDecoder decoder,
+                                       ValueFactory<String> stringValueFactory ) {
         super(PropertyType.BINARY, decoder, stringValueFactory);
     }
 
     /**
      * {@inheritDoc}
      */
-    public Binary create( String value ) throws ValueFormatException {
+    public Binary create( String value ) {
         if (value == null) return null;
         try {
             return create(value.getBytes(CHAR_SET_NAME));
-        } catch (UnsupportedEncodingException e) {
-            throw new ValueFormatException(SpiI18n.errorConvertingBinaryValueToString.text());
+        } catch (UnsupportedEncodingException err) {
+            throw new IllegalArgumentException(SpiI18n.errorConvertingType.text(String.class.getSimpleName(),
+                                                                                Binary.class.getSimpleName(),
+                                                                                value), err);
         }
     }
 
     /**
      * {@inheritDoc}
      */
-    public Binary create( String value, TextDecoder decoder ) throws ValueFormatException {
+    public Binary create( String value,
+                          TextDecoder decoder ) {
         if (value == null) return null;
         return create(getDecoder(decoder).decode(value));
     }
@@ -78,7 +83,7 @@ public class InMemoryBinaryValueFactory extends AbstractValueFactory<Binary> {
     /**
      * {@inheritDoc}
      */
-    public Binary create( int value ) throws ValueFormatException {
+    public Binary create( int value ) {
         // Convert the value to a string, then to a binary ...
         return create(this.getStringValueFactory().create(value));
     }
@@ -86,7 +91,7 @@ public class InMemoryBinaryValueFactory extends AbstractValueFactory<Binary> {
     /**
      * {@inheritDoc}
      */
-    public Binary create( long value ) throws ValueFormatException {
+    public Binary create( long value ) {
         // Convert the value to a string, then to a binary ...
         return create(this.getStringValueFactory().create(value));
     }
@@ -94,7 +99,7 @@ public class InMemoryBinaryValueFactory extends AbstractValueFactory<Binary> {
     /**
      * {@inheritDoc}
      */
-    public Binary create( boolean value ) throws ValueFormatException {
+    public Binary create( boolean value ) {
         // Convert the value to a string, then to a binary ...
         return create(this.getStringValueFactory().create(value));
     }
@@ -102,7 +107,7 @@ public class InMemoryBinaryValueFactory extends AbstractValueFactory<Binary> {
     /**
      * {@inheritDoc}
      */
-    public Binary create( float value ) throws ValueFormatException {
+    public Binary create( float value ) {
         // Convert the value to a string, then to a binary ...
         return create(this.getStringValueFactory().create(value));
     }
@@ -110,7 +115,7 @@ public class InMemoryBinaryValueFactory extends AbstractValueFactory<Binary> {
     /**
      * {@inheritDoc}
      */
-    public Binary create( double value ) throws ValueFormatException {
+    public Binary create( double value ) {
         // Convert the value to a string, then to a binary ...
         return create(this.getStringValueFactory().create(value));
     }
@@ -118,7 +123,7 @@ public class InMemoryBinaryValueFactory extends AbstractValueFactory<Binary> {
     /**
      * {@inheritDoc}
      */
-    public Binary create( BigDecimal value ) throws ValueFormatException {
+    public Binary create( BigDecimal value ) {
         // Convert the value to a string, then to a binary ...
         return create(this.getStringValueFactory().create(value));
     }
@@ -126,7 +131,7 @@ public class InMemoryBinaryValueFactory extends AbstractValueFactory<Binary> {
     /**
      * {@inheritDoc}
      */
-    public Binary create( Calendar value ) throws ValueFormatException {
+    public Binary create( Calendar value ) {
         // Convert the value to a string, then to a binary ...
         return create(this.getStringValueFactory().create(value));
     }
@@ -134,7 +139,7 @@ public class InMemoryBinaryValueFactory extends AbstractValueFactory<Binary> {
     /**
      * {@inheritDoc}
      */
-    public Binary create( Date value ) throws ValueFormatException {
+    public Binary create( Date value ) {
         // Convert the value to a string, then to a binary ...
         return create(this.getStringValueFactory().create(value));
     }
@@ -142,7 +147,7 @@ public class InMemoryBinaryValueFactory extends AbstractValueFactory<Binary> {
     /**
      * {@inheritDoc}
      */
-    public Binary create( Name value ) throws ValueFormatException {
+    public Binary create( Name value ) {
         // Convert the value to a string, then to a binary ...
         return create(this.getStringValueFactory().create(value));
     }
@@ -150,7 +155,7 @@ public class InMemoryBinaryValueFactory extends AbstractValueFactory<Binary> {
     /**
      * {@inheritDoc}
      */
-    public Binary create( Path value ) throws ValueFormatException {
+    public Binary create( Path value ) {
         // Convert the value to a string, then to a binary ...
         return create(this.getStringValueFactory().create(value));
     }
@@ -158,7 +163,7 @@ public class InMemoryBinaryValueFactory extends AbstractValueFactory<Binary> {
     /**
      * {@inheritDoc}
      */
-    public Binary create( Reference value ) throws ValueFormatException {
+    public Binary create( Reference value ) {
         // Convert the value to a string, then to a binary ...
         return create(this.getStringValueFactory().create(value));
     }
@@ -166,7 +171,7 @@ public class InMemoryBinaryValueFactory extends AbstractValueFactory<Binary> {
     /**
      * {@inheritDoc}
      */
-    public Binary create( URI value ) throws ValueFormatException {
+    public Binary create( URI value ) {
         // Convert the value to a string, then to a binary ...
         return create(this.getStringValueFactory().create(value));
     }
@@ -174,27 +179,38 @@ public class InMemoryBinaryValueFactory extends AbstractValueFactory<Binary> {
     /**
      * {@inheritDoc}
      */
-    public Binary create( byte[] value ) throws ValueFormatException {
+    public Binary create( byte[] value ) {
         return new InMemoryBinary(value);
     }
 
     /**
      * {@inheritDoc}
      */
-    public Binary create( InputStream stream, int approximateLength ) throws IOException {
+    public Binary create( InputStream stream,
+                          int approximateLength ) {
         if (stream == null) return null;
-        byte[] value = IoUtil.readBytes(stream);
-        return create(value);
+        try {
+            byte[] value = IoUtil.readBytes(stream);
+            return create(value);
+        } catch (IOException err) {
+            throw new IoException(SpiI18n.errorConvertingIo.text(InputStream.class.getSimpleName(),
+                                                                          Binary.class.getSimpleName()), err);
+        }
     }
 
     /**
      * {@inheritDoc}
      */
-    public Binary create( Reader reader, int approximateLength ) throws IOException {
+    public Binary create( Reader reader,
+                          int approximateLength ) {
         if (reader == null) return null;
         // Convert the value to a string, then to a binary ...
-        String value = IoUtil.read(reader);
-        return create(this.getStringValueFactory().create(value));
+        try {
+            String value = IoUtil.read(reader);
+            return create(this.getStringValueFactory().create(value));
+        } catch (IOException err) {
+            throw new IoException(SpiI18n.errorConvertingIo.text(Reader.class.getSimpleName(),
+                                                                          Binary.class.getSimpleName()), err);
+        }
     }
-
 }

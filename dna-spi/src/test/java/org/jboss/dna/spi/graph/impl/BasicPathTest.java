@@ -36,7 +36,6 @@ import org.jboss.dna.spi.graph.InvalidPathException;
 import org.jboss.dna.spi.graph.Name;
 import org.jboss.dna.spi.graph.Path;
 import org.jboss.dna.spi.graph.PathNotFoundException;
-import org.jboss.dna.spi.graph.ValueFormatException;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -63,8 +62,10 @@ public class BasicPathTest {
     public void beforeEach() throws Exception {
         validNamespacePrefix = "dna";
         validNamespaceUri = "http://www.jboss.org/dna";
-        validSegmentNames = new Name[] {new BasicName(validNamespaceUri, "a"), new BasicName(validNamespaceUri, "b"), new BasicName(validNamespaceUri, "c")};
-        validSegments = new Path.Segment[] {new BasicPathSegment(validSegmentNames[0]), new BasicPathSegment(validSegmentNames[1]), new BasicPathSegment(validSegmentNames[1])};
+        validSegmentNames = new Name[] {new BasicName(validNamespaceUri, "a"), new BasicName(validNamespaceUri, "b"),
+            new BasicName(validNamespaceUri, "c")};
+        validSegments = new Path.Segment[] {new BasicPathSegment(validSegmentNames[0]),
+            new BasicPathSegment(validSegmentNames[1]), new BasicPathSegment(validSegmentNames[1])};
         validSegmentsList = new ArrayList<Path.Segment>();
         for (Path.Segment segment : validSegments) {
             validSegmentsList.add(segment);
@@ -178,12 +179,12 @@ public class BasicPathTest {
         assertThat(pathFactory.create("/").isRoot(), is(true));
     }
 
-    @Test( expected = ValueFormatException.class )
+    @Test( expected = IllegalArgumentException.class )
     public void shouldNotConstructPathWithSuccessiveDelimiters() {
         pathFactory.create("///a/b///c//d//");
     }
 
-    @Test( expected = ValueFormatException.class )
+    @Test( expected = IllegalArgumentException.class )
     public void shouldNotConstructPathWithOnlyDelimiters() {
         pathFactory.create("///");
     }
@@ -525,7 +526,8 @@ public class BasicPathTest {
         testSegmentsByIteratorAndListAndArray(ROOT.getString());
     }
 
-    public void testSegmentsByIteratorAndListAndArray( String pathStr, String... expectedSegmentStrings ) {
+    public void testSegmentsByIteratorAndListAndArray( String pathStr,
+                                                       String... expectedSegmentStrings ) {
         path = pathFactory.create(pathStr);
         assertThat(expectedSegmentStrings.length, is(path.size()));
         Path.Segment[] segmentArray = path.getSegmentsArray();
@@ -549,7 +551,8 @@ public class BasicPathTest {
     @Test
     public void shouldGetStringWithNamespaceUrisIfNoNamespaceRegistryIsProvided() {
         path = pathFactory.create("/dna:a/b/dna:c/../d/./dna:e/../..");
-        assertThat(path.getString(NO_OP_ENCODER), is("/{http://www.jboss.org/dna}a/{}b/{http://www.jboss.org/dna}c/../{}d/./{http://www.jboss.org/dna}e/../.."));
+        assertThat(path.getString(NO_OP_ENCODER),
+                   is("/{http://www.jboss.org/dna}a/{}b/{http://www.jboss.org/dna}c/../{}d/./{http://www.jboss.org/dna}e/../.."));
     }
 
     @Test
@@ -628,7 +631,16 @@ public class BasicPathTest {
     @Test
     public void shouldReturnSubpathIfValidStartingIndexAndEndingIndexAreProvided() {
         path = pathFactory.create("/dna:a/b/dna:c/../d/./dna:e/../..");
-        assertThat(path.subpath(0, path.size()), hasSegments(pathFactory, "dna:a", "b", "dna:c", "..", "d", ".", "dna:e", "..", ".."));
+        assertThat(path.subpath(0, path.size()), hasSegments(pathFactory,
+                                                             "dna:a",
+                                                             "b",
+                                                             "dna:c",
+                                                             "..",
+                                                             "d",
+                                                             ".",
+                                                             "dna:e",
+                                                             "..",
+                                                             ".."));
         assertThat(path.subpath(0, path.size()), is(path));
         assertThat(path.subpath(0, path.size()), is(sameInstance(path)));
         assertThat(path.subpath(1, path.size()), hasSegments(pathFactory, "b", "dna:c", "..", "d", ".", "dna:e", "..", ".."));

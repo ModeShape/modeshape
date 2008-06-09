@@ -32,10 +32,16 @@ import org.jboss.dna.common.text.TextDecoder;
 import org.jboss.dna.common.text.TextEncoder;
 
 /**
- * A factory for {@link Property} values. Some of the methods may throw a {@link ValueFormatException} if the parameter supplied
- * to the <code>create(...)</code> method cannot be converted to the {@link #getPropertyType() factory's type}.
+ * A factory for {@link Property} values. Each create method may throw one of these exceptions when attempting to convert a
+ * supplied value to the {@link #getPropertyType() factory's type}:
+ * <ul>
+ * <li>{@link IllegalArgumentException} - If the supplied value is invalid in respect to the conversion being attempted.</li>
+ * <li>{@link UnsupportedOperationException} - If a conversion from the supplied value is not supported.</li>
+ * <li>{@link IoException} - If an unexpected problem occurs during the conversion (such as an {@link IOException}).</li>
+ * </ul>
  * 
  * @author Randall Hauch
+ * @author John Verhaeg
  * @param <T> the type of value to create
  */
 public interface ValueFactory<T> {
@@ -55,10 +61,10 @@ public interface ValueFactory<T> {
      * 
      * @param value the string from which the value is to be created
      * @return the value, or null if the supplied string is null
-     * @throws ValueFormatException if the value could not be created from the supplied string
+     * @throws IoException If an unexpected problem occurs during the conversion.
      * @see #create(String, TextDecoder)
      */
-    T create( String value ) throws ValueFormatException;
+    T create( String value ) throws IoException;
 
     /**
      * Create a value from a string, using the supplied decoder.
@@ -66,127 +72,128 @@ public interface ValueFactory<T> {
      * @param value the string from which the value is to be created
      * @param decoder the decoder that should be used; if null, the {@link #DEFAULT_DECODER default decoder} is used
      * @return the value, or null if the supplied string is null
-     * @throws ValueFormatException if the value could not be created from the supplied string
+     * @throws IoException If an unexpected problem occurs during the conversion.
      * @see #create(String)
      */
-    T create( String value, TextDecoder decoder ) throws ValueFormatException;
+    T create( String value,
+              TextDecoder decoder ) throws IoException;
 
     /**
      * Create a value from an integer.
      * 
      * @param value the integer from which the value is to be created
      * @return the value; never null
-     * @throws ValueFormatException if the value could not be created from the supplied integer
+     * @throws IoException If an unexpected problem occurs during the conversion.
      */
-    T create( int value ) throws ValueFormatException;
+    T create( int value ) throws IoException;
 
     /**
      * Create a long from a string.
      * 
      * @param value the string from which the long is to be created
      * @return the value; never null
-     * @throws ValueFormatException if the value could not be created from the supplied long
+     * @throws IoException If an unexpected problem occurs during the conversion.
      */
-    T create( long value ) throws ValueFormatException;
+    T create( long value ) throws IoException;
 
     /**
      * Create a boolean from a string.
      * 
      * @param value the boolean from which the value is to be created
      * @return the value; never null
-     * @throws ValueFormatException if the value could not be created from the supplied boolean
+     * @throws IoException If an unexpected problem occurs during the conversion.
      */
-    T create( boolean value ) throws ValueFormatException;
+    T create( boolean value ) throws IoException;
 
     /**
      * Create a value from a float.
      * 
      * @param value the float from which the value is to be created
      * @return the value; never null
-     * @throws ValueFormatException if the value could not be created from the supplied float
+     * @throws IoException If an unexpected problem occurs during the conversion.
      */
-    T create( float value ) throws ValueFormatException;
+    T create( float value ) throws IoException;
 
     /**
      * Create a value from a double.
      * 
      * @param value the double from which the value is to be created
      * @return the value; never null
-     * @throws ValueFormatException if the value could not be created from the supplied double
+     * @throws IoException If an unexpected problem occurs during the conversion.
      */
-    T create( double value ) throws ValueFormatException;
+    T create( double value ) throws IoException;
 
     /**
      * Create a value from a decimal.
      * 
      * @param value the decimal from which the value is to be created
      * @return the value, or null if the supplied decimal is null
-     * @throws ValueFormatException if the value could not be created from the supplied decimal
+     * @throws IoException If an unexpected problem occurs during the conversion.
      */
-    T create( BigDecimal value ) throws ValueFormatException;
+    T create( BigDecimal value ) throws IoException;
 
     /**
      * Create a value from a Calendar instance.
      * 
      * @param value the Calendar instance from which the value is to be created
      * @return the value, or null if the supplied Calendar is null
-     * @throws ValueFormatException if the value could not be created from the supplied Calendar object
+     * @throws IoException If an unexpected problem occurs during the conversion.
      */
-    T create( Calendar value ) throws ValueFormatException;
+    T create( Calendar value ) throws IoException;
 
     /**
      * Create a value from a date.
      * 
      * @param value the date from which the value is to be created
      * @return the value, or null if the supplied date is null
-     * @throws ValueFormatException if the value could not be created from the supplied date
+     * @throws IoException If an unexpected problem occurs during the conversion.
      */
-    T create( Date value ) throws ValueFormatException;
+    T create( Date value ) throws IoException;
 
     /**
      * Create a value from a name.
      * 
      * @param value the name from which the value is to be created
      * @return the value, or null if the supplied name is null
-     * @throws ValueFormatException if the value could not be created from the supplied name
+     * @throws IoException If an unexpected problem occurs during the conversion.
      */
-    T create( Name value ) throws ValueFormatException;
+    T create( Name value ) throws IoException;
 
     /**
      * Create a value from a path.
      * 
      * @param value the path from which the value is to be created
      * @return the value, or null if the supplied path is null
-     * @throws ValueFormatException if the value could not be created from the supplied path
+     * @throws IoException If an unexpected problem occurs during the conversion.
      */
-    T create( Path value ) throws ValueFormatException;
+    T create( Path value ) throws IoException;
 
     /**
      * Create a value from a reference.
      * 
      * @param value the reference from which the value is to be created
      * @return the value, or null if the supplied reference is null
-     * @throws ValueFormatException if the value could not be created from the supplied reference
+     * @throws IoException If an unexpected problem occurs during the conversion.
      */
-    T create( Reference value ) throws ValueFormatException;
+    T create( Reference value ) throws IoException;
 
     /**
      * Create a value from a URI.
      * 
      * @param value the URI from which the value is to be created
      * @return the value, or null if the supplied URI is null
-     * @throws ValueFormatException if the value could not be created from the supplied URI
+     * @throws IoException If an unexpected problem occurs during the conversion.
      */
-    T create( URI value ) throws ValueFormatException;
+    T create( URI value ) throws IoException;
 
     /**
      * Create a value from the binary content given by the supplied array.
      * 
      * @param value the content to be used to create the value
      * @return the value, or null if the supplied stream is null
-     * @throws ValueFormatException if the value could not be created from the supplied byte array
+     * @throws IoException If an unexpected problem occurs during the conversion.
      */
-    T create( byte[] value ) throws ValueFormatException;
+    T create( byte[] value ) throws IoException;
 
     /**
      * Create a value from the binary content given by the supplied stream.
@@ -194,10 +201,10 @@ public interface ValueFactory<T> {
      * @param stream the stream containing the content to be used to create the value
      * @param approximateLength the approximate length of the content (in bytes)
      * @return the value, or null if the supplied stream is null
-     * @throws ValueFormatException if the value could not be created from the supplied stream
-     * @throws IOException if there is a problem reading the stream
+     * @throws IoException If an unexpected problem occurs during the conversion (such as an {@link IOException}).
      */
-    T create( InputStream stream, int approximateLength ) throws ValueFormatException, IOException;
+    T create( InputStream stream,
+              int approximateLength ) throws IoException;
 
     /**
      * Create a value from a the binary content given by the supplied reader.
@@ -205,10 +212,10 @@ public interface ValueFactory<T> {
      * @param reader the reader containing the content to be used to create the value
      * @param approximateLength the approximate length of the content (in bytes)
      * @return the value, or null if the supplied string is null
-     * @throws ValueFormatException if the value could not be created from the supplied reader
-     * @throws IOException if there is a problem reading the stream
+     * @throws IoException If an unexpected problem occurs during the conversion (such as an {@link IOException}).
      */
-    T create( Reader reader, int approximateLength ) throws ValueFormatException, IOException;
+    T create( Reader reader,
+              int approximateLength ) throws IoException;
 
     /**
      * Create a value from the specified information by determining which other <code>create</code> method applies and
@@ -217,8 +224,8 @@ public interface ValueFactory<T> {
      * 
      * @param value the value
      * @return the new value, or null if the supplied parameter is null
-     * @throws ValueFormatException if the value could not be created from the supplied stream
+     * @throws IoException If an unexpected problem occurs during the conversion.
      */
-    T create( Object value ) throws ValueFormatException;
+    T create( Object value ) throws IoException;
 
 }

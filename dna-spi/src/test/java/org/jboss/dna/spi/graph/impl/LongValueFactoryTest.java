@@ -32,13 +32,13 @@ import java.util.Date;
 import org.jboss.dna.spi.graph.Name;
 import org.jboss.dna.spi.graph.Path;
 import org.jboss.dna.spi.graph.Reference;
-import org.jboss.dna.spi.graph.ValueFormatException;
 import org.jmock.Mockery;
 import org.junit.Before;
 import org.junit.Test;
 
 /**
  * @author Randall Hauch
+ * @author John Verhaeg
  */
 public class LongValueFactoryTest {
 
@@ -56,7 +56,7 @@ public class LongValueFactoryTest {
         context = new Mockery();
     }
 
-    @Test( expected = ValueFormatException.class )
+    @Test( expected = UnsupportedOperationException.class )
     public void shouldNotCreateDoubleFromBooleanValue() {
         factory.create(true);
     }
@@ -115,22 +115,22 @@ public class LongValueFactoryTest {
         assertThat(factory.create(value), is(Long.valueOf(value.getTimeInMillis())));
     }
 
-    @Test( expected = ValueFormatException.class )
+    @Test( expected = UnsupportedOperationException.class )
     public void shouldNotCreateLongFromName() {
         factory.create(context.mock(Name.class));
     }
 
-    @Test( expected = ValueFormatException.class )
+    @Test( expected = UnsupportedOperationException.class )
     public void shouldNotCreateLongFromPath() {
         factory.create(context.mock(Path.class));
     }
 
-    @Test( expected = ValueFormatException.class )
+    @Test( expected = UnsupportedOperationException.class )
     public void shouldNotCreateLongFromReference() {
         factory.create(context.mock(Reference.class));
     }
 
-    @Test( expected = ValueFormatException.class )
+    @Test( expected = UnsupportedOperationException.class )
     public void shouldNotCreateLongFromUri() throws Exception {
         factory.create(new URI("http://www.jboss.org"));
     }
@@ -159,17 +159,17 @@ public class LongValueFactoryTest {
         assertThat(factory.create(new StringReader("1003044")), is(1003044l));
     }
 
-    @Test( expected = ValueFormatException.class )
+    @Test( expected = IllegalArgumentException.class )
     public void shouldNotCreateLongFromByteArrayContainingUtf8EncodingOfStringWithContentsOtherThanLong() throws Exception {
         factory.create("something".getBytes("UTF-8"));
     }
 
-    @Test( expected = ValueFormatException.class )
+    @Test( expected = IllegalArgumentException.class )
     public void shouldNotCreateLongFromInputStreamContainingUtf8EncodingOfStringWithContentsOtherThanLong() throws Exception {
         factory.create(new ByteArrayInputStream("something".getBytes("UTF-8")));
     }
 
-    @Test( expected = ValueFormatException.class )
+    @Test( expected = IllegalArgumentException.class )
     public void shouldNotCreateLongFromReaderContainingStringWithContentsOtherThanLong() throws Exception {
         factory.create(new ByteArrayInputStream("something".getBytes("UTF-8")));
     }

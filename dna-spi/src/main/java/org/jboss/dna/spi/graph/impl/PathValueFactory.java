@@ -21,7 +21,6 @@
  */
 package org.jboss.dna.spi.graph.impl;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
 import java.math.BigDecimal;
@@ -41,7 +40,6 @@ import org.jboss.dna.spi.graph.PathFactory;
 import org.jboss.dna.spi.graph.PropertyType;
 import org.jboss.dna.spi.graph.Reference;
 import org.jboss.dna.spi.graph.ValueFactory;
-import org.jboss.dna.spi.graph.ValueFormatException;
 import org.jboss.dna.spi.graph.Path.Segment;
 
 /**
@@ -77,7 +75,9 @@ public class PathValueFactory extends AbstractValueFactory<Path> implements Path
 
     private final ValueFactory<Name> nameValueFactory;
 
-    public PathValueFactory( TextDecoder decoder, ValueFactory<String> stringValueFactory, ValueFactory<Name> nameValueFactory ) {
+    public PathValueFactory( TextDecoder decoder,
+                             ValueFactory<String> stringValueFactory,
+                             ValueFactory<Name> nameValueFactory ) {
         super(PropertyType.PATH, decoder, stringValueFactory);
         ArgCheck.isNotNull(nameValueFactory, "nameValueFactory");
         this.nameValueFactory = nameValueFactory;
@@ -111,7 +111,8 @@ public class PathValueFactory extends AbstractValueFactory<Path> implements Path
     /**
      * {@inheritDoc}
      */
-    public Path create( final String value, TextDecoder decoder ) throws ValueFormatException {
+    public Path create( final String value,
+                        TextDecoder decoder ) {
         if (value == null) return null;
         String trimmedValue = value.trim();
         int length = trimmedValue.length();
@@ -139,7 +140,7 @@ public class PathValueFactory extends AbstractValueFactory<Path> implements Path
         List<Segment> segments = new ArrayList<Segment>();
         String[] pathSegments = DELIMITER_PATTERN.split(trimmedValue);
         if (pathSegments.length == 0) {
-            throw new ValueFormatException(SpiI18n.validPathMayNotContainEmptySegment.text(value));
+            throw new IllegalArgumentException(SpiI18n.validPathMayNotContainEmptySegment.text(value));
         }
         if (decoder == null) decoder = getDecoder();
         assert pathSegments.length != 0;
@@ -148,7 +149,7 @@ public class PathValueFactory extends AbstractValueFactory<Path> implements Path
             assert segment != null;
             segment = segment.trim();
             if (segment.length() == 0) {
-                throw new ValueFormatException(SpiI18n.validPathMayNotContainEmptySegment.text(value));
+                throw new IllegalArgumentException(SpiI18n.validPathMayNotContainEmptySegment.text(value));
             }
             // Create the name and add a segment with it ...
             segments.add(createSegment(segment, decoder));
@@ -161,57 +162,73 @@ public class PathValueFactory extends AbstractValueFactory<Path> implements Path
     /**
      * {@inheritDoc}
      */
-    public Path create( int value ) throws ValueFormatException {
-        throw new ValueFormatException(SpiI18n.unableToCreateValue.text(getPropertyType().getName(), Date.class.getSimpleName(), value));
+    public Path create( int value ) {
+        throw new UnsupportedOperationException(SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
+                                                                                 Date.class.getSimpleName(),
+                                                                                 value));
     }
 
     /**
      * {@inheritDoc}
      */
-    public Path create( long value ) throws ValueFormatException {
-        throw new ValueFormatException(SpiI18n.unableToCreateValue.text(getPropertyType().getName(), Date.class.getSimpleName(), value));
+    public Path create( long value ) {
+        throw new UnsupportedOperationException(SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
+                                                                                 Date.class.getSimpleName(),
+                                                                                 value));
     }
 
     /**
      * {@inheritDoc}
      */
-    public Path create( boolean value ) throws ValueFormatException {
-        throw new ValueFormatException(SpiI18n.unableToCreateValue.text(getPropertyType().getName(), Date.class.getSimpleName(), value));
+    public Path create( boolean value ) {
+        throw new UnsupportedOperationException(SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
+                                                                                 Date.class.getSimpleName(),
+                                                                                 value));
     }
 
     /**
      * {@inheritDoc}
      */
-    public Path create( float value ) throws ValueFormatException {
-        throw new ValueFormatException(SpiI18n.unableToCreateValue.text(getPropertyType().getName(), Date.class.getSimpleName(), value));
+    public Path create( float value ) {
+        throw new UnsupportedOperationException(SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
+                                                                                 Date.class.getSimpleName(),
+                                                                                 value));
     }
 
     /**
      * {@inheritDoc}
      */
-    public Path create( double value ) throws ValueFormatException {
-        throw new ValueFormatException(SpiI18n.unableToCreateValue.text(getPropertyType().getName(), Date.class.getSimpleName(), value));
+    public Path create( double value ) {
+        throw new UnsupportedOperationException(SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
+                                                                                 Date.class.getSimpleName(),
+                                                                                 value));
     }
 
     /**
      * {@inheritDoc}
      */
-    public Path create( BigDecimal value ) throws ValueFormatException {
-        throw new ValueFormatException(SpiI18n.unableToCreateValue.text(getPropertyType().getName(), Date.class.getSimpleName(), value));
+    public Path create( BigDecimal value ) {
+        throw new UnsupportedOperationException(SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
+                                                                                 Date.class.getSimpleName(),
+                                                                                 value));
     }
 
     /**
      * {@inheritDoc}
      */
-    public Path create( Calendar value ) throws ValueFormatException {
-        throw new ValueFormatException(SpiI18n.unableToCreateValue.text(getPropertyType().getName(), Date.class.getSimpleName(), value));
+    public Path create( Calendar value ) {
+        throw new UnsupportedOperationException(SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
+                                                                                 Date.class.getSimpleName(),
+                                                                                 value));
     }
 
     /**
      * {@inheritDoc}
      */
-    public Path create( Date value ) throws ValueFormatException {
-        throw new ValueFormatException(SpiI18n.unableToCreateValue.text(getPropertyType().getName(), Date.class.getSimpleName(), value));
+    public Path create( Date value ) {
+        throw new UnsupportedOperationException(SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
+                                                                                 Date.class.getSimpleName(),
+                                                                                 value));
     }
 
     /**
@@ -227,7 +244,7 @@ public class PathValueFactory extends AbstractValueFactory<Path> implements Path
     /**
      * {@inheritDoc}
      */
-    public Path create( Path value ) throws ValueFormatException {
+    public Path create( Path value ) {
         return value;
     }
 
@@ -305,7 +322,9 @@ public class PathValueFactory extends AbstractValueFactory<Path> implements Path
     /**
      * {@inheritDoc}
      */
-    public Path create( Path parentPath, Name segmentName, int index ) {
+    public Path create( Path parentPath,
+                        Name segmentName,
+                        int index ) {
         ArgCheck.isNotNull(parentPath, "parent path");
         ArgCheck.isNotNull(segmentName, "segment name");
         List<Segment> segments = new ArrayList<Segment>(parentPath.size() + 1);
@@ -317,7 +336,8 @@ public class PathValueFactory extends AbstractValueFactory<Path> implements Path
     /**
      * {@inheritDoc}
      */
-    public Path create( Path parentPath, Name... segmentNames ) {
+    public Path create( Path parentPath,
+                        Name... segmentNames ) {
         ArgCheck.isNotNull(parentPath, "parent path");
         if (segmentNames == null || segmentNames.length == 0) return parentPath;
 
@@ -335,7 +355,8 @@ public class PathValueFactory extends AbstractValueFactory<Path> implements Path
     /**
      * {@inheritDoc}
      */
-    public Path create( Path parentPath, Segment... segments ) {
+    public Path create( Path parentPath,
+                        Segment... segments ) {
         ArgCheck.isNotNull(parentPath, "parent path");
         if (segments == null || segments.length == 0) return BasicPath.ROOT;
 
@@ -363,7 +384,8 @@ public class PathValueFactory extends AbstractValueFactory<Path> implements Path
     /**
      * {@inheritDoc}
      */
-    public Segment createSegment( Name segmentName, int index ) {
+    public Segment createSegment( Name segmentName,
+                                  int index ) {
         ArgCheck.isNotNull(segmentName, "segment name");
         if (Path.SELF_NAME.equals(segmentName)) return Path.SELF_SEGMENT;
         if (Path.PARENT_NAME.equals(segmentName)) return Path.PARENT_SEGMENT;
@@ -386,7 +408,8 @@ public class PathValueFactory extends AbstractValueFactory<Path> implements Path
      * 
      * @see org.jboss.dna.spi.graph.PathFactory#createSegment(java.lang.String, org.jboss.dna.common.text.TextDecoder)
      */
-    public Segment createSegment( String segmentName, TextDecoder decoder ) {
+    public Segment createSegment( String segmentName,
+                                  TextDecoder decoder ) {
         ArgCheck.isNotNull(segmentName, "segment name");
         if (Path.SELF.equals(segmentName)) return Path.SELF_SEGMENT;
         if (Path.PARENT.equals(segmentName)) return Path.PARENT_SEGMENT;
@@ -400,7 +423,8 @@ public class PathValueFactory extends AbstractValueFactory<Path> implements Path
         }
         String ndx = segmentName.substring(startBracketNdx + 1, endBracketNdx);
         try {
-            return new BasicPathSegment(this.nameValueFactory.create(segmentName.substring(0, startBracketNdx), decoder), Integer.parseInt(ndx));
+            return new BasicPathSegment(this.nameValueFactory.create(segmentName.substring(0, startBracketNdx), decoder),
+                                        Integer.parseInt(ndx));
         } catch (NumberFormatException err) {
             throw new IllegalArgumentException(SpiI18n.invalidIndexInSegmentName.text(ndx, segmentName));
         }
@@ -409,7 +433,8 @@ public class PathValueFactory extends AbstractValueFactory<Path> implements Path
     /**
      * {@inheritDoc}
      */
-    public Segment createSegment( String segmentName, int index ) {
+    public Segment createSegment( String segmentName,
+                                  int index ) {
         ArgCheck.isNotNull(segmentName, "segment name");
         if (Path.SELF.equals(segmentName)) return Path.SELF_SEGMENT;
         if (Path.PARENT.equals(segmentName)) return Path.PARENT_SEGMENT;
@@ -419,14 +444,16 @@ public class PathValueFactory extends AbstractValueFactory<Path> implements Path
     /**
      * {@inheritDoc}
      */
-    public Path create( Reference value ) throws ValueFormatException {
-        throw new ValueFormatException(SpiI18n.unableToCreateValue.text(getPropertyType().getName(), Reference.class.getSimpleName(), value));
+    public Path create( Reference value ) {
+        throw new UnsupportedOperationException(SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
+                                                                                 Reference.class.getSimpleName(),
+                                                                                 value));
     }
 
     /**
      * {@inheritDoc}
      */
-    public Path create( URI value ) throws ValueFormatException {
+    public Path create( URI value ) {
         if (value == null) return null;
         String asciiString = value.toASCIIString();
         // Remove any leading "./" ...
@@ -436,13 +463,15 @@ public class PathValueFactory extends AbstractValueFactory<Path> implements Path
         if (asciiString.indexOf('/') == -1) {
             return create(asciiString);
         }
-        throw new ValueFormatException(SpiI18n.errorCreatingValue.text(getPropertyType().getName(), Path.class.getSimpleName(), value));
+        throw new IllegalArgumentException(SpiI18n.errorConvertingType.text(URI.class.getSimpleName(),
+                                                                            Path.class.getSimpleName(),
+                                                                            value));
     }
 
     /**
      * {@inheritDoc}
      */
-    public Path create( byte[] value ) throws ValueFormatException {
+    public Path create( byte[] value ) {
         // First attempt to create a string from the value, then a long from the string ...
         return create(getStringValueFactory().create(value));
     }
@@ -450,7 +479,8 @@ public class PathValueFactory extends AbstractValueFactory<Path> implements Path
     /**
      * {@inheritDoc}
      */
-    public Path create( InputStream stream, int approximateLength ) throws IOException, ValueFormatException {
+    public Path create( InputStream stream,
+                        int approximateLength ) {
         // First attempt to create a string from the value, then a double from the string ...
         return create(getStringValueFactory().create(stream, approximateLength));
     }
@@ -458,7 +488,8 @@ public class PathValueFactory extends AbstractValueFactory<Path> implements Path
     /**
      * {@inheritDoc}
      */
-    public Path create( Reader reader, int approximateLength ) throws IOException, ValueFormatException {
+    public Path create( Reader reader,
+                        int approximateLength ) {
         // First attempt to create a string from the value, then a double from the string ...
         return create(getStringValueFactory().create(reader, approximateLength));
     }

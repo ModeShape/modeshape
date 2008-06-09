@@ -39,7 +39,7 @@ import org.jboss.dna.spi.graph.Path;
 import org.jboss.dna.spi.graph.PropertyType;
 import org.jboss.dna.spi.graph.Reference;
 import org.jboss.dna.spi.graph.ValueFactory;
-import org.jboss.dna.spi.graph.ValueFormatException;
+import org.jboss.dna.spi.graph.IoException;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -56,71 +56,71 @@ public class AbstractValueFactoryTest {
             super(PropertyType.STRING, decoder, stringValueFactory);
         }
 
-        public String create( String value ) throws ValueFormatException {
+        public String create( String value ) throws IoException {
             return null;
         }
 
-        public String create( String value, TextDecoder decoder ) throws ValueFormatException {
+        public String create( String value, TextDecoder decoder ) throws IoException {
             return null;
         }
 
-        public String create( int value ) throws ValueFormatException {
+        public String create( int value ) throws IoException {
             return null;
         }
 
-        public String create( long value ) throws ValueFormatException {
+        public String create( long value ) throws IoException {
             return null;
         }
 
-        public String create( boolean value ) throws ValueFormatException {
+        public String create( boolean value ) throws IoException {
             return null;
         }
 
-        public String create( float value ) throws ValueFormatException {
+        public String create( float value ) throws IoException {
             return null;
         }
 
-        public String create( double value ) throws ValueFormatException {
+        public String create( double value ) throws IoException {
             return null;
         }
 
-        public String create( BigDecimal value ) throws ValueFormatException {
+        public String create( BigDecimal value ) throws IoException {
             return null;
         }
 
-        public String create( Calendar value ) throws ValueFormatException {
+        public String create( Calendar value ) throws IoException {
             return null;
         }
 
-        public String create( Date value ) throws ValueFormatException {
+        public String create( Date value ) throws IoException {
             return null;
         }
 
-        public String create( Name value ) throws ValueFormatException {
+        public String create( Name value ) throws IoException {
             return null;
         }
 
-        public String create( Path value ) throws ValueFormatException {
+        public String create( Path value ) throws IoException {
             return null;
         }
 
-        public String create( Reference value ) throws ValueFormatException {
+        public String create( Reference value ) throws IoException {
             return null;
         }
 
-        public String create( URI value ) throws ValueFormatException {
+        public String create( URI value ) throws IoException {
             return null;
         }
 
-        public String create( byte[] value ) throws ValueFormatException {
+        public String create( byte[] value ) throws IoException {
             return null;
         }
 
-        public String create( InputStream stream, int approximateLength ) throws ValueFormatException {
+        public String create( InputStream stream, int approximateLength ) throws IoException {
             return null;
         }
 
-        public String create( Reader reader, int approximateLength ) throws ValueFormatException {
+        public String create( Reader reader, int approximateLength ) throws IoException {
             return null;
         }
     }

@@ -2,7 +2,7 @@
  * JBoss, Home of Professional Open Source.
  * Copyright 2008, Red Hat Middleware LLC, and individual contributors
  * as indicated by the @author tags. See the copyright.txt file in the
- * distribution for a full listing of individual contributors. 
+ * distribution for a full listing of individual contributors.
  *
  * This is free software; you can redistribute it and/or modify it
  * under the terms of the GNU Lesser General Public License as
@@ -21,7 +21,6 @@
  */
 package org.jboss.dna.spi.graph.impl;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
 import java.math.BigDecimal;
@@ -36,17 +35,18 @@ import org.jboss.dna.spi.graph.Path;
 import org.jboss.dna.spi.graph.PropertyType;
 import org.jboss.dna.spi.graph.Reference;
 import org.jboss.dna.spi.graph.ValueFactory;
-import org.jboss.dna.spi.graph.ValueFormatException;
 
 /**
  * The standard {@link ValueFactory} for {@link PropertyType#BOOLEAN} values.
  * 
  * @author Randall Hauch
+ * @author John Verhaeg
  */
 @Immutable
 public class BooleanValueFactory extends AbstractValueFactory<Boolean> {
 
-    public BooleanValueFactory( TextDecoder decoder, ValueFactory<String> stringValueFactory ) {
+    public BooleanValueFactory( TextDecoder decoder,
+                                ValueFactory<String> stringValueFactory ) {
         super(PropertyType.BOOLEAN, decoder, stringValueFactory);
     }
 
@@ -61,7 +61,8 @@ public class BooleanValueFactory extends AbstractValueFactory<Boolean> {
     /**
      * {@inheritDoc}
      */
-    public Boolean create( String value, TextDecoder decoder ) {
+    public Boolean create( String value,
+                           TextDecoder decoder ) {
         // this probably doesn't really need to call the decoder, but by doing so then we don't care at all what the decoder does
         return create(getDecoder(decoder).decode(value));
     }
@@ -69,15 +70,19 @@ public class BooleanValueFactory extends AbstractValueFactory<Boolean> {
     /**
      * {@inheritDoc}
      */
-    public Boolean create( int value ) throws ValueFormatException {
-        throw new ValueFormatException(SpiI18n.unableToCreateValue.text(getPropertyType().getName(), Integer.class.getSimpleName(), value));
+    public Boolean create( int value ) {
+        throw new UnsupportedOperationException(SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
+                                                                                 Integer.class.getSimpleName(),
+                                                                                 value));
     }
 
     /**
      * {@inheritDoc}
      */
-    public Boolean create( long value ) throws ValueFormatException {
-        throw new ValueFormatException(SpiI18n.unableToCreateValue.text(getPropertyType().getName(), Long.class.getSimpleName(), value));
+    public Boolean create( long value ) {
+        throw new UnsupportedOperationException(SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
+                                                                                 Long.class.getSimpleName(),
+                                                                                 value));
     }
 
     /**
@@ -90,70 +95,88 @@ public class BooleanValueFactory extends AbstractValueFactory<Boolean> {
     /**
      * {@inheritDoc}
      */
-    public Boolean create( float value ) throws ValueFormatException {
-        throw new ValueFormatException(SpiI18n.unableToCreateValue.text(getPropertyType().getName(), Float.class.getSimpleName(), value));
+    public Boolean create( float value ) {
+        throw new UnsupportedOperationException(SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
+                                                                                 Float.class.getSimpleName(),
+                                                                                 value));
     }
 
     /**
      * {@inheritDoc}
      */
-    public Boolean create( double value ) throws ValueFormatException {
-        throw new ValueFormatException(SpiI18n.unableToCreateValue.text(getPropertyType().getName(), Double.class.getSimpleName(), value));
+    public Boolean create( double value ) {
+        throw new UnsupportedOperationException(SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
+                                                                                 Double.class.getSimpleName(),
+                                                                                 value));
     }
 
     /**
      * {@inheritDoc}
      */
-    public Boolean create( BigDecimal value ) throws ValueFormatException {
-        throw new ValueFormatException(SpiI18n.unableToCreateValue.text(getPropertyType().getName(), BigDecimal.class.getSimpleName(), value));
+    public Boolean create( BigDecimal value ) {
+        throw new UnsupportedOperationException(SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
+                                                                                 BigDecimal.class.getSimpleName(),
+                                                                                 value));
     }
 
     /**
      * {@inheritDoc}
      */
-    public Boolean create( Calendar value ) throws ValueFormatException {
-        throw new ValueFormatException(SpiI18n.unableToCreateValue.text(getPropertyType().getName(), Calendar.class.getSimpleName(), value));
+    public Boolean create( Calendar value ) {
+        throw new UnsupportedOperationException(SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
+                                                                                 Calendar.class.getSimpleName(),
+                                                                                 value));
     }
 
     /**
      * {@inheritDoc}
      */
-    public Boolean create( Date value ) throws ValueFormatException {
-        throw new ValueFormatException(SpiI18n.unableToCreateValue.text(getPropertyType().getName(), Date.class.getSimpleName(), value));
+    public Boolean create( Date value ) {
+        throw new UnsupportedOperationException(SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
+                                                                                 Date.class.getSimpleName(),
+                                                                                 value));
     }
 
     /**
      * {@inheritDoc}
      */
-    public Boolean create( Name value ) throws ValueFormatException {
-        throw new ValueFormatException(SpiI18n.unableToCreateValue.text(getPropertyType().getName(), Name.class.getSimpleName(), value));
+    public Boolean create( Name value ) {
+        throw new UnsupportedOperationException(SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
+                                                                                 Name.class.getSimpleName(),
+                                                                                 value));
     }
 
     /**
      * {@inheritDoc}
      */
-    public Boolean create( Path value ) throws ValueFormatException {
-        throw new ValueFormatException(SpiI18n.unableToCreateValue.text(getPropertyType().getName(), Path.class.getSimpleName(), value));
+    public Boolean create( Path value ) {
+        throw new UnsupportedOperationException(SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
+                                                                                 Path.class.getSimpleName(),
+                                                                                 value));
     }
 
     /**
      * {@inheritDoc}
      */
-    public Boolean create( Reference value ) throws ValueFormatException {
-        throw new ValueFormatException(SpiI18n.unableToCreateValue.text(getPropertyType().getName(), Reference.class.getSimpleName(), value));
+    public Boolean create( Reference value ) {
+        throw new UnsupportedOperationException(SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
+                                                                                 Reference.class.getSimpleName(),
+                                                                                 value));
     }
 
     /**
      * {@inheritDoc}
      */
-    public Boolean create( URI value ) throws ValueFormatException {
-        throw new ValueFormatException(SpiI18n.unableToCreateValue.text(getPropertyType().getName(), URI.class.getSimpleName(), value));
+    public Boolean create( URI value ) {
+        throw new UnsupportedOperationException(SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
+                                                                                 URI.class.getSimpleName(),
+                                                                                 value));
     }
 
     /**
      * {@inheritDoc}
      */
-    public Boolean create( byte[] value ) throws ValueFormatException {
+    public Boolean create( byte[] value ) {
         // First create a string and then create the boolean from the string value ...
         return create(getStringValueFactory().create(value));
     }
@@ -161,7 +184,8 @@ public class BooleanValueFactory extends AbstractValueFactory<Boolean> {
     /**
      * {@inheritDoc}
      */
-    public Boolean create( InputStream stream, int approximateLength ) throws IOException, ValueFormatException {
+    public Boolean create( InputStream stream,
+                           int approximateLength ) {
         // First create a string and then create the boolean from the string value ...
         return create(getStringValueFactory().create(stream, approximateLength));
     }
@@ -169,7 +193,8 @@ public class BooleanValueFactory extends AbstractValueFactory<Boolean> {
     /**
      * {@inheritDoc}
      */
-    public Boolean create( Reader reader, int approximateLength ) throws IOException, ValueFormatException {
+    public Boolean create( Reader reader,
+                           int approximateLength ) {
         // First create a string and then create the boolean from the string value ...
         return create(getStringValueFactory().create(reader, approximateLength));
     }
