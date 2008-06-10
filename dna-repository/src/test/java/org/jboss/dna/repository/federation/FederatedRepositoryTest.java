@@ -60,7 +60,7 @@ public class FederatedRepositoryTest {
     // private RepositoryConnectionPool connectionPool;
 
     @Before
-    public void beforeEach() throws Exception {
+    public void beforeEach() {
         MockitoAnnotations.initMocks(this);
         name = "Test repository";
         repository = new FederatedRepository(service, name);

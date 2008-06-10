@@ -35,7 +35,9 @@ public class MockUserInterface implements UserInterface {
     private final URL fileToUpload;
     private final int numberOfSearchResults;
 
-    public MockUserInterface( URL fileToUpload, String repositoryPath, int numSearchResults ) {
+    public MockUserInterface( URL fileToUpload,
+                              String repositoryPath,
+                              int numSearchResults ) {
         this.repositoryPath = repositoryPath;
         this.fileToUpload = fileToUpload;
         this.numberOfSearchResults = numSearchResults;
@@ -54,7 +56,7 @@ public class MockUserInterface implements UserInterface {
     /**
      * {@inheritDoc}
      */
-    public URL getFileToUpload() throws IllegalArgumentException {
+    public URL getFileToUpload() {
         return this.fileToUpload;
     }
 

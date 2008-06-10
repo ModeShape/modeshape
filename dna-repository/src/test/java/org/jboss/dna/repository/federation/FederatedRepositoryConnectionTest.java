@@ -58,7 +58,7 @@ public class FederatedRepositoryConnectionTest {
     private ServiceAdministrator repositoryAdmin;
 
     @Before
-    public void beforeEach() throws Exception {
+    public void beforeEach() {
         MockitoAnnotations.initMocks(this);
         sourceName = "Source X";
         stub(source.getName()).toReturn(sourceName);

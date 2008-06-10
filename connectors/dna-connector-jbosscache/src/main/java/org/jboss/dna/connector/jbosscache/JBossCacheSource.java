@@ -49,7 +49,6 @@ import org.jboss.dna.spi.graph.Name;
 import org.jboss.dna.spi.graph.NameFactory;
 import org.jboss.dna.spi.graph.connection.RepositoryConnection;
 import org.jboss.dna.spi.graph.connection.RepositorySource;
-import org.jboss.dna.spi.graph.connection.RepositorySourceException;
 
 /**
  * @author Randall Hauch
@@ -192,7 +191,8 @@ public class JBossCacheSource implements RepositorySource, ObjectFactory {
      * @throws NamingException if there is a problem registering this object
      * @see #getJndiName()
      */
-    public synchronized void setJndiName( String name, Context context ) throws NamingException {
+    public synchronized void setJndiName( String name,
+                                          Context context ) throws NamingException {
         ArgCheck.isNotNull(name, "name");
         if (context == null) context = new InitialContext();
 
@@ -272,7 +272,7 @@ public class JBossCacheSource implements RepositorySource, ObjectFactory {
     /**
      * {@inheritDoc}
      */
-    public synchronized RepositoryConnection getConnection() throws RepositorySourceException {
+    public synchronized RepositoryConnection getConnection() {
         if (this.cache == null) {
             CacheFactory<Name, Object> factory = new DefaultCacheFactory<Name, Object>();
             cache = factory.createCache(cacheConfigurationName);
@@ -304,7 +304,10 @@ public class JBossCacheSource implements RepositorySource, ObjectFactory {
     /**
      * {@inheritDoc}
      */
-    public Object getObjectInstance( Object obj, javax.naming.Name name, Context nameCtx, Hashtable<?, ?> environment ) throws Exception {
+    public Object getObjectInstance( Object obj,
+                                     javax.naming.Name name,
+                                     Context nameCtx,
+                                     Hashtable<?, ?> environment ) {
         if (obj instanceof Reference) {
             Reference ref = (Reference)obj;
             if (ref.getClassName().equals(getClass().getName())) {

@@ -50,10 +50,10 @@ public class ImageMetadataSequencerTest {
     private URL cautionPng;
 
     @Before
-    public void beforeEach() throws Exception {
+    public void beforeEach() {
         this.sequencer = new ImageMetadataSequencer();
         this.output = new MockSequencerOutput();
-		output.getNamespaceRegistry().register("image", "http://jboss.org/dna/images/1.0");
+        output.getNamespaceRegistry().register("image", "http://jboss.org/dna/images/1.0");
         this.progress = new SimpleProgressMonitor("Test activity");
         this.cautionGif = this.getClass().getClassLoader().getResource("caution.gif");
         this.cautionJpg = this.getClass().getClassLoader().getResource("caution.jpg");
@@ -89,8 +89,10 @@ public class ImageMetadataSequencerTest {
         assertThat(output.getPropertyValues("image:metadata", "image:numberOfImages"), is(new Object[] {1}));
         assertThat(output.getPropertyValues("image:metadata", "image:physicalWidthDpi"), is(new Object[] {72}));
         assertThat(output.getPropertyValues("image:metadata", "image:physicalHeightDpi"), is(new Object[] {72}));
-        assertThat(((Float)(output.getPropertyValues("image:metadata", "image:physicalWidthInches")[0])).doubleValue(), is(closeTo(0.666667d, 0.0001d)));
-        assertThat(((Float)(output.getPropertyValues("image:metadata", "image:physicalHeightInches")[0])).doubleValue(), is(closeTo(0.666667d, 0.0001d)));
+        assertThat(((Float)(output.getPropertyValues("image:metadata", "image:physicalWidthInches")[0])).doubleValue(),
+                   is(closeTo(0.666667d, 0.0001d)));
+        assertThat(((Float)(output.getPropertyValues("image:metadata", "image:physicalHeightInches")[0])).doubleValue(),
+                   is(closeTo(0.666667d, 0.0001d)));
     }
 
     @Test

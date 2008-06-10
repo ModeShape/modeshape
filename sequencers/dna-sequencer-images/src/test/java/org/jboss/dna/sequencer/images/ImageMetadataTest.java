@@ -39,7 +39,7 @@ public class ImageMetadataTest {
     private InputStream imageStream;
 
     @Before
-    public void beforeEach() throws Exception {
+    public void beforeEach() {
         this.image = new ImageMetadata();
     }
 

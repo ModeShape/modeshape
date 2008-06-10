@@ -46,7 +46,8 @@ import org.junit.Test;
  */
 public class SequencingServiceTest extends AbstractJcrRepositoryTest {
 
-    public static final int ALL_EVENT_TYPES = Event.NODE_ADDED | Event.NODE_REMOVED | Event.PROPERTY_ADDED | Event.PROPERTY_CHANGED | Event.PROPERTY_REMOVED;
+    public static final int ALL_EVENT_TYPES = Event.NODE_ADDED | Event.NODE_REMOVED | Event.PROPERTY_ADDED
+                                              | Event.PROPERTY_CHANGED | Event.PROPERTY_REMOVED;
     public static final String REPOSITORY_WORKSPACE_NAME = "testRepository-Workspace";
 
     private ObservationService observationService;
@@ -54,7 +55,7 @@ public class SequencingServiceTest extends AbstractJcrRepositoryTest {
     private ExecutionContext executionContext;
 
     @Before
-    public void beforeEach() throws Exception {
+    public void beforeEach() {
         this.executionContext = new MockExecutionContext(this, REPOSITORY_WORKSPACE_NAME);
         this.sequencingService = new SequencingService();
         this.sequencingService.setExecutionContext(this.executionContext);
@@ -142,7 +143,8 @@ public class SequencingServiceTest extends AbstractJcrRepositoryTest {
             assertThat(sequencingService.getAdministrator().isPaused(), is(false));
             assertThat(sequencingService.getAdministrator().isStarted(), is(false));
             ServiceAdministrator.State actualState = sequencingService.getAdministrator().getState();
-            assertThat(actualState == ServiceAdministrator.State.SHUTDOWN || actualState == ServiceAdministrator.State.TERMINATED, is(true));
+            assertThat(actualState == ServiceAdministrator.State.SHUTDOWN || actualState == ServiceAdministrator.State.TERMINATED,
+                       is(true));
         }
     }
 
@@ -172,7 +174,8 @@ public class SequencingServiceTest extends AbstractJcrRepositoryTest {
         assertThat(sequencingService.getAdministrator().isPaused(), is(false));
         assertThat(sequencingService.getAdministrator().isStarted(), is(false));
         ServiceAdministrator.State actualState = sequencingService.getAdministrator().getState();
-        assertThat(actualState == ServiceAdministrator.State.SHUTDOWN || actualState == ServiceAdministrator.State.TERMINATED, is(true));
+        assertThat(actualState == ServiceAdministrator.State.SHUTDOWN || actualState == ServiceAdministrator.State.TERMINATED,
+                   is(true));
 
         // Now start it back up ... this will fail
         sequencingService.getAdministrator().start();

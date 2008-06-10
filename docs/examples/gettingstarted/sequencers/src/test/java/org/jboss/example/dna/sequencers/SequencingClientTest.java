@@ -42,7 +42,7 @@ public class SequencingClientTest {
     private SequencingClient client;
 
     @Before
-    public void beforeEach() throws Exception {
+    public void beforeEach() {
         this.pngImageUrl = Thread.currentThread().getContextClassLoader().getResource("caution.png");
         this.pictImageUrl = Thread.currentThread().getContextClassLoader().getResource("caution.pict");
         this.jpegImageUrl = Thread.currentThread().getContextClassLoader().getResource("caution.jpg");

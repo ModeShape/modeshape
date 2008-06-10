@@ -73,7 +73,7 @@ public class JackrabbitInMemoryTest {
     }
 
     @After
-    public void afterEach() throws Exception {
+    public void afterEach() {
         try {
             if (session != null) session.logout();
         } finally {
@@ -85,13 +85,16 @@ public class JackrabbitInMemoryTest {
 
     /**
      * Create an evenly distributed tree of nodes, starting with the supplied parent.
+     * 
      * @param parentNode the parent node of the tree; may not be null
      * @param numberOfChildNodes the number of child nodes to create under the parent
      * @param levelsToCreate the total number of levels in the tree to create
      * @return the total number of child nodes created
      * @throws Exception
      */
-    public int createNodes( Node parentNode, int numberOfChildNodes, int levelsToCreate ) throws Exception {
+    public int createNodes( Node parentNode,
+                            int numberOfChildNodes,
+                            int levelsToCreate ) throws Exception {
         int numberCreated = 0;
         for (int i = 0; i < numberOfChildNodes; ++i) {
             nodeStopwatch.start();
@@ -118,7 +121,10 @@ public class JackrabbitInMemoryTest {
             nodeStopwatch.stop();
         }
         rootNode.save();
-        HistogramTest.writeHistogramToLog(logger, nodeStopwatch.getHistogram(3).setBucketCount(50), 80, "create 100 nodes with no children and no properties");
+        HistogramTest.writeHistogramToLog(logger,
+                                          nodeStopwatch.getHistogram(3).setBucketCount(50),
+                                          80,
+                                          "create 100 nodes with no children and no properties");
         this.logger.info(MockI18n.passthrough, nodeStopwatch.toString());
     }
 
@@ -131,8 +137,12 @@ public class JackrabbitInMemoryTest {
         rootNode.save();
         saveStopwatch.stop();
 
-        HistogramTest.writeHistogramToLog(logger, nodeStopwatch.getHistogram(3).setBucketCount(50), 80, "create tree of " + numNodes + " nodes (2 deep, 10 children at every node)");
-        HistogramTest.writeHistogramToLog(logger, saveStopwatch.getHistogram(3).setBucketCount(50), 80, "1 save of 2x10 tree of " + numNodes + " nodes");
+        HistogramTest.writeHistogramToLog(logger,
+                                          nodeStopwatch.getHistogram(3).setBucketCount(50),
+                                          80,
+                                          "create tree of " + numNodes + " nodes (2 deep, 10 children at every node)");
+        HistogramTest.writeHistogramToLog(logger, saveStopwatch.getHistogram(3).setBucketCount(50), 80, "1 save of 2x10 tree of "
+                                                                                                        + numNodes + " nodes");
         this.logger.info(MockI18n.passthrough, "Node operation times: " + nodeStopwatch.toString());
         this.logger.info(MockI18n.passthrough, "Save times: " + saveStopwatch.toString());
     }

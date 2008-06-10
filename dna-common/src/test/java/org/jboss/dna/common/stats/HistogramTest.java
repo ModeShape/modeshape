@@ -34,7 +34,6 @@ import org.jboss.dna.common.math.FloatOperations;
 import org.jboss.dna.common.math.MathOperations;
 import org.jboss.dna.common.text.Inflector;
 import org.jboss.dna.common.util.Logger;
-import org.junit.Before;
 import org.junit.Test;
 
 public class HistogramTest {
@@ -42,11 +41,10 @@ public class HistogramTest {
     private Logger logger = Logger.getLogger(HistogramTest.class);
     private Inflector inflector = Inflector.getInstance();
 
-    @Before
-    public void beforeEach() throws Exception {
-    }
-
-    public static <T extends Number> Histogram<T> createRandomHistogram( T minimum, T maximum, int numberOfValues, MathOperations<T> ops ) {
+    public static <T extends Number> Histogram<T> createRandomHistogram( T minimum,
+                                                                         T maximum,
+                                                                         int numberOfValues,
+                                                                         MathOperations<T> ops ) {
         List<T> values = new ArrayList<T>();
         Random rng = new Random();
         for (int i = 0; i != numberOfValues; ++i) {
@@ -56,7 +54,10 @@ public class HistogramTest {
         return new Histogram<T>(ops, values);
     }
 
-    public static <T extends Number> void writeHistogramToLog( Logger logger, Histogram<T> histogram, int barLength, String description ) {
+    public static <T extends Number> void writeHistogramToLog( Logger logger,
+                                                               Histogram<T> histogram,
+                                                               int barLength,
+                                                               String description ) {
         logger.info(MockI18n.passthrough, description != null ? description : "Histogram:");
         List<String> barGraph = histogram.getTextGraph(barLength);
         for (String line : barGraph) {
@@ -64,13 +65,16 @@ public class HistogramTest {
         }
     }
 
-    public <T extends Number> void assertBucketValueCount( Histogram<T> histogram, long... values ) {
+    public <T extends Number> void assertBucketValueCount( Histogram<T> histogram,
+                                                           long... values ) {
         List<Histogram<T>.Bucket> buckets = histogram.getBuckets();
         // Check the number of buckets ...
         assertEquals("The number of buckets didn't match expected number", values.length, buckets.size());
         // Check the number of values ...
         for (int i = 0; i != buckets.size(); ++i) {
-            assertEquals("The " + inflector.ordinalize(i + 1) + " bucket didn't have the expected number of values", values[i], buckets.get(i).getNumberOfValues());
+            assertEquals("The " + inflector.ordinalize(i + 1) + " bucket didn't have the expected number of values",
+                         values[i],
+                         buckets.get(i).getNumberOfValues());
         }
     }
 
@@ -160,7 +164,8 @@ public class HistogramTest {
     public void shouldCorrectlyPlace1000RandomFloatValues() {
         Histogram<Float> gram = createRandomHistogram(10.0f, 100.0f, 1000, new FloatOperations());
         // gram.setDesiredRange(0.0f,100.0f);
-        HistogramTest.writeHistogramToLog(this.logger, gram, 0, "Histogram of 1000 random float values in " + gram.getBucketCount() + " buckets: ");
+        HistogramTest.writeHistogramToLog(this.logger, gram, 0, "Histogram of 1000 random float values in "
+                                                                + gram.getBucketCount() + " buckets: ");
     }
 
     @Test
@@ -174,7 +179,13 @@ public class HistogramTest {
 
     @Test
     public void shouldCorrectlyConstructBoundariesWithWindowSmallerThanActualNarrowlyVaryingFloats() {
-        List<Float> boundaries = Histogram.getBucketBoundaries(new FloatOperations(), 10.00020f, 10.00030f, 10.00011f, 10.00050f, 12, 3);
+        List<Float> boundaries = Histogram.getBucketBoundaries(new FloatOperations(),
+                                                               10.00020f,
+                                                               10.00030f,
+                                                               10.00011f,
+                                                               10.00050f,
+                                                               12,
+                                                               3);
         assertNotNull(boundaries);
         assertEquals(13, boundaries.size());
         assertEquals(10.00011f, boundaries.get(0), 0.00001f);

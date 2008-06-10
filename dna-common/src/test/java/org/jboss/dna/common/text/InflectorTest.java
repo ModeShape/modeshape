@@ -22,9 +22,7 @@
 
 package org.jboss.dna.common.text;
 
-import static org.junit.Assert.*;
-import org.jboss.dna.common.text.Inflector;
-import org.junit.After;
+import static org.junit.Assert.assertEquals;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -33,15 +31,12 @@ public class InflectorTest {
     private Inflector inflector;
 
     @Before
-    public void beforeEach() throws Exception {
+    public void beforeEach() {
         this.inflector = new Inflector();
     }
 
-    @After
-    public void afterEach() throws Exception {
-    }
-
-    public void singularToPlural( Object singular, String expectedPlural ) {
+    public void singularToPlural( Object singular,
+                                  String expectedPlural ) {
         // Test pluralizing the singular string
         String actualPlural = inflector.pluralize(singular);
         assertEquals(expectedPlural, actualPlural);
@@ -57,7 +52,9 @@ public class InflectorTest {
         assertEquals(expectedPlural, inflector.pluralize(expectedPlural));
     }
 
-    public void upperCamelCase( String word, String expectedCamelized, char... delimiterChars ) {
+    public void upperCamelCase( String word,
+                                String expectedCamelized,
+                                char... delimiterChars ) {
         // Test uppercasing the string
         String actualCamelized = inflector.camelCase(word, true, delimiterChars);
         assertEquals(expectedCamelized, actualCamelized);
@@ -70,7 +67,9 @@ public class InflectorTest {
         }
     }
 
-    public void lowerCamelCase( String word, String expectedCamelized, char... delimiterChars ) {
+    public void lowerCamelCase( String word,
+                                String expectedCamelized,
+                                char... delimiterChars ) {
         // Test lowercasing the string
         String actualCamelized = inflector.camelCase(word, false, delimiterChars);
         assertEquals(expectedCamelized, actualCamelized);
@@ -83,31 +82,39 @@ public class InflectorTest {
         }
     }
 
-    public void underscore( String word, String expectedUnderscored, char... delimiterChars ) {
+    public void underscore( String word,
+                            String expectedUnderscored,
+                            char... delimiterChars ) {
         // Test underscoring the word
         String actualUnderscored = inflector.underscore(word, delimiterChars);
         assertEquals(expectedUnderscored, actualUnderscored);
     }
 
-    public void capitalize( String words, String expectedValue ) {
+    public void capitalize( String words,
+                            String expectedValue ) {
         // Test capitalizing the phrase
         String actualValue = inflector.capitalize(words);
         assertEquals(expectedValue, actualValue);
     }
 
-    public void humanize( String word, String expectedValue, String... removableTokens ) {
+    public void humanize( String word,
+                          String expectedValue,
+                          String... removableTokens ) {
         // Test humanizing the word
         String actualValue = inflector.humanize(word, removableTokens);
         assertEquals(expectedValue, actualValue);
     }
 
-    public void titleCase( String word, String expectedValue, String... removableTokens ) {
+    public void titleCase( String word,
+                           String expectedValue,
+                           String... removableTokens ) {
         // Test title casing the word
         String actualValue = inflector.titleCase(word, removableTokens);
         assertEquals(expectedValue, actualValue);
     }
 
-    public void ordinalize( int number, String expectedValue ) {
+    public void ordinalize( int number,
+                            String expectedValue ) {
         // Test underscoring the camelized word
         String actualValue = inflector.ordinalize(number);
         assertEquals(expectedValue, actualValue);

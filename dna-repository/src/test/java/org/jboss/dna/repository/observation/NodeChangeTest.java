@@ -24,7 +24,6 @@ package org.jboss.dna.repository.observation;
 import java.util.HashSet;
 import java.util.Set;
 import javax.jcr.observation.Event;
-import org.jboss.dna.repository.observation.NodeChange;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -41,7 +40,7 @@ public class NodeChangeTest {
     private NodeChange nodeChange;
 
     @Before
-    public void beforeEach() throws Exception {
+    public void beforeEach() {
         validRepositoryWorkspaceName = "repositoryX";
         validAbsolutePath = "/a/b/c/d";
         validEventTypes = Event.NODE_ADDED | Event.PROPERTY_ADDED | Event.PROPERTY_CHANGED | Event.PROPERTY_REMOVED;
@@ -50,7 +49,8 @@ public class NodeChangeTest {
         validModifiedProperties.add("jcr:name");
         validModifiedProperties.add("jcr:title");
         validRemovedProperties.add("jcr:mime");
-        nodeChange = new NodeChange(validRepositoryWorkspaceName, validAbsolutePath, validEventTypes, validModifiedProperties, validRemovedProperties);
+        nodeChange = new NodeChange(validRepositoryWorkspaceName, validAbsolutePath, validEventTypes, validModifiedProperties,
+                                    validRemovedProperties);
     }
 
     @Test( expected = UnsupportedOperationException.class )

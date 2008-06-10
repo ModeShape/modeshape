@@ -41,7 +41,7 @@ public class BasicNamespaceRegistryTest {
     private BasicNamespaceRegistry namespaceRegistry;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         namespaceRegistry = new BasicNamespaceRegistry();
         validNamespaceUri1 = "http://www.jboss.org/dna/2";
         validNamespaceUri2 = "http://acme.com/something";

@@ -41,7 +41,7 @@ public class ComponentConfigTest {
     private String[] validClasspath;
 
     @Before
-    public void beforeEach() throws Exception {
+    public void beforeEach() {
         this.validName = "valid configuration name";
         this.validDescription = "a Component";
         this.validClassname = "org.jboss.dna.acme.GenericComponent";

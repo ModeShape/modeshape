@@ -65,7 +65,7 @@ public class SequencingClient {
     public static final String DEFAULT_USERNAME = "jsmith";
     public static final char[] DEFAULT_PASSWORD = "secret".toCharArray();
 
-    public static void main( String[] args ) throws Exception {
+    public static void main( String[] args ) {
         SequencingClient client = new SequencingClient();
         client.setRepositoryInformation(DEFAULT_REPOSITORY_NAME, DEFAULT_WORKSPACE_NAME, DEFAULT_USERNAME, DEFAULT_PASSWORD);
         client.setUserInterface(new ConsoleInput(client));
@@ -98,7 +98,10 @@ public class SequencingClient {
         this.jackrabbitConfigPath = jackrabbitConfigPath != null ? jackrabbitConfigPath : DEFAULT_JACKRABBIT_CONFIG_PATH;
     }
 
-    protected void setRepositoryInformation( String repositoryName, String workspaceName, String username, char[] password ) {
+    protected void setRepositoryInformation( String repositoryName,
+                                             String workspaceName,
+                                             String username,
+                                             char[] password ) {
         if (this.repository != null) {
             throw new IllegalArgumentException("Unable to set repository information when repository is already running");
         }
@@ -110,6 +113,7 @@ public class SequencingClient {
 
     /**
      * Set the user interface that this client should use.
+     * 
      * @param userInterface
      */
     public void setUserInterface( UserInterface userInterface ) {
@@ -118,6 +122,7 @@ public class SequencingClient {
 
     /**
      * Start up the JCR repository. This method only operates using the JCR API and Jackrabbit-specific API.
+     * 
      * @throws Exception
      */
     public void startRepository() throws Exception {
@@ -127,10 +132,12 @@ public class SequencingClient {
                 // Load the Jackrabbit configuration ...
                 File configFile = new File(this.jackrabbitConfigPath);
                 if (!configFile.exists()) {
-                    throw new SystemFailureException("The Jackrabbit configuration file cannot be found at " + configFile.getAbsoluteFile());
+                    throw new SystemFailureException("The Jackrabbit configuration file cannot be found at "
+                                                     + configFile.getAbsoluteFile());
                 }
                 if (!configFile.canRead()) {
-                    throw new SystemFailureException("Unable to read the Jackrabbit configuration file at " + configFile.getAbsoluteFile());
+                    throw new SystemFailureException("Unable to read the Jackrabbit configuration file at "
+                                                     + configFile.getAbsoluteFile());
                 }
                 String pathToConfig = configFile.getAbsolutePath();
 
@@ -138,7 +145,8 @@ public class SequencingClient {
                 File workingDirectory = new File(this.workingDirectory);
                 if (workingDirectory.exists()) {
                     if (!workingDirectory.isDirectory()) {
-                        throw new SystemFailureException("Unable to create working directory at " + workingDirectory.getAbsolutePath());
+                        throw new SystemFailureException("Unable to create working directory at "
+                                                         + workingDirectory.getAbsolutePath());
                     }
                 }
                 String workingDirectoryPath = workingDirectory.getAbsolutePath();
@@ -173,6 +181,7 @@ public class SequencingClient {
 
     /**
      * Shutdown the repository. This method only uses the JCR API.
+     * 
      * @throws Exception
      */
     public void shutdownRepository() throws Exception {
@@ -188,6 +197,7 @@ public class SequencingClient {
 
     /**
      * Start the DNA services.
+     * 
      * @throws Exception
      */
     public void startDnaServices() throws Exception {
@@ -248,7 +258,8 @@ public class SequencingClient {
             this.observationService = new ObservationService(this.executionContext.getSessionFactory());
             this.observationService.getAdministrator().start();
             this.observationService.addListener(this.sequencingService);
-            this.observationService.monitor(repositoryWorkspaceName, Event.NODE_ADDED | Event.PROPERTY_ADDED | Event.PROPERTY_CHANGED);
+            this.observationService.monitor(repositoryWorkspaceName, Event.NODE_ADDED | Event.PROPERTY_ADDED
+                                                                     | Event.PROPERTY_CHANGED);
         }
         // Start up the sequencing service ...
         this.sequencingService.getAdministrator().start();
@@ -256,6 +267,7 @@ public class SequencingClient {
 
     /**
      * Shut down the DNA services.
+     * 
      * @throws Exception
      */
     public void shutdownDnaServices() throws Exception {
@@ -272,6 +284,7 @@ public class SequencingClient {
 
     /**
      * Get the sequencing statistics.
+     * 
      * @return the statistics; never null
      */
     public SequencingService.Statistics getStatistics() {
@@ -280,6 +293,7 @@ public class SequencingClient {
 
     /**
      * Prompt the user interface for the file to upload into the JCR repository, then upload it using the JCR API.
+     * 
      * @throws Exception
      */
     public void uploadFile() throws Exception {
@@ -311,6 +325,7 @@ public class SequencingClient {
 
     /**
      * Perform a search of the repository for all image metadata automatically created by the image sequencer.
+     * 
      * @throws Exception
      */
     public void search() throws Exception {
@@ -361,7 +376,9 @@ public class SequencingClient {
      * @throws PathNotFoundException
      * @throws ValueFormatException
      */
-    private MediaInfo extractMediaInfo( String metadataNodeName, String mediaType, Node mediaNode ) throws RepositoryException, PathNotFoundException, ValueFormatException {
+    private MediaInfo extractMediaInfo( String metadataNodeName,
+                                        String mediaType,
+                                        Node mediaNode ) throws RepositoryException, PathNotFoundException, ValueFormatException {
         String nodePath = mediaNode.getPath();
         String nodeName = mediaNode.getName();
         mediaNode = mediaNode.getNode(metadataNodeName);
@@ -394,6 +411,7 @@ public class SequencingClient {
 
     /**
      * Utility method to create a new JCR session from the execution context's {@link SessionFactory}.
+     * 
      * @return the session
      * @throws RepositoryException
      */

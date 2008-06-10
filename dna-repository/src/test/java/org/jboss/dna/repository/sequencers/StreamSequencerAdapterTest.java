@@ -71,7 +71,7 @@ public class StreamSequencerAdapterTest extends AbstractJcrRepositoryTest {
     private String repositoryWorkspaceName = "something";
 
     @Before
-    public void beforeEach() throws Exception {
+    public void beforeEach() {
         final JcrTools tools = new JcrTools();
         this.tools = tools;
         final SessionFactory sessionFactory = new SessionFactory() {
@@ -91,7 +91,9 @@ public class StreamSequencerAdapterTest extends AbstractJcrRepositoryTest {
              * This method always copies the {@link StreamSequencerAdapterTest#sequencerOutput} data into the output {@inheritDoc},
              * and does nothing else with any of the other parameters.
              */
-            public void sequence( InputStream stream, SequencerOutput output, ProgressMonitor progressMonitor ) {
+            public void sequence( InputStream stream,
+                                  SequencerOutput output,
+                                  ProgressMonitor progressMonitor ) {
                 for (SequencerOutputMap.Entry entry : finalOutput) {
                     Path nodePath = entry.getPath();
                     for (SequencerOutputMap.PropertyValue property : entry.getPropertyValues()) {
@@ -104,7 +106,7 @@ public class StreamSequencerAdapterTest extends AbstractJcrRepositoryTest {
     }
 
     @After
-    public void afterEach() throws Exception {
+    public void afterEach() {
         if (session != null) {
             try {
                 session.logout();
@@ -149,7 +151,8 @@ public class StreamSequencerAdapterTest extends AbstractJcrRepositoryTest {
 
     @Test
     public void shouldExtractMixinTypesFromStringArrayWithNullValue() {
-        assertThat(sequencer.extractMixinTypes(new String[] {"value1", null, "value2"}), is(new String[] {"value1", null, "value2"}));
+        assertThat(sequencer.extractMixinTypes(new String[] {"value1", null, "value2"}), is(new String[] {"value1", null,
+            "value2"}));
     }
 
     @Test
@@ -170,7 +173,8 @@ public class StreamSequencerAdapterTest extends AbstractJcrRepositoryTest {
         nodeC.setProperty("sequencedProperty", new ByteArrayInputStream(sampleData.getBytes()));
 
         // Set up the node changes ...
-        NodeChange nodeChange = new NodeChange(repositoryWorkspaceName, nodeC.getPath(), Event.PROPERTY_CHANGED, Collections.singleton("sequencedProperty"), null);
+        NodeChange nodeChange = new NodeChange(repositoryWorkspaceName, nodeC.getPath(), Event.PROPERTY_CHANGED,
+                                               Collections.singleton("sequencedProperty"), null);
 
         // Set up the output directory ...
         Set<RepositoryNodePath> outputPaths = new HashSet<RepositoryNodePath>();
@@ -202,7 +206,8 @@ public class StreamSequencerAdapterTest extends AbstractJcrRepositoryTest {
         nodeC.setProperty("sequencedProperty", (InputStream)null);
 
         // Set up the node changes ...
-        NodeChange nodeChange = new NodeChange(repositoryWorkspaceName, nodeC.getPath(), Event.PROPERTY_CHANGED, Collections.singleton("sequencedProperty"), null);
+        NodeChange nodeChange = new NodeChange(repositoryWorkspaceName, nodeC.getPath(), Event.PROPERTY_CHANGED,
+                                               Collections.singleton("sequencedProperty"), null);
 
         // Set up the output directory ...
         Set<RepositoryNodePath> outputPaths = new HashSet<RepositoryNodePath>();
@@ -233,7 +238,8 @@ public class StreamSequencerAdapterTest extends AbstractJcrRepositoryTest {
         nodeC.setProperty("sequencedProperty", new ByteArrayInputStream(sampleData.getBytes()));
 
         // Set up the node changes ...
-        NodeChange nodeChange = new NodeChange(repositoryWorkspaceName, nodeC.getPath(), Event.PROPERTY_CHANGED, Collections.singleton("sequencedProperty"), null);
+        NodeChange nodeChange = new NodeChange(repositoryWorkspaceName, nodeC.getPath(), Event.PROPERTY_CHANGED,
+                                               Collections.singleton("sequencedProperty"), null);
 
         // Set up the output directory ...
         Set<RepositoryNodePath> outputPaths = new HashSet<RepositoryNodePath>();
@@ -265,7 +271,8 @@ public class StreamSequencerAdapterTest extends AbstractJcrRepositoryTest {
         nodeC.setProperty("sequencedProperty", new ByteArrayInputStream(sampleData.getBytes()));
 
         // Set up the node changes ...
-        NodeChange nodeChange = new NodeChange(repositoryWorkspaceName, nodeC.getPath(), Event.PROPERTY_CHANGED, Collections.singleton("sequencedProperty"), null);
+        NodeChange nodeChange = new NodeChange(repositoryWorkspaceName, nodeC.getPath(), Event.PROPERTY_CHANGED,
+                                               Collections.singleton("sequencedProperty"), null);
 
         // Set up the output directory ...
         Set<RepositoryNodePath> outputPaths = new HashSet<RepositoryNodePath>();
@@ -296,7 +303,8 @@ public class StreamSequencerAdapterTest extends AbstractJcrRepositoryTest {
         nodeC.setProperty("sequencedProperty", new ByteArrayInputStream(sampleData.getBytes()));
 
         // Set up the node changes ...
-        NodeChange nodeChange = new NodeChange(repositoryWorkspaceName, nodeC.getPath(), Event.PROPERTY_CHANGED, Collections.singleton("sequencedProperty"), null);
+        NodeChange nodeChange = new NodeChange(repositoryWorkspaceName, nodeC.getPath(), Event.PROPERTY_CHANGED,
+                                               Collections.singleton("sequencedProperty"), null);
 
         // Set up the output directory ...
         Set<RepositoryNodePath> outputPaths = new HashSet<RepositoryNodePath>();
@@ -327,7 +335,7 @@ public class StreamSequencerAdapterTest extends AbstractJcrRepositoryTest {
     }
 
     @Test
-	public void shouldSequencerOutputProvideAccessToNamespaceRegistry() {
-		assertThat(sequencerOutput.getNamespaceRegistry(), notNullValue());
-	}
+    public void shouldSequencerOutputProvideAccessToNamespaceRegistry() {
+        assertThat(sequencerOutput.getNamespaceRegistry(), notNullValue());
+    }
 }

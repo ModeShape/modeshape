@@ -22,7 +22,9 @@
 
 package org.jboss.dna.common.util;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.fail;
 import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Enumeration;
@@ -37,7 +39,6 @@ import org.apache.log4j.WriterAppender;
 import org.apache.log4j.spi.LoggingEvent;
 import org.apache.log4j.spi.ThrowableInformation;
 import org.jboss.dna.common.i18n.I18n;
-import org.jboss.dna.common.util.Logger;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -80,7 +81,7 @@ public class LoggerTest {
     private Map<String, List<Appender>> existingAppendersByLoggerName = new HashMap<String, List<Appender>>();
 
     @BeforeClass
-    public static void beforeAll() throws Exception {
+    public static void beforeAll() {
         // Initialize the I18n static fields ...
         I18n.initialize(LoggerTest.class);
     }
@@ -427,12 +428,15 @@ public class LoggerTest {
 
         /**
          * Remove the message that is currently at the front of the log, and verify that it contains the supplied information.
+         * 
          * @param expectedLevel the level that the next log message should have
          * @param expectedMessageExpression the message that the next log message should have, or a regular expression that would
-         * match the log message
+         *        match the log message
          * @param expectedExceptionClass the exception class that was expected, or null if there should not be an exception
          */
-        public void removeFirst( Logger.Level expectedLevel, String expectedMessageExpression, Class expectedExceptionClass ) {
+        public void removeFirst( Logger.Level expectedLevel,
+                                 String expectedMessageExpression,
+                                 Class expectedExceptionClass ) {
             if (!hasEvents()) {
                 fail("Expected log message but found none: " + expectedLevel + " - " + expectedMessageExpression);
             }
@@ -447,23 +451,27 @@ public class LoggerTest {
                 String actual = event.getMessage().toString();
                 // Treat as a regular expression, which works for both regular expressions and strings ...
                 if (!actual.matches(expectedMessageExpression)) {
-                    fail("Log line " + lineNumber + " differed: \nwas     :\t" + actual + "\nexpected:\t" + expectedMessageExpression);
+                    fail("Log line " + lineNumber + " differed: \nwas     :\t" + actual + "\nexpected:\t"
+                         + expectedMessageExpression);
                 }
             } // else they are both null
 
             // Check the exception ...
             ThrowableInformation throwableInfo = event.getThrowableInformation();
             if (expectedExceptionClass == null && throwableInfo != null) {
-                fail("Log line " + lineNumber + " had unexpected exception: " + event.getThrowableInformation().getThrowableStrRep());
+                fail("Log line " + lineNumber + " had unexpected exception: "
+                     + event.getThrowableInformation().getThrowableStrRep());
             } else if (expectedExceptionClass != null && throwableInfo == null) {
-                fail("Log line " + lineNumber + " was missing expected exception of type " + expectedExceptionClass.getCanonicalName());
+                fail("Log line " + lineNumber + " was missing expected exception of type "
+                     + expectedExceptionClass.getCanonicalName());
             } else if (expectedExceptionClass != null && throwableInfo != null) {
                 Throwable actualException = throwableInfo.getThrowable();
                 assertSame(expectedExceptionClass, actualException.getClass());
             } // else they are both null
         }
 
-        public void removeFirst( Logger.Level expectedLevel, String expectedMessageExpression ) {
+        public void removeFirst( Logger.Level expectedLevel,
+                                 String expectedMessageExpression ) {
             removeFirst(expectedLevel, expectedMessageExpression, null);
         }
     }

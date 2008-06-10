@@ -60,7 +60,8 @@ public class JBossCacheConnection implements RepositoryConnection {
         /**
          * {@inheritDoc}
          */
-        public void notify( String sourceName, Object... events ) {
+        public void notify( String sourceName,
+                            Object... events ) {
             // do nothing
         }
     };
@@ -74,7 +75,8 @@ public class JBossCacheConnection implements RepositoryConnection {
     /**
      * 
      */
-    /* package */JBossCacheConnection( JBossCacheSource source, Cache<Name, Object> cache ) {
+    /* package */JBossCacheConnection( JBossCacheSource source,
+                                        Cache<Name, Object> cache ) {
         assert source != null;
         assert cache != null;
         this.source = source;
@@ -112,7 +114,8 @@ public class JBossCacheConnection implements RepositoryConnection {
     /**
      * {@inheritDoc}
      */
-    public boolean ping( long time, TimeUnit unit ) {
+    public boolean ping( long time,
+                         TimeUnit unit ) {
         this.cache.getRoot();
         return true;
     }
@@ -134,7 +137,8 @@ public class JBossCacheConnection implements RepositoryConnection {
     /**
      * {@inheritDoc}
      */
-    public void execute( ExecutionEnvironment env, GraphCommand... commands ) throws RepositorySourceException {
+    public void execute( ExecutionEnvironment env,
+                         GraphCommand... commands ) {
         // Set up the workspace ...
 
         // Now execute the commands ...
@@ -292,7 +296,8 @@ public class JBossCacheConnection implements RepositoryConnection {
         return Fqn.fromElements(pathSegment);
     }
 
-    protected Node<Name, Object> getNode( ExecutionEnvironment env, Path path ) {
+    protected Node<Name, Object> getNode( ExecutionEnvironment env,
+                                          Path path ) {
         // Look up the node with the supplied path ...
         Fqn<Segment> fqn = getFullyQualifiedName(path);
         Node<Name, Object> node = cache.getNode(fqn);
@@ -308,7 +313,10 @@ public class JBossCacheConnection implements RepositoryConnection {
         return UUID.randomUUID();
     }
 
-    protected int copyNode( Node<Name, Object> original, Node<Name, Object> newParent, boolean recursive, Name uuidProperty ) {
+    protected int copyNode( Node<Name, Object> original,
+                            Node<Name, Object> newParent,
+                            boolean recursive,
+                            Name uuidProperty ) {
         // Get or create the new node ...
         Segment name = (Segment)original.getFqn().getLastElement();
         Node<Name, Object> copy = newParent.addChild(getFullyQualifiedName(name));

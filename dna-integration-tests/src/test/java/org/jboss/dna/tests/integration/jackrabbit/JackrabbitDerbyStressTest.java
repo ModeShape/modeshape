@@ -74,7 +74,7 @@ public class JackrabbitDerbyStressTest {
     }
 
     @After
-    public void afterEach() throws Exception {
+    public void afterEach() {
         try {
             if (session != null) session.logout();
         } finally {
@@ -94,7 +94,10 @@ public class JackrabbitDerbyStressTest {
             stopwatch.stop();
         }
         rootNode.save();
-        HistogramTest.writeHistogramToLog(logger, stopwatch.getHistogram(3).setBucketCount(50), 80, "create 100 nodes with no children and no properties");
+        HistogramTest.writeHistogramToLog(logger,
+                                          stopwatch.getHistogram(3).setBucketCount(50),
+                                          80,
+                                          "create 100 nodes with no children and no properties");
         this.logger.info(MockI18n.passthrough, stopwatch.toString());
     }
 
@@ -108,7 +111,10 @@ public class JackrabbitDerbyStressTest {
             stopwatch.stop();
         }
         rootNode.save();
-        HistogramTest.writeHistogramToLog(logger, stopwatch.getHistogram(1).setBucketCount(50), 80, "create 1000 nodes with no children and no properties");
+        HistogramTest.writeHistogramToLog(logger,
+                                          stopwatch.getHistogram(1).setBucketCount(50),
+                                          80,
+                                          "create 1000 nodes with no children and no properties");
         this.logger.info(MockI18n.passthrough, stopwatch.toString());
     }
 
@@ -122,7 +128,10 @@ public class JackrabbitDerbyStressTest {
             stopwatch.stop();
         }
         rootNode.save();
-        HistogramTest.writeHistogramToLog(logger, stopwatch.getHistogram(1).setBucketCount(50), 80, "create 5000 nodes with no children and no properties");
+        HistogramTest.writeHistogramToLog(logger,
+                                          stopwatch.getHistogram(1).setBucketCount(50),
+                                          80,
+                                          "create 5000 nodes with no children and no properties");
         this.logger.info(MockI18n.passthrough, stopwatch.toString());
     }
 
@@ -136,7 +145,10 @@ public class JackrabbitDerbyStressTest {
             stopwatch.stop();
         }
         rootNode.save();
-        HistogramTest.writeHistogramToLog(logger, stopwatch.getHistogram(1).setBucketCount(50), 80, "create 10000 nodes with no children and no properties");
+        HistogramTest.writeHistogramToLog(logger,
+                                          stopwatch.getHistogram(1).setBucketCount(50),
+                                          80,
+                                          "create 10000 nodes with no children and no properties");
         this.logger.info(MockI18n.passthrough, stopwatch.toString());
     }
 
@@ -152,7 +164,10 @@ public class JackrabbitDerbyStressTest {
             stopwatch.stop();
         }
         rootNode.save();
-        HistogramTest.writeHistogramToLog(logger, stopwatch.getHistogram(3).setBucketCount(50), 80, "create 100 nodes with no children and several properties");
+        HistogramTest.writeHistogramToLog(logger,
+                                          stopwatch.getHistogram(3).setBucketCount(50),
+                                          80,
+                                          "create 100 nodes with no children and several properties");
         this.logger.info(MockI18n.passthrough, stopwatch.toString());
     }
     //	

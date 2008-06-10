@@ -22,9 +22,9 @@
 
 package org.jboss.dna.common.math;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import java.util.concurrent.TimeUnit;
-import org.jboss.dna.common.math.Duration;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -33,7 +33,7 @@ public class DurationTest {
     private Duration duration;
 
     @Before
-    public void beforeEach() throws Exception {
+    public void beforeEach() {
         this.duration = new Duration(0);
     }
 

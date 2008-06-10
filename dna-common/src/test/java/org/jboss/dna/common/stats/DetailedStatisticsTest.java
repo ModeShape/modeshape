@@ -21,13 +21,13 @@
  */
 package org.jboss.dna.common.stats;
 
-import static org.hamcrest.core.Is.*;
-import static org.junit.Assert.*;
+import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 import org.jboss.dna.common.math.FloatOperations;
 import org.jboss.dna.common.math.IntegerOperations;
-import org.jboss.dna.common.stats.DetailedStatistics;
 import org.jboss.dna.common.util.Logger;
-import org.junit.Before;
 import org.junit.Test;
 
 public class DetailedStatisticsTest {
@@ -35,10 +35,6 @@ public class DetailedStatisticsTest {
     private DetailedStatistics<Integer> intStats = new DetailedStatistics<Integer>(new IntegerOperations());
     private DetailedStatistics<Float> floatStats = new DetailedStatistics<Float>(new FloatOperations());
     private Logger logger = Logger.getLogger(DetailedStatisticsTest.class);
-
-    @Before
-    public void beforeEach() throws Exception {
-    }
 
     @Test
     public void shouldHaveValidValuesWhenUnused() {
@@ -128,7 +124,10 @@ public class DetailedStatisticsTest {
         assertEquals(23.70675d, this.intStats.getStandardDeviation(), 0.0001d);
 
         HistogramTest.writeHistogramToLog(this.logger, this.intStats.getHistogram(), 20, "Histogram of 10 integer values: ");
-        HistogramTest.writeHistogramToLog(this.logger, this.intStats.getHistogram().setBucketCount(7), 20, "Histogram of 10 integer values: ");
+        HistogramTest.writeHistogramToLog(this.logger,
+                                          this.intStats.getHistogram().setBucketCount(7),
+                                          20,
+                                          "Histogram of 10 integer values: ");
     }
 
     @Test
@@ -152,7 +151,10 @@ public class DetailedStatisticsTest {
         assertEquals(2.370675f, this.floatStats.getStandardDeviation(), 0.0001f);
 
         HistogramTest.writeHistogramToLog(this.logger, this.floatStats.getHistogram(), 20, "Histogram of 10 float values: ");
-        HistogramTest.writeHistogramToLog(this.logger, this.floatStats.getHistogram().setBucketCount(7), 20, "Histogram of 10 float values: ");
+        HistogramTest.writeHistogramToLog(this.logger,
+                                          this.floatStats.getHistogram().setBucketCount(7),
+                                          20,
+                                          "Histogram of 10 float values: ");
     }
 
     @Test

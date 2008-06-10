@@ -156,18 +156,20 @@ public class JodaDateTimeValueFactoryTest {
     }
 
     @Test
-    public void shouldCreateDateFromReaderContainingStringWithWellFormedDate() throws Exception {
+    public void shouldCreateDateFromReaderContainingStringWithWellFormedDate() {
         assertThat(factory.create(new StringReader(TODAY.getString())), is(TODAY));
         assertThat(factory.create(new StringReader(LAST_YEAR.getString())), is(LAST_YEAR));
     }
 
     @Test( expected = IllegalArgumentException.class )
-    public void shouldNotCreateDateFromByteArrayContainingUtf8EncodingOfStringWithContentThatIsNotWellFormedDate() throws Exception {
+    public void shouldNotCreateDateFromByteArrayContainingUtf8EncodingOfStringWithContentThatIsNotWellFormedDate()
+        throws Exception {
         factory.create("something".getBytes("UTF-8"));
     }
 
     @Test( expected = IllegalArgumentException.class )
-    public void shouldNotCreateDateFromInputStreamContainingUtf8EncodingOfStringWithContentThatIsNotWellFormedDate() throws Exception {
+    public void shouldNotCreateDateFromInputStreamContainingUtf8EncodingOfStringWithContentThatIsNotWellFormedDate()
+        throws Exception {
         factory.create(new ByteArrayInputStream("something".getBytes("UTF-8")));
     }
 

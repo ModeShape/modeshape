@@ -32,7 +32,6 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import org.jboss.dna.common.util.IoUtil;
-import org.jboss.dna.repository.rules.RuleSet;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -52,7 +51,7 @@ public class RuleSetTest {
     private Map<String, Object> validProperties;
 
     @Before
-    public void beforeEach() throws Exception {
+    public void beforeEach() {
         this.validName = "This is a valid name";
         this.validDescription = "This is a valid description";
         this.validClassname = "com.acme.SuperDuper";
@@ -64,91 +63,109 @@ public class RuleSetTest {
         this.validProperties.put("key1", "value1");
         this.validProperties.put("key2", null);
         this.validProperties.put("key3", "value3".getBytes());
-        this.ruleSet = new RuleSet(validName, validDescription, validClassname, validClasspath, validProviderUri, validRuleSetUri, validRules, validProperties);
+        this.ruleSet = new RuleSet(validName, validDescription, validClassname, validClasspath, validProviderUri,
+                                   validRuleSetUri, validRules, validProperties);
     }
 
     @Test( expected = IllegalArgumentException.class )
     public void shouldNotAllowNullName() {
-        new RuleSet(null, validDescription, validClassname, validClasspath, validProviderUri, validRuleSetUri, validRules, validProperties);
+        new RuleSet(null, validDescription, validClassname, validClasspath, validProviderUri, validRuleSetUri, validRules,
+                    validProperties);
     }
 
     @Test( expected = IllegalArgumentException.class )
     public void shouldNotAllowEmptyName() {
-        new RuleSet("", validDescription, validClassname, validClasspath, validProviderUri, validRuleSetUri, validRules, validProperties);
+        new RuleSet("", validDescription, validClassname, validClasspath, validProviderUri, validRuleSetUri, validRules,
+                    validProperties);
     }
 
     @Test( expected = IllegalArgumentException.class )
     public void shouldNotAllowBlankName() {
-        new RuleSet("  \t ", validDescription, validClassname, validClasspath, validProviderUri, validRuleSetUri, validRules, validProperties);
+        new RuleSet("  \t ", validDescription, validClassname, validClasspath, validProviderUri, validRuleSetUri, validRules,
+                    validProperties);
     }
 
     @Test
     public void shouldTrimName() {
         validName = "  this is a valid name with leading and trailing whitespace  ";
-        ruleSet = new RuleSet(validName, validDescription, validClassname, validClasspath, validProviderUri, validRuleSetUri, validRules, validProperties);
+        ruleSet = new RuleSet(validName, validDescription, validClassname, validClasspath, validProviderUri, validRuleSetUri,
+                              validRules, validProperties);
         assertThat(ruleSet.getName(), is(validName.trim()));
     }
 
     @Test
     public void shouldAllowNullOrEmptyOrBlankDescriptionAndShouldReplaceWithEmptyString() {
-        ruleSet = new RuleSet(validName, null, validClassname, validClasspath, validProviderUri, validRuleSetUri, validRules, validProperties);
+        ruleSet = new RuleSet(validName, null, validClassname, validClasspath, validProviderUri, validRuleSetUri, validRules,
+                              validProperties);
         assertThat(ruleSet.getDescription(), is(""));
-        ruleSet = new RuleSet(validName, "", validClassname, validClasspath, validProviderUri, validRuleSetUri, validRules, validProperties);
+        ruleSet = new RuleSet(validName, "", validClassname, validClasspath, validProviderUri, validRuleSetUri, validRules,
+                              validProperties);
         assertThat(ruleSet.getDescription(), is(""));
-        ruleSet = new RuleSet(validName, "  \t ", validClassname, validClasspath, validProviderUri, validRuleSetUri, validRules, validProperties);
+        ruleSet = new RuleSet(validName, "  \t ", validClassname, validClasspath, validProviderUri, validRuleSetUri, validRules,
+                              validProperties);
         assertThat(ruleSet.getDescription(), is(""));
     }
 
     @Test
     public void shouldTrimDescription() {
-        ruleSet = new RuleSet(validName, "  valid ", validClassname, validClasspath, validProviderUri, validRuleSetUri, validRules, validProperties);
+        ruleSet = new RuleSet(validName, "  valid ", validClassname, validClasspath, validProviderUri, validRuleSetUri,
+                              validRules, validProperties);
         assertThat(ruleSet.getDescription(), is("valid"));
     }
 
     @Test( expected = IllegalArgumentException.class )
     public void shouldNotAllowNullClassname() {
-        new RuleSet(validName, validDescription, null, validClasspath, validProviderUri, validRuleSetUri, validRules, validProperties);
+        new RuleSet(validName, validDescription, null, validClasspath, validProviderUri, validRuleSetUri, validRules,
+                    validProperties);
     }
 
     @Test( expected = IllegalArgumentException.class )
     public void shouldNotAllowEmptyClassname() {
-        new RuleSet(validName, validDescription, "", validClasspath, validProviderUri, validRuleSetUri, validRules, validProperties);
+        new RuleSet(validName, validDescription, "", validClasspath, validProviderUri, validRuleSetUri, validRules,
+                    validProperties);
     }
 
     @Test( expected = IllegalArgumentException.class )
     public void shouldNotAllowBlankClassname() {
-        new RuleSet(validName, validDescription, "   ", validClasspath, validProviderUri, validRuleSetUri, validRules, validProperties);
+        new RuleSet(validName, validDescription, "   ", validClasspath, validProviderUri, validRuleSetUri, validRules,
+                    validProperties);
     }
 
     @Test( expected = IllegalArgumentException.class )
     public void shouldNotAllowClassnameThatDoesNotFollowJavaNamingRules() {
-        new RuleSet(validName, validDescription, "not a valid classname", validClasspath, validProviderUri, validRuleSetUri, validRules, validProperties);
+        new RuleSet(validName, validDescription, "not a valid classname", validClasspath, validProviderUri, validRuleSetUri,
+                    validRules, validProperties);
     }
 
     @Test
     public void shouldAllowNullOrEmptyClasspath() {
-        new RuleSet(validName, validDescription, validClassname, null, validProviderUri, validRuleSetUri, validRules, validProperties);
+        new RuleSet(validName, validDescription, validClassname, null, validProviderUri, validRuleSetUri, validRules,
+                    validProperties);
     }
 
     @Test
     public void shouldRemoveNullOrBlankClasspathItems() {
-        new RuleSet(validName, validDescription, validClassname, new String[] {}, validProviderUri, validRuleSetUri, validRules, validProperties);
+        new RuleSet(validName, validDescription, validClassname, new String[] {}, validProviderUri, validRuleSetUri, validRules,
+                    validProperties);
     }
 
     @Test
     public void shouldRemoveDuplicateClasspathItemsInCaseSensitiveManner() {
         validClasspath = new String[] {"path1", "path2", "path1", "path3", "path2"};
-        ruleSet = new RuleSet(validName, validDescription, validClassname, validClasspath, validProviderUri, validRuleSetUri, validRules, validProperties);
+        ruleSet = new RuleSet(validName, validDescription, validClassname, validClasspath, validProviderUri, validRuleSetUri,
+                              validRules, validProperties);
         assertThat(ruleSet.getComponentClasspathArray(), is(new String[] {"path1", "path2", "path3"}));
 
         validClasspath = new String[] {"path1", "path2", "path1", "path3", "Path2"};
-        ruleSet = new RuleSet(validName, validDescription, validClassname, validClasspath, validProviderUri, validRuleSetUri, validRules, validProperties);
+        ruleSet = new RuleSet(validName, validDescription, validClassname, validClasspath, validProviderUri, validRuleSetUri,
+                              validRules, validProperties);
         assertThat(ruleSet.getComponentClasspathArray(), is(new String[] {"path1", "path2", "path3", "Path2"}));
     }
 
     @Test( expected = IllegalArgumentException.class )
     public void shouldNotAllowNullProviderUri() {
-        new RuleSet(validName, validDescription, validClassname, validClasspath, null, validRuleSetUri, validRules, validProperties);
+        new RuleSet(validName, validDescription, validClassname, validClasspath, null, validRuleSetUri, validRules,
+                    validProperties);
     }
 
     @Test( expected = IllegalArgumentException.class )
@@ -158,44 +175,52 @@ public class RuleSetTest {
 
     @Test( expected = IllegalArgumentException.class )
     public void shouldNotAllowBlankProviderUri() {
-        new RuleSet(validName, validDescription, validClassname, validClasspath, "  \t  ", validRuleSetUri, validRules, validProperties);
+        new RuleSet(validName, validDescription, validClassname, validClasspath, "  \t  ", validRuleSetUri, validRules,
+                    validProperties);
     }
 
     @Test
     public void shouldUseNameInPlaceOfNullRuleSetUri() {
-        ruleSet = new RuleSet(validName, validDescription, validClassname, validClasspath, validProviderUri, null, validRules, validProperties);
+        ruleSet = new RuleSet(validName, validDescription, validClassname, validClasspath, validProviderUri, null, validRules,
+                              validProperties);
         assertThat(ruleSet.getRuleSetUri(), is(ruleSet.getName()));
     }
 
     @Test( expected = IllegalArgumentException.class )
     public void shouldNotAllowEmptyRuleSetUri() {
-        new RuleSet(validName, validDescription, validClassname, validClasspath, validProviderUri, "", validRules, validProperties);
+        new RuleSet(validName, validDescription, validClassname, validClasspath, validProviderUri, "", validRules,
+                    validProperties);
     }
 
     @Test( expected = IllegalArgumentException.class )
     public void shouldNotAllowBlankRuleSetUri() {
-        new RuleSet(validName, validDescription, validClassname, validClasspath, validProviderUri, "  \t  ", validRules, validProperties);
+        new RuleSet(validName, validDescription, validClassname, validClasspath, validProviderUri, "  \t  ", validRules,
+                    validProperties);
     }
 
     @Test( expected = IllegalArgumentException.class )
     public void shouldNotAllowNullRules() {
-        new RuleSet(validName, validDescription, validClassname, validClasspath, validProviderUri, validRuleSetUri, null, validProperties);
+        new RuleSet(validName, validDescription, validClassname, validClasspath, validProviderUri, validRuleSetUri, null,
+                    validProperties);
     }
 
     @Test( expected = IllegalArgumentException.class )
     public void shouldNotAllowEmptyRules() {
-        new RuleSet(validName, validDescription, validClassname, validClasspath, validProviderUri, validRuleSetUri, "", validProperties);
+        new RuleSet(validName, validDescription, validClassname, validClasspath, validProviderUri, validRuleSetUri, "",
+                    validProperties);
     }
 
     @Test( expected = IllegalArgumentException.class )
     public void shouldNotAllowBlankRules() {
-        new RuleSet(validName, validDescription, validClassname, validClasspath, validProviderUri, validRuleSetUri, "   \t  ", validProperties);
+        new RuleSet(validName, validDescription, validClassname, validClasspath, validProviderUri, validRuleSetUri, "   \t  ",
+                    validProperties);
     }
 
     @Test
     public void shouldAllowNullOrEmptyProperties() {
         validProperties = null;
-        ruleSet = new RuleSet(validName, validDescription, validClassname, validClasspath, validProviderUri, validRuleSetUri, validRules, validProperties);
+        ruleSet = new RuleSet(validName, validDescription, validClassname, validClasspath, validProviderUri, validRuleSetUri,
+                              validRules, validProperties);
         assertThat(ruleSet.getProperties(), is(notNullValue()));
     }
 
@@ -227,7 +252,8 @@ public class RuleSetTest {
         assertThat(executionSetPropIter.hasNext(), is(false));
         assertThat(propIter.hasNext(), is(false));
 
-        new RuleSet(validName, validDescription, validClassname, validClasspath, validProviderUri, validRuleSetUri, validRules, validProperties);
+        new RuleSet(validName, validDescription, validClassname, validClasspath, validProviderUri, validRuleSetUri, validRules,
+                    validProperties);
     }
 
     @Test
@@ -236,33 +262,40 @@ public class RuleSetTest {
         assertThat(copy.hasChanged(ruleSet), is(false));
         assertThat(copy.hasChanged(copy), is(false));
 
-        copy = new RuleSet(validName + "x", validDescription, validClassname, validClasspath, validProviderUri, validRuleSetUri, validRules, validProperties);
+        copy = new RuleSet(validName + "x", validDescription, validClassname, validClasspath, validProviderUri, validRuleSetUri,
+                           validRules, validProperties);
         assertThat(copy.hasChanged(ruleSet), is(true));
         assertThat(copy.hasChanged(copy), is(false));
 
-        copy = new RuleSet(validName, validDescription + "x", validClassname, validClasspath, validProviderUri, validRuleSetUri, validRules, validProperties);
+        copy = new RuleSet(validName, validDescription + "x", validClassname, validClasspath, validProviderUri, validRuleSetUri,
+                           validRules, validProperties);
         assertThat(copy.hasChanged(ruleSet), is(true));
         assertThat(copy.hasChanged(copy), is(false));
 
-        copy = new RuleSet(validName, validDescription, validClassname + "x", validClasspath, validProviderUri, validRuleSetUri, validRules, validProperties);
+        copy = new RuleSet(validName, validDescription, validClassname + "x", validClasspath, validProviderUri, validRuleSetUri,
+                           validRules, validProperties);
         assertThat(copy.hasChanged(ruleSet), is(true));
         assertThat(copy.hasChanged(copy), is(false));
 
-        copy = new RuleSet(validName, validDescription, validClassname, validClasspath, validProviderUri + "x", validRuleSetUri, validRules, validProperties);
+        copy = new RuleSet(validName, validDescription, validClassname, validClasspath, validProviderUri + "x", validRuleSetUri,
+                           validRules, validProperties);
         assertThat(copy.hasChanged(ruleSet), is(true));
         assertThat(copy.hasChanged(copy), is(false));
 
         validClasspath = new String[] {"classpath1", "classpath2x"};
-        copy = new RuleSet(validName, validDescription, validClassname, validClasspath, validProviderUri, validRuleSetUri + "x", validRules, validProperties);
+        copy = new RuleSet(validName, validDescription, validClassname, validClasspath, validProviderUri, validRuleSetUri + "x",
+                           validRules, validProperties);
         assertThat(copy.hasChanged(ruleSet), is(true));
         assertThat(copy.hasChanged(copy), is(false));
 
-        copy = new RuleSet(validName, validDescription, validClassname, validClasspath, validProviderUri, validRuleSetUri, validRules + "x", validProperties);
+        copy = new RuleSet(validName, validDescription, validClassname, validClasspath, validProviderUri, validRuleSetUri,
+                           validRules + "x", validProperties);
         assertThat(copy.hasChanged(ruleSet), is(true));
         assertThat(copy.hasChanged(copy), is(false));
 
         validProperties.remove("key1");
-        copy = new RuleSet(validName, validDescription, validClassname, validClasspath, validProviderUri, validRuleSetUri, validRules, validProperties);
+        copy = new RuleSet(validName, validDescription, validClassname, validClasspath, validProviderUri, validRuleSetUri,
+                           validRules, validProperties);
         assertThat(copy.hasChanged(ruleSet), is(true));
         assertThat(copy.hasChanged(copy), is(false));
     }
@@ -272,27 +305,34 @@ public class RuleSetTest {
         RuleSet copy = ruleSet.clone();
         assertThat(copy.equals(ruleSet), is(true));
 
-        copy = new RuleSet(validName + "x", validDescription, validClassname, validClasspath, validProviderUri, validRuleSetUri, validRules, validProperties);
+        copy = new RuleSet(validName + "x", validDescription, validClassname, validClasspath, validProviderUri, validRuleSetUri,
+                           validRules, validProperties);
         assertThat(copy.equals(ruleSet), is(false));
 
-        copy = new RuleSet(validName, validDescription + "x", validClassname, validClasspath, validProviderUri, validRuleSetUri, validRules, validProperties);
+        copy = new RuleSet(validName, validDescription + "x", validClassname, validClasspath, validProviderUri, validRuleSetUri,
+                           validRules, validProperties);
         assertThat(copy.equals(ruleSet), is(true));
 
-        copy = new RuleSet(validName, validDescription, validClassname + "x", validClasspath, validProviderUri, validRuleSetUri, validRules, validProperties);
+        copy = new RuleSet(validName, validDescription, validClassname + "x", validClasspath, validProviderUri, validRuleSetUri,
+                           validRules, validProperties);
         assertThat(copy.equals(ruleSet), is(true));
 
-        copy = new RuleSet(validName, validDescription, validClassname, validClasspath, validProviderUri + "x", validRuleSetUri, validRules, validProperties);
+        copy = new RuleSet(validName, validDescription, validClassname, validClasspath, validProviderUri + "x", validRuleSetUri,
+                           validRules, validProperties);
         assertThat(copy.equals(ruleSet), is(true));
 
         validClasspath = new String[] {"classpath1", "classpath2x"};
-        copy = new RuleSet(validName, validDescription, validClassname, validClasspath, validProviderUri, validRuleSetUri + "x", validRules, validProperties);
+        copy = new RuleSet(validName, validDescription, validClassname, validClasspath, validProviderUri, validRuleSetUri + "x",
+                           validRules, validProperties);
         assertThat(copy.equals(ruleSet), is(true));
 
-        copy = new RuleSet(validName, validDescription, validClassname, validClasspath, validProviderUri, validRuleSetUri, validRules + "x", validProperties);
+        copy = new RuleSet(validName, validDescription, validClassname, validClasspath, validProviderUri, validRuleSetUri,
+                           validRules + "x", validProperties);
         assertThat(copy.equals(ruleSet), is(true));
 
         validProperties.remove("key1");
-        copy = new RuleSet(validName, validDescription, validClassname, validClasspath, validProviderUri, validRuleSetUri, validRules, validProperties);
+        copy = new RuleSet(validName, validDescription, validClassname, validClasspath, validProviderUri, validRuleSetUri,
+                           validRules, validProperties);
         assertThat(copy.equals(ruleSet), is(true));
     }
 

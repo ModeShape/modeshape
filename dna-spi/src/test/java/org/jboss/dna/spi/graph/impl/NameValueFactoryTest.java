@@ -48,7 +48,7 @@ public class NameValueFactoryTest {
     private Name name;
 
     @Before
-    public void beforeEach() throws Exception {
+    public void beforeEach() {
         this.registry = new BasicNamespaceRegistry();
         this.registry.register("dna", "http://www.jboss.org/dna/namespace");
         this.encoder = Path.DEFAULT_ENCODER;

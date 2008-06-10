@@ -43,7 +43,7 @@ public class RepositoryConnectionPoolTest {
     private ExecutionEnvironment env;
 
     @Before
-    public void beforeEach() throws Exception {
+    public void beforeEach() {
         this.repositorySource = new TimeDelayingRepositorySource("source 1");
         this.pool = new RepositoryConnectionPool(this.repositorySource, 1, 1, 100, TimeUnit.SECONDS);
         this.env = null;
@@ -101,7 +101,8 @@ public class RepositoryConnectionPoolTest {
     }
 
     @Test
-    public void shouldAllowShutdownToBeCalledMultipleTimesEvenWhenShutdown() throws RepositorySourceException, InterruptedException {
+    public void shouldAllowShutdownToBeCalledMultipleTimesEvenWhenShutdown()
+        throws RepositorySourceException, InterruptedException {
         assertThat(pool.getTotalConnectionsCreated(), is(0l));
         assertThat(pool.getTotalConnectionsUsed(), is(0l));
 
@@ -140,7 +141,8 @@ public class RepositoryConnectionPoolTest {
     }
 
     @Test
-    public void shouldAllowConnectionsToBeClosedMoreThanOnceWithNoIllEffects() throws RepositorySourceException, InterruptedException {
+    public void shouldAllowConnectionsToBeClosedMoreThanOnceWithNoIllEffects()
+        throws RepositorySourceException, InterruptedException {
         assertThat(pool.getTotalConnectionsCreated(), is(0l));
         assertThat(pool.getTotalConnectionsUsed(), is(0l));
 
@@ -161,7 +163,8 @@ public class RepositoryConnectionPoolTest {
         RepositoryConnectionPool pool = new RepositoryConnectionPool(repositorySource);
         pool.setCorePoolSize(numConnectionsInPool);
         pool.setMaximumPoolSize(numConnectionsInPool);
-        RepositoryOperation.Factory<Integer> operationFactory = RepositorySourceLoadHarness.createMultipleLoadOperationFactory(env, 10);
+        RepositoryOperation.Factory<Integer> operationFactory = RepositorySourceLoadHarness.createMultipleLoadOperationFactory(env,
+                                                                                                                               10);
         runLoadTest(pool, numClients, 100, TimeUnit.MILLISECONDS, operationFactory);
         pool.shutdown();
         pool.awaitTermination(4, TimeUnit.SECONDS);
@@ -174,7 +177,8 @@ public class RepositoryConnectionPoolTest {
         RepositoryConnectionPool pool = new RepositoryConnectionPool(repositorySource);
         pool.setCorePoolSize(numConnectionsInPool);
         pool.setMaximumPoolSize(numConnectionsInPool);
-        RepositoryOperation.Factory<Integer> operationFactory = RepositorySourceLoadHarness.createMultipleLoadOperationFactory(env, 10);
+        RepositoryOperation.Factory<Integer> operationFactory = RepositorySourceLoadHarness.createMultipleLoadOperationFactory(env,
+                                                                                                                               10);
         runLoadTest(pool, numClients, 100, TimeUnit.MILLISECONDS, operationFactory);
         pool.shutdown();
         pool.awaitTermination(4, TimeUnit.SECONDS);
@@ -187,7 +191,8 @@ public class RepositoryConnectionPoolTest {
         RepositoryConnectionPool pool = new RepositoryConnectionPool(repositorySource);
         pool.setCorePoolSize(numConnectionsInPool);
         pool.setMaximumPoolSize(numConnectionsInPool);
-        RepositoryOperation.Factory<Integer> operationFactory = RepositorySourceLoadHarness.createMultipleLoadOperationFactory(env, 10);
+        RepositoryOperation.Factory<Integer> operationFactory = RepositorySourceLoadHarness.createMultipleLoadOperationFactory(env,
+                                                                                                                               10);
         runLoadTest(pool, numClients, 100, TimeUnit.MILLISECONDS, operationFactory);
         pool.shutdown();
         pool.awaitTermination(4, TimeUnit.SECONDS);
@@ -201,7 +206,8 @@ public class RepositoryConnectionPoolTest {
         RepositoryConnectionPool pool = new RepositoryConnectionPool(repositorySource);
         pool.setCorePoolSize(numConnectionsInPool);
         pool.setMaximumPoolSize(numConnectionsInPool);
-        RepositoryOperation.Factory<Integer> operationFactory = RepositorySourceLoadHarness.createMultipleLoadOperationFactory(env, 20);
+        RepositoryOperation.Factory<Integer> operationFactory = RepositorySourceLoadHarness.createMultipleLoadOperationFactory(env,
+                                                                                                                               20);
         List<Future<Integer>> results = runLoadTest(pool, numClients, 200, TimeUnit.MILLISECONDS, operationFactory);
         int total = 0;
         for (Future<Integer> result : results) {

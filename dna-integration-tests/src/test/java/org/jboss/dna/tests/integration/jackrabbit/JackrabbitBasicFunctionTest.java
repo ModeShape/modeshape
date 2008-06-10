@@ -63,7 +63,7 @@ public class JackrabbitBasicFunctionTest {
     }
 
     @After
-    public void afterEach() throws Exception {
+    public void afterEach() {
         // Clean up the test data ...
         FileUtil.delete(JACKRABBIT_DATA_PATH);
     }
@@ -151,7 +151,8 @@ public class JackrabbitBasicFunctionTest {
             // Retrieve content ...
             Node node = root.getNode("hello/world");
             this.logger.info(MockI18n.passthrough, "Node 'hello/world' has path: " + node.getPath());
-            this.logger.info(MockI18n.passthrough, "Node 'hello/world' has 'message' property: " + node.getProperty("message").getString());
+            this.logger.info(MockI18n.passthrough, "Node 'hello/world' has 'message' property: "
+                                                   + node.getProperty("message").getString());
         } finally {
             if (session != null) session.logout();
         }
@@ -164,7 +165,8 @@ public class JackrabbitBasicFunctionTest {
             // Retrieve content
             Node node = root.getNode("hello/world");
             this.logger.info(MockI18n.passthrough, "Node 'hello/world' has path: " + node.getPath());
-            this.logger.info(MockI18n.passthrough, "Node 'hello/world' has 'message' property: " + node.getProperty("message").getString());
+            this.logger.info(MockI18n.passthrough, "Node 'hello/world' has 'message' property: "
+                                                   + node.getProperty("message").getString());
 
             // Remove content
             this.logger.info(MockI18n.passthrough, "Node 'hello' is being removed");

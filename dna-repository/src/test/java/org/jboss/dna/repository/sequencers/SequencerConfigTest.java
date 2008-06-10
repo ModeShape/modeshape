@@ -24,7 +24,6 @@ package org.jboss.dna.repository.sequencers;
 
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
-import org.jboss.dna.repository.sequencers.SequencerConfig;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -43,15 +42,18 @@ public class SequencerConfigTest {
     private String[] validMavenIds;
 
     @Before
-    public void beforeEach() throws Exception {
+    public void beforeEach() {
         this.validName = "valid configuration name";
         this.validDescription = "a sequencer";
         this.validClassname = MockSequencerA.class.getName();
         this.validPathExpressions = new String[] {"/a/b/c/d[e/@attribute] => ."};
         this.validMavenIds = new String[] {"com.acme:configA:1.0,com.acme:configB:1.0"};
-        this.configA = new SequencerConfig("configA", validDescription, MockSequencerA.class.getName(), validMavenIds, validPathExpressions);
-        this.configB = new SequencerConfig("configB", validDescription, MockSequencerB.class.getName(), validMavenIds, validPathExpressions);
-        this.configA2 = new SequencerConfig("conFigA", validDescription, MockSequencerA.class.getName(), validMavenIds, validPathExpressions);
+        this.configA = new SequencerConfig("configA", validDescription, MockSequencerA.class.getName(), validMavenIds,
+                                           validPathExpressions);
+        this.configB = new SequencerConfig("configB", validDescription, MockSequencerB.class.getName(), validMavenIds,
+                                           validPathExpressions);
+        this.configA2 = new SequencerConfig("conFigA", validDescription, MockSequencerA.class.getName(), validMavenIds,
+                                            validPathExpressions);
     }
 
     @Test( expected = IllegalArgumentException.class )
@@ -106,7 +108,9 @@ public class SequencerConfigTest {
 
     @Test
     public void shouldNotAddSamePathExpressionMoreThanOnce() {
-        assertThat(SequencerConfig.buildPathExpressionSet(validPathExpressions[0], validPathExpressions[0], validPathExpressions[0]).size(), is(1));
+        assertThat(SequencerConfig.buildPathExpressionSet(validPathExpressions[0],
+                                                          validPathExpressions[0],
+                                                          validPathExpressions[0]).size(), is(1));
     }
 
     @Test

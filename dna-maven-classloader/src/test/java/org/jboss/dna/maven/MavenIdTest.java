@@ -21,8 +21,8 @@
  */
 package org.jboss.dna.maven;
 
-import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertThat;
 import org.junit.Before;
@@ -43,15 +43,17 @@ public class MavenIdTest {
     private MavenId validIdWithNullClassifier;
 
     @Before
-    public void beforeEach() throws Exception {
+    public void beforeEach() {
         this.validGroupId = "org.jboss.dna";
         this.validArtifactId = "jboss-dna-core";
         this.validClassifier = "jdk1.4";
         this.validVersion = "1.0";
         this.validId = new MavenId(this.validGroupId, this.validArtifactId, this.validVersion, this.validClassifier);
         this.validIdWithNullClassifier = new MavenId(this.validGroupId, this.validArtifactId, this.validVersion, null);
-        this.validArtifactIdToString = this.validGroupId + ":" + this.validArtifactId + ":" + this.validVersion + ":" + this.validClassifier;
-        this.validArtifactIdWithNullClassifierToString = this.validGroupId + ":" + this.validArtifactId + ":" + this.validVersion + ":";
+        this.validArtifactIdToString = this.validGroupId + ":" + this.validArtifactId + ":" + this.validVersion + ":"
+                                       + this.validClassifier;
+        this.validArtifactIdWithNullClassifierToString = this.validGroupId + ":" + this.validArtifactId + ":" + this.validVersion
+                                                         + ":";
     }
 
     @Test
@@ -149,18 +151,27 @@ public class MavenIdTest {
         assertThat(MavenId.createClasspath(""), is(new MavenId[] {}));
         assertThat(MavenId.createClasspath((String)null), is(new MavenId[] {}));
 
-        assertThat(MavenId.createClasspath("org.jboss.dna:dna-maven"), is(new MavenId[] {new MavenId("org.jboss.dna", "dna-maven")}));
-        assertThat(MavenId.createClasspath("  org.jboss.dna:dna-maven  "), is(new MavenId[] {new MavenId("org.jboss.dna", "dna-maven")}));
-        assertThat(MavenId.createClasspath("  org.jboss.dna : dna-maven  "), is(new MavenId[] {new MavenId("org.jboss.dna", "dna-maven")}));
-        assertThat(MavenId.createClasspath("org.jboss.dna:dna-maven:"), is(new MavenId[] {new MavenId("org.jboss.dna", "dna-maven")}));
-        assertThat(MavenId.createClasspath("org.jboss.dna:dna-maven::jdk1.4"), is(new MavenId[] {new MavenId("org.jboss.dna", "dna-maven", null, "jdk1.4")}));
-        assertThat(MavenId.createClasspath("org.jboss.dna:dna-maven:1.0:jdk1.4"), is(new MavenId[] {new MavenId("org.jboss.dna", "dna-maven", "1.0", "jdk1.4")}));
-        assertThat(MavenId.createClasspath("org.jboss.dna:dna-maven:1.0:jdk1.4,net.jcip:jcip-annotations:1.0"), is(new MavenId[] {new MavenId("org.jboss.dna", "dna-maven", "1.0", "jdk1.4"),
-                                                                                                                                  new MavenId("net.jcip", "jcip-annotations", "1.0")}));
-        assertThat(MavenId.createClasspath("org.jboss.dna:dna-maven:1.0:jdk1.4,,net.jcip:jcip-annotations:1.0,"), is(new MavenId[] {new MavenId("org.jboss.dna", "dna-maven", "1.0", "jdk1.4"),
-                                                                                                                                    new MavenId("net.jcip", "jcip-annotations", "1.0")}));
-        assertThat(MavenId.createClasspath(",,org.jboss.dna:dna-maven:1.0:jdk1.4,, net.jcip: jcip-annotations:1.0 ,,"), is(new MavenId[] {new MavenId("org.jboss.dna", "dna-maven", "1.0", "jdk1.4"),
-                                                                                                                                          new MavenId("net.jcip", "jcip-annotations", "1.0")}));
+        assertThat(MavenId.createClasspath("org.jboss.dna:dna-maven"),
+                   is(new MavenId[] {new MavenId("org.jboss.dna", "dna-maven")}));
+        assertThat(MavenId.createClasspath("  org.jboss.dna:dna-maven  "), is(new MavenId[] {new MavenId("org.jboss.dna",
+                                                                                                         "dna-maven")}));
+        assertThat(MavenId.createClasspath("  org.jboss.dna : dna-maven  "), is(new MavenId[] {new MavenId("org.jboss.dna",
+                                                                                                           "dna-maven")}));
+        assertThat(MavenId.createClasspath("org.jboss.dna:dna-maven:"), is(new MavenId[] {new MavenId("org.jboss.dna",
+                                                                                                      "dna-maven")}));
+        assertThat(MavenId.createClasspath("org.jboss.dna:dna-maven::jdk1.4"), is(new MavenId[] {new MavenId("org.jboss.dna",
+                                                                                                             "dna-maven", null,
+                                                                                                             "jdk1.4")}));
+        assertThat(MavenId.createClasspath("org.jboss.dna:dna-maven:1.0:jdk1.4"),
+                   is(new MavenId[] {new MavenId("org.jboss.dna", "dna-maven", "1.0", "jdk1.4")}));
+        assertThat(MavenId.createClasspath("org.jboss.dna:dna-maven:1.0:jdk1.4,net.jcip:jcip-annotations:1.0"), is(new MavenId[] {
+            new MavenId("org.jboss.dna", "dna-maven", "1.0", "jdk1.4"), new MavenId("net.jcip", "jcip-annotations", "1.0")}));
+        assertThat(MavenId.createClasspath("org.jboss.dna:dna-maven:1.0:jdk1.4,,net.jcip:jcip-annotations:1.0,"),
+                   is(new MavenId[] {new MavenId("org.jboss.dna", "dna-maven", "1.0", "jdk1.4"),
+                       new MavenId("net.jcip", "jcip-annotations", "1.0")}));
+        assertThat(MavenId.createClasspath(",,org.jboss.dna:dna-maven:1.0:jdk1.4,, net.jcip: jcip-annotations:1.0 ,,"),
+                   is(new MavenId[] {new MavenId("org.jboss.dna", "dna-maven", "1.0", "jdk1.4"),
+                       new MavenId("net.jcip", "jcip-annotations", "1.0")}));
     }
 
     @Test
@@ -169,12 +180,15 @@ public class MavenIdTest {
         assertThat(MavenId.createClasspath((String[])null), is(new MavenId[] {}));
         assertThat(MavenId.createClasspath(new String[] {null, null}), is(new MavenId[] {}));
 
-        assertThat(MavenId.createClasspath("org.jboss.dna:dna-maven:1.0:jdk1.4", "net.jcip:jcip-annotations:1.0"), is(new MavenId[] {new MavenId("org.jboss.dna", "dna-maven", "1.0", "jdk1.4"),
-                                                                                                                                     new MavenId("net.jcip", "jcip-annotations", "1.0")}));
+        assertThat(MavenId.createClasspath("org.jboss.dna:dna-maven:1.0:jdk1.4", "net.jcip:jcip-annotations:1.0"),
+                   is(new MavenId[] {new MavenId("org.jboss.dna", "dna-maven", "1.0", "jdk1.4"),
+                       new MavenId("net.jcip", "jcip-annotations", "1.0")}));
         assertThat(MavenId.createClasspath("org.jboss.dna:dna-maven:1.0:jdk1.4", "", "net.jcip:jcip-annotations:1.0", ""),
-                   is(new MavenId[] {new MavenId("org.jboss.dna", "dna-maven", "1.0", "jdk1.4"), new MavenId("net.jcip", "jcip-annotations", "1.0")}));
-        assertThat(MavenId.createClasspath(" org.jboss.dna:dna-maven:1.0:jdk1.4", " net.jcip: jcip-annotations:1.0"), is(new MavenId[] {new MavenId("org.jboss.dna", "dna-maven", "1.0", "jdk1.4"),
-                                                                                                                                        new MavenId("net.jcip", "jcip-annotations", "1.0")}));
+                   is(new MavenId[] {new MavenId("org.jboss.dna", "dna-maven", "1.0", "jdk1.4"),
+                       new MavenId("net.jcip", "jcip-annotations", "1.0")}));
+        assertThat(MavenId.createClasspath(" org.jboss.dna:dna-maven:1.0:jdk1.4", " net.jcip: jcip-annotations:1.0"),
+                   is(new MavenId[] {new MavenId("org.jboss.dna", "dna-maven", "1.0", "jdk1.4"),
+                       new MavenId("net.jcip", "jcip-annotations", "1.0")}));
     }
 
     @Test

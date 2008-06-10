@@ -21,12 +21,12 @@
  */
 package org.jboss.dna.common.stats;
 
-import static org.hamcrest.core.Is.*;
-import static org.junit.Assert.*;
+import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 import org.jboss.dna.common.math.FloatOperations;
 import org.jboss.dna.common.math.IntegerOperations;
-import org.jboss.dna.common.stats.SimpleStatistics;
-import org.junit.Before;
 import org.junit.Test;
 
 public class SimpleStatisticsTest {
@@ -35,10 +35,6 @@ public class SimpleStatisticsTest {
     private SimpleStatistics<Float> floatStats = new SimpleStatistics<Float>(new FloatOperations());
 
     // private Logger logger = Logger.getLogger(SimpleStatisticsTest.class);
-
-    @Before
-    public void beforeEach() throws Exception {
-    }
 
     @Test
     public void shouldHaveValidValuesWhenUnused() {

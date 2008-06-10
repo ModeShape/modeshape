@@ -59,7 +59,7 @@ public class BasicPathTest {
     private PathValueFactory pathFactory;
 
     @Before
-    public void beforeEach() throws Exception {
+    public void beforeEach() {
         validNamespacePrefix = "dna";
         validNamespaceUri = "http://www.jboss.org/dna";
         validSegmentNames = new Name[] {new BasicName(validNamespaceUri, "a"), new BasicName(validNamespaceUri, "b"),

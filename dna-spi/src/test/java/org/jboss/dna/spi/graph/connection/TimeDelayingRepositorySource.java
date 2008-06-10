@@ -106,7 +106,8 @@ public class TimeDelayingRepositorySource implements RepositorySource {
         return this.loadDelay.get();
     }
 
-    public void setConnectionExecuteDelay( long time, TimeUnit unit ) {
+    public void setConnectionExecuteDelay( long time,
+                                           TimeUnit unit ) {
         this.loadDelay.set(unit.toMillis(time));
     }
 
@@ -117,7 +118,8 @@ public class TimeDelayingRepositorySource implements RepositorySource {
         return this.pingDelay.get();
     }
 
-    public void setConnectionPingDelay( long time, TimeUnit unit ) {
+    public void setConnectionPingDelay( long time,
+                                        TimeUnit unit ) {
         this.pingDelay.set(unit.toMillis(time));
     }
 
@@ -152,7 +154,8 @@ public class TimeDelayingRepositorySource implements RepositorySource {
      * @return
      * @throws RepositorySourceException
      */
-    protected Connection newConnection( String connectionName, XAResource xaResource ) throws RepositorySourceException {
+    protected Connection newConnection( String connectionName,
+                                        XAResource xaResource ) throws RepositorySourceException {
         Connection c = new Connection(connectionName, this.loadDelay.get(), this.pingDelay.get());
         c.setXaResource(xaResource);
         return c;
@@ -198,7 +201,9 @@ public class TimeDelayingRepositorySource implements RepositorySource {
         private final AtomicLong pingDelay;
         private final AtomicReference<XAResource> xaResource = new AtomicReference<XAResource>();
 
-        protected Connection( String connectionName, long loadDelay, long pingDelay ) {
+        protected Connection( String connectionName,
+                              long loadDelay,
+                              long pingDelay ) {
             assert connectionName != null && connectionName.trim().length() != 0;
             this.loadDelay = new AtomicLong(loadDelay);
             this.pingDelay = new AtomicLong(pingDelay);
@@ -246,7 +251,8 @@ public class TimeDelayingRepositorySource implements RepositorySource {
         /**
          * {@inheritDoc}
          */
-        public void execute( ExecutionEnvironment env, GraphCommand... commands ) throws RepositorySourceException, InterruptedException {
+        public void execute( ExecutionEnvironment env,
+                             GraphCommand... commands ) throws InterruptedException {
             long delay = this.loadDelay.get();
             if (delay > 0l) Thread.sleep(delay);
             this.loadCount.incrementAndGet();
@@ -256,14 +262,16 @@ public class TimeDelayingRepositorySource implements RepositorySource {
             this.loadResponse.set(response);
         }
 
-        public void setLoadDelay( long time, TimeUnit unit ) {
+        public void setLoadDelay( long time,
+                                  TimeUnit unit ) {
             this.loadDelay.set(unit.toMillis(time));
         }
 
         /**
          * {@inheritDoc}
          */
-        public boolean ping( long time, TimeUnit unit ) throws InterruptedException {
+        public boolean ping( long time,
+                             TimeUnit unit ) throws InterruptedException {
             Thread.sleep(this.pingDelay.get());
             return this.pingResponse.get();
         }
@@ -272,7 +280,8 @@ public class TimeDelayingRepositorySource implements RepositorySource {
             this.pingResponse.set(pingResponse);
         }
 
-        public void setPingDelay( long time, TimeUnit unit ) {
+        public void setPingDelay( long time,
+                                  TimeUnit unit ) {
             this.pingDelay.set(unit.toMillis(time));
         }
 

@@ -31,14 +31,9 @@ import java.io.OutputStream;
 import java.io.Reader;
 import java.io.StringReader;
 import java.io.Writer;
-import org.junit.Before;
 import org.junit.Test;
 
 public class IoUtilTest {
-
-    @Before
-    public void beforeEach() throws Exception {
-    }
 
     @Test
     public void readBytesShouldReturnEmptyByteArrayForNullInputStream() throws Exception {
@@ -168,7 +163,9 @@ public class IoUtilTest {
         }
 
         @Override
-        public int read( char[] cbuf, int off, int len ) throws IOException {
+        public int read( char[] cbuf,
+                         int off,
+                         int len ) throws IOException {
             return reader.read(cbuf, off, len);
         }
     }
@@ -233,7 +230,9 @@ public class IoUtilTest {
          * {@inheritDoc}
          */
         @Override
-        public void write( char[] cbuf, int off, int len ) throws IOException {
+        public void write( char[] cbuf,
+                           int off,
+                           int len ) throws IOException {
             writer.write(cbuf, off, len);
         }
 

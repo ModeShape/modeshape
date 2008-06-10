@@ -44,7 +44,7 @@ public class BasicNameTest {
     private String validNamespacePrefix;
 
     @Before
-    public void beforeEach() throws Exception {
+    public void beforeEach() {
         this.validNamespaceUri = "http://www.jboss.org/dna";
         this.validLocalName = "localPart";
         this.validNamespacePrefix = "dna";
@@ -76,13 +76,13 @@ public class BasicNameTest {
     }
 
     @Test( expected = IllegalArgumentException.class )
-	public void shouldNotAllowNullLocalNameInConstructor() {
-		new BasicName(validNamespaceUri, null);
+    public void shouldNotAllowNullLocalNameInConstructor() {
+        new BasicName(validNamespaceUri, null);
     }
 
     @Test( expected = IllegalArgumentException.class )
-	public void shouldAllowEmptyLocalNameInConstructor() {
-		new BasicName(validNamespaceUri, "");
+    public void shouldAllowEmptyLocalNameInConstructor() {
+        new BasicName(validNamespaceUri, "");
     }
 
     @Test

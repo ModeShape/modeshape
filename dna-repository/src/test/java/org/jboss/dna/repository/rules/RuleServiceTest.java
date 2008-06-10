@@ -40,9 +40,6 @@ import org.jboss.dna.common.component.ClassLoaderFactory;
 import org.jboss.dna.common.component.StandardClassLoaderFactory;
 import org.jboss.dna.common.util.IoUtil;
 import org.jboss.dna.common.util.Logger;
-import org.jboss.dna.repository.rules.InvalidRuleSetException;
-import org.jboss.dna.repository.rules.RuleService;
-import org.jboss.dna.repository.rules.RuleSet;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -93,13 +90,13 @@ public class RuleServiceTest {
     }
 
     @Before
-    public void beforeEach() throws Exception {
+    public void beforeEach() {
         this.ruleService = new RuleService();
         this.classLoaderFactory = new StandardClassLoaderFactory();
     }
 
     @After
-    public void afterEach() throws Exception {
+    public void afterEach() {
         this.ruleService.getAdministrator().shutdown();
     }
 

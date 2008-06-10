@@ -48,7 +48,7 @@ public class PathValueFactoryTest {
     private Path path2;
 
     @Before
-    public void beforeEach() throws Exception {
+    public void beforeEach() {
         this.registry = new BasicNamespaceRegistry();
         this.registry.register("dna", "http://www.jboss.org/dna/namespace");
         this.stringValueFactory = new StringValueFactory(Path.DEFAULT_DECODER, Path.DEFAULT_ENCODER);

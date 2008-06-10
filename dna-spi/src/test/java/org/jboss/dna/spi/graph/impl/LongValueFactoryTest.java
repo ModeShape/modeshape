@@ -150,7 +150,7 @@ public class LongValueFactoryTest {
     }
 
     @Test
-    public void shouldCreateLongFromReaderContainingStringWithLong() throws Exception {
+    public void shouldCreateLongFromReaderContainingStringWithLong() {
         assertThat(factory.create(new StringReader("0")), is(0l));
         assertThat(factory.create(new StringReader("10")), is(10l));
         assertThat(factory.create(new StringReader("-103")), is(-103l));

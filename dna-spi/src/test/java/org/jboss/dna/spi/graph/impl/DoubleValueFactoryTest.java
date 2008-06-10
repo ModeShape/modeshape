@@ -148,7 +148,7 @@ public class DoubleValueFactoryTest {
     }
 
     @Test
-    public void shouldCreateDoubleFromReaderContainingStringWithDouble() throws Exception {
+    public void shouldCreateDoubleFromReaderContainingStringWithDouble() {
         assertThat(factory.create(new StringReader("0.1")), is(0.1d));
         assertThat(factory.create(new StringReader("1")), is(1.0d));
         assertThat(factory.create(new StringReader("-1.03")), is(-1.03));

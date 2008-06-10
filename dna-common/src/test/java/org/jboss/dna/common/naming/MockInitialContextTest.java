@@ -40,13 +40,13 @@ public class MockInitialContextTest {
     private Object registeredObject;
 
     @Before
-    public void beforeEach() throws Exception {
+    public void beforeEach() {
         this.validName = "java:jboss/unit/test/name";
         this.registeredObject = "This is the registered object";
     }
 
     @After
-    public void afterEach() throws Exception {
+    public void afterEach() {
         MockInitialContext.tearDown();
     }
 

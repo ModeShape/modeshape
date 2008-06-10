@@ -59,7 +59,7 @@ public class JndiSessionFactoryTest extends AbstractJcrRepositoryTest {
     }
 
     @After
-    public void afterEach() throws Exception {
+    public void afterEach() {
         if (session != null) {
             session.logout();
         }
@@ -75,7 +75,8 @@ public class JndiSessionFactoryTest extends AbstractJcrRepositoryTest {
         }
     }
 
-    protected void assertRegistered( String name, Object obj ) {
+    protected void assertRegistered( String name,
+                                     Object obj ) {
         try {
             assertThat(new InitialContext().lookup(name), is(sameInstance(obj)));
         } catch (NamingException e) {
@@ -124,21 +125,21 @@ public class JndiSessionFactoryTest extends AbstractJcrRepositoryTest {
     }
 
     @Test
-    public void shouldRegisterSuppliedRepositoryInJndi() throws Exception {
+    public void shouldRegisterSuppliedRepositoryInJndi() {
         assertNotRegistered(MOCK_REPOSITORY_NAME_ALT);
         factory.registerRepository(MOCK_REPOSITORY_NAME_ALT, mockRepository);
         assertRegistered(MOCK_REPOSITORY_NAME_ALT, mockRepository);
     }
 
     @Test
-    public void shouldUnregisterRepositoryInJndiIfNullRepositoryReference() throws Exception {
+    public void shouldUnregisterRepositoryInJndiIfNullRepositoryReference() {
         assertRegistered(MOCK_REPOSITORY_NAME, mockRepository);
         factory.registerRepository(MOCK_REPOSITORY_NAME, null);
         assertNotRegistered(MOCK_REPOSITORY_NAME);
     }
 
     @Test
-    public void shouldRemoveAllTrailingDelimitersWhenRegisteringRepository() throws Exception {
+    public void shouldRemoveAllTrailingDelimitersWhenRegisteringRepository() {
         assertNotRegistered("java:jcr/unit/test/repository");
         factory.registerRepository("java:jcr/unit/test/repository///", mockRepository);
         assertRegistered("java:jcr/unit/test/repository", mockRepository);

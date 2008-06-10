@@ -22,19 +22,14 @@
 
 package org.jboss.dna.common.math;
 
-import static org.hamcrest.core.Is.*;
-import static org.junit.Assert.*;
-import org.jboss.dna.common.math.IntegerOperations;
-import org.junit.Before;
+import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThat;
 import org.junit.Test;
 
 public class IntegerOperationsTest {
 
     private IntegerOperations ops = new IntegerOperations();
-
-    @Before
-    public void beforeEach() throws Exception {
-    }
 
     @Test
     public void shouldReturnProperExponenentInScientificNotation() {

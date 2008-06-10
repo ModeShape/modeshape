@@ -25,23 +25,12 @@ package org.jboss.dna.common.util;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNot.not;
 import static org.junit.Assert.assertThat;
-import org.jboss.dna.common.util.HashCode;
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 
 /**
  * @author Randall Hauch
  */
 public class HashCodeTest {
-
-    @Before
-    public void beforeEach() throws Exception {
-    }
-
-    @After
-    public void afterEach() throws Exception {
-    }
 
     @Test
     public void shouldComputeHashCodeForOnePrimitive() {

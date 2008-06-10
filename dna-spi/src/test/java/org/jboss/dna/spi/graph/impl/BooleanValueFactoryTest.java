@@ -157,7 +157,7 @@ public class BooleanValueFactoryTest {
     }
 
     @Test
-    public void shouldCreateBooleanFromReaderContainingTrueOrFalseStringRegardlessOfCase() throws Exception {
+    public void shouldCreateBooleanFromReaderContainingTrueOrFalseStringRegardlessOfCase() {
         assertThat(factory.create(new StringReader("true")), is(true));
         assertThat(factory.create(new StringReader("false")), is(false));
         assertThat(factory.create(new StringReader("TRUE")), is(true));

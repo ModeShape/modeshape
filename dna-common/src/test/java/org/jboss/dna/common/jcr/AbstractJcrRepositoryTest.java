@@ -54,6 +54,7 @@ import org.junit.BeforeClass;
  * whenever all {@link Session sessions} are closed, this class maintains an open session between the time the repository is
  * started and stopped. Therefore, unit tests can persist information in one session and see the information in other sessions.
  * </p>
+ * 
  * @author Randall Hauch
  */
 public abstract class AbstractJcrRepositoryTest {
@@ -77,7 +78,7 @@ public abstract class AbstractJcrRepositoryTest {
     }
 
     @AfterClass
-    public static void afterAll() throws Exception {
+    public static void afterAll() {
         if (repository != null) {
             try {
                 JackrabbitRepository jackrabbit = (JackrabbitRepository)repository;
@@ -101,6 +102,7 @@ public abstract class AbstractJcrRepositoryTest {
      * <p>
      * The repository can be started and {@link #shutdownRepository() shutdown} repeatedly during a single test.
      * </p>
+     * 
      * @throws RepositoryException if there is a problem starting the repository
      * @throws IOException if there's a problem reading the repository configuration
      * @see #shutdownRepository()
@@ -151,10 +153,11 @@ public abstract class AbstractJcrRepositoryTest {
 
     /**
      * Get the repository. This will start the repository if necessary.
+     * 
      * @return repository
      * @throws RepositoryException if there is a problem obtaining the repository
      * @throws IOException if the repository has not yet been {@link #startRepository() started} and there's a problem reading the
-     * repository configuration
+     *         repository configuration
      */
     public Repository getRepository() throws RepositoryException, IOException {
         startRepository();
@@ -163,6 +166,7 @@ public abstract class AbstractJcrRepositoryTest {
 
     /**
      * Get credentials that can be used to log into the repository.
+     * 
      * @return credentials
      */
     public Credentials getTestCredentials() {

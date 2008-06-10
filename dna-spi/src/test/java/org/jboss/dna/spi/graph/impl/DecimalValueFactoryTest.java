@@ -146,7 +146,7 @@ public class DecimalValueFactoryTest {
     }
 
     @Test
-    public void shouldCreateDecimalFromReaderContainingStringWithDecimal() throws Exception {
+    public void shouldCreateDecimalFromReaderContainingStringWithDecimal() {
         assertThat(factory.create(new StringReader("1")), is(BigDecimal.valueOf(1l)));
         assertThat(factory.create(new StringReader("-1.0")), is(BigDecimal.valueOf(-1.d)));
         assertThat(factory.create(new StringReader("100.000101")), is(BigDecimal.valueOf(100.000101d)));
@@ -158,12 +158,13 @@ public class DecimalValueFactoryTest {
     }
 
     @Test( expected = IllegalArgumentException.class )
-    public void shouldNotCreateDecimalFromInputStreamContainingUtf8EncodingOfStringWithContentsOtherThanDecimal() throws Exception {
+    public void shouldNotCreateDecimalFromInputStreamContainingUtf8EncodingOfStringWithContentsOtherThanDecimal()
+        throws Exception {
         factory.create(new ByteArrayInputStream("something".getBytes("UTF-8")));
     }
 
     @Test( expected = IllegalArgumentException.class )
-    public void shouldNotCreateDecimalFromReaderContainingStringWithContentsOtherThanDecimal() throws Exception {
+    public void shouldNotCreateDecimalFromReaderContainingStringWithContentsOtherThanDecimal() {
         factory.create(new StringReader("something"));
     }
 }

@@ -39,7 +39,6 @@ import org.jboss.dna.spi.graph.Path;
 import org.jboss.dna.spi.graph.PropertyType;
 import org.jboss.dna.spi.graph.Reference;
 import org.jboss.dna.spi.graph.ValueFactory;
-import org.jboss.dna.spi.graph.IoException;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -52,75 +51,79 @@ public class AbstractValueFactoryTest {
 
     private static class MockFactory extends AbstractValueFactory<String> {
 
-        protected MockFactory( TextDecoder decoder, StringValueFactory stringValueFactory ) {
+        protected MockFactory( TextDecoder decoder,
+                               StringValueFactory stringValueFactory ) {
             super(PropertyType.STRING, decoder, stringValueFactory);
         }
 
-        public String create( String value ) throws IoException {
+        public String create( String value ) {
             return null;
         }
 
-        public String create( String value, TextDecoder decoder ) throws IoException {
+        public String create( String value,
+                              TextDecoder decoder ) {
             return null;
         }
 
-        public String create( int value ) throws IoException {
+        public String create( int value ) {
             return null;
         }
 
-        public String create( long value ) throws IoException {
+        public String create( long value ) {
             return null;
         }
 
-        public String create( boolean value ) throws IoException {
+        public String create( boolean value ) {
             return null;
         }
 
-        public String create( float value ) throws IoException {
+        public String create( float value ) {
             return null;
         }
 
-        public String create( double value ) throws IoException {
+        public String create( double value ) {
             return null;
         }
 
-        public String create( BigDecimal value ) throws IoException {
+        public String create( BigDecimal value ) {
             return null;
         }
 
-        public String create( Calendar value ) throws IoException {
+        public String create( Calendar value ) {
             return null;
         }
 
-        public String create( Date value ) throws IoException {
+        public String create( Date value ) {
             return null;
         }
 
-        public String create( Name value ) throws IoException {
+        public String create( Name value ) {
             return null;
         }
 
-        public String create( Path value ) throws IoException {
+        public String create( Path value ) {
             return null;
         }
 
-        public String create( Reference value ) throws IoException {
+        public String create( Reference value ) {
             return null;
         }
 
-        public String create( URI value ) throws IoException {
+        public String create( URI value ) {
             return null;
         }
 
-        public String create( byte[] value ) throws IoException {
+        public String create( byte[] value ) {
             return null;
         }
 
-        public String create( InputStream stream, int approximateLength ) throws IoException {
+        public String create( InputStream stream,
+                              int approximateLength ) {
             return null;
         }
 
-        public String create( Reader reader, int approximateLength ) throws IoException {
+        public String create( Reader reader,
+                              int approximateLength ) {
             return null;
         }
     }
@@ -128,7 +131,7 @@ public class AbstractValueFactoryTest {
     private AbstractValueFactory factory;
 
     @Before
-    public void beforeEach() throws Exception {
+    public void beforeEach() {
         factory = new MockFactory(null, null);
     }
 

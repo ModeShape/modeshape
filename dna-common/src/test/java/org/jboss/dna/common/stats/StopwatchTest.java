@@ -39,7 +39,7 @@ public class StopwatchTest {
     private long totalPauseTimeInMillis;
 
     @Before
-    public void beforeEach() throws Exception {
+    public void beforeEach() {
         this.stopwatch = new Stopwatch();
     }
 

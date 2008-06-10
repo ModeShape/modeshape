@@ -38,7 +38,7 @@ public class ProgressStatusTest {
     private String validTaskName;
 
     @Before
-    public void beforeEach() throws Exception {
+    public void beforeEach() {
         this.validActivityName = "Reading from file X";
         this.validTaskName = "Checking for file";
         this.status = new ProgressStatus(this.validActivityName, this.validTaskName, 10.0d, false);
@@ -46,7 +46,8 @@ public class ProgressStatusTest {
 
     @Test
     public void shouldComputePercentageAs100PercentIfWithinPrecision() {
-        assertThat(ProgressStatus.computePercentage(100.0d - (ProgressStatus.PERCENT_PRECISION / 2.0d), 100.0d), is(closeTo(100.0d, ProgressStatus.PERCENT_PRECISION)));
+        assertThat(ProgressStatus.computePercentage(100.0d - (ProgressStatus.PERCENT_PRECISION / 2.0d), 100.0d),
+                   is(closeTo(100.0d, ProgressStatus.PERCENT_PRECISION)));
     }
 
     @Test

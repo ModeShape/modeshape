@@ -22,18 +22,12 @@
 
 package org.jboss.dna.common.math;
 
-import static org.junit.Assert.*;
-import org.jboss.dna.common.math.FloatOperations;
-import org.junit.Before;
+import static org.junit.Assert.assertEquals;
 import org.junit.Test;
 
 public class FloatOperationsTest {
 
     private FloatOperations ops = new FloatOperations();
-
-    @Before
-    public void beforeEach() throws Exception {
-    }
 
     @Test
     public void shouldReturnProperExponenentInScientificNotation() {
