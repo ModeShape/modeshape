@@ -38,6 +38,8 @@ import org.jboss.dna.spi.graph.connection.RepositorySourceException;
 import org.jboss.dna.spi.graph.connection.RepositorySourceListener;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.MockitoAnnotations;
+import org.mockito.MockitoAnnotations.Mock;
 
 /**
  * @author Randall Hauch
@@ -45,21 +47,22 @@ import org.junit.Test;
 public class FederatedRepositoryConnectionTest {
 
     private FederatedRepositoryConnection connection;
-    private FederatedRepositorySource source;
-    private FederatedRepository repository;
     private String sourceName;
+    @Mock
+    private FederatedRepositorySource source;
+    @Mock
+    private FederatedRepository repository;
+    @Mock
     private CachePolicy defaultCachePolicy;
+    @Mock
     private ServiceAdministrator repositoryAdmin;
 
     @Before
     public void beforeEach() throws Exception {
+        MockitoAnnotations.initMocks(this);
         sourceName = "Source X";
-        source = mock(FederatedRepositorySource.class);
         stub(source.getName()).toReturn(sourceName);
-        repository = mock(FederatedRepository.class);
-        defaultCachePolicy = mock(CachePolicy.class);
         stub(repository.getDefaultCachePolicy()).toReturn(defaultCachePolicy);
-        repositoryAdmin = mock(ServiceAdministrator.class);
         stub(repository.getAdministrator()).toReturn(repositoryAdmin);
         connection = new FederatedRepositoryConnection(repository, source);
     }

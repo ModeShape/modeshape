@@ -21,7 +21,6 @@
  */
 package org.jboss.dna.repository.federation;
 
-import java.util.concurrent.TimeUnit;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
@@ -29,6 +28,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.stub;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import java.util.concurrent.TimeUnit;
 import org.jboss.dna.spi.graph.connection.RepositoryConnection;
 import org.jboss.dna.spi.graph.connection.RepositoryConnectionPool;
 import org.jboss.dna.spi.graph.connection.RepositorySource;
@@ -36,14 +36,18 @@ import org.jboss.dna.spi.graph.connection.RepositorySourceException;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.MockitoAnnotations;
+import org.mockito.MockitoAnnotations.Mock;
 
 /**
  * @author Randall Hauch
  */
 public class FederatedSourceTest {
 
-    private RepositoryConnection connection;
     private FederatedSource source;
+    @Mock
+    private RepositoryConnection connection;
+    @Mock
     private RepositorySource repositorySource;
 
     /**
@@ -51,6 +55,7 @@ public class FederatedSourceTest {
      */
     @Before
     public void beforeEach() throws Exception {
+        MockitoAnnotations.initMocks(this);
         this.repositorySource = mock(RepositorySource.class);
         this.source = new FederatedSource(this.repositorySource);
         this.connection = mock(RepositoryConnection.class);

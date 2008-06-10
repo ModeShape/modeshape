@@ -41,6 +41,8 @@ import javax.naming.Reference;
 import org.jboss.dna.spi.graph.connection.RepositorySourceException;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.MockitoAnnotations;
+import org.mockito.MockitoAnnotations.Mock;
 
 /**
  * @author Randall Hauch
@@ -49,7 +51,9 @@ public class FederatedRepositorySourceTest {
 
     private FederatedRepositorySource source;
     private FederatedRepositoryConnection connection;
+    @Mock
     private FederatedRepository repository;
+    @Mock
     private FederationService service;
     private String repositoryName;
     private String username;
@@ -60,10 +64,9 @@ public class FederatedRepositorySourceTest {
      */
     @Before
     public void beforeEach() throws Exception {
+        MockitoAnnotations.initMocks(this);
         this.repositoryName = "Test Repository";
-        this.service = mock(FederationService.class);
         this.source = new FederatedRepositorySource(service, repositoryName);
-        this.repository = mock(FederatedRepository.class);
         this.username = "valid username";
         this.credentials = "valid password";
         this.source.setUsername(username);
