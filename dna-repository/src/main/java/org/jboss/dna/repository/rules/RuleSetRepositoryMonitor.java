@@ -34,7 +34,7 @@ import javax.jcr.Node;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import net.jcip.annotations.ThreadSafe;
-import org.jboss.dna.common.collection.Problems;
+import org.jboss.dna.common.collection.SimpleProblems;
 import org.jboss.dna.common.util.ArgCheck;
 import org.jboss.dna.common.util.Logger;
 import org.jboss.dna.repository.RepositoryI18n;
@@ -228,18 +228,18 @@ public class RuleSetRepositoryMonitor implements NodeChangeListener {
     protected RuleSet buildRuleSet( String name, Node ruleSetNode, JcrTools tools ) {
         if (ruleSetNode == null) return null;
 
-        Problems problems = new Problems();
-        String description = tools.getPropertyAsString(ruleSetNode, "jcr:description", false, problems);
-        String classname = tools.getPropertyAsString(ruleSetNode, "dna:classname", true, problems);
-        String[] classpath = tools.getPropertyAsStringArray(ruleSetNode, "dna:classpath", false, problems);
-        String providerUri = tools.getPropertyAsString(ruleSetNode, "dna:serviceProviderUri", true, problems);
-        String ruleSetUri = tools.getPropertyAsString(ruleSetNode, "dna:ruleSetUri", true, name, problems);
-        String rules = tools.getPropertyAsString(ruleSetNode, "dna:rules", true, problems);
-        Map<String, Object> properties = tools.loadProperties(ruleSetNode, problems);
-        if (problems.hasProblems()) {
+        SimpleProblems simpleProblems = new SimpleProblems();
+        String description = tools.getPropertyAsString(ruleSetNode, "jcr:description", false, simpleProblems);
+        String classname = tools.getPropertyAsString(ruleSetNode, "dna:classname", true, simpleProblems);
+        String[] classpath = tools.getPropertyAsStringArray(ruleSetNode, "dna:classpath", false, simpleProblems);
+        String providerUri = tools.getPropertyAsString(ruleSetNode, "dna:serviceProviderUri", true, simpleProblems);
+        String ruleSetUri = tools.getPropertyAsString(ruleSetNode, "dna:ruleSetUri", true, name, simpleProblems);
+        String rules = tools.getPropertyAsString(ruleSetNode, "dna:rules", true, simpleProblems);
+        Map<String, Object> properties = tools.loadProperties(ruleSetNode, simpleProblems);
+        if (simpleProblems.hasProblems()) {
             // There are problems, so store and save them, and then return null ...
             try {
-                if (tools.storeProblems(ruleSetNode, problems)) ruleSetNode.save();
+                if (tools.storeProblems(ruleSetNode, simpleProblems)) ruleSetNode.save();
             } catch (RepositoryException e) {
                 this.logger.error(e, RepositoryI18n.errorWritingProblemsOnRuleSet, tools.getReadable(ruleSetNode));
             }
