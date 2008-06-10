@@ -27,14 +27,21 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import net.jcip.annotations.GuardedBy;
-import net.jcip.annotations.ThreadSafe;
+import org.jboss.dna.common.collection.Problems;
+import org.jboss.dna.common.collection.SimpleProblems;
 import org.jboss.dna.common.i18n.I18n;
 
 /**
- * A basic progress monitor
+ * A basic progress monitor.
+ * <p>
+ * This class is thread-safe except when accessing or adding {@link #getProblems() problems}. Problems must only be added by the
+ * {@link ProgressMonitor <strong>Updater</strong>}, and accessed by {@link ProgressMonitor Observers} only after the activity
+ * has been {@link #done() completed}.
+ * </p>
+ * 
  * @author Randall Hauch
+ * @author John Verhaeg
  */
-@ThreadSafe
 public class SimpleProgressMonitor implements ProgressMonitor {
 
     @GuardedBy( "lock" )
@@ -45,12 +52,11 @@ public class SimpleProgressMonitor implements ProgressMonitor {
     private double totalWork;
     @GuardedBy( "lock" )
     private double worked;
-    @GuardedBy( "lock" )
-    private boolean done;
 
     private final String activityName;
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
     private final AtomicBoolean cancelled = new AtomicBoolean(false);
+    private final Problems problems = new SimpleProblems();
 
     public SimpleProgressMonitor( String activityName ) {
         this.activityName = activityName != null ? activityName.trim() : "";
@@ -68,7 +74,9 @@ public class SimpleProgressMonitor implements ProgressMonitor {
     /**
      * {@inheritDoc}
      */
-    public void beginTask( double totalWork, I18n name, Object... params ) {
+    public void beginTask( double totalWork,
+                           I18n name,
+                           Object... params ) {
         assert totalWork > 0;
         try {
             this.lock.writeLock().lock();
@@ -89,13 +97,17 @@ public class SimpleProgressMonitor implements ProgressMonitor {
     }
 
     /**
+     * <p>
      * {@inheritDoc}
+     * </p>
+     * 
+     * @see org.jboss.dna.common.monitor.ProgressMonitor#done()
      */
     public void done() {
         boolean alreadyDone = false;
         try {
             this.lock.writeLock().lock();
-            if (!this.done) {
+            if (this.worked < this.totalWork) {
                 this.worked = this.totalWork;
             } else {
                 alreadyDone = true;
@@ -111,6 +123,20 @@ public class SimpleProgressMonitor implements ProgressMonitor {
      */
     public boolean isCancelled() {
         return this.cancelled.get();
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.common.monitor.ProgressMonitor#isDone()
+     */
+    public boolean isDone() {
+        lock.readLock().lock();
+        try {
+            return worked >= totalWork;
+        } finally {
+            lock.readLock().unlock();
+        }
     }
 
     /**
@@ -161,5 +187,18 @@ public class SimpleProgressMonitor implements ProgressMonitor {
      */
     protected void notifyProgress() {
         // do nothing
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Problems must only be added by the {@link ProgressMonitor <strong>Updater</strong>}, and accessed by
+     * {@link ProgressMonitor Observers} only after the activity has been {@link #done() completed}.
+     * </p>
+     * 
+     * @see org.jboss.dna.common.monitor.ProgressMonitor#getProblems()
+     */
+    public Problems getProblems() {
+        return problems;
     }
 }

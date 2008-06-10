@@ -23,10 +23,14 @@
 package org.jboss.dna.common.monitor;
 
 import java.util.Locale;
+import org.jboss.dna.common.collection.Problems;
 import org.jboss.dna.common.i18n.I18n;
 
 /**
+ * The thread safety of this class is determined by the delegate.
+ * 
  * @author Randall Hauch
+ * @author John Verhaeg
  */
 public class ProgressMonitorWrapper implements ProgressMonitor {
 
@@ -36,67 +40,61 @@ public class ProgressMonitorWrapper implements ProgressMonitor {
         this.delegate = delegate;
     }
 
-    /**
-     * @return the wrapped progress monitor
-     */
     public ProgressMonitor getWrappedMonitor() {
         return this.delegate;
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    public void beginTask( double totalWork, I18n name, Object... params ) {
+    public void beginTask( double totalWork,
+                           I18n name,
+                           Object... params ) {
         this.delegate.beginTask(totalWork, name, params);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     public ProgressMonitor createSubtask( double subtaskWork ) {
         return this.delegate.createSubtask(subtaskWork);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     public void done() {
         this.delegate.done();
     }
 
-    /**
-     * {@inheritDoc}
-     */
     public String getActivityName() {
         return this.delegate.getActivityName();
     }
 
-    /**
-     * {@inheritDoc}
-     */
     public ProgressStatus getStatus( Locale locale ) {
         return this.delegate.getStatus(locale);
     }
 
     /**
+     * <p>
      * {@inheritDoc}
+     * </p>
+     * 
+     * @see org.jboss.dna.common.monitor.ProgressMonitor#getProblems()
      */
+    public Problems getProblems() {
+        return delegate.getProblems();
+    }
+
     public boolean isCancelled() {
         return this.delegate.isCancelled();
     }
 
     /**
      * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.common.monitor.ProgressMonitor#isDone()
      */
+    public boolean isDone() {
+        return delegate.isDone();
+    }
+
     public void setCancelled( boolean value ) {
         this.delegate.setCancelled(value);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     public void worked( double work ) {
         this.delegate.worked(work);
     }
-
 }

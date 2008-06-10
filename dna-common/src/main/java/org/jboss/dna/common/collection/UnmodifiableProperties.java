@@ -106,7 +106,8 @@ public class UnmodifiableProperties extends Properties {
      * {@inheritDoc}
      */
     @Override
-    public String getProperty( String key, String defaultValue ) {
+    public String getProperty( String key,
+                               String defaultValue ) {
         return this.delegate.getProperty(key, defaultValue);
     }
 
@@ -168,11 +169,13 @@ public class UnmodifiableProperties extends Properties {
 
     /**
      * {@inheritDoc}
+     * 
      * @deprecated
      */
     @Deprecated
     @Override
-    public void save( OutputStream out, String comments ) {
+    public void save( OutputStream out,
+                      String comments ) {
         this.delegate.save(out, comments);
     }
 
@@ -188,7 +191,8 @@ public class UnmodifiableProperties extends Properties {
      * {@inheritDoc}
      */
     @Override
-    public void store( OutputStream out, String comments ) throws IOException {
+    public void store( OutputStream out,
+                       String comments ) throws IOException {
         this.delegate.store(out, comments);
     }
 
@@ -196,7 +200,9 @@ public class UnmodifiableProperties extends Properties {
      * {@inheritDoc}
      */
     @Override
-    public void storeToXML( OutputStream os, String comment, String encoding ) throws IOException {
+    public void storeToXML( OutputStream os,
+                            String comment,
+                            String encoding ) throws IOException {
         this.delegate.storeToXML(os, comment, encoding);
     }
 
@@ -204,7 +210,8 @@ public class UnmodifiableProperties extends Properties {
      * {@inheritDoc}
      */
     @Override
-    public void storeToXML( OutputStream os, String comment ) throws IOException {
+    public void storeToXML( OutputStream os,
+                            String comment ) throws IOException {
         this.delegate.storeToXML(os, comment);
     }
 
@@ -268,7 +275,8 @@ public class UnmodifiableProperties extends Properties {
      * {@inheritDoc}
      */
     @Override
-    public synchronized Object put( Object key, Object value ) {
+    public synchronized Object put( Object key,
+                                    Object value ) {
         throw new UnsupportedOperationException();
     }
 
@@ -292,7 +300,8 @@ public class UnmodifiableProperties extends Properties {
      * {@inheritDoc}
      */
     @Override
-    public synchronized Object setProperty( String key, String value ) {
+    public synchronized Object setProperty( String key,
+                                            String value ) {
         throw new UnsupportedOperationException();
     }
 

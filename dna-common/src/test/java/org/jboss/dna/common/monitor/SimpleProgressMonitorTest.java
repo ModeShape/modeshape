@@ -22,14 +22,14 @@
 
 package org.jboss.dna.common.monitor;
 
-import java.util.Locale;
-import java.util.Set;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsInstanceOf.instanceOf;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsSame.sameInstance;
 import static org.hamcrest.number.IsCloseTo.closeTo;
 import static org.junit.Assert.assertThat;
+import java.util.Locale;
+import java.util.Set;
 import org.jboss.dna.common.CommonI18n;
 import org.jboss.dna.common.i18n.I18n;
 import org.jboss.dna.common.i18n.MockI18n;
@@ -38,6 +38,7 @@ import org.junit.Test;
 
 /**
  * @author Randall Hauch
+ * @author John Verhaeg
  */
 public class SimpleProgressMonitorTest {
 
@@ -46,7 +47,7 @@ public class SimpleProgressMonitorTest {
     private String validTaskName;
 
     @Before
-    public void beforeEach() throws Exception {
+    public void beforeEach() {
         this.validActivityName = "Reading from file X";
         this.validTaskName = "Checking for file";
         this.monitor = new SimpleProgressMonitor(this.validActivityName);
@@ -246,7 +247,10 @@ public class SimpleProgressMonitorTest {
 
     @Test
     public void shouldNotBeMarkedAsDoneAfterCancel() {
-
+        monitor.beginTask(100, MockI18n.passthrough, validTaskName);
+        monitor.setCancelled(true);
+        assertThat(monitor.isCancelled(), is(true));
+        assertThat(monitor.isDone(), is(false));
     }
 
     @Test
@@ -315,6 +319,14 @@ public class SimpleProgressMonitorTest {
         assertThat(status.getPercentWorked(), is(closeTo(100, 0.001d)));
         assertThat(status.isDone(), is(true));
         assertThat(monitor.isCancelled(), is(true));
+    }
+
+    @Test
+    public void shouldRecordProblems() {
+        monitor.beginTask(1000, MockI18n.passthrough, validTaskName);
+        monitor.getProblems().addWarning(MockI18n.passthrough);
+        monitor.done();
+        assertThat(monitor.getProblems().hasWarnings(), is(true));
     }
 
     public static class I18nMessages {

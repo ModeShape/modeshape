@@ -25,14 +25,17 @@ package org.jboss.dna.common.monitor;
 import java.util.Locale;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-import org.jboss.dna.common.i18n.I18n;
 import net.jcip.annotations.GuardedBy;
-import net.jcip.annotations.NotThreadSafe;
+import org.jboss.dna.common.collection.Problems;
+import org.jboss.dna.common.i18n.I18n;
 
 /**
+ * This class is thread-safe except when accessing or adding {@link #getProblems() problems}. Problems must only be added by the
+ * {@link ProgressMonitor <strong>Updater</strong>}, and accessed by {@link ProgressMonitor Observers} only after the activity
+ * has been {@link #done() completed}.
+ * 
  * @author Randall Hauch
  */
-@NotThreadSafe
 public class SubProgressMonitor implements ProgressMonitor {
 
     @GuardedBy( "lock" )
@@ -50,7 +53,8 @@ public class SubProgressMonitor implements ProgressMonitor {
     private final ProgressMonitor parent;
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
 
-    public SubProgressMonitor( final ProgressMonitor parent, final double subtaskTotalInParent ) {
+    public SubProgressMonitor( final ProgressMonitor parent,
+                               final double subtaskTotalInParent ) {
         assert subtaskTotalInParent > 0;
         assert parent != null;
         this.parent = parent;
@@ -74,7 +78,9 @@ public class SubProgressMonitor implements ProgressMonitor {
     /**
      * {@inheritDoc}
      */
-    public void beginTask( double totalWork, I18n name, Object... params ) {
+    public void beginTask( double totalWork,
+                           I18n name,
+                           Object... params ) {
         assert totalWork > 0;
         try {
             this.lock.writeLock().lock();
@@ -120,6 +126,15 @@ public class SubProgressMonitor implements ProgressMonitor {
 
     /**
      * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.common.monitor.ProgressMonitor#isDone()
+     */
+    public boolean isDone() {
+        return parent.isDone();
+    }
+
+    /**
+     * {@inheritDoc}
      */
     public void setCancelled( boolean value ) {
         this.parent.setCancelled(value);
@@ -150,9 +165,19 @@ public class SubProgressMonitor implements ProgressMonitor {
     public ProgressStatus getStatus( Locale locale ) {
         try {
             this.lock.readLock().lock();
-            return new ProgressStatus(this.getActivityName(), this.taskName.text(locale, this.params), this.submittedToParent, this.subtaskTotalInParent, this.isCancelled());
+            return new ProgressStatus(this.getActivityName(), this.taskName.text(locale, this.params), this.submittedToParent,
+                                      this.subtaskTotalInParent, this.isCancelled());
         } finally {
             this.lock.readLock().unlock();
         }
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.common.monitor.ProgressMonitor#getProblems()
+     */
+    public Problems getProblems() {
+        return parent.getProblems();
     }
 }

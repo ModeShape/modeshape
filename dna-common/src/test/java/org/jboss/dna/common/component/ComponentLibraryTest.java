@@ -28,13 +28,15 @@ import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.IsSame.sameInstance;
 import static org.junit.Assert.assertThat;
 import java.util.List;
-import org.jboss.dna.common.monitor.NullProgressMonitor;
 import org.jboss.dna.common.monitor.ProgressMonitor;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.MockitoAnnotations;
+import org.mockito.MockitoAnnotations.Mock;
 
 /**
  * @author Randall Hauch
+ * @author John Verhaeg
  */
 public class ComponentLibraryTest {
 
@@ -44,10 +46,12 @@ public class ComponentLibraryTest {
     private SampleComponentConfig configA2;
     private String validDescription;
     private String[] validClasspath;
-    private ProgressMonitor nullMonitor = new NullProgressMonitor(ComponentLibraryTest.class.getName());
+    @Mock
+    private ProgressMonitor nullMonitor;
 
     @Before
-    public void beforeEach() throws Exception {
+    public void beforeEach() {
+        MockitoAnnotations.initMocks(this);
         this.library = new ComponentLibrary<SampleComponent, SampleComponentConfig>();
         this.validDescription = "a Component";
         this.validClasspath = new String[] {"com.acme:configA:1.0,com.acme:configB:1.0"};
