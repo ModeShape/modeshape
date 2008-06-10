@@ -117,6 +117,11 @@ public class FederatedRepositoryConnection implements RepositoryConnection {
         if (!this.repository.getAdministrator().isStarted()) {
             throw new RepositorySourceException(RepositoryI18n.repositoryHasBeenShutDown.text(this.repository.getName()));
         }
+        if (commands == null || commands.length == 0) return;
+
+        for (GraphCommand command : commands) {
+            if (command == null) continue;
+        }
     }
 
     /**

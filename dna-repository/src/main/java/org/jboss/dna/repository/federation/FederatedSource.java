@@ -25,8 +25,10 @@ import java.util.concurrent.TimeUnit;
 import net.jcip.annotations.ThreadSafe;
 import org.jboss.dna.common.util.ArgCheck;
 import org.jboss.dna.spi.graph.connection.RepositoryConnection;
+import org.jboss.dna.spi.graph.connection.RepositoryConnectionFactory;
 import org.jboss.dna.spi.graph.connection.RepositoryConnectionPool;
 import org.jboss.dna.spi.graph.connection.RepositorySource;
+import org.jboss.dna.spi.graph.connection.RepositorySourceException;
 
 /**
  * A component that represents a {@link RepositorySource repository source} (with its state) being federated in a
@@ -35,7 +37,7 @@ import org.jboss.dna.spi.graph.connection.RepositorySource;
  * @author Randall Hauch
  */
 @ThreadSafe
-public class FederatedSource {
+public class FederatedSource implements RepositoryConnectionFactory {
 
     private final RepositorySource source;
     private final RepositoryConnectionPool connectionPool;
@@ -44,6 +46,12 @@ public class FederatedSource {
         ArgCheck.isNotNull(source, "source");
         this.source = source;
         this.connectionPool = new RepositoryConnectionPool(source);
+    }
+
+    protected FederatedSource( RepositorySource source, RepositoryConnectionPool connectionPool ) {
+        ArgCheck.isNotNull(source, "source");
+        this.source = source;
+        this.connectionPool = connectionPool;
     }
 
     /**
@@ -71,6 +79,13 @@ public class FederatedSource {
      */
     protected RepositoryConnectionPool getConnectionPool() {
         return this.connectionPool;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public RepositoryConnection getConnection() throws RepositorySourceException, InterruptedException {
+        return this.connectionPool.getConnection();
     }
 
     /**

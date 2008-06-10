@@ -33,6 +33,7 @@ import org.jboss.dna.repository.RepositoryI18n;
 import org.jboss.dna.repository.services.AbstractServiceAdministrator;
 import org.jboss.dna.repository.services.ServiceAdministrator;
 import org.jboss.dna.spi.cache.CachePolicy;
+import org.jboss.dna.spi.graph.connection.RepositoryConnection;
 import org.jboss.dna.spi.graph.connection.RepositoryConnectionPool;
 import org.jboss.dna.spi.graph.connection.RepositorySourceListener;
 
@@ -82,6 +83,14 @@ public class FederatedRepository {
             return FederatedRepository.this.awaitTermination(timeout, unit);
         }
 
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        protected boolean doCheckIsTerminated() {
+            return FederatedRepository.this.isTerminated();
+        }
+
     }
 
     private final ServiceAdministrator administrator = new Administrator();
@@ -107,6 +116,13 @@ public class FederatedRepository {
     }
 
     /**
+     * @return service
+     */
+    protected FederationService getService() {
+        return this.service;
+    }
+
+    /**
      * Get the name of this repository
      * 
      * @return name
@@ -127,6 +143,7 @@ public class FederatedRepository {
      */
     protected void startRepository() {
         // Do not establish connections to the sources; these will be established as needed
+
     }
 
     /**
@@ -155,6 +172,50 @@ public class FederatedRepository {
             this.sourcesWriteLock.lock();
             for (FederatedSource source : this.sources) {
                 if (!source.getConnectionPool().awaitTermination(timeout, unit)) {
+                    return false;
+                }
+            }
+            return true;
+        } finally {
+            this.sourcesWriteLock.unlock();
+        }
+    }
+
+    /**
+     * Returns true if this federated repository is in the process of terminating after {@link ServiceAdministrator#shutdown()}
+     * has been called on the {@link #getAdministrator() administrator}, but the federated repository has connections that have
+     * not yet normally been {@link RepositoryConnection#close() closed}. This method may be useful for debugging. A return of
+     * <tt>true</tt> reported a sufficient period after shutdown may indicate that connection users have ignored or suppressed
+     * interruption, causing this repository not to properly terminate.
+     * 
+     * @return true if terminating but not yet terminated, or false otherwise
+     * @see #isTerminated()
+     */
+    public boolean isTerminating() {
+        try {
+            this.sourcesWriteLock.lock();
+            for (FederatedSource source : this.sources) {
+                if (source.getConnectionPool().isTerminating()) {
+                    return true;
+                }
+            }
+            return false;
+        } finally {
+            this.sourcesWriteLock.unlock();
+        }
+    }
+
+    /**
+     * Return true if this federated repository has completed its termination and no longer has any open connections.
+     * 
+     * @return true if terminated, or false otherwise
+     * @see #isTerminating()
+     */
+    public boolean isTerminated() {
+        try {
+            this.sourcesWriteLock.lock();
+            for (FederatedSource source : this.sources) {
+                if (!source.getConnectionPool().isTerminated()) {
                     return false;
                 }
             }
@@ -287,10 +348,12 @@ public class FederatedRepository {
      * the supplied listener is null.
      * 
      * @param listener the new listener
+     * @return true if the listener was added, or false if the listener was not added (if reference is null, or if non-null
+     * listener is already an existing listener)
      */
-    public void addListener( RepositorySourceListener listener ) {
-        if (listener == null) return;
-        this.listeners.addIfAbsent(listener);
+    public boolean addListener( RepositorySourceListener listener ) {
+        if (listener == null) return false;
+        return this.listeners.addIfAbsent(listener);
     }
 
     /**
@@ -305,6 +368,15 @@ public class FederatedRepository {
     public boolean removeListener( RepositorySourceListener listener ) {
         if (listener == null) return false;
         return this.listeners.remove(listener);
+    }
+
+    /**
+     * Get the list of listeners, which is the actual list used by the repository.
+     * 
+     * @return the listeners
+     */
+    public List<RepositorySourceListener> getListeners() {
+        return this.listeners;
     }
 
     /**

@@ -26,6 +26,7 @@ import net.jcip.annotations.ThreadSafe;
 
 /**
  * Contract defining an administrative interface for controlling the running state of a service.
+ * 
  * @author Randall Hauch
  */
 @ThreadSafe
@@ -33,22 +34,26 @@ public interface ServiceAdministrator {
 
     /**
      * The available states.
+     * 
      * @author Randall Hauch
      */
     public static enum State {
         STARTED,
         PAUSED,
-        SHUTDOWN;
+        SHUTDOWN,
+        TERMINATED;
     }
 
     /**
      * Return the current state of this system.
+     * 
      * @return the current state
      */
     public State getState();
 
     /**
      * Set the state of the system. This method does nothing if the desired state matches the current state.
+     * 
      * @param state the desired state
      * @return this object for method chaining purposes
      * @see #setState(String)
@@ -60,6 +65,7 @@ public interface ServiceAdministrator {
 
     /**
      * Set the state of the system. This method does nothing if the desired state matches the current state.
+     * 
      * @param state the desired state in string form
      * @return this object for method chaining purposes
      * @throws IllegalArgumentException if the specified state string is null or does not match one of the predefined
@@ -74,6 +80,7 @@ public interface ServiceAdministrator {
     /**
      * Start monitoring and sequence the events. This method can be called multiple times, including after the system is
      * {@link #pause() paused}. However, once the system is {@link #shutdown() shutdown}, it cannot be started or paused.
+     * 
      * @return this object for method chaining purposes
      * @throws IllegalStateException if called when the system has been {@link #shutdown() shutdown}.
      * @see #pause()
@@ -85,6 +92,7 @@ public interface ServiceAdministrator {
     /**
      * Temporarily stop monitoring and sequencing events. This method can be called multiple times, including after the system is
      * {@link #start() started}. However, once the system is {@link #shutdown() shutdown}, it cannot be started or paused.
+     * 
      * @return this object for method chaining purposes
      * @throws IllegalStateException if called when the system has been {@link #shutdown() shutdown}.
      * @see #start()
@@ -96,6 +104,7 @@ public interface ServiceAdministrator {
     /**
      * Permanently stop monitoring and sequencing events. This method can be called multiple times, but only the first call has an
      * effect. Once the system has been shutdown, it may not be {@link #start() restarted} or {@link #pause() paused}.
+     * 
      * @return this object for method chaining purposes
      * @see #start()
      * @see #pause()
@@ -104,41 +113,62 @@ public interface ServiceAdministrator {
     public ServiceAdministrator shutdown();
 
     /**
-     * Blocks until all work has completed execution after a shutdown request, or the timeout occurs, or the current thread is
-     * interrupted, whichever happens first.
+     * Blocks until the shutdown has completed, or the timeout occurs, or the current thread is interrupted, whichever happens
+     * first.
+     * 
      * @param timeout the maximum time to wait
      * @param unit the time unit of the timeout argument
-     * @return <tt>true</tt> if this service terminated and <tt>false</tt> if the timeout elapsed before termination
+     * @return <tt>true</tt> if this service complete shut down and <tt>false</tt> if the timeout elapsed before it was shut
+     * down completely
      * @throws InterruptedException if interrupted while waiting
      */
     boolean awaitTermination( long timeout, TimeUnit unit ) throws InterruptedException;
 
     /**
      * Return whether this system has been started and is currently running.
+     * 
      * @return true if started and currently running, or false otherwise
      * @see #start()
      * @see #pause()
      * @see #isPaused()
      * @see #isShutdown()
+     * @see #isTerminated()
      */
     public boolean isStarted();
 
     /**
      * Return whether this system is currently paused.
+     * 
      * @return true if currently paused, or false otherwise
      * @see #pause()
      * @see #start()
      * @see #isStarted()
      * @see #isShutdown()
+     * @see #isTerminated()
      */
     public boolean isPaused();
 
     /**
-     * Return whether this system is stopped and unable to be restarted.
-     * @return true if currently shutdown, or false otherwise
+     * Return whether this system has been shut down.
+     * 
+     * @return true if this service has been shut down, or false otherwise
      * @see #shutdown()
      * @see #isPaused()
      * @see #isStarted()
+     * @see #isTerminated()
      */
     public boolean isShutdown();
+
+    /**
+     * Return whether this system has finished {@link #shutdown() shutting down}. Note that <code>isTerminated</code> is never
+     * <code>true</code> unless either {@link #shutdown()} was called first.
+     * 
+     * @return true if the system has finished shutting down, or false otherwise
+     * @see #shutdown()
+     * @see #isPaused()
+     * @see #isStarted()
+     * @see #isShutdown()
+     */
+    public boolean isTerminated();
+
 }

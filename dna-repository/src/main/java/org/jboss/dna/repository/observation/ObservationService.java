@@ -56,6 +56,7 @@ public class ObservationService implements AdministeredService {
 
     /**
      * Interface to which problems with particular events are logged.
+     * 
      * @author Randall Hauch
      */
     public static interface ProblemLog {
@@ -65,6 +66,7 @@ public class ObservationService implements AdministeredService {
 
     /**
      * Problem log implementation that records problems in the log.
+     * 
      * @author Randall Hauch
      */
     public class DefaultProblemLog implements ProblemLog {
@@ -90,6 +92,7 @@ public class ObservationService implements AdministeredService {
 
     /**
      * The administrative component for this service.
+     * 
      * @author Randall Hauch
      */
     protected class Administrator extends AbstractServiceAdministrator {
@@ -111,6 +114,14 @@ public class ObservationService implements AdministeredService {
          * {@inheritDoc}
          */
         public boolean awaitTermination( long timeout, TimeUnit unit ) {
+            return true;
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        protected boolean doCheckIsTerminated() {
             return true;
         }
 
@@ -146,6 +157,7 @@ public class ObservationService implements AdministeredService {
 
     /**
      * Get the statistics for this system.
+     * 
      * @return the statistics, which are updated as the system is used
      */
     public Statistics getStatistics() {
@@ -154,6 +166,7 @@ public class ObservationService implements AdministeredService {
 
     /**
      * Get the logger for this system
+     * 
      * @return the logger
      */
     public Logger getLogger() {
@@ -162,6 +175,7 @@ public class ObservationService implements AdministeredService {
 
     /**
      * Set the logger for this system.
+     * 
      * @param logger the logger, or null if the standard logging should be used
      */
     public void setLogger( Logger logger ) {
@@ -177,6 +191,7 @@ public class ObservationService implements AdministeredService {
 
     /**
      * Set the problem log that will be notified of problems handling events. By default, such problems are sent to the log.
+     * 
      * @param problemLog the new problem log implementation; if null, then the default problem log is used
      */
     public void setProblemLog( ProblemLog problemLog ) {
@@ -256,6 +271,7 @@ public class ObservationService implements AdministeredService {
      * The filters of an already-registered {@link WorkspaceListener} can be changed at runtime by changing the attributes and
      * {@link WorkspaceListener#reregister() registering}.
      * </p>
+     * 
      * @param repositoryWorkspaceName the name to be used with the session factory to obtain a session to the repository and
      * workspace that is to be monitored
      * @param absolutePath the absolute path of the node at or below which changes are to be monitored; may be null if all nodes
@@ -292,6 +308,7 @@ public class ObservationService implements AdministeredService {
      * needed, it simply must be {@link ObservationManager#removeEventListener(EventListener) removed} as a listener of the
      * workspace and garbage collected.
      * </p>
+     * 
      * @param repositoryWorkspaceName the name to be used with the session factory to obtain a session to the repository and
      * workspace that is to be monitored
      * @param absolutePath the absolute path of the node at or below which changes are to be monitored; may be null if all nodes
@@ -317,6 +334,7 @@ public class ObservationService implements AdministeredService {
      * needed, it simply must be {@link ObservationManager#removeEventListener(EventListener) removed} as a listener of the
      * workspace and garbage collected.
      * </p>
+     * 
      * @param repositoryWorkspaceName the name to be used with the session factory to obtain a session to the repository and
      * workspace that is to be monitored
      * @param eventTypes the bitmask of the {@link Event} types that are to be monitored
@@ -341,6 +359,7 @@ public class ObservationService implements AdministeredService {
      * made but excluding those to which that particular listener is not entitled, according to the listeners access permissions
      * and filters.
      * </p>
+     * 
      * @param events
      * @param listener
      */
@@ -460,6 +479,7 @@ public class ObservationService implements AdministeredService {
 
     /**
      * Implementation of the {@link EventListener JCR EventListener} interface, returned by the sequencing system.
+     * 
      * @author Randall Hauch
      */
     @ThreadSafe
@@ -617,6 +637,7 @@ public class ObservationService implements AdministeredService {
 
     /**
      * The statistics for the system. Each sequencing system has an instance of this class that is updated.
+     * 
      * @author Randall Hauch
      */
     @ThreadSafe

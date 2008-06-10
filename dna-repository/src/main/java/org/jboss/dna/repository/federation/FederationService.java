@@ -72,8 +72,16 @@ public class FederationService implements AdministeredService {
         /**
          * {@inheritDoc}
          */
-        public boolean awaitTermination( long timeout, TimeUnit unit ) {
-            return true;
+        @Override
+        protected boolean doCheckIsTerminated() {
+            return FederationService.this.isTerminated();
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        public boolean awaitTermination( long timeout, TimeUnit unit ) throws InterruptedException {
+            return FederationService.this.awaitTermination(timeout, unit);
         }
 
     }
@@ -162,6 +170,24 @@ public class FederationService implements AdministeredService {
                 repository.getAdministrator().shutdown();
             }
         }
+    }
+
+    protected boolean isTerminated() {
+        // Now shut down all repositories ...
+        for (String repositoryName : this.repositories.keySet()) {
+            FederatedRepository repository = this.repositories.get(repositoryName);
+            if (!repository.getAdministrator().isTerminated()) return false;
+        }
+        return true;
+    }
+
+    protected boolean awaitTermination( long timeout, TimeUnit unit ) throws InterruptedException {
+        // Now shut down all repositories ...
+        for (String repositoryName : this.repositories.keySet()) {
+            FederatedRepository repository = this.repositories.get(repositoryName);
+            if (repository.getAdministrator().awaitTermination(timeout, unit)) return false;
+        }
+        return true;
     }
 
     /**

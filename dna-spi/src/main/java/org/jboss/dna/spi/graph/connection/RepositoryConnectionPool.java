@@ -21,14 +21,11 @@
  */
 package org.jboss.dna.spi.graph.connection;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.Set;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.Callable;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -40,7 +37,6 @@ import javax.transaction.xa.XAResource;
 import net.jcip.annotations.GuardedBy;
 import net.jcip.annotations.ThreadSafe;
 import org.jboss.dna.common.util.ArgCheck;
-import org.jboss.dna.common.util.LogContext;
 import org.jboss.dna.common.util.Logger;
 import org.jboss.dna.spi.SpiI18n;
 import org.jboss.dna.spi.cache.CachePolicy;
@@ -402,104 +398,6 @@ public class RepositoryConnectionPool implements RepositoryConnectionFactory {
      */
     public long getTotalConnectionsUsed() {
         return this.totalConnectionsUsed.get();
-    }
-
-    // -------------------------------------------------
-    // Utility methods ...
-    // -------------------------------------------------
-
-    /**
-     * Call the supplied operation, using a connection from this pool.
-     * 
-     * @param <T> the return type for the operation
-     * @param operation the operation to be run using a connection in this pool
-     * @return the results from the operation
-     * @throws RepositorySourceException if there was an error obtaining the new connection
-     * @throws InterruptedException if the thread was interrupted during the operation
-     * @throws IllegalArgumentException if the operation is null
-     * @see #callable(RepositoryOperation)
-     * @see #callables(Iterable)
-     * @see #callables(RepositoryOperation...)
-     */
-    public <T> T call( RepositoryOperation<T> operation ) throws RepositorySourceException, InterruptedException {
-        ArgCheck.isNotNull(operation, "repository operation");
-        // Get a connection ...
-        T result = null;
-        LogContext.set("context", operation.getName());
-        RepositoryConnection conn = this.getConnection();
-        try {
-            // And run the client with the connection ...
-            result = operation.run(conn);
-        } finally {
-            conn.close();
-        }
-        LogContext.clear();
-        return result;
-    }
-
-    /**
-     * Return a callable object that, when run, performs the supplied repository operation against a connection in this pool.
-     * 
-     * @param <T> the return type for the operation
-     * @param operation the operation to be run using a connection in this pool
-     * @return the callable
-     * @see #call(RepositoryOperation)
-     * @see #callables(Iterable)
-     * @see #callables(RepositoryOperation...)
-     */
-    public <T> Callable<T> callable( final RepositoryOperation<T> operation ) {
-        ArgCheck.isNotNull(operation, "repository operation");
-        final RepositoryConnectionPool pool = this;
-        return new Callable<T>() {
-
-            /**
-             * Execute by getting a connection from this pool, running the client, and return the connection to the pool.
-             * 
-             * @return the operation's result
-             * @throws Exception
-             */
-            public T call() throws Exception {
-                return pool.call(operation);
-            }
-        };
-    }
-
-    /**
-     * Return a collection of callable objects that, when run, perform the supplied repository operations against connections in
-     * this pool.
-     * 
-     * @param <T> the return type for the operations
-     * @param operations the operations to be run using connection from this pool
-     * @return the collection of callables
-     * @see #call(RepositoryOperation)
-     * @see #callable(RepositoryOperation)
-     * @see #callables(Iterable)
-     */
-    public <T> List<Callable<T>> callables( RepositoryOperation<T>... operations ) {
-        List<Callable<T>> callables = new ArrayList<Callable<T>>();
-        for (final RepositoryOperation<T> operation : operations) {
-            callables.add(callable(operation));
-        }
-        return callables;
-    }
-
-    /**
-     * Return a collection of callable objects that, when run, perform the supplied repository operations against connections in
-     * this pool.
-     * 
-     * @param <T> the return type for the operations
-     * @param operations the operations to be run using connection from this pool
-     * @return the collection of callables
-     * @see #call(RepositoryOperation)
-     * @see #callable(RepositoryOperation)
-     * @see #callables(RepositoryOperation...)
-     */
-    public <T> List<Callable<T>> callables( Iterable<RepositoryOperation<T>> operations ) {
-        List<Callable<T>> callables = new ArrayList<Callable<T>>();
-        for (final RepositoryOperation<T> operation : operations) {
-            callables.add(callable(operation));
-        }
-        return callables;
     }
 
     // -------------------------------------------------
@@ -956,7 +854,7 @@ public class RepositoryConnectionPool implements RepositoryConnectionFactory {
     @GuardedBy( "mainLock" )
     protected int drainUnusedConnections( int count ) {
         if (count <= 0) return 0;
-        this.logger.trace("Draining up to {} unused repository connections to {0}", count, getName());
+        this.logger.trace("Draining up to {0} unused repository connections to {1}", count, getName());
         // Drain the extra connections from those available ...
         Collection<ConnectionWrapper> extraConnections = new LinkedList<ConnectionWrapper>();
         this.availableConnections.drainTo(extraConnections, count);

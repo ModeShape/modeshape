@@ -30,6 +30,7 @@ import org.jboss.dna.repository.RepositoryI18n;
 /**
  * Simple abstract implementation of the service administrator interface that can be easily subclassed by services that require an
  * administrative interface.
+ * 
  * @author Randall Hauch
  */
 @ThreadSafe
@@ -47,6 +48,7 @@ public abstract class AbstractServiceAdministrator implements ServiceAdministrat
 
     /**
      * Return the current state of this service.
+     * 
      * @return the current state
      */
     public State getState() {
@@ -55,6 +57,7 @@ public abstract class AbstractServiceAdministrator implements ServiceAdministrat
 
     /**
      * Set the state of the service. This method does nothing if the desired state matches the current state.
+     * 
      * @param state the desired state
      * @return this object for method chaining purposes
      * @see #setState(String)
@@ -72,6 +75,7 @@ public abstract class AbstractServiceAdministrator implements ServiceAdministrat
                 pause();
                 break;
             case SHUTDOWN:
+            case TERMINATED:
                 shutdown();
                 break;
         }
@@ -80,6 +84,7 @@ public abstract class AbstractServiceAdministrator implements ServiceAdministrat
 
     /**
      * Set the state of the service. This method does nothing if the desired state matches the current state.
+     * 
      * @param state the desired state in string form
      * @return this object for method chaining purposes
      * @throws IllegalArgumentException if the specified state string is null or does not match one of the predefined
@@ -100,6 +105,7 @@ public abstract class AbstractServiceAdministrator implements ServiceAdministrat
     /**
      * Start monitoring and sequence the events. This method can be called multiple times, including after the service is
      * {@link #pause() paused}. However, once the service is {@link #shutdown() shutdown}, it cannot be started or paused.
+     * 
      * @return this object for method chaining purposes
      * @throws IllegalStateException if called when the service has been {@link #shutdown() shutdown}.
      * @see #pause()
@@ -107,10 +113,16 @@ public abstract class AbstractServiceAdministrator implements ServiceAdministrat
      * @see #isStarted()
      */
     public synchronized ServiceAdministrator start() {
-        if (isShutdown()) throw new IllegalStateException(RepositoryI18n.serviceShutdowAndMayNotBeStarted.text(getServiceName()));
-        if (this.state != State.STARTED) {
-            doStart(this.state);
-            this.state = State.STARTED;
+        switch (this.state) {
+            case STARTED:
+                break;
+            case PAUSED:
+                doStart(this.state);
+                this.state = State.STARTED;
+                break;
+            case SHUTDOWN:
+            case TERMINATED:
+                throw new IllegalStateException(RepositoryI18n.serviceShutdowAndMayNotBeStarted.text(getServiceName()));
         }
         return this;
     }
@@ -119,6 +131,7 @@ public abstract class AbstractServiceAdministrator implements ServiceAdministrat
      * Implementation of the functionality to switch to the started state. This method is only called if the state from which the
      * service is transitioning is appropriate ({@link State#PAUSED}). This method does nothing by default, and should be
      * overridden if needed.
+     * 
      * @param fromState the state from which this service is transitioning; never null
      * @throws IllegalStateException if the service is such that it cannot be transitioned from the supplied state
      */
@@ -129,6 +142,7 @@ public abstract class AbstractServiceAdministrator implements ServiceAdministrat
     /**
      * Temporarily stop monitoring and sequencing events. This method can be called multiple times, including after the service is
      * {@link #start() started}. However, once the service is {@link #shutdown() shutdown}, it cannot be started or paused.
+     * 
      * @return this object for method chaining purposes
      * @throws IllegalStateException if called when the service has been {@link #shutdown() shutdown}.
      * @see #start()
@@ -136,10 +150,16 @@ public abstract class AbstractServiceAdministrator implements ServiceAdministrat
      * @see #isPaused()
      */
     public synchronized ServiceAdministrator pause() {
-        if (isShutdown()) throw new IllegalStateException(RepositoryI18n.serviceShutdowAndMayNotBePaused.text(getServiceName()));
-        if (this.state != State.PAUSED) {
-            doPause(this.state);
-            this.state = State.PAUSED;
+        switch (this.state) {
+            case STARTED:
+                doPause(this.state);
+                this.state = State.PAUSED;
+                break;
+            case PAUSED:
+                break;
+            case SHUTDOWN:
+            case TERMINATED:
+                throw new IllegalStateException(RepositoryI18n.serviceShutdowAndMayNotBePaused.text(getServiceName()));
         }
         return this;
     }
@@ -148,6 +168,7 @@ public abstract class AbstractServiceAdministrator implements ServiceAdministrat
      * Implementation of the functionality to switch to the paused state. This method is only called if the state from which the
      * service is transitioning is appropriate ({@link State#STARTED}). This method does nothing by default, and should be
      * overridden if needed.
+     * 
      * @param fromState the state from which this service is transitioning; never null
      * @throws IllegalStateException if the service is such that it cannot be transitioned from the supplied state
      */
@@ -158,15 +179,24 @@ public abstract class AbstractServiceAdministrator implements ServiceAdministrat
     /**
      * Permanently stop monitoring and sequencing events. This method can be called multiple times, but only the first call has an
      * effect. Once the service has been shutdown, it may not be {@link #start() restarted} or {@link #pause() paused}.
+     * 
      * @return this object for method chaining purposes
      * @see #start()
      * @see #pause()
      * @see #isShutdown()
      */
     public synchronized ServiceAdministrator shutdown() {
-        if (this.state != State.SHUTDOWN) {
-            doShutdown(this.state);
-            this.state = State.SHUTDOWN;
+        switch (this.state) {
+            case STARTED:
+            case PAUSED:
+                this.state = State.SHUTDOWN;
+                doShutdown(this.state);
+                isTerminated();
+                break;
+            case SHUTDOWN:
+            case TERMINATED:
+                isTerminated();
+                break;
         }
         return this;
     }
@@ -175,6 +205,7 @@ public abstract class AbstractServiceAdministrator implements ServiceAdministrat
      * Implementation of the functionality to switch to the shutdown state. This method is only called if the state from which the
      * service is transitioning is appropriate ({@link State#STARTED} or {@link State#PAUSED}). This method does nothing by
      * default, and should be overridden if needed.
+     * 
      * @param fromState the state from which this service is transitioning; never null
      * @throws IllegalStateException if the service is such that it cannot be transitioned from the supplied state
      */
@@ -184,6 +215,7 @@ public abstract class AbstractServiceAdministrator implements ServiceAdministrat
 
     /**
      * Return whether this service has been started and is currently running.
+     * 
      * @return true if started and currently running, or false otherwise
      * @see #start()
      * @see #pause()
@@ -196,6 +228,7 @@ public abstract class AbstractServiceAdministrator implements ServiceAdministrat
 
     /**
      * Return whether this service is currently paused.
+     * 
      * @return true if currently paused, or false otherwise
      * @see #pause()
      * @see #start()
@@ -208,17 +241,45 @@ public abstract class AbstractServiceAdministrator implements ServiceAdministrat
 
     /**
      * Return whether this service is stopped and unable to be restarted.
+     * 
      * @return true if currently shutdown, or false otherwise
      * @see #shutdown()
      * @see #isPaused()
      * @see #isStarted()
      */
     public boolean isShutdown() {
-        return this.state == State.SHUTDOWN;
+        return this.state == State.SHUTDOWN || this.state == State.TERMINATED;
     }
 
     /**
+     * {@inheritDoc}
+     */
+    public boolean isTerminated() {
+        switch (this.state) {
+            case PAUSED:
+            case STARTED:
+            case SHUTDOWN:
+                if (doCheckIsTerminated()) {
+                    this.state = State.TERMINATED;
+                    return true;
+                }
+                return false;
+            case TERMINATED:
+                return true;
+        }
+        return false;
+    }
+
+    /**
+     * Subclasses should implement this method to determine whether the service has completed shutdown.
+     * 
+     * @return true if terminated, or false otherwise
+     */
+    protected abstract boolean doCheckIsTerminated();
+
+    /**
      * Get the name of this service in the current locale.
+     * 
      * @return the service name
      */
     public String getServiceName() {
@@ -227,10 +288,12 @@ public abstract class AbstractServiceAdministrator implements ServiceAdministrat
 
     /**
      * Get the name of this service in the specified locale.
+     * 
      * @param locale the locale in which the service name is to be returned; may be null if the default locale is to be used
      * @return the service name
      */
     public String getServiceName( Locale locale ) {
         return this.serviceName.text(locale);
     }
+
 }

@@ -27,6 +27,7 @@ import static org.hamcrest.core.IsNull.nullValue;
 import static org.hamcrest.core.IsSame.sameInstance;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
+import static org.mockito.Mockito.mock;
 import javax.jcr.Repository;
 import javax.jcr.Session;
 import javax.naming.InitialContext;
@@ -34,8 +35,6 @@ import javax.naming.NamingException;
 import org.jboss.dna.common.SystemFailureException;
 import org.jboss.dna.common.jcr.AbstractJcrRepositoryTest;
 import org.jboss.dna.common.naming.MockInitialContext;
-import org.jboss.dna.repository.util.JndiSessionFactory;
-import org.jmock.Mockery;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -49,14 +48,12 @@ public class JndiSessionFactoryTest extends AbstractJcrRepositoryTest {
     public static final String MOCK_REPOSITORY_NAME_ALT = "java:jcr/unit/test/repository/2";
 
     private JndiSessionFactory factory;
-    private Mockery context;
     private Repository mockRepository;
     private Session session;
 
     @Before
     public void beforeEach() throws Exception {
-        this.context = new Mockery();
-        this.mockRepository = this.context.mock(Repository.class);
+        this.mockRepository = mock(Repository.class);
         MockInitialContext.register(MOCK_REPOSITORY_NAME, this.mockRepository);
         this.factory = new JndiSessionFactory();
     }

@@ -26,7 +26,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -37,12 +36,21 @@ import org.jboss.dna.common.util.Logger;
 
 /**
  * A test harness for using repository connections under load.
+ * 
  * @author Randall Hauch
  */
 public class RepositorySourceLoadHarness {
 
-    public static <T> List<T> runLoadTest( RepositoryConnectionFactory connectionFactory, int numConnectionsInPool, int numClients, long maxTime, TimeUnit maxTimeUnit,
-                                           RepositoryOperation.Factory<T> clientFactory ) throws InterruptedException, ExecutionException {
+    public static Future<Integer> execute( RepositoryConnectionFactory connectionFactory, ExecutionEnvironment env, long maxTime, TimeUnit maxTimeUnit ) throws InterruptedException {
+        int numTimes = 1;
+        int numClients = 1;
+        RepositoryOperation.Factory<Integer> operationFactory = RepositorySourceLoadHarness.createMultipleLoadOperationFactory(env, numTimes);
+        List<Future<Integer>> results = runLoadTest(connectionFactory, numClients, maxTime, maxTimeUnit, operationFactory);
+        return results.get(0);
+    }
+
+    public static <T> List<Future<T>> runLoadTest( RepositoryConnectionFactory connectionFactory, int numClients, long maxTime, TimeUnit maxTimeUnit, RepositoryOperation.Factory<T> clientFactory )
+        throws InterruptedException {
         // Create the clients ...
         Collection<RepositoryOperation<T>> clients = new ArrayList<RepositoryOperation<T>>();
         for (int i = 0; i != numClients; ++i) {
@@ -50,71 +58,47 @@ public class RepositorySourceLoadHarness {
         }
 
         // and run the test ...
-        return runLoadTest(connectionFactory, numConnectionsInPool, maxTime, maxTimeUnit, clients);
+        return runLoadTest(connectionFactory, maxTime, maxTimeUnit, clients);
     }
 
-    public static <T> List<T> runLoadTest( RepositoryConnectionFactory connectionFactory, int numConnectionsInPool, long maxTime, TimeUnit maxTimeUnit, RepositoryOperation<T>... clients )
-        throws InterruptedException, ExecutionException {
+    public static <T> List<Future<T>> runLoadTest( RepositoryConnectionFactory connectionFactory, long maxTime, TimeUnit maxTimeUnit, RepositoryOperation<T>... clients ) throws InterruptedException {
         // Create the client collection ...
         Collection<RepositoryOperation<T>> clientCollection = new ArrayList<RepositoryOperation<T>>();
         for (RepositoryOperation<T> client : clients) {
             if (client != null) clientCollection.add(client);
         }
         // and run the test ...
-        return runLoadTest(connectionFactory, numConnectionsInPool, maxTime, maxTimeUnit, clientCollection);
+        return runLoadTest(connectionFactory, maxTime, maxTimeUnit, clientCollection);
     }
 
-    public static <T> List<T> runLoadTest( RepositoryConnectionFactory connectionFactory, int numConnectionsInPool, long maxTime, TimeUnit maxTimeUnit, Collection<RepositoryOperation<T>> clients )
-        throws InterruptedException, ExecutionException {
+    public static <T> List<Future<T>> runLoadTest( RepositoryConnectionFactory connectionFactory, long maxTime, TimeUnit maxTimeUnit, Collection<RepositoryOperation<T>> clients )
+        throws InterruptedException {
         assert connectionFactory != null;
-        assert numConnectionsInPool > 0;
         assert clients != null;
         assert clients.size() > 0;
 
-        // Create a connection pool ...
-        final RepositoryConnectionPool connectionPool = new RepositoryConnectionPool(connectionFactory, numConnectionsInPool, numConnectionsInPool, 10, TimeUnit.SECONDS);
-
         // Create an Executor Service, using a thread factory that makes the first 'n' thread all wait for each other ...
-        final ThreadFactory threadFactory = new TestThreadFactory(clients.size(), connectionPool);
-        final ExecutorService clientPool = Executors.newFixedThreadPool(clients.size(), threadFactory);
+        ExecutorService clientPool = null;
+        if (clients.size() == 1) {
+            clientPool = Executors.newSingleThreadExecutor();
+        } else {
+            final ThreadFactory threadFactory = new TestThreadFactory(clients.size());
+            clientPool = Executors.newFixedThreadPool(clients.size(), threadFactory);
+        }
 
         try {
             // Wrap each client by a callable and by another that uses a latch ...
-            List<Callable<T>> callables = connectionPool.callables(clients);
+            List<Callable<T>> callables = RepositoryOperations.createCallables(connectionFactory, clients);
 
             // Run the tests ...
             List<Future<T>> futures = clientPool.invokeAll(callables, maxTime, maxTimeUnit);
-
-            // Whether or not all clients completed, process the results ...
-            List<T> results = new ArrayList<T>();
-            for (Future<T> future : futures) {
-                if (future.isDone() && !future.isCancelled()) {
-                    // Record the results ...
-                    results.add(future.get());
-                } else {
-                    // Record the results as null
-                    results.add(null);
-                    // Cancell any operation that is not completed
-                    future.cancel(true);
-                }
-            }
-            // Return the results ...
-            return results;
+            return futures;
         } finally {
-            try {
-                // Shut down the pool of clients ...
-                clientPool.shutdown();
-                if (!clientPool.awaitTermination(5, TimeUnit.SECONDS)) {
-                    String msg = "Unable to shutdown clients after 5 seconds";
-                    Logger.getLogger(RepositorySourceLoadHarness.class).error(MockI18n.passthrough, msg);
-                }
-            } finally {
-                // Shut down the connections ...
-                connectionPool.shutdown();
-                if (!connectionPool.awaitTermination(5, TimeUnit.SECONDS)) {
-                    String msg = "Unable to shutdown connections after 5 seconds";
-                    Logger.getLogger(RepositorySourceLoadHarness.class).error(MockI18n.passthrough, msg);
-                }
+            // Shut down the pool of clients ...
+            clientPool.shutdown();
+            if (!clientPool.awaitTermination(5, TimeUnit.SECONDS)) {
+                String msg = "Unable to shutdown clients after 5 seconds";
+                Logger.getLogger(RepositorySourceLoadHarness.class).error(MockI18n.passthrough, msg);
             }
         }
 
@@ -123,16 +107,17 @@ public class RepositorySourceLoadHarness {
     /**
      * A thread factory that makes an initial set of threads wait until all of those threads are created and ready. This is useful
      * in testing to ensure that the first threads created don't get a jump start.
+     * 
      * @author Randall Hauch
      */
     protected static class TestThreadFactory implements ThreadFactory {
 
+        protected final int totalNumberOfThreads;
         protected final CountDownLatch latch;
-        protected final RepositoryConnectionPool pool;
 
-        public TestThreadFactory( int numberOfThreadsToWait, RepositoryConnectionPool pool ) {
+        public TestThreadFactory( int numberOfThreadsToWait ) {
             this.latch = new CountDownLatch(numberOfThreadsToWait);
-            this.pool = pool;
+            this.totalNumberOfThreads = numberOfThreadsToWait;
         }
 
         /**
@@ -146,20 +131,95 @@ public class RepositorySourceLoadHarness {
                  */
                 @Override
                 public void run() {
-                    try {
-                        // Count down the thread count (if 0, this doesn't do anything)
-                        latch.countDown();
-                        // Wait for all threads to reach this point ...
-                        latch.await();
-                    } catch (InterruptedException e) {
-                        throw new RuntimeException(e);
+                    if (totalNumberOfThreads > 1) {
+                        // There are other threads, and we want to synchronize with them ...
+                        try {
+                            // Count down the number of threads that are to reach this point (if 0, this doesn't do anything)
+                            latch.countDown();
+                            // Wait for all threads to reach this point ...
+                            latch.await();
+                        } catch (InterruptedException e) {
+                            throw new RuntimeException(e);
+                        }
                     }
-                    // Check that the number of connections-in-use is smaller than the maximum pool size
-                    if (pool != null) assert pool.getInUseCount() <= pool.getMaximumPoolSize();
                     super.run();
                 }
             };
         }
+    }
+
+    /**
+     * Return an operation factory that produces {@link RepositoryOperation} instances that each call
+     * {@link RepositoryConnection#execute(ExecutionEnvironment, org.jboss.dna.spi.graph.commands.GraphCommand...)} the supplied
+     * number of times, intermixed with random math operations and {@link Thread#yield() yielding}.
+     * 
+     * @param env the environment
+     * @param callsPerOperation the number of <code>load</code> calls per RepositoryOperation
+     * @return the factory
+     */
+    public static RepositoryOperation.Factory<Integer> createMultipleLoadOperationFactory( final ExecutionEnvironment env, final int callsPerOperation ) {
+        return new RepositoryOperation.Factory<Integer>() {
+
+            public RepositoryOperation<Integer> create() {
+                return new CallLoadMultipleTimes(env, callsPerOperation);
+            }
+        };
+    }
+
+    public static class CallLoadMultipleTimes implements RepositoryOperation<Integer> {
+
+        private final int count;
+        private final ExecutionEnvironment env;
+
+        public CallLoadMultipleTimes( ExecutionEnvironment env, int count ) {
+            Logger.getLogger(RepositorySourceLoadHarness.class).debug("Creating repository operation to call {0} times", count);
+            this.count = count;
+            this.env = env;
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        public String getName() {
+            return Thread.currentThread().getName() + "-CallLoadMultipleTimes";
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        public Integer run( RepositoryConnection connection ) throws RepositorySourceException, InterruptedException {
+            Logger.getLogger(RepositorySourceLoadHarness.class).debug("Running {0} operation", this.getClass().getSimpleName());
+            int total = count;
+            for (int i = 0; i != count; ++i) {
+                // Add two random numbers ...
+                int int1 = random(this.hashCode() ^ (int)System.nanoTime() * i);
+                if (i % 2 == 0) {
+                    Thread.yield();
+                }
+                connection.execute(env);
+                int int2 = random(this.hashCode() ^ (int)System.nanoTime() + i);
+                total += Math.min(Math.abs(Math.max(int1, int2) + int1 * int2 / 3), count);
+            }
+            Logger.getLogger(RepositorySourceLoadHarness.class).debug("Finishing {0} operation", this.getClass().getSimpleName());
+            return total < count ? total : count; // should really always return count
+        }
+    }
+
+    /**
+     * A "random-enough" number generator that is cheap and that has no synchronization issues (like some other random number
+     * generators).
+     * <p>
+     * This was taken from <a href="http://wwww.jcip.org">Java Concurrency In Practice</a> (page 253).
+     * </p>
+     * 
+     * @param seed the seed, typically based on a hash code and nanoTime
+     * @return a number that is "random enough"
+     */
+    public static int random( int seed ) {
+        seed ^= (seed << 6);
+        seed ^= (seed >>> 21);
+        seed ^= (seed << 7);
+        return seed;
     }
 
 }

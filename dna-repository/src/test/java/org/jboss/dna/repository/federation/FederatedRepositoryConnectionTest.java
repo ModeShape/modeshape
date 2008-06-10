@@ -105,6 +105,24 @@ public class FederatedRepositoryConnectionTest {
     }
 
     @Test
+    public void shouldReturnImmediatelyWhenExecutingNullOrEmptyCommandArray() {
+        stub(repositoryAdmin.isStarted()).toReturn(true);
+        ExecutionEnvironment env = mock(ExecutionEnvironment.class);
+        connection.execute(env, (GraphCommand[])null);
+        verify(repositoryAdmin, times(1)).isStarted();
+        connection.execute(env, new GraphCommand[0]);
+        verify(repositoryAdmin, times(2)).isStarted();
+    }
+
+    @Test
+    public void shouldSkipNullCommandReferencesWhenExecuting() {
+        stub(repositoryAdmin.isStarted()).toReturn(true);
+        ExecutionEnvironment env = mock(ExecutionEnvironment.class);
+        connection.execute(env, new GraphCommand[] {null, null, null});
+        verify(repositoryAdmin, times(1)).isStarted();
+    }
+
+    @Test
     public void shouldAddListenerToRepositoryWhenSetOnConnection() {
         // Old listener is no-op, so it is not removed from repository ...
         RepositorySourceListener listener = mock(RepositorySourceListener.class);
@@ -129,5 +147,4 @@ public class FederatedRepositoryConnectionTest {
         connection.close();
         verify(repository, times(1)).removeListener(listener2);
     }
-
 }

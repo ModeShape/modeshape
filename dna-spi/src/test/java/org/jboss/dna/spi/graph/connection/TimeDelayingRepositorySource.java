@@ -21,6 +21,7 @@
  */
 package org.jboss.dna.spi.graph.connection;
 
+import static org.mockito.Mockito.mock;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.TimeUnit;
@@ -33,25 +34,26 @@ import javax.transaction.xa.XAResource;
 import net.jcip.annotations.ThreadSafe;
 import org.jboss.dna.spi.cache.CachePolicy;
 import org.jboss.dna.spi.graph.commands.GraphCommand;
-import org.jmock.Mockery;
 
 /**
  * @author Randall Hauch
  */
 @ThreadSafe
-public class MockRepositorySource implements RepositorySource {
+public class TimeDelayingRepositorySource implements RepositorySource {
 
     private final String identifier;
     private final AtomicInteger retryLimit = new AtomicInteger(0);
-    private final Mockery context;
     private final AtomicInteger connectionsOpenedCount = new AtomicInteger(0);
     private final AtomicInteger connectionsClosedCount = new AtomicInteger(0);
     private final Set<Connection> openConnections = new CopyOnWriteArraySet<Connection>();
+    private final AtomicLong loadCount = new AtomicLong(0);
+    private final AtomicLong loadDelay = new AtomicLong(0);
+    private final AtomicLong pingCount = new AtomicLong(0);
+    private final AtomicLong pingDelay = new AtomicLong(0);
     private CachePolicy defaultCachePolicy;
 
-    public MockRepositorySource( String identifier, Mockery context ) {
+    public TimeDelayingRepositorySource( String identifier ) {
         this.identifier = identifier;
-        this.context = context;
     }
 
     /**
@@ -84,19 +86,74 @@ public class MockRepositorySource implements RepositorySource {
     }
 
     /**
+     * @return loadCount
+     */
+    public long getTotalExecuteCount() {
+        return this.loadCount.get();
+    }
+
+    /**
+     * @return pingCount
+     */
+    public long getTotalPingCount() {
+        return this.pingCount.get();
+    }
+
+    /**
+     * @return loadDelay
+     */
+    public long getConnectionExecuteDelayInMillis() {
+        return this.loadDelay.get();
+    }
+
+    public void setConnectionExecuteDelay( long time, TimeUnit unit ) {
+        this.loadDelay.set(unit.toMillis(time));
+    }
+
+    /**
+     * @return pingDelay
+     */
+    public long getConnectionPingDelayInMillis() {
+        return this.pingDelay.get();
+    }
+
+    public void setConnectionPingDelay( long time, TimeUnit unit ) {
+        this.pingDelay.set(unit.toMillis(time));
+    }
+
+    /**
      * {@inheritDoc}
      */
     public RepositoryConnection getConnection() throws RepositorySourceException {
         int connectionNumber = this.connectionsOpenedCount.incrementAndGet();
         String connectionName = "Connection " + connectionNumber;
-        XAResource xaResource = context != null ? context.mock(XAResource.class, connectionName) : null;
+        XAResource xaResource = newXaResource(connectionName);
         Connection c = newConnection(connectionName, xaResource);
         this.openConnections.add(c);
         return c;
     }
 
+    /**
+     * Factory method that can be overridden by subclasses. This method implementation simply creates a mock {@link XAResource}.
+     * 
+     * @param connectionName the name of the connection
+     * @return the XAResource, or null if this source does not support XA
+     */
+    protected XAResource newXaResource( String connectionName ) {
+        return mock(XAResource.class);
+    }
+
+    /**
+     * Factory method that can be overridden by subclasses. This method implementation creates a new {@link Connection} that uses
+     * standard bean properties for the various delays and counts.
+     * 
+     * @param connectionName
+     * @param xaResource
+     * @return
+     * @throws RepositorySourceException
+     */
     protected Connection newConnection( String connectionName, XAResource xaResource ) throws RepositorySourceException {
-        Connection c = new Connection(connectionName);
+        Connection c = new Connection(connectionName, this.loadDelay.get(), this.pingDelay.get());
         c.setXaResource(xaResource);
         return c;
     }
@@ -104,6 +161,8 @@ public class MockRepositorySource implements RepositorySource {
     protected void close( Connection conn ) {
         if (conn != null && this.openConnections.remove(conn)) {
             this.connectionsClosedCount.incrementAndGet();
+            this.loadCount.addAndGet(conn.getLoadCount());
+            this.pingCount.addAndGet(conn.getPingCount());
         }
     }
 
@@ -134,13 +193,15 @@ public class MockRepositorySource implements RepositorySource {
         private final AtomicBoolean pingResponse = new AtomicBoolean(true);
         private final AtomicLong closeCount = new AtomicLong(0);
         private final AtomicLong loadCount = new AtomicLong(0);
-        private final AtomicLong loadDelay = new AtomicLong(0);
+        private final AtomicLong loadDelay;
         private final AtomicLong pingCount = new AtomicLong(0);
-        private final AtomicLong pingDelay = new AtomicLong(0);
+        private final AtomicLong pingDelay;
         private final AtomicReference<XAResource> xaResource = new AtomicReference<XAResource>();
 
-        protected Connection( String connectionName ) {
+        protected Connection( String connectionName, long loadDelay, long pingDelay ) {
             assert connectionName != null && connectionName.trim().length() != 0;
+            this.loadDelay = new AtomicLong(loadDelay);
+            this.pingDelay = new AtomicLong(pingDelay);
             this.connectionName = connectionName;
         }
 
@@ -154,21 +215,21 @@ public class MockRepositorySource implements RepositorySource {
         public void close() {
             this.closeCount.incrementAndGet();
             this.closed.set(true);
-            MockRepositorySource.this.close(this);
+            TimeDelayingRepositorySource.this.close(this);
         }
 
         /**
          * {@inheritDoc}
          */
         public String getSourceName() {
-            return MockRepositorySource.this.getName();
+            return TimeDelayingRepositorySource.this.getName();
         }
 
         /**
          * {@inheritDoc}
          */
         public CachePolicy getDefaultCachePolicy() {
-            return MockRepositorySource.this.getDefaultCachePolicy();
+            return TimeDelayingRepositorySource.this.getDefaultCachePolicy();
         }
 
         /**

@@ -66,18 +66,21 @@ import org.jboss.dna.spi.graph.ValueFactories;
 /**
  * A sequencing system is used to monitor changes in the content of {@link Repository JCR repositories} and to sequence the
  * content to extract or to generate structured information.
+ * 
  * @author Randall Hauch
  */
 public class SequencingService implements AdministeredService, NodeChangeListener {
 
     /**
      * Interface used to select the set of {@link Sequencer} instances that should be run.
+     * 
      * @author Randall Hauch
      */
     public static interface Selector {
 
         /**
          * Select the sequencers that should be used to sequence the supplied node.
+         * 
          * @param sequencers the list of all sequencers available at the moment; never null
          * @param node the node to be sequenced; never null
          * @param nodeChange the set of node changes; never null
@@ -89,6 +92,7 @@ public class SequencingService implements AdministeredService, NodeChangeListene
     /**
      * The default {@link Selector} implementation that selects every sequencer every time it's called, regardless of the node (or
      * logger) supplied.
+     * 
      * @author Randall Hauch
      */
     protected static class DefaultSelector implements Selector {
@@ -100,12 +104,14 @@ public class SequencingService implements AdministeredService, NodeChangeListene
 
     /**
      * Interface used to determine whether a {@link NodeChange} should be processed.
+     * 
      * @author Randall Hauch
      */
     public static interface NodeFilter {
 
         /**
          * Determine whether the node represented by the supplied change should be submitted for sequencing.
+         * 
          * @param nodeChange the node change event
          * @return true if the node should be submitted for sequencing, or false if the change should be ignored
          */
@@ -114,6 +120,7 @@ public class SequencingService implements AdministeredService, NodeChangeListene
 
     /**
      * The default filter implementation, which accepts only new nodes or nodes that have new or changed properties.
+     * 
      * @author Randall Hauch
      */
     protected static class DefaultNodeFilter implements NodeFilter {
@@ -126,11 +133,13 @@ public class SequencingService implements AdministeredService, NodeChangeListene
 
     /**
      * The default {@link Selector} that considers every {@link Sequencer} to be used for every node.
+     * 
      * @see SequencingService#setSequencerSelector(org.jboss.dna.repository.sequencers.SequencingService.Selector)
      */
     public static final Selector DEFAULT_SEQUENCER_SELECTOR = new DefaultSelector();
     /**
      * The default {@link NodeFilter} that accepts new nodes or nodes that have new/changed properties.
+     * 
      * @see SequencingService#setSequencerSelector(org.jboss.dna.repository.sequencers.SequencingService.Selector)
      */
     public static final NodeFilter DEFAULT_NODE_FILTER = new DefaultNodeFilter();
@@ -144,6 +153,7 @@ public class SequencingService implements AdministeredService, NodeChangeListene
 
     /**
      * The administrative component for this service.
+     * 
      * @author Randall Hauch
      */
     protected class Administrator extends AbstractServiceAdministrator {
@@ -168,6 +178,14 @@ public class SequencingService implements AdministeredService, NodeChangeListene
         protected void doShutdown( State fromState ) {
             super.doShutdown(fromState);
             shutdownService();
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        protected boolean doCheckIsTerminated() {
+            return isServiceTerminated();
         }
 
         /**
@@ -199,6 +217,7 @@ public class SequencingService implements AdministeredService, NodeChangeListene
 
     /**
      * Return the administrative component for this service.
+     * 
      * @return the administrative component; never null
      */
     public ServiceAdministrator getAdministrator() {
@@ -207,6 +226,7 @@ public class SequencingService implements AdministeredService, NodeChangeListene
 
     /**
      * Get the statistics for this system.
+     * 
      * @return statistics
      */
     public Statistics getStatistics() {
@@ -224,6 +244,7 @@ public class SequencingService implements AdministeredService, NodeChangeListene
      * Get the class loader factory that should be used to load sequencers. By default, this service uses a factory that will
      * return either the {@link Thread#getContextClassLoader() current thread's context class loader} (if not null) or the class
      * loader that loaded this class.
+     * 
      * @return the class loader factory; never null
      * @see #setClassLoaderFactory(ClassLoaderFactory)
      */
@@ -235,6 +256,7 @@ public class SequencingService implements AdministeredService, NodeChangeListene
      * Set the Maven Repository that should be used to load the sequencer classes. By default, this service uses a class loader
      * factory that will return either the {@link Thread#getContextClassLoader() current thread's context class loader} (if not
      * null) or the class loader that loaded this class.
+     * 
      * @param classLoaderFactory the class loader factory reference, or null if the default class loader factory should be used.
      * @see #getClassLoaderFactory()
      */
@@ -245,6 +267,7 @@ public class SequencingService implements AdministeredService, NodeChangeListene
     /**
      * Add the configuration for a sequencer, or update any existing one that represents the
      * {@link SequencerConfig#equals(Object) same configuration}
+     * 
      * @param config the new configuration
      * @return true if the sequencer was added, or false if there already was an existing and
      * {@link SequencerConfig#hasChanged(SequencerConfig) unchanged} sequencer configuration
@@ -259,6 +282,7 @@ public class SequencingService implements AdministeredService, NodeChangeListene
     /**
      * Update the configuration for a sequencer, or add it if there is no
      * {@link SequencerConfig#equals(Object) matching configuration}.
+     * 
      * @param config the updated (or new) configuration
      * @return true if the sequencer was updated, or false if there already was an existing and
      * {@link SequencerConfig#hasChanged(SequencerConfig) unchanged} sequencer configuration
@@ -272,6 +296,7 @@ public class SequencingService implements AdministeredService, NodeChangeListene
 
     /**
      * Remove the configuration for a sequencer.
+     * 
      * @param config the configuration to be removed
      * @return true if the sequencer was removed, or false if there was no existing sequencer
      * @throws IllegalArgumentException if <code>config</code> is null
@@ -284,6 +309,7 @@ public class SequencingService implements AdministeredService, NodeChangeListene
 
     /**
      * Get the logger for this system
+     * 
      * @return the logger
      */
     public Logger getLogger() {
@@ -292,6 +318,7 @@ public class SequencingService implements AdministeredService, NodeChangeListene
 
     /**
      * Set the logger for this system.
+     * 
      * @param logger the logger, or null if the standard logging should be used
      */
     public void setLogger( Logger logger ) {
@@ -318,6 +345,7 @@ public class SequencingService implements AdministeredService, NodeChangeListene
 
     /**
      * Get the executor service used to run the sequencers.
+     * 
      * @return the executor service
      * @see #setExecutorService(ExecutorService)
      */
@@ -328,6 +356,7 @@ public class SequencingService implements AdministeredService, NodeChangeListene
     /**
      * Set the executor service that should be used by this system. By default, the system is set up with a
      * {@link Executors#newSingleThreadExecutor() executor that uses a single thread}.
+     * 
      * @param executorService the executor service
      * @see #getExecutorService()
      * @see Executors#newCachedThreadPool()
@@ -355,6 +384,7 @@ public class SequencingService implements AdministeredService, NodeChangeListene
      * <p>
      * This method creates a {@link Executors#newSingleThreadExecutor() single-threaded executor}.
      * </p>
+     * 
      * @return
      */
     protected ExecutorService createDefaultExecutorService() {
@@ -380,6 +410,13 @@ public class SequencingService implements AdministeredService, NodeChangeListene
         }
     }
 
+    protected boolean isServiceTerminated() {
+        if (this.executorService != null) {
+            return this.executorService.isTerminated();
+        }
+        return true;
+    }
+
     protected boolean doAwaitTermination( long timeout, TimeUnit unit ) throws InterruptedException {
         if (this.executorService == null || this.executorService.isTerminated()) return true;
         return this.executorService.awaitTermination(timeout, unit);
@@ -387,6 +424,7 @@ public class SequencingService implements AdministeredService, NodeChangeListene
 
     /**
      * Get the sequencing selector used by this system.
+     * 
      * @return the sequencing selector
      */
     public Selector getSequencerSelector() {
@@ -395,6 +433,7 @@ public class SequencingService implements AdministeredService, NodeChangeListene
 
     /**
      * Set the sequencer selector, or null if the {@link #DEFAULT_SEQUENCER_SELECTOR default sequencer selector} should be used.
+     * 
      * @param sequencerSelector the selector
      */
     public void setSequencerSelector( Selector sequencerSelector ) {
@@ -403,6 +442,7 @@ public class SequencingService implements AdministeredService, NodeChangeListene
 
     /**
      * Get the node filter used by this system.
+     * 
      * @return the node filter
      */
     public NodeFilter getNodeFilter() {
@@ -412,6 +452,7 @@ public class SequencingService implements AdministeredService, NodeChangeListene
     /**
      * Set the filter that checks which nodes are to be sequenced, or null if the {@link #DEFAULT_NODE_FILTER default node filter}
      * should be used.
+     * 
      * @param nodeFilter the new node filter
      */
     public void setNodeFilter( NodeFilter nodeFilter ) {
@@ -443,6 +484,7 @@ public class SequencingService implements AdministeredService, NodeChangeListene
     /**
      * Do the work of processing by sequencing the node. This method is called by the {@link #executorService executor service}
      * when it performs it's work on the enqueued {@link ChangedNode ChangedNode runnable objects}.
+     * 
      * @param node the node to be processed.
      */
     protected void processChangedNode( NodeChange changedNode ) {
@@ -620,6 +662,7 @@ public class SequencingService implements AdministeredService, NodeChangeListene
 
     /**
      * The statistics for the system. Each sequencing system has an instance of this class that is updated.
+     * 
      * @author Randall Hauch
      */
     @ThreadSafe

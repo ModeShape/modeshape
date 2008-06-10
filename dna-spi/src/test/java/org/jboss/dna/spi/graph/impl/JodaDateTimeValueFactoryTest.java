@@ -23,6 +23,7 @@ package org.jboss.dna.spi.graph.impl;
 
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
+import static org.mockito.Mockito.mock;
 import java.io.ByteArrayInputStream;
 import java.io.StringReader;
 import java.math.BigDecimal;
@@ -32,7 +33,6 @@ import org.jboss.dna.spi.graph.DateTime;
 import org.jboss.dna.spi.graph.Name;
 import org.jboss.dna.spi.graph.Path;
 import org.jboss.dna.spi.graph.Reference;
-import org.jmock.Mockery;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -53,7 +53,6 @@ public class JodaDateTimeValueFactoryTest {
 
     private JodaDateTimeValueFactory factory;
     private StringValueFactory stringFactory;
-    private Mockery context;
 
     /**
      * @throws java.lang.Exception
@@ -62,7 +61,6 @@ public class JodaDateTimeValueFactoryTest {
     public void setUp() throws Exception {
         stringFactory = new StringValueFactory(Path.URL_DECODER, Path.URL_ENCODER);
         factory = new JodaDateTimeValueFactory(Path.URL_DECODER, stringFactory);
-        context = new Mockery();
     }
 
     @Test( expected = UnsupportedOperationException.class )
@@ -127,17 +125,17 @@ public class JodaDateTimeValueFactoryTest {
 
     @Test( expected = UnsupportedOperationException.class )
     public void shouldNotCreateDateFromName() {
-        factory.create(context.mock(Name.class));
+        factory.create(mock(Name.class));
     }
 
     @Test( expected = UnsupportedOperationException.class )
     public void shouldNotCreateDateFromPath() {
-        factory.create(context.mock(Path.class));
+        factory.create(mock(Path.class));
     }
 
     @Test( expected = UnsupportedOperationException.class )
     public void shouldNotCreateDateFromReference() {
-        factory.create(context.mock(Reference.class));
+        factory.create(mock(Reference.class));
     }
 
     @Test( expected = UnsupportedOperationException.class )
@@ -164,14 +162,12 @@ public class JodaDateTimeValueFactoryTest {
     }
 
     @Test( expected = IllegalArgumentException.class )
-    public void shouldNotCreateDateFromByteArrayContainingUtf8EncodingOfStringWithContentThatIsNotWellFormedDate()
-        throws Exception {
+    public void shouldNotCreateDateFromByteArrayContainingUtf8EncodingOfStringWithContentThatIsNotWellFormedDate() throws Exception {
         factory.create("something".getBytes("UTF-8"));
     }
 
     @Test( expected = IllegalArgumentException.class )
-    public void shouldNotCreateDateFromInputStreamContainingUtf8EncodingOfStringWithContentThatIsNotWellFormedDate()
-        throws Exception {
+    public void shouldNotCreateDateFromInputStreamContainingUtf8EncodingOfStringWithContentThatIsNotWellFormedDate() throws Exception {
         factory.create(new ByteArrayInputStream("something".getBytes("UTF-8")));
     }
 

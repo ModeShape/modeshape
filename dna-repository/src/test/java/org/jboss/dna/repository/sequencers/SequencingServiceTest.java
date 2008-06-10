@@ -141,7 +141,8 @@ public class SequencingServiceTest extends AbstractJcrRepositoryTest {
             assertThat(sequencingService.getAdministrator().shutdown().isShutdown(), is(true));
             assertThat(sequencingService.getAdministrator().isPaused(), is(false));
             assertThat(sequencingService.getAdministrator().isStarted(), is(false));
-            assertThat(sequencingService.getAdministrator().getState(), is(ServiceAdministrator.State.SHUTDOWN));
+            ServiceAdministrator.State actualState = sequencingService.getAdministrator().getState();
+            assertThat(actualState == ServiceAdministrator.State.SHUTDOWN || actualState == ServiceAdministrator.State.TERMINATED, is(true));
         }
     }
 
@@ -170,7 +171,8 @@ public class SequencingServiceTest extends AbstractJcrRepositoryTest {
         assertThat(sequencingService.getAdministrator().shutdown().isShutdown(), is(true));
         assertThat(sequencingService.getAdministrator().isPaused(), is(false));
         assertThat(sequencingService.getAdministrator().isStarted(), is(false));
-        assertThat(sequencingService.getAdministrator().getState(), is(ServiceAdministrator.State.SHUTDOWN));
+        ServiceAdministrator.State actualState = sequencingService.getAdministrator().getState();
+        assertThat(actualState == ServiceAdministrator.State.SHUTDOWN || actualState == ServiceAdministrator.State.TERMINATED, is(true));
 
         // Now start it back up ... this will fail
         sequencingService.getAdministrator().start();

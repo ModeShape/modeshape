@@ -70,6 +70,7 @@ import org.jboss.dna.repository.services.ServiceAdministrator;
  * the same time, all executions will be properly synchronized with methods to {@link #addRuleSet(RuleSet) add},
  * {@link #updateRuleSet(RuleSet) update}, and {@link #removeRuleSet(String) remove} rule sets.
  * </p>
+ * 
  * @author Randall Hauch
  */
 @ThreadSafe
@@ -79,6 +80,7 @@ public class RuleService implements AdministeredService {
 
     /**
      * The administrative component for this service.
+     * 
      * @author Randall Hauch
      */
     protected class Administrator extends AbstractServiceAdministrator {
@@ -95,6 +97,14 @@ public class RuleService implements AdministeredService {
             super.doShutdown(fromState);
             // Remove all rule sets ...
             removeAllRuleSets();
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        protected boolean doCheckIsTerminated() {
+            return RuleService.this.isTerminated();
         }
 
         /**
@@ -124,6 +134,7 @@ public class RuleService implements AdministeredService {
 
     /**
      * Return the administrative component for this service.
+     * 
      * @return the administrative component; never null
      */
     public ServiceAdministrator getAdministrator() {
@@ -134,6 +145,7 @@ public class RuleService implements AdministeredService {
      * Get the class loader factory that should be used to load sequencers. By default, this service uses a factory that will
      * return either the {@link Thread#getContextClassLoader() current thread's context class loader} (if not null) or the class
      * loader that loaded this class.
+     * 
      * @return the class loader factory; never null
      * @see #setClassLoaderFactory(ClassLoaderFactory)
      */
@@ -145,6 +157,7 @@ public class RuleService implements AdministeredService {
      * Set the Maven Repository that should be used to load the sequencer classes. By default, this service uses a class loader
      * factory that will return either the {@link Thread#getContextClassLoader() current thread's context class loader} (if not
      * null) or the class loader that loaded this class.
+     * 
      * @param classLoaderFactory the class loader factory reference, or null if the default class loader factory should be used.
      * @see #getClassLoaderFactory()
      */
@@ -154,6 +167,7 @@ public class RuleService implements AdministeredService {
 
     /**
      * Obtain the rule sets that are currently available in this service.
+     * 
      * @return an unmodifiable copy of the rule sets; never null, but possibly empty ...
      */
     public Collection<RuleSet> getRuleSets() {
@@ -170,6 +184,7 @@ public class RuleService implements AdministeredService {
 
     /**
      * Add a rule set, or update any existing one that represents the {@link RuleSet#equals(Object) same rule set}
+     * 
      * @param ruleSet the new rule set
      * @return true if the rule set was added, or false if the rule set was not added (because it wasn't necessary)
      * @throws IllegalArgumentException if <code>ruleSet</code> is null
@@ -266,6 +281,7 @@ public class RuleService implements AdministeredService {
 
     /**
      * Update the configuration for a sequencer, or add it if there is no {@link RuleSet#equals(Object) matching configuration}.
+     * 
      * @param ruleSet the rule set to be updated
      * @return true if the rule set was updated, or false if the rule set was not updated (because it wasn't necessary)
      * @throws InvalidRuleSetException if the supplied rule set is invalid, incomplete, incorrectly defined, or uses a JSR-94
@@ -279,6 +295,7 @@ public class RuleService implements AdministeredService {
 
     /**
      * Remove a rule set.
+     * 
      * @param ruleSetName the name of the rule set to be removed
      * @return true if the rule set was removed, or if it was not an existing rule set
      * @throws IllegalArgumentException if <code>ruleSetName</code> is null or empty
@@ -310,6 +327,7 @@ public class RuleService implements AdministeredService {
 
     /**
      * Get the logger for this system
+     * 
      * @return the logger
      */
     public Logger getLogger() {
@@ -318,6 +336,7 @@ public class RuleService implements AdministeredService {
 
     /**
      * Set the logger for this system.
+     * 
      * @param logger the logger, or null if the standard logging should be used
      */
     public void setLogger( Logger logger ) {
@@ -328,6 +347,7 @@ public class RuleService implements AdministeredService {
      * Execute the set of rules defined by the supplied rule set name. This method is safe to be concurrently called by multiple
      * threads, and is properly synchronized with the methods to {@link #addRuleSet(RuleSet) add},
      * {@link #updateRuleSet(RuleSet) update}, and {@link #removeRuleSet(String) remove} rule sets.
+     * 
      * @param ruleSetName the {@link RuleSet#getName() name} of the {@link RuleSet} that should be used
      * @param globals the global variables
      * @param facts the facts
@@ -396,8 +416,13 @@ public class RuleService implements AdministeredService {
         return this.shutdownLatch.await(timeout, unit);
     }
 
+    protected boolean isTerminated() {
+        return this.shutdownLatch.getCount() == 0;
+    }
+
     /**
      * Finds the JSR-94 service provider instance and returns it. If it could not be found, this method attempts to load it.
+     * 
      * @param ruleSet the rule set for which the service provider is to be found; may not be null
      * @return the rule service provider; never null
      * @throws ConfigurationException if there is a problem loading the service provider
@@ -433,6 +458,7 @@ public class RuleService implements AdministeredService {
     /**
      * Deregister the supplied rule set, if it could be found. This method does nothing if any of the service provider components
      * could not be found.
+     * 
      * @param ruleSet the rule set to be deregistered; may not be null
      * @return the service provider reference, or null if the service provider could not be found ...
      * @throws ConfigurationException

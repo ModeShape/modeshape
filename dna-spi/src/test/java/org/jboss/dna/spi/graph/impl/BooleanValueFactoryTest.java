@@ -23,6 +23,7 @@ package org.jboss.dna.spi.graph.impl;
 
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
+import static org.mockito.Mockito.mock;
 import java.io.ByteArrayInputStream;
 import java.io.StringReader;
 import java.net.URI;
@@ -31,7 +32,6 @@ import java.util.Date;
 import org.jboss.dna.spi.graph.Name;
 import org.jboss.dna.spi.graph.Path;
 import org.jboss.dna.spi.graph.Reference;
-import org.jmock.Mockery;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -43,7 +43,6 @@ public class BooleanValueFactoryTest {
 
     private BooleanValueFactory factory;
     private StringValueFactory stringFactory;
-    private Mockery context;
 
     /**
      * @throws java.lang.Exception
@@ -52,7 +51,6 @@ public class BooleanValueFactoryTest {
     public void setUp() throws Exception {
         stringFactory = new StringValueFactory(Path.URL_DECODER, Path.DEFAULT_ENCODER);
         factory = new BooleanValueFactory(Path.URL_DECODER, stringFactory);
-        context = new Mockery();
     }
 
     @Test
@@ -122,17 +120,17 @@ public class BooleanValueFactoryTest {
 
     @Test( expected = UnsupportedOperationException.class )
     public void shouldNotCreateBooleanFromName() {
-        factory.create(context.mock(Name.class));
+        factory.create(mock(Name.class));
     }
 
     @Test( expected = UnsupportedOperationException.class )
     public void shouldNotCreateBooleanFromPath() {
-        factory.create(context.mock(Path.class));
+        factory.create(mock(Path.class));
     }
 
     @Test( expected = UnsupportedOperationException.class )
     public void shouldNotCreateBooleanFromReference() {
-        factory.create(context.mock(Reference.class));
+        factory.create(mock(Reference.class));
     }
 
     @Test( expected = UnsupportedOperationException.class )

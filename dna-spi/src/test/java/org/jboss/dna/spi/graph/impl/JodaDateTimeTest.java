@@ -22,8 +22,8 @@
 package org.jboss.dna.spi.graph.impl;
 
 import static org.hamcrest.core.Is.is;
-import static org.hamcrest.text.StringStartsWith.startsWith;
 import static org.junit.Assert.assertThat;
+import static org.jboss.dna.common.text.StringMatcher.startsWith;
 import org.junit.Before;
 import org.junit.Test;
 

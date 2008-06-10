@@ -23,11 +23,11 @@ package org.jboss.dna.spi.graph.connection;
 
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
-import static org.junit.Assert.assertThat;
 import static org.jboss.dna.spi.graph.connection.RepositorySourceLoadHarness.runLoadTest;
+import static org.junit.Assert.assertThat;
 import java.util.List;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import org.jmock.Mockery;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -39,14 +39,12 @@ import org.junit.Test;
 public class RepositoryConnectionPoolTest {
 
     private RepositoryConnectionPool pool;
-    private MockRepositorySource repositorySource;
+    private TimeDelayingRepositorySource repositorySource;
     private ExecutionEnvironment env;
-    private Mockery context;
 
     @Before
     public void beforeEach() throws Exception {
-        this.context = new Mockery();
-        this.repositorySource = new MockRepositorySource("source 1", this.context);
+        this.repositorySource = new TimeDelayingRepositorySource("source 1");
         this.pool = new RepositoryConnectionPool(this.repositorySource, 1, 1, 100, TimeUnit.SECONDS);
         this.env = null;
     }
@@ -160,24 +158,39 @@ public class RepositoryConnectionPoolTest {
     public void shouldBlockClientsWhenNotEnoughConnections() throws Exception {
         int numConnectionsInPool = 1;
         int numClients = 2;
-        RepositoryOperation.Factory<Integer> operationFactory = RepositoryTestOperations.createMultipleLoadOperationFactory(env, 10);
-        runLoadTest(repositorySource, numConnectionsInPool, numClients, 4, TimeUnit.SECONDS, operationFactory);
+        RepositoryConnectionPool pool = new RepositoryConnectionPool(repositorySource);
+        pool.setCorePoolSize(numConnectionsInPool);
+        pool.setMaximumPoolSize(numConnectionsInPool);
+        RepositoryOperation.Factory<Integer> operationFactory = RepositorySourceLoadHarness.createMultipleLoadOperationFactory(env, 10);
+        runLoadTest(pool, numClients, 100, TimeUnit.MILLISECONDS, operationFactory);
+        pool.shutdown();
+        pool.awaitTermination(4, TimeUnit.SECONDS);
     }
 
     @Test
     public void shouldLimitClientsToRunSequentiallyWithOneConnectionInPool() throws Exception {
         int numConnectionsInPool = 1;
         int numClients = 3;
-        RepositoryOperation.Factory<Integer> operationFactory = RepositoryTestOperations.createMultipleLoadOperationFactory(env, 10);
-        runLoadTest(repositorySource, numConnectionsInPool, numClients, 4, TimeUnit.SECONDS, operationFactory);
+        RepositoryConnectionPool pool = new RepositoryConnectionPool(repositorySource);
+        pool.setCorePoolSize(numConnectionsInPool);
+        pool.setMaximumPoolSize(numConnectionsInPool);
+        RepositoryOperation.Factory<Integer> operationFactory = RepositorySourceLoadHarness.createMultipleLoadOperationFactory(env, 10);
+        runLoadTest(pool, numClients, 100, TimeUnit.MILLISECONDS, operationFactory);
+        pool.shutdown();
+        pool.awaitTermination(4, TimeUnit.SECONDS);
     }
 
     @Test
     public void shouldClientsToRunConncurrentlyWithTwoConnectionsInPool() throws Exception {
         int numConnectionsInPool = 2;
         int numClients = 10;
-        RepositoryOperation.Factory<Integer> operationFactory = RepositoryTestOperations.createMultipleLoadOperationFactory(env, 10);
-        runLoadTest(repositorySource, numConnectionsInPool, numClients, 4, TimeUnit.SECONDS, operationFactory);
+        RepositoryConnectionPool pool = new RepositoryConnectionPool(repositorySource);
+        pool.setCorePoolSize(numConnectionsInPool);
+        pool.setMaximumPoolSize(numConnectionsInPool);
+        RepositoryOperation.Factory<Integer> operationFactory = RepositorySourceLoadHarness.createMultipleLoadOperationFactory(env, 10);
+        runLoadTest(pool, numClients, 100, TimeUnit.MILLISECONDS, operationFactory);
+        pool.shutdown();
+        pool.awaitTermination(4, TimeUnit.SECONDS);
     }
 
     @Ignore( "doesn't run on hudson" )
@@ -185,13 +198,19 @@ public class RepositoryConnectionPoolTest {
     public void shouldClientsToRunConncurrentlyWithMultipleConnectionInPool() throws Exception {
         int numConnectionsInPool = 10;
         int numClients = 50;
-        RepositoryOperation.Factory<Integer> operationFactory = RepositoryTestOperations.createMultipleLoadOperationFactory(env, 20);
-        List<Integer> results = runLoadTest(repositorySource, numConnectionsInPool, numClients, 10, TimeUnit.SECONDS, operationFactory);
+        RepositoryConnectionPool pool = new RepositoryConnectionPool(repositorySource);
+        pool.setCorePoolSize(numConnectionsInPool);
+        pool.setMaximumPoolSize(numConnectionsInPool);
+        RepositoryOperation.Factory<Integer> operationFactory = RepositorySourceLoadHarness.createMultipleLoadOperationFactory(env, 20);
+        List<Future<Integer>> results = runLoadTest(pool, numClients, 200, TimeUnit.MILLISECONDS, operationFactory);
         int total = 0;
-        for (Integer integer : results) {
-            if (integer != null) total += integer;
+        for (Future<Integer> result : results) {
+            assertThat(result.isDone(), is(true));
+            if (result.isDone()) total += result.get();
         }
         assertThat(total, is(20 * numClients));
+        pool.shutdown();
+        pool.awaitTermination(4, TimeUnit.SECONDS);
     }
 
 }

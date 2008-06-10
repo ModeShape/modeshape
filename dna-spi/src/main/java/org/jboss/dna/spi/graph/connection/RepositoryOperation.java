@@ -22,18 +22,43 @@
 package org.jboss.dna.spi.graph.connection;
 
 /**
+ * An operation that runs against a repository connection.
+ * 
  * @author Randall Hauch
  * @param <T> the type of result returned by the client
  */
 public interface RepositoryOperation<T> {
 
+    /**
+     * Get the name of this operation.
+     * 
+     * @return the operation's name
+     */
     String getName();
 
+    /**
+     * Run the operation using the supplied connection.
+     * 
+     * @param connection the connection; may not be null
+     * @return the result of the operation
+     * @throws RepositorySourceException if there is a problem with the connection
+     * @throws InterruptedException if this thread was interrupted
+     */
     T run( RepositoryConnection connection ) throws RepositorySourceException, InterruptedException;
 
+    /**
+     * A factory interface for creating repository operations.
+     * 
+     * @param <T> the type of result for the operations
+     * @author Randall Hauch
+     */
     public static interface Factory<T> {
 
+        /**
+         * Create a repository operation that returns the result of type T.
+         * 
+         * @return the operation
+         */
         RepositoryOperation<T> create();
     }
-
 }

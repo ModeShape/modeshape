@@ -34,6 +34,7 @@ public final class RepositoryI18n {
     public static I18n invalidStateString;
     public static I18n serviceShutdowAndMayNotBeStarted;
     public static I18n serviceShutdowAndMayNotBePaused;
+    public static I18n serviceNotShutdowAndMayNotBeTerminated;
     public static I18n unableToFindRepositoryInJndi;
     public static I18n unableToRegisterRepositoryInJndi;
     public static I18n unableToUnregisterRepositoryInJndi;
@@ -104,9 +105,9 @@ public final class RepositoryI18n {
     public static I18n invalidRepositoryNodePath;
 
     // XML Sequencer
-	public static I18n errorSequencingXmlDocument;
-	public static I18n sequencingXmlDocument;
-	public static I18n canceledSequencingXmlDocument;
+    public static I18n errorSequencingXmlDocument;
+    public static I18n sequencingXmlDocument;
+    public static I18n canceledSequencingXmlDocument;
 
     public static I18n interruptedWhileConnectingToFederationConfigurationRepository;
     public static I18n interruptedWhileClosingConnectionToFederationConfigurationRepository;
