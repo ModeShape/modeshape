@@ -47,12 +47,9 @@
       <artifactId>junit</artifactId>
     </dependency>
     <dependency>
-      <groupId>org.jmock</groupId>
-      <artifactId>jmock</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.jmock</groupId>
-      <artifactId>jmock-junit4</artifactId>
+      <groupId>org.mockito</groupId>
+      <artifactId>mockito-all</artifactId>
+      <scope>test</scope>
     </dependency>
     <!-- 
       Logging (require SLF4J API for compiling, but use Log4J and its SLF4J binding for testing) 

@@ -58,6 +58,7 @@
 		<module>dna-common</module>
 		<module>dna-spi</module>
 		<module>dna-repository</module>
+		<module>dna-jcr</module>
 		<module>dna-maven-classloader</module>
 		<module>sequencers/dna-sequencer-images</module>
 		<module>sequencers/dna-sequencer-mp3</module>
@@ -313,18 +314,6 @@
 				<groupId>org.hamcrest</groupId>
 				<artifactId>hamcrest-library</artifactId>
 				<version>1.1</version>
-				<scope>test</scope>
-			</dependency>
-			<dependency>
-				<groupId>org.jmock</groupId>
-				<artifactId>jmock</artifactId>
-				<version>2.4.0</version>
-				<scope>test</scope>
-			</dependency>
-			<dependency>
-				<groupId>org.jmock</groupId>
-				<artifactId>jmock-junit4</artifactId>
-				<version>2.4.0</version>
 				<scope>test</scope>
 			</dependency>
             <dependency>
