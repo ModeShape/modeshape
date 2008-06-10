@@ -58,7 +58,6 @@
 		<module>dna-common</module>
 		<module>dna-spi</module>
 		<module>dna-repository</module>
-		<module>dna-jcr</module>
 		<module>dna-maven-classloader</module>
 		<module>sequencers/dna-sequencer-images</module>
 		<module>sequencers/dna-sequencer-mp3</module>
