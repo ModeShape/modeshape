@@ -105,8 +105,9 @@ public class XmlSequencer implements StreamSequencer {
             reader.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
             // Parse XML document
             reader.parse(new InputSource(stream));
-        } catch (Exception err) {
-            LOGGER.error(err, RepositoryI18n.errorSequencingXmlDocument);
+        } catch (Exception error) {
+            LOGGER.error(error, RepositoryI18n.fatalErrorSequencingXmlDocument, error);
+            monitor.getProblems().addError(error, RepositoryI18n.fatalErrorSequencingXmlDocument, error);
         } finally {
             monitor.done();
         }
@@ -353,7 +354,8 @@ public class XmlSequencer implements StreamSequencer {
          */
         @Override
         public void error( SAXParseException error ) {
-            LOGGER.error(error, RepositoryI18n.errorSequencingXmlDocument);
+            LOGGER.error(error, RepositoryI18n.errorSequencingXmlDocument, error);
+            monitor.getProblems().addError(error, RepositoryI18n.errorSequencingXmlDocument, error);
         }
 
         /**
@@ -388,7 +390,8 @@ public class XmlSequencer implements StreamSequencer {
          */
         @Override
         public void fatalError( SAXParseException error ) {
-            LOGGER.error(error, RepositoryI18n.errorSequencingXmlDocument);
+            LOGGER.error(error, RepositoryI18n.fatalErrorSequencingXmlDocument);
+            monitor.getProblems().addError(error, RepositoryI18n.fatalErrorSequencingXmlDocument, error);
         }
 
         private Name getCommentContentName() {
@@ -684,8 +687,9 @@ public class XmlSequencer implements StreamSequencer {
          * @see org.xml.sax.helpers.DefaultHandler#warning(org.xml.sax.SAXParseException)
          */
         @Override
-        public void warning( SAXParseException error ) {
-            LOGGER.warn(error, RepositoryI18n.errorSequencingXmlDocument);
+        public void warning( SAXParseException warning ) {
+            LOGGER.warn(warning, RepositoryI18n.warningSequencingXmlDocument);
+            monitor.getProblems().addWarning(warning, RepositoryI18n.warningSequencingXmlDocument, warning);
         }
     }
 

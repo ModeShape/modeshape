@@ -106,8 +106,10 @@ public final class RepositoryI18n {
 
     // XML Sequencer
     public static I18n errorSequencingXmlDocument;
+    public static I18n fatalErrorSequencingXmlDocument;
     public static I18n sequencingXmlDocument;
     public static I18n canceledSequencingXmlDocument;
+    public static I18n warningSequencingXmlDocument;
 
     public static I18n interruptedWhileConnectingToFederationConfigurationRepository;
     public static I18n interruptedWhileClosingConnectionToFederationConfigurationRepository;
