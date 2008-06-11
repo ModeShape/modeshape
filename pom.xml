@@ -61,7 +61,7 @@
 		<module>dna-maven-classloader</module>
 		<module>sequencers/dna-sequencer-images</module>
 		<module>sequencers/dna-sequencer-mp3</module>
-		<module>sequencers/dna-sequencer-esbMessage</module>
+		<!--module>sequencers/dna-sequencer-esbMessage</module-->
 		<module>connectors/dna-connector-jbosscache</module>
     	<module>dna-integration-tests</module>
 	</modules>
