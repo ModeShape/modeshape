@@ -43,6 +43,7 @@ import org.jboss.dna.common.util.ArgCheck;
  * Therefore, this library does guarantee that the {@link #getInstances() instances} at the time they are
  * {@link #getInstances() obtained} are always reflected by the configurations.
  * </p>
+ * 
  * @author Randall Hauch
  * @param <ComponentType> the type of component being managed, which may be a subclass of {@link Component}
  * @param <ConfigType> the configuration type describing the components
@@ -64,7 +65,7 @@ public class ComponentLibrary<ComponentType, ConfigType extends ComponentConfig>
 
     /**
      * The list of component instances. The index of each component instance matches the corresponding configuration instance in
-     * {@link #configurations}
+     * {@link #configs}
      */
     @GuardedBy( value = "lock" )
     private final List<ComponentType> instances = new CopyOnWriteArrayList<ComponentType>();
@@ -83,6 +84,7 @@ public class ComponentLibrary<ComponentType, ConfigType extends ComponentConfig>
      * {@link #DEFAULT default} class loader factory, which uses the
      * {@link Thread#getContextClassLoader() current thread's context class loader} if not null or the class loader that loaded
      * the library class.
+     * 
      * @return the class loader factory; never null
      * @see #setClassLoaderFactory(ClassLoaderFactory)
      */
@@ -95,8 +97,9 @@ public class ComponentLibrary<ComponentType, ConfigType extends ComponentConfig>
      * {@link #DEFAULT default} class loader factory, which uses the
      * {@link Thread#getContextClassLoader() current thread's context class loader} if not null or the class loader that loaded
      * the library class.
+     * 
      * @param classLoaderFactory the class loader factory reference, or null if the {@link #DEFAULT default class loader factory}
-     * should be used
+     *        should be used
      * @see #getClassLoaderFactory()
      */
     public void setClassLoaderFactory( ClassLoaderFactory classLoaderFactory ) {
@@ -106,9 +109,10 @@ public class ComponentLibrary<ComponentType, ConfigType extends ComponentConfig>
     /**
      * Add the configuration for a sequencer, or update any existing one that represents the
      * {@link ConfigType#equals(Object) same configuration}
+     * 
      * @param config the new configuration
      * @return true if the component was added, or false if there already was an existing and
-     * {@link ComponentConfig#hasChanged(ComponentConfig) unchanged} component configuration
+     *         {@link ComponentConfig#hasChanged(ComponentConfig) unchanged} component configuration
      * @throws IllegalArgumentException if <code>config</code> is null
      * @see #update(ComponentConfig)
      * @see #remove(ComponentConfig)
@@ -140,9 +144,10 @@ public class ComponentLibrary<ComponentType, ConfigType extends ComponentConfig>
 
     /**
      * Update the configuration for a sequencer, or add it if there is no {@link ConfigType#equals(Object) matching configuration}.
+     * 
      * @param config the updated (or new) configuration
      * @return true if the component was updated, or false if there already was an existing and
-     * {@link ComponentConfig#hasChanged(ComponentConfig) unchanged} component configuration
+     *         {@link ComponentConfig#hasChanged(ComponentConfig) unchanged} component configuration
      * @throws IllegalArgumentException if <code>config</code> is null
      * @see #add(ComponentConfig)
      * @see #remove(ComponentConfig)
@@ -153,6 +158,7 @@ public class ComponentLibrary<ComponentType, ConfigType extends ComponentConfig>
 
     /**
      * Remove the configuration for a sequencer.
+     * 
      * @param config the configuration to be removed
      * @return true if the component was remove, or false if there was no existing configuration
      * @throws IllegalArgumentException if <code>config</code> is null
@@ -179,6 +185,7 @@ public class ComponentLibrary<ComponentType, ConfigType extends ComponentConfig>
 
     /**
      * Return the list of sequencers.
+     * 
      * @return the unmodifiable list of sequencers; never null
      */
     public List<ComponentType> getInstances() {
@@ -188,6 +195,7 @@ public class ComponentLibrary<ComponentType, ConfigType extends ComponentConfig>
     /**
      * Instantiate, configure and return a new sequencer described by the supplied configuration. This method does not manage the
      * returned instance.
+     * 
      * @param config the configuration describing the sequencer
      * @return the new sequencer, or null if the sequencer could not be successfully configured
      * @throws IllegalArgumentException if the sequencer could not be configured properly
@@ -218,8 +226,9 @@ public class ComponentLibrary<ComponentType, ConfigType extends ComponentConfig>
     /**
      * Method that instantiates the supplied class. This method can be overridden by subclasses that may need to wrap or adapt the
      * instance to be a ComponentType.
+     * 
      * @param componentClass
-     * @return
+     * @return the new ComponentType instance
      * @throws InstantiationException
      * @throws IllegalAccessException
      */
@@ -229,7 +238,8 @@ public class ComponentLibrary<ComponentType, ConfigType extends ComponentConfig>
     }
 
     /**
-     * Find the index for the matching {@link #configurations configuration} and {@link #sequencerInstances sequencer}.
+     * Find the index for the matching {@link #configs configuration} and {@link #instances sequencer}.
+     * 
      * @param config the configuration; may not be null
      * @return the index, or -1 if not found
      */

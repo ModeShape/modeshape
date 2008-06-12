@@ -63,10 +63,8 @@ public class FederatedRepositorySource implements RepositorySource {
     private String username;
     private String credentials;
 
-    /**
-     * 
-     */
-    protected FederatedRepositorySource( FederationService federationService, String repositoryName ) {
+    protected FederatedRepositorySource( FederationService federationService,
+                                         String repositoryName ) {
         ArgCheck.isNotNull(federationService, "federationService");
         ArgCheck.isNotNull(repositoryName, "repositoryName");
         this.federationService = federationService;
@@ -102,13 +100,16 @@ public class FederatedRepositorySource implements RepositorySource {
         // Find the repository ...
         FederatedRepository repository = federationService.getRepository(this.repositoryName);
         if (repository == null) {
-            throw new RepositorySourceException(RepositoryI18n.unableToCreateConnectionToFederatedRepository.text(this.repositoryName));
+            throw new RepositorySourceException(
+                                                RepositoryI18n.unableToCreateConnectionToFederatedRepository.text(this.repositoryName));
         }
         // Authenticate the user ...
         String username = this.username;
         Object credentials = this.credentials;
         if (!repository.authenticate(username, credentials)) {
-            throw new RepositorySourceException(RepositoryI18n.unableToAuthenticateConnectionToFederatedRepository.text(this.repositoryName, username));
+            throw new RepositorySourceException(
+                                                RepositoryI18n.unableToAuthenticateConnectionToFederatedRepository.text(this.repositoryName,
+                                                                                                                        username));
         }
         // Return the new connection ...
         return new FederatedRepositoryConnection(repository, this);
@@ -188,7 +189,10 @@ public class FederatedRepositorySource implements RepositorySource {
         /**
          * {@inheritDoc}
          */
-        public Object getObjectInstance( Object obj, javax.naming.Name name, Context nameCtx, Hashtable<?, ?> environment ) throws Exception {
+        public Object getObjectInstance( Object obj,
+                                         javax.naming.Name name,
+                                         Context nameCtx,
+                                         Hashtable<?, ?> environment ) throws Exception {
             if (obj instanceof Reference) {
                 Map<String, String> values = new HashMap<String, String>();
                 Reference ref = (Reference)obj;

@@ -45,6 +45,7 @@ import org.jboss.dna.common.SystemFailureException;
  * dependency rules</a>. Each {@link MavenRepository} instance owns an instance of this class, which provides a cached set of
  * class loaders and a facility for {@link MavenRepository#getClassLoader(ClassLoader, MavenId...) getting class loaders} based
  * upon a set of one or more versioned libraries.
+ * 
  * @author Randall Hauch
  */
 /* package */class MavenClassLoaders {
@@ -66,8 +67,8 @@ import org.jboss.dna.common.SystemFailureException;
     /**
      * Create with a specified repository and optionally the parent class loader that should be consulted first and a default
      * class loader that should be consulted after all others.
+     * 
      * @param repository the Maven repository; may not be null
-     * @param parentClassLoader the parent class loader that should be accessed before any class loaders for any Maven project.
      */
     /* package */MavenClassLoaders( MavenRepository repository ) {
         this.repository = repository;
@@ -97,7 +98,8 @@ import org.jboss.dna.common.SystemFailureException;
         return result;
     }
 
-    public ProjectClassLoader getClassLoader( ClassLoader parent, MavenId... mavenIds ) {
+    public ProjectClassLoader getClassLoader( ClassLoader parent,
+                                              MavenId... mavenIds ) {
         if (parent == null) parent = Thread.currentThread().getContextClassLoader();
         if (parent == null) parent = this.getClass().getClassLoader();
         ProjectClassLoader result = new ProjectClassLoader(parent);
@@ -129,6 +131,7 @@ import org.jboss.dna.common.SystemFailureException;
     /**
      * A project class loader is responsible for loading all classes and resources for the project, including delegating to
      * dependent projects if required and adhearing to all stated exclusions.
+     * 
      * @author Randall Hauch
      */
     protected class ProjectClassLoader extends ClassLoader {
@@ -141,13 +144,13 @@ import org.jboss.dna.common.SystemFailureException;
 
         /**
          * Create a class loader for the given project.
+         * 
          * @param mavenId
          * @param jarFileClassLoader
-         * @param dependencies
-         * @param parent
          * @see MavenClassLoaders#getClassLoader(ClassLoader, MavenId...)
          */
-        protected ProjectClassLoader( MavenId mavenId, URLClassLoader jarFileClassLoader ) {
+        protected ProjectClassLoader( MavenId mavenId,
+                                      URLClassLoader jarFileClassLoader ) {
             super(null);
             this.mavenId = mavenId;
             this.jarFileClassLoader = jarFileClassLoader;
@@ -155,7 +158,7 @@ import org.jboss.dna.common.SystemFailureException;
 
         /**
          * Create a class loader that doesn't reference a top level project, but instead references multiple projects.
-         * @param dependencies
+         * 
          * @param parent
          * @see MavenClassLoaders#getClassLoader(ClassLoader, MavenId...)
          */
@@ -188,9 +191,10 @@ import org.jboss.dna.common.SystemFailureException;
         /**
          * Finds the resource with the given name. This implementation first consults the class loader for this project's JAR
          * file, and failing that, consults all of the class loaders for the dependent projects.
+         * 
          * @param name The resource name
          * @return A <tt>URL</tt> object for reading the resource, or <tt>null</tt> if the resource could not be found or the
-         * invoker doesn't have adequate privileges to get the resource.
+         *         invoker doesn't have adequate privileges to get the resource.
          */
         @Override
         protected URL findResource( String name ) {
@@ -203,17 +207,19 @@ import org.jboss.dna.common.SystemFailureException;
          * this method should only be directly called by test methods; subclasses should call {@link #findResource(String)}.</i>
          * <p>
          * This method first looks in this project's JAR. If the resource is not found, then this method
-         * {@link #findResource(String, Set, List) searches the dependencies}. This method's signature allows for a list to be
-         * supplied for reporting the list of projects that make up the searched classpath (excluding those that were never
+         * {@link #findResource(String, Set, Set, List) searches the dependencies}. This method's signature allows for a list to
+         * be supplied for reporting the list of projects that make up the searched classpath (excluding those that were never
          * searched because the resource was found).
          * </p>
+         * 
          * @param name The resource name
          * @param debugSearchPath the list into which the IDs of the searched projects will be placed; may be null if this
-         * information is not needed
+         *        information is not needed
          * @return A <tt>URL</tt> object for reading the resource, or <tt>null</tt> if the resource could not be found or the
-         * invoker doesn't have adequate privileges to get the resource.
+         *         invoker doesn't have adequate privileges to get the resource.
          */
-        protected URL findResource( String name, List<MavenId> debugSearchPath ) {
+        protected URL findResource( String name,
+                                    List<MavenId> debugSearchPath ) {
             Set<MavenId> processed = new HashSet<MavenId>();
             // This method is called only by the top-level class loader handling a request.
             // Therefore, first look in this project's JAR file ...
@@ -231,7 +237,10 @@ import org.jboss.dna.common.SystemFailureException;
             return result;
         }
 
-        protected URL findResource( String name, Set<MavenId> processed, Set<MavenId> exclusions, List<MavenId> debugSearchPath ) {
+        protected URL findResource( String name,
+                                    Set<MavenId> processed,
+                                    Set<MavenId> exclusions,
+                                    List<MavenId> debugSearchPath ) {
             // If this project is to be excluded, then simply return ...
             if (exclusions != null && exclusions.contains(this.mavenId)) return null;
 

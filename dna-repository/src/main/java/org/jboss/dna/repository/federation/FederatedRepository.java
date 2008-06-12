@@ -79,7 +79,8 @@ public class FederatedRepository {
         /**
          * {@inheritDoc}
          */
-        public boolean awaitTermination( long timeout, TimeUnit unit ) throws InterruptedException {
+        public boolean awaitTermination( long timeout,
+                                         TimeUnit unit ) throws InterruptedException {
             return FederatedRepository.this.awaitTermination(timeout, unit);
         }
 
@@ -108,7 +109,8 @@ public class FederatedRepository {
      * @param name the name of the repository
      * @throws IllegalArgumentException if the service is null or the name is null or blank
      */
-    public FederatedRepository( FederationService service, String name ) {
+    public FederatedRepository( FederationService service,
+                                String name ) {
         ArgCheck.isNotNull(service, "service");
         ArgCheck.isNotEmpty(name, "name");
         this.name = name;
@@ -165,8 +167,15 @@ public class FederatedRepository {
 
     /**
      * Utility method called by the administrator.
+     * 
+     * @param timeout
+     * @param unit
+     * @return true if all pools were terminated in the supplied time (or were already terminated), or false if the timeout
+     *         occurred before all the connections were closed
+     * @throws InterruptedException
      */
-    protected boolean awaitTermination( long timeout, TimeUnit unit ) throws InterruptedException {
+    protected boolean awaitTermination( long timeout,
+                                        TimeUnit unit ) throws InterruptedException {
         // Check whether all source pools are shut down. This is done inside the sources write lock.
         try {
             this.sourcesWriteLock.lock();
@@ -245,7 +254,7 @@ public class FederatedRepository {
      * 
      * @param source the source to add
      * @return true if the source is added, or false if the reference is null or if there is already an existing source with the
-     * supplied name.
+     *         supplied name.
      */
     public boolean addSource( FederatedSource source ) {
         if (source == null) return false;
@@ -270,10 +279,11 @@ public class FederatedRepository {
      * @param source the source to add
      * @param index the index at which the source should be added
      * @return true if the source is added, or false if the reference is null or if there is already an existing source with the
-     * supplied name.
+     *         supplied name.
      * @throws IndexOutOfBoundsException if the index is out of bounds
      */
-    public boolean addSource( FederatedSource source, int index ) {
+    public boolean addSource( FederatedSource source,
+                              int index ) {
         if (source == null) return false;
         try {
             this.sourcesWriteLock.lock();
@@ -297,12 +307,14 @@ public class FederatedRepository {
      * 
      * @param source the source to be removed
      * @param timeToAwait the amount of time to wait while all of the source's connections are closed, or non-positive if the call
-     * should not wait at all
+     *        should not wait at all
      * @param unit the time unit to be used for <code>timeToAwait</code>
      * @return true if the source was removed, or false if the source was not a source for this repository.
      * @throws InterruptedException if the thread is interrupted while awaiting closing of the connections
      */
-    public boolean removeSource( FederatedSource source, long timeToAwait, TimeUnit unit ) throws InterruptedException {
+    public boolean removeSource( FederatedSource source,
+                                 long timeToAwait,
+                                 TimeUnit unit ) throws InterruptedException {
         // Use the name; don't use the object equality ...
         return removeSource(source.getName(), timeToAwait, unit) != null;
     }
@@ -317,13 +329,15 @@ public class FederatedRepository {
      * 
      * @param name the name of the source to be removed
      * @param timeToAwait the amount of time to wait while all of the source's connections are closed, or non-positive if the call
-     * should not wait at all
+     *        should not wait at all
      * @param unit the time unit to be used for <code>timeToAwait</code>
      * @return the source with the supplied name that was removed, or null if no existing source matching the supplied name could
-     * be found
+     *         be found
      * @throws InterruptedException if the thread is interrupted while awaiting closing of the connections
      */
-    public FederatedSource removeSource( String name, long timeToAwait, TimeUnit unit ) throws InterruptedException {
+    public FederatedSource removeSource( String name,
+                                         long timeToAwait,
+                                         TimeUnit unit ) throws InterruptedException {
         try {
             this.sourcesWriteLock.lock();
             for (FederatedSource existingSource : this.sources) {
@@ -349,7 +363,7 @@ public class FederatedRepository {
      * 
      * @param listener the new listener
      * @return true if the listener was added, or false if the listener was not added (if reference is null, or if non-null
-     * listener is already an existing listener)
+     *         listener is already an existing listener)
      */
     public boolean addListener( RepositorySourceListener listener ) {
         if (listener == null) return false;
@@ -386,7 +400,8 @@ public class FederatedRepository {
      * @param credentials the credentials
      * @return true if authentication succeeded, or false otherwise
      */
-    public boolean authenticate( String username, Object credentials ) {
+    public boolean authenticate( String username,
+                                 Object credentials ) {
         return true;
     }
 

@@ -86,7 +86,9 @@ public class SequencingService implements AdministeredService, NodeChangeListene
          * @param nodeChange the set of node changes; never null
          * @return the list of sequencers that should be used; may not be null
          */
-        List<Sequencer> selectSequencers( List<Sequencer> sequencers, Node node, NodeChange nodeChange );
+        List<Sequencer> selectSequencers( List<Sequencer> sequencers,
+                                          Node node,
+                                          NodeChange nodeChange );
     }
 
     /**
@@ -97,7 +99,9 @@ public class SequencingService implements AdministeredService, NodeChangeListene
      */
     protected static class DefaultSelector implements Selector {
 
-        public List<Sequencer> selectSequencers( List<Sequencer> sequencers, Node node, NodeChange nodeChange ) {
+        public List<Sequencer> selectSequencers( List<Sequencer> sequencers,
+                                                 Node node,
+                                                 NodeChange nodeChange ) {
             return sequencers;
         }
     }
@@ -149,7 +153,8 @@ public class SequencingService implements AdministeredService, NodeChangeListene
      * {@link Thread#getContextClassLoader() current thread's context class loader} (if not null) or component library's class
      * loader.
      */
-    protected static final ClassLoaderFactory DEFAULT_CLASSLOADER_FACTORY = new StandardClassLoaderFactory(SequencingService.class.getClassLoader());
+    protected static final ClassLoaderFactory DEFAULT_CLASSLOADER_FACTORY = new StandardClassLoaderFactory(
+                                                                                                           SequencingService.class.getClassLoader());
 
     /**
      * The administrative component for this service.
@@ -191,7 +196,8 @@ public class SequencingService implements AdministeredService, NodeChangeListene
         /**
          * {@inheritDoc}
          */
-        public boolean awaitTermination( long timeout, TimeUnit unit ) throws InterruptedException {
+        public boolean awaitTermination( long timeout,
+                                         TimeUnit unit ) throws InterruptedException {
             return doAwaitTermination(timeout, unit);
         }
 
@@ -270,7 +276,7 @@ public class SequencingService implements AdministeredService, NodeChangeListene
      * 
      * @param config the new configuration
      * @return true if the sequencer was added, or false if there already was an existing and
-     * {@link SequencerConfig#hasChanged(SequencerConfig) unchanged} sequencer configuration
+     *         {@link SequencerConfig#hasChanged(SequencerConfig) unchanged} sequencer configuration
      * @throws IllegalArgumentException if <code>config</code> is null
      * @see #updateSequencer(SequencerConfig)
      * @see #removeSequencer(SequencerConfig)
@@ -285,7 +291,7 @@ public class SequencingService implements AdministeredService, NodeChangeListene
      * 
      * @param config the updated (or new) configuration
      * @return true if the sequencer was updated, or false if there already was an existing and
-     * {@link SequencerConfig#hasChanged(SequencerConfig) unchanged} sequencer configuration
+     *         {@link SequencerConfig#hasChanged(SequencerConfig) unchanged} sequencer configuration
      * @throws IllegalArgumentException if <code>config</code> is null
      * @see #addSequencer(SequencerConfig)
      * @see #removeSequencer(SequencerConfig)
@@ -380,12 +386,12 @@ public class SequencingService implements AdministeredService, NodeChangeListene
 
     /**
      * Override this method to creates a different kind of default executor service. This method is called when the system is
-     * {@link #start() started} without an executor service being {@link #setExecutorService(ExecutorService) set}.
+     * {@link #startService() started} without an executor service being {@link #setExecutorService(ExecutorService) set}.
      * <p>
      * This method creates a {@link Executors#newSingleThreadExecutor() single-threaded executor}.
      * </p>
      * 
-     * @return
+     * @return the executor service
      */
     protected ExecutorService createDefaultExecutorService() {
         return Executors.newSingleThreadExecutor();
@@ -417,7 +423,8 @@ public class SequencingService implements AdministeredService, NodeChangeListene
         return true;
     }
 
-    protected boolean doAwaitTermination( long timeout, TimeUnit unit ) throws InterruptedException {
+    protected boolean doAwaitTermination( long timeout,
+                                          TimeUnit unit ) throws InterruptedException {
         if (this.executorService == null || this.executorService.isTerminated()) return true;
         return this.executorService.awaitTermination(timeout, unit);
     }
@@ -483,9 +490,9 @@ public class SequencingService implements AdministeredService, NodeChangeListene
 
     /**
      * Do the work of processing by sequencing the node. This method is called by the {@link #executorService executor service}
-     * when it performs it's work on the enqueued {@link ChangedNode ChangedNode runnable objects}.
+     * when it performs it's work on the enqueued {@link NodeChange NodeChange runnable objects}.
      * 
-     * @param node the node to be processed.
+     * @param changedNode the node to be processed.
      */
     protected void processChangedNode( NodeChange changedNode ) {
         try {
@@ -506,7 +513,8 @@ public class SequencingService implements AdministeredService, NodeChangeListene
                             SequencerPathExpression.Matcher matcher = pathExpression.matcher(path);
                             if (matcher.matches()) {
                                 // String selectedPath = matcher.getSelectedPath();
-                                RepositoryNodePath outputPath = RepositoryNodePath.parse(matcher.getOutputPath(), repositoryWorkspaceName);
+                                RepositoryNodePath outputPath = RepositoryNodePath.parse(matcher.getOutputPath(),
+                                                                                         repositoryWorkspaceName);
                                 SequencerCall call = new SequencerCall(sequencer, propertyName);
                                 // Record the output path ...
                                 Set<RepositoryNodePath> outputPaths = sequencerCalls.get(call);
@@ -562,9 +570,17 @@ public class SequencingService implements AdministeredService, NodeChangeListene
                             final ProgressMonitor sequenceMonitor = progressMonitor.createSubtask(1);
                             try {
                                 sequenceMonitor.beginTask(100, RepositoryI18n.sequencerSubtask, sequencerName);
-                                sequencer.execute(node, propertyName, changedNode, outputPaths, executionContext, sequenceMonitor.createSubtask(80)); // 80%
+                                sequencer.execute(node,
+                                                  propertyName,
+                                                  changedNode,
+                                                  outputPaths,
+                                                  executionContext,
+                                                  sequenceMonitor.createSubtask(80)); // 80%
                             } catch (RepositoryException e) {
-                                this.logger.error(e, RepositoryI18n.errorInRepositoryWhileSequencingNode, sequencerName, changedNode);
+                                this.logger.error(e,
+                                                  RepositoryI18n.errorInRepositoryWhileSequencingNode,
+                                                  sequencerName,
+                                                  changedNode);
                             } catch (SequencerException e) {
                                 this.logger.error(e, RepositoryI18n.errorWhileSequencingNode, sequencerName, changedNode);
                             } finally {
@@ -721,7 +737,8 @@ public class SequencingService implements AdministeredService, NodeChangeListene
         private final String sequencedPropertyName;
         private final int hc;
 
-        protected SequencerCall( Sequencer sequencer, String sequencedPropertyName ) {
+        protected SequencerCall( Sequencer sequencer,
+                                 String sequencedPropertyName ) {
             this.sequencer = sequencer;
             this.sequencerName = sequencer.getConfiguration().getName();
             this.sequencedPropertyName = sequencedPropertyName;

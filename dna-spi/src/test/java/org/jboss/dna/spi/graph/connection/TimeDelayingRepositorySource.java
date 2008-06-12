@@ -154,7 +154,7 @@ public class TimeDelayingRepositorySource implements RepositorySource {
      * 
      * @param connectionName
      * @param xaResource
-     * @return
+     * @return a new Connection
      * @throws RepositorySourceException
      */
     protected Connection newConnection( String connectionName,

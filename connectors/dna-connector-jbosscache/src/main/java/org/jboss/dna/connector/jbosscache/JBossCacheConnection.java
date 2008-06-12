@@ -72,11 +72,8 @@ public class JBossCacheConnection implements RepositoryConnection {
     private final Cache<Name, Object> cache;
     private RepositorySourceListener listener = NO_OP_LISTENER;
 
-    /**
-     * 
-     */
-    /* package */JBossCacheConnection( JBossCacheSource source,
-                                        Cache<Name, Object> cache ) {
+    JBossCacheConnection( JBossCacheSource source,
+                          Cache<Name, Object> cache ) {
         assert source != null;
         assert cache != null;
         this.source = source;

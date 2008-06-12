@@ -332,15 +332,14 @@ public final class ArgCheck {
     /**
      * Check that the object is an instance of the specified Class
      * 
-     * @param <T> the class type
      * @param argument Value
      * @param expectedClass Class
      * @param name The name of the argument
      * @throws IllegalArgumentException If value is null
      */
-    public static <T> void isInstanceOf( Object argument,
-                                         Class<T> expectedClass,
-                                         String name ) {
+    public static void isInstanceOf( Object argument,
+                                     Class<?> expectedClass,
+                                     String name ) {
         isNotNull(argument, name);
         if (!expectedClass.isInstance(argument)) {
             throw new IllegalArgumentException(CommonI18n.argumentMustBeInstanceOf.text(name,
@@ -359,13 +358,12 @@ public final class ArgCheck {
      * @return value cast to the specified Class
      * @throws IllegalArgumentException If value is not an instance of theClass.
      */
-    @SuppressWarnings( "unchecked" )
     // due to cast in return
     public static <C> C getInstanceOf( Object argument,
                                        Class<C> expectedClass,
                                        String name ) {
         isInstanceOf(argument, expectedClass, name);
-        return (C)argument;
+        return expectedClass.cast(argument);
     }
 
     /**

@@ -54,6 +54,7 @@ import org.jboss.dna.repository.util.JcrTools;
  * branch are discovered, they are processed asynchronously. This ensure that the processing of the repository contents does not
  * block the other listeners of the {@link ObservationService}.
  * </p>
+ * 
  * @author Randall Hauch
  */
 @ThreadSafe
@@ -73,14 +74,17 @@ public class RuleSetRepositoryMonitor implements NodeChangeListener {
     /**
      * Create an instance that can listen to the {@link RuleSet} definitions stored in a JCR repository and ensure that the
      * {@link RuleSet} instances of a {@link RuleService} reflect the definitions in the repository.
+     * 
      * @param ruleService the rule service that should be kept in sync with the JCR repository.
      * @param jcrAbsolutePath the absolute path to the branch where the rule sets are defined; if null or empty, the
-     * {@link #DEFAULT_JCR_ABSOLUTE_PATH default path} is used
+     *        {@link #DEFAULT_JCR_ABSOLUTE_PATH default path} is used
      * @param executionContext the context in which this monitor is to execute
      * @throws IllegalArgumentException if the rule service or execution context is null, or if the supplied
-     * <code>jcrAbsolutePath</code> is invalid
+     *         <code>jcrAbsolutePath</code> is invalid
      */
-    public RuleSetRepositoryMonitor( RuleService ruleService, String jcrAbsolutePath, ExecutionContext executionContext ) {
+    public RuleSetRepositoryMonitor( RuleService ruleService,
+                                     String jcrAbsolutePath,
+                                     ExecutionContext executionContext ) {
         ArgCheck.isNotNull(ruleService, "rule service");
         ArgCheck.isNotNull(executionContext, "execution context");
         this.ruleService = ruleService;
@@ -95,7 +99,10 @@ public class RuleSetRepositoryMonitor implements NodeChangeListener {
             if (!leadingPath.endsWith(JCR_PATH_DELIM)) leadingPath = leadingPath + JCR_PATH_DELIM;
             this.ruleSetNamePattern = Pattern.compile(leadingPath + "([^/]+)/?.*");
         } catch (PatternSyntaxException e) {
-            throw new IllegalArgumentException(RepositoryI18n.unableToBuildRuleSetRegularExpressionPattern.text(e.getPattern(), jcrAbsolutePath, e.getDescription()));
+            throw new IllegalArgumentException(
+                                               RepositoryI18n.unableToBuildRuleSetRegularExpressionPattern.text(e.getPattern(),
+                                                                                                                jcrAbsolutePath,
+                                                                                                                e.getDescription()));
         }
     }
 
@@ -161,6 +168,7 @@ public class RuleSetRepositoryMonitor implements NodeChangeListener {
 
     /**
      * Process the rule sets given by the supplied names, keyed by the repository workspace name.
+     * 
      * @param ruleSetNamesByWorkspaceName the set of rule set names keyed by the repository workspace name
      */
     protected void processRuleSets( Map<String, Set<String>> ruleSetNamesByWorkspaceName ) {
@@ -221,11 +229,15 @@ public class RuleSetRepositoryMonitor implements NodeChangeListener {
      * property. Rule set properties are optional.</li>
      * </ul>
      * </p>
+     * 
      * @param name the name of the rule set; never null
      * @param ruleSetNode the node representing the rule set; null if the rule set doesn't exist
+     * @param tools
      * @return the rule set for the information stored in the repository, or null if the rule set does not exist or has errors
      */
-    protected RuleSet buildRuleSet( String name, Node ruleSetNode, JcrTools tools ) {
+    protected RuleSet buildRuleSet( String name,
+                                    Node ruleSetNode,
+                                    JcrTools tools ) {
         if (ruleSetNode == null) return null;
 
         SimpleProblems simpleProblems = new SimpleProblems();

@@ -15,8 +15,8 @@ package org.jboss.dna.sequencer.images;
 
 import java.io.DataInput;
 import java.io.FileInputStream;
-import java.io.InputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
 import java.util.Vector;
 
@@ -35,8 +35,9 @@ import java.util.Vector;
  *     System.err.println(&quot;Not a supported image file format.&quot;);
  *     return;
  * }
- * System.out.println(ii.getFormatName() + &quot;, &quot; + ii.getMimeType() + &quot;, &quot; + ii.getWidth() + &quot; x &quot; + ii.getHeight() + &quot; pixels, &quot; + ii.getBitsPerPixel() + &quot; bits per pixel, &quot; + ii.getNumberOfImages()
- *                    + &quot; image(s), &quot; + ii.getNumberOfComments() + &quot; comment(s).&quot;);
+ * System.out.println(ii.getFormatName() + &quot;, &quot; + ii.getMimeType() + &quot;, &quot; + ii.getWidth() + &quot; x &quot; + ii.getHeight() + &quot; pixels, &quot;
+ *                    + ii.getBitsPerPixel() + &quot; bits per pixel, &quot; + ii.getNumberOfImages() + &quot; image(s), &quot;
+ *                    + ii.getNumberOfComments() + &quot; comment(s).&quot;);
  * // there are other properties, check out the API documentation
  * </pre>
  * 
@@ -125,6 +126,7 @@ import java.util.Vector;
  * unnecessary casting. Also removed the unnecessary else statements where the previous block ended in a return. Also renamed to
  * <code>ImageMetadata</code>.
  * </ul>
+ * 
  * @author Marco Schmidt
  */
 public class ImageMetadata {
@@ -200,8 +202,8 @@ public class ImageMetadata {
      * The names of the MIME types for all supported file formats. The FORMAT_xyz int constants can be used as index values for
      * this array.
      */
-    private static final String[] MIME_TYPE_STRINGS =
-        {"image/jpeg", "image/gif", "image/png", "image/bmp", "image/pcx", "image/iff", "image/ras", "image/x-portable-bitmap", "image/x-portable-graymap", "image/x-portable-pixmap", "image/psd"};
+    private static final String[] MIME_TYPE_STRINGS = {"image/jpeg", "image/gif", "image/png", "image/bmp", "image/pcx",
+        "image/iff", "image/ras", "image/x-portable-bitmap", "image/x-portable-graymap", "image/x-portable-pixmap", "image/psd"};
 
     private int width;
     private int height;
@@ -229,6 +231,7 @@ public class ImageMetadata {
      * Call this method after you have provided an input stream or file using {@link #setInput(InputStream)} or
      * {@link #setInput(DataInput)}. If true is returned, the file format was known and information on the file's content can be
      * retrieved using the various getXyz methods.
+     * 
      * @return if information could be retrieved from input
      */
     public boolean check() {
@@ -280,7 +283,8 @@ public class ImageMetadata {
             return false;
         }
         bitsPerPixel = getShortLittleEndian(a, 26);
-        if (bitsPerPixel != 1 && bitsPerPixel != 4 && bitsPerPixel != 8 && bitsPerPixel != 16 && bitsPerPixel != 24 && bitsPerPixel != 32) {
+        if (bitsPerPixel != 1 && bitsPerPixel != 4 && bitsPerPixel != 8 && bitsPerPixel != 16 && bitsPerPixel != 24
+            && bitsPerPixel != 32) {
             return false;
         }
         int x = (int)(getIntLittleEndian(a, 36) * 0.0254);
@@ -663,8 +667,10 @@ public class ImageMetadata {
     }
 
     /**
-     * Run over String list, return false iff at least one of the arguments equals <code>-c</code>.
+     * Run over String list, return false if and only if at least one of the arguments equals <code>-c</code>.
+     * 
      * @param args string list to check
+     * @return <code>true</code> none of the supplied parameters is <code>-c</code>
      */
     private static boolean determineVerbosity( String[] args ) {
         if (args != null && args.length > 0) {
@@ -677,7 +683,11 @@ public class ImageMetadata {
         return true;
     }
 
-    private static boolean equals( byte[] a1, int offs1, byte[] a2, int offs2, int num ) {
+    private static boolean equals( byte[] a1,
+                                   int offs1,
+                                   byte[] a2,
+                                   int offs2,
+                                   int num ) {
         while (num-- > 0) {
             if (a1[offs1++] != a2[offs2++]) {
                 return false;
@@ -689,6 +699,7 @@ public class ImageMetadata {
     /**
      * If {@link #check()} was successful, returns the image's number of bits per pixel. Does not include transparency information
      * like the alpha channel.
+     * 
      * @return number of bits per image pixel
      */
     public int getBitsPerPixel() {
@@ -697,6 +708,7 @@ public class ImageMetadata {
 
     /**
      * Returns the index'th comment retrieved from the file.
+     * 
      * @param index int index of comment to return
      * @return the comment at the supplied index
      * @throws IllegalArgumentException if index is smaller than 0 or larger than or equal to the number of comments retrieved
@@ -712,6 +724,7 @@ public class ImageMetadata {
     /**
      * If {@link #check()} was successful, returns the image format as one of the FORMAT_xyz constants from this class. Use
      * {@link #getFormatName()} to get a textual description of the file format.
+     * 
      * @return file format as a FORMAT_xyz constant
      */
     public int getFormat() {
@@ -720,6 +733,7 @@ public class ImageMetadata {
 
     /**
      * If {@link #check()} was successful, returns the image format's name. Use {@link #getFormat()} to get a unique number.
+     * 
      * @return file format name
      */
     public String getFormatName() {
@@ -731,22 +745,26 @@ public class ImageMetadata {
 
     /**
      * If {@link #check()} was successful, returns one the image's vertical resolution in pixels.
+     * 
      * @return image height in pixels
      */
     public int getHeight() {
         return height;
     }
 
-    private static int getIntBigEndian( byte[] a, int offs ) {
+    private static int getIntBigEndian( byte[] a,
+                                        int offs ) {
         return (a[offs] & 0xff) << 24 | (a[offs + 1] & 0xff) << 16 | (a[offs + 2] & 0xff) << 8 | a[offs + 3] & 0xff;
     }
 
-    private static int getIntLittleEndian( byte[] a, int offs ) {
+    private static int getIntLittleEndian( byte[] a,
+                                           int offs ) {
         return (a[offs + 3] & 0xff) << 24 | (a[offs + 2] & 0xff) << 16 | (a[offs + 1] & 0xff) << 8 | a[offs] & 0xff;
     }
 
     /**
      * If {@link #check()} was successful, returns a String with the MIME type of the format.
+     * 
      * @return MIME type, e.g. <code>image/jpeg</code>
      */
     public String getMimeType() {
@@ -763,6 +781,7 @@ public class ImageMetadata {
      * If {@link #check()} was successful and {@link #setCollectComments(boolean)} was called with <code>true</code> as
      * argument, returns the number of comments retrieved from the input image stream / file. Any number &gt;= 0 and smaller than
      * this number of comments is then a valid argument for the {@link #getComment(int)} method.
+     * 
      * @return number of comments retrieved from input image
      */
     public int getNumberOfComments() {
@@ -776,6 +795,7 @@ public class ImageMetadata {
      * Returns the number of images in the examined file. Assumes that <code>setDetermineImageNumber(true);</code> was called
      * before a successful call to {@link #check()}. This value can currently be only different from <code>1</code> for GIF
      * images.
+     * 
      * @return number of images in file
      */
     public int getNumberOfImages() {
@@ -785,6 +805,7 @@ public class ImageMetadata {
     /**
      * Returns the physical height of this image in dots per inch (dpi). Assumes that {@link #check()} was successful. Returns
      * <code>-1</code> on failure.
+     * 
      * @return physical height (in dpi)
      * @see #getPhysicalWidthDpi()
      * @see #getPhysicalHeightInch()
@@ -796,6 +817,7 @@ public class ImageMetadata {
     /**
      * If {@link #check()} was successful, returns the physical width of this image in dpi (dots per inch) or -1 if no value could
      * be found.
+     * 
      * @return physical height (in dpi)
      * @see #getPhysicalHeightDpi()
      * @see #getPhysicalWidthDpi()
@@ -813,6 +835,7 @@ public class ImageMetadata {
     /**
      * If {@link #check()} was successful, returns the physical width of this image in dpi (dots per inch) or -1 if no value could
      * be found.
+     * 
      * @return physical width (in dpi)
      * @see #getPhysicalHeightDpi()
      * @see #getPhysicalWidthInch()
@@ -825,6 +848,7 @@ public class ImageMetadata {
     /**
      * Returns the physical width of an image in inches, or <code>-1.0f</code> if width information is not available. Assumes
      * that {@link #check} has been called successfully.
+     * 
      * @return physical width in inches or <code>-1.0f</code> on failure
      * @see #getPhysicalWidthDpi
      * @see #getPhysicalHeightInch
@@ -838,16 +862,19 @@ public class ImageMetadata {
         return -1.0f;
     }
 
-    private static int getShortBigEndian( byte[] a, int offs ) {
+    private static int getShortBigEndian( byte[] a,
+                                          int offs ) {
         return (a[offs] & 0xff) << 8 | (a[offs + 1] & 0xff);
     }
 
-    private static int getShortLittleEndian( byte[] a, int offs ) {
+    private static int getShortLittleEndian( byte[] a,
+                                             int offs ) {
         return (a[offs] & 0xff) | (a[offs + 1] & 0xff) << 8;
     }
 
     /**
      * If {@link #check()} was successful, returns one the image's horizontal resolution in pixels.
+     * 
      * @return image width in pixels
      */
     public int getWidth() {
@@ -856,6 +883,7 @@ public class ImageMetadata {
 
     /**
      * Returns whether the image is stored in a progressive (also called: interlaced) way.
+     * 
      * @return true for progressive/interlaced, false otherwise
      */
     public boolean isProgressive() {
@@ -866,6 +894,7 @@ public class ImageMetadata {
      * To use this class as a command line application, give it either some file names as parameters (information on them will be
      * printed to standard output, one line per file) or call it with no parameters. It will then check data given to it via
      * standard input.
+     * 
      * @param args the program arguments which must be file names
      */
     public static void main( String[] args ) {
@@ -901,7 +930,9 @@ public class ImageMetadata {
         }
     }
 
-    private static void print( String sourceName, ImageMetadata ii, boolean verbose ) {
+    private static void print( String sourceName,
+                               ImageMetadata ii,
+                               boolean verbose ) {
         if (verbose) {
             printVerbose(sourceName, ii);
         } else {
@@ -909,27 +940,38 @@ public class ImageMetadata {
         }
     }
 
-    private static void printCompact( String sourceName, ImageMetadata imageMetadata ) {
+    private static void printCompact( String sourceName,
+                                      ImageMetadata imageMetadata ) {
         final String SEP = "\t";
-        System.out.println(sourceName + SEP + imageMetadata.getFormatName() + SEP + imageMetadata.getMimeType() + SEP + imageMetadata.getWidth() + SEP + imageMetadata.getHeight() + SEP
-                           + imageMetadata.getBitsPerPixel() + SEP + imageMetadata.getNumberOfImages() + SEP + imageMetadata.getPhysicalWidthDpi() + SEP + imageMetadata.getPhysicalHeightDpi() + SEP
-                           + imageMetadata.getPhysicalWidthInch() + SEP + imageMetadata.getPhysicalHeightInch() + SEP + imageMetadata.isProgressive());
+        System.out.println(sourceName + SEP + imageMetadata.getFormatName() + SEP + imageMetadata.getMimeType() + SEP
+                           + imageMetadata.getWidth() + SEP + imageMetadata.getHeight() + SEP + imageMetadata.getBitsPerPixel()
+                           + SEP + imageMetadata.getNumberOfImages() + SEP + imageMetadata.getPhysicalWidthDpi() + SEP
+                           + imageMetadata.getPhysicalHeightDpi() + SEP + imageMetadata.getPhysicalWidthInch() + SEP
+                           + imageMetadata.getPhysicalHeightInch() + SEP + imageMetadata.isProgressive());
     }
 
-    private static void printLine( int indentLevels, String text, float value, float minValidValue ) {
+    private static void printLine( int indentLevels,
+                                   String text,
+                                   float value,
+                                   float minValidValue ) {
         if (value < minValidValue) {
             return;
         }
         printLine(indentLevels, text, Float.toString(value));
     }
 
-    private static void printLine( int indentLevels, String text, int value, int minValidValue ) {
+    private static void printLine( int indentLevels,
+                                   String text,
+                                   int value,
+                                   int minValidValue ) {
         if (value >= minValidValue) {
             printLine(indentLevels, text, Integer.toString(value));
         }
     }
 
-    private static void printLine( int indentLevels, String text, String value ) {
+    private static void printLine( int indentLevels,
+                                   String text,
+                                   String value ) {
         if (value == null || value.length() == 0) {
             return;
         }
@@ -943,7 +985,8 @@ public class ImageMetadata {
         System.out.println(value);
     }
 
-    private static void printVerbose( String sourceName, ImageMetadata ii ) {
+    private static void printVerbose( String sourceName,
+                                      ImageMetadata ii ) {
         printLine(0, null, sourceName);
         printLine(1, "File format: ", ii.getFormatName());
         printLine(1, "MIME type: ", ii.getMimeType());
@@ -980,7 +1023,9 @@ public class ImageMetadata {
         return a.length;
     }
 
-    private int read( byte[] a, int offset, int num ) throws IOException {
+    private int read( byte[] a,
+                      int offset,
+                      int num ) throws IOException {
         if (in != null) {
             return in.read(a, offset, num);
         }
@@ -1004,7 +1049,10 @@ public class ImageMetadata {
         return sb.toString();
     }
 
-    private static void run( String sourceName, InputStream in, ImageMetadata imageMetadata, boolean verbose ) {
+    private static void run( String sourceName,
+                             InputStream in,
+                             ImageMetadata imageMetadata,
+                             boolean verbose ) {
         imageMetadata.setInput(in);
         imageMetadata.setDetermineImageNumber(true);
         imageMetadata.setCollectComments(verbose);
@@ -1016,6 +1064,7 @@ public class ImageMetadata {
     /**
      * Specify whether textual comments are supposed to be extracted from input. Default is <code>false</code>. If enabled,
      * comments will be added to an internal list.
+     * 
      * @param newValue if <code>true</code>, this class will read comments
      * @see #getNumberOfComments
      * @see #getComment
@@ -1030,6 +1079,7 @@ public class ImageMetadata {
      * time-consuming task. Not all file formats support more than one image. If this method is called with <code>true</code> as
      * argument, the actual number of images can be queried via {@link #getNumberOfImages()} after a successful call to
      * {@link #check()}.
+     * 
      * @param newValue will the number of images be determined?
      * @see #getNumberOfImages
      */
@@ -1040,6 +1090,7 @@ public class ImageMetadata {
     /**
      * Set the input stream to the argument stream (or file). Note that {@link java.io.RandomAccessFile} implements
      * {@link java.io.DataInput}.
+     * 
      * @param dataInput the input stream to read from
      */
     public void setInput( DataInput dataInput ) {
@@ -1049,6 +1100,7 @@ public class ImageMetadata {
 
     /**
      * Set the input stream to the argument stream (or file).
+     * 
      * @param inputStream the input stream to read from
      */
     public void setInput( InputStream inputStream ) {

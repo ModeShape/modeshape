@@ -22,8 +22,8 @@
 
 package org.jboss.dna.common.util;
 
-import static org.junit.Assert.*;
-import static org.hamcrest.core.Is.*;
+import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.assertThat;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;

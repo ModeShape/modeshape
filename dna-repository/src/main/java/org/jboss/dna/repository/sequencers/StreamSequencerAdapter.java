@@ -47,6 +47,7 @@ import org.jboss.dna.spi.sequencers.StreamSequencer;
 
 /**
  * An adapter class that wraps a {@link StreamSequencer} instance to be a {@link Sequencer}.
+ * 
  * @author Randall Hauch
  */
 public class StreamSequencerAdapter implements Sequencer {
@@ -75,8 +76,12 @@ public class StreamSequencerAdapter implements Sequencer {
     /**
      * {@inheritDoc}
      */
-    public void execute( Node input, String sequencedPropertyName, NodeChange changes, Set<RepositoryNodePath> outputPaths, ExecutionContext context, ProgressMonitor progressMonitor )
-        throws RepositoryException, SequencerException {
+    public void execute( Node input,
+                         String sequencedPropertyName,
+                         NodeChange changes,
+                         Set<RepositoryNodePath> outputPaths,
+                         ExecutionContext context,
+                         ProgressMonitor progressMonitor ) throws RepositoryException, SequencerException {
         // 'sequencedPropertyName' contains the name of the modified property on 'input' that resuled the call to this sequencer
         // 'changes' contains all of the changes to this node that occurred in the transaction.
         // 'outputPaths' contains the paths of the node(s) where this sequencer is to save it's data
@@ -125,7 +130,11 @@ public class StreamSequencerAdapter implements Sequencer {
 
             // Find each output node and save the image metadata there ...
             ProgressMonitor writingProgress = progressMonitor.createSubtask(40);
-            writingProgress.beginTask(outputPaths.size(), RepositoryI18n.writingOutputSequencedFromPropertyOnNodes, sequencedPropertyName, input.getPath(), outputPaths.size());
+            writingProgress.beginTask(outputPaths.size(),
+                                      RepositoryI18n.writingOutputSequencedFromPropertyOnNodes,
+                                      sequencedPropertyName,
+                                      input.getPath(),
+                                      outputPaths.size());
             for (RepositoryNodePath outputPath : outputPaths) {
                 Session session = null;
                 try {
@@ -158,13 +167,16 @@ public class StreamSequencerAdapter implements Sequencer {
     /**
      * Save the sequencing output to the supplied node. This method does not need to save the output, as that is done by the
      * caller of this method.
+     * 
      * @param outputNode the existing node onto (or below) which the output is to be written; never null
-     * @param outputProperties the (immutable) sequencing output; never null
+     * @param output the (immutable) sequencing output; never null
      * @param context the execution context for this sequencing operation; never null
      * @return true if the output was written to the node, or false if no information was written
      * @throws RepositoryException
      */
-    protected boolean saveOutput( Node outputNode, SequencerOutputMap output, ExecutionContext context ) throws RepositoryException {
+    protected boolean saveOutput( Node outputNode,
+                                  SequencerOutputMap output,
+                                  ExecutionContext context ) throws RepositoryException {
         if (output.isEmpty()) return false;
         final PathFactory pathFactory = context.getValueFactories().getPathFactory();
         final NamespaceRegistry namespaceRegistry = context.getNamespaceRegistry();
@@ -195,7 +207,8 @@ public class StreamSequencerAdapter implements Sequencer {
                     }
                     // We only have the primary type for the final one ...
                     if (i == (max - 1) && primaryType != null) {
-                        targetNode = targetNode.addNode(qualifiedName, primaryType.getString(namespaceRegistry, Path.NO_OP_ENCODER));
+                        targetNode = targetNode.addNode(qualifiedName, primaryType.getString(namespaceRegistry,
+                                                                                             Path.NO_OP_ENCODER));
                     } else {
                         targetNode = targetNode.addNode(qualifiedName);
                     }

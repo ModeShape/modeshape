@@ -24,11 +24,12 @@ package org.jboss.dna.common.monitor;
 
 import java.io.Serializable;
 import java.text.DecimalFormat;
-import org.jboss.dna.common.util.StringUtil;
 import net.jcip.annotations.Immutable;
+import org.jboss.dna.common.util.StringUtil;
 
 /**
  * A snapshot of the progress on an activity.
+ * 
  * @author Randall Hauch
  */
 @Immutable
@@ -42,11 +43,13 @@ public class ProgressStatus implements Serializable, Comparable<ProgressStatus> 
 
     /**
      * Compute the percentage worked, accounting for imprecision in
+     * 
      * @param workedSoFar the amount of work so far percentage worked
      * @param totalWork the total amount of work for this activity
-     * @return
+     * @return the percentage worked
      */
-    protected static double computePercentage( double workedSoFar, double totalWork ) {
+    protected static double computePercentage( double workedSoFar,
+                                               double totalWork ) {
         if (isSamePercentage(workedSoFar, 0.0d)) return 0.0d;
         assert totalWork > 0.0d;
         double percentage = workedSoFar / totalWork * 100.0d;
@@ -54,7 +57,8 @@ public class ProgressStatus implements Serializable, Comparable<ProgressStatus> 
         return percentage;
     }
 
-    protected static boolean isSamePercentage( double percentage1, double percentage2 ) {
+    protected static boolean isSamePercentage( double percentage1,
+                                               double percentage2 ) {
         return Math.abs(percentage1 - percentage2) <= PERCENT_PRECISION;
     }
 
@@ -66,13 +70,17 @@ public class ProgressStatus implements Serializable, Comparable<ProgressStatus> 
 
     /**
      * Create the progress status.
+     * 
      * @param activityName the name of the activity, which may not be null
      * @param message the message for the progress, which may not be null
      * @param percentWorked the percentage worked, ranging from 0.0 for not started to 100.0 for complete; a negative value are
-     * treated as 0.0, while a value greater than 100.0 is treated as 100.0
+     *        treated as 0.0, while a value greater than 100.0 is treated as 100.0
      * @param cancelled true if the activity has been requested to be cancelled, or false otherwise
      */
-    public ProgressStatus( String activityName, String message, double percentWorked, boolean cancelled ) {
+    public ProgressStatus( String activityName,
+                           String message,
+                           double percentWorked,
+                           boolean cancelled ) {
         assert activityName != null;
         assert message != null;
         this.activityName = activityName;
@@ -84,18 +92,24 @@ public class ProgressStatus implements Serializable, Comparable<ProgressStatus> 
 
     /**
      * Create the progress status and compute the percentage worked.
+     * 
      * @param activityName the name of the activity, which may not be null
      * @param message the message for the progress, which may not be null
      * @param workedSoFar the amount of work so far percentage worked
      * @param totalWork the total amount of work for this activity
      * @param cancelled true if the activity has been requested to be cancelled, or false otherwise
      */
-    public ProgressStatus( String activityName, String message, double workedSoFar, double totalWork, boolean cancelled ) {
+    public ProgressStatus( String activityName,
+                           String message,
+                           double workedSoFar,
+                           double totalWork,
+                           boolean cancelled ) {
         this(activityName, message, computePercentage(workedSoFar, totalWork), cancelled);
     }
 
     /**
      * Get the name of the activity.
+     * 
      * @return the activity's name
      */
     public String getActivityName() {
@@ -104,6 +118,7 @@ public class ProgressStatus implements Serializable, Comparable<ProgressStatus> 
 
     /**
      * Get the progress as a percentage of the total work that's been completed.
+     * 
      * @return the percentage worked, ranging from 0.0 to 100.0
      */
     public double getPercentWorked() {
@@ -112,6 +127,7 @@ public class ProgressStatus implements Serializable, Comparable<ProgressStatus> 
 
     /**
      * Get the progress monitor's text message.
+     * 
      * @return the text message
      */
     public String getMessage() {
@@ -120,6 +136,7 @@ public class ProgressStatus implements Serializable, Comparable<ProgressStatus> 
 
     /**
      * Return whether work on this activity has completed.
+     * 
      * @return true if work has completed, or false if work on the activity is still progressing
      * @see #isCancelled()
      */
@@ -129,6 +146,7 @@ public class ProgressStatus implements Serializable, Comparable<ProgressStatus> 
 
     /**
      * Return whether the activity was requested to be cancelled.
+     * 
      * @return cancelled
      * @see #isDone()
      */

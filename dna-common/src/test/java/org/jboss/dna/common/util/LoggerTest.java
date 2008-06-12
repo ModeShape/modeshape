@@ -436,7 +436,7 @@ public class LoggerTest {
          */
         public void removeFirst( Logger.Level expectedLevel,
                                  String expectedMessageExpression,
-                                 Class<?> expectedExceptionClass ) {
+                                 Class<? extends Throwable> expectedExceptionClass ) {
             if (!hasEvents()) {
                 fail("Expected log message but found none: " + expectedLevel + " - " + expectedMessageExpression);
             }

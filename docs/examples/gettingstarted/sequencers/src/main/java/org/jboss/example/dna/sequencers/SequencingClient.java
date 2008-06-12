@@ -368,14 +368,6 @@ public class SequencingClient {
         this.userInterface.displaySearchResults(medias);
     }
 
-    /**
-     * @param metadataNodeName
-     * @param mediaType
-     * @param mediaNode media node
-     * @throws RepositoryException
-     * @throws PathNotFoundException
-     * @throws ValueFormatException
-     */
     private MediaInfo extractMediaInfo( String metadataNodeName,
                                         String mediaType,
                                         Node mediaNode ) throws RepositoryException, PathNotFoundException, ValueFormatException {
