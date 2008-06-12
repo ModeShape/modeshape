@@ -38,6 +38,10 @@ import org.joda.time.DateTimeZone;
 @Immutable
 public class JodaDateTime implements org.jboss.dna.spi.graph.DateTime {
 
+    /**
+     */
+    private static final long serialVersionUID = -730188225988292422L;
+
     private static final int MILLIS_IN_HOUR = 1000 * 60 * 60;
 
     private final DateTime instance;

@@ -37,6 +37,9 @@ import org.jboss.dna.spi.graph.commands.GetChildrenCommand;
 @NotThreadSafe
 public class BasicGetChildrenCommand extends BasicGraphCommand implements GetChildrenCommand {
 
+    /**
+     */
+    private static final long serialVersionUID = -8515194602506918337L;
     private List<Segment> children;
     private final Path path;
     private CachePolicy cachePolicy;

@@ -53,6 +53,10 @@ import org.jboss.dna.repository.RepositoryI18n;
 public class SequencerPathExpression implements Serializable {
 
     /**
+     */
+    private static final long serialVersionUID = 229464314137494765L;
+
+    /**
      * The pattern used to break the initial input string into the two major parts, the selection and output expressions. Group 1
      * contains the selection expression, and group 2 contains the output expression.
      */

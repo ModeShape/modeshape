@@ -49,18 +49,18 @@ public enum PropertyType {
     OBJECT("Object", ValueComparators.OBJECT_COMPARATOR, Object.class);
 
     private final String name;
-    private final Comparator comparator;
-    private final Class valueClass;
+    private final Comparator<?> comparator;
+    private final Class<?> valueClass;
 
     private PropertyType( String name,
-                          Comparator comparator,
-                          Class valueClass ) {
+                          Comparator<?> comparator,
+                          Class<?> valueClass ) {
         this.name = name;
         this.comparator = comparator;
         this.valueClass = valueClass;
     }
 
-    public Class getValueClass() {
+    public Class<?> getValueClass() {
         return this.valueClass;
     }
 
@@ -68,7 +68,7 @@ public enum PropertyType {
         return this.name;
     }
 
-    public Comparator getComparator() {
+    public Comparator<?> getComparator() {
         return this.comparator;
     }
 

@@ -26,6 +26,9 @@ package org.jboss.dna.spi.graph.connection;
  */
 public class RepositorySourceException extends RuntimeException {
 
+    /**
+     */
+    private static final long serialVersionUID = -7704170453962924565L;
     private final String sourceName;
 
     /**

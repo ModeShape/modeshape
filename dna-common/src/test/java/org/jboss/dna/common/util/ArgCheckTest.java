@@ -259,7 +259,7 @@ public class ArgCheckTest {
 
     @Test( expected = IllegalArgumentException.class )
     public void isNotEmptyCollectionShouldThrowExceptionIfGivenNullCollection() {
-        ArgCheck.isNotEmpty((Collection)null, "test");
+        ArgCheck.isNotEmpty((Collection<?>)null, "test");
     }
 
     @Test( expected = IllegalArgumentException.class )
@@ -274,7 +274,7 @@ public class ArgCheckTest {
 
     @Test( expected = IllegalArgumentException.class )
     public void isNotEmptyMapShouldThrowExceptionIfGivenNullMap() {
-        ArgCheck.isNotEmpty((Map)null, "test");
+        ArgCheck.isNotEmpty((Map<?, ?>)null, "test");
     }
 
     @Test( expected = IllegalArgumentException.class )
@@ -382,7 +382,7 @@ public class ArgCheckTest {
 
     @Test( expected = IllegalArgumentException.class )
     public void containsNoNullsCollectionShouldThrowExceptionIfGivenNullCollection() {
-        ArgCheck.containsNoNulls((Collection)null, "test");
+        ArgCheck.containsNoNulls((Collection<?>)null, "test");
     }
 
     @Test

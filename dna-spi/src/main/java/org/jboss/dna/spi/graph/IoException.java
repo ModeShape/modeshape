@@ -28,6 +28,10 @@ package org.jboss.dna.spi.graph;
 public class IoException extends RuntimeException {
 
     /**
+     */
+    private static final long serialVersionUID = -2015526722307950714L;
+
+    /**
      * 
      */
     public IoException() {

@@ -38,6 +38,9 @@ import org.jboss.dna.spi.graph.impl.BasicPathSegment;
 @NotThreadSafe
 public class BasicGetNodeCommand extends BasicGetPropertiesCommand implements GetNodeCommand {
 
+    /**
+     */
+    private static final long serialVersionUID = 5355669032301356873L;
     private List<Segment> children;
 
     /**

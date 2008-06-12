@@ -36,12 +36,15 @@ public final class ArgCheck {
 
     /**
      * Check that the argument is not less than the supplied value
+     * 
      * @param argument The argument
      * @param notLessThanValue the value that is to be used to check the value
      * @param name The name of the argument
      * @throws IllegalArgumentException If argument is negative (<0)
      */
-    public static void isNotLessThan( int argument, int notLessThanValue, String name ) {
+    public static void isNotLessThan( int argument,
+                                      int notLessThanValue,
+                                      String name ) {
         if (argument < notLessThanValue) {
             throw new IllegalArgumentException(CommonI18n.argumentMayNotBeLessThan.text(name, argument, notLessThanValue));
         }
@@ -49,12 +52,15 @@ public final class ArgCheck {
 
     /**
      * Check that the argument is not greater than the supplied value
+     * 
      * @param argument The argument
      * @param notGreaterThanValue the value that is to be used to check the value
      * @param name The name of the argument
      * @throws IllegalArgumentException If argument is negative (<0)
      */
-    public static void isNotGreaterThan( int argument, int notGreaterThanValue, String name ) {
+    public static void isNotGreaterThan( int argument,
+                                         int notGreaterThanValue,
+                                         String name ) {
         if (argument < notGreaterThanValue) {
             throw new IllegalArgumentException(CommonI18n.argumentMayNotBeGreaterThan.text(name, argument, notGreaterThanValue));
         }
@@ -62,11 +68,13 @@ public final class ArgCheck {
 
     /**
      * Check that the argument is non-negative (>=0).
+     * 
      * @param argument The argument
      * @param name The name of the argument
      * @throws IllegalArgumentException If argument is negative (<0)
      */
-    public static void isNonNegative( int argument, String name ) {
+    public static void isNonNegative( int argument,
+                                      String name ) {
         if (argument < 0) {
             throw new IllegalArgumentException(CommonI18n.argumentMayNotBeNegative.text(name, argument));
         }
@@ -74,11 +82,13 @@ public final class ArgCheck {
 
     /**
      * Check that the argument is non-positive (<=0).
+     * 
      * @param argument The argument
      * @param name The name of the argument
      * @throws IllegalArgumentException If argument is positive (>0)
      */
-    public static void isNonPositive( int argument, String name ) {
+    public static void isNonPositive( int argument,
+                                      String name ) {
         if (argument > 0) {
             throw new IllegalArgumentException(CommonI18n.argumentMayNotBePositive.text(name, argument));
         }
@@ -86,11 +96,13 @@ public final class ArgCheck {
 
     /**
      * Check that the argument is negative (<0).
+     * 
      * @param argument The argument
      * @param name The name of the argument
      * @throws IllegalArgumentException If argument is non-negative (>=0)
      */
-    public static void isNegative( int argument, String name ) {
+    public static void isNegative( int argument,
+                                   String name ) {
         if (argument >= 0) {
             throw new IllegalArgumentException(CommonI18n.argumentMustBeNegative.text(name, argument));
         }
@@ -98,11 +110,13 @@ public final class ArgCheck {
 
     /**
      * Check that the argument is positive (>0).
+     * 
      * @param argument The argument
      * @param name The name of the argument
      * @throws IllegalArgumentException If argument is non-positive (<=0)
      */
-    public static void isPositive( int argument, String name ) {
+    public static void isPositive( int argument,
+                                   String name ) {
         if (argument <= 0) {
             throw new IllegalArgumentException(CommonI18n.argumentMustBePositive.text(name, argument));
         }
@@ -112,11 +126,13 @@ public final class ArgCheck {
 
     /**
      * Check that the argument is non-negative (>=0).
+     * 
      * @param argument The argument
      * @param name The name of the argument
      * @throws IllegalArgumentException If argument is negative (<0)
      */
-    public static void isNonNegative( long argument, String name ) {
+    public static void isNonNegative( long argument,
+                                      String name ) {
         if (argument < 0) {
             throw new IllegalArgumentException(CommonI18n.argumentMayNotBeNegative.text(name, argument));
         }
@@ -124,11 +140,13 @@ public final class ArgCheck {
 
     /**
      * Check that the argument is non-positive (<=0).
+     * 
      * @param argument The argument
      * @param name The name of the argument
      * @throws IllegalArgumentException If argument is positive (>0)
      */
-    public static void isNonPositive( long argument, String name ) {
+    public static void isNonPositive( long argument,
+                                      String name ) {
         if (argument > 0) {
             throw new IllegalArgumentException(CommonI18n.argumentMayNotBePositive.text(name, argument));
         }
@@ -136,11 +154,13 @@ public final class ArgCheck {
 
     /**
      * Check that the argument is negative (<0).
+     * 
      * @param argument The argument
      * @param name The name of the argument
      * @throws IllegalArgumentException If argument is non-negative (>=0)
      */
-    public static void isNegative( long argument, String name ) {
+    public static void isNegative( long argument,
+                                   String name ) {
         if (argument >= 0) {
             throw new IllegalArgumentException(CommonI18n.argumentMustBeNegative.text(name, argument));
         }
@@ -148,11 +168,13 @@ public final class ArgCheck {
 
     /**
      * Check that the argument is positive (>0).
+     * 
      * @param argument The argument
      * @param name The name of the argument
      * @throws IllegalArgumentException If argument is non-positive (<=0)
      */
-    public static void isPositive( long argument, String name ) {
+    public static void isPositive( long argument,
+                                   String name ) {
         if (argument <= 0) {
             throw new IllegalArgumentException(CommonI18n.argumentMustBePositive.text(name, argument));
         }
@@ -162,11 +184,13 @@ public final class ArgCheck {
 
     /**
      * Check that the argument is non-negative (>=0).
+     * 
      * @param argument The argument
      * @param name The name of the argument
      * @throws IllegalArgumentException If argument is negative (<0)
      */
-    public static void isNonNegative( double argument, String name ) {
+    public static void isNonNegative( double argument,
+                                      String name ) {
         if (argument < 0.0) {
             throw new IllegalArgumentException(CommonI18n.argumentMayNotBeNegative.text(name, argument));
         }
@@ -174,11 +198,13 @@ public final class ArgCheck {
 
     /**
      * Check that the argument is non-positive (<=0).
+     * 
      * @param argument The argument
      * @param name The name of the argument
      * @throws IllegalArgumentException If argument is positive (>0)
      */
-    public static void isNonPositive( double argument, String name ) {
+    public static void isNonPositive( double argument,
+                                      String name ) {
         if (argument > 0.0) {
             throw new IllegalArgumentException(CommonI18n.argumentMayNotBePositive.text(name, argument));
         }
@@ -186,11 +212,13 @@ public final class ArgCheck {
 
     /**
      * Check that the argument is negative (<0).
+     * 
      * @param argument The argument
      * @param name The name of the argument
      * @throws IllegalArgumentException If argument is non-negative (>=0)
      */
-    public static void isNegative( double argument, String name ) {
+    public static void isNegative( double argument,
+                                   String name ) {
         if (argument >= 0.0) {
             throw new IllegalArgumentException(CommonI18n.argumentMustBeNegative.text(name, argument));
         }
@@ -198,11 +226,13 @@ public final class ArgCheck {
 
     /**
      * Check that the argument is positive (>0).
+     * 
      * @param argument The argument
      * @param name The name of the argument
      * @throws IllegalArgumentException If argument is non-positive (<=0)
      */
-    public static void isPositive( double argument, String name ) {
+    public static void isPositive( double argument,
+                                   String name ) {
         if (argument <= 0.0) {
             throw new IllegalArgumentException(CommonI18n.argumentMustBePositive.text(name, argument));
         }
@@ -210,11 +240,13 @@ public final class ArgCheck {
 
     /**
      * Check that the argument is not NaN.
+     * 
      * @param argument The argument
      * @param name The name of the argument
      * @throws IllegalArgumentException If argument is NaN
      */
-    public static void isNotNan( double argument, String name ) {
+    public static void isNotNan( double argument,
+                                 String name ) {
         if (Double.isNaN(argument)) {
             throw new IllegalArgumentException(CommonI18n.argumentMustBeNumber.text(name));
         }
@@ -224,11 +256,13 @@ public final class ArgCheck {
 
     /**
      * Check that the string is non-null and has length > 0
+     * 
      * @param argument The argument
      * @param name The name of the argument
      * @throws IllegalArgumentException If value is null or length == 0
      */
-    public static void isNotZeroLength( String argument, String name ) {
+    public static void isNotZeroLength( String argument,
+                                        String name ) {
         isNotNull(argument, name);
         if (argument.length() <= 0) {
             throw new IllegalArgumentException(CommonI18n.argumentMayNotBeNullOrZeroLength.text(name));
@@ -237,11 +271,13 @@ public final class ArgCheck {
 
     /**
      * Check that the string is not empty, is not null, and does not contain only whitespace.
+     * 
      * @param argument String
      * @param name The name of the argument
      * @throws IllegalArgumentException If string is null or empty
      */
-    public static void isNotEmpty( String argument, String name ) {
+    public static void isNotEmpty( String argument,
+                                   String name ) {
         isNotZeroLength(argument, name);
         if (argument != null && argument.trim().length() == 0) {
             throw new IllegalArgumentException(CommonI18n.argumentMayNotBeNullOrZeroLengthOrEmpty.text(name));
@@ -252,11 +288,13 @@ public final class ArgCheck {
 
     /**
      * Check that the specified argument is non-null
+     * 
      * @param argument The argument
      * @param name The name of the argument
      * @throws IllegalArgumentException If argument is null
      */
-    public static void isNotNull( Object argument, String name ) {
+    public static void isNotNull( Object argument,
+                                  String name ) {
         if (argument == null) {
             throw new IllegalArgumentException(CommonI18n.argumentMayNotBeNull.text(name));
         }
@@ -264,24 +302,28 @@ public final class ArgCheck {
 
     /**
      * Returns the specified argument if it is not <code>null</code>.
+     * 
      * @param <T>
      * @param argument The argument
      * @param name The name of the argument
      * @return The argument
      * @throws IllegalArgumentException If argument is <code>null</code>
      */
-    public static <T> T getNotNull( T argument, String name ) {
+    public static <T> T getNotNull( T argument,
+                                    String name ) {
         isNotNull(argument, name);
         return argument;
     }
 
     /**
      * Check that the argument is null
+     * 
      * @param argument The argument
      * @param name The name of the argument
      * @throws IllegalArgumentException If value is non-null
      */
-    public static void isNull( Object argument, String name ) {
+    public static void isNull( Object argument,
+                               String name ) {
         if (argument != null) {
             throw new IllegalArgumentException(CommonI18n.argumentMustBeNull.text(name));
         }
@@ -289,21 +331,28 @@ public final class ArgCheck {
 
     /**
      * Check that the object is an instance of the specified Class
+     * 
+     * @param <T> the class type
      * @param argument Value
      * @param expectedClass Class
      * @param name The name of the argument
      * @throws IllegalArgumentException If value is null
      */
-    public static void isInstanceOf( Object argument, Class expectedClass, String name ) {
+    public static <T> void isInstanceOf( Object argument,
+                                         Class<T> expectedClass,
+                                         String name ) {
         isNotNull(argument, name);
         if (!expectedClass.isInstance(argument)) {
-            throw new IllegalArgumentException(CommonI18n.argumentMustBeInstanceOf.text(name, argument.getClass(), expectedClass.getName()));
+            throw new IllegalArgumentException(CommonI18n.argumentMustBeInstanceOf.text(name,
+                                                                                        argument.getClass(),
+                                                                                        expectedClass.getName()));
         }
     }
 
     /**
      * Checks that the object is an instance of the specified Class and then returns the object cast to the specified Class
-     * @param <C>
+     * 
+     * @param <C> the class type
      * @param argument Value
      * @param expectedClass Class
      * @param name The name of the argument
@@ -312,23 +361,29 @@ public final class ArgCheck {
      */
     @SuppressWarnings( "unchecked" )
     // due to cast in return
-    public static <C> C getInstanceOf( Object argument, Class<C> expectedClass, String name ) {
+    public static <C> C getInstanceOf( Object argument,
+                                       Class<C> expectedClass,
+                                       String name ) {
         isInstanceOf(argument, expectedClass, name);
         return (C)argument;
     }
 
     /**
      * Asserts that the specified first object is the same as (==) the specified second object.
+     * 
      * @param <T>
      * @param argument The argument to assert as the same as <code>object</code>.
      * @param argumentName The name that will be used within the exception message for the argument should an exception be thrown
      * @param object The object to assert as the same as <code>argument</code>.
      * @param objectName The name that will be used within the exception message for <code>object</code> should an exception be
-     * thrown; if <code>null</code> and <code>object</code> is not <code>null</code>, <code>object.toString()</code> will
-     * be used.
+     *        thrown; if <code>null</code> and <code>object</code> is not <code>null</code>, <code>object.toString()</code>
+     *        will be used.
      * @throws IllegalArgumentException If the specified objects are not the same.
      */
-    public static <T> void isSame( final T argument, String argumentName, final T object, String objectName ) {
+    public static <T> void isSame( final T argument,
+                                   String argumentName,
+                                   final T object,
+                                   String objectName ) {
         if (argument != object) {
             if (objectName == null) objectName = getObjectName(object);
             throw new IllegalArgumentException(CommonI18n.argumentMustBeSameAs.text(argumentName, objectName));
@@ -337,16 +392,20 @@ public final class ArgCheck {
 
     /**
      * Asserts that the specified first object is not the same as (==) the specified second object.
+     * 
      * @param <T>
      * @param argument The argument to assert as not the same as <code>object</code>.
      * @param argumentName The name that will be used within the exception message for the argument should an exception be thrown
      * @param object The object to assert as not the same as <code>argument</code>.
      * @param objectName The name that will be used within the exception message for <code>object</code> should an exception be
-     * thrown; if <code>null</code> and <code>object</code> is not <code>null</code>, <code>object.toString()</code> will
-     * be used.
+     *        thrown; if <code>null</code> and <code>object</code> is not <code>null</code>, <code>object.toString()</code>
+     *        will be used.
      * @throws IllegalArgumentException If the specified objects are the same.
      */
-    public static <T> void isNotSame( final T argument, String argumentName, final T object, String objectName ) {
+    public static <T> void isNotSame( final T argument,
+                                      String argumentName,
+                                      final T object,
+                                      String objectName ) {
         if (argument == object) {
             if (objectName == null) objectName = getObjectName(object);
             throw new IllegalArgumentException(CommonI18n.argumentMustNotBeSameAs.text(argumentName, objectName));
@@ -355,16 +414,20 @@ public final class ArgCheck {
 
     /**
      * Asserts that the specified first object is {@link Object#equals(Object) equal to} the specified second object.
+     * 
      * @param <T>
      * @param argument The argument to assert equal to <code>object</code>.
      * @param argumentName The name that will be used within the exception message for the argument should an exception be thrown
      * @param object The object to assert as equal to <code>argument</code>.
      * @param objectName The name that will be used within the exception message for <code>object</code> should an exception be
-     * thrown; if <code>null</code> and <code>object</code> is not <code>null</code>, <code>object.toString()</code> will
-     * be used.
+     *        thrown; if <code>null</code> and <code>object</code> is not <code>null</code>, <code>object.toString()</code>
+     *        will be used.
      * @throws IllegalArgumentException If the specified objects are not equal.
      */
-    public static <T> void isEquals( final T argument, String argumentName, final T object, String objectName ) {
+    public static <T> void isEquals( final T argument,
+                                     String argumentName,
+                                     final T object,
+                                     String objectName ) {
         if (!argument.equals(object)) {
             if (objectName == null) objectName = getObjectName(object);
             throw new IllegalArgumentException(CommonI18n.argumentMustBeEquals.text(argumentName, objectName));
@@ -373,16 +436,20 @@ public final class ArgCheck {
 
     /**
      * Asserts that the specified first object is not {@link Object#equals(Object) equal to} the specified second object.
+     * 
      * @param <T>
      * @param argument The argument to assert equal to <code>object</code>.
      * @param argumentName The name that will be used within the exception message for the argument should an exception be thrown
      * @param object The object to assert as equal to <code>argument</code>.
      * @param objectName The name that will be used within the exception message for <code>object</code> should an exception be
-     * thrown; if <code>null</code> and <code>object</code> is not <code>null</code>, <code>object.toString()</code> will
-     * be used.
+     *        thrown; if <code>null</code> and <code>object</code> is not <code>null</code>, <code>object.toString()</code>
+     *        will be used.
      * @throws IllegalArgumentException If the specified objects are equals.
      */
-    public static <T> void isNotEquals( final T argument, String argumentName, final T object, String objectName ) {
+    public static <T> void isNotEquals( final T argument,
+                                        String argumentName,
+                                        final T object,
+                                        String objectName ) {
         if (argument.equals(object)) {
             if (objectName == null) objectName = getObjectName(object);
             throw new IllegalArgumentException(CommonI18n.argumentMustNotBeEquals.text(argumentName, objectName));
@@ -393,11 +460,13 @@ public final class ArgCheck {
 
     /**
      * Checks that the iterator is not empty, and throws an exception if it is.
+     * 
      * @param argument the iterator to check
      * @param name The name of the argument
      * @throws IllegalArgumentException If iterator is empty (i.e., iterator.hasNext() returns false)
      */
-    public static void isNotEmpty( Iterator argument, String name ) {
+    public static void isNotEmpty( Iterator<?> argument,
+                                   String name ) {
         isNotNull(argument, name);
         if (!argument.hasNext()) {
             throw new IllegalArgumentException(CommonI18n.argumentMayNotBeEmpty.text(name));
@@ -408,11 +477,13 @@ public final class ArgCheck {
 
     /**
      * Check that the collection is not empty
+     * 
      * @param argument Collection
      * @param name The name of the argument
      * @throws IllegalArgumentException If collection is null or empty
      */
-    public static void isNotEmpty( Collection argument, String name ) {
+    public static void isNotEmpty( Collection<?> argument,
+                                   String name ) {
         isNotNull(argument, name);
         if (argument.isEmpty()) {
             throw new IllegalArgumentException(CommonI18n.argumentMayNotBeEmpty.text(name));
@@ -421,11 +492,13 @@ public final class ArgCheck {
 
     /**
      * Check that the map is not empty
+     * 
      * @param argument Map
      * @param name The name of the argument
      * @throws IllegalArgumentException If map is null or empty
      */
-    public static void isNotEmpty( Map argument, String name ) {
+    public static void isNotEmpty( Map<?, ?> argument,
+                                   String name ) {
         isNotNull(argument, name);
         if (argument.isEmpty()) {
             throw new IllegalArgumentException(CommonI18n.argumentMayNotBeEmpty.text(name));
@@ -434,11 +507,13 @@ public final class ArgCheck {
 
     /**
      * Check that the array is not empty
+     * 
      * @param argument Array
      * @param name The name of the argument
      * @throws IllegalArgumentException If array is null or empty
      */
-    public static void isNotEmpty( Object[] argument, String name ) {
+    public static void isNotEmpty( Object[] argument,
+                                   String name ) {
         isNotNull(argument, name);
         if (argument.length == 0) {
             throw new IllegalArgumentException(CommonI18n.argumentMayNotBeEmpty.text(name));
@@ -451,12 +526,15 @@ public final class ArgCheck {
 
     /**
      * Check that the collection contains the value
+     * 
      * @param argument Collection to check
      * @param value Value to check for, may be null
      * @param name The name of the argument
      * @throws IllegalArgumentException If collection is null or doesn't contain value
      */
-    public static void contains( Collection argument, Object value, String name ) {
+    public static void contains( Collection<?> argument,
+                                 Object value,
+                                 String name ) {
         isNotNull(argument, name);
         if (!argument.contains(value)) {
             throw new IllegalArgumentException(CommonI18n.argumentDidNotContainObject.text(name, getObjectName(value)));
@@ -465,12 +543,15 @@ public final class ArgCheck {
 
     /**
      * Check that the map contains the key
+     * 
      * @param argument Map to check
      * @param key Key to check for, may be null
      * @param name The name of the argument
      * @throws IllegalArgumentException If map is null or doesn't contain key
      */
-    public static void containsKey( Map argument, Object key, String name ) {
+    public static void containsKey( Map<?, ?> argument,
+                                    Object key,
+                                    String name ) {
         isNotNull(argument, name);
         if (!argument.containsKey(key)) {
             throw new IllegalArgumentException(CommonI18n.argumentDidNotContainKey.text(name, getObjectName(key)));
@@ -479,11 +560,13 @@ public final class ArgCheck {
 
     /**
      * Check that the collection is not null and contains no nulls
+     * 
      * @param argument Array
      * @param name The name of the argument
      * @throws IllegalArgumentException If array is null or has null values
      */
-    public static void containsNoNulls( Collection argument, String name ) {
+    public static void containsNoNulls( Collection<?> argument,
+                                        String name ) {
         isNotNull(argument, name);
         int i = 0;
         for (Object object : argument) {
@@ -496,11 +579,13 @@ public final class ArgCheck {
 
     /**
      * Check that the array is not null and contains no nulls
+     * 
      * @param argument Array
      * @param name The name of the argument
      * @throws IllegalArgumentException If array is null or has null values
      */
-    public static void containsNoNulls( Object[] argument, String name ) {
+    public static void containsNoNulls( Object[] argument,
+                                        String name ) {
         isNotNull(argument, name);
         int i = 0;
         for (Object object : argument) {

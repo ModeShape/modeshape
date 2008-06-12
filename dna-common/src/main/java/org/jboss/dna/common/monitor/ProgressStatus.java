@@ -34,6 +34,9 @@ import net.jcip.annotations.Immutable;
 @Immutable
 public class ProgressStatus implements Serializable, Comparable<ProgressStatus> {
 
+    /**
+     */
+    private static final long serialVersionUID = -7771764546193063275L;
     protected static final String PERCENTAGE_PATTERN = "##0.0"; // percentage should always fit
     protected static final double PERCENT_PRECISION = 0.001d;
 

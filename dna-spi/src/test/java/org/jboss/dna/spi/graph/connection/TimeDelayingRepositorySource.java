@@ -41,6 +41,9 @@ import org.jboss.dna.spi.graph.commands.GraphCommand;
 @ThreadSafe
 public class TimeDelayingRepositorySource implements RepositorySource {
 
+    /**
+     */
+    private static final long serialVersionUID = -2756725117087437347L;
     private final String identifier;
     private final AtomicInteger retryLimit = new AtomicInteger(0);
     private final AtomicInteger connectionsOpenedCount = new AtomicInteger(0);

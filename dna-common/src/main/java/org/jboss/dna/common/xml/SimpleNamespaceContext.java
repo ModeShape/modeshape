@@ -50,7 +50,8 @@ public class SimpleNamespaceContext implements NamespaceContext {
         return null;
     }
 
-    public SimpleNamespaceContext setNamespace( String prefix, String namespaceUri ) {
+    public SimpleNamespaceContext setNamespace( String prefix,
+                                                String namespaceUri ) {
         this.prefixToNamespace.put(prefix, namespaceUri);
         return this;
     }
@@ -58,7 +59,7 @@ public class SimpleNamespaceContext implements NamespaceContext {
     /**
      * {@inheritDoc}
      */
-    public Iterator getPrefixes( String namespaceURI ) {
+    public Iterator<String> getPrefixes( String namespaceURI ) {
         return this.prefixToNamespace.keySet().iterator();
     }
 

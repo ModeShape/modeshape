@@ -46,7 +46,11 @@ import org.jboss.dna.spi.graph.PathNotFoundException;
 @Immutable
 public class BasicPath implements Path {
 
-	private static final List<Segment> EMPTY_SEGMENTS = Collections.emptyList();
+	/**
+     */
+    private static final long serialVersionUID = 8488295345524209746L;
+
+    private static final List<Segment> EMPTY_SEGMENTS = Collections.emptyList();
 
 	public static final Path ROOT = new BasicPath(EMPTY_SEGMENTS, true);
 

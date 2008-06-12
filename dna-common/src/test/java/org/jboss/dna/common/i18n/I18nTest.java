@@ -59,8 +59,8 @@ public final class I18nTest {
         clearFields(TestI18nNotStaticField.class);
         clearFields(TestI18nPrivate.class);
         clearFields(TestI18nUnusedProperty.class);
-        for (Entry<Locale, Map<Class, Set<String>>> localeToMapEntry : I18n.LOCALE_TO_CLASS_TO_PROBLEMS_MAP.entrySet()) {
-            for (Iterator<Entry<Class, Set<String>>> iter = localeToMapEntry.getValue().entrySet().iterator(); iter.hasNext();) {
+        for (Entry<Locale, Map<Class<?>, Set<String>>> localeToMapEntry : I18n.LOCALE_TO_CLASS_TO_PROBLEMS_MAP.entrySet()) {
+            for (Iterator<Entry<Class<?>, Set<String>>> iter = localeToMapEntry.getValue().entrySet().iterator(); iter.hasNext();) {
                 if (iter.next().getKey() != CommonI18n.class) {
                     iter.remove();
                 }
@@ -68,7 +68,7 @@ public final class I18nTest {
         }
     }
 
-    private void clearFields( Class i18nClass ) throws Exception {
+    private void clearFields( Class<?> i18nClass ) throws Exception {
         for (Field fld : i18nClass.getDeclaredFields()) {
             if (fld.getType() == I18n.class && (fld.getModifiers() & Modifier.PUBLIC) == Modifier.PUBLIC
                 && (fld.getModifiers() & Modifier.STATIC) == Modifier.STATIC

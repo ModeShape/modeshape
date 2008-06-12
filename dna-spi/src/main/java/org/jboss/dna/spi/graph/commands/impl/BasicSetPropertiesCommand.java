@@ -34,6 +34,9 @@ import org.jboss.dna.spi.graph.commands.SetPropertiesCommand;
 @NotThreadSafe
 public class BasicSetPropertiesCommand extends BasicGraphCommand implements SetPropertiesCommand {
 
+    /**
+     */
+    private static final long serialVersionUID = -2693642411179501304L;
     private final Path path;
     private final List<Property> properties;
     private CachePolicy cachePolicy;

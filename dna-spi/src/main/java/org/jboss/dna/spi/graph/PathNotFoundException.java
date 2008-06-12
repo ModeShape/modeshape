@@ -27,6 +27,10 @@ package org.jboss.dna.spi.graph;
 public class PathNotFoundException extends RuntimeException {
 
     /**
+     */
+    private static final long serialVersionUID = -3703984046286975978L;
+
+    /**
      * 
      */
     public PathNotFoundException() {

@@ -37,6 +37,9 @@ import org.jboss.dna.spi.graph.commands.GetPropertiesCommand;
 @NotThreadSafe
 public class BasicGetPropertiesCommand extends BasicGraphCommand implements GetPropertiesCommand {
 
+    /**
+     */
+    private static final long serialVersionUID = -7816393217506909521L;
     private final Map<Name, List<Object>> propertyValues = new HashMap<Name, List<Object>>();
     private final Path path;
     private CachePolicy cachePolicy;

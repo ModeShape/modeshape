@@ -43,6 +43,10 @@ import org.jboss.dna.spi.graph.connection.RepositorySourceException;
 @ThreadSafe
 public class FederatedRepositorySource implements RepositorySource {
 
+    /**
+     */
+    private static final long serialVersionUID = 7587346948013486977L;
+
     public static final int DEFAULT_RETRY_LIMIT = 0;
 
     protected static final String USERNAME = "username";

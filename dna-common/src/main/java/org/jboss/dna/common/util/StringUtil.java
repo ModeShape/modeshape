@@ -45,611 +45,611 @@ import org.jboss.dna.common.SystemFailureException;
  */
 public class StringUtil {
 
-	public static final String[] EMPTY_STRING_ARRAY = new String[0];
-	private static final Pattern NORMALIZE_PATTERN = Pattern.compile("\\s+");
-	private static final Pattern PARAMETER_COUNT_PATTERN = Pattern.compile("\\{(\\d+)\\}");
+    public static final String[] EMPTY_STRING_ARRAY = new String[0];
+    private static final Pattern NORMALIZE_PATTERN = Pattern.compile("\\s+");
+    private static final Pattern PARAMETER_COUNT_PATTERN = Pattern.compile("\\{(\\d+)\\}");
 
-	/**
-	 * Split the supplied content into lines, returning each line as an element in the returned list.
-	 *
-	 * @param content the string content that is to be split
-	 * @return the list of lines; never null but may be an empty (unmodifiable) list if the supplied content is null or empty
-	 */
-	public static List<String> splitLines( final String content ) {
-		if (content == null || content.length() == 0) return Collections.emptyList();
-		String[] lines = content.split("[\\r]?\\n");
-		return Arrays.asList(lines);
-	}
+    /**
+     * Split the supplied content into lines, returning each line as an element in the returned list.
+     * 
+     * @param content the string content that is to be split
+     * @return the list of lines; never null but may be an empty (unmodifiable) list if the supplied content is null or empty
+     */
+    public static List<String> splitLines( final String content ) {
+        if (content == null || content.length() == 0) return Collections.emptyList();
+        String[] lines = content.split("[\\r]?\\n");
+        return Arrays.asList(lines);
+    }
 
-	/**
-	 * Create a string by substituting the parameters into all key occurrences in the supplied format. The pattern consists of
-	 * zero or more keys of the form <code>{n}</code>, where <code>n</code> is an integer starting at 1. Therefore, the first
-	 * parameter replaces all occurrences of "{1}", the second parameter replaces all occurrences of "{2}", etc.
-	 * <p>
-	 * If any parameter is null, the corresponding key is replaced with the string "null". Therefore, consider using an empty
-	 * string when keys are to be removed altogether.
-	 * </p>
-	 * <p>
-	 * If there are no parameters, this method does nothing and returns the supplied pattern as is.
-	 * </p>
-	 *
-	 * @param pattern the pattern
-	 * @param parameters the parameters used to replace keys
-	 * @return the string with all keys replaced (or removed)
-	 */
-	public static String createString( String pattern,
-	                                   Object... parameters ) {
-		ArgCheck.isNotNull(pattern, "pattern");
-		if (parameters == null) parameters = EMPTY_STRING_ARRAY;
-		Matcher matcher = PARAMETER_COUNT_PATTERN.matcher(pattern);
-		StringBuffer text = new StringBuffer();
-		int requiredParameterCount = 0;
-		boolean err = false;
-		while (matcher.find()) {
-			int ndx = Integer.valueOf(matcher.group(1));
-			if (requiredParameterCount <= ndx) {
-				requiredParameterCount = ndx + 1;
-			}
-			if (ndx >= parameters.length) {
-				err = true;
-				matcher.appendReplacement(text, matcher.group());
-			} else {
-				Object parameter = parameters[ndx];
-				matcher.appendReplacement(text, Matcher.quoteReplacement(parameter == null ? "null" : parameter.toString()));
-			}
-		}
-		if (err || requiredParameterCount < parameters.length) {
-			throw new IllegalArgumentException(
-			                                   CommonI18n.requiredToSuppliedParameterMismatch.text(parameters.length,
-			                                                                                       parameters.length == 1 ? "" : "s",
-			                                                                                       requiredParameterCount,
-			                                                                                       requiredParameterCount == 1 ? "" : "s",
-			                                                                                       pattern,
-			                                                                                       text.toString()));
-		}
-		matcher.appendTail(text);
+    /**
+     * Create a string by substituting the parameters into all key occurrences in the supplied format. The pattern consists of
+     * zero or more keys of the form <code>{n}</code>, where <code>n</code> is an integer starting at 1. Therefore, the first
+     * parameter replaces all occurrences of "{1}", the second parameter replaces all occurrences of "{2}", etc.
+     * <p>
+     * If any parameter is null, the corresponding key is replaced with the string "null". Therefore, consider using an empty
+     * string when keys are to be removed altogether.
+     * </p>
+     * <p>
+     * If there are no parameters, this method does nothing and returns the supplied pattern as is.
+     * </p>
+     * 
+     * @param pattern the pattern
+     * @param parameters the parameters used to replace keys
+     * @return the string with all keys replaced (or removed)
+     */
+    public static String createString( String pattern,
+                                       Object... parameters ) {
+        ArgCheck.isNotNull(pattern, "pattern");
+        if (parameters == null) parameters = EMPTY_STRING_ARRAY;
+        Matcher matcher = PARAMETER_COUNT_PATTERN.matcher(pattern);
+        StringBuffer text = new StringBuffer();
+        int requiredParameterCount = 0;
+        boolean err = false;
+        while (matcher.find()) {
+            int ndx = Integer.valueOf(matcher.group(1));
+            if (requiredParameterCount <= ndx) {
+                requiredParameterCount = ndx + 1;
+            }
+            if (ndx >= parameters.length) {
+                err = true;
+                matcher.appendReplacement(text, matcher.group());
+            } else {
+                Object parameter = parameters[ndx];
+                matcher.appendReplacement(text, Matcher.quoteReplacement(parameter == null ? "null" : parameter.toString()));
+            }
+        }
+        if (err || requiredParameterCount < parameters.length) {
+            throw new IllegalArgumentException(
+                                               CommonI18n.requiredToSuppliedParameterMismatch.text(parameters.length,
+                                                                                                   parameters.length == 1 ? "" : "s",
+                                                                                                   requiredParameterCount,
+                                                                                                   requiredParameterCount == 1 ? "" : "s",
+                                                                                                   pattern,
+                                                                                                   text.toString()));
+        }
+        matcher.appendTail(text);
 
-		return text.toString();
-	}
+        return text.toString();
+    }
 
-	/**
-	 * Create a new string containing the specified character repeated a specific number of times.
-	 *
-	 * @param charToRepeat the character to repeat
-	 * @param numberOfRepeats the number of times the character is to repeat in the result; must be greater than 0
-	 * @return the resulting string
-	 */
-	public static String createString( final char charToRepeat,
-	                                   int numberOfRepeats ) {
-		assert numberOfRepeats >= 0;
-		StringBuilder sb = new StringBuilder();
-		for (int i = 0; i < numberOfRepeats; ++i) {
-			sb.append(charToRepeat);
-		}
-		return sb.toString();
-	}
+    /**
+     * Create a new string containing the specified character repeated a specific number of times.
+     * 
+     * @param charToRepeat the character to repeat
+     * @param numberOfRepeats the number of times the character is to repeat in the result; must be greater than 0
+     * @return the resulting string
+     */
+    public static String createString( final char charToRepeat,
+                                       int numberOfRepeats ) {
+        assert numberOfRepeats >= 0;
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < numberOfRepeats; ++i) {
+            sb.append(charToRepeat);
+        }
+        return sb.toString();
+    }
 
-	/**
-	 * Set the length of the string, padding with the supplied character if the supplied string is shorter than desired, or
-	 * truncating the string if it is longer than desired. Unlike {@link #justifyLeft(String, int, char)}, this method does not
-	 * remove leading and trailing whitespace.
-	 *
-	 * @param original the string for which the length is to be set; may not be null
-	 * @param length the desired length; must be positive
-	 * @param padChar the character to use for padding, if the supplied string is not long enough
-	 * @return the string of the desired length
-	 * @see #justifyLeft(String, int, char)
-	 */
-	public static String setLength( String original,
-	                                int length,
-	                                char padChar ) {
-		return justifyLeft(original, length, padChar, false);
-	}
+    /**
+     * Set the length of the string, padding with the supplied character if the supplied string is shorter than desired, or
+     * truncating the string if it is longer than desired. Unlike {@link #justifyLeft(String, int, char)}, this method does not
+     * remove leading and trailing whitespace.
+     * 
+     * @param original the string for which the length is to be set; may not be null
+     * @param length the desired length; must be positive
+     * @param padChar the character to use for padding, if the supplied string is not long enough
+     * @return the string of the desired length
+     * @see #justifyLeft(String, int, char)
+     */
+    public static String setLength( String original,
+                                    int length,
+                                    char padChar ) {
+        return justifyLeft(original, length, padChar, false);
+    }
 
-	/**
-	 * Right justify the contents of the string, ensuring that the string ends at the last character. If the supplied string is
-	 * longer than the desired width, the leading characters are removed so that the last character in the supplied string at the
-	 * last position. If the supplied string is shorter than the desired width, the padding character is inserted one or more
-	 * times such that the last character in the supplied string appears as the last character in the resulting string and that
-	 * the length matches that specified.
-	 *
-	 * @param str the string to be right justified; if null, an empty string is used
-	 * @param width the desired width of the string; must be positive
-	 * @param padWithChar the character to use for padding, if needed
-	 * @return the right justified string
-	 */
-	public static String justifyRight( String str,
-	                                   final int width,
-	                                   char padWithChar ) {
-		assert width > 0;
-		// Trim the leading and trailing whitespace ...
-		str = str != null ? str.trim() : "";
+    /**
+     * Right justify the contents of the string, ensuring that the string ends at the last character. If the supplied string is
+     * longer than the desired width, the leading characters are removed so that the last character in the supplied string at the
+     * last position. If the supplied string is shorter than the desired width, the padding character is inserted one or more
+     * times such that the last character in the supplied string appears as the last character in the resulting string and that
+     * the length matches that specified.
+     * 
+     * @param str the string to be right justified; if null, an empty string is used
+     * @param width the desired width of the string; must be positive
+     * @param padWithChar the character to use for padding, if needed
+     * @return the right justified string
+     */
+    public static String justifyRight( String str,
+                                       final int width,
+                                       char padWithChar ) {
+        assert width > 0;
+        // Trim the leading and trailing whitespace ...
+        str = str != null ? str.trim() : "";
 
-		final int length = str.length();
-		int addChars = width - length;
-		if (addChars < 0) {
-			// truncate the first characters, keep the last
-			return str.subSequence(length - width, length).toString();
-		}
-		// Prepend the whitespace ...
-		final StringBuilder sb = new StringBuilder();
-		while (addChars > 0) {
-			sb.append(padWithChar);
-			--addChars;
-		}
+        final int length = str.length();
+        int addChars = width - length;
+        if (addChars < 0) {
+            // truncate the first characters, keep the last
+            return str.subSequence(length - width, length).toString();
+        }
+        // Prepend the whitespace ...
+        final StringBuilder sb = new StringBuilder();
+        while (addChars > 0) {
+            sb.append(padWithChar);
+            --addChars;
+        }
 
-		// Write the content ...
-		sb.append(str);
-		return sb.toString();
-	}
+        // Write the content ...
+        sb.append(str);
+        return sb.toString();
+    }
 
-	/**
-	 * Left justify the contents of the string, ensuring that the supplied string begins at the first character and that the
-	 * resulting string is of the desired length. If the supplied string is longer than the desired width, it is truncated to the
-	 * specified length. If the supplied string is shorter than the desired width, the padding character is added to the end of
-	 * the string one or more times such that the length is that specified. All leading and trailing whitespace is removed.
-	 *
-	 * @param str the string to be left justified; if null, an empty string is used
-	 * @param width the desired width of the string; must be positive
-	 * @param padWithChar the character to use for padding, if needed
-	 * @return the left justified string
-	 * @see #setLength(String, int, char)
-	 */
-	public static String justifyLeft( String str,
-	                                  final int width,
-	                                  char padWithChar ) {
-		return justifyLeft(str, width, padWithChar, true);
-	}
+    /**
+     * Left justify the contents of the string, ensuring that the supplied string begins at the first character and that the
+     * resulting string is of the desired length. If the supplied string is longer than the desired width, it is truncated to the
+     * specified length. If the supplied string is shorter than the desired width, the padding character is added to the end of
+     * the string one or more times such that the length is that specified. All leading and trailing whitespace is removed.
+     * 
+     * @param str the string to be left justified; if null, an empty string is used
+     * @param width the desired width of the string; must be positive
+     * @param padWithChar the character to use for padding, if needed
+     * @return the left justified string
+     * @see #setLength(String, int, char)
+     */
+    public static String justifyLeft( String str,
+                                      final int width,
+                                      char padWithChar ) {
+        return justifyLeft(str, width, padWithChar, true);
+    }
 
-	protected static String justifyLeft( String str,
-	                                     final int width,
-	                                     char padWithChar,
-	                                     boolean trimWhitespace ) {
-		// Trim the leading and trailing whitespace ...
-		str = str != null ? (trimWhitespace ? str.trim() : str) : "";
+    protected static String justifyLeft( String str,
+                                         final int width,
+                                         char padWithChar,
+                                         boolean trimWhitespace ) {
+        // Trim the leading and trailing whitespace ...
+        str = str != null ? (trimWhitespace ? str.trim() : str) : "";
 
-		int addChars = width - str.length();
-		if (addChars < 0) {
-			// truncate
-			return str.subSequence(0, width).toString();
-		}
-		// Write the content ...
-		final StringBuilder sb = new StringBuilder();
-		sb.append(str);
+        int addChars = width - str.length();
+        if (addChars < 0) {
+            // truncate
+            return str.subSequence(0, width).toString();
+        }
+        // Write the content ...
+        final StringBuilder sb = new StringBuilder();
+        sb.append(str);
 
-		// Append the whitespace ...
-		while (addChars > 0) {
-			sb.append(padWithChar);
-			--addChars;
-		}
+        // Append the whitespace ...
+        while (addChars > 0) {
+            sb.append(padWithChar);
+            --addChars;
+        }
 
-		return sb.toString();
-	}
+        return sb.toString();
+    }
 
-	/**
-	 * Center the contents of the string. If the supplied string is longer than the desired width, it is truncated to the
-	 * specified length. If the supplied string is shorter than the desired width, padding characters are added to the beginning
-	 * and end of the string such that the length is that specified; one additional padding character is prepended if required.
-	 * All leading and trailing whitespace is removed before centering.
-	 *
-	 * @param str the string to be left justified; if null, an empty string is used
-	 * @param width the desired width of the string; must be positive
-	 * @param padWithChar the character to use for padding, if needed
-	 * @return the left justified string
-	 * @see #setLength(String, int, char)
-	 */
-	public static String justifyCenter( String str,
-	                                    final int width,
-	                                    char padWithChar ) {
-		// Trim the leading and trailing whitespace ...
-		str = str != null ? str.trim() : "";
+    /**
+     * Center the contents of the string. If the supplied string is longer than the desired width, it is truncated to the
+     * specified length. If the supplied string is shorter than the desired width, padding characters are added to the beginning
+     * and end of the string such that the length is that specified; one additional padding character is prepended if required.
+     * All leading and trailing whitespace is removed before centering.
+     * 
+     * @param str the string to be left justified; if null, an empty string is used
+     * @param width the desired width of the string; must be positive
+     * @param padWithChar the character to use for padding, if needed
+     * @return the left justified string
+     * @see #setLength(String, int, char)
+     */
+    public static String justifyCenter( String str,
+                                        final int width,
+                                        char padWithChar ) {
+        // Trim the leading and trailing whitespace ...
+        str = str != null ? str.trim() : "";
 
-		int addChars = width - str.length();
-		if (addChars < 0) {
-			// truncate
-			return str.subSequence(0, width).toString();
-		}
-		// Write the content ...
-		int prependNumber = addChars / 2;
-		int appendNumber = prependNumber;
-		if ((prependNumber + appendNumber) != addChars) {
-			++prependNumber;
-		}
+        int addChars = width - str.length();
+        if (addChars < 0) {
+            // truncate
+            return str.subSequence(0, width).toString();
+        }
+        // Write the content ...
+        int prependNumber = addChars / 2;
+        int appendNumber = prependNumber;
+        if ((prependNumber + appendNumber) != addChars) {
+            ++prependNumber;
+        }
 
-		final StringBuilder sb = new StringBuilder();
+        final StringBuilder sb = new StringBuilder();
 
-		// Prepend the pad character(s) ...
-		while (prependNumber > 0) {
-			sb.append(padWithChar);
-			--prependNumber;
-		}
+        // Prepend the pad character(s) ...
+        while (prependNumber > 0) {
+            sb.append(padWithChar);
+            --prependNumber;
+        }
 
-		// Add the actual content
-		sb.append(str);
+        // Add the actual content
+        sb.append(str);
 
-		// Append the pad character(s) ...
-		while (appendNumber > 0) {
-			sb.append(padWithChar);
-			--appendNumber;
-		}
+        // Append the pad character(s) ...
+        while (appendNumber > 0) {
+            sb.append(padWithChar);
+            --appendNumber;
+        }
 
-		return sb.toString();
-	}
+        return sb.toString();
+    }
 
-	/**
-	 * Truncate the supplied string to be no more than the specified length. This method returns an empty string if the supplied
-	 * object is null.
-	 *
-	 * @param obj the object from which the string is to be obtained using {@link Object#toString()}.
-	 * @param maxLength the maximum length of the string being returned
-	 * @return the supplied string if no longer than the maximum length, or the supplied string truncated to be no longer than the
-	 *         maximum length (including the suffix)
-	 * @throws IllegalArgumentException if the maximum length is negative
-	 */
-	public static String truncate( Object obj,
-	                               int maxLength ) {
-		return truncate(obj, maxLength, null);
-	}
+    /**
+     * Truncate the supplied string to be no more than the specified length. This method returns an empty string if the supplied
+     * object is null.
+     * 
+     * @param obj the object from which the string is to be obtained using {@link Object#toString()}.
+     * @param maxLength the maximum length of the string being returned
+     * @return the supplied string if no longer than the maximum length, or the supplied string truncated to be no longer than the
+     *         maximum length (including the suffix)
+     * @throws IllegalArgumentException if the maximum length is negative
+     */
+    public static String truncate( Object obj,
+                                   int maxLength ) {
+        return truncate(obj, maxLength, null);
+    }
 
-	/**
-	 * Truncate the supplied string to be no more than the specified length. This method returns an empty string if the supplied
-	 * object is null.
-	 *
-	 * @param obj the object from which the string is to be obtained using {@link Object#toString()}.
-	 * @param maxLength the maximum length of the string being returned
-	 * @param suffix the suffix that should be added to the content if the string must be truncated, or null if the default suffix
-	 *        of "..." should be used
-	 * @return the supplied string if no longer than the maximum length, or the supplied string truncated to be no longer than the
-	 *         maximum length (including the suffix)
-	 * @throws IllegalArgumentException if the maximum length is negative
-	 */
-	public static String truncate( Object obj,
-	                               int maxLength,
-	                               String suffix ) {
-		ArgCheck.isNonNegative(maxLength, "maxLength");
-		if (obj == null || maxLength == 0) {
-			return "";
-		}
-		String str = obj.toString();
-		if (str.length() <= maxLength) return str;
-		if (suffix == null) suffix = "...";
-		int maxNumChars = maxLength - suffix.length();
-		if (maxNumChars < 0) {
-			// Then the max length is actually shorter than the suffix ...
-			str = suffix.substring(0, maxLength);
-		} else if (str.length() > maxNumChars) {
-			str = str.substring(0, maxNumChars) + suffix;
-		}
-		return str;
-	}
+    /**
+     * Truncate the supplied string to be no more than the specified length. This method returns an empty string if the supplied
+     * object is null.
+     * 
+     * @param obj the object from which the string is to be obtained using {@link Object#toString()}.
+     * @param maxLength the maximum length of the string being returned
+     * @param suffix the suffix that should be added to the content if the string must be truncated, or null if the default suffix
+     *        of "..." should be used
+     * @return the supplied string if no longer than the maximum length, or the supplied string truncated to be no longer than the
+     *         maximum length (including the suffix)
+     * @throws IllegalArgumentException if the maximum length is negative
+     */
+    public static String truncate( Object obj,
+                                   int maxLength,
+                                   String suffix ) {
+        ArgCheck.isNonNegative(maxLength, "maxLength");
+        if (obj == null || maxLength == 0) {
+            return "";
+        }
+        String str = obj.toString();
+        if (str.length() <= maxLength) return str;
+        if (suffix == null) suffix = "...";
+        int maxNumChars = maxLength - suffix.length();
+        if (maxNumChars < 0) {
+            // Then the max length is actually shorter than the suffix ...
+            str = suffix.substring(0, maxLength);
+        } else if (str.length() > maxNumChars) {
+            str = str.substring(0, maxNumChars) + suffix;
+        }
+        return str;
+    }
 
-	/**
-	 * Read and return the entire contents of the supplied {@link Reader}. This method always closes the reader when finished
-	 * reading.
-	 *
-	 * @param reader the reader of the contents; may be null
-	 * @return the contents, or an empty string if the supplied reader is null
-	 * @throws IOException if there is an error reading the content
-	 */
-	public static String read( Reader reader ) throws IOException {
-		return IoUtil.read(reader);
-	}
+    /**
+     * Read and return the entire contents of the supplied {@link Reader}. This method always closes the reader when finished
+     * reading.
+     * 
+     * @param reader the reader of the contents; may be null
+     * @return the contents, or an empty string if the supplied reader is null
+     * @throws IOException if there is an error reading the content
+     */
+    public static String read( Reader reader ) throws IOException {
+        return IoUtil.read(reader);
+    }
 
-	/**
-	 * Read and return the entire contents of the supplied {@link InputStream}. This method always closes the stream when
-	 * finished reading.
-	 *
-	 * @param stream the streamed contents; may be null
-	 * @return the contents, or an empty string if the supplied stream is null
-	 * @throws IOException if there is an error reading the content
-	 */
-	public static String read( InputStream stream ) throws IOException {
-		return IoUtil.read(stream);
-	}
+    /**
+     * Read and return the entire contents of the supplied {@link InputStream}. This method always closes the stream when
+     * finished reading.
+     * 
+     * @param stream the streamed contents; may be null
+     * @return the contents, or an empty string if the supplied stream is null
+     * @throws IOException if there is an error reading the content
+     */
+    public static String read( InputStream stream ) throws IOException {
+        return IoUtil.read(stream);
+    }
 
-	/**
-	 * Write the entire contents of the supplied string to the given stream. This method always flushes and closes the stream when
-	 * finished.
-	 *
-	 * @param content the content to write to the stream; may be null
-	 * @param stream the stream to which the content is to be written
-	 * @throws IOException
-	 * @throws IllegalArgumentException if the stream is null
-	 */
-	public static void write( String content,
-	                          OutputStream stream ) throws IOException {
-		IoUtil.write(content, stream);
-	}
+    /**
+     * Write the entire contents of the supplied string to the given stream. This method always flushes and closes the stream when
+     * finished.
+     * 
+     * @param content the content to write to the stream; may be null
+     * @param stream the stream to which the content is to be written
+     * @throws IOException
+     * @throws IllegalArgumentException if the stream is null
+     */
+    public static void write( String content,
+                              OutputStream stream ) throws IOException {
+        IoUtil.write(content, stream);
+    }
 
-	/**
-	 * Write the entire contents of the supplied string to the given writer. This method always flushes and closes the writer when
-	 * finished.
-	 *
-	 * @param content the content to write to the writer; may be null
-	 * @param writer the writer to which the content is to be written
-	 * @throws IOException
-	 * @throws IllegalArgumentException if the writer is null
-	 */
-	public static void write( String content,
-	                          Writer writer ) throws IOException {
-		IoUtil.write(content, writer);
-	}
+    /**
+     * Write the entire contents of the supplied string to the given writer. This method always flushes and closes the writer when
+     * finished.
+     * 
+     * @param content the content to write to the writer; may be null
+     * @param writer the writer to which the content is to be written
+     * @throws IOException
+     * @throws IllegalArgumentException if the writer is null
+     */
+    public static void write( String content,
+                              Writer writer ) throws IOException {
+        IoUtil.write(content, writer);
+    }
 
-	/**
-	 * Create a human-readable form of the supplied object by choosing the representation format based upon the object type.
-	 * <p>
-	 * <ul>
-	 * <li>A null reference results in the "null" string.</li>
-	 * <li>A string is written wrapped by double quotes.</li>
-	 * <li>A boolean is written using {@link Boolean#toString()}.</li>
-	 * <li>A {@link Number number} is written using the standard {@link Number#toString() toString()} method.</li>
-	 * <li>A {@link java.util.Date date} is written using the the {@link DateUtil#getDateAsStandardString(java.util.Date)}
-	 * utility method.</li>
-	 * <li>A {@link java.sql.Date SQL date} is written using the the {@link DateUtil#getDateAsStandardString(java.util.Date)}
-	 * utility method.</li>
-	 * <li>A {@link Calendar Calendar instance} is written using the the {@link DateUtil#getDateAsStandardString(Calendar)}
-	 * utility method.</li>
-	 * <li>An array of bytes is written with a leading "[ " and trailing " ]" surrounding the bytes written as UTF-8.
-	 * <li>An array of objects is written with a leading "[ " and trailing " ]", and with all objects sent through
-	 * {@link #readableString(Object)} and separated by ", ".</li>
-	 * <li>A collection of objects (e.g, <code>Collection<?></code>) is written with a leading "[ " and trailing " ]", and
-	 * with all objects sent through {@link #readableString(Object)} and separated by ", ".</li>
-	 * <li>A map of objects (e.g, <code>Map<?></code>) is written with a leading "{ " and trailing " }", and with all map
-	 * entries written in the form "key => value" and separated by ", ". All key and value objects are sent through the
-	 * {@link #readableString(Object)} method.</li>
-	 * <li>Any other object is written using the object's {@link Object#toString() toString()} method.</li>
-	 * </ul>
-	 * </p>
-	 * <p>
-	 * This method is capable of generating strings for nested objects. For example, a <code>Map<Date,Object[]></code> would be
-	 * written in the form:
-	 *
-	 * <pre>
-	 *    { 2008-02-03T14:22:49 =&gt; [ &quot;description&quot;, 3, [ 003459de7389g23aef, true ] ] }
-	 * </pre>
-	 *
-	 * </p>
-	 *
-	 * @param obj the object that is to be converted to a string.
-	 * @return the string representation that is to be human readable
-	 */
-	public static String readableString( Object obj ) {
-		if (obj == null) return "null";
-		if (obj instanceof Boolean) return ((Boolean)obj).toString();
-		if (obj instanceof String) return "\"" + obj.toString() + "\"";
-		if (obj instanceof Number) return obj.toString();
-		if (obj instanceof Map) return readableString((Map)obj);
-		if (obj instanceof Collection) return readableString((Collection)obj);
-		if (obj instanceof byte[]) return readableString((byte[])obj);
-		if (obj instanceof boolean[]) return readableString((boolean[])obj);
-		if (obj instanceof short[]) return readableString((short[])obj);
-		if (obj instanceof int[]) return readableString((int[])obj);
-		if (obj instanceof long[]) return readableString((long[])obj);
-		if (obj instanceof float[]) return readableString((float[])obj);
-		if (obj instanceof double[]) return readableString((double[])obj);
-		if (obj instanceof Object[]) return readableString((Object[])obj);
-		if (obj instanceof Calendar) return DateUtil.getDateAsStandardString((Calendar)obj);
-		if (obj instanceof java.util.Date) return DateUtil.getDateAsStandardString((java.util.Date)obj);
-		if (obj instanceof java.sql.Date) return DateUtil.getDateAsStandardString((java.sql.Date)obj);
-		return obj.toString();
-	}
+    /**
+     * Create a human-readable form of the supplied object by choosing the representation format based upon the object type.
+     * <p>
+     * <ul>
+     * <li>A null reference results in the "null" string.</li>
+     * <li>A string is written wrapped by double quotes.</li>
+     * <li>A boolean is written using {@link Boolean#toString()}.</li>
+     * <li>A {@link Number number} is written using the standard {@link Number#toString() toString()} method.</li>
+     * <li>A {@link java.util.Date date} is written using the the {@link DateUtil#getDateAsStandardString(java.util.Date)}
+     * utility method.</li>
+     * <li>A {@link java.sql.Date SQL date} is written using the the {@link DateUtil#getDateAsStandardString(java.util.Date)}
+     * utility method.</li>
+     * <li>A {@link Calendar Calendar instance} is written using the the {@link DateUtil#getDateAsStandardString(Calendar)}
+     * utility method.</li>
+     * <li>An array of bytes is written with a leading "[ " and trailing " ]" surrounding the bytes written as UTF-8.
+     * <li>An array of objects is written with a leading "[ " and trailing " ]", and with all objects sent through
+     * {@link #readableString(Object)} and separated by ", ".</li>
+     * <li>A collection of objects (e.g, <code>Collection<?></code>) is written with a leading "[ " and trailing " ]", and
+     * with all objects sent through {@link #readableString(Object)} and separated by ", ".</li>
+     * <li>A map of objects (e.g, <code>Map<?></code>) is written with a leading "{ " and trailing " }", and with all map
+     * entries written in the form "key => value" and separated by ", ". All key and value objects are sent through the
+     * {@link #readableString(Object)} method.</li>
+     * <li>Any other object is written using the object's {@link Object#toString() toString()} method.</li>
+     * </ul>
+     * </p>
+     * <p>
+     * This method is capable of generating strings for nested objects. For example, a <code>Map<Date,Object[]></code> would be
+     * written in the form:
+     * 
+     * <pre>
+     *    { 2008-02-03T14:22:49 =&gt; [ &quot;description&quot;, 3, [ 003459de7389g23aef, true ] ] }
+     * </pre>
+     * 
+     * </p>
+     * 
+     * @param obj the object that is to be converted to a string.
+     * @return the string representation that is to be human readable
+     */
+    public static String readableString( Object obj ) {
+        if (obj == null) return "null";
+        if (obj instanceof Boolean) return ((Boolean)obj).toString();
+        if (obj instanceof String) return "\"" + obj.toString() + "\"";
+        if (obj instanceof Number) return obj.toString();
+        if (obj instanceof Map<?, ?>) return readableString((Map<?, ?>)obj);
+        if (obj instanceof Collection<?>) return readableString((Collection<?>)obj);
+        if (obj instanceof byte[]) return readableString((byte[])obj);
+        if (obj instanceof boolean[]) return readableString((boolean[])obj);
+        if (obj instanceof short[]) return readableString((short[])obj);
+        if (obj instanceof int[]) return readableString((int[])obj);
+        if (obj instanceof long[]) return readableString((long[])obj);
+        if (obj instanceof float[]) return readableString((float[])obj);
+        if (obj instanceof double[]) return readableString((double[])obj);
+        if (obj instanceof Object[]) return readableString((Object[])obj);
+        if (obj instanceof Calendar) return DateUtil.getDateAsStandardString((Calendar)obj);
+        if (obj instanceof java.util.Date) return DateUtil.getDateAsStandardString((java.util.Date)obj);
+        if (obj instanceof java.sql.Date) return DateUtil.getDateAsStandardString((java.sql.Date)obj);
+        return obj.toString();
+    }
 
-	protected static String readableEmptyArray( Class arrayClass ) {
-		assert arrayClass != null;
-		Class componentType = arrayClass.getComponentType();
-		if (componentType.isArray()) return "[" + readableEmptyArray(componentType) + "]";
-		return "[]";
-	}
+    protected static String readableEmptyArray( Class<?> arrayClass ) {
+        assert arrayClass != null;
+        Class<?> componentType = arrayClass.getComponentType();
+        if (componentType.isArray()) return "[" + readableEmptyArray(componentType) + "]";
+        return "[]";
+    }
 
-	protected static String readableString( Object[] array ) {
-		assert array != null;
-		if (array.length == 0) return readableEmptyArray(array.getClass());
-		StringBuilder sb = new StringBuilder();
-		boolean first = true;
-		sb.append("[ ");
-		for (Object value : array) {
-			if (first) {
-				first = false;
-			} else {
-				sb.append(", ");
-			}
-			sb.append(readableString(value));
-		}
-		sb.append(" ]");
-		return sb.toString();
-	}
+    protected static String readableString( Object[] array ) {
+        assert array != null;
+        if (array.length == 0) return readableEmptyArray(array.getClass());
+        StringBuilder sb = new StringBuilder();
+        boolean first = true;
+        sb.append("[ ");
+        for (Object value : array) {
+            if (first) {
+                first = false;
+            } else {
+                sb.append(", ");
+            }
+            sb.append(readableString(value));
+        }
+        sb.append(" ]");
+        return sb.toString();
+    }
 
-	protected static String readableString( int[] array ) {
-		assert array != null;
-		if (array.length == 0) return readableEmptyArray(array.getClass());
-		StringBuilder sb = new StringBuilder();
-		boolean first = true;
-		sb.append("[ ");
-		for (int value : array) {
-			if (first) {
-				first = false;
-			} else {
-				sb.append(", ");
-			}
-			sb.append(readableString(value));
-		}
-		sb.append(" ]");
-		return sb.toString();
-	}
+    protected static String readableString( int[] array ) {
+        assert array != null;
+        if (array.length == 0) return readableEmptyArray(array.getClass());
+        StringBuilder sb = new StringBuilder();
+        boolean first = true;
+        sb.append("[ ");
+        for (int value : array) {
+            if (first) {
+                first = false;
+            } else {
+                sb.append(", ");
+            }
+            sb.append(readableString(value));
+        }
+        sb.append(" ]");
+        return sb.toString();
+    }
 
-	protected static String readableString( short[] array ) {
-		assert array != null;
-		if (array.length == 0) return readableEmptyArray(array.getClass());
-		StringBuilder sb = new StringBuilder();
-		boolean first = true;
-		sb.append("[ ");
-		for (short value : array) {
-			if (first) {
-				first = false;
-			} else {
-				sb.append(", ");
-			}
-			sb.append(readableString(value));
-		}
-		sb.append(" ]");
-		return sb.toString();
-	}
+    protected static String readableString( short[] array ) {
+        assert array != null;
+        if (array.length == 0) return readableEmptyArray(array.getClass());
+        StringBuilder sb = new StringBuilder();
+        boolean first = true;
+        sb.append("[ ");
+        for (short value : array) {
+            if (first) {
+                first = false;
+            } else {
+                sb.append(", ");
+            }
+            sb.append(readableString(value));
+        }
+        sb.append(" ]");
+        return sb.toString();
+    }
 
-	protected static String readableString( long[] array ) {
-		assert array != null;
-		if (array.length == 0) return readableEmptyArray(array.getClass());
-		StringBuilder sb = new StringBuilder();
-		boolean first = true;
-		sb.append("[ ");
-		for (long value : array) {
-			if (first) {
-				first = false;
-			} else {
-				sb.append(", ");
-			}
-			sb.append(readableString(value));
-		}
-		sb.append(" ]");
-		return sb.toString();
-	}
+    protected static String readableString( long[] array ) {
+        assert array != null;
+        if (array.length == 0) return readableEmptyArray(array.getClass());
+        StringBuilder sb = new StringBuilder();
+        boolean first = true;
+        sb.append("[ ");
+        for (long value : array) {
+            if (first) {
+                first = false;
+            } else {
+                sb.append(", ");
+            }
+            sb.append(readableString(value));
+        }
+        sb.append(" ]");
+        return sb.toString();
+    }
 
-	protected static String readableString( boolean[] array ) {
-		assert array != null;
-		if (array.length == 0) return readableEmptyArray(array.getClass());
-		StringBuilder sb = new StringBuilder();
-		boolean first = true;
-		sb.append("[ ");
-		for (boolean value : array) {
-			if (first) {
-				first = false;
-			} else {
-				sb.append(", ");
-			}
-			sb.append(readableString(value));
-		}
-		sb.append(" ]");
-		return sb.toString();
-	}
+    protected static String readableString( boolean[] array ) {
+        assert array != null;
+        if (array.length == 0) return readableEmptyArray(array.getClass());
+        StringBuilder sb = new StringBuilder();
+        boolean first = true;
+        sb.append("[ ");
+        for (boolean value : array) {
+            if (first) {
+                first = false;
+            } else {
+                sb.append(", ");
+            }
+            sb.append(readableString(value));
+        }
+        sb.append(" ]");
+        return sb.toString();
+    }
 
-	protected static String readableString( float[] array ) {
-		assert array != null;
-		if (array.length == 0) return readableEmptyArray(array.getClass());
-		StringBuilder sb = new StringBuilder();
-		boolean first = true;
-		sb.append("[ ");
-		for (float value : array) {
-			if (first) {
-				first = false;
-			} else {
-				sb.append(", ");
-			}
-			sb.append(readableString(value));
-		}
-		sb.append(" ]");
-		return sb.toString();
-	}
+    protected static String readableString( float[] array ) {
+        assert array != null;
+        if (array.length == 0) return readableEmptyArray(array.getClass());
+        StringBuilder sb = new StringBuilder();
+        boolean first = true;
+        sb.append("[ ");
+        for (float value : array) {
+            if (first) {
+                first = false;
+            } else {
+                sb.append(", ");
+            }
+            sb.append(readableString(value));
+        }
+        sb.append(" ]");
+        return sb.toString();
+    }
 
-	protected static String readableString( double[] array ) {
-		assert array != null;
-		if (array.length == 0) return readableEmptyArray(array.getClass());
-		StringBuilder sb = new StringBuilder();
-		boolean first = true;
-		sb.append("[ ");
-		for (double value : array) {
-			if (first) {
-				first = false;
-			} else {
-				sb.append(", ");
-			}
-			sb.append(readableString(value));
-		}
-		sb.append(" ]");
-		return sb.toString();
-	}
+    protected static String readableString( double[] array ) {
+        assert array != null;
+        if (array.length == 0) return readableEmptyArray(array.getClass());
+        StringBuilder sb = new StringBuilder();
+        boolean first = true;
+        sb.append("[ ");
+        for (double value : array) {
+            if (first) {
+                first = false;
+            } else {
+                sb.append(", ");
+            }
+            sb.append(readableString(value));
+        }
+        sb.append(" ]");
+        return sb.toString();
+    }
 
-	protected static String readableString( byte[] array ) {
-		assert array != null;
-		if (array.length == 0) return readableEmptyArray(array.getClass());
-		StringBuilder sb = new StringBuilder();
-		sb.append("[ ");
-		try {
-			sb.append(new String(array, "UTF-8"));
-		} catch (UnsupportedEncodingException e) {
-			throw new SystemFailureException(e);
-		}
-		sb.append(" ]");
-		return sb.toString();
-	}
+    protected static String readableString( byte[] array ) {
+        assert array != null;
+        if (array.length == 0) return readableEmptyArray(array.getClass());
+        StringBuilder sb = new StringBuilder();
+        sb.append("[ ");
+        try {
+            sb.append(new String(array, "UTF-8"));
+        } catch (UnsupportedEncodingException e) {
+            throw new SystemFailureException(e);
+        }
+        sb.append(" ]");
+        return sb.toString();
+    }
 
-	protected static String readableString( Collection<?> collection ) {
-		assert collection != null;
-		if (collection.isEmpty()) return "[]";
-		StringBuilder sb = new StringBuilder();
-		boolean first = true;
-		sb.append("[ ");
-		for (Object value : collection) {
-			if (first) {
-				first = false;
-			} else {
-				sb.append(", ");
-			}
-			sb.append(readableString(value));
-		}
-		sb.append(" ]");
-		return sb.toString();
-	}
+    protected static String readableString( Collection<?> collection ) {
+        assert collection != null;
+        if (collection.isEmpty()) return "[]";
+        StringBuilder sb = new StringBuilder();
+        boolean first = true;
+        sb.append("[ ");
+        for (Object value : collection) {
+            if (first) {
+                first = false;
+            } else {
+                sb.append(", ");
+            }
+            sb.append(readableString(value));
+        }
+        sb.append(" ]");
+        return sb.toString();
+    }
 
-	protected static String readableString( Map<?, ?> map ) {
-		assert map != null;
-		if (map.isEmpty()) return "{}";
-		StringBuilder sb = new StringBuilder();
-		boolean first = true;
-		sb.append("{ ");
-		for (Map.Entry<?, ?> entry : map.entrySet()) {
-			Object key = entry.getKey();
-			Object value = entry.getValue();
-			if (first) {
-				first = false;
-			} else {
-				sb.append(", ");
-			}
-			sb.append(readableString(key));
-			sb.append(" => ");
-			sb.append(readableString(value));
-		}
-		sb.append(" }");
-		return sb.toString();
-	}
+    protected static String readableString( Map<?, ?> map ) {
+        assert map != null;
+        if (map.isEmpty()) return "{}";
+        StringBuilder sb = new StringBuilder();
+        boolean first = true;
+        sb.append("{ ");
+        for (Map.Entry<?, ?> entry : map.entrySet()) {
+            Object key = entry.getKey();
+            Object value = entry.getValue();
+            if (first) {
+                first = false;
+            } else {
+                sb.append(", ");
+            }
+            sb.append(readableString(key));
+            sb.append(" => ");
+            sb.append(readableString(value));
+        }
+        sb.append(" }");
+        return sb.toString();
+    }
 
-	/**
-	 * Get the stack trace of the supplied exception.
-	 *
-	 * @param throwable the exception for which the stack trace is to be returned
-	 * @return the stack trace, or null if the supplied exception is null
-	 */
-	public static String getStackTrace( Throwable throwable ) {
-		if (throwable == null) return null;
-		final ByteArrayOutputStream bas = new ByteArrayOutputStream();
-		final PrintWriter pw = new PrintWriter(bas);
-		throwable.printStackTrace(pw);
-		pw.close();
-		return bas.toString();
-	}
+    /**
+     * Get the stack trace of the supplied exception.
+     * 
+     * @param throwable the exception for which the stack trace is to be returned
+     * @return the stack trace, or null if the supplied exception is null
+     */
+    public static String getStackTrace( Throwable throwable ) {
+        if (throwable == null) return null;
+        final ByteArrayOutputStream bas = new ByteArrayOutputStream();
+        final PrintWriter pw = new PrintWriter(bas);
+        throwable.printStackTrace(pw);
+        pw.close();
+        return bas.toString();
+    }
 
-	/**
-	 * Removes leading and trailing whitespace from the supplied text, and reduces other consecutive whitespace characters to a
-	 * single space. Whitespace includes line-feeds.
-	 *
-	 * @param text the text to be normalized
-	 * @return the normalized text
-	 */
-	public static String normalize( String text ) {
-		ArgCheck.isNotNull(text, "text");
-		// This could be much more efficient.
-		return NORMALIZE_PATTERN.matcher(text).replaceAll(" ").trim();
-	}
+    /**
+     * Removes leading and trailing whitespace from the supplied text, and reduces other consecutive whitespace characters to a
+     * single space. Whitespace includes line-feeds.
+     * 
+     * @param text the text to be normalized
+     * @return the normalized text
+     */
+    public static String normalize( String text ) {
+        ArgCheck.isNotNull(text, "text");
+        // This could be much more efficient.
+        return NORMALIZE_PATTERN.matcher(text).replaceAll(" ").trim();
+    }
 
-	private StringUtil() {
-		// Prevent construction
-	}
+    private StringUtil() {
+        // Prevent construction
+    }
 }

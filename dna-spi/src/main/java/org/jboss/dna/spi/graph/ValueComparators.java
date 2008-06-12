@@ -41,7 +41,8 @@ public class ValueComparators {
      */
     public static final Comparator<String> STRING_COMPARATOR = new Comparator<String>() {
 
-        public int compare( String o1, String o2 ) {
+        public int compare( String o1,
+                            String o2 ) {
             if (o1 == o2) return 0;
             if (o1 == null) return -1;
             if (o2 == null) return 1;
@@ -53,7 +54,8 @@ public class ValueComparators {
      */
     public static final Comparator<Long> LONG_COMPARATOR = new Comparator<Long>() {
 
-        public int compare( Long o1, Long o2 ) {
+        public int compare( Long o1,
+                            Long o2 ) {
             if (o1 == o2) return 0;
             if (o1 == null) return -1;
             if (o2 == null) return 1;
@@ -65,7 +67,8 @@ public class ValueComparators {
      */
     public static final Comparator<Double> DOUBLE_COMPARATOR = new Comparator<Double>() {
 
-        public int compare( Double o1, Double o2 ) {
+        public int compare( Double o1,
+                            Double o2 ) {
             if (o1 == o2) return 0;
             if (o1 == null) return -1;
             if (o2 == null) return 1;
@@ -77,7 +80,8 @@ public class ValueComparators {
      */
     public static final Comparator<BigDecimal> DECIMAL_COMPARATOR = new Comparator<BigDecimal>() {
 
-        public int compare( BigDecimal o1, BigDecimal o2 ) {
+        public int compare( BigDecimal o1,
+                            BigDecimal o2 ) {
             if (o1 == o2) return 0;
             if (o1 == null) return -1;
             if (o2 == null) return 1;
@@ -91,7 +95,8 @@ public class ValueComparators {
      */
     public static final Comparator<Binary> BINARY_COMPARATOR = new Comparator<Binary>() {
 
-        public int compare( Binary o1, Binary o2 ) {
+        public int compare( Binary o1,
+                            Binary o2 ) {
             if (o1 == o2) return 0;
             if (o1 == null) return -1;
             if (o2 == null) return 1;
@@ -155,7 +160,8 @@ public class ValueComparators {
      */
     public static final Comparator<Boolean> BOOLEAN_COMPARATOR = new Comparator<Boolean>() {
 
-        public int compare( Boolean o1, Boolean o2 ) {
+        public int compare( Boolean o1,
+                            Boolean o2 ) {
             if (o1 == o2) return 0;
             if (o1 == null) return -1;
             if (o2 == null) return 1;
@@ -167,7 +173,8 @@ public class ValueComparators {
      */
     public static final Comparator<DateTime> DATE_TIME_COMPARATOR = new Comparator<DateTime>() {
 
-        public int compare( DateTime o1, DateTime o2 ) {
+        public int compare( DateTime o1,
+                            DateTime o2 ) {
             if (o1 == o2) return 0;
             if (o1 == null) return -1;
             if (o2 == null) return 1;
@@ -179,7 +186,8 @@ public class ValueComparators {
      */
     public static final Comparator<Date> DATE_COMPARATOR = new Comparator<Date>() {
 
-        public int compare( Date o1, Date o2 ) {
+        public int compare( Date o1,
+                            Date o2 ) {
             if (o1 == o2) return 0;
             if (o1 == null) return -1;
             if (o2 == null) return 1;
@@ -191,7 +199,8 @@ public class ValueComparators {
      */
     public static final Comparator<Calendar> CALENDAR_COMPARATOR = new Comparator<Calendar>() {
 
-        public int compare( Calendar o1, Calendar o2 ) {
+        public int compare( Calendar o1,
+                            Calendar o2 ) {
             if (o1 == o2) return 0;
             if (o1 == null) return -1;
             if (o2 == null) return 1;
@@ -203,7 +212,8 @@ public class ValueComparators {
      */
     public static final Comparator<Name> NAME_COMPARATOR = new Comparator<Name>() {
 
-        public int compare( Name o1, Name o2 ) {
+        public int compare( Name o1,
+                            Name o2 ) {
             if (o1 == o2) return 0;
             if (o1 == null) return -1;
             if (o2 == null) return 1;
@@ -215,7 +225,8 @@ public class ValueComparators {
      */
     public static final Comparator<Path> PATH_COMPARATOR = new Comparator<Path>() {
 
-        public int compare( Path o1, Path o2 ) {
+        public int compare( Path o1,
+                            Path o2 ) {
             if (o1 == o2) return 0;
             if (o1 == null) return -1;
             if (o2 == null) return 1;
@@ -227,7 +238,8 @@ public class ValueComparators {
      */
     public static final Comparator<URI> URI_COMPARATOR = new Comparator<URI>() {
 
-        public int compare( URI o1, URI o2 ) {
+        public int compare( URI o1,
+                            URI o2 ) {
             if (o1 == o2) return 0;
             if (o1 == null) return -1;
             if (o2 == null) return 1;
@@ -239,7 +251,8 @@ public class ValueComparators {
      */
     public static final Comparator<Reference> REFERENCE_COMPARATOR = new Comparator<Reference>() {
 
-        public int compare( Reference o1, Reference o2 ) {
+        public int compare( Reference o1,
+                            Reference o2 ) {
             if (o1 == o2) return 0;
             if (o1 == null) return -1;
             if (o2 == null) return 1;
@@ -252,21 +265,22 @@ public class ValueComparators {
     public static final Comparator<Object> OBJECT_COMPARATOR = new Comparator<Object>() {
 
         @SuppressWarnings( "unchecked" )
-        public int compare( Object o1, Object o2 ) {
+        public int compare( Object o1,
+                            Object o2 ) {
             if (o1 == o2) return 0;
             if (o1 == null) return -1;
             if (o2 == null) return 1;
             PropertyType type1 = PropertyType.discoverType(o1);
             PropertyType type2 = PropertyType.discoverType(o2);
             if (type1 != PropertyType.OBJECT && type2 != PropertyType.OBJECT) {
-                if (type1 == type2) return type1.getComparator().compare(o1, o2);
+                if (type1 == type2) return ((Comparator<Object>)type1.getComparator()).compare(o1, o2);
 
                 // The types are different but the classes are the same ...
                 if (type1.getDeclaringClass().isAssignableFrom(type2.getDeclaringClass())) {
-                    return type1.getComparator().compare(o1, o2);
+                    return ((Comparator<Object>)type1.getComparator()).compare(o1, o2);
                 }
                 if (type2.getDeclaringClass().isAssignableFrom(type1.getDeclaringClass())) {
-                    return type2.getComparator().compare(o1, o2);
+                    return ((Comparator<Object>)type2.getComparator()).compare(o1, o2);
                 }
             }
 

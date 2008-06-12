@@ -27,6 +27,10 @@ package org.jboss.dna.spi.graph;
 public class InvalidPathException extends RuntimeException {
 
     /**
+     */
+    private static final long serialVersionUID = 6034512896518552227L;
+
+    /**
      * 
      */
     public InvalidPathException() {

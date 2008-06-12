@@ -31,11 +31,15 @@ import java.text.StringCharacterIterator;
 
 /**
  * Static utilities for working with classes.
+ * 
  * @author John Verhaeg
  */
 public final class ClassUtil {
 
-    private static void addObjectString( Object object, int includeInheritedFieldDepth, Class clazz, StringBuffer text ) {
+    private static void addObjectString( Object object,
+                                         int includeInheritedFieldDepth,
+                                         Class<?> clazz,
+                                         StringBuffer text ) {
 
         // Add class's name
         text.append(nonPackageQualifiedName(clazz));
@@ -85,7 +89,8 @@ public final class ClassUtil {
         text.append(')');
     }
 
-    private static boolean addSeparator( boolean separatorNeeded, StringBuffer text ) {
+    private static boolean addSeparator( boolean separatorNeeded,
+                                         StringBuffer text ) {
         if (separatorNeeded) {
             text.append(", "); //$NON-NLS-1$
         }
@@ -114,9 +119,9 @@ public final class ClassUtil {
     /**
      * @param clazz A class.
      * @return The non-package-qualified name of the specified class. Note, inner class names will still be qualified by their
-     * enclosing class names and a "$" delimiter.
+     *         enclosing class names and a "$" delimiter.
      */
-    public static String nonPackageQualifiedName( final Class clazz ) {
+    public static String nonPackageQualifiedName( final Class<?> clazz ) {
         // if (clazz == null) {
         // throw new IllegalArgumentException(I18n.format(CommonI18n.mustNotBeNull, "Class")); //$NON-NLS-1$
         // }
@@ -127,7 +132,7 @@ public final class ClassUtil {
     /**
      * @param object An object.
      * @return The non-package-qualified name of the class of the specified object. Note, inner class names will still be
-     * qualified by their enclosing class names and a "$" delimiter.
+     *         qualified by their enclosing class names and a "$" delimiter.
      */
     public static String nonPackageQualifiedName( final Object object ) {
         // if (object == null) {
@@ -141,7 +146,8 @@ public final class ClassUtil {
      * @param includeInheritedFieldDepth
      * @return A string representation of the specified object, consisting of its class name, properties, and property values.
      */
-    public static String toString( Object object, int includeInheritedFieldDepth ) {
+    public static String toString( Object object,
+                                   int includeInheritedFieldDepth ) {
         StringBuffer text = new StringBuffer();
         addObjectString(object, includeInheritedFieldDepth, object.getClass(), text);
         return text.toString();
@@ -150,6 +156,7 @@ public final class ClassUtil {
     /**
      * Determine whether the supplied string represents a well-formed fully-qualified Java classname. This utility method enforces
      * no conventions (e.g., packages are all lowercase) nor checks whether the class is available on the classpath.
+     * 
      * @param classname
      * @return true if the string is a fully-qualified class name
      */

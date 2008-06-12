@@ -96,7 +96,7 @@ public class LoggerTest {
         org.apache.log4j.Logger theLogger = log4jLogger;
         while (theLogger != null) {
             List<Appender> appenders = new ArrayList<Appender>();
-            Enumeration previousAppenders = theLogger.getAllAppenders();
+            Enumeration<?> previousAppenders = theLogger.getAllAppenders();
             while (previousAppenders.hasMoreElements()) {
                 appenders.add((Appender)previousAppenders.nextElement());
             }
@@ -436,7 +436,7 @@ public class LoggerTest {
          */
         public void removeFirst( Logger.Level expectedLevel,
                                  String expectedMessageExpression,
-                                 Class expectedExceptionClass ) {
+                                 Class<?> expectedExceptionClass ) {
             if (!hasEvents()) {
                 fail("Expected log message but found none: " + expectedLevel + " - " + expectedMessageExpression);
             }

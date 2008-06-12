@@ -35,6 +35,9 @@ import org.jboss.dna.spi.graph.Path;
 @Immutable
 public class BasicPathSegment implements Path.Segment {
 
+    /**
+     */
+    private static final long serialVersionUID = 4367349287846075157L;
     private final Name name;
     private final int index;
 

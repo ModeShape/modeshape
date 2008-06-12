@@ -30,6 +30,10 @@ package org.jboss.dna.common;
 public class SystemFailureException extends RuntimeException {
 
     /**
+     */
+    private static final long serialVersionUID = 8281373010920861138L;
+
+    /**
      * 
      */
     public SystemFailureException() {

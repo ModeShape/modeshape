@@ -27,6 +27,10 @@ package org.jboss.dna.repository.rules;
 public class InvalidRuleSetException extends RuntimeException {
 
     /**
+     */
+    private static final long serialVersionUID = 6739445071678626125L;
+
+    /**
      * 
      */
     public InvalidRuleSetException() {

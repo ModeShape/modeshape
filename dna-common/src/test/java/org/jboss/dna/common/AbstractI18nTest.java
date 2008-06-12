@@ -37,9 +37,9 @@ import org.junit.Test;
  */
 public abstract class AbstractI18nTest {
 
-    private Class i18nClass;
+    private Class<?> i18nClass;
 
-    protected AbstractI18nTest( Class i18nClass ) {
+    protected AbstractI18nTest( Class<?> i18nClass ) {
         this.i18nClass = i18nClass;
     }
 

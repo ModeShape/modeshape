@@ -56,6 +56,9 @@ import org.jboss.dna.spi.graph.connection.RepositorySource;
 @ThreadSafe
 public class JBossCacheSource implements RepositorySource, ObjectFactory {
 
+    /**
+     */
+    private static final long serialVersionUID = 1530716494560375111L;
     public static final String DEFAULT_UUID_PROPERTY_NAMESPACE = "http://www.jboss.org/dna/connector/jbosscache";
     public static final String DEFAULT_UUID_PROPERTY_NAME = "uuid";
 

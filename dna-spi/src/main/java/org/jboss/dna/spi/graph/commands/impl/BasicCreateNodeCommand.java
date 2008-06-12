@@ -34,6 +34,9 @@ import org.jboss.dna.spi.graph.commands.CreateNodeCommand;
 @NotThreadSafe
 public class BasicCreateNodeCommand extends BasicGraphCommand implements CreateNodeCommand {
 
+    /**
+     */
+    private static final long serialVersionUID = -5452285887178397354L;
     private final Path path;
     private final List<Property> properties;
     private CachePolicy cachePolicy;
@@ -43,7 +46,8 @@ public class BasicCreateNodeCommand extends BasicGraphCommand implements CreateN
      * @param path the path to the node; may not be null
      * @param properties the properties of the node; may not be null
      */
-    public BasicCreateNodeCommand( Path path, List<Property> properties ) {
+    public BasicCreateNodeCommand( Path path,
+                                   List<Property> properties ) {
         super();
         assert path != null;
         assert properties != null;

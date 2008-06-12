@@ -29,6 +29,10 @@ package org.jboss.dna.repository.sequencers;
 public class InvalidSequencerPathExpression extends RuntimeException {
 
     /**
+     */
+    private static final long serialVersionUID = -2814638971450551156L;
+
+    /**
      * 
      */
     public InvalidSequencerPathExpression() {

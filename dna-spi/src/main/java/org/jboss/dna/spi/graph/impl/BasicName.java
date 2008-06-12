@@ -38,7 +38,10 @@ import org.jboss.dna.spi.graph.Path;
 @Immutable
 public class BasicName implements Name {
 
-	private final String namespaceUri;
+	/**
+     */
+    private static final long serialVersionUID = -1737537720336990144L;
+    private final String namespaceUri;
 	private final String localName;
 	private final int hc;
 

@@ -128,7 +128,7 @@ public class AbstractValueFactoryTest {
         }
     }
 
-    private AbstractValueFactory factory;
+    private AbstractValueFactory<?> factory;
 
     @Before
     public void beforeEach() {

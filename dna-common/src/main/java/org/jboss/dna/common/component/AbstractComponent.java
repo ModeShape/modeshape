@@ -21,24 +21,23 @@
  */
 package org.jboss.dna.common.component;
 
-
 /**
- * 
+ * @param <T> the type of configuration
  * @author Randall Hauch
  */
-public class AbstractComponent implements Component {
+public class AbstractComponent<T extends ComponentConfig> implements Component<T> {
 
     /**
      * {@inheritDoc}
      */
-    public ComponentConfig getConfiguration() {
+    public T getConfiguration() {
         return null;
     }
 
     /**
      * {@inheritDoc}
      */
-    public void setConfiguration( ComponentConfig configuration ) {
+    public void setConfiguration( T configuration ) {
     }
 
 }

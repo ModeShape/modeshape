@@ -27,6 +27,10 @@ package org.jboss.dna.spi.graph;
 public class NamespaceException extends RuntimeException {
 
     /**
+     */
+    private static final long serialVersionUID = 1300642242538881207L;
+
+    /**
      * 
      */
     public NamespaceException() {

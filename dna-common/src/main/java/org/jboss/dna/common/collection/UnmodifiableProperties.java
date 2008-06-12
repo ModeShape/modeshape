@@ -39,6 +39,9 @@ import java.util.Map.Entry;
  */
 public class UnmodifiableProperties extends Properties {
 
+    /**
+     */
+    private static final long serialVersionUID = -4670639332874922546L;
     private Properties delegate;
 
     public UnmodifiableProperties( Properties props ) {

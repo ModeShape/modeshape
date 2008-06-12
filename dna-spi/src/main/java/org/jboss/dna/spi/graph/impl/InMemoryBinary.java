@@ -35,6 +35,10 @@ import org.jboss.dna.spi.graph.ValueComparators;
 @Immutable
 public class InMemoryBinary implements Binary {
 
+    /**
+     */
+    private static final long serialVersionUID = 8792863149767123559L;
+
     protected static final byte[] EMPTY_CONTENT = new byte[0];
 
     private final byte[] bytes;

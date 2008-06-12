@@ -33,6 +33,9 @@ import org.jboss.dna.spi.graph.Reference;
 @Immutable
 public class UuidReference implements Reference {
 
+    /**
+     */
+    private static final long serialVersionUID = 2299467578161645109L;
     private UUID uuid;
 
     public UuidReference( UUID uuid ) {

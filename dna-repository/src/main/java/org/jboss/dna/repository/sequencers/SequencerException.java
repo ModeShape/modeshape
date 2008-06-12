@@ -28,6 +28,10 @@ public class SequencerException extends RuntimeException {
 
     /**
      */
+    private static final long serialVersionUID = -7610898771539657335L;
+
+    /**
+     */
     public SequencerException() {
     }
 

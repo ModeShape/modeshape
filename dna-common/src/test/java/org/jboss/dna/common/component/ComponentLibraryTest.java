@@ -62,7 +62,7 @@ public class ComponentLibraryTest {
 
     @Test
     public void shouldBeInstantiableWithDefaultConstructor() {
-        new ComponentLibrary();
+        new ComponentLibrary<SampleComponent, SampleComponentConfig>();
     }
 
     @Test
@@ -146,7 +146,7 @@ public class ComponentLibraryTest {
         components = library.getInstances();
         assertThat(components.size(), is(2));
         assertThat(components.get(0), instanceOf(MockComponentA.class));
-        assertThat(components.get(0), is(sameInstance((Component)secondComponentA)));
+        assertThat(components.get(0), is(sameInstance((Component<SampleComponentConfig>)secondComponentA)));
         assertThat(components.get(1), instanceOf(MockComponentB.class));
         MockComponentB firstComponentB = (MockComponentB)components.get(1);
 

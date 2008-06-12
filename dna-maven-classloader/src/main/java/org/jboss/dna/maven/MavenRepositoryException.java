@@ -28,6 +28,10 @@ package org.jboss.dna.maven;
 public class MavenRepositoryException extends RuntimeException {
 
     /**
+     */
+    private static final long serialVersionUID = -9198687929215916061L;
+
+    /**
      * 
      */
     public MavenRepositoryException() {

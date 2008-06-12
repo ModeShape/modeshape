@@ -29,6 +29,10 @@ package org.jboss.dna.repository.federation;
 public class FederationException extends RuntimeException {
 
     /**
+     */
+    private static final long serialVersionUID = -27536888064529864L;
+
+    /**
      * 
      */
     public FederationException() {
