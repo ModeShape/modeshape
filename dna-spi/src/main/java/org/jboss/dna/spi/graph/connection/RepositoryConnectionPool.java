@@ -166,7 +166,8 @@ public class RepositoryConnectionPool implements RepositoryConnectionFactory {
      * @throws IllegalArgumentException if the connection factory is null or any of the supplied arguments are invalid
      */
     public RepositoryConnectionPool( RepositoryConnectionFactory connectionFactory ) {
-        this(connectionFactory, DEFAULT_CORE_POOL_SIZE, DEFAULT_MAXIMUM_POOL_SIZE, DEFAULT_KEEP_ALIVE_TIME_IN_SECONDS, TimeUnit.SECONDS);
+        this(connectionFactory, DEFAULT_CORE_POOL_SIZE, DEFAULT_MAXIMUM_POOL_SIZE, DEFAULT_KEEP_ALIVE_TIME_IN_SECONDS,
+             TimeUnit.SECONDS);
     }
 
     /**
@@ -176,11 +177,15 @@ public class RepositoryConnectionPool implements RepositoryConnectionFactory {
      * @param corePoolSize the number of connections to keep in the pool, even if they are idle.
      * @param maximumPoolSize the maximum number of connections to allow in the pool.
      * @param keepAliveTime when the number of connection is greater than the core, this is the maximum time that excess idle
-     * connections will be kept before terminating.
+     *        connections will be kept before terminating.
      * @param unit the time unit for the keepAliveTime argument.
      * @throws IllegalArgumentException if the connection factory is null or any of the supplied arguments are invalid
      */
-    public RepositoryConnectionPool( RepositoryConnectionFactory connectionFactory, int corePoolSize, int maximumPoolSize, long keepAliveTime, TimeUnit unit ) {
+    public RepositoryConnectionPool( RepositoryConnectionFactory connectionFactory,
+                                     int corePoolSize,
+                                     int maximumPoolSize,
+                                     long keepAliveTime,
+                                     TimeUnit unit ) {
         ArgCheck.isNonNegative(corePoolSize, "corePoolSize");
         ArgCheck.isPositive(maximumPoolSize, "maximumPoolSize");
         ArgCheck.isNonNegative(keepAliveTime, "keepAliveTime");
@@ -228,7 +233,8 @@ public class RepositoryConnectionPool implements RepositoryConnectionFactory {
      * @param pingTimeout the time to wait for a ping to complete
      * @param unit the time unit of the time argument
      */
-    public void setPingTimeout( long pingTimeout, TimeUnit unit ) {
+    public void setPingTimeout( long pingTimeout,
+                                TimeUnit unit ) {
         ArgCheck.isNonNegative(pingTimeout, "time");
         this.pingTimeout.set(unit.toNanos(pingTimeout));
     }
@@ -253,12 +259,13 @@ public class RepositoryConnectionPool implements RepositoryConnectionFactory {
      * This overrides any value set in the constructor.
      * 
      * @param time the time to wait. A time value of zero will cause excess connections to terminate immediately after being
-     * returned.
+     *        returned.
      * @param unit the time unit of the time argument
      * @throws IllegalArgumentException if time less than zero
      * @see #getKeepAliveTime
      */
-    public void setKeepAliveTime( long time, TimeUnit unit ) {
+    public void setKeepAliveTime( long time,
+                                  TimeUnit unit ) {
         ArgCheck.isNonNegative(time, "time");
         this.keepAliveTime = unit.toNanos(time);
     }
@@ -446,8 +453,8 @@ public class RepositoryConnectionPool implements RepositoryConnectionFactory {
      * but no new connections will be created. Invocation has no additional effect if already shut down.
      * 
      * @throws SecurityException if a security manager exists and shutting down this pool may manipulate threads that the caller
-     * is not permitted to modify because it does not hold {@link java.lang.RuntimePermission}<tt>("modifyThread")</tt>, or
-     * the security manager's <tt>checkAccess</tt> method denies access.
+     *         is not permitted to modify because it does not hold {@link java.lang.RuntimePermission}<tt>("modifyThread")</tt>,
+     *         or the security manager's <tt>checkAccess</tt> method denies access.
      * @see #shutdownNow()
      */
     public void shutdown() {
@@ -497,8 +504,8 @@ public class RepositoryConnectionPool implements RepositoryConnectionFactory {
      * Attempts to close all connections, including those connections currently in use, and prevent the use of other connections.
      * 
      * @throws SecurityException if a security manager exists and shutting down this pool may manipulate threads that the caller
-     * is not permitted to modify because it does not hold {@link java.lang.RuntimePermission}<tt>("modifyThread")</tt>, or
-     * the security manager's <tt>checkAccess</tt> method denies access.
+     *         is not permitted to modify because it does not hold {@link java.lang.RuntimePermission}<tt>("modifyThread")</tt>,
+     *         or the security manager's <tt>checkAccess</tt> method denies access.
      * @see #shutdown()
      */
     public void shutdownNow() {
@@ -610,10 +617,11 @@ public class RepositoryConnectionPool implements RepositoryConnectionFactory {
      * @param timeout the maximum time to wait for all connections to be closed and returned to the pool
      * @param unit the time unit for <code>timeout</code>
      * @return true if the pool was terminated in the supplied time (or was already terminated), or false if the timeout occurred
-     * before all the connections were closed
+     *         before all the connections were closed
      * @throws InterruptedException if the thread was interrupted
      */
-    public boolean awaitTermination( long timeout, TimeUnit unit ) throws InterruptedException {
+    public boolean awaitTermination( long timeout,
+                                     TimeUnit unit ) throws InterruptedException {
         long nanos = unit.toNanos(timeout);
         final ReentrantLock mainLock = this.mainLock;
         try {
@@ -652,72 +660,59 @@ public class RepositoryConnectionPool implements RepositoryConnectionFactory {
     /**
      * {@inheritDoc}
      */
-    @SuppressWarnings( "null" )
     public RepositoryConnection getConnection() throws RepositorySourceException, InterruptedException {
         int attemptsAllowed = this.maxFailedAttemptsBeforeError.get();
         ConnectionWrapper connection = null;
-        try {
-            // Do this until we get a good connection ...
-            int attemptsRemaining = attemptsAllowed;
-            while (connection == null && attemptsRemaining > 0) {
-                --attemptsRemaining;
-                ReentrantLock mainLock = this.mainLock;
+        // Do this until we get a good connection ...
+        int attemptsRemaining = attemptsAllowed;
+        while (connection == null && attemptsRemaining > 0) {
+            --attemptsRemaining;
+            ReentrantLock mainLock = this.mainLock;
+            try {
+                mainLock.lock();
+                // If we're shutting down the pool, then just close the connection ...
+                if (this.runState != RUNNING) {
+                    throw new IllegalStateException(SpiI18n.repositoryConnectionPoolIsNotRunning.text());
+                }
+                // If there are fewer total connections than the core size ...
+                if (this.poolSize < this.corePoolSize) {
+                    // Immediately create a wrapped connection and return it ...
+                    connection = newWrappedConnection();
+                }
+                // Peek to see if there is a connection available ...
+                else if (this.availableConnections.peek() != null) {
+                    // There is, so take it and return it ...
+                    connection = this.availableConnections.take();
+                }
+                // There is no connection available. If there are fewer total connections than the maximum size ...
+                else if (this.poolSize < this.maximumPoolSize) {
+                    // Immediately create a wrapped connection and return it ...
+                    connection = newWrappedConnection();
+                }
+                if (connection != null) {
+                    this.inUseConnections.add(connection);
+                }
+            } finally {
+                mainLock.unlock();
+            }
+            if (connection == null) {
+                // There are not enough connections, so wait in line for the next available connection ...
+                this.logger.trace("Waiting for a repository connection from pool {0}", getName());
+                connection = this.availableConnections.take();
+                mainLock = this.mainLock;
+                mainLock.lock();
                 try {
-                    mainLock.lock();
-                    // If we're shutting down the pool, then just close the connection ...
-                    if (this.runState != RUNNING) {
-                        throw new IllegalStateException(SpiI18n.repositoryConnectionPoolIsNotRunning.text());
-                    }
-                    // If there are fewer total connections than the core size ...
-                    if (this.poolSize < this.corePoolSize) {
-                        // Immediately create a wrapped connection and return it ...
-                        connection = newWrappedConnection();
-                    }
-                    // Peek to see if there is a connection available ...
-                    else if (this.availableConnections.peek() != null) {
-                        // There is, so take it and return it ...
-                        connection = this.availableConnections.take();
-                    }
-                    // There is no connection available. If there are fewer total connections than the maximum size ...
-                    else if (this.poolSize < this.maximumPoolSize) {
-                        // Immediately create a wrapped connection and return it ...
-                        connection = newWrappedConnection();
-                    }
                     if (connection != null) {
                         this.inUseConnections.add(connection);
                     }
                 } finally {
                     mainLock.unlock();
                 }
-                if (connection == null) {
-                    // There are not enough connections, so wait in line for the next available connection ...
-                    this.logger.trace("Waiting for a repository connection from pool {0}", getName());
-                    connection = this.availableConnections.take();
-                    mainLock = this.mainLock;
-                    mainLock.lock();
-                    try {
-                        if (connection != null) {
-                            this.inUseConnections.add(connection);
-                        }
-                    } finally {
-                        mainLock.unlock();
-                    }
-                    this.logger.trace("Recieved a repository connection from pool {0}", getName());
-                }
-                if (connection != null && this.validateConnectionBeforeUse.get()) {
-                    connection = validateConnection(connection);
-                }
+                this.logger.trace("Recieved a repository connection from pool {0}", getName());
             }
-        } catch (InterruptedException e) {
-            this.logger.trace("Thread interrupted while waiting for a repository connection from pool {0}", getName());
-
-            // If the thread has been interrupted after we've taken a connection from the pool ...
-            if (connection != null) {
-                // We need to return the connection back into the pool ...
-                returnConnection(connection);
+            if (connection != null && this.validateConnectionBeforeUse.get()) {
+                connection = validateConnection(connection);
             }
-            // And rethrow ...
-            throw e;
         }
         if (connection == null) {
             // We were unable to obtain a usable connection, so fail ...
@@ -955,7 +950,8 @@ public class RepositoryConnectionPool implements RepositoryConnectionFactory {
         /**
          * {@inheritDoc}
          */
-        public void execute( ExecutionEnvironment env, GraphCommand... commands ) throws RepositorySourceException, InterruptedException {
+        public void execute( ExecutionEnvironment env,
+                             GraphCommand... commands ) throws RepositorySourceException, InterruptedException {
             if (closed) throw new IllegalStateException(SpiI18n.closedConnectionMayNotBeUsed.text());
             this.original.execute(env, commands);
         }
@@ -963,7 +959,8 @@ public class RepositoryConnectionPool implements RepositoryConnectionFactory {
         /**
          * {@inheritDoc}
          */
-        public boolean ping( long time, TimeUnit unit ) throws InterruptedException {
+        public boolean ping( long time,
+                             TimeUnit unit ) throws InterruptedException {
             if (closed) throw new IllegalStateException(SpiI18n.closedConnectionMayNotBeUsed.text());
             return this.original.ping(time, unit);
         }
