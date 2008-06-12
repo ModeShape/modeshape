@@ -61,7 +61,8 @@ public class ObservationService implements AdministeredService {
      */
     public static interface ProblemLog {
 
-        void error( String repositoryWorkspaceName, Throwable t );
+        void error( String repositoryWorkspaceName,
+                    Throwable t );
     }
 
     /**
@@ -74,7 +75,8 @@ public class ObservationService implements AdministeredService {
         /**
          * {@inheritDoc}
          */
-        public void error( String repositoryWorkspaceName, Throwable t ) {
+        public void error( String repositoryWorkspaceName,
+                           Throwable t ) {
             getLogger().error(t, RepositoryI18n.errorProcessingEvents, repositoryWorkspaceName);
         }
     }
@@ -84,7 +86,8 @@ public class ObservationService implements AdministeredService {
         /**
          * {@inheritDoc}
          */
-        public void error( String repositoryWorkspaceName, Throwable t ) {
+        public void error( String repositoryWorkspaceName,
+                           Throwable t ) {
         }
     }
 
@@ -113,7 +116,8 @@ public class ObservationService implements AdministeredService {
         /**
          * {@inheritDoc}
          */
-        public boolean awaitTermination( long timeout, TimeUnit unit ) {
+        public boolean awaitTermination( long timeout,
+                                         TimeUnit unit ) {
             return true;
         }
 
@@ -273,23 +277,29 @@ public class ObservationService implements AdministeredService {
      * </p>
      * 
      * @param repositoryWorkspaceName the name to be used with the session factory to obtain a session to the repository and
-     * workspace that is to be monitored
+     *        workspace that is to be monitored
      * @param absolutePath the absolute path of the node at or below which changes are to be monitored; may be null if all nodes
-     * in the workspace are to be monitored
+     *        in the workspace are to be monitored
      * @param eventTypes the bitmask of the {@link Event} types that are to be monitored
      * @param isDeep true if events below the node given by the <code>absolutePath</code> or by the <code>uuids</code> are to
-     * be processed, or false if only the events at the node
+     *        be processed, or false if only the events at the node
      * @param uuids array of UUIDs of nodes that are to be monitored; may be null or empty if the UUIDs are not known
      * @param nodeTypeNames array of node type names that are to be monitored; may be null or empty if the monitoring has no node
-     * type restrictions
+     *        type restrictions
      * @param noLocal true if the events originating in the supplied workspace are to be ignored, or false if they are also to be
-     * processed.
+     *        processed.
      * @return the listener that was created and registered to perform the monitoring
      * @throws RepositoryException if there is a problem registering the listener
      */
-    public WorkspaceListener monitor( String repositoryWorkspaceName, String absolutePath, int eventTypes, boolean isDeep, String[] uuids, String[] nodeTypeNames, boolean noLocal )
-        throws RepositoryException {
-        WorkspaceListener listener = new WorkspaceListener(repositoryWorkspaceName, eventTypes, absolutePath, isDeep, uuids, nodeTypeNames, noLocal);
+    public WorkspaceListener monitor( String repositoryWorkspaceName,
+                                      String absolutePath,
+                                      int eventTypes,
+                                      boolean isDeep,
+                                      String[] uuids,
+                                      String[] nodeTypeNames,
+                                      boolean noLocal ) throws RepositoryException {
+        WorkspaceListener listener = new WorkspaceListener(repositoryWorkspaceName, eventTypes, absolutePath, isDeep, uuids,
+                                                           nodeTypeNames, noLocal);
         listener.register();
         this.workspaceListeners.add(listener);
         return listener;
@@ -310,16 +320,24 @@ public class ObservationService implements AdministeredService {
      * </p>
      * 
      * @param repositoryWorkspaceName the name to be used with the session factory to obtain a session to the repository and
-     * workspace that is to be monitored
+     *        workspace that is to be monitored
      * @param absolutePath the absolute path of the node at or below which changes are to be monitored; may be null if all nodes
-     * in the workspace are to be monitored
+     *        in the workspace are to be monitored
      * @param nodeTypeNames the names of the node types that are to be monitored; may be null or empty if the monitoring has no
-     * node type restrictions
+     *        node type restrictions
      * @return the listener that was created and registered to perform the monitoring
      * @throws RepositoryException if there is a problem registering the listener
      */
-    public WorkspaceListener monitor( String repositoryWorkspaceName, String absolutePath, String... nodeTypeNames ) throws RepositoryException {
-        return monitor(repositoryWorkspaceName, absolutePath, WorkspaceListener.DEFAULT_EVENT_TYPES, WorkspaceListener.DEFAULT_IS_DEEP, null, nodeTypeNames, WorkspaceListener.DEFAULT_NO_LOCAL);
+    public WorkspaceListener monitor( String repositoryWorkspaceName,
+                                      String absolutePath,
+                                      String... nodeTypeNames ) throws RepositoryException {
+        return monitor(repositoryWorkspaceName,
+                       absolutePath,
+                       WorkspaceListener.DEFAULT_EVENT_TYPES,
+                       WorkspaceListener.DEFAULT_IS_DEEP,
+                       null,
+                       nodeTypeNames,
+                       WorkspaceListener.DEFAULT_NO_LOCAL);
     }
 
     /**
@@ -336,15 +354,23 @@ public class ObservationService implements AdministeredService {
      * </p>
      * 
      * @param repositoryWorkspaceName the name to be used with the session factory to obtain a session to the repository and
-     * workspace that is to be monitored
+     *        workspace that is to be monitored
      * @param eventTypes the bitmask of the {@link Event} types that are to be monitored
      * @param nodeTypeNames the names of the node types that are to be monitored; may be null or empty if the monitoring has no
-     * node type restrictions
+     *        node type restrictions
      * @return the listener that was created and registered to perform the monitoring
      * @throws RepositoryException if there is a problem registering the listener
      */
-    public WorkspaceListener monitor( String repositoryWorkspaceName, int eventTypes, String... nodeTypeNames ) throws RepositoryException {
-        return monitor(repositoryWorkspaceName, WorkspaceListener.DEFAULT_ABSOLUTE_PATH, eventTypes, WorkspaceListener.DEFAULT_IS_DEEP, null, nodeTypeNames, WorkspaceListener.DEFAULT_NO_LOCAL);
+    public WorkspaceListener monitor( String repositoryWorkspaceName,
+                                      int eventTypes,
+                                      String... nodeTypeNames ) throws RepositoryException {
+        return monitor(repositoryWorkspaceName,
+                       WorkspaceListener.DEFAULT_ABSOLUTE_PATH,
+                       eventTypes,
+                       WorkspaceListener.DEFAULT_IS_DEEP,
+                       null,
+                       nodeTypeNames,
+                       WorkspaceListener.DEFAULT_NO_LOCAL);
     }
 
     protected void unregisterListener( WorkspaceListener listener ) {
@@ -360,10 +386,11 @@ public class ObservationService implements AdministeredService {
      * and filters.
      * </p>
      * 
-     * @param events
+     * @param eventIterator
      * @param listener
      */
-    protected void processEvents( EventIterator eventIterator, WorkspaceListener listener ) {
+    protected void processEvents( EventIterator eventIterator,
+                                  WorkspaceListener listener ) {
         if (eventIterator == null) return;
         List<Event> events = new ArrayList<Event>();
         // Copy the events ...
@@ -418,7 +445,8 @@ public class ObservationService implements AdministeredService {
         private final int size;
         private int position = 0;
 
-        protected DelegatingEventIterator( Iterator<Event> events, int size ) {
+        protected DelegatingEventIterator( Iterator<Event> events,
+                                           int size ) {
             this.events = events;
             this.size = size;
         }
@@ -487,7 +515,8 @@ public class ObservationService implements AdministeredService {
 
         public static final boolean DEFAULT_IS_DEEP = true;
         public static final boolean DEFAULT_NO_LOCAL = false;
-        public static final int DEFAULT_EVENT_TYPES = Event.NODE_ADDED | /* Event.NODE_REMOVED| */Event.PROPERTY_ADDED | Event.PROPERTY_CHANGED /* |Event.PROPERTY_REMOVED */;
+        public static final int DEFAULT_EVENT_TYPES = Event.NODE_ADDED | /* Event.NODE_REMOVED| */Event.PROPERTY_ADDED
+                                                      | Event.PROPERTY_CHANGED /* |Event.PROPERTY_REMOVED */;
         public static final String DEFAULT_ABSOLUTE_PATH = "/";
 
         private final String repositoryWorkspaceName;
@@ -500,7 +529,13 @@ public class ObservationService implements AdministeredService {
         @GuardedBy( "this" )
         private transient Session session;
 
-        protected WorkspaceListener( String repositoryWorkspaceName, int eventTypes, String absPath, boolean isDeep, String[] uuids, String[] nodeTypeNames, boolean noLocal ) {
+        protected WorkspaceListener( String repositoryWorkspaceName,
+                                     int eventTypes,
+                                     String absPath,
+                                     boolean isDeep,
+                                     String[] uuids,
+                                     String[] nodeTypeNames,
+                                     boolean noLocal ) {
             this.repositoryWorkspaceName = repositoryWorkspaceName;
             this.eventTypes = eventTypes;
             this.deep = isDeep;
@@ -591,7 +626,13 @@ public class ObservationService implements AdministeredService {
             this.session = ObservationService.this.getSessionFactory().createSession(this.repositoryWorkspaceName);
             String[] uuids = this.uuids.isEmpty() ? null : this.uuids.toArray(new String[this.uuids.size()]);
             String[] nodeTypeNames = this.nodeTypeNames.isEmpty() ? null : this.nodeTypeNames.toArray(new String[this.nodeTypeNames.size()]);
-            this.session.getWorkspace().getObservationManager().addEventListener(this, eventTypes, absolutePath, deep, uuids, nodeTypeNames, noLocal);
+            this.session.getWorkspace().getObservationManager().addEventListener(this,
+                                                                                 eventTypes,
+                                                                                 absolutePath,
+                                                                                 deep,
+                                                                                 uuids,
+                                                                                 nodeTypeNames,
+                                                                                 noLocal);
             return this;
         }
 

@@ -214,9 +214,6 @@ public class RuleServiceTest {
         executeRuleSet(validRuleSet.getName());
     }
 
-    /**
-     * @param validRuleSet
-     */
     protected void executeRuleSet( String ruleSetName ) {
         // Create some simple fact objects ...
         RuleInput info = new RuleInput();

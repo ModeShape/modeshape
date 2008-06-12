@@ -191,7 +191,10 @@ public class JcrMavenUrlProvider extends AbstractMavenUrlProvider {
     /**
      * {@inheritDoc}
      */
-    public URL getUrl( MavenId mavenId, ArtifactType artifactType, SignatureType signatureType, boolean createIfRequired ) throws MalformedURLException, MavenRepositoryException {
+    public URL getUrl( MavenId mavenId,
+                       ArtifactType artifactType,
+                       SignatureType signatureType,
+                       boolean createIfRequired ) throws MalformedURLException, MavenRepositoryException {
         final String path = getUrlPath(mavenId, artifactType, signatureType);
         MavenUrl mavenUrl = new MavenUrl();
         mavenUrl.setWorkspaceName(this.getWorkspaceName());
@@ -232,9 +235,14 @@ public class JcrMavenUrlProvider extends AbstractMavenUrlProvider {
                 session.save();
                 this.logger.trace("Created Maven repository node for {0}", mavenUrl);
             } catch (LoginException err) {
-                throw new MavenRepositoryException(MavenI18n.unableToOpenSessiontoRepositoryWhenCreatingNode.text(mavenUrl, err.getMessage()), err);
+                throw new MavenRepositoryException(
+                                                   MavenI18n.unableToOpenSessiontoRepositoryWhenCreatingNode.text(mavenUrl,
+                                                                                                                  err.getMessage()),
+                                                   err);
             } catch (NoSuchWorkspaceException err) {
-                throw new MavenRepositoryException(MavenI18n.unableToFindWorkspaceWhenCreatingNode.text(this.getWorkspaceName(), mavenUrl, err.getMessage()), err);
+                throw new MavenRepositoryException(MavenI18n.unableToFindWorkspaceWhenCreatingNode.text(this.getWorkspaceName(),
+                                                                                                        mavenUrl,
+                                                                                                        err.getMessage()), err);
             } catch (PathNotFoundException err) {
                 return null;
             } catch (RepositoryException err) {
@@ -246,8 +254,11 @@ public class JcrMavenUrlProvider extends AbstractMavenUrlProvider {
         return mavenUrl.getUrl(this.urlStreamHandler, this.urlEncoder);
     }
 
-    protected Node getOrCreatePath( Node root, String relPath, String nodeType )
-        throws PathNotFoundException, ItemExistsException, NoSuchNodeTypeException, LockException, VersionException, ConstraintViolationException, RepositoryException {
+    protected Node getOrCreatePath( Node root,
+                                    String relPath,
+                                    String nodeType )
+        throws PathNotFoundException, ItemExistsException, NoSuchNodeTypeException, LockException, VersionException,
+        ConstraintViolationException, RepositoryException {
         // Create the "nt:unstructured" nodes for the folder structures ...
         Node current = root;
         boolean created = false;
@@ -267,7 +278,8 @@ public class JcrMavenUrlProvider extends AbstractMavenUrlProvider {
         return current;
     }
 
-    protected Node getContentNodeForMavenResource( Session session, MavenUrl mavenUrl ) throws RepositoryException {
+    protected Node getContentNodeForMavenResource( Session session,
+                                                   MavenUrl mavenUrl ) throws RepositoryException {
         final String mavenPath = mavenUrl.getPath().replaceFirst("^/+", "");
         final String mavenRootPath = this.getPathToTopOfRepository().replaceFirst("^/+", "");
         Node root = session.getRootNode();
@@ -285,7 +297,9 @@ public class JcrMavenUrlProvider extends AbstractMavenUrlProvider {
      * @param signatureType the type of signature; may be null if the signature file is not desired
      * @return the path
      */
-    protected String getUrlPath( MavenId mavenId, ArtifactType artifactType, SignatureType signatureType ) {
+    protected String getUrlPath( MavenId mavenId,
+                                 ArtifactType artifactType,
+                                 SignatureType signatureType ) {
         StringBuilder sb = new StringBuilder();
         sb.append("/");
         if (artifactType == null) {
@@ -335,7 +349,7 @@ public class JcrMavenUrlProvider extends AbstractMavenUrlProvider {
     /**
      * Obtain an input stream to the existing content at the location given by the supplied {@link MavenUrl}. The Maven URL
      * should have a path that points to the node where the content is stored in the
-     * {@link #getContentProperty() content property}.
+     * {@link #CONTENT_PROPERTY_NAME content property}.
      * 
      * @param mavenUrl the Maven URL to the content; may not be null
      * @return the input stream to the content, or null if there is no existing content
@@ -354,9 +368,13 @@ public class JcrMavenUrlProvider extends AbstractMavenUrlProvider {
             result = new MavenInputStream(session, result);
             return result;
         } catch (LoginException err) {
-            throw new MavenRepositoryException(MavenI18n.unableToOpenSessiontoRepositoryWhenReadingNode.text(mavenUrl, err.getMessage()), err);
+            throw new MavenRepositoryException(MavenI18n.unableToOpenSessiontoRepositoryWhenReadingNode.text(mavenUrl,
+                                                                                                             err.getMessage()),
+                                               err);
         } catch (NoSuchWorkspaceException err) {
-            throw new MavenRepositoryException(MavenI18n.unableToFindWorkspaceWhenReadingNode.text(this.getWorkspaceName(), mavenUrl, err.getMessage()), err);
+            throw new MavenRepositoryException(MavenI18n.unableToFindWorkspaceWhenReadingNode.text(this.getWorkspaceName(),
+                                                                                                   mavenUrl,
+                                                                                                   err.getMessage()), err);
         } catch (PathNotFoundException err) {
             return null;
         } catch (RepositoryException err) {
@@ -371,7 +389,7 @@ public class JcrMavenUrlProvider extends AbstractMavenUrlProvider {
     /**
      * Obtain an output stream to the existing content at the location given by the supplied {@link MavenUrl}. The Maven URL
      * should have a path that points to the property or to the node where the content is stored in the
-     * {@link #getContentProperty() content property}.
+     * {@link #CONTENT_PROPERTY_NAME content property}.
      * 
      * @param mavenUrl the Maven URL to the content; may not be null
      * @return the input stream to the content, or null if there is no existing content
@@ -389,15 +407,20 @@ public class JcrMavenUrlProvider extends AbstractMavenUrlProvider {
             }
             return result;
         } catch (LoginException err) {
-            throw new MavenRepositoryException(MavenI18n.unableToOpenSessiontoRepositoryWhenReadingNode.text(mavenUrl, err.getMessage()), err);
+            throw new MavenRepositoryException(MavenI18n.unableToOpenSessiontoRepositoryWhenReadingNode.text(mavenUrl,
+                                                                                                             err.getMessage()),
+                                               err);
         } catch (NoSuchWorkspaceException err) {
-            throw new MavenRepositoryException(MavenI18n.unableToFindWorkspaceWhenReadingNode.text(this.getWorkspaceName(), mavenUrl, err.getMessage()), err);
+            throw new MavenRepositoryException(MavenI18n.unableToFindWorkspaceWhenReadingNode.text(this.getWorkspaceName(),
+                                                                                                   mavenUrl,
+                                                                                                   err.getMessage()), err);
         } catch (RepositoryException err) {
             throw new MavenRepositoryException(MavenI18n.errorReadingNode.text(mavenUrl, err.getMessage()), err);
         }
     }
 
-    public void setContent( MavenUrl mavenUrl, InputStream content ) throws IOException {
+    public void setContent( MavenUrl mavenUrl,
+                            InputStream content ) throws IOException {
         Session session = null;
         try {
             // Create a new session, find the actual node, create a temporary file to which the content will be written,
@@ -411,7 +434,9 @@ public class JcrMavenUrlProvider extends AbstractMavenUrlProvider {
         } catch (LoginException err) {
             throw new IOException(MavenI18n.unableToOpenSessiontoRepositoryWhenWritingNode.text(mavenUrl, err.getMessage()));
         } catch (NoSuchWorkspaceException err) {
-            throw new IOException(MavenI18n.unableToFindWorkspaceWhenWritingNode.text(this.getWorkspaceName(), mavenUrl, err.getMessage()));
+            throw new IOException(MavenI18n.unableToFindWorkspaceWhenWritingNode.text(this.getWorkspaceName(),
+                                                                                      mavenUrl,
+                                                                                      err.getMessage()));
         } catch (RepositoryException err) {
             throw new IOException(MavenI18n.errorWritingNode.text(mavenUrl, err.getMessage()));
         } finally {
@@ -426,7 +451,8 @@ public class JcrMavenUrlProvider extends AbstractMavenUrlProvider {
         private final InputStream stream;
         private final Session session;
 
-        protected MavenInputStream( final Session session, final InputStream stream ) {
+        protected MavenInputStream( final Session session,
+                                    final InputStream stream ) {
             this.session = session;
             this.stream = stream;
         }
@@ -458,7 +484,8 @@ public class JcrMavenUrlProvider extends AbstractMavenUrlProvider {
         private final File file;
         private final MavenUrl mavenUrl;
 
-        protected MavenOutputStream( final MavenUrl mavenUrl, final File file ) throws FileNotFoundException {
+        protected MavenOutputStream( final MavenUrl mavenUrl,
+                                     final File file ) throws FileNotFoundException {
             this.mavenUrl = mavenUrl;
             this.file = file;
             this.stream = new BufferedOutputStream(new FileOutputStream(this.file));
@@ -487,7 +514,9 @@ public class JcrMavenUrlProvider extends AbstractMavenUrlProvider {
          * {@inheritDoc}
          */
         @Override
-        public void write( byte[] b, int off, int len ) throws IOException {
+        public void write( byte[] b,
+                           int off,
+                           int len ) throws IOException {
             if (stream == null) throw new IOException(MavenI18n.unableToWriteToClosedStream.text());
             stream.write(b, off, len);
         }
@@ -512,12 +541,18 @@ public class JcrMavenUrlProvider extends AbstractMavenUrlProvider {
                         try {
                             inputStream.close();
                         } catch (IOException ioe) {
-                            Logger.getLogger(this.getClass()).error(ioe, MavenI18n.errorClosingTempFileStreamAfterWritingContent, mavenUrl, ioe.getMessage());
+                            Logger.getLogger(this.getClass()).error(ioe,
+                                                                    MavenI18n.errorClosingTempFileStreamAfterWritingContent,
+                                                                    mavenUrl,
+                                                                    ioe.getMessage());
                         } finally {
                             try {
                                 file.delete();
                             } catch (SecurityException se) {
-                                Logger.getLogger(this.getClass()).error(se, MavenI18n.errorDeletingTempFileStreamAfterWritingContent, mavenUrl, se.getMessage());
+                                Logger.getLogger(this.getClass()).error(se,
+                                                                        MavenI18n.errorDeletingTempFileStreamAfterWritingContent,
+                                                                        mavenUrl,
+                                                                        se.getMessage());
                             } finally {
                                 stream = null;
                             }
@@ -563,9 +598,7 @@ public class JcrMavenUrlProvider extends AbstractMavenUrlProvider {
         private final MavenUrl mavenUrl;
 
         /**
-         * @param repository the repository that contains the content from/to which the URL connections will read/write
          * @param url the URL that is to be processed
-         * @param decoder the decoder that will unescape any characters in the URL
          */
         protected MavenUrlConnection( URL url ) {
             super(url);

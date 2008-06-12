@@ -30,6 +30,7 @@ import org.jboss.dna.common.util.ArgCheck;
 
 /**
  * Transforms words to singular, plural, humanized (human readable), underscore, camel case, or ordinal form.
+ * 
  * @author Randall Hauch
  */
 public class Inflector {
@@ -46,7 +47,8 @@ public class Inflector {
         protected final Pattern expressionPattern;
         protected final String replacement;
 
-        protected Rule( String expression, String replacement ) {
+        protected Rule( String expression,
+                        String replacement ) {
             this.expression = expression;
             this.replacement = replacement != null ? replacement : "";
             this.expressionPattern = Pattern.compile(this.expression, Pattern.CASE_INSENSITIVE);
@@ -55,6 +57,7 @@ public class Inflector {
         /**
          * Apply the rule against the input string, returning the modified string or null if the rule didn't apply (and no
          * modifications were made)
+         * 
          * @param input the input string
          * @return the modified string if this rule applied, or null if the input was not modified by this rule
          */
@@ -130,6 +133,7 @@ public class Inflector {
      * <p>
      * Note that if the {@link Object#toString()} is called on the supplied object, so this method works for non-strings, too.
      * </p>
+     * 
      * @param word the word that is to be pluralized.
      * @return the pluralized form of the word, or the word itself if it could not be pluralized
      * @see #singularize(Object)
@@ -146,7 +150,8 @@ public class Inflector {
         return wordStr;
     }
 
-    public String pluralize( Object word, int count ) {
+    public String pluralize( Object word,
+                             int count ) {
         if (word == null) return null;
         if (count == 1 || count == -1) {
             return word.toString();
@@ -172,6 +177,7 @@ public class Inflector {
      * <p>
      * Note that if the {@link Object#toString()} is called on the supplied object, so this method works for non-strings, too.
      * </p>
+     * 
      * @param word the word that is to be pluralized.
      * @return the pluralized form of the word, or the word itself if it could not be pluralized
      * @see #pluralize(Object)
@@ -201,6 +207,7 @@ public class Inflector {
      * </pre>
      * 
      * </p>
+     * 
      * @param lowerCaseAndUnderscoredWord the word that is to be converted to camel case
      * @param delimiterChars optional characters that are used to delimit word boundaries
      * @return the lower camel case version of the word
@@ -208,7 +215,8 @@ public class Inflector {
      * @see #camelCase(String, boolean, char[])
      * @see #upperCamelCase(String, char[])
      */
-    public String lowerCamelCase( String lowerCaseAndUnderscoredWord, char... delimiterChars ) {
+    public String lowerCamelCase( String lowerCaseAndUnderscoredWord,
+                                  char... delimiterChars ) {
         return camelCase(lowerCaseAndUnderscoredWord, false, delimiterChars);
     }
 
@@ -225,6 +233,7 @@ public class Inflector {
      * </pre>
      * 
      * </p>
+     * 
      * @param lowerCaseAndUnderscoredWord the word that is to be converted to camel case
      * @param delimiterChars optional characters that are used to delimit word boundaries
      * @return the upper camel case version of the word
@@ -232,7 +241,8 @@ public class Inflector {
      * @see #camelCase(String, boolean, char[])
      * @see #lowerCamelCase(String, char[])
      */
-    public String upperCamelCase( String lowerCaseAndUnderscoredWord, char... delimiterChars ) {
+    public String upperCamelCase( String lowerCaseAndUnderscoredWord,
+                                  char... delimiterChars ) {
         return camelCase(lowerCaseAndUnderscoredWord, true, delimiterChars);
     }
 
@@ -253,16 +263,19 @@ public class Inflector {
      * </pre>
      * 
      * </p>
+     * 
      * @param lowerCaseAndUnderscoredWord the word that is to be converted to camel case
      * @param uppercaseFirstLetter true if the first character is to be uppercased, or false if the first character is to be
-     * lowercased
+     *        lowercased
      * @param delimiterChars optional characters that are used to delimit word boundaries
      * @return the camel case version of the word
      * @see #underscore(String, char[])
      * @see #upperCamelCase(String, char[])
      * @see #lowerCamelCase(String, char[])
      */
-    public String camelCase( String lowerCaseAndUnderscoredWord, boolean uppercaseFirstLetter, char... delimiterChars ) {
+    public String camelCase( String lowerCaseAndUnderscoredWord,
+                             boolean uppercaseFirstLetter,
+                             char... delimiterChars ) {
         if (lowerCaseAndUnderscoredWord == null) return null;
         lowerCaseAndUnderscoredWord = lowerCaseAndUnderscoredWord.trim();
         if (lowerCaseAndUnderscoredWord.length() == 0) return "";
@@ -279,7 +292,8 @@ public class Inflector {
             return replaceAllWithUppercase(result, "(^|_)(.)", 2);
         }
         if (lowerCaseAndUnderscoredWord.length() < 2) return lowerCaseAndUnderscoredWord;
-        return "" + lowerCaseAndUnderscoredWord.charAt(0) + camelCase(lowerCaseAndUnderscoredWord, true, delimiterChars).substring(1);
+        return "" + lowerCaseAndUnderscoredWord.charAt(0)
+               + camelCase(lowerCaseAndUnderscoredWord, true, delimiterChars).substring(1);
     }
 
     /**
@@ -299,11 +313,13 @@ public class Inflector {
      * </pre>
      * 
      * </p>
+     * 
      * @param camelCaseWord the camel-cased word that is to be converted;
      * @param delimiterChars optional characters that are used to delimit word boundaries (beyond capitalization)
      * @return a lower-cased version of the input, with separate words delimited by the underscore character.
      */
-    public String underscore( String camelCaseWord, char... delimiterChars ) {
+    public String underscore( String camelCaseWord,
+                              char... delimiterChars ) {
         if (camelCaseWord == null) return null;
         String result = camelCaseWord.trim();
         if (result.length() == 0) return "";
@@ -320,6 +336,7 @@ public class Inflector {
 
     /**
      * Returns a copy of the input with the first character converted to uppercase and the remainder to lowercase.
+     * 
      * @param words the word to be capitalized
      * @return the string with the first character capitalized and the remaining characters lowercased
      */
@@ -343,12 +360,14 @@ public class Inflector {
      * </pre>
      * 
      * </p>
+     * 
      * @param lowerCaseAndUnderscoredWords the input to be humanized
      * @param removableTokens optional array of tokens that are to be removed
      * @return the humanized string
      * @see #titleCase(String, String[])
      */
-    public String humanize( String lowerCaseAndUnderscoredWords, String... removableTokens ) {
+    public String humanize( String lowerCaseAndUnderscoredWords,
+                            String... removableTokens ) {
         if (lowerCaseAndUnderscoredWords == null) return null;
         String result = lowerCaseAndUnderscoredWords.trim();
         if (result.length() == 0) return "";
@@ -377,11 +396,13 @@ public class Inflector {
      * </pre>
      * 
      * </p>
+     * 
      * @param words the input to be turned into title case
      * @param removableTokens optional array of tokens that are to be removed
      * @return the title-case version of the supplied words
      */
-    public String titleCase( String words, String... removableTokens ) {
+    public String titleCase( String words,
+                             String... removableTokens ) {
         String result = humanize(words, removableTokens);
         result = replaceAllWithUppercase(result, "\\b([a-z])", 1); // change first char of each word to uppercase
         return result;
@@ -390,6 +411,7 @@ public class Inflector {
     /**
      * Turns a non-negative number into an ordinal string used to denote the position in an ordered sequence, such as 1st, 2nd,
      * 3rd, 4th.
+     * 
      * @param number the non-negative number
      * @return the string with the number and ordinal suffix
      */
@@ -411,6 +433,7 @@ public class Inflector {
     /**
      * Determine whether the supplied word is considered uncountable by the {@link #pluralize(Object) pluralize} and
      * {@link #singularize(Object) singularize} methods.
+     * 
      * @param word the word
      * @return true if the plural and singular forms of the word are the same
      */
@@ -422,23 +445,27 @@ public class Inflector {
 
     /**
      * Get the set of words that are not processed by the Inflector. The resulting map is directly modifiable.
+     * 
      * @return the set of uncountable words
      */
     public Set<String> getUncountables() {
         return uncountables;
     }
 
-    public void addPluralize( String rule, String replacement ) {
+    public void addPluralize( String rule,
+                              String replacement ) {
         final Rule pluralizeRule = new Rule(rule, replacement);
         this.plurals.addFirst(pluralizeRule);
     }
 
-    public void addSingularize( String rule, String replacement ) {
+    public void addSingularize( String rule,
+                                String replacement ) {
         final Rule singularizeRule = new Rule(rule, replacement);
         this.singulars.addFirst(singularizeRule);
     }
 
-    public void addIrregular( String singular, String plural ) {
+    public void addIrregular( String singular,
+                              String plural ) {
         ArgCheck.isNotEmpty(singular, "singular rule");
         ArgCheck.isNotEmpty(plural, "plural rule");
         String singularRemainder = singular.length() > 1 ? singular.substring(1) : "";
@@ -463,12 +490,15 @@ public class Inflector {
      * string to uppercase or lowercase the backreferences. For example, <code>\L1</code> would lowercase the first
      * backreference, and <code>&#92;u3</code> would uppercase the 3rd backreference.
      * </p>
+     * 
      * @param input
      * @param regex
      * @param groupNumberToUppercase
-     * @return
+     * @return the input string with the appropriate characters converted to upper-case
      */
-    protected static String replaceAllWithUppercase( String input, String regex, int groupNumberToUppercase ) {
+    protected static String replaceAllWithUppercase( String input,
+                                                     String regex,
+                                                     int groupNumberToUppercase ) {
         Pattern underscoreAndDotPattern = Pattern.compile(regex);
         Matcher matcher = underscoreAndDotPattern.matcher(input);
         StringBuffer sb = new StringBuffer();

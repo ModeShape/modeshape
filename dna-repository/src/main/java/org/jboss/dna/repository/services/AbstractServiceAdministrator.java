@@ -39,7 +39,8 @@ public abstract class AbstractServiceAdministrator implements ServiceAdministrat
     private volatile State state;
     private final I18n serviceName;
 
-    protected AbstractServiceAdministrator( I18n serviceName, State initialState ) {
+    protected AbstractServiceAdministrator( I18n serviceName,
+                                            State initialState ) {
         assert initialState != null;
         assert serviceName != null;
         this.state = initialState;
@@ -88,7 +89,7 @@ public abstract class AbstractServiceAdministrator implements ServiceAdministrat
      * @param state the desired state in string form
      * @return this object for method chaining purposes
      * @throws IllegalArgumentException if the specified state string is null or does not match one of the predefined
-     * {@link ServiceAdministrator.State predefined enumerated values}
+     *         {@link ServiceAdministrator.State predefined enumerated values}
      * @see #setState(State)
      * @see #start()
      * @see #pause()
@@ -129,8 +130,8 @@ public abstract class AbstractServiceAdministrator implements ServiceAdministrat
 
     /**
      * Implementation of the functionality to switch to the started state. This method is only called if the state from which the
-     * service is transitioning is appropriate ({@link State#PAUSED}). This method does nothing by default, and should be
-     * overridden if needed.
+     * service is transitioning is appropriate ({@link ServiceAdministrator.State#PAUSED}). This method does nothing by default,
+     * and should be overridden if needed.
      * 
      * @param fromState the state from which this service is transitioning; never null
      * @throws IllegalStateException if the service is such that it cannot be transitioned from the supplied state
@@ -166,8 +167,8 @@ public abstract class AbstractServiceAdministrator implements ServiceAdministrat
 
     /**
      * Implementation of the functionality to switch to the paused state. This method is only called if the state from which the
-     * service is transitioning is appropriate ({@link State#STARTED}). This method does nothing by default, and should be
-     * overridden if needed.
+     * service is transitioning is appropriate ({@link ServiceAdministrator.State#STARTED}). This method does nothing by
+     * default, and should be overridden if needed.
      * 
      * @param fromState the state from which this service is transitioning; never null
      * @throws IllegalStateException if the service is such that it cannot be transitioned from the supplied state
@@ -203,8 +204,8 @@ public abstract class AbstractServiceAdministrator implements ServiceAdministrat
 
     /**
      * Implementation of the functionality to switch to the shutdown state. This method is only called if the state from which the
-     * service is transitioning is appropriate ({@link State#STARTED} or {@link State#PAUSED}). This method does nothing by
-     * default, and should be overridden if needed.
+     * service is transitioning is appropriate ({@link ServiceAdministrator.State#STARTED} or
+     * {@link ServiceAdministrator.State#PAUSED}). This method does nothing by default, and should be overridden if needed.
      * 
      * @param fromState the state from which this service is transitioning; never null
      * @throws IllegalStateException if the service is such that it cannot be transitioned from the supplied state
