@@ -33,6 +33,11 @@ import javax.naming.Referenceable;
  * leaving that entirely to the implementation classes.
  * </p>
  * <p>
+ * Implementations should also provide a no-arg constructor so that it is possible to easily create instances and initialize using
+ * the standard getters and setters. One example where this is required is when a RepositorySource instance is recorded in a
+ * repository (e.g., in a configuration area), and needs to be reinstantiated.
+ * </p>
+ * <p>
  * Objects that implement this <code>RepositorySource</code> interface are typically registered with a naming service such as
  * Java Naming and Directory Interface<sup><font size=-3>TM</font></sup> (JNDI). This interface extends both
  * {@link Referenceable} and {@link Serializable} so that such objects can be stored in any JNDI naming context and enable proper

@@ -23,7 +23,6 @@ package org.jboss.dna.spi.graph.commands.impl;
 
 import java.util.List;
 import net.jcip.annotations.NotThreadSafe;
-import org.jboss.dna.spi.cache.CachePolicy;
 import org.jboss.dna.spi.graph.Path;
 import org.jboss.dna.spi.graph.Property;
 import org.jboss.dna.spi.graph.commands.SetPropertiesCommand;
@@ -39,14 +38,13 @@ public class BasicSetPropertiesCommand extends BasicGraphCommand implements SetP
     private static final long serialVersionUID = -2693642411179501304L;
     private final Path path;
     private final List<Property> properties;
-    private CachePolicy cachePolicy;
-    private long timeLoaded;
 
     /**
      * @param path the path to the node; may not be null
      * @param properties the properties of the node; may not be null
      */
-    public BasicSetPropertiesCommand( Path path, List<Property> properties ) {
+    public BasicSetPropertiesCommand( Path path,
+                                      List<Property> properties ) {
         super();
         assert path != null;
         assert properties != null;
@@ -67,33 +65,4 @@ public class BasicSetPropertiesCommand extends BasicGraphCommand implements SetP
     public Iterable<Property> getProperties() {
         return properties;
     }
-
-    /**
-     * {@inheritDoc}
-     */
-    public CachePolicy getCachePolicy() {
-        return cachePolicy;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public long getTimeLoaded() {
-        return timeLoaded;
-    }
-
-    /**
-     * @param timeLoaded Sets timeLoaded to the specified value.
-     */
-    public void setTimeLoaded( long timeLoaded ) {
-        this.timeLoaded = timeLoaded;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public void setCachePolicy( CachePolicy cachePolicy ) {
-        this.cachePolicy = cachePolicy;
-    }
-
 }

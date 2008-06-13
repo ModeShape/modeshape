@@ -195,4 +195,12 @@ public class DecimalValueFactory extends AbstractValueFactory<BigDecimal> {
         return create(getStringValueFactory().create(reader, approximateLength));
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    protected BigDecimal[] createEmptyArray( int length ) {
+        return new BigDecimal[length];
+    }
+
 }

@@ -24,6 +24,7 @@ package org.jboss.dna.spi.graph.commands.impl;
 import net.jcip.annotations.NotThreadSafe;
 import org.jboss.dna.spi.graph.Path;
 import org.jboss.dna.spi.graph.commands.MoveBranchCommand;
+import org.jboss.dna.spi.graph.commands.NodeConflictBehavior;
 
 /**
  * @author Randall Hauch
@@ -33,17 +34,23 @@ public class BasicMoveBranchCommand extends BasicGraphCommand implements MoveBra
 
     private final Path oldPath;
     private final Path newPath;
+    private final NodeConflictBehavior conflictBehavior;
 
     /**
      * @param oldPath the path to the original; may not be null
      * @param newPath the path to the new location; may not be null
+     * @param conflictBehavior the desired behavior when a node exists at the <code>path</code>; may not be null
      */
-    public BasicMoveBranchCommand( Path oldPath, Path newPath ) {
+    public BasicMoveBranchCommand( Path oldPath,
+                                   Path newPath,
+                                   NodeConflictBehavior conflictBehavior ) {
         super();
         assert oldPath != null;
         assert newPath != null;
+        assert conflictBehavior != null;
         this.oldPath = oldPath;
         this.newPath = newPath;
+        this.conflictBehavior = conflictBehavior;
     }
 
     /**
@@ -58,6 +65,13 @@ public class BasicMoveBranchCommand extends BasicGraphCommand implements MoveBra
      */
     public Path getNewPath() {
         return newPath;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public NodeConflictBehavior getConflictBehavior() {
+        return conflictBehavior;
     }
 
 }

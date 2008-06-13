@@ -228,4 +228,154 @@ public interface ValueFactory<T> {
      */
     T create( Object value ) throws IoException;
 
+    /**
+     * Create an array of values from an array of string values, using no decoding.
+     * 
+     * @param values the values
+     * @return the values, or null if the supplied string is null
+     * @throws IoException If an unexpected problem occurs during the conversion.
+     * @see #create(String[], TextDecoder)
+     */
+    T[] create( String[] values ) throws IoException;
+
+    /**
+     * Create an array of values from an array of strings, using the supplied decoder.
+     * 
+     * @param values the string values from which the values are to be created
+     * @param decoder the decoder that should be used; if null, the {@link #DEFAULT_DECODER default decoder} is used
+     * @return the value, or null if the supplied string is null
+     * @throws IoException If an unexpected problem occurs during the conversion.
+     * @see #create(String)
+     */
+    T[] create( String[] values,
+                TextDecoder decoder ) throws IoException;
+
+    /**
+     * Create an array of values from an array of integers.
+     * 
+     * @param values the integers from which the values are to be created
+     * @return the values, or null if the supplied array is null
+     * @throws IoException If an unexpected problem occurs during the conversion.
+     */
+    T[] create( int[] values ) throws IoException;
+
+    /**
+     * Create an array of values from an array of longs.
+     * 
+     * @param values the longs from which the values are to be created
+     * @return the values, or null if the supplied array is null
+     * @throws IoException If an unexpected problem occurs during the conversion.
+     */
+    T[] create( long[] values ) throws IoException;
+
+    /**
+     * Create an array of values from an array of booleans.
+     * 
+     * @param values the booleans from which the values are to be created
+     * @return the values, or null if the supplied array is null
+     * @throws IoException If an unexpected problem occurs during the conversion.
+     */
+    T[] create( boolean[] values ) throws IoException;
+
+    /**
+     * Create an array of values from an array of booleans.
+     * 
+     * @param values the floats from which the values are to be created
+     * @return the values, or null if the supplied array is null
+     * @throws IoException If an unexpected problem occurs during the conversion.
+     */
+    T[] create( float[] values ) throws IoException;
+
+    /**
+     * Create an array of values from an array of doubles.
+     * 
+     * @param values the doubles from which the values are to be created
+     * @return the values, or null if the supplied array is null
+     * @throws IoException If an unexpected problem occurs during the conversion.
+     */
+    T[] create( double[] values ) throws IoException;
+
+    /**
+     * Create an array of values from an array of decimal values.
+     * 
+     * @param values the decimals from which the values are to be created
+     * @return the values, or null if the supplied array is null
+     * @throws IoException If an unexpected problem occurs during the conversion.
+     */
+    T[] create( BigDecimal[] values ) throws IoException;
+
+    /**
+     * Create an array of values from an array of Calendar instances.
+     * 
+     * @param values the Calendar instances from which the values are to be created
+     * @return the values, or null if the supplied array is null
+     * @throws IoException If an unexpected problem occurs during the conversion.
+     */
+    T[] create( Calendar[] values ) throws IoException;
+
+    /**
+     * Create an array of values from an array of dates.
+     * 
+     * @param values the dates from which the values are to be created
+     * @return the values, or null if the supplied array is null
+     * @throws IoException If an unexpected problem occurs during the conversion.
+     */
+    T[] create( Date[] values ) throws IoException;
+
+    /**
+     * Create an array of values from an array of names.
+     * 
+     * @param values the names from which the values are to be created
+     * @return the values, or null if the supplied array is null
+     * @throws IoException If an unexpected problem occurs during the conversion.
+     */
+    T[] create( Name[] values ) throws IoException;
+
+    /**
+     * Create an array of values from an array of paths.
+     * 
+     * @param values the paths from which the values are to be created
+     * @return the values, or null if the supplied array is null
+     * @throws IoException If an unexpected problem occurs during the conversion.
+     */
+    T[] create( Path[] values ) throws IoException;
+
+    /**
+     * Create an array of values from an array of references.
+     * 
+     * @param values the references from which the values are to be created
+     * @return the values, or null if the supplied array is null
+     * @throws IoException If an unexpected problem occurs during the conversion.
+     */
+    T[] create( Reference[] values ) throws IoException;
+
+    /**
+     * Create an array of values from an array of URIs.
+     * 
+     * @param values the URIs from which the values are to be created
+     * @return the values, or null if the supplied array is null
+     * @throws IoException If an unexpected problem occurs during the conversion.
+     */
+    T[] create( URI[] values ) throws IoException;
+
+    /**
+     * Create an array of values from the array of binary content.
+     * 
+     * @param values the array of content to be used to create the values
+     * @return the value, or null if the supplied array is null
+     * @throws IoException If an unexpected problem occurs during the conversion.
+     */
+    T[] create( byte[][] values ) throws IoException;
+
+    /**
+     * Create an array of values from the specified information by determining which other <code>create</code> method applies
+     * for each object and then delegating to that method. Note that this method will not consider
+     * {@link #create(InputStream, int)}, {@link #create(Reader, int)} and {@link #create(String, TextDecoder)}.
+     * 
+     * @param values the values
+     * @return the new value, or null if the supplied parameter is null
+     * @throws IoException If an unexpected problem occurs during the conversion.
+     */
+    T[] create( Object[] values ) throws IoException;
+
 }

@@ -44,7 +44,7 @@ public class TimeDelayingRepositorySource implements RepositorySource {
     /**
      */
     private static final long serialVersionUID = -2756725117087437347L;
-    private final String identifier;
+    private String name;
     private final AtomicInteger retryLimit = new AtomicInteger(0);
     private final AtomicInteger connectionsOpenedCount = new AtomicInteger(0);
     private final AtomicInteger connectionsClosedCount = new AtomicInteger(0);
@@ -56,14 +56,21 @@ public class TimeDelayingRepositorySource implements RepositorySource {
     private CachePolicy defaultCachePolicy;
 
     public TimeDelayingRepositorySource( String identifier ) {
-        this.identifier = identifier;
+        this.name = identifier;
     }
 
     /**
      * {@inheritDoc}
      */
     public String getName() {
-        return this.identifier;
+        return this.name;
+    }
+
+    /**
+     * @param name the identifier
+     */
+    public void setName( String name ) {
+        this.name = name;
     }
 
     /**

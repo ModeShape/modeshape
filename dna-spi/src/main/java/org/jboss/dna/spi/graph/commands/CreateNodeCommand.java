@@ -22,19 +22,28 @@
 package org.jboss.dna.spi.graph.commands;
 
 import java.util.Iterator;
-import org.jboss.dna.spi.cache.Cacheable;
 import org.jboss.dna.spi.graph.Property;
 
 /**
  * A command to get the children of a single node given its path.
+ * 
  * @author Randall Hauch
  */
-public interface CreateNodeCommand extends GraphCommand, ActsOnPath, Cacheable, ActsOnProperties, ActsAsUpdate {
+public interface CreateNodeCommand
+    extends GraphCommand, ActsOnPath, ActsOnProperties, ActsAsUpdate, Comparable<CreateNodeCommand> {
 
     /**
      * Get the properties for this new node. The recipient of the command should {@link Iterator#remove() remove} any property
      * that will not be stored.
+     * 
      * @return the property iterator; never null, but possibly empty
      */
     Iterable<Property> getProperties();
+
+    /**
+     * Get the desired behavior when a node at the target {@link ActsOnPath#getPath() path} already exists.
+     * 
+     * @return the desired behavior; never null
+     */
+    NodeConflictBehavior getConflictBehavior();
 }

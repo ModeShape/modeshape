@@ -185,6 +185,15 @@ public interface Path extends Comparable<Path>, Iterable<Path.Segment>, Serializ
         public boolean isParentReference();
 
         /**
+         * Get the raw string form of the segment using the {@link Path#NO_OP_ENCODER no-op encoder}. This is equivalent to
+         * calling <code>getString(Path.NO_OP_ENCODER)</code>.
+         * 
+         * @return the un-encoded string
+         * @see #getString(TextEncoder)
+         */
+        public String getUnencodedString();
+
+        /**
          * Get the string form of the segment. The {@link #DEFAULT_ENCODER default encoder} is used to encode characters in each
          * of the path segments.
          * 
@@ -208,7 +217,7 @@ public interface Path extends Comparable<Path>, Iterable<Path.Segment>, Serializ
          * prefix. The {@link #DEFAULT_ENCODER default encoder} is used to encode characters in each of the path segments.
          * 
          * @param namespaceRegistry the namespace registry that should be used to obtain the prefix for the
-         * {@link Name#getNamespaceUri() namespace URI} in the segment's {@link #getName() name}
+         *        {@link Name#getNamespaceUri() namespace URI} in the segment's {@link #getName() name}
          * @return the encoded string
          * @throws IllegalArgumentException if the namespace registry is null
          * @see #getString(NamespaceRegistry,TextEncoder)
@@ -220,13 +229,14 @@ public interface Path extends Comparable<Path>, Iterable<Path.Segment>, Serializ
          * to a prefix and the supplied encoder to encode characters in each of the path segments.
          * 
          * @param namespaceRegistry the namespace registry that should be used to obtain the prefix for the
-         * {@link Name#getNamespaceUri() namespace URI} in the segment's {@link #getName() name}
+         *        {@link Name#getNamespaceUri() namespace URI} in the segment's {@link #getName() name}
          * @param encoder the encoder to use, or null if the {@link #DEFAULT_ENCODER default encoder} should be used
          * @return the encoded string
          * @throws IllegalArgumentException if the namespace registry is null
          * @see #getString(NamespaceRegistry)
          */
-        public String getString( NamespaceRegistry namespaceRegistry, TextEncoder encoder );
+        public String getString( NamespaceRegistry namespaceRegistry,
+                                 TextEncoder encoder );
     }
 
     /**
@@ -417,7 +427,7 @@ public interface Path extends Comparable<Path>, Iterable<Path.Segment>, Serializ
      * @param beginIndex the beginning index, inclusive.
      * @return the specified subpath
      * @exception IndexOutOfBoundsException if the <code>beginIndex</code> is negative or larger than the length of this
-     * <code>Path</code> object
+     *            <code>Path</code> object
      */
     public Path subpath( int beginIndex );
 
@@ -429,9 +439,11 @@ public interface Path extends Comparable<Path>, Iterable<Path.Segment>, Serializ
      * @param endIndex the ending index, exclusive.
      * @return the specified subpath
      * @exception IndexOutOfBoundsException if the <code>beginIndex</code> is negative, or <code>endIndex</code> is larger
-     * than the length of this <code>Path</code> object, or <code>beginIndex</code> is larger than <code>endIndex</code>.
+     *            than the length of this <code>Path</code> object, or <code>beginIndex</code> is larger than
+     *            <code>endIndex</code>.
      */
-    public Path subpath( int beginIndex, int endIndex );
+    public Path subpath( int beginIndex,
+                         int endIndex );
 
     /**
      * {@inheritDoc}
@@ -475,7 +487,7 @@ public interface Path extends Comparable<Path>, Iterable<Path.Segment>, Serializ
      * The {@link #DEFAULT_ENCODER default encoder} is used to encode characters in each of the path segments.
      * 
      * @param namespaceRegistry the namespace registry that should be used to obtain the prefix for the
-     * {@link Name#getNamespaceUri() namespace URIs} in the segment {@link Segment#getName() names}
+     *        {@link Name#getNamespaceUri() namespace URIs} in the segment {@link Segment#getName() names}
      * @return the encoded string
      * @throws IllegalArgumentException if the namespace registry is null
      * @see #getString(NamespaceRegistry,TextEncoder)
@@ -487,12 +499,13 @@ public interface Path extends Comparable<Path>, Iterable<Path.Segment>, Serializ
      * prefixes and the supplied encoder to encode characters in each of the path segments.
      * 
      * @param namespaceRegistry the namespace registry that should be used to obtain the prefix for the
-     * {@link Name#getNamespaceUri() namespace URIs} in the segment {@link Segment#getName() names}
+     *        {@link Name#getNamespaceUri() namespace URIs} in the segment {@link Segment#getName() names}
      * @param encoder the encoder to use, or null if the {@link #DEFAULT_ENCODER default encoder} should be used
      * @return the encoded string
      * @throws IllegalArgumentException if the namespace registry is null
      * @see #getString(NamespaceRegistry)
      */
-    public String getString( NamespaceRegistry namespaceRegistry, TextEncoder encoder );
+    public String getString( NamespaceRegistry namespaceRegistry,
+                             TextEncoder encoder );
 
 }

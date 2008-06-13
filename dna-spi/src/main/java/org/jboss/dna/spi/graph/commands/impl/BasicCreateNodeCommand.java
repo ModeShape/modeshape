@@ -23,10 +23,10 @@ package org.jboss.dna.spi.graph.commands.impl;
 
 import java.util.List;
 import net.jcip.annotations.NotThreadSafe;
-import org.jboss.dna.spi.cache.CachePolicy;
 import org.jboss.dna.spi.graph.Path;
 import org.jboss.dna.spi.graph.Property;
 import org.jboss.dna.spi.graph.commands.CreateNodeCommand;
+import org.jboss.dna.spi.graph.commands.NodeConflictBehavior;
 
 /**
  * @author Randall Hauch
@@ -39,20 +39,23 @@ public class BasicCreateNodeCommand extends BasicGraphCommand implements CreateN
     private static final long serialVersionUID = -5452285887178397354L;
     private final Path path;
     private final List<Property> properties;
-    private CachePolicy cachePolicy;
-    private long timeLoaded;
+    private final NodeConflictBehavior conflictBehavior;
 
     /**
      * @param path the path to the node; may not be null
      * @param properties the properties of the node; may not be null
+     * @param conflictBehavior the desired behavior when a node exists at the <code>path</code>; may not be null
      */
     public BasicCreateNodeCommand( Path path,
-                                   List<Property> properties ) {
+                                   List<Property> properties,
+                                   NodeConflictBehavior conflictBehavior ) {
         super();
         assert path != null;
         assert properties != null;
+        assert conflictBehavior != null;
         this.properties = properties;
         this.path = path;
+        this.conflictBehavior = conflictBehavior;
     }
 
     /**
@@ -72,29 +75,36 @@ public class BasicCreateNodeCommand extends BasicGraphCommand implements CreateN
     /**
      * {@inheritDoc}
      */
-    public CachePolicy getCachePolicy() {
-        return cachePolicy;
+    public NodeConflictBehavior getConflictBehavior() {
+        return this.conflictBehavior;
     }
 
     /**
      * {@inheritDoc}
      */
-    public long getTimeLoaded() {
-        return timeLoaded;
-    }
-
-    /**
-     * @param timeLoaded Sets timeLoaded to the specified value.
-     */
-    public void setTimeLoaded( long timeLoaded ) {
-        this.timeLoaded = timeLoaded;
+    public int compareTo( CreateNodeCommand that ) {
+        if (this == that) return 0;
+        return this.path.compareTo(that.getPath());
     }
 
     /**
      * {@inheritDoc}
      */
-    public void setCachePolicy( CachePolicy cachePolicy ) {
-        this.cachePolicy = cachePolicy;
+    @Override
+    public int hashCode() {
+        return path.hashCode();
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean equals( Object obj ) {
+        if (obj == this) return true;
+        if (obj instanceof CreateNodeCommand) {
+            CreateNodeCommand that = (CreateNodeCommand)obj;
+            return this.path.equals(that.getPath());
+        }
+        return false;
+    }
 }

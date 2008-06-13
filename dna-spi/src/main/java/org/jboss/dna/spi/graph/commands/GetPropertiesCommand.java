@@ -21,9 +21,8 @@
  */
 package org.jboss.dna.spi.graph.commands;
 
-import java.util.Iterator;
 import org.jboss.dna.spi.cache.Cacheable;
-import org.jboss.dna.spi.graph.Name;
+import org.jboss.dna.spi.graph.Property;
 
 /**
  * A command to obtain from the source the properties for a single node given its path.
@@ -35,34 +34,9 @@ public interface GetPropertiesCommand extends GraphCommand, ActsOnPath, Cacheabl
     /**
      * Set the values for the named property. Any existing property values, if previously set, will be overwritten. If there are
      * no property vlaues or if all of the property values are null, the property will be removed.
-     * <p>
-     * The implementation should be capable of accepting an array, {@link Iterator}, or {@link Iterable} as a sole single
-     * parameter, and properly extracting the values. This is so that callers that have an {@link Object} reference to an array,
-     * Iterator, or Iterable don't need to type check and cast in order to call {@link #setProperty(Name, Iterable...) the}
-     * {@link #setProperty(Name, Iterator...) appropriate} method.
-     * </p>
      * 
-     * @param propertyName the name of the property
-     * @param values the property values
+     * @param property the property
      */
-    void setProperty( Name propertyName, Object... values );
-
-    /**
-     * Set the values for the named property. Any existing property values, if previously set, will be overwritten. If there are
-     * no property vlaues or if all of the property values are null, the property will be removed.
-     * 
-     * @param propertyName the name of the property
-     * @param values the iterable property values
-     */
-    void setProperty( Name propertyName, Iterable<?> values );
-
-    /**
-     * Set the values for the named property. Any existing property values, if previously set, will be overwritten. If there are
-     * no property vlaues or if all of the property values are null, the property will be removed.
-     * 
-     * @param propertyName the name of the property
-     * @param values the iterator over the property values
-     */
-    void setProperty( Name propertyName, Iterator<?> values );
+    void setProperty( Property property );
 
 }

@@ -212,8 +212,9 @@ public class StringValueFactory extends AbstractValueFactory<String> {
                                                                                 String.class.getSimpleName(),
                                                                                 value), err);
         } catch (IOException err) {
-            throw new IoException(SpiI18n.errorConvertingIo.text(InputStream.class.getSimpleName(),
-                                                                          String.class.getSimpleName()), err);
+            throw new IoException(
+                                  SpiI18n.errorConvertingIo.text(InputStream.class.getSimpleName(), String.class.getSimpleName()),
+                                  err);
         }
     }
 
@@ -226,9 +227,16 @@ public class StringValueFactory extends AbstractValueFactory<String> {
         try {
             return IoUtil.read(reader);
         } catch (IOException err) {
-            throw new IoException(SpiI18n.errorConvertingIo.text(Reader.class.getSimpleName(),
-                                                                          String.class.getSimpleName()), err);
+            throw new IoException(SpiI18n.errorConvertingIo.text(Reader.class.getSimpleName(), String.class.getSimpleName()), err);
         }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    protected String[] createEmptyArray( int length ) {
+        return new String[length];
     }
 
 }

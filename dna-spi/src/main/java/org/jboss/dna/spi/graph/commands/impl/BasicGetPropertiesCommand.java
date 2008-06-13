@@ -22,13 +22,12 @@
 package org.jboss.dna.spi.graph.commands.impl;
 
 import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import net.jcip.annotations.NotThreadSafe;
 import org.jboss.dna.spi.cache.CachePolicy;
 import org.jboss.dna.spi.graph.Name;
 import org.jboss.dna.spi.graph.Path;
+import org.jboss.dna.spi.graph.Property;
 import org.jboss.dna.spi.graph.commands.GetPropertiesCommand;
 
 /**
@@ -40,7 +39,7 @@ public class BasicGetPropertiesCommand extends BasicGraphCommand implements GetP
     /**
      */
     private static final long serialVersionUID = -7816393217506909521L;
-    private final Map<Name, List<Object>> propertyValues = new HashMap<Name, List<Object>>();
+    private final Map<Name, Property> properties = new HashMap<Name, Property>();
     private final Path path;
     private CachePolicy cachePolicy;
     private long timeLoaded;
@@ -57,22 +56,10 @@ public class BasicGetPropertiesCommand extends BasicGraphCommand implements GetP
     /**
      * {@inheritDoc}
      */
-    public void setProperty( Name propertyName, Object... values ) {
-        setProperty(propertyValues, propertyName, values);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public void setProperty( Name propertyName, Iterable<?> values ) {
-        setProperty(propertyValues, propertyName, values);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public void setProperty( Name propertyName, Iterator<?> values ) {
-        setProperty(propertyValues, propertyName, values);
+    public void setProperty( Property property ) {
+        if (property != null) {
+            properties.put(property.getName(), property);
+        }
     }
 
     /**
@@ -80,8 +67,8 @@ public class BasicGetPropertiesCommand extends BasicGraphCommand implements GetP
      * 
      * @return the map of property name to values
      */
-    public Map<Name, List<Object>> getPropertyValues() {
-        return this.propertyValues;
+    public Iterable<Property> getProperties() {
+        return this.properties.values();
     }
 
     /**

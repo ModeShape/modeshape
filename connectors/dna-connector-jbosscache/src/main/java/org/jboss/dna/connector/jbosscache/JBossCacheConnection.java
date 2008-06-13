@@ -202,7 +202,8 @@ public class JBossCacheConnection implements RepositoryConnection {
                 for (Map.Entry<Name, Object> data : dataMap.entrySet()) {
                     Name propertyName = data.getKey();
                     Object values = data.getValue();
-                    theCommand.setProperty(propertyName, values);
+                    Property property = env.getPropertyFactory().create(propertyName, values);
+                    theCommand.setProperty(property);
                 }
             }
             if (command instanceof SetPropertiesCommand) {

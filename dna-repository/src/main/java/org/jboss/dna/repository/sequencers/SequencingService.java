@@ -61,6 +61,7 @@ import org.jboss.dna.repository.util.JcrTools;
 import org.jboss.dna.repository.util.RepositoryNodePath;
 import org.jboss.dna.repository.util.SessionFactory;
 import org.jboss.dna.spi.graph.NamespaceRegistry;
+import org.jboss.dna.spi.graph.PropertyFactory;
 import org.jboss.dna.spi.graph.ValueFactories;
 
 /**
@@ -651,6 +652,13 @@ public class SequencingService implements AdministeredService, NodeChangeListene
          */
         public ValueFactories getValueFactories() {
             return this.delegate.getValueFactories();
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        public PropertyFactory getPropertyFactory() {
+            return this.delegate.getPropertyFactory();
         }
 
         /**

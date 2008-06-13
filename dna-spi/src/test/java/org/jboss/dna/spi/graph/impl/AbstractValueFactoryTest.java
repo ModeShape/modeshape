@@ -126,6 +126,14 @@ public class AbstractValueFactoryTest {
                               int approximateLength ) {
             return null;
         }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        protected String[] createEmptyArray( int length ) {
+            return new String[length];
+        }
     }
 
     private AbstractValueFactory<String> factory;

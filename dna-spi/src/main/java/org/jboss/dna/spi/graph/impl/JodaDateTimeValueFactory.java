@@ -247,4 +247,12 @@ public class JodaDateTimeValueFactory extends AbstractValueFactory<DateTime> imp
         return new JodaDateTime(year, monthOfYear, dayOfMonth, hourOfDay, minuteOfHour, secondOfMinute, millisecondsOfSecond,
                                 timeZoneId);
     }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    protected DateTime[] createEmptyArray( int length ) {
+        return new DateTime[length];
+    }
 }

@@ -297,4 +297,12 @@ public class NameValueFactory extends AbstractValueFactory<Name> implements Name
     public NamespaceRegistry getNamespaceRegistry() {
         return namespaceRegistry;
     }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    protected Name[] createEmptyArray( int length ) {
+        return new Name[length];
+    }
 }

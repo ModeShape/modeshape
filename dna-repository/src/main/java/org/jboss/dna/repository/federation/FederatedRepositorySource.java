@@ -56,20 +56,34 @@ public class FederatedRepositorySource implements RepositorySource {
     protected static final String RETRY_LIMIT = "retryLimit";
     protected static final String FEDERATION_SERVICE_JNDI_NAME = "fedServiceJndiName";
 
-    private final String repositoryName;
-    private final FederationService federationService;
+    private String repositoryName;
+    private FederationService federationService;
     private String sourceName;
-    private int retryLimit;
+    private int retryLimit = DEFAULT_RETRY_LIMIT;
     private String username;
     private String credentials;
 
-    protected FederatedRepositorySource( FederationService federationService,
-                                         String repositoryName ) {
+    /**
+     * Create a new instance of the source, which must still be properly initialized with a
+     * {@link #setRepositoryName(String) repository name} and a reference to the
+     * {@link #setFederationService(FederationService) federation service}.
+     */
+    public FederatedRepositorySource() {
+    }
+
+    /**
+     * Create a new instance of the source with the required repository name and federation service.
+     * 
+     * @param federationService the {@link FederationService}
+     * @param repositoryName the repository name
+     * @throws IllegalArgumentException if the federation service is null or the repository name is null or blank
+     */
+    public FederatedRepositorySource( FederationService federationService,
+                                      String repositoryName ) {
         ArgCheck.isNotNull(federationService, "federationService");
         ArgCheck.isNotNull(repositoryName, "repositoryName");
         this.federationService = federationService;
         this.repositoryName = repositoryName;
-        this.retryLimit = DEFAULT_RETRY_LIMIT;
     }
 
     /**
@@ -77,6 +91,14 @@ public class FederatedRepositorySource implements RepositorySource {
      */
     public FederationService getFederationService() {
         return this.federationService;
+    }
+
+    /**
+     * @param federationService Sets federationService to the specified value.
+     */
+    public void setFederationService( FederationService federationService ) {
+        ArgCheck.isNotNull(federationService, "federatedService");
+        this.federationService = federationService;
     }
 
     /**
@@ -162,6 +184,14 @@ public class FederatedRepositorySource implements RepositorySource {
      */
     public String getRepositoryName() {
         return this.repositoryName;
+    }
+
+    /**
+     * @param repositoryName Sets repositoryName to the specified value.
+     */
+    public void setRepositoryName( String repositoryName ) {
+        ArgCheck.isNotEmpty(repositoryName, "repositoryName");
+        this.repositoryName = repositoryName;
     }
 
     /**

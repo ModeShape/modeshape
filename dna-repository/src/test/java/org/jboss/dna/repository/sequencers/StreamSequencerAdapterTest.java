@@ -81,7 +81,7 @@ public class StreamSequencerAdapterTest extends AbstractJcrRepositoryTest {
             }
         };
         NamespaceRegistry registry = new JcrNamespaceRegistry(sessionFactory, "doesn't matter");
-        this.context = new SimpleExecutionContext(sessionFactory, registry, null);
+        this.context = new SimpleExecutionContext(sessionFactory, registry, null, null);
         this.sequencerOutput = new SequencerOutputMap(this.context.getValueFactories());
         this.progressMonitor = new RecordingProgressMonitor(StreamSequencerAdapterTest.class.getName());
         final SequencerOutputMap finalOutput = sequencerOutput;

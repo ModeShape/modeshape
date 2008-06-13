@@ -193,8 +193,9 @@ public class InMemoryBinaryValueFactory extends AbstractValueFactory<Binary> {
             byte[] value = IoUtil.readBytes(stream);
             return create(value);
         } catch (IOException err) {
-            throw new IoException(SpiI18n.errorConvertingIo.text(InputStream.class.getSimpleName(),
-                                                                          Binary.class.getSimpleName()), err);
+            throw new IoException(
+                                  SpiI18n.errorConvertingIo.text(InputStream.class.getSimpleName(), Binary.class.getSimpleName()),
+                                  err);
         }
     }
 
@@ -209,8 +210,15 @@ public class InMemoryBinaryValueFactory extends AbstractValueFactory<Binary> {
             String value = IoUtil.read(reader);
             return create(this.getStringValueFactory().create(value));
         } catch (IOException err) {
-            throw new IoException(SpiI18n.errorConvertingIo.text(Reader.class.getSimpleName(),
-                                                                          Binary.class.getSimpleName()), err);
+            throw new IoException(SpiI18n.errorConvertingIo.text(Reader.class.getSimpleName(), Binary.class.getSimpleName()), err);
         }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    protected Binary[] createEmptyArray( int length ) {
+        return new Binary[length];
     }
 }

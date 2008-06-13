@@ -199,4 +199,12 @@ public class BooleanValueFactory extends AbstractValueFactory<Boolean> {
         return create(getStringValueFactory().create(reader, approximateLength));
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    protected Boolean[] createEmptyArray( int length ) {
+        return new Boolean[length];
+    }
+
 }

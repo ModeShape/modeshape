@@ -41,7 +41,8 @@ public interface GetChildrenCommand extends GraphCommand, ActsOnPath, Cacheable 
      * </p>
      * <p>
      * The caller may supply a custom iterator implementation, which will be called on this same connection within the same
-     * transaction when the node data is processed and consumed.
+     * transaction when the node data is processed and consumed. This is useful, for example, if the iterator to transparently
+     * page through the information without requiring all children to be pulled into memory.
      * </p>
      * 
      * @param namesOfChildren the iterator over the names of children; may be null if there are no children
@@ -55,8 +56,9 @@ public interface GetChildrenCommand extends GraphCommand, ActsOnPath, Cacheable 
      * The indexes of the same-name siblings will be determined by the order in which they appear in the iterator.
      * </p>
      * <p>
-     * The caller may supply a custom iterator implementation, which will be called on this same connection within the same
-     * transaction when the node data is processed and consumed.
+     * The caller may supply a custom {@link Iterable} implementation, which will be called on this same connection within the
+     * same transaction when the node data is processed and consumed. This is useful, for example, if the iterator to
+     * transparently page through the information without requiring all children to be pulled into memory.
      * </p>
      * 
      * @param namesOfChildren the iterable names of children; may be null if there are no children

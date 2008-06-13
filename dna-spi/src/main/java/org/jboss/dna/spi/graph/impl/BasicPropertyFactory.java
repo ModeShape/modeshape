@@ -52,44 +52,71 @@ public class BasicPropertyFactory implements PropertyFactory {
     /**
      * {@inheritDoc}
      */
-    public Property create( Name name, PropertyType type, Name definitionName, Object... values ) {
+    public Property create( Name name,
+                            Iterable<?> values ) {
+        return create(name, PropertyType.OBJECT, values);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public Property create( Name name,
+                            Iterator<?> values ) {
+        return create(name, PropertyType.OBJECT, values);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public Property create( Name name,
+                            Object... values ) {
+        return create(name, PropertyType.OBJECT, values);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public Property create( Name name,
+                            PropertyType desiredType,
+                            Object... values ) {
         ArgCheck.isNotNull(name, "name");
-        ArgCheck.isNotNull(type, "type");
         if (values == null || values.length == 0) {
-            return new BasicEmptyProperty(name, type, definitionName, this.factories);
+            return new BasicEmptyProperty(name);
         }
         final int len = values.length;
-        final ValueFactory<?> factory = factories.getValueFactory(type);
+        if (desiredType == null) desiredType = PropertyType.OBJECT;
+        final ValueFactory<?> factory = factories.getValueFactory(desiredType);
         if (values.length == 1) {
             Object value = values[0];
             // Check whether the sole value was a collection ...
             if (value instanceof Collection) {
                 // The single value is a collection, so create property with the collection's contents ...
-                return create(name, type, definitionName, (Collection<?>)value);
+                return create(name, (Collection<?>)value);
             }
             value = factory.create(values[0]);
-            return new BasicSingleValueProperty(name, type, definitionName, this.factories, value);
+            return new BasicSingleValueProperty(name, value);
         }
         List<Object> valueList = new ArrayList<Object>(len);
         for (int i = 0; i != len; ++i) {
             Object value = factory.create(values[i]);
             valueList.add(value);
         }
-        return new BasicMultiValueProperty(name, type, definitionName, this.factories, valueList);
+        return new BasicMultiValueProperty(name, valueList);
     }
 
     /**
      * {@inheritDoc}
      */
     @SuppressWarnings( "unchecked" )
-    public Property create( Name name, PropertyType type, Name definitionName, Iterable<?> values ) {
+    public Property create( Name name,
+                            PropertyType desiredType,
+                            Iterable<?> values ) {
         ArgCheck.isNotNull(name, "name");
-        ArgCheck.isNotNull(type, "type");
         List<Object> valueList = null;
         if (values instanceof Collection) {
             Collection<Object> originalValues = (Collection<Object>)values;
             if (originalValues.isEmpty()) {
-                return new BasicEmptyProperty(name, type, definitionName, this.factories);
+                return new BasicEmptyProperty(name);
             }
             valueList = new ArrayList<Object>(originalValues.size());
         } else {
@@ -97,39 +124,42 @@ public class BasicPropertyFactory implements PropertyFactory {
             valueList = new ArrayList<Object>();
         }
         // Copy the values, ensuring that the values are the correct type ...
-        final ValueFactory<?> factory = factories.getValueFactory(type);
+        if (desiredType == null) desiredType = PropertyType.OBJECT;
+        final ValueFactory<?> factory = factories.getValueFactory(desiredType);
         for (Object value : values) {
             valueList.add(factory.create(value));
         }
         if (valueList.isEmpty()) { // may not have been a collection earlier
-            return new BasicEmptyProperty(name, type, definitionName, this.factories);
+            return new BasicEmptyProperty(name);
         }
         if (valueList.size() == 1) {
-            return new BasicSingleValueProperty(name, type, definitionName, this.factories, valueList.get(0));
+            return new BasicSingleValueProperty(name, valueList.get(0));
         }
-        return new BasicMultiValueProperty(name, type, definitionName, this.factories, valueList);
+        return new BasicMultiValueProperty(name, valueList);
     }
 
     /**
      * {@inheritDoc}
      */
-    public Property create( Name name, PropertyType type, Name definitionName, Iterator<?> values ) {
+    public Property create( Name name,
+                            PropertyType desiredType,
+                            Iterator<?> values ) {
         ArgCheck.isNotNull(name, "name");
-        ArgCheck.isNotNull(type, "type");
         final List<Object> valueList = new ArrayList<Object>();
-        final ValueFactory<?> factory = factories.getValueFactory(type);
+        if (desiredType == null) desiredType = PropertyType.OBJECT;
+        final ValueFactory<?> factory = factories.getValueFactory(desiredType);
         while (values.hasNext()) {
             Object value = values.next();
             value = factory.create(value);
             valueList.add(value);
         }
         if (valueList.isEmpty()) {
-            return new BasicEmptyProperty(name, type, definitionName, this.factories);
+            return new BasicEmptyProperty(name);
         }
         if (valueList.size() == 1) {
-            return new BasicSingleValueProperty(name, type, definitionName, this.factories, valueList.get(0));
+            return new BasicSingleValueProperty(name, valueList.get(0));
         }
-        return new BasicMultiValueProperty(name, type, definitionName, this.factories, valueList);
+        return new BasicMultiValueProperty(name, valueList);
     }
 
 }

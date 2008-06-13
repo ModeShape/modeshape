@@ -30,6 +30,7 @@ import org.jboss.dna.spi.graph.Path;
 
 /**
  * A basic implementation of {@link Path.Segment}.
+ * 
  * @author Randall Hauch
  */
 @Immutable
@@ -54,7 +55,8 @@ public class BasicPathSegment implements Path.Segment {
      * @param index the segment index
      * @throws IllegalArgumentException if the name is null or if the index is invalid
      */
-    public BasicPathSegment( Name name, int index ) {
+    public BasicPathSegment( Name name,
+                             int index ) {
         ArgCheck.isNotNull(name, "name");
         ArgCheck.isNotLessThan(index, Path.NO_INDEX, "index");
         this.name = name;
@@ -142,6 +144,13 @@ public class BasicPathSegment implements Path.Segment {
     /**
      * {@inheritDoc}
      */
+    public String getUnencodedString() {
+        return getString(Path.NO_OP_ENCODER);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
     public String getString() {
         return getString(Path.DEFAULT_ENCODER);
     }
@@ -168,7 +177,8 @@ public class BasicPathSegment implements Path.Segment {
     /**
      * {@inheritDoc}
      */
-    public String getString( NamespaceRegistry namespaceRegistry, TextEncoder encoder ) {
+    public String getString( NamespaceRegistry namespaceRegistry,
+                             TextEncoder encoder ) {
         ArgCheck.isNotNull(namespaceRegistry, "namespaceRegistry");
         if (encoder == null) encoder = Path.DEFAULT_ENCODER;
         String encodedName = this.getName().getString(namespaceRegistry, encoder);

@@ -21,23 +21,16 @@
  */
 package org.jboss.dna.spi.graph.commands;
 
-import org.jboss.dna.spi.cache.Cacheable;
-import org.jboss.dna.spi.graph.Property;
-
 /**
- * Aspect interface for any repository command that acts upon or updates properties on a given node. This aspect also allows for
- * the recipient to {@link Cacheable#setCachePolicy(org.jboss.dna.spi.cache.CachePolicy) update the cache policy} for the updated
- * information.
+ * An enumeration used by several commands for the choice of handling duplicate nodes, such as when a node is to be copied to
+ * another location where a node already exists.
  * 
  * @author Randall Hauch
  */
-public interface ActsOnProperties extends ActsOnPath {
+public enum NodeConflictBehavior {
 
-    /**
-     * Get the properties. Any property with no values will be removed.
-     * 
-     * @return the properties
-     */
-    Iterable<Property> getProperties();
+    DO_NOT_REPLACE,
+    APPEND,
+    REPLACE;
 
 }

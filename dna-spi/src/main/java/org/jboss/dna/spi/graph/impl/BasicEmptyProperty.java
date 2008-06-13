@@ -25,8 +25,6 @@ import java.util.Iterator;
 import java.util.NoSuchElementException;
 import net.jcip.annotations.Immutable;
 import org.jboss.dna.spi.graph.Name;
-import org.jboss.dna.spi.graph.PropertyType;
-import org.jboss.dna.spi.graph.ValueFactories;
 
 /**
  * @author Randall Hauch
@@ -36,12 +34,9 @@ public class BasicEmptyProperty extends BasicProperty {
 
     /**
      * @param name
-     * @param type
-     * @param definitionName
-     * @param valueFactories
      */
-    public BasicEmptyProperty( Name name, PropertyType type, Name definitionName, ValueFactories valueFactories ) {
-        super(name, type, definitionName, valueFactories);
+    public BasicEmptyProperty( Name name ) {
+        super(name);
     }
 
     /**

@@ -214,4 +214,12 @@ public class UriValueFactory extends AbstractValueFactory<URI> {
         return create(getStringValueFactory().create(reader, approximateLength));
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    protected URI[] createEmptyArray( int length ) {
+        return new URI[length];
+    }
+
 }

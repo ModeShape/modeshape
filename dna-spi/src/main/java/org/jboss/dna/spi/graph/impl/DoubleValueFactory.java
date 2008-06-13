@@ -202,4 +202,12 @@ public class DoubleValueFactory extends AbstractValueFactory<Double> {
         return create(getStringValueFactory().create(reader, approximateLength));
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    protected Double[] createEmptyArray( int length ) {
+        return new Double[length];
+    }
+
 }

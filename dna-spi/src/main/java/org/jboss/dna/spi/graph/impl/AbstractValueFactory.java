@@ -30,6 +30,7 @@ import java.util.Date;
 import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.text.TextDecoder;
 import org.jboss.dna.common.util.ArgCheck;
+import org.jboss.dna.spi.graph.IoException;
 import org.jboss.dna.spi.graph.Name;
 import org.jboss.dna.spi.graph.Path;
 import org.jboss.dna.spi.graph.PropertyType;
@@ -114,6 +115,217 @@ public abstract class AbstractValueFactory<T> implements ValueFactory<T> {
         if (value instanceof InputStream) return create((InputStream)value, 0);
         if (value instanceof Reader) return create((Reader)value, 0);
         return create(value.toString());
+    }
+
+    protected abstract T[] createEmptyArray( int length );
+
+    /**
+     * {@inheritDoc}
+     */
+    public T[] create( BigDecimal[] values ) throws IoException {
+        if (values == null) return null;
+        final int length = values.length;
+        T[] result = createEmptyArray(length);
+        for (int i = 0; i != length; ++i) {
+            result[i] = create(values[i]);
+        }
+        return result;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public T[] create( boolean[] values ) throws IoException {
+        if (values == null) return null;
+        final int length = values.length;
+        T[] result = createEmptyArray(length);
+        for (int i = 0; i != length; ++i) {
+            result[i] = create(values[i]);
+        }
+        return result;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public T[] create( byte[][] values ) throws IoException {
+        if (values == null) return null;
+        final int length = values.length;
+        T[] result = createEmptyArray(length);
+        for (int i = 0; i != length; ++i) {
+            result[i] = create(values[i]);
+        }
+        return result;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public T[] create( Calendar[] values ) throws IoException {
+        if (values == null) return null;
+        final int length = values.length;
+        T[] result = createEmptyArray(length);
+        for (int i = 0; i != length; ++i) {
+            result[i] = create(values[i]);
+        }
+        return result;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public T[] create( Date[] values ) throws IoException {
+        if (values == null) return null;
+        final int length = values.length;
+        T[] result = createEmptyArray(length);
+        for (int i = 0; i != length; ++i) {
+            result[i] = create(values[i]);
+        }
+        return result;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public T[] create( double[] values ) throws IoException {
+        if (values == null) return null;
+        final int length = values.length;
+        T[] result = createEmptyArray(length);
+        for (int i = 0; i != length; ++i) {
+            result[i] = create(values[i]);
+        }
+        return result;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public T[] create( float[] values ) throws IoException {
+        if (values == null) return null;
+        final int length = values.length;
+        T[] result = createEmptyArray(length);
+        for (int i = 0; i != length; ++i) {
+            result[i] = create(values[i]);
+        }
+        return result;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public T[] create( int[] values ) throws IoException {
+        if (values == null) return null;
+        final int length = values.length;
+        T[] result = createEmptyArray(length);
+        for (int i = 0; i != length; ++i) {
+            result[i] = create(values[i]);
+        }
+        return result;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public T[] create( long[] values ) throws IoException {
+        if (values == null) return null;
+        final int length = values.length;
+        T[] result = createEmptyArray(length);
+        for (int i = 0; i != length; ++i) {
+            result[i] = create(values[i]);
+        }
+        return result;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public T[] create( Name[] values ) throws IoException {
+        if (values == null) return null;
+        final int length = values.length;
+        T[] result = createEmptyArray(length);
+        for (int i = 0; i != length; ++i) {
+            result[i] = create(values[i]);
+        }
+        return result;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public T[] create( Object[] values ) throws IoException {
+        if (values == null) return null;
+        final int length = values.length;
+        T[] result = createEmptyArray(length);
+        for (int i = 0; i != length; ++i) {
+            result[i] = create(values[i]);
+        }
+        return result;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public T[] create( Path[] values ) throws IoException {
+        if (values == null) return null;
+        final int length = values.length;
+        T[] result = createEmptyArray(length);
+        for (int i = 0; i != length; ++i) {
+            result[i] = create(values[i]);
+        }
+        return result;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public T[] create( Reference[] values ) throws IoException {
+        if (values == null) return null;
+        final int length = values.length;
+        T[] result = createEmptyArray(length);
+        for (int i = 0; i != length; ++i) {
+            result[i] = create(values[i]);
+        }
+        return result;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public T[] create( String[] values,
+                       TextDecoder decoder ) throws IoException {
+        if (values == null) return null;
+        final int length = values.length;
+        T[] result = createEmptyArray(length);
+        for (int i = 0; i != length; ++i) {
+            result[i] = create(values[i], decoder);
+        }
+        return result;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public T[] create( String[] values ) throws IoException {
+        if (values == null) return null;
+        final int length = values.length;
+        T[] result = createEmptyArray(length);
+        for (int i = 0; i != length; ++i) {
+            result[i] = create(values[i]);
+        }
+        return result;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public T[] create( URI[] values ) throws IoException {
+        if (values == null) return null;
+        final int length = values.length;
+        T[] result = createEmptyArray(length);
+        for (int i = 0; i != length; ++i) {
+            result[i] = create(values[i]);
+        }
+        return result;
     }
 
 }

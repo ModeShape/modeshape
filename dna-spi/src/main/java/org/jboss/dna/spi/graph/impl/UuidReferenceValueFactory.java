@@ -207,4 +207,12 @@ public class UuidReferenceValueFactory extends AbstractValueFactory<Reference> {
         return create(getStringValueFactory().create(reader, approximateLength));
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    protected Reference[] createEmptyArray( int length ) {
+        return new Reference[length];
+    }
+
 }

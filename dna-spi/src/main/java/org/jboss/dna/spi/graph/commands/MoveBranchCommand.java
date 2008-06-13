@@ -25,13 +25,22 @@ import org.jboss.dna.spi.graph.Path;
 
 /**
  * Command that moves a branch from one path to another.
+ * 
  * @author Randall Hauch
  */
 public interface MoveBranchCommand extends GraphCommand, ActsOnPath, ActsAsUpdate {
 
     /**
      * Get the new path to which the branch is to be moved.
+     * 
      * @return the new path; never null
      */
     Path getNewPath();
+
+    /**
+     * Get the desired behavior when a node at the target {@link ActsOnPath#getPath() path} already exists.
+     * 
+     * @return the desired behavior; never null
+     */
+    NodeConflictBehavior getConflictBehavior();
 }

@@ -95,9 +95,9 @@ public class PathValueFactory extends AbstractValueFactory<Path> implements Path
      * {@inheritDoc}
      * </p>
      * 
-     * @see org.jboss.dna.spi.graph.PathFactory#create()
+     * @see org.jboss.dna.spi.graph.PathFactory#createRootPath()
      */
-    public Path create() {
+    public Path createRootPath() {
         return BasicPath.ROOT;
     }
 
@@ -251,7 +251,7 @@ public class PathValueFactory extends AbstractValueFactory<Path> implements Path
     /**
      * {@inheritDoc}
      */
-    public Path create( Name... segmentNames ) {
+    public Path createAbsolutePath( Name... segmentNames ) {
         if (segmentNames == null || segmentNames.length == 0) return BasicPath.ROOT;
         List<Segment> segments = new ArrayList<Segment>(segmentNames.length);
         for (Name segmentName : segmentNames) {
@@ -266,7 +266,7 @@ public class PathValueFactory extends AbstractValueFactory<Path> implements Path
     /**
      * {@inheritDoc}
      */
-    public Path create( Segment... segments ) {
+    public Path createAbsolutePath( Segment... segments ) {
         if (segments == null || segments.length == 0) return BasicPath.ROOT;
         List<Segment> segmentsList = new ArrayList<Segment>(segments.length);
         for (Segment segment : segments) {
@@ -492,6 +492,14 @@ public class PathValueFactory extends AbstractValueFactory<Path> implements Path
                         int approximateLength ) {
         // First attempt to create a string from the value, then a double from the string ...
         return create(getStringValueFactory().create(reader, approximateLength));
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    protected Path[] createEmptyArray( int length ) {
+        return new Path[length];
     }
 
 }

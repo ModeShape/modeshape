@@ -46,13 +46,6 @@ public interface ExecutionEnvironment {
     NamespaceRegistry getNamespaceRegistry();
 
     /**
-     * Return the repository source against which this environment applies.
-     * 
-     * @return the repository source; never null
-     */
-    RepositorySource getRepositorySource();
-
-    /**
      * Get the factory for creating {@link Property} objects.
      * 
      * @return the property factory; never null

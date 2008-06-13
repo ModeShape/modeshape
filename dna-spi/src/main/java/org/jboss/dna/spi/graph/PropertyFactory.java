@@ -27,11 +27,70 @@ import java.util.Iterator;
  * @author Randall Hauch
  */
 public interface PropertyFactory {
+    /**
+     * Create a property with the supplied name and values
+     * 
+     * @param name the property name; may not be null
+     * @param values the values
+     * @return the resulting property
+     */
+    Property create( Name name,
+                     Object... values );
 
-    Property create( Name name, PropertyType type, Name definitionName, Object... values );
+    /**
+     * Create a property with the supplied name and values
+     * 
+     * @param name the property name; may not be null
+     * @param values the values
+     * @return the resulting property
+     */
+    Property create( Name name,
+                     Iterable<?> values );
 
-    Property create( Name name, PropertyType type, Name definitionName, Iterable<?> values );
+    /**
+     * Create a property with the supplied name and values
+     * 
+     * @param name the property name; may not be null
+     * @param values the values
+     * @return the resulting property
+     */
+    Property create( Name name,
+                     Iterator<?> values );
 
-    Property create( Name name, PropertyType type, Name definitionName, Iterator<?> values );
+    /**
+     * Create a property with the supplied name and values
+     * 
+     * @param name the property name; may not be null
+     * @param desiredType the type that the objects should be converted to; if null, they will be used as is
+     * @param values the values
+     * @return the resulting property
+     */
+    Property create( Name name,
+                     PropertyType desiredType,
+                     Object... values );
+
+    /**
+     * Create a property with the supplied name and values
+     * 
+     * @param name the property name; may not be null
+     * @param desiredType the type that the objects should be converted to; if null, they will be used as is
+     * @param values the values
+     * @return the resulting property
+     */
+    Property create( Name name,
+                     PropertyType desiredType,
+                     Iterable<?> values );
+
+    /**
+     * Create a property with the supplied name and values
+     * 
+     * @param name the property name; may not be null
+     * @param desiredType the type that the objects should be converted to; if null, they will be used as is
+     * @param values the values
+     * @return the resulting property
+     */
+    Property create( Name name,
+                     PropertyType desiredType,
+                     Iterator<?> values );
 
 }

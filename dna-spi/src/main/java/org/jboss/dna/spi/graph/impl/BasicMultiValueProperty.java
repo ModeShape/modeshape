@@ -25,8 +25,6 @@ import java.util.Iterator;
 import java.util.List;
 import net.jcip.annotations.Immutable;
 import org.jboss.dna.spi.graph.Name;
-import org.jboss.dna.spi.graph.PropertyType;
-import org.jboss.dna.spi.graph.ValueFactories;
 
 /**
  * @author Randall Hauch
@@ -38,13 +36,11 @@ public class BasicMultiValueProperty extends BasicProperty {
 
     /**
      * @param name
-     * @param type
-     * @param definitionName
-     * @param valueFactories
      * @param values
      */
-    public BasicMultiValueProperty( Name name, PropertyType type, Name definitionName, ValueFactories valueFactories, List<Object> values ) {
-        super(name, type, definitionName, valueFactories);
+    public BasicMultiValueProperty( Name name,
+                                    List<Object> values ) {
+        super(name);
         this.values = values;
     }
 

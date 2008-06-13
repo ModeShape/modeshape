@@ -185,4 +185,12 @@ public class ObjectValueFactory extends AbstractValueFactory<Object> {
         return getBinaryValueFactory().create(reader, approximateLength);
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    protected Object[] createEmptyArray( int length ) {
+        return new Object[length];
+    }
+
 }

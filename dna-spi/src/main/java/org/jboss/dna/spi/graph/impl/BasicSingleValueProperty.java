@@ -25,8 +25,6 @@ import java.util.Iterator;
 import java.util.NoSuchElementException;
 import net.jcip.annotations.Immutable;
 import org.jboss.dna.spi.graph.Name;
-import org.jboss.dna.spi.graph.PropertyType;
-import org.jboss.dna.spi.graph.ValueFactories;
 
 /**
  * @author Randall Hauch
@@ -38,13 +36,11 @@ public class BasicSingleValueProperty extends BasicProperty {
 
     /**
      * @param name
-     * @param type
-     * @param definitionName
-     * @param valueFactories
      * @param value
      */
-    public BasicSingleValueProperty( Name name, PropertyType type, Name definitionName, ValueFactories valueFactories, Object value ) {
-        super(name, type, definitionName, valueFactories);
+    public BasicSingleValueProperty( Name name,
+                                     Object value ) {
+        super(name);
         this.value = value;
     }
 

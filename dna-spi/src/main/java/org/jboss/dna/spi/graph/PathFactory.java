@@ -37,7 +37,7 @@ public interface PathFactory extends ValueFactory<Path> {
      * 
      * @return the new path
      */
-    Path create();
+    Path createRootPath();
 
     /**
      * Create an absolute path with the supplied segment names, in order. If no segments are provided, the result will be the root
@@ -47,7 +47,7 @@ public interface PathFactory extends ValueFactory<Path> {
      * @return the new path
      * @throws IllegalArgumentException if at least one segment name is provided and if any of the supplied segment names are null
      */
-    Path create( Name... segmentNames );
+    Path createAbsolutePath( Name... segmentNames );
 
     /**
      * Create an absolute path with the supplied segments, in order. If no segments are provided, the result will be the root
@@ -57,7 +57,7 @@ public interface PathFactory extends ValueFactory<Path> {
      * @return the new path
      * @throws IllegalArgumentException if at least one segment is provided and if any of the supplied segments are null
      */
-    Path create( Path.Segment... segments );
+    Path createAbsolutePath( Path.Segment... segments );
 
     /**
      * Create an empty relative path (i.e., equivalent to {@link #createRelativePath(Path.Segment...) createRelativePath}({@link Path#SELF_SEGMENT})).
@@ -95,7 +95,9 @@ public interface PathFactory extends ValueFactory<Path> {
      * @return the new path
      * @throws IllegalArgumentException if the parent path reference or the segment name is null, or if the index is invalid
      */
-    Path create( Path parentPath, Name segmentName, int index );
+    Path create( Path parentPath,
+                 Name segmentName,
+                 int index );
 
     /**
      * Create a path by appending the supplied names to the parent path. If no names are appended, the parent path is returned.
@@ -104,9 +106,10 @@ public interface PathFactory extends ValueFactory<Path> {
      * @param segmentNames the names of the segments that are to be appended, in order, to the parent path
      * @return the new path
      * @throws IllegalArgumentException if the parent path reference is null, or if at least one segment name is provided and if
-     * any of the supplied segment names are null
+     *         any of the supplied segment names are null
      */
-    Path create( Path parentPath, Name... segmentNames );
+    Path create( Path parentPath,
+                 Name... segmentNames );
 
     /**
      * Create a path by appending the supplied names to the parent path. If no names are appended, the parent path is returned.
@@ -115,9 +118,10 @@ public interface PathFactory extends ValueFactory<Path> {
      * @param segments the segments that are to be appended, in order, to the parent path
      * @return the new path
      * @throws IllegalArgumentException if the parent path reference is null, or if at least one segment name is provided and if
-     * any of the supplied segment names are null
+     *         any of the supplied segment names are null
      */
-    Path create( Path parentPath, Path.Segment... segments );
+    Path create( Path parentPath,
+                 Path.Segment... segments );
 
     /**
      * Create a path segment given the supplied segment name. The resulting segment will have no index.
@@ -125,7 +129,7 @@ public interface PathFactory extends ValueFactory<Path> {
      * @param segmentName the name of the segment
      * @return the segment
      * @throws IllegalArgumentException if the segment name reference is <code>null</code> or the value could not be created
-     * from the supplied string
+     *         from the supplied string
      */
     Path.Segment createSegment( String segmentName );
 
@@ -136,9 +140,10 @@ public interface PathFactory extends ValueFactory<Path> {
      * @param decoder the decoder that should be used to decode the qualified name
      * @return the segment
      * @throws IllegalArgumentException if the segment name reference is <code>null</code> or the value could not be created
-     * from the supplied string
+     *         from the supplied string
      */
-    Path.Segment createSegment( String segmentName, TextDecoder decoder );
+    Path.Segment createSegment( String segmentName,
+                                TextDecoder decoder );
 
     /**
      * Create a path segment given the supplied segment name and index.
@@ -148,7 +153,8 @@ public interface PathFactory extends ValueFactory<Path> {
      * @return the segment
      * @throws IllegalArgumentException if the segment name reference is <code>null</code> or if the index is invalid
      */
-    Path.Segment createSegment( String segmentName, int index );
+    Path.Segment createSegment( String segmentName,
+                                int index );
 
     /**
      * Create a path segment given the supplied segment name. The resulting segment will have no index.
@@ -167,6 +173,7 @@ public interface PathFactory extends ValueFactory<Path> {
      * @return the segment
      * @throws IllegalArgumentException if the segment name reference is null or if the index is invalid
      */
-    Path.Segment createSegment( Name segmentName, int index );
+    Path.Segment createSegment( Name segmentName,
+                                int index );
 
 }

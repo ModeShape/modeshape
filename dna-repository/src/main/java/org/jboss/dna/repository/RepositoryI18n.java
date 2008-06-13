@@ -112,6 +112,7 @@ public final class RepositoryI18n {
     public static I18n warningSequencingXmlDocument;
 
     public static I18n interruptedWhileConnectingToFederationConfigurationRepository;
+    public static I18n interruptedWhileUsingFederationConfigurationRepository;
     public static I18n interruptedWhileClosingConnectionToFederationConfigurationRepository;
     public static I18n unableToCreateConnectionToFederatedRepository;
     public static I18n unableToAuthenticateConnectionToFederatedRepository;

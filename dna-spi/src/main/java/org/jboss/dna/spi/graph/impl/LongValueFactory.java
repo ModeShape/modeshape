@@ -196,4 +196,12 @@ public class LongValueFactory extends AbstractValueFactory<Long> {
         return create(getStringValueFactory().create(reader, approximateLength));
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    protected Long[] createEmptyArray( int length ) {
+        return new Long[length];
+    }
+
 }
