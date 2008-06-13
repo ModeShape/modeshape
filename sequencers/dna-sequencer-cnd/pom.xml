@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <parent>
+    <artifactId>dna</artifactId>
+    <groupId>org.jboss.dna</groupId>
+    <version>0.2-SNAPSHOT</version>
+  </parent>
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>org.jboss.dna</groupId>
+  <artifactId>dna-sequencer-cnd</artifactId>
+  <name>JBoss DNA CND Sequencer</name>
+  <version>0.2-SNAPSHOT</version>
+  <description>JBoss DNA Sequencer that processes JCR CND files</description>
+  <dependencies>
+    <dependency>
+      <groupId>org.jboss.dna</groupId>
+      <artifactId>dna-common</artifactId>
+      <version>0.2-SNAPSHOT</version>
+    </dependency>
+    <dependency>
+      <groupId>org.jboss.dna</groupId>
+      <artifactId>dna-spi</artifactId>
+      <version>0.2-SNAPSHOT</version>
+    </dependency>
+    <dependency>
+      <groupId>org.antlr</groupId>
+      <artifactId>antlr-runtime</artifactId>
+      <version>3.0.1</version>
+    </dependency>
+    
+    <!-- Testing -->
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.hamcrest</groupId>
+      <artifactId>hamcrest-library</artifactId>
+    </dependency>
+  </dependencies>
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>antlr3-maven-plugin</artifactId>
+        <version>1.0</version>
+        <executions>
+          <execution>
+            <goals>
+              <goal>antlr</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+</project>
