@@ -112,40 +112,40 @@ public class StopwatchTest {
     public void shouldReportTotalTime() {
         for (int i = 0; i != 4; ++i) {
             stopwatch.start();
-            pause(10);
+            pause(100);
             stopwatch.stop();
         }
-        assertThat((double)stopwatch.getTotalDuration().getDuration(TimeUnit.MILLISECONDS), is(closeTo(40, 10)));
+        assertThat((double)stopwatch.getTotalDuration().getDuration(TimeUnit.MILLISECONDS), is(closeTo(400, 100)));
     }
 
     @Test
     public void shouldReportAverageTime() {
         for (int i = 0; i != 4; ++i) {
             stopwatch.start();
-            pause(10);
+            pause(100);
             stopwatch.stop();
         }
-        assertThat((double)stopwatch.getAverageDuration().getDuration(TimeUnit.MILLISECONDS), is(closeTo(10, 5)));
+        assertThat((double)stopwatch.getAverageDuration().getDuration(TimeUnit.MILLISECONDS), is(closeTo(100, 25)));
     }
 
     @Test
     public void shouldReportMinimumTime() {
         for (int i = 0; i != 3; ++i) {
             stopwatch.start();
-            pause(10 * (i + 1));
+            pause(50 * (i + 1));
             stopwatch.stop();
         }
-        assertThat((double)stopwatch.getMinimumDuration().getDuration(TimeUnit.MILLISECONDS), is(closeTo(10, 5)));
+        assertThat((double)stopwatch.getMinimumDuration().getDuration(TimeUnit.MILLISECONDS), is(closeTo(50, 20)));
     }
 
     @Test
     public void shouldReportMaximumTime() {
         for (int i = 0; i != 3; ++i) {
             stopwatch.start();
-            pause(10 * (i + 1));
+            pause(50 * (i + 1));
             stopwatch.stop();
         }
-        assertThat((double)stopwatch.getMaximumDuration().getDuration(TimeUnit.MILLISECONDS), is(closeTo(30, 5)));
+        assertThat((double)stopwatch.getMaximumDuration().getDuration(TimeUnit.MILLISECONDS), is(closeTo(150, 25)));
     }
 
     @Test
