@@ -1,0 +1,75 @@
+/*
+ * JBoss, Home of Professional Open Source.
+ * Copyright 2008, Red Hat Middleware LLC, and individual contributors
+ * as indicated by the @author tags. See the copyright.txt file in the
+ * distribution for a full listing of individual contributors.
+ *
+ * This is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU Lesser General Public License as
+ * published by the Free Software Foundation; either version 2.1 of
+ * the License, or (at your option) any later version.
+ *
+ * This software is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this software; if not, write to the Free
+ * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+ * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+ */
+
+//------------------------------------------------------------------------------
+// N A M E S P A C E S
+//------------------------------------------------------------------------------
+<jcr='http://www.jcp.org/jcr/1.0'>
+<nt='http://www.jcp.org/jcr/nt/1.0'>
+<mix='http://www.jcp.org/jcr/mix/1.0'>
+<msoffice='http://jboss.org/dna/msoffice/1.0'>
+
+// ----------------------------------------------------------
+// JCR Pre-defined Mixin Types that are not loaded by default
+// ----------------------------------------------------------
+
+[mix:mimeType] mixin
+  - jcr:mimeType (string)
+  - jcr:encoding (string)
+
+
+//------------------------------------------------------------------------------
+// N O D E T Y P E S
+//------------------------------------------------------------------------------
+
+[msoffice:metadata] > nt:unstructured, mix:mimeTyped
+  - msoffice:title (string)
+  - msoffice:subject (string)
+  - msoffice:author (string)
+  - msoffice:keywords (string)
+  - msoffice:comment (string)
+  - msoffice:template (string)
+  - msoffice:last_saved_by (string)
+  - msoffice:revision (string)
+  - msoffice:total_editing_time (long)
+  - msoffice:last_printed (date)
+  - msoffice:created (date)
+  - msoffice:saved (date)
+  - msoffice:pages (long)
+  - msoffice:words (long)
+  - msoffice:characters (long)
+  - msoffice:creating_application (string)
+  - msoffice:thumbnail (binary)
+
+// PowerPoint specific data
+  + msoffice:slide (msoffice:pptslide) multiple
+
+// Excel specific data
+  - msoffice:full_content (string)
+  - msoffice:sheet_name (string) multiple
+
+[msoffice:pptslide]
+  - msoffice:title (string)
+  - msoffice:text (string)
+  - msoffice:thumbnail (binary)
+
+

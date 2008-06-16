@@ -65,6 +65,7 @@
 		<!--module>sequencers/dna-sequencer-esbMessage</module-->
 		<module>sequencers/dna-sequencer-cnd</module>
 		<module>sequencers/dna-sequencer-java</module>
+		<module>sequencers/dna-sequencer-msoffice</module>
 		<module>connectors/dna-connector-jbosscache</module>
     	<module>dna-integration-tests</module>
 	</modules>
