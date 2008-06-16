@@ -1,0 +1,261 @@
+/*
+ * JBoss, Home of Professional Open Source.
+ * Copyright 2008, Red Hat Middleware LLC, and individual contributors
+ * as indicated by the @author tags. See the copyright.txt file in the
+ * distribution for a full listing of individual contributors. 
+ *
+ * This is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU Lesser General Public License as
+ * published by the Free Software Foundation; either version 2.1 of
+ * the License, or (at your option) any later version.
+ *
+ * This software is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this software; if not, write to the Free
+ * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+ * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+ */
+
+/**
+ * @author Serge Pagop (serge.pagop@innoq.com)
+ */
+
+//------------------------------------------------------------------------------
+// N A M E S P A C E S
+//------------------------------------------------------------------------------
+<java='http://www.jboss.org/dna/java/1.0'>
+<nt='http://www.jcp.org/jcr/nt/1.0'>
+<mix='http://www.jcp.org/jcr/mix/1.0'>
+
+//------------------------------------------------------------------------------
+// B A S E  T Y P E S
+//------------------------------------------------------------------------------
+
+
+//------------------------------------------------------------------------------
+// V E R S I O N I N G
+//------------------------------------------------------------------------------
+
+
+//------------------------------------------------------------------------------
+// N O D E T Y P E S
+//------------------------------------------------------------------------------
+
+/**
+ * Element-value
+ */
+[java:elementValue] > nt:unstructured
+ + java:kindOfvalues (java:conditionalExpression, java:annotationType, java:elementValueArrayInitializer) mandatory
+
+/**
+ * Expression element-value type
+ */
+[java:conditionalExpression] > nt:unstructured
+ - java:expression (string)
+
+/**
+ * Array initializer element-value type
+ */
+[java:elementValueArrayInitializer] > nt:unstructured
+ + java:elementValue (java:elementValue) = java:elementValue multiple
+
+/**
+ * Identifier
+ */
+[java:identifier] > nt:unstructured
+ - java:sampleName (String) mandatory
+ + java:value (java:elementValue) = java:elementValue mandatory
+ 
+/**
+ * Element-value pair
+ */
+[java:elementValuePair] > nt:unstructured
+ + java:identifier (java:identifier) mandatory
+
+/**
+ * Annotation type
+ */
+[java:annotationType] > nt:unstructured
+ + java:annotation (java:normalAnnotation, java:markerAnnotation,  java:singleElementAnnotation) mandatory
+  
+/**
+ * Normal annotation e.g. @Entity(name="Customer")
+ */
+[java:normalAnnotation] > nt:unstructured
+ - java:typeName (string) mandatory
+ + java:elementValuePair (java:elementValuePair)
+
+/**
+ * Marker annotation e.g. @GET
+ */
+[java:markerAnnotation] > nt:unstructured
+ - typeName (string)
+
+/**
+ * Single element annotation  e.g. @Path("/book")
+ */
+[java:singleElementAnnotation] > nt:unstructured
+ + java:value (java:elementValue) = java:elementValue mandatory
+
+/** 
+ * Formal parameter
+ */
+[java:formalParameter] > nt:unstructured
+ - java:name (string)
+ + java:type (java:primitiveType, java:referenceType) mandatory multiple
+
+/** 
+ * No Return type 
+ */
+[java:noReturnType] > nt:unstructured
+ - java:noReturn (string)
+   < 'void'
+
+/** 
+ * Integral type
+ */
+[java:integralType] > nt:unstructured
+ - java:predefinedIntegralType (string) mandatory
+   < 'byte', 'short', 'int', 'long', 'char' 
+
+/** 
+ * Floating point type
+ */
+[java:floatingPointType] > nt:unstructured
+ - java:predefinedFloatingType (string) mandatory
+  < 'float', 'double'
+
+/**
+ * Primitive type 
+ */
+[java:primitiveType] > nt:unstructured
+ - java:booleanType (string)
+   < 'boolean'
+ + java:numericType (java:integralType, java:floatingPointType)
+ 
+
+/** 
+ * Reference type  (TODO to enhance)
+ */	
+[java:referenceType] > nt:unstructured
+
+/** 
+ * Field type 
+ */
+[java:fieldType] > nt:unstructured
+ - java:description (string)
+ - java:modifier (string)
+   < 'public', 'protected', 'private'
+ - java:declaredAs (string) multiple
+   < 'static','final', 'transient', 'volatile'
+ - java:name (string) mandatory
+ + java:type (java:primitiveType, java:referenceType) mandatory multiple 
+ 
+ /** 
+  * Method declaration 
+  */
+[java:methodDeclaration] > nt:unstructured
+ - java:description (string)
+ - java:modifier (string)
+   < 'public', 'protected', 'private'
+ + java:resultType (java:noReturnType, java:primitiveType, java:referenceType) mandatory
+ - java:name (string) mandatory
+ - java:declaredAs (string) multiple
+   < 'static','final', 'native', 'strictfp', 'synchronized'
+ + java:parameter (java:formalParameter) multiple
+
+/** 
+ * Constructor declarations 
+ */
+[java:constructorDeclaration] > nt:unstructured
+ - java:description (string)
+ - java:modifier (string)
+  < 'public', 'protected', 'private'
+ - java:name (string) mandatory
+ + java:parameter (java:formalParameter)
+
+
+/**
+ * Package declarations
+ */
+[java:packageDeclaration] > nt:unstructured
+ + java:annotation (java:annotationType) = java:annotationType
+ - java:keyword (string)
+   < 'package' 
+ - java:packageName (string) mandatory 
+
+/**
+ * Import declarations
+ */
+[java:singleTypeImportDeclaration] > nt:unstructured
+ - keyword (string) mandatory
+  < 'import'
+ - typeName (string) mandatory
+ 
+// TODO: needs to be enhance
+[java:typeImportOnDemandDeclaration] > nt:unstructured
+ - keyword (string) mandatory
+  < 'import'
+ - packageOrTypeName (string) mandatory
+
+// TODO: needs to be enhance
+[java:singleStaticImportDeclaration] > nt:unstructured
+ - single_static (string) mandatory
+  < 'import static'
+ - typeName (string) mandatory
+
+// TODO: needs to be enhance
+[java:staticImportOnDemandDeclaration] > nt:unstructured
+ - static_import (string) mandatory
+  < 'import static'
+ - typeName (string) mandatory
+ 
+[java:importDeclaration] > nt:unstructured
+ + java:singleTypeImport (java:singleTypeImportDeclaration) = java:singleTypeImportDeclaration
+ + java:typeImportOnDemand (java:typeImportOnDemandDeclaration) = java:typeImportOnDemandDeclaration
+ + java:singleStaticImport (java:singleStaticImportDeclaration) = java:singleStaticImportDeclaration
+ + java:staticImportOnDemand (java:staticImportOnDemandDeclaration) = java:staticImportOnDemandDeclaration 
+
+/**
+ * Class declaration
+ *
+ * The body of class declares members (fields and methods and nested classes and interfaces), 
+ * instance and static initializers, and constructors
+ */
+[java:normalClassDeclaration] > nt:unstructured
+ - java:description (string)
+ - java:modifier = 'public'
+ - java:declaredAs (string) 
+  < 'abstract', 'final'
+ - java:name (string) mandatory
+ + java:field (java:fieldType)  = java:fieldType multiple
+ + java:method (java:methodDeclaration) = java:methodDeclaration multiple
+ + java:constructor (java:constructorDeclaration) = java:constructorDeclaration multiple
+ 
+[java:enumDeclaration] > nt:unstructured
+ 
+[java:classDeclaration] > nt:unstructured
+ + java:normalClass (java:normalClassDeclaration) = java:normalClassDeclaration
+ + java:enum (java:enumDeclaration) = java:enumDeclaration
+
+/**
+ * Interface declaration 
+ *
+ * The body of class declares members (fields and methods and nested classes and interfaces), 
+ * instance and static initializers, and constructors
+ */
+ //TODO
+[java:interfaceDeclaration] > nt:unstructured
+ 
+ 
+/**
+ * Compilation unit
+ */
+[java:compilationUnit] > nt:unstructured
+ + java:package (java:packageDeclaration) = java:packageDeclaration
+ + java:import (java:importDeclaration) = java:importDeclaration
+ + java:type (java:classDeclaration, java:interfaceDeclaration) 
