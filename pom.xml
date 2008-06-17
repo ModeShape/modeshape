@@ -53,6 +53,15 @@
 			</roles>
 			<timezone>+1</timezone>
 		</developer>
+		<developer>
+			<name>Serge Pagop</name>
+			<id>spagop</id>
+			<email>Serge.Pagop@innoq.com</email>
+			<roles>
+				<role>Developer</role>
+			</roles>
+			<timezone>+1</timezone>
+		</developer>
 	</developers>
 	<modules>
 		<module>dna-common</module>
