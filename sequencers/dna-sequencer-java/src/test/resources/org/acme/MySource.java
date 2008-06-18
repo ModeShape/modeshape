@@ -23,6 +23,9 @@ package org.acme;
 
 import org.acme.annotation.MyClassAnnotation;
 
+/**
+ * @author Serge Pagop
+ */
 @MyClassAnnotation
 public class MySource {
     private int i;
