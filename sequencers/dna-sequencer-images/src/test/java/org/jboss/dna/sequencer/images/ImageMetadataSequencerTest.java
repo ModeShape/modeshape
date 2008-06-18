@@ -25,6 +25,7 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.number.IsCloseTo.closeTo;
 import static org.junit.Assert.assertThat;
+import static org.mockito.Mockito.stub;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
@@ -57,14 +58,15 @@ public class ImageMetadataSequencerTest {
     @Before
     public void beforeEach() {
         MockitoAnnotations.initMocks(this);
-        this.sequencer = new ImageMetadataSequencer();
-        this.output = new MockSequencerOutput();
+        sequencer = new ImageMetadataSequencer();
+        output = new MockSequencerOutput();
         output.getNamespaceRegistry().register("image", "http://jboss.org/dna/images/1.0");
-        this.progress = new SimpleProgressMonitor("Test activity");
-        this.cautionGif = this.getClass().getClassLoader().getResource("caution.gif");
-        this.cautionJpg = this.getClass().getClassLoader().getResource("caution.jpg");
-        this.cautionPict = this.getClass().getClassLoader().getResource("caution.pict");
-        this.cautionPng = this.getClass().getClassLoader().getResource("caution.png");
+        progress = new SimpleProgressMonitor("Test activity");
+        cautionGif = this.getClass().getClassLoader().getResource("caution.gif");
+        cautionJpg = this.getClass().getClassLoader().getResource("caution.jpg");
+        cautionPict = this.getClass().getClassLoader().getResource("caution.pict");
+        cautionPng = this.getClass().getClassLoader().getResource("caution.png");
+        stub(context.getFactories()).toReturn(output.getFactories());
     }
 
     @After
