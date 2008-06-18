@@ -80,7 +80,7 @@ public class StreamSequencerAdapter implements Sequencer {
                          String sequencedPropertyName,
                          NodeChange changes,
                          Set<RepositoryNodePath> outputPaths,
-                         ExecutionContext context,
+                         ExecutionContext execContext,
                          ProgressMonitor progressMonitor ) throws RepositoryException, SequencerException {
         // 'sequencedPropertyName' contains the name of the modified property on 'input' that resuled the call to this sequencer
         // 'changes' contains all of the changes to this node that occurred in the transaction.
@@ -100,13 +100,14 @@ public class StreamSequencerAdapter implements Sequencer {
             progressMonitor.worked(10);
 
             // Get the binary property with the image content, and build the image metadata from the image ...
-            SequencerOutputMap output = new SequencerOutputMap(context.getValueFactories());
+            SequencerOutputMap output = new SequencerOutputMap(execContext.getValueFactories());
             InputStream stream = null;
             Throwable firstError = null;
             ProgressMonitor sequencingMonitor = progressMonitor.createSubtask(50);
             try {
                 stream = imageDataProperty.getStream();
-                this.streamSequencer.sequence(stream, output, sequencingMonitor);
+                SequencerNodeContext sequencerContext = new SequencerNodeContext(input, execContext);
+                this.streamSequencer.sequence(stream, output, sequencerContext, sequencingMonitor);
             } catch (Throwable t) {
                 // Record the error ...
                 firstError = t;
@@ -143,13 +144,13 @@ public class StreamSequencerAdapter implements Sequencer {
                     final String nodePath = outputPath.getNodePath();
 
                     // Create a session to the repository where the data should be written ...
-                    session = context.getSessionFactory().createSession(repositoryWorkspaceName);
+                    session = execContext.getSessionFactory().createSession(repositoryWorkspaceName);
 
                     // Find or create the output node in this session ...
-                    Node outputNode = context.getTools().findOrCreateNode(session, nodePath);
+                    Node outputNode = execContext.getTools().findOrCreateNode(session, nodePath);
 
                     // Now save the image metadata to the output node ...
-                    if (saveOutput(outputNode, output, context)) {
+                    if (saveOutput(outputNode, output, execContext)) {
                         session.save();
                     }
                 } finally {

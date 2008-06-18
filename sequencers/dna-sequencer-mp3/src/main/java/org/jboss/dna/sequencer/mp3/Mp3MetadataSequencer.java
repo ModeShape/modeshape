@@ -23,6 +23,7 @@ package org.jboss.dna.sequencer.mp3;
 
 import java.io.InputStream;
 import org.jboss.dna.common.monitor.ProgressMonitor;
+import org.jboss.dna.spi.sequencers.SequencerContext;
 import org.jboss.dna.spi.sequencers.SequencerOutput;
 import org.jboss.dna.spi.sequencers.StreamSequencer;
 
@@ -43,6 +44,7 @@ import org.jboss.dna.spi.sequencers.StreamSequencer;
  * </li>
  * </ul>
  * </p>
+ * 
  * @author Stefano Maestri
  * @author Randall Hauch
  */
@@ -58,8 +60,13 @@ public class Mp3MetadataSequencer implements StreamSequencer {
 
     /**
      * {@inheritDoc}
+     * 
+     * @see StreamSequencer#sequence(InputStream, SequencerOutput, SequencerContext, ProgressMonitor)
      */
-    public void sequence( InputStream stream, SequencerOutput output, ProgressMonitor progressMonitor ) {
+    public void sequence( InputStream stream,
+                          SequencerOutput output,
+                          SequencerContext context,
+                          ProgressMonitor progressMonitor ) {
         Mp3Metadata metadata = Mp3Metadata.instance(stream);
 
         if (metadata != null) {

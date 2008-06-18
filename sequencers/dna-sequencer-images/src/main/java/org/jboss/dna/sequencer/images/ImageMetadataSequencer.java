@@ -26,6 +26,7 @@ import org.jboss.dna.common.monitor.ProgressMonitor;
 import org.jboss.dna.spi.graph.NameFactory;
 import org.jboss.dna.spi.graph.Path;
 import org.jboss.dna.spi.graph.PathFactory;
+import org.jboss.dna.spi.sequencers.SequencerContext;
 import org.jboss.dna.spi.sequencers.SequencerOutput;
 import org.jboss.dna.spi.sequencers.StreamSequencer;
 
@@ -62,6 +63,7 @@ import org.jboss.dna.spi.sequencers.StreamSequencer;
  * vendors to store custom metadata. This structure could be mapped with each directory (e.g. "EXIF" or "Nikon Makernote" or
  * "IPTC") as the name of a child node, with the EXIF tags values stored as either properties or child nodes.
  * </p>
+ * 
  * @author Randall Hauch
  */
 public class ImageMetadataSequencer implements StreamSequencer {
@@ -84,8 +86,13 @@ public class ImageMetadataSequencer implements StreamSequencer {
 
     /**
      * {@inheritDoc}
+     * 
+     * @see StreamSequencer#sequence(InputStream, SequencerOutput, SequencerContext, ProgressMonitor)
      */
-    public void sequence( InputStream stream, SequencerOutput output, ProgressMonitor progressMonitor ) {
+    public void sequence( InputStream stream,
+                          SequencerOutput output,
+                          SequencerContext context,
+                          ProgressMonitor progressMonitor ) {
         progressMonitor.beginTask(10, ImageSequencerI18n.sequencerTaskName);
 
         ImageMetadata metadata = new ImageMetadata();
@@ -102,8 +109,8 @@ public class ImageMetadataSequencer implements StreamSequencer {
 
         // Generate the output graph if we found useful metadata ...
         if (metadata != null) {
-            NameFactory nameFactory = output.getFactories().getNameFactory();
-            PathFactory pathFactory = output.getFactories().getPathFactory();
+            NameFactory nameFactory = context.getFactories().getNameFactory();
+            PathFactory pathFactory = context.getFactories().getPathFactory();
             Path metadataNode = pathFactory.create(METADATA_NODE);
 
             // Place the image metadata into the output map ...

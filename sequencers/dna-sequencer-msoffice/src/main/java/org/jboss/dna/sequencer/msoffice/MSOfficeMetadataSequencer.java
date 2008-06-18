@@ -31,6 +31,7 @@ import org.jboss.dna.sequencer.msoffice.excel.ExcelMetadataReader;
 import org.jboss.dna.sequencer.msoffice.powerpoint.PowerPointMetadataReader;
 import org.jboss.dna.sequencer.msoffice.powerpoint.SlideMetadata;
 import org.jboss.dna.sequencer.msoffice.word.WordMetadataReader;
+import org.jboss.dna.spi.sequencers.SequencerContext;
 import org.jboss.dna.spi.sequencers.SequencerOutput;
 import org.jboss.dna.spi.sequencers.StreamSequencer;
 
@@ -114,6 +115,7 @@ public class MSOfficeMetadataSequencer implements StreamSequencer {
      */
     public void sequence( InputStream stream,
                           SequencerOutput output,
+                          SequencerContext context,
                           ProgressMonitor progressMonitor ) {
         progressMonitor.beginTask(10, MSOfficeMetadataI18n.sequencerTaskName);
 

@@ -24,6 +24,7 @@ package org.jboss.dna.sequencer.java;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
+import static org.mockito.Mockito.stub;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -32,9 +33,12 @@ import java.io.InputStream;
 import org.jboss.dna.common.monitor.ProgressMonitor;
 import org.jboss.dna.common.monitor.SimpleProgressMonitor;
 import org.jboss.dna.spi.sequencers.MockSequencerOutput;
+import org.jboss.dna.spi.sequencers.SequencerContext;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.MockitoAnnotations;
+import org.mockito.MockitoAnnotations.Mock;
 
 /**
  * @author Serge Pagop
@@ -45,14 +49,18 @@ public class JavaMetadataSequencerTest {
     private MockSequencerOutput output;
     private ProgressMonitor progress;
     private File source;
+    @Mock
+    private SequencerContext context;
 
     @Before
-    public void beforeEach() throws Exception {
-        this.sequencer = new JavaMetadataSequencer();
-        this.output = new MockSequencerOutput();
+    public void beforeEach() {
+        MockitoAnnotations.initMocks(this);
+        sequencer = new JavaMetadataSequencer();
+        output = new MockSequencerOutput();
         output.getNamespaceRegistry().register("java", "http://jboss.org/dna/java/1.0");
         this.progress = new SimpleProgressMonitor("Test java monitor activity");
         source = new File("src/test/resources/org/acme/MySource.java");
+        stub(context.getFactories()).toReturn(output.getFactories());
     }
 
     @After
@@ -74,7 +82,7 @@ public class JavaMetadataSequencerTest {
     public void shouldGenerateMetadataForJavaSourceFile() throws IOException {
         content = getJavaSrc(source);
         assertThat(content, is(notNullValue()));
-        sequencer.sequence(content, output, progress);
+        sequencer.sequence(content, output, context, progress);
         assertThat(output.getPropertyValues("java:compilationUnit", "jcr:primaryType"), is(new Object[] {"java:compilationUnit"}));
         assertThat(output.getPropertyValues("java:compilationUnit/java:package/java:packageDeclaration", "java:packageName"),
                    is(new Object[] {"org.acme"}));

@@ -74,7 +74,7 @@ public class jackrabbitCNDSupportsTest {
     }
 
     @After
-    public void afterEach() throws Exception {
+    public void afterEach() {
         try {
             if (session != null) session.logout();
         } finally {
@@ -98,7 +98,7 @@ public class jackrabbitCNDSupportsTest {
     }
 
     @Test
-    public void testMap() throws Exception {
+    public void testMap() {
         Map<String, String> errors = new HashMap<String, String>();
         errors.put("login", "field.isNull");
         if (!errors.containsKey("login")) errors.put("login", "field.regexp");

@@ -31,9 +31,12 @@ import java.net.URL;
 import org.jboss.dna.common.monitor.ProgressMonitor;
 import org.jboss.dna.common.monitor.SimpleProgressMonitor;
 import org.jboss.dna.spi.sequencers.MockSequencerOutput;
+import org.jboss.dna.spi.sequencers.SequencerContext;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.MockitoAnnotations;
+import org.mockito.MockitoAnnotations.Mock;
 
 /**
  * @author Randall Hauch
@@ -48,9 +51,12 @@ public class ImageMetadataSequencerTest {
     private URL cautionJpg;
     private URL cautionPict;
     private URL cautionPng;
+    @Mock
+    private SequencerContext context;
 
     @Before
     public void beforeEach() {
+        MockitoAnnotations.initMocks(this);
         this.sequencer = new ImageMetadataSequencer();
         this.output = new MockSequencerOutput();
         output.getNamespaceRegistry().register("image", "http://jboss.org/dna/images/1.0");
@@ -78,7 +84,7 @@ public class ImageMetadataSequencerTest {
         assertThat(url, is(notNullValue()));
         content = url.openStream();
         assertThat(content, is(notNullValue()));
-        sequencer.sequence(content, output, progress);
+        sequencer.sequence(content, output, context, progress);
         assertThat(output.getPropertyValues("image:metadata", "jcr:primaryType"), is(new Object[] {"image:metadata"}));
         assertThat(output.getPropertyValues("image:metadata", "jcr:mimeType"), is(new Object[] {"image/jpeg"}));
         assertThat(output.getPropertyValues("image:metadata", "image:formatName"), is(new Object[] {"JPEG"}));
@@ -101,7 +107,7 @@ public class ImageMetadataSequencerTest {
         assertThat(url, is(notNullValue()));
         content = url.openStream();
         assertThat(content, is(notNullValue()));
-        sequencer.sequence(content, output, progress);
+        sequencer.sequence(content, output, context, progress);
         assertThat(output.getPropertyValues("image:metadata", "jcr:primaryType"), is(new Object[] {"image:metadata"}));
         assertThat(output.getPropertyValues("image:metadata", "jcr:mimeType"), is(new Object[] {"image/png"}));
         assertThat(output.getPropertyValues("image:metadata", "image:formatName"), is(new Object[] {"PNG"}));
@@ -122,7 +128,7 @@ public class ImageMetadataSequencerTest {
         assertThat(url, is(notNullValue()));
         content = url.openStream();
         assertThat(content, is(notNullValue()));
-        sequencer.sequence(content, output, progress);
+        sequencer.sequence(content, output, context, progress);
         assertThat(output.getPropertyValues("image:metadata", "jcr:mimeType"), is(new Object[] {"image/gif"}));
         assertThat(output.getPropertyValues("image:metadata", "image:formatName"), is(new Object[] {"GIF"}));
         assertThat(output.getPropertyValues("image:metadata", "image:width"), is(new Object[] {48}));
@@ -142,7 +148,7 @@ public class ImageMetadataSequencerTest {
         assertThat(url, is(notNullValue()));
         content = url.openStream();
         assertThat(content, is(notNullValue()));
-        sequencer.sequence(content, output, progress);
+        sequencer.sequence(content, output, context, progress);
         assertThat(output.hasProperties(), is(false));
 
     }

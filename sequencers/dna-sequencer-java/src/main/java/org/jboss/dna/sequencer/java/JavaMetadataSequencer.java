@@ -27,6 +27,7 @@ import org.jboss.dna.common.monitor.ProgressMonitor;
 import org.jboss.dna.spi.graph.NameFactory;
 import org.jboss.dna.spi.graph.Path;
 import org.jboss.dna.spi.graph.PathFactory;
+import org.jboss.dna.spi.sequencers.SequencerContext;
 import org.jboss.dna.spi.sequencers.SequencerOutput;
 import org.jboss.dna.spi.sequencers.StreamSequencer;
 
@@ -48,29 +49,32 @@ import org.jboss.dna.spi.sequencers.StreamSequencer;
  */
 public class JavaMetadataSequencer implements StreamSequencer {
 
-  
     public static final String JAVA_COMPILATION_UNIT_NODE = "java:compilationUnit";
     public static final String JAVA_COMPILATION_UNIT_PRIMARY_TYPE = "jcr:primaryType";
     public static final String JAVA_PACKAGE_CHILD_NODE = "java:package";
-    public static final String JAVA_PACKAGE_DECLARATION_CHILD_NODE ="java:packageDeclaration";
-    public static final String JAVA_PACKAGE_NAME ="java:packageName";
-    public static final String JAVA_ANNOTATION_CHILD_NODE ="java:annotation";
-    
-    private static final String SLASH ="/";
+    public static final String JAVA_PACKAGE_DECLARATION_CHILD_NODE = "java:packageDeclaration";
+    public static final String JAVA_PACKAGE_NAME = "java:packageName";
+    public static final String JAVA_ANNOTATION_CHILD_NODE = "java:annotation";
 
-   
-    /* (non-Javadoc)
-     * @see org.jboss.dna.spi.sequencers.StreamSequencer#sequence(java.io.InputStream, org.jboss.dna.spi.sequencers.SequencerOutput, org.jboss.dna.common.monitor.ProgressMonitor)
+    private static final String SLASH = "/";
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.spi.sequencers.StreamSequencer#sequence(java.io.InputStream,
+     *      org.jboss.dna.spi.sequencers.SequencerOutput, org.jboss.dna.spi.sequencers.SequencerContext,
+     *      org.jboss.dna.common.monitor.ProgressMonitor)
      */
     public void sequence( InputStream stream,
                           SequencerOutput output,
+                          SequencerContext context,
                           ProgressMonitor progressMonitor ) {
         progressMonitor.beginTask(10, JavaMetadataI18n.sequencerTaskName);
-        
+
         JavaMetadata javaMetadata = null;
-        NameFactory nameFactory = output.getFactories().getNameFactory();
-        PathFactory pathFactory = output.getFactories().getPathFactory();
-        
+        NameFactory nameFactory = context.getFactories().getNameFactory();
+        PathFactory pathFactory = context.getFactories().getPathFactory();
+
         try {
             javaMetadata = JavaMetadata.instance(stream, JavaMetadataUtil.length(stream), null, progressMonitor.createSubtask(10));
             if (progressMonitor.isCancelled()) return;
@@ -78,12 +82,18 @@ public class JavaMetadataSequencer implements StreamSequencer {
             e.printStackTrace();
             return;
         }
-        if(javaMetadata != null) {
+        if (javaMetadata != null) {
             Path javaCompilationUnitNode = pathFactory.create(JAVA_COMPILATION_UNIT_NODE);
-            output.setProperty(javaCompilationUnitNode, nameFactory.create(JAVA_COMPILATION_UNIT_PRIMARY_TYPE), "java:compilationUnit");
-            Path javaPackageDeclarationChildNode = pathFactory.create(JAVA_COMPILATION_UNIT_NODE + SLASH + JAVA_PACKAGE_CHILD_NODE + SLASH + JAVA_PACKAGE_DECLARATION_CHILD_NODE);
-            output.setProperty(javaPackageDeclarationChildNode, nameFactory.create(JAVA_PACKAGE_NAME), javaMetadata.getPackageMetadata().getName());
-            
+            output.setProperty(javaCompilationUnitNode,
+                               nameFactory.create(JAVA_COMPILATION_UNIT_PRIMARY_TYPE),
+                               "java:compilationUnit");
+            Path javaPackageDeclarationChildNode = pathFactory.create(JAVA_COMPILATION_UNIT_NODE + SLASH
+                                                                      + JAVA_PACKAGE_CHILD_NODE + SLASH
+                                                                      + JAVA_PACKAGE_DECLARATION_CHILD_NODE);
+            output.setProperty(javaPackageDeclarationChildNode,
+                               nameFactory.create(JAVA_PACKAGE_NAME),
+                               javaMetadata.getPackageMetadata().getName());
+
         }
         progressMonitor.done();
     }

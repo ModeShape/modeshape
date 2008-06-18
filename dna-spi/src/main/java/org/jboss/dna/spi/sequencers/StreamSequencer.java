@@ -30,6 +30,7 @@ import org.jboss.dna.common.monitor.ProgressMonitor;
  * <p>
  * Implementations must provide a no-argument constructor.
  * </p>
+ * 
  * @author Randall Hauch
  */
 public interface StreamSequencer {
@@ -58,11 +59,15 @@ public interface StreamSequencer {
      * <p>
      * Finally, the implementation should call {@link ProgressMonitor#done()} when the operation has finished.
      * </p>
-     * @param stream the stream with the data to be sequenced; never null
-     * @param output the output from the sequencing operation; never null
+     * 
+     * @param stream the stream with the data to be sequenced; never <code>null</code>
+     * @param output the output from the sequencing operation; never <code>null</code>
+     * @param context the context for the sequencing operation; never <code>null</code>
      * @param progressMonitor the progress monitor that should be kept updated with the sequencer's progress and that should be
-     * frequently consulted as to whether this operation has been {@link ProgressMonitor#isCancelled() cancelled}.
+     *        frequently consulted as to whether this operation has been {@link ProgressMonitor#isCancelled() cancelled}.
      */
-    void sequence( InputStream stream, SequencerOutput output, ProgressMonitor progressMonitor );
-
+    void sequence( InputStream stream,
+                   SequencerOutput output,
+                   SequencerContext context,
+                   ProgressMonitor progressMonitor );
 }

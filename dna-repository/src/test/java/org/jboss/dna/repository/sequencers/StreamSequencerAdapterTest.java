@@ -35,6 +35,7 @@ import java.util.Set;
 import javax.jcr.Node;
 import javax.jcr.Session;
 import javax.jcr.observation.Event;
+import org.jboss.dna.common.collection.Problem;
 import org.jboss.dna.common.jcr.AbstractJcrRepositoryTest;
 import org.jboss.dna.common.monitor.ProgressMonitor;
 import org.jboss.dna.common.monitor.RecordingProgressMonitor;
@@ -47,6 +48,7 @@ import org.jboss.dna.repository.util.SessionFactory;
 import org.jboss.dna.repository.util.SimpleExecutionContext;
 import org.jboss.dna.spi.graph.NamespaceRegistry;
 import org.jboss.dna.spi.graph.Path;
+import org.jboss.dna.spi.sequencers.SequencerContext;
 import org.jboss.dna.spi.sequencers.SequencerOutput;
 import org.jboss.dna.spi.sequencers.StreamSequencer;
 import org.junit.After;
@@ -93,6 +95,7 @@ public class StreamSequencerAdapterTest extends AbstractJcrRepositoryTest {
              */
             public void sequence( InputStream stream,
                                   SequencerOutput output,
+                                  SequencerContext context,
                                   ProgressMonitor progressMonitor ) {
                 for (SequencerOutputMap.Entry entry : finalOutput) {
                     Path nodePath = entry.getPath();
@@ -122,6 +125,37 @@ public class StreamSequencerAdapterTest extends AbstractJcrRepositoryTest {
         } catch (Exception e) {
             fail("Unable to create repository session: " + e.getMessage());
             return null; // won't get here
+        }
+    }
+
+    protected void testSequencer( final StreamSequencer sequencer ) throws Exception {
+        StreamSequencer streamSequencer = new StreamSequencer() {
+
+            public void sequence( InputStream stream,
+                                  SequencerOutput output,
+                                  SequencerContext context,
+                                  ProgressMonitor progressMonitor ) {
+                try {
+                    sequencer.sequence(stream, output, context, progressMonitor);
+                } catch (AssertionError err) {
+                    progressMonitor.getProblems().addError(err, null);
+                }
+            }
+        };
+        StreamSequencerAdapter adapter = new StreamSequencerAdapter(streamSequencer);
+        startRepository();
+        session = getRepository().login(getTestCredentials());
+        Node inputNode = tools.findOrCreateNode(session, "/a/b/c");
+        Node outputNode = tools.findOrCreateNode(session, "/d/e");
+        inputNode.setProperty("sequencedProperty", new ByteArrayInputStream(sampleData.getBytes()));
+        NodeChange nodeChange = new NodeChange(repositoryWorkspaceName, inputNode.getPath(), Event.PROPERTY_CHANGED,
+                                               Collections.singleton("sequencedProperty"), null);
+        Set<RepositoryNodePath> outputPaths = new HashSet<RepositoryNodePath>();
+        outputPaths.add(new RepositoryNodePath(repositoryWorkspaceName, outputNode.getPath()));
+        sequencerOutput.setProperty("alpha/beta", "isSomething", true);
+        adapter.execute(inputNode, "sequencedProperty", nodeChange, outputPaths, context, progressMonitor);
+        for (Problem problem : progressMonitor.getProblems()) {
+            throw (AssertionError)problem.getThrowable();
         }
     }
 
@@ -337,5 +371,57 @@ public class StreamSequencerAdapterTest extends AbstractJcrRepositoryTest {
     @Test
     public void shouldSequencerOutputProvideAccessToNamespaceRegistry() {
         assertThat(sequencerOutput.getNamespaceRegistry(), notNullValue());
+    }
+
+    @Test
+    public void shouldPassNonNullInputStreamToSequencer() throws Exception {
+        testSequencer(new StreamSequencer() {
+
+            public void sequence( InputStream stream,
+                                  SequencerOutput output,
+                                  SequencerContext context,
+                                  ProgressMonitor progressMonitor ) {
+                assertThat(stream, notNullValue());
+            }
+        });
+    }
+
+    @Test
+    public void shouldPassNonNullSequencerOutputToSequencer() throws Exception {
+        testSequencer(new StreamSequencer() {
+
+            public void sequence( InputStream stream,
+                                  SequencerOutput output,
+                                  SequencerContext context,
+                                  ProgressMonitor progressMonitor ) {
+                assertThat(output, notNullValue());
+            }
+        });
+    }
+
+    @Test
+    public void shouldPassNonNullSequencerContextToSequencer() throws Exception {
+        testSequencer(new StreamSequencer() {
+
+            public void sequence( InputStream stream,
+                                  SequencerOutput output,
+                                  SequencerContext context,
+                                  ProgressMonitor progressMonitor ) {
+                assertThat(context, notNullValue());
+            }
+        });
+    }
+
+    @Test
+    public void shouldPassNonNullProgressMonitorToSequencer() throws Exception {
+        testSequencer(new StreamSequencer() {
+
+            public void sequence( InputStream stream,
+                                  SequencerOutput output,
+                                  SequencerContext context,
+                                  ProgressMonitor progressMonitor ) {
+                assertThat(progressMonitor, notNullValue());
+            }
+        });
     }
 }

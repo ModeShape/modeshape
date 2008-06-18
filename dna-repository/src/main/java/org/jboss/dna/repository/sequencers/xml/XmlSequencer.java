@@ -35,6 +35,7 @@ import org.jboss.dna.spi.graph.Name;
 import org.jboss.dna.spi.graph.NameFactory;
 import org.jboss.dna.spi.graph.NamespaceRegistry;
 import org.jboss.dna.spi.graph.Path;
+import org.jboss.dna.spi.sequencers.SequencerContext;
 import org.jboss.dna.spi.sequencers.SequencerOutput;
 import org.jboss.dna.spi.sequencers.StreamSequencer;
 import org.xml.sax.Attributes;
@@ -73,21 +74,19 @@ public class XmlSequencer implements StreamSequencer {
     private static final String LEXICAL_HANDLER_FEATURE = "http://xml.org/sax/properties/lexical-handler";
 
     /**
-     * <p>
      * {@inheritDoc}
-     * </p>
      * 
-     * @see org.jboss.dna.spi.sequencers.StreamSequencer#sequence(java.io.InputStream,
-     *      org.jboss.dna.spi.sequencers.SequencerOutput, org.jboss.dna.common.monitor.ProgressMonitor)
+     * @see org.jboss.dna.spi.sequencers.StreamSequencer#sequence(InputStream, SequencerOutput, SequencerContext, ProgressMonitor)
      */
     public void sequence( InputStream stream,
                           SequencerOutput output,
+                          SequencerContext context,
                           ProgressMonitor monitor ) {
         monitor.beginTask(100.0, RepositoryI18n.sequencingXmlDocument);
         XMLReader reader;
         try {
             reader = XMLReaderFactory.createXMLReader();
-            Handler handler = new Handler(output, monitor);
+            Handler handler = new Handler(output, context, monitor);
             reader.setContentHandler(handler);
             reader.setErrorHandler(handler);
             // Ensure handler acting as entity resolver 2
@@ -113,16 +112,18 @@ public class XmlSequencer implements StreamSequencer {
         }
     }
 
-    private class Handler extends DefaultHandler2 {
+    private final class Handler extends DefaultHandler2 {
 
-        private ProgressMonitor monitor;
-        private SequencerOutput output;
+        private final SequencerOutput output;
+        private final SequencerContext context;
+        private final ProgressMonitor monitor;
+
         private double progress;
 
         private Path path; // The DNA path of the node representing the current XML element
 
         // Cached instances of the name factory and commonly referenced names
-        private NameFactory nameFactory;
+        private final NameFactory nameFactory;
         private Name commentContentName;
         private Name commentName;
         private Name elementContentName;
@@ -133,11 +134,11 @@ public class XmlSequencer implements StreamSequencer {
         private Map<Name, List<IndexedName>> nameToIndexedNamesMap = new HashMap<Name, List<IndexedName>>();
 
         // The stack of recursive maps being processed, with the head entry being the map for the current path
-        private LinkedList<Map<Name, List<IndexedName>>> nameToIndexedNamesMapStack = new LinkedList<Map<Name, List<IndexedName>>>();
+        private final LinkedList<Map<Name, List<IndexedName>>> nameToIndexedNamesMapStack = new LinkedList<Map<Name, List<IndexedName>>>();
 
         // The stack of XML namespace in scope, with the head entry being namespace of the closest ancestor element declaring a
         // namespace.
-        private LinkedList<String> nsStack = new LinkedList<String>();
+        private final LinkedList<String> nsStack = new LinkedList<String>();
 
         // Builder used to concatenate concurrent lines of CDATA into a single value.
         private StringBuilder cDataBuilder;
@@ -149,13 +150,18 @@ public class XmlSequencer implements StreamSequencer {
         private String entity;
 
         Handler( SequencerOutput output,
+                 SequencerContext context,
                  ProgressMonitor monitor ) {
+            assert output != null;
+            assert monitor != null;
+            assert context != null;
             this.output = output;
+            this.context = context;
             this.monitor = monitor;
             // Initialize path to a an empty path relative to the SequencerOutput's target path.
-            path = output.getFactories().getPathFactory().createRelativePath();
+            path = context.getFactories().getPathFactory().createRelativePath();
             // Cache name factory since it is frequently used
-            nameFactory = output.getFactories().getNameFactory();
+            nameFactory = context.getFactories().getNameFactory();
         }
 
         /**
@@ -574,7 +580,7 @@ public class XmlSequencer implements StreamSequencer {
             indexedNames.add(indexedName);
             // Add element name and the appropriate index to the path.
             // Per the JCR spec, the index must be relative to same-name sibling nodes
-            path = output.getFactories().getPathFactory().create(path, name, indexedNames.size());
+            path = context.getFactories().getPathFactory().create(path, name, indexedNames.size());
             // Add the indexed name map to the stack and set the current map to the new element's map
             nameToIndexedNamesMapStack.addFirst(nameToIndexedNamesMap);
             nameToIndexedNamesMap = indexedName.nameToIndexedNamesMap;
@@ -641,7 +647,7 @@ public class XmlSequencer implements StreamSequencer {
                                         String uri ) throws SAXException {
             stopIfCancelled();
             // Register any unregistered namespaces
-            NamespaceRegistry registry = output.getNamespaceRegistry();
+            NamespaceRegistry registry = context.getNamespaceRegistry();
             if (!registry.isRegisteredNamespaceUri(uri)) {
                 registry.register(prefix, uri);
             }

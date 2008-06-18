@@ -32,11 +32,13 @@ import org.jboss.dna.common.monitor.ProgressMonitor;
 import org.jboss.dna.common.monitor.SimpleProgressMonitor;
 import org.jboss.dna.spi.graph.Name;
 import org.jboss.dna.spi.graph.NameFactory;
-import org.jboss.dna.spi.graph.Path;
 import org.jboss.dna.spi.sequencers.MockSequencerOutput;
+import org.jboss.dna.spi.sequencers.SequencerContext;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.MockitoAnnotations;
+import org.mockito.MockitoAnnotations.Mock;
 
 /**
  * @author John Verhaeg
@@ -52,20 +54,14 @@ public class XmlSequencerTest {
     private URL xml3;
     private URL xml4;
     private URL xsd;
+    @Mock
+    private SequencerContext context;
 
     @Before
     public void beforeEach() {
+        MockitoAnnotations.initMocks(this);
         sequencer = new XmlSequencer();
-        output = new MockSequencerOutput() {
-
-            @Override
-            public void setProperty( Path nodePath,
-                                     Name propertyName,
-                                     Object... values ) {
-                super.setProperty(nodePath, propertyName, values);
-                // System.out.println(nodePath + "." + propertyName + " = " + Arrays.asList(values));
-            }
-        };
+        output = new MockSequencerOutput();
         monitor = new SimpleProgressMonitor("Test activity");
         xml1 = this.getClass().getClassLoader().getResource("jackrabbitInMemoryTestRepositoryConfig.xml");
         assertThat(xml1, is(notNullValue()));
@@ -193,7 +189,7 @@ public class XmlSequencerTest {
     private void verifyDocument( URL url ) throws IOException {
         stream = url.openStream();
         assertThat(stream, is(notNullValue()));
-        sequencer.sequence(stream, output, monitor);
+        sequencer.sequence(stream, output, context, monitor);
         verifyName("", NameFactory.JCR_PRIMARY_TYPE, XmlSequencer.DOCUMENT);
     }
 
