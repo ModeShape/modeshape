@@ -40,7 +40,7 @@ public class ReflectionTest {
     private Reflection stringListReflection;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         string = "This is string #";
         stringList = new ArrayList<String>();
         for (int i = 0; i != 10; ++i) {
