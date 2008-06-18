@@ -21,6 +21,7 @@
  */
 package org.jboss.dna.common.collection;
 
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -36,6 +37,8 @@ import org.jboss.dna.common.i18n.I18n;
  */
 @NotThreadSafe
 public class SimpleProblems implements Problems {
+
+    private static final List<Problem> EMPTY_PROBLEMS = Collections.emptyList();
 
     private List<Problem> problems;
 
@@ -245,14 +248,12 @@ public class SimpleProblems implements Problems {
     }
 
     /**
-     * <p>
      * {@inheritDoc}
-     * </p>
      * 
      * @see org.jboss.dna.common.collection.Problems#iterator()
      */
     public Iterator<Problem> iterator() {
-        return problems.iterator();
+        return (problems == null ? EMPTY_PROBLEMS.iterator() : problems.iterator());
     }
 
     protected void addProblem( Problem problem ) {
