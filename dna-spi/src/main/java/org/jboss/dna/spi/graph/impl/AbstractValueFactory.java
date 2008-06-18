@@ -30,7 +30,6 @@ import java.util.Date;
 import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.text.TextDecoder;
 import org.jboss.dna.common.util.ArgCheck;
-import org.jboss.dna.spi.graph.IoException;
 import org.jboss.dna.spi.graph.Name;
 import org.jboss.dna.spi.graph.Path;
 import org.jboss.dna.spi.graph.PropertyType;
@@ -122,7 +121,7 @@ public abstract class AbstractValueFactory<T> implements ValueFactory<T> {
     /**
      * {@inheritDoc}
      */
-    public T[] create( BigDecimal[] values ) throws IoException {
+    public T[] create( BigDecimal[] values ) {
         if (values == null) return null;
         final int length = values.length;
         T[] result = createEmptyArray(length);
@@ -135,7 +134,7 @@ public abstract class AbstractValueFactory<T> implements ValueFactory<T> {
     /**
      * {@inheritDoc}
      */
-    public T[] create( boolean[] values ) throws IoException {
+    public T[] create( boolean[] values ) {
         if (values == null) return null;
         final int length = values.length;
         T[] result = createEmptyArray(length);
@@ -148,7 +147,7 @@ public abstract class AbstractValueFactory<T> implements ValueFactory<T> {
     /**
      * {@inheritDoc}
      */
-    public T[] create( byte[][] values ) throws IoException {
+    public T[] create( byte[][] values ) {
         if (values == null) return null;
         final int length = values.length;
         T[] result = createEmptyArray(length);
@@ -161,7 +160,7 @@ public abstract class AbstractValueFactory<T> implements ValueFactory<T> {
     /**
      * {@inheritDoc}
      */
-    public T[] create( Calendar[] values ) throws IoException {
+    public T[] create( Calendar[] values ) {
         if (values == null) return null;
         final int length = values.length;
         T[] result = createEmptyArray(length);
@@ -174,7 +173,7 @@ public abstract class AbstractValueFactory<T> implements ValueFactory<T> {
     /**
      * {@inheritDoc}
      */
-    public T[] create( Date[] values ) throws IoException {
+    public T[] create( Date[] values ) {
         if (values == null) return null;
         final int length = values.length;
         T[] result = createEmptyArray(length);
@@ -187,7 +186,7 @@ public abstract class AbstractValueFactory<T> implements ValueFactory<T> {
     /**
      * {@inheritDoc}
      */
-    public T[] create( double[] values ) throws IoException {
+    public T[] create( double[] values ) {
         if (values == null) return null;
         final int length = values.length;
         T[] result = createEmptyArray(length);
@@ -200,7 +199,7 @@ public abstract class AbstractValueFactory<T> implements ValueFactory<T> {
     /**
      * {@inheritDoc}
      */
-    public T[] create( float[] values ) throws IoException {
+    public T[] create( float[] values ) {
         if (values == null) return null;
         final int length = values.length;
         T[] result = createEmptyArray(length);
@@ -213,7 +212,7 @@ public abstract class AbstractValueFactory<T> implements ValueFactory<T> {
     /**
      * {@inheritDoc}
      */
-    public T[] create( int[] values ) throws IoException {
+    public T[] create( int[] values ) {
         if (values == null) return null;
         final int length = values.length;
         T[] result = createEmptyArray(length);
@@ -226,7 +225,7 @@ public abstract class AbstractValueFactory<T> implements ValueFactory<T> {
     /**
      * {@inheritDoc}
      */
-    public T[] create( long[] values ) throws IoException {
+    public T[] create( long[] values ) {
         if (values == null) return null;
         final int length = values.length;
         T[] result = createEmptyArray(length);
@@ -239,7 +238,7 @@ public abstract class AbstractValueFactory<T> implements ValueFactory<T> {
     /**
      * {@inheritDoc}
      */
-    public T[] create( Name[] values ) throws IoException {
+    public T[] create( Name[] values ) {
         if (values == null) return null;
         final int length = values.length;
         T[] result = createEmptyArray(length);
@@ -252,7 +251,7 @@ public abstract class AbstractValueFactory<T> implements ValueFactory<T> {
     /**
      * {@inheritDoc}
      */
-    public T[] create( Object[] values ) throws IoException {
+    public T[] create( Object[] values ) {
         if (values == null) return null;
         final int length = values.length;
         T[] result = createEmptyArray(length);
@@ -265,7 +264,7 @@ public abstract class AbstractValueFactory<T> implements ValueFactory<T> {
     /**
      * {@inheritDoc}
      */
-    public T[] create( Path[] values ) throws IoException {
+    public T[] create( Path[] values ) {
         if (values == null) return null;
         final int length = values.length;
         T[] result = createEmptyArray(length);
@@ -278,7 +277,7 @@ public abstract class AbstractValueFactory<T> implements ValueFactory<T> {
     /**
      * {@inheritDoc}
      */
-    public T[] create( Reference[] values ) throws IoException {
+    public T[] create( Reference[] values ) {
         if (values == null) return null;
         final int length = values.length;
         T[] result = createEmptyArray(length);
@@ -292,7 +291,7 @@ public abstract class AbstractValueFactory<T> implements ValueFactory<T> {
      * {@inheritDoc}
      */
     public T[] create( String[] values,
-                       TextDecoder decoder ) throws IoException {
+                       TextDecoder decoder ) {
         if (values == null) return null;
         final int length = values.length;
         T[] result = createEmptyArray(length);
@@ -305,7 +304,7 @@ public abstract class AbstractValueFactory<T> implements ValueFactory<T> {
     /**
      * {@inheritDoc}
      */
-    public T[] create( String[] values ) throws IoException {
+    public T[] create( String[] values ) {
         if (values == null) return null;
         final int length = values.length;
         T[] result = createEmptyArray(length);
@@ -318,7 +317,7 @@ public abstract class AbstractValueFactory<T> implements ValueFactory<T> {
     /**
      * {@inheritDoc}
      */
-    public T[] create( URI[] values ) throws IoException {
+    public T[] create( URI[] values ) {
         if (values == null) return null;
         final int length = values.length;
         T[] result = createEmptyArray(length);
