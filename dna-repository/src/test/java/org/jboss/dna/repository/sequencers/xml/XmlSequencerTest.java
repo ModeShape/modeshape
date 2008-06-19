@@ -25,6 +25,7 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsInstanceOf.instanceOf;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
+import static org.mockito.Mockito.stub;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
@@ -73,6 +74,8 @@ public class XmlSequencerTest {
         assertThat(xml4, is(notNullValue()));
         xsd = this.getClass().getClassLoader().getResource("Descriptor.1.0.xsd");
         assertThat(xsd, is(notNullValue()));
+        stub(context.getFactories()).toReturn(output.getFactories());
+        stub(context.getNamespaceRegistry()).toReturn(output.getNamespaceRegistry());
     }
 
     @After
