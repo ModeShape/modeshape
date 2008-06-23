@@ -161,8 +161,6 @@ public class SequencerNodeContext implements SequencerContext {
 
     /**
      * {@inheritDoc}
-     * 
-     * @see org.jboss.dna.spi.sequencers.SequencerOutput#getNamespaceRegistry()
      */
     public NamespaceRegistry getNamespaceRegistry() {
         return factories.getNameFactory().getNamespaceRegistry();
