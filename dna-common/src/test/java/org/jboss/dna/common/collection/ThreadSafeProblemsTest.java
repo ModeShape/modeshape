@@ -21,41 +21,18 @@
  */
 package org.jboss.dna.common.collection;
 
-import java.util.LinkedList;
-import java.util.List;
-import net.jcip.annotations.NotThreadSafe;
-
 /**
- * A list of problems for some execution context. The problems will be {@link #iterator() returned} in the order in which they
- * were encountered (although this cannot be guaranteed in contexts involving multiple threads or processes).
- * 
  * @author Randall Hauch
- * @author John Verhaeg
  */
-@NotThreadSafe
-public class SimpleProblems extends AbstractProblems {
-
-    private List<Problem> problems;
+public class ThreadSafeProblemsTest extends AbstractProblemsTest {
 
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.common.collection.AbstractProblems#addProblem(Problem)
+     * @see org.jboss.dna.common.collection.AbstractProblemsTest#createProblems()
      */
     @Override
-    protected void addProblem( Problem problem ) {
-        if (problem == null) return;
-        if (problems == null) problems = new LinkedList<Problem>();
-        problems.add(problem);
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.jboss.dna.common.collection.AbstractProblems#getProblems()
-     */
-    @Override
-    protected List<Problem> getProblems() {
-        return this.problems != null ? problems : EMPTY_PROBLEMS;
+    protected Problems createProblems() {
+        return new ThreadSafeProblems();
     }
 }

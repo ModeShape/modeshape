@@ -24,6 +24,7 @@ package org.jboss.dna.common.collection;
 import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.i18n.I18n;
 import org.jboss.dna.common.util.ArgCheck;
+import org.jboss.dna.common.util.HashCode;
 
 /**
  * @author Randall Hauch
@@ -47,11 +48,13 @@ public class Problem {
     private final String resource;
     private final String location;
 
-    public Problem( Status status, int code, I18n message, Object... params ) {
-        this(status, code, message, params, null, null, null);
-    }
-
-    public Problem( Status status, int code, I18n message, Object[] params, String resource, String location, Throwable throwable ) {
+    public Problem( Status status,
+                    int code,
+                    I18n message,
+                    Object[] params,
+                    String resource,
+                    String location,
+                    Throwable throwable ) {
         ArgCheck.isNotNull(status, "status");
         ArgCheck.isNotNull(message, "message");
         this.status = status;
@@ -79,6 +82,7 @@ public class Problem {
 
     /**
      * Get the message written in the current locale.
+     * 
      * @return the message
      */
     public String getMessageString() {
@@ -115,6 +119,78 @@ public class Problem {
      */
     public Throwable getThrowable() {
         return this.throwable;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see java.lang.Object#hashCode()
+     */
+    @Override
+    public int hashCode() {
+        return HashCode.compute(status, code, message, resource, location);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see java.lang.Object#equals(java.lang.Object)
+     */
+    @Override
+    public boolean equals( Object obj ) {
+        if (obj == this) return true;
+        if (obj instanceof Problem) {
+            Problem that = (Problem)obj;
+            if (this.getStatus() != that.getStatus()) return false;
+            if (this.getCode() != that.getCode()) return false;
+            if (!this.getMessage().equals(that.getMessage())) return false;
+            if (!this.getParameters().equals(that.getParameters())) return false;
+
+            String thisResource = this.getResource();
+            String thatResource = that.getResource();
+            if (thisResource != thatResource) {
+                if (thisResource == null || !thisResource.equals(thatResource)) return false;
+            }
+
+            String thisLocation = this.getLocation();
+            String thatLocation = that.getLocation();
+            if (thisLocation != thatLocation) {
+                if (thisLocation == null || !thisLocation.equals(thatLocation)) return false;
+            }
+
+            Throwable thisThrowable = this.getThrowable();
+            Throwable thatThrowable = that.getThrowable();
+            if (thisThrowable != thatThrowable) {
+                if (thisThrowable == null || !thisThrowable.equals(thatThrowable)) return false;
+            }
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see java.lang.Object#toString()
+     */
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(this.getStatus()).append(": ");
+        if (this.getCode() != DEFAULT_CODE) {
+            sb.append("(").append(this.getCode()).append(") ");
+        }
+        sb.append(this.getMessageString());
+        if (this.getResource() != null) {
+            sb.append(" Resource=\"").append(this.getResource()).append("\"");
+        }
+        if (this.getLocation() != null) {
+            sb.append(" At \"").append(this.getLocation()).append("\"");
+        }
+        if (this.getThrowable() != null) {
+            sb.append(" (threw ").append(this.getThrowable().getLocalizedMessage()).append(")");
+        }
+        return sb.toString();
     }
 
 }
