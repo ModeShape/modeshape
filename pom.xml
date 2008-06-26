@@ -12,12 +12,24 @@
 	<scm>
 		<connection>scm:svn:https://svn.jboss.org/repos/dna/trunk</connection>
 	</scm>
+	<licenses>
+		<license>
+			<name>GNU Lesser General Public License</name>
+			<url>http://www.gnu.org/licenses/lgpl.html</url>
+			<distribution>repo</distribution>
+			<comments>A business-friendly OSS license</comments>
+		</license>
+	</licenses>
+	<organization>
+		<name>JBoss, a division of Red Hat</name>
+		<url>http://www.jboss.org</url>
+	</organization>
 	<developers>
 		<developer>
 			<name>Randall Hauch</name>
 			<id>randall</id>
 			<email>rhauch@redhat.com</email>
-			<organization>Red Hat</organization>
+			<organization>JBoss, a division of Red Hat</organization>
 			<roles>
 				<role>Project Lead</role>
 				<role>Developer</role>
@@ -28,7 +40,7 @@
 			<name>John Verhaeg</name>
 			<id>johnny</id>
 			<email>jverhaeg@redhat.com</email>
-			<organization>Red Hat</organization>
+			<organization>JBoss, a division of Red Hat</organization>
 			<roles>
 				<role>Developer</role>
 			</roles>
@@ -38,7 +50,7 @@
 			<name>Dan Florian</name>
 			<id>dan</id>
 			<email>dflorian@redhat.com</email>
-			<organization>Red Hat</organization>
+			<organization>JBoss, a division of Red Hat</organization>
 			<roles>
 				<role>Developer</role>
 			</roles>
@@ -62,7 +74,24 @@
 			</roles>
 			<timezone>+1</timezone>
 		</developer>
+		<developer>
+			<name>Michael Trezzi</name>
+			<id>mathwizard</id>
+			<email>michael@mathwizard.org</email>
+			<roles>
+				<role>Developer</role>
+			</roles>
+			<timezone>+1</timezone>
+		</developer>
 	</developers>
+	<contributors>
+		<contributor>
+			<name>Greg Haber</name>
+			<id>ghaber</id>
+			<organization>JBoss, a division of Red Hat</organization>
+			<timezone>-5</timezone>
+		</contributor>
+	</contributors>
 	<modules>
 		<module>dna-common</module>
 		<module>dna-spi</module>
