@@ -6,6 +6,7 @@
 	<packaging>pom</packaging>
 	<name>JBoss DNA</name>
 	<url>http://www.jboss.org/dna</url>
+	<inceptionYear>2008</inceptionYear>
 	<description>
 		JBoss DNA provides tools for working with JCR repositories.
 	</description>
