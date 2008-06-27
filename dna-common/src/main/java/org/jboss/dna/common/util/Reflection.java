@@ -21,14 +21,17 @@
  */
 package org.jboss.dna.common.util;
 
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 /**
@@ -219,10 +222,13 @@ public class Reflection {
      * Find the method on the target class that matches the supplied method name.
      * 
      * @param methodName the name of the method that is to be found.
+     * @param caseSensitive true if the method name supplied should match case-sensitively, or false if case does not matter
      * @return the Method objects that have a matching name, or an empty array if there are no methods that have a matching name.
      */
-    public Method[] findMethods( String methodName ) {
-        return findMethods(Pattern.compile(methodName));
+    public Method[] findMethods( String methodName,
+                                 boolean caseSensitive ) {
+        Pattern pattern = caseSensitive ? Pattern.compile(methodName) : Pattern.compile(methodName, Pattern.CASE_INSENSITIVE);
+        return findMethods(pattern);
     }
 
     /**
@@ -247,10 +253,13 @@ public class Reflection {
      * Find the method on the target class that matches the supplied method name.
      * 
      * @param methodName the name of the method that is to be found.
+     * @param caseSensitive true if the method name supplied should match case-sensitively, or false if case does not matter
      * @return the first Method object found that has a matching name, or null if there are no methods that have a matching name.
      */
-    public Method findFirstMethod( String methodName ) {
-        return findFirstMethod(Pattern.compile(methodName));
+    public Method findFirstMethod( String methodName,
+                                   boolean caseSensitive ) {
+        Pattern pattern = caseSensitive ? Pattern.compile(methodName) : Pattern.compile(methodName, Pattern.CASE_INSENSITIVE);
+        return findFirstMethod(pattern);
     }
 
     /**
@@ -268,6 +277,104 @@ public class Reflection {
             }
         }
         return null;
+    }
+
+    /**
+     * Find and execute the best method on the target class that matches the signature specified with one of the specified names
+     * and the list of arguments. If no such method is found, a NoSuchMethodException is thrown.
+     * <P>
+     * This method is unable to find methods with signatures that include both primitive arguments <i>and</i> arguments that are
+     * instances of <code>Number</code> or its subclasses.
+     * </p>
+     * 
+     * @param methodNames the names of the methods that are to be invoked, in the order they are to be tried
+     * @param target the object on which the method is to be invoked
+     * @param arguments the array of Object instances that correspond to the arguments passed to the method.
+     * @return the Method object that references the method that satisfies the requirements, or null if no satisfactory method
+     *         could be found.
+     * @throws NoSuchMethodException if a matching method is not found.
+     * @throws SecurityException if access to the information is denied.
+     * @throws InvocationTargetException
+     * @throws IllegalAccessException
+     * @throws IllegalArgumentException
+     */
+    public Object invokeBestMethodOnTarget( String[] methodNames,
+                                            Object target,
+                                            Object... arguments )
+        throws NoSuchMethodException, SecurityException, IllegalArgumentException, IllegalAccessException,
+        InvocationTargetException {
+        Class<?>[] argumentClasses = buildArgumentClasses(arguments);
+        int remaining = methodNames.length;
+        Object result = null;
+        for (String methodName : methodNames) {
+            --remaining;
+            try {
+                Method method = findBestMethodWithSignature(methodName, argumentClasses);
+                result = method.invoke(target, arguments);
+                break;
+            } catch (NoSuchMethodException e) {
+                if (remaining == 0) throw e;
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Find and execute the best setter method on the target class for the supplied property name and the supplied list of
+     * arguments. If no such method is found, a NoSuchMethodException is thrown.
+     * <P>
+     * This method is unable to find methods with signatures that include both primitive arguments <i>and</i> arguments that are
+     * instances of <code>Number</code> or its subclasses.
+     * </p>
+     * 
+     * @param javaPropertyName the name of the property whose setter is to be invoked, in the order they are to be tried
+     * @param target the object on which the method is to be invoked
+     * @param argument the new value for the property
+     * @return the result of the setter method, which is typically null (void)
+     * @throws NoSuchMethodException if a matching method is not found.
+     * @throws SecurityException if access to the information is denied.
+     * @throws InvocationTargetException
+     * @throws IllegalAccessException
+     * @throws IllegalArgumentException
+     */
+    public Object invokeSetterMethodOnTarget( String javaPropertyName,
+                                              Object target,
+                                              Object argument )
+        throws NoSuchMethodException, SecurityException, IllegalArgumentException, IllegalAccessException,
+        InvocationTargetException {
+        String[] methodNamesArray = findMethodNames("set" + javaPropertyName);
+        return invokeBestMethodOnTarget(methodNamesArray, target, argument);
+    }
+
+    /**
+     * Find and execute the getter method on the target class for the supplied property name. If no such method is found, a
+     * NoSuchMethodException is thrown.
+     * 
+     * @param javaPropertyName the name of the property whose getter is to be invoked, in the order they are to be tried
+     * @param target the object on which the method is to be invoked
+     * @return the property value (the result of the getter method call)
+     * @throws NoSuchMethodException if a matching method is not found.
+     * @throws SecurityException if access to the information is denied.
+     * @throws InvocationTargetException
+     * @throws IllegalAccessException
+     * @throws IllegalArgumentException
+     */
+    public Object invokeGetterMethodOnTarget( String javaPropertyName,
+                                              Object target )
+        throws NoSuchMethodException, SecurityException, IllegalArgumentException, IllegalAccessException,
+        InvocationTargetException {
+        String[] methodNamesArray = findMethodNames("get" + javaPropertyName);
+        return invokeBestMethodOnTarget(methodNamesArray, target);
+    }
+
+    protected String[] findMethodNames( String methodName ) {
+        Method[] methods = findMethods(methodName, false);
+        Set<String> methodNames = new HashSet<String>();
+        for (Method method : methods) {
+            String actualMethodName = method.getName();
+            methodNames.add(actualMethodName);
+        }
+        return methodNames.toArray(new String[methodNames.size()]);
     }
 
     /**

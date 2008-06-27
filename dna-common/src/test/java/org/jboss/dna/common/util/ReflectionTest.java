@@ -132,12 +132,12 @@ public class ReflectionTest {
 
     @Test
     public void shouldFindMethodsWithExactMatchingName() {
-        Method[] stringMethods = stringReflection.findMethods("indexOf");
+        Method[] stringMethods = stringReflection.findMethods("indexOf", true);
         assertThat(stringMethods.length, is(4));
         for (Method method : stringMethods) {
             assertThat(method.getName(), is("indexOf"));
         }
-        stringMethods = stringReflection.findMethods("length");
+        stringMethods = stringReflection.findMethods("length", true);
         assertThat(stringMethods.length, is(1));
         for (Method method : stringMethods) {
             assertThat(method.getName(), is("length"));
@@ -146,12 +146,12 @@ public class ReflectionTest {
 
     @Test
     public void shouldFindMethodsWithNameMatchingRegularExpression() {
-        Method[] stringMethods = stringReflection.findMethods("indexO.");
+        Method[] stringMethods = stringReflection.findMethods("indexO.", true);
         assertThat(stringMethods.length, is(4));
         for (Method method : stringMethods) {
             assertThat(method.getName(), is("indexOf"));
         }
-        stringMethods = stringReflection.findMethods(".+gth");
+        stringMethods = stringReflection.findMethods(".+gth", true);
         assertThat(stringMethods.length, is(1));
         for (Method method : stringMethods) {
             assertThat(method.getName(), is("length"));
@@ -160,8 +160,8 @@ public class ReflectionTest {
 
     @Test
     public void shouldNotFindMethodsWhenThereAreNoMethodsWithThatName() {
-        assertThat(stringReflection.findMethods("size").length, is(0));
-        assertThat(stringListReflection.findMethods("argleBargle").length, is(0));
+        assertThat(stringReflection.findMethods("size", true).length, is(0));
+        assertThat(stringListReflection.findMethods("argleBargle", true).length, is(0));
     }
 
 }
