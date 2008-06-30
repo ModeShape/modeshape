@@ -36,6 +36,7 @@ import org.jboss.dna.spi.graph.Path;
 import org.jboss.dna.spi.graph.Property;
 import org.jboss.dna.spi.graph.Path.Segment;
 import org.jboss.dna.spi.graph.commands.ActsOnPath;
+import org.jboss.dna.spi.graph.commands.CompositeCommand;
 import org.jboss.dna.spi.graph.commands.CopyBranchCommand;
 import org.jboss.dna.spi.graph.commands.CopyNodeCommand;
 import org.jboss.dna.spi.graph.commands.CreateNodeCommand;
@@ -140,120 +141,136 @@ public class JBossCacheConnection implements RepositoryConnection {
 
         // Now execute the commands ...
         for (GraphCommand command : commands) {
-            // This node reference is available for any command that extends ActsOnPath ...
-            Node<Name, Object> node = null;
+            executeCommand(env, command);
+        }
+    }
 
-            // First, process the commands that create a new node ...
-            if (command instanceof CreateNodeCommand) {
-                CreateNodeCommand theCommand = (CreateNodeCommand)command;
-                Path path = theCommand.getPath();
-                Path parent = path.getAncestor();
-                Fqn<Segment> childFqn = getFullyQualifiedName(path.getLastSegment());
-                // Look up the parent node, which must exist ...
-                Node<Name, Object> parentNode = getNode(env, parent);
-                node = parentNode.addChild(childFqn);
-                // Add the UUID property (if required), which may be overwritten by a supplied property ...
-                Name uuidPropertyName = getUuidProperty(env);
-                if (uuidPropertyName != null) {
-                    node.put(uuidPropertyName, generateUuid());
-                }
-                // Now add the properties to the supplied node ...
-                for (Property property : theCommand.getProperties()) {
-                    if (property.size() == 0) continue;
-                    Name propName = property.getName();
-                    Object value = null;
-                    if (property.size() == 1) {
-                        value = property.iterator().next();
-                    } else {
-                        value = property.getValuesAsArray();
-                    }
-                    node.put(propName, value);
-                }
-                assert node != null;
-            }
+    /**
+     * @param env
+     * @param command
+     */
+    protected void executeCommand( ExecutionEnvironment env,
+                                   GraphCommand command ) {
+        // This node reference is available for any command that extends ActsOnPath ...
+        Node<Name, Object> node = null;
 
-            // Otherwise, check whether the command is applies to a path; all the remaining commands
-            // that do so expect the node to exist ...
-            else if (command instanceof ActsOnPath) {
-                ActsOnPath theCommand = (ActsOnPath)command;
-                Path path = theCommand.getPath();
-                // Look up the node with the supplied path ...
-                node = getNode(env, path);
-                assert node != null;
+        if (command instanceof CompositeCommand) {
+            CompositeCommand theCommand = (CompositeCommand)command;
+            for (GraphCommand containedCommand : theCommand) {
+                executeCommand(env, containedCommand);
             }
+        }
 
-            if (command instanceof GetChildrenCommand) {
-                GetChildrenCommand theCommand = (GetChildrenCommand)command;
-                assert command instanceof ActsOnPath;
-                assert node != null;
-                // Get the names of the children ...
-                List<Segment> childSegments = new ArrayList<Segment>();
-                for (Node<Name, Object> child : node.getChildren()) {
-                    childSegments.add((Segment)child.getFqn().getLastElement());
+        // First, process the commands that create a new node ...
+        if (command instanceof CreateNodeCommand) {
+            CreateNodeCommand theCommand = (CreateNodeCommand)command;
+            Path path = theCommand.getPath();
+            Path parent = path.getAncestor();
+            Fqn<Segment> childFqn = getFullyQualifiedName(path.getLastSegment());
+            // Look up the parent node, which must exist ...
+            Node<Name, Object> parentNode = getNode(env, parent);
+            node = parentNode.addChild(childFqn);
+            // Add the UUID property (if required), which may be overwritten by a supplied property ...
+            Name uuidPropertyName = getUuidProperty(env);
+            if (uuidPropertyName != null) {
+                node.put(uuidPropertyName, generateUuid());
+            }
+            // Now add the properties to the supplied node ...
+            for (Property property : theCommand.getProperties()) {
+                if (property.size() == 0) continue;
+                Name propName = property.getName();
+                Object value = null;
+                if (property.size() == 1) {
+                    value = property.iterator().next();
+                } else {
+                    value = property.getValuesAsArray();
                 }
-                theCommand.setChildren(childSegments);
+                node.put(propName, value);
+            }
+            assert node != null;
+        }
 
+        // Otherwise, check whether the command is applies to a path; all the remaining commands
+        // that do so expect the node to exist ...
+        else if (command instanceof ActsOnPath) {
+            ActsOnPath theCommand = (ActsOnPath)command;
+            Path path = theCommand.getPath();
+            // Look up the node with the supplied path ...
+            node = getNode(env, path);
+            assert node != null;
+        }
+
+        if (command instanceof GetChildrenCommand) {
+            GetChildrenCommand theCommand = (GetChildrenCommand)command;
+            assert command instanceof ActsOnPath;
+            assert node != null;
+            // Get the names of the children ...
+            List<Segment> childSegments = new ArrayList<Segment>();
+            for (Node<Name, Object> child : node.getChildren()) {
+                childSegments.add((Segment)child.getFqn().getLastElement());
             }
-            if (command instanceof GetPropertiesCommand) {
-                GetPropertiesCommand theCommand = (GetPropertiesCommand)command;
-                assert command instanceof ActsOnPath;
-                assert node != null;
-                Map<Name, Object> dataMap = node.getData();
-                for (Map.Entry<Name, Object> data : dataMap.entrySet()) {
-                    Name propertyName = data.getKey();
-                    Object values = data.getValue();
-                    Property property = env.getPropertyFactory().create(propertyName, values);
-                    theCommand.setProperty(property);
+            theCommand.setChildren(childSegments);
+
+        }
+        if (command instanceof GetPropertiesCommand) {
+            GetPropertiesCommand theCommand = (GetPropertiesCommand)command;
+            assert command instanceof ActsOnPath;
+            assert node != null;
+            Map<Name, Object> dataMap = node.getData();
+            for (Map.Entry<Name, Object> data : dataMap.entrySet()) {
+                Name propertyName = data.getKey();
+                Object values = data.getValue();
+                Property property = env.getPropertyFactory().create(propertyName, values);
+                theCommand.setProperty(property);
+            }
+        }
+        if (command instanceof SetPropertiesCommand) {
+            SetPropertiesCommand theCommand = (SetPropertiesCommand)command;
+            assert command instanceof ActsOnPath;
+            assert node != null;
+            // Now set (or remove) the properties to the supplied node ...
+            for (Property property : theCommand.getProperties()) {
+                Name propName = property.getName();
+                if (property.size() == 0) {
+                    node.remove(propName);
+                    continue;
                 }
-            }
-            if (command instanceof SetPropertiesCommand) {
-                SetPropertiesCommand theCommand = (SetPropertiesCommand)command;
-                assert command instanceof ActsOnPath;
-                assert node != null;
-                // Now set (or remove) the properties to the supplied node ...
-                for (Property property : theCommand.getProperties()) {
-                    Name propName = property.getName();
-                    if (property.size() == 0) {
-                        node.remove(propName);
-                        continue;
-                    }
-                    Object value = null;
-                    if (property.size() == 1) {
-                        value = property.iterator().next();
-                    } else {
-                        value = property.getValuesAsArray();
-                    }
-                    node.put(propName, value);
+                Object value = null;
+                if (property.size() == 1) {
+                    value = property.iterator().next();
+                } else {
+                    value = property.getValuesAsArray();
                 }
+                node.put(propName, value);
             }
-            if (command instanceof DeleteBranchCommand) {
-                assert command instanceof ActsOnPath;
-                assert node != null;
-                node.getParent().removeChild(node.getFqn().getLastElement());
-            }
-            if (command instanceof CopyNodeCommand) {
-                CopyNodeCommand theCommand = (CopyNodeCommand)command;
-                boolean recursive = command instanceof CopyBranchCommand;
-                // Look up the new parent, which must exist ...
-                Path newPath = theCommand.getNewPath();
-                Node<Name, Object> newParent = getNode(env, newPath.getAncestor());
-                copyNode(node, newParent, recursive, null);
-            }
-            if (command instanceof MoveBranchCommand) {
-                MoveBranchCommand theCommand = (MoveBranchCommand)command;
-                assert command instanceof ActsOnPath;
-                assert node != null;
-                boolean recursive = true;
-                Name uuidProperty = getUuidProperty(env);
-                // Look up the new parent, which must exist ...
-                Path newPath = theCommand.getNewPath();
-                Node<Name, Object> newParent = getNode(env, newPath.getAncestor());
-                copyNode(node, newParent, recursive, uuidProperty);
-                // Now delete the old node ...
-                Node<Name, Object> oldParent = node.getParent();
-                boolean removed = oldParent.removeChild(node.getFqn().getLastElement());
-                assert removed;
-            }
+        }
+        if (command instanceof DeleteBranchCommand) {
+            assert command instanceof ActsOnPath;
+            assert node != null;
+            node.getParent().removeChild(node.getFqn().getLastElement());
+        }
+        if (command instanceof CopyNodeCommand) {
+            CopyNodeCommand theCommand = (CopyNodeCommand)command;
+            boolean recursive = command instanceof CopyBranchCommand;
+            // Look up the new parent, which must exist ...
+            Path newPath = theCommand.getNewPath();
+            Node<Name, Object> newParent = getNode(env, newPath.getAncestor());
+            copyNode(node, newParent, recursive, null);
+        }
+        if (command instanceof MoveBranchCommand) {
+            MoveBranchCommand theCommand = (MoveBranchCommand)command;
+            assert command instanceof ActsOnPath;
+            assert node != null;
+            boolean recursive = true;
+            Name uuidProperty = getUuidProperty(env);
+            // Look up the new parent, which must exist ...
+            Path newPath = theCommand.getNewPath();
+            Node<Name, Object> newParent = getNode(env, newPath.getAncestor());
+            copyNode(node, newParent, recursive, uuidProperty);
+            // Now delete the old node ...
+            Node<Name, Object> oldParent = node.getParent();
+            boolean removed = oldParent.removeChild(node.getFqn().getLastElement());
+            assert removed;
         }
     }
 
