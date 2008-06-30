@@ -25,21 +25,20 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 import net.jcip.annotations.ThreadSafe;
 import org.jboss.dna.common.util.ArgCheck;
 import org.jboss.dna.repository.RepositoryI18n;
 import org.jboss.dna.repository.services.AbstractServiceAdministrator;
 import org.jboss.dna.repository.services.ServiceAdministrator;
 import org.jboss.dna.spi.cache.CachePolicy;
+import org.jboss.dna.spi.graph.connection.ExecutionEnvironment;
 import org.jboss.dna.spi.graph.connection.RepositoryConnection;
-import org.jboss.dna.spi.graph.connection.RepositoryConnectionPool;
+import org.jboss.dna.spi.graph.connection.RepositorySource;
 import org.jboss.dna.spi.graph.connection.RepositorySourceListener;
 
 /**
  * The component in the {@link FederationService} that represents a single federated repository. The federated repository manages
- * a set of {@link FederatedSource federated sources}, and provides the logic of interacting with those sources and presenting a
+ * a set of {@link RepositorySource federated sources}, and provides the logic of interacting with those sources and presenting a
  * single unified graph.
  * 
  * @author Randall Hauch
@@ -96,32 +95,29 @@ public class FederatedRepository {
 
     private final ServiceAdministrator administrator = new Administrator();
     private final String name;
-    private final FederationService service;
-    private final Lock sourcesWriteLock = new ReentrantLock();
-    private final List<FederatedSource> sources = new CopyOnWriteArrayList<FederatedSource>();
+    private final ExecutionEnvironment env;
+    private final RepositoryConnectionFactories connectionFactories;
+    private final CopyOnWriteArrayList<FederatedRegion> regions = new CopyOnWriteArrayList<FederatedRegion>();
     private final CopyOnWriteArrayList<RepositorySourceListener> listeners = new CopyOnWriteArrayList<RepositorySourceListener>();
     private CachePolicy defaultCachePolicy;
 
     /**
      * Create a federated repository instance, as managed by the supplied {@link FederationService}.
      * 
-     * @param service the federation service that is managing this instance
-     * @param name the name of the repository
-     * @throws IllegalArgumentException if the service is null or the name is null or blank
+     * @param repositoryName the name of the repository
+     * @param env the execution environment
+     * @param connectionFactories the set of connection factories that should be used
+     * @throws IllegalArgumentException if any of the parameters are null, or if the name is blank
      */
-    public FederatedRepository( FederationService service,
-                                String name ) {
-        ArgCheck.isNotNull(service, "service");
-        ArgCheck.isNotEmpty(name, "name");
-        this.name = name;
-        this.service = service;
-    }
-
-    /**
-     * @return service
-     */
-    protected FederationService getService() {
-        return this.service;
+    public FederatedRepository( String repositoryName,
+                                ExecutionEnvironment env,
+                                RepositoryConnectionFactories connectionFactories ) {
+        ArgCheck.isNotNull(connectionFactories, "connectionFactories");
+        ArgCheck.isNotNull(env, "env");
+        ArgCheck.isNotEmpty(repositoryName, "repositoryName");
+        this.name = repositoryName;
+        this.env = env;
+        this.connectionFactories = connectionFactories;
     }
 
     /**
@@ -141,9 +137,25 @@ public class FederatedRepository {
     }
 
     /**
+     * @return the execution environment
+     */
+    public ExecutionEnvironment getExecutionEnvironment() {
+        return env;
+    }
+
+    /**
+     * @return connectionFactories
+     */
+    protected RepositoryConnectionFactories getConnectionFactories() {
+        return connectionFactories;
+    }
+
+    /**
      * Utility method called by the administrator.
      */
     protected void startRepository() {
+        // Look for the sources in the repository, creating any that are missing
+        // Look for the
         // Do not establish connections to the sources; these will be established as needed
 
     }
@@ -152,17 +164,7 @@ public class FederatedRepository {
      * Utility method called by the administrator.
      */
     protected void shutdownRepository() {
-        // Close all connections to the sources. This is done inside the sources write lock.
-        try {
-            this.sourcesWriteLock.lock();
-            for (FederatedSource source : this.sources) {
-                source.getConnectionPool().shutdown();
-            }
-        } finally {
-            this.sourcesWriteLock.unlock();
-        }
-        // Connections to this repository check before doing anything with this, so just remove it from the service ...
-        this.service.removeRepository(this);
+        // Connections to this repository check before doing anything with this, so no need to do anything to them ...
     }
 
     /**
@@ -176,18 +178,7 @@ public class FederatedRepository {
      */
     protected boolean awaitTermination( long timeout,
                                         TimeUnit unit ) throws InterruptedException {
-        // Check whether all source pools are shut down. This is done inside the sources write lock.
-        try {
-            this.sourcesWriteLock.lock();
-            for (FederatedSource source : this.sources) {
-                if (!source.getConnectionPool().awaitTermination(timeout, unit)) {
-                    return false;
-                }
-            }
-            return true;
-        } finally {
-            this.sourcesWriteLock.unlock();
-        }
+        return true;
     }
 
     /**
@@ -201,17 +192,7 @@ public class FederatedRepository {
      * @see #isTerminated()
      */
     public boolean isTerminating() {
-        try {
-            this.sourcesWriteLock.lock();
-            for (FederatedSource source : this.sources) {
-                if (source.getConnectionPool().isTerminating()) {
-                    return true;
-                }
-            }
-            return false;
-        } finally {
-            this.sourcesWriteLock.unlock();
-        }
+        return false;
     }
 
     /**
@@ -221,140 +202,33 @@ public class FederatedRepository {
      * @see #isTerminating()
      */
     public boolean isTerminated() {
-        try {
-            this.sourcesWriteLock.lock();
-            for (FederatedSource source : this.sources) {
-                if (!source.getConnectionPool().isTerminated()) {
-                    return false;
-                }
-            }
-            return true;
-        } finally {
-            this.sourcesWriteLock.unlock();
-        }
+        return false;
     }
 
     /**
-     * Get an unmodifiable collection of {@link FederatedSource federated sources}.
-     * <p>
-     * This method can safely be called while the federation repository is in use.
-     * </p>
+     * Return the unmodifiable list of bindings.
      * 
-     * @return the sources
+     * @return the bindings
      */
-    public List<FederatedSource> getSources() {
-        return Collections.unmodifiableList(this.sources);
+    public List<FederatedRegion> getRegions() {
+        return Collections.unmodifiableList(regions);
     }
 
     /**
-     * Add the supplied federated source. This method returns false if the source is null.
-     * <p>
-     * This method can safely be called while the federation repository is in use.
-     * </p>
+     * Add the supplied federation region to this repository, if it is not already in the repository. . This method does not
+     * attempt to check whether this region would result in a duplicate region.
      * 
-     * @param source the source to add
-     * @return true if the source is added, or false if the reference is null or if there is already an existing source with the
-     *         supplied name.
+     * @param region the region to be added
+     * @return true if the region was added, or false if there was already a duplicate region
+     * @throws IllegalArgumentException if the binding reference is null
      */
-    public boolean addSource( FederatedSource source ) {
-        if (source == null) return false;
-        try {
-            this.sourcesWriteLock.lock();
-            for (FederatedSource existingSource : this.sources) {
-                if (existingSource.getName().equals(source.getName())) return false;
-            }
-            this.sources.add(source);
-        } finally {
-            this.sourcesWriteLock.unlock();
-        }
-        return true;
+    protected boolean addRegionIfAbsent( FederatedRegion region ) {
+        ArgCheck.isNotNull(region, "region");
+        return this.regions.addIfAbsent(region);
     }
 
-    /**
-     * Add the supplied federated source. This method returns false if the source is null.
-     * <p>
-     * This method can safely be called while the federation repository is in use.
-     * </p>
-     * 
-     * @param source the source to add
-     * @param index the index at which the source should be added
-     * @return true if the source is added, or false if the reference is null or if there is already an existing source with the
-     *         supplied name.
-     * @throws IndexOutOfBoundsException if the index is out of bounds
-     */
-    public boolean addSource( FederatedSource source,
-                              int index ) {
-        if (source == null) return false;
-        try {
-            this.sourcesWriteLock.lock();
-            for (FederatedSource existingSource : this.sources) {
-                if (existingSource.getName().equals(source.getName())) return false;
-            }
-            this.sources.add(index, source);
-        } finally {
-            this.sourcesWriteLock.unlock();
-        }
-        return true;
-    }
-
-    /**
-     * Remove from this federated repository the supplied source (or a source with the same name as that supplied). This call
-     * shuts down the connections in the source in an orderly fashion, allowing those connection currently in use to be used and
-     * closed normally, but preventing further connections from being used.
-     * <p>
-     * This method can safely be called while the federation repository is in use.
-     * </p>
-     * 
-     * @param source the source to be removed
-     * @param timeToAwait the amount of time to wait while all of the source's connections are closed, or non-positive if the call
-     *        should not wait at all
-     * @param unit the time unit to be used for <code>timeToAwait</code>
-     * @return true if the source was removed, or false if the source was not a source for this repository.
-     * @throws InterruptedException if the thread is interrupted while awaiting closing of the connections
-     */
-    public boolean removeSource( FederatedSource source,
-                                 long timeToAwait,
-                                 TimeUnit unit ) throws InterruptedException {
-        // Use the name; don't use the object equality ...
-        return removeSource(source.getName(), timeToAwait, unit) != null;
-    }
-
-    /**
-     * Remove from this federated repository the source with the supplied name. This call shuts down the connections in the source
-     * in an orderly fashion, allowing those connection currently in use to be used and closed normally, but preventing further
-     * connections from being used.
-     * <p>
-     * This method can safely be called while the federation repository is in use.
-     * </p>
-     * 
-     * @param name the name of the source to be removed
-     * @param timeToAwait the amount of time to wait while all of the source's connections are closed, or non-positive if the call
-     *        should not wait at all
-     * @param unit the time unit to be used for <code>timeToAwait</code>
-     * @return the source with the supplied name that was removed, or null if no existing source matching the supplied name could
-     *         be found
-     * @throws InterruptedException if the thread is interrupted while awaiting closing of the connections
-     */
-    public FederatedSource removeSource( String name,
-                                         long timeToAwait,
-                                         TimeUnit unit ) throws InterruptedException {
-        try {
-            this.sourcesWriteLock.lock();
-            for (FederatedSource existingSource : this.sources) {
-                if (existingSource.getName().equals(name)) {
-                    boolean removed = this.sources.remove(existingSource);
-                    assert removed;
-                    // Shut down the connection pool for the source ...
-                    RepositoryConnectionPool pool = existingSource.getConnectionPool();
-                    pool.shutdown();
-                    if (timeToAwait > 0l) pool.awaitTermination(timeToAwait, unit);
-                    return existingSource;
-                }
-            }
-        } finally {
-            this.sourcesWriteLock.unlock();
-        }
-        return null;
+    protected boolean removeBinding( FederatedRegion region ) {
+        return this.regions.remove(region);
     }
 
     /**

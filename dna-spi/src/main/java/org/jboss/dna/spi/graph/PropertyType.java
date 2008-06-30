@@ -23,8 +23,11 @@ package org.jboss.dna.spi.graph;
 
 import java.math.BigDecimal;
 import java.net.URI;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
+import java.util.List;
 import net.jcip.annotations.Immutable;
 import org.jboss.dna.spi.SpiI18n;
 
@@ -47,6 +50,15 @@ public enum PropertyType {
     REFERENCE("Reference", ValueComparators.REFERENCE_COMPARATOR, Reference.class),
     URI("URI", ValueComparators.URI_COMPARATOR, URI.class),
     OBJECT("Object", ValueComparators.OBJECT_COMPARATOR, Object.class);
+
+    private static final List<PropertyType> ALL_PROPERTY_TYPES;
+    static {
+        List<PropertyType> types = new ArrayList<PropertyType>();
+        for (PropertyType type : PropertyType.values()) {
+            types.add(type);
+        }
+        ALL_PROPERTY_TYPES = Collections.unmodifiableList(types);
+    }
 
     private final String name;
     private final Comparator<?> comparator;
@@ -100,5 +112,14 @@ public enum PropertyType {
             if (type.isTypeFor(value)) return type;
         }
         return OBJECT;
+    }
+
+    /**
+     * Return an iterator over all the property type enumeration literals.
+     * 
+     * @return an immutable iterator
+     */
+    public static Iterator<PropertyType> iterator() {
+        return ALL_PROPERTY_TYPES.iterator();
     }
 }

@@ -25,19 +25,15 @@ import org.jboss.dna.common.util.ArgCheck;
 import org.jboss.dna.spi.graph.NamespaceRegistry;
 import org.jboss.dna.spi.graph.PropertyFactory;
 import org.jboss.dna.spi.graph.ValueFactories;
-import org.jboss.dna.spi.graph.impl.BasicPropertyFactory;
-import org.jboss.dna.spi.graph.impl.StandardValueFactories;
+import org.jboss.dna.spi.graph.connection.BasicExecutionEnvironment;
 
 /**
  * @author Randall Hauch
  */
-public class SimpleExecutionContext implements ExecutionContext {
+public class SimpleExecutionContext extends BasicExecutionEnvironment implements ExecutionContext {
 
     private final JcrTools tools = new JcrTools();
-    private final PropertyFactory propertyFactory;
     private final SessionFactory sessionFactory;
-    private final ValueFactories valueFactories;
-    private final NamespaceRegistry namespaceRegistry;
 
     public SimpleExecutionContext( SessionFactory sessionFactory,
                                    String repositoryWorkspaceForNamespaceRegistry ) {
@@ -53,33 +49,9 @@ public class SimpleExecutionContext implements ExecutionContext {
                                    NamespaceRegistry namespaceRegistry,
                                    ValueFactories valueFactories,
                                    PropertyFactory propertyFactory ) {
+        super(namespaceRegistry, valueFactories, propertyFactory);
         ArgCheck.isNotNull(sessionFactory, "session factory");
-        ArgCheck.isNotNull(namespaceRegistry, "namespace registry");
         this.sessionFactory = sessionFactory;
-        this.namespaceRegistry = namespaceRegistry;
-        this.valueFactories = valueFactories != null ? valueFactories : new StandardValueFactories(this.namespaceRegistry);
-        this.propertyFactory = propertyFactory != null ? propertyFactory : new BasicPropertyFactory(this.valueFactories);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public NamespaceRegistry getNamespaceRegistry() {
-        return this.namespaceRegistry;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public ValueFactories getValueFactories() {
-        return this.valueFactories;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public PropertyFactory getPropertyFactory() {
-        return this.propertyFactory;
     }
 
     /**

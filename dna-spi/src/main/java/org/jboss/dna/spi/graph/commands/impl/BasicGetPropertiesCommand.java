@@ -67,8 +67,12 @@ public class BasicGetPropertiesCommand extends BasicGraphCommand implements GetP
      * 
      * @return the map of property name to values
      */
-    public Iterable<Property> getProperties() {
+    public Iterable<Property> getPropertyIterator() {
         return this.properties.values();
+    }
+
+    public Map<Name, Property> getProperties() {
+        return this.properties;
     }
 
     /**

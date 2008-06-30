@@ -39,12 +39,14 @@ public interface RepositoryOperation<T> {
     /**
      * Run the operation using the supplied connection.
      * 
+     * @param env the environment in which this operation is executing; may not be null
      * @param connection the connection; may not be null
      * @return the result of the operation
      * @throws RepositorySourceException if there is a problem with the connection
      * @throws InterruptedException if this thread was interrupted
      */
-    T run( RepositoryConnection connection ) throws RepositorySourceException, InterruptedException;
+    T run( ExecutionEnvironment env,
+           RepositoryConnection connection ) throws RepositorySourceException, InterruptedException;
 
     /**
      * A factory interface for creating repository operations.

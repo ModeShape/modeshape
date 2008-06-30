@@ -27,13 +27,9 @@ import static org.hamcrest.core.IsSame.sameInstance;
 import static org.junit.Assert.assertThat;
 import static org.junit.matchers.JUnitMatchers.hasItems;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.stub;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import java.util.concurrent.TimeUnit;
-import org.jboss.dna.spi.graph.connection.RepositoryConnection;
+import org.jboss.dna.spi.graph.connection.BasicExecutionEnvironment;
+import org.jboss.dna.spi.graph.connection.ExecutionEnvironment;
 import org.jboss.dna.spi.graph.connection.RepositorySourceListener;
-import org.jboss.dna.spi.graph.connection.TimeDelayingRepositorySource;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.MockitoAnnotations;
@@ -44,38 +40,29 @@ import org.mockito.MockitoAnnotations.Mock;
  */
 public class FederatedRepositoryTest {
 
+    private ExecutionEnvironment env;
     private FederatedRepository repository;
     private String name;
-    @Mock
-    private FederationService service;
     @Mock
     private RepositorySourceListener listener1;
     @Mock
     private RepositorySourceListener listener2;
     @Mock
-    private FederatedSource source1;
-    @Mock
-    private FederatedSource source2;
+    private RepositoryConnectionFactories connectionFactories;
 
-    // private RepositoryConnectionPool connectionPool;
+    // private BasicRepositoryConnectionPool connectionPool;
 
     @Before
     public void beforeEach() {
         MockitoAnnotations.initMocks(this);
+        env = new BasicExecutionEnvironment();
         name = "Test repository";
-        repository = new FederatedRepository(service, name);
-        stub(source1.getName()).toReturn("soure 1");
-        stub(source2.getName()).toReturn("soure 2");
+        repository = new FederatedRepository(name, env, connectionFactories);
     }
 
     @Test
     public void shouldHaveNamePassedIntoConstructor() {
         assertThat(repository.getName(), is(name));
-    }
-
-    @Test
-    public void shouldHaveFederationServicePassedIntoConstructor() {
-        assertThat(repository.getService(), is(sameInstance(service)));
     }
 
     @Test
@@ -150,73 +137,32 @@ public class FederatedRepositoryTest {
     }
 
     @Test
-    public void shouldHaveNoSourcesAfterInitialization() {
-        assertThat(repository.getSources(), is(notNullValue()));
-        assertThat(repository.getSources().isEmpty(), is(true));
+    public void shouldHaveNoFederationRegionsAfterInitialization() {
+        assertThat(repository.getRegions(), is(notNullValue()));
+        assertThat(repository.getRegions().isEmpty(), is(true));
     }
 
     @Test
-    public void shouldAddSourceThatIsNotAlreadyRegistered() {
-        assertThat(repository.getSources(), hasItems(new FederatedSource[] {}));
-        assertThat(repository.addSource(source1), is(true));
-        assertThat(repository.getSources(), hasItems(source1));
-        assertThat(repository.addSource(source2), is(true));
-        assertThat(repository.getSources(), hasItems(source1, source2));
+    public void shouldAddFederationRegionThatIsNotAlreadyRegistered() {
+        FederatedRegion region1 = mock(FederatedRegion.class);
+        FederatedRegion region2 = mock(FederatedRegion.class);
+
+        assertThat(repository.getRegions().isEmpty(), is(true));
+        assertThat(repository.addRegionIfAbsent(region1), is(true));
+        assertThat(repository.getRegions(), hasItems(region1));
+        assertThat(repository.addRegionIfAbsent(region2), is(true));
+        assertThat(repository.getRegions(), hasItems(region1, region2));
     }
 
     @Test
     public void shouldNotAddSourceThatIsAlreadyRegistered() {
-        String source1Name = source1.getName();
-        FederatedSource source1a = mock(FederatedSource.class);
-        stub(source1a.getName()).toReturn(source1Name);
+        FederatedRegion region1 = mock(FederatedRegion.class);
 
-        assertThat(repository.getSources(), hasItems(new FederatedSource[] {}));
-        assertThat(repository.addSource(source1), is(true));
-        assertThat(repository.getSources(), hasItems(source1));
-        assertThat(repository.addSource(source2), is(true));
-        assertThat(repository.getSources(), hasItems(source1, source2));
-        assertThat(repository.addSource(source1a), is(false));
-        assertThat(repository.getSources(), hasItems(source1, source2));
+        assertThat(repository.getRegions().isEmpty(), is(true));
+        assertThat(repository.addRegionIfAbsent(region1), is(true));
+        assertThat(repository.getRegions(), hasItems(region1));
+        assertThat(repository.addRegionIfAbsent(region1), is(false));
+        assertThat(repository.getRegions(), hasItems(region1));
     }
 
-    @Test
-    public void shouldShutdownAndRemoveRepositoryFromFederationService() {
-        repository.getAdministrator().shutdown();
-        verify(service, times(1)).removeRepository(repository);
-    }
-
-    @Test
-    public void shouldShutdownAllSourceConnectionPoolsWhenShuttingDownRepository() throws Exception {
-        // Create the source instances that wait during termination ...
-        TimeDelayingRepositorySource timeDelaySource1 = new TimeDelayingRepositorySource("time delay source 1");
-        source1 = new FederatedSource(timeDelaySource1);
-        TimeDelayingRepositorySource timeDelaySource2 = new TimeDelayingRepositorySource("time delay source 2");
-        source2 = new FederatedSource(timeDelaySource2);
-        repository.addSource(source1);
-        repository.addSource(source2);
-        assertThat(repository.getSources(), hasItems(source1, source2));
-
-        // Get a connection from one source ...
-        RepositoryConnection connection = source2.getConnection();
-        assertThat(connection, is(notNullValue()));
-
-        // Shut down the repository, which will shut down each of the sources ...
-        repository.getAdministrator().shutdown();
-        assertThat(repository.getAdministrator().isShutdown(), is(true));
-        assertThat(repository.getAdministrator().isTerminated(), is(false));
-
-        // Source 1 should be shut down AND terminated ...
-        assertThat(source1.getConnectionPool().isShutdown(), is(true));
-        assertThat(source1.getConnectionPool().isTerminated(), is(true));
-
-        // Source 2 should be shutdown but not terminated, since we still have a connection ...
-        assertThat(source2.getConnectionPool().isShutdown(), is(true));
-        assertThat(source2.getConnectionPool().isTerminated(), is(false));
-
-        // Close the connection ...
-        connection.close();
-        assertThat(repository.getAdministrator().awaitTermination(1, TimeUnit.SECONDS), is(true));
-        assertThat(repository.getAdministrator().isShutdown(), is(true));
-        assertThat(repository.getAdministrator().isTerminated(), is(true));
-    }
 }

@@ -87,6 +87,18 @@ public interface PathFactory extends ValueFactory<Path> {
     Path createRelativePath( Path.Segment... segments );
 
     /**
+     * Create a path by appending the supplied relative path to the supplied parent path. The resulting path will be
+     * {@link Path#isAbsolute() absolute} if the supplied parent path is absolute.
+     * 
+     * @param parentPath the path that is to provide the basis for the new path
+     * @param childPath the path that should be appended to the parent path
+     * @return the new path
+     * @throws IllegalArgumentException if the parent path reference or the child path reference is null
+     */
+    Path create( Path parentPath,
+                 Path childPath );
+
+    /**
      * Create a path by appending the supplied names to the parent path.
      * 
      * @param parentPath the path that is to provide the basis for the new path

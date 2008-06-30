@@ -40,7 +40,8 @@ public class FederatedRepositoryConnection implements RepositoryConnection {
 
     protected static final RepositorySourceListener NO_OP_LISTENER = new RepositorySourceListener() {
 
-        public void notify( String sourceName, Object... events ) {
+        public void notify( String sourceName,
+                            Object... events ) {
             // do nothing
         }
     };
@@ -49,7 +50,8 @@ public class FederatedRepositoryConnection implements RepositoryConnection {
     private final FederatedRepositorySource source;
     private RepositorySourceListener listener = NO_OP_LISTENER;
 
-    protected FederatedRepositoryConnection( FederatedRepository repository, FederatedRepositorySource source ) {
+    protected FederatedRepositoryConnection( FederatedRepository repository,
+                                             FederatedRepositorySource source ) {
         assert source != null;
         assert repository != null;
         this.source = source;
@@ -106,14 +108,16 @@ public class FederatedRepositoryConnection implements RepositoryConnection {
     /**
      * {@inheritDoc}
      */
-    public boolean ping( long time, TimeUnit unit ) {
+    public boolean ping( long time,
+                         TimeUnit unit ) {
         return this.repository.getAdministrator().isStarted();
     }
 
     /**
      * {@inheritDoc}
      */
-    public void execute( ExecutionEnvironment env, GraphCommand... commands ) throws RepositorySourceException {
+    public void execute( ExecutionEnvironment env,
+                         GraphCommand... commands ) throws RepositorySourceException {
         if (!this.repository.getAdministrator().isStarted()) {
             throw new RepositorySourceException(RepositoryI18n.repositoryHasBeenShutDown.text(this.repository.getName()));
         }

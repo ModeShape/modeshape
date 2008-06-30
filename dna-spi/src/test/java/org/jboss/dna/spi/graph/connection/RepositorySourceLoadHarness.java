@@ -41,16 +41,23 @@ import org.jboss.dna.common.util.Logger;
  */
 public class RepositorySourceLoadHarness {
 
-    public static Future<Integer> execute( RepositoryConnectionFactory connectionFactory, ExecutionEnvironment env, long maxTime, TimeUnit maxTimeUnit ) throws InterruptedException {
+    public static Future<Integer> execute( RepositoryConnectionFactory connectionFactory,
+                                           ExecutionEnvironment env,
+                                           long maxTime,
+                                           TimeUnit maxTimeUnit ) throws InterruptedException {
         int numTimes = 1;
         int numClients = 1;
-        RepositoryOperation.Factory<Integer> operationFactory = RepositorySourceLoadHarness.createMultipleLoadOperationFactory(env, numTimes);
-        List<Future<Integer>> results = runLoadTest(connectionFactory, numClients, maxTime, maxTimeUnit, operationFactory);
+        RepositoryOperation.Factory<Integer> operationFactory = RepositorySourceLoadHarness.createMultipleLoadOperationFactory(numTimes);
+        List<Future<Integer>> results = runLoadTest(env, connectionFactory, numClients, maxTime, maxTimeUnit, operationFactory);
         return results.get(0);
     }
 
-    public static <T> List<Future<T>> runLoadTest( RepositoryConnectionFactory connectionFactory, int numClients, long maxTime, TimeUnit maxTimeUnit, RepositoryOperation.Factory<T> clientFactory )
-        throws InterruptedException {
+    public static <T> List<Future<T>> runLoadTest( ExecutionEnvironment env,
+                                                   RepositoryConnectionFactory connectionFactory,
+                                                   int numClients,
+                                                   long maxTime,
+                                                   TimeUnit maxTimeUnit,
+                                                   RepositoryOperation.Factory<T> clientFactory ) throws InterruptedException {
         // Create the clients ...
         Collection<RepositoryOperation<T>> clients = new ArrayList<RepositoryOperation<T>>();
         for (int i = 0; i != numClients; ++i) {
@@ -58,21 +65,28 @@ public class RepositorySourceLoadHarness {
         }
 
         // and run the test ...
-        return runLoadTest(connectionFactory, maxTime, maxTimeUnit, clients);
+        return runLoadTest(env, connectionFactory, maxTime, maxTimeUnit, clients);
     }
 
-    public static <T> List<Future<T>> runLoadTest( RepositoryConnectionFactory connectionFactory, long maxTime, TimeUnit maxTimeUnit, RepositoryOperation<T>... clients ) throws InterruptedException {
+    public static <T> List<Future<T>> runLoadTest( ExecutionEnvironment env,
+                                                   RepositoryConnectionFactory connectionFactory,
+                                                   long maxTime,
+                                                   TimeUnit maxTimeUnit,
+                                                   RepositoryOperation<T>... clients ) throws InterruptedException {
         // Create the client collection ...
         Collection<RepositoryOperation<T>> clientCollection = new ArrayList<RepositoryOperation<T>>();
         for (RepositoryOperation<T> client : clients) {
             if (client != null) clientCollection.add(client);
         }
         // and run the test ...
-        return runLoadTest(connectionFactory, maxTime, maxTimeUnit, clientCollection);
+        return runLoadTest(env, connectionFactory, maxTime, maxTimeUnit, clientCollection);
     }
 
-    public static <T> List<Future<T>> runLoadTest( RepositoryConnectionFactory connectionFactory, long maxTime, TimeUnit maxTimeUnit, Collection<RepositoryOperation<T>> clients )
-        throws InterruptedException {
+    public static <T> List<Future<T>> runLoadTest( ExecutionEnvironment env,
+                                                   RepositoryConnectionFactory connectionFactory,
+                                                   long maxTime,
+                                                   TimeUnit maxTimeUnit,
+                                                   Collection<RepositoryOperation<T>> clients ) throws InterruptedException {
         assert connectionFactory != null;
         assert clients != null;
         assert clients.size() > 0;
@@ -88,7 +102,7 @@ public class RepositorySourceLoadHarness {
 
         try {
             // Wrap each client by a callable and by another that uses a latch ...
-            List<Callable<T>> callables = RepositoryOperations.createCallables(connectionFactory, clients);
+            List<Callable<T>> callables = RepositoryOperations.createCallables(env, connectionFactory, clients);
 
             // Run the tests ...
             List<Future<T>> futures = clientPool.invokeAll(callables, maxTime, maxTimeUnit);
@@ -153,15 +167,14 @@ public class RepositorySourceLoadHarness {
      * {@link RepositoryConnection#execute(ExecutionEnvironment, org.jboss.dna.spi.graph.commands.GraphCommand...)} the supplied
      * number of times, intermixed with random math operations and {@link Thread#yield() yielding}.
      * 
-     * @param env the environment
      * @param callsPerOperation the number of <code>load</code> calls per RepositoryOperation
      * @return the factory
      */
-    public static RepositoryOperation.Factory<Integer> createMultipleLoadOperationFactory( final ExecutionEnvironment env, final int callsPerOperation ) {
+    public static RepositoryOperation.Factory<Integer> createMultipleLoadOperationFactory( final int callsPerOperation ) {
         return new RepositoryOperation.Factory<Integer>() {
 
             public RepositoryOperation<Integer> create() {
-                return new CallLoadMultipleTimes(env, callsPerOperation);
+                return new CallLoadMultipleTimes(callsPerOperation);
             }
         };
     }
@@ -169,12 +182,10 @@ public class RepositorySourceLoadHarness {
     public static class CallLoadMultipleTimes implements RepositoryOperation<Integer> {
 
         private final int count;
-        private final ExecutionEnvironment env;
 
-        public CallLoadMultipleTimes( ExecutionEnvironment env, int count ) {
+        public CallLoadMultipleTimes( int count ) {
             Logger.getLogger(RepositorySourceLoadHarness.class).debug("Creating repository operation to call {0} times", count);
             this.count = count;
-            this.env = env;
         }
 
         /**
@@ -186,8 +197,12 @@ public class RepositorySourceLoadHarness {
 
         /**
          * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.spi.graph.connection.RepositoryOperation#run(org.jboss.dna.spi.graph.connection.ExecutionEnvironment,
+         *      org.jboss.dna.spi.graph.connection.RepositoryConnection)
          */
-        public Integer run( RepositoryConnection connection ) throws RepositorySourceException, InterruptedException {
+        public Integer run( ExecutionEnvironment env,
+                            RepositoryConnection connection ) throws RepositorySourceException, InterruptedException {
             Logger.getLogger(RepositorySourceLoadHarness.class).debug("Running {0} operation", this.getClass().getSimpleName());
             int total = count;
             for (int i = 0; i != count; ++i) {

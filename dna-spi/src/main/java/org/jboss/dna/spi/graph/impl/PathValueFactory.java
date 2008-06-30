@@ -321,6 +321,28 @@ public class PathValueFactory extends AbstractValueFactory<Path> implements Path
 
     /**
      * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.spi.graph.PathFactory#create(org.jboss.dna.spi.graph.Path, org.jboss.dna.spi.graph.Path)
+     */
+    public Path create( Path parentPath,
+                        Path childPath ) {
+        ArgCheck.isNotNull(parentPath, "parent path");
+        ArgCheck.isNotNull(childPath, "child path");
+        if (childPath.size() == 0) return parentPath;
+        if (parentPath.size() == 0) {
+            // Just need to return the child path, but it must be absolute if the parent is ...
+            if (childPath.isAbsolute() == parentPath.isAbsolute()) return childPath;
+            // They aren't the same absoluteness, so create a new one ...
+            return new BasicPath(childPath.getSegmentsList(), parentPath.isAbsolute());
+        }
+        List<Segment> segments = new ArrayList<Segment>(parentPath.size() + childPath.size());
+        segments.addAll(parentPath.getSegmentsList());
+        segments.addAll(childPath.getSegmentsList());
+        return new BasicPath(segments, parentPath.isAbsolute());
+    }
+
+    /**
+     * {@inheritDoc}
      */
     public Path create( Path parentPath,
                         Name segmentName,

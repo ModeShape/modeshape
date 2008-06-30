@@ -31,6 +31,7 @@ import org.jboss.dna.common.i18n.I18n;
  */
 public final class RepositoryI18n {
 
+    // Services and Repository
     public static I18n invalidStateString;
     public static I18n serviceShutdowAndMayNotBeStarted;
     public static I18n serviceShutdowAndMayNotBePaused;
@@ -45,6 +46,7 @@ public final class RepositoryI18n {
     public static I18n errorFindingPropertyNameInPropertyChangedEvent;
     public static I18n errorFindingPropertyNameInPropertyRemovedEvent;
 
+    // Rules
     public static I18n unableToObtainJsr94RuleAdministrator;
     public static I18n errorUsingJsr94RuleAdministrator;
     public static I18n unableToObtainJsr94ServiceProvider;
@@ -66,6 +68,7 @@ public final class RepositoryI18n {
     public static I18n observationServiceName;
     public static I18n ruleServiceName;
 
+    // Sequencing
     public static I18n sequencingServiceName;
     public static I18n unableToChangeExecutionContextWhileRunning;
     public static I18n unableToStartSequencingServiceWithoutExecutionContext;
@@ -80,6 +83,7 @@ public final class RepositoryI18n {
     public static I18n sequencingPropertyOnNode;
     public static I18n writingOutputSequencedFromPropertyOnNodes;
 
+    // Properties
     public static I18n errorReadingPropertiesFromContainerNode;
     public static I18n requiredPropertyOnNodeWasExpectedToBeStringValue;
     public static I18n optionalPropertyOnNodeWasExpectedToBeStringValue;
@@ -95,14 +99,20 @@ public final class RepositoryI18n {
     public static I18n errorGettingNodeRelativeToNode;
     public static I18n unknownPropertyValueType;
 
+    // Path expressions
     public static I18n pathExpressionIsInvalid;
     public static I18n pathExpressionMayNotBeBlank;
     public static I18n pathExpressionHasInvalidSelect;
     public static I18n pathExpressionHasInvalidMatch;
 
+    // Observation
     public static I18n errorUnregisteringWorkspaceListenerWhileShuttingDownObservationService;
 
+    // General
     public static I18n invalidRepositoryNodePath;
+    public static I18n unableToLoadClassUsingClasspath;
+    public static I18n unableToInstantiateClassUsingClasspath;
+    public static I18n unableToAccessClassUsingClasspath;
 
     // XML Sequencer
     public static I18n errorSequencingXmlDocument;
@@ -114,9 +124,11 @@ public final class RepositoryI18n {
     public static I18n interruptedWhileConnectingToFederationConfigurationRepository;
     public static I18n interruptedWhileUsingFederationConfigurationRepository;
     public static I18n interruptedWhileClosingConnectionToFederationConfigurationRepository;
+    public static I18n unableToFindRepositorySourceByName;
     public static I18n unableToCreateConnectionToFederatedRepository;
     public static I18n unableToAuthenticateConnectionToFederatedRepository;
     public static I18n repositoryHasBeenShutDown;
+    public static I18n repositoryPathInFederationBindingIsNotAbsolute;
 
     static {
         try {

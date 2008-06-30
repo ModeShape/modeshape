@@ -46,15 +46,15 @@ import org.jboss.dna.spi.graph.commands.GraphCommand;
  * @author Randall Hauch
  */
 @ThreadSafe
-public class RepositoryConnectionPool implements RepositoryConnectionFactory {
+public class BasicRepositoryConnectionPool implements RepositoryConnectionPool {
 
     /**
-     * The core pool size for default-constructed pools is {@value}.
+     * The core pool size for default-constructed pools is {@value} .
      */
     public static final int DEFAULT_CORE_POOL_SIZE = 1;
 
     /**
-     * The maximum pool size for default-constructed pools is {@value}.
+     * The maximum pool size for default-constructed pools is {@value} .
      */
     public static final int DEFAULT_MAXIMUM_POOL_SIZE = 10;
 
@@ -165,7 +165,7 @@ public class RepositoryConnectionPool implements RepositoryConnectionFactory {
      * @param connectionFactory the factory for connections
      * @throws IllegalArgumentException if the connection factory is null or any of the supplied arguments are invalid
      */
-    public RepositoryConnectionPool( RepositoryConnectionFactory connectionFactory ) {
+    public BasicRepositoryConnectionPool( RepositoryConnectionFactory connectionFactory ) {
         this(connectionFactory, DEFAULT_CORE_POOL_SIZE, DEFAULT_MAXIMUM_POOL_SIZE, DEFAULT_KEEP_ALIVE_TIME_IN_SECONDS,
              TimeUnit.SECONDS);
     }
@@ -181,11 +181,11 @@ public class RepositoryConnectionPool implements RepositoryConnectionFactory {
      * @param unit the time unit for the keepAliveTime argument.
      * @throws IllegalArgumentException if the connection factory is null or any of the supplied arguments are invalid
      */
-    public RepositoryConnectionPool( RepositoryConnectionFactory connectionFactory,
-                                     int corePoolSize,
-                                     int maximumPoolSize,
-                                     long keepAliveTime,
-                                     TimeUnit unit ) {
+    public BasicRepositoryConnectionPool( RepositoryConnectionFactory connectionFactory,
+                                          int corePoolSize,
+                                          int maximumPoolSize,
+                                          long keepAliveTime,
+                                          TimeUnit unit ) {
         ArgCheck.isNonNegative(corePoolSize, "corePoolSize");
         ArgCheck.isPositive(maximumPoolSize, "maximumPoolSize");
         ArgCheck.isNonNegative(keepAliveTime, "keepAliveTime");
@@ -200,6 +200,11 @@ public class RepositoryConnectionPool implements RepositoryConnectionFactory {
         this.setPingTimeout(100, TimeUnit.MILLISECONDS);
     }
 
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.spi.graph.connection.RepositoryConnectionFactory#getName()
+     */
     public String getName() {
         return this.connectionFactory.getName();
     }
@@ -449,13 +454,9 @@ public class RepositoryConnectionPool implements RepositoryConnectionFactory {
     }
 
     /**
-     * Initiates an orderly shutdown in which connections that are currently in use are allowed to be used and closed as normal,
-     * but no new connections will be created. Invocation has no additional effect if already shut down.
+     * {@inheritDoc}
      * 
-     * @throws SecurityException if a security manager exists and shutting down this pool may manipulate threads that the caller
-     *         is not permitted to modify because it does not hold {@link java.lang.RuntimePermission}<tt>("modifyThread")</tt>,
-     *         or the security manager's <tt>checkAccess</tt> method denies access.
-     * @see #shutdownNow()
+     * @see org.jboss.dna.spi.graph.connection.RepositoryConnectionPool#shutdown()
      */
     public void shutdown() {
         // Fail if caller doesn't have modifyThread permission. We
@@ -501,12 +502,9 @@ public class RepositoryConnectionPool implements RepositoryConnectionFactory {
     }
 
     /**
-     * Attempts to close all connections, including those connections currently in use, and prevent the use of other connections.
+     * {@inheritDoc}
      * 
-     * @throws SecurityException if a security manager exists and shutting down this pool may manipulate threads that the caller
-     *         is not permitted to modify because it does not hold {@link java.lang.RuntimePermission}<tt>("modifyThread")</tt>,
-     *         or the security manager's <tt>checkAccess</tt> method denies access.
-     * @see #shutdown()
+     * @see org.jboss.dna.spi.graph.connection.RepositoryConnectionPool#shutdownNow()
      */
     public void shutdownNow() {
         // Almost the same code as shutdown()
@@ -560,65 +558,45 @@ public class RepositoryConnectionPool implements RepositoryConnectionFactory {
     }
 
     /**
-     * Return whether this connection pool is running and is able to {@link #getConnection() provide connections}. Note that this
-     * method is effectively <code>!isShutdown()</code>.
+     * {@inheritDoc}
      * 
-     * @return true if this pool is running, or false otherwise
-     * @see #isShutdown()
-     * @see #isTerminated()
-     * @see #isTerminating()
+     * @see org.jboss.dna.spi.graph.connection.RepositoryConnectionPool#isRunning()
      */
     public boolean isRunning() {
         return runState == RUNNING;
     }
 
     /**
-     * Return whether this connection pool is in the process of shutting down or has already been shut down. A result of
-     * <code>true</code> signals that the pool may no longer be used. Note that this method is effectively
-     * <code>!isRunning()</code>.
+     * {@inheritDoc}
      * 
-     * @return true if this pool has been shut down, or false otherwise
-     * @see #isShutdown()
-     * @see #isTerminated()
-     * @see #isTerminating()
+     * @see org.jboss.dna.spi.graph.connection.RepositoryConnectionPool#isShutdown()
      */
     public boolean isShutdown() {
         return runState != RUNNING;
     }
 
     /**
-     * Returns true if this pool is in the process of terminating after {@link #shutdown()} or {@link #shutdownNow()} has been
-     * called but has not completely terminated. This method may be useful for debugging. A return of <tt>true</tt> reported a
-     * sufficient period after shutdown may indicate that submitted tasks have ignored or suppressed interruption, causing this
-     * executor not to properly terminate.
+     * {@inheritDoc}
      * 
-     * @return true if terminating but not yet terminated, or false otherwise
-     * @see #isTerminated()
+     * @see org.jboss.dna.spi.graph.connection.RepositoryConnectionPool#isTerminating()
      */
     public boolean isTerminating() {
         return runState == STOP;
     }
 
     /**
-     * Return true if this pool has completed its termination and no longer has any open connections.
+     * {@inheritDoc}
      * 
-     * @return true if terminated, or false otherwise
-     * @see #isTerminating()
+     * @see org.jboss.dna.spi.graph.connection.RepositoryConnectionPool#isTerminated()
      */
     public boolean isTerminated() {
         return runState == TERMINATED;
     }
 
     /**
-     * Method that can be called after {@link #shutdown()} or {@link #shutdownNow()} to wait until all connections in use at the
-     * time those methods were called have been closed normally. This method accepts a maximum time duration, after which it will
-     * return even if all connections have not been closed.
+     * {@inheritDoc}
      * 
-     * @param timeout the maximum time to wait for all connections to be closed and returned to the pool
-     * @param unit the time unit for <code>timeout</code>
-     * @return true if the pool was terminated in the supplied time (or was already terminated), or false if the timeout occurred
-     *         before all the connections were closed
-     * @throws InterruptedException if the thread was interrupted
+     * @see org.jboss.dna.spi.graph.connection.RepositoryConnectionPool#awaitTermination(long, java.util.concurrent.TimeUnit)
      */
     public boolean awaitTermination( long timeout,
                                      TimeUnit unit ) throws InterruptedException {

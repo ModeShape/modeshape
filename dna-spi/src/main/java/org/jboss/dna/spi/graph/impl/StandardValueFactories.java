@@ -23,9 +23,7 @@ package org.jboss.dna.spi.graph.impl;
 
 import java.math.BigDecimal;
 import java.net.URI;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.text.TextDecoder;
@@ -38,7 +36,6 @@ import org.jboss.dna.spi.graph.NamespaceRegistry;
 import org.jboss.dna.spi.graph.PathFactory;
 import org.jboss.dna.spi.graph.PropertyType;
 import org.jboss.dna.spi.graph.Reference;
-import org.jboss.dna.spi.graph.ValueFactories;
 import org.jboss.dna.spi.graph.ValueFactory;
 
 /**
@@ -47,7 +44,7 @@ import org.jboss.dna.spi.graph.ValueFactory;
  * @author Randall Hauch
  */
 @Immutable
-public class StandardValueFactories implements ValueFactories {
+public class StandardValueFactories extends AbstractValueFactories {
 
     // This class is implemented with separate members for each factory so that the typical usage is optimized.
     private final ValueFactory<String> stringFactory;
@@ -62,7 +59,6 @@ public class StandardValueFactories implements ValueFactories {
     private final ValueFactory<Reference> referenceFactory;
     private final ValueFactory<URI> uriFactory;
     private final ValueFactory<Object> objectFactory;
-    private final Map<PropertyType, ValueFactory<?>> factories;
 
     private final NamespaceRegistry namespaceRegistry;
     private final TextDecoder decoder;
@@ -85,10 +81,13 @@ public class StandardValueFactories implements ValueFactories {
      * @param decoder the decoder that should be used; if null, the {@link ValueFactory#DEFAULT_DECODER default decoder} is used.
      * @param encoder the encoder that should be used; if null, the {@link ValueFactory#DEFAULT_ENCODER default encoder} is used.
      * @param extraFactories any extra factories that should be used; any factory will override the standard factories based upon
-     * the {@link ValueFactory#getPropertyType() factory's property type}.
+     *        the {@link ValueFactory#getPropertyType() factory's property type}.
      * @throws IllegalArgumentException if the namespace registry is null
      */
-    public StandardValueFactories( NamespaceRegistry namespaceRegistry, TextDecoder decoder, TextEncoder encoder, ValueFactory<?>... extraFactories ) {
+    public StandardValueFactories( NamespaceRegistry namespaceRegistry,
+                                   TextDecoder decoder,
+                                   TextEncoder encoder,
+                                   ValueFactory<?>... extraFactories ) {
         ArgCheck.isNotNull(namespaceRegistry, "namespaceRegistry");
         this.namespaceRegistry = namespaceRegistry;
         this.decoder = decoder != null ? decoder : ValueFactory.DEFAULT_DECODER;
@@ -109,18 +108,18 @@ public class StandardValueFactories implements ValueFactories {
         this.decimalFactory = getFactory(factories, new DecimalValueFactory(this.decoder, this.stringFactory));
         this.doubleFactory = getFactory(factories, new DoubleValueFactory(this.decoder, this.stringFactory));
         this.longFactory = getFactory(factories, new LongValueFactory(this.decoder, this.stringFactory));
-        this.nameFactory = (NameFactory)getFactory(factories, new NameValueFactory(this.namespaceRegistry, this.decoder, this.stringFactory));
-        this.pathFactory = (PathFactory)getFactory(factories, new PathValueFactory(this.decoder, this.stringFactory, this.nameFactory));
+        this.nameFactory = (NameFactory)getFactory(factories, new NameValueFactory(this.namespaceRegistry, this.decoder,
+                                                                                   this.stringFactory));
+        this.pathFactory = (PathFactory)getFactory(factories, new PathValueFactory(this.decoder, this.stringFactory,
+                                                                                   this.nameFactory));
         this.referenceFactory = getFactory(factories, new UuidReferenceValueFactory(this.decoder, this.stringFactory));
         this.uriFactory = getFactory(factories, new UriValueFactory(this.namespaceRegistry, this.decoder, this.stringFactory));
         this.objectFactory = getFactory(factories, new ObjectValueFactory(this.decoder, this.stringFactory, this.binaryFactory));
-
-        // Wrap the factories with an unmodifiable ...
-        this.factories = Collections.unmodifiableMap(factories);
     }
 
     @SuppressWarnings( "unchecked" )
-    private static <T> ValueFactory<T> getFactory( Map<PropertyType, ValueFactory<?>> factories, ValueFactory<T> defaultFactory ) {
+    private static <T> ValueFactory<T> getFactory( Map<PropertyType, ValueFactory<?>> factories,
+                                                   ValueFactory<T> defaultFactory ) {
         PropertyType type = defaultFactory.getPropertyType();
         ValueFactory<?> factory = factories.get(type);
         if (factory == null) {
@@ -142,13 +141,6 @@ public class StandardValueFactories implements ValueFactories {
      */
     public NamespaceRegistry getNamespaceRegistry() {
         return this.namespaceRegistry;
-    }
-
-    /**
-     * @return factories
-     */
-    public Map<PropertyType, ValueFactory<?>> getMapOfValueFactories() {
-        return this.factories;
     }
 
     /**
@@ -233,31 +225,6 @@ public class StandardValueFactories implements ValueFactories {
      */
     public ValueFactory<Object> getObjectFactory() {
         return this.objectFactory;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public Iterator<ValueFactory<?>> iterator() {
-        return this.factories.values().iterator();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public ValueFactory<?> getValueFactory( PropertyType type ) {
-        ArgCheck.isNotNull(type, "type");
-        return this.factories.get(type);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public ValueFactory<?> getValueFactory( Object prototype ) {
-        ArgCheck.isNotNull(prototype, "prototype");
-        PropertyType inferredType = PropertyType.discoverType(prototype);
-        assert inferredType != null;
-        return this.factories.get(inferredType);
     }
 
 }
