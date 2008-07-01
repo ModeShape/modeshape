@@ -40,6 +40,7 @@ import org.jboss.dna.spi.graph.impl.BasicPathSegment;
 public abstract class BasicGraphCommand implements GraphCommand {
 
     private boolean cancelled = false;
+    private Throwable error;
 
     /**
      * 
@@ -59,6 +60,30 @@ public abstract class BasicGraphCommand implements GraphCommand {
      */
     public void setCancelled( boolean cancelled ) {
         this.cancelled = cancelled;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.spi.graph.commands.GraphCommand#setError(java.lang.Throwable)
+     */
+    public void setError( Throwable t ) {
+        error = t;
+    }
+
+    /**
+     * @return error
+     */
+    public Throwable getError() {
+        return error;
+    }
+
+    public boolean hasError() {
+        return error != null;
+    }
+
+    public boolean hasNoError() {
+        return error == null;
     }
 
     // ----------------------------------------------------------------------------------------------------------------
@@ -105,7 +130,9 @@ public abstract class BasicGraphCommand implements GraphCommand {
         return children;
     }
 
-    protected static void setProperty( Map<Name, List<Object>> propertyValues, Name propertyName, Object... values ) {
+    protected static void setProperty( Map<Name, List<Object>> propertyValues,
+                                       Name propertyName,
+                                       Object... values ) {
         if (values == null || values.length == 0) {
             propertyValues.remove(propertyName);
         } else {
@@ -135,7 +162,9 @@ public abstract class BasicGraphCommand implements GraphCommand {
         }
     }
 
-    protected static void setProperty( Map<Name, List<Object>> propertyValues, Name propertyName, Iterable<?> values ) {
+    protected static void setProperty( Map<Name, List<Object>> propertyValues,
+                                       Name propertyName,
+                                       Iterable<?> values ) {
         if (values == null) {
             propertyValues.remove(propertyName);
         } else {
@@ -147,7 +176,9 @@ public abstract class BasicGraphCommand implements GraphCommand {
         }
     }
 
-    protected static void setProperty( Map<Name, List<Object>> propertyValues, Name propertyName, Iterator<?> values ) {
+    protected static void setProperty( Map<Name, List<Object>> propertyValues,
+                                       Name propertyName,
+                                       Iterator<?> values ) {
         if (values == null) {
             propertyValues.remove(propertyName);
         } else {

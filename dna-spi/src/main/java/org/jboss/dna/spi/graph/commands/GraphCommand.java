@@ -23,14 +23,23 @@ package org.jboss.dna.spi.graph.commands;
 
 /**
  * The base interface for all repository commands
+ * 
  * @author Randall Hauch
  */
 public interface GraphCommand {
 
     /**
      * Return whether this command has been cancelled.
+     * 
      * @return true if this command has been cancelled, or false otherwise.
      */
     boolean isCancelled();
+
+    /**
+     * Set the error for this command.
+     * 
+     * @param error the exception
+     */
+    void setError( Throwable error );
 
 }
