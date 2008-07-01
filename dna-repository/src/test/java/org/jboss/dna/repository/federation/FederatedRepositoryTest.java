@@ -26,7 +26,6 @@ import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsSame.sameInstance;
 import static org.junit.Assert.assertThat;
 import static org.junit.matchers.JUnitMatchers.hasItems;
-import static org.mockito.Mockito.mock;
 import org.jboss.dna.spi.graph.connection.BasicExecutionEnvironment;
 import org.jboss.dna.spi.graph.connection.ExecutionEnvironment;
 import org.jboss.dna.spi.graph.connection.RepositorySourceListener;
@@ -44,6 +43,8 @@ public class FederatedRepositoryTest {
     private FederatedRepository repository;
     private String name;
     @Mock
+    private FederatedRepositoryConfig config;
+    @Mock
     private RepositorySourceListener listener1;
     @Mock
     private RepositorySourceListener listener2;
@@ -57,7 +58,7 @@ public class FederatedRepositoryTest {
         MockitoAnnotations.initMocks(this);
         env = new BasicExecutionEnvironment();
         name = "Test repository";
-        repository = new FederatedRepository(name, env, connectionFactories);
+        repository = new FederatedRepository(name, env, connectionFactories, config);
     }
 
     @Test
@@ -137,32 +138,9 @@ public class FederatedRepositoryTest {
     }
 
     @Test
-    public void shouldHaveNoFederationRegionsAfterInitialization() {
-        assertThat(repository.getRegions(), is(notNullValue()));
-        assertThat(repository.getRegions().isEmpty(), is(true));
-    }
-
-    @Test
-    public void shouldAddFederationRegionThatIsNotAlreadyRegistered() {
-        FederatedRegion region1 = mock(FederatedRegion.class);
-        FederatedRegion region2 = mock(FederatedRegion.class);
-
-        assertThat(repository.getRegions().isEmpty(), is(true));
-        assertThat(repository.addRegionIfAbsent(region1), is(true));
-        assertThat(repository.getRegions(), hasItems(region1));
-        assertThat(repository.addRegionIfAbsent(region2), is(true));
-        assertThat(repository.getRegions(), hasItems(region1, region2));
-    }
-
-    @Test
-    public void shouldNotAddSourceThatIsAlreadyRegistered() {
-        FederatedRegion region1 = mock(FederatedRegion.class);
-
-        assertThat(repository.getRegions().isEmpty(), is(true));
-        assertThat(repository.addRegionIfAbsent(region1), is(true));
-        assertThat(repository.getRegions(), hasItems(region1));
-        assertThat(repository.addRegionIfAbsent(region1), is(false));
-        assertThat(repository.getRegions(), hasItems(region1));
+    public void shouldHaveConfigurationAfterInitialization() {
+        assertThat(repository.getConfiguration(), is(notNullValue()));
+        assertThat(repository.getConfiguration(), is(sameInstance(config)));
     }
 
 }

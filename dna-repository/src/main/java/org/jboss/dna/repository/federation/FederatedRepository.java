@@ -21,7 +21,6 @@
  */
 package org.jboss.dna.repository.federation;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
@@ -30,16 +29,15 @@ import org.jboss.dna.common.util.ArgCheck;
 import org.jboss.dna.repository.RepositoryI18n;
 import org.jboss.dna.repository.services.AbstractServiceAdministrator;
 import org.jboss.dna.repository.services.ServiceAdministrator;
-import org.jboss.dna.spi.cache.CachePolicy;
 import org.jboss.dna.spi.graph.connection.ExecutionEnvironment;
 import org.jboss.dna.spi.graph.connection.RepositoryConnection;
 import org.jboss.dna.spi.graph.connection.RepositorySource;
 import org.jboss.dna.spi.graph.connection.RepositorySourceListener;
 
 /**
- * The component in the {@link FederationService} that represents a single federated repository. The federated repository manages
- * a set of {@link RepositorySource federated sources}, and provides the logic of interacting with those sources and presenting a
- * single unified graph.
+ * The component in the {@link FederationService} that represents a single federated repository. The federated repository uses a
+ * set of {@link RepositorySource federated sources} as designated by name through the {@link #getConfiguration() configuration},
+ * and provides the logic of interacting with those sources and presenting a single unified graph.
  * 
  * @author Randall Hauch
  */
@@ -97,9 +95,8 @@ public class FederatedRepository {
     private final String name;
     private final ExecutionEnvironment env;
     private final RepositoryConnectionFactories connectionFactories;
-    private final CopyOnWriteArrayList<FederatedRegion> regions = new CopyOnWriteArrayList<FederatedRegion>();
+    private FederatedRepositoryConfig config;
     private final CopyOnWriteArrayList<RepositorySourceListener> listeners = new CopyOnWriteArrayList<RepositorySourceListener>();
-    private CachePolicy defaultCachePolicy;
 
     /**
      * Create a federated repository instance, as managed by the supplied {@link FederationService}.
@@ -107,17 +104,21 @@ public class FederatedRepository {
      * @param repositoryName the name of the repository
      * @param env the execution environment
      * @param connectionFactories the set of connection factories that should be used
+     * @param config the configuration for this repository
      * @throws IllegalArgumentException if any of the parameters are null, or if the name is blank
      */
     public FederatedRepository( String repositoryName,
                                 ExecutionEnvironment env,
-                                RepositoryConnectionFactories connectionFactories ) {
+                                RepositoryConnectionFactories connectionFactories,
+                                FederatedRepositoryConfig config ) {
         ArgCheck.isNotNull(connectionFactories, "connectionFactories");
         ArgCheck.isNotNull(env, "env");
+        ArgCheck.isNotNull(config, "config");
         ArgCheck.isNotEmpty(repositoryName, "repositoryName");
         this.name = repositoryName;
         this.env = env;
         this.connectionFactories = connectionFactories;
+        this.config = config;
     }
 
     /**
@@ -206,32 +207,6 @@ public class FederatedRepository {
     }
 
     /**
-     * Return the unmodifiable list of bindings.
-     * 
-     * @return the bindings
-     */
-    public List<FederatedRegion> getRegions() {
-        return Collections.unmodifiableList(regions);
-    }
-
-    /**
-     * Add the supplied federation region to this repository, if it is not already in the repository. . This method does not
-     * attempt to check whether this region would result in a duplicate region.
-     * 
-     * @param region the region to be added
-     * @return true if the region was added, or false if there was already a duplicate region
-     * @throws IllegalArgumentException if the binding reference is null
-     */
-    protected boolean addRegionIfAbsent( FederatedRegion region ) {
-        ArgCheck.isNotNull(region, "region");
-        return this.regions.addIfAbsent(region);
-    }
-
-    protected boolean removeBinding( FederatedRegion region ) {
-        return this.regions.remove(region);
-    }
-
-    /**
      * Add a listener that is to receive notifications to changes to content within this repository. This method does nothing if
      * the supplied listener is null.
      * 
@@ -280,25 +255,28 @@ public class FederatedRepository {
     }
 
     /**
-     * Get the default cache policy for the repository with the supplied name
+     * Get the configuration of this repository. This configuration is immutable and may be
+     * {@link #setConfiguration(FederatedRepositoryConfig) changed} as needed. Therefore, when using a configuration and needing a
+     * consistent configuration, maintain a reference to the configuration during that time (as the actual configuration may be
+     * replaced at any time).
      * 
-     * @return the default cache policy
+     * @return the repository's configuration at the time this method is called.
      */
-    public CachePolicy getDefaultCachePolicy() {
-        return defaultCachePolicy;
+    public FederatedRepositoryConfig getConfiguration() {
+        return config;
     }
 
     /**
-     * Set the default cache policy for the federated repository.
-     * <p>
-     * This method can safely be called while the federation repository is in use.
-     * </p>
+     * Set the configuration for this repository. The configuration is immutable and therefore may be replaced using this method.
+     * All interaction with the configuration is done in a thread-safe and concurrent manner, and as such only valid
+     * configurations should be used.
      * 
-     * @param defaultCachePolicy Sets defaultCachePolicy to the specified value.
+     * @param config the new configuration
+     * @throws IllegalArgumentException if the configuration is null
      */
-    public void setDefaultCachePolicy( CachePolicy defaultCachePolicy ) {
-        ArgCheck.isNotNull(defaultCachePolicy, "defaultCachePolicy");
-        this.defaultCachePolicy = defaultCachePolicy;
+    public void setConfiguration( FederatedRepositoryConfig config ) {
+        ArgCheck.isNotNull(config, "config");
+        this.config = config;
     }
 
 }

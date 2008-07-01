@@ -23,7 +23,6 @@ package org.jboss.dna.repository.federation;
 
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.nullValue;
-import static org.hamcrest.core.IsSame.sameInstance;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.stub;
@@ -31,7 +30,6 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import java.util.concurrent.TimeUnit;
 import org.jboss.dna.repository.services.ServiceAdministrator;
-import org.jboss.dna.spi.cache.CachePolicy;
 import org.jboss.dna.spi.graph.commands.GraphCommand;
 import org.jboss.dna.spi.graph.connection.ExecutionEnvironment;
 import org.jboss.dna.spi.graph.connection.RepositorySourceException;
@@ -53,8 +51,6 @@ public class FederatedRepositoryConnectionTest {
     @Mock
     private FederatedRepository repository;
     @Mock
-    private CachePolicy defaultCachePolicy;
-    @Mock
     private ServiceAdministrator repositoryAdmin;
 
     @Before
@@ -62,7 +58,6 @@ public class FederatedRepositoryConnectionTest {
         MockitoAnnotations.initMocks(this);
         sourceName = "Source X";
         stub(source.getName()).toReturn(sourceName);
-        stub(repository.getDefaultCachePolicy()).toReturn(defaultCachePolicy);
         stub(repository.getAdministrator()).toReturn(repositoryAdmin);
         connection = new FederatedRepositoryConnection(repository, source);
     }
@@ -79,12 +74,6 @@ public class FederatedRepositoryConnectionTest {
             assertThat(connection.getSourceName(), is(sourceName));
         }
         verify(source, times(10)).getName();
-    }
-
-    @Test
-    public void shouldGetDefaultCachePolicyFromRepository() {
-        assertThat(connection.getDefaultCachePolicy(), is(sameInstance(defaultCachePolicy)));
-        verify(repository, times(1)).getDefaultCachePolicy();
     }
 
     @Test

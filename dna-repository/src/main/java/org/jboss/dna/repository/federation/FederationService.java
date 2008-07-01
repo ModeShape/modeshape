@@ -23,6 +23,7 @@ package org.jboss.dna.repository.federation;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -41,6 +42,9 @@ import org.jboss.dna.repository.RepositoryI18n;
 import org.jboss.dna.repository.services.AbstractServiceAdministrator;
 import org.jboss.dna.repository.services.AdministeredService;
 import org.jboss.dna.repository.services.ServiceAdministrator;
+import org.jboss.dna.spi.cache.BasicCachePolicy;
+import org.jboss.dna.spi.cache.CachePolicy;
+import org.jboss.dna.spi.graph.InvalidPathException;
 import org.jboss.dna.spi.graph.Name;
 import org.jboss.dna.spi.graph.NameFactory;
 import org.jboss.dna.spi.graph.Path;
@@ -65,6 +69,11 @@ public class FederationService implements AdministeredService {
 
     protected static final String CLASSNAME_PROPERTY_NAME = "dna:classname";
     protected static final String CLASSPATH_PROPERTY_NAME = "dna:classpath";
+    protected static final String REGION_PATH_IN_REPOSITORY_PROPERTY_NAME = "dna:pathInRepository";
+    protected static final String REGION_PATH_IN_SOURCE_PROPERTY_NAME = "dna:pathInSource";
+    protected static final String REGION_SOURCE_NAME = "dna:sourceName";
+    protected static final String CACHE_POLICY_TIME_TO_EXPIRE = "dna:timeToExpire";
+    protected static final String CACHE_POLICY_TIME_TO_CACHE = "dna:timeToCache";
 
     /**
      * The administrative component for this service.
@@ -74,7 +83,7 @@ public class FederationService implements AdministeredService {
     protected class Administrator extends AbstractServiceAdministrator {
 
         protected Administrator() {
-            super(RepositoryI18n.federationServiceName, State.STARTED);
+            super(RepositoryI18n.federationServiceName, State.PAUSED);
         }
 
         /**
@@ -204,6 +213,9 @@ public class FederationService implements AdministeredService {
             } catch (InterruptedException err) {
                 I18n msg = RepositoryI18n.interruptedWhileConnectingToFederationConfigurationRepository;
                 throw new FederationException(msg.text(configurationSourceName));
+            } catch (Throwable err) {
+                I18n msg = RepositoryI18n.unableToConnectToFederationConfigurationRepository;
+                throw new FederationException(msg.text(configurationSourceName));
             }
 
             // ------------------------------------------------------------------------------------
@@ -211,31 +223,41 @@ public class FederationService implements AdministeredService {
             // ------------------------------------------------------------------------------------
             ValueFactories valueFactories = env.getValueFactories();
             PathFactory pathFactory = valueFactories.getPathFactory();
+            NameFactory nameFactory = valueFactories.getNameFactory();
+
+            // The root of the configuration repository should be converted using the configuration region
+            // to the path in the source (since we're talking directly to the source) ...
+            Path configurationRoot = pathFactory.create("/");
+            configurationRoot = configurationRegion.convertPathInRepositoryToPathInSource(configurationRoot, pathFactory);
 
             // Read the configuration and the repository sources, located as child nodes/branches under "/dna:sources",
             // and then instantiate and register each in the "sources" manager
             try {
-                Path sourcesNode = pathFactory.create("/dna:sources");
+                Path sourcesNode = pathFactory.create(configurationRoot, nameFactory.create("dna:sources"));
                 BasicGetChildrenCommand getSources = new BasicGetChildrenCommand(sourcesNode);
                 configurationConnection.execute(env, getSources);
+                if (getSources.hasNoError()) {
 
-                // Build the commands to get each of the children ...
-                List<Path.Segment> children = getSources.getChildren();
-                if (children.isEmpty()) {
-                    BasicCompositeCommand commands = new BasicCompositeCommand();
-                    for (Path.Segment child : getSources.getChildren()) {
-                        final Path pathToSource = pathFactory.create(sourcesNode, child);
-                        commands.add(new BasicGetNodeCommand(pathToSource));
-                    }
-                    configurationConnection.execute(env, commands);
+                    // Build the commands to get each of the children ...
+                    List<Path.Segment> children = getSources.getChildren();
+                    if (!children.isEmpty()) {
+                        BasicCompositeCommand commands = new BasicCompositeCommand();
+                        for (Path.Segment child : getSources.getChildren()) {
+                            final Path pathToSource = pathFactory.create(sourcesNode, child);
+                            commands.add(new BasicGetNodeCommand(pathToSource));
+                        }
+                        configurationConnection.execute(env, commands);
 
-                    // Iterate over each source node obtained ...
-                    for (GraphCommand command : commands) {
-                        BasicGetNodeCommand getSourceCommand = (BasicGetNodeCommand)command;
-                        RepositorySource source = createRepositorySource(getSourceCommand.getPath(),
-                                                                         getSourceCommand.getProperties(),
-                                                                         problems);
-                        if (source != null) sources.addSource(source);
+                        // Iterate over each source node obtained ...
+                        for (GraphCommand command : commands) {
+                            BasicGetNodeCommand getSourceCommand = (BasicGetNodeCommand)command;
+                            if (getSourceCommand.hasNoError()) {
+                                RepositorySource source = createRepositorySource(getSourceCommand.getPath(),
+                                                                                 getSourceCommand.getProperties(),
+                                                                                 problems);
+                                if (source != null) sources.addSource(source, false);
+                            }
+                        }
                     }
                 }
             } catch (InterruptedException err) {
@@ -268,14 +290,12 @@ public class FederationService implements AdministeredService {
         if (classnameProperty == null) {
             problems.addError(RepositoryI18n.requiredPropertyIsMissingFromNode, CLASSNAME_PROPERTY_NAME, path);
         }
-        if (classpathProperty == null) {
-            problems.addError(RepositoryI18n.requiredPropertyIsMissingFromNode, CLASSPATH_PROPERTY_NAME, path);
-        }
+        // If the classpath property is null or empty, the default classpath will be used
         if (problems.hasErrors()) return null;
 
         // Create the instance ...
         String classname = stringFactory.create(classnameProperty.getValues().next());
-        String[] classpath = stringFactory.create(classpathProperty.getValuesAsArray());
+        String[] classpath = classpathProperty == null ? new String[] {} : stringFactory.create(classpathProperty.getValuesAsArray());
         ClassLoader classLoader = this.classLoaderFactory.getClassLoader(classpath);
         RepositorySource source = null;
         try {
@@ -289,8 +309,23 @@ public class FederationService implements AdministeredService {
             problems.addError(err, RepositoryI18n.unableToInstantiateClassUsingClasspath, classname, classpath);
         }
 
-        // Now set all the properties that we can, ignoring any property that doesn't fit pattern ...
+        // Try to set the name property to the local name of the node...
         Reflection reflection = new Reflection(source.getClass());
+        try {
+            reflection.invokeSetterMethodOnTarget("name", source, path.getLastSegment().getName().getLocalName());
+        } catch (SecurityException err) {
+            // Do nothing ... assume not a JavaBean property
+        } catch (NoSuchMethodException err) {
+            // Do nothing ... assume not a JavaBean property
+        } catch (IllegalArgumentException err) {
+            // Do nothing ... assume not a JavaBean property
+        } catch (IllegalAccessException err) {
+            // Do nothing ... assume not a JavaBean property
+        } catch (InvocationTargetException err) {
+            // Do nothing ... assume not a JavaBean property
+        }
+
+        // Now set all the properties that we can, ignoring any property that doesn't fit pattern ...
         for (Map.Entry<Name, Property> entry : properties.entrySet()) {
             Name propertyName = entry.getKey();
             Property property = entry.getValue();
@@ -332,10 +367,12 @@ public class FederationService implements AdministeredService {
         FederatedRepository repository = this.repositories.get(name);
         if (repository == null) {
             // Look up the node representing the repository in the configuration ...
+            FederatedRepositoryConfig config = loadConfiguration(name);
+            assert config != null;
 
-            // // New up a repository and configure it ...
-            // Repository
-            repository = new FederatedRepository(name, env, sources);
+            // New up a repository and configure it ...
+            repository = new FederatedRepository(name, env, sources, config);
+
             // Now register it, being careful to not overwrite any added since "get" call above ..
             FederatedRepository existingRepository = this.repositories.putIfAbsent(name, repository);
             if (existingRepository != null) repository = existingRepository;
@@ -343,6 +380,117 @@ public class FederationService implements AdministeredService {
         // Make sure it's started. By doing this here, whoever finds it in the map will start it.
         repository.getAdministrator().start();
         return repository;
+    }
+
+    protected FederatedRepositoryConfig loadConfiguration( String repositoryName ) {
+        Problems problems = new SimpleProblems();
+        ValueFactories valueFactories = env.getValueFactories();
+        PathFactory pathFactory = valueFactories.getPathFactory();
+        NameFactory nameFactory = valueFactories.getNameFactory();
+        ValueFactory<Long> longFactory = valueFactories.getLongFactory();
+
+        // The root of the configuration repository should be converted using the configuration region
+        // to the path in the source (since we're talking directly to the source) ...
+        Path configurationRoot = pathFactory.create("/dna:repositories");
+        configurationRoot = configurationRegion.convertPathInRepositoryToPathInSource(configurationRoot, pathFactory);
+        Path repositoryNode = pathFactory.create(configurationRoot, nameFactory.create(repositoryName));
+
+        try {
+            // Get the repository node ...
+            BasicGetNodeCommand getRepository = new BasicGetNodeCommand(repositoryNode);
+
+            // Get the regions for the repository ...
+            Path regionsNode = pathFactory.create(repositoryNode, nameFactory.create("dna:regions"));
+            BasicGetChildrenCommand getRegions = new BasicGetChildrenCommand(regionsNode);
+
+            configurationConnection.execute(env, getRepository, getRegions);
+            if (getRepository.hasError()) {
+                throw new FederationException(RepositoryI18n.federatedRepositoryCannotBeFound.text(repositoryName));
+            }
+
+            // Build the commands to get each of the region branches ...
+            List<FederatedRegion> regions = new LinkedList<FederatedRegion>();
+            if (getRegions.hasNoError() && !getRegions.getChildren().isEmpty()) {
+                BasicCompositeCommand commands = new BasicCompositeCommand();
+                for (Path.Segment child : getRegions.getChildren()) {
+                    final Path pathToSource = pathFactory.create(regionsNode, child);
+                    commands.add(new BasicGetNodeCommand(pathToSource));
+                }
+                configurationConnection.execute(env, commands);
+
+                // Iterate over each region node obtained ...
+                for (GraphCommand command : commands) {
+                    BasicGetNodeCommand getRegionCommand = (BasicGetNodeCommand)command;
+                    if (getRegionCommand.hasNoError()) {
+                        FederatedRegion region = createRegion(getRegionCommand.getPath(),
+                                                              getRegionCommand.getProperties(),
+                                                              problems);
+                        if (region != null) regions.add(region);
+                    }
+                }
+            }
+
+            // Look for the default cache policy ...
+            BasicCachePolicy cachePolicy = new BasicCachePolicy();
+            Property timeToExpireProperty = getRepository.getProperties().get(nameFactory.create(CACHE_POLICY_TIME_TO_EXPIRE));
+            Property timeToCacheProperty = getRepository.getProperties().get(nameFactory.create(CACHE_POLICY_TIME_TO_CACHE));
+            if (timeToCacheProperty != null && !timeToCacheProperty.isEmpty()) {
+                cachePolicy.setTimeToCache(longFactory.create(timeToCacheProperty.getValues().next()));
+            }
+            if (timeToExpireProperty != null && !timeToExpireProperty.isEmpty()) {
+                cachePolicy.setTimeToExpire(longFactory.create(timeToExpireProperty.getValues().next()));
+            }
+            CachePolicy defaultCachePolicy = cachePolicy.isEmpty() ? null : cachePolicy.getUnmodifiable();
+            return new FederatedRepositoryConfig(repositoryName, regions, defaultCachePolicy);
+        } catch (InvalidPathException err) {
+            I18n msg = RepositoryI18n.federatedRepositoryCannotBeFound;
+            throw new FederationException(msg.text(repositoryName));
+        } catch (InterruptedException err) {
+            I18n msg = RepositoryI18n.interruptedWhileUsingFederationConfigurationRepository;
+            throw new FederationException(msg.text(repositoryName));
+        }
+
+    }
+
+    /**
+     * Instantiate the {@link FederatedRegion} described by the supplied properties.
+     * 
+     * @param path the path to the node where these properties were found; never null
+     * @param properties the properties; never null
+     * @param problems the problems container in which any problems should be reported; never null
+     * @return the region instance, or null if it could not be created
+     */
+    @SuppressWarnings( "null" )
+    protected FederatedRegion createRegion( Path path,
+                                            Map<Name, Property> properties,
+                                            Problems problems ) {
+        ValueFactories valueFactories = env.getValueFactories();
+        PathFactory pathFactory = valueFactories.getPathFactory();
+        NameFactory nameFactory = valueFactories.getNameFactory();
+        ValueFactory<String> stringFactory = valueFactories.getStringFactory();
+
+        String regionName = path.getLastSegment().getName().getLocalName();
+        Path pathInRepository = pathFactory.createRootPath();
+        Path pathInSource = pathInRepository;
+
+        // Get the classname and classpath ...
+        Property pathInRepositoryProperty = properties.get(nameFactory.create(REGION_PATH_IN_REPOSITORY_PROPERTY_NAME));
+        Property pathInSourceProperty = properties.get(nameFactory.create(REGION_PATH_IN_SOURCE_PROPERTY_NAME));
+        Property sourceNameProperty = properties.get(nameFactory.create(REGION_SOURCE_NAME));
+        if (pathInRepositoryProperty != null && !pathInRepositoryProperty.isEmpty()) {
+            pathInRepository = pathFactory.create(pathInRepositoryProperty.iterator().next());
+        }
+        if (pathInSourceProperty != null && !pathInSourceProperty.isEmpty()) {
+            pathInSource = pathFactory.create(pathInSourceProperty.iterator().next());
+        }
+        if (sourceNameProperty == null || sourceNameProperty.isEmpty()) {
+            problems.addError(RepositoryI18n.requiredPropertyIsMissingFromNode, CLASSNAME_PROPERTY_NAME, path);
+        }
+        if (problems.hasErrors()) return null;
+
+        String sourceName = stringFactory.create(sourceNameProperty.iterator().next());
+        FederatedRegion region = new FederatedRegion(regionName, pathInRepository, pathInSource, sourceName);
+        return region;
     }
 
     protected synchronized void shutdownService() {

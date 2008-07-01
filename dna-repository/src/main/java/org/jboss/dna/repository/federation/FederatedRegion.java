@@ -44,19 +44,22 @@ public class FederatedRegion implements Comparable<FederatedRegion> {
     private final Path pathInRepository;
     private final Path pathInSource;
     private final String sourceName;
+    private final String regionName;
 
     /**
      * Create a binding given a location in the repository below which the content from the named source appears.
      * 
+     * @param regionName the name of the region
      * @param pathInRepository the absolute path in the repository at which the content appears
      * @param pathInSource the path in the source defining the content
      * @param sourceName the name of the source
      * @throws IllegalArgumentException if any of the parameters is null, or if the source name is empty/blank, or if the
      *         <code>pathInRepository</code> is not {@link Path#isAbsolute() absolute}.
      */
-    public FederatedRegion( Path pathInRepository,
-                             Path pathInSource,
-                             String sourceName ) {
+    public FederatedRegion( String regionName,
+                            Path pathInRepository,
+                            Path pathInSource,
+                            String sourceName ) {
         ArgCheck.isNotNull(pathInRepository, "pathInRepository");
         ArgCheck.isNotNull(pathInSource, "pathInSource");
         ArgCheck.isNotEmpty(sourceName, "sourceName");
@@ -64,9 +67,19 @@ public class FederatedRegion implements Comparable<FederatedRegion> {
             String msg = RepositoryI18n.repositoryPathInFederationBindingIsNotAbsolute.text(pathInRepository.getString());
             throw new IllegalArgumentException(msg);
         }
+        this.regionName = regionName;
         this.pathInRepository = pathInRepository;
         this.pathInSource = pathInSource;
         this.sourceName = sourceName;
+    }
+
+    /**
+     * Get the name of this region.
+     * 
+     * @return regionName
+     */
+    public String getRegionName() {
+        return regionName;
     }
 
     /**
@@ -154,6 +167,7 @@ public class FederatedRegion implements Comparable<FederatedRegion> {
         if (obj == this) return true;
         if (obj instanceof FederatedRegion) {
             FederatedRegion that = (FederatedRegion)obj;
+            if (!this.getRegionName().equals(that.getRegionName())) return false;
             if (!this.getPathInRepository().equals(that.getPathInRepository())) return false;
             if (!this.getPathInSource().equals(that.getPathInSource())) return false;
             if (!this.getSourceName().equals(that.getSourceName())) return false;
@@ -169,7 +183,9 @@ public class FederatedRegion implements Comparable<FederatedRegion> {
      */
     public int compareTo( FederatedRegion that ) {
         if (this == that) return 0;
-        int diff = this.getPathInRepository().compareTo(that.getPathInRepository());
+        int diff = this.getRegionName().compareTo(that.getRegionName());
+        if (diff != 0) return diff;
+        diff = this.getPathInRepository().compareTo(that.getPathInRepository());
         if (diff != 0) return diff;
         diff = this.getPathInSource().compareTo(that.getPathInSource());
         if (diff != 0) return diff;
@@ -183,6 +199,15 @@ public class FederatedRegion implements Comparable<FederatedRegion> {
      */
     @Override
     public String toString() {
-        return this.getPathInRepository().toString() + " -> \"" + this.getSourceName() + "\":" + this.getPathInSource();
+        StringBuilder sb = new StringBuilder();
+        if (this.getRegionName() != null) {
+            sb.append(this.getRegionName());
+        }
+        sb.append(this.getPathInRepository());
+        sb.append(" -> \"");
+        sb.append(this.getSourceName());
+        sb.append("\":");
+        sb.append(this.getPathInSource());
+        return sb.toString();
     }
 }

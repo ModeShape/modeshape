@@ -247,17 +247,23 @@ public class RepositorySourceManager implements RepositoryConnectionFactories {
      * </p>
      * 
      * @param source the source to add
+     * @param force true if the valid source should be added even if there is an existing source with the supplied name
      * @return true if the source is added, or false if the reference is null or if there is already an existing source with the
      *         supplied name.
      */
-    public boolean addSource( RepositorySource source ) {
+    public boolean addSource( RepositorySource source,
+                              boolean force ) {
         if (source == null) return false;
         try {
             this.sourcesWriteLock.lock();
             for (RepositorySource existingSource : this.sources.values()) {
                 if (existingSource.getName().equals(source.getName())) return false;
             }
-            this.sources.put(source.getName(), source);
+            if (force) {
+                this.sources.put(source.getName(), source);
+            } else {
+                this.sources.putIfAbsent(source.getName(), source);
+            }
         } finally {
             this.sourcesWriteLock.unlock();
         }
