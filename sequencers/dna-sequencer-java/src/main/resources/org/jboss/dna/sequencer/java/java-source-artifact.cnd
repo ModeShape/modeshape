@@ -79,8 +79,8 @@
 /**
  * Annotation type
  */
-[java:annotationType] > nt:unstructured
- + java:annotation (java:normalAnnotation, java:markerAnnotation,  java:singleElementAnnotation) mandatory
+[java:annotationDeclaration] > nt:unstructured
+ + java:annotationType (java:normalAnnotation, java:markerAnnotation,  java:singleElementAnnotation) mandatory
   
 /**
  * Normal annotation e.g. @Entity(name="Customer")
@@ -93,7 +93,7 @@
  * Marker annotation e.g. @GET
  */
 [java:markerAnnotation] > nt:unstructured
- - typeName (string)
+ - java:typeName (string) mandatory
 
 /**
  * Single element annotation  e.g. @Path("/book")
@@ -183,7 +183,7 @@
  * Package declarations
  */
 [java:packageDeclaration] > nt:unstructured
- + java:annotation (java:annotationType) = java:annotationType
+ + java:annotation (java:annotationDeclaration) = java:annotationDeclaration
  - java:keyword (string)
    < 'package' 
  - java:packageName (string) mandatory 
@@ -196,29 +196,14 @@
   < 'import'
  - typeName (string) mandatory
  
-// TODO: needs to be enhance
 [java:typeImportOnDemandDeclaration] > nt:unstructured
  - keyword (string) mandatory
   < 'import'
- - packageOrTypeName (string) mandatory
-
-// TODO: needs to be enhance
-[java:singleStaticImportDeclaration] > nt:unstructured
- - single_static (string) mandatory
-  < 'import static'
  - typeName (string) mandatory
 
-// TODO: needs to be enhance
-[java:staticImportOnDemandDeclaration] > nt:unstructured
- - static_import (string) mandatory
-  < 'import static'
- - typeName (string) mandatory
- 
-[java:importDeclaration] > nt:unstructured
- + java:singleTypeImport (java:singleTypeImportDeclaration) = java:singleTypeImportDeclaration
- + java:typeImportOnDemand (java:typeImportOnDemandDeclaration) = java:typeImportOnDemandDeclaration
- + java:singleStaticImport (java:singleStaticImportDeclaration) = java:singleStaticImportDeclaration
- + java:staticImportOnDemand (java:staticImportOnDemandDeclaration) = java:staticImportOnDemandDeclaration 
+ [java:importDeclaration] > nt:unstructured
+ + java:singleImport (java:singleTypeImportDeclaration) = java:singleTypeImportDeclaration
+ + java:importOnDemand (java:typeImportOnDemandDeclaration) = java:typeImportOnDemandDeclaration
 
 /**
  * Class declaration
