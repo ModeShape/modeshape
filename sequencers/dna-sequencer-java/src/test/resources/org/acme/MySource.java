@@ -19,9 +19,10 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.acme;
+@org.acme.annotation.MyPackageAnnotation package org.acme;
 
 import org.acme.annotation.MyClassAnnotation;
+import static import java.util.*;
 
 /**
  * @author Serge Pagop
@@ -29,12 +30,17 @@ import org.acme.annotation.MyClassAnnotation;
 @MyClassAnnotation
 public class MySource {
     private int i;
-
+    private List<String> l;
     public int getI() {
         return this.i;
     }
 
     public void setI( int i ) {
         this.i = i;
+    }
+    
+    public void doSomething() {
+        l= new ArrayList<String>();
+        l.add("N1");
     }
 }
