@@ -86,6 +86,10 @@ public class JavaMetadataSequencerTest {
         assertThat(output.getPropertyValues("java:compilationUnit", "jcr:primaryType"), is(new Object[] {"java:compilationUnit"}));
         assertThat(output.getPropertyValues("java:compilationUnit/java:package/java:packageDeclaration", "java:packageName"),
                    is(new Object[] {"org.acme"}));
+        assertThat(output.getPropertyValues("java:compilationUnit/java:package/java:packageDeclaration/java:annotation/java:annotationDeclaration/java:annotationType/java:markerAnnotation",
+                                            "java:typeName"),
+                   is(new Object[] {"org.acme.annotation.MyPackageAnnotation"}));
+
     }
 
 }

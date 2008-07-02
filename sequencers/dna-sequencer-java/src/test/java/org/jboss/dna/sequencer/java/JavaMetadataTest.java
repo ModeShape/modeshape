@@ -29,11 +29,21 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.Annotation;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.MarkerAnnotation;
+import org.jboss.dna.sequencer.java.annotationmetadata.AnnotationMetadata;
+import org.jboss.dna.sequencer.java.annotationmetadata.MarkerAnnotationMetadata;
+import org.jboss.dna.sequencer.java.fieldmetadata.FieldMetadata;
+import org.jboss.dna.sequencer.java.importmetadata.ImportMetadata;
+import org.jboss.dna.sequencer.java.importmetadata.ImportOnDemandMetadata;
+import org.jboss.dna.sequencer.java.importmetadata.SingleImportMetadata;
+import org.jboss.dna.sequencer.java.packagemetadata.PackageMetadata;
+import org.jboss.dna.sequencer.java.typemetadata.TypeMetadata;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -44,12 +54,17 @@ import org.junit.Test;
 public class JavaMetadataTest {
     private File source;
     private InputStream stream;
-    JavaMetadata javaMetadata;
+    private JavaMetadata javaMetadata;
+    private ASTNode rootNode = null;
 
     @Before
     public void beforeEach() throws Exception {
         source = new File("src/test/resources/org/acme/MySource.java");
         stream = getJavaSrc(source);
+        javaMetadata = JavaMetadata.instance(stream, JavaMetadataUtil.length(stream), null, null);
+        rootNode = CompilationUnitParser.runJLS3Conversion(JavaMetadataUtil.getJavaSourceFromTheInputStream(getJavaSrc(source),
+                                                                                                            source.length(),
+                                                                                                            null), true);
 
     }
 
@@ -77,10 +92,6 @@ public class JavaMetadataTest {
 
     @Test
     public void shouldRunJLS3Conversion() throws Exception {
-        ASTNode rootNode = CompilationUnitParser.runJLS3Conversion(JavaMetadataUtil.getJavaSourceFromTheInputStream(getJavaSrc(source),
-                                                                                                                    source.length(),
-                                                                                                                    null),
-                                                                   true);
         assertThat(rootNode, is(notNullValue()));
         // Verify we get a compilation unit node and that binding are correct
         assertTrue("Not a compilation unit", rootNode.getNodeType() == ASTNode.COMPILATION_UNIT);
@@ -88,19 +99,39 @@ public class JavaMetadataTest {
 
     @Test
     public void shouldCreatePackageMetadata() throws Exception {
-        javaMetadata = JavaMetadata.instance(stream, JavaMetadataUtil.length(stream), null, null);
-        ASTNode rootNode = CompilationUnitParser.runJLS3Conversion(JavaMetadataUtil.getJavaSourceFromTheInputStream(getJavaSrc(source),
-                                                                                                                    source.length(),
-                                                                                                                    null),
-                                                                   true);
         PackageMetadata packageMetadata = javaMetadata.createPackageMetadata((CompilationUnit)rootNode);
         assertThat(packageMetadata, is(notNullValue()));
         assertThat(packageMetadata.getName(), is("org.acme"));
-        List<Annotation> annotations = packageMetadata.getAnnotations();
-        for (Annotation annotation : annotations) {
-            if (annotation instanceof MarkerAnnotation) {
-                assertThat(annotation.getTypeName().getFullyQualifiedName(), is("org.acme.annotation.MyPackageAnnotation"));
+        List<AnnotationMetadata> annotations = packageMetadata.getAnnotationMetada();
+        for (AnnotationMetadata annotationMetadata : annotations) {
+            if (annotationMetadata instanceof MarkerAnnotationMetadata) {
+                MarkerAnnotationMetadata maker = (MarkerAnnotationMetadata)annotationMetadata;
+                assertThat(maker.getName(), is("org.acme.annotation.MyPackageAnnotation"));
+
             }
         }
     }
+
+    @Test
+    public void shouldCreateImportMetadata() throws Exception {
+        List<ImportMetadata> data = javaMetadata.createImportMetadata((CompilationUnit)rootNode);
+        for (Iterator<ImportMetadata> i = data.iterator(); i.hasNext();) {
+            Object o = i.next();
+            if (o instanceof ImportOnDemandMetadata) {
+                ImportOnDemandMetadata onDemand = (ImportOnDemandMetadata)o;
+                assertThat(onDemand.getName(), is("java.util"));
+            } else {
+                SingleImportMetadata singleImport = (SingleImportMetadata)o;
+                assertThat(singleImport.getName(), is("org.acme.annotation.MyClassAnnotation"));
+            }
+
+        }
+    }
+
+    @Test
+    public void shouldCreateTopLevelTypeMetadata() throws Exception {
+        List<TypeMetadata> data = javaMetadata.createTypeMetadata((CompilationUnit)rootNode);
+        assertTrue(data.size() > 0);
+    }
+
 }
