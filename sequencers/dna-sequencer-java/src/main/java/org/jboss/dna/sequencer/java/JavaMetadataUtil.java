@@ -23,6 +23,7 @@ package org.jboss.dna.sequencer.java;
 
 import java.io.IOException;
 import java.io.InputStream;
+import org.eclipse.jdt.core.dom.Name;
 import org.eclipse.jdt.internal.compiler.util.Util;
 
 /**
@@ -54,5 +55,19 @@ public class JavaMetadataUtil {
                                                           String encoding ) throws IOException {
         char[] source = Util.getInputStreamAsCharArray(inputStream, (int)length, encoding);
         return source;
+    }
+
+    /**
+     * Get the fully qualified name from the <code>Name</code>.
+     * 
+     * @param name - the name to process.
+     * @return a FQN of the name.
+     */
+    public static String getName( Name name ) {
+        if (name != null) {
+            return name.getFullyQualifiedName();
+        }
+        final String message = "name cannot be null";
+        throw new IllegalArgumentException(message);
     }
 }

@@ -23,7 +23,14 @@ package org.jboss.dna.sequencer.java;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.List;
+import org.apache.commons.lang.StringUtils;
 import org.jboss.dna.common.monitor.ProgressMonitor;
+import org.jboss.dna.sequencer.java.annotationmetadata.AnnotationMetadata;
+import org.jboss.dna.sequencer.java.annotationmetadata.MarkerAnnotationMetadata;
+import org.jboss.dna.sequencer.java.annotationmetadata.NormalAnnotationMetadata;
+import org.jboss.dna.sequencer.java.annotationmetadata.SingleMemberAnnotationMetadata;
+import org.jboss.dna.sequencer.java.packagemetadata.PackageMetadata;
 import org.jboss.dna.spi.graph.NameFactory;
 import org.jboss.dna.spi.graph.Path;
 import org.jboss.dna.spi.graph.PathFactory;
@@ -54,10 +61,28 @@ public class JavaMetadataSequencer implements StreamSequencer {
     public static final String JAVA_PACKAGE_CHILD_NODE = "java:package";
     public static final String JAVA_PACKAGE_DECLARATION_CHILD_NODE = "java:packageDeclaration";
     public static final String JAVA_PACKAGE_NAME = "java:packageName";
+    
+    // Annnotation declaration
     public static final String JAVA_ANNOTATION_CHILD_NODE = "java:annotation";
+    public static final String JAVA_ANNOTATION_DECLARATION_CHILD_NODE = "java:annotationDeclaration";
+    public static final String JAVA_ANNOTATION_TYPE_CHILD_NODE = "java:annotationType";
+    public static final String JAVA_MARKER_ANNOTATION_CHILD_NODE = "java:markerAnnotation";
+    public static final String JAVA_NORMAL_ANNOTATION_CHILD_NODE = "java:normalAnnotation";
+    public static final String JAVA_SINGLE_ELEMENT_ANNOTATION_CHILD_NODE = "java:singleElementAnnotation";
+    public static final String JAVA_ANNOTATION_TYPE_NAME = "java:typeName";
+
+    // Import declaration
+    public static final String JAVA_IMPORT_CHILD_NODE = "java:import";
+    public static final String JAVA_IMPORT_DECLARATION_CHILD_NODE = "java:importDeclaration";
+    public static final String JAVA_SINGLE_IMPORT_CHILD_NODE = "java:singleImport";
+    public static final String JAVA_SINGLE_TYPE_IMPORT_DECLARATION_CHILD_NODE = "java:singleTypeImportDeclaration";
+    
+    public static final String JAVA_IMPORT_ON_DEMAND_CHILD_NODE = "java:importOnDemand";
+    public static final String JAVA_TYPE_IMPORT_ON_DEMAND_DECLARATION_CHILD_NODE = "java:typeImportOnDemandDeclaration";
+    public static final String JAVA_IMPORT_TYPE_NAME = "typeName";
 
     private static final String SLASH = "/";
-
+    
     /**
      * {@inheritDoc}
      * 
@@ -87,13 +112,73 @@ public class JavaMetadataSequencer implements StreamSequencer {
             output.setProperty(javaCompilationUnitNode,
                                nameFactory.create(JAVA_COMPILATION_UNIT_PRIMARY_TYPE),
                                "java:compilationUnit");
-            Path javaPackageDeclarationChildNode = pathFactory.create(JAVA_COMPILATION_UNIT_NODE + SLASH
-                                                                      + JAVA_PACKAGE_CHILD_NODE + SLASH
-                                                                      + JAVA_PACKAGE_DECLARATION_CHILD_NODE);
-            output.setProperty(javaPackageDeclarationChildNode,
-                               nameFactory.create(JAVA_PACKAGE_NAME),
-                               javaMetadata.getPackageMetadata().getName());
 
+            // Process package declaration of a unit.
+            PackageMetadata packageMetadata = javaMetadata.getPackageMetadata();
+            if (packageMetadata != null) {
+                if (StringUtils.isNotEmpty(packageMetadata.getName())) {
+                    
+                    Path javaPackageDeclarationChildNode = pathFactory.create(JAVA_COMPILATION_UNIT_NODE + SLASH
+                                                                              + JAVA_PACKAGE_CHILD_NODE + SLASH
+                                                                              + JAVA_PACKAGE_DECLARATION_CHILD_NODE);
+                    output.setProperty(javaPackageDeclarationChildNode,
+                                       nameFactory.create(JAVA_PACKAGE_NAME),
+                                       javaMetadata.getPackageMetadata().getName());
+                }
+
+                List<AnnotationMetadata> annotations = packageMetadata.getAnnotationMetada();
+                if (!annotations.isEmpty()) {
+                    for (AnnotationMetadata annotationMetadata : annotations) {
+                        if (annotationMetadata instanceof MarkerAnnotationMetadata) {
+                            MarkerAnnotationMetadata markerAnnotationMetadata = (MarkerAnnotationMetadata)annotationMetadata;
+                            Path markerAnnotationChildNode = pathFactory.create(JAVA_COMPILATION_UNIT_NODE + SLASH
+                                                                                + JAVA_PACKAGE_CHILD_NODE + SLASH
+                                                                                + JAVA_PACKAGE_DECLARATION_CHILD_NODE + SLASH
+                                                                                + JAVA_ANNOTATION_CHILD_NODE + SLASH
+                                                                                + JAVA_ANNOTATION_DECLARATION_CHILD_NODE + SLASH
+                                                                                + JAVA_ANNOTATION_TYPE_CHILD_NODE + SLASH
+                                                                                + JAVA_MARKER_ANNOTATION_CHILD_NODE);
+                            System.out.println("markerAnnotationChildNode: " + markerAnnotationChildNode.getString());
+                            output.setProperty(markerAnnotationChildNode,
+                                               nameFactory.create(JAVA_ANNOTATION_TYPE_NAME),
+                                               markerAnnotationMetadata.getName());
+                        }
+                        if (annotationMetadata instanceof SingleMemberAnnotationMetadata) {
+                            SingleMemberAnnotationMetadata singleMemberAnnotationMetadata = (SingleMemberAnnotationMetadata)annotationMetadata;
+                            Path singleMemberAnnotationChildNode = pathFactory.create(JAVA_COMPILATION_UNIT_NODE + SLASH
+                                                                                      + JAVA_PACKAGE_CHILD_NODE + SLASH
+                                                                                      + JAVA_PACKAGE_DECLARATION_CHILD_NODE
+                                                                                      + SLASH + JAVA_ANNOTATION_CHILD_NODE
+                                                                                      + SLASH
+                                                                                      + JAVA_ANNOTATION_DECLARATION_CHILD_NODE
+                                                                                      + SLASH + JAVA_ANNOTATION_TYPE_CHILD_NODE
+                                                                                      + SLASH
+                                                                                      + JAVA_SINGLE_ELEMENT_ANNOTATION_CHILD_NODE);
+                            output.setProperty(singleMemberAnnotationChildNode,
+                                               nameFactory.create(JAVA_ANNOTATION_TYPE_NAME),
+                                               singleMemberAnnotationMetadata.getName());
+                        }
+                        if (annotationMetadata instanceof NormalAnnotationMetadata) {
+                            NormalAnnotationMetadata normalAnnotationMetadata = (NormalAnnotationMetadata)annotationMetadata;
+                            Path normalAnnotationChildNode = pathFactory.create(JAVA_COMPILATION_UNIT_NODE + SLASH
+                                                                                + JAVA_PACKAGE_CHILD_NODE + SLASH
+                                                                                + JAVA_PACKAGE_DECLARATION_CHILD_NODE + SLASH
+                                                                                + JAVA_ANNOTATION_CHILD_NODE + SLASH
+                                                                                + JAVA_ANNOTATION_DECLARATION_CHILD_NODE + SLASH
+                                                                                + JAVA_ANNOTATION_TYPE_CHILD_NODE + SLASH
+                                                                                + JAVA_NORMAL_ANNOTATION_CHILD_NODE);
+                            
+                            
+                            output.setProperty(normalAnnotationChildNode,
+                                               nameFactory.create(JAVA_ANNOTATION_TYPE_NAME),
+                                               normalAnnotationMetadata.getName());
+                        }
+                    }
+                }
+            }
+
+            // Process import declarations of a unit
+            //TODO write BDD to show how the works
         }
         progressMonitor.done();
     }

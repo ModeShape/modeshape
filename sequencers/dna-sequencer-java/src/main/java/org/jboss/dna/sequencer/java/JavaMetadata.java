@@ -22,15 +22,26 @@
 package org.jboss.dna.sequencer.java;
 
 import java.io.InputStream;
-import org.eclipse.jdt.core.dom.ASTNode;
+import java.util.List;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.jboss.dna.common.monitor.ProgressMonitor;
+import org.jboss.dna.sequencer.java.importmetadata.ImportMetadata;
+import org.jboss.dna.sequencer.java.packagemetadata.PackageMetadata;
 
 /**
  * @author Serge Pagop
  */
 public class JavaMetadata extends AbstractJavaMetadata {
+    
+    /** The package representation of a compilation unit. */
     private PackageMetadata packageMetadata;
+    
+    /** All the import declarations of a compilation unit. */
+    private List<ImportMetadata> importMetadata;
+    
+    /** variables */
+    
+    /** methods */
 
     private JavaMetadata() {
     }
@@ -60,18 +71,30 @@ public class JavaMetadata extends AbstractJavaMetadata {
             return null;
         }
 
-        ASTNode rootNode = CompilationUnitParser.runJLS3Conversion(source, true);
-        javaMetadata.packageMetadata = javaMetadata.createPackageMetadata((CompilationUnit)rootNode);
+        CompilationUnit unit = (CompilationUnit)CompilationUnitParser.runJLS3Conversion(source, true);
+        if (unit != null) {
+            javaMetadata.packageMetadata = javaMetadata.createPackageMetadata(unit);
+            javaMetadata.importMetadata = javaMetadata.createImportMetadata(unit);
+        }
+
         return javaMetadata;
     }
 
     /**
-     * Gets the PackageMetadata.
+     * Gets the <code>PackageMetadata</code>.
      * 
-     * @return the packageMetadata
+     * @return the PackageMetadata or null if there is not package declaration for the unit.
      */
     public final PackageMetadata getPackageMetadata() {
         return packageMetadata;
     }
 
+    /**
+     * Gets a list of <code>ImportMetadata</code>.
+     * 
+     * @return all the importMetadata of this unit if there is one.
+     */
+    public List<ImportMetadata> getImportMetadata() {
+        return importMetadata;
+    }
 }
