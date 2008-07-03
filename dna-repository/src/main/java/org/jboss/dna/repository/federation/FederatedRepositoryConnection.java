@@ -22,10 +22,12 @@
 package org.jboss.dna.repository.federation;
 
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 import javax.transaction.xa.XAResource;
 import net.jcip.annotations.ThreadSafe;
 import org.jboss.dna.repository.RepositoryI18n;
 import org.jboss.dna.spi.cache.CachePolicy;
+import org.jboss.dna.spi.graph.commands.CompositeCommand;
 import org.jboss.dna.spi.graph.commands.GraphCommand;
 import org.jboss.dna.spi.graph.connection.ExecutionEnvironment;
 import org.jboss.dna.spi.graph.connection.RepositoryConnection;
@@ -39,7 +41,6 @@ import org.jboss.dna.spi.graph.connection.RepositorySourceListener;
 public class FederatedRepositoryConnection implements RepositoryConnection {
 
     protected static final RepositorySourceListener NO_OP_LISTENER = new RepositorySourceListener() {
-
         public void notify( String sourceName,
                             Object... events ) {
             // do nothing
@@ -47,15 +48,17 @@ public class FederatedRepositoryConnection implements RepositoryConnection {
     };
 
     private final FederatedRepository repository;
-    private final FederatedRepositorySource source;
-    private RepositorySourceListener listener = NO_OP_LISTENER;
+    private final String sourceName;
+    private final AtomicReference<RepositorySourceListener> listener;
 
     protected FederatedRepositoryConnection( FederatedRepository repository,
-                                             FederatedRepositorySource source ) {
-        assert source != null;
+                                             String sourceName ) {
+        assert sourceName != null;
         assert repository != null;
-        this.source = source;
+        this.sourceName = sourceName;
         this.repository = repository;
+        this.listener = new AtomicReference<RepositorySourceListener>(NO_OP_LISTENER);
+        this.repository.register(this);
     }
 
     /**
@@ -66,17 +69,10 @@ public class FederatedRepositoryConnection implements RepositoryConnection {
     }
 
     /**
-     * @return source
-     */
-    protected FederatedRepositorySource getRepositorySource() {
-        return this.source;
-    }
-
-    /**
      * {@inheritDoc}
      */
     public String getSourceName() {
-        return this.source.getName();
+        return this.sourceName;
     }
 
     /**
@@ -97,9 +93,9 @@ public class FederatedRepositoryConnection implements RepositoryConnection {
      * {@inheritDoc}
      */
     public void setListener( RepositorySourceListener listener ) {
-        RepositorySourceListener oldListener = this.listener;
-        this.listener = listener != null ? listener : NO_OP_LISTENER;
-        this.repository.addListener(this.listener);
+        if (listener == null) listener = NO_OP_LISTENER;
+        RepositorySourceListener oldListener = this.listener.getAndSet(listener);
+        this.repository.addListener(listener);
         if (oldListener != NO_OP_LISTENER) {
             this.repository.removeListener(oldListener);
         }
@@ -123,8 +119,22 @@ public class FederatedRepositoryConnection implements RepositoryConnection {
         }
         if (commands == null || commands.length == 0) return;
 
+        FederatedRepositoryConfig config = this.repository.getConfiguration();
         for (GraphCommand command : commands) {
             if (command == null) continue;
+            executeCommand(env, command, config);
+        }
+    }
+
+    protected void executeCommand( ExecutionEnvironment env,
+                                   GraphCommand command,
+                                   FederatedRepositoryConfig config ) {
+        if (command instanceof CompositeCommand) {
+            CompositeCommand composite = (CompositeCommand)command;
+            for (GraphCommand nestedCommand : composite) {
+                if (nestedCommand == null) continue;
+                executeCommand(env, nestedCommand, config);
+            }
         }
     }
 
@@ -132,7 +142,11 @@ public class FederatedRepositoryConnection implements RepositoryConnection {
      * {@inheritDoc}
      */
     public void close() {
-        this.repository.removeListener(this.listener);
+        try {
+            this.repository.removeListener(this.listener.get());
+        } finally {
+            this.repository.unregister(this);
+        }
     }
 
 }

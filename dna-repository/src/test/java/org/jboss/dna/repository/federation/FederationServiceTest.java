@@ -35,6 +35,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import java.util.concurrent.TimeUnit;
 import org.jboss.dna.common.component.ClassLoaderFactory;
+import org.jboss.dna.common.util.Logger;
 import org.jboss.dna.repository.services.ServiceAdministrator;
 import org.jboss.dna.spi.graph.NamespaceRegistry;
 import org.jboss.dna.spi.graph.Path;
@@ -103,8 +104,9 @@ public class FederationServiceTest {
     @After
     public void afterEach() throws Exception {
         service.getAdministrator().shutdown();
-        service.getAdministrator().awaitTermination(2, TimeUnit.SECONDS);
+        service.getAdministrator().awaitTermination(4, TimeUnit.SECONDS);
         SimpleRepository.shutdownAll();
+        Logger.getLogger(getClass()).trace("");
     }
 
     @Test

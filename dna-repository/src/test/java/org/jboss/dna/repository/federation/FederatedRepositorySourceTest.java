@@ -50,6 +50,7 @@ import org.mockito.MockitoAnnotations.Mock;
 public class FederatedRepositorySourceTest {
 
     private FederatedRepositorySource source;
+    @Mock
     private FederatedRepositoryConnection connection;
     @Mock
     private FederatedRepository repository;
@@ -75,18 +76,17 @@ public class FederatedRepositorySourceTest {
 
     @Test
     public void shouldCreateConnectionsByAuthenticateUsingFederationRepository() throws Exception {
-        stub(repository.authenticate(source.getUsername(), source.getCredentials())).toReturn(true);
+        stub(repository.createConnection(source, source.getUsername(), source.getCredentials())).toReturn(connection);
         stub(service.getRepository(source.getRepositoryName())).toReturn(repository);
         connection = (FederatedRepositoryConnection)source.getConnection();
-        assertThat(connection, is(notNullValue()));
-        assertThat(connection.getRepository(), is(sameInstance(repository)));
-        verify(repository, times(1)).authenticate(source.getUsername(), source.getCredentials());
+        assertThat(connection, is(sameInstance(connection)));
+        verify(repository, times(1)).createConnection(source, source.getUsername(), source.getCredentials());
         verify(service, times(1)).getRepository(source.getRepositoryName());
     }
 
     @Test( expected = RepositorySourceException.class )
     public void shouldNotCreateConnectionWhenAuthenticationFails() throws Exception {
-        stub(repository.authenticate(source.getUsername(), source.getCredentials())).toReturn(false);
+        stub(repository.createConnection(source, source.getUsername(), source.getCredentials())).toReturn(null);
         stub(service.getRepository(source.getRepositoryName())).toReturn(repository);
         connection = (FederatedRepositoryConnection)source.getConnection();
     }

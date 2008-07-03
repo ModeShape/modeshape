@@ -31,6 +31,7 @@ import javax.naming.Reference;
 import javax.naming.StringRefAddr;
 import javax.naming.spi.ObjectFactory;
 import net.jcip.annotations.ThreadSafe;
+import org.jboss.dna.common.i18n.I18n;
 import org.jboss.dna.common.util.ArgCheck;
 import org.jboss.dna.repository.RepositoryI18n;
 import org.jboss.dna.spi.graph.connection.RepositoryConnection;
@@ -64,9 +65,8 @@ public class FederatedRepositorySource implements RepositorySource {
     private String credentials;
 
     /**
-     * Create a new instance of the source, which must still be properly initialized with a
-     * {@link #setRepositoryName(String) repository name} and a reference to the
-     * {@link #setFederationService(FederationService) federation service}.
+     * Create a new instance of the source, which must still be properly initialized with a {@link #setRepositoryName(String)
+     * repository name} and a reference to the {@link #setFederationService(FederationService) federation service}.
      */
     public FederatedRepositorySource() {
     }
@@ -122,19 +122,19 @@ public class FederatedRepositorySource implements RepositorySource {
         // Find the repository ...
         FederatedRepository repository = federationService.getRepository(this.repositoryName);
         if (repository == null) {
-            throw new RepositorySourceException(
-                                                RepositoryI18n.unableToCreateConnectionToFederatedRepository.text(this.repositoryName));
+            I18n msg = RepositoryI18n.unableToCreateConnectionToFederatedRepository;
+            throw new RepositorySourceException(msg.text(this.repositoryName));
         }
         // Authenticate the user ...
         String username = this.username;
         Object credentials = this.credentials;
-        if (!repository.authenticate(username, credentials)) {
-            throw new RepositorySourceException(
-                                                RepositoryI18n.unableToAuthenticateConnectionToFederatedRepository.text(this.repositoryName,
-                                                                                                                        username));
+        RepositoryConnection connection = repository.createConnection(this, username, credentials);
+        if (connection == null) {
+            I18n msg = RepositoryI18n.unableToAuthenticateConnectionToFederatedRepository;
+            throw new RepositorySourceException(msg.text(this.repositoryName, username));
         }
         // Return the new connection ...
-        return new FederatedRepositoryConnection(repository, this);
+        return connection;
     }
 
     /**

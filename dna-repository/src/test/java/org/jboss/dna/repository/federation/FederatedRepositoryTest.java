@@ -28,6 +28,7 @@ import static org.junit.Assert.assertThat;
 import static org.junit.matchers.JUnitMatchers.hasItems;
 import org.jboss.dna.spi.graph.connection.BasicExecutionEnvironment;
 import org.jboss.dna.spi.graph.connection.ExecutionEnvironment;
+import org.jboss.dna.spi.graph.connection.RepositoryConnectionFactories;
 import org.jboss.dna.spi.graph.connection.RepositorySourceListener;
 import org.junit.Before;
 import org.junit.Test;
@@ -141,6 +142,11 @@ public class FederatedRepositoryTest {
     public void shouldHaveConfigurationAfterInitialization() {
         assertThat(repository.getConfiguration(), is(notNullValue()));
         assertThat(repository.getConfiguration(), is(sameInstance(config)));
+    }
+
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldNotAllowSettingConfigurationToNull() {
+        repository.setConfiguration(null);
     }
 
 }

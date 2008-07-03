@@ -23,7 +23,10 @@ package org.jboss.dna.repository.federation;
 
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import net.jcip.annotations.ThreadSafe;
 import org.jboss.dna.common.util.ArgCheck;
 import org.jboss.dna.repository.RepositoryI18n;
@@ -31,6 +34,7 @@ import org.jboss.dna.repository.services.AbstractServiceAdministrator;
 import org.jboss.dna.repository.services.ServiceAdministrator;
 import org.jboss.dna.spi.graph.connection.ExecutionEnvironment;
 import org.jboss.dna.spi.graph.connection.RepositoryConnection;
+import org.jboss.dna.spi.graph.connection.RepositoryConnectionFactories;
 import org.jboss.dna.spi.graph.connection.RepositorySource;
 import org.jboss.dna.spi.graph.connection.RepositorySourceListener;
 
@@ -96,6 +100,9 @@ public class FederatedRepository {
     private final ExecutionEnvironment env;
     private final RepositoryConnectionFactories connectionFactories;
     private FederatedRepositoryConfig config;
+    private final AtomicInteger openConnections = new AtomicInteger(0);
+    private final CountDownLatch shutdownLatch = new CountDownLatch(1);
+    private final AtomicBoolean shutdownRequested = new AtomicBoolean(false);
     private final CopyOnWriteArrayList<RepositorySourceListener> listeners = new CopyOnWriteArrayList<RepositorySourceListener>();
 
     /**
@@ -154,18 +161,16 @@ public class FederatedRepository {
     /**
      * Utility method called by the administrator.
      */
-    protected void startRepository() {
-        // Look for the sources in the repository, creating any that are missing
-        // Look for the
+    protected synchronized void startRepository() {
         // Do not establish connections to the sources; these will be established as needed
-
     }
 
     /**
      * Utility method called by the administrator.
      */
-    protected void shutdownRepository() {
-        // Connections to this repository check before doing anything with this, so no need to do anything to them ...
+    protected synchronized void shutdownRepository() {
+        this.shutdownRequested.set(true);
+        if (this.openConnections.get() <= 0) shutdownLatch.countDown();
     }
 
     /**
@@ -173,37 +178,23 @@ public class FederatedRepository {
      * 
      * @param timeout
      * @param unit
-     * @return true if all pools were terminated in the supplied time (or were already terminated), or false if the timeout
-     *         occurred before all the connections were closed
+     * @return true if all connections open at the time this method is called were {@link RepositoryConnection#close() closed} in
+     *         the supplied time, or false if the timeout occurred before all the connections were closed
      * @throws InterruptedException
      */
     protected boolean awaitTermination( long timeout,
                                         TimeUnit unit ) throws InterruptedException {
-        return true;
-    }
-
-    /**
-     * Returns true if this federated repository is in the process of terminating after {@link ServiceAdministrator#shutdown()}
-     * has been called on the {@link #getAdministrator() administrator}, but the federated repository has connections that have
-     * not yet normally been {@link RepositoryConnection#close() closed}. This method may be useful for debugging. A return of
-     * <tt>true</tt> reported a sufficient period after shutdown may indicate that connection users have ignored or suppressed
-     * interruption, causing this repository not to properly terminate.
-     * 
-     * @return true if terminating but not yet terminated, or false otherwise
-     * @see #isTerminated()
-     */
-    public boolean isTerminating() {
-        return false;
+        // Await until all connections have been closed, or until the timeout occurs
+        return shutdownLatch.await(timeout, unit);
     }
 
     /**
      * Return true if this federated repository has completed its termination and no longer has any open connections.
      * 
      * @return true if terminated, or false otherwise
-     * @see #isTerminating()
      */
-    public boolean isTerminated() {
-        return false;
+    protected boolean isTerminated() {
+        return this.openConnections.get() != 0;
     }
 
     /**
@@ -245,13 +236,15 @@ public class FederatedRepository {
     /**
      * Authenticate the supplied username with the supplied credentials, and return whether authentication was successful.
      * 
+     * @param source the {@link RepositorySource} that should be affiliated with the resulting connection
      * @param username the username
      * @param credentials the credentials
-     * @return true if authentication succeeded, or false otherwise
+     * @return the repository connection if authentication succeeded, or null otherwise
      */
-    public boolean authenticate( String username,
-                                 Object credentials ) {
-        return true;
+    public RepositoryConnection createConnection( RepositorySource source,
+                                                  String username,
+                                                  Object credentials ) {
+        return new FederatedRepositoryConnection(this, source.getName());
     }
 
     /**
@@ -277,6 +270,28 @@ public class FederatedRepository {
     public void setConfiguration( FederatedRepositoryConfig config ) {
         ArgCheck.isNotNull(config, "config");
         this.config = config;
+    }
+
+    /**
+     * Called by {@link FederatedRepositoryConnection#FederatedRepositoryConnection(FederatedRepository, String)
+     * FederatedRepositoryConnection constructor}.
+     * 
+     * @param federatedRepositoryConnection
+     */
+    /*package*/void register( FederatedRepositoryConnection federatedRepositoryConnection ) {
+        openConnections.incrementAndGet();
+    }
+
+    /**
+     * Called by {@link FederatedRepositoryConnection#close()}.
+     * 
+     * @param federatedRepositoryConnection
+     */
+    /*package*/void unregister( FederatedRepositoryConnection federatedRepositoryConnection ) {
+        if (openConnections.decrementAndGet() <= 0 && shutdownRequested.get()) {
+            // Last connection, so turn out the lights ...
+            shutdownLatch.countDown();
+        }
     }
 
 }

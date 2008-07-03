@@ -19,9 +19,8 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.jboss.dna.repository.federation;
+package org.jboss.dna.spi.graph.connection;
 
-import org.jboss.dna.spi.graph.connection.RepositoryConnectionFactory;
 
 /**
  * @author Randall Hauch

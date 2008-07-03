@@ -59,21 +59,12 @@ public class FederatedRepositoryConnectionTest {
         sourceName = "Source X";
         stub(source.getName()).toReturn(sourceName);
         stub(repository.getAdministrator()).toReturn(repositoryAdmin);
-        connection = new FederatedRepositoryConnection(repository, source);
+        connection = new FederatedRepositoryConnection(repository, sourceName);
     }
 
     @Test
-    public void shouldHaveSourceAndRepository() {
+    public void shouldHaveRepository() {
         assertThat(connection.getRepository(), is(repository));
-        assertThat(connection.getRepositorySource(), is(source));
-    }
-
-    @Test
-    public void shouldGetSourceNameFromSource() {
-        for (int i = 0; i != 10; ++i) {
-            assertThat(connection.getSourceName(), is(sourceName));
-        }
-        verify(source, times(10)).getName();
     }
 
     @Test

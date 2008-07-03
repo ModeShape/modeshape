@@ -101,6 +101,7 @@ public class FederationService implements AdministeredService {
         @Override
         protected void doShutdown( State fromState ) {
             super.doShutdown(fromState);
+            FederationService.this.shutdownService();
         }
 
         /**

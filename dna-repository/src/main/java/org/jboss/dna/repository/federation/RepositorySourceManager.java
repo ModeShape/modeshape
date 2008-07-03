@@ -32,6 +32,7 @@ import org.jboss.dna.repository.RepositoryI18n;
 import org.jboss.dna.repository.services.AbstractServiceAdministrator;
 import org.jboss.dna.repository.services.ServiceAdministrator;
 import org.jboss.dna.spi.graph.connection.RepositoryConnection;
+import org.jboss.dna.spi.graph.connection.RepositoryConnectionFactories;
 import org.jboss.dna.spi.graph.connection.RepositoryConnectionFactory;
 import org.jboss.dna.spi.graph.connection.RepositoryConnectionPool;
 import org.jboss.dna.spi.graph.connection.RepositorySource;
@@ -331,7 +332,7 @@ public class RepositorySourceManager implements RepositoryConnectionFactories {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.repository.federation.RepositoryConnectionFactories#getConnectionFactory(java.lang.String)
+     * @see org.jboss.dna.spi.graph.connection.RepositoryConnectionFactories#getConnectionFactory(java.lang.String)
      */
     public RepositoryConnectionFactory getConnectionFactory( String sourceName ) {
         RepositoryConnectionFactory result = this.sources.get(sourceName);
