@@ -213,7 +213,8 @@
  */
 [java:normalClassDeclaration] > nt:unstructured
  - java:description (string)
- - java:modifier = 'public'
+ - java:modifier (string)
+  < 'public'
  - java:declaredAs (string) 
   < 'abstract', 'final'
  - java:name (string) mandatory
