@@ -23,6 +23,7 @@ package org.jboss.dna.sequencer.java;
 
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import java.io.File;
@@ -31,19 +32,18 @@ import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Set;
+import java.util.Map;
 import org.eclipse.jdt.core.dom.ASTNode;
-import org.eclipse.jdt.core.dom.Annotation;
 import org.eclipse.jdt.core.dom.CompilationUnit;
-import org.eclipse.jdt.core.dom.MarkerAnnotation;
-import org.jboss.dna.sequencer.java.annotationmetadata.AnnotationMetadata;
-import org.jboss.dna.sequencer.java.annotationmetadata.MarkerAnnotationMetadata;
-import org.jboss.dna.sequencer.java.fieldmetadata.FieldMetadata;
-import org.jboss.dna.sequencer.java.importmetadata.ImportMetadata;
-import org.jboss.dna.sequencer.java.importmetadata.ImportOnDemandMetadata;
-import org.jboss.dna.sequencer.java.importmetadata.SingleImportMetadata;
-import org.jboss.dna.sequencer.java.packagemetadata.PackageMetadata;
-import org.jboss.dna.sequencer.java.typemetadata.TypeMetadata;
+import org.jboss.dna.sequencer.java.metadata.AnnotationMetadata;
+import org.jboss.dna.sequencer.java.metadata.ClassMetadata;
+import org.jboss.dna.sequencer.java.metadata.ImportMetadata;
+import org.jboss.dna.sequencer.java.metadata.ImportOnDemandMetadata;
+import org.jboss.dna.sequencer.java.metadata.JavaMetadata;
+import org.jboss.dna.sequencer.java.metadata.MarkerAnnotationMetadata;
+import org.jboss.dna.sequencer.java.metadata.PackageMetadata;
+import org.jboss.dna.sequencer.java.metadata.SingleImportMetadata;
+import org.jboss.dna.sequencer.java.metadata.TypeMetadata;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -132,6 +132,27 @@ public class JavaMetadataTest {
     public void shouldCreateTopLevelTypeMetadata() throws Exception {
         List<TypeMetadata> data = javaMetadata.createTypeMetadata((CompilationUnit)rootNode);
         assertTrue(data.size() > 0);
+        for (TypeMetadata typeMetadata : data) {
+            // meta data of a top level class
+            if (typeMetadata instanceof ClassMetadata) {
+                ClassMetadata classMetadata = (ClassMetadata)typeMetadata;
+                assertThat(classMetadata.getName(), is("MySource"));
+                // modifiers of the top level class 
+                Map<Integer, String> modifiers = classMetadata.getModifiers();
+                assertNotNull(modifiers);
+                assertTrue(!modifiers.isEmpty());
+                assertThat(modifiers.get(ClassMetadata.PUBLIC_MODIFIER), is("public"));
+                // annotations of the top level class
+                List<AnnotationMetadata> annotations = classMetadata.getAnnotationMetadata();
+                for (AnnotationMetadata annotationMetadata : annotations) {
+                    if (annotationMetadata instanceof MarkerAnnotationMetadata) {
+                        MarkerAnnotationMetadata marker = (MarkerAnnotationMetadata)annotationMetadata;
+                        assertNotNull(marker);
+                        assertThat(marker.getName(), is("MyClassAnnotation"));
+                    }
+                }
+            }
+        }
     }
 
 }
