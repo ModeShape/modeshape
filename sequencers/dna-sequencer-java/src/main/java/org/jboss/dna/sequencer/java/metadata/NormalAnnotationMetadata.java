@@ -19,26 +19,26 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.jboss.dna.sequencer.java.annotationmetadata;
+package org.jboss.dna.sequencer.java.metadata;
 
 
 /**
  * 
  */
-public class SingleMemberAnnotationMetadata extends AnnotationMetadata {
-    private boolean single;
+public class NormalAnnotationMetadata extends AnnotationMetadata {
+    private  boolean normal;
 
     /**
-     * @return single
+     * @return normal
      */
-    public boolean isSingle() {
-        return single;
+    public boolean isNormal() {
+        return normal;
     }
 
     /**
-     * @param single Sets single to the specified value.
+     * @param normal Sets normal to the specified value.
      */
-    public void setSingle( boolean single ) {
-        this.single = single;
+    public void setNormal( boolean normal ) {
+        this.normal = normal;
     }
 }

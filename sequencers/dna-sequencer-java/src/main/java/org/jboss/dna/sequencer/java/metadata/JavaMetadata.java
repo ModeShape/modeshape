@@ -19,14 +19,15 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.jboss.dna.sequencer.java;
+package org.jboss.dna.sequencer.java.metadata;
 
 import java.io.InputStream;
 import java.util.List;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.jboss.dna.common.monitor.ProgressMonitor;
-import org.jboss.dna.sequencer.java.importmetadata.ImportMetadata;
-import org.jboss.dna.sequencer.java.packagemetadata.PackageMetadata;
+import org.jboss.dna.sequencer.java.AbstractJavaMetadata;
+import org.jboss.dna.sequencer.java.CompilationUnitParser;
+import org.jboss.dna.sequencer.java.JavaMetadataUtil;
 
 /**
  * @author Serge Pagop

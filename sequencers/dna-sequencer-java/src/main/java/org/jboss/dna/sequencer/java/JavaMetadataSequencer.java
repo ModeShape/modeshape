@@ -26,11 +26,12 @@ import java.io.InputStream;
 import java.util.List;
 import org.apache.commons.lang.StringUtils;
 import org.jboss.dna.common.monitor.ProgressMonitor;
-import org.jboss.dna.sequencer.java.annotationmetadata.AnnotationMetadata;
-import org.jboss.dna.sequencer.java.annotationmetadata.MarkerAnnotationMetadata;
-import org.jboss.dna.sequencer.java.annotationmetadata.NormalAnnotationMetadata;
-import org.jboss.dna.sequencer.java.annotationmetadata.SingleMemberAnnotationMetadata;
-import org.jboss.dna.sequencer.java.packagemetadata.PackageMetadata;
+import org.jboss.dna.sequencer.java.metadata.AnnotationMetadata;
+import org.jboss.dna.sequencer.java.metadata.JavaMetadata;
+import org.jboss.dna.sequencer.java.metadata.MarkerAnnotationMetadata;
+import org.jboss.dna.sequencer.java.metadata.NormalAnnotationMetadata;
+import org.jboss.dna.sequencer.java.metadata.PackageMetadata;
+import org.jboss.dna.sequencer.java.metadata.SingleMemberAnnotationMetadata;
 import org.jboss.dna.spi.graph.NameFactory;
 import org.jboss.dna.spi.graph.Path;
 import org.jboss.dna.spi.graph.PathFactory;
@@ -138,7 +139,6 @@ public class JavaMetadataSequencer implements StreamSequencer {
                                                                                 + JAVA_ANNOTATION_DECLARATION_CHILD_NODE + SLASH
                                                                                 + JAVA_ANNOTATION_TYPE_CHILD_NODE + SLASH
                                                                                 + JAVA_MARKER_ANNOTATION_CHILD_NODE);
-                            System.out.println("markerAnnotationChildNode: " + markerAnnotationChildNode.getString());
                             output.setProperty(markerAnnotationChildNode,
                                                nameFactory.create(JAVA_ANNOTATION_TYPE_NAME),
                                                markerAnnotationMetadata.getName());

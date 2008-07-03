@@ -19,11 +19,32 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.jboss.dna.sequencer.java.typemetadata;
+package org.jboss.dna.sequencer.java.metadata;
+
 
 /**
- * @author Serge Pagop
+ * Serge Pagop
  */
-public class InterfaceMetadata extends TypeMetadata {
+public class SingleImportMetadata extends ImportMetadata {
+
+    /**
+     * {@inheritDoc}
+     *
+     * @see org.jboss.dna.sequencer.java.metadata.ImportMetadata#isOnDemand()
+     */
+    @Override
+    protected boolean isOnDemand() {
+        return false;
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @see org.jboss.dna.sequencer.java.metadata.ImportMetadata#isSingle()
+     */
+    @Override
+    protected boolean isSingle() {
+        return true;
+    }
 
 }

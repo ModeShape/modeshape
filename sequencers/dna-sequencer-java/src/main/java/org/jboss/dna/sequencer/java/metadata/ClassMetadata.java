@@ -19,26 +19,11 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.jboss.dna.sequencer.java.annotationmetadata;
-
+package org.jboss.dna.sequencer.java.metadata;
 
 /**
- * 
+ * @author Serge Pagop
  */
-public class MarkerAnnotationMetadata extends AnnotationMetadata {
-    private boolean marker;
+public class ClassMetadata extends TypeMetadata {
 
-    /**
-     * @return marker
-     */
-    public boolean isMarker() {
-        return marker;
-    }
-
-    /**
-     * @param marker Sets marker to the specified value.
-     */
-    public void setMarker( boolean marker ) {
-        this.marker = marker;
-    }
 }

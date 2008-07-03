@@ -19,31 +19,11 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.jboss.dna.sequencer.java.typemetadata;
+package org.jboss.dna.sequencer.java.metadata;
 
 /**
  * @author Serge Pagop
  */
-public class TypeMetadata {
+public class InterfaceMetadata extends TypeMetadata {
 
-    /** The name. */
-    private String name;
-
-    /**
-     * Get the name.
-     * 
-     * @return the name.
-     */
-    public String getName() {
-        return name;
-    }
-
-    /**
-     * Set the name.
-     * 
-     * @param name Sets name to the specified value.
-     */
-    public void setName( String name ) {
-        this.name = name;
-    }
 }

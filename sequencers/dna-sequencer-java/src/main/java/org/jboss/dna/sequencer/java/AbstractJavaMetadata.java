@@ -23,26 +23,33 @@ package org.jboss.dna.sequencer.java;
 
 import java.util.ArrayList;
 import java.util.List;
+import org.eclipse.jdt.core.dom.AbstractTypeDeclaration;
 import org.eclipse.jdt.core.dom.Annotation;
+import org.eclipse.jdt.core.dom.AnnotationTypeDeclaration;
 import org.eclipse.jdt.core.dom.CompilationUnit;
+import org.eclipse.jdt.core.dom.EnumDeclaration;
 import org.eclipse.jdt.core.dom.ImportDeclaration;
 import org.eclipse.jdt.core.dom.MarkerAnnotation;
+import org.eclipse.jdt.core.dom.Modifier;
 import org.eclipse.jdt.core.dom.NormalAnnotation;
 import org.eclipse.jdt.core.dom.PackageDeclaration;
 import org.eclipse.jdt.core.dom.SingleMemberAnnotation;
 import org.eclipse.jdt.core.dom.TypeDeclaration;
-import org.jboss.dna.sequencer.java.annotationmetadata.MarkerAnnotationMetadata;
-import org.jboss.dna.sequencer.java.annotationmetadata.NormalAnnotationMetadata;
-import org.jboss.dna.sequencer.java.annotationmetadata.SingleMemberAnnotationMetadata;
-import org.jboss.dna.sequencer.java.importmetadata.ImportMetadata;
-import org.jboss.dna.sequencer.java.importmetadata.ImportOnDemandMetadata;
-import org.jboss.dna.sequencer.java.importmetadata.SingleImportMetadata;
-import org.jboss.dna.sequencer.java.packagemetadata.PackageMetadata;
-import org.jboss.dna.sequencer.java.typemetadata.ClassMetadata;
-import org.jboss.dna.sequencer.java.typemetadata.InterfaceMetadata;
-import org.jboss.dna.sequencer.java.typemetadata.TypeMetadata;
+import org.jboss.dna.sequencer.java.metadata.ClassMetadata;
+import org.jboss.dna.sequencer.java.metadata.ImportMetadata;
+import org.jboss.dna.sequencer.java.metadata.ImportOnDemandMetadata;
+import org.jboss.dna.sequencer.java.metadata.InterfaceMetadata;
+import org.jboss.dna.sequencer.java.metadata.MarkerAnnotationMetadata;
+import org.jboss.dna.sequencer.java.metadata.NormalAnnotationMetadata;
+import org.jboss.dna.sequencer.java.metadata.PackageMetadata;
+import org.jboss.dna.sequencer.java.metadata.SingleImportMetadata;
+import org.jboss.dna.sequencer.java.metadata.SingleMemberAnnotationMetadata;
+import org.jboss.dna.sequencer.java.metadata.TypeMetadata;
 
 /**
+ * Abstract definition of a <tt>JavaMetadata<tt>. This class exposes some useful methods, that can
+ * be used to create meta data of a compilation unit. Methods can also separately be used.
+ *  
  * @author Serge Pagop
  */
 public abstract class AbstractJavaMetadata {
@@ -131,18 +138,51 @@ public abstract class AbstractJavaMetadata {
     @SuppressWarnings( "unchecked" )
     protected List<TypeMetadata> createTypeMetadata( CompilationUnit unit ) {
         List<TypeMetadata> metadata = new ArrayList<TypeMetadata>();
-        List<TypeDeclaration> topLevelType = unit.types();
-        for (TypeDeclaration typeDeclaration : topLevelType) {
-            if (typeDeclaration.isInterface()) {
-                // is an interface top level type
-                InterfaceMetadata interfaceMetadata = new InterfaceMetadata();
-                interfaceMetadata.setName(JavaMetadataUtil.getName(typeDeclaration.getName()));
-                metadata.add(interfaceMetadata);
-            } else {
-                // is a class top level type
-                ClassMetadata classMetadata = new ClassMetadata();
-                classMetadata.setName(JavaMetadataUtil.getName(typeDeclaration.getName()));
-                metadata.add(classMetadata);
+        List<AbstractTypeDeclaration> topLevelType = unit.types();
+        for (AbstractTypeDeclaration abstractTypeDeclaration : topLevelType) {
+
+            // process TypeDeclaration (class, interface)
+            if (abstractTypeDeclaration instanceof TypeDeclaration) {
+                TypeDeclaration typeDeclaration = (TypeDeclaration)abstractTypeDeclaration;
+                if (typeDeclaration.isInterface()) {
+
+                    // is an interface top level type
+                    InterfaceMetadata interfaceMetadata = new InterfaceMetadata();
+                    interfaceMetadata.setName(JavaMetadataUtil.getName(typeDeclaration.getName()));
+                    metadata.add(interfaceMetadata);
+                } else {
+                    // is a class top level type
+                    ClassMetadata classMetadata = new ClassMetadata();
+                    classMetadata.setName(JavaMetadataUtil.getName(typeDeclaration.getName()));
+                    List modifiers = typeDeclaration.modifiers();
+                    for (Object object : modifiers) {
+                        if (object instanceof Modifier) {
+                            Modifier modifier = (Modifier)object;
+                            if (modifier.isPublic()) {
+                                classMetadata.getModifiers().put(TypeMetadata.PUBLIC_MODIFIER, modifier.getKeyword().toString());
+                            }
+                        }
+                        if (object instanceof MarkerAnnotation) {
+                            MarkerAnnotation marker = (MarkerAnnotation)object;
+                            MarkerAnnotationMetadata markerAnnotationMetadata = new MarkerAnnotationMetadata();
+                            markerAnnotationMetadata.setName(JavaMetadataUtil.getName(marker.getTypeName()));
+                            classMetadata.getAnnotationMetadata().add(markerAnnotationMetadata);
+                        }
+                    }
+                    metadata.add(classMetadata);
+                }
+            }
+
+            // process EnumDeclaration
+            if (abstractTypeDeclaration instanceof EnumDeclaration) {
+                EnumDeclaration enumDeclaration = (EnumDeclaration)abstractTypeDeclaration;
+                // TODO get infos from enum declaration and create a enum meta data object.
+            }
+
+            // process annotationTypeDeclaration
+            if (abstractTypeDeclaration instanceof AnnotationTypeDeclaration) {
+                AnnotationTypeDeclaration annotationTypeDeclaration = (AnnotationTypeDeclaration)abstractTypeDeclaration;
+                // TODO get infos from annotation type declaration and create a annotation meta data object.
             }
         }
         return metadata;

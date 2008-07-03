@@ -19,27 +19,24 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.jboss.dna.sequencer.java.fieldmetadata;
+package org.jboss.dna.sequencer.java.metadata;
 
 /**
  * @author Serge Pagop
  */
-public class FieldMetadata {
-    
-    /** The name */
+public abstract class ImportMetadata {
+
     private String name;
 
-    /**
-     * @return name
-     */
     public String getName() {
-        return name;
+        return this.name;
     }
 
-    /**
-     * @param name Sets name to the specified value.
-     */
     public void setName( String name ) {
         this.name = name;
     }
+
+    protected abstract boolean isOnDemand();
+
+    protected abstract boolean isSingle();
 }

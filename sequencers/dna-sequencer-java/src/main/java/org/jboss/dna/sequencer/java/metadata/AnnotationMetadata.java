@@ -19,32 +19,27 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.jboss.dna.sequencer.java.importmetadata;
-
+package org.jboss.dna.sequencer.java.metadata;
 
 /**
- * Serge Pagop
+ * @author Serge Pagop
  */
-public class SingleImportMetadata extends ImportMetadata {
+public abstract class AnnotationMetadata {
+    
+    private String name;
 
     /**
-     * {@inheritDoc}
-     *
-     * @see org.jboss.dna.sequencer.java.importmetadata.ImportMetadata#isOnDemand()
+     * @return name
      */
-    @Override
-    protected boolean isOnDemand() {
-        return false;
+    public String getName() {
+        return name;
     }
 
     /**
-     * {@inheritDoc}
-     *
-     * @see org.jboss.dna.sequencer.java.importmetadata.ImportMetadata#isSingle()
+     * @param name Sets name to the specified value.
      */
-    @Override
-    protected boolean isSingle() {
-        return true;
+    public void setName( String name ) {
+        this.name = name;
     }
-
+    
 }
