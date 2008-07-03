@@ -21,6 +21,7 @@
  */
 package org.jboss.dna.connector.inmemory;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -32,7 +33,22 @@ import net.jcip.annotations.NotThreadSafe;
 import org.jboss.dna.common.util.ArgCheck;
 import org.jboss.dna.spi.graph.Name;
 import org.jboss.dna.spi.graph.Path;
+import org.jboss.dna.spi.graph.Property;
+import org.jboss.dna.spi.graph.Path.Segment;
+import org.jboss.dna.spi.graph.commands.ActsOnPath;
+import org.jboss.dna.spi.graph.commands.CopyBranchCommand;
+import org.jboss.dna.spi.graph.commands.CopyNodeCommand;
+import org.jboss.dna.spi.graph.commands.CreateNodeCommand;
+import org.jboss.dna.spi.graph.commands.DeleteBranchCommand;
+import org.jboss.dna.spi.graph.commands.GetChildrenCommand;
+import org.jboss.dna.spi.graph.commands.GetPropertiesCommand;
+import org.jboss.dna.spi.graph.commands.MoveBranchCommand;
+import org.jboss.dna.spi.graph.commands.RecordBranchCommand;
+import org.jboss.dna.spi.graph.commands.SetPropertiesCommand;
+import org.jboss.dna.spi.graph.commands.executor.AbstractCommandExecutor;
+import org.jboss.dna.spi.graph.commands.executor.CommandExecutor;
 import org.jboss.dna.spi.graph.connection.ExecutionEnvironment;
+import org.jboss.dna.spi.graph.connection.RepositorySourceException;
 
 /**
  * @author Randall Hauch
@@ -263,4 +279,136 @@ public class InMemoryRepository {
         }
         return numNodesCopied;
     }
+
+    /**
+     * Get a command executor given the supplied environment and source name.
+     * 
+     * @param env the environment in which the commands are to be executed
+     * @param sourceName the name of the repository source
+     * @return the executor; never null
+     */
+    public CommandExecutor getCommandExecutor( ExecutionEnvironment env,
+                                               String sourceName ) {
+        return new Executor(env, sourceName);
+    }
+
+    protected class Executor extends AbstractCommandExecutor {
+
+        protected Executor( ExecutionEnvironment env,
+                            String sourceName ) {
+            super(env, sourceName);
+        }
+
+        @Override
+        public void execute( CreateNodeCommand command ) {
+            Path path = command.getPath();
+            Path parent = path.getAncestor();
+            // Look up the parent node, which must exist ...
+            Node parentNode = getNode(parent);
+            Node node = createNode(getEnvironment(), parentNode, path.getLastSegment().getName());
+            // Now add the properties to the supplied node ...
+            for (Property property : command.getProperties()) {
+                Name propName = property.getName();
+                if (property.size() == 0) {
+                    node.getProperties().remove(propName);
+                    continue;
+                }
+                node.getProperties().put(propName, property);
+            }
+            assert node != null;
+        }
+
+        @Override
+        public void execute( GetChildrenCommand command ) {
+            Node node = getTargetNode(command);
+            // Get the names of the children ...
+            List<Node> children = node.getChildren();
+            List<Segment> childSegments = new ArrayList<Segment>(children.size());
+            for (Node child : children) {
+                childSegments.add(child.getName());
+            }
+            command.setChildren(childSegments);
+        }
+
+        @Override
+        public void execute( GetPropertiesCommand command ) {
+            Node node = getTargetNode(command);
+            for (Property property : node.getProperties().values()) {
+                command.setProperty(property);
+            }
+        }
+
+        @Override
+        public void execute( SetPropertiesCommand command ) {
+            Node node = getTargetNode(command);
+            // Now set (or remove) the properties to the supplied node ...
+            for (Property property : command.getProperties()) {
+                Name propName = property.getName();
+                if (property.size() == 0) {
+                    node.getProperties().remove(propName);
+                    continue;
+                }
+                node.getProperties().put(propName, property);
+            }
+        }
+
+        @Override
+        public void execute( DeleteBranchCommand command ) {
+            Node node = getTargetNode(command);
+            removeNode(getEnvironment(), node);
+        }
+
+        @Override
+        public void execute( CopyNodeCommand command ) {
+            Node node = getTargetNode(command);
+            // Look up the new parent, which must exist ...
+            Path newPath = command.getNewPath();
+            Node newParent = getNode(newPath.getAncestor());
+            copyNode(getEnvironment(), node, newParent, false);
+        }
+
+        @Override
+        public void execute( CopyBranchCommand command ) {
+            Node node = getTargetNode(command);
+            // Look up the new parent, which must exist ...
+            Path newPath = command.getNewPath();
+            Node newParent = getNode(newPath.getAncestor());
+            copyNode(getEnvironment(), node, newParent, true);
+        }
+
+        @Override
+        public void execute( MoveBranchCommand command ) {
+            Node node = getTargetNode(command);
+            // Look up the new parent, which must exist ...
+            Path newPath = command.getNewPath();
+            Node newParent = getNode(newPath.getAncestor());
+            node.setParent(newParent);
+        }
+
+        @Override
+        public void execute( RecordBranchCommand command ) {
+            Node node = getTargetNode(command);
+            recordNode(command, node);
+        }
+
+        protected void recordNode( RecordBranchCommand command,
+                                   Node node ) {
+            command.record(command.getPath(), node.getProperties().values());
+            for (Node child : node.getChildren()) {
+                recordNode(command, child);
+            }
+        }
+
+        protected Node getTargetNode( ActsOnPath command ) {
+            Path path = command.getPath();
+            // Look up the node with the supplied path ...
+            Node node = InMemoryRepository.this.getNode(path);
+            if (node == null) {
+                throw new RepositorySourceException(getSourceName(), InMemoryConnectorI18n.nodeDoesNotExist.text(path));
+            }
+            return null;
+        }
+
+    }
+
 }
