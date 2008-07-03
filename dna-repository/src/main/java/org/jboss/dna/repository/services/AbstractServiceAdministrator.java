@@ -25,6 +25,7 @@ import java.util.Locale;
 import net.jcip.annotations.GuardedBy;
 import net.jcip.annotations.ThreadSafe;
 import org.jboss.dna.common.i18n.I18n;
+import org.jboss.dna.common.util.Logger;
 import org.jboss.dna.repository.RepositoryI18n;
 
 /**
@@ -38,6 +39,7 @@ public abstract class AbstractServiceAdministrator implements ServiceAdministrat
 
     private volatile State state;
     private final I18n serviceName;
+    private final Logger logger;
 
     protected AbstractServiceAdministrator( I18n serviceName,
                                             State initialState ) {
@@ -45,6 +47,7 @@ public abstract class AbstractServiceAdministrator implements ServiceAdministrat
         assert serviceName != null;
         this.state = initialState;
         this.serviceName = serviceName;
+        this.logger = Logger.getLogger(getClass());
     }
 
     /**
@@ -118,8 +121,10 @@ public abstract class AbstractServiceAdministrator implements ServiceAdministrat
             case STARTED:
                 break;
             case PAUSED:
+                logger.trace("Starting \"{0}\"", getServiceName());
                 doStart(this.state);
                 this.state = State.STARTED;
+                logger.trace("Started \"{0}\"", getServiceName());
                 break;
             case SHUTDOWN:
             case TERMINATED:
@@ -153,8 +158,10 @@ public abstract class AbstractServiceAdministrator implements ServiceAdministrat
     public synchronized ServiceAdministrator pause() {
         switch (this.state) {
             case STARTED:
+                logger.trace("Pausing \"{0}\"", getServiceName());
                 doPause(this.state);
                 this.state = State.PAUSED;
+                logger.trace("Paused \"{0}\"", getServiceName());
                 break;
             case PAUSED:
                 break;
@@ -167,8 +174,8 @@ public abstract class AbstractServiceAdministrator implements ServiceAdministrat
 
     /**
      * Implementation of the functionality to switch to the paused state. This method is only called if the state from which the
-     * service is transitioning is appropriate ({@link ServiceAdministrator.State#STARTED}). This method does nothing by
-     * default, and should be overridden if needed.
+     * service is transitioning is appropriate ({@link ServiceAdministrator.State#STARTED}). This method does nothing by default,
+     * and should be overridden if needed.
      * 
      * @param fromState the state from which this service is transitioning; never null
      * @throws IllegalStateException if the service is such that it cannot be transitioned from the supplied state
@@ -190,8 +197,10 @@ public abstract class AbstractServiceAdministrator implements ServiceAdministrat
         switch (this.state) {
             case STARTED:
             case PAUSED:
+                logger.trace("Initiating shutdown of \"{0}\"", getServiceName());
                 this.state = State.SHUTDOWN;
                 doShutdown(this.state);
+                logger.trace("Initiated shutdown of \"{0}\"", getServiceName());
                 isTerminated();
                 break;
             case SHUTDOWN:
@@ -262,6 +271,7 @@ public abstract class AbstractServiceAdministrator implements ServiceAdministrat
             case SHUTDOWN:
                 if (doCheckIsTerminated()) {
                     this.state = State.TERMINATED;
+                    logger.trace("Service \"{0}\" has terminated", getServiceName());
                     return true;
                 }
                 return false;
