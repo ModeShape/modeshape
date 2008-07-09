@@ -30,35 +30,45 @@ public class PathNotFoundException extends RuntimeException {
      */
     private static final long serialVersionUID = -3703984046286975978L;
 
+    private final Path path;
+
     /**
-     * 
+     * @param path
      */
-    public PathNotFoundException() {
+    public PathNotFoundException( Path path ) {
+        this.path = path;
     }
 
     /**
+     * @param path
      * @param message
      */
-    public PathNotFoundException( String message ) {
+    public PathNotFoundException( Path path,
+                                  String message ) {
         super(message);
-
+        this.path = path;
     }
 
     /**
+     * @param path
      * @param cause
      */
-    public PathNotFoundException( Throwable cause ) {
+    public PathNotFoundException( Path path,
+                                  Throwable cause ) {
         super(cause);
-
+        this.path = path;
     }
 
     /**
+     * @param path
      * @param message
      * @param cause
      */
-    public PathNotFoundException( String message, Throwable cause ) {
+    public PathNotFoundException( Path path,
+                                  String message,
+                                  Throwable cause ) {
         super(message, cause);
-
+        this.path = path;
     }
 
     /**
@@ -67,5 +77,14 @@ public class PathNotFoundException extends RuntimeException {
     @Override
     public String toString() {
         return super.toString();
+    }
+
+    /**
+     * Get the path that was not found
+     * 
+     * @return the path that was not found
+     */
+    public Path getPath() {
+        return path;
     }
 }

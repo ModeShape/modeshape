@@ -22,16 +22,20 @@
 package org.jboss.dna.spi.graph.commands;
 
 import org.jboss.dna.spi.graph.Path;
+import org.jboss.dna.spi.graph.PathNotFoundException;
 
 /**
  * Aspect interface for any repository command that acts upon a specific path. This aspect adds a method that can be used by the
  * recipient to obtain the path that the command applies to.
+ * 
  * @author Randall Hauch
  */
 public interface ActsOnPath {
 
     /**
-     * Get the path to which this command applies.
+     * Get the path to which this command applies. If the path does not exist, an {@link PathNotFoundException} exception should
+     * be recorded as an {@link GraphCommand#setError(Throwable) error}.
+     * 
      * @return the path; never null
      */
     Path getPath();
