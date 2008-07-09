@@ -34,6 +34,7 @@ import org.jboss.cache.Node;
 import org.jboss.dna.spi.cache.CachePolicy;
 import org.jboss.dna.spi.graph.Name;
 import org.jboss.dna.spi.graph.Path;
+import org.jboss.dna.spi.graph.PathNotFoundException;
 import org.jboss.dna.spi.graph.Property;
 import org.jboss.dna.spi.graph.PropertyFactory;
 import org.jboss.dna.spi.graph.Path.Segment;
@@ -191,7 +192,7 @@ public class JBossCacheConnection implements RepositoryConnection {
         Node<Name, Object> node = cache.getNode(fqn);
         if (node == null) {
             String nodePath = path.getString(env.getNamespaceRegistry());
-            throw new RepositorySourceException(getSourceName(), JBossCacheConnectorI18n.nodeDoesNotExist.text(nodePath));
+            throw new PathNotFoundException(path, JBossCacheConnectorI18n.nodeDoesNotExist.text(nodePath));
         }
         return node;
 

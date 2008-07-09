@@ -33,6 +33,7 @@ import net.jcip.annotations.NotThreadSafe;
 import org.jboss.dna.common.util.ArgCheck;
 import org.jboss.dna.spi.graph.Name;
 import org.jboss.dna.spi.graph.Path;
+import org.jboss.dna.spi.graph.PathNotFoundException;
 import org.jboss.dna.spi.graph.Property;
 import org.jboss.dna.spi.graph.Path.Segment;
 import org.jboss.dna.spi.graph.commands.ActsOnPath;
@@ -48,7 +49,6 @@ import org.jboss.dna.spi.graph.commands.SetPropertiesCommand;
 import org.jboss.dna.spi.graph.commands.executor.AbstractCommandExecutor;
 import org.jboss.dna.spi.graph.commands.executor.CommandExecutor;
 import org.jboss.dna.spi.graph.connection.ExecutionEnvironment;
-import org.jboss.dna.spi.graph.connection.RepositorySourceException;
 
 /**
  * @author Randall Hauch
@@ -404,7 +404,7 @@ public class InMemoryRepository {
             // Look up the node with the supplied path ...
             Node node = InMemoryRepository.this.getNode(path);
             if (node == null) {
-                throw new RepositorySourceException(getSourceName(), InMemoryConnectorI18n.nodeDoesNotExist.text(path));
+                throw new PathNotFoundException(path, InMemoryConnectorI18n.nodeDoesNotExist.text(path));
             }
             return null;
         }
