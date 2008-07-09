@@ -46,7 +46,7 @@ import org.jboss.dna.spi.graph.PathNotFoundException;
 @Immutable
 public class BasicPath implements Path {
 
-	/**
+    /**
      */
     private static final long serialVersionUID = 8488295345524209746L;
 
@@ -99,7 +99,7 @@ public class BasicPath implements Path {
         int endIndex = this.segments.size() - degree;
         if (endIndex < 0) {
             String msg = SpiI18n.pathAncestorDegreeIsInvalid.text(this.getString(), Inflector.getInstance().ordinalize(degree));
-            throw new PathNotFoundException(msg);
+            throw new PathNotFoundException(this, msg);
         }
         return subpath(0, endIndex);
     }
