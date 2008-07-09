@@ -168,4 +168,66 @@ public class ComponentLibraryTest {
         }
         assertThat(firstComponentB.getCounter(), is(10));
     }
+
+    @Test
+    public void shouldRefreshInstancesWhenCalledDirectly() {
+        library.add(configA);
+        library.add(configB);
+        List<SampleComponent> components = library.getInstances();
+        assertThat(components.size(), is(2));
+        assertThat(components.get(0), instanceOf(MockComponentA.class));
+        assertThat(components.get(1), instanceOf(MockComponentB.class));
+        MockComponentA firstInstanceA = (MockComponentA)components.get(0);
+        MockComponentB firstInstanceB = (MockComponentB)components.get(1);
+        assertThat(components.get(0), is(sameInstance((SampleComponent)firstInstanceA)));
+        assertThat(components.get(1), is(sameInstance((SampleComponent)firstInstanceB)));
+
+        // Refresh the instances ...
+        assertThat(library.refreshInstances(), is(true));
+
+        // Check that there are instances for each of the components ...
+        components = library.getInstances();
+        assertThat(components.size(), is(2));
+        assertThat(components.get(0), instanceOf(MockComponentA.class));
+        assertThat(components.get(1), instanceOf(MockComponentB.class));
+        MockComponentA secondInstanceA = (MockComponentA)components.get(0);
+        MockComponentB secondInstanceB = (MockComponentB)components.get(1);
+        assertThat(components.get(0), is(sameInstance((SampleComponent)secondInstanceA)));
+        assertThat(components.get(1), is(sameInstance((SampleComponent)secondInstanceB)));
+
+        // And check that the instances have changed ...
+        assertThat(firstInstanceA, is(not(sameInstance((SampleComponent)secondInstanceA))));
+        assertThat(firstInstanceB, is(not(sameInstance((SampleComponent)secondInstanceB))));
+    }
+
+    @Test
+    public void shouldRefreshInstancesWhenSettingClassLoaderFactory() {
+        library.add(configA);
+        library.add(configB);
+        List<SampleComponent> components = library.getInstances();
+        assertThat(components.size(), is(2));
+        assertThat(components.get(0), instanceOf(MockComponentA.class));
+        assertThat(components.get(1), instanceOf(MockComponentB.class));
+        MockComponentA firstInstanceA = (MockComponentA)components.get(0);
+        MockComponentB firstInstanceB = (MockComponentB)components.get(1);
+        assertThat(components.get(0), is(sameInstance((SampleComponent)firstInstanceA)));
+        assertThat(components.get(1), is(sameInstance((SampleComponent)firstInstanceB)));
+
+        // Set the class loader factory to the SAME instance, and this should always refresh the instances ...
+        library.setClassLoaderFactory(library.getClassLoaderFactory());
+
+        // Check that there are instances for each of the components ...
+        components = library.getInstances();
+        assertThat(components.size(), is(2));
+        assertThat(components.get(0), instanceOf(MockComponentA.class));
+        assertThat(components.get(1), instanceOf(MockComponentB.class));
+        MockComponentA secondInstanceA = (MockComponentA)components.get(0);
+        MockComponentB secondInstanceB = (MockComponentB)components.get(1);
+        assertThat(components.get(0), is(sameInstance((SampleComponent)secondInstanceA)));
+        assertThat(components.get(1), is(sameInstance((SampleComponent)secondInstanceB)));
+
+        // And check that the instances have changed ...
+        assertThat(firstInstanceA, is(not(sameInstance((SampleComponent)secondInstanceA))));
+        assertThat(firstInstanceB, is(not(sameInstance((SampleComponent)secondInstanceB))));
+    }
 }

@@ -37,11 +37,11 @@ import org.jboss.dna.common.util.ArgCheck;
 /**
  * Maintains the list of component instances for the system. This class does not actively update the component configurations, but
  * is designed to properly maintain the sequencer instances when those configurations are changed by other callers. If the
- * components are subclasses of {@link Component}, then they will be
- * {@link Component#setConfiguration(ComponentConfig) configured} with the appropriate configuration.
+ * components are subclasses of {@link Component}, then they will be {@link Component#setConfiguration(ComponentConfig)
+ * configured} with the appropriate configuration.
  * <p>
- * Therefore, this library does guarantee that the {@link #getInstances() instances} at the time they are
- * {@link #getInstances() obtained} are always reflected by the configurations.
+ * Therefore, this library does guarantee that the {@link #getInstances() instances} at the time they are {@link #getInstances()
+ * obtained} are always reflected by the configurations.
  * </p>
  * 
  * @author Randall Hauch
@@ -52,9 +52,8 @@ import org.jboss.dna.common.util.ArgCheck;
 public class ComponentLibrary<ComponentType, ConfigType extends ComponentConfig> {
 
     /**
-     * Class loader factory instance that always returns the
-     * {@link Thread#getContextClassLoader() current thread's context class loader} (if not null) or component library's class
-     * loader.
+     * Class loader factory instance that always returns the {@link Thread#getContextClassLoader() current thread's context class
+     * loader} (if not null) or component library's class loader.
      */
     public static final ClassLoaderFactory DEFAULT = new StandardClassLoaderFactory(ComponentLibrary.class.getClassLoader());
 
@@ -81,9 +80,8 @@ public class ComponentLibrary<ComponentType, ConfigType extends ComponentConfig>
 
     /**
      * Get the class loader factory that should be used to load the component classes. Unless changed, the library uses the
-     * {@link #DEFAULT default} class loader factory, which uses the
-     * {@link Thread#getContextClassLoader() current thread's context class loader} if not null or the class loader that loaded
-     * the library class.
+     * {@link #DEFAULT default} class loader factory, which uses the {@link Thread#getContextClassLoader() current thread's
+     * context class loader} if not null or the class loader that loaded the library class.
      * 
      * @return the class loader factory; never null
      * @see #setClassLoaderFactory(ClassLoaderFactory)
@@ -94,9 +92,8 @@ public class ComponentLibrary<ComponentType, ConfigType extends ComponentConfig>
 
     /**
      * Set the Maven Repository that should be used to load the sequencer classes. Unless changed, the library uses the
-     * {@link #DEFAULT default} class loader factory, which uses the
-     * {@link Thread#getContextClassLoader() current thread's context class loader} if not null or the class loader that loaded
-     * the library class.
+     * {@link #DEFAULT default} class loader factory, which uses the {@link Thread#getContextClassLoader() current thread's
+     * context class loader} if not null or the class loader that loaded the library class.
      * 
      * @param classLoaderFactory the class loader factory reference, or null if the {@link #DEFAULT default class loader factory}
      *        should be used
@@ -104,11 +101,12 @@ public class ComponentLibrary<ComponentType, ConfigType extends ComponentConfig>
      */
     public void setClassLoaderFactory( ClassLoaderFactory classLoaderFactory ) {
         this.classLoaderFactory.set(classLoaderFactory != null ? classLoaderFactory : DEFAULT);
+        refreshInstances();
     }
 
     /**
-     * Add the configuration for a sequencer, or update any existing one that represents the
-     * {@link ConfigType#equals(Object) same configuration}
+     * Add the configuration for a sequencer, or update any existing one that represents the {@link ConfigType#equals(Object) same
+     * configuration}
      * 
      * @param config the new configuration
      * @return true if the component was added, or false if there already was an existing and
@@ -143,7 +141,8 @@ public class ComponentLibrary<ComponentType, ConfigType extends ComponentConfig>
     }
 
     /**
-     * Update the configuration for a sequencer, or add it if there is no {@link ConfigType#equals(Object) matching configuration}.
+     * Update the configuration for a sequencer, or add it if there is no {@link ConfigType#equals(Object) matching configuration}
+     * .
      * 
      * @param config the updated (or new) configuration
      * @return true if the component was updated, or false if there already was an existing and
@@ -178,6 +177,29 @@ public class ComponentLibrary<ComponentType, ConfigType extends ComponentConfig>
                 return true;
             }
             return false;
+        } finally {
+            this.lock.unlock();
+        }
+    }
+
+    /**
+     * Refresh the instances by attempting to re-instantiate each registered configuration.
+     * 
+     * @return true if at least one instance was instantiated, or false if none were
+     */
+    public boolean refreshInstances() {
+        try {
+            this.lock.lock();
+            // Loop through and create new instances for each configuration ...
+            boolean found = false;
+            int index = 0;
+            for (ConfigType config : this.configs) {
+                ComponentType instance = newInstance(config);
+                found = found || instance != null;
+                this.instances.set(index, instance);
+                ++index;
+            }
+            return found;
         } finally {
             this.lock.unlock();
         }
