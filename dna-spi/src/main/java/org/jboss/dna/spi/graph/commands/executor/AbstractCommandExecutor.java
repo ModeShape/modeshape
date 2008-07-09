@@ -224,4 +224,13 @@ public abstract class AbstractCommandExecutor implements CommandExecutor {
     public void execute( RecordBranchCommand command ) throws RepositorySourceException, InterruptedException {
     }
 
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.spi.graph.commands.executor.CommandExecutor#close()
+     */
+    @SuppressWarnings( "unused" )
+    public void close() throws InterruptedException {
+    }
+
 }

@@ -400,14 +400,24 @@ public class FederationService implements AdministeredService {
             // Get the repository node ...
             BasicGetNodeCommand getRepository = new BasicGetNodeCommand(repositoryNode);
 
+            // Add a command to get the region defining the cache ...
+            Path pathToCacheRegion = pathFactory.create(repositoryNode, nameFactory.create("dna:cache"));
+            BasicGetNodeCommand getCacheRegion = new BasicGetNodeCommand(pathToCacheRegion);
+
             // Get the regions for the repository ...
             Path regionsNode = pathFactory.create(repositoryNode, nameFactory.create("dna:regions"));
             BasicGetChildrenCommand getRegions = new BasicGetChildrenCommand(regionsNode);
 
-            configurationConnection.execute(env, getRepository, getRegions);
+            configurationConnection.execute(env, getRepository, getCacheRegion, getRegions);
             if (getRepository.hasError()) {
                 throw new FederationException(RepositoryI18n.federatedRepositoryCannotBeFound.text(repositoryName));
             }
+            if (getCacheRegion.hasError()) {
+                I18n msg = RepositoryI18n.requiredNodeDoesNotExistRelativeToNode;
+                throw new FederationException(msg.text("dna:regions", configurationRoot));
+            }
+
+            FederatedRegion cacheRegion = createRegion(getCacheRegion.getPath(), getCacheRegion.getProperties(), problems);
 
             // Build the commands to get each of the region branches ...
             List<FederatedRegion> regions = new LinkedList<FederatedRegion>();
@@ -417,6 +427,7 @@ public class FederationService implements AdministeredService {
                     final Path pathToSource = pathFactory.create(regionsNode, child);
                     commands.add(new BasicGetNodeCommand(pathToSource));
                 }
+                // Now execute these commands ...
                 configurationConnection.execute(env, commands);
 
                 // Iterate over each region node obtained ...
@@ -442,7 +453,7 @@ public class FederationService implements AdministeredService {
                 cachePolicy.setTimeToExpire(longFactory.create(timeToExpireProperty.getValues().next()));
             }
             CachePolicy defaultCachePolicy = cachePolicy.isEmpty() ? null : cachePolicy.getUnmodifiable();
-            return new FederatedRepositoryConfig(repositoryName, regions, defaultCachePolicy);
+            return new FederatedRepositoryConfig(repositoryName, cacheRegion, regions, defaultCachePolicy);
         } catch (InvalidPathException err) {
             I18n msg = RepositoryI18n.federatedRepositoryCannotBeFound;
             throw new FederationException(msg.text(repositoryName));

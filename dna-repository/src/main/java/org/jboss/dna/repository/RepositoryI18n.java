@@ -121,6 +121,7 @@ public final class RepositoryI18n {
     public static I18n canceledSequencingXmlDocument;
     public static I18n warningSequencingXmlDocument;
 
+    // Federation
     public static I18n interruptedWhileConnectingToFederationConfigurationRepository;
     public static I18n interruptedWhileUsingFederationConfigurationRepository;
     public static I18n interruptedWhileClosingConnectionToFederationConfigurationRepository;
@@ -131,6 +132,7 @@ public final class RepositoryI18n {
     public static I18n unableToAuthenticateConnectionToFederatedRepository;
     public static I18n repositoryHasBeenShutDown;
     public static I18n repositoryPathInFederationBindingIsNotAbsolute;
+    public static I18n errorReadingMergePlan;
 
     static {
         try {

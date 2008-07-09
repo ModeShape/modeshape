@@ -140,4 +140,10 @@ public interface CommandExecutor {
      */
     void execute( MoveBranchCommand command ) throws RepositorySourceException, InterruptedException;
 
+    /**
+     * Close this executor, allowing it to clean up any open resources.
+     * 
+     * @throws InterruptedException if the thread is interrupted while the connection is being closed
+     */
+    void close() throws InterruptedException;
 }

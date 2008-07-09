@@ -30,8 +30,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 import net.jcip.annotations.ThreadSafe;
 import org.jboss.dna.common.util.ArgCheck;
 import org.jboss.dna.repository.RepositoryI18n;
+import org.jboss.dna.repository.federation.impl.FederatingCommandExecutor;
 import org.jboss.dna.repository.services.AbstractServiceAdministrator;
 import org.jboss.dna.repository.services.ServiceAdministrator;
+import org.jboss.dna.spi.graph.commands.executor.CommandExecutor;
 import org.jboss.dna.spi.graph.connection.ExecutionEnvironment;
 import org.jboss.dna.spi.graph.connection.RepositoryConnection;
 import org.jboss.dna.spi.graph.connection.RepositoryConnectionFactories;
@@ -100,7 +102,7 @@ public class FederatedRepository {
     private final ExecutionEnvironment env;
     private final RepositoryConnectionFactories connectionFactories;
     private FederatedRepositoryConfig config;
-    private final AtomicInteger openConnections = new AtomicInteger(0);
+    private final AtomicInteger openExecutors = new AtomicInteger(0);
     private final CountDownLatch shutdownLatch = new CountDownLatch(1);
     private final AtomicBoolean shutdownRequested = new AtomicBoolean(false);
     private final CopyOnWriteArrayList<RepositorySourceListener> listeners = new CopyOnWriteArrayList<RepositorySourceListener>();
@@ -170,7 +172,7 @@ public class FederatedRepository {
      */
     protected synchronized void shutdownRepository() {
         this.shutdownRequested.set(true);
-        if (this.openConnections.get() <= 0) shutdownLatch.countDown();
+        if (this.openExecutors.get() <= 0) shutdownLatch.countDown();
     }
 
     /**
@@ -194,7 +196,7 @@ public class FederatedRepository {
      * @return true if terminated, or false otherwise
      */
     protected boolean isTerminated() {
-        return this.openConnections.get() != 0;
+        return this.openExecutors.get() != 0;
     }
 
     /**
@@ -273,22 +275,36 @@ public class FederatedRepository {
     }
 
     /**
-     * Called by {@link FederatedRepositoryConnection#FederatedRepositoryConnection(FederatedRepository, String)
-     * FederatedRepositoryConnection constructor}.
+     * Called by
+     * {@link FederatedRepositoryConnection#execute(ExecutionEnvironment, org.jboss.dna.spi.graph.commands.GraphCommand...)}.
      * 
-     * @param federatedRepositoryConnection
+     * @param env the execution environment in which the executor will be run; may not be null
+     * @param sourceName the name of the {@link RepositorySource} that is making use of this executor; may not be null or empty
+     * @return the executor
      */
-    /*package*/void register( FederatedRepositoryConnection federatedRepositoryConnection ) {
-        openConnections.incrementAndGet();
+    protected CommandExecutor getExecutor( ExecutionEnvironment env,
+                                           String sourceName ) {
+        FederatedRepositoryConfig config = this.getConfiguration();
+        return new FederatingCommandExecutor(env, sourceName, config.getCacheRegion(), config.getRegions(),
+                                             getConnectionFactories());
+    }
+
+    /**
+     * Called by {@link FederatedRepositoryConnection#FederatedRepositoryConnection(FederatedRepository, String)}.
+     * 
+     * @param connection the connection being opened
+     */
+    /*package*/void register( FederatedRepositoryConnection connection ) {
+        openExecutors.incrementAndGet();
     }
 
     /**
      * Called by {@link FederatedRepositoryConnection#close()}.
      * 
-     * @param federatedRepositoryConnection
+     * @param connection the connection being closed
      */
-    /*package*/void unregister( FederatedRepositoryConnection federatedRepositoryConnection ) {
-        if (openConnections.decrementAndGet() <= 0 && shutdownRequested.get()) {
+    /*package*/void unregister( FederatedRepositoryConnection connection ) {
+        if (openExecutors.decrementAndGet() <= 0 && shutdownRequested.get()) {
             // Last connection, so turn out the lights ...
             shutdownLatch.countDown();
         }

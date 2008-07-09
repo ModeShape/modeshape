@@ -27,8 +27,8 @@ import javax.transaction.xa.XAResource;
 import net.jcip.annotations.ThreadSafe;
 import org.jboss.dna.repository.RepositoryI18n;
 import org.jboss.dna.spi.cache.CachePolicy;
-import org.jboss.dna.spi.graph.commands.CompositeCommand;
 import org.jboss.dna.spi.graph.commands.GraphCommand;
+import org.jboss.dna.spi.graph.commands.executor.CommandExecutor;
 import org.jboss.dna.spi.graph.connection.ExecutionEnvironment;
 import org.jboss.dna.spi.graph.connection.RepositoryConnection;
 import org.jboss.dna.spi.graph.connection.RepositorySourceException;
@@ -113,28 +113,16 @@ public class FederatedRepositoryConnection implements RepositoryConnection {
      * {@inheritDoc}
      */
     public void execute( ExecutionEnvironment env,
-                         GraphCommand... commands ) throws RepositorySourceException {
+                         GraphCommand... commands ) throws RepositorySourceException, InterruptedException {
         if (!this.repository.getAdministrator().isStarted()) {
             throw new RepositorySourceException(RepositoryI18n.repositoryHasBeenShutDown.text(this.repository.getName()));
         }
         if (commands == null || commands.length == 0) return;
 
-        FederatedRepositoryConfig config = this.repository.getConfiguration();
+        CommandExecutor executor = this.repository.getExecutor(env, sourceName);
+        assert executor != null;
         for (GraphCommand command : commands) {
-            if (command == null) continue;
-            executeCommand(env, command, config);
-        }
-    }
-
-    protected void executeCommand( ExecutionEnvironment env,
-                                   GraphCommand command,
-                                   FederatedRepositoryConfig config ) {
-        if (command instanceof CompositeCommand) {
-            CompositeCommand composite = (CompositeCommand)command;
-            for (GraphCommand nestedCommand : composite) {
-                if (nestedCommand == null) continue;
-                executeCommand(env, nestedCommand, config);
-            }
+            executor.execute(command);
         }
     }
 

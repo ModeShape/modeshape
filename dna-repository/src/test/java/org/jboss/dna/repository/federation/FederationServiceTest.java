@@ -250,6 +250,9 @@ public class FederationServiceTest {
         String fedReposPath = "/reposX/dna:repositories/fed repos/";
         configRepository.setProperty(env, fedReposPath, TIME_TO_CACHE, "10000");
         configRepository.setProperty(env, fedReposPath, TIME_TO_EXPIRE, "20000");
+        configRepository.setProperty(env, fedReposPath + "dna:cache", PATH_IN_REPOSITORY, "/ca/cb/cc");
+        configRepository.setProperty(env, fedReposPath + "dna:cache", PATH_IN_SOURCE, "/cx/cy");
+        configRepository.setProperty(env, fedReposPath + "dna:cache", SOURCE_NAME, "cache source");
         configRepository.setProperty(env, fedReposPath + "dna:regions/region1", PATH_IN_REPOSITORY, "/a/b/c");
         configRepository.setProperty(env, fedReposPath + "dna:regions/region1", PATH_IN_SOURCE, "/sx/sy");
         configRepository.setProperty(env, fedReposPath + "dna:regions/region1", SOURCE_NAME, "source A");
@@ -272,6 +275,10 @@ public class FederationServiceTest {
         assertThat(repository.getName(), is("fed repos"));
         assertThat(repository.getConfiguration().getDefaultCachePolicy().getTimeToCache(), is(10000l));
         assertThat(repository.getConfiguration().getDefaultCachePolicy().getTimeToExpire(), is(20000l));
+        assertThat(repository.getConfiguration().getCacheRegion().getRegionName(), is("cache"));
+        assertThat(repository.getConfiguration().getCacheRegion().getPathInRepository(), is(pathFactory.create("/ca/cb/cc")));
+        assertThat(repository.getConfiguration().getCacheRegion().getPathInSource(), is(pathFactory.create("/cx/cy")));
+        assertThat(repository.getConfiguration().getCacheRegion().getSourceName(), is("cache source"));
         assertThat(repository.getConfiguration().getRegions().get(0).getRegionName(), is("region1"));
         assertThat(repository.getConfiguration().getRegions().get(0).getPathInRepository(), is(pathFactory.create("/a/b/c")));
         assertThat(repository.getConfiguration().getRegions().get(0).getPathInSource(), is(pathFactory.create("/sx/sy")));

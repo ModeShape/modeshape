@@ -41,6 +41,7 @@ import org.jboss.dna.spi.graph.connection.RepositorySource;
 @Immutable
 public class FederatedRepositoryConfig {
 
+    private final FederatedRegion cacheRegion;
     private final List<FederatedRegion> regions;
     private final Problems problems;
     private final String name;
@@ -50,20 +51,27 @@ public class FederatedRepositoryConfig {
      * Create a federated repository instance, as managed by the supplied {@link FederationService}.
      * 
      * @param repositoryName the name of the repository
+     * @param cacheRegion the region used for the cache; may not be null
      * @param regions the federated regions; may not be null
      * @param defaultCachePolicy the default cache policy for this repository; may be null
      * @throws IllegalArgumentException if the name is null or is blank
      */
     public FederatedRepositoryConfig( String repositoryName,
+                                      FederatedRegion cacheRegion,
                                       Iterable<FederatedRegion> regions,
                                       CachePolicy defaultCachePolicy ) {
         ArgCheck.isNotEmpty(repositoryName, "repositoryName");
+        ArgCheck.isNotNull(cacheRegion, "cacheRegion");
         this.name = repositoryName;
         this.problems = new ThreadSafeProblems();
         this.defaultCachePolicy = defaultCachePolicy;
+        this.cacheRegion = cacheRegion;
         List<FederatedRegion> regionList = new ArrayList<FederatedRegion>();
         for (FederatedRegion region : regions) {
-            if (region != null && !regionList.contains(region)) regionList.add(region);
+            if (region == null) continue;
+            if (!regionList.contains(region)) {
+                regionList.add(region);
+            }
         }
         this.regions = Collections.unmodifiableList(regionList);
         ArgCheck.isNotEmpty(this.regions, "regions");
@@ -86,6 +94,16 @@ public class FederatedRepositoryConfig {
      */
     public Problems getProblems() {
         return problems;
+    }
+
+    /**
+     * Get the region that defines the cache for this repository. This region does not exist in the {@link #getRegions() list of
+     * source regions}.
+     * 
+     * @return the region used for caching; never null
+     */
+    public FederatedRegion getCacheRegion() {
+        return cacheRegion;
     }
 
     /**
