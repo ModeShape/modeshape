@@ -39,7 +39,40 @@ public interface GraphCommand {
      * Set the error for this command.
      * 
      * @param error the exception
+     * @see #getError()
+     * @see #hasError()
+     * @see #hasNoError()
      */
     void setError( Throwable error );
+
+    /**
+     * Get the error for this command.
+     * 
+     * @return the error, or null if there is no error
+     * @see #setError(Throwable)
+     * @see #hasError()
+     * @see #hasNoError()
+     */
+    Throwable getError();
+
+    /**
+     * Return true if this command has an {@link #getError() error}.
+     * 
+     * @return true if the command has an error, or false otherwise
+     * @see #getError()
+     * @see #setError(Throwable)
+     * @see #hasNoError()
+     */
+    boolean hasError();
+
+    /**
+     * Convenience method that is equivalent to <code>!hasError()</code>.
+     * 
+     * @return true if the command has no error, or false otherwise
+     * @see #getError()
+     * @see #setError(Throwable)
+     * @see #hasError()
+     */
+    boolean hasNoError();
 
 }

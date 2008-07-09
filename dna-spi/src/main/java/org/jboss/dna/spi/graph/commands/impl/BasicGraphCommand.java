@@ -72,12 +72,19 @@ public abstract class BasicGraphCommand implements GraphCommand {
     }
 
     /**
-     * @return error
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.spi.graph.commands.GraphCommand#getError()
      */
     public Throwable getError() {
         return error;
     }
 
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.spi.graph.commands.GraphCommand#hasError()
+     */
     public boolean hasError() {
         return error != null;
     }
