@@ -25,8 +25,7 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.Assert.assertThat;
-import org.jboss.dna.repository.sequencers.InvalidSequencerPathExpression;
-import org.jboss.dna.repository.sequencers.SequencerPathExpression;
+import org.jboss.dna.spi.graph.PathExpression;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -39,7 +38,7 @@ public class SequencerPathExpressionTest {
 
     @Before
     public void beforeEach() throws Exception {
-        expr = new SequencerPathExpression(".*", "/output");
+        expr = new SequencerPathExpression(new PathExpression(".*"), "/output");
     }
 
     @Test( expected = IllegalArgumentException.class )
@@ -102,86 +101,6 @@ public class SequencerPathExpressionTest {
         assertThat(SequencerPathExpression.compile("/a/b[0]/c[1]/d/e[2]"), is(notNullValue()));
     }
 
-    @Test
-    public void shouldNotRemoveUsedPredicates() {
-        assertThat(expr.removeUnusedPredicates("/a/b/c"), is("/a/b/c"));
-        assertThat(expr.removeUnusedPredicates("/a/b[0]/c"), is("/a/b[0]/c"));
-        assertThat(expr.removeUnusedPredicates("/a/b[1]/c"), is("/a/b[1]/c"));
-        assertThat(expr.removeUnusedPredicates("/a/b[10]/c"), is("/a/b[10]/c"));
-        assertThat(expr.removeUnusedPredicates("/a/b[100]/c"), is("/a/b[100]/c"));
-        assertThat(expr.removeUnusedPredicates("/a/b[1000]/c"), is("/a/b[1000]/c"));
-        assertThat(expr.removeUnusedPredicates("/a/b[]/c"), is("/a/b[]/c"));
-        assertThat(expr.removeUnusedPredicates("/a/b[*]/c"), is("/a/b[*]/c"));
-        assertThat(expr.removeUnusedPredicates("/a/b[1,2]/c"), is("/a/b[1,2]/c"));
-        assertThat(expr.removeUnusedPredicates("/a/b[1,2,3,4,5]/c"), is("/a/b[1,2,3,4,5]/c"));
-        assertThat(expr.removeUnusedPredicates("/a/b/c[@title]"), is("/a/b/c[@title]"));
-        assertThat(expr.removeUnusedPredicates("/a/b/c[d/e/@title]"), is("/a/b/c[d/e/@title]"));
-        assertThat(expr.removeUnusedPredicates("/a/(b/c)[(d|e)/(f|g)/@something]"), is("/a/(b/c)[(d|e)/(f|g)/@something]"));
-        // These are legal, but aren't really useful ...
-        assertThat(expr.removeUnusedPredicates("/a/b[1][2][3]/c"), is("/a/b[1][2][3]/c"));
-    }
-
-    @Test
-    public void shouldRemoveUnusedPredicates() {
-        assertThat(expr.removeUnusedPredicates("/a/b[-1]/c"), is("/a/b/c"));
-        assertThat(expr.removeUnusedPredicates("/a/b[@name='wacky']/c"), is("/a/b/c"));
-        assertThat(expr.removeUnusedPredicates("/a/b[3][@name='wacky']/c"), is("/a/b[3]/c"));
-        assertThat(expr.removeUnusedPredicates("/a/b[3][@name]/c"), is("/a/b[3]/c"));
-        assertThat(expr.removeUnusedPredicates("/a/b[length(@name)=3]/c"), is("/a/b/c"));
-    }
-
-    @Test
-    public void shouldRemoveAllPredicates() {
-        assertThat(expr.removeAllPredicatesExceptIndexes("/a/b/c"), is("/a/b/c"));
-        assertThat(expr.removeAllPredicatesExceptIndexes("/a/b[0]/c"), is("/a/b[0]/c"));
-        assertThat(expr.removeAllPredicatesExceptIndexes("/a/b[1]/c"), is("/a/b[1]/c"));
-        assertThat(expr.removeAllPredicatesExceptIndexes("/a/b[10]/c"), is("/a/b[10]/c"));
-        assertThat(expr.removeAllPredicatesExceptIndexes("/a/b[100]/c"), is("/a/b[100]/c"));
-        assertThat(expr.removeAllPredicatesExceptIndexes("/a/b[1000]/c"), is("/a/b[1000]/c"));
-        assertThat(expr.removeAllPredicatesExceptIndexes("/a/b[]/c"), is("/a/b[]/c"));
-        assertThat(expr.removeAllPredicatesExceptIndexes("/a/b[*]/c"), is("/a/b[*]/c"));
-        assertThat(expr.removeAllPredicatesExceptIndexes("/a/b/c[@title]"), is("/a/b/c"));
-        // These are legal, but aren't really useful ...
-        assertThat(expr.removeAllPredicatesExceptIndexes("/a/b[1][2][3]/c"), is("/a/b[1][2][3]/c"));
-
-        assertThat(expr.removeAllPredicatesExceptIndexes("/a/b[-1]/c"), is("/a/b/c"));
-        assertThat(expr.removeAllPredicatesExceptIndexes("/a/b[@name='wacky']/c"), is("/a/b/c"));
-        assertThat(expr.removeAllPredicatesExceptIndexes("/a/b[3][@name='wacky']/c"), is("/a/b[3]/c"));
-        assertThat(expr.removeAllPredicatesExceptIndexes("/a/b[3][@name]/c"), is("/a/b[3]/c"));
-        assertThat(expr.removeAllPredicatesExceptIndexes("/a/b[length(@name)=3]/c"), is("/a/b/c"));
-    }
-
-    @Test
-    public void shouldReplaceAllXPathPatterns() {
-        assertThat(expr.replaceXPathPatterns("/a/b[3]/c"), is("/a/b\\[3\\]/c"));
-        assertThat(expr.replaceXPathPatterns("/a/b[*]/c"), is("/a/b(?:\\[\\d+\\])?/c"));
-        assertThat(expr.replaceXPathPatterns("/a/b[]/c"), is("/a/b(?:\\[\\d+\\])?/c"));
-        assertThat(expr.replaceXPathPatterns("/a/b[0]/c"), is("/a/b(?:\\[0\\])?/c"));
-        assertThat(expr.replaceXPathPatterns("/a/b[0,1,2,4]/c"), is("/a/b(?:\\[(?:1|2|4)\\])?/c"));
-        assertThat(expr.replaceXPathPatterns("/a/b[1,2,4,0]/c"), is("/a/b(?:\\[(?:1|2|4)\\])?/c"));
-        assertThat(expr.replaceXPathPatterns("/a/b[1,2,0,4]/c"), is("/a/b(?:\\[(?:1|2|4)\\])?/c"));
-        assertThat(expr.replaceXPathPatterns("/a/b[0,1,2,0,4,0]/c"), is("/a/b(?:\\[(?:1|2|4)\\])?/c"));
-        assertThat(expr.replaceXPathPatterns("/a/b[1,2,4]/c"), is("/a/b\\[(?:1|2|4)\\]/c"));
-        assertThat(expr.replaceXPathPatterns("/a/b[@param]"), is("/a/b/@param"));
-        assertThat(expr.replaceXPathPatterns("/a/b[3][@param]"), is("/a/b\\[3\\]/@param"));
-        assertThat(expr.replaceXPathPatterns("/a/b[c/d/@param]"), is("/a/b/c/d/@param"));
-
-        assertThat(expr.replaceXPathPatterns("/a/(b|c|d)/e"), is("/a/(b|c|d)/e"));
-        assertThat(expr.replaceXPathPatterns("/a/(b||c|d)/e"), is("/a/(b|c|d)/e"));
-        assertThat(expr.replaceXPathPatterns("/a/(b|||c|d)/e"), is("/a/(b|c|d)/e"));
-        assertThat(expr.replaceXPathPatterns("/a/(|b|c|d)/e"), is("/a(/(b|c|d))?/e"));
-        assertThat(expr.replaceXPathPatterns("/a/(b|c|d|)/e"), is("/a(/(b|c|d))?/e"));
-        assertThat(expr.replaceXPathPatterns("/a/(b|c|d)[]/e"), is("/a/(b|c|d)(?:\\[\\d+\\])?/e"));
-        assertThat(expr.replaceXPathPatterns("/a/(b|c[2]|d[])/e"), is("/a/(b|c\\[2\\]|d(?:\\[\\d+\\])?)/e"));
-        assertThat(expr.replaceXPathPatterns("/a/(b|c/d|e)/f"), is("/a/(b|c/d|e)/f"));
-        assertThat(expr.replaceXPathPatterns("/a/(b/c)[(d|e)/(f|g)/@something]"), is("/a/(b/c)/(d|e)/(f|g)/@something"));
-
-        assertThat(expr.replaceXPathPatterns("/a/*/f"), is("/a/[^/]*/f"));
-        assertThat(expr.replaceXPathPatterns("/a//f"), is("/a(?:/[^/]*)*/f"));
-        assertThat(expr.replaceXPathPatterns("/a///f"), is("/a(?:/[^/]*)*/f"));
-        assertThat(expr.replaceXPathPatterns("/a/////f"), is("/a(?:/[^/]*)*/f"));
-    }
-
     protected void assertNotMatches( SequencerPathExpression.Matcher matcher ) {
         assertThat(matcher, is(notNullValue()));
         assertThat(matcher.getSelectedPath(), is(nullValue()));
@@ -189,7 +108,9 @@ public class SequencerPathExpressionTest {
         assertThat(matcher.matches(), is(false));
     }
 
-    protected void assertMatches( SequencerPathExpression.Matcher matcher, String selectedPath, String outputPath ) {
+    protected void assertMatches( SequencerPathExpression.Matcher matcher,
+                                  String selectedPath,
+                                  String outputPath ) {
         assertThat(matcher, is(notNullValue()));
         assertThat(matcher.getSelectedPath(), is(selectedPath));
         assertThat(matcher.getOutputPath(), is(outputPath));
@@ -371,7 +292,9 @@ public class SequencerPathExpressionTest {
     @Test
     public void shouldMatchExpressionWithFilenamePatternAndChildProperty() {
         expr = SequencerPathExpression.compile("//(*.(jpeg|gif|bmp|pcx|png|iff|ras|pbm|pgm|ppm|psd))[*]/jcr:content[@jcr:data]=>/images/$1");
-        assertMatches(expr.matcher("/a/b/caution.png/jcr:content/@jcr:data"), "/a/b/caution.png/jcr:content", "/images/caution.png");
+        assertMatches(expr.matcher("/a/b/caution.png/jcr:content/@jcr:data"),
+                      "/a/b/caution.png/jcr:content",
+                      "/images/caution.png");
     }
 
 }

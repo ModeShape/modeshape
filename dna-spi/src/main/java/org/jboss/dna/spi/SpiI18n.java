@@ -54,6 +54,10 @@ public final class SpiI18n {
     public static I18n unableToObtainValidRepositoryAfterAttempts;
     public static I18n validPathMayNotContainEmptySegment;
     public static I18n valueJavaTypeNotCompatibleWithPropertyType;
+    public static I18n pathExpressionMayNotBeBlank;
+    public static I18n pathExpressionIsInvalid;
+    public static I18n pathExpressionHasInvalidSelect;
+    public static I18n pathExpressionHasInvalidMatch;
 
     static {
         try {
