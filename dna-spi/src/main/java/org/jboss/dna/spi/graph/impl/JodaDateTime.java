@@ -33,6 +33,7 @@ import org.joda.time.DateTimeZone;
 
 /**
  * Implementation of DateTime based upon the Joda-Time library.
+ * 
  * @author Randall Hauch
  */
 @Immutable
@@ -55,7 +56,8 @@ public class JodaDateTime implements org.jboss.dna.spi.graph.DateTime {
         this.instance = new DateTime(iso8601);
     }
 
-    public JodaDateTime( String iso8601, String timeZoneId ) {
+    public JodaDateTime( String iso8601,
+                         String timeZoneId ) {
         this.instance = new DateTime(iso8601, DateTimeZone.forID(timeZoneId));
     }
 
@@ -63,7 +65,8 @@ public class JodaDateTime implements org.jboss.dna.spi.graph.DateTime {
         this.instance = new DateTime(milliseconds);
     }
 
-    public JodaDateTime( long milliseconds, Chronology chronology ) {
+    public JodaDateTime( long milliseconds,
+                         Chronology chronology ) {
         this.instance = new DateTime(milliseconds, chronology);
     }
 
@@ -71,24 +74,62 @@ public class JodaDateTime implements org.jboss.dna.spi.graph.DateTime {
         this.instance = new DateTime(dateTimeZone);
     }
 
-    public JodaDateTime( int year, int monthOfYear, int dayOfMonth, int hourOfDay, int minuteOfHour, int secondOfMinute, int millisecondsOfSecond ) {
+    public JodaDateTime( int year,
+                         int monthOfYear,
+                         int dayOfMonth,
+                         int hourOfDay,
+                         int minuteOfHour,
+                         int secondOfMinute,
+                         int millisecondsOfSecond ) {
         this.instance = new DateTime(year, monthOfYear, dayOfMonth, hourOfDay, minuteOfHour, secondOfMinute, millisecondsOfSecond);
     }
 
-    public JodaDateTime( int year, int monthOfYear, int dayOfMonth, int hourOfDay, int minuteOfHour, int secondOfMinute, int millisecondsOfSecond, Chronology chronology ) {
-        this.instance = new DateTime(year, monthOfYear, dayOfMonth, hourOfDay, minuteOfHour, secondOfMinute, millisecondsOfSecond, chronology);
+    public JodaDateTime( int year,
+                         int monthOfYear,
+                         int dayOfMonth,
+                         int hourOfDay,
+                         int minuteOfHour,
+                         int secondOfMinute,
+                         int millisecondsOfSecond,
+                         Chronology chronology ) {
+        this.instance = new DateTime(year, monthOfYear, dayOfMonth, hourOfDay, minuteOfHour, secondOfMinute,
+                                     millisecondsOfSecond, chronology);
     }
 
-    public JodaDateTime( int year, int monthOfYear, int dayOfMonth, int hourOfDay, int minuteOfHour, int secondOfMinute, int millisecondsOfSecond, DateTimeZone dateTimeZone ) {
-        this.instance = new DateTime(year, monthOfYear, dayOfMonth, hourOfDay, minuteOfHour, secondOfMinute, millisecondsOfSecond, dateTimeZone);
+    public JodaDateTime( int year,
+                         int monthOfYear,
+                         int dayOfMonth,
+                         int hourOfDay,
+                         int minuteOfHour,
+                         int secondOfMinute,
+                         int millisecondsOfSecond,
+                         DateTimeZone dateTimeZone ) {
+        this.instance = new DateTime(year, monthOfYear, dayOfMonth, hourOfDay, minuteOfHour, secondOfMinute,
+                                     millisecondsOfSecond, dateTimeZone);
     }
 
-    public JodaDateTime( int year, int monthOfYear, int dayOfMonth, int hourOfDay, int minuteOfHour, int secondOfMinute, int millisecondsOfSecond, int timeZoneOffsetHours ) {
-        this.instance = new DateTime(year, monthOfYear, dayOfMonth, hourOfDay, minuteOfHour, secondOfMinute, millisecondsOfSecond, DateTimeZone.forOffsetHours(timeZoneOffsetHours));
+    public JodaDateTime( int year,
+                         int monthOfYear,
+                         int dayOfMonth,
+                         int hourOfDay,
+                         int minuteOfHour,
+                         int secondOfMinute,
+                         int millisecondsOfSecond,
+                         int timeZoneOffsetHours ) {
+        this.instance = new DateTime(year, monthOfYear, dayOfMonth, hourOfDay, minuteOfHour, secondOfMinute,
+                                     millisecondsOfSecond, DateTimeZone.forOffsetHours(timeZoneOffsetHours));
     }
 
-    public JodaDateTime( int year, int monthOfYear, int dayOfMonth, int hourOfDay, int minuteOfHour, int secondOfMinute, int millisecondsOfSecond, String timeZoneId ) {
-        this.instance = new DateTime(year, monthOfYear, dayOfMonth, hourOfDay, minuteOfHour, secondOfMinute, millisecondsOfSecond, DateTimeZone.forID(timeZoneId));
+    public JodaDateTime( int year,
+                         int monthOfYear,
+                         int dayOfMonth,
+                         int hourOfDay,
+                         int minuteOfHour,
+                         int secondOfMinute,
+                         int millisecondsOfSecond,
+                         String timeZoneId ) {
+        this.instance = new DateTime(year, monthOfYear, dayOfMonth, hourOfDay, minuteOfHour, secondOfMinute,
+                                     millisecondsOfSecond, DateTimeZone.forID(timeZoneId));
     }
 
     public JodaDateTime( java.util.Date jdkDate ) {
@@ -274,7 +315,11 @@ public class JodaDateTime implements org.jboss.dna.spi.graph.DateTime {
      * {@inheritDoc}
      */
     public int compareTo( org.jboss.dna.spi.graph.DateTime that ) {
-        return this.instance.compareTo(that);
+        if (that instanceof JodaDateTime) {
+            return this.instance.compareTo(((JodaDateTime)that).instance);
+        }
+        long diff = this.toUtcTimeZone().getMilliseconds() - that.toUtcTimeZone().getMilliseconds();
+        return (int)diff;
     }
 
     /**
@@ -324,6 +369,33 @@ public class JodaDateTime implements org.jboss.dna.spi.graph.DateTime {
         ArgCheck.isNotNull(timeZoneId, "time zone identifier");
         DateTime jodaTime = this.instance.withZone(DateTimeZone.forID(timeZoneId));
         return new JodaDateTime(jodaTime);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.spi.graph.DateTime#isBefore(org.jboss.dna.spi.graph.DateTime)
+     */
+    public boolean isBefore( org.jboss.dna.spi.graph.DateTime other ) {
+        return this.compareTo(other) < 0;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.spi.graph.DateTime#isSameAs(org.jboss.dna.spi.graph.DateTime)
+     */
+    public boolean isSameAs( org.jboss.dna.spi.graph.DateTime other ) {
+        return this.compareTo(other) == 0;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.spi.graph.DateTime#isAfter(org.jboss.dna.spi.graph.DateTime)
+     */
+    public boolean isAfter( org.jboss.dna.spi.graph.DateTime other ) {
+        return this.compareTo(other) > 0;
     }
 
 }
