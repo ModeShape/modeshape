@@ -414,4 +414,185 @@ public class ArgCheckTest {
     public void containsNoNullsArrayShouldThrowExceptionIfGivenArrayWithNullEntry() {
         ArgCheck.containsNoNulls(new Object[] {"some", null, "thing", null}, "test");
     }
+
+    @Test( expected = IllegalArgumentException.class )
+    public void isNotLessThanShouldThrowExceptionIfValueIsLessThanSuppliedValue() {
+        ArgCheck.isNotLessThan(0, 1, "value");
+    }
+
+    @Test( expected = IllegalArgumentException.class )
+    public void isNotGreaterThanShouldThrowExceptionIfValueIsGreaterThanSuppliedValue() {
+        ArgCheck.isNotGreaterThan(1, 0, "value");
+    }
+
+    @Test( expected = IllegalArgumentException.class )
+    public void isNotLessThanShouldThrowExceptionIfValueIsEqualToSuppliedValue() {
+        ArgCheck.isNotLessThan(1, 2, "value");
+    }
+
+    @Test( expected = IllegalArgumentException.class )
+    public void isNotGreaterThanShouldThrowExceptionIfValueIsEqualToSuppliedValue() {
+        ArgCheck.isNotGreaterThan(2, 1, "value");
+    }
+
+    @Test( expected = IllegalArgumentException.class )
+    public void isLessThanShouldThrowExceptionIfValueIsGreaterThanSuppliedValue() {
+        ArgCheck.isLessThan(1, 0, "value");
+    }
+
+    @Test( expected = IllegalArgumentException.class )
+    public void isGreaterThanShouldThrowExceptionIfValueIsLessThanSuppliedValue() {
+        ArgCheck.isGreaterThan(0, 1, "value");
+    }
+
+    @Test( expected = IllegalArgumentException.class )
+    public void isLessThanShouldThrowExceptionIfValueIsEqualToSuppliedValue() {
+        ArgCheck.isLessThan(1, 1, "value");
+    }
+
+    @Test( expected = IllegalArgumentException.class )
+    public void isGreaterThanShouldThrowExceptionIfValueIsEqualToSuppliedValue() {
+        ArgCheck.isGreaterThan(1, 1, "value");
+    }
+
+    @Test( expected = IllegalArgumentException.class )
+    public void isLessThanOrEqualToShouldThrowExceptionIfValueIsNotLessThanOrEqualToSuppliedValue() {
+        ArgCheck.isLessThanOrEqualTo(1, 0, "value");
+    }
+
+    @Test( expected = IllegalArgumentException.class )
+    public void isGreaterThanOrEqualToShouldThrowExceptionIfValueIsNotGreaterThanOrEqualToSuppliedValue() {
+        ArgCheck.isGreaterThanOrEqualTo(0, 1, "value");
+    }
+
+    @Test
+    public void isNotLessThanShouldNotThrowExceptionIfValueIsNotLessThanSuppliedValue() {
+        ArgCheck.isNotLessThan(1, 1, "value");
+        ArgCheck.isNotLessThan(2, 1, "value");
+        ArgCheck.isNotLessThan(100, 1, "value");
+    }
+
+    @Test
+    public void isNotGreaterThanShouldNotThrowExceptionIfValueIsNotGreaterThanSuppliedValue() {
+        ArgCheck.isNotGreaterThan(1, 1, "value");
+        ArgCheck.isNotGreaterThan(1, 2, "value");
+        ArgCheck.isNotGreaterThan(1, 100, "value");
+    }
+
+    @Test
+    public void isLessThanShouldNotThrowExceptionIfValueIsLessThanSuppliedValue() {
+        ArgCheck.isLessThanOrEqualTo(1, 2, "value");
+        ArgCheck.isLessThanOrEqualTo(1, 100, "value");
+    }
+
+    @Test
+    public void isGreaterThanShouldNotThrowExceptionIfValueIsGreaterThanSuppliedValue() {
+        ArgCheck.isGreaterThan(2, 1, "value");
+        ArgCheck.isGreaterThan(100, 1, "value");
+    }
+
+    @Test
+    public void isLessThanOrEqualToShouldNotThrowExceptionIfValueIsLessThanOrEqualToSuppliedValue() {
+        ArgCheck.isLessThanOrEqualTo(1, 1, "value");
+        ArgCheck.isLessThanOrEqualTo(1, 2, "value");
+        ArgCheck.isLessThanOrEqualTo(1, 100, "value");
+    }
+
+    @Test
+    public void isGreaterThanOrEqualToShouldNotThrowExceptionIfValueIsGreaterThanOrEqualToSuppliedValue() {
+        ArgCheck.isGreaterThanOrEqualTo(1, 1, "value");
+        ArgCheck.isGreaterThanOrEqualTo(2, 1, "value");
+        ArgCheck.isGreaterThanOrEqualTo(100, 1, "value");
+    }
+
+    @Test( expected = IllegalArgumentException.class )
+    public void hasSizeOfAtLeastShouldThrowExceptionIfCollectionSizeIsSmallerThanSuppliedValue() {
+        ArgCheck.hasSizeOfAtLeast(Collections.singletonList(" "), 2, "value");
+    }
+
+    @Test( expected = IllegalArgumentException.class )
+    public void hasSizeOfAtMostShouldThrowExceptionIfCollectionSizeIsLargerThanSuppliedValue() {
+        ArgCheck.hasSizeOfAtMost(Collections.singletonList(" "), 0, "value");
+    }
+
+    @Test
+    public void hasSizeOfAtLeastShouldNotThrowExceptionIfCollectionSizeIsEqualToSuppliedValue() {
+        ArgCheck.hasSizeOfAtLeast(Collections.singletonList(" "), 1, "value");
+    }
+
+    @Test
+    public void hasSizeOfAtMostShouldNotThrowExceptionIfCollectionSizeIsEqualToSuppliedValue() {
+        ArgCheck.hasSizeOfAtMost(Collections.singletonList(" "), 1, "value");
+    }
+
+    @Test
+    public void hasSizeOfAtLeastShouldNotThrowExceptionIfCollectionSizeIsGreaterThanSuppliedValue() {
+        ArgCheck.hasSizeOfAtLeast(Collections.singletonList(" "), 0, "value");
+    }
+
+    @Test
+    public void hasSizeOfAtMostShouldNotThrowExceptionIfCollectionSizeIsGreaterThanSuppliedValue() {
+        ArgCheck.hasSizeOfAtMost(Collections.singletonList(" "), 2, "value");
+    }
+
+    @Test( expected = IllegalArgumentException.class )
+    public void hasSizeOfAtLeastShouldThrowExceptionIfMapSizeIsSmallerThanSuppliedValue() {
+        ArgCheck.hasSizeOfAtLeast(Collections.singletonMap("key", "value"), 2, "value");
+    }
+
+    @Test( expected = IllegalArgumentException.class )
+    public void hasSizeOfAtMostShouldThrowExceptionIfMapSizeIsLargerThanSuppliedValue() {
+        ArgCheck.hasSizeOfAtMost(Collections.singletonMap("key", "value"), 0, "value");
+    }
+
+    @Test
+    public void hasSizeOfAtLeastShouldNotThrowExceptionIfMapSizeIsEqualToSuppliedValue() {
+        ArgCheck.hasSizeOfAtLeast(Collections.singletonMap("key", "value"), 1, "value");
+    }
+
+    @Test
+    public void hasSizeOfAtMostShouldNotThrowExceptionIfMapSizeIsEqualToSuppliedValue() {
+        ArgCheck.hasSizeOfAtMost(Collections.singletonMap("key", "value"), 1, "value");
+    }
+
+    @Test
+    public void hasSizeOfAtLeastShouldNotThrowExceptionIfMapSizeIsGreaterThanSuppliedValue() {
+        ArgCheck.hasSizeOfAtLeast(Collections.singletonMap("key", "value"), 0, "value");
+    }
+
+    @Test
+    public void hasSizeOfAtMostShouldNotThrowExceptionIfMapSizeIsGreaterThanSuppliedValue() {
+        ArgCheck.hasSizeOfAtMost(Collections.singletonMap("key", "value"), 2, "value");
+    }
+
+    @Test( expected = IllegalArgumentException.class )
+    public void hasSizeOfAtLeastShouldThrowExceptionIfArraySizeIsSmallerThanSuppliedValue() {
+        ArgCheck.hasSizeOfAtLeast(new Object[] {"key", "value"}, 3, "value");
+    }
+
+    @Test( expected = IllegalArgumentException.class )
+    public void hasSizeOfAtMostShouldThrowExceptionIfArraySizeIsLargerThanSuppliedValue() {
+        ArgCheck.hasSizeOfAtMost(new Object[] {"key", "value"}, 1, "value");
+    }
+
+    @Test
+    public void hasSizeOfAtLeastShouldNotThrowExceptionIfArraySizeIsEqualToSuppliedValue() {
+        ArgCheck.hasSizeOfAtLeast(new Object[] {"key", "value"}, 2, "value");
+    }
+
+    @Test
+    public void hasSizeOfAtMostShouldNotThrowExceptionIfArraySizeIsEqualToSuppliedValue() {
+        ArgCheck.hasSizeOfAtMost(new Object[] {"key", "value"}, 2, "value");
+    }
+
+    @Test
+    public void hasSizeOfAtLeastShouldNotThrowExceptionIfArraySizeIsGreaterThanSuppliedValue() {
+        ArgCheck.hasSizeOfAtLeast(new Object[] {"key", "value"}, 1, "value");
+    }
+
+    @Test
+    public void hasSizeOfAtMostShouldNotThrowExceptionIfArraySizeIsGreaterThanSuppliedValue() {
+        ArgCheck.hasSizeOfAtMost(new Object[] {"key", "value"}, 3, "value");
+    }
+
 }

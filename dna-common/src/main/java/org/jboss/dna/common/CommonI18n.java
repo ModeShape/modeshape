@@ -58,6 +58,10 @@ public final class CommonI18n {
     // Core-related fields
     public static I18n argumentMayNotBeLessThan;
     public static I18n argumentMayNotBeGreaterThan;
+    public static I18n argumentMustBeGreaterThan;
+    public static I18n argumentMustBeLessThan;
+    public static I18n argumentMustBeGreaterThanOrEqualTo;
+    public static I18n argumentMustBeLessThanOrEqualTo;
     public static I18n argumentMayNotBeNegative;
     public static I18n argumentMayNotBePositive;
     public static I18n argumentMustBeNegative;
@@ -76,6 +80,8 @@ public final class CommonI18n {
     public static I18n argumentDidNotContainObject;
     public static I18n argumentDidNotContainKey;
     public static I18n argumentMayNotContainNullValue;
+    public static I18n argumentMustBeOfMinimumSize;
+    public static I18n argumentMustBeOfMaximumSize;
     public static I18n componentClassnameNotValid;
     public static I18n componentNotConfigured;
     public static I18n dateParsingFailure;

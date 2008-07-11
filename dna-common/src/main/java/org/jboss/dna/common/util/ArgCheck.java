@@ -40,7 +40,7 @@ public final class ArgCheck {
      * @param argument The argument
      * @param notLessThanValue the value that is to be used to check the value
      * @param name The name of the argument
-     * @throws IllegalArgumentException If argument is negative (<0)
+     * @throws IllegalArgumentException If argument greater than or equal to the supplied vlaue
      */
     public static void isNotLessThan( int argument,
                                       int notLessThanValue,
@@ -56,13 +56,81 @@ public final class ArgCheck {
      * @param argument The argument
      * @param notGreaterThanValue the value that is to be used to check the value
      * @param name The name of the argument
-     * @throws IllegalArgumentException If argument is negative (<0)
+     * @throws IllegalArgumentException If argument is less than or equal to the supplied value
      */
     public static void isNotGreaterThan( int argument,
                                          int notGreaterThanValue,
                                          String name ) {
-        if (argument < notGreaterThanValue) {
+        if (argument > notGreaterThanValue) {
             throw new IllegalArgumentException(CommonI18n.argumentMayNotBeGreaterThan.text(name, argument, notGreaterThanValue));
+        }
+    }
+
+    /**
+     * Check that the argument is greater than the supplied value
+     * 
+     * @param argument The argument
+     * @param greaterThanValue the value that is to be used to check the value
+     * @param name The name of the argument
+     * @throws IllegalArgumentException If argument is not greater than the supplied value
+     */
+    public static void isGreaterThan( int argument,
+                                      int greaterThanValue,
+                                      String name ) {
+        if (argument <= greaterThanValue) {
+            throw new IllegalArgumentException(CommonI18n.argumentMustBeGreaterThan.text(name, argument, greaterThanValue));
+        }
+    }
+
+    /**
+     * Check that the argument is less than the supplied value
+     * 
+     * @param argument The argument
+     * @param lessThanValue the value that is to be used to check the value
+     * @param name The name of the argument
+     * @throws IllegalArgumentException If argument is not less than the supplied value
+     */
+    public static void isLessThan( int argument,
+                                   int lessThanValue,
+                                   String name ) {
+        if (argument >= lessThanValue) {
+            throw new IllegalArgumentException(CommonI18n.argumentMustBeLessThan.text(name, argument, lessThanValue));
+        }
+    }
+
+    /**
+     * Check that the argument is greater than or equal to the supplied value
+     * 
+     * @param argument The argument
+     * @param greaterThanOrEqualToValue the value that is to be used to check the value
+     * @param name The name of the argument
+     * @throws IllegalArgumentException If argument is not greater than or equal to the supplied value
+     */
+    public static void isGreaterThanOrEqualTo( int argument,
+                                               int greaterThanOrEqualToValue,
+                                               String name ) {
+        if (argument < greaterThanOrEqualToValue) {
+            throw new IllegalArgumentException(CommonI18n.argumentMustBeGreaterThanOrEqualTo.text(name,
+                                                                                                  argument,
+                                                                                                  greaterThanOrEqualToValue));
+        }
+    }
+
+    /**
+     * Check that the argument is less than or equal to the supplied value
+     * 
+     * @param argument The argument
+     * @param lessThanOrEqualToValue the value that is to be used to check the value
+     * @param name The name of the argument
+     * @throws IllegalArgumentException If argument is not less than or equal to the supplied value
+     */
+    public static void isLessThanOrEqualTo( int argument,
+                                            int lessThanOrEqualToValue,
+                                            String name ) {
+        if (argument > lessThanOrEqualToValue) {
+            throw new IllegalArgumentException(CommonI18n.argumentMustBeLessThanOrEqualTo.text(name,
+                                                                                               argument,
+                                                                                               lessThanOrEqualToValue));
         }
     }
 
@@ -374,8 +442,8 @@ public final class ArgCheck {
      * @param argumentName The name that will be used within the exception message for the argument should an exception be thrown
      * @param object The object to assert as the same as <code>argument</code>.
      * @param objectName The name that will be used within the exception message for <code>object</code> should an exception be
-     *        thrown; if <code>null</code> and <code>object</code> is not <code>null</code>, <code>object.toString()</code>
-     *        will be used.
+     *        thrown; if <code>null</code> and <code>object</code> is not <code>null</code>, <code>object.toString()</code> will
+     *        be used.
      * @throws IllegalArgumentException If the specified objects are not the same.
      */
     public static <T> void isSame( final T argument,
@@ -396,8 +464,8 @@ public final class ArgCheck {
      * @param argumentName The name that will be used within the exception message for the argument should an exception be thrown
      * @param object The object to assert as not the same as <code>argument</code>.
      * @param objectName The name that will be used within the exception message for <code>object</code> should an exception be
-     *        thrown; if <code>null</code> and <code>object</code> is not <code>null</code>, <code>object.toString()</code>
-     *        will be used.
+     *        thrown; if <code>null</code> and <code>object</code> is not <code>null</code>, <code>object.toString()</code> will
+     *        be used.
      * @throws IllegalArgumentException If the specified objects are the same.
      */
     public static <T> void isNotSame( final T argument,
@@ -418,8 +486,8 @@ public final class ArgCheck {
      * @param argumentName The name that will be used within the exception message for the argument should an exception be thrown
      * @param object The object to assert as equal to <code>argument</code>.
      * @param objectName The name that will be used within the exception message for <code>object</code> should an exception be
-     *        thrown; if <code>null</code> and <code>object</code> is not <code>null</code>, <code>object.toString()</code>
-     *        will be used.
+     *        thrown; if <code>null</code> and <code>object</code> is not <code>null</code>, <code>object.toString()</code> will
+     *        be used.
      * @throws IllegalArgumentException If the specified objects are not equal.
      */
     public static <T> void isEquals( final T argument,
@@ -440,8 +508,8 @@ public final class ArgCheck {
      * @param argumentName The name that will be used within the exception message for the argument should an exception be thrown
      * @param object The object to assert as equal to <code>argument</code>.
      * @param objectName The name that will be used within the exception message for <code>object</code> should an exception be
-     *        thrown; if <code>null</code> and <code>object</code> is not <code>null</code>, <code>object.toString()</code>
-     *        will be used.
+     *        thrown; if <code>null</code> and <code>object</code> is not <code>null</code>, <code>object.toString()</code> will
+     *        be used.
      * @throws IllegalArgumentException If the specified objects are equals.
      */
     public static <T> void isNotEquals( final T argument,
@@ -591,6 +659,126 @@ public final class ArgCheck {
                 throw new IllegalArgumentException(CommonI18n.argumentMayNotContainNullValue.text(name, i));
             }
             ++i;
+        }
+    }
+
+    /**
+     * Check that the collection contains at least the supplied number of elements
+     * 
+     * @param argument Collection
+     * @param minimumSize the minimum size
+     * @param name The name of the argument
+     * @throws IllegalArgumentException If collection has a size smaller than the supplied value
+     */
+    public static void hasSizeOfAtLeast( Collection<?> argument,
+                                         int minimumSize,
+                                         String name ) {
+        isNotNull(argument, name);
+        if (argument.size() < minimumSize) {
+            throw new IllegalArgumentException(CommonI18n.argumentMustBeOfMinimumSize.text(name,
+                                                                                           Collection.class.getSimpleName(),
+                                                                                           argument.size(),
+                                                                                           minimumSize));
+        }
+    }
+
+    /**
+     * Check that the collection contains no more than the supplied number of elements
+     * 
+     * @param argument Collection
+     * @param maximumSize the maximum size
+     * @param name The name of the argument
+     * @throws IllegalArgumentException If collection has a size smaller than the supplied value
+     */
+    public static void hasSizeOfAtMost( Collection<?> argument,
+                                        int maximumSize,
+                                        String name ) {
+        isNotNull(argument, name);
+        if (argument.size() > maximumSize) {
+            throw new IllegalArgumentException(CommonI18n.argumentMustBeOfMinimumSize.text(name,
+                                                                                           Collection.class.getSimpleName(),
+                                                                                           argument.size(),
+                                                                                           maximumSize));
+        }
+    }
+
+    /**
+     * Check that the map contains at least the supplied number of entries
+     * 
+     * @param argument the map
+     * @param minimumSize the minimum size
+     * @param name The name of the argument
+     * @throws IllegalArgumentException If the map has a size smaller than the supplied value
+     */
+    public static void hasSizeOfAtLeast( Map<?, ?> argument,
+                                         int minimumSize,
+                                         String name ) {
+        isNotNull(argument, name);
+        if (argument.size() < minimumSize) {
+            throw new IllegalArgumentException(CommonI18n.argumentMustBeOfMinimumSize.text(name,
+                                                                                           Map.class.getSimpleName(),
+                                                                                           argument.size(),
+                                                                                           minimumSize));
+        }
+    }
+
+    /**
+     * Check that the map contains no more than the supplied number of entries
+     * 
+     * @param argument the map
+     * @param maximumSize the maximum size
+     * @param name The name of the argument
+     * @throws IllegalArgumentException If the map has a size smaller than the supplied value
+     */
+    public static void hasSizeOfAtMost( Map<?, ?> argument,
+                                        int maximumSize,
+                                        String name ) {
+        isNotNull(argument, name);
+        if (argument.size() > maximumSize) {
+            throw new IllegalArgumentException(CommonI18n.argumentMustBeOfMinimumSize.text(name,
+                                                                                           Map.class.getSimpleName(),
+                                                                                           argument.size(),
+                                                                                           maximumSize));
+        }
+    }
+
+    /**
+     * Check that the array contains at least the supplied number of elements
+     * 
+     * @param argument the array
+     * @param minimumSize the minimum size
+     * @param name The name of the argument
+     * @throws IllegalArgumentException If the array has a size smaller than the supplied value
+     */
+    public static void hasSizeOfAtLeast( Object[] argument,
+                                         int minimumSize,
+                                         String name ) {
+        isNotNull(argument, name);
+        if (argument.length < minimumSize) {
+            throw new IllegalArgumentException(CommonI18n.argumentMustBeOfMinimumSize.text(name,
+                                                                                           Object[].class.getSimpleName(),
+                                                                                           argument.length,
+                                                                                           minimumSize));
+        }
+    }
+
+    /**
+     * Check that the array contains no more than the supplied number of elements
+     * 
+     * @param argument the array
+     * @param maximumSize the maximum size
+     * @param name The name of the argument
+     * @throws IllegalArgumentException If the array has a size smaller than the supplied value
+     */
+    public static void hasSizeOfAtMost( Object[] argument,
+                                        int maximumSize,
+                                        String name ) {
+        isNotNull(argument, name);
+        if (argument.length > maximumSize) {
+            throw new IllegalArgumentException(CommonI18n.argumentMustBeOfMinimumSize.text(name,
+                                                                                           Object[].class.getSimpleName(),
+                                                                                           argument.length,
+                                                                                           maximumSize));
         }
     }
 

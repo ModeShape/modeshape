@@ -27,13 +27,20 @@ import net.jcip.annotations.Immutable;
 import org.jboss.dna.spi.graph.Name;
 
 /**
+ * An immutable version of a property that has no values. This is done for efficiency of the in-memory representation, since many
+ * properties will have just a single value, while others will have multiple values.
+ * 
  * @author Randall Hauch
  */
 @Immutable
 public class BasicEmptyProperty extends BasicProperty {
 
+    private static final Iterator<Object> SHARED_ITERATOR = new EmptyIterator<Object>();
+
     /**
-     * @param name
+     * Create a property with no values.
+     * 
+     * @param name the property name
      */
     public BasicEmptyProperty( Name name ) {
         super(name);
@@ -71,10 +78,10 @@ public class BasicEmptyProperty extends BasicProperty {
      * {@inheritDoc}
      */
     public Iterator<Object> iterator() {
-        return new EmptyIterator<Object>();
+        return SHARED_ITERATOR;
     }
 
-    protected class EmptyIterator<T> implements Iterator<T> {
+    protected static class EmptyIterator<T> implements Iterator<T> {
 
         protected EmptyIterator() {
         }

@@ -21,12 +21,17 @@
  */
 package org.jboss.dna.spi.graph.impl;
 
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import net.jcip.annotations.Immutable;
+import org.jboss.dna.common.util.ArgCheck;
 import org.jboss.dna.spi.graph.Name;
 
 /**
+ * An immutable version of a property that has 2 or more values. This is done for efficiency of the in-memory representation,
+ * since many properties will have just a single value, while others will have multiple values.
+ * 
  * @author Randall Hauch
  */
 @Immutable
@@ -35,20 +40,40 @@ public class BasicMultiValueProperty extends BasicProperty {
     private final List<Object> values;
 
     /**
-     * @param name
-     * @param values
+     * Create a property with 2 or more values. Note that the supplied list may be modifiable, as this object does not expose any
+     * means for modifying the contents.
+     * 
+     * @param name the property name
+     * @param values the property values
+     * @throws IllegalArgumentException if the values is null or does not have at least 2 values
      */
     public BasicMultiValueProperty( Name name,
                                     List<Object> values ) {
         super(name);
+        ArgCheck.isNotNull(values, "values");
+        ArgCheck.hasSizeOfAtLeast(values, 2, "values");
         this.values = values;
+    }
+
+    /**
+     * Create a property with 2 or more values.
+     * 
+     * @param name the property name
+     * @param values the property values
+     * @throws IllegalArgumentException if the values is null or does not have at least 2 values
+     */
+    public BasicMultiValueProperty( Name name,
+                                    Object... values ) {
+        super(name);
+        ArgCheck.isNotNull(values, "values");
+        ArgCheck.hasSizeOfAtLeast(values, 2, "values");
+        this.values = Arrays.asList(values);
     }
 
     /**
      * {@inheritDoc}
      */
     public boolean isEmpty() {
-        assert values.isEmpty() == false;
         return false;
     }
 
@@ -56,7 +81,6 @@ public class BasicMultiValueProperty extends BasicProperty {
      * {@inheritDoc}
      */
     public boolean isMultiple() {
-        assert values.size() > 1;
         return true;
     }
 
@@ -64,7 +88,6 @@ public class BasicMultiValueProperty extends BasicProperty {
      * {@inheritDoc}
      */
     public boolean isSingle() {
-        assert values.size() == 1;
         return false;
     }
 

@@ -27,6 +27,9 @@ import net.jcip.annotations.Immutable;
 import org.jboss.dna.spi.graph.Name;
 
 /**
+ * An immutable version of a property that has exactly 1 value. This is done for efficiency of the in-memory representation, since
+ * many properties will have just a single value, while others will have multiple values.
+ * 
  * @author Randall Hauch
  */
 @Immutable
@@ -35,8 +38,10 @@ public class BasicSingleValueProperty extends BasicProperty {
     protected final Object value;
 
     /**
-     * @param name
-     * @param value
+     * Create a property with a single value
+     * 
+     * @param name the property name
+     * @param value the property value (which may be null)
      */
     public BasicSingleValueProperty( Name name,
                                      Object value ) {
