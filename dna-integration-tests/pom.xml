@@ -49,7 +49,6 @@
     <dependency>
       <groupId>org.mockito</groupId>
       <artifactId>mockito-all</artifactId>
-      <scope>test</scope>
     </dependency>
     <!-- 
       Logging (require SLF4J API for compiling, but use Log4J and its SLF4J binding for testing) 
@@ -57,6 +56,7 @@
     <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-api</artifactId>
+      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.slf4j</groupId>
@@ -72,6 +72,7 @@
     <dependency>
       <groupId>javax.jcr</groupId>
       <artifactId>jcr</artifactId>
+      <scope>test</scope>
     </dependency>
     <!-- 
       Apache Jackrabbit (JCR Implementation)
