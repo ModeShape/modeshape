@@ -28,8 +28,7 @@
    </dependency>
     <dependency>
       <groupId>junit</groupId>
-      <artifactId>junit-dep</artifactId>
-      <version>4.4</version>
+      <artifactId>junit</artifactId>
     </dependency>
   </dependencies>
 </project>
