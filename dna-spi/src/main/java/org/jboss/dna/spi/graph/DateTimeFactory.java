@@ -24,8 +24,7 @@ package org.jboss.dna.spi.graph;
 /**
  * A factory for creating {@link DateTime date-time instants}. This interface extends the {@link ValueFactory} generic interface
  * and adds specific methods for creating instants for the current time (and time zone) as well as various combinations of
- * individual field values.
- * <h2>ISO-8601</h2>
+ * individual field values. <h2>ISO-8601</h2>
  * <p>
  * The factory creates date-time instants from strings that are in the standard ISO-8601 format. There are three supported styles:
  * month-based, day-of-year-based, and week-based.
@@ -96,18 +95,30 @@ package org.jboss.dna.spi.graph;
  * the previous year, and the last week finishes in the next year. The weekyear field is defined to refer to the year that owns
  * the week, which may differ from the actual year.
  * </p>
+ * 
  * @author Randall Hauch
  */
 public interface DateTimeFactory extends ValueFactory<DateTime> {
 
     /**
-     * Create a date-time instance for the current time.
-     * @return the date-time instance
+     * Create a date-time instance for the current time in the local time zone.
+     * 
+     * @return the current date-time instance
+     * @see #createUtc()
      */
     DateTime create();
 
     /**
+     * Create a date-time instance for the current time in UTC.
+     * 
+     * @return the current date-time instance (in UTC)
+     * @see #create()
+     */
+    DateTime createUtc();
+
+    /**
      * Create a date-time instance given the individual values for the fields
+     * 
      * @param year the year of the era
      * @param monthOfYear the month of the year
      * @param dayOfMonth the day of the month
@@ -117,10 +128,17 @@ public interface DateTimeFactory extends ValueFactory<DateTime> {
      * @param millisecondsOfSecond the milliseconds of the second
      * @return the date-time instance
      */
-    DateTime create( int year, int monthOfYear, int dayOfMonth, int hourOfDay, int minuteOfHour, int secondOfMinute, int millisecondsOfSecond );
+    DateTime create( int year,
+                     int monthOfYear,
+                     int dayOfMonth,
+                     int hourOfDay,
+                     int minuteOfHour,
+                     int secondOfMinute,
+                     int millisecondsOfSecond );
 
     /**
      * Create a date-time instance given the individual values for the fields
+     * 
      * @param year the year of the era
      * @param monthOfYear the month of the year
      * @param dayOfMonth the day of the month
@@ -131,10 +149,18 @@ public interface DateTimeFactory extends ValueFactory<DateTime> {
      * @param timeZoneOffsetHours the number of hours offset from UTC for the time zone
      * @return the date-time instance
      */
-    DateTime create( int year, int monthOfYear, int dayOfMonth, int hourOfDay, int minuteOfHour, int secondOfMinute, int millisecondsOfSecond, int timeZoneOffsetHours );
+    DateTime create( int year,
+                     int monthOfYear,
+                     int dayOfMonth,
+                     int hourOfDay,
+                     int minuteOfHour,
+                     int secondOfMinute,
+                     int millisecondsOfSecond,
+                     int timeZoneOffsetHours );
 
     /**
      * Create a date-time instance given the individual values for the fields
+     * 
      * @param year the year of the era
      * @param monthOfYear the month of the year
      * @param dayOfMonth the day of the month
@@ -145,6 +171,13 @@ public interface DateTimeFactory extends ValueFactory<DateTime> {
      * @param timeZoneId the ID of the time zone (e.g, "PST", "UTC", "EDT"); may not be null
      * @return the date-time instance
      */
-    DateTime create( int year, int monthOfYear, int dayOfMonth, int hourOfDay, int minuteOfHour, int secondOfMinute, int millisecondsOfSecond, String timeZoneId );
+    DateTime create( int year,
+                     int monthOfYear,
+                     int dayOfMonth,
+                     int hourOfDay,
+                     int minuteOfHour,
+                     int secondOfMinute,
+                     int millisecondsOfSecond,
+                     String timeZoneId );
 
 }

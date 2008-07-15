@@ -37,6 +37,7 @@ import org.jboss.dna.spi.graph.Path;
 import org.jboss.dna.spi.graph.PropertyType;
 import org.jboss.dna.spi.graph.Reference;
 import org.jboss.dna.spi.graph.ValueFactory;
+import org.joda.time.DateTimeZone;
 
 /**
  * The standard {@link ValueFactory} for {@link PropertyType#DATE} values.
@@ -203,6 +204,15 @@ public class JodaDateTimeValueFactory extends AbstractValueFactory<DateTime> imp
      */
     public DateTime create() {
         return new JodaDateTime();
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.spi.graph.DateTimeFactory#createUtc()
+     */
+    public DateTime createUtc() {
+        return new JodaDateTime(DateTimeZone.UTC);
     }
 
     /**
