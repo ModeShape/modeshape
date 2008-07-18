@@ -1,0 +1,45 @@
+<jcr='http://www.jcp.org/jcr/1.0'>
+<nt='http://www.jcp.org/jcr/nt/1.0'>
+<mix='http://www.jcp.org/jcr/mix/1.0'>
+<image='http://jboss.org/dna/images/1.0'>
+<mp3='http://jboss.org/dna/mp3/1.0'>
+// ----------------------------------------------------------
+// JCR Pre-defined Mixin Types that are not loaded by default
+// ----------------------------------------------------------
+
+[mix:mimeTyped] mixin 
+  - jcr:mimeType (string)  
+  - jcr:encoding (string)
+
+
+// -------------------
+// DNA Image Sequencer
+// -------------------
+
+/**
+ * Node type that defines the metadata for an image
+ */
+[image:metadata] > nt:unstructured, mix:mimeTyped
+  - image:formatName (string) mandatory
+    < 'JPEG', 'GIF', 'PNG', 'BMP', 'PCX', 'IFF', 'RAS', 'PBM', 'PGM', 'PPM', 'PSD'
+  - image:width (long)
+  - image:height (long)
+  - image:bitsPerPixel (long)
+  - image:progressive (boolean)
+  - image:numberOfImages (long)
+  - image:physicalWidthDpi (long)
+  - image:physicalHeightDpi (long)
+  - image:physicalWidthInches (long)
+  - image:physicalHeightInches (long)
+
+/**
+ * Node type that defines the metadata for an MP3 audio file
+ */
+[mp3:metadata] > nt:unstructured, mix:mimeTyped
+  - mp3:title (string)
+  - mp3:author (string)
+  - mp3:album (string)
+  - mp3:year (long)
+  - mp3:comment (string)
+
+

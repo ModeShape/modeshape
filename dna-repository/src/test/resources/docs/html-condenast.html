@@ -1,0 +1,2794 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+		
+		
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html>
+
+
+
+	
+	
+		
+	
+	
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+		
+		
+
+
+
+	
+		
+	
+	
+
+
+
+
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+
+
+	
+
+
+
+	
+	
+	
+	
+	
+	
+	
+	
+		 
+	
+
+
+
+
+
+<head>
+	<title>CondeNast - Welcome!</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+	<meta name="description" content=""/>
+	<meta name="keyword" content="CondeNast, , LeftNav, Specials, AllMags, CategorizedMags, Better Together Bundles, EmployeeProducts, "/>
+		
+	<!-- useMooTools: true -->
+	
+		
+			<script src="/webapp/wcs/stores/CondeNast/lib/mootools.v1.11.js" type="text/javascript"></script>		
+			<script src="/webapp/wcs/stores/CondeNast/lib/iCarousel.js" type="text/javascript"></script>		
+		
+		
+	
+	<script type="text/javascript">
+		// jQuery.noConflict(); // Only needed if we use mootools and jQuery together
+		djConfig = { isDebug: false, parseWidgets:false, searchIds:[]};
+		var currentId = '';
+		var currentImage = '';
+	</script>
+	<script type="text/javascript" src="/webapp/wcs/stores/dojo041/dojo.js"></script>	
+	<script type="text/javascript" src="/webapp/wcs/stores/CondeNast/AJAXUserInterface/javascript/Common.js"></script>
+	<script type="text/javascript" src="/webapp/wcs/stores/CondeNast/AJAXUserInterface/javascript/ServicesEventMapping.js"></script>	
+	<script type="text/javascript" src="/webapp/wcs/stores/CondeNast/lib/cdsutils.js"></script>	
+	
+
+
+
+<!-- Start- JSP File Name: ServicesDeclaration.jsp -->
+
+
+
+<script type="text/javascript">
+<!-- <![CDATA[
+dojo.require("wc.service.*");
+wc.service.declare({
+	id: "AjaxAddOrderItem",
+	actionId: "AjaxAddOrderItem",
+	url: "AjaxOrderChangeServiceItemAdd",
+	formId: ""
+
+	,failureHandler: function(serviceResponse) {
+		if (serviceResponse.errorMessage) {
+                     alertDialog(serviceResponse.errorMessage,10001,10001,-1);
+              } else {
+                     if (serviceResponse.errorMessageKey) {
+                            alertDialog(serviceResponse.errorMessageKey,10001,10001,-1);
+                     }
+              }
+              cursor_clear();
+	}
+
+});
+//[[>-->
+</script>
+
+
+
+
+
+<script type="text/javascript">
+<!-- <![CDATA[
+dojo.require("wc.service.*");
+wc.service.declare({
+	id: "AjaxDeleteOrderItem",
+	actionId: "AjaxDeleteOrderItem",
+	url: "AjaxOrderChangeServiceItemDelete",
+	formId: ""
+
+	,failureHandler: function(serviceResponse) {
+		if (serviceResponse.errorMessage) {
+                     alertDialog(serviceResponse.errorMessage,10001,10001,-1);
+              } else {
+                     if (serviceResponse.errorMessageKey) {
+                            alertDialog(serviceResponse.errorMessageKey,10001,10001,-1);
+                     }
+              }
+              cursor_clear();
+	}
+
+});
+//[[>-->
+</script>
+
+
+
+
+
+<script type="text/javascript">
+<!-- <![CDATA[
+dojo.require("wc.service.*");
+wc.service.declare({
+	id: "AjaxUpdateOrderItem",
+	actionId: "AjaxUpdateOrderItem",
+	url: "AjaxOrderChangeServiceItemUpdate",
+	formId: ""
+
+	,failureHandler: function(serviceResponse) {
+		if (serviceResponse.errorMessage) {
+                     alertDialog(serviceResponse.errorMessage,10001,10001,-1);
+              } else {
+                     if (serviceResponse.errorMessageKey) {
+                            alertDialog(serviceResponse.errorMessageKey,10001,10001,-1);
+                     }
+              }
+              cursor_clear();
+	}
+
+});
+//[[>-->
+</script>
+
+
+
+
+
+<script type="text/javascript">
+<!-- <![CDATA[
+dojo.require("wc.service.*");
+wc.service.declare({
+	id: "AjaxUpdateOrderShippingInfo",
+	actionId: "AjaxUpdateOrderShippingInfo",
+	url: "AjaxOrderChangeServiceShipInfoUpdate",
+	formId: ""
+
+	,failureHandler: function(serviceResponse) {
+		if (serviceResponse.errorMessage) {
+                     alertDialog(serviceResponse.errorMessage,10001,10001,-1);
+              } else {
+                     if (serviceResponse.errorMessageKey) {
+                            alertDialog(serviceResponse.errorMessageKey,10001,10001,-1);
+                     }
+              }
+              cursor_clear();
+	}
+
+});
+//[[>-->
+</script>
+
+
+
+
+
+<script type="text/javascript">
+<!-- <![CDATA[
+dojo.require("wc.service.*");
+wc.service.declare({
+	id: "AjaxPrepareOrder",
+	actionId: "AjaxPrepareOrder",
+	url: "AjaxOrderProcessServiceOrderPrepare",
+	formId: ""
+
+	,failureHandler: function(serviceResponse) {
+		if (serviceResponse.errorMessage) {
+                     alertDialog(serviceResponse.errorMessage,10001,10001,-1);
+              } else {
+                     if (serviceResponse.errorMessageKey) {
+                            alertDialog(serviceResponse.errorMessageKey,10001,10001,-1);
+                     }
+              }
+              cursor_clear();
+	}
+
+});
+//[[>-->
+</script>
+
+
+
+
+
+<script type="text/javascript">
+<!-- <![CDATA[
+dojo.require("wc.service.*");
+wc.service.declare({
+	id: "AjaxSubmitOrder",
+	actionId: "AjaxSubmitOrder",
+	url: "AjaxOrderProcessServiceOrderSubmit",
+	formId: ""
+
+	,successHandler: function(serviceResponse) {
+		document.location.href = "AjaxOrderConfirmationView?storeId=" + 10001 + "&catalogId=" + 10001 + "&langId=" + -1 + "&orderId=" + serviceResponse.orderId;
+	}
+
+	,failureHandler: function(serviceResponse) {
+		if (serviceResponse.errorMessage) {
+                     alertDialog(serviceResponse.errorMessage,10001,10001,-1);
+              } else {
+                     if (serviceResponse.errorMessageKey) {
+                            alertDialog(serviceResponse.errorMessageKey,10001,10001,-1);
+                     }
+              }
+              cursor_clear();
+	}
+
+});
+//[[>-->
+</script>
+
+
+
+
+
+<script type="text/javascript">
+<!-- <![CDATA[
+dojo.require("wc.service.*");
+wc.service.declare({
+	id: "AjaxAddAddressForPerson",
+	actionId: "AjaxAddAddressForPerson",
+	url: "AjaxPersonChangeServiceAddressAdd",
+	formId: ""
+
+	,failureHandler: function(serviceResponse) {
+		if (serviceResponse.errorMessage) {
+                     alertDialog(serviceResponse.errorMessage,10001,10001,-1);
+              } else {
+                     if (serviceResponse.errorMessageKey) {
+                            alertDialog(serviceResponse.errorMessageKey,10001,10001,-1);
+                     }
+              }
+              cursor_clear();
+	}
+
+});
+//[[>-->
+</script>
+
+
+
+
+
+<script type="text/javascript">
+<!-- <![CDATA[
+dojo.require("wc.service.*");
+wc.service.declare({
+	id: "AjaxUpdateAddressForPerson",
+	actionId: "AjaxUpdateAddressForPerson",
+	url: "AjaxPersonChangeServiceAddressUpdate",
+	formId: ""
+
+	,failureHandler: function(serviceResponse) {
+		if (serviceResponse.errorMessage) {
+                     alertDialog(serviceResponse.errorMessage,10001,10001,-1);
+              } else {
+                     if (serviceResponse.errorMessageKey) {
+                            alertDialog(serviceResponse.errorMessageKey,10001,10001,-1);
+                     }
+              }
+              cursor_clear();
+	}
+
+});
+//[[>-->
+</script>
+
+
+	
+
+
+<script type="text/javascript">
+<!-- <![CDATA[
+dojo.require("wc.service.*");
+wc.service.declare({
+	id: "AjaxReplaceOrderItem",
+	actionId: "AjaxReplaceOrderItem",
+	url: "AjaxReplaceOrderItemCmd",
+	formId: ""
+
+	,failureHandler: function(serviceResponse) {
+		if (serviceResponse.errorMessage) {
+                     alertDialog(serviceResponse.errorMessage,10001,10001,-1);
+              } else {
+                     if (serviceResponse.errorMessageKey) {
+                            alertDialog(serviceResponse.errorMessageKey,10001,10001,-1);
+                     }
+              }
+              cursor_clear();
+	}
+
+});
+//[[>-->
+</script>
+
+
+
+
+
+<script type="text/javascript">
+<!-- <![CDATA[
+dojo.require("wc.service.*");
+wc.service.declare({
+	id: "AjaxOrderItemResetAddress",
+	actionId: "AjaxOrderItemResetAddress",
+	url: "AjaxOrderItemResetAddressCmd",
+	formId: ""
+
+	,failureHandler: function(serviceResponse) {
+		if (serviceResponse.errorMessage) {
+                     alertDialog(serviceResponse.errorMessage,10001,10001,-1);
+              } else {
+                     if (serviceResponse.errorMessageKey) {
+                            alertDialog(serviceResponse.errorMessageKey,10001,10001,-1);
+                     }
+              }
+              cursor_clear();
+	}
+
+});
+//[[>-->
+</script>
+
+
+
+<!-- End - JSP File Name: ServicesDeclaration.jsp -->
+
+	
+
+<script type="text/javascript">
+<!-- <![CDATA[
+dojo.require("wc.render.*");
+wc.render.declareRefreshController({
+	id: "miniShopCartAreaController",
+	renderContext: wc.render.getContextById("currentPage_Context"),
+	url: "MiniCartView?storeId=10001&catalogId=10001&justAdded=1",
+	formId: ""
+
+	,modelChangedHandler: function(message, widget) {
+		var controller = this;
+		var renderContext = this.renderContext;
+		if (message.actionId in order_updated) {	
+				var origURL = this.url;
+				if (message.orderItemId.length > 1) {					
+					this.url = this.url + '&betterTogether=1';
+				}
+				widget.refresh();
+				if (document.getElementById(currentId)) {
+					document.getElementById(currentId).src = currentImage;
+					currentId = '';
+					currentImage = '';
+				}				
+				this.url = origURL;
+			}
+	}
+
+});
+//[[>-->
+</script>
+
+	
+	<style type="text/css">
+	<!--
+	 @import url("/webapp/wcs/stores/CondeNast/css/mainCat.css");
+	-->
+	</style>
+	<link href="/webapp/wcs/stores/CondeNast/css/greybox.css" rel="stylesheet" type="text/css" media="all" />
+</head>
+<body>
+<div id="container"><!-- JSP File Name:  TopCategoriesDisplay.jsp -->
+<table width="960" align="center" border="0" cellspacing="0" cellpadding="0">
+  <tr><!--header-->
+    <td colspan="3" align="left" valign="top">	
+
+<!-- BEGIN HeaderDisplay.jspf -->
+
+
+	
+	
+	
+	
+		
+
+<!-- Start - JSP File name:  style1/CachedHeaderDisplay.jsp -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+		
+		
+
+
+
+
+
+
+
+	
+		
+		
+		
+		
+		
+		
+	
+	
+
+	
+
+
+<!--START HEADER-->
+
+
+
+
+
+
+
+
+	
+		
+	
+	
+	
+		
+	
+		
+	
+	
+
+<IE:clientCaps ID="oClientCaps" STYLE="behavior:url('#default#clientCaps')"></IE:clientCaps>
+<div id="header">	
+	</div>
+	<div id="subheader">	
+		<div id="subnavcontainer">
+			<ul id="subnavlist">
+				<li id="active"><a href="Home_Page" id="nav_home">Home</a></li>
+				<li id=""><a href="BrowseMagazines_Page" id="nav_browse">Browse Magazines</a></li>
+				<li id=""><a href="Categories_Page" id="nav_cat">Categories</a></li>
+				<li id=""><a href="GiveAGift_Page" id="nav_gift">Give a Gift</a></li>
+				
+					<li id=""><a href="SpecialOffers_Page" id="nav_so">Special Offers</a></li>				
+				
+				<li id=""><a href="OrderCalculate?langId=-1&amp;storeId=10001&amp;catalogId=10001&amp;URL=OrderItemDisplay%3fstoreId%3d10001%26catalogId%3d10001&amp;activeLink=Cart" id="nav_cart">Shopping Cart</a></li>
+				<li id=""><a href="MyAccount_Page" id="nav_custserv">Customer Service</a></li>
+			</ul>
+		</div>
+	</div>
+<!--END HEADER-->
+<!-- End - JSP File name:  style1/CachedHeaderDisplay.jsp -->
+
+<!-- END HeaderDisplay.jspf -->
+</td>
+  </tr>
+  <tr>
+    <td width="146" rowspan="3" align="left" valign="top" >
+
+
+<!-- BEGIN SidebarDisplay.jspf -->
+
+
+	
+	
+	
+	
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+		
+		
+
+
+
+
+
+
+
+
+
+
+	
+	
+		
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+<div id="leftNav"><!--<h1>Browse Magazines</h1>-->
+<ul id="logo_nav">
+	<li>
+	<img src="/webapp/wcs/stores/content/CondeNast/images/leftnavmap.png" border="0" usemap="#mags" />
+	</li>
+</ul>
+
+	
+				
+<map name="mags">
+	
+	
+		
+			
+		
+		
+	
+	
+	
+			
+				
+				
+				
+			
+	
+	<area alt="Vogue" shape="rect" coords="7,5,144,25" href="Subscriptions_Vogue">
+	
+	
+		
+			
+		
+		
+	
+	
+	
+			
+				
+				
+				
+			
+	
+	<area alt="W" shape="rect" coords="7,25,144,48" href="Subscriptions_W">
+	
+	
+		
+			
+		
+		
+	
+	
+	
+			
+				
+				
+				
+			
+	
+	<area alt="Glamour" shape="rect" coords="7,48,144,68" href="Subscriptions_Glamour">
+	
+	
+		
+			
+		
+		
+	
+	
+	
+			
+				
+				
+				
+			
+	
+	<area alt="Allure" shape="rect" coords="7,68,144,88" href="Subscriptions_allure">
+	
+	
+		
+			
+		
+		
+	
+	
+	
+			
+				
+				
+				
+			
+	
+	<area alt="Self" shape="rect" coords="7,88,144,112" href="Subscriptions_Self">
+	
+	
+		
+			
+		
+		
+	
+	
+	
+			
+				
+				
+				
+			
+	
+	<area alt="Teen Vogue" shape="rect" coords="7,112,144,131" href="Subscriptions_TeenVogue">
+	
+	
+		
+			
+		
+		
+	
+	
+	
+			
+				
+				
+				
+			
+	
+	<area alt="GQ" shape="rect" coords="7,131,144,153" href="Subscriptions_GQ">
+	
+	
+		
+			
+		
+		
+	
+	
+	
+			
+				
+				
+				
+			
+	
+	<area alt="Details" shape="rect" coords="7,153,144,173" href="Subscriptions_Details">
+	
+	
+		
+			
+		
+		
+	
+	
+	
+			
+				
+				
+				
+			
+	
+	<area alt="Men's Vogue" shape="rect" coords="7,173,144,193" href="Subscriptions_MensVogue">
+	
+	
+		
+			
+		
+		
+	
+	
+	
+			
+				
+				
+				
+			
+	
+	<area alt="Architectural Digest" shape="rect" coords="7,193,144,210" href="Subscriptions_ArchitecturalDigest">
+	
+	
+		
+			
+		
+		
+	
+	
+	
+			
+				
+				
+				
+			
+	
+	<area alt="Brides" shape="rect" coords="7,210,144,230" href="Subscriptions_Brides">
+	
+	
+		
+			
+		
+		
+	
+	
+	
+			
+				
+				
+				
+			
+	
+	<area alt="Modern Bride" shape="rect" coords="7,230,144,250" href="Subscriptions_ModernBride">
+	
+	
+		
+			
+		
+		
+	
+	
+	
+			
+				
+				
+				
+			
+	
+	<area alt="Elegant Bride" shape="rect" coords="7,250,144,275" href="Subscriptions_ElegantBride">
+	
+	
+		
+			
+		
+		
+	
+	
+	
+			
+				
+				
+				
+			
+	
+	<area alt="Lucky" shape="rect" coords="7,275,144,295" href="Subscriptions_Lucky">
+	
+	
+		
+			
+		
+		
+	
+	
+	
+			
+				
+				
+				
+			
+	
+	<area alt="Domino" shape="rect" coords="7,295,144,315" href="Subscriptions_Domino">
+	
+	
+		
+			
+		
+		
+	
+	
+	
+			
+				
+				
+				
+			
+	
+	<area alt="Golf Digest" shape="rect" coords="7,315,144,337" href="Subscriptions_GolfDigest">
+	
+	
+		
+			
+		
+		
+	
+	
+	
+			
+				
+				
+				
+			
+	
+	<area alt="Golf World" shape="rect" coords="7,337,144,359" href="Subscriptions_GolfWorld">
+	
+	
+		
+			
+		
+		
+	
+	
+	
+			
+				
+				
+				
+			
+	
+	<area alt="Golf For Women" shape="rect" coords="7,359,144,379" href="Subscriptions_GolfForWomen">
+	
+	
+		
+			
+		
+		
+	
+	
+	
+			
+				
+				
+				
+			
+	
+	<area alt="Vanity Fair" shape="rect" coords="7,379,144,397" href="Subscriptions_VanityFair">
+	
+	
+		
+			
+		
+		
+	
+	
+	
+			
+				
+				
+				
+			
+	
+	<area alt="Gourmet" shape="rect" coords="7,397,144,420" href="Subscriptions_Gourmet">
+	
+	
+		
+			
+		
+		
+	
+	
+	
+			
+				
+				
+				
+			
+	
+	<area alt="Bon App&eacute;tit" shape="rect" coords="7,428,144,446" href="Subscriptions_BonAppetite">
+	
+	
+		
+			
+		
+		
+	
+	
+	
+			
+				
+				
+				
+			
+	
+	<area alt="Cond&eacute; Nast Traveler" shape="rect" coords="7,446,144,469" href="Subscriptions_CondeNastTraveler">
+	
+	
+		
+			
+		
+		
+	
+	
+	
+			
+				
+				
+				
+			
+	
+	<area alt="Wired" shape="rect" coords="7,469,144,486" href="Subscriptions_Wired">
+	
+	
+		
+			
+		
+		
+	
+	
+	
+			
+				
+				
+				
+			
+	
+	<area alt="Cookie" shape="rect" coords="7,486,144,506" href="Subscriptions_Cookie">
+	
+	
+		
+			
+		
+		
+	
+	
+	
+			
+				
+				
+				
+			
+	
+	<area alt="Cond&eacute; Nast Portfolio" shape="rect" coords="7,506,144,529" href="Subscriptions_CondeNastPortfolio">
+	
+	
+		
+			
+		
+		
+	
+	
+	
+			
+				
+				
+				
+			
+	
+	<area alt="The New Yorker" shape="rect" coords="7,529,144,546" href="Subscriptions_NewYorker">
+					
+</map>
+
+	
+	
+</div>
+
+<!-- END SidebarDisplay.jspf -->
+</td>
+    <td colspan="2" align="left" valign="top" ></td>
+    </tr>
+  <tr><!--left nav & subheader-->
+    <!--content and right nav-->
+    <td align="left" valign="top" >
+<!--MAIN CONTENT STARTS HERE--><div id="content" style="padding-top:5px;">
+	
+			    
+                			
+                			
+                			
+                			
+                			
+                        
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+		
+		
+
+
+
+
+
+<!-- Start of the JSP: CachedTopCategoriesDisplay.jsp -->	
+	
+	
+	
+			
+				
+			    	
+			    	
+			    	
+			    	
+			    	
+			    			    	
+			    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+		
+		
+
+
+
+
+	
+	
+		
+			
+		
+		
+	
+	
+	
+		
+			<span   style=" ">
+				
+				 
+				 					
+				
+					
+					
+					
+						<img src="/webapp/wcs/stores/content/CondeNast/images/banner.gif" />
+<!--<h2 style="margin:3px 0; color:#000;padding-left:10px;">Welcome to the<span style="color:#369;"> Cond&eacute; Nast Online Magazine Store</span></h2><h3 style="margin:3px 0 15px 0; color:#000;padding-left:10px;">Buy Direct - Best Deals, Free Gifts, Free Shipping</h3> -->
+<p ><br />Home to many of the world's most celebrated magazines, Cond&eacute; Nast Publications is committed to journalistic integrity, influential reporting and superior design.</p>
+<p> Now you can buy magazines online <strong></strong>direct</strong> from Cond&eacute; 
+Nast at the lowest authorized prices available! Your satisfaction is also <strong>100% Guaranteed:</strong> you can receive a full refund for all undelivered issues, at any time, for any reason. <br /></p><br />
+
+					
+					
+					
+				
+			</span>
+		
+		
+		
+	
+
+			
+			
+						
+		
+		<div id="showcase">   
+			<div id="DEF_showcase">
+							
+					
+						
+							
+						
+						
+						
+					
+				
+				
+				<ul id="specialoffer">
+				
+					
+						
+						
+						
+						
+									
+							
+						
+	
+						
+											
+												
+								
+							
+								
+									
+								
+									
+								
+							
+						
+											
+												
+								
+							
+								
+									
+								
+									
+								
+							
+						
+											
+												
+								
+							
+								
+									
+								
+									
+								
+							
+						
+											
+												
+								
+							
+								
+									
+								
+									
+								
+							
+						
+											
+												
+								
+							
+								
+									
+								
+									
+								
+							
+						
+											
+												
+								
+							
+								
+									
+								
+									
+								
+							
+						
+											
+						
+						<li>
+							<div class="so_bg">
+											
+													
+									<h1>GQ</h1>
+									
+									<a href="ProductDisplay?catalogId=10001&amp;storeId=10001&amp;productId=10514&amp;langId=-1"><img width="100" border="0" alt="GQ" src="/webapp/wcs/stores/content/CondeNast/images/cover_gq_100.jpg" style="margin:5px 15px 5px 15px;border:1px solid #000;"/></a>
+									<!-- bundle img class="soImgBottom" -->			
+									
+													
+									
+										
+											
+										
+														
+											
+									
+										
+												
+													<div class="so_desc">
+														<br/>
+														<span class="termValue">12 issues / 1 year</span><br/>
+														<span class="cvrPrice">Cover Price: <span class="strike">$47.88</span></span><br/>
+														<span class="ourPrice">Our Price: $12.00</span><br/>
+														
+														
+														
+														
+														
+														<span class="youSave">You Save: 74%</span><br/>
+													</div>
+												
+												<form name="OrderItemAddForm_1" ACTION="OrderItemAdd" METHOD="POST" id="OrderItemAddForm_1" onsubmit="return Add2ShopCartAjax('OrderItemAddForm_1', 'addtocart_11527', '/webapp/wcs/stores/content/CondeNast/images/so_add_to_cart.gif', '/webapp/wcs/stores/content/CondeNast/images/loader_so_add_to_cart.gif', '/webapp/wcs/stores/content/CondeNast/images/so_added.gif')">
+													<input type="hidden" name="storeId" value="10001">
+													<input type="hidden" name="langId" value="-1"> 
+													<input type="hidden" name="catalogId" value="10001"> 
+													<input type="hidden" name="URL" value="OrderCalculate?URL=OrderItemResetAddressCmd?URL=TopCategoriesDisplay?catalogId=10001&amp;storeId=10001&amp;activeLink=Home&amp;langId=-1&amp;justAdded=1"> 			
+													<input type="hidden" name="quantity" value="1">	
+													<input type="hidden" name="catEntryId" value="11527">	
+													<input type="hidden" name="comment" value="GQ">	
+													<input type="image" name="addtocart" id="addtocart_11527" src="/webapp/wcs/stores/content/CondeNast/images/so_add_to_cart.gif" alt="Add to Cart" />						
+												</form>						
+										
+											
+										
+																								
+							</div>
+						</li>				
+						
+					
+						
+						
+						
+						
+						
+	
+						
+											
+												
+								
+							
+								
+									
+								
+									
+								
+							
+						
+											
+												
+								
+							
+								
+									
+								
+									
+								
+							
+						
+											
+												
+								
+							
+								
+									
+								
+									
+								
+							
+						
+											
+												
+								
+							
+								
+									
+								
+									
+								
+							
+						
+											
+												
+								
+							
+								
+									
+								
+									
+								
+							
+						
+											
+												
+								
+							
+								
+									
+								
+									
+								
+							
+						
+											
+						
+						<li>
+							<div class="so_bg">
+											
+													
+									<h1>The New Yorker</h1>
+									
+									<a href="ProductDisplay?catalogId=10001&amp;storeId=10001&amp;productId=10519&amp;langId=-1"><img width="100" border="0" alt="The New Yorker" src="/webapp/wcs/stores/content/CondeNast/images/cover_newyorker_100.jpg" style="margin:5px 15px 5px 15px;border:1px solid #000;"/></a>
+									<!-- bundle img class="soImgBottom" -->			
+									
+													
+									
+										
+											
+										
+														
+											
+									
+										
+												
+													<div class="so_desc">
+														<br/>
+														<span class="termValue">47 issues / 1 year</span><br/>
+														<span class="cvrPrice">Cover Price: <span class="strike">$196.18</span></span><br/>
+														<span class="ourPrice">Our Price: $39.95</span><br/>
+														
+														
+														
+														
+														
+														<span class="youSave">You Save: 79%</span><br/>
+													</div>
+												
+												<form name="OrderItemAddForm_2" ACTION="OrderItemAdd" METHOD="POST" id="OrderItemAddForm_2" onsubmit="return Add2ShopCartAjax('OrderItemAddForm_2', 'addtocart_11537', '/webapp/wcs/stores/content/CondeNast/images/so_add_to_cart.gif', '/webapp/wcs/stores/content/CondeNast/images/loader_so_add_to_cart.gif', '/webapp/wcs/stores/content/CondeNast/images/so_added.gif')">
+													<input type="hidden" name="storeId" value="10001">
+													<input type="hidden" name="langId" value="-1"> 
+													<input type="hidden" name="catalogId" value="10001"> 
+													<input type="hidden" name="URL" value="OrderCalculate?URL=OrderItemResetAddressCmd?URL=TopCategoriesDisplay?catalogId=10001&amp;storeId=10001&amp;activeLink=Home&amp;langId=-1&amp;justAdded=1"> 			
+													<input type="hidden" name="quantity" value="1">	
+													<input type="hidden" name="catEntryId" value="11537">	
+													<input type="hidden" name="comment" value="The New Yorker">	
+													<input type="image" name="addtocart" id="addtocart_11537" src="/webapp/wcs/stores/content/CondeNast/images/so_add_to_cart.gif" alt="Add to Cart" />						
+												</form>						
+										
+											
+										
+																								
+							</div>
+						</li>				
+						
+					
+				
+				</ul>
+			</div>
+	</div>
+	
+
+
+
+<!-- BEGIN CarouselDisplay.jspf -->
+
+
+	
+	
+	
+	
+		
+		
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+		
+		
+
+
+
+
+
+
+
+
+	
+	
+	
+		
+		
+			
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+	
+
+
+<style type="text/css">
+.carousel-component {
+	padding-left: 1px;
+	width: 615px; 
+    overflow: hidden;
+}
+.carousel-component .carousel-list li { 
+    margin:0px;
+    /*width:58px;*/
+    /*    margin-left: auto;*/ /* for testing IE auto issue */
+}
+
+.carousel-component .carousel-list li a { 
+    display:block;
+    /*border:1px solid #e2edfa;*/
+    outline:none;
+    -moz-outline:none; 
+}
+
+.carousel-component .carousel-list li a:hover { 
+    /*border: 1px solid #87bf4e; */
+}
+
+.carousel-component .carousel-list li img { 
+    /*border:1px solid #999;*/
+    display:block;
+}
+
+.carousel-component .carousel-list li strong { 
+    display:block;
+}
+.carousel-clip-region {
+	/*background: #AFC5DA none repeat;*/
+	padding-left:51px;
+}
+</style>
+
+<script type="text/javascript" src="/webapp/wcs/stores/CondeNast/lib/yahoo-dom-event.js"></script> 
+<script type="text/javascript" src="/webapp/wcs/stores/CondeNast/lib/utilities.js"></script>
+<script type="text/javascript" src="/webapp/wcs/stores/CondeNast/lib/dragdrop-min.js"></script>
+<script type="text/javascript" src="/webapp/wcs/stores/CondeNast/lib/container_core-min.js"></script>
+<script type="text/javascript" src="/webapp/wcs/stores/CondeNast/lib/ycarousel_min.js"></script>		
+<script language="javascript">
+	function ProductUrl() {
+		this.id = 0;
+		this.partNumber;
+		this.altText;
+		this.src;
+		this.url;
+		this.hasBeenLoaded = false;
+	}
+var hash = new Hash();
+var carItems = new Hash();
+var imageList = [];
+var urlList = [];
+
+/**
+ * Since carousel.addItem uses an HTML string to create the interface
+ * for each carousel item, this method formats the HTML for an LI.
+ **/
+var fmtItem = function(imgUrl, url, title, id) {
+
+      var innerHTML = 
+          '<a href="' + 
+          url + 
+          '"><img src="' + 
+          imgUrl +
+        '" title="' +
+        title +
+        '" width="' +
+        58 +
+        '" height="' +
+        80+
+        '" id="' +
+        id+
+        '"/>' + 
+          '<\/a>';
+  
+    return innerHTML;
+    
+};
+/**
+ * Custom inital load handler. Called when the carousel loads the initial
+ * set of data items. Specified to the carousel as the configuration
+ * parameter: loadInitHandler
+ **/
+var loadInitialItems = function(type, args) {
+    var start = args[0];
+    var last = args[1]; 
+    load(this, 1, 27+10);
+    //this.moveTo(27);
+};
+/**
+ * Custom load next handler. Called when the carousel loads the next
+ * set of data items. Specified to the carousel as the configuration
+ * parameter: loadNextHandler
+ **/
+var loadNextItems = function(type, args) {    
+    var start = args[0];
+    var last = args[1]; 
+    var alreadyCached = args[2];
+
+    if(!alreadyCached) {
+        load(this, start, last);
+    	initCovers();
+    }
+};
+
+/**
+ * Custom load previous handler. Called when the carousel loads the previous
+ * set of data items. Specified to the carousel as the configuration
+ * parameter: loadPrevHandler
+ **/
+var loadPrevItems = function(type, args) {
+    var start = args[0];
+    var last = args[1]; 
+    var alreadyCached = args[2];
+    if (last == 6) {
+    	var pu = carItems.get(26);
+    	carousel.addItem(1, fmtItem(pu.src, pu.url, pu.altText, i));
+    	var pu = carItems.get(25);
+    	carousel.addItem(1, fmtItem(pu.src, pu.url, pu.altText, i));
+    	var pu = carItems.get(24);
+    	carousel.addItem(1, fmtItem(pu.src, pu.url, pu.altText, i));
+    	var pu = carItems.get(23);
+    	carousel.addItem(1, fmtItem(pu.src, pu.url, pu.altText, i));
+    } else {
+	    if(!alreadyCached) {
+	        load(this, start, last);
+	    }
+    }
+};
+
+var load = function(carousel, start, last) {
+    for(var i=start;i<=last;i++) {
+    	var itemIndex = i;
+    	while (itemIndex > 26) {
+    		itemIndex -= 26;
+    	}
+        var pu = carItems.get(itemIndex);
+        carousel.addItem(i, fmtItem(pu.src, pu.url, pu.altText, i));
+    }
+};
+
+var getRandom = function(max, last) {
+    var randomIndex;
+    do {
+        randomIndex = Math.floor(Math.random()*max);
+    } while(randomIndex == last);
+    
+    return randomIndex;
+};
+
+/**
+ * Custom button state handler for enabling/disabling button state. 
+ * Called when the carousel has determined that the previous button
+ * state should be changed.
+ * Specified to the carousel as the configuration
+ * parameter: prevButtonStateHandler
+ **/
+var handlePrevButtonState = function(type, args) {
+
+    var enabling = args[0];
+    var leftImage = args[1];
+/*    if(enabling) {
+        leftImage.src = "images/left-enabled.gif";    
+    } else {
+        leftImage.src = "images/left-disabled.gif";
+    }
+*/
+};
+
+/**
+ * You must create the carousel after the page is loaded since it is
+ * dependent on an HTML element (in this case 'dhtml-carousel'.) See the
+ * HTML code below.
+ **/
+
+var carousel; // for ease of debugging; globals generally not a good idea
+var pageLoad = function() 
+{
+    carousel = new YAHOO.extension.Carousel("car_container", 
+        {
+            numVisible:        10,
+            animationSpeed:    0.45,
+            scrollInc:         4,
+//            size:			   26,
+            prevElement:       "prev-arrow",
+            nextElement:       "next-arrow",
+            loadInitHandler:   loadInitialItems,
+            loadNextHandler:   loadNextItems,
+            loadPrevHandler:   loadPrevItems,
+            navMargin:		   23,
+//            wrap:			   true,
+			firstVisible: 	   27,
+            prevButtonStateHandler:   handlePrevButtonState
+        }
+    );
+    initCovers();
+};
+
+YAHOO.util.Event.addListener(window, 'load', pageLoad);
+
+function initCovers() {
+	var htNormal = 80, htSmall =80, htFull = 109,wNormal = 58, wSmall = 58, wFull = 80;
+	var cvrs = $$("ul#carousel_list_content li img");
+	var fx = new Fx.Elements(cvrs, {wait: false, duration: 300, transition: Fx.Transitions.Back.easeOut});
+	
+	cvrs.each(function(cvr, i) {
+		cvr.setStyles('width: '+wNormal+'px; height: '+htNormal+'px;');
+		cvr.addEvent("mouseenter", function(event) {
+			var o = {};
+			o[i] = {width: [cvr.getStyle("width").toInt(), wFull],height: [cvr.getStyle("height").toInt(), htFull]}
+			cvrs.each(function(other, j) {
+				if(i != j) {
+					var w = other.getStyle("width").toInt();
+					var h = other.getStyle("height").toInt();
+					if(h != htSmall) { o[j] = {height: [h, htSmall], width: [w, wSmall]}};
+				}
+			});
+			fx.start(o);
+			if ($('DEF_showcase')) {
+			var cvrIndex = cvr.getProperty('id');
+			while (cvrIndex > 26) {
+				cvrIndex -= 26;
+			}
+			var myAjax = new Ajax(hash.get(cvrIndex), 
+								 {method: 'get', 
+								  onComplete: function(resp) {
+//								  if ($('#DEF_showcase')) {
+									  $('DEF_showcase').setHTML(resp);
+//									  $('DEF_showcase').setOpacity('0');
+//									  $('UPD_showcase').setOpacity('1');
+//									  $('DEF_showcase').setStyle('display','none');
+//									  $('UPD_showcase').setStyle('display','block');
+//								  }
+								  }});
+			myAjax.request();
+			}
+		});
+		//click		
+	}); 
+
+	cvrs.addEvent("mouseleave", function(event) {
+		var o = {};
+		cvrs.each(function(cvr, i) {
+			o[i] = {width: [cvr.getStyle("width").toInt(), wNormal],height: [cvr.getStyle("height").toInt(), htNormal]}			
+		});
+		fx.start(o);
+	}); 
+	
+}
+
+</script>
+
+		
+			
+			
+								    		
+		
+									
+					   
+			<script language="javascript">
+			var productUrl = new ProductUrl();
+			productUrl.id="10523";
+			productUrl.partNumber="Vogue";
+			productUrl.altText = "Vogue";
+			productUrl.src = '/webapp/wcs/stores/content/CondeNast/images/cover_vogue_100.jpg';
+			productUrl.url = 'ProductDisplay?catalogId=10001&storeId=10001&productId=10523&langId=-1';
+			carItems.set('1', productUrl);
+			hash.set('1', 'ProductESpotDisplayView?catalogId=10001&storeId=10001&productId=10523&langId=-1&returnUrl=TopCategoriesDisplay%3fcatalogId%3d10001%26storeId%3d10001%26activeLink%3dHome%26langId%3d-1');
+			</script>
+									
+		
+									
+					   
+			<script language="javascript">
+			var productUrl = new ProductUrl();
+			productUrl.id="10524";
+			productUrl.partNumber="W";
+			productUrl.altText = "W";
+			productUrl.src = '/webapp/wcs/stores/content/CondeNast/images/cover_w_100.jpg';
+			productUrl.url = 'ProductDisplay?catalogId=10001&storeId=10001&productId=10524&langId=-1';
+			carItems.set('2', productUrl);
+			hash.set('2', 'ProductESpotDisplayView?catalogId=10001&storeId=10001&productId=10524&langId=-1&returnUrl=TopCategoriesDisplay%3fcatalogId%3d10001%26storeId%3d10001%26activeLink%3dHome%26langId%3d-1');
+			</script>
+									
+		
+									
+					   
+			<script language="javascript">
+			var productUrl = new ProductUrl();
+			productUrl.id="10510";
+			productUrl.partNumber="Glamour";
+			productUrl.altText = "Glamour";
+			productUrl.src = '/webapp/wcs/stores/content/CondeNast/images/cover_glamour_100.jpg';
+			productUrl.url = 'ProductDisplay?catalogId=10001&storeId=10001&productId=10510&langId=-1';
+			carItems.set('3', productUrl);
+			hash.set('3', 'ProductESpotDisplayView?catalogId=10001&storeId=10001&productId=10510&langId=-1&returnUrl=TopCategoriesDisplay%3fcatalogId%3d10001%26storeId%3d10001%26activeLink%3dHome%26langId%3d-1');
+			</script>
+									
+		
+									
+					   
+			<script language="javascript">
+			var productUrl = new ProductUrl();
+			productUrl.id="10001";
+			productUrl.partNumber="allure";
+			productUrl.altText = "Allure";
+			productUrl.src = '/webapp/wcs/stores/content/CondeNast/images/cover_allure_100.jpg';
+			productUrl.url = 'ProductDisplay?catalogId=10001&storeId=10001&productId=10001&langId=-1';
+			carItems.set('4', productUrl);
+			hash.set('4', 'ProductESpotDisplayView?catalogId=10001&storeId=10001&productId=10001&langId=-1&returnUrl=TopCategoriesDisplay%3fcatalogId%3d10001%26storeId%3d10001%26activeLink%3dHome%26langId%3d-1');
+			</script>
+									
+		
+									
+					   
+			<script language="javascript">
+			var productUrl = new ProductUrl();
+			productUrl.id="10520";
+			productUrl.partNumber="Self";
+			productUrl.altText = "Self";
+			productUrl.src = '/webapp/wcs/stores/content/CondeNast/images/cover_self_100.jpg';
+			productUrl.url = 'ProductDisplay?catalogId=10001&storeId=10001&productId=10520&langId=-1';
+			carItems.set('5', productUrl);
+			hash.set('5', 'ProductESpotDisplayView?catalogId=10001&storeId=10001&productId=10520&langId=-1&returnUrl=TopCategoriesDisplay%3fcatalogId%3d10001%26storeId%3d10001%26activeLink%3dHome%26langId%3d-1');
+			</script>
+									
+		
+									
+					   
+			<script language="javascript">
+			var productUrl = new ProductUrl();
+			productUrl.id="10521";
+			productUrl.partNumber="TeenVogue";
+			productUrl.altText = "Teen Vogue";
+			productUrl.src = '/webapp/wcs/stores/content/CondeNast/images/cover_teenvogue_100.jpg';
+			productUrl.url = 'ProductDisplay?catalogId=10001&storeId=10001&productId=10521&langId=-1';
+			carItems.set('6', productUrl);
+			hash.set('6', 'ProductESpotDisplayView?catalogId=10001&storeId=10001&productId=10521&langId=-1&returnUrl=TopCategoriesDisplay%3fcatalogId%3d10001%26storeId%3d10001%26activeLink%3dHome%26langId%3d-1');
+			</script>
+									
+		
+									
+					   
+			<script language="javascript">
+			var productUrl = new ProductUrl();
+			productUrl.id="10514";
+			productUrl.partNumber="GQ";
+			productUrl.altText = "GQ";
+			productUrl.src = '/webapp/wcs/stores/content/CondeNast/images/cover_gq_100.jpg';
+			productUrl.url = 'ProductDisplay?catalogId=10001&storeId=10001&productId=10514&langId=-1';
+			carItems.set('7', productUrl);
+			hash.set('7', 'ProductESpotDisplayView?catalogId=10001&storeId=10001&productId=10514&langId=-1&returnUrl=TopCategoriesDisplay%3fcatalogId%3d10001%26storeId%3d10001%26activeLink%3dHome%26langId%3d-1');
+			</script>
+									
+		
+									
+					   
+			<script language="javascript">
+			var productUrl = new ProductUrl();
+			productUrl.id="10507";
+			productUrl.partNumber="Details";
+			productUrl.altText = "Details";
+			productUrl.src = '/webapp/wcs/stores/content/CondeNast/images/cover_details_100.jpg';
+			productUrl.url = 'ProductDisplay?catalogId=10001&storeId=10001&productId=10507&langId=-1';
+			carItems.set('8', productUrl);
+			hash.set('8', 'ProductESpotDisplayView?catalogId=10001&storeId=10001&productId=10507&langId=-1&returnUrl=TopCategoriesDisplay%3fcatalogId%3d10001%26storeId%3d10001%26activeLink%3dHome%26langId%3d-1');
+			</script>
+									
+		
+									
+					   
+			<script language="javascript">
+			var productUrl = new ProductUrl();
+			productUrl.id="10517";
+			productUrl.partNumber="MensVogue";
+			productUrl.altText = "Men&#039;s Vogue";
+			productUrl.src = '/webapp/wcs/stores/content/CondeNast/images/cover_mensvogue_100.jpg';
+			productUrl.url = 'ProductDisplay?catalogId=10001&storeId=10001&productId=10517&langId=-1';
+			carItems.set('9', productUrl);
+			hash.set('9', 'ProductESpotDisplayView?catalogId=10001&storeId=10001&productId=10517&langId=-1&returnUrl=TopCategoriesDisplay%3fcatalogId%3d10001%26storeId%3d10001%26activeLink%3dHome%26langId%3d-1');
+			</script>
+									
+		
+									
+					   
+			<script language="javascript">
+			var productUrl = new ProductUrl();
+			productUrl.id="10501";
+			productUrl.partNumber="ArchitecturalDigest";
+			productUrl.altText = "Architectural Digest";
+			productUrl.src = '/webapp/wcs/stores/content/CondeNast/images/cover_archdigest_100.jpg';
+			productUrl.url = 'ProductDisplay?catalogId=10001&storeId=10001&productId=10501&langId=-1';
+			carItems.set('10', productUrl);
+			hash.set('10', 'ProductESpotDisplayView?catalogId=10001&storeId=10001&productId=10501&langId=-1&returnUrl=TopCategoriesDisplay%3fcatalogId%3d10001%26storeId%3d10001%26activeLink%3dHome%26langId%3d-1');
+			</script>
+									
+		
+									
+					   
+			<script language="javascript">
+			var productUrl = new ProductUrl();
+			productUrl.id="10502";
+			productUrl.partNumber="Brides";
+			productUrl.altText = "Brides";
+			productUrl.src = '/webapp/wcs/stores/content/CondeNast/images/cover_brides_100.jpg';
+			productUrl.url = 'ProductDisplay?catalogId=10001&storeId=10001&productId=10502&langId=-1';
+			carItems.set('11', productUrl);
+			hash.set('11', 'ProductESpotDisplayView?catalogId=10001&storeId=10001&productId=10502&langId=-1&returnUrl=TopCategoriesDisplay%3fcatalogId%3d10001%26storeId%3d10001%26activeLink%3dHome%26langId%3d-1');
+			</script>
+									
+		
+									
+					   
+			<script language="javascript">
+			var productUrl = new ProductUrl();
+			productUrl.id="10518";
+			productUrl.partNumber="ModernBride";
+			productUrl.altText = "Modern Bride";
+			productUrl.src = '/webapp/wcs/stores/content/CondeNast/images/cover_modernbride_100.jpg';
+			productUrl.url = 'ProductDisplay?catalogId=10001&storeId=10001&productId=10518&langId=-1';
+			carItems.set('12', productUrl);
+			hash.set('12', 'ProductESpotDisplayView?catalogId=10001&storeId=10001&productId=10518&langId=-1&returnUrl=TopCategoriesDisplay%3fcatalogId%3d10001%26storeId%3d10001%26activeLink%3dHome%26langId%3d-1');
+			</script>
+									
+		
+									
+					   
+			<script language="javascript">
+			var productUrl = new ProductUrl();
+			productUrl.id="10509";
+			productUrl.partNumber="ElegantBride";
+			productUrl.altText = "Elegant Bride";
+			productUrl.src = '/webapp/wcs/stores/content/CondeNast/images/cover_elegantbride_100.jpg';
+			productUrl.url = 'ProductDisplay?catalogId=10001&storeId=10001&productId=10509&langId=-1';
+			carItems.set('13', productUrl);
+			hash.set('13', 'ProductESpotDisplayView?catalogId=10001&storeId=10001&productId=10509&langId=-1&returnUrl=TopCategoriesDisplay%3fcatalogId%3d10001%26storeId%3d10001%26activeLink%3dHome%26langId%3d-1');
+			</script>
+									
+		
+									
+					   
+			<script language="javascript">
+			var productUrl = new ProductUrl();
+			productUrl.id="10516";
+			productUrl.partNumber="Lucky";
+			productUrl.altText = "Lucky";
+			productUrl.src = '/webapp/wcs/stores/content/CondeNast/images/cover_lucky_100.jpg';
+			productUrl.url = 'ProductDisplay?catalogId=10001&storeId=10001&productId=10516&langId=-1';
+			carItems.set('14', productUrl);
+			hash.set('14', 'ProductESpotDisplayView?catalogId=10001&storeId=10001&productId=10516&langId=-1&returnUrl=TopCategoriesDisplay%3fcatalogId%3d10001%26storeId%3d10001%26activeLink%3dHome%26langId%3d-1');
+			</script>
+									
+		
+									
+					   
+			<script language="javascript">
+			var productUrl = new ProductUrl();
+			productUrl.id="10508";
+			productUrl.partNumber="Domino";
+			productUrl.altText = "Domino";
+			productUrl.src = '/webapp/wcs/stores/content/CondeNast/images/cover_domino_100.jpg';
+			productUrl.url = 'ProductDisplay?catalogId=10001&storeId=10001&productId=10508&langId=-1';
+			carItems.set('15', productUrl);
+			hash.set('15', 'ProductESpotDisplayView?catalogId=10001&storeId=10001&productId=10508&langId=-1&returnUrl=TopCategoriesDisplay%3fcatalogId%3d10001%26storeId%3d10001%26activeLink%3dHome%26langId%3d-1');
+			</script>
+									
+		
+									
+					   
+			<script language="javascript">
+			var productUrl = new ProductUrl();
+			productUrl.id="10512";
+			productUrl.partNumber="GolfDigest";
+			productUrl.altText = "Golf Digest";
+			productUrl.src = '/webapp/wcs/stores/content/CondeNast/images/cover_golfdigest_100.jpg';
+			productUrl.url = 'ProductDisplay?catalogId=10001&storeId=10001&productId=10512&langId=-1';
+			carItems.set('16', productUrl);
+			hash.set('16', 'ProductESpotDisplayView?catalogId=10001&storeId=10001&productId=10512&langId=-1&returnUrl=TopCategoriesDisplay%3fcatalogId%3d10001%26storeId%3d10001%26activeLink%3dHome%26langId%3d-1');
+			</script>
+									
+		
+									
+					   
+			<script language="javascript">
+			var productUrl = new ProductUrl();
+			productUrl.id="10511";
+			productUrl.partNumber="GolfWorld";
+			productUrl.altText = "Golf World";
+			productUrl.src = '/webapp/wcs/stores/content/CondeNast/images/cover_golfworld_100.jpg';
+			productUrl.url = 'ProductDisplay?catalogId=10001&storeId=10001&productId=10511&langId=-1';
+			carItems.set('17', productUrl);
+			hash.set('17', 'ProductESpotDisplayView?catalogId=10001&storeId=10001&productId=10511&langId=-1&returnUrl=TopCategoriesDisplay%3fcatalogId%3d10001%26storeId%3d10001%26activeLink%3dHome%26langId%3d-1');
+			</script>
+									
+		
+									
+					   
+			<script language="javascript">
+			var productUrl = new ProductUrl();
+			productUrl.id="10513";
+			productUrl.partNumber="GolfForWomen";
+			productUrl.altText = "Golf For Women";
+			productUrl.src = '/webapp/wcs/stores/content/CondeNast/images/cover_golfforwomen_100.jpg';
+			productUrl.url = 'ProductDisplay?catalogId=10001&storeId=10001&productId=10513&langId=-1';
+			carItems.set('18', productUrl);
+			hash.set('18', 'ProductESpotDisplayView?catalogId=10001&storeId=10001&productId=10513&langId=-1&returnUrl=TopCategoriesDisplay%3fcatalogId%3d10001%26storeId%3d10001%26activeLink%3dHome%26langId%3d-1');
+			</script>
+									
+		
+									
+					   
+			<script language="javascript">
+			var productUrl = new ProductUrl();
+			productUrl.id="10522";
+			productUrl.partNumber="VanityFair";
+			productUrl.altText = "Vanity Fair";
+			productUrl.src = '/webapp/wcs/stores/content/CondeNast/images/cover_vanityfair_100.jpg';
+			productUrl.url = 'ProductDisplay?catalogId=10001&storeId=10001&productId=10522&langId=-1';
+			carItems.set('19', productUrl);
+			hash.set('19', 'ProductESpotDisplayView?catalogId=10001&storeId=10001&productId=10522&langId=-1&returnUrl=TopCategoriesDisplay%3fcatalogId%3d10001%26storeId%3d10001%26activeLink%3dHome%26langId%3d-1');
+			</script>
+									
+		
+									
+					   
+			<script language="javascript">
+			var productUrl = new ProductUrl();
+			productUrl.id="10515";
+			productUrl.partNumber="Gourmet";
+			productUrl.altText = "Gourmet";
+			productUrl.src = '/webapp/wcs/stores/content/CondeNast/images/cover_gourmet_100.jpg';
+			productUrl.url = 'ProductDisplay?catalogId=10001&storeId=10001&productId=10515&langId=-1';
+			carItems.set('20', productUrl);
+			hash.set('20', 'ProductESpotDisplayView?catalogId=10001&storeId=10001&productId=10515&langId=-1&returnUrl=TopCategoriesDisplay%3fcatalogId%3d10001%26storeId%3d10001%26activeLink%3dHome%26langId%3d-1');
+			</script>
+									
+		
+									
+					   
+			<script language="javascript">
+			var productUrl = new ProductUrl();
+			productUrl.id="10503";
+			productUrl.partNumber="BonAppetite";
+			productUrl.altText = "Bon App&amp;eacute;tit";
+			productUrl.src = '/webapp/wcs/stores/content/CondeNast/images/cover_bonap_100.jpg';
+			productUrl.url = 'ProductDisplay?catalogId=10001&storeId=10001&productId=10503&langId=-1';
+			carItems.set('21', productUrl);
+			hash.set('21', 'ProductESpotDisplayView?catalogId=10001&storeId=10001&productId=10503&langId=-1&returnUrl=TopCategoriesDisplay%3fcatalogId%3d10001%26storeId%3d10001%26activeLink%3dHome%26langId%3d-1');
+			</script>
+									
+		
+									
+					   
+			<script language="javascript">
+			var productUrl = new ProductUrl();
+			productUrl.id="10506";
+			productUrl.partNumber="CondeNastTraveler";
+			productUrl.altText = "Cond&amp;eacute; Nast Traveler";
+			productUrl.src = '/webapp/wcs/stores/content/CondeNast/images/cover_travel_100.jpg';
+			productUrl.url = 'ProductDisplay?catalogId=10001&storeId=10001&productId=10506&langId=-1';
+			carItems.set('22', productUrl);
+			hash.set('22', 'ProductESpotDisplayView?catalogId=10001&storeId=10001&productId=10506&langId=-1&returnUrl=TopCategoriesDisplay%3fcatalogId%3d10001%26storeId%3d10001%26activeLink%3dHome%26langId%3d-1');
+			</script>
+									
+		
+									
+					   
+			<script language="javascript">
+			var productUrl = new ProductUrl();
+			productUrl.id="11001";
+			productUrl.partNumber="Wired";
+			productUrl.altText = "Wired";
+			productUrl.src = '/webapp/wcs/stores/content/CondeNast/images/cover_wired_100.jpg';
+			productUrl.url = 'ProductDisplay?catalogId=10001&storeId=10001&productId=11001&langId=-1';
+			carItems.set('23', productUrl);
+			hash.set('23', 'ProductESpotDisplayView?catalogId=10001&storeId=10001&productId=11001&langId=-1&returnUrl=TopCategoriesDisplay%3fcatalogId%3d10001%26storeId%3d10001%26activeLink%3dHome%26langId%3d-1');
+			</script>
+									
+		
+									
+					   
+			<script language="javascript">
+			var productUrl = new ProductUrl();
+			productUrl.id="10504";
+			productUrl.partNumber="Cookie";
+			productUrl.altText = "Cookie";
+			productUrl.src = '/webapp/wcs/stores/content/CondeNast/images/cover_cookie_100.jpg';
+			productUrl.url = 'ProductDisplay?catalogId=10001&storeId=10001&productId=10504&langId=-1';
+			carItems.set('24', productUrl);
+			hash.set('24', 'ProductESpotDisplayView?catalogId=10001&storeId=10001&productId=10504&langId=-1&returnUrl=TopCategoriesDisplay%3fcatalogId%3d10001%26storeId%3d10001%26activeLink%3dHome%26langId%3d-1');
+			</script>
+									
+		
+									
+					   
+			<script language="javascript">
+			var productUrl = new ProductUrl();
+			productUrl.id="10505";
+			productUrl.partNumber="CondeNastPortfolio";
+			productUrl.altText = "Cond&amp;eacute; Nast Portfolio";
+			productUrl.src = '/webapp/wcs/stores/content/CondeNast/images/cover_portfolio_100.jpg';
+			productUrl.url = 'ProductDisplay?catalogId=10001&storeId=10001&productId=10505&langId=-1';
+			carItems.set('25', productUrl);
+			hash.set('25', 'ProductESpotDisplayView?catalogId=10001&storeId=10001&productId=10505&langId=-1&returnUrl=TopCategoriesDisplay%3fcatalogId%3d10001%26storeId%3d10001%26activeLink%3dHome%26langId%3d-1');
+			</script>
+									
+		
+									
+					   
+			<script language="javascript">
+			var productUrl = new ProductUrl();
+			productUrl.id="10519";
+			productUrl.partNumber="NewYorker";
+			productUrl.altText = "The New Yorker";
+			productUrl.src = '/webapp/wcs/stores/content/CondeNast/images/cover_newyorker_100.jpg';
+			productUrl.url = 'ProductDisplay?catalogId=10001&storeId=10001&productId=10519&langId=-1';
+			carItems.set('26', productUrl);
+			hash.set('26', 'ProductESpotDisplayView?catalogId=10001&storeId=10001&productId=10519&langId=-1&returnUrl=TopCategoriesDisplay%3fcatalogId%3d10001%26storeId%3d10001%26activeLink%3dHome%26langId%3d-1');
+			</script>
+									
+						
+			
+
+<div id="car_container">
+<div class="carousel-component">
+	<div style="text-align: center; left:5px; display: block;">
+		Click cover to find out more.<br />
+	</div><!-- show only on homepage -->
+    <div><img id="prev-arrow" class="left-button-image" src="/webapp/wcs/stores/content/CondeNast/images//left3-disabled.gif" alt="Previous group"/>
+    </div>
+    <div><img id="next-arrow" class="right-button-image" src="/webapp/wcs/stores/content/CondeNast/images//right3-disabled.gif" alt="Next group" />
+    </div>
+    <div class="carousel-clip-region">
+        <ul id="carousel_list_content" class="carousel-list">
+        </ul>
+    </div>
+</div>
+</div>
+
+
+
+<script type="text/javascript">
+
+
+
+</script>
+
+
+<!-- END CarouselDisplay.jspf -->
+
+</div><!-- MAIN CONTENT ENDS HERE -->
+</td>
+    <td align="left" valign="top" rowspan="2">    
+
+<!-- BEGIN RightSideDisplay.jspf -->
+
+
+	
+	
+	
+	
+	
+	
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+		
+		
+
+
+
+
+	
+
+
+
+
+	<!-- useMooTools:2 true -->
+<div id="rightnav">
+	
+		
+		
+		
+		
+	
+		
+		<script> djConfig.searchIds.push("miniShopCartArea"); </script>
+		<div dojoType="wc:RefreshArea" id="miniShopCartArea" widgetId="miniShopCartArea" controllerId="miniShopCartAreaController">		
+	
+		
+    		
+    			
+    			
+    			    			
+            
+<!-- Start - JSP File Name: MiniShopCartDisplay.jsp -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+		
+		
+
+
+
+   
+
+
+
+
+
+	
+
+
+
+	
+
+
+
+
+
+
+
+
+	
+	<h1>Your Cart <img src="/webapp/wcs/stores/content/CondeNast/images/cart.png" style="border:0; vertical-align:middle;" alt="Shopping Cart" /></h1>
+	<div class="box">
+		 Cart: <span class="h_text_red">
+			0</span> item(s)
+		<br />
+		Subtotal:
+		$0.00
+		<br />
+		
+		<br />		
+		<strong><span style="float:right"><a href="OrderCalculate?langId=-1&amp;storeId=10001&amp;catalogId=10001&amp;URL=ReviewCartDisplay%3fstoreId%3d10001%26catalogId%3d10001">Check Out</a></span><a href="OrderCalculate?langId=-1&amp;storeId=10001&amp;catalogId=10001&amp;URL=OrderItemDisplay%3fstoreId%3d10001%26catalogId%3d10001&amp;activeLink=Cart">View Cart</a> </strong>
+	</div>				
+	
+				
+		</div>
+</div>
+
+<!-- END RightSideDisplay.jspf -->
+  </td>
+  </tr>
+  <tr><td>
+  <tr>
+    <td colspan="3" align="left" valign="top">
+
+<!-- BEGIN FooterDisplay.jspf -->
+
+	
+	
+	
+	
+		
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+		
+		
+
+
+
+<!-- BEGIN CachedFooterDisplay.jsp -->
+<div id="footer">
+	<br style="clear:both"/>
+<a href="ContactUsView?langId=-1&amp;storeId=10001&amp;catalogId=10001">Contact Us</a> - 
+<a href="http://www.condenastdirect.com/store/services_magazine/user" target="terms">Terms of Use</a> - 
+<a href="http://www.condenastdirect.com/store/services_magazine/privacy" target="privacy">Privacy Policy</a> - 
+<a href="http://condenastcareers.com" target="careers">Careers</a>
+<p>&copy; 2007 Cond&eacute; Nast Publications - All Rights Reserved</p>
+</div>
+
+<!-- END CachedFooterDisplay.jsp -->
+
+<!-- END FooterDisplay.jspf -->
+</td>
+  </tr>
+</table></div>
+</body></html>

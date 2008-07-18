@@ -21,6 +21,8 @@
  */
 package org.jboss.dna.repository.sequencers;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
@@ -32,6 +34,7 @@ import javax.jcr.Value;
 import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.util.ArgCheck;
 import org.jboss.dna.repository.RepositoryI18n;
+import org.jboss.dna.repository.mimetype.MimeType;
 import org.jboss.dna.repository.util.ExecutionContext;
 import org.jboss.dna.spi.graph.Name;
 import org.jboss.dna.spi.graph.NamespaceRegistry;
@@ -42,23 +45,31 @@ import org.jboss.dna.spi.sequencers.SequencerContext;
 import org.jboss.dna.spi.sequencers.StreamSequencer;
 
 /**
- * Contains context information that is passed to {@link StreamSequencer stream sequencers}, including information about the
- * input node containing the data being sequenced.
+ * Contains context information that is passed to {@link StreamSequencer stream sequencers}, including information about the input
+ * node containing the data being sequenced.
  * 
  * @author John Verhaeg
  */
 @Immutable
 public class SequencerNodeContext implements SequencerContext {
 
+    private final javax.jcr.Property sequencedProperty;
     private final ValueFactories factories;
     private final Path path;
     private final Set<Property> props;
 
     SequencerNodeContext( Node input,
+                          javax.jcr.Property sequencedProperty,
                           ExecutionContext context ) throws RepositoryException {
         assert input != null;
+        assert sequencedProperty != null;
         assert context != null;
+        this.sequencedProperty = sequencedProperty;
         this.factories = context.getValueFactories();
+        // Translate JCR path and property values to DNA constructs and cache them to improve performance and prevent
+        // RepositoryException from being thrown by getters
+        // Note: getMimeType() will still operate lazily, and thus throw a SequencerException, since it is very intrusive and
+        // potentially slow-running.
         path = factories.getPathFactory().create(input.getPath());
         Set<Property> props = new HashSet<Property>();
         for (PropertyIterator iter = input.getProperties(); iter.hasNext();) {
@@ -157,6 +168,37 @@ public class SequencerNodeContext implements SequencerContext {
             }
         }
         return null;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.spi.sequencers.SequencerContext#getMimeType()
+     */
+    @SuppressWarnings( "null" )
+    // The need for the SuppressWarnings looks like an Eclipse bug
+    public String getMimeType() {
+        SequencerException err = null;
+        String mimeType = null;
+        InputStream stream = null;
+        try {
+            stream = sequencedProperty.getStream();
+            mimeType = MimeType.of(path.getLastSegment().getName().getLocalName(), stream);
+            return mimeType;
+        } catch (Exception error) {
+            err = new SequencerException(error);
+        } finally {
+            if (stream != null) {
+                try {
+                    stream.close();
+                } catch (IOException error) {
+                    // Only throw exception if an exception was not already thrown
+                    if (err == null) err = new SequencerException(error);
+                }
+            }
+        }
+        if (err != null) throw err;
+        return mimeType;
     }
 
     /**

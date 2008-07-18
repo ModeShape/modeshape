@@ -63,6 +63,13 @@ public interface SequencerContext {
     Property getInputProperty( Name name );
 
     /**
+     * Return the MIME-type of the content being sequenced.
+     * 
+     * @return the MIME-type
+     */
+    String getMimeType();
+
+    /**
      * Convenience method to get the namespace registry used by the {@link ValueFactories#getNameFactory() name value factory}.
      * 
      * @return the namespace registry; never <code>null</code>.

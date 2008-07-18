@@ -71,11 +71,23 @@ public class ComponentLibrary<ComponentType, ConfigType extends ComponentConfig>
     private final List<ConfigType> configs = new CopyOnWriteArrayList<ConfigType>();
     private final List<ComponentType> unmodifiableInstances = Collections.unmodifiableList(instances);
     private final Lock lock = new ReentrantLock();
+    private final boolean addBeforeExistingConfigs;
 
     /**
      * Create a new library of components.
      */
     public ComponentLibrary() {
+        this(false);
+    }
+
+    /**
+     * Create a new library of components.
+     * 
+     * @param addBeforeExistingConfigs <code>true</code> if configurations should be {@link #add(ComponentConfig) added} before
+     *        previously added configurations.
+     */
+    public ComponentLibrary( boolean addBeforeExistingConfigs ) {
+        this.addBeforeExistingConfigs = addBeforeExistingConfigs;
     }
 
     /**
@@ -132,8 +144,13 @@ public class ComponentLibrary<ComponentType, ConfigType extends ComponentConfig>
                 return false;
             }
             // Didn't find one, so add it ...
-            this.configs.add(config);
-            this.instances.add(newInstance(config));
+            if (addBeforeExistingConfigs) {
+                this.configs.add(0, config);
+                this.instances.add(0, newInstance(config));
+            } else {
+                this.configs.add(config);
+                this.instances.add(newInstance(config));
+            }
             return true;
         } finally {
             this.lock.unlock();

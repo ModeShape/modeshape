@@ -82,17 +82,18 @@ public class StreamSequencerAdapter implements Sequencer {
                          Set<RepositoryNodePath> outputPaths,
                          ExecutionContext execContext,
                          ProgressMonitor progressMonitor ) throws RepositoryException, SequencerException {
-        // 'sequencedPropertyName' contains the name of the modified property on 'input' that resuled the call to this sequencer
+        // 'sequencedPropertyName' contains the name of the modified property on 'input' that resulted in the call to this
+        // sequencer.
         // 'changes' contains all of the changes to this node that occurred in the transaction.
-        // 'outputPaths' contains the paths of the node(s) where this sequencer is to save it's data
+        // 'outputPaths' contains the paths of the node(s) where this sequencer is to save it's data.
 
         try {
             progressMonitor.beginTask(100, RepositoryI18n.sequencingPropertyOnNode, sequencedPropertyName, input.getPath());
 
-            // Get the property that contains the image data, given by 'propertyName' ...
-            Property imageDataProperty = null;
+            // Get the property that contains the data, given by 'propertyName' ...
+            Property sequencedProperty = null;
             try {
-                imageDataProperty = input.getProperty(sequencedPropertyName);
+                sequencedProperty = input.getProperty(sequencedPropertyName);
             } catch (PathNotFoundException e) {
                 String msg = RepositoryI18n.unableToFindPropertyForSequencing.text(sequencedPropertyName, input.getPath());
                 throw new SequencerException(msg, e);
@@ -105,8 +106,8 @@ public class StreamSequencerAdapter implements Sequencer {
             Throwable firstError = null;
             ProgressMonitor sequencingMonitor = progressMonitor.createSubtask(50);
             try {
-                stream = imageDataProperty.getStream();
-                SequencerNodeContext sequencerContext = new SequencerNodeContext(input, execContext);
+                stream = sequencedProperty.getStream();
+                SequencerNodeContext sequencerContext = new SequencerNodeContext(input, sequencedProperty, execContext);
                 this.streamSequencer.sequence(stream, output, sequencerContext, sequencingMonitor);
             } catch (Throwable t) {
                 // Record the error ...

@@ -1,0 +1,2636 @@
+<!-- TemplateBegin: $Archive:   //pvcssrv02.service.itellium.net/pvcsfs/b2ccc/pvcsprojekte/Q2_Gesamt/archives/enfinity/share/private/eCS/Store/templates/de/q_category_10000.isml-arc  $ $Revision:   1.9  $ -->
+
+<!-- Hallo //-->
+
+
+
+
+
+
+
+
+
+
+
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="INTERSHOP" content="Powered by INTERSHOP Enfinity"/>
+
+<script type="text/javascript">
+var storefront = true;
+</script>
+<!-- TemplateBegin : inc/q6_first_include.isml  $Revision$ -->
+
+<script type="text/javascript">
+var WebRoot='http://images.quelle.de/is-bin/intershop.static/WFS/Quelle-quelle_de-Site/-/de_DE';
+var d=new Date();
+var dat=d.getYear()+''+d.getMonth()+''+d.getDate();
+document.write('<scr'+'ipt type="text/javascr'+'ipt" src="'+WebRoot+'/js/basic.js?idrefresh='+dat+'"><\/scr'+'ipt>');
+if ( (typeof(window['storefront']) == "undefined") || (storefront !== true) ){
+document.write('<scr'+'ipt type="text/javascr'+'ipt" src="'+WebRoot+'/js/q_cookie.js?idrefresh='+dat+'"><\/scr'+'ipt>');}
+</script>
+<script type="text/javascript">
+var sid = '';
+if ( sid != '' ) {
+sid = sid.substring(5, sid.length);
+} else {
+sid = getCookie('sid');
+}
+</script>
+
+<!-- TemplateEnd : inc/q6_first_include.isml $Revision$ -->
+
+<title> quelle.de </title>
+<link rel="stylesheet" href="http://images.quelle.de/is-bin/intershop.static/WFS/Quelle-quelle_de-Site/-/de_DE/css/position.css" type="text/css">
+<link rel="stylesheet" href="http://images.quelle.de/is-bin/intershop.static/WFS/Quelle-quelle_de-Site/-/de_DE/css/font.css" type="text/css">
+<link rel="shortcut icon" href="http://images.quelle.de/is-bin/intershop.static/WFS/Quelle-quelle_de-Site/-/de_DE/imagesOnline/favicon.ico">
+<!-- Template Begin:  inc/q_minibasket_ecs.isml (sld_ch_quelle_app) -->
+
+
+
+<link rel="shortcut icon" href="http://images.quelle.de/is-bin/intershop.static/WFS/Quelle-quelle_de-Site/-/de_DE/imagesOnline/favicon.ico">
+
+<script type="text/javascript">
+<!--
+var testProduktSKU = '';
+var testProduktAAID = '';
+setCookie("CookieActive", "yes");
+if(getBasketSum().length < 1) {
+setCookie("BasketSum", "0.00");
+}
+if(getBasketElemCount().length < 1) {
+setCookie("BasketElemCount", 0);
+}
+function prepareMBPrice(price){
+//alert(price+"do");
+price = price.replace(/\,/,".")
+if(price.indexOf(".") != price.lastIndexOf(".")){
+price=price.replace(".","");
+}
+//alert(price+"posle");
+return price;
+}
+function NNuser() {
+var ns4=document.layers;
+if(ns4) {
+window.open("http://www.quelle.de/is-bin/INTERSHOP.enfinity/WFS/Quelle-quelle_de-Site/de_DE/-/EUR/Q_ViewTemplate_ecs-View?Template=q_quick_basket_hinweis_nn_popup&Linktype=K", "QuickBasketNN", "width=250,height=262,toolbar=no,location=0,directories=0,status=0,menubar=0,scrollbars=no,resizeable=no");
+}
+}
+function getBasketSum(){
+var bs = getCookie("BasketSum");
+if (bs != null && bs != -1 && bs != "N/A" && bs != "undefined"){
+return bs.replace(/,/,"."); // return value with Euro symbol
+}else{
+return "0.00";}
+}
+function getBasketElemCount(){
+var ec = getCookie("BasketElemCount");
+if (ec != null && ec != -1 && ec != "N/A" && ec != "undefined"){
+return ec;
+}
+else {
+return 0;
+}
+}
+var bBasketClick = false; //this variable is also used in q_basket_direct_order
+function callZurKasse()
+{
+if (!bBasketClick)
+{
+switch_zum_warenkorb_button();
+window.setTimeout('window.location.href = "https://www.quelle.de/is-bin/INTERSHOP.enfinity/WFS/Quelle-quelle_de-Site/de_DE/-/EUR/Q_ViewBasketOpt-DispatchForm?Linktype=AB";',100);
+window.bBasketClick = true;
+}
+try {document.getElementById("zurKasseBTN").href = "";} catch(e) {}
+}
+function callExpressKasse()
+{
+if (!bBasketClick)
+{
+window.location.href = "https://www.quelle.de/is-bin/INTERSHOP.enfinity/WFS/Quelle-quelle_de-Site/de_DE/-/EUR/Q_ViewBasketOpt-DispatchForm?Linktype=AB";
+bBasketClick = true;
+}
+try {document.getElementById("zurExpressKasseBTN").href = "";} catch(e) {}
+}
+function printMiniBasket(catalogbarPipelineInclude) {
+var html;
+if(getCookie('CookieActive') != "")
+{
+html = '<span id="bluebar-minibasket-k1gfx"><img src="http://images.quelle.de/is-bin/intershop.static/WFS/Quelle-quelle_de-Site/-/de_DE/imagesOnline/q5_kasse1.gif" width="17" height="15" border="0" alt=""></span>';
+html += '<span id="basketelementcount" style="position:absolute;left:140px;top:4px;" class="q-normal-12px-darkgray">Artikel: <b>' + getBasketElemCount() + '</b></span>';
+html += '<span id="basketsum" style="position:absolute;left:204px;top:4px;" class="q-normal-12px-darkgray">Summe: <b>' + getBasketSum() + ' &euro;</b></span>';
+if (catalogbarPipelineInclude != null && catalogbarPipelineInclude == 'true')
+{
+html = html + '<span style="position:absolute;left:34px;top:26px;"><a href="https://www.quelle.de/is-bin/INTERSHOP.enfinity/WFS/Quelle-quelle_de-Site/de_DE/-/EUR/Q_ViewBasketOpt-DispatchForm?Linktype=AB" id="zurKasseBTN" class="q-normal-11px-darkblue">direkt zur Kasse</a></span>';
+}
+else
+{
+html = html + '<span style="position:absolute;left:34px;top:26px;"><a href="javascript:if (top.frames.length == 0) javascript:callZurKasse(); else location.href=\'https://www.quelle.de/is-bin/INTERSHOP.enfinity/WFS/Quelle-quelle_de-Site/de_DE/-/EUR/Q_ViewBasketOpt-DispatchForm?Linktype=AB\'"';
+html = html + ' id="zurKasseBTN" class="q-normal-11px-darkblue">direkt zur Kasse</a></span>';
+}
+}
+else
+{
+html = '<span style="position:absolute;top:26px;left:6px;" class="q-normal-10px-darkblue">Eine Anzeige ist nur mit <a href="javascript:showHelp();" class="q-normal-11px-darkblue"><b>aktivierten Cookies</b></a> m&ouml;glich.</span>';
+}
+document.write(html);
+}
+function showHelp() {
+newWin('CookieHelp','http://www.quelle.de/is-bin/INTERSHOP.enfinity/WFS/Quelle-quelle_de-Site/de_DE/-/EUR/Q_ViewStatic-CookieHelp',462,568,'scrollbars=no');
+}
+function updateMiniBasket(basketsum, basketelementcount)
+{
+if(getCookie('CookieActive') != "")
+{
+//Dynmic-Basket Interface call
+if ((typeof(dynBasket) != "undefined") && (dynBasket != null)) {
+dynBasket.productNumberDisplay.innerHTML = "<b>"+basketelementcount+"</b> Artikel";
+dynBasket.productSumDisplay.innerHTML = "Artikel:&nbsp;&nbsp;<b>"+basketelementcount+"</b> Summe:&nbsp;&nbsp;<b>"+basketsum.replace(/\./,",")+"&nbsp;&euro;</b>";
+dynBasket.stateDisplay.innerHTML = "<img src='"+dynBasket.imageList.open+"' class='bild' onclick='"+dynBasket.id+".toggle();'>";
+dynBasket.dirty = true;
+}
+//document.getElementById("basketelementcount").innerHTML="Artikel: <b>" + basketelementcount + "</b>";
+//document.getElementById("basketsum").innerHTML="Summe: <b>" + basketsum.replace(/\./,",") + " &euro;</b>";
+}
+}
+if (typeof(testProdukt) == "undefined"){
+testProdukt = false;
+}
+// fuer "In den WK" Button ohne Redirect
+function addToBasket( price, quantity, sLink )
+{
+if (!testProdukt) {
+price = price.replace(/,/,".");
+basketSum = getBasketSum();
+basketCount = getBasketElemCount();
+try {
+if (document.getElementById("amount").value > 1) {
+sLink = sLink + '&Quantity=' + document.getElementById("amount").value;
+quantity = document.getElementById("amount").value;
+}
+} catch(e) {}
+if( price.indexOf("EUR") == 0 )
+{
+iLen = price.length;
+price = price.substring( 3, iLen );
+}
+basketCount = basketCount * 1;
+if( basketCount < 19 )
+{
+basketSum = basketSum * 1 + price * quantity;
+basketCount = basketCount + 1;
+basketSum = Math.round(basketSum*Math.pow(10,2))/Math.pow(10,2);
+setCookie("BasketElemCount", basketCount);
+setCookie("BasketSum", basketSum.toFixed(2));
+if ( (typeof(show_rec2_ok) != "undefined") && show_rec2_ok) {
+switch_wkbutton();
+}
+var bi = new Image();
+var dat = new Date;
+var anID = ('' + dat.getTime()) + ('' + Math.random());
+bi.src = sLink + '&randomid=' + anID;
+updateMiniBasket(basketSum.toFixed(2), basketCount);
+after_basket(quantity);
+}
+else
+{
+window.location.href = "https://www.quelle.de/is-bin/INTERSHOP.enfinity/WFS/Quelle-quelle_de-Site/de_DE/-/EUR/Q_ViewBasketOpt-View?Linktype=AB&ERROR_Basket=BasketSize";
+}
+}
+else
+{
+var tmp;
+switch_wkbutton();
+tmp = sLink.substring(sLink.indexOf("ProductSKU=")+11, sLink.length);
+testProduktSKU = tmp.substring(0, tmp.indexOf("&"));
+tmp = sLink.substring(sLink.indexOf("AAID=")+5, sLink.length);
+testProduktAAID = tmp.substring(0, tmp.indexOf("&"));
+after_basket(quantity);
+}
+}
+// nach addToBasket
+function after_basket(quantity) {
+var url;
+var sku;
+if (q6content) {
+url = "http://www.quelle.de/is-bin/INTERSHOP.enfinity/WFS/Quelle-quelle_de-Site/de_DE/-/EUR/Q_ProductRecommendation-Rec2NewStatic?textonly=true";
+} else {
+url = "http://www.quelle.de/is-bin/INTERSHOP.enfinity/WFS/Quelle-quelle_de-Site/de_DE/-/EUR/Q_ProductRecommendation-Rec2Static?textonly=true";
+}
+if ( (typeof(FileShowRecommended) != "undefined") && FileShowRecommended && (typeof(REAnzeigePA2) != "undefined") && REAnzeigePA2) {
+sku = '';
+if (last_action == 'infobox') { sku = document.getElementById("infobox_bstnr").innerHTML.substr(5, 6); }
+try {
+if (q6content) {
+url = "http://www.quelle.de/is-bin/INTERSHOP.enfinity/WFS/Quelle-quelle_de-Site/de_DE/-/EUR/Q_ProductRecommendation-Rec2New?textonly=true&ShortSKU=" + sku;
+}
+if (testProdukt) {
+url = "http://www.quelle.de/is-bin/INTERSHOP.enfinity/WFS/Quelle-quelle_de-Site/de_DE/-/EUR/Q_ProductRecommendation-Rec2New?textonly=true&ShortSKU=" + sku + "&Quantity=" + quantity + "&TestProdukt=" + testProdukt + "&TestProduktSKU=" + testProduktSKU + "&AAID=" + testProduktAAID + "&CategoryName=QuelleRoot&TestProduktID=" + UUID;
+}
+} catch (e) {
+url = "http://www.quelle.de/is-bin/INTERSHOP.enfinity/WFS/Quelle-quelle_de-Site/de_DE/-/EUR/Q_ProductRecommendation-Rec2?textonly=true&ShortSKU=" + sku;
+}
+}
+if ( (typeof(show_rec2_ok) != "undefined") && show_rec2_ok) {
+show_rec2(url);
+//// CODE FamilienBonus ///
+var cGrID = ''; //005 = QuelleMarket Produkt
+var fburl = 'http://www.quelle.de/is-bin/INTERSHOP.enfinity/WFS/Quelle-quelle_de-Site/de_DE/-/EUR/Q_ViewFamilienBonus-Teaser';
+try {
+fb_mehrwert(cGrID, fburl);
+} catch (e) {}
+/// CODE FamilienBonus END ///
+} else {
+conf();
+}
+}
+// fuer "In den WK" Button mit Product Parameter (use in inc/q4-product160-wkb.isml)
+function addToBasketProd( price, quantity, sLink, product )
+{
+var bi;
+var anID;
+var dat;
+price=prepareMBPrice(price);
+basketSum = getBasketSum();
+basketCount = getBasketElemCount();
+if( price.indexOf("EUR") == 0 )
+{
+iLen = price.length;
+price = price.substring( 3, iLen );
+}
+basketCount = basketCount * 1;
+if( basketCount < 19 )
+{
+basketSum = basketSum * 1 + price * quantity;
+basketCount = basketCount + 1;
+basketSum = Math.round(basketSum*Math.pow(10,2))/Math.pow(10,2);
+setCookie("BasketElemCount", basketCount);
+setCookie("BasketSum", basketSum.toFixed(2));
+if ( (typeof(show_rec2_ok) != "undefined") && show_rec2_ok) {
+switch_wkbutton();
+}
+// set prod parameter, defined in product_rec.js
+prod = product;
+bi = new Image();
+bi.onload = after_basket;
+dat = new Date();
+anID = ('' + dat.getTime()) + ('' + Math.random());
+bi.src = sLink + '&randomid=' + anID;
+updateMiniBasket(basketSum.toFixed(2), basketCount);
+}
+else
+{
+window.location.href = "https://www.quelle.de/is-bin/INTERSHOP.enfinity/WFS/Quelle-quelle_de-Site/de_DE/-/EUR/Q_ViewBasketOpt-View?Linktype=AB&ERROR_Basket=BasketSize";
+}
+}
+// fuer "In den WK" von Fashionshow
+function addManyToBasket( price, quantity, articleAmout, sLink )
+{
+var aImg;
+price = prepareMBPrice(price);
+basketSum = getBasketSum();
+basketCount = getBasketElemCount();
+if( price.indexOf("EUR") == 0 )
+{
+iLen = price.length;
+price = price.substring( 3, iLen );
+}
+basketCount = basketCount * 1;
+if( basketCount + articleAmout <= 19 )
+{
+basketSum = basketSum * 1 + price * quantity;
+basketCount = basketCount + articleAmout;
+basketSum = Math.round(basketSum*Math.pow(10,2))/Math.pow(10,2);
+setCookie("BasketElemCount", basketCount);
+setCookie("BasketSum", basketSum.toFixed(2));
+aImg = new Image();
+aImg.src = sLink.replace(/\"/g, '%22');
+updateMiniBasket(basketSum.toFixed(2), basketCount);
+conf();
+}
+else
+{
+window.location.href = "https://www.quelle.de/is-bin/INTERSHOP.enfinity/WFS/Quelle-quelle_de-Site/de_DE/-/EUR/Q_ViewBasketOpt-View?Linktype=AB&ERROR_Basket=BasketSize";
+}
+}
+//-->
+</script>
+
+<script type="text/javascript">
+<!--
+if( typeof(PD_RANDOM) != "undefined" && PD_RANDOM > 0 )
+{
+if(getCookie('CookieActive') != "")
+{
+// phaydon cookie is set
+if(getCookie('phaydon') != "" )
+{
+pdCookie = getCookie("phaydon");
+if( pdCookie == 1 )
+{
+sendpath(true);
+}
+}
+else // cookie not set yet
+{
+raz = 0.5 + PD_RANDOM * ( Math.random() );
+raz = Math.round(raz);
+if (raz == PD_RANDOM) // alle x. te
+{
+setCookie("phaydon", 1);
+sendpath(true);
+}
+else
+{
+setCookie("phaydon", 0);
+}
+}
+}
+}
+document.write('<scr'+'ipt type="text/javascr'+'ipt" src="http://www.quelle.de/is-bin/INTERSHOP.enfinity/WFS/Quelle-quelle_de-Site/de_DE/-/EUR/Q_Survey-Start"?idrefresh='+dat+'"><\/scr'+'ipt>');
+//-->
+</script>
+<script type="text/javascript">
+<!--
+
+
+
+
+//-->
+</script>
+<!-- Template End: inc/q_minibasket_ecs.isml (sld_ch_quelle_app) -->
+
+<style type="text/css">
+<!--
+.q-history {position:absolute; top:155px; left:20px; width:777px; height:14px; z-index:3; display:none; visibility:hidden;}
+-->
+</style>
+</head>
+<body>
+<!-- Template Begin:  inc/q_blueBar_ecs.isml (sld_ch_quelle_app) -->
+
+
+<!-- Template Begin:  inc/q_blueBar_content_ecs.isml (sld_ch_quelle_app) -->
+
+
+
+
+<!-- 1341640805070541-->
+
+
+
+<!-- 1341640805070541-->
+
+<script type="text/javascript">
+function changeBlueBarSearchCacheCtrl() {
+var foundItem = false;
+var sSearchFree;
+var sSearchReplace;
+var sSearchCache;
+sSearchFree = document.BlueBarSearch.search_free.value; // after ToUpper !
+sSearchReplace = "";
+for (i=0; i<itemsSearchCacheCtrl.length;i++) {
+if (sSearchFree == itemsSearchCacheCtrl[i].search_free) {
+foundItem = true;
+sSearchReplace = itemsSearchCacheCtrl[i].search_replace; // can be empty ""
+sSearchCache = itemsSearchCacheCtrl[i].search_cache;
+break;
+}
+}
+if (foundItem) {
+document.BlueBarSearch.search_replace.value = sSearchReplace;
+document.BlueBarSearch.search_cache.value = sSearchCache;
+}
+}
+// end 18.02.2004
+</script>
+
+<!-- q4-qtaste_include.isml -->
+
+
+
+
+
+
+
+
+<script type="text/javascript">
+<!--
+var d=new Date;
+var m=d.getMonth();
+var t=d.getDate();
+var j=d.getYear();
+j=(j>=2000)?j:((j<80)?j+2000:j+1900);
+var dat=(j+''+m+''+t);
+//-->
+</script>
+
+<script type="text/javascript">
+<!--
+if ( (typeof(window['storefront']) == "undefined") || (storefront !== true) ){
+document.write('<scr'+'ipt type="text\/javascript" src="http://images.quelle.de/is-bin/intershop.static/WFS/Quelle-quelle_de-Site/-/de_DE\/js\/fehlertoleranz.js?idrefresh='+dat+'"><\/scr'+'ipt>');}
+//-->
+</script>
+<script type="text/javascript">
+<!--
+var keyCount = 0, pwd = "qQ";
+var naObj = new Array("text","file","password");
+function keyCheck(e) {
+var obj = (document.all) ? window.event.srcElement : e.target;
+var qOk = true;
+if (obj.type) {
+for (i=0;i<naObj.length;i++) {
+if (qOk) {qOk = (obj.type.toLowerCase() != naObj[i]);}
+}
+if (!qOk && obj.tagName && obj.tagName.toLowerCase() != "input") {qOk = true;}
+}
+if (obj.type == "textarea") {qOk = false;}
+if (qOk) {winTrigger(((document.all) ? window.event.keyCode : e.which));}
+}
+function winTrigger(taste) {
+for (i=0;i<pwd.length;i++) {
+if (taste == pwd.charCodeAt(i)) {
+jumpto("https://www.quelle.de/is-bin/INTERSHOP.enfinity/WFS/Quelle-quelle_de-Site/de_DE/-/EUR/Q_Taste06-Start");
+break;
+}
+}
+}
+if (document.layers) {
+window.captureEvents(Event.KEYPRESS);
+window.onkeypress = keyCheck;
+} else {
+document.onkeydown = keyCheck;
+}
+//-->
+</script>
+
+
+<script type="text/javascript">
+<!--
+popini("http://www.quelle.de/is-bin/INTERSHOP.enfinity/WFS/Quelle-quelle_de-Site/de_DE/-/EUR/Q_ViewStatic-ViewPopup?CategoryName=1&Template=static%2Fq_welcome_popup&OmitHTMLWrapper=1" , location.href , "http://www.quelle.de/is-bin/INTERSHOP.enfinity/WFS/Quelle-quelle_de-Site/de_DE/-/EUR/Q_AmendDictionary-SetGoodbyePage");
+//-->
+</script>
+
+<!-- Resolution check -->
+<script>
+if ( (typeof(PaRefreshActivated) == 'undefined') && (typeof(window['storefront']) == "undefined") || (storefront !== true) ) {
+document.write('<scr'+'ipt type="text/javascr'+'ipt" src="http://images.quelle.de/is-bin/intershop.static/WFS/Quelle-quelle_de-Site/-/de_DE/js/reswitch.js?idrefresh='+dat+'"><\/scr'+'ipt>');
+}
+</script>
+<!-- TemplateEnd -->
+
+
+
+
+
+
+
+
+
+
+<script type="text/javascript">
+<!--
+function conf() {
+var conf_win;
+//bBasketClick=true; Bug 7888 Auskommentiert, da kein Reload von ProduktAnsicht mehr
+if( (document.cookie.indexOf("BasketElemCount") == -1) || (getCookieValue("BasketElemCount") < 19) ) {
+conf_win = window.open("http://www.quelle.de/is-bin/INTERSHOP.enfinity/WFS/Quelle-quelle_de-Site/de_DE/-/EUR/Q_ViewStatic-ViewPopup?Template=q_basket_conf", "Warenkorb", "width=250,height=262,toolbar=no,location=0,directories=0,status=0,menubar=0,scrollbars=no,resizeable=0");
+}
+conf_win.opener=self;
+conf_win.focus();
+}
+function zuHome () {
+if( (window.location.protocol == "https:") || ((document.cookie.indexOf('CookieActive') != -1) && (getCookie("UserLoggedIn") == "true")) )
+{
+jumpto("https://www.quelle.de/is-bin/INTERSHOP.enfinity/WFS/Quelle-quelle_de-Site/de_DE/-/EUR/Q_ViewLogin-Home?Linktype=B");
+} else {
+jumpto("http://www.quelle.de/is-bin/INTERSHOP.enfinity/WFS/Quelle-quelle_de-Site/de_DE/-/EUR/Q_ViewLogin-Home?Linktype=B");
+}
+}
+function loggingImage() {
+var url;
+var params;
+cookieName = 'ClientParameter';
+pipeline = 'http://www.quelle.de/is-bin/INTERSHOP.enfinity/WFS/Quelle-quelle_de-Site/de_DE/-/EUR/Q_ClientParameters-Start';
+pipeline = pipeline.substr(pipeline.indexOf('/',7));
+if (document.cookie.indexOf(cookieName) == -1){ // not set before ?
+document.cookie = cookieName+'=yes; path=/'; // set cookie
+params = 'Resolution='+screen.width+'x'+screen.height;
+params = params + '&ColorDepth='+screen.colorDepth;
+url = pipeline+'?'+params;
+while(url.search(/ /) != -1) {
+url = url.replace(/ /, '%20');
+}
+document.write('<div style="position:absolute;top:0px;left:0px;"><img src="' + url + '" width="1" height="1" border="0"></div>');
+}
+}
+loggingImage();
+if(document.cookie.indexOf('CookieActive')==-1 && document.URL.indexOf("Bannerref")!=-1) {
+document.cookie = "znx=; path=/; expires=Wed, 1 Jan 2003 12:00:00 GMT";
+}
+
+var selectedMenu = "QuelleRoot";
+var enfsession = '';
+var parse_enfsession = enfsession.substr(5);
+//-->
+</script>
+<noscript>
+<div style="position:absolute;top:0px;left:0px;"><img src="http://www.quelle.de/is-bin/INTERSHOP.enfinity/WFS/Quelle-quelle_de-Site/de_DE/-/EUR/Q_ClientParameters-Start" width="1" height="1" border="0"></div>
+</noscript>
+<style type="text/css">
+<!--
+.q4-component-bg-white{background-color:#FFFFFF;border-color:#164093;}
+
+.q4-component-bg-shop, .q-mehrwert-1px-dotted-line, .q-mehrwert-250px-div-border, .q-mehrwert-250px-div-border-neutral{background-color:#E4E9F4;}
+
+
+.q4-component-bg-shop, .q-mehrwert-1px-dotted-line, .q-mehrwert-250px-div-border, .q-mehrwert-250px-div-border-neutral{border-color:#4463A1;}
+.q4-component-bg-shop2{background-color:#4463A1;}
+
+
+
+-->
+</style>
+
+
+<script type="text/javascript">
+var pcready;
+function loadPersComps()
+{
+if (pcready == null)
+{
+// Prüfe ob Zugriff auf AS notwendig (getCookieValue => Funktion aus general-JS)
+if (getCookieValue('udc') != null && getCookieValue('udc') != '')
+{
+pcready = false;
+getPersonalComponents();
+}
+else
+{
+pcready = true;
+}
+}
+}
+function getPersonalComponents()
+{
+if (window.XMLHttpRequest)
+{
+pcreq = new XMLHttpRequest();
+}
+else
+{
+if(window.ActiveXObject)
+{
+pcreq = new ActiveXObject("Microsoft.XMLHTTP");
+}
+}
+if (pcreq != null)
+{
+pcreq.onreadystatechange = pccallback;
+
+pcreq.open("GET", "http://www.quelle.de/is-bin/INTERSHOP.enfinity/WFS/Quelle-quelle_de-Site/de_DE/-/EUR/Q_DeterminePersonalizedContent-GetComponentURLs?CategoryName=QuelleRoot&ActionGroupID=261", true);
+
+pcreq.send('');
+}
+}
+// Zurueckschreiben der AJAX-Rueckmeldung
+function pccallback()
+{
+if (pcreq.readyState == 4)
+{
+pcready = true;
+}
+}
+</script>
+
+
+<script type="text/javascript">
+var browsername = navigator.userAgent;
+var posi = browsername.search(/Netscape.+/);
+if(posi != -1){
+document.write('<div style="position:relative;height:53px;width:985px;border:2px solid red;background-color:white">');
+document.write('<div style="position:relative;height:20px;width:910px;margin-left:8px;margin-top:4px">');
+document.write('<table>');
+document.write('<tr>');
+document.write('<td>');
+document.write('<img src="http://images.quelle.de/is-bin/intershop.static/WFS/Quelle-quelle_de-Site/-/de_DE/imagesOnline/achtung_01.gif" style="vertical-align:middle" alt="">');
+document.write('<img src="http://images.quelle.de/is-bin/intershop.static/WFS/Quelle-quelle_de-Site/-/de_DE/imagesOnline/space.gif" width="6" height="10" border=0 alt="">');
+document.write('</td>');
+document.write('<td style="font-size:12px;color:darkblue">');
+document.write('Lieber Kunde, Sie verwenden einen Browser der von Quelle.de nicht unterst&uuml;tzt wird. Um alle Features der Quelle Webseite');
+document.write('</td>');
+document.write('</tr>');
+document.write('<tr>');
+document.write('<td></td>');
+document.write('<td style="font-size:12px;color:darkblue">');
+document.write('nutzen zu k&ouml;nnen nutzen Sie bitte einen der folgenden Browser: Internet Explorer, Firefox, Opera und Safari.');
+document.write('</td>');
+document.write('</tr>');
+document.write('</table>');
+document.write('</div>');
+document.write('</div>');
+}
+</script>
+<iframe id="killSelectElement" style="position:absolute;z-index:98;top:166px;visibility:hidden;display:none;" src="http://images.quelle.de/is-bin/intershop.static/WFS/Quelle-quelle_de-Site/-/de_DE/imagesOnline/space.gif"></iframe>
+<!-- Tracker:10217 -->
+<noscript>
+<div style="position:relative;height:53px;width:985px;border:2px solid red;background-color:white">
+<div style="position:relative;height:20px;width:910px;margin-left:8px;margin-top:4px">
+<table>
+<tr>
+<td>
+<img src="http://images.quelle.de/is-bin/intershop.static/WFS/Quelle-quelle_de-Site/-/de_DE/imagesOnline/achtung_01.gif" style="vertical-align:middle" alt="">
+<img src="http://images.quelle.de/is-bin/intershop.static/WFS/Quelle-quelle_de-Site/-/de_DE/imagesOnline/space.gif" width="6" height="10" border=0 alt="">
+</td>
+<td style="font-size:12px;color:darkblue">
+JavaScript ist in Ihrem Browser nicht aktiviert. Entweder unterstützt Ihr Browser kein JavaScript oder Sie haben JavaScript aus Sicherheitsgründen abgeschaltet.
+</td>
+</tr>
+<tr>
+<td></td>
+<td style="font-size:12px;color:darkblue">
+Um alle Features der Quelle Webseite nutzen zu können, schalten Sie bitte <a href="http://www.quelle.de/is-bin/INTERSHOP.enfinity/WFS/Quelle-quelle_de-Site/de_DE/-/EUR/Q_ViewStatic-ViewPage?ProductSKU=static3148" style="font-size:12px;color:red">JavaScript ein</a>.
+</td>
+</tr>
+</table>
+</div>
+</div>
+</noscript>
+
+<div id="bluebar" style="background-color: white;">
+<div id="bluebar-qtaste">
+<a href="https://www.quelle.de/is-bin/INTERSHOP.enfinity/WFS/Quelle-quelle_de-Site/de_DE/-/EUR/Q_Taste06-Start?Linktype=A"><img src="http://images.quelle.de/is-bin/intershop.static/WFS/Quelle-quelle_de-Site/-/de_DE/imagesOnline/Head_qtaste.gif" width="260" height="77" border="0" alt="Q-Taste"></a>
+</div>
+<div id="bluebar-banner">
+<script type="text/javascript">
+var bluebar_banner_baseurl = 'http://www.quelle.de/is-bin/INTERSHOP.enfinity/WFS/Quelle-quelle_de-Site/de_DE/-/EUR/Q_ViewTemplate-View';
+update_bluebar_banner();
+</script>
+</div>
+<div id="bluebar-blue-banner">
+<div id="bluebar-search-lens"><img src="http://images.quelle.de/is-bin/intershop.static/WFS/Quelle-quelle_de-Site/-/de_DE/imagesOnline/bbar_lens.gif" alt="Suchen nach" border="0" align="bottom"></div>
+<div id="bluebar-search-txt" class="q-bold-14px-white">Suche:</div>
+<div id="bluebar-pres-txt"><img src="http://images.quelle.de/is-bin/intershop.static/WFS/Quelle-quelle_de-Site/-/de_DE/imagesOnline/quelle_hp_BlauesBand.gif" alt="Ideen für ein sch&ouml;neres Leben" border="0"></div>
+<script type="text/javascript">
+<!--
+var defaulttext = "Bitte Produkt oder Bestellnr. eingeben";
+//-->
+</script>
+
+<form action="http://www.quelle.de/is-bin/INTERSHOP.enfinity/WFS/Quelle-quelle_de-Site/de_DE/-/EUR/Q_FreeSearch-Start" method="get" name="BlueBarSearch" onsubmit="return changeBlueBarSearchTextToUpper()" style="margin:0px;padding:0px;" autocomplete="off" accept-charset="ISO-8859-1">
+	<div id="bluebar-search-field">
+		
+			<input type="text" name="search_input" id="search_input" style="color:#000000;width:225px;font-size:12px;" value="" onclick="get_search_library();if(this.value==defaulttext)this.value='';return false" onblur="if( this.value.replace(/\s/g, '') == '' )this.value=defaulttext; return false">
+		
+		<input type="hidden" name="search_free" value="">
+		<input type="hidden" name="fh_view_size" value="10">
+		<input type="hidden" name="fh_sort_by" value="">
+		<input type="hidden" name="enfaction" value="msearch">
+		<input type="hidden" name="action" value="search" >
+		<input type="hidden" name="Linktype" value="E">
+		<input type="hidden" name="fh_location" value="//quelle_de/de_DE">^
+		
+	</div>
+	<div id="bluebar-search-btn">
+		<input type="Image" src="http://images.quelle.de/is-bin/intershop.static/WFS/Quelle-quelle_de-Site/-/de_DE/imagesOnline/q5_search_btn.gif" width="37" height="20" alt="Los" border="0" id="search_go">
+	</div>
+</form>
+
+<script type="text/javascript">
+<!--
+
+
+	document.BlueBarSearch.search_input.value = defaulttext;
+
+
+function changeBlueBarSearchTextToUpper()
+{
+	var DOM;
+	var sText;
+	var whiteSpaces1 = /^\s+/;
+	var whiteSpaces2 = /\s+$/;
+	
+	expireDate = new Date();
+	expireDate.setDate(expireDate.getDate());
+	document.cookie = "searchcompare=;expires=" + expireDate.toGMTString() + ";path=/";
+	
+	sText = document.BlueBarSearch.search_input.value;
+	sText = sText.replace(whiteSpaces1, "");
+	sText = sText.replace(whiteSpaces2, "");
+
+	if (sText == "" || sText == defaulttext)
+	{
+		return false;
+	}
+	else
+	{
+		DOM = (document.getElementById)? true : false;
+		if (DOM)
+		{
+			
+			if (navigator.userAgent.indexOf('Safari') == -1)
+			{
+				document.getElementById("search_input").disabled = true;
+			}
+			document.getElementById("search_go").disabled = true;
+		}
+		document.BlueBarSearch.search_input.value = sText;
+		document.BlueBarSearch.search_free.value = sText.toLowerCase();
+		orderProcessSurvey('search');
+		return true;
+	}
+}
+//-->
+</script>
+
+<div id="bluebar-search-verlauf">&nbsp;</div>
+<div id="bluebar-qlogo">
+<a href="http://www.quelle.de/is-bin/INTERSHOP.enfinity/WFS/Quelle-quelle_de-Site/de_DE/-/EUR/Q_Storefront-Start?Linktype=A"><img src="http://images.quelle.de/is-bin/intershop.static/WFS/Quelle-quelle_de-Site/-/de_DE/imagesOnline/bbar_qlogo.gif" width="188" height="54" border="0" alt="QUELLE"></a>
+</div>
+</div>
+
+
+
+<!-- TemplateBegin : $Archive:   //pvcssrv02.service.itellium.net/pvcsfs/b2ccc/pvcsprojekte/Q2_Gesamt/archives/enfinity/share/private/eCS/Store/templates/de/inc/q_catalogbar_include.isml-arc  $ $Revision:   1.26  $ -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div id="bluebar-category-reiter-container">
+<script type="text/javascript">
+if (checkHideLayerNavigation()) {
+document.write('<div style="display: none;">');
+}
+</script>
+<table border="0" cellspacing="0" cellpadding="0" width="980">
+<tr>
+
+<td width="1" height="34" bgcolor="#CCCCCC"><img src="http://images.quelle.de/is-bin/intershop.static/WFS/Quelle-quelle_de-Site/-/de_DE/imagesOnline/space.gif" width="1" height="34" border="0" alt=""></td>
+<td id="r_QuelleRoot" width="45" valign="middle" align="center" bgcolor="#FFFFFF" class="catbar_home" onClick="orderProcessSurvey('catalogbar'); top.location.href='http://www.quelle.de/is-bin/INTERSHOP.enfinity/WFS/Quelle-quelle_de-Site/de_DE/-/EUR/Q_Storefront-Start?Linktype=G'" nowrap>Home</td>
+
+
+
+
+<td width="2" height="34" align="left"><img src="http://images.quelle.de/is-bin/intershop.static/WFS/Quelle-quelle_de-Site/-/de_DE/imagesOnline/q_trenn_verlauf.gif" border="0" alt=""></td>
+<td width="63" id="r_50000010" style="overflow:hidden; text-align:center" class="catbar_inact_new" align="center" valign="middle" bgcolor="#FFFFFF" background="http://images.quelle.de/is-bin/intershop.static/WFS/Quelle-quelle_de-Site/-/de_DE/imagesOnline/q_verlauf_bg.gif" nowrap onmouseover="if (typeof displayLayer == 'function')displayLayer('50000010',true, 'http://images.quelle.de/is-bin/intershop.static/WFS/Quelle-quelle_de-Site/-/de_DE', false,'#CC0033');" onmouseout="if (typeof displayLayer == 'function')displayLayer('50000010',false,'http://images.quelle.de/is-bin/intershop.static/WFS/Quelle-quelle_de-Site/-/de_DE', false);" onClick="orderProcessSurvey('catalogbar'); top.location.href='http://www.quelle.de/is-bin/INTERSHOP.enfinity/WFS/Quelle-quelle_de-Site/de_DE/-/EUR/Q_BrowseCatalog-Start?CategoryName=50000010&Linktype=G'">Aktuelles</td>
+
+
+
+
+
+<td width="2" height="34" align="left"><img src="http://images.quelle.de/is-bin/intershop.static/WFS/Quelle-quelle_de-Site/-/de_DE/imagesOnline/q_trenn_verlauf.gif" border="0" alt=""></td>
+<td width="65" id="r_50000059" style="overflow:hidden; text-align:center" class="catbar_inact_new" align="center" valign="middle" bgcolor="#FFFFFF" background="http://images.quelle.de/is-bin/intershop.static/WFS/Quelle-quelle_de-Site/-/de_DE/imagesOnline/q_verlauf_bg.gif" nowrap onmouseover="if (typeof displayLayer == 'function')displayLayer('50000059',true, 'http://images.quelle.de/is-bin/intershop.static/WFS/Quelle-quelle_de-Site/-/de_DE', false,'#556622');" onmouseout="if (typeof displayLayer == 'function')displayLayer('50000059',false,'http://images.quelle.de/is-bin/intershop.static/WFS/Quelle-quelle_de-Site/-/de_DE', false);" onClick="orderProcessSurvey('catalogbar'); top.location.href='http://www.quelle.de/is-bin/INTERSHOP.enfinity/WFS/Quelle-quelle_de-Site/de_DE/-/EUR/Q_BrowseCatalog-Start?CategoryName=50000059&Linktype=G'">Mode<BR>f&uuml;r SIE</td>
+
+
+
+
+
+<td width="2" height="34" align="left"><img src="http://images.quelle.de/is-bin/intershop.static/WFS/Quelle-quelle_de-Site/-/de_DE/imagesOnline/q_trenn_verlauf.gif" border="0" alt=""></td>
+<td width="65" id="r_50000138" style="overflow:hidden; text-align:center" class="catbar_inact_new" align="center" valign="middle" bgcolor="#FFFFFF" background="http://images.quelle.de/is-bin/intershop.static/WFS/Quelle-quelle_de-Site/-/de_DE/imagesOnline/q_verlauf_bg.gif" nowrap onmouseover="if (typeof displayLayer == 'function')displayLayer('50000138',true, 'http://images.quelle.de/is-bin/intershop.static/WFS/Quelle-quelle_de-Site/-/de_DE', false,'#556622');" onmouseout="if (typeof displayLayer == 'function')displayLayer('50000138',false,'http://images.quelle.de/is-bin/intershop.static/WFS/Quelle-quelle_de-Site/-/de_DE', false);" onClick="orderProcessSurvey('catalogbar'); top.location.href='http://www.quelle.de/is-bin/INTERSHOP.enfinity/WFS/Quelle-quelle_de-Site/de_DE/-/EUR/Q_BrowseCatalog-Start?CategoryName=50000138&Linktype=G'">Mode<BR>f&uuml;r IHN</td>
+
+
+
+
+
+<td width="2" height="34" align="left"><img src="http://images.quelle.de/is-bin/intershop.static/WFS/Quelle-quelle_de-Site/-/de_DE/imagesOnline/q_trenn_verlauf.gif" border="0" alt=""></td>
+<td width="70" id="r_50000732" style="overflow:hidden; text-align:center" class="catbar_inact_new" align="center" valign="middle" bgcolor="#FFFFFF" background="http://images.quelle.de/is-bin/intershop.static/WFS/Quelle-quelle_de-Site/-/de_DE/imagesOnline/q_verlauf_bg.gif" nowrap onmouseover="if (typeof displayLayer == 'function')displayLayer('50000732',true, 'http://images.quelle.de/is-bin/intershop.static/WFS/Quelle-quelle_de-Site/-/de_DE', false,'#556622');" onmouseout="if (typeof displayLayer == 'function')displayLayer('50000732',false,'http://images.quelle.de/is-bin/intershop.static/WFS/Quelle-quelle_de-Site/-/de_DE', false);" onClick="orderProcessSurvey('catalogbar'); top.location.href='http://www.quelle.de/is-bin/INTERSHOP.enfinity/WFS/Quelle-quelle_de-Site/de_DE/-/EUR/Q_BrowseCatalog-Start?CategoryName=50000732&Linktype=G'">Baby, Kind<BR>&amp; Spielen</td>
+
+
+
+
+
+<td width="2" height="34" align="left"><img src="http://images.quelle.de/is-bin/intershop.static/WFS/Quelle-quelle_de-Site/-/de_DE/imagesOnline/q_trenn_verlauf.gif" border="0" alt=""></td>
+<td width="73" id="r_50000180" style="overflow:hidden; text-align:center" class="catbar_inact_new" align="center" valign="middle" bgcolor="#FFFFFF" background="http://images.quelle.de/is-bin/intershop.static/WFS/Quelle-quelle_de-Site/-/de_DE/imagesOnline/q_verlauf_bg.gif" nowrap onmouseover="if (typeof displayLayer == 'function')displayLayer('50000180',true, 'http://images.quelle.de/is-bin/intershop.static/WFS/Quelle-quelle_de-Site/-/de_DE', false,'#007788');" onmouseout="if (typeof displayLayer == 'function')displayLayer('50000180',false,'http://images.quelle.de/is-bin/intershop.static/WFS/Quelle-quelle_de-Site/-/de_DE', false);" onClick="orderProcessSurvey('catalogbar'); top.location.href='http://www.quelle.de/is-bin/INTERSHOP.enfinity/WFS/Quelle-quelle_de-Site/de_DE/-/EUR/Q_BrowseCatalog-Start?CategoryName=50000180&Linktype=G'">Technik &amp;<BR>Multimedia</td>
+
+
+
+
+
+<td width="2" height="34" align="left"><img src="http://images.quelle.de/is-bin/intershop.static/WFS/Quelle-quelle_de-Site/-/de_DE/imagesOnline/q_trenn_verlauf.gif" border="0" alt=""></td>
+<td width="72" id="r_50000283" style="overflow:hidden; text-align:center" class="catbar_inact_new" align="center" valign="middle" bgcolor="#FFFFFF" background="http://images.quelle.de/is-bin/intershop.static/WFS/Quelle-quelle_de-Site/-/de_DE/imagesOnline/q_verlauf_bg.gif" nowrap onmouseover="if (typeof displayLayer == 'function')displayLayer('50000283',true, 'http://images.quelle.de/is-bin/intershop.static/WFS/Quelle-quelle_de-Site/-/de_DE', false,'#007788');" onmouseout="if (typeof displayLayer == 'function')displayLayer('50000283',false,'http://images.quelle.de/is-bin/intershop.static/WFS/Quelle-quelle_de-Site/-/de_DE', false);" onClick="orderProcessSurvey('catalogbar'); top.location.href='http://www.quelle.de/is-bin/INTERSHOP.enfinity/WFS/Quelle-quelle_de-Site/de_DE/-/EUR/Q_BrowseCatalog-Start?CategoryName=50000283&Linktype=G'">Haushalts-<BR>ger&auml;te</td>
+
+
+
+
+
+<td width="2" height="34" align="left"><img src="http://images.quelle.de/is-bin/intershop.static/WFS/Quelle-quelle_de-Site/-/de_DE/imagesOnline/q_trenn_verlauf.gif" border="0" alt=""></td>
+<td width="70" id="r_50000373" style="overflow:hidden; text-align:center" class="catbar_inact_new" align="center" valign="middle" bgcolor="#FFFFFF" background="http://images.quelle.de/is-bin/intershop.static/WFS/Quelle-quelle_de-Site/-/de_DE/imagesOnline/q_verlauf_bg.gif" nowrap onmouseover="if (typeof displayLayer == 'function')displayLayer('50000373',true, 'http://images.quelle.de/is-bin/intershop.static/WFS/Quelle-quelle_de-Site/-/de_DE', false,'#644f3e');" onmouseout="if (typeof displayLayer == 'function')displayLayer('50000373',false,'http://images.quelle.de/is-bin/intershop.static/WFS/Quelle-quelle_de-Site/-/de_DE', false);" onClick="orderProcessSurvey('catalogbar'); top.location.href='http://www.quelle.de/is-bin/INTERSHOP.enfinity/WFS/Quelle-quelle_de-Site/de_DE/-/EUR/Q_BrowseCatalog-Start?CategoryName=50000373&Linktype=G'">Wohnen &amp;<BR>Haushalt</td>
+
+
+
+
+
+<td width="2" height="34" align="left"><img src="http://images.quelle.de/is-bin/intershop.static/WFS/Quelle-quelle_de-Site/-/de_DE/imagesOnline/q_trenn_verlauf.gif" border="0" alt=""></td>
+<td width="72" id="r_50000483" style="overflow:hidden; text-align:center" class="catbar_inact_new" align="center" valign="middle" bgcolor="#FFFFFF" background="http://images.quelle.de/is-bin/intershop.static/WFS/Quelle-quelle_de-Site/-/de_DE/imagesOnline/q_verlauf_bg.gif" nowrap onmouseover="if (typeof displayLayer == 'function')displayLayer('50000483',true, 'http://images.quelle.de/is-bin/intershop.static/WFS/Quelle-quelle_de-Site/-/de_DE', false,'#644f3e');" onmouseout="if (typeof displayLayer == 'function')displayLayer('50000483',false,'http://images.quelle.de/is-bin/intershop.static/WFS/Quelle-quelle_de-Site/-/de_DE', false);" onClick="orderProcessSurvey('catalogbar'); top.location.href='http://www.quelle.de/is-bin/INTERSHOP.enfinity/WFS/Quelle-quelle_de-Site/de_DE/-/EUR/Q_BrowseCatalog-Start?CategoryName=50000483&Linktype=G'">Auto, Haus<BR>&amp; Garten</td>
+
+
+
+
+
+<td width="2" height="34" align="left"><img src="http://images.quelle.de/is-bin/intershop.static/WFS/Quelle-quelle_de-Site/-/de_DE/imagesOnline/q_trenn_verlauf.gif" border="0" alt=""></td>
+<td width="88" id="r_50000598" style="overflow:hidden; text-align:center" class="catbar_inact_new" align="center" valign="middle" bgcolor="#FFFFFF" background="http://images.quelle.de/is-bin/intershop.static/WFS/Quelle-quelle_de-Site/-/de_DE/imagesOnline/q_verlauf_bg.gif" nowrap onmouseover="if (typeof displayLayer == 'function')displayLayer('50000598',true, 'http://images.quelle.de/is-bin/intershop.static/WFS/Quelle-quelle_de-Site/-/de_DE', false,'#644f3e');" onmouseout="if (typeof displayLayer == 'function')displayLayer('50000598',false,'http://images.quelle.de/is-bin/intershop.static/WFS/Quelle-quelle_de-Site/-/de_DE', false);" onClick="orderProcessSurvey('catalogbar'); top.location.href='http://www.quelle.de/is-bin/INTERSHOP.enfinity/WFS/Quelle-quelle_de-Site/de_DE/-/EUR/Q_BrowseCatalog-Start?CategoryName=50000598&Linktype=G'">Sport, Reisen<BR>&amp; Freizeit</td>
+
+
+
+
+
+<td width="2" height="34" align="left"><img src="http://images.quelle.de/is-bin/intershop.static/WFS/Quelle-quelle_de-Site/-/de_DE/imagesOnline/q_trenn_verlauf.gif" border="0" alt=""></td>
+<td width="88" id="r_50000336" style="overflow:hidden; text-align:center" class="catbar_inact_new" align="center" valign="middle" bgcolor="#FFFFFF" background="http://images.quelle.de/is-bin/intershop.static/WFS/Quelle-quelle_de-Site/-/de_DE/imagesOnline/q_verlauf_bg.gif" nowrap onmouseover="if (typeof displayLayer == 'function')displayLayer('50000336',true, 'http://images.quelle.de/is-bin/intershop.static/WFS/Quelle-quelle_de-Site/-/de_DE', false,'#556622');" onmouseout="if (typeof displayLayer == 'function')displayLayer('50000336',false,'http://images.quelle.de/is-bin/intershop.static/WFS/Quelle-quelle_de-Site/-/de_DE', false);" onClick="orderProcessSurvey('catalogbar'); top.location.href='http://www.quelle.de/is-bin/INTERSHOP.enfinity/WFS/Quelle-quelle_de-Site/de_DE/-/EUR/Q_BrowseCatalog-Start?CategoryName=50000336&Linktype=G'">Schmuck<BR>&amp; Geschenke </td>
+
+
+
+
+
+<td width="2" height="34" align="left"><img src="http://images.quelle.de/is-bin/intershop.static/WFS/Quelle-quelle_de-Site/-/de_DE/imagesOnline/q_trenn_verlauf.gif" border="0" alt=""></td>
+<td width="92" id="r_50000880" style="overflow:hidden; text-align:center" class="catbar_inact_new" align="center" valign="middle" bgcolor="#FFFFFF" background="http://images.quelle.de/is-bin/intershop.static/WFS/Quelle-quelle_de-Site/-/de_DE/imagesOnline/q_verlauf_bg.gif" nowrap onmouseover="if (typeof displayLayer == 'function')displayLayer('50000880',true, 'http://images.quelle.de/is-bin/intershop.static/WFS/Quelle-quelle_de-Site/-/de_DE', false,'#CC0033');" onmouseout="if (typeof displayLayer == 'function')displayLayer('50000880',false,'http://images.quelle.de/is-bin/intershop.static/WFS/Quelle-quelle_de-Site/-/de_DE', false);" onClick="orderProcessSurvey('catalogbar'); top.location.href='http://www.quelle.de/is-bin/INTERSHOP.enfinity/WFS/Quelle-quelle_de-Site/de_DE/-/EUR/Q_BrowseCatalog-Start?CategoryName=50000880&Linktype=G'">B&uuml;cher,<BR>Filme &amp; Musik</td>
+
+
+
+
+
+<td width="2" height="34" align="left"><img src="http://images.quelle.de/is-bin/intershop.static/WFS/Quelle-quelle_de-Site/-/de_DE/imagesOnline/q_trenn_verlauf.gif" border="0" alt=""></td>
+<td width="92" id="r_500544" style="overflow:hidden; text-align:center" class="catbar_inact_new" align="center" valign="middle" bgcolor="#FFFFFF" background="http://images.quelle.de/is-bin/intershop.static/WFS/Quelle-quelle_de-Site/-/de_DE/imagesOnline/q_verlauf_bg.gif" nowrap onmouseover="if (typeof displayLayer == 'function')displayLayer('500544',true, 'http://images.quelle.de/is-bin/intershop.static/WFS/Quelle-quelle_de-Site/-/de_DE', false,'#CC0033');" onmouseout="if (typeof displayLayer == 'function')displayLayer('500544',false,'http://images.quelle.de/is-bin/intershop.static/WFS/Quelle-quelle_de-Site/-/de_DE', false);" onClick="orderProcessSurvey('catalogbar'); top.location.href='http://www.quelle.de/is-bin/INTERSHOP.enfinity/WFS/Quelle-quelle_de-Site/de_DE/-/EUR/Q_BrowseCatalog-Start?CategoryName=500544&Linktype=G'">Schn&auml;ppchen<BR>&amp; Auktionen</td>
+
+
+
+
+
+</tr>
+</table>
+<script type="text/javascript">
+if (checkHideLayerNavigation()) {
+document.write('</div>');
+}
+</script>
+<div width="980" height="1" style="background-color:#FFF;border-top-width:1px;border-top-color:#CCCCCC;"></div>
+</div>
+
+
+
+
+</div> <!-- bluebar -->
+
+<script type="text/javascript">
+<!--
+function clientlogout()
+{
+setUserLoggedInCookie("false");
+document.cookie = "ProBesyCostumer=no; path=/";
+updateMiniBasket("0.00", "0");
+// alternativ aktives logout
+logoutIMG = new Image();
+logoutIMG.src = "https://www.quelle.de/is-bin/INTERSHOP.enfinity/WFS/Quelle-quelle_de-Site/de_DE/-/EUR/Q_ViewLogout-Process?clientlogout=true";
+if( typeof(isHomePage) != "undefined" ) {
+checkLoginSwitch();
+}
+}
+if(document.cookie.indexOf('CookieActive') != -1)
+{
+if(getCookie("UserLoggedIn") == "true")
+{
+setTimeout("clientlogout()", 1800000); // 30 Minuten
+}
+}
+//-->
+</script>
+<!-- Template End: inc/q_blueBar_content_ecs.isml (sld_ch_quelle_app) -->
+
+<!-- Template End: inc/q_blueBar_ecs.isml (sld_ch_quelle_app) -->
+
+<div id="content-container">
+<div id="content">
+
+<!-- TemplateBegin : $Archive:   //pvcssrv02.service.itellium.net/pvcsfs/b2ccc/pvcsprojekte/Q2_Gesamt/archives/enfinity/share/private/eCS/Store/templates/de/scc/container-types/nxm.isml-arc  $ $  $-->
+
+
+
+<!-- generiert am May 5, 2008 10:26:34 PM -->
+
+
+
+
+
+
+
+<div style="position:relative;height:1076px;overflow:hidden;">
+<div style="position:absolute;overflow:hidden;width:700px;left:0px;top:0px;">
+
+ 
+<!-- TemplateBegin : scc/component-types/10.isml -->
+<div id="welcome-cookie-container">
+<script type="text/javascript">
+var DEFAULTWELCOMEMESSAGE = '<span class="q5-welcome-msg" style="position:relative;top:8px;font-size:12px;"><b>Hallo lieber Kunde und herzlich willkommen auf quelle.de!</b> Melden Sie sich gleich <a href="http://www.quelle.de/is-bin/INTERSHOP.enfinity/WFS/Quelle-quelle_de-Site/de_DE/-/EUR/Q_ViewLogin-LoginPrefix" class="q-bold-12px-darkblue"><u>hier an</u></a> und nutzen Sie Ihre Vorteile!</span>';
+// Prüfe ob Zugriff auf AS notwendig (getCookieValue => Funktion aus general-JS)
+if (getCookieValue('udc') != null && getCookieValue('udc') != '')
+setPersonalWelcomeText();
+else
+setWelcomeTextDIV(DEFAULTWELCOMEMESSAGE);
+// Setze Ajax-Call ab, zur Ermittllung des persoenlichen Begruessungstextes
+function setPersonalWelcomeText(){
+if (window.XMLHttpRequest){
+udcreq = new XMLHttpRequest();
+}
+else{
+if(window.ActiveXObject)
+udcreq = new ActiveXObject("Microsoft.XMLHTTP");
+}
+if (udcreq != null){
+udcreq.onreadystatechange = callback;
+udcreq.open("GET", "http://www.quelle.de/is-bin/INTERSHOP.enfinity/WFS/Quelle-quelle_de-Site/de_DE/-/EUR/Q_ProcessUserCookie-Include?Template=q_personal_welcome&show=true", true);
+udcreq.send('');
+}
+}
+// Zurueckschreiben der AJAX-Rueckmeldung
+function callback(){
+if (udcreq.readyState == 4)
+{
+if (udcreq.status == 200)
+setWelcomeTextDIV(udcreq.responseText);
+else
+setWelcomeTextDIV(DEFAULTWELCOMEMESSAGE);
+}
+}
+function setWelcomeTextDIV(aText){
+document.getElementById("welcome-cookie-container").innerHTML = aText;
+}
+</script>
+</div>
+<!-- TemplateEnd -->
+
+</div>
+<div style="position:absolute;overflow:hidden;width:190px;left:765px;top:5px;">
+
+<!-- TemplateBegin : $Archive:   //pvcssrv02.service.itellium.net/pvcsfs/b2ccc/pvcsprojekte/Q2_Gesamt/archives/enfinity/share/private/eCS/Store/templates/de/inc/q_dynamicBasket.isml-arc  $ $Revision: 19811 $-->
+
+
+<div style="position: relative; top: 0px; left: 0px; height: 100px; width: 190px;">
+<div style="position: relative; top: -2px; left: 0px; width: 190px; height: 20px;">
+<script type="text/javascript">
+<!--
+document.write("&nbsp;&nbsp;<a href='https://www.quelle.de/is-bin/INTERSHOP.enfinity/WFS/Quelle-quelle_de-Site/de_DE/-/EUR/Q_ViewLogin-Home?Linktype=D' class='q-bold-12px-darkblue' style='text-decoration: underline'>Meine Quelle</a><span class='q-bold-12px-darkblue'>&nbsp;&nbsp;|&nbsp;&nbsp;</span>");
+if(document.cookie.indexOf('CookieActive') != -1) {
+if(getCookie("UserLoggedIn") == "true" || document.location.hostname.indexOf("meinepost") != -1) {
+document.write("<a href='https://www.quelle.de/is-bin/INTERSHOP.enfinity/WFS/Quelle-quelle_de-Site/de_DE/-/EUR/Q_ViewLogout-Process?Linktype=D'><span class='q-bold-12px-darkblue'><u>Logout</u></span></a>");
+} else {
+document.write("<a href='https://www.quelle.de/is-bin/INTERSHOP.enfinity/WFS/Quelle-quelle_de-Site/de_DE/-/EUR/Q_ViewLogin-View?Linktype=D'><span class='q-bold-12px-darkblue'><u>Login</u></span></a>");
+}
+} else {
+document.write("<a href='https://www.quelle.de/is-bin/INTERSHOP.enfinity/WFS/Quelle-quelle_de-Site/de_DE/-/EUR/Q_ViewLogin-View?Linktype=D'><span class='q-bold-12px-darkblue'><u>Login/Logout</u></span></a>");
+}
+//-->
+</script>
+</div>
+<script type="text/javascript">
+if (getBasketElemCount() != 0 || storefront != true){
+document.write('<scr'+'ipt type="text/javascr'+'ipt" src="'+WebRoot+'/js/dynamicBasket.js?idrefresh='+dat+'"><\/scr'+'ipt>');
+document.write('<scr'+'ipt type="text/javascr'+'ipt" src="'+WebRoot+'/js/xmlhttprequest.js?idrefresh='+dat+'"><\/scr'+'ipt>');
+}
+</script>
+
+<style type="text/css">
+<!--
+.dynWarenkorb {width:190px;background:#c1cbe4;overflow: hidden;z-index: 10;position: relative;top : 0px;left: 0px;}
+.warenkorbHelperFrame {z-index: 1;position: absolute;top: 0px;left: 0px;width: 190px;}
+/*.dynWarenkorb .kopfbereich {width:190px; height:25px;background:#d81a26;color:white;}*/
+.dynWarenkorb .kopfbereich {width:190px; height:25px;background-image: url('http://images.quelle.de/is-bin/intershop.static/WFS/Quelle-quelle_de-Site/-/de_DE/imagesOnline/basket/q_ajax_wk_header.gif');background-color: #003399; color:white;}
+.dynWarenkorb .kopfbereich .headline-warenkorb {color:white;font-weight:bold;padding:4px 15px 0px 6px;margin:0px;float:left;}
+.dynWarenkorb .kopfbereich .headline-artikel {color:white;font-size:11px;float:left;padding:5px 4px 3px 0px;margin:0px}
+.dynWarenkorb .headline-preis {width:190px;height:22px;background-color:white;margin-bottom: 1px; color: #003399; font-size: 12px; padding-top: 3px; padding-left: 10px; }
+.dynWarenkorb .aufklapp-button {width:190px;height:30px;background-color:white;text-align:left;padding-left: 8px;}
+.dynWarenkorb .aufklapp-button .bild {margin:4px 4px 0px 0px;cursor: pointer;}
+.dynWarenkorb .produktListe {overflow: hidden;}
+.dynWarenkorb .produkt {width:190px;height:65px;margin:1px 0px 0px 0px;background:white;*height:65px;overflow: hidden;position: relative;}
+.dynWarenkorb .produkt .produktbild {float:left;width:65px; height:48px;margin-right: 3px}
+.dynWarenkorb .produkt .produktbild .prodMenge {font-size: 9px; color:#a5adc2; padding-top: 2px; width: 55px; height: 12px; overflow: hidden; padding-left: 5px; }
+.dynWarenkorb .produkt .produktbild .bild {width:57px; height:48px;}
+.dynWarenkorb .produkt .produktbeschreibung a{font-size:11px;font-weight:bold;color:#162286; }
+.dynWarenkorb .produkt .rechts {width:190px;clear:both;margin: 0px; padding: 0px; margin-top: -11px}
+.dynWarenkorb .produkt .rechts .bild {margin:0px 6px 4px 2px;float:right;cursor: pointer;}
+.dynWarenkorb .produkt .hoverText {font-size: 11px;position: absolute;z-index: 20;top: 27px;left: 54px;padding-left: 5px;padding-top: 1px;background-repeat: no-repeat;width: 127px;height: 19px;background-image: url('http://images.quelle.de/is-bin/intershop.static/WFS/Quelle-quelle_de-Site/-/de_DE/imagesOnline/basket/q_ajax_wk_hover_bk.gif');}
+.dynWarenkorb .produkt .rechts .preis {font-size:10px;color:#a5adc2; width:104px;margin:0px;padding:0px;float:right}
+.dynWarenkorb .kasse {width:190px;height:30px;background:white;margin:1px 0px 0px 0px;}
+.dynWarenkorb .kasse .bild {margin:4px 6px 0px 6px;float:none;cursor: pointer;}
+.shade {width:190px;height:60px;background-image:url(http://images.quelle.de/is-bin/intershop.static/WFS/Quelle-quelle_de-Site/-/de_DE/imagesOnline/basket/q_ajax_wk_shade.png); background-repeat:repeat-x;*background:none;font-size: 1px;z-index: 10;filter:progid:DXImageTransform.Microsoft.AlphaImageLoader(src=http://images.quelle.de/is-bin/intershop.static/WFS/Quelle-quelle_de-Site/-/de_DE/imagesOnline/basket/q_ajax_wk_shade.png);}
+.dynWarenkorb .produkt .produktbeschreibung {font-size:11px;font-weight:bold;color:#162286;padding:4px 0px 0px 0px;float:left;width:120px;height:37px; overflow:hidden}
+.dynWarenkorb .produkt .produktbeschreibung {;#}
+.dynWarenkorb .produkt .produktbeschreibung {font-size:11px;font-weight:bold;color:#162286;padding:4px 0px 0px 0px;width:120px;height:45px; overflow:hidden; float: right; margin: 0px;}
+//-->
+</style>
+<div id="dynBasketPlaceHolder" style="top: 0px; left: 0px; width: 190px; height: 78px; display: none; z-index: 10; position: relative">
+<div id="dynBasketContainer" style="position: absolute; top: 0px; left: 0px; z-index: 10;"></div>
+</div>
+<script type="text/javascript">
+<!--
+if (getBasketElemCount() != 0 || storefront != true){
+var dynBasket = null;
+try {
+dynBasket = new dynamicBasket("dynBasket",
+"http://www.quelle.de/is-bin/INTERSHOP.enfinity/WFS/Quelle-quelle_de-Site/de_DE/-/EUR/Q_ViewBasketOpt-ViewXML",
+"https://www.quelle.de/is-bin/INTERSHOP.enfinity/WFS/Quelle-quelle_de-Site/de_DE/-/EUR/Q_ViewBasketOpt-View?Linktype=AW",
+"https://www.quelle.de/is-bin/INTERSHOP.enfinity/WFS/Quelle-quelle_de-Site/de_DE/-/EUR/Q_ViewBasketOpt-View?Linktype=K",
+"dynWarenkorb",
+"http://www.quelle.de/is-bin/INTERSHOP.enfinity/WFS/Quelle-quelle_de-Site/de_DE/-/EUR/Q_ViewBasketOpt-UpdateXML",
+{"open" :"http://images.quelle.de/is-bin/intershop.static/WFS/Quelle-quelle_de-Site/-/de_DE/imagesOnline/basket/q_ajax_wk_aufklappen.gif",
+"close" :"http://images.quelle.de/is-bin/intershop.static/WFS/Quelle-quelle_de-Site/-/de_DE/imagesOnline/basket/q_ajax_wk_zuklappen.gif",
+"trash" :"http://images.quelle.de/is-bin/intershop.static/WFS/Quelle-quelle_de-Site/-/de_DE/imagesOnline/basket/q_ajax_wk_trash.gif",
+"shade" :"http://images.quelle.de/is-bin/intershop.static/WFS/Quelle-quelle_de-Site/-/de_DE/imagesOnline/basket/q_ajax_wk_shade.png",
+"hoverTrash" :"http://images.quelle.de/is-bin/intershop.static/WFS/Quelle-quelle_de-Site/-/de_DE/imagesOnline/basket/q_ajax_wk_hover_bk.gif",
+"zurKasse" :"http://images.quelle.de/is-bin/intershop.static/WFS/Quelle-quelle_de-Site/-/de_DE/imagesOnline/basket/q_ajax_wk_zurkasse.gif"},
+"http://images.quelle.de/is-bin/intershop.static/WFS/Quelle-quelle_de-Site/-/de_DE/",
+"http://www.quelle.de/is-bin/INTERSHOP.enfinity/WFS/Quelle-quelle_de-Site/de_DE/-/EUR/Q_TrackResultPage-Start"
+);
+document.getElementById("dynBasketContainer").appendChild(dynBasket.DOMBasket);
+}
+catch (e) {
+document.getElementById("dynBasketPlaceHolder").innerHTML = createBasketReplacement('https://www.quelle.de/is-bin/INTERSHOP.enfinity/WFS/Quelle-quelle_de-Site/de_DE/-/EUR/Q_ViewBasketOpt-View?Linktype=K','http://images.quelle.de/is-bin/intershop.static/WFS/Quelle-quelle_de-Site/-/de_DE/imagesOnline/basket/q_ajax_wk_zurkasse.gif','https://www.quelle.de/is-bin/INTERSHOP.enfinity/WFS/Quelle-quelle_de-Site/de_DE/-/EUR/Q_ViewBasketOpt-View?Linktype=AW');
+}
+document.getElementById("dynBasketPlaceHolder").style.display = "block";
+try {
+dynBasket.zIndexInheritance(document.getElementById("dynBasketContainer"), 10);
+} catch(e) {;}
+} else {
+document.getElementById("dynBasketPlaceHolder").innerHTML = createEmptyBasket('https://www.quelle.de/is-bin/INTERSHOP.enfinity/WFS/Quelle-quelle_de-Site/de_DE/-/EUR/Q_ViewBasketOpt-View?Linktype=K');
+document.getElementById("dynBasketPlaceHolder").style.display = "block";
+}
+//-->
+</script>
+</div>
+
+
+</div>
+<div style="position:absolute;overflow:hidden;width:245px;left:0px;top:35px;">
+  
+<!-- TemplateBegin : $Archive: //pvcssrv02.service.itellium.net/pvcsfs/b2ccc/pvcsprojekte/Q2_Gesamt/archives/enfinity/share/private/eCS/Store/templates/de/scc/component-types/1560.isml-arc $ $Revision: 1.2 $-->
+<div style="position:relative;width:245px;height:200px;">
+
+<a href="http://www.quelle.de/is-bin/INTERSHOP.enfinity/WFS/Quelle-quelle_de-Site/de_DE/-/EUR/Q_BrowseCatalog-Start?CategoryName=315690&PromoShopID=QuelleRoot&Linktype=M" class="" style="">
+<img src="http://images.quelle.de/is-bin/intershop.static/WFS/Quelle-quelle_de-Site/-/de_DE/images/5e/hp-frottier.gif" border="0" class="noStyle" alt=""></a>
+</div>
+<!-- TemplateEnd -->
+
+</div>
+<div style="position:absolute;overflow:hidden;width:245px;left:250px;top:35px;">
+  
+<!-- TemplateBegin : $Archive: //pvcssrv02.service.itellium.net/pvcsfs/b2ccc/pvcsprojekte/Q2_Gesamt/archives/enfinity/share/private/eCS/Store/templates/de/scc/component-types/1560.isml-arc $ $Revision: 1.2 $-->
+<div style="position:relative;width:245px;height:200px;">
+
+<a href="http://www.quelle.de/is-bin/INTERSHOP.enfinity/WFS/Quelle-quelle_de-Site/de_DE/-/EUR/Q_BrowseCatalog-Start?CategoryName=306156&PromoShopID=QuelleRoot&Linktype=M" class="" style="">
+<img src="http://images.quelle.de/is-bin/intershop.static/WFS/Quelle-quelle_de-Site/-/de_DE/images/ed/hp-abendmode.gif" border="0" class="noStyle" alt=""></a>
+</div>
+<!-- TemplateEnd -->
+
+</div>
+<div style="position:absolute;overflow:hidden;width:245px;left:500px;top:35px;">
+  
+<!-- TemplateBegin : $Archive: //pvcssrv02.service.itellium.net/pvcsfs/b2ccc/pvcsprojekte/Q2_Gesamt/archives/enfinity/share/private/eCS/Store/templates/de/scc/component-types/9998.isml-arc $ $Revision: 1.4 $-->
+<script>
+var defContentOf1236210 = '\<div style=\"position:relative;width:245px;height:200px;\"\> \<a href=\"http://www.quelle.de/is-bin/INTERSHOP.enfinity/WFS/Quelle-quelle_de-Site/de_DE/-/EUR/Q_BrowseCatalog-Start?CategoryName=315942&PromoShopID=&Linktype=M\" class=\"\" style=\"\"\> \<img src=\"http://www.quelle.de/is-bin/intershop.static/WFS/Quelle-quelle_de-Site/-/de_DE/images/9b/hp-10euro_fruehling.jpg\" border=\"0\" class=\"noStyle\" alt=\"\"\>\</a\> \</div\>';
+</script>
+<div id="Comp_1236210" style="position:relative;top:0px;left:0px;"></div>
+<script type="text/javascript">
+try
+{
+loadPersComps();
+checkPersComps_1236210();
+}
+catch(e)
+{
+pcready = true;
+}
+var req_counter_1236210 = 0;
+function checkPersComps_1236210()
+{
+if(pcready == true || req_counter_1236210 >= 50)
+{
+setActionCompoment_1236210();
+}
+else
+{
+req_counter_1236210++;
+setTimeout("checkPersComps_1236210()", 200);
+}
+}
+function setActionCompoment_1236210()
+{
+try
+{
+if ((pcreq != null) && (pcreq.responseText != ''))
+{
+eval(pcreq.responseText);
+}
+if (ContentOf1236210 != null && ContentOf1236210 != '')
+{
+document.getElementById("Comp_1236210").innerHTML = ContentOf1236210;
+}
+else
+{
+document.getElementById("Comp_1236210").innerHTML = defContentOf1236210;
+}
+}
+catch (e)
+{
+document.getElementById("Comp_1236210").innerHTML = defContentOf1236210;
+}
+}
+</script>
+<!-- TemplateEnd -->
+
+</div>
+<div style="position:absolute;overflow:hidden;width:190px;left:765px;top:115px;">
+  
+<!-- TemplateBegin : $Archive: //pvcssrv02.service.itellium.net/pvcsfs/b2ccc/pvcsprojekte/Q2_Gesamt/archives/enfinity/share/private/eCS/Store/templates/de/scc/component-types/1572.isml-arc $ $Revision: 1.2 $-->
+<div style="position:relative;width:190px;height:74px;overflow:hidden;">
+<div style="position:relative;width:190px;height:25px;overflow:hidden;background-color:#7990bd;">
+<div style="position:absolute;top:5px;left:10px;">
+<span class="q-bold-12px-white" style="color:#ffffff;text-decoration:none;">Katalog-Besteller</span>
+</div>
+</div>
+<div style="position:relative;width:190px;height:50px;overflow:hidden;background-color:white;">
+<div style="position:absolute;top:7px;left:10px;width:115px;height:49px;">
+<a href="https://www.quelle.de/is-bin/INTERSHOP.enfinity/WFS/Quelle-quelle_de-Site/de_DE/-/EUR/Q_ViewBasketOpt-View?Linktype=M" class="q-bold-15px-darkred" style="color:#ff0000;text-decoration:none;">
+Direkt bestellen aus Katalogen</a>
+<br>
+</div>
+</div>
+<div style="position:absolute;top:0px;left:125px;width:65px;height:75px;overflow:hidden;">
+
+<a href="https://www.quelle.de/is-bin/INTERSHOP.enfinity/WFS/Quelle-quelle_de-Site/de_DE/-/EUR/Q_ViewBasketOpt-View?Linktype=M" class="" style="">
+<img src="http://images.quelle.de/is-bin/intershop.static/WFS/Quelle-quelle_de-Site/-/de_DE/images/66/mw_hkfs2008_65x75.gif" width="65" height="75" border="0" class="noStyle" alt=""></a>
+</div>
+<div style="position:relative;width:190px;height:1px;overflow:hidden;background-color:#7990bd;"></div>
+</div>
+<!-- TemplateEnd -->
+
+</div>
+<div style="position:absolute;overflow:hidden;width:190px;left:765px;top:190px;">
+  
+<!-- TemplateBegin : $Archive: //pvcssrv02.service.itellium.net/pvcsfs/b2ccc/pvcsprojekte/Q2_Gesamt/archives/enfinity/share/private/eCS/Store/templates/de/scc/component-types/1520.isml-arc $ $Revision: 1.0 $-->
+<div style="position:relative;width:190px;height:25px;">
+<div style="position:relative;width:190px;height:24px;overflow:hidden;background-color:white;">
+<div style="position:absolute;left:6px;top:7px;width:16px;height:12px;">
+<img src="http://images.quelle.de/is-bin/intershop.static/WFS/Quelle-quelle_de-Site/-/de_DE/images/8e/start_icon_katalog-bestelle.gif" border="0" class="noStyle" style="width:17px;height:12px;" alt="">
+</div>
+<div style="position:absolute;left:31px;top:5px;width:157px;height:19px;">
+<a href="javascript:newWin('M1990208981','http://www.quelle.de/is-bin/INTERSHOP.enfinity/WFS/Quelle-quelle_de-Site/de_DE/-/EUR/Q_ViewTemplate_ecs-View?PromoShopID=QuelleRoot&Template=q_redirect&RedirectURL=http%253a%2F%2Fwww.quelle-katalog.de%2Fsokats.php&Linktype=M',850,720,'scrollbars=yes')" class="q-normal-12px-darkblue">
+Kataloge gratis anfordern</a>
+</div>
+</div>
+</div>
+<!-- TemplateEnd -->
+
+</div>
+<div style="position:absolute;overflow:hidden;width:190px;left:765px;top:215px;">
+  
+<!-- TemplateBegin : $Archive: //pvcssrv02.service.itellium.net/pvcsfs/b2ccc/pvcsprojekte/Q2_Gesamt/archives/enfinity/share/private/eCS/Store/templates/de/scc/component-types/1520.isml-arc $ $Revision: 1.0 $-->
+<div style="position:relative;width:190px;height:25px;">
+<div style="position:relative;width:190px;height:24px;overflow:hidden;background-color:white;">
+<div style="position:absolute;left:6px;top:7px;width:16px;height:12px;">
+<img src="http://images.quelle.de/is-bin/intershop.static/WFS/Quelle-quelle_de-Site/-/de_DE/images/d7/icon-ecat-inhalstverzeichnis.gif" border="0" class="noStyle" style="width:17px;height:12px;" alt="">
+</div>
+<div style="position:absolute;left:31px;top:5px;width:157px;height:19px;">
+<a href="http://www.quelle.de/is-bin/INTERSHOP.enfinity/WFS/Quelle-quelle_de-Site/de_DE/-/EUR/Q_BrowseCatalog-Start?CategoryName=113774&Linktype=H&PromoShopID=QuelleRoot&Linktype=M" class="q-normal-12px-darkblue">
+Online Kataloge bl&auml;ttern</a>
+</div>
+</div>
+</div>
+<!-- TemplateEnd -->
+
+</div>
+<div style="position:absolute;overflow:hidden;width:245px;left:0px;top:240px;">
+  
+<!-- TemplateBegin : $Archive: //pvcssrv02.service.itellium.net/pvcsfs/b2ccc/pvcsprojekte/Q2_Gesamt/archives/enfinity/share/private/eCS/Store/templates/de/scc/component-types/1560.isml-arc $ $Revision: 1.2 $-->
+<div style="position:relative;width:245px;height:65px;">
+
+<a href="http://www.quelle.de/is-bin/INTERSHOP.enfinity/WFS/Quelle-quelle_de-Site/de_DE/-/EUR/Q_BrowseCatalog-Start?CategoryName=259089&PromoShopID=QuelleRoot&Linktype=M" class="" style="">
+<img src="http://images.quelle.de/is-bin/intershop.static/WFS/Quelle-quelle_de-Site/-/de_DE/images/4e/hp-you.gif" border="0" class="noStyle" alt=""></a>
+</div>
+<!-- TemplateEnd -->
+
+</div>
+<div style="position:absolute;overflow:hidden;width:245px;left:250px;top:240px;">
+  
+<!-- TemplateBegin : $Archive: //pvcssrv02.service.itellium.net/pvcsfs/b2ccc/pvcsprojekte/Q2_Gesamt/archives/enfinity/share/private/eCS/Store/templates/de/scc/component-types/1560.isml-arc $ $Revision: 1.2 $-->
+<div style="position:relative;width:245px;height:65px;">
+
+<a href="http://www.quelle.de/is-bin/INTERSHOP.enfinity/WFS/Quelle-quelle_de-Site/de_DE/-/EUR/Q_BrowseCatalog-Start?CategoryName=315729&PromoShopID=QuelleRoot&Linktype=M" class="" style="">
+<img src="http://images.quelle.de/is-bin/intershop.static/WFS/Quelle-quelle_de-Site/-/de_DE/images/7c/hp-cashback.gif" border="0" class="noStyle" alt=""></a>
+</div>
+<!-- TemplateEnd -->
+
+</div>
+<div style="position:absolute;overflow:hidden;width:245px;left:500px;top:240px;">
+  
+<!-- TemplateBegin : $Archive: //pvcssrv02.service.itellium.net/pvcsfs/b2ccc/pvcsprojekte/Q2_Gesamt/archives/enfinity/share/private/eCS/Store/templates/de/scc/component-types/1560.isml-arc $ $Revision: 1.2 $-->
+<div style="position:relative;width:245px;height:65px;">
+
+<a href="http://www.quelle.de/is-bin/INTERSHOP.enfinity/WFS/Quelle-quelle_de-Site/de_DE/-/EUR/Q_BrowseCatalog-Start?CategoryName=287157&PromoShopID=QuelleRoot&Linktype=M" class="" style="">
+<img src="http://images.quelle.de/is-bin/intershop.static/WFS/Quelle-quelle_de-Site/-/de_DE/images/46/hp-kochbuch.gif" border="0" class="noStyle" alt=""></a>
+</div>
+<!-- TemplateEnd -->
+
+</div>
+<div style="position:absolute;overflow:hidden;width:190px;left:765px;top:245px;">
+  
+<!-- TemplateBegin : $Archive: //pvcssrv02.service.itellium.net/pvcsfs/b2ccc/pvcsprojekte/Q2_Gesamt/archives/enfinity/share/private/eCS/Store/templates/de/scc/component-types/1571.isml-arc $ $Revision: 1.2 $-->
+<div style="position:relative;width:190px;height:49px;overflow:hidden;">
+<div style="position:relative;width:190px;height:25px;overflow:hidden;background-color:#7990bd;">
+<div style="position:absolute;top:5px;left:10px;">
+<span class="q-bold-12px-white" style="color:#ffffff;text-decoration:none;">Meine Services</span>
+</div>
+</div>
+<div style="position:relative;width:190px;height:25px;overflow:hidden;background-color:white;">
+<div style="position:absolute;top:5px;left:10px;">
+<a href="http://www.quelle.de/is-bin/INTERSHOP.enfinity/WFS/Quelle-quelle_de-Site/de_DE/-/EUR/Q_ViewBuyerAccount-ViewNewsletter?CategoryName=3000592&PromoShopID=QuelleRoot&Linktype=M" class="q-bold-12px-darkred" style="color:#003399;text-decoration:none;">
+<b>Newsletter-Service</b></a>
+<br>
+</div>
+</div>
+<div style="position:absolute;top:5px;left:135px;width:50px;height:44px;overflow:hidden;">
+
+<a href="http://www.quelle.de/is-bin/INTERSHOP.enfinity/WFS/Quelle-quelle_de-Site/de_DE/-/EUR/Q_ViewBuyerAccount-ViewNewsletter?Linktype=M" class="" style="">
+<img src="http://images.quelle.de/is-bin/intershop.static/WFS/Quelle-quelle_de-Site/-/de_DE/images/50/newsletter_navi.gif" width="50" height="44" border="0" class="noStyle" alt=""></a>
+</div>
+<div style="position:relative;width:190px;height:1px;overflow:hidden;background-color:#7990bd;"></div>
+</div>
+<!-- TemplateEnd -->
+
+</div>
+<div style="position:absolute;overflow:hidden;width:190px;left:765px;top:295px;">
+  
+<!-- TemplateBegin : $Archive: //pvcssrv02.service.itellium.net/pvcsfs/b2ccc/pvcsprojekte/Q2_Gesamt/archives/enfinity/share/private/eCS/Store/templates/de/scc/component-types/1520.isml-arc $ $Revision: 1.0 $-->
+<div style="position:relative;width:190px;height:25px;">
+<div style="position:relative;width:190px;height:24px;overflow:hidden;background-color:white;">
+<div style="position:absolute;left:6px;top:7px;width:16px;height:12px;">
+
+<a href="https://www.quelle.de/is-bin/INTERSHOP.enfinity/WFS/Quelle-quelle_de-Site/de_DE/-/EUR/Q_ViewKIS-View?CategoryName=2000124&PromoShopID=QuelleRoot&Linktype=M" class="" style="">
+<img src="http://images.quelle.de/is-bin/intershop.static/WFS/Quelle-quelle_de-Site/-/de_DE/images/72/start_icon_02.gif" border="0" class="noStyle" style="width:17px;height:12px;" alt=""></a>
+</div>
+<div style="position:absolute;left:31px;top:5px;width:157px;height:19px;">
+<a href="https://www.quelle.de/is-bin/INTERSHOP.enfinity/WFS/Quelle-quelle_de-Site/de_DE/-/EUR/Q_ViewKIS-View?CategoryName=2000124&PromoShopID=QuelleRoot&Linktype=M" class="q-normal-12px-darkblue">
+Mein Konto</a>
+</div>
+</div>
+</div>
+<!-- TemplateEnd -->
+
+</div>
+<div style="position:absolute;overflow:hidden;width:745px;left:0px;top:310px;">
+  
+<!-- TemplateBegin : $Archive: //pvcssrv02.service.itellium.net/pvcsfs/b2ccc/pvcsprojekte/Q2_Gesamt/archives/enfinity/share/private/eCS/Store/templates/de/scc/component-types/1560.isml-arc $ $Revision: 1.2 $-->
+<div style="position:relative;width:745px;height:65px;">
+
+<a href="http://www.quelle.de/is-bin/INTERSHOP.enfinity/WFS/Quelle-quelle_de-Site/de_DE/-/EUR/Q_BrowseCatalog-Start?CategoryName=302979&PromoShopID=QuelleRoot&Linktype=M" class="" style="">
+<img src="http://images.quelle.de/is-bin/intershop.static/WFS/Quelle-quelle_de-Site/-/de_DE/images/5e/hp-muttertag.gif" border="0" class="noStyle" alt=""></a>
+</div>
+<!-- TemplateEnd -->
+
+</div>
+<div style="position:absolute;overflow:hidden;width:190px;left:765px;top:320px;">
+  
+<!-- TemplateBegin : $Archive: //pvcssrv02.service.itellium.net/pvcsfs/b2ccc/pvcsprojekte/Q2_Gesamt/archives/enfinity/share/private/eCS/Store/templates/de/scc/component-types/1520.isml-arc $ $Revision: 1.0 $-->
+<div style="position:relative;width:190px;height:25px;">
+<div style="position:relative;width:190px;height:24px;overflow:hidden;background-color:white;">
+<div style="position:absolute;left:6px;top:7px;width:16px;height:12px;">
+
+<a href="https://www.quelle.de/is-bin/INTERSHOP.enfinity/WFS/Quelle-quelle_de-Site/de_DE/-/EUR/Q_MeinePost-Start?Linktype=M" class="" style="">
+<img src="http://images.quelle.de/is-bin/intershop.static/WFS/Quelle-quelle_de-Site/-/de_DE/images/5f/HP-Icon_meine-Post.gif" border="0" class="noStyle" style="width:17px;height:12px;" alt=""></a>
+</div>
+<div style="position:absolute;left:31px;top:5px;width:157px;height:19px;">
+<a href="https://www.quelle.de/is-bin/INTERSHOP.enfinity/WFS/Quelle-quelle_de-Site/de_DE/-/EUR/Q_MeinePost-Start?Linktype=M" class="q-normal-12px-darkblue">
+Meine Post</a>
+</div>
+</div>
+</div>
+<!-- TemplateEnd -->
+
+</div>
+<div style="position:absolute;overflow:hidden;width:190px;left:765px;top:345px;">
+  
+<!-- TemplateBegin : $Archive: //pvcssrv02.service.itellium.net/pvcsfs/b2ccc/pvcsprojekte/Q2_Gesamt/archives/enfinity/share/private/eCS/Store/templates/de/scc/component-types/1520.isml-arc $ $Revision: 1.0 $-->
+<div style="position:relative;width:190px;height:25px;">
+<div style="position:relative;width:190px;height:24px;overflow:hidden;background-color:white;">
+<div style="position:absolute;left:6px;top:7px;width:16px;height:12px;">
+
+<a href="http://www.quelle.de/is-bin/INTERSHOP.enfinity/WFS/Quelle-quelle_de-Site/de_DE/-/EUR/Q_ViewTemplate_ecs-View?PromoShopID=QuelleRoot&Template=q_redirect&RedirectURL=https%3A%2F%2Fwww.quelle.de%2Fis-bin%2FINTERSHOP.enfinity%2FWFS%2FQuelle-quelle_de-Site%2Fde_DE%2F-%2FEUR%2FQ_HappyDigits-View&Linktype=M" class="" style="">
+<img src="http://images.quelle.de/is-bin/intershop.static/WFS/Quelle-quelle_de-Site/-/de_DE/images/81/icon_happydigits.gif" border="0" class="noStyle" style="width:17px;height:12px;" alt=""></a>
+</div>
+<div style="position:absolute;left:31px;top:5px;width:157px;height:19px;">
+<a href="http://www.quelle.de/is-bin/INTERSHOP.enfinity/WFS/Quelle-quelle_de-Site/de_DE/-/EUR/Q_ViewTemplate_ecs-View?PromoShopID=QuelleRoot&Template=q_redirect&RedirectURL=https%3A%2F%2Fwww.quelle.de%2Fis-bin%2FINTERSHOP.enfinity%2FWFS%2FQuelle-quelle_de-Site%2Fde_DE%2F-%2FEUR%2FQ_HappyDigits-View&Linktype=M" class="q-normal-12px-darkblue">
+HappyDigits</a>
+</div>
+</div>
+</div>
+<!-- TemplateEnd -->
+
+</div>
+<div style="position:absolute;overflow:hidden;width:190px;left:765px;top:370px;">
+  
+<!-- TemplateBegin : $Archive: //pvcssrv02.service.itellium.net/pvcsfs/b2ccc/pvcsprojekte/Q2_Gesamt/archives/enfinity/share/private/eCS/Store/templates/de/scc/component-types/1520.isml-arc $ $Revision: 1.0 $-->
+<div style="position:relative;width:190px;height:25px;">
+<div style="position:relative;width:190px;height:24px;overflow:hidden;background-color:white;">
+<div style="position:absolute;left:6px;top:7px;width:16px;height:12px;">
+
+<a href="http://www.quelle.de/is-bin/INTERSHOP.enfinity/WFS/Quelle-quelle_de-Site/de_DE/-/EUR/Q_BrowseCatalog-Start?CategoryName=257616&PromoShopID=QuelleRoot&Linktype=M" class="" style="">
+<img src="http://images.quelle.de/is-bin/intershop.static/WFS/Quelle-quelle_de-Site/-/de_DE/images/69/Icon-Herz.gif" border="0" class="noStyle" style="width:17px;height:12px;" alt=""></a>
+</div>
+<div style="position:absolute;left:31px;top:5px;width:157px;height:19px;">
+<a href="http://www.quelle.de/is-bin/INTERSHOP.enfinity/WFS/Quelle-quelle_de-Site/de_DE/-/EUR/Q_BrowseCatalog-Start?CategoryName=257616&PromoShopID=QuelleRoot&Linktype=M" class="q-normal-12px-darkblue">
+Für unsere Neukunden</a>
+</div>
+</div>
+</div>
+<!-- TemplateEnd -->
+
+</div>
+<div style="position:absolute;overflow:hidden;width:245px;left:0px;top:380px;">
+ <!-- TemplateBegin : $Archive:   //pvcssrv02.service.itellium.net/pvcsfs/b2ccc/pvcsprojekte/Q2_Gesamt/archives/enfinity/share/private/eCS/Store/templates/de/scc/component-types/1575.isml-arc  $ $Revision: 8195 $-->
+
+
+
+
+
+<div style="position:relative;width:245px;height:25px;text-align:left;color:#ffffff;background-color:#acaf93;overflow:hidden;">
+	<div style="position:absolute;left:7px;top:5px;width:231px;height:15px;">
+	<span style="font: normal bold 12px Arial;color:#ffffff;text-decoration:none;">Aktuelle Fashion-Trends</span>
+	</div>	
+</div>
+
+
+
+
+
+<!-- TemplateEnd -->
+
+</div>
+<div style="position:absolute;overflow:hidden;width:245px;left:250px;top:380px;">
+ <!-- TemplateBegin : $Archive:   //pvcssrv02.service.itellium.net/pvcsfs/b2ccc/pvcsprojekte/Q2_Gesamt/archives/enfinity/share/private/eCS/Store/templates/de/scc/component-types/1575.isml-arc  $ $Revision: 8195 $-->
+
+
+
+
+
+<div style="position:relative;width:245px;height:25px;text-align:left;color:#ffffff;background-color:#94bac1;overflow:hidden;">
+	<div style="position:absolute;left:7px;top:5px;width:231px;height:15px;">
+	<span style="font: normal bold 12px Arial;color:#ffffff;text-decoration:none;">Technik-Angebote</span>
+	</div>	
+</div>
+
+
+
+
+
+<!-- TemplateEnd -->
+
+</div>
+<div style="position:absolute;overflow:hidden;width:245px;left:500px;top:380px;">
+ <!-- TemplateBegin : $Archive:   //pvcssrv02.service.itellium.net/pvcsfs/b2ccc/pvcsprojekte/Q2_Gesamt/archives/enfinity/share/private/eCS/Store/templates/de/scc/component-types/1575.isml-arc  $ $Revision: 8195 $-->
+
+
+
+
+
+<div style="position:relative;width:245px;height:25px;text-align:left;color:#ffffff;background-color:#afa59d;overflow:hidden;">
+	<div style="position:absolute;left:7px;top:5px;width:231px;height:15px;">
+	<span style="font: normal bold 12px Arial;color:#ffffff;text-decoration:none;">Sch&#246;nes Zuhause</span>
+	</div>	
+</div>
+
+
+
+
+
+<!-- TemplateEnd -->
+
+</div>
+<div style="position:absolute;overflow:hidden;width:190px;left:765px;top:395px;">
+  
+<!-- TemplateBegin : $Archive: //pvcssrv02.service.itellium.net/pvcsfs/b2ccc/pvcsprojekte/Q2_Gesamt/archives/enfinity/share/private/eCS/Store/templates/de/scc/component-types/1520.isml-arc $ $Revision: 1.0 $-->
+<div style="position:relative;width:190px;height:25px;">
+<div style="position:relative;width:190px;height:24px;overflow:hidden;background-color:white;">
+<div style="position:absolute;left:6px;top:7px;width:16px;height:12px;">
+
+<a href="http://www.quelle.de/is-bin/INTERSHOP.enfinity/WFS/Quelle-quelle_de-Site/de_DE/-/EUR/Q_BrowseCatalog-Start?CategoryName=278187&PromoShopID=QuelleRoot&Linktype=M" class="" style="">
+<img src="http://images.quelle.de/is-bin/intershop.static/WFS/Quelle-quelle_de-Site/-/de_DE/images/72/HP_Mobile-Services.gif" border="0" class="noStyle" style="width:17px;height:12px;" alt=""></a>
+</div>
+<div style="position:absolute;left:31px;top:5px;width:157px;height:19px;">
+<a href="http://www.quelle.de/is-bin/INTERSHOP.enfinity/WFS/Quelle-quelle_de-Site/de_DE/-/EUR/Q_BrowseCatalog-Start?CategoryName=278187&PromoShopID=QuelleRoot&Linktype=M" class="q-normal-12px-darkblue">
+QUELLE Mobile</a>
+</div>
+</div>
+</div>
+<!-- TemplateEnd -->
+
+</div>
+<div style="position:absolute;overflow:hidden;width:245px;left:0px;top:410px;">
+  
+<!-- TemplateBegin : $Archive: //pvcssrv02.service.itellium.net/pvcsfs/b2ccc/pvcsprojekte/Q2_Gesamt/archives/enfinity/share/private/eCS/Store/templates/de/scc/component-types/1565.isml-arc $ $Revision: 1.3 $-->
+<script type="text/javascript">
+<!--
+var compID651996 = '651996';
+var prodcount651996 = 0;
+var products651996 = new Array();
+products651996[0] = new Object();
+products651996[0]["desc"] = 'Y.O.U. 2er-Set Tops';
+products651996[0]["longdesc"] = 'Das Basic an hei&szlig;en Sommertagen!';
+products651996[0]["price"] = '12.49';
+products651996[0]["secondaryprice"] = '24.99';
+products651996[0]["UVP"] = '';
+products651996[0]["abPrice"] = '1';
+products651996[0]["pic"] = 'http://products.quelle.de/zc/bs/q1/images/d/7/4/d74753c4f10dd584411bc7161c8eed62.tif/JDAqxrSlXGIzEidNs4z8S1GBB8ptARw_';
+products651996[0]["ProductSKU"] = '0574441U-34';
+products651996[0]["AAID"] = '200001637920';
+products651996[0]["CategoryName"] = '295779';
+products651996[0]["PromoShopID"] = 'QuelleRoot';
+products651996[0]["category_text"] = '... mehr von Y.O.U.';
+products651996[0]["category_linkid"] = '294687';
+products651996[1] = new Object();
+products651996[1]["desc"] = 'EXPLORER Ballerina';
+products651996[1]["longdesc"] = 'Der perfekte Schuh zum sportlich legeren Look.';
+products651996[1]["price"] = '24.99';
+products651996[1]["secondaryprice"] = '';
+products651996[1]["UVP"] = '';
+products651996[1]["abPrice"] = '';
+products651996[1]["pic"] = 'http://products.quelle.de/zc/bs/q1/images/3/3/8/338c21ec5fe1f6d9c01fac816dfa350e.tif/JDAqxrSlXGIzEidNs4z8S1GBB8ptARw_';
+products651996[1]["ProductSKU"] = '0082424Y-36';
+products651996[1]["AAID"] = '200002382001';
+products651996[1]["CategoryName"] = '296556';
+products651996[1]["PromoShopID"] = 'QuelleRoot';
+products651996[1]["category_text"] = '... mehr Schuhe';
+products651996[1]["category_linkid"] = '229587';
+function showProd651996(count) {
+var ProductLink = window.location.protocol + "//" + window.location.hostname + "/is-bin/INTERSHOP.enfinity/WFS/Quelle-quelle_de-Site/de_DE/-/EUR/Q_DisplayProductInformation-Start;"+"sid"+"="+parse_enfsession+"?ProductSKU="+products651996[count]["ProductSKU"]+"&AAID="+products651996[count]["AAID"]+"&ProductRefID="+products651996[count]["ProductSKU"]+"@Quelle-quelle_de&CategoryName="+products651996[count]["CategoryName"]+"&PromoShopID="+products651996[count]["PromoShopID"]+"&Linktype=M";
+var CategoryLink = window.location.protocol + "//" + window.location.hostname + "/is-bin/INTERSHOP.enfinity/WFS/Quelle-quelle_de-Site/de_DE/-/EUR/Q_BrowseCatalog-Start;"+"sid"+"="+parse_enfsession+"?CategoryName="+products651996[count]["category_linkid"]+"&Linktype=M";
+var longdesc = products651996[count]["longdesc"].substr(0, 70);
+var shoptext = products651996[count]["category_text"];
+if (products651996[count]["longdesc"].length > 70) { longdesc = longdesc + ' ...';};
+document.write('<a href="'+ProductLink+'"><img src="'+products651996[count]["pic"]+'" width="112" height="95" border="0" alt=""></a>');
+document.write('<div style="position:relative;left:5px;top:8px;width:110px;height:80px;overflow:hidden;line-height:15px;">');
+document.write('<a href="'+ProductLink+'" style="font-face:arial;font-size:12px;font-weight:bold;text-decoration:underline;">'+products651996[count]["desc"]+'</a><br>');
+document.write(longdesc);
+document.write('</div><div style="position:relative;top:10px;left:5px;width:110px;">');
+if (products651996[count]["secondaryprice"] != '') {
+if (products651996[count]["secondaryprice"].length + products651996[count]["price"].length > 11) {
+document.write('<span id="pa_streichprice" class="q-trebuchet-12px-darkgrey">&euro; '+products651996[count]["secondaryprice"]+'</span>&nbsp;<br>');
+} else {
+document.write('<br><span id="pa_streichprice" class="q-trebuchet-12px-darkgrey">&euro; '+products651996[count]["secondaryprice"]+'</span>&nbsp;');
+}
+} else {
+if (products651996[count]["UVP"] != '') {
+document.write('<span id="pa_uvp" class="q-normal-12px-darkblue" style="color:#999999;">UVP*&nbsp;&euro;&nbsp;'+products651996[count]["UVP"]+'</span><br>');
+} else {
+document.write('<br>&nbsp;');
+}
+}
+if(products651996[count]["abPrice"] == '1') {
+document.write('<span class="q-bold-12px-red">ab &euro; '+products651996[count]["price"]+'</span></div>');
+} else {
+document.write('<span class="q-bold-12px-red">&euro; '+products651996[count]["price"]+'</span></div>');
+}
+document.write('<div style="position:relative;top:15px;width:120px;height:30px;float:left;background-color:#acaf93;overflow:hidden;">');
+if (products651996[count]["category_text"] != '') {
+document.write('<table border="0" cellpadding="2" cellspacing="0" width="100%" height="30"><tbody><tr><td valign="bottom"><a href="'+CategoryLink+'" style="color:white;font-face:arial;font-size:11px;font-weight:bold;text-decoration:none;">'+shoptext+'</a></td><td valign="bottom"><a href="'+CategoryLink+'"><img src="http://images.quelle.de/is-bin/intershop.static/WFS/Quelle-quelle_de-Site/-/de_DE/imagesOnline/pfeil_10x13.gif" border="0" style="position:relative;"></a></td></tr></tbody></table>');
+}
+document.write('</div>');
+}
+//-->
+</script>
+<div style="position:relative;width:245px;height:260px;overflow:hidden;background-color:#acaf93;">
+<div style="position:relative;width:120px;height:255px;background-color:white;float:left;">
+<script type="text/javascript">
+<!--
+showProd651996(prodcount651996);
+prodcount651996++;
+//-->
+</script>
+</div>
+<div style="position:relative;width:5px;height:255px;overflow:hidden;float:left;background-color:white;">
+</div>
+<div style="position:relative;width:120px;height:255px;background-color:white;float:left;">
+<script type="text/javascript">
+<!--
+showProd651996(prodcount651996);
+prodcount651996++;
+//-->
+</script>
+</div>
+</div>
+<!-- TemplateEnd -->
+
+</div>
+<div style="position:absolute;overflow:hidden;width:245px;left:250px;top:410px;">
+  
+<!-- TemplateBegin : $Archive: //pvcssrv02.service.itellium.net/pvcsfs/b2ccc/pvcsprojekte/Q2_Gesamt/archives/enfinity/share/private/eCS/Store/templates/de/scc/component-types/1565.isml-arc $ $Revision: 1.3 $-->
+<script type="text/javascript">
+<!--
+var compID476442 = '476442';
+var prodcount476442 = 0;
+var products476442 = new Array();
+products476442[0] = new Object();
+products476442[0]["desc"] = 'FUJITSU SIEMENS Desktoprechner';
+products476442[0]["longdesc"] = 'AMD Athlon 64 Prozessor 4400+';
+products476442[0]["price"] = '399.00';
+products476442[0]["secondaryprice"] = '';
+products476442[0]["UVP"] = '';
+products476442[0]["abPrice"] = '';
+products476442[0]["pic"] = 'http://products.quelle.de/zc/bs/q1/images/f/c/a/fcaa40ecde4918a317f344ecd7e72dbc.tif/JDAqxrSlXGIzEidNs4z8S1GBB8ptARw_';
+products476442[0]["ProductSKU"] = '0701985F';
+products476442[0]["AAID"] = '200002449414';
+products476442[0]["CategoryName"] = '282165';
+products476442[0]["PromoShopID"] = 'QuelleRoot';
+products476442[0]["category_text"] = '... mehr Computer';
+products476442[0]["category_linkid"] = '282162';
+products476442[1] = new Object();
+products476442[1]["desc"] = 'SONY Digitale Spiegelreflex';
+products476442[1]["longdesc"] = 'Mit hochwirksamer Bildstabilisierung';
+products476442[1]["price"] = '749.99';
+products476442[1]["secondaryprice"] = '849.99';
+products476442[1]["UVP"] = '850.00';
+products476442[1]["abPrice"] = '';
+products476442[1]["pic"] = 'http://products.quelle.de/zc/bs/q1/images/6/b/b/6bb916d9b81f8381547efb71dc8c34a4.tif/JDAqxrSlXGIzEidNs4z8S1GBB8ptARw_';
+products476442[1]["ProductSKU"] = '0416417R';
+products476442[1]["AAID"] = '200004083178';
+products476442[1]["CategoryName"] = '112707';
+products476442[1]["PromoShopID"] = 'QuelleRoot';
+products476442[1]["category_text"] = '... mehr von SONY';
+products476442[1]["category_linkid"] = '112499';
+function showProd476442(count) {
+var ProductLink = window.location.protocol + "//" + window.location.hostname + "/is-bin/INTERSHOP.enfinity/WFS/Quelle-quelle_de-Site/de_DE/-/EUR/Q_DisplayProductInformation-Start;"+"sid"+"="+parse_enfsession+"?ProductSKU="+products476442[count]["ProductSKU"]+"&AAID="+products476442[count]["AAID"]+"&ProductRefID="+products476442[count]["ProductSKU"]+"@Quelle-quelle_de&CategoryName="+products476442[count]["CategoryName"]+"&PromoShopID="+products476442[count]["PromoShopID"]+"&Linktype=M";
+var CategoryLink = window.location.protocol + "//" + window.location.hostname + "/is-bin/INTERSHOP.enfinity/WFS/Quelle-quelle_de-Site/de_DE/-/EUR/Q_BrowseCatalog-Start;"+"sid"+"="+parse_enfsession+"?CategoryName="+products476442[count]["category_linkid"]+"&Linktype=M";
+var longdesc = products476442[count]["longdesc"].substr(0, 70);
+var shoptext = products476442[count]["category_text"];
+if (products476442[count]["longdesc"].length > 70) { longdesc = longdesc + ' ...';};
+document.write('<a href="'+ProductLink+'"><img src="'+products476442[count]["pic"]+'" width="112" height="95" border="0" alt=""></a>');
+document.write('<div style="position:relative;left:5px;top:8px;width:110px;height:80px;overflow:hidden;line-height:15px;">');
+document.write('<a href="'+ProductLink+'" style="font-face:arial;font-size:12px;font-weight:bold;text-decoration:underline;">'+products476442[count]["desc"]+'</a><br>');
+document.write(longdesc);
+document.write('</div><div style="position:relative;top:10px;left:5px;width:110px;">');
+if (products476442[count]["secondaryprice"] != '') {
+if (products476442[count]["secondaryprice"].length + products476442[count]["price"].length > 11) {
+document.write('<span id="pa_streichprice" class="q-trebuchet-12px-darkgrey">&euro; '+products476442[count]["secondaryprice"]+'</span>&nbsp;<br>');
+} else {
+document.write('<br><span id="pa_streichprice" class="q-trebuchet-12px-darkgrey">&euro; '+products476442[count]["secondaryprice"]+'</span>&nbsp;');
+}
+} else {
+if (products476442[count]["UVP"] != '') {
+document.write('<span id="pa_uvp" class="q-normal-12px-darkblue" style="color:#999999;">UVP*&nbsp;&euro;&nbsp;'+products476442[count]["UVP"]+'</span><br>');
+} else {
+document.write('<br>&nbsp;');
+}
+}
+if(products476442[count]["abPrice"] == '1') {
+document.write('<span class="q-bold-12px-red">ab &euro; '+products476442[count]["price"]+'</span></div>');
+} else {
+document.write('<span class="q-bold-12px-red">&euro; '+products476442[count]["price"]+'</span></div>');
+}
+document.write('<div style="position:relative;top:15px;width:120px;height:30px;float:left;background-color:#94bac1;overflow:hidden;">');
+if (products476442[count]["category_text"] != '') {
+document.write('<table border="0" cellpadding="2" cellspacing="0" width="100%" height="30"><tbody><tr><td valign="bottom"><a href="'+CategoryLink+'" style="color:white;font-face:arial;font-size:11px;font-weight:bold;text-decoration:none;">'+shoptext+'</a></td><td valign="bottom"><a href="'+CategoryLink+'"><img src="http://images.quelle.de/is-bin/intershop.static/WFS/Quelle-quelle_de-Site/-/de_DE/imagesOnline/pfeil_10x13.gif" border="0" style="position:relative;"></a></td></tr></tbody></table>');
+}
+document.write('</div>');
+}
+//-->
+</script>
+<div style="position:relative;width:245px;height:260px;overflow:hidden;background-color:#94bac1;">
+<div style="position:relative;width:120px;height:255px;background-color:white;float:left;">
+<script type="text/javascript">
+<!--
+showProd476442(prodcount476442);
+prodcount476442++;
+//-->
+</script>
+</div>
+<div style="position:relative;width:5px;height:255px;overflow:hidden;float:left;background-color:white;">
+</div>
+<div style="position:relative;width:120px;height:255px;background-color:white;float:left;">
+<script type="text/javascript">
+<!--
+showProd476442(prodcount476442);
+prodcount476442++;
+//-->
+</script>
+</div>
+</div>
+<!-- TemplateEnd -->
+
+</div>
+<div style="position:absolute;overflow:hidden;width:245px;left:500px;top:410px;">
+  
+<!-- TemplateBegin : $Archive: //pvcssrv02.service.itellium.net/pvcsfs/b2ccc/pvcsprojekte/Q2_Gesamt/archives/enfinity/share/private/eCS/Store/templates/de/scc/component-types/1565.isml-arc $ $Revision: 1.3 $-->
+<script type="text/javascript">
+<!--
+var compID476634 = '476634';
+var prodcount476634 = 0;
+var products476634 = new Array();
+products476634[0] = new Object();
+products476634[0]["desc"] = 'NINTENDO Wii Fit mit Balance Board';
+products476634[0]["longdesc"] = 'Die Erg&auml;nzung zur Spielekonsole Wii';
+products476634[0]["price"] = '99.99';
+products476634[0]["secondaryprice"] = '';
+products476634[0]["UVP"] = '';
+products476634[0]["abPrice"] = '';
+products476634[0]["pic"] = 'http://products.quelle.de/zc/bs/q1/images/e/2/0/e2052ae9c0714c0255d471a9d22ffbc2.tif/JDAqxrSlXGIzEidNs4z8S1GBB8ptARw_';
+products476634[0]["ProductSKU"] = '0637510J';
+products476634[0]["AAID"] = '200004143535';
+products476634[0]["CategoryName"] = '263031';
+products476634[0]["PromoShopID"] = 'QuelleRoot';
+products476634[0]["category_text"] = '... mehr von NINTENDO';
+products476634[0]["category_linkid"] = '260871';
+products476634[1] = new Object();
+products476634[1]["desc"] = 'PLAYBOY 2-tlg. Bettw&auml;sche';
+products476634[1]["longdesc"] = 'Exklusiv bei Quelle!';
+products476634[1]["price"] = '24.99';
+products476634[1]["secondaryprice"] = '34.99';
+products476634[1]["UVP"] = '';
+products476634[1]["abPrice"] = '';
+products476634[1]["pic"] = 'http://products.quelle.de/zc/bs/q1/images/6/2/a/62af39aae081a6b5dee7104de890d5b2.tif/JDAqxrSlXGIzEidNs4z8S1GBB8ptARw_';
+products476634[1]["ProductSKU"] = '0543499M-135/200';
+products476634[1]["AAID"] = '200001983598';
+products476634[1]["CategoryName"] = '264045';
+products476634[1]["PromoShopID"] = 'QuelleRoot';
+products476634[1]["category_text"] = '... mehr Bettw&auml;sche';
+products476634[1]["category_linkid"] = '264045';
+function showProd476634(count) {
+var ProductLink = window.location.protocol + "//" + window.location.hostname + "/is-bin/INTERSHOP.enfinity/WFS/Quelle-quelle_de-Site/de_DE/-/EUR/Q_DisplayProductInformation-Start;"+"sid"+"="+parse_enfsession+"?ProductSKU="+products476634[count]["ProductSKU"]+"&AAID="+products476634[count]["AAID"]+"&ProductRefID="+products476634[count]["ProductSKU"]+"@Quelle-quelle_de&CategoryName="+products476634[count]["CategoryName"]+"&PromoShopID="+products476634[count]["PromoShopID"]+"&Linktype=M";
+var CategoryLink = window.location.protocol + "//" + window.location.hostname + "/is-bin/INTERSHOP.enfinity/WFS/Quelle-quelle_de-Site/de_DE/-/EUR/Q_BrowseCatalog-Start;"+"sid"+"="+parse_enfsession+"?CategoryName="+products476634[count]["category_linkid"]+"&Linktype=M";
+var longdesc = products476634[count]["longdesc"].substr(0, 70);
+var shoptext = products476634[count]["category_text"];
+if (products476634[count]["longdesc"].length > 70) { longdesc = longdesc + ' ...';};
+document.write('<a href="'+ProductLink+'"><img src="'+products476634[count]["pic"]+'" width="112" height="95" border="0" alt=""></a>');
+document.write('<div style="position:relative;left:5px;top:8px;width:110px;height:80px;overflow:hidden;line-height:15px;">');
+document.write('<a href="'+ProductLink+'" style="font-face:arial;font-size:12px;font-weight:bold;text-decoration:underline;">'+products476634[count]["desc"]+'</a><br>');
+document.write(longdesc);
+document.write('</div><div style="position:relative;top:10px;left:5px;width:110px;">');
+if (products476634[count]["secondaryprice"] != '') {
+if (products476634[count]["secondaryprice"].length + products476634[count]["price"].length > 11) {
+document.write('<span id="pa_streichprice" class="q-trebuchet-12px-darkgrey">&euro; '+products476634[count]["secondaryprice"]+'</span>&nbsp;<br>');
+} else {
+document.write('<br><span id="pa_streichprice" class="q-trebuchet-12px-darkgrey">&euro; '+products476634[count]["secondaryprice"]+'</span>&nbsp;');
+}
+} else {
+if (products476634[count]["UVP"] != '') {
+document.write('<span id="pa_uvp" class="q-normal-12px-darkblue" style="color:#999999;">UVP*&nbsp;&euro;&nbsp;'+products476634[count]["UVP"]+'</span><br>');
+} else {
+document.write('<br>&nbsp;');
+}
+}
+if(products476634[count]["abPrice"] == '1') {
+document.write('<span class="q-bold-12px-red">ab &euro; '+products476634[count]["price"]+'</span></div>');
+} else {
+document.write('<span class="q-bold-12px-red">&euro; '+products476634[count]["price"]+'</span></div>');
+}
+document.write('<div style="position:relative;top:15px;width:120px;height:30px;float:left;background-color:#afa59d;overflow:hidden;">');
+if (products476634[count]["category_text"] != '') {
+document.write('<table border="0" cellpadding="2" cellspacing="0" width="100%" height="30"><tbody><tr><td valign="bottom"><a href="'+CategoryLink+'" style="color:white;font-face:arial;font-size:11px;font-weight:bold;text-decoration:none;">'+shoptext+'</a></td><td valign="bottom"><a href="'+CategoryLink+'"><img src="http://images.quelle.de/is-bin/intershop.static/WFS/Quelle-quelle_de-Site/-/de_DE/imagesOnline/pfeil_10x13.gif" border="0" style="position:relative;"></a></td></tr></tbody></table>');
+}
+document.write('</div>');
+}
+//-->
+</script>
+<div style="position:relative;width:245px;height:260px;overflow:hidden;background-color:#afa59d;">
+<div style="position:relative;width:120px;height:255px;background-color:white;float:left;">
+<script type="text/javascript">
+<!--
+showProd476634(prodcount476634);
+prodcount476634++;
+//-->
+</script>
+</div>
+<div style="position:relative;width:5px;height:255px;overflow:hidden;float:left;background-color:white;">
+</div>
+<div style="position:relative;width:120px;height:255px;background-color:white;float:left;">
+<script type="text/javascript">
+<!--
+showProd476634(prodcount476634);
+prodcount476634++;
+//-->
+</script>
+</div>
+</div>
+<!-- TemplateEnd -->
+
+</div>
+<div style="position:absolute;overflow:hidden;width:190px;left:765px;top:420px;">
+  
+<!-- TemplateBegin : $Archive: //pvcssrv02.service.itellium.net/pvcsfs/b2ccc/pvcsprojekte/Q2_Gesamt/archives/enfinity/share/private/eCS/Store/templates/de/scc/component-types/1520.isml-arc $ $Revision: 1.0 $-->
+<div style="position:relative;width:190px;height:25px;">
+<div style="position:relative;width:190px;height:24px;overflow:hidden;background-color:white;">
+<div style="position:absolute;left:6px;top:7px;width:16px;height:12px;">
+
+<a href="http://www.quelle.de/is-bin/INTERSHOP.enfinity/WFS/Quelle-quelle_de-Site/de_DE/-/EUR/Q_ViewStatic-ViewPage2?ProductSKU=static3109&CategoryName=50000010&PromoShopID=QuelleRoot&Linktype=M" class="" style="">
+<img src="http://images.quelle.de/is-bin/intershop.static/WFS/Quelle-quelle_de-Site/-/de_DE/images/5d/Icon-eCard-v01.gif" border="0" class="noStyle" style="width:17px;height:12px;" alt=""></a>
+</div>
+<div style="position:absolute;left:31px;top:5px;width:157px;height:19px;">
+<a href="http://www.quelle.de/is-bin/INTERSHOP.enfinity/WFS/Quelle-quelle_de-Site/de_DE/-/EUR/Q_ViewStatic-ViewPage2?ProductSKU=static3192&CategoryName=275550&PromoShopID=QuelleRoot&Linktype=M" class="q-normal-12px-darkblue">
+Meine eCards</a>
+</div>
+</div>
+</div>
+<!-- TemplateEnd -->
+
+</div>
+<div style="position:absolute;overflow:hidden;width:190px;left:765px;top:445px;">
+  
+<!-- TemplateBegin : $Archive: //pvcssrv02.service.itellium.net/pvcsfs/b2ccc/pvcsprojekte/Q2_Gesamt/archives/enfinity/share/private/eCS/Store/templates/de/scc/component-types/1520.isml-arc $ $Revision: 1.0 $-->
+<div style="position:relative;width:190px;height:25px;">
+<div style="position:relative;width:190px;height:24px;overflow:hidden;background-color:white;">
+<div style="position:absolute;left:6px;top:7px;width:16px;height:12px;">
+
+<a href="http://www.quelle.de/is-bin/INTERSHOP.enfinity/WFS/Quelle-quelle_de-Site/de_DE/-/EUR/Q_ViewTemplate-View?Template=q_redirect&RedirectURL=http://www.quelle.de/is-bin/INTERSHOP.enfinity/WFS/Quelle-quelle_de-Site/de_DE/-/EUR/Q_ViewTemplate_ecs-View?Template=static/q_quelletv_iframe&PromoShopID=QuelleRoot&Linktype=M" class="" style="">
+<img src="http://images.quelle.de/is-bin/intershop.static/WFS/Quelle-quelle_de-Site/-/de_DE/images/d8/icon_kamera.gif" border="0" class="noStyle" style="width:17px;height:12px;" alt=""></a>
+</div>
+<div style="position:absolute;left:31px;top:5px;width:157px;height:19px;">
+<a href="http://www.quelle.de/is-bin/INTERSHOP.enfinity/WFS/Quelle-quelle_de-Site/de_DE/-/EUR/Q_ViewTemplate-View?Template=q_redirect&RedirectURL=http://www.quelle.de/is-bin/INTERSHOP.enfinity/WFS/Quelle-quelle_de-Site/de_DE/-/EUR/Q_ViewTemplate_ecs-View?Template=static/q_quelletv_iframe&PromoShopID=QuelleRoot&Linktype=M" class="q-normal-12px-darkblue">
+quelle.tv</a>
+</div>
+</div>
+</div>
+<!-- TemplateEnd -->
+
+</div>
+<div style="position:absolute;overflow:hidden;width:190px;left:765px;top:475px;">
+  
+<!-- TemplateBegin : $Archive: //pvcssrv02.service.itellium.net/pvcsfs/b2ccc/pvcsprojekte/Q2_Gesamt/archives/enfinity/share/private/eCS/Store/templates/de/scc/component-types/1518.isml-arc $ $Revision: 1.1 $-->
+<div style="position:relative;height:25px;width:190px;overflow:hidden;background:url('http://images.quelle.de/is-bin/intershop.static/WFS/Quelle-quelle_de-Site/-/de_DE/imagesOnline/q5_mw_header_bg.gif') repeat-x;">
+<div style="position:relative;top:5px;left:7px;">
+<span class="q-bold-12px-white" style="text-decoration:none;">Weitere Sortimente</span>
+</div>
+</div>
+<!-- TemplateEnd -->
+
+</div>
+<div style="position:absolute;overflow:hidden;width:190px;left:765px;top:500px;">
+  
+<!-- TemplateBegin : $Archive: //pvcssrv02.service.itellium.net/pvcsfs/b2ccc/pvcsprojekte/Q2_Gesamt/archives/enfinity/share/private/eCS/Store/templates/de/scc/component-types/1569.isml-arc $ $Revision: 1.1 $-->
+<div style="position:relative;width:190px;height:40px;overflow:hidden;">
+<div style="position:relative;width:38px;height:38px;overflow:hidden;background-color:white;float:left;">
+<img src="http://images.quelle.de/is-bin/intershop.static/WFS/Quelle-quelle_de-Site/-/de_DE/images/68/kq_kochmuetze_38x38.gif" width="38" height="38">
+</div>
+<div style="position:relative;width:152px;height:38px;overflow:hidden;background-color:white;float:left;">
+<table border="0" callpadding="0" callspacing="0"><tr><td height="40">
+<a href="http://www.quelle.de/is-bin/INTERSHOP.enfinity/WFS/Quelle-quelle_de-Site/de_DE/-/EUR/Q_BrowseCatalog-Start?CategoryName=201159&PromoShopID=QuelleRoot&Linktype=M" class="q-bold-12px-darkred" style="color:#003399;text-decoration:none;">
+Küchen-QUELLE</a><br>
+</td></tr></table>
+</div>
+</div>
+<!-- TemplateEnd -->
+
+</div>
+<div style="position:absolute;overflow:hidden;width:190px;left:765px;top:540px;">
+  
+<!-- TemplateBegin : $Archive: //pvcssrv02.service.itellium.net/pvcsfs/b2ccc/pvcsprojekte/Q2_Gesamt/archives/enfinity/share/private/eCS/Store/templates/de/scc/component-types/1569.isml-arc $ $Revision: 1.1 $-->
+<div style="position:relative;width:190px;height:40px;overflow:hidden;">
+<div style="position:relative;width:38px;height:38px;overflow:hidden;background-color:white;float:left;">
+<img src="http://images.quelle.de/is-bin/intershop.static/WFS/Quelle-quelle_de-Site/-/de_DE/images/78/hp_icon_no7_finanzen_neu.gif" width="38" height="38">
+</div>
+<div style="position:relative;width:152px;height:38px;overflow:hidden;background-color:white;float:left;">
+<table border="0" callpadding="0" callspacing="0"><tr><td height="40">
+<a href="http://www.quelle.de/is-bin/INTERSHOP.enfinity/WFS/Quelle-quelle_de-Site/de_DE/-/EUR/Q_ViewStatic-ViewPage?ProductSKU=static2154&PromoShopID=QuelleRoot&Linktype=M" class="q-bold-12px-darkred" style="color:#003399;text-decoration:none;">
+Versicherungen &
+Finanzen</a><br>
+</td></tr></table>
+</div>
+</div>
+<!-- TemplateEnd -->
+
+</div>
+<div style="position:absolute;overflow:hidden;width:190px;left:765px;top:580px;">
+  
+<!-- TemplateBegin : $Archive: //pvcssrv02.service.itellium.net/pvcsfs/b2ccc/pvcsprojekte/Q2_Gesamt/archives/enfinity/share/private/eCS/Store/templates/de/scc/component-types/1569.isml-arc $ $Revision: 1.1 $-->
+<div style="position:relative;width:190px;height:40px;overflow:hidden;">
+<div style="position:relative;width:38px;height:38px;overflow:hidden;background-color:white;float:left;">
+<img src="http://images.quelle.de/is-bin/intershop.static/WFS/Quelle-quelle_de-Site/-/de_DE/images/e1/hp_icon_no3_reisen.gif" width="38" height="38">
+</div>
+<div style="position:relative;width:152px;height:38px;overflow:hidden;background-color:white;float:left;">
+<table border="0" callpadding="0" callspacing="0"><tr><td height="40">
+<a href="http://www.quelle.de/is-bin/INTERSHOP.enfinity/WFS/Quelle-quelle_de-Site/de_DE/-/EUR/Q_ViewTemplate_ecs-View?PromoShopID=QuelleRoot&Template=q_redirect&RedirectURL=http%3A%2F%2Fwww.quelle.de%2Fis-bin%2FINTERSHOP.enfinity%2FWFS%2FQuelle-quelle_de-Site%2Fde_DE%2F-%2FEUR%2FQ_ViewTemplate_ecs-View%3FTemplate%3Dstatic%2Fq_reisequelle_iframe%26LinkType%3DM&Linktype=M" class="q-bold-12px-darkred" style="color:#003399;text-decoration:none;">
+Lust auf Urlaub?<br>Jetzt hier buchen!</a><br>
+</td></tr></table>
+</div>
+</div>
+<!-- TemplateEnd -->
+
+</div>
+<div style="position:absolute;overflow:hidden;width:190px;left:765px;top:620px;">
+  
+<!-- TemplateBegin : $Archive: //pvcssrv02.service.itellium.net/pvcsfs/b2ccc/pvcsprojekte/Q2_Gesamt/archives/enfinity/share/private/eCS/Store/templates/de/scc/component-types/1569.isml-arc $ $Revision: 1.1 $-->
+<div style="position:relative;width:190px;height:40px;overflow:hidden;">
+<div style="position:relative;width:38px;height:38px;overflow:hidden;background-color:white;float:left;">
+<img src="http://images.quelle.de/is-bin/intershop.static/WFS/Quelle-quelle_de-Site/-/de_DE/images/bc/hp_icon_no1_bildershop_neu.gif" width="38" height="38">
+</div>
+<div style="position:relative;width:152px;height:38px;overflow:hidden;background-color:white;float:left;">
+<table border="0" callpadding="0" callspacing="0"><tr><td height="40">
+<a href="javascript:newWin('M1185485459','http://www.quelle.de/is-bin/INTERSHOP.enfinity/WFS/Quelle-quelle_de-Site/de_DE/-/EUR/Q_ViewTemplate-View?Template=q_redirect&RedirectURL=http://www.fotoquelle.de/&PromoShopID=QuelleRoot&Linktype=M',1026,736,'scrollbars=yes','scrollbars=yes')" class="q-bold-12px-darkred" style="color:#003399;text-decoration:none;">
+Foto Service</a><br>
+</td></tr></table>
+</div>
+</div>
+<!-- TemplateEnd -->
+
+</div>
+<div style="position:absolute;overflow:hidden;width:190px;left:765px;top:660px;">
+  
+<!-- TemplateBegin : $Archive: //pvcssrv02.service.itellium.net/pvcsfs/b2ccc/pvcsprojekte/Q2_Gesamt/archives/enfinity/share/private/eCS/Store/templates/de/scc/component-types/1569.isml-arc $ $Revision: 1.1 $-->
+<div style="position:relative;width:190px;height:40px;overflow:hidden;">
+<div style="position:relative;width:38px;height:38px;overflow:hidden;background-color:white;float:left;">
+<img src="http://images.quelle.de/is-bin/intershop.static/WFS/Quelle-quelle_de-Site/-/de_DE/images/32/HP_icon_dvd_gedreht.gif" width="38" height="38">
+</div>
+<div style="position:relative;width:152px;height:38px;overflow:hidden;background-color:white;float:left;">
+<table border="0" callpadding="0" callspacing="0"><tr><td height="40">
+<a href="http://www.quelle.de/is-bin/INTERSHOP.enfinity/WFS/Quelle-quelle_de-Site/de_DE/-/EUR/Q_ViewTemplate-View?Template=q_redirect&RedirectURL=http://www.quelle.de/is-bin/INTERSHOP.enfinity/WFS/Quelle-quelle_de-Site/de_DE/-/EUR/Q_DVDRental-Show&PromoShopID=QuelleRoot&Linktype=M" class="q-bold-12px-darkred" style="color:#003399;text-decoration:none;">
+DVD-Verleih</a><br>
+</td></tr></table>
+</div>
+</div>
+<!-- TemplateEnd -->
+
+</div>
+<div style="position:absolute;overflow:hidden;width:245px;left:0px;top:675px;">
+  
+<!-- TemplateBegin : $Archive: //pvcssrv02.service.itellium.net/pvcsfs/b2ccc/pvcsprojekte/Q2_Gesamt/archives/enfinity/share/private/eCS/Store/templates/de/scc/component-types/1565.isml-arc $ $Revision: 1.3 $-->
+<script type="text/javascript">
+<!--
+var compID609720 = '609720';
+var prodcount609720 = 0;
+var products609720 = new Array();
+products609720[0] = new Object();
+products609720[0]["desc"] = 'QS by s.Oliver T-Shirt';
+products609720[0]["longdesc"] = 'Markenqualit&auml;t f&uuml;r wenig Geld.';
+products609720[0]["price"] = '9.95';
+products609720[0]["secondaryprice"] = '';
+products609720[0]["UVP"] = '';
+products609720[0]["abPrice"] = '';
+products609720[0]["pic"] = 'http://products.quelle.de/zc/bs/q1/images/1/5/1/1510e07947c63b75198624320ee85cd0.tif/JDAqxrSlXGIzEidNs4z8S1GBB8ptARw_';
+products609720[0]["ProductSKU"] = '0480106A-M';
+products609720[0]["AAID"] = '200000900841';
+products609720[0]["CategoryName"] = '298140';
+products609720[0]["PromoShopID"] = 'QuelleRoot';
+products609720[0]["category_text"] = '... mehr von s. Oliver';
+products609720[0]["category_linkid"] = '298035';
+products609720[1] = new Object();
+products609720[1]["desc"] = 'Bermudas';
+products609720[1]["longdesc"] = 'L&auml;ssige Falten-Optik an den Taschen.';
+products609720[1]["price"] = '19.99';
+products609720[1]["secondaryprice"] = '';
+products609720[1]["UVP"] = '';
+products609720[1]["abPrice"] = '1';
+products609720[1]["pic"] = 'http://products.quelle.de/zc/bs/q1/images/7/7/4/774055ab531c4864fab60c526a580b9b.tif/JDAqxrSlXGIzEidNs4z8S1GBB8ptARw_';
+products609720[1]["ProductSKU"] = '0175320K-44';
+products609720[1]["AAID"] = '200002410180';
+products609720[1]["CategoryName"] = '272715';
+products609720[1]["PromoShopID"] = 'QuelleRoot';
+products609720[1]["category_text"] = '... mehr Hosen f&uuml;r Ihn';
+products609720[1]["category_linkid"] = '272715';
+function showProd609720(count) {
+var ProductLink = window.location.protocol + "//" + window.location.hostname + "/is-bin/INTERSHOP.enfinity/WFS/Quelle-quelle_de-Site/de_DE/-/EUR/Q_DisplayProductInformation-Start;"+"sid"+"="+parse_enfsession+"?ProductSKU="+products609720[count]["ProductSKU"]+"&AAID="+products609720[count]["AAID"]+"&ProductRefID="+products609720[count]["ProductSKU"]+"@Quelle-quelle_de&CategoryName="+products609720[count]["CategoryName"]+"&PromoShopID="+products609720[count]["PromoShopID"]+"&Linktype=M";
+var CategoryLink = window.location.protocol + "//" + window.location.hostname + "/is-bin/INTERSHOP.enfinity/WFS/Quelle-quelle_de-Site/de_DE/-/EUR/Q_BrowseCatalog-Start;"+"sid"+"="+parse_enfsession+"?CategoryName="+products609720[count]["category_linkid"]+"&Linktype=M";
+var longdesc = products609720[count]["longdesc"].substr(0, 70);
+var shoptext = products609720[count]["category_text"];
+if (products609720[count]["longdesc"].length > 70) { longdesc = longdesc + ' ...';};
+document.write('<a href="'+ProductLink+'"><img src="'+products609720[count]["pic"]+'" width="112" height="95" border="0" alt=""></a>');
+document.write('<div style="position:relative;left:5px;top:8px;width:110px;height:80px;overflow:hidden;line-height:15px;">');
+document.write('<a href="'+ProductLink+'" style="font-face:arial;font-size:12px;font-weight:bold;text-decoration:underline;">'+products609720[count]["desc"]+'</a><br>');
+document.write(longdesc);
+document.write('</div><div style="position:relative;top:10px;left:5px;width:110px;">');
+if (products609720[count]["secondaryprice"] != '') {
+if (products609720[count]["secondaryprice"].length + products609720[count]["price"].length > 11) {
+document.write('<span id="pa_streichprice" class="q-trebuchet-12px-darkgrey">&euro; '+products609720[count]["secondaryprice"]+'</span>&nbsp;<br>');
+} else {
+document.write('<br><span id="pa_streichprice" class="q-trebuchet-12px-darkgrey">&euro; '+products609720[count]["secondaryprice"]+'</span>&nbsp;');
+}
+} else {
+if (products609720[count]["UVP"] != '') {
+document.write('<span id="pa_uvp" class="q-normal-12px-darkblue" style="color:#999999;">UVP*&nbsp;&euro;&nbsp;'+products609720[count]["UVP"]+'</span><br>');
+} else {
+document.write('<br>&nbsp;');
+}
+}
+if(products609720[count]["abPrice"] == '1') {
+document.write('<span class="q-bold-12px-red">ab &euro; '+products609720[count]["price"]+'</span></div>');
+} else {
+document.write('<span class="q-bold-12px-red">&euro; '+products609720[count]["price"]+'</span></div>');
+}
+document.write('<div style="position:relative;top:15px;width:120px;height:30px;float:left;background-color:#acaf93;overflow:hidden;">');
+if (products609720[count]["category_text"] != '') {
+document.write('<table border="0" cellpadding="2" cellspacing="0" width="100%" height="30"><tbody><tr><td valign="bottom"><a href="'+CategoryLink+'" style="color:white;font-face:arial;font-size:11px;font-weight:bold;text-decoration:none;">'+shoptext+'</a></td><td valign="bottom"><a href="'+CategoryLink+'"><img src="http://images.quelle.de/is-bin/intershop.static/WFS/Quelle-quelle_de-Site/-/de_DE/imagesOnline/pfeil_10x13.gif" border="0" style="position:relative;"></a></td></tr></tbody></table>');
+}
+document.write('</div>');
+}
+//-->
+</script>
+<div style="position:relative;width:245px;height:260px;overflow:hidden;background-color:#acaf93;">
+<div style="position:relative;width:120px;height:255px;background-color:white;float:left;">
+<script type="text/javascript">
+<!--
+showProd609720(prodcount609720);
+prodcount609720++;
+//-->
+</script>
+</div>
+<div style="position:relative;width:5px;height:255px;overflow:hidden;float:left;background-color:white;">
+</div>
+<div style="position:relative;width:120px;height:255px;background-color:white;float:left;">
+<script type="text/javascript">
+<!--
+showProd609720(prodcount609720);
+prodcount609720++;
+//-->
+</script>
+</div>
+</div>
+<!-- TemplateEnd -->
+
+</div>
+<div style="position:absolute;overflow:hidden;width:245px;left:250px;top:675px;">
+  
+<!-- TemplateBegin : $Archive: //pvcssrv02.service.itellium.net/pvcsfs/b2ccc/pvcsprojekte/Q2_Gesamt/archives/enfinity/share/private/eCS/Store/templates/de/scc/component-types/1565.isml-arc $ $Revision: 1.3 $-->
+<script type="text/javascript">
+<!--
+var compID476619 = '476619';
+var prodcount476619 = 0;
+var products476619 = new Array();
+products476619[0] = new Object();
+products476619[0]["desc"] = 'PRIVILEG Einbauherdset';
+products476619[0]["longdesc"] = 'Unser Preishit!';
+products476619[0]["price"] = '399.99';
+products476619[0]["secondaryprice"] = '';
+products476619[0]["UVP"] = '';
+products476619[0]["abPrice"] = '1';
+products476619[0]["pic"] = 'http://products.quelle.de/zc/bs/q1/images/9/c/8/9c8eaaa44a6c92ca08c27c2b9bc072ba.tif/JDAqxrSlXGIzEidNs4z8S1GBB8ptARw_';
+products476619[0]["ProductSKU"] = '0360507U';
+products476619[0]["AAID"] = '200004073101';
+products476619[0]["CategoryName"] = '279057';
+products476619[0]["PromoShopID"] = 'QuelleRoot';
+products476619[0]["category_text"] = '... mehr Einbauger&auml;te';
+products476619[0]["category_linkid"] = '50000288';
+products476619[1] = new Object();
+products476619[1]["desc"] = 'PRIVILEG Waschmaschine';
+products476619[1]["longdesc"] = 'Inklusive Lieferung und Anschluss!';
+products476619[1]["price"] = '349.99';
+products476619[1]["secondaryprice"] = '369.99';
+products476619[1]["UVP"] = '';
+products476619[1]["abPrice"] = '';
+products476619[1]["pic"] = 'http://products.quelle.de/zc/bs/q1/images/8/d/d/8dd11f17bb23ffd363b8017d75a10eb9.tif/JDAqxrSlXGIzEidNs4z8S1GBB8ptARw_';
+products476619[1]["ProductSKU"] = '0121676Z';
+products476619[1]["AAID"] = '200002333404';
+products476619[1]["CategoryName"] = '264048';
+products476619[1]["PromoShopID"] = 'QuelleRoot';
+products476619[1]["category_text"] = '... mehr Waschmaschinen';
+products476619[1]["category_linkid"] = '264048';
+function showProd476619(count) {
+var ProductLink = window.location.protocol + "//" + window.location.hostname + "/is-bin/INTERSHOP.enfinity/WFS/Quelle-quelle_de-Site/de_DE/-/EUR/Q_DisplayProductInformation-Start;"+"sid"+"="+parse_enfsession+"?ProductSKU="+products476619[count]["ProductSKU"]+"&AAID="+products476619[count]["AAID"]+"&ProductRefID="+products476619[count]["ProductSKU"]+"@Quelle-quelle_de&CategoryName="+products476619[count]["CategoryName"]+"&PromoShopID="+products476619[count]["PromoShopID"]+"&Linktype=M";
+var CategoryLink = window.location.protocol + "//" + window.location.hostname + "/is-bin/INTERSHOP.enfinity/WFS/Quelle-quelle_de-Site/de_DE/-/EUR/Q_BrowseCatalog-Start;"+"sid"+"="+parse_enfsession+"?CategoryName="+products476619[count]["category_linkid"]+"&Linktype=M";
+var longdesc = products476619[count]["longdesc"].substr(0, 70);
+var shoptext = products476619[count]["category_text"];
+if (products476619[count]["longdesc"].length > 70) { longdesc = longdesc + ' ...';};
+document.write('<a href="'+ProductLink+'"><img src="'+products476619[count]["pic"]+'" width="112" height="95" border="0" alt=""></a>');
+document.write('<div style="position:relative;left:5px;top:8px;width:110px;height:80px;overflow:hidden;line-height:15px;">');
+document.write('<a href="'+ProductLink+'" style="font-face:arial;font-size:12px;font-weight:bold;text-decoration:underline;">'+products476619[count]["desc"]+'</a><br>');
+document.write(longdesc);
+document.write('</div><div style="position:relative;top:10px;left:5px;width:110px;">');
+if (products476619[count]["secondaryprice"] != '') {
+if (products476619[count]["secondaryprice"].length + products476619[count]["price"].length > 11) {
+document.write('<span id="pa_streichprice" class="q-trebuchet-12px-darkgrey">&euro; '+products476619[count]["secondaryprice"]+'</span>&nbsp;<br>');
+} else {
+document.write('<br><span id="pa_streichprice" class="q-trebuchet-12px-darkgrey">&euro; '+products476619[count]["secondaryprice"]+'</span>&nbsp;');
+}
+} else {
+if (products476619[count]["UVP"] != '') {
+document.write('<span id="pa_uvp" class="q-normal-12px-darkblue" style="color:#999999;">UVP*&nbsp;&euro;&nbsp;'+products476619[count]["UVP"]+'</span><br>');
+} else {
+document.write('<br>&nbsp;');
+}
+}
+if(products476619[count]["abPrice"] == '1') {
+document.write('<span class="q-bold-12px-red">ab &euro; '+products476619[count]["price"]+'</span></div>');
+} else {
+document.write('<span class="q-bold-12px-red">&euro; '+products476619[count]["price"]+'</span></div>');
+}
+document.write('<div style="position:relative;top:15px;width:120px;height:30px;float:left;background-color:#94bac1;overflow:hidden;">');
+if (products476619[count]["category_text"] != '') {
+document.write('<table border="0" cellpadding="2" cellspacing="0" width="100%" height="30"><tbody><tr><td valign="bottom"><a href="'+CategoryLink+'" style="color:white;font-face:arial;font-size:11px;font-weight:bold;text-decoration:none;">'+shoptext+'</a></td><td valign="bottom"><a href="'+CategoryLink+'"><img src="http://images.quelle.de/is-bin/intershop.static/WFS/Quelle-quelle_de-Site/-/de_DE/imagesOnline/pfeil_10x13.gif" border="0" style="position:relative;"></a></td></tr></tbody></table>');
+}
+document.write('</div>');
+}
+//-->
+</script>
+<div style="position:relative;width:245px;height:260px;overflow:hidden;background-color:#94bac1;">
+<div style="position:relative;width:120px;height:255px;background-color:white;float:left;">
+<script type="text/javascript">
+<!--
+showProd476619(prodcount476619);
+prodcount476619++;
+//-->
+</script>
+</div>
+<div style="position:relative;width:5px;height:255px;overflow:hidden;float:left;background-color:white;">
+</div>
+<div style="position:relative;width:120px;height:255px;background-color:white;float:left;">
+<script type="text/javascript">
+<!--
+showProd476619(prodcount476619);
+prodcount476619++;
+//-->
+</script>
+</div>
+</div>
+<!-- TemplateEnd -->
+
+</div>
+<div style="position:absolute;overflow:hidden;width:245px;left:500px;top:675px;">
+  
+<!-- TemplateBegin : $Archive: //pvcssrv02.service.itellium.net/pvcsfs/b2ccc/pvcsprojekte/Q2_Gesamt/archives/enfinity/share/private/eCS/Store/templates/de/scc/component-types/1565.isml-arc $ $Revision: 1.3 $-->
+<script type="text/javascript">
+<!--
+var compID722898 = '722898';
+var prodcount722898 = 0;
+var products722898 = new Array();
+products722898[0] = new Object();
+products722898[0]["desc"] = 'K&Auml;RCHER Hochdruckreiniger';
+products722898[0]["longdesc"] = 'Perfekt f&uuml;r den Fr&uuml;hjarsputz!';
+products722898[0]["price"] = '89.99';
+products722898[0]["secondaryprice"] = '';
+products722898[0]["UVP"] = '';
+products722898[0]["abPrice"] = '';
+products722898[0]["pic"] = 'http://products.quelle.de/zc/bs/q1/images/5/6/e/56edae93917833678f41e5fc3fecee18.tif/JDAqxrSlXGIzEidNs4z8S1GBB8ptARw_';
+products722898[0]["ProductSKU"] = '0048931X';
+products722898[0]["AAID"] = '200000363373';
+products722898[0]["CategoryName"] = '250716';
+products722898[0]["PromoShopID"] = 'QuelleRoot';
+products722898[0]["category_text"] = '... mehr Gartentechnik';
+products722898[0]["category_linkid"] = '116664';
+products722898[1] = new Object();
+products722898[1]["desc"] = 'Pflanzkasten mit Blumenrankgitter';
+products722898[1]["longdesc"] = 'F&uuml;r Balkon oder Terasse';
+products722898[1]["price"] = '59.99';
+products722898[1]["secondaryprice"] = '';
+products722898[1]["UVP"] = '';
+products722898[1]["abPrice"] = '';
+products722898[1]["pic"] = 'http://products.quelle.de/zc/bs/q1/images/4/6/b/46b6a77695ebb54fb4ac5ca2c37db125.tif/JDAqxrSlXGIzEidNs4z8S1GBB8ptARw_';
+products722898[1]["ProductSKU"] = '0743623H';
+products722898[1]["AAID"] = '100000164234';
+products722898[1]["CategoryName"] = '267687';
+products722898[1]["PromoShopID"] = 'QuelleRoot';
+products722898[1]["category_text"] = '... mehr Gartendeko';
+products722898[1]["category_linkid"] = '267687';
+function showProd722898(count) {
+var ProductLink = window.location.protocol + "//" + window.location.hostname + "/is-bin/INTERSHOP.enfinity/WFS/Quelle-quelle_de-Site/de_DE/-/EUR/Q_DisplayProductInformation-Start;"+"sid"+"="+parse_enfsession+"?ProductSKU="+products722898[count]["ProductSKU"]+"&AAID="+products722898[count]["AAID"]+"&ProductRefID="+products722898[count]["ProductSKU"]+"@Quelle-quelle_de&CategoryName="+products722898[count]["CategoryName"]+"&PromoShopID="+products722898[count]["PromoShopID"]+"&Linktype=M";
+var CategoryLink = window.location.protocol + "//" + window.location.hostname + "/is-bin/INTERSHOP.enfinity/WFS/Quelle-quelle_de-Site/de_DE/-/EUR/Q_BrowseCatalog-Start;"+"sid"+"="+parse_enfsession+"?CategoryName="+products722898[count]["category_linkid"]+"&Linktype=M";
+var longdesc = products722898[count]["longdesc"].substr(0, 70);
+var shoptext = products722898[count]["category_text"];
+if (products722898[count]["longdesc"].length > 70) { longdesc = longdesc + ' ...';};
+document.write('<a href="'+ProductLink+'"><img src="'+products722898[count]["pic"]+'" width="112" height="95" border="0" alt=""></a>');
+document.write('<div style="position:relative;left:5px;top:8px;width:110px;height:80px;overflow:hidden;line-height:15px;">');
+document.write('<a href="'+ProductLink+'" style="font-face:arial;font-size:12px;font-weight:bold;text-decoration:underline;">'+products722898[count]["desc"]+'</a><br>');
+document.write(longdesc);
+document.write('</div><div style="position:relative;top:10px;left:5px;width:110px;">');
+if (products722898[count]["secondaryprice"] != '') {
+if (products722898[count]["secondaryprice"].length + products722898[count]["price"].length > 11) {
+document.write('<span id="pa_streichprice" class="q-trebuchet-12px-darkgrey">&euro; '+products722898[count]["secondaryprice"]+'</span>&nbsp;<br>');
+} else {
+document.write('<br><span id="pa_streichprice" class="q-trebuchet-12px-darkgrey">&euro; '+products722898[count]["secondaryprice"]+'</span>&nbsp;');
+}
+} else {
+if (products722898[count]["UVP"] != '') {
+document.write('<span id="pa_uvp" class="q-normal-12px-darkblue" style="color:#999999;">UVP*&nbsp;&euro;&nbsp;'+products722898[count]["UVP"]+'</span><br>');
+} else {
+document.write('<br>&nbsp;');
+}
+}
+if(products722898[count]["abPrice"] == '1') {
+document.write('<span class="q-bold-12px-red">ab &euro; '+products722898[count]["price"]+'</span></div>');
+} else {
+document.write('<span class="q-bold-12px-red">&euro; '+products722898[count]["price"]+'</span></div>');
+}
+document.write('<div style="position:relative;top:15px;width:120px;height:30px;float:left;background-color:#afa59d;overflow:hidden;">');
+if (products722898[count]["category_text"] != '') {
+document.write('<table border="0" cellpadding="2" cellspacing="0" width="100%" height="30"><tbody><tr><td valign="bottom"><a href="'+CategoryLink+'" style="color:white;font-face:arial;font-size:11px;font-weight:bold;text-decoration:none;">'+shoptext+'</a></td><td valign="bottom"><a href="'+CategoryLink+'"><img src="http://images.quelle.de/is-bin/intershop.static/WFS/Quelle-quelle_de-Site/-/de_DE/imagesOnline/pfeil_10x13.gif" border="0" style="position:relative;"></a></td></tr></tbody></table>');
+}
+document.write('</div>');
+}
+//-->
+</script>
+<div style="position:relative;width:245px;height:260px;overflow:hidden;background-color:#afa59d;">
+<div style="position:relative;width:120px;height:255px;background-color:white;float:left;">
+<script type="text/javascript">
+<!--
+showProd722898(prodcount722898);
+prodcount722898++;
+//-->
+</script>
+</div>
+<div style="position:relative;width:5px;height:255px;overflow:hidden;float:left;background-color:white;">
+</div>
+<div style="position:relative;width:120px;height:255px;background-color:white;float:left;">
+<script type="text/javascript">
+<!--
+showProd722898(prodcount722898);
+prodcount722898++;
+//-->
+</script>
+</div>
+</div>
+<!-- TemplateEnd -->
+
+</div>
+<div style="position:absolute;overflow:hidden;width:190px;left:765px;top:705px;">
+  
+<!-- TemplateBegin : $Archive: //pvcssrv02.service.itellium.net/pvcsfs/b2ccc/pvcsprojekte/Q2_Gesamt/archives/enfinity/share/private/eCS/Store/templates/de/scc/component-types/1518.isml-arc $ $Revision: 1.1 $-->
+<div style="position:relative;height:25px;width:190px;overflow:hidden;background:url('http://images.quelle.de/is-bin/intershop.static/WFS/Quelle-quelle_de-Site/-/de_DE/imagesOnline/q5_mw_header_bg.gif') repeat-x;">
+<div style="position:relative;top:5px;left:7px;">
+<span class="q-bold-12px-white" style="text-decoration:none;">Quelle in Ihrer Nähe</span>
+</div>
+</div>
+<!-- TemplateEnd -->
+
+</div>
+<div style="position:absolute;overflow:hidden;width:190px;left:765px;top:730px;">
+  
+<!-- TemplateBegin : $Archive: //pvcssrv02.service.itellium.net/pvcsfs/b2ccc/pvcsprojekte/Q2_Gesamt/archives/enfinity/share/private/eCS/Store/templates/de/scc/component-types/1570.isml-arc $ $Revision: 1.3 $-->
+<div style="position:relative;width:190px;height:85px;overflow:hidden;background-color:white;">
+<form action="http://www.quelle.de/is-bin/INTERSHOP.enfinity/WFS/Quelle-quelle_de-Site/de_DE/-/EUR/Q_Shopfinder-Process" method="GET" name="formMask_mw">
+<div align="center" style="position:relative;left:5px;top:13px;width:180px;height:30px;">
+<select name="Show" size="1" style="width:170px;" class="q-normal-12px-darkblue">
+<option value="all"> Alle
+<option value="qtcs" > QUELLE Filialen *
+<option value="bas" > QUELLE-Bestellannahmen
+</select>
+</div>
+<div align="center" class="q-normal-12px-darkblue" style="position:relative;left:5px;top:6px;width:180px;height:30px;">
+PLZ: &nbsp;<input type="text" size="5" maxlength="5" name="ZipCode" class="q-normal-12px-darkblue"> &nbsp;<a href="javascript:document.formMask_mw.submit()" target="_self"><img src="http://images.quelle.de/is-bin/intershop.static/WFS/Quelle-quelle_de-Site/-/de_DE/imagesOnline/q5_sf_search.gif" border="0" style="position:relative;top:5px;"></a>
+<div style="font-size:smaller;padding:5px 5px 0px 5px; text-align:left">* Eigene und Partner-Filialen</div>
+</div>
+<input type="Hidden" name="City" value="">
+<input type="Hidden" name="Type" value="eTS">
+<input type="Hidden" name="CategoryName" value="qnav6000293">
+<input type="Hidden" name="Linktype" value="M">
+<input type="Hidden" name="PromoShopID" value="QuelleRoot">
+</form>
+</div>
+<!-- TemplateEnd -->
+
+</div>
+<div style="position:absolute;overflow:hidden;width:190px;left:765px;top:820px;">
+  
+<!-- TemplateBegin : $Archive: //pvcssrv02.service.itellium.net/pvcsfs/b2ccc/pvcsprojekte/Q2_Gesamt/archives/enfinity/share/private/eCS/Store/templates/de/scc/component-types/1518.isml-arc $ $Revision: 1.1 $-->
+<div style="position:relative;height:25px;width:190px;overflow:hidden;background:url('http://images.quelle.de/is-bin/intershop.static/WFS/Quelle-quelle_de-Site/-/de_DE/imagesOnline/q5_mw_header_bg.gif') repeat-x;">
+<div style="position:relative;top:5px;left:7px;">
+<a href="http://www.quelle.de/is-bin/INTERSHOP.enfinity/WFS/Quelle-quelle_de-Site/de_DE/-/EUR/Q_BrowseCatalog-Start?CategoryName=245730&PromoShopID=QuelleRoot&Linktype=M" class="q-bold-12px-white" style="text-decoration:none;">
+Sicheres Einkaufen</a>
+</div>
+</div>
+<!-- TemplateEnd -->
+
+</div>
+<div style="position:absolute;overflow:hidden;width:190px;left:765px;top:845px;">
+  
+<!-- TemplateBegin : $Archive: //pvcssrv02.service.itellium.net/pvcsfs/b2ccc/pvcsprojekte/Q2_Gesamt/archives/enfinity/share/private/eCS/Store/templates/de/scc/component-types/1560.isml-arc $ $Revision: 1.2 $-->
+<div style="position:relative;width:190px;height:70px;">
+
+<a href="http://www.quelle.de/is-bin/INTERSHOP.enfinity/WFS/Quelle-quelle_de-Site/de_DE/-/EUR/Q_BrowseCatalog-Start?CategoryName=273975&PromoShopID=QuelleRoot&Linktype=M" class="" style="">
+<img src="http://images.quelle.de/is-bin/intershop.static/WFS/Quelle-quelle_de-Site/-/de_DE/images/1f/hp_awards.gif" border="0" class="noStyle" alt=""></a>
+</div>
+<!-- TemplateEnd -->
+
+</div>
+<div style="position:absolute;overflow:hidden;width:190px;left:765px;top:920px;">
+  
+<!-- TemplateBegin : $Archive: //pvcssrv02.service.itellium.net/pvcsfs/b2ccc/pvcsprojekte/Q2_Gesamt/archives/enfinity/share/private/eCS/Store/templates/de/scc/component-types/1518.isml-arc $ $Revision: 1.1 $-->
+<div style="position:relative;height:25px;width:190px;overflow:hidden;background:url('http://images.quelle.de/is-bin/intershop.static/WFS/Quelle-quelle_de-Site/-/de_DE/imagesOnline/q5_mw_header_bg.gif') repeat-x;">
+<div style="position:relative;top:5px;left:7px;">
+<span class="q-bold-12px-white" style="text-decoration:none;">Extra profitieren mit Quelle</span>
+</div>
+</div>
+<!-- TemplateEnd -->
+
+</div>
+<div style="position:absolute;overflow:hidden;width:150px;left:0px;top:945px;">
+ <!-- TemplateBegin : $Archive:   //pvcssrv02.service.itellium.net/pvcsfs/b2ccc/pvcsprojekte/Q2_Gesamt/archives/enfinity/share/private/eCS/Store/templates/de/scc/component-types/1575.isml-arc  $ $Revision: 8195 $-->
+
+
+
+
+
+<div style="position:relative;width:150px;height:20px;text-align:left;color:#003399;background-color:white;overflow:hidden;">
+	<div style="position:absolute;left:7px;top:5px;width:136px;height:10px;">
+	<span style="font: normal bold 12px Arial;color:#003399;text-decoration:none;">Marken bei QUELLE</span>
+	</div>	
+</div>
+
+
+
+
+
+<!-- TemplateEnd -->
+
+</div>
+<div style="position:absolute;overflow:hidden;width:190px;left:765px;top:945px;">
+  
+<!-- TemplateBegin : $Archive: //pvcssrv02.service.itellium.net/pvcsfs/b2ccc/pvcsprojekte/Q2_Gesamt/archives/enfinity/share/private/eCS/Store/templates/de/scc/component-types/1519.isml-arc $ $Revision: 1.1 $-->
+<div style="position:relative;width:190px;height:25px;">
+<div style="position:relative;width:190px;height:24px;overflow:hidden;background-color:white;">
+<div style="position:absolute;left:6px;top:4px;">
+<a href="http://www.quelle.de/is-bin/INTERSHOP.enfinity/WFS/Quelle-quelle_de-Site/de_DE/-/EUR/Q_ViewStatic-ViewPage?ProductSKU=static2449&PromoShopID=QuelleRoot&Linktype=M" class="q-normal-12px-darkblue">
+Profi Partner werden</a>
+</div>
+</div>
+</div>
+<!-- TemplateEnd -->
+
+</div>
+<div style="position:absolute;overflow:hidden;width:75px;left:0px;top:970px;">
+  
+<!-- TemplateBegin : $Archive: //pvcssrv02.service.itellium.net/pvcsfs/b2ccc/pvcsprojekte/Q2_Gesamt/archives/enfinity/share/private/eCS/Store/templates/de/scc/component-types/1560.isml-arc $ $Revision: 1.2 $-->
+<div style="position:relative;width:75px;height:36px;">
+
+<a href="http://www.quelle.de/is-bin/INTERSHOP.enfinity/WFS/Quelle-quelle_de-Site/de_DE/-/EUR/Q_BrowseCatalog-Start?CategoryName=114184&PromoShopID=QuelleRoot&Linktype=M" class="" style="">
+<img src="http://images.quelle.de/is-bin/intershop.static/WFS/Quelle-quelle_de-Site/-/de_DE/images/9f/HP_Marke_adidas.gif" border="0" class="noStyle" alt=""></a>
+</div>
+<!-- TemplateEnd -->
+
+</div>
+<div style="position:absolute;overflow:hidden;width:75px;left:75px;top:970px;">
+  
+<!-- TemplateBegin : $Archive: //pvcssrv02.service.itellium.net/pvcsfs/b2ccc/pvcsprojekte/Q2_Gesamt/archives/enfinity/share/private/eCS/Store/templates/de/scc/component-types/1560.isml-arc $ $Revision: 1.2 $-->
+<div style="position:relative;width:75px;height:36px;">
+
+<a href="http://www.quelle.de/is-bin/INTERSHOP.enfinity/WFS/Quelle-quelle_de-Site/de_DE/-/EUR/Q_BrowseCatalog-Start?CategoryName=251631&PromoShopID=QuelleRoot&Linktype=M" class="" style="">
+<img src="http://images.quelle.de/is-bin/intershop.static/WFS/Quelle-quelle_de-Site/-/de_DE/images/ff/HP_Marke_casamaxx.gif" border="0" class="noStyle" alt=""></a>
+</div>
+<!-- TemplateEnd -->
+
+</div>
+<div style="position:absolute;overflow:hidden;width:75px;left:150px;top:970px;">
+  
+<!-- TemplateBegin : $Archive: //pvcssrv02.service.itellium.net/pvcsfs/b2ccc/pvcsprojekte/Q2_Gesamt/archives/enfinity/share/private/eCS/Store/templates/de/scc/component-types/1560.isml-arc $ $Revision: 1.2 $-->
+<div style="position:relative;width:75px;height:36px;">
+
+<a href="http://www.quelle.de/is-bin/INTERSHOP.enfinity/WFS/Quelle-quelle_de-Site/de_DE/-/EUR/Q_BrowseCatalog-Start?CategoryName=256260&PromoShopID=QuelleRoot&Linktype=M" class="" style="">
+<img src="http://images.quelle.de/is-bin/intershop.static/WFS/Quelle-quelle_de-Site/-/de_DE/images/27/HP_Marke_esprit.gif" border="0" class="noStyle" alt=""></a>
+</div>
+<!-- TemplateEnd -->
+
+</div>
+<div style="position:absolute;overflow:hidden;width:75px;left:225px;top:970px;">
+  
+<!-- TemplateBegin : $Archive: //pvcssrv02.service.itellium.net/pvcsfs/b2ccc/pvcsprojekte/Q2_Gesamt/archives/enfinity/share/private/eCS/Store/templates/de/scc/component-types/1560.isml-arc $ $Revision: 1.2 $-->
+<div style="position:relative;width:75px;height:36px;">
+
+<a href="http://www.quelle.de/is-bin/INTERSHOP.enfinity/WFS/Quelle-quelle_de-Site/de_DE/-/EUR/Q_FreeSearch-Start?search_free=fujitsu&PromoShopID=QuelleRoot&Linktype=M" class="" style="">
+<img src="http://images.quelle.de/is-bin/intershop.static/WFS/Quelle-quelle_de-Site/-/de_DE/images/a7/Hp_Marke_FujitsuSiemens.gif" border="0" class="noStyle" alt=""></a>
+</div>
+<!-- TemplateEnd -->
+
+</div>
+<div style="position:absolute;overflow:hidden;width:75px;left:300px;top:970px;">
+  
+<!-- TemplateBegin : $Archive: //pvcssrv02.service.itellium.net/pvcsfs/b2ccc/pvcsprojekte/Q2_Gesamt/archives/enfinity/share/private/eCS/Store/templates/de/scc/component-types/1560.isml-arc $ $Revision: 1.2 $-->
+<div style="position:relative;width:75px;height:36px;">
+
+<a href="http://www.quelle.de/is-bin/INTERSHOP.enfinity/WFS/Quelle-quelle_de-Site/de_DE/-/EUR/Q_BrowseCatalog-Start?CategoryName=223659&PromoShopID=QuelleRoot&Linktype=M" class="" style="">
+<img src="http://images.quelle.de/is-bin/intershop.static/WFS/Quelle-quelle_de-Site/-/de_DE/images/e3/HP_Marke_Mexx.gif" border="0" class="noStyle" alt=""></a>
+</div>
+<!-- TemplateEnd -->
+
+</div>
+<div style="position:absolute;overflow:hidden;width:75px;left:375px;top:970px;">
+  
+<!-- TemplateBegin : $Archive: //pvcssrv02.service.itellium.net/pvcsfs/b2ccc/pvcsprojekte/Q2_Gesamt/archives/enfinity/share/private/eCS/Store/templates/de/scc/component-types/1560.isml-arc $ $Revision: 1.2 $-->
+<div style="position:relative;width:75px;height:36px;">
+
+<a href="http://www.quelle.de/is-bin/INTERSHOP.enfinity/WFS/Quelle-quelle_de-Site/de_DE/-/EUR/Q_BrowseCatalog-Start?CategoryName=200388&PromoShopID=QuelleRoot&Linktype=M" class="" style="">
+<img src="http://images.quelle.de/is-bin/intershop.static/WFS/Quelle-quelle_de-Site/-/de_DE/images/ae/HP_Marke_privileg.gif" border="0" class="noStyle" alt=""></a>
+</div>
+<!-- TemplateEnd -->
+
+</div>
+<div style="position:absolute;overflow:hidden;width:75px;left:450px;top:970px;">
+  
+<!-- TemplateBegin : $Archive: //pvcssrv02.service.itellium.net/pvcsfs/b2ccc/pvcsprojekte/Q2_Gesamt/archives/enfinity/share/private/eCS/Store/templates/de/scc/component-types/1560.isml-arc $ $Revision: 1.2 $-->
+<div style="position:relative;width:75px;height:36px;">
+
+<a href="http://www.quelle.de/is-bin/INTERSHOP.enfinity/WFS/Quelle-quelle_de-Site/de_DE/-/EUR/Q_BrowseCatalog-Start?CategoryName=116286&PromoShopID=QuelleRoot&Linktype=M" class="" style="">
+<img src="http://images.quelle.de/is-bin/intershop.static/WFS/Quelle-quelle_de-Site/-/de_DE/images/17/HP_Marke_puma.gif" border="0" class="noStyle" alt=""></a>
+</div>
+<!-- TemplateEnd -->
+
+</div>
+<div style="position:absolute;overflow:hidden;width:75px;left:525px;top:970px;">
+  
+<!-- TemplateBegin : $Archive: //pvcssrv02.service.itellium.net/pvcsfs/b2ccc/pvcsprojekte/Q2_Gesamt/archives/enfinity/share/private/eCS/Store/templates/de/scc/component-types/1560.isml-arc $ $Revision: 1.2 $-->
+<div style="position:relative;width:75px;height:36px;">
+
+<a href="http://www.quelle.de/is-bin/INTERSHOP.enfinity/WFS/Quelle-quelle_de-Site/de_DE/-/EUR/Q_BrowseCatalog-Start?CategoryName=112499&PromoShopID=QuelleRoot&Linktype=M" class="" style="">
+<img src="http://images.quelle.de/is-bin/intershop.static/WFS/Quelle-quelle_de-Site/-/de_DE/images/f2/HP_Marke_Sony.gif" border="0" class="noStyle" alt=""></a>
+</div>
+<!-- TemplateEnd -->
+
+</div>
+<div style="position:absolute;overflow:hidden;width:65px;left:600px;top:970px;">
+  
+<!-- TemplateBegin : $Archive: //pvcssrv02.service.itellium.net/pvcsfs/b2ccc/pvcsprojekte/Q2_Gesamt/archives/enfinity/share/private/eCS/Store/templates/de/scc/component-types/1560.isml-arc $ $Revision: 1.2 $-->
+<div style="position:relative;width:65px;height:36px;">
+
+<a href="http://www.quelle.de/is-bin/INTERSHOP.enfinity/WFS/Quelle-quelle_de-Site/de_DE/-/EUR/Q_BrowseCatalog-Start?CategoryName=274512&PromoShopID=QuelleRoot&Linktype=M" class="" style="">
+<img src="http://images.quelle.de/is-bin/intershop.static/WFS/Quelle-quelle_de-Site/-/de_DE/images/f3/hp_marke_wmf_neu2.gif" border="0" class="noStyle" alt=""></a>
+</div>
+<!-- TemplateEnd -->
+
+</div>
+<div style="position:absolute;overflow:hidden;width:190px;left:765px;top:970px;">
+  
+<!-- TemplateBegin : $Archive: //pvcssrv02.service.itellium.net/pvcsfs/b2ccc/pvcsprojekte/Q2_Gesamt/archives/enfinity/share/private/eCS/Store/templates/de/scc/component-types/1519.isml-arc $ $Revision: 1.1 $-->
+<div style="position:relative;width:190px;height:25px;">
+<div style="position:relative;width:190px;height:24px;overflow:hidden;background-color:white;">
+<div style="position:absolute;left:6px;top:4px;">
+<a href="http://www.quelle.de/is-bin/INTERSHOP.enfinity/WFS/Quelle-quelle_de-Site/de_DE/-/EUR/Q_BrowseCatalog-Start?CategoryName=265365&PromoShopID=QuelleRoot&Linktype=M" class="q-normal-12px-darkblue">
+Freunde werben Freunde</a>
+</div>
+</div>
+</div>
+<!-- TemplateEnd -->
+
+</div>
+<div style="position:absolute;overflow:hidden;width:75px;left:665px;top:980px;">
+ <!-- TemplateBegin : $Archive:   //pvcssrv02.service.itellium.net/pvcsfs/b2ccc/pvcsprojekte/Q2_Gesamt/archives/enfinity/share/private/eCS/Store/templates/de/scc/component-types/1575.isml-arc  $ $Revision: 8195 $-->
+
+
+
+
+
+<div style="position:relative;width:75px;height:20px;text-align:left;color:#003399;background-color:white;overflow:hidden;">
+	<div style="position:absolute;left:7px;top:5px;width:61px;height:10px;">
+	
+
+
+
+
+
+<a href="http://www.quelle.de/is-bin/INTERSHOP.enfinity/WFS/Quelle-quelle_de-Site/de_DE/-/EUR/Q_BrowseCatalog-Start?CategoryName=242112&PromoShopID=QuelleRoot&Linktype=M" class="none" style="font: normal normal 10px Arial;color:#003399;text-decoration:underline;">
+Alle Marken</a>
+	</div>	
+</div>
+
+
+
+
+
+<!-- TemplateEnd -->
+
+</div>
+<div style="position:absolute;overflow:hidden;width:190px;left:765px;top:995px;">
+  
+<!-- TemplateBegin : $Archive: //pvcssrv02.service.itellium.net/pvcsfs/b2ccc/pvcsprojekte/Q2_Gesamt/archives/enfinity/share/private/eCS/Store/templates/de/scc/component-types/1519.isml-arc $ $Revision: 1.1 $-->
+<div style="position:relative;width:190px;height:25px;">
+<div style="position:relative;width:190px;height:24px;overflow:hidden;background-color:white;">
+<div style="position:absolute;left:6px;top:4px;">
+<a href="http://www.quelle.de/is-bin/INTERSHOP.enfinity/WFS/Quelle-quelle_de-Site/de_DE/-/EUR/Q_ViewStatic-ViewPage2?CategoryName=qnav6000007&ProductSKU=static2974&PromoShopID=QuelleRoot&Linktype=M" class="q-normal-12px-darkblue">
+Internet-Partnerprogramm</a>
+</div>
+</div>
+</div>
+<!-- TemplateEnd -->
+
+</div>
+<div style="position:absolute;overflow:hidden;width:150px;left:0px;top:1015px;">
+ <!-- TemplateBegin : $Archive:   //pvcssrv02.service.itellium.net/pvcsfs/b2ccc/pvcsprojekte/Q2_Gesamt/archives/enfinity/share/private/eCS/Store/templates/de/scc/component-types/1575.isml-arc  $ $Revision: 8195 $-->
+
+
+
+
+
+<div style="position:relative;width:150px;height:20px;text-align:left;color:#003399;background-color:white;overflow:hidden;">
+	<div style="position:absolute;left:7px;top:5px;width:136px;height:10px;">
+	<span style="font: normal bold 12px Arial;color:#003399;text-decoration:none;">Unser Versandpartner</span>
+	</div>	
+</div>
+
+
+
+
+
+<!-- TemplateEnd -->
+
+</div>
+<div style="position:absolute;overflow:hidden;width:75px;left:5px;top:1040px;">
+  
+<!-- TemplateBegin : $Archive: //pvcssrv02.service.itellium.net/pvcsfs/b2ccc/pvcsprojekte/Q2_Gesamt/archives/enfinity/share/private/eCS/Store/templates/de/scc/component-types/1560.isml-arc $ $Revision: 1.2 $-->
+<div style="position:relative;width:75px;height:36px;">
+
+<a href="http://www.quelle.de/is-bin/INTERSHOP.enfinity/WFS/Quelle-quelle_de-Site/de_DE/-/EUR/Q_BrowseCatalog-Start?CategoryName=287325&PromoShopID=QuelleRoot&Linktype=M" class="" style="">
+<img src="http://images.quelle.de/is-bin/intershop.static/WFS/Quelle-quelle_de-Site/-/de_DE/images/e2/dhl_logo_75x36.gif" border="0" class="noStyle" alt=""></a>
+</div>
+<!-- TemplateEnd -->
+
+</div>
+</div>
+<div style="color:#636363;position:relative;padding-top:5px;padding-left:12px;height:25px;overflow:hidden;" class="q-normal-12px-darkblue">
+&nbsp;&nbsp;*) UVP = Unverbindliche Preisempfehlung des Herstellers
+</div>
+
+<div class="q-spacer" style="height:10px;">&nbsp;</div>
+
+</div>
+</div>
+<!-- Template Begin:  inc/q5_pg_footer_ecs.isml (sld_ch_quelle_app) -->
+
+
+<!-- Template Begin:  inc/q5_pg_footer_content.isml (sld_ch_quelle_app) -->
+
+
+
+
+
+
+
+
+
+<div id="footer-container">
+<div id="footer-verlauf">&nbsp;</div>
+<div id="footer-inhalt">
+<div id="footer-inhalt-txt3" class="q5-footer">
+Preisangaben inkl. gesetzl. MwSt. und zzgl. <a class="q5-footer link" href="http://www.quelle.de/is-bin/INTERSHOP.enfinity/WFS/Quelle-quelle_de-Site/de_DE/-/EUR/Q_ViewStatic-ViewPage?ProductSKU=static1046&PromoShopID=241494&Linktype=M">Service- &amp; Versandkosten</a><br>
+Quelle - Das Versandhaus präsentiert ein Sortiment aus Mode für <a class="q5-footer link" href="http://www.quelle.de/Mode-fuer-SIE/">Sie</a> und <a class="q5-footer link" href="http://www.quelle.de/Mode-fuer-IHN/">Ihn</a>, <a class="q5-footer link" href="http://www.quelle.de/Technik-Multimedia/">Technik</a>, <a class="q5-footer link" href="http://www.quelle.de/Wohnen-Haushalt/">Haushalt</a> ...
+</div>
+<div id="footer-inhalt-txt" class="q5-footer" >
+<a class="q5-footer link" href="http://www.quelle.de/is-bin/INTERSHOP.enfinity/WFS/Quelle-quelle_de-Site/de_DE/-/EUR/Q_ViewStatic-ViewPage?ProductSKU=static1510&Linktype=AD">Kontakt</a>
+&nbsp;|&nbsp;
+<a class="q5-footer link" href="http://www.quelle.de/is-bin/INTERSHOP.enfinity/WFS/Quelle-quelle_de-Site/de_DE/-/EUR/Q_ViewStatic-ViewPage?ProductSKU=static1021&Linktype=AD">AGB</a>
+&nbsp;|&nbsp;
+<a class="q5-footer link" href="http://www.quelle.de/is-bin/INTERSHOP.enfinity/WFS/Quelle-quelle_de-Site/de_DE/-/EUR/Q_ViewStatic-ViewPage?ProductSKU=static1034&Linktype=AD">Datenschutz</a>
+&nbsp;|&nbsp;
+<a class="q5-footer link" href="http://www.quelle.de/is-bin/INTERSHOP.enfinity/WFS/Quelle-quelle_de-Site/de_DE/-/EUR/Q_ViewStatic-ViewPage?ProductSKU=static2565&Linktype=AD">Impressum</a>
+&nbsp;|&nbsp;
+<a class="q5-footer link" href="http://www.quelle.de/is-bin/INTERSHOP.enfinity/WFS/Quelle-quelle_de-Site/de_DE/-/EUR/Q_ViewStatic-ViewPage?ProductSKU=static1003&Linktype=AD">Jobs &amp; Karriere</a>
+&nbsp;|&nbsp;
+<a class="q5-footer link" href="http://www.quelle.de/is-bin/INTERSHOP.enfinity/WFS/Quelle-quelle_de-Site/de_DE/-/EUR/Q_ViewStatic-ViewPage?ProductSKU=static2313&Linktype=AD">&Uuml;ber Quelle</a>
+&nbsp;|&nbsp;
+<a class="q5-footer link" href="http://www.quelle.de/versand/arcandor.html">Arcandor-Unternehmensgruppe</a>
+&nbsp;|&nbsp;
+<a class="q5-footer link" href="#" onclick="javascript:window.open('http://www.quelle.de/is-bin/INTERSHOP.enfinity/WFS/Quelle-quelle_de-Site/de_DE/-/EUR/Q_ViewStatic-ViewPage?ProductSKU=static2904&Linktype=AD','presse','status=1,scrollbars=1,toolbar=1,location=1,resizable=1,height=550,width=840')">Presse</a>
+&nbsp;|&nbsp;
+<a class="q5-footer link" href="http://www.quelle.de/is-bin/INTERSHOP.enfinity/WFS/Quelle-quelle_de-Site/de_DE/-/EUR/Q_ViewStatic-ViewPage?ProductSKU=static1512&Linktype=AD">Hilfe</a>
+&nbsp;|&nbsp;
+<a class="q5-footer link" href="http://www.quelle.de/is-bin/INTERSHOP.enfinity/WFS/Quelle-quelle_de-Site/de_DE/-/EUR/Q_ViewStatic-ViewPage?ProductSKU=static2731&Linktype=AD">Service & Beratung</a>
+&nbsp;|&nbsp;
+<a class="q5-footer link" href="http://www.quelle.de/is-bin/INTERSHOP.enfinity/WFS/Quelle-quelle_de-Site/de_DE/-/EUR/Q_ViewStatic-ViewPage?ProductSKU=static2488&Linktype=AD">Sicher einkaufen</a>
+</div>
+<div id="footer-inhalt-txt2" class="q5-footer">
+<a class="q5-footer link" href="http://www.quelle.de/Aktuelles/" style="text-decoration:none;">QUELLE GmbH 2008</a>
+</div>
+</div>
+</div>
+
+<div style="display: none;"><a href="http://www.quelle.de">Quelle Produktverzeichnis</a></div>
+<script type="text/javascript">
+<!--
+try {QTCMWPosition();}
+catch (e) {}
+//-->
+</script>
+
+<script type="text/javascript">
+<!--
+var b1 = document.body;
+try {
+if (b1)
+{
+var oldfunc = window.onload;
+if(typeof window.onload != 'function'){
+window.onload=function () {
+basic_onload();
+if(!storefront) {
+DSLCheckUp ();
+}
+}
+}else{
+window.onload = function() {
+//oldfunc();
+basic_onload();
+if(!storefront) {
+DSLCheckUp ();
+}
+}
+}
+}
+}
+catch (e) {}
+
+if (window.location.protocol == "https:") {
+document.write('<scr'+'ipt type="text/javascr'+'ipt" src="https://www.quelle.de/is-bin/INTERSHOP.enfinity/WFS/Quelle-quelle_de-Site/de_DE/-/EUR/Q_BrowseCatalog-StartRootCategories?NavigationBarReloaded="><\/scr'+'ipt>');
+} else {
+document.write('<scr'+'ipt type="text/javascr'+'ipt" src="http://www.quelle.de/is-bin/INTERSHOP.enfinity/WFS/Quelle-quelle_de-Site/de_DE/-/EUR/Q_BrowseCatalog-StartRootCategories?NavigationBarReloaded="><\/scr'+'ipt>');
+}
+
+//-->
+</script>
+<!-- QBuild: v11_30_48 20183 2008-05-06_123930 -->
+<!-- Template End: inc/q5_pg_footer_content.isml (sld_ch_quelle_app) -->
+
+
+
+
+
+
+
+
+
+
+<style type="text/css">
+<!--
+.q-private-normal-12px-darkblue-ul{position:relative;float:left;}
+-->
+</style>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</div>
+<div class="q-history" style="width:745px;height:32px;overflow:hidden;">
+<table style="width:100%;"><tr style="height:32px;"><td style="vertical-align:middle; font-size:12px;">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<span class="q5-history"><b>Sie sind hier: &gt;</b></span>
+
+
+<!-- TemplateEnd -->
+
+
+
+</td></tr></table>
+</div>
+<div>
+
+
+</body>
+</html>
