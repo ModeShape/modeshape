@@ -106,6 +106,7 @@
 		<module>sequencers/dna-sequencer-msoffice</module>
 		<module>connectors/dna-connector-inmemory</module>
 		<module>connectors/dna-connector-jbosscache</module>
+        <module>mime-type-detectors/dna-mimetype-detector-aperture</module>
     	<module>dna-integration-tests</module>
 	</modules>
 
@@ -340,6 +341,11 @@
 				<artifactId>dna-repository</artifactId>
 				<version>${dna-version}</version>
 			</dependency>
+            <dependency>
+                <groupId>org.jboss.dna</groupId>
+                <artifactId>dna-mimetype-detector-aperture</artifactId>
+                <version>${dna-version}</version>
+            </dependency>
 			<!-- 
 		    Time and Date
 		    -->
@@ -506,9 +512,8 @@
 	
 		<repository>
 			<id>jboss</id>
-			<url>http://repository.jboss.com/maven2/</url>
+			<url>http://repository.jboss.com/maven2</url>
 		</repository>
-		
 		<repository>
 			<id>jboss-snapshot</id>
 			<url>http://snapshots.jboss.org/maven2</url>
