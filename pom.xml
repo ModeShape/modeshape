@@ -106,7 +106,7 @@
 		<module>sequencers/dna-sequencer-msoffice</module>
 		<module>connectors/dna-connector-inmemory</module>
 		<module>connectors/dna-connector-jbosscache</module>
-        <module>mime-type-detectors/dna-mimetype-detector-aperture</module>
+        <module>extensions/dna-mimetype-detector-aperture</module>
     	<module>dna-integration-tests</module>
 	</modules>
 
