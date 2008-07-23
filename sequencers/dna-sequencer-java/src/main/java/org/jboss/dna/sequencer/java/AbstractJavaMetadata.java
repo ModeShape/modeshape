@@ -28,23 +28,39 @@ import org.eclipse.jdt.core.dom.Annotation;
 import org.eclipse.jdt.core.dom.AnnotationTypeDeclaration;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.EnumDeclaration;
+import org.eclipse.jdt.core.dom.FieldDeclaration;
 import org.eclipse.jdt.core.dom.ImportDeclaration;
 import org.eclipse.jdt.core.dom.MarkerAnnotation;
+import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.Modifier;
 import org.eclipse.jdt.core.dom.NormalAnnotation;
 import org.eclipse.jdt.core.dom.PackageDeclaration;
+import org.eclipse.jdt.core.dom.ParameterizedType;
+import org.eclipse.jdt.core.dom.PrimitiveType;
+import org.eclipse.jdt.core.dom.QualifiedType;
+import org.eclipse.jdt.core.dom.SimpleType;
 import org.eclipse.jdt.core.dom.SingleMemberAnnotation;
+import org.eclipse.jdt.core.dom.Type;
 import org.eclipse.jdt.core.dom.TypeDeclaration;
+import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
 import org.jboss.dna.sequencer.java.metadata.ClassMetadata;
+import org.jboss.dna.sequencer.java.metadata.ConstructorMetadata;
+import org.jboss.dna.sequencer.java.metadata.FieldMetadata;
 import org.jboss.dna.sequencer.java.metadata.ImportMetadata;
 import org.jboss.dna.sequencer.java.metadata.ImportOnDemandMetadata;
 import org.jboss.dna.sequencer.java.metadata.InterfaceMetadata;
 import org.jboss.dna.sequencer.java.metadata.MarkerAnnotationMetadata;
+import org.jboss.dna.sequencer.java.metadata.MethodMetadata;
+import org.jboss.dna.sequencer.java.metadata.MethodTypeMemberMetadata;
 import org.jboss.dna.sequencer.java.metadata.NormalAnnotationMetadata;
 import org.jboss.dna.sequencer.java.metadata.PackageMetadata;
+import org.jboss.dna.sequencer.java.metadata.ParameterizedFieldMetadata;
+import org.jboss.dna.sequencer.java.metadata.PrimitiveFieldMetadata;
+import org.jboss.dna.sequencer.java.metadata.SimpleFieldMetadata;
 import org.jboss.dna.sequencer.java.metadata.SingleImportMetadata;
 import org.jboss.dna.sequencer.java.metadata.SingleMemberAnnotationMetadata;
 import org.jboss.dna.sequencer.java.metadata.TypeMetadata;
+import org.jboss.dna.sequencer.java.metadata.Variable;
 
 /**
  * Abstract definition of a <tt>JavaMetadata<tt>. This class exposes some useful methods, that can
@@ -140,12 +156,10 @@ public abstract class AbstractJavaMetadata {
         List<TypeMetadata> metadata = new ArrayList<TypeMetadata>();
         List<AbstractTypeDeclaration> topLevelType = unit.types();
         for (AbstractTypeDeclaration abstractTypeDeclaration : topLevelType) {
-
             // process TypeDeclaration (class, interface)
             if (abstractTypeDeclaration instanceof TypeDeclaration) {
                 TypeDeclaration typeDeclaration = (TypeDeclaration)abstractTypeDeclaration;
                 if (typeDeclaration.isInterface()) {
-
                     // is an interface top level type
                     InterfaceMetadata interfaceMetadata = new InterfaceMetadata();
                     interfaceMetadata.setName(JavaMetadataUtil.getName(typeDeclaration.getName()));
@@ -166,8 +180,20 @@ public abstract class AbstractJavaMetadata {
                             MarkerAnnotation marker = (MarkerAnnotation)object;
                             MarkerAnnotationMetadata markerAnnotationMetadata = new MarkerAnnotationMetadata();
                             markerAnnotationMetadata.setName(JavaMetadataUtil.getName(marker.getTypeName()));
-                            classMetadata.getAnnotationMetadata().add(markerAnnotationMetadata);
+                            classMetadata.getAnnotations().add(markerAnnotationMetadata);
                         }
+                    }
+                    // fields of the class top level type
+                    FieldDeclaration[] fieldDeclarations = typeDeclaration.getFields();
+                    for (FieldDeclaration fieldDeclaration : fieldDeclarations) {
+                        FieldMetadata fieldMetadata = getFieldMetadataFrom(fieldDeclaration);
+                        classMetadata.getFields().add(fieldMetadata);
+                    }
+                    // methods of the class top level type
+                    MethodDeclaration[] methodDeclarations = typeDeclaration.getMethods();
+                    for (MethodDeclaration methodDeclaration : methodDeclarations) {
+                        MethodMetadata methodMetadata = getFieldMetadataFrom(methodDeclaration);
+                        classMetadata.getMethods().add(methodMetadata);
                     }
                     metadata.add(classMetadata);
                 }
@@ -186,5 +212,114 @@ public abstract class AbstractJavaMetadata {
             }
         }
         return metadata;
+    }
+
+    /**
+     * Gets a method meta data from {@link MethodDeclaration}.
+     * 
+     * @param methodDeclaration - the MethodDeclaration.
+     * @return methodMetadata - the method meta data.
+     */
+    private MethodMetadata getFieldMetadataFrom( MethodDeclaration methodDeclaration ) {
+        if (methodDeclaration != null) {
+            if (methodDeclaration.isConstructor()) {
+                return getConstructorMetadataFrom(methodDeclaration);
+            }
+            return getMethodTypeMemberMetadataFrom(methodDeclaration);
+
+        }
+        return null;
+    }
+
+    /**
+     * Get {@link MethodTypeMemberMetadata}
+     * 
+     * @param methodDeclaration
+     * @return methodTypeMemberMetadata
+     */
+    private MethodMetadata getMethodTypeMemberMetadataFrom( MethodDeclaration methodDeclaration ) {
+        MethodTypeMemberMetadata methodTypeMemberMetadata = new MethodTypeMemberMetadata();
+        methodTypeMemberMetadata.setName(JavaMetadataUtil.getName(methodDeclaration.getName()));
+        return methodTypeMemberMetadata;
+    }
+
+    /**
+     * Get {@link ConstructorMetadata}
+     * 
+     * @param methodDeclaration
+     * @return constructorMetadata
+     */
+    private MethodMetadata getConstructorMetadataFrom( MethodDeclaration methodDeclaration ) {
+        ConstructorMetadata constructorMetadata = new ConstructorMetadata();
+        constructorMetadata.setName(JavaMetadataUtil.getName(methodDeclaration.getName()));
+        return constructorMetadata;
+    }
+
+    /**
+     * Gets a field meta data from {@link FieldDeclaration}.
+     * 
+     * @param fieldDeclaration - the declaration.
+     * @return fieldMetadata - meta data.
+     */
+    @SuppressWarnings( "unchecked" )
+    private FieldMetadata getFieldMetadataFrom( FieldDeclaration fieldDeclaration ) {
+        if (fieldDeclaration != null && fieldDeclaration.getType() != null && (!fieldDeclaration.fragments().isEmpty())) {
+            List<VariableDeclarationFragment> fragments = null;
+            // type
+            Type type = fieldDeclaration.getType();
+            // Primitive type
+            if (type instanceof PrimitiveType) {
+                PrimitiveType primitiveType = (PrimitiveType)type;
+                PrimitiveFieldMetadata primitiveFieldMetadata = new PrimitiveFieldMetadata();
+                primitiveFieldMetadata.setCode(primitiveType.getPrimitiveTypeCode().toString());
+                // variables
+                fragments = fieldDeclaration.fragments();
+                getAllVariablesOf(fragments, primitiveFieldMetadata);
+                return primitiveFieldMetadata;
+            }
+            if (type instanceof ParameterizedType) {
+                ParameterizedType parameterizedType = (ParameterizedType)type;
+                ParameterizedFieldMetadata parameterizedFieldMetadata = new ParameterizedFieldMetadata();
+                Type typeOfParameterizedType = parameterizedType.getType(); // type may be a simple type or a qualified type.
+                if (typeOfParameterizedType instanceof SimpleType) {
+                    SimpleType simpleType = (SimpleType)typeOfParameterizedType;
+                    parameterizedFieldMetadata.setName(JavaMetadataUtil.getName(simpleType.getName()));
+                }
+                if (typeOfParameterizedType instanceof QualifiedType) {
+                    QualifiedType qualifiedType = (QualifiedType)typeOfParameterizedType;
+                    parameterizedFieldMetadata.setName(JavaMetadataUtil.getName(qualifiedType.getName()));
+                    Type qualifier = qualifiedType.getQualifier();
+                    if (qualifier instanceof ParameterizedType) {
+                        // TODO
+                    }
+                }
+                // variables
+                fragments = fieldDeclaration.fragments();
+                getAllVariablesOf(fragments, parameterizedFieldMetadata);
+                return parameterizedFieldMetadata;
+            }
+            if (type instanceof SimpleType) {
+                SimpleType simpleType = (SimpleType)type;
+                SimpleFieldMetadata simpleFieldMetadata = new SimpleFieldMetadata();
+                simpleFieldMetadata.setName(JavaMetadataUtil.getName(simpleType.getName()));
+                fragments = fieldDeclaration.fragments();
+                getAllVariablesOf(fragments, simpleFieldMetadata);
+                return simpleFieldMetadata;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Get all variables of a fragment.
+     * 
+     * @param fragments
+     * @param fieldMetadata
+     */
+    private void getAllVariablesOf( List<VariableDeclarationFragment> fragments,
+                                    FieldMetadata fieldMetadata ) {
+        for (VariableDeclarationFragment fragment : fragments) {
+            fieldMetadata.getVariables().add(new Variable(JavaMetadataUtil.getName(fragment.getName())));
+        }
     }
 }
