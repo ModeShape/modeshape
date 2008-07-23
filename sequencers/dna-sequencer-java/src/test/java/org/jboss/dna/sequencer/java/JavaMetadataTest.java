@@ -37,11 +37,18 @@ import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.jboss.dna.sequencer.java.metadata.AnnotationMetadata;
 import org.jboss.dna.sequencer.java.metadata.ClassMetadata;
+import org.jboss.dna.sequencer.java.metadata.ConstructorMetadata;
+import org.jboss.dna.sequencer.java.metadata.FieldMetadata;
 import org.jboss.dna.sequencer.java.metadata.ImportMetadata;
 import org.jboss.dna.sequencer.java.metadata.ImportOnDemandMetadata;
 import org.jboss.dna.sequencer.java.metadata.JavaMetadata;
 import org.jboss.dna.sequencer.java.metadata.MarkerAnnotationMetadata;
+import org.jboss.dna.sequencer.java.metadata.MethodMetadata;
+import org.jboss.dna.sequencer.java.metadata.MethodTypeMemberMetadata;
 import org.jboss.dna.sequencer.java.metadata.PackageMetadata;
+import org.jboss.dna.sequencer.java.metadata.ParameterizedFieldMetadata;
+import org.jboss.dna.sequencer.java.metadata.PrimitiveFieldMetadata;
+import org.jboss.dna.sequencer.java.metadata.SimpleFieldMetadata;
 import org.jboss.dna.sequencer.java.metadata.SingleImportMetadata;
 import org.jboss.dna.sequencer.java.metadata.TypeMetadata;
 import org.junit.After;
@@ -59,13 +66,12 @@ public class JavaMetadataTest {
 
     @Before
     public void beforeEach() throws Exception {
-        source = new File("src/test/resources/org/acme/MySource.java");
+        source = new File("src/test/workspace/projectX/src/org/acme/MySource.java");
         stream = getJavaSrc(source);
         javaMetadata = JavaMetadata.instance(stream, JavaMetadataUtil.length(stream), null, null);
         rootNode = CompilationUnitParser.runJLS3Conversion(JavaMetadataUtil.getJavaSourceFromTheInputStream(getJavaSrc(source),
                                                                                                             source.length(),
                                                                                                             null), true);
-
     }
 
     @After
@@ -132,18 +138,20 @@ public class JavaMetadataTest {
     public void shouldCreateTopLevelTypeMetadata() throws Exception {
         List<TypeMetadata> data = javaMetadata.createTypeMetadata((CompilationUnit)rootNode);
         assertTrue(data.size() > 0);
+
         for (TypeMetadata typeMetadata : data) {
             // meta data of a top level class
             if (typeMetadata instanceof ClassMetadata) {
                 ClassMetadata classMetadata = (ClassMetadata)typeMetadata;
                 assertThat(classMetadata.getName(), is("MySource"));
-                // modifiers of the top level class 
+                // modifiers of the top level class
                 Map<Integer, String> modifiers = classMetadata.getModifiers();
                 assertNotNull(modifiers);
                 assertTrue(!modifiers.isEmpty());
                 assertThat(modifiers.get(ClassMetadata.PUBLIC_MODIFIER), is("public"));
+
                 // annotations of the top level class
-                List<AnnotationMetadata> annotations = classMetadata.getAnnotationMetadata();
+                List<AnnotationMetadata> annotations = classMetadata.getAnnotations();
                 for (AnnotationMetadata annotationMetadata : annotations) {
                     if (annotationMetadata instanceof MarkerAnnotationMetadata) {
                         MarkerAnnotationMetadata marker = (MarkerAnnotationMetadata)annotationMetadata;
@@ -151,6 +159,51 @@ public class JavaMetadataTest {
                         assertThat(marker.getName(), is("MyClassAnnotation"));
                     }
                 }
+
+                // get fields
+                List<FieldMetadata> fields = classMetadata.getFields();
+                assertNotNull(fields);
+                assertTrue(fields.size() == 4);
+
+                PrimitiveFieldMetadata primitiveFieldMetadata = (PrimitiveFieldMetadata)fields.get(0);
+                assertThat(primitiveFieldMetadata.getCode(), is("int"));
+                assertThat(primitiveFieldMetadata.getVariables().get(0).getName(), is("i"));
+
+                ParameterizedFieldMetadata parameterizedFieldMetadata1 = (ParameterizedFieldMetadata)fields.get(1);
+                assertNotNull(parameterizedFieldMetadata1);
+                assertThat(parameterizedFieldMetadata1.getName(), is("List"));
+                assertThat(parameterizedFieldMetadata1.getVariables().get(0).getName(), is("l"));
+
+                ParameterizedFieldMetadata parameterizedFieldMetadata2 = (ParameterizedFieldMetadata)fields.get(2);
+                assertNotNull(parameterizedFieldMetadata2);
+                assertThat(parameterizedFieldMetadata2.getName(), is("B"));
+                assertThat(parameterizedFieldMetadata2.getVariables().get(0).getName(), is("o"));
+                
+                SimpleFieldMetadata simpleFieldMetadata = (SimpleFieldMetadata)fields.get(3);
+                assertNotNull(simpleFieldMetadata);
+                assertThat(simpleFieldMetadata.getName(), is("X"));
+                assertThat(simpleFieldMetadata.getVariables().get(0).getName(), is("x"));
+                
+                // get methods
+                List<MethodMetadata> methods = classMetadata.getMethods();
+                assertNotNull(methods);
+                assertTrue(methods.size() == 4);
+                
+                ConstructorMetadata constructorMetadata = (ConstructorMetadata)methods.get(0);
+                assertNotNull(constructorMetadata);
+                assertThat(constructorMetadata.getName(), is("MySource"));
+                
+                MethodTypeMemberMetadata methodTypeMemberMetadata1 = (MethodTypeMemberMetadata)methods.get(1);
+                assertNotNull(methodTypeMemberMetadata1);
+                assertThat(methodTypeMemberMetadata1.getName(), is("getI"));
+                
+                MethodTypeMemberMetadata methodTypeMemberMetadata2 = (MethodTypeMemberMetadata)methods.get(2);
+                assertNotNull(methodTypeMemberMetadata2);
+                assertThat(methodTypeMemberMetadata2.getName(), is("setI"));
+                
+                MethodTypeMemberMetadata methodTypeMemberMetadata3 = (MethodTypeMemberMetadata)methods.get(3);
+                assertNotNull(methodTypeMemberMetadata3);
+                assertThat(methodTypeMemberMetadata3.getName(), is("doSomething"));
             }
         }
     }
