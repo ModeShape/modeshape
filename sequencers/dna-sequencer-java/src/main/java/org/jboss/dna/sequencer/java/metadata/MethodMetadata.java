@@ -21,13 +21,24 @@
  */
 package org.jboss.dna.sequencer.java.metadata;
 
-import java.util.List;
-
-
 /**
- * @author Serge Pagop
+ * 
  */
-public class ClassMetadata extends TypeMetadata {
+public class MethodMetadata {
+    private String name;
 
+    /**
+     * @return name
+     */
+    public String getName() {
+        return name;
+    }
 
+    /**
+     * @param name Sets name to the specified value.
+     */
+    public void setName( String name ) {
+        this.name = name;
+    }
+    
 }

@@ -21,13 +21,32 @@
  */
 package org.jboss.dna.sequencer.java.metadata;
 
-import java.util.List;
-
-
 /**
- * @author Serge Pagop
+ * A variable
  */
-public class ClassMetadata extends TypeMetadata {
+public class Variable {
 
+    private String name;
+
+    public Variable() {
+    }
+
+    public Variable( String name ) {
+        this.name = name;
+    }
+
+    /**
+     * @return name
+     */
+    public String getName() {
+        return name;
+    }
+
+    /**
+     * @param name Sets name to the specified value.
+     */
+    public void setName( String name ) {
+        this.name = name;
+    }
 
 }

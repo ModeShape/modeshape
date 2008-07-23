@@ -21,13 +21,9 @@
  */
 package org.jboss.dna.sequencer.java.metadata;
 
-import java.util.List;
-
-
 /**
- * @author Serge Pagop
+ * 
  */
-public class ClassMetadata extends TypeMetadata {
-
+public class MethodTypeMemberMetadata extends MethodMetadata {
 
 }

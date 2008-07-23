@@ -21,13 +21,26 @@
  */
 package org.jboss.dna.sequencer.java.metadata;
 
-import java.util.List;
-
-
 /**
- * @author Serge Pagop
+ * FieldMetadata for primitive types
  */
-public class ClassMetadata extends TypeMetadata {
+public class PrimitiveFieldMetadata extends FieldMetadata {
 
+    /** The code */
+    private String code;
+
+    /**
+     * @return code
+     */
+    public String getCode() {
+        return code;
+    }
+
+    /**
+     * @param code Sets code to the specified value.
+     */
+    public void setCode( String code ) {
+        this.code = code;
+    }
 
 }

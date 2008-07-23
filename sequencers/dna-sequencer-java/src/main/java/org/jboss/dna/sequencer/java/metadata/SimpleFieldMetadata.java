@@ -21,13 +21,25 @@
  */
 package org.jboss.dna.sequencer.java.metadata;
 
-import java.util.List;
-
-
 /**
- * @author Serge Pagop
+ * field meta data for simple type.
  */
-public class ClassMetadata extends TypeMetadata {
+public class SimpleFieldMetadata extends FieldMetadata {
 
+    private String name;
+
+    /**
+     * @param name
+     */
+    public void setName( String name ) {
+        this.name = name;
+    }
+
+    /**
+     * @return name
+     */
+    public String getName() {
+        return name;
+    }
 
 }

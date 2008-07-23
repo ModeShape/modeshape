@@ -21,25 +21,28 @@
  */
 package org.jboss.dna.sequencer.java.metadata;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * @author Serge Pagop
  */
 public class FieldMetadata {
-    
+
     /** The name */
-    private String name;
+    private List<Variable> variables = new ArrayList<Variable>();
 
     /**
-     * @return name
+     * @return variables
      */
-    public String getName() {
-        return name;
+    public List<Variable> getVariables() {
+        return variables;
     }
 
     /**
-     * @param name Sets name to the specified value.
+     * @param variables Sets variables to the specified value.
      */
-    public void setName( String name ) {
-        this.name = name;
+    public void setVariables( List<Variable> variables ) {
+        this.variables = variables;
     }
 }

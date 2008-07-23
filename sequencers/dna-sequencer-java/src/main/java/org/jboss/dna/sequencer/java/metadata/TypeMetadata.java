@@ -32,17 +32,23 @@ import java.util.Map;
  * @author Serge Pagop
  */
 public class TypeMetadata {
-    
+
     public static final int PUBLIC_MODIFIER = 0;
-    
+
     /** The name. */
     private String name;
 
     /** All modifiers of a top level type */
     private Map<Integer, String> modifiers = new HashMap<Integer, String>();
 
-    /** All annotations of the type meta data */
-    private List<AnnotationMetadata> annotationMetadata = new ArrayList<AnnotationMetadata>();
+    /** All annotations of a top level type */
+    private List<AnnotationMetadata> annotations = new ArrayList<AnnotationMetadata>();
+
+    /** All fields of a top level type */
+    private List<FieldMetadata> fields = new ArrayList<FieldMetadata>();
+
+    /** All methods of a top level type */
+    private List<MethodMetadata> methods = new ArrayList<MethodMetadata>();
 
     /**
      * Get the name.
@@ -63,17 +69,17 @@ public class TypeMetadata {
     }
 
     /**
-     * @return annotationMetadata
+     * @return annotations
      */
-    public List<AnnotationMetadata> getAnnotationMetadata() {
-        return annotationMetadata;
+    public List<AnnotationMetadata> getAnnotations() {
+        return annotations;
     }
 
     /**
-     * @param annotationMetadata Sets annotationMetadata to the specified value.
+     * @param annotations Sets annotations to the specified value.
      */
-    public void setAnnotationMetadata( List<AnnotationMetadata> annotationMetadata ) {
-        this.annotationMetadata = annotationMetadata;
+    public void setAnnotations( List<AnnotationMetadata> annotations ) {
+        this.annotations = annotations;
     }
 
     /**
@@ -88,6 +94,34 @@ public class TypeMetadata {
      */
     public void setModifiers( Map<Integer, String> modifiers ) {
         this.modifiers = modifiers;
+    }
+
+    /**
+     * @return fields of this top level unit.
+     */
+    public List<FieldMetadata> getFields() {
+        return this.fields;
+    }
+
+    /**
+     * @param fields Sets fields to the specified value.
+     */
+    public void setFields( List<FieldMetadata> fields ) {
+        this.fields = fields;
+    }
+
+    /**
+     * @return methods of this top level unit.
+     */
+    public List<MethodMetadata> getMethods() {
+        return methods;
+    }
+
+    /**
+     * @param methods Sets methods to the specified value.
+     */
+    public void setMethods( List<MethodMetadata> methods ) {
+        this.methods = methods;
     }
 
 }
