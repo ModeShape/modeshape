@@ -21,6 +21,7 @@
  */
 package org.jboss.dna.spi.graph.commands.executor;
 
+import org.jboss.dna.spi.graph.DateTime;
 import org.jboss.dna.spi.graph.commands.CompositeCommand;
 import org.jboss.dna.spi.graph.commands.CopyBranchCommand;
 import org.jboss.dna.spi.graph.commands.CopyNodeCommand;
@@ -58,13 +59,21 @@ public abstract class AbstractCommandExecutor implements CommandExecutor {
 
     private final ExecutionEnvironment env;
     private final String sourceName;
+    private final DateTime nowInUtc;
 
     protected AbstractCommandExecutor( ExecutionEnvironment env,
                                        String sourceName ) {
+        this(env, sourceName, null);
+    }
+
+    protected AbstractCommandExecutor( ExecutionEnvironment env,
+                                       String sourceName,
+                                       DateTime now ) {
         assert env != null;
         assert sourceName != null && sourceName.trim().length() != 0;
         this.env = env;
         this.sourceName = sourceName;
+        this.nowInUtc = now != null ? now.toUtcTimeZone() : env.getValueFactories().getDateFactory().createUtc();
     }
 
     /**
@@ -86,6 +95,15 @@ public abstract class AbstractCommandExecutor implements CommandExecutor {
     }
 
     /**
+     * Get the current time associated with this executor. All calls to this method will result in the same time.
+     * 
+     * @return the current time expressed in UTC
+     */
+    public DateTime getCurrentTimeInUtc() {
+        return nowInUtc;
+    }
+
+    /**
      * {@inheritDoc}
      * <p>
      * This implementation examines the instance to see which {@link GraphCommand command interfaces} are implemented by the
@@ -101,6 +119,9 @@ public abstract class AbstractCommandExecutor implements CommandExecutor {
             return;
         }
         // The command could implement multiple "get" behaviors
+        if (command instanceof GetNodeCommand) {
+            execute((GetNodeCommand)command);
+        }
         if (command instanceof GetPropertiesCommand) {
             execute((GetPropertiesCommand)command);
         }
@@ -141,6 +162,21 @@ public abstract class AbstractCommandExecutor implements CommandExecutor {
         for (GraphCommand nestedCommand : command) {
             execute(nestedCommand);
         }
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * This method implementation simply delegates to both the {@link #execute(GetPropertiesCommand)} and
+     * {@link #execute(GetChildrenCommand)} methods, and should be overridden by subclasses that can process
+     * {@link GetNodeCommand} more efficiently as a single command.
+     * </p>
+     * 
+     * @see org.jboss.dna.spi.graph.commands.executor.CommandExecutor#execute(org.jboss.dna.spi.graph.commands.GetNodeCommand)
+     */
+    public void execute( GetNodeCommand command ) throws RepositorySourceException, InterruptedException {
+        execute((GetPropertiesCommand)command);
+        execute((GetChildrenCommand)command);
     }
 
     /**

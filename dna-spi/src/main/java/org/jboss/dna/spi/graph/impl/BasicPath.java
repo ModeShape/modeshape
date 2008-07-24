@@ -307,6 +307,40 @@ public class BasicPath implements Path {
 
     /**
      * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.spi.graph.Path#isAtOrBelow(org.jboss.dna.spi.graph.Path)
+     */
+    public boolean isAtOrBelow( Path other ) {
+        if (other == null) return false;
+        if (this == other) return true;
+        Iterator<Segment> thisIter = this.segments.iterator();
+        Iterator<Segment> thatIter = other.iterator();
+        while (thisIter.hasNext() && thatIter.hasNext()) {
+            if (!thisIter.next().equals(thatIter.next())) return false;
+        }
+        if (thatIter.hasNext()) return false; // The other still has segments, but this doesn't
+        return true;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.spi.graph.Path#isAtOrAbove(org.jboss.dna.spi.graph.Path)
+     */
+    public boolean isAtOrAbove( Path other ) {
+        if (other == null) return false;
+        if (this == other) return true;
+        Iterator<Segment> thisIter = this.segments.iterator();
+        Iterator<Segment> thatIter = other.iterator();
+        while (thisIter.hasNext() && thatIter.hasNext()) {
+            if (!thisIter.next().equals(thatIter.next())) return false;
+        }
+        if (thisIter.hasNext()) return false; // This still has segments, but other doesn't
+        return true;
+    }
+
+    /**
+     * {@inheritDoc}
      */
     public boolean isDecendantOf( Path ancestor ) {
         if (ancestor == null) return false;
@@ -330,8 +364,8 @@ public class BasicPath implements Path {
     /**
      * {@inheritDoc}
      */
-    public boolean isSame( Path other ) {
-        return this.compareTo(other) == 0;
+    public boolean isSameAs( Path other ) {
+        return other != null && this.compareTo(other) == 0;
     }
 
     /**

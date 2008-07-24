@@ -23,6 +23,7 @@ package org.jboss.dna.spi.graph.commands.impl;
 
 import java.util.List;
 import net.jcip.annotations.NotThreadSafe;
+import org.jboss.dna.common.util.StringUtil;
 import org.jboss.dna.spi.graph.Path;
 import org.jboss.dna.spi.graph.Property;
 import org.jboss.dna.spi.graph.commands.CreateNodeCommand;
@@ -84,7 +85,7 @@ public class BasicCreateNodeCommand extends BasicGraphCommand implements CreateN
      */
     public int compareTo( CreateNodeCommand that ) {
         if (this == that) return 0;
-        return this.path.compareTo(that.getPath());
+        return this.getPath().compareTo(that.getPath());
     }
 
     /**
@@ -106,5 +107,39 @@ public class BasicCreateNodeCommand extends BasicGraphCommand implements CreateN
             return this.path.equals(that.getPath());
         }
         return false;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see java.lang.Object#toString()
+     */
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(this.getClass().getSimpleName());
+        sb.append(" at ");
+        sb.append(this.getPath());
+        boolean firstProperty = true;
+        for (Property property : this.getProperties()) {
+            if (property.isEmpty()) continue;
+            if (firstProperty) {
+                sb.append(" { ");
+                firstProperty = false;
+            } else {
+                sb.append("; ");
+            }
+            sb.append(property.getName());
+            sb.append("=");
+            if (property.isSingle()) {
+                sb.append(StringUtil.readableString(property.getValues().next()));
+            } else {
+                sb.append(StringUtil.readableString(property.getValuesAsArray()));
+            }
+        }
+        if (!firstProperty) {
+            sb.append(" }");
+        }
+        return sb.toString();
     }
 }

@@ -25,6 +25,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import net.jcip.annotations.NotThreadSafe;
+import org.jboss.dna.common.util.StringUtil;
 import org.jboss.dna.spi.cache.CachePolicy;
 import org.jboss.dna.spi.graph.Name;
 import org.jboss.dna.spi.graph.Path;
@@ -131,4 +132,22 @@ public class BasicGetChildrenCommand extends BasicGraphCommand implements GetChi
         this.cachePolicy = cachePolicy;
     }
 
+    /**
+     * {@inheritDoc}
+     * 
+     * @see java.lang.Object#toString()
+     */
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(this.getClass().getSimpleName());
+        sb.append(" at ");
+        sb.append(this.getPath());
+        List<Path.Segment> children = this.getChildren();
+        if (children != null && children.size() > 0) {
+            sb.append(" with ").append(children.size()).append(" children: ");
+            sb.append(StringUtil.readableString(children));
+        }
+        return sb.toString();
+    }
 }

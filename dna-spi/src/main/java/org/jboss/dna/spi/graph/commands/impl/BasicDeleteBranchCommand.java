@@ -49,4 +49,13 @@ public class BasicDeleteBranchCommand extends BasicGraphCommand implements Delet
         return path;
     }
 
+    /**
+     * {@inheritDoc}
+     * 
+     * @see java.lang.Object#toString()
+     */
+    @Override
+    public String toString() {
+        return this.getClass().getSimpleName() + " at " + this.getPath();
+    }
 }

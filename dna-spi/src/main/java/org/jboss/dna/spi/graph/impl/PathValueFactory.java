@@ -395,6 +395,18 @@ public class PathValueFactory extends AbstractValueFactory<Path> implements Path
 
     /**
      * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.spi.graph.PathFactory#create(org.jboss.dna.spi.graph.Path, java.lang.String)
+     */
+    public Path create( Path parentPath,
+                        String subpath ) {
+        // Create a relative path for the subpath ...
+        Path relativeSubpath = create(subpath);
+        return create(parentPath, relativeSubpath);
+    }
+
+    /**
+     * {@inheritDoc}
      */
     public Segment createSegment( Name segmentName ) {
         ArgCheck.isNotNull(segmentName, "segment name");

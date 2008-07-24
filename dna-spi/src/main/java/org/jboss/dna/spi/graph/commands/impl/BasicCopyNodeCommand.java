@@ -38,7 +38,8 @@ public class BasicCopyNodeCommand extends BasicGraphCommand implements CopyNodeC
      * @param oldPath the path to the original; may not be null
      * @param newPath the path to the copy; may not be null
      */
-    public BasicCopyNodeCommand( Path oldPath, Path newPath ) {
+    public BasicCopyNodeCommand( Path oldPath,
+                                 Path newPath ) {
         super();
         assert oldPath != null;
         assert newPath != null;
@@ -58,6 +59,16 @@ public class BasicCopyNodeCommand extends BasicGraphCommand implements CopyNodeC
      */
     public Path getNewPath() {
         return newPath;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see java.lang.Object#toString()
+     */
+    @Override
+    public String toString() {
+        return this.getClass().getSimpleName() + " from " + this.getPath() + " to " + this.getNewPath();
     }
 
 }

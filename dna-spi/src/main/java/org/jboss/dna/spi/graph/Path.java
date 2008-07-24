@@ -105,14 +105,14 @@ public interface Path extends Comparable<Path>, Iterable<Path.Segment>, Serializ
     public static final TextDecoder URL_DECODER = new UrlEncoder().setSlashEncoded(true);
 
     /**
-     * The default text encoder to be used when none is otherwise specified. This is currently the
-     * {@link #JSR283_ENCODER JSR-283 encoder}.
+     * The default text encoder to be used when none is otherwise specified. This is currently the {@link #JSR283_ENCODER JSR-283
+     * encoder}.
      */
     public static final TextEncoder DEFAULT_ENCODER = JSR283_ENCODER;
 
     /**
-     * The default text decoder to be used when none is otherwise specified. This is currently the
-     * {@link #JSR283_ENCODER JSR-283 encoder}.
+     * The default text decoder to be used when none is otherwise specified. This is currently the {@link #JSR283_ENCODER JSR-283
+     * encoder}.
      */
     public static final TextDecoder DEFAULT_DECODER = JSR283_DECODER;
 
@@ -274,20 +274,40 @@ public interface Path extends Comparable<Path>, Iterable<Path.Segment>, Serializ
     public boolean isRoot();
 
     /**
-     * Determine whether this path represents the same as the supplied path. This is equivalent to calling
-     * <code>this.compareTo(other) == 0 </code>.
+     * Determine whether this path represents the same as the supplied path. This is equivalent to calling <code>
+     * this.compareTo(other) == 0 </code>.
      * 
-     * @param other the other path to compare with this path
+     * @param other the other path to compare with this path; may be null
      * @return true if the paths are equivalent, or false otherwise
      */
-    public boolean isSame( Path other );
+    public boolean isSameAs( Path other );
+
+    /**
+     * Determine whether this path is the {@link #isSameAs(Path) same as} to or a {@link #isAncestorOf(Path) ancestor of} the
+     * supplied path. This method is equivalent to (but may be more efficient than) calling <code>isSame(other) ||
+     * isAncestor(other)</code>, and is a convenience method that is identical to calling <code>other.isAtOrBelow(this)</code>.
+     * 
+     * @param other the other path to compare with this path; may be null
+     * @return true if the paths are equivalent or if this path is considered an ancestor of the other path, or false otherwise
+     */
+    public boolean isAtOrAbove( Path other );
+
+    /**
+     * Determine whether this path is the {@link #isSameAs(Path) same as} to or a {@link #isDecendantOf(Path) decendant of} the
+     * supplied path. This method is equivalent to (but may be more efficient than) calling <code>isSame(other) ||
+     * isAncestor(other)</code>.
+     * 
+     * @param other the other path to compare with this path; may be null
+     * @return true if the paths are equivalent or if this path is considered a decendant of the other path, or false otherwise
+     */
+    public boolean isAtOrBelow( Path other );
 
     /**
      * Determine whether this path is an ancestor of the supplied path. A path is considered an ancestor of another path if the
      * the ancestor path appears in its entirety at the beginning of the decendant path, and where the decendant path contains at
      * least one additional segment.
      * 
-     * @param decendant the path that may be the decendant
+     * @param decendant the path that may be the decendant; may be null
      * @return true if this path is an ancestor of the supplied path, or false otherwise
      */
     public boolean isAncestorOf( Path decendant );
@@ -296,14 +316,14 @@ public interface Path extends Comparable<Path>, Iterable<Path.Segment>, Serializ
      * Determine whether this path is an decendant of the supplied path. A path is considered a decendant of another path if the
      * the decendant path starts exactly with the entire ancestor path but contains at least one additional segment.
      * 
-     * @param ancestor the path that may be the ancestor
+     * @param ancestor the path that may be the ancestor; may be null
      * @return true if this path is an decendant of the supplied path, or false otherwise
      */
     public boolean isDecendantOf( Path ancestor );
 
     /**
-     * Return whether this path is an absolute path. A path is either relative or {@link #isAbsolute() absolute}. An absolute
-     * path starts with a "/".
+     * Return whether this path is an absolute path. A path is either relative or {@link #isAbsolute() absolute}. An absolute path
+     * starts with a "/".
      * 
      * @return true if the path is absolute, or false otherwise
      */
@@ -372,11 +392,11 @@ public interface Path extends Comparable<Path>, Iterable<Path.Segment>, Serializ
     public Path getAncestor();
 
     /**
-     * Return the path to the ancestor of the supplied degree. An ancestor of degree <code>x</code> is the path that is
-     * <code>x</code> levels up along the path. For example, <code>degree = 0</code> returns this path, while
-     * <code>degree = 1</code> returns the parent of this path, <code>degree = 2</code> returns the grandparent of this path,
-     * and so on. Note that the result may be unexpected if this path is not {@link #isNormalized() normalized}, as a
-     * non-normalized path contains ".." and "." segments.
+     * Return the path to the ancestor of the supplied degree. An ancestor of degree <code>x</code> is the path that is <code>x
+     * </code> levels up along the path. For example, <code>degree = 0</code> returns this path, while <code>degree = 1</code>
+     * returns the parent of this path, <code>degree = 2</code> returns the grandparent of this path, and so on. Note that the
+     * result may be unexpected if this path is not {@link #isNormalized() normalized}, as a non-normalized path contains ".." and
+     * "." segments.
      * 
      * @param degree
      * @return the ancestor of the supplied degree
@@ -426,21 +446,20 @@ public interface Path extends Comparable<Path>, Iterable<Path.Segment>, Serializ
      * 
      * @param beginIndex the beginning index, inclusive.
      * @return the specified subpath
-     * @exception IndexOutOfBoundsException if the <code>beginIndex</code> is negative or larger than the length of this
-     *            <code>Path</code> object
+     * @exception IndexOutOfBoundsException if the <code>beginIndex</code> is negative or larger than the length of this <code>
+     *            Path</code> object
      */
     public Path subpath( int beginIndex );
 
     /**
-     * Return a new path consisting of the segments between the <code>beginIndex</code> index (inclusive) and the
-     * <code>endIndex</code> index (exclusive).
+     * Return a new path consisting of the segments between the <code>beginIndex</code> index (inclusive) and the <code>endIndex
+     * </code> index (exclusive).
      * 
      * @param beginIndex the beginning index, inclusive.
      * @param endIndex the ending index, exclusive.
      * @return the specified subpath
-     * @exception IndexOutOfBoundsException if the <code>beginIndex</code> is negative, or <code>endIndex</code> is larger
-     *            than the length of this <code>Path</code> object, or <code>beginIndex</code> is larger than
-     *            <code>endIndex</code>.
+     * @exception IndexOutOfBoundsException if the <code>beginIndex</code> is negative, or <code>endIndex</code> is larger than
+     *            the length of this <code>Path</code> object, or <code>beginIndex</code> is larger than <code>endIndex</code>.
      */
     public Path subpath( int beginIndex,
                          int endIndex );

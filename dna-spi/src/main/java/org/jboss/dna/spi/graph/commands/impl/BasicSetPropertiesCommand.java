@@ -23,6 +23,7 @@ package org.jboss.dna.spi.graph.commands.impl;
 
 import java.util.List;
 import net.jcip.annotations.NotThreadSafe;
+import org.jboss.dna.common.util.StringUtil;
 import org.jboss.dna.spi.graph.Path;
 import org.jboss.dna.spi.graph.Property;
 import org.jboss.dna.spi.graph.commands.SetPropertiesCommand;
@@ -64,5 +65,39 @@ public class BasicSetPropertiesCommand extends BasicGraphCommand implements SetP
      */
     public Iterable<Property> getProperties() {
         return properties;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see java.lang.Object#toString()
+     */
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(this.getClass().getSimpleName());
+        sb.append(" at ");
+        sb.append(this.getPath());
+        boolean firstProperty = true;
+        for (Property property : this.getProperties()) {
+            if (property.isEmpty()) continue;
+            if (firstProperty) {
+                sb.append(" { ");
+                firstProperty = false;
+            } else {
+                sb.append("; ");
+            }
+            sb.append(property.getName());
+            sb.append("=");
+            if (property.isSingle()) {
+                sb.append(StringUtil.readableString(property.getValues().next()));
+            } else {
+                sb.append(StringUtil.readableString(property.getValuesAsArray()));
+            }
+        }
+        if (!firstProperty) {
+            sb.append(" }");
+        }
+        return sb.toString();
     }
 }

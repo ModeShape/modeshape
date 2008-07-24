@@ -44,6 +44,7 @@ import org.jboss.dna.spi.graph.commands.GraphCommand;
 import org.jboss.dna.spi.graph.commands.MoveBranchCommand;
 import org.jboss.dna.spi.graph.commands.RecordBranchCommand;
 import org.jboss.dna.spi.graph.commands.SetPropertiesCommand;
+import org.jboss.dna.spi.graph.connection.BasicExecutionEnvironment;
 import org.jboss.dna.spi.graph.connection.ExecutionEnvironment;
 import org.jboss.dna.spi.graph.connection.RepositorySourceException;
 import org.junit.Before;
@@ -61,7 +62,6 @@ public class AbstractCommandExecutorTest {
 
     private AbstractCommandExecutor executor;
     private GraphCommand command;
-    @Mock
     private ExecutionEnvironment env;
     @Mock
     protected CommandExecutor validator;
@@ -69,6 +69,7 @@ public class AbstractCommandExecutorTest {
     @Before
     public void beforeEach() throws Exception {
         MockitoAnnotations.initMocks(this);
+        env = new BasicExecutionEnvironment();
         executor = new ExecutorImpl(env, "Source X", validator);
     }
 
@@ -123,6 +124,7 @@ public class AbstractCommandExecutorTest {
         verify(validator, times(2)).execute((GetPropertiesCommand)getNodeCommand);
         verify(validator, times(2)).execute((GetChildrenCommand)getNodeCommand);
         verify(validator, times(1)).execute(createNodeCommand);
+        verify(validator, times(2)).execute(getNodeCommand);
         verifyNoMoreInteractions(validator);
     }
 
@@ -139,6 +141,7 @@ public class AbstractCommandExecutorTest {
         verify(validator, times(2)).execute((GetPropertiesCommand)getNodeCommand);
         verify(validator, times(2)).execute((GetChildrenCommand)getNodeCommand);
         verify(validator, times(1)).execute(createNodeCommand);
+        verify(validator, times(2)).execute(getNodeCommand);
         verifyNoMoreInteractions(validator);
     }
 
@@ -149,6 +152,7 @@ public class AbstractCommandExecutorTest {
         verify(validator, times(1)).execute((GraphCommand)getNodeCommand);
         verify(validator, times(1)).execute((GetPropertiesCommand)getNodeCommand);
         verify(validator, times(1)).execute((GetChildrenCommand)getNodeCommand);
+        verify(validator, times(1)).execute(getNodeCommand);
         verifyNoMoreInteractions(validator);
     }
 
@@ -261,6 +265,11 @@ public class AbstractCommandExecutorTest {
 
         @Override
         public void execute( MoveBranchCommand command ) throws RepositorySourceException, InterruptedException {
+            validator.execute(command);
+        }
+
+        @Override
+        public void execute( GetNodeCommand command ) throws RepositorySourceException, InterruptedException {
             validator.execute(command);
         }
 

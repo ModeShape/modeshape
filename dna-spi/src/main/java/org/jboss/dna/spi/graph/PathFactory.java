@@ -60,8 +60,8 @@ public interface PathFactory extends ValueFactory<Path> {
     Path createAbsolutePath( Path.Segment... segments );
 
     /**
-     * Create an empty relative path (i.e., equivalent to {@link #createRelativePath(Path.Segment...) createRelativePath}({@link Path#SELF_SEGMENT})).
-     * Subsequent calls will always return the same instance.
+     * Create an empty relative path (i.e., equivalent to {@link #createRelativePath(Path.Segment...) createRelativePath}(
+     * {@link Path#SELF_SEGMENT})). Subsequent calls will always return the same instance.
      * 
      * @return the new path
      */
@@ -136,12 +136,23 @@ public interface PathFactory extends ValueFactory<Path> {
                  Path.Segment... segments );
 
     /**
+     * Create a path by appending the supplied names to the parent path.
+     * 
+     * @param parentPath the path that is to provide the basis for the new path
+     * @param subpath the subpath to be appended to the parent path, which must be in the form of a relative path
+     * @return the new path
+     * @throws IllegalArgumentException if the parent path reference or the segment name is null, or if the index is invalid
+     */
+    Path create( Path parentPath,
+                 String subpath );
+
+    /**
      * Create a path segment given the supplied segment name. The resulting segment will have no index.
      * 
      * @param segmentName the name of the segment
      * @return the segment
-     * @throws IllegalArgumentException if the segment name reference is <code>null</code> or the value could not be created
-     *         from the supplied string
+     * @throws IllegalArgumentException if the segment name reference is <code>null</code> or the value could not be created from
+     *         the supplied string
      */
     Path.Segment createSegment( String segmentName );
 
@@ -151,8 +162,8 @@ public interface PathFactory extends ValueFactory<Path> {
      * @param segmentName the name of the segment
      * @param decoder the decoder that should be used to decode the qualified name
      * @return the segment
-     * @throws IllegalArgumentException if the segment name reference is <code>null</code> or the value could not be created
-     *         from the supplied string
+     * @throws IllegalArgumentException if the segment name reference is <code>null</code> or the value could not be created from
+     *         the supplied string
      */
     Path.Segment createSegment( String segmentName,
                                 TextDecoder decoder );

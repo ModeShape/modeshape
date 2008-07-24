@@ -68,4 +68,14 @@ public class BasicCompositeCommand extends BasicGraphCommand implements Composit
         return this;
     }
 
+    /**
+     * {@inheritDoc}
+     * 
+     * @see java.lang.Object#toString()
+     */
+    @Override
+    public String toString() {
+        return this.getClass().getSimpleName() + " (containing " + commands.size() + " commands)";
+    }
+
 }

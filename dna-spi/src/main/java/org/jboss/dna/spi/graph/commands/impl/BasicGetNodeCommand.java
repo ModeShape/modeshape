@@ -26,8 +26,10 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import net.jcip.annotations.NotThreadSafe;
+import org.jboss.dna.common.util.StringUtil;
 import org.jboss.dna.spi.graph.Name;
 import org.jboss.dna.spi.graph.Path;
+import org.jboss.dna.spi.graph.Property;
 import org.jboss.dna.spi.graph.Path.Segment;
 import org.jboss.dna.spi.graph.commands.GetNodeCommand;
 import org.jboss.dna.spi.graph.impl.BasicPathSegment;
@@ -49,6 +51,13 @@ public class BasicGetNodeCommand extends BasicGetPropertiesCommand implements Ge
     public BasicGetNodeCommand( Path path ) {
         super(path);
 
+    }
+
+    /**
+     * @return children
+     */
+    public List<Segment> getChildren() {
+        return children;
     }
 
     /**
@@ -109,6 +118,45 @@ public class BasicGetNodeCommand extends BasicGetPropertiesCommand implements Ge
      */
     public void setNoChildren() {
         children = Collections.emptyList();
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see java.lang.Object#toString()
+     */
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(this.getClass().getSimpleName());
+        sb.append(" at ");
+        sb.append(this.getPath());
+        boolean firstProperty = true;
+        for (Property property : this.getPropertyIterator()) {
+            if (property.isEmpty()) continue;
+            if (firstProperty) {
+                sb.append(" { ");
+                firstProperty = false;
+            } else {
+                sb.append("; ");
+            }
+            sb.append(property.getName());
+            sb.append("=");
+            if (property.isSingle()) {
+                sb.append(StringUtil.readableString(property.getValues().next()));
+            } else {
+                sb.append(StringUtil.readableString(property.getValuesAsArray()));
+            }
+        }
+        if (!firstProperty) {
+            sb.append(" }");
+        }
+        List<Path.Segment> children = this.getChildren();
+        if (children != null && children.size() > 0) {
+            sb.append(" with ").append(children.size()).append(" children: ");
+            sb.append(StringUtil.readableString(children));
+        }
+        return sb.toString();
     }
 
 }

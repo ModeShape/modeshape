@@ -74,4 +74,14 @@ public class BasicMoveBranchCommand extends BasicGraphCommand implements MoveBra
         return conflictBehavior;
     }
 
+    /**
+     * {@inheritDoc}
+     * 
+     * @see java.lang.Object#toString()
+     */
+    @Override
+    public String toString() {
+        return this.getClass().getSimpleName() + " from " + this.getPath() + " to " + this.getNewPath();
+    }
+
 }

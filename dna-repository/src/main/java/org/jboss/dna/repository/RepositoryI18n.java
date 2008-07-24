@@ -41,6 +41,7 @@ public final class RepositoryI18n {
     public static I18n unableToUnregisterRepositoryInJndi;
     public static I18n unableToRemoveRepository;
     public static I18n unableToFindRepositoryWithName;
+    public static I18n unableToFindRepositorySourceWithName;
     public static I18n errorProcessingEvents;
     public static I18n errorFindingPropertyNameInPropertyAddedEvent;
     public static I18n errorFindingPropertyNameInPropertyChangedEvent;
@@ -122,17 +123,7 @@ public final class RepositoryI18n {
     public static I18n warningSequencingXmlDocument;
 
     // Federation
-    public static I18n interruptedWhileConnectingToFederationConfigurationRepository;
-    public static I18n interruptedWhileUsingFederationConfigurationRepository;
-    public static I18n interruptedWhileClosingConnectionToFederationConfigurationRepository;
-    public static I18n federatedRepositoryCannotBeFound;
-    public static I18n unableToConnectToFederationConfigurationRepository;
-    public static I18n unableToFindRepositorySourceByName;
-    public static I18n unableToCreateConnectionToFederatedRepository;
-    public static I18n unableToAuthenticateConnectionToFederatedRepository;
-    public static I18n repositoryHasBeenShutDown;
-    public static I18n repositoryPathInFederationBindingIsNotAbsolute;
-    public static I18n errorReadingMergePlan;
+    public static I18n errorStartingRepositoryService;
 
     static {
         try {

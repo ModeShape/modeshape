@@ -409,6 +409,96 @@ public class BasicPathTest {
     }
 
     @Test
+    public void shouldConsiderNodeToBeAtOrAboveItself() {
+        assertThat(path.isAtOrAbove(path), is(true));
+    }
+
+    @Test
+    public void shouldConsiderNodeToBeAtOrBelowItself() {
+        assertThat(path.isAtOrBelow(path), is(true));
+    }
+
+    @Test
+    public void shouldConsiderAncestorToBeAtOrAboveTheDecendant() {
+        Path path1 = pathFactory.create("/a/y/z");
+        Path path2 = pathFactory.create("/a/b/c");
+        Path path3 = pathFactory.create("/x/b/c");
+        Path path4 = pathFactory.create("/a/b/c/d/e/f/g/h/i/j/k/l/m/n/o/p/q/r/s/t/u/v/w/x/y/z");
+        for (int i = 1; i < path1.size(); ++i) {
+            assertThat(path1.getAncestor(i).isAtOrAbove(path1), is(true));
+        }
+        for (int i = 1; i < path2.size(); ++i) {
+            assertThat(path2.getAncestor(i).isAtOrAbove(path2), is(true));
+        }
+        for (int i = 1; i < path3.size(); ++i) {
+            assertThat(path3.getAncestor(i).isAtOrAbove(path3), is(true));
+        }
+        for (int i = 1; i < path4.size(); ++i) {
+            assertThat(path4.getAncestor(i).isAtOrAbove(path4), is(true));
+        }
+    }
+
+    @Test
+    public void shouldConsiderDecendantToBeAtOrBelowTheAncestor() {
+        Path path1 = pathFactory.create("/a/y/z");
+        Path path2 = pathFactory.create("/a/b/c");
+        Path path3 = pathFactory.create("/x/b/c");
+        Path path4 = pathFactory.create("/a/b/c/d/e/f/g/h/i/j/k/l/m/n/o/p/q/r/s/t/u/v/w/x/y/z");
+        for (int i = 1; i < path1.size(); ++i) {
+            assertThat(path1.isAtOrBelow(path1.getAncestor(i)), is(true));
+        }
+        for (int i = 1; i < path2.size(); ++i) {
+            assertThat(path2.isAtOrBelow(path2.getAncestor(i)), is(true));
+        }
+        for (int i = 1; i < path3.size(); ++i) {
+            assertThat(path3.isAtOrBelow(path3.getAncestor(i)), is(true));
+        }
+        for (int i = 1; i < path4.size(); ++i) {
+            assertThat(path4.isAtOrBelow(path4.getAncestor(i)), is(true));
+        }
+    }
+
+    @Test
+    public void shouldNotConsiderAncestorToBeAtOrBelowTheDecendant() {
+        Path path1 = pathFactory.create("/a/y/z");
+        Path path2 = pathFactory.create("/a/b/c");
+        Path path3 = pathFactory.create("/x/b/c");
+        Path path4 = pathFactory.create("/a/b/c/d/e/f/g/h/i/j/k/l/m/n/o/p/q/r/s/t/u/v/w/x/y/z");
+        for (int i = 1; i < path1.size(); ++i) {
+            assertThat(path1.getAncestor(i).isAtOrBelow(path1), is(false));
+        }
+        for (int i = 1; i < path2.size(); ++i) {
+            assertThat(path2.getAncestor(i).isAtOrBelow(path2), is(false));
+        }
+        for (int i = 1; i < path3.size(); ++i) {
+            assertThat(path3.getAncestor(i).isAtOrBelow(path3), is(false));
+        }
+        for (int i = 1; i < path4.size(); ++i) {
+            assertThat(path4.getAncestor(i).isAtOrBelow(path4), is(false));
+        }
+    }
+
+    @Test
+    public void shouldNotConsiderDecendantToBeAtOrAboveTheAncestor() {
+        Path path1 = pathFactory.create("/a/y/z");
+        Path path2 = pathFactory.create("/a/b/c");
+        Path path3 = pathFactory.create("/x/b/c");
+        Path path4 = pathFactory.create("/a/b/c/d/e/f/g/h/i/j/k/l/m/n/o/p/q/r/s/t/u/v/w/x/y/z");
+        for (int i = 1; i < path1.size(); ++i) {
+            assertThat(path1.isAtOrAbove(path1.getAncestor(i)), is(false));
+        }
+        for (int i = 1; i < path2.size(); ++i) {
+            assertThat(path2.isAtOrAbove(path2.getAncestor(i)), is(false));
+        }
+        for (int i = 1; i < path3.size(); ++i) {
+            assertThat(path3.isAtOrAbove(path3.getAncestor(i)), is(false));
+        }
+        for (int i = 1; i < path4.size(); ++i) {
+            assertThat(path4.isAtOrAbove(path4.getAncestor(i)), is(false));
+        }
+    }
+
+    @Test
     public void shouldReturnNullForLastSegmentOfRoot() {
         assertThat(ROOT.getLastSegment(), is(nullValue()));
     }

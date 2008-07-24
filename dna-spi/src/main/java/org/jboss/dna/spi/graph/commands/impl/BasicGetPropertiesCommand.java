@@ -24,6 +24,7 @@ package org.jboss.dna.spi.graph.commands.impl;
 import java.util.HashMap;
 import java.util.Map;
 import net.jcip.annotations.NotThreadSafe;
+import org.jboss.dna.common.util.StringUtil;
 import org.jboss.dna.spi.cache.CachePolicy;
 import org.jboss.dna.spi.graph.Name;
 import org.jboss.dna.spi.graph.Path;
@@ -110,4 +111,37 @@ public class BasicGetPropertiesCommand extends BasicGraphCommand implements GetP
         this.cachePolicy = cachePolicy;
     }
 
+    /**
+     * {@inheritDoc}
+     * 
+     * @see java.lang.Object#toString()
+     */
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(this.getClass().getSimpleName());
+        sb.append(" at ");
+        sb.append(this.getPath());
+        boolean firstProperty = true;
+        for (Property property : this.getPropertyIterator()) {
+            if (property.isEmpty()) continue;
+            if (firstProperty) {
+                sb.append(" { ");
+                firstProperty = false;
+            } else {
+                sb.append("; ");
+            }
+            sb.append(property.getName());
+            sb.append("=");
+            if (property.isSingle()) {
+                sb.append(StringUtil.readableString(property.getValues().next()));
+            } else {
+                sb.append(StringUtil.readableString(property.getValuesAsArray()));
+            }
+        }
+        if (!firstProperty) {
+            sb.append(" }");
+        }
+        return sb.toString();
+    }
 }

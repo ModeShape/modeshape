@@ -27,6 +27,7 @@ import org.jboss.dna.spi.graph.commands.CopyNodeCommand;
 import org.jboss.dna.spi.graph.commands.CreateNodeCommand;
 import org.jboss.dna.spi.graph.commands.DeleteBranchCommand;
 import org.jboss.dna.spi.graph.commands.GetChildrenCommand;
+import org.jboss.dna.spi.graph.commands.GetNodeCommand;
 import org.jboss.dna.spi.graph.commands.GetPropertiesCommand;
 import org.jboss.dna.spi.graph.commands.GraphCommand;
 import org.jboss.dna.spi.graph.commands.MoveBranchCommand;
@@ -58,6 +59,17 @@ public interface CommandExecutor {
      * @throws InterruptedException if the thread is interrupted during execution
      */
     void execute( CompositeCommand command ) throws RepositorySourceException, InterruptedException;
+
+    /**
+     * Execute a command to get the properties and children of a node. {@link GetNodeCommand} is a subtype of both
+     * {@link GetPropertiesCommand} and {@link GetChildrenCommand}, so this method will be called in place of the
+     * {@link #execute(GetPropertiesCommand)} and {@link #execute(GetChildrenCommand)} methods.
+     * 
+     * @param command the command to be executed; may not be null
+     * @throws RepositorySourceException if there is an error executing the command
+     * @throws InterruptedException if the thread is interrupted during execution
+     */
+    void execute( GetNodeCommand command ) throws RepositorySourceException, InterruptedException;
 
     /**
      * Execute a command to get the properties of a node.

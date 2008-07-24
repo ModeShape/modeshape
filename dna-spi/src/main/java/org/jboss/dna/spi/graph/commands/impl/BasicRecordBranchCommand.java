@@ -167,8 +167,8 @@ public class BasicRecordBranchCommand extends BasicGraphCommand implements Recor
      * Method that is called whenver a node is recorded by the recipient of this command. This implementation simply records it,
      * but subclasses can override this method to respond immediately.
      * 
-     * @param command the command containing the node information; never null and always above the
-     *        {@link #getMaxDepth() maximum depth}.
+     * @param command the command containing the node information; never null and always above the {@link #getMaxDepth() maximum
+     *        depth}.
      */
     protected void record( CreateNodeCommand command ) {
         commands.add(command);
@@ -182,4 +182,15 @@ public class BasicRecordBranchCommand extends BasicGraphCommand implements Recor
     public List<CreateNodeCommand> getCreateNodeCommands() {
         return this.commands;
     }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see java.lang.Object#toString()
+     */
+    @Override
+    public String toString() {
+        return this.getClass().getSimpleName() + " at " + this.getPath();
+    }
+
 }
