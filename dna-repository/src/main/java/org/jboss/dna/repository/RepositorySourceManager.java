@@ -32,7 +32,6 @@ import org.jboss.dna.repository.services.ServiceAdministrator;
 import org.jboss.dna.spi.graph.connection.RepositoryConnection;
 import org.jboss.dna.spi.graph.connection.RepositoryConnectionFactories;
 import org.jboss.dna.spi.graph.connection.RepositoryConnectionFactory;
-import org.jboss.dna.spi.graph.connection.RepositoryConnectionPool;
 import org.jboss.dna.spi.graph.connection.RepositorySource;
 
 /**
@@ -139,10 +138,7 @@ public class RepositorySourceManager implements RepositoryConnectionFactories {
         try {
             this.sourcesLock.readLock().lock();
             for (RepositorySource source : this.sources) {
-                if (source instanceof RepositoryConnectionPool) {
-                    RepositoryConnectionPool pool = (RepositoryConnectionPool)source;
-                    pool.shutdown();
-                }
+                source.shutdown();
             }
         } finally {
             this.sourcesLock.readLock().unlock();
@@ -164,12 +160,7 @@ public class RepositorySourceManager implements RepositoryConnectionFactories {
         try {
             this.sourcesLock.readLock().lock();
             for (RepositorySource source : this.sources) {
-                if (source instanceof RepositoryConnectionPool) {
-                    RepositoryConnectionPool pool = (RepositoryConnectionPool)source;
-                    if (!pool.awaitTermination(timeout, unit)) {
-                        return false;
-                    }
-                }
+                if (!source.awaitTermination(timeout, unit)) return false;
             }
             return true;
         } finally {
@@ -191,12 +182,7 @@ public class RepositorySourceManager implements RepositoryConnectionFactories {
         try {
             this.sourcesLock.readLock().lock();
             for (RepositorySource source : this.sources) {
-                if (source instanceof RepositoryConnectionPool) {
-                    RepositoryConnectionPool pool = (RepositoryConnectionPool)source;
-                    if (pool.isTerminating()) {
-                        return true;
-                    }
-                }
+                if (source.isTerminating()) return true;
             }
             return false;
         } finally {
@@ -214,12 +200,7 @@ public class RepositorySourceManager implements RepositoryConnectionFactories {
         try {
             this.sourcesLock.readLock().lock();
             for (RepositorySource source : this.sources) {
-                if (source instanceof RepositoryConnectionPool) {
-                    RepositoryConnectionPool pool = (RepositoryConnectionPool)source;
-                    if (!pool.isTerminated()) {
-                        return false;
-                    }
-                }
+                if (!source.isTerminated()) return false;
             }
             return true;
         } finally {
@@ -309,12 +290,9 @@ public class RepositorySourceManager implements RepositoryConnectionFactories {
             this.sourcesLock.writeLock().lock();
             for (RepositorySource existingSource : this.sources) {
                 if (existingSource.getName().equals(name)) {
-                    // Shut down the connection pool if it is one ...
-                    if (existingSource instanceof RepositoryConnectionPool) {
-                        RepositoryConnectionPool pool = (RepositoryConnectionPool)existingSource;
-                        pool.shutdown();
-                        if (timeToAwait > 0l) pool.awaitTermination(timeToAwait, unit);
-                    }
+                    // Shut down the source ...
+                    existingSource.shutdown();
+                    if (timeToAwait > 0l) existingSource.awaitTermination(timeToAwait, unit);
                 }
                 return existingSource;
             }

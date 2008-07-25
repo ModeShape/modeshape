@@ -36,16 +36,17 @@ import org.jboss.dna.spi.cache.CachePolicy;
 import org.jboss.dna.spi.graph.commands.GraphCommand;
 
 /**
+ * A simple {@link RepositorySource} that simulates an imaginary source with a built-in delay mechanism.
+ * 
  * @author Randall Hauch
  */
 @ThreadSafe
-public class TimeDelayingRepositorySource implements RepositorySource {
+public class TimeDelayingRepositorySource extends AbstractRepositorySource {
 
     /**
      */
     private static final long serialVersionUID = -2756725117087437347L;
     private String name;
-    private final AtomicInteger retryLimit = new AtomicInteger(0);
     private final AtomicInteger connectionsOpenedCount = new AtomicInteger(0);
     private final AtomicInteger connectionsClosedCount = new AtomicInteger(0);
     private final Set<Connection> openConnections = new CopyOnWriteArraySet<Connection>();
@@ -56,6 +57,7 @@ public class TimeDelayingRepositorySource implements RepositorySource {
     private CachePolicy defaultCachePolicy;
 
     public TimeDelayingRepositorySource( String identifier ) {
+        super();
         this.name = identifier;
     }
 
@@ -71,20 +73,6 @@ public class TimeDelayingRepositorySource implements RepositorySource {
      */
     public void setName( String name ) {
         this.name = name;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public int getRetryLimit() {
-        return this.retryLimit.get();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public void setRetryLimit( int limit ) {
-        this.retryLimit.set(limit);
     }
 
     public CachePolicy getDefaultCachePolicy() {
@@ -135,8 +123,11 @@ public class TimeDelayingRepositorySource implements RepositorySource {
 
     /**
      * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.spi.graph.connection.AbstractRepositorySource#createConnection()
      */
-    public RepositoryConnection getConnection() throws RepositorySourceException {
+    @Override
+    protected RepositoryConnection createConnection() throws RepositorySourceException {
         int connectionNumber = this.connectionsOpenedCount.incrementAndGet();
         String connectionName = "Connection " + connectionNumber;
         XAResource xaResource = newXaResource(connectionName);

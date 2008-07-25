@@ -28,6 +28,7 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import javax.naming.Reference;
 import javax.transaction.xa.XAResource;
+import net.jcip.annotations.ThreadSafe;
 import org.jboss.dna.spi.cache.CachePolicy;
 import org.jboss.dna.spi.graph.InvalidPathException;
 import org.jboss.dna.spi.graph.Name;
@@ -37,43 +38,22 @@ import org.jboss.dna.spi.graph.commands.CompositeCommand;
 import org.jboss.dna.spi.graph.commands.GetChildrenCommand;
 import org.jboss.dna.spi.graph.commands.GetPropertiesCommand;
 import org.jboss.dna.spi.graph.commands.GraphCommand;
-import org.jboss.dna.spi.graph.connection.ExecutionEnvironment;
-import org.jboss.dna.spi.graph.connection.RepositoryConnection;
-import org.jboss.dna.spi.graph.connection.RepositorySource;
-import org.jboss.dna.spi.graph.connection.RepositorySourceException;
-import org.jboss.dna.spi.graph.connection.RepositorySourceListener;
 
 /**
  * A {@link RepositorySource} for a {@link SimpleRepository simple repository}.
  * 
  * @author Randall Hauch
  */
-public class SimpleRepositorySource implements RepositorySource {
+@ThreadSafe
+public class SimpleRepositorySource extends AbstractRepositorySource {
 
     private static final long serialVersionUID = 1L;
 
-    public static final int DEFAULT_RETRY_LIMIT = 5;
-
     private String repositoryName;
     private String name;
-    private int retryLimit = DEFAULT_RETRY_LIMIT;
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.jboss.dna.spi.graph.connection.RepositorySource#getRetryLimit()
-     */
-    public int getRetryLimit() {
-        return retryLimit;
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.jboss.dna.spi.graph.connection.RepositorySource#setRetryLimit(int)
-     */
-    public void setRetryLimit( int limit ) {
-        retryLimit = limit;
+    public SimpleRepositorySource() {
+        super();
     }
 
     /**
@@ -118,20 +98,6 @@ public class SimpleRepositorySource implements RepositorySource {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.spi.graph.connection.RepositoryConnectionFactory#getConnection()
-     */
-    public RepositoryConnection getConnection() throws RepositorySourceException {
-        String reposName = this.repositoryName;
-        SimpleRepository repository = SimpleRepository.get(reposName);
-        if (repository == null) {
-            throw new RepositorySourceException(this.getName(), "Unable to find repository \"" + reposName + "\"");
-        }
-        return new Connection(repository);
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
      * @see java.lang.Object#hashCode()
      */
     @Override
@@ -154,6 +120,21 @@ public class SimpleRepositorySource implements RepositorySource {
             return true;
         }
         return false;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.spi.graph.connection.AbstractRepositorySource#createConnection()
+     */
+    @Override
+    protected synchronized RepositoryConnection createConnection() throws RepositorySourceException {
+        String reposName = this.getRepositoryName();
+        SimpleRepository repository = SimpleRepository.get(reposName);
+        if (repository == null) {
+            throw new RepositorySourceException(this.getName(), "Unable to find repository \"" + reposName + "\"");
+        }
+        return new Connection(repository);
     }
 
     protected class Connection implements RepositoryConnection {

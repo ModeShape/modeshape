@@ -24,7 +24,6 @@ package org.jboss.dna.connector.federation;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsNull.nullValue;
-import static org.hamcrest.core.IsSame.sameInstance;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Matchers.argThat;
 import static org.mockito.Matchers.eq;
@@ -43,6 +42,7 @@ import javax.security.auth.login.LoginException;
 import org.jboss.dna.spi.ExecutionContextFactory;
 import org.jboss.dna.spi.graph.connection.BasicExecutionEnvironment;
 import org.jboss.dna.spi.graph.connection.ExecutionEnvironment;
+import org.jboss.dna.spi.graph.connection.RepositoryConnection;
 import org.jboss.dna.spi.graph.connection.RepositoryConnectionFactories;
 import org.jboss.dna.spi.graph.connection.RepositorySourceException;
 import org.jboss.dna.spi.graph.connection.SimpleRepository;
@@ -72,7 +72,7 @@ public class FederatedRepositorySourceTest {
     private SimpleRepositorySource configRepositorySource;
     private ExecutionEnvironment env;
     @Mock
-    private FederatedRepositoryConnection connection;
+    private RepositoryConnection connection;
     @Mock
     private Context jndiContext;
     @Mock
@@ -143,8 +143,8 @@ public class FederatedRepositorySourceTest {
 
     @Test
     public void shouldCreateConnectionsByAuthenticateUsingFederationRepository() throws Exception {
-        connection = (FederatedRepositoryConnection)source.getConnection();
-        assertThat(connection, is(sameInstance(connection)));
+        connection = source.getConnection();
+        assertThat(connection, is(notNullValue()));
     }
 
     @Test( expected = RepositorySourceException.class )

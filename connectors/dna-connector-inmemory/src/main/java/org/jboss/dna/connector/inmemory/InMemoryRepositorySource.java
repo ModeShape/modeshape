@@ -27,7 +27,6 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -41,13 +40,14 @@ import javax.naming.spi.ObjectFactory;
 import net.jcip.annotations.GuardedBy;
 import org.jboss.dna.common.util.ArgCheck;
 import org.jboss.dna.spi.cache.CachePolicy;
+import org.jboss.dna.spi.graph.connection.AbstractRepositorySource;
 import org.jboss.dna.spi.graph.connection.RepositoryConnection;
-import org.jboss.dna.spi.graph.connection.RepositorySource;
+import org.jboss.dna.spi.graph.connection.RepositorySourceException;
 
 /**
  * @author Randall Hauch
  */
-public class InMemoryRepositorySource implements RepositorySource, ObjectFactory {
+public class InMemoryRepositorySource extends AbstractRepositorySource implements ObjectFactory {
 
     /**
      * The initial version is 1
@@ -95,7 +95,6 @@ public class InMemoryRepositorySource implements RepositorySource, ObjectFactory
     private String name;
     @GuardedBy( "this" )
     private String jndiName;
-    private final AtomicInteger retryLimit = new AtomicInteger(0);
     private UUID rootNodeUuid = UUID.randomUUID();
     private CachePolicy defaultCachePolicy;
     private String configurationName;
@@ -105,6 +104,7 @@ public class InMemoryRepositorySource implements RepositorySource, ObjectFactory
      * Create a repository source instance.
      */
     public InMemoryRepositorySource() {
+        super();
     }
 
     /**
@@ -225,22 +225,11 @@ public class InMemoryRepositorySource implements RepositorySource, ObjectFactory
 
     /**
      * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.spi.graph.connection.AbstractRepositorySource#createConnection()
      */
-    public int getRetryLimit() {
-        return retryLimit.get();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public void setRetryLimit( int limit ) {
-        retryLimit.set(limit);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public synchronized RepositoryConnection getConnection() {
+    @Override
+    protected synchronized RepositoryConnection createConnection() throws RepositorySourceException {
         if (this.repository == null) {
             repository = new InMemoryRepository(configurationName, this.rootNodeUuid);
         }

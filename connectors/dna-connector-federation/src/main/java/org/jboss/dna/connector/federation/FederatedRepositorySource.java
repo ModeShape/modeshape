@@ -66,6 +66,7 @@ import org.jboss.dna.spi.graph.commands.executor.NoOpCommandExecutor;
 import org.jboss.dna.spi.graph.commands.impl.BasicCompositeCommand;
 import org.jboss.dna.spi.graph.commands.impl.BasicGetChildrenCommand;
 import org.jboss.dna.spi.graph.commands.impl.BasicGetNodeCommand;
+import org.jboss.dna.spi.graph.connection.AbstractRepositorySource;
 import org.jboss.dna.spi.graph.connection.ExecutionEnvironment;
 import org.jboss.dna.spi.graph.connection.RepositoryConnection;
 import org.jboss.dna.spi.graph.connection.RepositoryConnectionFactories;
@@ -76,13 +77,12 @@ import org.jboss.dna.spi.graph.connection.RepositorySourceException;
  * @author Randall Hauch
  */
 @ThreadSafe
-public class FederatedRepositorySource implements RepositorySource {
+public class FederatedRepositorySource extends AbstractRepositorySource {
 
     /**
      */
     private static final long serialVersionUID = 7587346948013486977L;
 
-    public static final int DEFAULT_RETRY_LIMIT = 0;
     public static final String[] DEFAULT_CONFIGURATION_SOURCE_PROJECTION_RULES = {"/dna:system => /"};
 
     protected static final String REPOSITORY_NAME = "repositoryName";
@@ -111,7 +111,6 @@ public class FederatedRepositorySource implements RepositorySource {
     private String executionContextFactoryJndiName;
     private String securityDomain;
     private String repositoryJndiName;
-    private int retryLimit = DEFAULT_RETRY_LIMIT;
     private transient FederatedRepository repository;
     private transient Context jndiContext;
 
@@ -120,6 +119,7 @@ public class FederatedRepositorySource implements RepositorySource {
      * repository name}.
      */
     public FederatedRepositorySource() {
+        super();
     }
 
     /**
@@ -129,6 +129,7 @@ public class FederatedRepositorySource implements RepositorySource {
      * @throws IllegalArgumentException if the federation service is null or the repository name is null or blank
      */
     public FederatedRepositorySource( String repositoryName ) {
+        super();
         ArgCheck.isNotNull(repositoryName, "repositoryName");
         this.repositoryName = repositoryName;
     }
@@ -136,21 +137,393 @@ public class FederatedRepositorySource implements RepositorySource {
     /**
      * {@inheritDoc}
      */
-    public int getRetryLimit() {
-        return this.retryLimit;
+    public synchronized String getName() {
+        return sourceName;
+    }
+
+    /**
+     * Set the name of this source.
+     * <p>
+     * This is a required property.
+     * </p>
+     * 
+     * @param sourceName the name of this repository source
+     * @see #setConfigurationSourceName(String)
+     * @see #setConnectionFactoriesJndiName(String)
+     * @see #setConfigurationSourceProjectionRules(String[])
+     * @see #setPassword(String)
+     * @see #setUsername(String)
+     * @see #setRepositoryName(String)
+     * @see #setExecutionContextFactoryJndiName(String)
+     * @see #setPassword(String)
+     * @see #setUsername(String)
+     * @see #setName(String)
+     */
+    public synchronized void setName( String sourceName ) {
+        if (this.sourceName == sourceName || this.sourceName != null && this.sourceName.equals(sourceName)) return; // unchanged
+        this.sourceName = sourceName;
+        changeRepositoryConfig();
+    }
+
+    /**
+     * Get the name in JNDI of a {@link FederatedRepository} instance that should be used. If this is set (and an instance can be
+     * found at that location), few of the remaining properties on this instance may not be used (basically just
+     * {@link #getUsername() username}, {@link #getPassword() password}, and {@link #getName() source name}).
+     * <p>
+     * This is an optional property.
+     * </p>
+     * 
+     * @return the location in JNDI of the {@link FederatedRepository} that should be used by this source, or null if the
+     *         {@link FederatedRepository} instance will be created from the properties of this instance
+     * @see #setRepositoryJndiName(String)
+     */
+    public String getRepositoryJndiName() {
+        return repositoryJndiName;
+    }
+
+    /**
+     * Set the name in JNDI of a {@link FederatedRepository} instance that should be used. If this is set (and an instance can be
+     * found at that location), few of the remaining properties on this instance may not be used (basically just
+     * {@link #getUsername() username}, {@link #getPassword() password}, and {@link #getName() source name}).
+     * <p>
+     * This is an optional property.
+     * </p>
+     * 
+     * @param jndiName the JNDI name where the {@link FederatedRepository} instance can be found, or null if the instance is not
+     *        to be found in JNDI but one should be instantiated from this instance's properties
+     * @see #getRepositoryJndiName()
+     * @see #setPassword(String)
+     * @see #setUsername(String)
+     * @see #setName(String)
+     */
+    public void setRepositoryJndiName( String jndiName ) {
+        if (this.repositoryJndiName == jndiName || this.repositoryJndiName != null && this.repositoryJndiName.equals(jndiName)) return; // unchanged
+        this.repositoryJndiName = jndiName;
+        changeRepositoryConfig();
+    }
+
+    /**
+     * Get the name in JNDI of a {@link RepositorySource} instance that should be used by the {@link FederatedRepository federated
+     * repository} as the configuration repository.
+     * <p>
+     * This is a required property (unless the {@link #getRepositoryJndiName() federated repository is to be found in JDNI}).
+     * </p>
+     * 
+     * @return the JNDI name of the {@link RepositorySource} instance that should be used for the configuration, or null if the
+     *         federated repository instance is to be found in JNDI
+     * @see #setConfigurationSourceName(String)
+     */
+    public String getConfigurationSourceName() {
+        return configurationSourceName;
+    }
+
+    /**
+     * Get the name of a {@link RepositorySource} instance that should be used by the {@link FederatedRepository federated
+     * repository} as the configuration repository. The instance will be retrieved from the {@link RepositoryConnectionFactories}
+     * instance {@link #getConnectionFactoriesJndiName() found in JDNI}.
+     * <p>
+     * This is a required property (unless the {@link #getRepositoryJndiName() federated repository is to be found in JDNI}).
+     * </p>
+     * 
+     * @param sourceName the name of the {@link RepositorySource} instance that should be used for the configuration, or null if
+     *        the federated repository instance is to be found in JNDI
+     * @see #getConfigurationSourceName()
+     * @see #setConnectionFactoriesJndiName(String)
+     * @see #setConfigurationSourceProjectionRules(String[])
+     * @see #setPassword(String)
+     * @see #setUsername(String)
+     * @see #setRepositoryName(String)
+     * @see #setExecutionContextFactoryJndiName(String)
+     * @see #setName(String)
+     */
+    public void setConfigurationSourceName( String sourceName ) {
+        if (this.configurationSourceName == sourceName || this.configurationSourceName != null
+            && this.configurationSourceName.equals(sourceName)) return; // unchanged
+        this.configurationSourceName = sourceName;
+        changeRepositoryConfig();
+    }
+
+    /**
+     * Get the projection rule definitions used for the {@link #getConfigurationSourceName() configuration source}. The
+     * {@link #DEFAULT_CONFIGURATION_SOURCE_PROJECTION_RULES default projection rules} map the root of the configuration source
+     * into the <code>/dna:system</code> branch of the repository.
+     * <p>
+     * This is a required property (unless the {@link #getRepositoryJndiName() federated repository is to be found in JDNI}).
+     * </p>
+     * 
+     * @return the string array of projection rules, or null if the projection rules haven't yet been set or if the federated
+     *         repository instance is to be found in JNDI
+     * @see #setConfigurationSourceProjectionRules(String[])
+     */
+    public String[] getConfigurationSourceProjectionRules() {
+        return configurationSourceProjectionRules;
+    }
+
+    /**
+     * Get the projection rule definitions used for the {@link #getConfigurationSourceName() configuration source}. The
+     * {@link #DEFAULT_CONFIGURATION_SOURCE_PROJECTION_RULES default projection rules} map the root of the configuration source
+     * into the <code>/dna:system</code> branch of the repository.
+     * <p>
+     * This is a required property (unless the {@link #getRepositoryJndiName() federated repository is to be found in JDNI}).
+     * </p>
+     * 
+     * @param projectionRules the string array of projection rules, or null if the projection rules haven't yet been set or if the
+     *        federated repository instance is to be found in JNDI
+     * @see #setConfigurationSourceProjectionRules(String[])
+     * @see #setConnectionFactoriesJndiName(String)
+     * @see #setConfigurationSourceName(String)
+     * @see #setPassword(String)
+     * @see #setUsername(String)
+     * @see #setRepositoryName(String)
+     * @see #setExecutionContextFactoryJndiName(String)
+     * @see #setName(String)
+     */
+    public void setConfigurationSourceProjectionRules( String[] projectionRules ) {
+        if (projectionRules != null) {
+            List<String> rules = new LinkedList<String>();
+            for (String rule : projectionRules) {
+                if (rule != null && rule.trim().length() != 0) rules.add(rule);
+            }
+            projectionRules = rules.toArray(new String[rules.size()]);
+        }
+        this.configurationSourceProjectionRules = projectionRules != null ? projectionRules : DEFAULT_CONFIGURATION_SOURCE_PROJECTION_RULES;
+    }
+
+    /**
+     * Get the name in JNDI of a {@link ExecutionContextFactory} instance that should be used to obtain the
+     * {@link ExecutionEnvironment execution context} used by the {@link FederatedRepository federated repository}.
+     * <p>
+     * This is a required property (unless the {@link #getRepositoryJndiName() federated repository is to be found in JDNI}).
+     * </p>
+     * 
+     * @return the JNDI name of the {@link ExecutionContextFactory} instance that should be used, or null if the federated
+     *         repository instance is to be found in JNDI
+     * @see #setExecutionContextFactoryJndiName(String)
+     */
+    public String getExecutionContextFactoryJndiName() {
+        return executionContextFactoryJndiName;
+    }
+
+    /**
+     * Set the name in JNDI of a {@link ExecutionContextFactory} instance that should be used to obtain the
+     * {@link ExecutionEnvironment execution context} used by the {@link FederatedRepository federated repository}.
+     * <p>
+     * This is a required property (unless the {@link #getRepositoryJndiName() federated repository is to be found in JDNI}).
+     * </p>
+     * 
+     * @param jndiName the JNDI name where the {@link ExecutionContextFactory} instance can be found, or null if the federated
+     *        repository instance is to be found in JNDI
+     * @see #getExecutionContextFactoryJndiName()
+     * @see #setConfigurationSourceName(String)
+     * @see #setConfigurationSourceProjectionRules(String[])
+     * @see #setConnectionFactoriesJndiName(String)
+     * @see #setPassword(String)
+     * @see #setUsername(String)
+     * @see #setRepositoryName(String)
+     * @see #setName(String)
+     */
+    public synchronized void setExecutionContextFactoryJndiName( String jndiName ) {
+        if (this.repositoryJndiName == jndiName || this.repositoryJndiName != null && this.repositoryJndiName.equals(jndiName)) return;
+        this.executionContextFactoryJndiName = jndiName; // unchanged
+        changeRepositoryConfig();
+    }
+
+    /**
+     * Get the name in JNDI where the {@link RepositoryConnectionFactories} instance that can be used by the
+     * {@link FederatedRepository federated repository} can find any {@link RepositorySource} sources it needs, including those
+     * used for {@link Projection sources} and that used for it's {@link #getConfigurationSourceName() configuration}.
+     * <p>
+     * This is a required property (unless the {@link #getRepositoryJndiName() federated repository is to be found in JDNI}).
+     * </p>
+     * 
+     * @return the JNDI name where the {@link RepositoryConnectionFactories} instance can be found, or null if the federated
+     *         repository instance is to be found in JNDI
+     * @see #setConnectionFactoriesJndiName(String)
+     */
+    public String getConnectionFactoriesJndiName() {
+        return connectionFactoriesJndiName;
+    }
+
+    /**
+     * Set the name in JNDI where the {@link RepositoryConnectionFactories} instance that can be used by the
+     * {@link FederatedRepository federated repository} can find any {@link RepositorySource} sources it needs, including those
+     * used for {@link Projection sources} and that used for it's {@link #getConfigurationSourceName() configuration}.
+     * <p>
+     * This is a required property (unless the {@link #getRepositoryJndiName() federated repository is to be found in JDNI}).
+     * </p>
+     * 
+     * @param jndiName the JNDI name where the {@link RepositoryConnectionFactories} instance can be found, or null if the
+     *        federated repository instance is to be found in JNDI
+     * @see #getConnectionFactoriesJndiName()
+     * @see #setConfigurationSourceName(String)
+     * @see #setConfigurationSourceProjectionRules(String[])
+     * @see #setPassword(String)
+     * @see #setUsername(String)
+     * @see #setRepositoryName(String)
+     * @see #setExecutionContextFactoryJndiName(String)
+     * @see #setName(String)
+     */
+    public synchronized void setConnectionFactoriesJndiName( String jndiName ) {
+        if (this.connectionFactoriesJndiName == jndiName || this.connectionFactoriesJndiName != null
+            && this.connectionFactoriesJndiName.equals(jndiName)) return; // unchanged
+        this.connectionFactoriesJndiName = jndiName;
+        changeRepositoryConfig();
+    }
+
+    /**
+     * Get the name of the security domain that should be used by JAAS to identify the application or security context. This
+     * should correspond to the JAAS login configuration located within the JAAS login configuration file.
+     * 
+     * @return securityDomain
+     */
+    public String getSecurityDomain() {
+        return securityDomain;
+    }
+
+    /**
+     * Set the name of the security domain that should be used by JAAS to identify the application or security context. This
+     * should correspond to the JAAS login configuration located within the JAAS login configuration file.
+     * 
+     * @param securityDomain Sets securityDomain to the specified value.
+     */
+    public void setSecurityDomain( String securityDomain ) {
+        if (this.securityDomain != null && this.securityDomain.equals(securityDomain)) return; // unchanged
+        this.securityDomain = securityDomain;
+        changeRepositoryConfig();
+    }
+
+    /**
+     * Get the name of the federated repository.
+     * <p>
+     * This is a required property (unless the {@link #getRepositoryJndiName() federated repository is to be found in JDNI}).
+     * </p>
+     * 
+     * @return the name of the repository
+     * @see #setRepositoryName(String)
+     */
+    public synchronized String getRepositoryName() {
+        return this.repositoryName;
+    }
+
+    /**
+     * Get the name of the federated repository.
+     * <p>
+     * This is a required property (unless the {@link #getRepositoryJndiName() federated repository is to be found in JDNI}).
+     * </p>
+     * 
+     * @param repositoryName the new name of the repository
+     * @throws IllegalArgumentException if the repository name is null, empty or blank
+     * @see #getRepositoryName()
+     * @see #setConfigurationSourceName(String)
+     * @see #setConfigurationSourceProjectionRules(String[])
+     * @see #setPassword(String)
+     * @see #setUsername(String)
+     * @see #setConnectionFactoriesJndiName(String)
+     * @see #setExecutionContextFactoryJndiName(String)
+     * @see #setName(String)
+     */
+    public synchronized void setRepositoryName( String repositoryName ) {
+        ArgCheck.isNotEmpty(repositoryName, "repositoryName");
+        if (this.repositoryName != null && this.repositoryName.equals(repositoryName)) return; // unchanged
+        this.repositoryName = repositoryName;
+        changeRepositoryConfig();
+    }
+
+    /**
+     * Get the username that should be used when authenticating and {@link #getConnection() creating connections}.
+     * <p>
+     * This is an optional property, required only when authentication is to be used.
+     * </p>
+     * 
+     * @return the username, or null if no username has been set or are not to be used
+     * @see #setUsername(String)
+     */
+    public String getUsername() {
+        return this.username;
+    }
+
+    /**
+     * Set the username that should be used when authenticating and {@link #getConnection() creating connections}.
+     * <p>
+     * This is an optional property, required only when authentication is to be used.
+     * </p>
+     * 
+     * @param username the username, or null if no username has been set or are not to be used
+     * @see #getUsername()
+     * @see #setPassword(String)
+     * @see #setConfigurationSourceName(String)
+     * @see #setConfigurationSourceProjectionRules(String[])
+     * @see #setPassword(String)
+     * @see #setRepositoryName(String)
+     * @see #setConnectionFactoriesJndiName(String)
+     * @see #setExecutionContextFactoryJndiName(String)
+     * @see #setName(String)
+     */
+    public void setUsername( String username ) {
+        if (this.username != null && this.username.equals(username)) return; // unchanged
+        this.username = username;
+        changeRepositoryConfig();
+    }
+
+    /**
+     * Get the password that should be used when authenticating and {@link #getConnection() creating connections}.
+     * <p>
+     * This is an optional property, required only when authentication is to be used.
+     * </p>
+     * 
+     * @return the password, or null if no password have been set or are not to be used
+     * @see #setPassword(String)
+     */
+    public String getPassword() {
+        return this.password;
+    }
+
+    /**
+     * Get the password that should be used when authenticating and {@link #getConnection() creating connections}.
+     * <p>
+     * This is an optional property, required only when authentication is to be used.
+     * </p>
+     * 
+     * @param password the password, or null if no password have been set or are not to be used
+     * @see #getPassword()
+     * @see #setConfigurationSourceName(String)
+     * @see #setConfigurationSourceProjectionRules(String[])
+     * @see #setUsername(String)
+     * @see #setRepositoryName(String)
+     * @see #setConnectionFactoriesJndiName(String)
+     * @see #setExecutionContextFactoryJndiName(String)
+     * @see #setName(String)
+     */
+    public void setPassword( String password ) {
+        if (this.password != null && this.password.equals(password)) return; // unchanged
+        this.password = password;
+        changeRepositoryConfig();
+    }
+
+    /**
+     * This method is called to signal that some aspect of the configuration has changed. If a {@link #getRepository() repository}
+     * instance has been created, it's configuration is
+     * {@link #getRepositoryConfiguration(ExecutionEnvironment, RepositoryConnectionFactories) rebuilt} and updated. Nothing is
+     * done, however, if there is currently no {@link #getRepository() repository}.
+     */
+    protected synchronized void changeRepositoryConfig() {
+        if (this.repository != null) {
+            // Find in JNDI the repository connection factories and the environment ...
+            ExecutionEnvironment env = getExecutionEnvironment();
+            RepositoryConnectionFactories factories = getRepositoryConnectionFactories();
+            // Compute a new repository config and set it on the repository ...
+            FederatedRepositoryConfig newConfig = getRepositoryConfiguration(env, factories);
+            this.repository.setConfiguration(newConfig);
+        }
     }
 
     /**
      * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.spi.graph.connection.AbstractRepositorySource#createConnection()
      */
-    public void setRetryLimit( int limit ) {
-        this.retryLimit = limit > 0 ? limit : 0;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public synchronized RepositoryConnection getConnection() throws RepositorySourceException {
+    @Override
+    protected synchronized RepositoryConnection createConnection() throws RepositorySourceException {
         if (getName() == null) {
             throw new RepositorySourceException(FederationI18n.propertyIsRequired.text("name"));
         }
@@ -448,377 +821,6 @@ public class FederatedRepositorySource implements RepositorySource {
 
         Projection region = new Projection(sourceName, projectionRules);
         return region;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public synchronized String getName() {
-        return sourceName;
-    }
-
-    /**
-     * Set the name of this source.
-     * <p>
-     * This is a required property.
-     * </p>
-     * 
-     * @param sourceName the name of this repository source
-     * @see #setConfigurationSourceName(String)
-     * @see #setConnectionFactoriesJndiName(String)
-     * @see #setConfigurationSourceProjectionRules(String[])
-     * @see #setPassword(String)
-     * @see #setUsername(String)
-     * @see #setRepositoryName(String)
-     * @see #setExecutionContextFactoryJndiName(String)
-     * @see #setPassword(String)
-     * @see #setUsername(String)
-     * @see #setName(String)
-     */
-    public synchronized void setName( String sourceName ) {
-        if (this.sourceName == sourceName || this.sourceName != null && this.sourceName.equals(sourceName)) return;
-        this.sourceName = sourceName;
-        changeRepositoryConfig();
-    }
-
-    /**
-     * Get the name in JNDI of a {@link FederatedRepository} instance that should be used. If this is set (and an instance can be
-     * found at that location), few of the remaining properties on this instance may not be used (basically just
-     * {@link #getUsername() username}, {@link #getPassword() password}, and {@link #getName() source name}).
-     * <p>
-     * This is an optional property.
-     * </p>
-     * 
-     * @return the location in JNDI of the {@link FederatedRepository} that should be used by this source, or null if the
-     *         {@link FederatedRepository} instance will be created from the properties of this instance
-     * @see #setRepositoryJndiName(String)
-     */
-    public String getRepositoryJndiName() {
-        return repositoryJndiName;
-    }
-
-    /**
-     * Set the name in JNDI of a {@link FederatedRepository} instance that should be used. If this is set (and an instance can be
-     * found at that location), few of the remaining properties on this instance may not be used (basically just
-     * {@link #getUsername() username}, {@link #getPassword() password}, and {@link #getName() source name}).
-     * <p>
-     * This is an optional property.
-     * </p>
-     * 
-     * @param jndiName the JNDI name where the {@link FederatedRepository} instance can be found, or null if the instance is not
-     *        to be found in JNDI but one should be instantiated from this instance's properties
-     * @see #getRepositoryJndiName()
-     * @see #setPassword(String)
-     * @see #setUsername(String)
-     * @see #setName(String)
-     */
-    public void setRepositoryJndiName( String jndiName ) {
-        if (this.repositoryJndiName == jndiName || this.repositoryJndiName != null && this.repositoryJndiName.equals(jndiName)) return;
-        this.repositoryJndiName = jndiName;
-        changeRepositoryConfig();
-    }
-
-    /**
-     * Get the name in JNDI of a {@link RepositorySource} instance that should be used by the {@link FederatedRepository federated
-     * repository} as the configuration repository.
-     * <p>
-     * This is a required property (unless the {@link #getRepositoryJndiName() federated repository is to be found in JDNI}).
-     * </p>
-     * 
-     * @return the JNDI name of the {@link RepositorySource} instance that should be used for the configuration, or null if the
-     *         federated repository instance is to be found in JNDI
-     * @see #setConfigurationSourceName(String)
-     */
-    public String getConfigurationSourceName() {
-        return configurationSourceName;
-    }
-
-    /**
-     * Get the name of a {@link RepositorySource} instance that should be used by the {@link FederatedRepository federated
-     * repository} as the configuration repository. The instance will be retrieved from the {@link RepositoryConnectionFactories}
-     * instance {@link #getConnectionFactoriesJndiName() found in JDNI}.
-     * <p>
-     * This is a required property (unless the {@link #getRepositoryJndiName() federated repository is to be found in JDNI}).
-     * </p>
-     * 
-     * @param sourceName the name of the {@link RepositorySource} instance that should be used for the configuration, or null if
-     *        the federated repository instance is to be found in JNDI
-     * @see #getConfigurationSourceName()
-     * @see #setConnectionFactoriesJndiName(String)
-     * @see #setConfigurationSourceProjectionRules(String[])
-     * @see #setPassword(String)
-     * @see #setUsername(String)
-     * @see #setRepositoryName(String)
-     * @see #setExecutionContextFactoryJndiName(String)
-     * @see #setName(String)
-     */
-    public void setConfigurationSourceName( String sourceName ) {
-        if (this.configurationSourceName == sourceName || this.configurationSourceName != null
-            && this.configurationSourceName.equals(sourceName)) return;
-        this.configurationSourceName = sourceName;
-        changeRepositoryConfig();
-    }
-
-    /**
-     * Get the projection rule definitions used for the {@link #getConfigurationSourceName() configuration source}. The
-     * {@link #DEFAULT_CONFIGURATION_SOURCE_PROJECTION_RULES default projection rules} map the root of the configuration source
-     * into the <code>/dna:system</code> branch of the repository.
-     * <p>
-     * This is a required property (unless the {@link #getRepositoryJndiName() federated repository is to be found in JDNI}).
-     * </p>
-     * 
-     * @return the string array of projection rules, or null if the projection rules haven't yet been set or if the federated
-     *         repository instance is to be found in JNDI
-     * @see #setConfigurationSourceProjectionRules(String[])
-     */
-    public String[] getConfigurationSourceProjectionRules() {
-        return configurationSourceProjectionRules;
-    }
-
-    /**
-     * Get the projection rule definitions used for the {@link #getConfigurationSourceName() configuration source}. The
-     * {@link #DEFAULT_CONFIGURATION_SOURCE_PROJECTION_RULES default projection rules} map the root of the configuration source
-     * into the <code>/dna:system</code> branch of the repository.
-     * <p>
-     * This is a required property (unless the {@link #getRepositoryJndiName() federated repository is to be found in JDNI}).
-     * </p>
-     * 
-     * @param projectionRules the string array of projection rules, or null if the projection rules haven't yet been set or if the
-     *        federated repository instance is to be found in JNDI
-     * @see #setConfigurationSourceProjectionRules(String[])
-     * @see #setConnectionFactoriesJndiName(String)
-     * @see #setConfigurationSourceName(String)
-     * @see #setPassword(String)
-     * @see #setUsername(String)
-     * @see #setRepositoryName(String)
-     * @see #setExecutionContextFactoryJndiName(String)
-     * @see #setName(String)
-     */
-    public void setConfigurationSourceProjectionRules( String[] projectionRules ) {
-        if (projectionRules != null) {
-            List<String> rules = new LinkedList<String>();
-            for (String rule : projectionRules) {
-                if (rule != null && rule.trim().length() != 0) rules.add(rule);
-            }
-            projectionRules = rules.toArray(new String[rules.size()]);
-        }
-        this.configurationSourceProjectionRules = projectionRules != null ? projectionRules : DEFAULT_CONFIGURATION_SOURCE_PROJECTION_RULES;
-    }
-
-    /**
-     * Get the name in JNDI of a {@link ExecutionContextFactory} instance that should be used to obtain the
-     * {@link ExecutionEnvironment execution context} used by the {@link FederatedRepository federated repository}.
-     * <p>
-     * This is a required property (unless the {@link #getRepositoryJndiName() federated repository is to be found in JDNI}).
-     * </p>
-     * 
-     * @return the JNDI name of the {@link ExecutionContextFactory} instance that should be used, or null if the federated
-     *         repository instance is to be found in JNDI
-     * @see #setExecutionContextFactoryJndiName(String)
-     */
-    public String getExecutionContextFactoryJndiName() {
-        return executionContextFactoryJndiName;
-    }
-
-    /**
-     * Set the name in JNDI of a {@link ExecutionContextFactory} instance that should be used to obtain the
-     * {@link ExecutionEnvironment execution context} used by the {@link FederatedRepository federated repository}.
-     * <p>
-     * This is a required property (unless the {@link #getRepositoryJndiName() federated repository is to be found in JDNI}).
-     * </p>
-     * 
-     * @param jndiName the JNDI name where the {@link ExecutionContextFactory} instance can be found, or null if the federated
-     *        repository instance is to be found in JNDI
-     * @see #getExecutionContextFactoryJndiName()
-     * @see #setConfigurationSourceName(String)
-     * @see #setConfigurationSourceProjectionRules(String[])
-     * @see #setConnectionFactoriesJndiName(String)
-     * @see #setPassword(String)
-     * @see #setUsername(String)
-     * @see #setRepositoryName(String)
-     * @see #setName(String)
-     */
-    public synchronized void setExecutionContextFactoryJndiName( String jndiName ) {
-        if (this.repositoryJndiName == jndiName || this.repositoryJndiName != null && this.repositoryJndiName.equals(jndiName)) return;
-        this.executionContextFactoryJndiName = jndiName;
-        changeRepositoryConfig();
-    }
-
-    /**
-     * Get the name in JNDI where the {@link RepositoryConnectionFactories} instance that can be used by the
-     * {@link FederatedRepository federated repository} can find any {@link RepositorySource} sources it needs, including those
-     * used for {@link Projection sources} and that used for it's {@link #getConfigurationSourceName() configuration}.
-     * <p>
-     * This is a required property (unless the {@link #getRepositoryJndiName() federated repository is to be found in JDNI}).
-     * </p>
-     * 
-     * @return the JNDI name where the {@link RepositoryConnectionFactories} instance can be found, or null if the federated
-     *         repository instance is to be found in JNDI
-     * @see #setConnectionFactoriesJndiName(String)
-     */
-    public String getConnectionFactoriesJndiName() {
-        return connectionFactoriesJndiName;
-    }
-
-    /**
-     * Set the name in JNDI where the {@link RepositoryConnectionFactories} instance that can be used by the
-     * {@link FederatedRepository federated repository} can find any {@link RepositorySource} sources it needs, including those
-     * used for {@link Projection sources} and that used for it's {@link #getConfigurationSourceName() configuration}.
-     * <p>
-     * This is a required property (unless the {@link #getRepositoryJndiName() federated repository is to be found in JDNI}).
-     * </p>
-     * 
-     * @param jndiName the JNDI name where the {@link RepositoryConnectionFactories} instance can be found, or null if the
-     *        federated repository instance is to be found in JNDI
-     * @see #getConnectionFactoriesJndiName()
-     * @see #setConfigurationSourceName(String)
-     * @see #setConfigurationSourceProjectionRules(String[])
-     * @see #setPassword(String)
-     * @see #setUsername(String)
-     * @see #setRepositoryName(String)
-     * @see #setExecutionContextFactoryJndiName(String)
-     * @see #setName(String)
-     */
-    public synchronized void setConnectionFactoriesJndiName( String jndiName ) {
-        if (this.connectionFactoriesJndiName == jndiName || this.connectionFactoriesJndiName != null
-            && this.connectionFactoriesJndiName.equals(jndiName)) return;
-        this.connectionFactoriesJndiName = jndiName;
-        changeRepositoryConfig();
-    }
-
-    /**
-     * @return securityDomain
-     */
-    public String getSecurityDomain() {
-        return securityDomain;
-    }
-
-    /**
-     * @param securityDomain Sets securityDomain to the specified value.
-     */
-    public void setSecurityDomain( String securityDomain ) {
-        this.securityDomain = securityDomain;
-    }
-
-    /**
-     * Get the name of the federated repository.
-     * <p>
-     * This is a required property (unless the {@link #getRepositoryJndiName() federated repository is to be found in JDNI}).
-     * </p>
-     * 
-     * @return the name of the repository
-     * @see #setRepositoryName(String)
-     */
-    public synchronized String getRepositoryName() {
-        return this.repositoryName;
-    }
-
-    /**
-     * Get the name of the federated repository.
-     * <p>
-     * This is a required property (unless the {@link #getRepositoryJndiName() federated repository is to be found in JDNI}).
-     * </p>
-     * 
-     * @param repositoryName the new name of the repository
-     * @throws IllegalArgumentException if the repository name is null, empty or blank
-     * @see #getRepositoryName()
-     * @see #setConfigurationSourceName(String)
-     * @see #setConfigurationSourceProjectionRules(String[])
-     * @see #setPassword(String)
-     * @see #setUsername(String)
-     * @see #setConnectionFactoriesJndiName(String)
-     * @see #setExecutionContextFactoryJndiName(String)
-     * @see #setName(String)
-     */
-    public synchronized void setRepositoryName( String repositoryName ) {
-        ArgCheck.isNotEmpty(repositoryName, "repositoryName");
-        if (this.repositoryName != null && this.repositoryName.equals(repositoryName)) return;
-        this.repositoryName = repositoryName;
-        changeRepositoryConfig();
-    }
-
-    /**
-     * This method is called to signal that some aspect of the configuration has changed. If a {@link #getRepository() repository}
-     * instance has been created, it's configuration is
-     * {@link #getRepositoryConfiguration(ExecutionEnvironment, RepositoryConnectionFactories) rebuilt} and updated. Nothing is
-     * done, however, if there is currently no {@link #getRepository() repository}.
-     */
-    protected synchronized void changeRepositoryConfig() {
-        if (this.repository != null) {
-            // Find in JNDI the repository connection factories and the environment ...
-            ExecutionEnvironment env = getExecutionEnvironment();
-            RepositoryConnectionFactories factories = getRepositoryConnectionFactories();
-            // Compute a new repository config and set it on the repository ...
-            FederatedRepositoryConfig newConfig = getRepositoryConfiguration(env, factories);
-            this.repository.setConfiguration(newConfig);
-        }
-    }
-
-    /**
-     * Get the username that should be used when authenticating and {@link #getConnection() creating connections}.
-     * <p>
-     * This is an optional property, required only when authentication is to be used.
-     * </p>
-     * 
-     * @return the username, or null if no username has been set or are not to be used
-     * @see #setUsername(String)
-     */
-    public String getUsername() {
-        return this.username;
-    }
-
-    /**
-     * Set the username that should be used when authenticating and {@link #getConnection() creating connections}.
-     * <p>
-     * This is an optional property, required only when authentication is to be used.
-     * </p>
-     * 
-     * @param username the username, or null if no username has been set or are not to be used
-     * @see #getUsername()
-     * @see #setPassword(String)
-     * @see #setConfigurationSourceName(String)
-     * @see #setConfigurationSourceProjectionRules(String[])
-     * @see #setPassword(String)
-     * @see #setRepositoryName(String)
-     * @see #setConnectionFactoriesJndiName(String)
-     * @see #setExecutionContextFactoryJndiName(String)
-     * @see #setName(String)
-     */
-    public void setUsername( String username ) {
-        this.username = username;
-    }
-
-    /**
-     * Get the password that should be used when authenticating and {@link #getConnection() creating connections}.
-     * <p>
-     * This is an optional property, required only when authentication is to be used.
-     * </p>
-     * 
-     * @return the password, or null if no password have been set or are not to be used
-     * @see #setPassword(String)
-     */
-    public String getPassword() {
-        return this.password;
-    }
-
-    /**
-     * Get the password that should be used when authenticating and {@link #getConnection() creating connections}.
-     * <p>
-     * This is an optional property, required only when authentication is to be used.
-     * </p>
-     * 
-     * @param password the password, or null if no password have been set or are not to be used
-     * @see #getPassword()
-     * @see #setConfigurationSourceName(String)
-     * @see #setConfigurationSourceProjectionRules(String[])
-     * @see #setUsername(String)
-     * @see #setRepositoryName(String)
-     * @see #setConnectionFactoriesJndiName(String)
-     * @see #setExecutionContextFactoryJndiName(String)
-     * @see #setName(String)
-     */
-    public void setPassword( String password ) {
-        this.password = password;
     }
 
     /**

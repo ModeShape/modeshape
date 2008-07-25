@@ -38,29 +38,28 @@ import javax.naming.Referenceable;
  * repository (e.g., in a configuration area), and needs to be reinstantiated.
  * </p>
  * <p>
- * Objects that implement this <code>RepositorySource</code> interface are typically registered with a naming service such as
- * Java Naming and Directory Interface<sup><font size=-3>TM</font></sup> (JNDI). This interface extends both
- * {@link Referenceable} and {@link Serializable} so that such objects can be stored in any JNDI naming context and enable proper
- * system recovery,
+ * Objects that implement this <code>RepositorySource</code> interface are typically registered with a naming service such as Java
+ * Naming and Directory Interface<sup><font size=-3>TM</font></sup> (JNDI). This interface extends both {@link Referenceable} and
+ * {@link Serializable} so that such objects can be stored in any JNDI naming context and enable proper system recovery,
  * </p>
  * 
  * @author Randall Hauch
  */
-public interface RepositorySource extends RepositoryConnectionFactory, Referenceable, Serializable {
+public interface RepositorySource extends ManagedRepositoryConnectionFactory, Referenceable, Serializable {
 
     /**
-     * Get the maximum number of retries that may be performed on a given operation when using
-     * {@link #getConnection() connections} created by this source. This value does not constitute a minimum number of retries; in
-     * fact, the connection user is not required to retry any operations.
+     * Get the maximum number of retries that may be performed on a given operation when using {@link #getConnection()
+     * connections} created by this source. This value does not constitute a minimum number of retries; in fact, the connection
+     * user is not required to retry any operations.
      * 
      * @return the maximum number of allowable retries, or 0 if the source has no limit
      */
     int getRetryLimit();
 
     /**
-     * Set the maximum number of retries that may be performed on a given operation when using
-     * {@link #getConnection() connections} created by this source. This value does not constitute a minimum number of retries; in
-     * fact, the connection user is not required to retry any operations.
+     * Set the maximum number of retries that may be performed on a given operation when using {@link #getConnection()
+     * connections} created by this source. This value does not constitute a minimum number of retries; in fact, the connection
+     * user is not required to retry any operations.
      * 
      * @param limit the maximum number of allowable retries, or 0 if the source has no limit
      */

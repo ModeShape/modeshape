@@ -52,7 +52,7 @@ public class FederatedRepositoryTest {
     @Mock
     private RepositoryConnectionFactories connectionFactories;
 
-    // private BasicRepositoryConnectionPool connectionPool;
+    // private RepositoryConnectionPool connectionPool;
 
     @Before
     public void beforeEach() {

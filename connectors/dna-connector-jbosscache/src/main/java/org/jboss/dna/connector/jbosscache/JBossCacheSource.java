@@ -27,7 +27,6 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -47,14 +46,14 @@ import org.jboss.dna.common.util.ArgCheck;
 import org.jboss.dna.spi.cache.CachePolicy;
 import org.jboss.dna.spi.graph.Name;
 import org.jboss.dna.spi.graph.NameFactory;
+import org.jboss.dna.spi.graph.connection.AbstractRepositorySource;
 import org.jboss.dna.spi.graph.connection.RepositoryConnection;
-import org.jboss.dna.spi.graph.connection.RepositorySource;
 
 /**
  * @author Randall Hauch
  */
 @ThreadSafe
-public class JBossCacheSource implements RepositorySource, ObjectFactory {
+public class JBossCacheSource extends AbstractRepositorySource implements ObjectFactory {
 
     /**
      */
@@ -100,7 +99,6 @@ public class JBossCacheSource implements RepositorySource, ObjectFactory {
     private String name;
     @GuardedBy( "this" )
     private String jndiName;
-    private final AtomicInteger retryLimit = new AtomicInteger(0);
     private UUID rootNodeUuid = UUID.randomUUID();
     private CachePolicy defaultCachePolicy;
     private String cacheConfigurationName;
@@ -261,21 +259,8 @@ public class JBossCacheSource implements RepositorySource, ObjectFactory {
     /**
      * {@inheritDoc}
      */
-    public int getRetryLimit() {
-        return retryLimit.get();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public void setRetryLimit( int limit ) {
-        retryLimit.set(limit);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public synchronized RepositoryConnection getConnection() {
+    @Override
+    protected synchronized RepositoryConnection createConnection() {
         if (this.cache == null) {
             CacheFactory<Name, Object> factory = new DefaultCacheFactory<Name, Object>();
             cache = factory.createCache(cacheConfigurationName);
