@@ -38,10 +38,10 @@ import org.jboss.dna.common.text.TextEncoder;
 import org.jboss.dna.common.util.ArgCheck;
 import org.jboss.dna.common.util.HashCode;
 import org.jboss.dna.common.util.Logger;
+import org.jboss.dna.spi.ExecutionContext;
 import org.jboss.dna.spi.graph.NamespaceRegistry;
 import org.jboss.dna.spi.graph.Path;
 import org.jboss.dna.spi.graph.PathFactory;
-import org.jboss.dna.spi.graph.connection.ExecutionEnvironment;
 import org.jboss.dna.spi.graph.connection.RepositorySource;
 
 /**
@@ -64,7 +64,7 @@ public class Projection implements Comparable<Projection>, Serializable {
     static {
         parserMethods = new CopyOnWriteArrayList<Method>();
         try {
-            parserMethods.add(Projection.class.getDeclaredMethod("parsePathRule", String.class, ExecutionEnvironment.class));
+            parserMethods.add(Projection.class.getDeclaredMethod("parsePathRule", String.class, ExecutionContext.class));
         } catch (Throwable err) {
             Logger.getLogger(Projection.class).error(err, FederationI18n.errorAddingProjectionRuleParseMethod);
         }
@@ -73,8 +73,8 @@ public class Projection implements Comparable<Projection>, Serializable {
     /**
      * Add a static method that can be used to parse {@link Rule#getString(NamespaceRegistry, TextEncoder) rule definition
      * strings}. These methods must be static, must accept a {@link String} definition as the first parameter and an
-     * {@link ExecutionEnvironment} environment reference as the second parameter, and should return the resulting {@link Rule}
-     * (or null if the definition format could not be understood by the method. Any exceptions during
+     * {@link ExecutionContext} environment reference as the second parameter, and should return the resulting {@link Rule} (or
+     * null if the definition format could not be understood by the method. Any exceptions during
      * {@link Method#invoke(Object, Object...) invocation} will be logged at the
      * {@link Logger#trace(Throwable, String, Object...) trace} level.
      * 
@@ -88,8 +88,8 @@ public class Projection implements Comparable<Projection>, Serializable {
     /**
      * Add a static method that can be used to parse {@link Rule#getString(NamespaceRegistry, TextEncoder) rule definition
      * strings}. These methods must be static, must accept a {@link String} definition as the first parameter and an
-     * {@link ExecutionEnvironment} environment reference as the second parameter, and should return the resulting {@link Rule}
-     * (or null if the definition format could not be understood by the method. Any exceptions during
+     * {@link ExecutionContext} environment reference as the second parameter, and should return the resulting {@link Rule} (or
+     * null if the definition format could not be understood by the method. Any exceptions during
      * {@link Method#invoke(Object, Object...) invocation} will be logged at the
      * {@link Logger#trace(Throwable, String, Object...) trace} level.
      * 
@@ -110,7 +110,7 @@ public class Projection implements Comparable<Projection>, Serializable {
         ArgCheck.isNotEmpty(className, "className");
         ArgCheck.isNotEmpty(methodName, "methodName");
         Class<?> clazz = Class.forName(className, true, classLoader);
-        parserMethods.add(clazz.getMethod(className, String.class, ExecutionEnvironment.class));
+        parserMethods.add(clazz.getMethod(className, String.class, ExecutionContext.class));
     }
 
     /**
@@ -148,17 +148,17 @@ public class Projection implements Comparable<Projection>, Serializable {
      * Parse the string form of a rule definition and return the rule
      * 
      * @param definition the definition of the rule that is to be parsed
-     * @param env the environment in which this method is being executed; may not be null
+     * @param context the environment in which this method is being executed; may not be null
      * @return the rule, or null if the definition could not be parsed
      */
     public static Rule fromString( String definition,
-                                   ExecutionEnvironment env ) {
-        ArgCheck.isNotNull(env, "env");
+                                   ExecutionContext context ) {
+        ArgCheck.isNotNull(context, "env");
         definition = definition != null ? definition.trim() : "";
         if (definition.length() == 0) return null;
         for (Method method : parserMethods) {
             try {
-                Rule rule = (Rule)method.invoke(null, definition, env);
+                Rule rule = (Rule)method.invoke(null, definition, context);
                 if (rule != null) return rule;
             } catch (Throwable err) {
                 String msg = "Error while parsing project rule definition \"{0}\" using {1}";
@@ -201,18 +201,18 @@ public class Projection implements Comparable<Projection>, Serializable {
      * parser methods} by the static initializer of {@link Projection}.
      * 
      * @param definition the definition
-     * @param env the environment
+     * @param context the environment
      * @return the path rule, or null if the definition is not in the right form
      */
     public static PathRule parsePathRule( String definition,
-                                          ExecutionEnvironment env ) {
+                                          ExecutionContext context ) {
         definition = definition != null ? definition.trim() : "";
         if (definition.length() == 0) return null;
         Matcher matcher = PATH_RULE_PATTERN.matcher(definition);
         if (!matcher.find()) return null;
         String reposPathStr = matcher.group(1);
         String sourcePathStr = matcher.group(2);
-        PathFactory pathFactory = env.getValueFactories().getPathFactory();
+        PathFactory pathFactory = context.getValueFactories().getPathFactory();
         Path repositoryPath = pathFactory.create(reposPathStr);
         Path sourcePath = pathFactory.create(sourcePathStr);
 

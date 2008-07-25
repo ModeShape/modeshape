@@ -31,6 +31,7 @@ import javax.transaction.xa.XAResource;
 import org.jboss.cache.Cache;
 import org.jboss.cache.Fqn;
 import org.jboss.cache.Node;
+import org.jboss.dna.spi.ExecutionContext;
 import org.jboss.dna.spi.cache.CachePolicy;
 import org.jboss.dna.spi.graph.Name;
 import org.jboss.dna.spi.graph.Path;
@@ -50,7 +51,6 @@ import org.jboss.dna.spi.graph.commands.RecordBranchCommand;
 import org.jboss.dna.spi.graph.commands.SetPropertiesCommand;
 import org.jboss.dna.spi.graph.commands.executor.AbstractCommandExecutor;
 import org.jboss.dna.spi.graph.commands.executor.CommandExecutor;
-import org.jboss.dna.spi.graph.connection.ExecutionEnvironment;
 import org.jboss.dna.spi.graph.connection.RepositoryConnection;
 import org.jboss.dna.spi.graph.connection.RepositorySourceException;
 import org.jboss.dna.spi.graph.connection.RepositorySourceListener;
@@ -139,10 +139,10 @@ public class JBossCacheConnection implements RepositoryConnection {
     /**
      * {@inheritDoc}
      */
-    public void execute( ExecutionEnvironment env,
+    public void execute( ExecutionContext context,
                          GraphCommand... commands ) throws RepositorySourceException, InterruptedException {
         // Now execute the commands ...
-        CommandExecutor executor = new Executor(env, this.getSourceName());
+        CommandExecutor executor = new Executor(context, this.getSourceName());
         for (GraphCommand command : commands) {
             executor.execute(command);
         }
@@ -160,12 +160,12 @@ public class JBossCacheConnection implements RepositoryConnection {
      * This method may be called without regard to synchronization, since it should return the same value if it happens to be
      * called concurrently while not yet initialized.
      * 
-     * @param env the environment
+     * @param context the execution context
      * @return the name, or null if the UUID should not be stored
      */
-    protected Name getUuidProperty( ExecutionEnvironment env ) {
+    protected Name getUuidProperty( ExecutionContext context ) {
         if (!initializedUuidPropertyName) {
-            this.uuidPropertyName = this.source.getUuidPropertyName(env.getValueFactories().getNameFactory());
+            this.uuidPropertyName = this.source.getUuidPropertyName(context.getValueFactories().getNameFactory());
             initializedUuidPropertyName = true;
         }
         return this.uuidPropertyName;
@@ -185,13 +185,13 @@ public class JBossCacheConnection implements RepositoryConnection {
         return Fqn.fromElements(pathSegment);
     }
 
-    protected Node<Name, Object> getNode( ExecutionEnvironment env,
+    protected Node<Name, Object> getNode( ExecutionContext context,
                                           Path path ) {
         // Look up the node with the supplied path ...
         Fqn<Segment> fqn = getFullyQualifiedName(path);
         Node<Name, Object> node = cache.getNode(fqn);
         if (node == null) {
-            String nodePath = path.getString(env.getNamespaceRegistry());
+            String nodePath = path.getString(context.getNamespaceRegistry());
             throw new PathNotFoundException(path, JBossCacheConnectorI18n.nodeDoesNotExist.text(nodePath));
         }
         return node;
@@ -230,10 +230,10 @@ public class JBossCacheConnection implements RepositoryConnection {
 
         private final PropertyFactory propertyFactory;
 
-        protected Executor( ExecutionEnvironment env,
+        protected Executor( ExecutionContext context,
                             String sourceName ) {
-            super(env, sourceName);
-            this.propertyFactory = env.getPropertyFactory();
+            super(context, sourceName);
+            this.propertyFactory = context.getPropertyFactory();
         }
 
         @Override

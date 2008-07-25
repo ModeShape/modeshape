@@ -31,6 +31,7 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import net.jcip.annotations.NotThreadSafe;
 import org.jboss.dna.common.util.ArgCheck;
+import org.jboss.dna.spi.ExecutionContext;
 import org.jboss.dna.spi.graph.Name;
 import org.jboss.dna.spi.graph.Path;
 import org.jboss.dna.spi.graph.PathNotFoundException;
@@ -48,7 +49,6 @@ import org.jboss.dna.spi.graph.commands.RecordBranchCommand;
 import org.jboss.dna.spi.graph.commands.SetPropertiesCommand;
 import org.jboss.dna.spi.graph.commands.executor.AbstractCommandExecutor;
 import org.jboss.dna.spi.graph.commands.executor.CommandExecutor;
-import org.jboss.dna.spi.graph.connection.ExecutionEnvironment;
 
 /**
  * @author Randall Hauch
@@ -99,11 +99,11 @@ public class InMemoryRepository {
         return nodesByUuid;
     }
 
-    public Node getNode( ExecutionEnvironment env,
+    public Node getNode( ExecutionContext context,
                          String path ) {
-        assert env != null;
+        assert context != null;
         assert path != null;
-        return getNode(env.getValueFactories().getPathFactory().create(path));
+        return getNode(context.getValueFactories().getPathFactory().create(path));
     }
 
     /**
@@ -139,15 +139,15 @@ public class InMemoryRepository {
         return UUID.randomUUID();
     }
 
-    public void removeNode( ExecutionEnvironment env,
+    public void removeNode( ExecutionContext context,
                             Node node ) {
-        assert env != null;
+        assert context != null;
         assert node != null;
         assert getRoot().equals(node) != true;
         Node parent = node.getParent();
         assert parent != null;
         parent.getChildren().remove(node);
-        correctSameNameSiblingIndexes(env, parent, node.getName().getName());
+        correctSameNameSiblingIndexes(context, parent, node.getName().getName());
         removeUuidReference(node);
     }
 
@@ -161,47 +161,47 @@ public class InMemoryRepository {
     /**
      * Create a node at the supplied path. The parent of the new node must already exist.
      * 
-     * @param env the environment; may not be null
+     * @param context the environment; may not be null
      * @param pathToNewNode the path to the new node; may not be null
      * @return the new node (or root if the path specified the root)
      */
-    public Node createNode( ExecutionEnvironment env,
+    public Node createNode( ExecutionContext context,
                             String pathToNewNode ) {
-        assert env != null;
+        assert context != null;
         assert pathToNewNode != null;
-        Path path = env.getValueFactories().getPathFactory().create(pathToNewNode);
+        Path path = context.getValueFactories().getPathFactory().create(pathToNewNode);
         if (path.isRoot()) return getRoot();
         Path parentPath = path.getAncestor();
         Node parentNode = getNode(parentPath);
         Name name = path.getLastSegment().getName();
-        return createNode(env, parentNode, name);
+        return createNode(context, parentNode, name);
     }
 
     /**
      * Create a new node with the supplied name, as a child of the supplied parent.
      * 
-     * @param env the execution environment
+     * @param context the execution context
      * @param parentNode the parent node; may not be null
      * @param name the name; may not be null
      * @return the new node
      */
-    public Node createNode( ExecutionEnvironment env,
+    public Node createNode( ExecutionContext context,
                             Node parentNode,
                             Name name ) {
-        assert env != null;
+        assert context != null;
         assert name != null;
         if (parentNode == null) parentNode = getRoot();
         Node node = new Node(generateUuid());
         nodesByUuid.put(node.getUuid(), node);
         node.setParent(parentNode);
-        Path.Segment newName = env.getValueFactories().getPathFactory().createSegment(name);
+        Path.Segment newName = context.getValueFactories().getPathFactory().createSegment(name);
         node.setName(newName);
         parentNode.getChildren().add(node);
-        correctSameNameSiblingIndexes(env, parentNode, name);
+        correctSameNameSiblingIndexes(context, parentNode, name);
         return node;
     }
 
-    protected void correctSameNameSiblingIndexes( ExecutionEnvironment env,
+    protected void correctSameNameSiblingIndexes( ExecutionContext context,
                                                   Node parentNode,
                                                   Name name ) {
         if (parentNode == null) return;
@@ -213,7 +213,7 @@ public class InMemoryRepository {
         if (childrenWithSameNames.size() == 0) return;
         if (childrenWithSameNames.size() == 1) {
             Node childWithSameName = childrenWithSameNames.get(0);
-            Path.Segment newName = env.getValueFactories().getPathFactory().createSegment(name, Path.NO_INDEX);
+            Path.Segment newName = context.getValueFactories().getPathFactory().createSegment(name, Path.NO_INDEX);
             childWithSameName.setName(newName);
             return;
         }
@@ -221,7 +221,7 @@ public class InMemoryRepository {
         for (Node childWithSameName : childrenWithSameNames) {
             Path.Segment segment = childWithSameName.getName();
             if (segment.getIndex() != index) {
-                Path.Segment newName = env.getValueFactories().getPathFactory().createSegment(name, index);
+                Path.Segment newName = context.getValueFactories().getPathFactory().createSegment(name, index);
                 childWithSameName.setName(newName);
             }
             ++index;
@@ -232,14 +232,14 @@ public class InMemoryRepository {
      * Move the supplied node to the new parent. This method automatically removes the node from its existing parent, and also
      * correctly adjusts the {@link Path.Segment#getIndex() index} to be correct in the new parent.
      * 
-     * @param env
+     * @param context
      * @param node the node to be moved; may not be the {@link #getRoot() root}
      * @param newParent the new parent; may not be the {@link #getRoot() root}
      */
-    public void moveNode( ExecutionEnvironment env,
+    public void moveNode( ExecutionContext context,
                           Node node,
                           Node newParent ) {
-        assert env != null;
+        assert context != null;
         assert newParent != null;
         assert node != null;
         assert getRoot().equals(newParent) != true;
@@ -250,22 +250,22 @@ public class InMemoryRepository {
             boolean removed = oldParent.getChildren().remove(node);
             assert removed == true;
             node.setParent(null);
-            correctSameNameSiblingIndexes(env, oldParent, node.getName().getName());
+            correctSameNameSiblingIndexes(context, oldParent, node.getName().getName());
         }
         node.setParent(newParent);
         newParent.getChildren().add(node);
-        correctSameNameSiblingIndexes(env, newParent, node.getName().getName());
+        correctSameNameSiblingIndexes(context, newParent, node.getName().getName());
     }
 
-    public int copyNode( ExecutionEnvironment env,
+    public int copyNode( ExecutionContext context,
                          Node original,
                          Node newParent,
                          boolean recursive ) {
-        assert env != null;
+        assert context != null;
         assert original != null;
         assert newParent != null;
         // Get or create the new node ...
-        Node copy = createNode(env, newParent, original.getName().getName());
+        Node copy = createNode(context, newParent, original.getName().getName());
 
         // Copy the properties ...
         copy.getProperties().clear();
@@ -274,7 +274,7 @@ public class InMemoryRepository {
         if (recursive) {
             // Loop over each child and call this method ...
             for (Node child : original.getChildren()) {
-                numNodesCopied += copyNode(env, child, copy, true);
+                numNodesCopied += copyNode(context, child, copy, true);
             }
         }
         return numNodesCopied;
@@ -283,20 +283,20 @@ public class InMemoryRepository {
     /**
      * Get a command executor given the supplied environment and source name.
      * 
-     * @param env the environment in which the commands are to be executed
+     * @param context the environment in which the commands are to be executed
      * @param sourceName the name of the repository source
      * @return the executor; never null
      */
-    public CommandExecutor getCommandExecutor( ExecutionEnvironment env,
+    public CommandExecutor getCommandExecutor( ExecutionContext context,
                                                String sourceName ) {
-        return new Executor(env, sourceName);
+        return new Executor(context, sourceName);
     }
 
     protected class Executor extends AbstractCommandExecutor {
 
-        protected Executor( ExecutionEnvironment env,
+        protected Executor( ExecutionContext context,
                             String sourceName ) {
-            super(env, sourceName);
+            super(context, sourceName);
         }
 
         @Override

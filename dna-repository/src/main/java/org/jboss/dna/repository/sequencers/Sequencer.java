@@ -32,7 +32,7 @@ import org.jboss.dna.repository.observation.NodeChange;
 import org.jboss.dna.repository.observation.NodeChangeListener;
 import org.jboss.dna.repository.observation.NodeChanges;
 import org.jboss.dna.repository.observation.ObservationService;
-import org.jboss.dna.repository.util.ExecutionContext;
+import org.jboss.dna.repository.util.JcrExecutionContext;
 import org.jboss.dna.repository.util.RepositoryNodePath;
 
 /**
@@ -48,7 +48,7 @@ public interface Sequencer extends Component<SequencerConfig> {
 
     /**
      * Execute the sequencing operation on the supplied node, which has recently been created or changed. The implementation of
-     * this method is responsible for {@link ExecutionContext#getSessionFactory() getting sessions}, modifying the appropriate
+     * this method is responsible for {@link JcrExecutionContext#getSessionFactory() getting sessions}, modifying the appropriate
      * nodes, {@link Session#save() saving} any changes made by this sequencer, and {@link Session#logout() closing} all sessions
      * (and any other acquired resources), even in the case of {@link ProgressMonitor#isCancelled() cancellation} or exceptions.
      * <p>
@@ -94,7 +94,7 @@ public interface Sequencer extends Component<SequencerConfig> {
      * @throws RepositoryException if there is a problem while working with the repository
      * @throws SequencerException if there is an error in this sequencer
      */
-    void execute( Node input, String sequencedPropertyName, NodeChange changes, Set<RepositoryNodePath> outputPaths, ExecutionContext context, ProgressMonitor progress )
+    void execute( Node input, String sequencedPropertyName, NodeChange changes, Set<RepositoryNodePath> outputPaths, JcrExecutionContext context, ProgressMonitor progress )
         throws RepositoryException, SequencerException;
 
 }

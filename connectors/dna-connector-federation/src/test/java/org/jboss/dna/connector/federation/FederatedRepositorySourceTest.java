@@ -39,9 +39,9 @@ import javax.naming.RefAddr;
 import javax.naming.Reference;
 import javax.security.auth.callback.CallbackHandler;
 import javax.security.auth.login.LoginException;
+import org.jboss.dna.spi.ExecutionContext;
 import org.jboss.dna.spi.ExecutionContextFactory;
-import org.jboss.dna.spi.graph.connection.BasicExecutionEnvironment;
-import org.jboss.dna.spi.graph.connection.ExecutionEnvironment;
+import org.jboss.dna.spi.graph.connection.BasicExecutionContext;
 import org.jboss.dna.spi.graph.connection.RepositoryConnection;
 import org.jboss.dna.spi.graph.connection.RepositoryConnectionFactories;
 import org.jboss.dna.spi.graph.connection.RepositorySourceException;
@@ -70,7 +70,7 @@ public class FederatedRepositorySourceTest {
     private String securityDomain;
     private SimpleRepository configRepository;
     private SimpleRepositorySource configRepositorySource;
-    private ExecutionEnvironment env;
+    private ExecutionContext context;
     @Mock
     private RepositoryConnection connection;
     @Mock
@@ -86,8 +86,8 @@ public class FederatedRepositorySourceTest {
     @Before
     public void beforeEach() throws Exception {
         MockitoAnnotations.initMocks(this);
-        env = new BasicExecutionEnvironment();
-        env.getNamespaceRegistry().register("dna", "http://www.jboss.org/dna");
+        context = new BasicExecutionContext();
+        context.getNamespaceRegistry().register("dna", "http://www.jboss.org/dna");
         executionContextFactoryJndiName = "context factory jndi name";
         connectionFactoriesJndiName = "connection factories jndi name";
         configurationSourceName = "configuration source name";
@@ -107,14 +107,14 @@ public class FederatedRepositorySourceTest {
         source.setContext(jndiContext);
         source.setSecurityDomain(securityDomain);
         configRepository = new SimpleRepository("Configuration Repository");
-        configRepository.setProperty(env, "/dna:repositories/Test Repository", "dna:timeToExpire", "100000");
-        configRepository.setProperty(env, "/dna:repositories/Test Repository", "dna:timeToCache", "100000");
-        configRepository.setProperty(env, "/dna:repositories/Test Repository/dna:cache", "dna:projectionRules", "/ => /");
-        configRepository.setProperty(env,
+        configRepository.setProperty(context, "/dna:repositories/Test Repository", "dna:timeToExpire", "100000");
+        configRepository.setProperty(context, "/dna:repositories/Test Repository", "dna:timeToCache", "100000");
+        configRepository.setProperty(context, "/dna:repositories/Test Repository/dna:cache", "dna:projectionRules", "/ => /");
+        configRepository.setProperty(context,
                                      "/dna:repositories/Test Repository/dna:projections/source 1/",
                                      "dna:projectionRules",
                                      "/ => /s1");
-        configRepository.setProperty(env,
+        configRepository.setProperty(context,
                                      "/dna:repositories/Test Repository/dna:projections/source 2/",
                                      "dna:projectionRules",
                                      "/ => /s1");
@@ -124,7 +124,7 @@ public class FederatedRepositorySourceTest {
         stub(connectionFactories.getConnectionFactory(configurationSourceName)).toReturn(configRepositorySource);
         stub(jndiContext.lookup(executionContextFactoryJndiName)).toReturn(executionContextFactory);
         stub(jndiContext.lookup(connectionFactoriesJndiName)).toReturn(connectionFactories);
-        stub(executionContextFactory.create(eq(securityDomain), anyCallbackHandler())).toReturn(env);
+        stub(executionContextFactory.create(eq(securityDomain), anyCallbackHandler())).toReturn(context);
     }
 
     protected static CallbackHandler anyCallbackHandler() {

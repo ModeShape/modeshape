@@ -21,6 +21,8 @@
  */
 package org.jboss.dna.spi.graph.connection;
 
+import org.jboss.dna.spi.ExecutionContext;
+
 /**
  * An operation that runs against a repository connection.
  * 
@@ -39,13 +41,13 @@ public interface RepositoryOperation<T> {
     /**
      * Run the operation using the supplied connection.
      * 
-     * @param env the environment in which this operation is executing; may not be null
+     * @param context the environment in which this operation is executing; may not be null
      * @param connection the connection; may not be null
      * @return the result of the operation
      * @throws RepositorySourceException if there is a problem with the connection
      * @throws InterruptedException if this thread was interrupted
      */
-    T run( ExecutionEnvironment env,
+    T run( ExecutionContext context,
            RepositoryConnection connection ) throws RepositorySourceException, InterruptedException;
 
     /**

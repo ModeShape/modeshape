@@ -33,6 +33,7 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import org.jboss.dna.common.i18n.MockI18n;
 import org.jboss.dna.common.util.Logger;
+import org.jboss.dna.spi.ExecutionContext;
 
 /**
  * A test harness for using repository connections under load.
@@ -42,17 +43,22 @@ import org.jboss.dna.common.util.Logger;
 public class RepositorySourceLoadHarness {
 
     public static Future<Integer> execute( RepositoryConnectionFactory connectionFactory,
-                                           ExecutionEnvironment env,
+                                           ExecutionContext context,
                                            long maxTime,
                                            TimeUnit maxTimeUnit ) throws InterruptedException {
         int numTimes = 1;
         int numClients = 1;
         RepositoryOperation.Factory<Integer> operationFactory = RepositorySourceLoadHarness.createMultipleLoadOperationFactory(numTimes);
-        List<Future<Integer>> results = runLoadTest(env, connectionFactory, numClients, maxTime, maxTimeUnit, operationFactory);
+        List<Future<Integer>> results = runLoadTest(context,
+                                                    connectionFactory,
+                                                    numClients,
+                                                    maxTime,
+                                                    maxTimeUnit,
+                                                    operationFactory);
         return results.get(0);
     }
 
-    public static <T> List<Future<T>> runLoadTest( ExecutionEnvironment env,
+    public static <T> List<Future<T>> runLoadTest( ExecutionContext context,
                                                    RepositoryConnectionFactory connectionFactory,
                                                    int numClients,
                                                    long maxTime,
@@ -65,10 +71,10 @@ public class RepositorySourceLoadHarness {
         }
 
         // and run the test ...
-        return runLoadTest(env, connectionFactory, maxTime, maxTimeUnit, clients);
+        return runLoadTest(context, connectionFactory, maxTime, maxTimeUnit, clients);
     }
 
-    public static <T> List<Future<T>> runLoadTest( ExecutionEnvironment env,
+    public static <T> List<Future<T>> runLoadTest( ExecutionContext context,
                                                    RepositoryConnectionFactory connectionFactory,
                                                    long maxTime,
                                                    TimeUnit maxTimeUnit,
@@ -79,10 +85,10 @@ public class RepositorySourceLoadHarness {
             if (client != null) clientCollection.add(client);
         }
         // and run the test ...
-        return runLoadTest(env, connectionFactory, maxTime, maxTimeUnit, clientCollection);
+        return runLoadTest(context, connectionFactory, maxTime, maxTimeUnit, clientCollection);
     }
 
-    public static <T> List<Future<T>> runLoadTest( ExecutionEnvironment env,
+    public static <T> List<Future<T>> runLoadTest( ExecutionContext context,
                                                    RepositoryConnectionFactory connectionFactory,
                                                    long maxTime,
                                                    TimeUnit maxTimeUnit,
@@ -102,7 +108,7 @@ public class RepositorySourceLoadHarness {
 
         try {
             // Wrap each client by a callable and by another that uses a latch ...
-            List<Callable<T>> callables = RepositoryOperations.createCallables(env, connectionFactory, clients);
+            List<Callable<T>> callables = RepositoryOperations.createCallables(context, connectionFactory, clients);
 
             // Run the tests ...
             List<Future<T>> futures = clientPool.invokeAll(callables, maxTime, maxTimeUnit);
@@ -164,7 +170,7 @@ public class RepositorySourceLoadHarness {
 
     /**
      * Return an operation factory that produces {@link RepositoryOperation} instances that each call
-     * {@link RepositoryConnection#execute(ExecutionEnvironment, org.jboss.dna.spi.graph.commands.GraphCommand...)} the supplied
+     * {@link RepositoryConnection#execute(ExecutionContext, org.jboss.dna.spi.graph.commands.GraphCommand...)} the supplied
      * number of times, intermixed with random math operations and {@link Thread#yield() yielding}.
      * 
      * @param callsPerOperation the number of <code>load</code> calls per RepositoryOperation
@@ -198,10 +204,10 @@ public class RepositorySourceLoadHarness {
         /**
          * {@inheritDoc}
          * 
-         * @see org.jboss.dna.spi.graph.connection.RepositoryOperation#run(org.jboss.dna.spi.graph.connection.ExecutionEnvironment,
+         * @see org.jboss.dna.spi.graph.connection.RepositoryOperation#run(org.jboss.dna.spi.ExecutionContext,
          *      org.jboss.dna.spi.graph.connection.RepositoryConnection)
          */
-        public Integer run( ExecutionEnvironment env,
+        public Integer run( ExecutionContext context,
                             RepositoryConnection connection ) throws RepositorySourceException, InterruptedException {
             Logger.getLogger(RepositorySourceLoadHarness.class).debug("Running {0} operation", this.getClass().getSimpleName());
             int total = count;
@@ -211,7 +217,7 @@ public class RepositorySourceLoadHarness {
                 if (i % 2 == 0) {
                     Thread.yield();
                 }
-                connection.execute(env);
+                connection.execute(context);
                 int int2 = random(this.hashCode() ^ (int)System.nanoTime() + i);
                 total += Math.min(Math.abs(Math.max(int1, int2) + int1 * int2 / 3), count);
             }

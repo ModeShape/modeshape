@@ -30,8 +30,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import net.jcip.annotations.ThreadSafe;
 import org.jboss.dna.common.util.ArgCheck;
 import org.jboss.dna.connector.federation.executor.FederatingCommandExecutor;
+import org.jboss.dna.spi.ExecutionContext;
 import org.jboss.dna.spi.graph.commands.executor.CommandExecutor;
-import org.jboss.dna.spi.graph.connection.ExecutionEnvironment;
 import org.jboss.dna.spi.graph.connection.RepositoryConnection;
 import org.jboss.dna.spi.graph.connection.RepositoryConnectionFactories;
 import org.jboss.dna.spi.graph.connection.RepositorySource;
@@ -47,7 +47,7 @@ import org.jboss.dna.spi.graph.connection.RepositorySourceListener;
 @ThreadSafe
 public class FederatedRepository {
 
-    private final ExecutionEnvironment env;
+    private final ExecutionContext context;
     private final RepositoryConnectionFactories connectionFactories;
     private FederatedRepositoryConfig config;
     private final AtomicInteger openExecutors = new AtomicInteger(0);
@@ -58,18 +58,18 @@ public class FederatedRepository {
     /**
      * Create a federated repository instance.
      * 
-     * @param env the execution environment
+     * @param context the execution context
      * @param connectionFactories the set of connection factories that should be used
      * @param config the configuration for this repository
      * @throws IllegalArgumentException if any of the parameters are null, or if the name is blank
      */
-    public FederatedRepository( ExecutionEnvironment env,
+    public FederatedRepository( ExecutionContext context,
                                 RepositoryConnectionFactories connectionFactories,
                                 FederatedRepositoryConfig config ) {
         ArgCheck.isNotNull(connectionFactories, "connectionFactories");
-        ArgCheck.isNotNull(env, "env");
+        ArgCheck.isNotNull(context, "context");
         ArgCheck.isNotNull(config, "config");
-        this.env = env;
+        this.context = context;
         this.connectionFactories = connectionFactories;
         this.config = config;
     }
@@ -84,10 +84,10 @@ public class FederatedRepository {
     }
 
     /**
-     * @return the execution environment
+     * @return the execution context
      */
-    public ExecutionEnvironment getExecutionEnvironment() {
-        return env;
+    public ExecutionContext getExecutionContext() {
+        return context;
     }
 
     /**
@@ -221,17 +221,17 @@ public class FederatedRepository {
     }
 
     /**
-     * Called by
-     * {@link FederatedRepositoryConnection#execute(ExecutionEnvironment, org.jboss.dna.spi.graph.commands.GraphCommand...)}.
+     * Called by {@link FederatedRepositoryConnection#execute(ExecutionContext, org.jboss.dna.spi.graph.commands.GraphCommand...)}
+     * .
      * 
-     * @param env the execution environment in which the executor will be run; may not be null
+     * @param context the execution context in which the executor will be run; may not be null
      * @param sourceName the name of the {@link RepositorySource} that is making use of this executor; may not be null or empty
      * @return the executor
      */
-    protected CommandExecutor getExecutor( ExecutionEnvironment env,
+    protected CommandExecutor getExecutor( ExecutionContext context,
                                            String sourceName ) {
         FederatedRepositoryConfig config = this.getConfiguration();
-        return new FederatingCommandExecutor(env, sourceName, config.getCacheProjection(), config.getSourceProjections(),
+        return new FederatingCommandExecutor(context, sourceName, config.getCacheProjection(), config.getSourceProjections(),
                                              getConnectionFactories());
     }
 

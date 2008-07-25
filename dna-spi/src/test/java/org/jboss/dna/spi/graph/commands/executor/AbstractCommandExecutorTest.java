@@ -32,6 +32,7 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import org.jboss.dna.spi.ExecutionContext;
 import org.jboss.dna.spi.graph.commands.CompositeCommand;
 import org.jboss.dna.spi.graph.commands.CopyBranchCommand;
 import org.jboss.dna.spi.graph.commands.CopyNodeCommand;
@@ -44,8 +45,7 @@ import org.jboss.dna.spi.graph.commands.GraphCommand;
 import org.jboss.dna.spi.graph.commands.MoveBranchCommand;
 import org.jboss.dna.spi.graph.commands.RecordBranchCommand;
 import org.jboss.dna.spi.graph.commands.SetPropertiesCommand;
-import org.jboss.dna.spi.graph.connection.BasicExecutionEnvironment;
-import org.jboss.dna.spi.graph.connection.ExecutionEnvironment;
+import org.jboss.dna.spi.graph.connection.BasicExecutionContext;
 import org.jboss.dna.spi.graph.connection.RepositorySourceException;
 import org.junit.Before;
 import org.junit.Test;
@@ -62,20 +62,20 @@ public class AbstractCommandExecutorTest {
 
     private AbstractCommandExecutor executor;
     private GraphCommand command;
-    private ExecutionEnvironment env;
+    private ExecutionContext context;
     @Mock
     protected CommandExecutor validator;
 
     @Before
     public void beforeEach() throws Exception {
         MockitoAnnotations.initMocks(this);
-        env = new BasicExecutionEnvironment();
-        executor = new ExecutorImpl(env, "Source X", validator);
+        context = new BasicExecutionContext();
+        executor = new ExecutorImpl(context, "Source X", validator);
     }
 
     @Test
     public void shouldHaveEnvironment() {
-        assertThat(executor.getEnvironment(), is(sameInstance(env)));
+        assertThat(executor.getEnvironment(), is(sameInstance(context)));
     }
 
     @Test
@@ -214,10 +214,10 @@ public class AbstractCommandExecutorTest {
 
         private final CommandExecutor validator;
 
-        protected ExecutorImpl( ExecutionEnvironment env,
+        protected ExecutorImpl( ExecutionContext context,
                                 String name,
                                 CommandExecutor validator ) {
-            super(env, name);
+            super(context, name);
             this.validator = validator;
         }
 

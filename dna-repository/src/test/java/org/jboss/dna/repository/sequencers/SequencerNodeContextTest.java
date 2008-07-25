@@ -30,11 +30,11 @@ import javax.jcr.Node;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import org.jboss.dna.common.jcr.AbstractJcrRepositoryTest;
-import org.jboss.dna.repository.util.ExecutionContext;
+import org.jboss.dna.repository.util.JcrExecutionContext;
 import org.jboss.dna.repository.util.JcrNamespaceRegistry;
 import org.jboss.dna.repository.util.JcrTools;
 import org.jboss.dna.repository.util.SessionFactory;
-import org.jboss.dna.repository.util.SimpleExecutionContext;
+import org.jboss.dna.repository.util.BasicJcrExecutionContext;
 import org.jboss.dna.spi.graph.NameFactory;
 import org.jboss.dna.spi.graph.NamespaceRegistry;
 import org.jboss.dna.spi.graph.Property;
@@ -50,7 +50,7 @@ import org.mockito.MockitoAnnotations.Mock;
  */
 public class SequencerNodeContextTest extends AbstractJcrRepositoryTest {
 
-    private ExecutionContext execContext;
+    private JcrExecutionContext execContext;
     private Session session;
     private JcrTools tools;
     @Mock
@@ -70,7 +70,7 @@ public class SequencerNodeContextTest extends AbstractJcrRepositoryTest {
             }
         };
         NamespaceRegistry registry = new JcrNamespaceRegistry(sessionFactory, "doesn't matter");
-        execContext = new SimpleExecutionContext(sessionFactory, registry, null, null);
+        execContext = new BasicJcrExecutionContext(sessionFactory, registry, null, null);
         startRepository();
         session = getRepository().login(getTestCredentials());
         tools = new JcrTools();

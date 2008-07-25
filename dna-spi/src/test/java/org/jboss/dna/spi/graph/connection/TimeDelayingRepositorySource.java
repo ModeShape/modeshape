@@ -32,6 +32,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import javax.naming.Reference;
 import javax.transaction.xa.XAResource;
 import net.jcip.annotations.ThreadSafe;
+import org.jboss.dna.spi.ExecutionContext;
 import org.jboss.dna.spi.cache.CachePolicy;
 import org.jboss.dna.spi.graph.commands.GraphCommand;
 
@@ -252,7 +253,7 @@ public class TimeDelayingRepositorySource extends AbstractRepositorySource {
         /**
          * {@inheritDoc}
          */
-        public void execute( ExecutionEnvironment env,
+        public void execute( ExecutionContext context,
                              GraphCommand... commands ) throws InterruptedException {
             long delay = this.loadDelay.get();
             if (delay > 0l) Thread.sleep(delay);

@@ -21,6 +21,7 @@
  */
 package org.jboss.dna.spi.graph.commands.executor;
 
+import org.jboss.dna.spi.ExecutionContext;
 import org.jboss.dna.spi.graph.DateTime;
 import org.jboss.dna.spi.graph.commands.CompositeCommand;
 import org.jboss.dna.spi.graph.commands.CopyBranchCommand;
@@ -34,7 +35,6 @@ import org.jboss.dna.spi.graph.commands.GraphCommand;
 import org.jboss.dna.spi.graph.commands.MoveBranchCommand;
 import org.jboss.dna.spi.graph.commands.RecordBranchCommand;
 import org.jboss.dna.spi.graph.commands.SetPropertiesCommand;
-import org.jboss.dna.spi.graph.connection.ExecutionEnvironment;
 import org.jboss.dna.spi.graph.connection.RepositoryConnection;
 import org.jboss.dna.spi.graph.connection.RepositorySourceException;
 
@@ -47,42 +47,42 @@ import org.jboss.dna.spi.graph.connection.RepositorySourceException;
  * {@link DeleteBranchCommand}), the methods do nothing and should be overridden if the command is to be processed.
  * <p>
  * The implementation is also designed to be instantated as needed. This may be once per call to
- * {@link RepositoryConnection#execute(ExecutionEnvironment, GraphCommand...)}, or may be once per transaction. Either way, this
- * class is designed to allow subclasses to store additional state that may otherwise be expensive or undesirable to obtain
- * repeatedly. However, this state should be independent of the commands that are processed, meaning that implementations should
- * generally not change state as a result of processing specific commands.
+ * {@link RepositoryConnection#execute(ExecutionContext, GraphCommand...)}, or may be once per transaction. Either way, this class
+ * is designed to allow subclasses to store additional state that may otherwise be expensive or undesirable to obtain repeatedly.
+ * However, this state should be independent of the commands that are processed, meaning that implementations should generally not
+ * change state as a result of processing specific commands.
  * </p>
  * 
  * @author Randall Hauch
  */
 public abstract class AbstractCommandExecutor implements CommandExecutor {
 
-    private final ExecutionEnvironment env;
+    private final ExecutionContext context;
     private final String sourceName;
     private final DateTime nowInUtc;
 
-    protected AbstractCommandExecutor( ExecutionEnvironment env,
+    protected AbstractCommandExecutor( ExecutionContext context,
                                        String sourceName ) {
-        this(env, sourceName, null);
+        this(context, sourceName, null);
     }
 
-    protected AbstractCommandExecutor( ExecutionEnvironment env,
+    protected AbstractCommandExecutor( ExecutionContext context,
                                        String sourceName,
                                        DateTime now ) {
-        assert env != null;
+        assert context != null;
         assert sourceName != null && sourceName.trim().length() != 0;
-        this.env = env;
+        this.context = context;
         this.sourceName = sourceName;
-        this.nowInUtc = now != null ? now.toUtcTimeZone() : env.getValueFactories().getDateFactory().createUtc();
+        this.nowInUtc = now != null ? now.toUtcTimeZone() : context.getValueFactories().getDateFactory().createUtc();
     }
 
     /**
      * Get the environment in which these commands are being executed.
      * 
-     * @return the execution environment; never null
+     * @return the execution context; never null
      */
-    public ExecutionEnvironment getEnvironment() {
-        return env;
+    public ExecutionContext getEnvironment() {
+        return context;
     }
 
     /**

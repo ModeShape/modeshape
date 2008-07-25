@@ -38,6 +38,7 @@ import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.observation.Event;
+import javax.security.auth.Subject;
 import net.jcip.annotations.Immutable;
 import net.jcip.annotations.ThreadSafe;
 import org.jboss.dna.common.component.ClassLoaderFactory;
@@ -56,7 +57,7 @@ import org.jboss.dna.repository.observation.NodeChanges;
 import org.jboss.dna.repository.services.AbstractServiceAdministrator;
 import org.jboss.dna.repository.services.AdministeredService;
 import org.jboss.dna.repository.services.ServiceAdministrator;
-import org.jboss.dna.repository.util.ExecutionContext;
+import org.jboss.dna.repository.util.JcrExecutionContext;
 import org.jboss.dna.repository.util.JcrTools;
 import org.jboss.dna.repository.util.RepositoryNodePath;
 import org.jboss.dna.repository.util.SessionFactory;
@@ -150,9 +151,8 @@ public class SequencingService implements AdministeredService, NodeChangeListene
     public static final NodeFilter DEFAULT_NODE_FILTER = new DefaultNodeFilter();
 
     /**
-     * Class loader factory instance that always returns the
-     * {@link Thread#getContextClassLoader() current thread's context class loader} (if not null) or component library's class
-     * loader.
+     * Class loader factory instance that always returns the {@link Thread#getContextClassLoader() current thread's context class
+     * loader} (if not null) or component library's class loader.
      */
     protected static final ClassLoaderFactory DEFAULT_CLASSLOADER_FACTORY = new StandardClassLoaderFactory(
                                                                                                            SequencingService.class.getClassLoader());
@@ -204,7 +204,7 @@ public class SequencingService implements AdministeredService, NodeChangeListene
 
     }
 
-    private ExecutionContext executionContext;
+    private JcrExecutionContext executionContext;
     private SequencerLibrary sequencerLibrary = new SequencerLibrary();
     private Selector sequencerSelector = DEFAULT_SEQUENCER_SELECTOR;
     private NodeFilter nodeFilter = DEFAULT_NODE_FILTER;
@@ -287,8 +287,8 @@ public class SequencingService implements AdministeredService, NodeChangeListene
     }
 
     /**
-     * Update the configuration for a sequencer, or add it if there is no
-     * {@link SequencerConfig#equals(Object) matching configuration}.
+     * Update the configuration for a sequencer, or add it if there is no {@link SequencerConfig#equals(Object) matching
+     * configuration}.
      * 
      * @param config the updated (or new) configuration
      * @return true if the sequencer was updated, or false if there already was an existing and
@@ -335,14 +335,14 @@ public class SequencingService implements AdministeredService, NodeChangeListene
     /**
      * @return executionContext
      */
-    public ExecutionContext getExecutionContext() {
+    public JcrExecutionContext getExecutionContext() {
         return this.executionContext;
     }
 
     /**
      * @param executionContext Sets executionContext to the specified value.
      */
-    public void setExecutionContext( ExecutionContext executionContext ) {
+    public void setExecutionContext( JcrExecutionContext executionContext ) {
         ArgCheck.isNotNull(executionContext, "execution context");
         if (this.getAdministrator().isStarted()) {
             throw new IllegalStateException(RepositoryI18n.unableToChangeExecutionContextWhileRunning.text());
@@ -615,9 +615,9 @@ public class SequencingService implements AdministeredService, NodeChangeListene
         }
     }
 
-    protected class Context implements ExecutionContext {
+    protected class Context implements JcrExecutionContext {
 
-        protected final ExecutionContext delegate;
+        protected final JcrExecutionContext delegate;
         protected final SessionFactory factory;
         private final Set<Session> sessions = new HashSet<Session>();
         protected final AtomicBoolean closed = new AtomicBoolean(false);
@@ -673,6 +673,15 @@ public class SequencingService implements AdministeredService, NodeChangeListene
          */
         public JcrTools getTools() {
             return SequencingService.this.getExecutionContext().getTools();
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.spi.ExecutionContext#getSubject()
+         */
+        public Subject getSubject() {
+            return this.delegate.getSubject();
         }
 
         public synchronized void close() {

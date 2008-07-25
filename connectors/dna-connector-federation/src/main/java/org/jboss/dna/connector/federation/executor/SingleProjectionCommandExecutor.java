@@ -24,6 +24,7 @@ package org.jboss.dna.connector.federation.executor;
 import java.util.Set;
 import net.jcip.annotations.NotThreadSafe;
 import org.jboss.dna.connector.federation.Projection;
+import org.jboss.dna.spi.ExecutionContext;
 import org.jboss.dna.spi.graph.DateTime;
 import org.jboss.dna.spi.graph.Path;
 import org.jboss.dna.spi.graph.PathFactory;
@@ -38,7 +39,6 @@ import org.jboss.dna.spi.graph.commands.MoveBranchCommand;
 import org.jboss.dna.spi.graph.commands.RecordBranchCommand;
 import org.jboss.dna.spi.graph.commands.SetPropertiesCommand;
 import org.jboss.dna.spi.graph.commands.executor.AbstractCommandExecutor;
-import org.jboss.dna.spi.graph.connection.ExecutionEnvironment;
 import org.jboss.dna.spi.graph.connection.RepositoryConnection;
 import org.jboss.dna.spi.graph.connection.RepositoryConnectionFactories;
 import org.jboss.dna.spi.graph.connection.RepositoryConnectionFactory;
@@ -57,39 +57,39 @@ public class SingleProjectionCommandExecutor extends AbstractCommandExecutor {
     private RepositoryConnection connection;
 
     /**
-     * @param env the execution environment in which the executor will be run; may not be null
+     * @param context the execution context in which the executor will be run; may not be null
      * @param sourceName the name of the {@link RepositorySource} that is making use of this executor; may not be null or empty
      * @param projection the projection used for the cached information; may not be null and must have exactly one
      *        {@link Projection#getRules() rule}
      * @param connectionFactories the factory for connection factory instances
      */
-    public SingleProjectionCommandExecutor( ExecutionEnvironment env,
+    public SingleProjectionCommandExecutor( ExecutionContext context,
                                             String sourceName,
                                             Projection projection,
                                             RepositoryConnectionFactories connectionFactories ) {
-        this(env, sourceName, null, projection, connectionFactories);
+        this(context, sourceName, null, projection, connectionFactories);
     }
 
     /**
-     * @param env the execution environment in which the executor will be run; may not be null
+     * @param context the execution context in which the executor will be run; may not be null
      * @param sourceName the name of the {@link RepositorySource} that is making use of this executor; may not be null or empty
      * @param now the current time; may be null if the system time is to be used
      * @param projection the projection used for the cached information; may not be null and must have exactly one
      *        {@link Projection#getRules() rule}
      * @param connectionFactories the factory for connection factory instances
      */
-    public SingleProjectionCommandExecutor( ExecutionEnvironment env,
+    public SingleProjectionCommandExecutor( ExecutionContext context,
                                             String sourceName,
                                             DateTime now,
                                             Projection projection,
                                             RepositoryConnectionFactories connectionFactories ) {
-        super(env, sourceName, now);
+        super(context, sourceName, now);
         assert connectionFactories != null;
         assert projection != null;
         assert projection.getRules().size() == 1;
         this.projection = projection;
         this.factories = connectionFactories;
-        this.pathFactory = env.getValueFactories().getPathFactory();
+        this.pathFactory = context.getValueFactories().getPathFactory();
         assert this.pathFactory != null;
     }
 

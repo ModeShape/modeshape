@@ -48,6 +48,7 @@ import org.jboss.dna.common.util.Logger;
 import org.jboss.dna.common.util.StringUtil;
 import org.jboss.dna.connector.federation.executor.FederatingCommandExecutor;
 import org.jboss.dna.connector.federation.executor.SingleProjectionCommandExecutor;
+import org.jboss.dna.spi.ExecutionContext;
 import org.jboss.dna.spi.ExecutionContextFactory;
 import org.jboss.dna.spi.cache.BasicCachePolicy;
 import org.jboss.dna.spi.cache.CachePolicy;
@@ -67,7 +68,6 @@ import org.jboss.dna.spi.graph.commands.impl.BasicCompositeCommand;
 import org.jboss.dna.spi.graph.commands.impl.BasicGetChildrenCommand;
 import org.jboss.dna.spi.graph.commands.impl.BasicGetNodeCommand;
 import org.jboss.dna.spi.graph.connection.AbstractRepositorySource;
-import org.jboss.dna.spi.graph.connection.ExecutionEnvironment;
 import org.jboss.dna.spi.graph.connection.RepositoryConnection;
 import org.jboss.dna.spi.graph.connection.RepositoryConnectionFactories;
 import org.jboss.dna.spi.graph.connection.RepositorySource;
@@ -291,7 +291,7 @@ public class FederatedRepositorySource extends AbstractRepositorySource {
 
     /**
      * Get the name in JNDI of a {@link ExecutionContextFactory} instance that should be used to obtain the
-     * {@link ExecutionEnvironment execution context} used by the {@link FederatedRepository federated repository}.
+     * {@link ExecutionContext execution context} used by the {@link FederatedRepository federated repository}.
      * <p>
      * This is a required property (unless the {@link #getRepositoryJndiName() federated repository is to be found in JDNI}).
      * </p>
@@ -306,7 +306,7 @@ public class FederatedRepositorySource extends AbstractRepositorySource {
 
     /**
      * Set the name in JNDI of a {@link ExecutionContextFactory} instance that should be used to obtain the
-     * {@link ExecutionEnvironment execution context} used by the {@link FederatedRepository federated repository}.
+     * {@link ExecutionContext execution context} used by the {@link FederatedRepository federated repository}.
      * <p>
      * This is a required property (unless the {@link #getRepositoryJndiName() federated repository is to be found in JDNI}).
      * </p>
@@ -503,16 +503,16 @@ public class FederatedRepositorySource extends AbstractRepositorySource {
     /**
      * This method is called to signal that some aspect of the configuration has changed. If a {@link #getRepository() repository}
      * instance has been created, it's configuration is
-     * {@link #getRepositoryConfiguration(ExecutionEnvironment, RepositoryConnectionFactories) rebuilt} and updated. Nothing is
-     * done, however, if there is currently no {@link #getRepository() repository}.
+     * {@link #getRepositoryConfiguration(ExecutionContext, RepositoryConnectionFactories) rebuilt} and updated. Nothing is done,
+     * however, if there is currently no {@link #getRepository() repository}.
      */
     protected synchronized void changeRepositoryConfig() {
         if (this.repository != null) {
             // Find in JNDI the repository connection factories and the environment ...
-            ExecutionEnvironment env = getExecutionEnvironment();
+            ExecutionContext context = getExecutionContext();
             RepositoryConnectionFactories factories = getRepositoryConnectionFactories();
             // Compute a new repository config and set it on the repository ...
-            FederatedRepositoryConfig newConfig = getRepositoryConfiguration(env, factories);
+            FederatedRepositoryConfig newConfig = getRepositoryConfiguration(context, factories);
             this.repository.setConfiguration(newConfig);
         }
     }
@@ -555,7 +555,7 @@ public class FederatedRepositorySource extends AbstractRepositorySource {
      * <ol>
      * <li>If a {@link FederatedRepository} already was obtained from a prior call, the same instance is returned.</li>
      * <li>A {@link FederatedRepository} is created using a {@link FederatedRepositoryConfig} is created from this instance's
-     * properties and {@link ExecutionEnvironment} and {@link RepositoryConnectionFactories} instances obtained from JNDI.</li>
+     * properties and {@link ExecutionContext} and {@link RepositoryConnectionFactories} instances obtained from JNDI.</li>
      * <li></li>
      * <li></li>
      * </ol>
@@ -566,12 +566,12 @@ public class FederatedRepositorySource extends AbstractRepositorySource {
     protected synchronized FederatedRepository getRepository() throws RepositorySourceException {
         if (repository == null) {
             String jndiName = this.getRepositoryJndiName();
-            Context context = getContext();
+            Context jndiContext = getContext();
             if (jndiName != null && jndiName.trim().length() != 0) {
                 // Look for an existing repository in JNDI ...
                 try {
-                    if (context == null) context = new InitialContext();
-                    repository = (FederatedRepository)context.lookup(jndiName);
+                    if (jndiContext == null) jndiContext = new InitialContext();
+                    repository = (FederatedRepository)jndiContext.lookup(jndiName);
                 } catch (Throwable err) {
                     I18n msg = FederationI18n.unableToFindFederatedRepositoryInJndi;
                     throw new RepositorySourceException(msg.text(this.sourceName, jndiName), err);
@@ -580,17 +580,17 @@ public class FederatedRepositorySource extends AbstractRepositorySource {
 
             if (repository == null) {
                 // Find in JNDI the repository connection factories and the environment ...
-                ExecutionEnvironment env = getExecutionEnvironment();
+                ExecutionContext context = getExecutionContext();
                 RepositoryConnectionFactories factories = getRepositoryConnectionFactories();
                 // And create the configuration and the repository ...
-                FederatedRepositoryConfig config = getRepositoryConfiguration(env, factories);
-                repository = new FederatedRepository(env, factories, config);
+                FederatedRepositoryConfig config = getRepositoryConfiguration(context, factories);
+                repository = new FederatedRepository(context, factories, config);
             }
         }
         return repository;
     }
 
-    protected ExecutionEnvironment getExecutionEnvironment() {
+    protected ExecutionContext getExecutionContext() {
         ExecutionContextFactory factory = null;
         Context context = getContext();
         String jndiName = getExecutionContextFactoryJndiName();
@@ -666,22 +666,22 @@ public class FederatedRepositorySource extends AbstractRepositorySource {
      * Create a {@link FederatedRepositoryConfig} instance from the current properties of this instance. This method does
      * <i>not</i> modify the state of this instance.
      * 
-     * @param env the execution environment that should be used to read the configuration; may not be null
+     * @param context the execution context that should be used to read the configuration; may not be null
      * @param factories the factories from which can be obtained the RepositoryConnectionFactory instances for each name source;
      *        may not be null
      * @return a configuration reflecting the current state of this instance
      */
-    protected synchronized FederatedRepositoryConfig getRepositoryConfiguration( ExecutionEnvironment env,
+    protected synchronized FederatedRepositoryConfig getRepositoryConfiguration( ExecutionContext context,
                                                                                  RepositoryConnectionFactories factories ) {
         Problems problems = new SimpleProblems();
-        ValueFactories valueFactories = env.getValueFactories();
+        ValueFactories valueFactories = context.getValueFactories();
         PathFactory pathFactory = valueFactories.getPathFactory();
         NameFactory nameFactory = valueFactories.getNameFactory();
         ValueFactory<Long> longFactory = valueFactories.getLongFactory();
 
         // Create the configuration projection ...
         ProjectionParser projectionParser = ProjectionParser.getInstance();
-        Projection.Rule[] rules = projectionParser.rulesFromStrings(env, this.getConfigurationSourceProjectionRules());
+        Projection.Rule[] rules = projectionParser.rulesFromStrings(context, this.getConfigurationSourceProjectionRules());
         Projection configurationProjection = new Projection(this.getConfigurationSourceName(), rules);
 
         // Create a federating command executor to execute the commands and merge the results into a single set of
@@ -692,13 +692,13 @@ public class FederatedRepositorySource extends AbstractRepositorySource {
         if (configurationProjection.getRules().size() == 1) {
             // There is just a single projection for the configuration repository, so just use an executor that
             // translates the paths using the projection
-            executor = new SingleProjectionCommandExecutor(env, configurationSourceName, configurationProjection, factories);
+            executor = new SingleProjectionCommandExecutor(context, configurationSourceName, configurationProjection, factories);
         } else if (configurationProjection.getRules().size() == 0) {
             // There is no projection for the configuration repository, so just use a no-op executor
-            executor = new NoOpCommandExecutor(env, configurationSourceName);
+            executor = new NoOpCommandExecutor(context, configurationSourceName);
         } else {
             // The configuration repository has more than one projection, so we need to merge the results
-            executor = new FederatingCommandExecutor(env, configurationSourceName, null, projections, factories);
+            executor = new FederatingCommandExecutor(context, configurationSourceName, null, projections, factories);
         }
         // Wrap the executor with a logging executor ...
         executor = new LoggingCommandExecutor(executor, Logger.getLogger(getClass()), Logger.Level.INFO);
@@ -719,7 +719,7 @@ public class FederatedRepositorySource extends AbstractRepositorySource {
             Path pathToCacheRegion = pathFactory.create(configNode, nameFactory.create("dna:cache"));
             BasicGetNodeCommand getCacheRegion = new BasicGetNodeCommand(pathToCacheRegion);
             executor.execute(getCacheRegion);
-            Projection cacheProjection = createProjection(env,
+            Projection cacheProjection = createProjection(context,
                                                           projectionParser,
                                                           getCacheRegion.getPath(),
                                                           getCacheRegion.getProperties(),
@@ -755,7 +755,7 @@ public class FederatedRepositorySource extends AbstractRepositorySource {
                 for (GraphCommand command : commands) {
                     BasicGetNodeCommand getProjectionCommand = (BasicGetNodeCommand)command;
                     if (getProjectionCommand.hasNoError()) {
-                        Projection projection = createProjection(env,
+                        Projection projection = createProjection(context,
                                                                  projectionParser,
                                                                  getProjectionCommand.getPath(),
                                                                  getProjectionCommand.getProperties(),
@@ -790,19 +790,19 @@ public class FederatedRepositorySource extends AbstractRepositorySource {
     /**
      * Instantiate the {@link Projection} described by the supplied properties.
      * 
-     * @param env the execution environment that should be used to read the configuration; may not be null
+     * @param context the execution context that should be used to read the configuration; may not be null
      * @param projectionParser the projection rule parser that should be used; may not be null
      * @param path the path to the node where these properties were found; never null
      * @param properties the properties; never null
      * @param problems the problems container in which any problems should be reported; never null
      * @return the region instance, or null if it could not be created
      */
-    protected Projection createProjection( ExecutionEnvironment env,
+    protected Projection createProjection( ExecutionContext context,
                                            ProjectionParser projectionParser,
                                            Path path,
                                            Map<Name, Property> properties,
                                            Problems problems ) {
-        ValueFactories valueFactories = env.getValueFactories();
+        ValueFactories valueFactories = context.getValueFactories();
         NameFactory nameFactory = valueFactories.getNameFactory();
         ValueFactory<String> stringFactory = valueFactories.getStringFactory();
 
@@ -814,7 +814,7 @@ public class FederatedRepositorySource extends AbstractRepositorySource {
         if (projectionRulesProperty != null && !projectionRulesProperty.isEmpty()) {
             String[] projectionRuleStrs = stringFactory.create(projectionRulesProperty.getValuesAsArray());
             if (projectionRuleStrs != null && projectionRuleStrs.length != 0) {
-                projectionRules = projectionParser.rulesFromStrings(env, projectionRuleStrs);
+                projectionRules = projectionParser.rulesFromStrings(context, projectionRuleStrs);
             }
         }
         if (problems.hasErrors()) return null;

@@ -25,27 +25,27 @@ import org.jboss.dna.common.util.ArgCheck;
 import org.jboss.dna.spi.graph.NamespaceRegistry;
 import org.jboss.dna.spi.graph.PropertyFactory;
 import org.jboss.dna.spi.graph.ValueFactories;
-import org.jboss.dna.spi.graph.connection.BasicExecutionEnvironment;
+import org.jboss.dna.spi.graph.connection.BasicExecutionContext;
 
 /**
  * @author Randall Hauch
  */
-public class SimpleExecutionContext extends BasicExecutionEnvironment implements ExecutionContext {
+public class BasicJcrExecutionContext extends BasicExecutionContext implements JcrExecutionContext {
 
     private final JcrTools tools = new JcrTools();
     private final SessionFactory sessionFactory;
 
-    public SimpleExecutionContext( SessionFactory sessionFactory,
+    public BasicJcrExecutionContext( SessionFactory sessionFactory,
                                    String repositoryWorkspaceForNamespaceRegistry ) {
         this(sessionFactory, new JcrNamespaceRegistry(sessionFactory, repositoryWorkspaceForNamespaceRegistry), null, null);
     }
 
-    public SimpleExecutionContext( SessionFactory sessionFactory,
+    public BasicJcrExecutionContext( SessionFactory sessionFactory,
                                    NamespaceRegistry namespaceRegistry ) {
         this(sessionFactory, namespaceRegistry, null, null);
     }
 
-    public SimpleExecutionContext( SessionFactory sessionFactory,
+    public BasicJcrExecutionContext( SessionFactory sessionFactory,
                                    NamespaceRegistry namespaceRegistry,
                                    ValueFactories valueFactories,
                                    PropertyFactory propertyFactory ) {

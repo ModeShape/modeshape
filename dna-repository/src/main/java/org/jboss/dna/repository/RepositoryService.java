@@ -44,6 +44,7 @@ import org.jboss.dna.connector.federation.executor.SingleProjectionCommandExecut
 import org.jboss.dna.repository.services.AbstractServiceAdministrator;
 import org.jboss.dna.repository.services.AdministeredService;
 import org.jboss.dna.repository.services.ServiceAdministrator;
+import org.jboss.dna.spi.ExecutionContext;
 import org.jboss.dna.spi.graph.Name;
 import org.jboss.dna.spi.graph.NameFactory;
 import org.jboss.dna.spi.graph.Path;
@@ -57,7 +58,6 @@ import org.jboss.dna.spi.graph.commands.executor.NoOpCommandExecutor;
 import org.jboss.dna.spi.graph.commands.impl.BasicCompositeCommand;
 import org.jboss.dna.spi.graph.commands.impl.BasicGetChildrenCommand;
 import org.jboss.dna.spi.graph.commands.impl.BasicGetNodeCommand;
-import org.jboss.dna.spi.graph.connection.ExecutionEnvironment;
 import org.jboss.dna.spi.graph.connection.RepositoryConnectionFactory;
 import org.jboss.dna.spi.graph.connection.RepositorySource;
 
@@ -113,7 +113,7 @@ public class RepositoryService implements AdministeredService {
     }
 
     private final ClassLoaderFactory classLoaderFactory;
-    private final ExecutionEnvironment env;
+    private final ExecutionContext context;
     private final RepositorySourceManager sources;
     private final Projection configurationProjection;
     private final Administrator administrator = new Administrator();
@@ -125,7 +125,7 @@ public class RepositoryService implements AdministeredService {
      * @param sources the source manager
      * @param configurationProjection the projection defining where the service can find configuration information for the
      *        different repositories that it is to manage
-     * @param env the execution environment in which this service should run
+     * @param context the execution context in which this service should run
      * @param classLoaderFactory the class loader factory used to instantiate {@link RepositorySource} instances; may be null if
      *        this instance should use a default factory that attempts to load classes first from the
      *        {@link Thread#getContextClassLoader() thread's current context class loader} and then from the class loader that
@@ -134,14 +134,14 @@ public class RepositoryService implements AdministeredService {
      */
     public RepositoryService( RepositorySourceManager sources,
                               Projection configurationProjection,
-                              ExecutionEnvironment env,
+                              ExecutionContext context,
                               ClassLoaderFactory classLoaderFactory ) {
         ArgCheck.isNotNull(configurationProjection, "configurationProjection");
         ArgCheck.isNotNull(sources, "sources");
-        ArgCheck.isNotNull(env, "env");
+        ArgCheck.isNotNull(context, "context");
         this.sources = sources;
         this.configurationProjection = configurationProjection;
-        this.env = env;
+        this.context = context;
         this.classLoaderFactory = classLoaderFactory != null ? classLoaderFactory : new StandardClassLoaderFactory();
     }
 
@@ -169,8 +169,8 @@ public class RepositoryService implements AdministeredService {
     /**
      * @return env
      */
-    public ExecutionEnvironment getExecutionEnvironment() {
-        return env;
+    public ExecutionContext getExecutionEnvironment() {
+        return context;
     }
 
     /**
@@ -192,7 +192,7 @@ public class RepositoryService implements AdministeredService {
             // ------------------------------------------------------------------------------------
             // Read the configuration ...
             // ------------------------------------------------------------------------------------
-            ValueFactories valueFactories = env.getValueFactories();
+            ValueFactories valueFactories = context.getValueFactories();
             PathFactory pathFactory = valueFactories.getPathFactory();
             NameFactory nameFactory = valueFactories.getNameFactory();
 
@@ -209,13 +209,13 @@ public class RepositoryService implements AdministeredService {
             if (configurationProjection.getRules().size() == 1) {
                 // There is just a single projection for the configuration repository, so just use an executor that
                 // translates the paths using the projection
-                executor = new SingleProjectionCommandExecutor(env, configurationSourceName, configurationProjection, sources);
+                executor = new SingleProjectionCommandExecutor(context, configurationSourceName, configurationProjection, sources);
             } else if (configurationProjection.getRules().size() == 0) {
                 // There is no projection for the configuration repository, so just use a no-op executor
-                executor = new NoOpCommandExecutor(env, configurationSourceName);
+                executor = new NoOpCommandExecutor(context, configurationSourceName);
             } else {
                 // The configuration repository has more than one projection, so we need to merge the results
-                executor = new FederatingCommandExecutor(env, configurationSourceName, null, projections, sources);
+                executor = new FederatingCommandExecutor(context, configurationSourceName, null, projections, sources);
             }
 
             // Read the configuration and the repository sources, located as child nodes/branches under "/dna:sources",
@@ -268,7 +268,7 @@ public class RepositoryService implements AdministeredService {
     protected RepositorySource createRepositorySource( Path path,
                                                        Map<Name, Property> properties,
                                                        Problems problems ) {
-        ValueFactories valueFactories = env.getValueFactories();
+        ValueFactories valueFactories = context.getValueFactories();
         NameFactory nameFactory = valueFactories.getNameFactory();
         ValueFactory<String> stringFactory = valueFactories.getStringFactory();
 

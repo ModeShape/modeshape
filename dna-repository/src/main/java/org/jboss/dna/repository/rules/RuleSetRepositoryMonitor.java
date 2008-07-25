@@ -42,7 +42,7 @@ import org.jboss.dna.repository.observation.NodeChange;
 import org.jboss.dna.repository.observation.NodeChangeListener;
 import org.jboss.dna.repository.observation.NodeChanges;
 import org.jboss.dna.repository.observation.ObservationService;
-import org.jboss.dna.repository.util.ExecutionContext;
+import org.jboss.dna.repository.util.JcrExecutionContext;
 import org.jboss.dna.repository.util.JcrTools;
 
 /**
@@ -64,7 +64,7 @@ public class RuleSetRepositoryMonitor implements NodeChangeListener {
 
     protected static final String JCR_PATH_DELIM = "/";
 
-    private final ExecutionContext executionContext;
+    private final JcrExecutionContext executionContext;
     private final RuleService ruleService;
     private final String jcrAbsolutePath;
     private final Pattern ruleSetNamePattern;
@@ -84,7 +84,7 @@ public class RuleSetRepositoryMonitor implements NodeChangeListener {
      */
     public RuleSetRepositoryMonitor( RuleService ruleService,
                                      String jcrAbsolutePath,
-                                     ExecutionContext executionContext ) {
+                                     JcrExecutionContext executionContext ) {
         ArgCheck.isNotNull(ruleService, "rule service");
         ArgCheck.isNotNull(executionContext, "execution context");
         this.ruleService = ruleService;

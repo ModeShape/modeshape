@@ -31,8 +31,8 @@ import org.jboss.dna.common.util.ArgCheck;
 import org.jboss.dna.common.util.Logger;
 import org.jboss.dna.common.util.StringUtil;
 import org.jboss.dna.connector.federation.Projection.Rule;
+import org.jboss.dna.spi.ExecutionContext;
 import org.jboss.dna.spi.graph.NamespaceRegistry;
-import org.jboss.dna.spi.graph.connection.ExecutionEnvironment;
 
 /**
  * A parser library for {@link Projection projections} and {@link Projection.Rule projection rules}.
@@ -71,8 +71,8 @@ public class ProjectionParser {
     /**
      * Add a static method that can be used to parse {@link Rule#getString(NamespaceRegistry, TextEncoder) rule definition
      * strings}. These methods must be static, must accept a {@link String} definition as the first parameter and an
-     * {@link ExecutionEnvironment} environment reference as the second parameter, and should return the resulting {@link Rule}
-     * (or null if the definition format could not be understood by the method. Any exceptions during
+     * {@link ExecutionContext} environment reference as the second parameter, and should return the resulting {@link Rule} (or
+     * null if the definition format could not be understood by the method. Any exceptions during
      * {@link Method#invoke(Object, Object...) invocation} will be logged at the
      * {@link Logger#trace(Throwable, String, Object...) trace} level.
      * 
@@ -86,8 +86,8 @@ public class ProjectionParser {
     /**
      * Add a static method that can be used to parse {@link Rule#getString(NamespaceRegistry, TextEncoder) rule definition
      * strings}. These methods must be static, must accept a {@link String} definition as the first parameter and an
-     * {@link ExecutionEnvironment} environment reference as the second parameter, and should return the resulting {@link Rule}
-     * (or null if the definition format could not be understood by the method. Any exceptions during
+     * {@link ExecutionContext} environment reference as the second parameter, and should return the resulting {@link Rule} (or
+     * null if the definition format could not be understood by the method. Any exceptions during
      * {@link Method#invoke(Object, Object...) invocation} will be logged at the
      * {@link Logger#trace(Throwable, String, Object...) trace} level.
      * 
@@ -103,14 +103,14 @@ public class ProjectionParser {
                                String methodName ) throws SecurityException, NoSuchMethodException {
         ArgCheck.isNotNull(clazz, "clazz");
         ArgCheck.isNotEmpty(methodName, "methodName");
-        parserMethods.add(clazz.getMethod(methodName, String.class, ExecutionEnvironment.class));
+        parserMethods.add(clazz.getMethod(methodName, String.class, ExecutionContext.class));
     }
 
     /**
      * Add a static method that can be used to parse {@link Rule#getString(NamespaceRegistry, TextEncoder) rule definition
      * strings}. These methods must be static, must accept a {@link String} definition as the first parameter and an
-     * {@link ExecutionEnvironment} environment reference as the second parameter, and should return the resulting {@link Rule}
-     * (or null if the definition format could not be understood by the method. Any exceptions during
+     * {@link ExecutionContext} environment reference as the second parameter, and should return the resulting {@link Rule} (or
+     * null if the definition format could not be understood by the method. Any exceptions during
      * {@link Method#invoke(Object, Object...) invocation} will be logged at the
      * {@link Logger#trace(Throwable, String, Object...) trace} level.
      * 
@@ -131,7 +131,7 @@ public class ProjectionParser {
         ArgCheck.isNotEmpty(className, "className");
         ArgCheck.isNotEmpty(methodName, "methodName");
         Class<?> clazz = Class.forName(className, true, classLoader);
-        parserMethods.add(clazz.getMethod(methodName, String.class, ExecutionEnvironment.class));
+        parserMethods.add(clazz.getMethod(methodName, String.class, ExecutionContext.class));
     }
 
     /**
@@ -176,17 +176,17 @@ public class ProjectionParser {
      * Parse the string form of a rule definition and return the rule
      * 
      * @param definition the definition of the rule that is to be parsed
-     * @param env the environment in which this method is being executed; may not be null
+     * @param context the environment in which this method is being executed; may not be null
      * @return the rule, or null if the definition could not be parsed
      */
     public Rule ruleFromString( String definition,
-                                ExecutionEnvironment env ) {
-        ArgCheck.isNotNull(env, "env");
+                                ExecutionContext context ) {
+        ArgCheck.isNotNull(context, "env");
         definition = definition != null ? definition.trim() : "";
         if (definition.length() == 0) return null;
         for (Method method : parserMethods) {
             try {
-                Rule rule = (Rule)method.invoke(null, definition, env);
+                Rule rule = (Rule)method.invoke(null, definition, context);
                 if (rule != null) {
                     if (logger.isTraceEnabled()) {
                         String msg = "Success parsing project rule definition \"{0}\" using {1}";
@@ -208,15 +208,15 @@ public class ProjectionParser {
     /**
      * Parse string forms of an arry of rule definitions and return the rules
      * 
-     * @param env the environment in which this method is being executed; may not be null
+     * @param context the environment in which this method is being executed; may not be null
      * @param definitions the definition of the rules that are to be parsed
      * @return the rule, or null if the definition could not be parsed
      */
-    public Rule[] rulesFromStrings( ExecutionEnvironment env,
+    public Rule[] rulesFromStrings( ExecutionContext context,
                                     String... definitions ) {
         List<Rule> rules = new LinkedList<Rule>();
         for (String definition : definitions) {
-            Rule rule = ruleFromString(definition, env);
+            Rule rule = ruleFromString(definition, context);
             if (rule != null) rules.add(rule);
         }
         return rules.toArray(new Rule[rules.size()]);
@@ -226,16 +226,16 @@ public class ProjectionParser {
      * Parse a single string containing one or more string forms of rule definitions, and return the rules. The string contains
      * each rule on a separate line.
      * 
-     * @param env the environment in which this method is being executed; may not be null
+     * @param context the environment in which this method is being executed; may not be null
      * @param definitions the definitions of the rules that are to be parsed, each definition separated by a newline character.
      * @return the rule, or null if the definition could not be parsed
      */
-    public Rule[] rulesFromString( ExecutionEnvironment env,
+    public Rule[] rulesFromString( ExecutionContext context,
                                    String definitions ) {
         List<String> lines = StringUtil.splitLines(definitions);
         List<Rule> rules = new LinkedList<Rule>();
         for (String definition : lines) {
-            Rule rule = ruleFromString(definition, env);
+            Rule rule = ruleFromString(definition, context);
             if (rule != null) rules.add(rule);
         }
         return rules.toArray(new Rule[rules.size()]);

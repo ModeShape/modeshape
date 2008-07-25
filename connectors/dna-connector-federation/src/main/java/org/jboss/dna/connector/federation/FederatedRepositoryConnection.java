@@ -25,10 +25,10 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import javax.transaction.xa.XAResource;
 import net.jcip.annotations.ThreadSafe;
+import org.jboss.dna.spi.ExecutionContext;
 import org.jboss.dna.spi.cache.CachePolicy;
 import org.jboss.dna.spi.graph.commands.GraphCommand;
 import org.jboss.dna.spi.graph.commands.executor.CommandExecutor;
-import org.jboss.dna.spi.graph.connection.ExecutionEnvironment;
 import org.jboss.dna.spi.graph.connection.RepositoryConnection;
 import org.jboss.dna.spi.graph.connection.RepositorySourceException;
 import org.jboss.dna.spi.graph.connection.RepositorySourceListener;
@@ -111,14 +111,14 @@ public class FederatedRepositoryConnection implements RepositoryConnection {
     /**
      * {@inheritDoc}
      */
-    public void execute( ExecutionEnvironment env,
+    public void execute( ExecutionContext context,
                          GraphCommand... commands ) throws RepositorySourceException, InterruptedException {
         if (!this.repository.isRunning()) {
             throw new RepositorySourceException(FederationI18n.repositoryHasBeenShutDown.text(this.repository.getName()));
         }
         if (commands == null || commands.length == 0) return;
 
-        CommandExecutor executor = this.repository.getExecutor(env, sourceName);
+        CommandExecutor executor = this.repository.getExecutor(context, sourceName);
         assert executor != null;
         for (GraphCommand command : commands) {
             executor.execute(command);

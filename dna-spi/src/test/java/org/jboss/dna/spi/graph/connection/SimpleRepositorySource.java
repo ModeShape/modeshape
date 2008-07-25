@@ -29,6 +29,7 @@ import java.util.concurrent.TimeUnit;
 import javax.naming.Reference;
 import javax.transaction.xa.XAResource;
 import net.jcip.annotations.ThreadSafe;
+import org.jboss.dna.spi.ExecutionContext;
 import org.jboss.dna.spi.cache.CachePolicy;
 import org.jboss.dna.spi.graph.InvalidPathException;
 import org.jboss.dna.spi.graph.Name;
@@ -158,28 +159,28 @@ public class SimpleRepositorySource extends AbstractRepositorySource {
         /**
          * {@inheritDoc}
          * 
-         * @see org.jboss.dna.spi.graph.connection.RepositoryConnection#execute(org.jboss.dna.spi.graph.connection.ExecutionEnvironment,
+         * @see org.jboss.dna.spi.graph.connection.RepositoryConnection#execute(org.jboss.dna.spi.ExecutionContext,
          *      org.jboss.dna.spi.graph.commands.GraphCommand[])
          */
-        public void execute( ExecutionEnvironment env,
+        public void execute( ExecutionContext context,
                              GraphCommand... commands ) throws RepositorySourceException {
-            assert env != null;
+            assert context != null;
             if (repository.isShutdown()) {
                 throw new RepositorySourceException(getName(), "The repository \"" + repository.getRepositoryName()
                                                                + "\" is no longer available");
             }
             for (GraphCommand command : commands) {
-                executeCommand(env, command);
+                executeCommand(context, command);
             }
         }
 
-        protected void executeCommand( ExecutionEnvironment env,
+        protected void executeCommand( ExecutionContext context,
                                        GraphCommand command ) {
             if (command == null) return;
             if (command instanceof CompositeCommand) {
                 CompositeCommand composite = (CompositeCommand)command;
                 for (GraphCommand nestedCommand : composite) {
-                    executeCommand(env, nestedCommand);
+                    executeCommand(context, nestedCommand);
                 }
             }
             Map<Path, Map<Name, Property>> data = repository.getData();

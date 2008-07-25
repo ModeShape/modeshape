@@ -35,7 +35,7 @@ import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.util.ArgCheck;
 import org.jboss.dna.repository.RepositoryI18n;
 import org.jboss.dna.repository.mimetype.MimeType;
-import org.jboss.dna.repository.util.ExecutionContext;
+import org.jboss.dna.repository.util.JcrExecutionContext;
 import org.jboss.dna.spi.graph.Name;
 import org.jboss.dna.spi.graph.NamespaceRegistry;
 import org.jboss.dna.spi.graph.Path;
@@ -60,7 +60,7 @@ public class SequencerNodeContext implements SequencerContext {
 
     SequencerNodeContext( Node input,
                           javax.jcr.Property sequencedProperty,
-                          ExecutionContext context ) throws RepositoryException {
+                          JcrExecutionContext context ) throws RepositoryException {
         assert input != null;
         assert sequencedProperty != null;
         assert context != null;

@@ -47,10 +47,10 @@ import org.jboss.dna.common.SystemFailureException;
 import org.jboss.dna.repository.observation.ObservationService;
 import org.jboss.dna.repository.sequencers.SequencerConfig;
 import org.jboss.dna.repository.sequencers.SequencingService;
-import org.jboss.dna.repository.util.ExecutionContext;
+import org.jboss.dna.repository.util.JcrExecutionContext;
 import org.jboss.dna.repository.util.JcrTools;
 import org.jboss.dna.repository.util.SessionFactory;
-import org.jboss.dna.repository.util.SimpleExecutionContext;
+import org.jboss.dna.repository.util.BasicJcrExecutionContext;
 import org.jboss.dna.repository.util.SimpleSessionFactory;
 
 /**
@@ -82,7 +82,7 @@ public class SequencingClient {
     private SequencingService sequencingService;
     private ObservationService observationService;
     private UserInterface userInterface;
-    private ExecutionContext executionContext;
+    private JcrExecutionContext executionContext;
 
     public SequencingClient() {
         setJackrabbitConfigPath(DEFAULT_JACKRABBIT_CONFIG_PATH);
@@ -208,7 +208,7 @@ public class SequencingClient {
 
             // Create an execution context for the sequencing service. This execution context provides an environment
             // for the DNA services which knows about the JCR repositories, workspaces, and credentials used to
-            // establish sessions to these workspaces. This example uses the SimpleExecutionContext, but there is
+            // establish sessions to these workspaces. This example uses the BasicJcrExecutionContext, but there is
             // implementation for use with JCR repositories registered in JNDI.
             final String repositoryWorkspaceName = this.repositoryName + "/" + this.workspaceName;
             SimpleSessionFactory sessionFactory = new SimpleSessionFactory();
@@ -217,7 +217,7 @@ public class SequencingClient {
                 Credentials credentials = new SimpleCredentials(this.username, this.password);
                 sessionFactory.registerCredentials(repositoryWorkspaceName, credentials);
             }
-            this.executionContext = new SimpleExecutionContext(sessionFactory, repositoryWorkspaceName);
+            this.executionContext = new BasicJcrExecutionContext(sessionFactory, repositoryWorkspaceName);
 
             // Create the sequencing service, passing in the execution context ...
             this.sequencingService = new SequencingService();

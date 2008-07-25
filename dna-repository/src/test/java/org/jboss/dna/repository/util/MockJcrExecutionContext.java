@@ -32,9 +32,9 @@ import org.jboss.dna.common.jcr.AbstractJcrRepositoryTest;
 /**
  * @author Randall Hauch
  */
-public class MockExecutionContext extends SimpleExecutionContext {
+public class MockJcrExecutionContext extends BasicJcrExecutionContext {
 
-    public MockExecutionContext( final AbstractJcrRepositoryTest test, final String repositoryName ) {
+    public MockJcrExecutionContext( final AbstractJcrRepositoryTest test, final String repositoryName ) {
         super(new SessionFactory() {
 
             public Session createSession( String name ) throws RepositoryException {

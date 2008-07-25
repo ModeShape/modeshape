@@ -21,7 +21,9 @@
  */
 package org.jboss.dna.spi.graph.connection;
 
+import javax.security.auth.Subject;
 import org.jboss.dna.common.util.ArgCheck;
+import org.jboss.dna.spi.ExecutionContext;
 import org.jboss.dna.spi.graph.NamespaceRegistry;
 import org.jboss.dna.spi.graph.PropertyFactory;
 import org.jboss.dna.spi.graph.ValueFactories;
@@ -32,24 +34,43 @@ import org.jboss.dna.spi.graph.impl.StandardValueFactories;
 /**
  * @author Randall Hauch
  */
-public class BasicExecutionEnvironment implements ExecutionEnvironment {
+public class BasicExecutionContext implements ExecutionContext {
 
+    private final Subject subject;
     private final PropertyFactory propertyFactory;
     private final ValueFactories valueFactories;
     private final NamespaceRegistry namespaceRegistry;
 
-    public BasicExecutionEnvironment() {
-        this(new BasicNamespaceRegistry());
+    public BasicExecutionContext() {
+        this(new Subject(), new BasicNamespaceRegistry());
     }
 
-    public BasicExecutionEnvironment( NamespaceRegistry namespaceRegistry ) {
-        this(namespaceRegistry, null, null);
+    public BasicExecutionContext( NamespaceRegistry namespaceRegistry ) {
+        this(new Subject(), namespaceRegistry, null, null);
     }
 
-    public BasicExecutionEnvironment( NamespaceRegistry namespaceRegistry,
-                                      ValueFactories valueFactories,
-                                      PropertyFactory propertyFactory ) {
+    public BasicExecutionContext( NamespaceRegistry namespaceRegistry,
+                                  ValueFactories valueFactories,
+                                  PropertyFactory propertyFactory ) {
+        this(new Subject(), namespaceRegistry, valueFactories, propertyFactory);
+    }
+
+    public BasicExecutionContext( Subject subject ) {
+        this(subject, new BasicNamespaceRegistry());
+    }
+
+    public BasicExecutionContext( Subject subject,
+                                  NamespaceRegistry namespaceRegistry ) {
+        this(subject, namespaceRegistry, null, null);
+    }
+
+    public BasicExecutionContext( Subject subject,
+                                  NamespaceRegistry namespaceRegistry,
+                                  ValueFactories valueFactories,
+                                  PropertyFactory propertyFactory ) {
+        ArgCheck.isNotNull(subject, "subject");
         ArgCheck.isNotNull(namespaceRegistry, "namespace registry");
+        this.subject = subject;
         this.namespaceRegistry = namespaceRegistry;
         this.valueFactories = valueFactories != null ? valueFactories : new StandardValueFactories(this.namespaceRegistry);
         this.propertyFactory = propertyFactory != null ? propertyFactory : new BasicPropertyFactory(this.valueFactories);
@@ -74,5 +95,14 @@ public class BasicExecutionEnvironment implements ExecutionEnvironment {
      */
     public PropertyFactory getPropertyFactory() {
         return this.propertyFactory;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.spi.ExecutionContext#getSubject()
+     */
+    public Subject getSubject() {
+        return this.subject;
     }
 }

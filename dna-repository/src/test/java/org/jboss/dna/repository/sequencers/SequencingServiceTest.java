@@ -35,8 +35,8 @@ import javax.jcr.observation.Event;
 import org.jboss.dna.common.jcr.AbstractJcrRepositoryTest;
 import org.jboss.dna.repository.observation.ObservationService;
 import org.jboss.dna.repository.services.ServiceAdministrator;
-import org.jboss.dna.repository.util.ExecutionContext;
-import org.jboss.dna.repository.util.MockExecutionContext;
+import org.jboss.dna.repository.util.JcrExecutionContext;
+import org.jboss.dna.repository.util.MockJcrExecutionContext;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -52,11 +52,11 @@ public class SequencingServiceTest extends AbstractJcrRepositoryTest {
 
     private ObservationService observationService;
     private SequencingService sequencingService;
-    private ExecutionContext executionContext;
+    private JcrExecutionContext executionContext;
 
     @Before
     public void beforeEach() {
-        this.executionContext = new MockExecutionContext(this, REPOSITORY_WORKSPACE_NAME);
+        this.executionContext = new MockJcrExecutionContext(this, REPOSITORY_WORKSPACE_NAME);
         this.sequencingService = new SequencingService();
         this.sequencingService.setExecutionContext(this.executionContext);
         this.observationService = new ObservationService(this.executionContext.getSessionFactory());

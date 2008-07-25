@@ -19,37 +19,31 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.jboss.dna.spi.graph.connection;
+package org.jboss.dna.repository.util;
 
-import org.jboss.dna.spi.graph.NamespaceRegistry;
-import org.jboss.dna.spi.graph.Property;
-import org.jboss.dna.spi.graph.PropertyFactory;
-import org.jboss.dna.spi.graph.ValueFactories;
+import javax.jcr.Session;
+import org.jboss.dna.spi.ExecutionContext;
 
 /**
+ * The context of an execution within a JCR environment.
+ * 
  * @author Randall Hauch
  */
-public interface ExecutionEnvironment {
+public interface JcrExecutionContext extends ExecutionContext {
 
     /**
-     * Get the factories that should be used to create values for {@link Property properties}.
+     * Get the session factory, which can be used to obtain sessions temporarily for this context. Any session obtained from this
+     * factory should be {@link Session#logout() closed} before the execution finishes.
      * 
-     * @return the property value factory; never null
+     * @return the session factory
      */
-    ValueFactories getValueFactories();
+    SessionFactory getSessionFactory();
 
     /**
-     * Get the namespace registry for this environment.
+     * Get a set of utilities for working with JCR.
      * 
-     * @return the namespace registry; never null
+     * @return the tools
      */
-    NamespaceRegistry getNamespaceRegistry();
-
-    /**
-     * Get the factory for creating {@link Property} objects.
-     * 
-     * @return the property factory; never null
-     */
-    PropertyFactory getPropertyFactory();
+    JcrTools getTools();
 
 }

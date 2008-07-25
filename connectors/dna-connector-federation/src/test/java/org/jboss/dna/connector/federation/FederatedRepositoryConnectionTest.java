@@ -29,9 +29,9 @@ import static org.mockito.Mockito.stub;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import java.util.concurrent.TimeUnit;
+import org.jboss.dna.spi.ExecutionContext;
 import org.jboss.dna.spi.graph.commands.GraphCommand;
 import org.jboss.dna.spi.graph.commands.executor.CommandExecutor;
-import org.jboss.dna.spi.graph.connection.ExecutionEnvironment;
 import org.jboss.dna.spi.graph.connection.RepositorySourceException;
 import org.jboss.dna.spi.graph.connection.RepositorySourceListener;
 import org.junit.Before;
@@ -79,28 +79,28 @@ public class FederatedRepositoryConnectionTest {
     @Test( expected = RepositorySourceException.class )
     public void shouldFailExecutionIfRepositoryAdminsIsNotStarted() throws Exception {
         stub(repository.isRunning()).toReturn(false);
-        ExecutionEnvironment env = mock(ExecutionEnvironment.class);
+        ExecutionContext context = mock(ExecutionContext.class);
         GraphCommand command = mock(GraphCommand.class);
-        connection.execute(env, command);
+        connection.execute(context, command);
     }
 
     @Test
     public void shouldReturnImmediatelyWhenExecutingNullOrEmptyCommandArray() throws Exception {
         stub(repository.isRunning()).toReturn(true);
-        ExecutionEnvironment env = mock(ExecutionEnvironment.class);
-        connection.execute(env, (GraphCommand[])null);
+        ExecutionContext context = mock(ExecutionContext.class);
+        connection.execute(context, (GraphCommand[])null);
         verify(repository, times(1)).isRunning();
-        connection.execute(env, new GraphCommand[0]);
+        connection.execute(context, new GraphCommand[0]);
         verify(repository, times(2)).isRunning();
     }
 
     @Test
     public void shouldSkipNullCommandReferencesWhenExecuting() throws Exception {
         stub(repository.isRunning()).toReturn(true);
-        ExecutionEnvironment env = mock(ExecutionEnvironment.class);
+        ExecutionContext context = mock(ExecutionContext.class);
         CommandExecutor executor = mock(CommandExecutor.class);
-        stub(repository.getExecutor(env, sourceName)).toReturn(executor);
-        connection.execute(env, new GraphCommand[] {null, null, null});
+        stub(repository.getExecutor(context, sourceName)).toReturn(executor);
+        connection.execute(context, new GraphCommand[] {null, null, null});
         verify(repository, times(1)).isRunning();
     }
 

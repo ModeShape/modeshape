@@ -26,11 +26,10 @@ import static org.junit.Assert.assertThat;
 import static org.junit.matchers.JUnitMatchers.hasItems;
 import static org.mockito.Mockito.stub;
 import java.util.Set;
-import org.jboss.dna.connector.federation.Projection;
+import org.jboss.dna.spi.ExecutionContext;
 import org.jboss.dna.spi.graph.Path;
 import org.jboss.dna.spi.graph.PathFactory;
-import org.jboss.dna.spi.graph.connection.BasicExecutionEnvironment;
-import org.jboss.dna.spi.graph.connection.ExecutionEnvironment;
+import org.jboss.dna.spi.graph.connection.BasicExecutionContext;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.MockitoAnnotations;
@@ -41,7 +40,7 @@ import org.mockito.MockitoAnnotations.Mock;
  */
 public class ProjectionTest {
 
-    private ExecutionEnvironment env;
+    private ExecutionContext context;
     private String sourceName;
     private Projection.Rule[] rules;
     private Projection projection;
@@ -56,8 +55,8 @@ public class ProjectionTest {
     @Before
     public void beforeEach() {
         MockitoAnnotations.initMocks(this);
-        env = new BasicExecutionEnvironment();
-        pathFactory = env.getValueFactories().getPathFactory();
+        context = new BasicExecutionContext();
+        pathFactory = context.getValueFactories().getPathFactory();
         sourceName = "Valid name";
         rules = new Projection.Rule[] {mockRule1, mockRule2, mockRule3};
         projection = new Projection(sourceName, rules);

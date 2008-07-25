@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.concurrent.Callable;
 import org.jboss.dna.common.util.ArgCheck;
 import org.jboss.dna.common.util.LogContext;
+import org.jboss.dna.spi.ExecutionContext;
 
 /**
  * @author Randall Hauch
@@ -37,18 +38,18 @@ public class RepositoryOperations {
      * Call the supplied operation, using a connection from this pool.
      * 
      * @param <T> the return type for the operation
-     * @param env the environment in which the operation is to execute; may not be null
+     * @param context the context in which the operation is to execute; may not be null
      * @param connectionFactory the factory for the connection to use
      * @param operation the operation to be run using a new connection obtained from the factory
      * @return the results from the operation
      * @throws RepositorySourceException if there was an error obtaining the new connection
      * @throws InterruptedException if the thread was interrupted during the operation
      * @throws IllegalArgumentException if the operation is null
-     * @see #createCallable(ExecutionEnvironment, RepositoryConnectionFactory, RepositoryOperation)
-     * @see #createCallables(ExecutionEnvironment, RepositoryConnectionFactory, Iterable)
-     * @see #createCallables(ExecutionEnvironment, RepositoryConnectionFactory, RepositoryOperation...)
+     * @see #createCallable(ExecutionContext, RepositoryConnectionFactory, RepositoryOperation)
+     * @see #createCallables(ExecutionContext, RepositoryConnectionFactory, Iterable)
+     * @see #createCallables(ExecutionContext, RepositoryConnectionFactory, RepositoryOperation...)
      */
-    public static <T> T call( ExecutionEnvironment env,
+    public static <T> T call( ExecutionContext context,
                               RepositoryConnectionFactory connectionFactory,
                               RepositoryOperation<T> operation ) throws RepositorySourceException, InterruptedException {
         ArgCheck.isNotNull(operation, "repository operation");
@@ -58,7 +59,7 @@ public class RepositoryOperations {
         RepositoryConnection conn = connectionFactory.getConnection();
         try {
             // And run the client with the connection ...
-            result = operation.run(env, conn);
+            result = operation.run(context, conn);
         } finally {
             conn.close();
         }
@@ -71,15 +72,15 @@ public class RepositoryOperations {
      * supplied factory.
      * 
      * @param <T> the return type for the operation
-     * @param env the environment in which the operation is to execute; may not be null
+     * @param context the context in which the operation is to execute; may not be null
      * @param connectionFactory the factory for the connection to use
      * @param operation the operation to be run using a new connection obtained from the factory
      * @return the callable
-     * @see #call(ExecutionEnvironment, RepositoryConnectionFactory, RepositoryOperation)
-     * @see #createCallables(ExecutionEnvironment, RepositoryConnectionFactory, Iterable)
-     * @see #createCallables(ExecutionEnvironment, RepositoryConnectionFactory, RepositoryOperation...)
+     * @see #call(ExecutionContext, RepositoryConnectionFactory, RepositoryOperation)
+     * @see #createCallables(ExecutionContext, RepositoryConnectionFactory, Iterable)
+     * @see #createCallables(ExecutionContext, RepositoryConnectionFactory, RepositoryOperation...)
      */
-    public static <T> Callable<T> createCallable( final ExecutionEnvironment env,
+    public static <T> Callable<T> createCallable( final ExecutionContext context,
                                                   final RepositoryConnectionFactory connectionFactory,
                                                   final RepositoryOperation<T> operation ) {
         ArgCheck.isNotNull(operation, "repository operation");
@@ -92,7 +93,7 @@ public class RepositoryOperations {
              * @throws Exception
              */
             public T call() throws Exception {
-                return RepositoryOperations.call(env, connectionFactory, operation);
+                return RepositoryOperations.call(context, connectionFactory, operation);
             }
         };
     }
@@ -102,20 +103,20 @@ public class RepositoryOperations {
      * this pool.
      * 
      * @param <T> the return type for the operations
-     * @param env the environment in which the operation is to execute; may not be null
+     * @param context the context in which the operation is to execute; may not be null
      * @param connectionFactory the factory for the connection to use
      * @param operations the operations to be run using connections from the factory
      * @return the collection of callables
-     * @see #call(ExecutionEnvironment, RepositoryConnectionFactory, RepositoryOperation)
-     * @see #createCallable(ExecutionEnvironment, RepositoryConnectionFactory, RepositoryOperation)
-     * @see #createCallables(ExecutionEnvironment, RepositoryConnectionFactory, Iterable)
+     * @see #call(ExecutionContext, RepositoryConnectionFactory, RepositoryOperation)
+     * @see #createCallable(ExecutionContext, RepositoryConnectionFactory, RepositoryOperation)
+     * @see #createCallables(ExecutionContext, RepositoryConnectionFactory, Iterable)
      */
-    public static <T> List<Callable<T>> createCallables( final ExecutionEnvironment env,
+    public static <T> List<Callable<T>> createCallables( final ExecutionContext context,
                                                          final RepositoryConnectionFactory connectionFactory,
                                                          final RepositoryOperation<T>... operations ) {
         List<Callable<T>> callables = new ArrayList<Callable<T>>();
         for (final RepositoryOperation<T> operation : operations) {
-            callables.add(createCallable(env, connectionFactory, operation));
+            callables.add(createCallable(context, connectionFactory, operation));
         }
         return callables;
     }
@@ -125,20 +126,20 @@ public class RepositoryOperations {
      * this pool.
      * 
      * @param <T> the return type for the operations
-     * @param env the environment in which the operation is to execute; may not be null
+     * @param context the context in which the operation is to execute; may not be null
      * @param connectionFactory the factory for the connection to use
      * @param operations the operations to be run using connections from the factory
      * @return the collection of callables
-     * @see #call(ExecutionEnvironment, RepositoryConnectionFactory, RepositoryOperation)
-     * @see #createCallable(ExecutionEnvironment, RepositoryConnectionFactory, RepositoryOperation)
-     * @see #createCallables(ExecutionEnvironment, RepositoryConnectionFactory, RepositoryOperation...)
+     * @see #call(ExecutionContext, RepositoryConnectionFactory, RepositoryOperation)
+     * @see #createCallable(ExecutionContext, RepositoryConnectionFactory, RepositoryOperation)
+     * @see #createCallables(ExecutionContext, RepositoryConnectionFactory, RepositoryOperation...)
      */
-    public static <T> List<Callable<T>> createCallables( final ExecutionEnvironment env,
+    public static <T> List<Callable<T>> createCallables( final ExecutionContext context,
                                                          final RepositoryConnectionFactory connectionFactory,
                                                          Iterable<RepositoryOperation<T>> operations ) {
         List<Callable<T>> callables = new ArrayList<Callable<T>>();
         for (final RepositoryOperation<T> operation : operations) {
-            callables.add(createCallable(env, connectionFactory, operation));
+            callables.add(createCallable(context, connectionFactory, operation));
         }
         return callables;
     }
@@ -148,21 +149,21 @@ public class RepositoryOperations {
      * this pool.
      * 
      * @param <T> the return type for the operations
-     * @param env the environment in which the operation is to execute; may not be null
+     * @param context the context in which the operation is to execute; may not be null
      * @param connectionFactory the factory for the connection to use
      * @param operations the operations to be run using connections from the factory
      * @return the collection of callables
-     * @see #call(ExecutionEnvironment, RepositoryConnectionFactory, RepositoryOperation)
-     * @see #createCallable(ExecutionEnvironment, RepositoryConnectionFactory, RepositoryOperation)
-     * @see #createCallables(ExecutionEnvironment, RepositoryConnectionFactory, RepositoryOperation...)
+     * @see #call(ExecutionContext, RepositoryConnectionFactory, RepositoryOperation)
+     * @see #createCallable(ExecutionContext, RepositoryConnectionFactory, RepositoryOperation)
+     * @see #createCallables(ExecutionContext, RepositoryConnectionFactory, RepositoryOperation...)
      */
-    public static <T> List<Callable<T>> createCallables( final ExecutionEnvironment env,
+    public static <T> List<Callable<T>> createCallables( final ExecutionContext context,
                                                          final RepositoryConnectionFactory connectionFactory,
                                                          Iterator<RepositoryOperation<T>> operations ) {
         List<Callable<T>> callables = new ArrayList<Callable<T>>();
         while (operations.hasNext()) {
             final RepositoryOperation<T> operation = operations.next();
-            callables.add(createCallable(env, connectionFactory, operation));
+            callables.add(createCallable(context, connectionFactory, operation));
         }
         return callables;
     }

@@ -34,6 +34,7 @@ import org.jboss.dna.connector.federation.FederationI18n;
 import org.jboss.dna.connector.federation.Projection;
 import org.jboss.dna.connector.federation.contribution.Contribution;
 import org.jboss.dna.connector.federation.merge.BasicMergePlan;
+import org.jboss.dna.spi.ExecutionContext;
 import org.jboss.dna.spi.graph.Binary;
 import org.jboss.dna.spi.graph.DateTime;
 import org.jboss.dna.spi.graph.Name;
@@ -46,7 +47,6 @@ import org.jboss.dna.spi.graph.commands.GetPropertiesCommand;
 import org.jboss.dna.spi.graph.commands.executor.AbstractCommandExecutor;
 import org.jboss.dna.spi.graph.commands.impl.BasicGetNodeCommand;
 import org.jboss.dna.spi.graph.commands.impl.BasicGetPropertiesCommand;
-import org.jboss.dna.spi.graph.connection.ExecutionEnvironment;
 import org.jboss.dna.spi.graph.connection.RepositoryConnection;
 import org.jboss.dna.spi.graph.connection.RepositoryConnectionFactories;
 import org.jboss.dna.spi.graph.connection.RepositoryConnectionFactory;
@@ -72,20 +72,19 @@ public class FederatingCommandExecutor extends AbstractCommandExecutor {
     /**
      * Create a command executor that federates (merges) the information from multiple sources described by the source
      * projections. The resulting command executor does not first consult a cache for the merged information; if a cache is
-     * desired, see
-     * {@link #FederatingCommandExecutor(ExecutionEnvironment, String, Projection, List, RepositoryConnectionFactories)
+     * desired, see {@link #FederatingCommandExecutor(ExecutionContext, String, Projection, List, RepositoryConnectionFactories)
      * constructor} that takes a {@link Projection cache projection}.
      * 
-     * @param env the execution environment in which the executor will be run; may not be null
+     * @param context the execution context in which the executor will be run; may not be null
      * @param sourceName the name of the {@link RepositorySource} that is making use of this executor; may not be null or empty
      * @param sourceProjections the source projections; may not be null
      * @param connectionFactories the factory for connection factory instances
      */
-    public FederatingCommandExecutor( ExecutionEnvironment env,
+    public FederatingCommandExecutor( ExecutionContext context,
                                       String sourceName,
                                       List<Projection> sourceProjections,
                                       RepositoryConnectionFactories connectionFactories ) {
-        this(env, sourceName, null, sourceProjections, connectionFactories);
+        this(context, sourceName, null, sourceProjections, connectionFactories);
     }
 
     /**
@@ -95,25 +94,25 @@ public class FederatingCommandExecutor extends AbstractCommandExecutor {
      * how the paths are mapped in the cache. This cache will be consulted first for the requested information, and will be kept
      * up to date as changes are made to the federated information.
      * 
-     * @param env the execution environment in which the executor will be run; may not be null
+     * @param context the execution context in which the executor will be run; may not be null
      * @param sourceName the name of the {@link RepositorySource} that is making use of this executor; may not be null or empty
      * @param cacheProjection the projection used for the cached information; may be null if there is no cache
      * @param sourceProjections the source projections; may not be null
      * @param connectionFactories the factory for connection factory instances
      */
-    public FederatingCommandExecutor( ExecutionEnvironment env,
+    public FederatingCommandExecutor( ExecutionContext context,
                                       String sourceName,
                                       Projection cacheProjection,
                                       List<Projection> sourceProjections,
                                       RepositoryConnectionFactories connectionFactories ) {
-        super(env, sourceName);
+        super(context, sourceName);
         assert sourceProjections != null;
         assert connectionFactories != null;
         this.cacheProjection = cacheProjection;
         this.sourceProjections = sourceProjections;
         this.connectionFactories = connectionFactories;
         this.connectionsBySourceName = new HashMap<String, RepositoryConnection>();
-        this.mergePlanPropertyName = env.getValueFactories().getNameFactory().create("dna:mergePlan");
+        this.mergePlanPropertyName = context.getValueFactories().getNameFactory().create("dna:mergePlan");
         this.sourceNames = new HashSet<String>();
     }
 

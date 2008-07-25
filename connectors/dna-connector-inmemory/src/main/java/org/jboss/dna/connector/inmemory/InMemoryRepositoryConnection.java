@@ -24,11 +24,11 @@ package org.jboss.dna.connector.inmemory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import javax.transaction.xa.XAResource;
+import org.jboss.dna.spi.ExecutionContext;
 import org.jboss.dna.spi.cache.CachePolicy;
 import org.jboss.dna.spi.graph.commands.ActsAsUpdate;
 import org.jboss.dna.spi.graph.commands.GraphCommand;
 import org.jboss.dna.spi.graph.commands.executor.CommandExecutor;
-import org.jboss.dna.spi.graph.connection.ExecutionEnvironment;
 import org.jboss.dna.spi.graph.connection.RepositoryConnection;
 import org.jboss.dna.spi.graph.connection.RepositorySourceException;
 import org.jboss.dna.spi.graph.connection.RepositorySourceListener;
@@ -111,7 +111,7 @@ public class InMemoryRepositoryConnection implements RepositoryConnection {
      * @throws InterruptedException
      * @throws RepositorySourceException
      */
-    public void execute( ExecutionEnvironment env,
+    public void execute( ExecutionContext context,
                          GraphCommand... commands ) throws RepositorySourceException, InterruptedException {
         // Do any commands update/write?
         Lock lock = this.content.getLock().readLock();
@@ -124,7 +124,7 @@ public class InMemoryRepositoryConnection implements RepositoryConnection {
 
         try {
             // Obtain the lock and execute the commands ...
-            CommandExecutor executor = this.content.getCommandExecutor(env, this.getSourceName());
+            CommandExecutor executor = this.content.getCommandExecutor(context, this.getSourceName());
             lock.lock();
             for (GraphCommand command : commands) {
                 executor.execute(command);

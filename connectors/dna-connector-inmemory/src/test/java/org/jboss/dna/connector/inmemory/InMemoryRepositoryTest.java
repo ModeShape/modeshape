@@ -32,6 +32,7 @@ import static org.mockito.Mockito.stub;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
+import org.jboss.dna.spi.ExecutionContext;
 import org.jboss.dna.spi.graph.Name;
 import org.jboss.dna.spi.graph.NameFactory;
 import org.jboss.dna.spi.graph.PathFactory;
@@ -39,7 +40,6 @@ import org.jboss.dna.spi.graph.Property;
 import org.jboss.dna.spi.graph.PropertyFactory;
 import org.jboss.dna.spi.graph.ValueFactories;
 import org.jboss.dna.spi.graph.ValueFactory;
-import org.jboss.dna.spi.graph.connection.ExecutionEnvironment;
 import org.jboss.dna.spi.graph.impl.BasicNamespaceRegistry;
 import org.jboss.dna.spi.graph.impl.BasicPropertyFactory;
 import org.jboss.dna.spi.graph.impl.StandardValueFactories;
@@ -61,7 +61,7 @@ public class InMemoryRepositoryTest {
     private NameFactory nameFactory;
     private PropertyFactory propertyFactory;
     @Mock
-    private ExecutionEnvironment env;
+    private ExecutionContext context;
 
     @Before
     public void beforeEach() throws Exception {
@@ -73,8 +73,8 @@ public class InMemoryRepositoryTest {
         name = "Test repository";
         rootUuid = UUID.randomUUID();
         repository = new InMemoryRepository(name, rootUuid);
-        stub(env.getValueFactories()).toReturn(valueFactories);
-        stub(env.getPropertyFactory()).toReturn(propertyFactory);
+        stub(context.getValueFactories()).toReturn(valueFactories);
+        stub(context.getPropertyFactory()).toReturn(propertyFactory);
     }
 
     @Test( expected = IllegalArgumentException.class )
@@ -117,13 +117,13 @@ public class InMemoryRepositoryTest {
 
     @Test( expected = AssertionError.class )
     public void shouldNotAllowRootToBeRemoved() {
-        repository.removeNode(env, repository.getRoot());
+        repository.removeNode(context, repository.getRoot());
     }
 
     @Test( expected = AssertionError.class )
     public void shouldNotAllowRootToBeMoved() {
         Node node = mock(Node.class);
-        repository.moveNode(env, repository.getRoot(), node);
+        repository.moveNode(context, repository.getRoot(), node);
     }
 
     @Test( expected = AssertionError.class )
@@ -136,7 +136,7 @@ public class InMemoryRepositoryTest {
     @Test( expected = AssertionError.class )
     public void shouldNotAllowNullNodeToBeMoved() {
         Node newParent = mock(Node.class);
-        repository.moveNode(env, null, newParent);
+        repository.moveNode(context, null, newParent);
     }
 
     @Test( expected = AssertionError.class )
@@ -147,27 +147,27 @@ public class InMemoryRepositoryTest {
 
     @Test( expected = AssertionError.class )
     public void shouldNotAllowNullNodeToBeRemoved() {
-        repository.removeNode(env, null);
+        repository.removeNode(context, null);
     }
 
     @Test
     public void shouldCreateNodesByPath() {
         Name name_a = nameFactory.create("a");
-        Node node_a = repository.createNode(env, repository.getRoot(), name_a);
+        Node node_a = repository.createNode(context, repository.getRoot(), name_a);
         assertThat(node_a, is(notNullValue()));
         assertThat(node_a.getParent(), is(repository.getRoot()));
         assertThat(node_a.getName().getName(), is(name_a));
         assertThat(node_a.getName().hasIndex(), is(false));
 
         Name name_b = nameFactory.create("b");
-        Node node_b = repository.createNode(env, node_a, name_b);
+        Node node_b = repository.createNode(context, node_a, name_b);
         assertThat(node_b, is(notNullValue()));
         assertThat(node_b.getParent(), is(node_a));
         assertThat(node_b.getName().getName(), is(name_b));
         assertThat(node_b.getName().hasIndex(), is(false));
 
         Name name_c = nameFactory.create("c");
-        Node node_c = repository.createNode(env, node_b, name_c);
+        Node node_c = repository.createNode(context, node_b, name_c);
         assertThat(node_c, is(notNullValue()));
         assertThat(node_c.getParent(), is(node_b));
         assertThat(node_c.getName().getName(), is(name_c));
@@ -182,9 +182,9 @@ public class InMemoryRepositoryTest {
 
     @Test
     public void shouldNotFindNodesThatDoNotExist() {
-        Node node_a = repository.createNode(env, repository.getRoot(), nameFactory.create("a"));
-        Node node_b = repository.createNode(env, node_a, nameFactory.create("b"));
-        /*Node node_c =*/repository.createNode(env, node_b, nameFactory.create("c"));
+        Node node_a = repository.createNode(context, repository.getRoot(), nameFactory.create("a"));
+        Node node_b = repository.createNode(context, node_a, nameFactory.create("b"));
+        /*Node node_c =*/repository.createNode(context, node_b, nameFactory.create("c"));
 
         assertThat(repository.getNodesByUuid().size(), is(4));
         assertThat(repository.getNode(pathFactory.create("/a[1]")), is(nullValue()));
@@ -194,14 +194,14 @@ public class InMemoryRepositoryTest {
     @Test
     public void shouldCorrectlyManageIndexesOfSiblingsWithSameNames() {
         Name name_a1 = nameFactory.create("a");
-        Node node_a1 = repository.createNode(env, repository.getRoot(), name_a1);
+        Node node_a1 = repository.createNode(context, repository.getRoot(), name_a1);
         assertThat(node_a1, is(notNullValue()));
         assertThat(node_a1.getParent(), is(repository.getRoot()));
         assertThat(node_a1.getName().getName(), is(name_a1));
         assertThat(node_a1.getName().hasIndex(), is(false));
 
         Name name_a2 = nameFactory.create("a");
-        Node node_a2 = repository.createNode(env, repository.getRoot(), name_a2);
+        Node node_a2 = repository.createNode(context, repository.getRoot(), name_a2);
         assertThat(node_a2, is(notNullValue()));
         assertThat(node_a2.getParent(), is(repository.getRoot()));
         assertThat(node_a2.getName().getName(), is(name_a2));
@@ -213,7 +213,7 @@ public class InMemoryRepositoryTest {
 
         // Add another node without the same name ...
         Name name_b = nameFactory.create("b");
-        Node node_b = repository.createNode(env, repository.getRoot(), name_b);
+        Node node_b = repository.createNode(context, repository.getRoot(), name_b);
         assertThat(node_b, is(notNullValue()));
         assertThat(node_b.getParent(), is(repository.getRoot()));
         assertThat(node_b.getName().getName(), is(name_b));
@@ -221,7 +221,7 @@ public class InMemoryRepositoryTest {
 
         // Add a third node with the same name ...
         Name name_a3 = nameFactory.create("a");
-        Node node_a3 = repository.createNode(env, repository.getRoot(), name_a3);
+        Node node_a3 = repository.createNode(context, repository.getRoot(), name_a3);
         assertThat(node_a3, is(notNullValue()));
         assertThat(node_a3.getParent(), is(repository.getRoot()));
         assertThat(node_a3.getName().getName(), is(name_a3));
@@ -238,7 +238,7 @@ public class InMemoryRepositoryTest {
         assertThat(repository.getNode(pathFactory.create("/b")), is(sameInstance(node_b)));
 
         // Removing a node with the same name will reduce the index ...
-        repository.removeNode(env, node_a2);
+        repository.removeNode(context, node_a2);
         assertThat(repository.getRoot().getChildren().size(), is(3));
         assertThat(repository.getRoot().getChildren(), hasItems(node_a1, node_b, node_a3));
         assertThat(node_a1.getName().getIndex(), is(1));
@@ -246,7 +246,7 @@ public class InMemoryRepositoryTest {
         assertThat(node_a3.getName().getIndex(), is(2));
 
         // Removing a node with the same name will reduce the index ...
-        repository.removeNode(env, node_a1);
+        repository.removeNode(context, node_a1);
         assertThat(repository.getRoot().getChildren().size(), is(2));
         assertThat(repository.getRoot().getChildren(), hasItems(node_b, node_a3));
         assertThat(node_b.getName().hasIndex(), is(false));
@@ -257,12 +257,12 @@ public class InMemoryRepositoryTest {
     @Test
     public void shouldMoveNodes() {
         Node root = repository.getRoot();
-        Node node_a = repository.createNode(env, root, nameFactory.create("a"));
-        Node node_b = repository.createNode(env, node_a, nameFactory.create("b"));
-        Node node_c = repository.createNode(env, node_b, nameFactory.create("c"));
-        Node node_d = repository.createNode(env, root, nameFactory.create("d"));
-        Node node_e = repository.createNode(env, node_d, nameFactory.create("e"));
-        Node node_b2 = repository.createNode(env, node_d, nameFactory.create("b"));
+        Node node_a = repository.createNode(context, root, nameFactory.create("a"));
+        Node node_b = repository.createNode(context, node_a, nameFactory.create("b"));
+        Node node_c = repository.createNode(context, node_b, nameFactory.create("c"));
+        Node node_d = repository.createNode(context, root, nameFactory.create("d"));
+        Node node_e = repository.createNode(context, node_d, nameFactory.create("e"));
+        Node node_b2 = repository.createNode(context, node_d, nameFactory.create("b"));
 
         assertThat(repository.getNodesByUuid().size(), is(7));
         assertThat(repository.getNode(pathFactory.create("/")), is(sameInstance(repository.getRoot())));
@@ -273,7 +273,7 @@ public class InMemoryRepositoryTest {
         assertThat(repository.getNode(pathFactory.create("/d/e")), is(sameInstance(node_e)));
         assertThat(repository.getNode(pathFactory.create("/d/b")), is(sameInstance(node_b2)));
 
-        repository.moveNode(env, node_b, node_d);
+        repository.moveNode(context, node_b, node_d);
 
         assertThat(repository.getNode(pathFactory.create("/")), is(sameInstance(repository.getRoot())));
         assertThat(repository.getNode(pathFactory.create("/a")), is(sameInstance(node_a)));
@@ -283,7 +283,7 @@ public class InMemoryRepositoryTest {
         assertThat(repository.getNode(pathFactory.create("/d/b[2]")), is(sameInstance(node_b)));
         assertThat(repository.getNode(pathFactory.create("/d/b[2]/c")), is(sameInstance(node_c)));
 
-        repository.moveNode(env, node_b, node_e);
+        repository.moveNode(context, node_b, node_e);
 
         assertThat(repository.getNode(pathFactory.create("/")), is(sameInstance(repository.getRoot())));
         assertThat(repository.getNode(pathFactory.create("/a")), is(sameInstance(node_a)));
@@ -297,12 +297,12 @@ public class InMemoryRepositoryTest {
     @Test
     public void shouldCopyNodes() {
         Node root = repository.getRoot();
-        Node node_a = repository.createNode(env, root, nameFactory.create("a"));
-        Node node_b = repository.createNode(env, node_a, nameFactory.create("b"));
-        Node node_c = repository.createNode(env, node_b, nameFactory.create("c"));
-        Node node_d = repository.createNode(env, root, nameFactory.create("d"));
-        Node node_e = repository.createNode(env, node_d, nameFactory.create("e"));
-        Node node_b2 = repository.createNode(env, node_d, nameFactory.create("b"));
+        Node node_a = repository.createNode(context, root, nameFactory.create("a"));
+        Node node_b = repository.createNode(context, node_a, nameFactory.create("b"));
+        Node node_c = repository.createNode(context, node_b, nameFactory.create("c"));
+        Node node_d = repository.createNode(context, root, nameFactory.create("d"));
+        Node node_e = repository.createNode(context, node_d, nameFactory.create("e"));
+        Node node_b2 = repository.createNode(context, node_d, nameFactory.create("b"));
 
         ValueFactory<String> stringFactory = valueFactories.getStringFactory();
         Name propertyName = nameFactory.create("something");
@@ -320,7 +320,7 @@ public class InMemoryRepositoryTest {
 
         assertThat(repository.getNode(pathFactory.create("/a/b")).getProperties().get(propertyName), is(property));
 
-        repository.copyNode(env, node_b, node_d, true);
+        repository.copyNode(context, node_b, node_d, true);
 
         assertThat(repository.getNodesByUuid().size(), is(9));
         assertThat(repository.getNode(pathFactory.create("/")), is(sameInstance(repository.getRoot())));
@@ -339,13 +339,18 @@ public class InMemoryRepositoryTest {
 
     @Test
     public void shouldCreateRepositoryStructure() {
-        repository.createNode(env, "/a").setProperty(env, "name", "value").setProperty(env, "desc", "Some description");
-        repository.createNode(env, "/a/b").setProperty(env, "name", "value2").setProperty(env, "desc", "Some description 2");
-        assertThat(repository.getNode(env, "/a").getProperty(env, "name").getValuesAsArray(), is(new Object[] {"value"}));
-        assertThat(repository.getNode(env, "/a").getProperty(env, "desc").getValuesAsArray(),
+        repository.createNode(context, "/a").setProperty(context, "name", "value").setProperty(context,
+                                                                                               "desc",
+                                                                                               "Some description");
+        repository.createNode(context, "/a/b").setProperty(context, "name", "value2").setProperty(context,
+                                                                                                  "desc",
+                                                                                                  "Some description 2");
+        assertThat(repository.getNode(context, "/a").getProperty(context, "name").getValuesAsArray(), is(new Object[] {"value"}));
+        assertThat(repository.getNode(context, "/a").getProperty(context, "desc").getValuesAsArray(),
                    is(new Object[] {"Some description"}));
-        assertThat(repository.getNode(env, "/a/b").getProperty(env, "name").getValuesAsArray(), is(new Object[] {"value2"}));
-        assertThat(repository.getNode(env, "/a/b").getProperty(env, "desc").getValuesAsArray(),
+        assertThat(repository.getNode(context, "/a/b").getProperty(context, "name").getValuesAsArray(),
+                   is(new Object[] {"value2"}));
+        assertThat(repository.getNode(context, "/a/b").getProperty(context, "desc").getValuesAsArray(),
                    is(new Object[] {"Some description 2"}));
     }
 }

@@ -35,7 +35,7 @@ import org.jboss.dna.common.monitor.ProgressMonitor;
 import org.jboss.dna.common.util.Logger;
 import org.jboss.dna.repository.RepositoryI18n;
 import org.jboss.dna.repository.observation.NodeChange;
-import org.jboss.dna.repository.util.ExecutionContext;
+import org.jboss.dna.repository.util.JcrExecutionContext;
 import org.jboss.dna.repository.util.RepositoryNodePath;
 import org.jboss.dna.spi.graph.Binary;
 import org.jboss.dna.spi.graph.DateTime;
@@ -80,7 +80,7 @@ public class StreamSequencerAdapter implements Sequencer {
                          String sequencedPropertyName,
                          NodeChange changes,
                          Set<RepositoryNodePath> outputPaths,
-                         ExecutionContext execContext,
+                         JcrExecutionContext execContext,
                          ProgressMonitor progressMonitor ) throws RepositoryException, SequencerException {
         // 'sequencedPropertyName' contains the name of the modified property on 'input' that resulted in the call to this
         // sequencer.
@@ -178,7 +178,7 @@ public class StreamSequencerAdapter implements Sequencer {
      */
     protected boolean saveOutput( Node outputNode,
                                   SequencerOutputMap output,
-                                  ExecutionContext context ) throws RepositoryException {
+                                  JcrExecutionContext context ) throws RepositoryException {
         if (output.isEmpty()) return false;
         final PathFactory pathFactory = context.getValueFactories().getPathFactory();
         final NamespaceRegistry namespaceRegistry = context.getNamespaceRegistry();

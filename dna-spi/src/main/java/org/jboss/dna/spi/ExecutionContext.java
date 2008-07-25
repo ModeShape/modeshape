@@ -19,31 +19,45 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.jboss.dna.repository.util;
+package org.jboss.dna.spi;
 
-import javax.jcr.Session;
-import org.jboss.dna.spi.graph.connection.ExecutionEnvironment;
+import javax.security.auth.Subject;
+import org.jboss.dna.spi.graph.NamespaceRegistry;
+import org.jboss.dna.spi.graph.Property;
+import org.jboss.dna.spi.graph.PropertyFactory;
+import org.jboss.dna.spi.graph.ValueFactories;
 
 /**
- * The context of an execution.
- * 
  * @author Randall Hauch
  */
-public interface ExecutionContext extends ExecutionEnvironment {
+public interface ExecutionContext {
 
     /**
-     * Get the session factory, which can be used to obtain sessions temporarily for this context. Any session obtained from this
-     * factory should be {@link Session#logout() closed} before the execution finishes.
+     * Get the factories that should be used to create values for {@link Property properties}.
      * 
-     * @return the session factory
+     * @return the property value factory; never null
      */
-    SessionFactory getSessionFactory();
+    ValueFactories getValueFactories();
 
     /**
-     * Get a set of utilities for working with JCR.
+     * Get the namespace registry for this context.
      * 
-     * @return the tools
+     * @return the namespace registry; never null
      */
-    JcrTools getTools();
+    NamespaceRegistry getNamespaceRegistry();
+
+    /**
+     * Get the factory for creating {@link Property} objects.
+     * 
+     * @return the property factory; never null
+     */
+    PropertyFactory getPropertyFactory();
+
+    /**
+     * Get the JAAS subject for which this context was created.
+     * 
+     * @return the subject; never null
+     */
+    Subject getSubject();
 
 }

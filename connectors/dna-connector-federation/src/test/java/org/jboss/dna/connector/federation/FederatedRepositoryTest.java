@@ -27,8 +27,8 @@ import static org.hamcrest.core.IsNull.nullValue;
 import static org.hamcrest.core.IsSame.sameInstance;
 import static org.junit.Assert.assertThat;
 import static org.junit.matchers.JUnitMatchers.hasItems;
-import org.jboss.dna.spi.graph.connection.BasicExecutionEnvironment;
-import org.jboss.dna.spi.graph.connection.ExecutionEnvironment;
+import org.jboss.dna.spi.ExecutionContext;
+import org.jboss.dna.spi.graph.connection.BasicExecutionContext;
 import org.jboss.dna.spi.graph.connection.RepositoryConnectionFactories;
 import org.jboss.dna.spi.graph.connection.RepositorySourceListener;
 import org.junit.Before;
@@ -41,7 +41,7 @@ import org.mockito.MockitoAnnotations.Mock;
  */
 public class FederatedRepositoryTest {
 
-    private ExecutionEnvironment env;
+    private ExecutionContext context;
     private FederatedRepository repository;
     @Mock
     private FederatedRepositoryConfig config;
@@ -57,8 +57,8 @@ public class FederatedRepositoryTest {
     @Before
     public void beforeEach() {
         MockitoAnnotations.initMocks(this);
-        env = new BasicExecutionEnvironment();
-        repository = new FederatedRepository(env, connectionFactories, config);
+        context = new BasicExecutionContext();
+        repository = new FederatedRepository(context, connectionFactories, config);
     }
 
     @Test

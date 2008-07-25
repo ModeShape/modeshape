@@ -28,11 +28,11 @@ import static org.junit.Assert.assertThat;
 import static org.junit.matchers.JUnitMatchers.hasItems;
 import org.jboss.dna.common.text.TextEncoder;
 import org.jboss.dna.common.text.UrlEncoder;
+import org.jboss.dna.spi.ExecutionContext;
 import org.jboss.dna.spi.graph.NamespaceRegistry;
 import org.jboss.dna.spi.graph.Path;
 import org.jboss.dna.spi.graph.PathFactory;
-import org.jboss.dna.spi.graph.connection.BasicExecutionEnvironment;
-import org.jboss.dna.spi.graph.connection.ExecutionEnvironment;
+import org.jboss.dna.spi.graph.connection.BasicExecutionContext;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -41,7 +41,7 @@ import org.junit.Test;
  */
 public class ProjectionPathRuleTest {
 
-    private ExecutionEnvironment env;
+    private ExecutionContext context;
     private Projection.PathRule rule;
     private PathFactory pathFactory;
     private Path repositoryPath;
@@ -52,9 +52,9 @@ public class ProjectionPathRuleTest {
 
     @Before
     public void beforeEach() {
-        env = new BasicExecutionEnvironment();
-        pathFactory = env.getValueFactories().getPathFactory();
-        registry = env.getNamespaceRegistry();
+        context = new BasicExecutionContext();
+        pathFactory = context.getValueFactories().getPathFactory();
+        registry = context.getNamespaceRegistry();
         encoder = new UrlEncoder();
         repositoryPath = pathFactory.create("/a/b/c");
         sourcePath = pathFactory.create("/x/y");

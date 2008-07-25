@@ -23,6 +23,7 @@ package org.jboss.dna.spi.graph.connection;
 
 import java.util.concurrent.TimeUnit;
 import javax.transaction.xa.XAResource;
+import org.jboss.dna.spi.ExecutionContext;
 import org.jboss.dna.spi.cache.CachePolicy;
 import org.jboss.dna.spi.graph.commands.GraphCommand;
 
@@ -61,7 +62,8 @@ public interface RepositoryConnection {
      * @return true if this connection is still valid and can still be used, or false otherwise
      * @throws InterruptedException if the thread has been interrupted during the operation
      */
-    boolean ping( long time, TimeUnit unit ) throws InterruptedException;
+    boolean ping( long time,
+                  TimeUnit unit ) throws InterruptedException;
 
     /**
      * Set the listener that is to receive notifications to changes to content within this source.
@@ -80,12 +82,13 @@ public interface RepositoryConnection {
     /**
      * Execute the supplied commands against this repository source.
      * 
-     * @param env the environment in which the commands are being executed; never null
+     * @param context the environment in which the commands are being executed; never null
      * @param commands the commands to be executed; never null
      * @throws RepositorySourceException if there is a problem loading the node data
      * @throws InterruptedException if the thread has been interrupted during the operation
      */
-    void execute( ExecutionEnvironment env, GraphCommand... commands ) throws RepositorySourceException, InterruptedException;
+    void execute( ExecutionContext context,
+                  GraphCommand... commands ) throws RepositorySourceException, InterruptedException;
 
     /**
      * Close this connection to signal that it is no longer needed and that any accumulated resources are to be released.

@@ -27,11 +27,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import net.jcip.annotations.NotThreadSafe;
+import org.jboss.dna.spi.ExecutionContext;
 import org.jboss.dna.spi.graph.Name;
 import org.jboss.dna.spi.graph.Path;
 import org.jboss.dna.spi.graph.Property;
 import org.jboss.dna.spi.graph.PropertyFactory;
-import org.jboss.dna.spi.graph.connection.ExecutionEnvironment;
 
 /**
  * @author Randall Hauch
@@ -106,17 +106,17 @@ public class Node {
         return this;
     }
 
-    public Node setProperty( ExecutionEnvironment env,
+    public Node setProperty( ExecutionContext context,
                              String name,
                              Object... values ) {
-        PropertyFactory propertyFactory = env.getPropertyFactory();
-        Name propertyName = env.getValueFactories().getNameFactory().create(name);
+        PropertyFactory propertyFactory = context.getPropertyFactory();
+        Name propertyName = context.getValueFactories().getNameFactory().create(name);
         return setProperty(propertyFactory.create(propertyName, values));
     }
 
-    public Property getProperty( ExecutionEnvironment env,
+    public Property getProperty( ExecutionContext context,
                                  String name ) {
-        Name propertyName = env.getValueFactories().getNameFactory().create(name);
+        Name propertyName = context.getValueFactories().getNameFactory().create(name);
         return getProperty(propertyName);
     }
 

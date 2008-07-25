@@ -40,12 +40,12 @@ import org.jboss.dna.common.jcr.AbstractJcrRepositoryTest;
 import org.jboss.dna.common.monitor.ProgressMonitor;
 import org.jboss.dna.common.monitor.RecordingProgressMonitor;
 import org.jboss.dna.repository.observation.NodeChange;
-import org.jboss.dna.repository.util.ExecutionContext;
+import org.jboss.dna.repository.util.JcrExecutionContext;
 import org.jboss.dna.repository.util.JcrNamespaceRegistry;
 import org.jboss.dna.repository.util.JcrTools;
 import org.jboss.dna.repository.util.RepositoryNodePath;
 import org.jboss.dna.repository.util.SessionFactory;
-import org.jboss.dna.repository.util.SimpleExecutionContext;
+import org.jboss.dna.repository.util.BasicJcrExecutionContext;
 import org.jboss.dna.spi.graph.NamespaceRegistry;
 import org.jboss.dna.spi.graph.Path;
 import org.jboss.dna.spi.sequencers.SequencerContext;
@@ -68,7 +68,7 @@ public class StreamSequencerAdapterTest extends AbstractJcrRepositoryTest {
     private Session session;
     private SequencerOutputMap sequencerOutput;
     private String sampleData = "The little brown fox didn't something bad.";
-    private ExecutionContext context;
+    private JcrExecutionContext context;
     private RecordingProgressMonitor progressMonitor;
     private String repositoryWorkspaceName = "something";
 
@@ -83,7 +83,7 @@ public class StreamSequencerAdapterTest extends AbstractJcrRepositoryTest {
             }
         };
         NamespaceRegistry registry = new JcrNamespaceRegistry(sessionFactory, "doesn't matter");
-        this.context = new SimpleExecutionContext(sessionFactory, registry, null, null);
+        this.context = new BasicJcrExecutionContext(sessionFactory, registry, null, null);
         this.sequencerOutput = new SequencerOutputMap(this.context.getValueFactories());
         this.progressMonitor = new RecordingProgressMonitor(StreamSequencerAdapterTest.class.getName());
         final SequencerOutputMap finalOutput = sequencerOutput;

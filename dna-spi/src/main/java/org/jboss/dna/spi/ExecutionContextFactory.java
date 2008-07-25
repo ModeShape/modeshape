@@ -26,10 +26,9 @@ import javax.security.auth.callback.CallbackHandler;
 import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
 import javax.security.auth.spi.LoginModule;
-import org.jboss.dna.spi.graph.connection.ExecutionEnvironment;
 
 /**
- * A factory for creating {@link ExecutionEnvironment} instances. Each execution environment is affiliated with a JAAS
+ * A factory for creating {@link ExecutionContext} instances. Each execution context is affiliated with a JAAS
  * {@link Subject}, and thus the factory methods take the same parameters that the JAAS {@link LoginContext} take.
  * 
  * @author Randall Hauch
@@ -37,13 +36,13 @@ import org.jboss.dna.spi.graph.connection.ExecutionEnvironment;
 public interface ExecutionContextFactory {
 
     /**
-     * Create an {@link ExecutionEnvironment} for the supplied {@link LoginContext}.
+     * Create an {@link ExecutionContext} for the supplied {@link LoginContext}.
      * 
      * @param loginContext the JAAS login context
      * @return the execution context
      * @throws IllegalArgumentException if the <code>loginContext</code> is null
      */
-    ExecutionEnvironment create( LoginContext loginContext );
+    ExecutionContext create( LoginContext loginContext );
 
     /**
      * @param name the name of the JAAS login context
@@ -52,7 +51,7 @@ public interface ExecutionContextFactory {
      * @throws LoginException if there <code>name</code> is invalid (or there is no login context named "other"), or if the
      *         default callback handler JAAS property was not set or could not be loaded
      */
-    ExecutionEnvironment create( String name ) throws LoginException;
+    ExecutionContext create( String name ) throws LoginException;
 
     /**
      * @param name the name of the JAAS login context
@@ -62,7 +61,7 @@ public interface ExecutionContextFactory {
      *         callback handler JAAS property was not set or could not be loaded, or if the <code>subject</code> is null or
      *         unknown
      */
-    ExecutionEnvironment create( String name,
+    ExecutionContext create( String name,
                                  Subject subject ) throws LoginException;
 
     /**
@@ -72,7 +71,7 @@ public interface ExecutionContextFactory {
      * @throws LoginException if there <code>name</code> is invalid (or there is no login context named "other"), or if the
      *         <code>callbackHandler</code> is null
      */
-    ExecutionEnvironment create( String name,
+    ExecutionContext create( String name,
                                  CallbackHandler callbackHandler ) throws LoginException;
 
     /**
@@ -84,7 +83,7 @@ public interface ExecutionContextFactory {
      *         callback handler JAAS property was not set or could not be loaded, if the <code>subject</code> is null or unknown,
      *         or if the <code>callbackHandler</code> is null
      */
-    ExecutionEnvironment create( String name,
+    ExecutionContext create( String name,
                                  Subject subject,
                                  CallbackHandler callbackHandler ) throws LoginException;
 

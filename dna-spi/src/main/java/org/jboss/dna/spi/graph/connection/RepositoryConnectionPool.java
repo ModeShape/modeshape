@@ -38,6 +38,7 @@ import net.jcip.annotations.GuardedBy;
 import net.jcip.annotations.ThreadSafe;
 import org.jboss.dna.common.util.ArgCheck;
 import org.jboss.dna.common.util.Logger;
+import org.jboss.dna.spi.ExecutionContext;
 import org.jboss.dna.spi.SpiI18n;
 import org.jboss.dna.spi.cache.CachePolicy;
 import org.jboss.dna.spi.graph.commands.GraphCommand;
@@ -182,10 +183,10 @@ public class RepositoryConnectionPool implements ManagedRepositoryConnectionFact
      * @throws IllegalArgumentException if the connection factory is null or any of the supplied arguments are invalid
      */
     public RepositoryConnectionPool( RepositoryConnectionFactory connectionFactory,
-                                          int corePoolSize,
-                                          int maximumPoolSize,
-                                          long keepAliveTime,
-                                          TimeUnit unit ) {
+                                     int corePoolSize,
+                                     int maximumPoolSize,
+                                     long keepAliveTime,
+                                     TimeUnit unit ) {
         ArgCheck.isNonNegative(corePoolSize, "corePoolSize");
         ArgCheck.isPositive(maximumPoolSize, "maximumPoolSize");
         ArgCheck.isNonNegative(keepAliveTime, "keepAliveTime");
@@ -596,7 +597,8 @@ public class RepositoryConnectionPool implements ManagedRepositoryConnectionFact
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.spi.graph.connection.ManagedRepositoryConnectionFactory#awaitTermination(long, java.util.concurrent.TimeUnit)
+     * @see org.jboss.dna.spi.graph.connection.ManagedRepositoryConnectionFactory#awaitTermination(long,
+     *      java.util.concurrent.TimeUnit)
      */
     public boolean awaitTermination( long timeout,
                                      TimeUnit unit ) throws InterruptedException {
@@ -928,10 +930,10 @@ public class RepositoryConnectionPool implements ManagedRepositoryConnectionFact
         /**
          * {@inheritDoc}
          */
-        public void execute( ExecutionEnvironment env,
+        public void execute( ExecutionContext context,
                              GraphCommand... commands ) throws RepositorySourceException, InterruptedException {
             if (closed) throw new IllegalStateException(SpiI18n.closedConnectionMayNotBeUsed.text());
-            this.original.execute(env, commands);
+            this.original.execute(context, commands);
         }
 
         /**
