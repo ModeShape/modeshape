@@ -29,14 +29,16 @@ import java.util.*;
  */
 @MyClassAnnotation
 public class MySource {
-    
-    private int i;
+
+    private int i, j;
+    private double a;
     private List<String> l;
     private A<String>.B<Integer> o;
     private X x;
-    
-    public MySource(){}
-    
+
+    public MySource() {
+    }
+
     public int getI() {
         return this.i;
     }
@@ -44,35 +46,43 @@ public class MySource {
     public void setI( int i ) {
         this.i = i;
     }
-    
+
+    public void setJ( int j ) {
+        this.j = j;
+    }
+
     public void doSomething() {
-        l= new ArrayList<String>();
+        l = new ArrayList<String>();
         l.add("N1");
     }
-    
+
     class A<E> {
         E e;
-        
-        A(E e) {
+
+        A( E e ) {
             this.e = e;
         }
-        
+
         @Override
         public String toString() {
             return String.valueOf(this.e);
         }
+
         class B<T> {
             T t;
-            B(T t) {
+
+            B( T t ) {
                 this.t = t;
             }
+
             @Override
             public String toString() {
                 return String.valueOf(this.t);
             }
         }
     }
+
     class X {
-        
+
     }
 }

@@ -26,4 +26,16 @@ package org.jboss.dna.sequencer.java.metadata;
  */
 public class ConstructorMetadata extends MethodMetadata {
 
+    public ConstructorMetadata() {
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.sequencer.java.metadata.MethodMetadata#isContructor()
+     */
+    @Override
+    public boolean isContructor() {
+        return true;
+    }
 }

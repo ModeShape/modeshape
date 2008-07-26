@@ -83,6 +83,7 @@ public class TypeMetadata {
     }
 
     /**
+     * 
      * @return modifiers
      */
     public Map<Integer, String> getModifiers() {
@@ -97,7 +98,9 @@ public class TypeMetadata {
     }
 
     /**
-     * @return fields of this top level unit.
+     * Gets a ordered lists of {@link FieldMetadata} from the unit.
+     * 
+     * @return all fields of this unit if there is one.
      */
     public List<FieldMetadata> getFields() {
         return this.fields;
@@ -111,7 +114,9 @@ public class TypeMetadata {
     }
 
     /**
-     * @return methods of this top level unit.
+     * Gets all {@link MethodMetadata} from the unit.
+     * 
+     * @return all methods from the units.
      */
     public List<MethodMetadata> getMethods() {
         return methods;

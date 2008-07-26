@@ -108,51 +108,38 @@
  - java:name (string)
  + java:type (java:primitiveType, java:referenceType) mandatory multiple
 
-/** 
- * No Return type 
- */
-[java:noReturnType] > nt:unstructured
- - java:noReturn (string)
-   < 'void'
-
-/** 
- * Integral type
- */
-[java:integralType] > nt:unstructured
- - java:predefinedIntegralType (string) mandatory
-   < 'byte', 'short', 'int', 'long', 'char' 
-
-/** 
- * Floating point type
- */
-[java:floatingPointType] > nt:unstructured
- - java:predefinedFloatingType (string) mandatory
-  < 'float', 'double'
-
 /**
- * Primitive type 
+ * Primitive type:
+ * - Integral type ('byte', 'short', 'int', 'long', 'char')
+ * - Floating point type ('float', 'double')
+ * - Boolean type ('boolean')
+ * - No return type (''void')
  */
 [java:primitiveType] > nt:unstructured
- - java:booleanType (string)
-   < 'boolean'
- + java:numericType (java:integralType, java:floatingPointType)
+ - java:description (string)
+ - java:modifier (string)
+    < 'public', 'protected', 'private'
+ - java:declaredAs (string) multiple
+   < 'static','final', 'transient', 'volatile'
+ - java:type (string)
+   < 'byte','short','char','int,'long','float','double','boolean','void'
+ - java:name (string) mandatory
  
-
 /** 
  * Reference type  (TODO to enhance)
  */	
 [java:referenceType] > nt:unstructured
-
+- java:description (string)
+ - java:modifier (string)
+    < 'public', 'protected', 'private'
+ - java:declaredAs (string) multiple
+   < 'static','final', 'transient', 'volatile'
+ - java:name (string) mandatory
+ 
 /** 
  * Field type 
  */
 [java:fieldType] > nt:unstructured
- - java:description (string)
- - java:modifier (string)
-   < 'public', 'protected', 'private'
- - java:declaredAs (string) multiple
-   < 'static','final', 'transient', 'volatile'
- - java:name (string) mandatory
  + java:type (java:primitiveType, java:referenceType) mandatory multiple 
  
  /** 
@@ -162,7 +149,7 @@
  - java:description (string)
  - java:modifier (string)
    < 'public', 'protected', 'private'
- + java:resultType (java:noReturnType, java:primitiveType, java:referenceType) mandatory
+ + java:resultType (java:primitiveType, java:referenceType) mandatory
  - java:name (string) mandatory
  - java:declaredAs (string) multiple
    < 'static','final', 'native', 'strictfp', 'synchronized'
@@ -192,14 +179,14 @@
  * Import declarations
  */
 [java:singleTypeImportDeclaration] > nt:unstructured
- - keyword (string) mandatory
+ - java:keyword (string) mandatory
   < 'import'
- - typeName (string) mandatory
+ - java:typeName (string) mandatory
  
 [java:typeImportOnDemandDeclaration] > nt:unstructured
- - keyword (string) mandatory
+ - java:keyword (string) mandatory
   < 'import'
- - typeName (string) mandatory
+ - java:typeName (string) mandatory
 
  [java:importDeclaration] > nt:unstructured
  + java:singleImport (java:singleTypeImportDeclaration) = java:singleTypeImportDeclaration
@@ -244,4 +231,4 @@
 [java:compilationUnit] > nt:unstructured
  + java:package (java:packageDeclaration) = java:packageDeclaration
  + java:import (java:importDeclaration) = java:importDeclaration
- + java:type (java:classDeclaration, java:interfaceDeclaration) 
+ + java:unitType (java:classDeclaration, java:interfaceDeclaration) 

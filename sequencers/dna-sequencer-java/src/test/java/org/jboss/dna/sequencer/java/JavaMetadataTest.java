@@ -163,45 +163,48 @@ public class JavaMetadataTest {
                 // get fields
                 List<FieldMetadata> fields = classMetadata.getFields();
                 assertNotNull(fields);
-                assertTrue(fields.size() == 4);
+                assertTrue(fields.size() == 5);
 
                 PrimitiveFieldMetadata primitiveFieldMetadata = (PrimitiveFieldMetadata)fields.get(0);
                 assertThat(primitiveFieldMetadata.getCode(), is("int"));
                 assertThat(primitiveFieldMetadata.getVariables().get(0).getName(), is("i"));
+                assertThat(primitiveFieldMetadata.getVariables().get(1).getName(), is("j"));
 
-                ParameterizedFieldMetadata parameterizedFieldMetadata1 = (ParameterizedFieldMetadata)fields.get(1);
+                ParameterizedFieldMetadata parameterizedFieldMetadata1 = (ParameterizedFieldMetadata)fields.get(2);
                 assertNotNull(parameterizedFieldMetadata1);
                 assertThat(parameterizedFieldMetadata1.getName(), is("List"));
                 assertThat(parameterizedFieldMetadata1.getVariables().get(0).getName(), is("l"));
 
-                ParameterizedFieldMetadata parameterizedFieldMetadata2 = (ParameterizedFieldMetadata)fields.get(2);
+                ParameterizedFieldMetadata parameterizedFieldMetadata2 = (ParameterizedFieldMetadata)fields.get(3);
                 assertNotNull(parameterizedFieldMetadata2);
                 assertThat(parameterizedFieldMetadata2.getName(), is("B"));
                 assertThat(parameterizedFieldMetadata2.getVariables().get(0).getName(), is("o"));
-                
-                SimpleFieldMetadata simpleFieldMetadata = (SimpleFieldMetadata)fields.get(3);
+
+                SimpleFieldMetadata simpleFieldMetadata = (SimpleFieldMetadata)fields.get(4);
                 assertNotNull(simpleFieldMetadata);
                 assertThat(simpleFieldMetadata.getName(), is("X"));
                 assertThat(simpleFieldMetadata.getVariables().get(0).getName(), is("x"));
-                
+
                 // get methods
                 List<MethodMetadata> methods = classMetadata.getMethods();
                 assertNotNull(methods);
-                assertTrue(methods.size() == 4);
-                
-                ConstructorMetadata constructorMetadata = (ConstructorMetadata)methods.get(0);
+                assertTrue(methods.size() == 5);
+
+                MethodMetadata methodMetadata = methods.get(0);
+                assertTrue(methodMetadata.isContructor());
+                ConstructorMetadata constructorMetadata = (ConstructorMetadata)methodMetadata;
                 assertNotNull(constructorMetadata);
                 assertThat(constructorMetadata.getName(), is("MySource"));
-                
+
                 MethodTypeMemberMetadata methodTypeMemberMetadata1 = (MethodTypeMemberMetadata)methods.get(1);
                 assertNotNull(methodTypeMemberMetadata1);
                 assertThat(methodTypeMemberMetadata1.getName(), is("getI"));
-                
+
                 MethodTypeMemberMetadata methodTypeMemberMetadata2 = (MethodTypeMemberMetadata)methods.get(2);
                 assertNotNull(methodTypeMemberMetadata2);
                 assertThat(methodTypeMemberMetadata2.getName(), is("setI"));
-                
-                MethodTypeMemberMetadata methodTypeMemberMetadata3 = (MethodTypeMemberMetadata)methods.get(3);
+
+                MethodTypeMemberMetadata methodTypeMemberMetadata3 = (MethodTypeMemberMetadata)methods.get(4);
                 assertNotNull(methodTypeMemberMetadata3);
                 assertThat(methodTypeMemberMetadata3.getName(), is("doSomething"));
             }

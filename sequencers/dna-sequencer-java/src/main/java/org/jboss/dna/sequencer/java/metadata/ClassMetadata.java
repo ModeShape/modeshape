@@ -21,7 +21,6 @@
  */
 package org.jboss.dna.sequencer.java.metadata;
 
-import java.util.List;
 
 
 /**

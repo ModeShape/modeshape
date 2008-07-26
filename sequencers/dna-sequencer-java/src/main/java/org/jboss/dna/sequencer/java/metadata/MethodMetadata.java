@@ -26,7 +26,6 @@ package org.jboss.dna.sequencer.java.metadata;
  */
 public class MethodMetadata {
     private String name;
-
     /**
      * @return name
      */
@@ -40,5 +39,11 @@ public class MethodMetadata {
     public void setName( String name ) {
         this.name = name;
     }
-    
+
+    /**
+     * @return isContructor
+     */
+    public boolean isContructor() {
+        return false;
+    }    
 }

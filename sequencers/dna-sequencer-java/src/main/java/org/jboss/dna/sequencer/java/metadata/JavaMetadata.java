@@ -33,16 +33,15 @@ import org.jboss.dna.sequencer.java.JavaMetadataUtil;
  * @author Serge Pagop
  */
 public class JavaMetadata extends AbstractJavaMetadata {
-    
+
     /** The package representation of a compilation unit. */
     private PackageMetadata packageMetadata;
-    
+
     /** All the import declarations of a compilation unit. */
-    private List<ImportMetadata> importMetadata;
-    
-    /** variables */
-    
-    /** methods */
+    private List<ImportMetadata> imports;
+
+    /** Types of unit */
+    private List<TypeMetadata> types;
 
     private JavaMetadata() {
     }
@@ -75,14 +74,16 @@ public class JavaMetadata extends AbstractJavaMetadata {
         CompilationUnit unit = (CompilationUnit)CompilationUnitParser.runJLS3Conversion(source, true);
         if (unit != null) {
             javaMetadata.packageMetadata = javaMetadata.createPackageMetadata(unit);
-            javaMetadata.importMetadata = javaMetadata.createImportMetadata(unit);
+            javaMetadata.imports = javaMetadata.createImportMetadata(unit);
+            javaMetadata.types = javaMetadata.createTypeMetadata(unit);
+
         }
 
         return javaMetadata;
     }
 
     /**
-     * Gets the <code>PackageMetadata</code>.
+     * Gets the {@link PackageMetadata} from the unit.
      * 
      * @return the PackageMetadata or null if there is not package declaration for the unit.
      */
@@ -91,11 +92,20 @@ public class JavaMetadata extends AbstractJavaMetadata {
     }
 
     /**
-     * Gets a list of <code>ImportMetadata</code>.
+     * Gets a list of {@linkImportMetadata} from the unit.
      * 
-     * @return all the importMetadata of this unit if there is one.
+     * @return all imports of this unit if there is one.
      */
-    public List<ImportMetadata> getImportMetadata() {
-        return importMetadata;
+    public List<ImportMetadata> getImports() {
+        return imports;
+    }
+
+    /**
+     * Gets the list for type declarations (class/interface/enum/annotation) of this unit.
+     * 
+     * @return all typeMetadata of this unit.
+     */
+    public List<TypeMetadata> getTypeMetadata() {
+        return types;
     }
 }

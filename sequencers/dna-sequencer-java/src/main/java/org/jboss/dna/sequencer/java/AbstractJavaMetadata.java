@@ -155,6 +155,7 @@ public abstract class AbstractJavaMetadata {
     protected List<TypeMetadata> createTypeMetadata( CompilationUnit unit ) {
         List<TypeMetadata> metadata = new ArrayList<TypeMetadata>();
         List<AbstractTypeDeclaration> topLevelType = unit.types();
+        
         for (AbstractTypeDeclaration abstractTypeDeclaration : topLevelType) {
             // process TypeDeclaration (class, interface)
             if (abstractTypeDeclaration instanceof TypeDeclaration) {
@@ -192,7 +193,7 @@ public abstract class AbstractJavaMetadata {
                     // methods of the class top level type
                     MethodDeclaration[] methodDeclarations = typeDeclaration.getMethods();
                     for (MethodDeclaration methodDeclaration : methodDeclarations) {
-                        MethodMetadata methodMetadata = getFieldMetadataFrom(methodDeclaration);
+                        MethodMetadata methodMetadata = getMethodMetadataFrom(methodDeclaration);
                         classMetadata.getMethods().add(methodMetadata);
                     }
                     metadata.add(classMetadata);
@@ -220,7 +221,7 @@ public abstract class AbstractJavaMetadata {
      * @param methodDeclaration - the MethodDeclaration.
      * @return methodMetadata - the method meta data.
      */
-    private MethodMetadata getFieldMetadataFrom( MethodDeclaration methodDeclaration ) {
+    private MethodMetadata getMethodMetadataFrom( MethodDeclaration methodDeclaration ) {
         if (methodDeclaration != null) {
             if (methodDeclaration.isConstructor()) {
                 return getConstructorMetadataFrom(methodDeclaration);
