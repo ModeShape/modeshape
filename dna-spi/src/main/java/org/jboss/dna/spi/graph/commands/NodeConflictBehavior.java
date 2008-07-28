@@ -31,6 +31,7 @@ public enum NodeConflictBehavior {
 
     DO_NOT_REPLACE,
     APPEND,
-    REPLACE;
+    REPLACE,
+    UPDATE;
 
 }

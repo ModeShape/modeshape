@@ -21,57 +21,59 @@
  */
 package org.jboss.dna.connector.federation.contribution;
 
+import java.util.Iterator;
 import net.jcip.annotations.Immutable;
 import org.jboss.dna.spi.graph.Path;
+import org.jboss.dna.spi.graph.Path.Segment;
 
 /**
- * A source contribution that is empty. In other words, the source has no contribution to make.
- * <p>
- * Note that this is different than an unknown contribution, which may occur when a source is added to a federated repository
- * after the contributions have already been determined for nodes. In this case, the new source's contribution for a node is not
- * known and must be determined.
- * </p>
+ * The record of a source contributing only properties to a node.
  * 
  * @author Randall Hauch
  */
 @Immutable
-public class EmptyContribution extends Contribution {
+public class OneChildContribution extends NonEmptyContribution {
 
     /**
      * This is the first version of this class. See the documentation of MergePlan.serialVersionUID.
      */
     private static final long serialVersionUID = 1L;
 
+    private final Segment child;
+
     /**
-     * Create a contribution for the source with the supplied name.
+     * Create a contribution of node properties from the source with the supplied name.
      * 
      * @param sourceName the name of the source, which may not be null or blank
+     * @param pathInSource the path in the source for this contributed information; may not be null
+     * @param child the child contributed from the source; may not be null
      */
-    public EmptyContribution( String sourceName ) {
-        super(sourceName);
+    public OneChildContribution( String sourceName,
+                                 Path pathInSource,
+                                 Segment child ) {
+        super(sourceName, pathInSource);
+        assert child != null;
+        this.child = child;
     }
 
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.connector.federation.contribution.Contribution#getPathInSource()
+     * @see org.jboss.dna.connector.federation.contribution.Contribution#getChildren()
      */
     @Override
-    public Path getPathInSource() {
-        return null;
+    public Iterator<Segment> getChildren() {
+        return new OneValueIterator<Segment>(child);
     }
 
     /**
      * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.connector.federation.contribution.Contribution#getChildrenCount()
      */
     @Override
-    public boolean equals( Object obj ) {
-        if (obj == this) return true;
-        if (obj instanceof EmptyContribution) {
-            EmptyContribution that = (EmptyContribution)obj;
-            if (!this.getSourceName().equals(that.getSourceName())) return false;
-            return true;
-        }
-        return false;
+    public int getChildrenCount() {
+        return 1;
     }
+
 }

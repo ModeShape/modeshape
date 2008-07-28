@@ -21,30 +21,34 @@
  */
 package org.jboss.dna.connector.federation.executor;
 
-import java.io.ObjectInputStream;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import net.jcip.annotations.NotThreadSafe;
-import org.jboss.dna.common.i18n.I18n;
 import org.jboss.dna.common.util.Logger;
-import org.jboss.dna.connector.federation.FederationI18n;
 import org.jboss.dna.connector.federation.Projection;
 import org.jboss.dna.connector.federation.contribution.Contribution;
-import org.jboss.dna.connector.federation.merge.BasicMergePlan;
+import org.jboss.dna.connector.federation.merge.MergePlan;
 import org.jboss.dna.spi.ExecutionContext;
-import org.jboss.dna.spi.graph.Binary;
 import org.jboss.dna.spi.graph.DateTime;
 import org.jboss.dna.spi.graph.Name;
 import org.jboss.dna.spi.graph.Path;
+import org.jboss.dna.spi.graph.PathFactory;
+import org.jboss.dna.spi.graph.PathNotFoundException;
 import org.jboss.dna.spi.graph.Property;
-import org.jboss.dna.spi.graph.ValueFactory;
+import org.jboss.dna.spi.graph.Path.Segment;
 import org.jboss.dna.spi.graph.commands.GetChildrenCommand;
 import org.jboss.dna.spi.graph.commands.GetNodeCommand;
 import org.jboss.dna.spi.graph.commands.GetPropertiesCommand;
+import org.jboss.dna.spi.graph.commands.GraphCommand;
+import org.jboss.dna.spi.graph.commands.NodeConflictBehavior;
 import org.jboss.dna.spi.graph.commands.executor.AbstractCommandExecutor;
+import org.jboss.dna.spi.graph.commands.impl.BasicCreateNodeCommand;
 import org.jboss.dna.spi.graph.commands.impl.BasicGetNodeCommand;
 import org.jboss.dna.spi.graph.commands.impl.BasicGetPropertiesCommand;
 import org.jboss.dna.spi.graph.connection.RepositoryConnection;
@@ -114,6 +118,9 @@ public class FederatingCommandExecutor extends AbstractCommandExecutor {
         this.connectionsBySourceName = new HashMap<String, RepositoryConnection>();
         this.mergePlanPropertyName = context.getValueFactories().getNameFactory().create("dna:mergePlan");
         this.sourceNames = new HashSet<String>();
+        for (Projection projection : this.sourceProjections) {
+            this.sourceNames.add(projection.getSourceName());
+        }
     }
 
     /**
@@ -215,14 +222,20 @@ public class FederatingCommandExecutor extends AbstractCommandExecutor {
         RepositoryConnection cacheConnection = getConnectionToCache();
         BasicGetNodeCommand fromCache = new BasicGetNodeCommand(path);
         cacheConnection.execute(getEnvironment(), fromCache);
+        if (fromCache.hasError()) {
+            if (fromCache.getError() instanceof PathNotFoundException) {
+                // Start at the root and populate the cache down to this node ...
+            }
+        }
+
         if (fromCache.hasError()) return fromCache;
 
         // Look up the merge plan ...
-        BasicMergePlan basicMergePlan = getMergePlan(fromCache);
-        if (basicMergePlan != null) {
-            if (isCurrent(path, basicMergePlan)) return fromCache;
+        MergePlan mergePlan = getMergePlan(fromCache);
+        if (mergePlan != null) {
+            if (isCurrent(path, mergePlan)) return fromCache;
             // Some of the merge plan is out of date, so we need to read the information from those regions that are expired ...
-            BasicMergePlan newMergePlan = new BasicMergePlan();
+            // MergePlan newMergePlan = new BasicMergePlan();
             // for (Projection projection : sourceProjections) {
             // // Does this region apply to the path ...
             // if (projection.appliesTo(path)) {
@@ -246,53 +259,93 @@ public class FederatingCommandExecutor extends AbstractCommandExecutor {
             // What about other (new) regions?
         } else {
             // At this point, there is no merge plan, so read information from the sources ...
-            // for (FederatedRegion region : regions) {
-            // if (!region.appliesTo(path)) continue;
-            // // Issue a command to get the node from the
-            // // BasicGetNode
-            // }
+            PathFactory pathFactory = getEnvironment().getValueFactories().getPathFactory();
+            List<Contribution> contributions = new LinkedList<Contribution>();
+            for (Projection projection : this.sourceProjections) {
+                final String source = projection.getSourceName();
+                // Get the paths-in-source where we should fetch node contributions ...
+                Set<Path> pathsInSource = projection.getPathsInSource(path, pathFactory);
+                if (pathsInSource.isEmpty()) {
+                    // The source has no contributions ...
+                    contributions.add(Contribution.create(source));
+                } else {
+                    // There is at least one contribution ...
+                    RepositoryConnection sourceConnection = getConnection(projection);
+
+                    // Get the contributions ...
+                    final int numPaths = pathsInSource.size();
+                    if (numPaths == 1) {
+                        Path pathInSource = pathsInSource.iterator().next();
+                        BasicGetNodeCommand fromSource = new BasicGetNodeCommand(pathInSource);
+                        sourceConnection.execute(getEnvironment(), fromSource);
+                        if (!fromSource.hasError()) {
+                            Collection<Property> properties = fromSource.getProperties().values();
+                            Collection<Segment> children = fromSource.getChildren();
+                            Contribution contribution = Contribution.create(source, pathInSource, properties, children);
+                            contributions.add(contribution);
+                        }
+                    } else {
+                        BasicGetNodeCommand[] fromSourceCommands = new BasicGetNodeCommand[numPaths];
+                        int i = 0;
+                        for (Path pathInSource : pathsInSource) {
+                            fromSourceCommands[i++] = new BasicGetNodeCommand(pathInSource);
+                        }
+                        sourceConnection.execute(getEnvironment(), fromSourceCommands);
+                        for (BasicGetNodeCommand fromSource : fromSourceCommands) {
+                            if (fromSource.hasError()) continue;
+                            Collection<Property> properties = fromSource.getProperties().values();
+                            Collection<Segment> children = fromSource.getChildren();
+                            Contribution contribution = Contribution.create(source, fromSource.getPath(), properties, children);
+                            contributions.add(contribution);
+                        }
+                    }
+                }
+            }
+            // Merge the results into a single set of results ...
+            mergePlan = MergePlan.create(contributions);
+            BasicGetNodeCommand mergedNode = new BasicGetNodeCommand(null);
+
+            // Place the results into the cache ...
+            NodeConflictBehavior conflictBehavior = NodeConflictBehavior.UPDATE;
+            BasicCreateNodeCommand newNode = new BasicCreateNodeCommand(path, mergedNode.getProperties().values(),
+                                                                        conflictBehavior);
+            List<Segment> children = mergedNode.getChildren();
+            GraphCommand[] intoCache = new GraphCommand[1 + children.size()];
+            int i = 0;
+            intoCache[i++] = newNode;
+            List<Property> noProperties = Collections.emptyList();
+            for (Segment child : mergedNode.getChildren()) {
+                intoCache[i++] = new BasicCreateNodeCommand(pathFactory.create(path, child), noProperties, conflictBehavior);
+            }
+            cacheConnection.execute(getEnvironment(), mergedNode);
+
+            // Return the results ...
+            return mergedNode;
         }
-        // And read the information from any new region ...
+
         return null;
     }
 
-    protected Contribution getContribution( String sourceName,
-                                            Path path ) {
-        return null;
+    protected Contribution getContribution( RepositoryConnection connection,
+                                            String sourceName,
+                                            Path path ) throws RepositorySourceException, InterruptedException {
+        BasicGetNodeCommand fromSource = new BasicGetNodeCommand(path);
+        connection.execute(getEnvironment(), fromSource);
+        if (fromSource.hasError()) return null;
+
+        Collection<Property> properties = fromSource.getProperties().values();
+        Collection<Segment> children = fromSource.getChildren();
+        Contribution contribution = Contribution.create(sourceName, path, properties, children);
+        return contribution;
     }
 
-    protected BasicMergePlan getMergePlan( BasicGetPropertiesCommand command ) {
+    protected MergePlan getMergePlan( BasicGetPropertiesCommand command ) {
         Property mergePlanProperty = command.getProperties().get(mergePlanPropertyName);
         if (mergePlanProperty == null || mergePlanProperty.isEmpty()) {
             return null;
         }
-        ValueFactory<Binary> binaryFactory = getEnvironment().getValueFactories().getBinaryFactory();
-        Binary binaryValue = binaryFactory.create(mergePlanProperty.getValues().next());
-        binaryValue.acquire();
-        ObjectInputStream stream = null;
-        BasicMergePlan basicMergePlan = null;
-        RepositorySourceException error = null;
-        try {
-            stream = new ObjectInputStream(binaryValue.getStream());
-            basicMergePlan = (BasicMergePlan)stream.readObject();
-        } catch (Throwable err) {
-            I18n msg = FederationI18n.errorReadingMergePlan;
-            error = new RepositorySourceException(getSourceName(), msg.text(command.getPath()), err);
-            throw error;
-        } finally {
-            try {
-                if (stream != null) stream.close();
-            } catch (Throwable err) {
-                if (error == null) {
-                    I18n msg = FederationI18n.errorReadingMergePlan;
-                    error = new RepositorySourceException(getSourceName(), msg.text(command.getPath()), err);
-                    throw error;
-                }
-            } finally {
-                binaryValue.release();
-            }
-        }
-        return basicMergePlan;
+        Object value = mergePlanProperty.getValues().next();
+        return value instanceof MergePlan ? (MergePlan)value : null;
     }
 
     /**
@@ -303,27 +356,27 @@ public class FederatingCommandExecutor extends AbstractCommandExecutor {
      * @return true if the merge plan is current, or false if it needs to be (at least partially) rebuilt
      */
     protected boolean isCurrent( Path path,
-                                 BasicMergePlan plan ) {
+                                 MergePlan plan ) {
         // First check the time ...
         DateTime now = getCurrentTimeInUtc();
         if (plan.isExpired(now)) return false;
 
         // Does the plan have any contributions from sources that don't exist ?
-        for (String contributingSource : plan.getNamesOfContributingSources()) {
-            if (!sourceNames.contains(contributingSource)) return false;
+        for (Contribution contribution : plan) {
+            if (!sourceNames.contains(contribution.getSourceName())) return false;
         }
-
-        // Determine if any new source projections exists that aren't part of the plan ...
-        for (String sourceName : sourceNames) {
-            if (plan.isSource(sourceName)) continue;
-            // The source is new ... see whether there are any regions that apply ...
-            // for (FederatedRegion region : this.regionsBySourceName.get(sourceName)) {
-            // // If the region's path is not at/above the path, the region doesn't matter
-            // if (!region.appliesTo(path)) continue;
-            // // The region applies to the path ...
-            // return false;
-            // }
-        }
+        //
+        // // Determine if any new source projections exists that aren't part of the plan ...
+        // for (String sourceName : sourceNames) {
+        // if (plan.isSource(sourceName)) continue;
+        // // The source is new ... see whether there are any regions that apply ...
+        // // for (FederatedRegion region : this.regionsBySourceName.get(sourceName)) {
+        // // // If the region's path is not at/above the path, the region doesn't matter
+        // // if (!region.appliesTo(path)) continue;
+        // // // The region applies to the path ...
+        // // return false;
+        // // }
+        // }
         return true;
     }
 

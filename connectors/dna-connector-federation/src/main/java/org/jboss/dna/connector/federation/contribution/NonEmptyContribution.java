@@ -22,33 +22,35 @@
 package org.jboss.dna.connector.federation.contribution;
 
 import net.jcip.annotations.Immutable;
+import org.jboss.dna.common.util.HashCode;
 import org.jboss.dna.spi.graph.Path;
 
 /**
- * A source contribution that is empty. In other words, the source has no contribution to make.
- * <p>
- * Note that this is different than an unknown contribution, which may occur when a source is added to a federated repository
- * after the contributions have already been determined for nodes. In this case, the new source's contribution for a node is not
- * known and must be determined.
- * </p>
+ * The record of a non-empty source contribution from a single location within the source.
  * 
  * @author Randall Hauch
  */
 @Immutable
-public class EmptyContribution extends Contribution {
+public abstract class NonEmptyContribution extends Contribution {
 
     /**
      * This is the first version of this class. See the documentation of MergePlan.serialVersionUID.
      */
     private static final long serialVersionUID = 1L;
 
+    private final Path pathInSource;
+
     /**
-     * Create a contribution for the source with the supplied name.
+     * Create a contribution of node properties from the source with the supplied name.
      * 
      * @param sourceName the name of the source, which may not be null or blank
+     * @param pathInSource the path in the source for this contributed information; may not be null
      */
-    public EmptyContribution( String sourceName ) {
+    protected NonEmptyContribution( String sourceName,
+                                    Path pathInSource ) {
         super(sourceName);
+        assert pathInSource != null;
+        this.pathInSource = pathInSource;
     }
 
     /**
@@ -58,7 +60,19 @@ public class EmptyContribution extends Contribution {
      */
     @Override
     public Path getPathInSource() {
-        return null;
+        return pathInSource;
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * This implementation returns the hash code of the {@link #getSourceName() source name}, and is compatible with the
+     * implementation of {@link #equals(Object)}.
+     * </p>
+     */
+    @Override
+    public int hashCode() {
+        return HashCode.compute(this.getSourceName(), this.getPathInSource());
     }
 
     /**
@@ -67,9 +81,10 @@ public class EmptyContribution extends Contribution {
     @Override
     public boolean equals( Object obj ) {
         if (obj == this) return true;
-        if (obj instanceof EmptyContribution) {
-            EmptyContribution that = (EmptyContribution)obj;
+        if (obj instanceof NonEmptyContribution) {
+            NonEmptyContribution that = (NonEmptyContribution)obj;
             if (!this.getSourceName().equals(that.getSourceName())) return false;
+            if (!this.getPathInSource().equals(that.getPathInSource())) return false;
             return true;
         }
         return false;

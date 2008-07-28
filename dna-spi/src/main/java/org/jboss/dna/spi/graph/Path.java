@@ -401,7 +401,7 @@ public interface Path extends Comparable<Path>, Iterable<Path.Segment>, Serializ
      * @param degree
      * @return the ancestor of the supplied degree
      * @throws IllegalArgumentException if the degree is negative
-     * @throws PathNotFoundException if the degree is greater than the {@link #size() length} of this path
+     * @throws InvalidPathException if the degree is greater than the {@link #size() length} of this path
      */
     public Path getAncestor( int degree );
 

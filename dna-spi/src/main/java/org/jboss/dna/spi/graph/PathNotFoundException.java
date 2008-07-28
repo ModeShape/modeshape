@@ -31,44 +31,53 @@ public class PathNotFoundException extends RuntimeException {
     private static final long serialVersionUID = -3703984046286975978L;
 
     private final Path path;
+    private final Path lowestAncestorThatDoesExist;
 
     /**
      * @param path
+     * @param lowestAncestorThatDoesExist
      */
-    public PathNotFoundException( Path path ) {
+    public PathNotFoundException( Path path, Path lowestAncestorThatDoesExist ) {
         this.path = path;
+        this.lowestAncestorThatDoesExist = lowestAncestorThatDoesExist;
     }
 
     /**
      * @param path
+     * @param lowestAncestorThatDoesExist
      * @param message
      */
-    public PathNotFoundException( Path path,
+    public PathNotFoundException( Path path, Path lowestAncestorThatDoesExist,
                                   String message ) {
         super(message);
         this.path = path;
+        this.lowestAncestorThatDoesExist = lowestAncestorThatDoesExist;
     }
 
     /**
      * @param path
+     * @param lowestAncestorThatDoesExist
      * @param cause
      */
-    public PathNotFoundException( Path path,
+    public PathNotFoundException( Path path, Path lowestAncestorThatDoesExist,
                                   Throwable cause ) {
         super(cause);
         this.path = path;
+        this.lowestAncestorThatDoesExist = lowestAncestorThatDoesExist;
     }
 
     /**
      * @param path
+     * @param lowestAncestorThatDoesExist
      * @param message
      * @param cause
      */
-    public PathNotFoundException( Path path,
+    public PathNotFoundException( Path path, Path lowestAncestorThatDoesExist,
                                   String message,
                                   Throwable cause ) {
         super(message, cause);
         this.path = path;
+        this.lowestAncestorThatDoesExist = lowestAncestorThatDoesExist;
     }
 
     /**
@@ -86,5 +95,13 @@ public class PathNotFoundException extends RuntimeException {
      */
     public Path getPath() {
         return path;
+    }
+    
+    /**
+     * Get the lowest (closest) existing {@link Path#getAncestor() ancestor} of the {@link #getPath() non-existant path}.
+     * @return the lowest ancestor that does exist
+     */
+    public Path getLowestAncestorThatDoesExist() {
+        return lowestAncestorThatDoesExist;
     }
 }

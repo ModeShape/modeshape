@@ -21,57 +21,62 @@
  */
 package org.jboss.dna.connector.federation.contribution;
 
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
 import net.jcip.annotations.Immutable;
 import org.jboss.dna.spi.graph.Path;
+import org.jboss.dna.spi.graph.Path.Segment;
 
 /**
- * A source contribution that is empty. In other words, the source has no contribution to make.
- * <p>
- * Note that this is different than an unknown contribution, which may occur when a source is added to a federated repository
- * after the contributions have already been determined for nodes. In this case, the new source's contribution for a node is not
- * known and must be determined.
- * </p>
+ * The contribution of a source to the information for a single federated node.
  * 
  * @author Randall Hauch
  */
 @Immutable
-public class EmptyContribution extends Contribution {
+public class MultiChildContribution extends NonEmptyContribution {
 
     /**
      * This is the first version of this class. See the documentation of MergePlan.serialVersionUID.
      */
     private static final long serialVersionUID = 1L;
 
+    private List<Segment> children;
+
     /**
-     * Create a contribution for the source with the supplied name.
+     * Create a contribution of children from the source with the supplied name.
      * 
      * @param sourceName the name of the source, which may not be null or blank
+     * @param pathInSource the path in the source for this contributed information; may not be null
+     * @param children the children from the source; may not be null or empty
      */
-    public EmptyContribution( String sourceName ) {
-        super(sourceName);
+    public MultiChildContribution( String sourceName,
+                                   Path pathInSource,
+                                   Iterable<Segment> children ) {
+        super(sourceName, pathInSource);
+        this.children = new LinkedList<Segment>();
+        for (Segment child : children) {
+            if (child != null) this.children.add(child);
+        }
     }
 
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.connector.federation.contribution.Contribution#getPathInSource()
+     * @see org.jboss.dna.connector.federation.contribution.Contribution#getChildren()
      */
     @Override
-    public Path getPathInSource() {
-        return null;
+    public Iterator<Segment> getChildren() {
+        return new ImmutableIterator<Segment>(children.iterator());
     }
 
     /**
      * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.connector.federation.contribution.Contribution#getChildrenCount()
      */
     @Override
-    public boolean equals( Object obj ) {
-        if (obj == this) return true;
-        if (obj instanceof EmptyContribution) {
-            EmptyContribution that = (EmptyContribution)obj;
-            if (!this.getSourceName().equals(that.getSourceName())) return false;
-            return true;
-        }
-        return false;
+    public int getChildrenCount() {
+        return children.size();
     }
 }

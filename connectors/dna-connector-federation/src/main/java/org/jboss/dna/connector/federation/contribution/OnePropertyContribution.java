@@ -21,64 +21,71 @@
  */
 package org.jboss.dna.connector.federation.contribution;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.Iterator;
+import net.jcip.annotations.Immutable;
 import org.jboss.dna.spi.graph.Name;
 import org.jboss.dna.spi.graph.Path;
 import org.jboss.dna.spi.graph.Property;
 
 /**
  * The record of a source contributing only properties to a node.
- * <p>
- * This class does return a mutable mutable map of {@link #getProperties() properties}.
- * </p>
  * 
  * @author Randall Hauch
  */
-public class PropertyContribution extends AbstractContribution {
+@Immutable
+public class OnePropertyContribution extends NonEmptyContribution {
 
     /**
-     * This is the first version of this class. See the documentation of BasicMergePlan.serialVersionUID.
+     * This is the first version of this class. See the documentation of MergePlan.serialVersionUID.
      */
     private static final long serialVersionUID = 1L;
 
-    private final Map<Name, Property> properties;
-    private final Path pathInSource;
+    private final Property property;
 
     /**
      * Create a contribution of node properties from the source with the supplied name.
      * 
      * @param sourceName the name of the source, which may not be null or blank
      * @param pathInSource the path in the source for this contributed information; may not be null
-     * @param properties the properties from the source; may not be null
+     * @param property the property from the source; may not be null
      */
-    public PropertyContribution( String sourceName,
-                                 Path pathInSource,
-                                 Iterable<Property> properties ) {
-        super(sourceName);
-        assert pathInSource != null;
-        this.properties = new HashMap<Name, Property>();
-        this.pathInSource = pathInSource;
-        for (Property property : properties) {
-            this.properties.put(property.getName(), property);
-        }
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public Map<Name, Property> getProperties() {
-        return this.properties;
+    public OnePropertyContribution( String sourceName,
+                                    Path pathInSource,
+                                    Property property ) {
+        super(sourceName, pathInSource);
+        assert property != null;
+        assert property.isEmpty() == false;
+        this.property = property;
     }
 
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.connector.federation.contribution.Contribution#getPathInSource()
+     * @see org.jboss.dna.connector.federation.contribution.Contribution#getProperties()
      */
-    public Path getPathInSource() {
-        return pathInSource;
+    @Override
+    public Iterator<Property> getProperties() {
+        return new OneValueIterator<Property>(property);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.connector.federation.contribution.Contribution#getPropertyCount()
+     */
+    @Override
+    public int getPropertyCount() {
+        return 1;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.connector.federation.contribution.Contribution#getProperty(org.jboss.dna.spi.graph.Name)
+     */
+    @Override
+    public Property getProperty( Name name ) {
+        return this.property.getName().equals(name) ? property : null;
     }
 
 }

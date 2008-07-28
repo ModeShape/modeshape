@@ -49,6 +49,7 @@ import org.jboss.dna.spi.graph.commands.RecordBranchCommand;
 import org.jboss.dna.spi.graph.commands.SetPropertiesCommand;
 import org.jboss.dna.spi.graph.commands.executor.AbstractCommandExecutor;
 import org.jboss.dna.spi.graph.commands.executor.CommandExecutor;
+import org.jboss.dna.spi.graph.impl.BasicPath;
 
 /**
  * @author Randall Hauch
@@ -133,6 +134,37 @@ public class InMemoryRepository {
             }
         }
         return node;
+    }
+
+    /**
+     * Find the lowest existing node along the path.
+     * 
+     * @param path the path to the node; may not be null
+     * @return the lowest existing node along the path, or the root node if no node exists on the path
+     */
+    public Path getLowestExistingPath( Path path ) {
+        assert path != null;
+        Node node = getRoot();
+        int segmentNumber = 0;
+        for (Path.Segment segment : path) {
+            Node desiredChild = null;
+            for (Node child : node.getChildren()) {
+                if (child == null) continue;
+                Path.Segment childName = child.getName();
+                if (childName == null) continue;
+                if (childName.equals(segment)) {
+                    desiredChild = child;
+                    break;
+                }
+            }
+            if (desiredChild != null) {
+                node = desiredChild;
+            } else {
+                return path.subpath(0, segmentNumber);
+            }
+            ++segmentNumber;
+        }
+        return BasicPath.ROOT;
     }
 
     protected UUID generateUuid() {
@@ -305,6 +337,10 @@ public class InMemoryRepository {
             Path parent = path.getAncestor();
             // Look up the parent node, which must exist ...
             Node parentNode = getNode(parent);
+            if (parentNode == null) {
+                Path lowestExisting = getLowestExistingPath(parent);
+                throw new PathNotFoundException(path, lowestExisting, InMemoryConnectorI18n.nodeDoesNotExist.text(parent));
+            }
             Node node = createNode(getEnvironment(), parentNode, path.getLastSegment().getName());
             // Now add the properties to the supplied node ...
             for (Property property : command.getProperties()) {
@@ -404,7 +440,8 @@ public class InMemoryRepository {
             // Look up the node with the supplied path ...
             Node node = InMemoryRepository.this.getNode(path);
             if (node == null) {
-                throw new PathNotFoundException(path, InMemoryConnectorI18n.nodeDoesNotExist.text(path));
+                Path lowestExisting = getLowestExistingPath(path);
+                throw new PathNotFoundException(path, lowestExisting, InMemoryConnectorI18n.nodeDoesNotExist.text(path));
             }
             return null;
         }

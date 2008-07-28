@@ -23,6 +23,7 @@ package org.jboss.dna.connector.federation.merge;
 
 import java.io.InvalidClassException;
 import java.io.Serializable;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -54,11 +55,35 @@ public abstract class MergePlan implements Serializable, Iterable<Contribution> 
         ArgCheck.isNotNull(contributions, "contributions");
         switch (contributions.length) {
             case 1:
-                return new SingleContributionMergePlan(contributions[0]);
+                return new OneContributionMergePlan(contributions[0]);
             case 2:
-                return new DoubleContributionMergePlan(contributions[0], contributions[1]);
+                return new TwoContributionMergePlan(contributions[0], contributions[1]);
             case 3:
-                return new TripleContributionMergePlan(contributions[0], contributions[1], contributions[2]);
+                return new ThreeContributionMergePlan(contributions[0], contributions[1], contributions[2]);
+            case 4:
+                return new FourContributionMergePlan(contributions[0], contributions[1], contributions[2], contributions[3]);
+            case 5:
+                return new FiveContributionMergePlan(contributions[0], contributions[1], contributions[2], contributions[3],
+                                                     contributions[4]);
+            default:
+                return new MultipleContributionMergePlan(contributions);
+        }
+    }
+
+    public static MergePlan create( Collection<Contribution> contributions ) {
+        ArgCheck.isNotNull(contributions, "contributions");
+        Iterator<Contribution> iter = contributions.iterator();
+        switch (contributions.size()) {
+            case 1:
+                return new OneContributionMergePlan(iter.next());
+            case 2:
+                return new TwoContributionMergePlan(iter.next(), iter.next());
+            case 3:
+                return new ThreeContributionMergePlan(iter.next(), iter.next(), iter.next());
+            case 4:
+                return new FourContributionMergePlan(iter.next(), iter.next(), iter.next(), iter.next());
+            case 5:
+                return new FiveContributionMergePlan(iter.next(), iter.next(), iter.next(), iter.next(), iter.next());
             default:
                 return new MultipleContributionMergePlan(contributions);
         }
@@ -71,20 +96,26 @@ public abstract class MergePlan implements Serializable, Iterable<Contribution> 
             multiPlan.addContribution(contribution);
             return multiPlan;
         }
-        if (plan instanceof SingleContributionMergePlan) {
-            MergePlan newPlan = new DoubleContributionMergePlan(plan.iterator().next(), contribution);
-            newPlan.setAnnotations(plan.getAnnotations());
+        MergePlan newPlan = null;
+        if (plan instanceof OneContributionMergePlan) {
+            newPlan = new TwoContributionMergePlan(plan.iterator().next(), contribution);
+        } else if (plan instanceof TwoContributionMergePlan) {
+            Iterator<Contribution> iter = plan.iterator();
+            newPlan = new ThreeContributionMergePlan(iter.next(), iter.next(), contribution);
+        } else if (plan instanceof ThreeContributionMergePlan) {
+            Iterator<Contribution> iter = plan.iterator();
+            newPlan = new FourContributionMergePlan(iter.next(), iter.next(), iter.next(), contribution);
+        } else if (plan instanceof FourContributionMergePlan) {
+            Iterator<Contribution> iter = plan.iterator();
+            newPlan = new FiveContributionMergePlan(iter.next(), iter.next(), iter.next(), iter.next(), contribution);
+        } else {
+            MultipleContributionMergePlan multiPlan = new MultipleContributionMergePlan();
+            for (Contribution existingContribution : plan) {
+                multiPlan.addContribution(existingContribution);
+            }
+            multiPlan.addContribution(contribution);
+            newPlan = multiPlan;
         }
-        if (plan instanceof DoubleContributionMergePlan) {
-            Iterator<Contribution> iterator = plan.iterator();
-            MergePlan newPlan = new TripleContributionMergePlan(iterator.next(), iterator.next(), contribution);
-            newPlan.setAnnotations(plan.getAnnotations());
-        }
-        MultipleContributionMergePlan newPlan = new MultipleContributionMergePlan();
-        for (Contribution existingContribution : plan) {
-            newPlan.addContribution(existingContribution);
-        }
-        newPlan.addContribution(contribution);
         newPlan.setAnnotations(plan.getAnnotations());
         return newPlan;
     }

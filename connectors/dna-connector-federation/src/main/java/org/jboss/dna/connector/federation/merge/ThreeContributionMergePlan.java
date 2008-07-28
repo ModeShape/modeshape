@@ -30,17 +30,27 @@ import org.jboss.dna.connector.federation.contribution.Contribution;
  * @author Randall Hauch
  */
 @ThreadSafe
-public class SingleContributionMergePlan extends MergePlan {
+public class ThreeContributionMergePlan extends MergePlan {
 
     private static final long serialVersionUID = 1L;
-    private final Contribution contribution;
+    private final Contribution contribution1;
+    private final Contribution contribution2;
+    private final Contribution contribution3;
 
     /**
-     * @param contribution the contribution for this merge plan
+     * @param contribution1 the first contribution for this merge plan
+     * @param contribution2 the second contribution for this merge plan
+     * @param contribution3 the third contribution for this merge plan
      */
-    public SingleContributionMergePlan( Contribution contribution ) {
-        assert contribution != null;
-        this.contribution = contribution;
+    public ThreeContributionMergePlan( Contribution contribution1,
+                                       Contribution contribution2,
+                                       Contribution contribution3 ) {
+        assert contribution1 != null;
+        assert contribution2 != null;
+        assert contribution3 != null;
+        this.contribution1 = contribution1;
+        this.contribution2 = contribution2;
+        this.contribution3 = contribution3;
     }
 
     /**
@@ -50,7 +60,7 @@ public class SingleContributionMergePlan extends MergePlan {
      */
     @Override
     public int getContributionCount() {
-        return 1;
+        return 3;
     }
 
     /**
@@ -60,7 +70,10 @@ public class SingleContributionMergePlan extends MergePlan {
      */
     @Override
     public Contribution getContributionFrom( String sourceName ) {
-        return isSource(sourceName) ? contribution : null;
+        if (contribution1.getSourceName().equals(sourceName)) return contribution1;
+        if (contribution2.getSourceName().equals(sourceName)) return contribution2;
+        if (contribution3.getSourceName().equals(sourceName)) return contribution3;
+        return null;
     }
 
     /**
@@ -70,17 +83,25 @@ public class SingleContributionMergePlan extends MergePlan {
      */
     public Iterator<Contribution> iterator() {
         return new Iterator<Contribution>() {
-            private boolean next = true;
+            private int next = 3;
 
             public boolean hasNext() {
-                return next;
+                return next > 0;
             }
 
             @SuppressWarnings( "synthetic-access" )
             public Contribution next() {
-                if (next) {
-                    next = false;
-                    return contribution;
+                if (next == 3) {
+                    next = 2;
+                    return contribution1;
+                }
+                if (next == 2) {
+                    next = 1;
+                    return contribution2;
+                }
+                if (next == 1) {
+                    next = 0;
+                    return contribution3;
                 }
                 throw new NoSuchElementException();
             }
@@ -98,7 +119,10 @@ public class SingleContributionMergePlan extends MergePlan {
      */
     @Override
     public boolean isSource( String sourceName ) {
-        return contribution.getSourceName().equals(sourceName);
+        if (contribution1.getSourceName().equals(sourceName)) return true;
+        if (contribution2.getSourceName().equals(sourceName)) return true;
+        if (contribution3.getSourceName().equals(sourceName)) return true;
+        return false;
     }
 
 }

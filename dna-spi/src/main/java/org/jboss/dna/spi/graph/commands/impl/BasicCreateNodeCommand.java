@@ -21,7 +21,7 @@
  */
 package org.jboss.dna.spi.graph.commands.impl;
 
-import java.util.List;
+import java.util.Collection;
 import net.jcip.annotations.NotThreadSafe;
 import org.jboss.dna.common.util.StringUtil;
 import org.jboss.dna.spi.graph.Path;
@@ -39,7 +39,7 @@ public class BasicCreateNodeCommand extends BasicGraphCommand implements CreateN
      */
     private static final long serialVersionUID = -5452285887178397354L;
     private final Path path;
-    private final List<Property> properties;
+    private final Collection<Property> properties;
     private final NodeConflictBehavior conflictBehavior;
 
     /**
@@ -48,7 +48,7 @@ public class BasicCreateNodeCommand extends BasicGraphCommand implements CreateN
      * @param conflictBehavior the desired behavior when a node exists at the <code>path</code>; may not be null
      */
     public BasicCreateNodeCommand( Path path,
-                                   List<Property> properties,
+                                   Collection<Property> properties,
                                    NodeConflictBehavior conflictBehavior ) {
         super();
         assert path != null;

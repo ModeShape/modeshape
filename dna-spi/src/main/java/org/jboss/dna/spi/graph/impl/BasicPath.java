@@ -35,7 +35,6 @@ import org.jboss.dna.spi.SpiI18n;
 import org.jboss.dna.spi.graph.InvalidPathException;
 import org.jboss.dna.spi.graph.NamespaceRegistry;
 import org.jboss.dna.spi.graph.Path;
-import org.jboss.dna.spi.graph.PathNotFoundException;
 
 /**
  * A basic implementation of {@link Path}.
@@ -99,7 +98,7 @@ public class BasicPath implements Path {
         int endIndex = this.segments.size() - degree;
         if (endIndex < 0) {
             String msg = SpiI18n.pathAncestorDegreeIsInvalid.text(this.getString(), Inflector.getInstance().ordinalize(degree));
-            throw new PathNotFoundException(this, msg);
+            throw new InvalidPathException(msg);
         }
         return subpath(0, endIndex);
     }

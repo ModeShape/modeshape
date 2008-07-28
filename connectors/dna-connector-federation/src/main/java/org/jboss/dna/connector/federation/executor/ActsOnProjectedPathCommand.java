@@ -29,7 +29,7 @@ import org.jboss.dna.spi.graph.commands.GraphCommand;
  * @author Randall Hauch
  * @param <T> the command type
  */
-public class ActsOnProjectedPathCommand<T extends GraphCommand> implements ActsOnPath, GraphCommand {
+public class ActsOnProjectedPathCommand<T extends ActsOnPath & GraphCommand> implements ActsOnPath, GraphCommand {
 
     private final T delegate;
     private final Path projectedPath;

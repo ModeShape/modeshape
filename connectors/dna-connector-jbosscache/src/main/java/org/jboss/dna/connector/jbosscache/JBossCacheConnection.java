@@ -35,6 +35,7 @@ import org.jboss.dna.spi.ExecutionContext;
 import org.jboss.dna.spi.cache.CachePolicy;
 import org.jboss.dna.spi.graph.Name;
 import org.jboss.dna.spi.graph.Path;
+import org.jboss.dna.spi.graph.PathFactory;
 import org.jboss.dna.spi.graph.PathNotFoundException;
 import org.jboss.dna.spi.graph.Property;
 import org.jboss.dna.spi.graph.PropertyFactory;
@@ -185,6 +186,15 @@ public class JBossCacheConnection implements RepositoryConnection {
         return Fqn.fromElements(pathSegment);
     }
 
+    protected Path getPath( PathFactory factory,
+                            Fqn<Path.Segment> fqn ) {
+        Path.Segment[] segments = new Path.Segment[fqn.size()];
+        for (int i = 0; i != segments.length; ++i) {
+            segments[i] = fqn.get(i);
+        }
+        return factory.create(factory.createRootPath(), segments);
+    }
+
     protected Node<Name, Object> getNode( ExecutionContext context,
                                           Path path ) {
         // Look up the node with the supplied path ...
@@ -192,7 +202,16 @@ public class JBossCacheConnection implements RepositoryConnection {
         Node<Name, Object> node = cache.getNode(fqn);
         if (node == null) {
             String nodePath = path.getString(context.getNamespaceRegistry());
-            throw new PathNotFoundException(path, JBossCacheConnectorI18n.nodeDoesNotExist.text(nodePath));
+            Path lowestExisting = null;
+            while (fqn != null) {
+                fqn = fqn.getParent();
+                node = cache.getNode(fqn);
+                if (node != null) {
+                    lowestExisting = getPath(context.getValueFactories().getPathFactory(), fqn);
+                    fqn = null;
+                }
+            }
+            throw new PathNotFoundException(path, lowestExisting, JBossCacheConnectorI18n.nodeDoesNotExist.text(nodePath));
         }
         return node;
 

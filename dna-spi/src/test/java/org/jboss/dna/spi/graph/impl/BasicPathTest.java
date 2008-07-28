@@ -35,7 +35,6 @@ import org.jboss.dna.common.text.TextEncoder;
 import org.jboss.dna.spi.graph.InvalidPathException;
 import org.jboss.dna.spi.graph.Name;
 import org.jboss.dna.spi.graph.Path;
-import org.jboss.dna.spi.graph.PathNotFoundException;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -241,7 +240,7 @@ public class BasicPathTest {
         assertThat(path.getAncestor(3), is(ROOT));
     }
 
-    @Test( expected = PathNotFoundException.class )
+    @Test( expected = InvalidPathException.class )
     public void shouldNotAllowAncestorDegreeLargerThanSize() {
         path.getAncestor(path.size() + 1);
     }

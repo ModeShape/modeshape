@@ -22,64 +22,78 @@
 package org.jboss.dna.connector.federation.contribution;
 
 import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
 import net.jcip.annotations.Immutable;
+import org.jboss.dna.spi.graph.Name;
 import org.jboss.dna.spi.graph.Path;
 import org.jboss.dna.spi.graph.Property;
-import org.jboss.dna.spi.graph.Path.Segment;
 
 /**
- * The contribution of a source to the information for a single federated node.
+ * The record of a source contributing only properties to a node.
  * 
  * @author Randall Hauch
  */
 @Immutable
-public class NodeContribution extends MultiPropertyContribution {
+public class TwoPropertyContribution extends NonEmptyContribution {
 
     /**
      * This is the first version of this class. See the documentation of MergePlan.serialVersionUID.
      */
     private static final long serialVersionUID = 1L;
 
-    private List<Segment> children;
+    private final Property property1;
+    private final Property property2;
 
     /**
-     * Create a contribution of node properties and children from the source with the supplied name.
+     * Create a contribution of node properties from the source with the supplied name.
      * 
      * @param sourceName the name of the source, which may not be null or blank
      * @param pathInSource the path in the source for this contributed information; may not be null
-     * @param properties the properties from the source; may not be null
-     * @param children the children from the source; may not be null or empty
+     * @param property1 the first property from the source; may not be null
+     * @param property2 the first property from the source; may not be null
      */
-    public NodeContribution( String sourceName,
-                             Path pathInSource,
-                             Iterable<Property> properties,
-                             Iterable<Segment> children ) {
-        super(sourceName, pathInSource, properties);
-        this.children = new LinkedList<Segment>();
-        for (Segment child : children) {
-            if (child != null) this.children.add(child);
-        }
+    public TwoPropertyContribution( String sourceName,
+                                    Path pathInSource,
+                                    Property property1,
+                                    Property property2 ) {
+        super(sourceName, pathInSource);
+        assert property1 != null;
+        assert property1.isEmpty() == false;
+        assert property2 != null;
+        assert property2.isEmpty() == false;
+        this.property1 = property1;
+        this.property2 = property2;
     }
 
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.connector.federation.contribution.Contribution#getChildren()
+     * @see org.jboss.dna.connector.federation.contribution.Contribution#getProperties()
      */
     @Override
-    public Iterator<Segment> getChildren() {
-        return new ImmutableIterator<Segment>(children.iterator());
+    public Iterator<Property> getProperties() {
+        return new TwoValueIterator<Property>(property1, property2);
     }
 
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.connector.federation.contribution.Contribution#getChildrenCount()
+     * @see org.jboss.dna.connector.federation.contribution.Contribution#getPropertyCount()
      */
     @Override
-    public int getChildrenCount() {
-        return children.size();
+    public int getPropertyCount() {
+        return 2;
     }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.connector.federation.contribution.Contribution#getProperty(org.jboss.dna.spi.graph.Name)
+     */
+    @Override
+    public Property getProperty( Name name ) {
+        if (this.property1.getName().equals(name)) return property1;
+        if (this.property2.getName().equals(name)) return property2;
+        return null;
+    }
+
 }

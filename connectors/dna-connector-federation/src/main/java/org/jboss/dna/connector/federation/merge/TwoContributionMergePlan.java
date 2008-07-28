@@ -22,8 +22,7 @@
 package org.jboss.dna.connector.federation.merge;
 
 import java.util.Iterator;
-import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.NoSuchElementException;
 import net.jcip.annotations.ThreadSafe;
 import org.jboss.dna.connector.federation.contribution.Contribution;
 
@@ -31,46 +30,22 @@ import org.jboss.dna.connector.federation.contribution.Contribution;
  * @author Randall Hauch
  */
 @ThreadSafe
-public class MultipleContributionMergePlan extends MergePlan {
+public class TwoContributionMergePlan extends MergePlan {
 
     private static final long serialVersionUID = 1L;
-    private final List<Contribution> contributions;
+    private final Contribution contribution1;
+    private final Contribution contribution2;
 
     /**
-     * @param contributions the contributions for this merge plan
+     * @param contribution1 the first contribution for this merge plan
+     * @param contribution2 the second contribution for this merge plan
      */
-    public MultipleContributionMergePlan( Contribution... contributions ) {
-        assert contributions != null;
-        this.contributions = new CopyOnWriteArrayList<Contribution>();
-        for (int i = 0; i != contributions.length; ++i) {
-            assert contributions[i] != null;
-            this.contributions.add(contributions[i]);
-        }
-    }
-
-    /**
-     * @param contributions the contributions for this merge plan
-     */
-    public MultipleContributionMergePlan( Iterable<Contribution> contributions ) {
-        assert contributions != null;
-        this.contributions = new CopyOnWriteArrayList<Contribution>();
-        for (Contribution contribution : contributions) {
-            assert contribution != null;
-            this.contributions.add(contribution);
-        }
-    }
-
-    /**
-     * @param contributions the contributions for this merge plan
-     */
-    public MultipleContributionMergePlan( Iterator<Contribution> contributions ) {
-        assert contributions != null;
-        this.contributions = new CopyOnWriteArrayList<Contribution>();
-        while (contributions.hasNext()) {
-            Contribution contribution = contributions.next();
-            assert contribution != null;
-            this.contributions.add(contribution);
-        }
+    public TwoContributionMergePlan( Contribution contribution1,
+                                     Contribution contribution2 ) {
+        assert contribution1 != null;
+        assert contribution2 != null;
+        this.contribution1 = contribution1;
+        this.contribution2 = contribution2;
     }
 
     /**
@@ -80,7 +55,7 @@ public class MultipleContributionMergePlan extends MergePlan {
      */
     @Override
     public int getContributionCount() {
-        return contributions.size();
+        return 2;
     }
 
     /**
@@ -90,9 +65,8 @@ public class MultipleContributionMergePlan extends MergePlan {
      */
     @Override
     public Contribution getContributionFrom( String sourceName ) {
-        for (Contribution contribution : contributions) {
-            if (contribution.getSourceName().equals(sourceName)) return contribution;
-        }
+        if (contribution1.getSourceName().equals(sourceName)) return contribution1;
+        if (contribution2.getSourceName().equals(sourceName)) return contribution2;
         return null;
     }
 
@@ -102,14 +76,24 @@ public class MultipleContributionMergePlan extends MergePlan {
      * @see java.lang.Iterable#iterator()
      */
     public Iterator<Contribution> iterator() {
-        final Iterator<Contribution> iterator = this.contributions.iterator();
         return new Iterator<Contribution>() {
+            private int next = 2;
+
             public boolean hasNext() {
-                return iterator.hasNext();
+                return next > 0;
             }
 
+            @SuppressWarnings( "synthetic-access" )
             public Contribution next() {
-                return iterator.next();
+                if (next == 2) {
+                    next = 1;
+                    return contribution1;
+                }
+                if (next == 1) {
+                    next = 0;
+                    return contribution2;
+                }
+                throw new NoSuchElementException();
             }
 
             public void remove() {
@@ -125,17 +109,7 @@ public class MultipleContributionMergePlan extends MergePlan {
      */
     @Override
     public boolean isSource( String sourceName ) {
-        for (Contribution contribution : contributions) {
-            if (contribution.getSourceName().equals(sourceName)) return true;
-        }
-        return false;
-    }
-
-    /**
-     * @param contribution
-     */
-    public void addContribution( Contribution contribution ) {
-        this.contributions.add(contribution);
+        return contribution1.getSourceName().equals(sourceName) || contribution2.getSourceName().equals(sourceName);
     }
 
 }
