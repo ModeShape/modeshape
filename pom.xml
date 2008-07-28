@@ -104,6 +104,7 @@
 		<module>sequencers/dna-sequencer-cnd</module>
 		<module>sequencers/dna-sequencer-java</module>
 		<module>sequencers/dna-sequencer-msoffice</module>
+        <module>sequencers/dna-sequencer-zip</module>
 		<module>connectors/dna-connector-federation</module>
 		<module>connectors/dna-connector-inmemory</module>
 		<module>connectors/dna-connector-jbosscache</module>

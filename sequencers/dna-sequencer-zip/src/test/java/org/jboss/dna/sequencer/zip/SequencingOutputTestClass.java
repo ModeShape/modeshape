@@ -22,45 +22,49 @@
 
 package org.jboss.dna.sequencer.zip;
 
-import org.jboss.dna.spi.sequencers.SequencerOutput;
-import org.jboss.dna.spi.graph.*;
-import org.junit.Test;
-import org.junit.Ignore;
-
-import java.util.Collection;
-import java.util.List;
 import java.util.ArrayList;
+import java.util.List;
+import org.jboss.dna.spi.graph.Name;
+import org.jboss.dna.spi.graph.NamespaceRegistry;
+import org.jboss.dna.spi.graph.Path;
+import org.jboss.dna.spi.graph.ValueFactories;
+import org.jboss.dna.spi.sequencers.SequencerOutput;
+import org.junit.Ignore;
 
 /**
  * @author Michael Trezzi
  */
 @Ignore
 public class SequencingOutputTestClass implements SequencerOutput {
-    List<PropertyClassTest> properties = new ArrayList();
-    List<PropertyClassTest> references = new ArrayList();
-
-
+    List<PropertyClassTest> properties = new ArrayList<PropertyClassTest>();
+    List<PropertyClassTest> references = new ArrayList<PropertyClassTest>();
 
     public ValueFactories getFactories() {
         return null;
     }
-    
+
     public NamespaceRegistry getNamespaceRegistry() {
         return null;
     }
 
-    public void setProperty(String nodePath, String propertyName, Object... values) {
-        System.out.println("Setting property on '"+nodePath+"' "+propertyName+":"+values[0]);
-        properties.add(new PropertyClassTest(nodePath,propertyName,values[0]));
+    public void setProperty( String nodePath,
+                             String propertyName,
+                             Object... values ) {
+        System.out.println("Setting property on '" + nodePath + "' " + propertyName + ":" + values[0]);
+        properties.add(new PropertyClassTest(nodePath, propertyName, values[0]));
     }
 
-    public void setReference(String nodePath, String propertyName, String... paths) {
-        System.out.println("Setting reference on "+nodePath+" "+propertyName+":"+paths[0]);
-        references.add(new PropertyClassTest(nodePath,propertyName,paths[0]));
+    public void setReference( String nodePath,
+                              String propertyName,
+                              String... paths ) {
+        System.out.println("Setting reference on " + nodePath + " " + propertyName + ":" + paths[0]);
+        references.add(new PropertyClassTest(nodePath, propertyName, paths[0]));
     }
 
-    public void setProperty(Path nodePath, Name propertyName, Object... values) {
-        System.out.println("Setting property on "+nodePath.getString()+" "+propertyName.getString()+":"+values[0]);
-        properties.add(new PropertyClassTest(nodePath.getString(),propertyName.getString(),values[0]));
+    public void setProperty( Path nodePath,
+                             Name propertyName,
+                             Object... values ) {
+        System.out.println("Setting property on " + nodePath.getString() + " " + propertyName.getString() + ":" + values[0]);
+        properties.add(new PropertyClassTest(nodePath.getString(), propertyName.getString(), values[0]));
     }
 }

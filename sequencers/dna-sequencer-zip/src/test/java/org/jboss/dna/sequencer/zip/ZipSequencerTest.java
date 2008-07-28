@@ -22,12 +22,12 @@
 
 package org.jboss.dna.sequencer.zip;
 
-import org.junit.Test;
-import org.junit.After;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
-
 import java.io.InputStream;
+import org.jboss.dna.spi.sequencers.SequencerContext;
+import org.junit.After;
+import org.junit.Test;
 
 /**
  * @author Michael Trezzi
@@ -54,10 +54,11 @@ public class ZipSequencerTest {
     public void shouldBeAbleToExtractZip() {
         InputStream is = getTestZip("testzip.zip");
         ZipSequencer zs = new ZipSequencer();
-        SequencingOutputTestClass seqtest =  new SequencingOutputTestClass();
-        zs.sequence(is,seqtest,null);
+        SequencingOutputTestClass seqtest = new SequencingOutputTestClass();
+        SequencerContext context = null;
+        zs.sequence(is, seqtest, context, null);
 
         assertThat(seqtest.properties.get(2).getPath(), is("zip:content/test subfolder/test2.txt/jcr:content"));
     }
-    
+
 }
