@@ -65,7 +65,7 @@ import org.jboss.dna.sequencer.java.metadata.Variable;
 /**
  * Abstract definition of a <tt>JavaMetadata<tt>. This class exposes some useful methods, that can
  * be used to create meta data of a compilation unit. Methods can also separately be used.
- *  
+ * 
  * @author Serge Pagop
  */
 public abstract class AbstractJavaMetadata {
@@ -155,7 +155,7 @@ public abstract class AbstractJavaMetadata {
     protected List<TypeMetadata> createTypeMetadata( CompilationUnit unit ) {
         List<TypeMetadata> metadata = new ArrayList<TypeMetadata>();
         List<AbstractTypeDeclaration> topLevelType = unit.types();
-        
+
         for (AbstractTypeDeclaration abstractTypeDeclaration : topLevelType) {
             // process TypeDeclaration (class, interface)
             if (abstractTypeDeclaration instanceof TypeDeclaration) {
@@ -202,13 +202,13 @@ public abstract class AbstractJavaMetadata {
 
             // process EnumDeclaration
             if (abstractTypeDeclaration instanceof EnumDeclaration) {
-                EnumDeclaration enumDeclaration = (EnumDeclaration)abstractTypeDeclaration;
+                // EnumDeclaration enumDeclaration = (EnumDeclaration)abstractTypeDeclaration;
                 // TODO get infos from enum declaration and create a enum meta data object.
             }
 
             // process annotationTypeDeclaration
             if (abstractTypeDeclaration instanceof AnnotationTypeDeclaration) {
-                AnnotationTypeDeclaration annotationTypeDeclaration = (AnnotationTypeDeclaration)abstractTypeDeclaration;
+                // AnnotationTypeDeclaration annotationTypeDeclaration = (AnnotationTypeDeclaration)abstractTypeDeclaration;
                 // TODO get infos from annotation type declaration and create a annotation meta data object.
             }
         }

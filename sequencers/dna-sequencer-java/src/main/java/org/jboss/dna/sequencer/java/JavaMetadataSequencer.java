@@ -347,7 +347,7 @@ public class JavaMetadataSequencer implements StreamSequencer {
                             }
                         }
                         if (fieldMetadata instanceof ParameterizedFieldMetadata) {
-                            ParameterizedFieldMetadata parameterizedFieldMetadata = (ParameterizedFieldMetadata)fieldMetadata;
+                            // ParameterizedFieldMetadata parameterizedFieldMetadata = (ParameterizedFieldMetadata)fieldMetadata;
                             // TODO
                         }
                     }
