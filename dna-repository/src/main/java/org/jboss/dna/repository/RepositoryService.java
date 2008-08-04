@@ -215,7 +215,7 @@ public class RepositoryService implements AdministeredService {
                 executor = new NoOpCommandExecutor(context, configurationSourceName);
             } else {
                 // The configuration repository has more than one projection, so we need to merge the results
-                executor = new FederatingCommandExecutor(context, configurationSourceName, null, projections, sources);
+                executor = new FederatingCommandExecutor(context, configurationSourceName, projections, sources);
             }
 
             // Read the configuration and the repository sources, located as child nodes/branches under "/dna:sources",

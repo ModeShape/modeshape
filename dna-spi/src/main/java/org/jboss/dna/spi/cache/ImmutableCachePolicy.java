@@ -28,30 +28,18 @@ public class ImmutableCachePolicy implements CachePolicy {
 
     private static final long serialVersionUID = 1L;
     private final long timeToCache;
-    private final long timeToExpire;
 
-    public ImmutableCachePolicy( long timeToCache,
-                                 long timeToExpire ) {
+    public ImmutableCachePolicy( long timeToCache ) {
         this.timeToCache = timeToCache;
-        this.timeToExpire = timeToExpire;
     }
 
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.spi.cache.CachePolicy#getTimeToCache()
+     * @see org.jboss.dna.spi.cache.CachePolicy#getTimeToLive()
      */
-    public long getTimeToCache() {
+    public long getTimeToLive() {
         return this.timeToCache;
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.jboss.dna.spi.cache.CachePolicy#getTimeToExpire()
-     */
-    public long getTimeToExpire() {
-        return this.timeToExpire;
     }
 
     public CachePolicy getUnmodifiable() {

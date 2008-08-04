@@ -27,56 +27,37 @@ package org.jboss.dna.spi.cache;
 public class BasicCachePolicy implements CachePolicy {
 
     private static final long serialVersionUID = 1L;
-    private long timeToCache;
-    private long timeToExpire;
+    private long timeToLive;
 
     public BasicCachePolicy() {
     }
 
-    public BasicCachePolicy( long timeToCache,
-                             long timeToExpire ) {
-        this.timeToCache = timeToCache;
-        this.timeToExpire = timeToExpire;
+    public BasicCachePolicy( long timeToCache ) {
+        this.timeToLive = timeToCache;
     }
 
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.spi.cache.CachePolicy#getTimeToCache()
+     * @see org.jboss.dna.spi.cache.CachePolicy#getTimeToLive()
      */
-    public long getTimeToCache() {
-        return this.timeToCache;
+    public long getTimeToLive() {
+        return this.timeToLive;
     }
 
     /**
-     * @param timeToCache Sets timeToCache to the specified value.
+     * @param timeToLive Sets timeToLive to the specified value.
      */
-    public void setTimeToCache( long timeToCache ) {
-        this.timeToCache = timeToCache;
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.jboss.dna.spi.cache.CachePolicy#getTimeToExpire()
-     */
-    public long getTimeToExpire() {
-        return this.timeToExpire;
-    }
-
-    /**
-     * @param timeToExpire Sets timeToExpire to the specified value.
-     */
-    public void setTimeToExpire( long timeToExpire ) {
-        this.timeToExpire = timeToExpire;
+    public void setTimeToLive( long timeToLive ) {
+        this.timeToLive = timeToLive;
     }
 
     public boolean isEmpty() {
-        return this.timeToCache == 0 && this.timeToExpire == 0;
+        return this.timeToLive == 0;
     }
 
     public CachePolicy getUnmodifiable() {
-        return new ImmutableCachePolicy(this.getTimeToCache(), this.getTimeToExpire());
+        return new ImmutableCachePolicy(this.getTimeToLive());
     }
 
 }

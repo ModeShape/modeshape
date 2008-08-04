@@ -25,6 +25,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import net.jcip.annotations.Immutable;
+import org.jboss.dna.spi.graph.DateTime;
 import org.jboss.dna.spi.graph.Name;
 import org.jboss.dna.spi.graph.Path;
 import org.jboss.dna.spi.graph.Property;
@@ -42,23 +43,29 @@ public class MultiPropertyContribution extends NonEmptyContribution {
      */
     private static final long serialVersionUID = 1L;
 
-    private final Map<Name, Property> properties;
+    protected final Map<Name, Property> properties;
 
     /**
      * Create a contribution of node properties from the source with the supplied name.
      * 
      * @param sourceName the name of the source, which may not be null or blank
      * @param pathInSource the path in the source for this contributed information; may not be null
+     * @param expirationTime the time (in UTC) after which this contribution should be considered expired, or null if there is no
+     *        expiration time
      * @param properties the properties from the source; may not be null
      */
     public MultiPropertyContribution( String sourceName,
                                       Path pathInSource,
+                                      DateTime expirationTime,
                                       Iterable<Property> properties ) {
-        super(sourceName, pathInSource);
+        super(sourceName, pathInSource, expirationTime);
+        assert properties != null;
         this.properties = new HashMap<Name, Property>();
         for (Property property : properties) {
             if (property != null) this.properties.put(property.getName(), property);
         }
+        assert this.properties.isEmpty() == false;
+        if (ContributionStatistics.RECORD) ContributionStatistics.record(this.properties.size(), 0);
     }
 
     /**

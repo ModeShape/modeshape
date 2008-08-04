@@ -231,8 +231,8 @@ public class FederatedRepository {
     protected CommandExecutor getExecutor( ExecutionContext context,
                                            String sourceName ) {
         FederatedRepositoryConfig config = this.getConfiguration();
-        return new FederatingCommandExecutor(context, sourceName, config.getCacheProjection(), config.getSourceProjections(),
-                                             getConnectionFactories());
+        return new FederatingCommandExecutor(context, sourceName, config.getCacheProjection(), config.getDefaultCachePolicy(),
+                                             config.getSourceProjections(), getConnectionFactories());
     }
 
     /**

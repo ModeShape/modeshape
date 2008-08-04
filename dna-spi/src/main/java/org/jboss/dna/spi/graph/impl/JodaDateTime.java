@@ -70,6 +70,11 @@ public class JodaDateTime implements org.jboss.dna.spi.graph.DateTime {
         this.instance = new DateTime(milliseconds, chronology);
     }
 
+    public JodaDateTime( long milliseconds,
+                         String timeZoneId ) {
+        this.instance = new DateTime(milliseconds, DateTimeZone.forID(timeZoneId));
+    }
+
     public JodaDateTime( DateTimeZone dateTimeZone ) {
         this.instance = new DateTime(dateTimeZone);
     }

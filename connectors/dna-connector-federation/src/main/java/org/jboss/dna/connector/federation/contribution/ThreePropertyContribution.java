@@ -23,6 +23,7 @@ package org.jboss.dna.connector.federation.contribution;
 
 import java.util.Iterator;
 import net.jcip.annotations.Immutable;
+import org.jboss.dna.spi.graph.DateTime;
 import org.jboss.dna.spi.graph.Name;
 import org.jboss.dna.spi.graph.Path;
 import org.jboss.dna.spi.graph.Property;
@@ -49,16 +50,19 @@ public class ThreePropertyContribution extends NonEmptyContribution {
      * 
      * @param sourceName the name of the source, which may not be null or blank
      * @param pathInSource the path in the source for this contributed information; may not be null
+     * @param expirationTime the time (in UTC) after which this contribution should be considered expired, or null if there is no
+     *        expiration time
      * @param property1 the first property from the source; may not be null
      * @param property2 the second property from the source; may not be null
      * @param property3 the third property from the source; may not be null
      */
     public ThreePropertyContribution( String sourceName,
                                       Path pathInSource,
+                                      DateTime expirationTime,
                                       Property property1,
                                       Property property2,
                                       Property property3 ) {
-        super(sourceName, pathInSource);
+        super(sourceName, pathInSource, expirationTime);
         assert property1 != null;
         assert property1.isEmpty() == false;
         assert property2 != null;
@@ -68,6 +72,7 @@ public class ThreePropertyContribution extends NonEmptyContribution {
         this.property1 = property1;
         this.property2 = property2;
         this.property3 = property3;
+        if (ContributionStatistics.RECORD) ContributionStatistics.record(3, 0);
     }
 
     /**

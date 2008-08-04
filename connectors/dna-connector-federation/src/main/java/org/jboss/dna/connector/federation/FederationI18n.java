@@ -40,12 +40,8 @@ public final class FederationI18n {
     public static I18n unableToFindRepositoryConnectionFactoriesInJndi;
     public static I18n noRepositoryConnectionFactories;
     public static I18n federatedRepositoryCannotBeFound;
-    public static I18n unableToFindRepositorySourceByName;
-    public static I18n unableToCreateConnectionToFederatedRepository;
     public static I18n unableToAuthenticateConnectionToFederatedRepository;
     public static I18n repositoryHasBeenShutDown;
-    public static I18n repositoryPathInFederationBindingIsNotAbsolute;
-    public static I18n errorReadingMergePlan;
     public static I18n errorAddingProjectionRuleParseMethod;
 
     static {

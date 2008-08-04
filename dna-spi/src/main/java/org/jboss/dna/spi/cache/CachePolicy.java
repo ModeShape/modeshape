@@ -27,6 +27,7 @@ import net.jcip.annotations.Immutable;
 /**
  * The specification of how node data is to be cached. The time values provided are relative, allowing the same cache policy
  * instance to be shared among multiple {@link Cacheable} objects.
+ * 
  * @author Randall Hauch
  */
 @Immutable
@@ -34,14 +35,9 @@ public interface CachePolicy extends Serializable {
 
     /**
      * Get the system time in milliseconds before which the node data remains valid.
+     * 
      * @return the number of milliseconds that the cached data should be used before consulting the original source.
      */
-    public long getTimeToCache();
-
-    /**
-     * Get the relative time after which the cached data should expire and no longer be used.
-     * @return the number of milliseconds until the cached data expires
-     */
-    public long getTimeToExpire();
+    public long getTimeToLive();
 
 }

@@ -22,49 +22,48 @@
 package org.jboss.dna.connector.federation.contribution;
 
 import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
 import net.jcip.annotations.Immutable;
 import org.jboss.dna.spi.graph.DateTime;
 import org.jboss.dna.spi.graph.Path;
 import org.jboss.dna.spi.graph.Path.Segment;
 
 /**
- * The contribution of a source to the information for a single federated node.
+ * The record of a source contributing only two children to a node.
  * 
  * @author Randall Hauch
  */
 @Immutable
-public class MultiChildContribution extends NonEmptyContribution {
+public class TwoChildContribution extends NonEmptyContribution {
 
     /**
      * This is the first version of this class. See the documentation of MergePlan.serialVersionUID.
      */
     private static final long serialVersionUID = 1L;
 
-    private List<Segment> children;
+    private final Segment child1;
+    private final Segment child2;
 
     /**
-     * Create a contribution of children from the source with the supplied name.
+     * Create a contribution of two children from the source with the supplied name.
      * 
      * @param sourceName the name of the source, which may not be null or blank
      * @param pathInSource the path in the source for this contributed information; may not be null
      * @param expirationTime the time (in UTC) after which this contribution should be considered expired, or null if there is no
      *        expiration time
-     * @param children the children from the source; may not be null or empty
+     * @param child1 the first child contributed from the source; may not be null
+     * @param child2 the second child contributed from the source; may not be null
      */
-    public MultiChildContribution( String sourceName,
-                                   Path pathInSource,
-                                   DateTime expirationTime,
-                                   Iterable<Segment> children ) {
+    public TwoChildContribution( String sourceName,
+                                 Path pathInSource,
+                                 DateTime expirationTime,
+                                 Segment child1,
+                                 Segment child2 ) {
         super(sourceName, pathInSource, expirationTime);
-        assert children != null;
-        this.children = new LinkedList<Segment>();
-        for (Segment child : children) {
-            if (child != null) this.children.add(child);
-        }
-        assert this.children.isEmpty() == false;
-        if (ContributionStatistics.RECORD) ContributionStatistics.record(0, this.children.size());
+        assert child1 != null;
+        assert child2 != null;
+        this.child1 = child1;
+        this.child2 = child2;
+        if (ContributionStatistics.RECORD) ContributionStatistics.record(0, 2);
     }
 
     /**
@@ -74,7 +73,7 @@ public class MultiChildContribution extends NonEmptyContribution {
      */
     @Override
     public Iterator<Segment> getChildren() {
-        return new ImmutableIterator<Segment>(children.iterator());
+        return new TwoValueIterator<Segment>(child1, child2);
     }
 
     /**
@@ -84,6 +83,7 @@ public class MultiChildContribution extends NonEmptyContribution {
      */
     @Override
     public int getChildrenCount() {
-        return children.size();
+        return 2;
     }
+
 }

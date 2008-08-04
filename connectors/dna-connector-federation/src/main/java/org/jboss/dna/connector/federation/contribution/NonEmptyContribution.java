@@ -23,6 +23,7 @@ package org.jboss.dna.connector.federation.contribution;
 
 import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.util.HashCode;
+import org.jboss.dna.spi.graph.DateTime;
 import org.jboss.dna.spi.graph.Path;
 
 /**
@@ -45,10 +46,13 @@ public abstract class NonEmptyContribution extends Contribution {
      * 
      * @param sourceName the name of the source, which may not be null or blank
      * @param pathInSource the path in the source for this contributed information; may not be null
+     * @param expirationTime the time (in UTC) after which this contribution should be considered expired, or null if there is no
+     *        expiration time
      */
     protected NonEmptyContribution( String sourceName,
-                                    Path pathInSource ) {
-        super(sourceName);
+                                    Path pathInSource,
+                                    DateTime expirationTime ) {
+        super(sourceName, expirationTime);
         assert pathInSource != null;
         this.pathInSource = pathInSource;
     }

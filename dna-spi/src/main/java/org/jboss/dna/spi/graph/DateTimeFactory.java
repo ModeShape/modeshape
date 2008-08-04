@@ -21,6 +21,7 @@
  */
 package org.jboss.dna.spi.graph;
 
+
 /**
  * A factory for creating {@link DateTime date-time instants}. This interface extends the {@link ValueFactory} generic interface
  * and adds specific methods for creating instants for the current time (and time zone) as well as various combinations of
@@ -115,6 +116,16 @@ public interface DateTimeFactory extends ValueFactory<DateTime> {
      * @see #create()
      */
     DateTime createUtc();
+
+    /**
+     * Create a date-time instance that is offset from the original by the specified amount.
+     * 
+     * @param original
+     * @param offsetInMillis the offset in milliseconds (positive or negative)
+     * @return the offset date-time instance
+     */
+    DateTime create( DateTime original,
+                     long offsetInMillis );
 
     /**
      * Create a date-time instance given the individual values for the fields

@@ -47,10 +47,13 @@ public abstract class Contribution implements Serializable {
      * Create an empty contribution from the named source.
      * 
      * @param sourceName the name of the source, which may not be null or blank
+     * @param expirationTime the time (in UTC) after which this contribution should be considered expired, or null if there is no
+     *        expiration time
      * @return the contribution
      */
-    public static Contribution create( String sourceName ) {
-        return new EmptyContribution(sourceName);
+    public static Contribution create( String sourceName,
+                                       DateTime expirationTime ) {
+        return new EmptyContribution(sourceName, expirationTime);
     }
 
     /**
@@ -58,16 +61,19 @@ public abstract class Contribution implements Serializable {
      * 
      * @param sourceName the name of the source, which may not be null or blank
      * @param pathInSource the path in the source for this contributed information; may not be null
+     * @param expirationTime the time (in UTC) after which this contribution should be considered expired, or null if there is no
+     *        expiration time
      * @param property the property from the source; may not be null
      * @return the contribution
      */
     public static Contribution create( String sourceName,
                                        Path pathInSource,
+                                       DateTime expirationTime,
                                        Property property ) {
         if (property == null) {
-            return new EmptyContribution(sourceName);
+            return new EmptyContribution(sourceName, expirationTime);
         }
-        return new OnePropertyContribution(sourceName, pathInSource, property);
+        return new OnePropertyContribution(sourceName, pathInSource, expirationTime, property);
     }
 
     /**
@@ -75,16 +81,47 @@ public abstract class Contribution implements Serializable {
      * 
      * @param sourceName the name of the source, which may not be null or blank
      * @param pathInSource the path in the source for this contributed information; may not be null
+     * @param expirationTime the time (in UTC) after which this contribution should be considered expired, or null if there is no
+     *        expiration time
      * @param child the child from the source; may not be null or empty
      * @return the contribution
      */
     public static Contribution create( String sourceName,
                                        Path pathInSource,
+                                       DateTime expirationTime,
                                        Segment child ) {
         if (child == null) {
-            return new EmptyContribution(sourceName);
+            return new EmptyContribution(sourceName, expirationTime);
         }
-        return new OneChildContribution(sourceName, pathInSource, child);
+        return new OneChildContribution(sourceName, pathInSource, expirationTime, child);
+    }
+
+    /**
+     * Create a contribution of a single child from the named source.
+     * 
+     * @param sourceName the name of the source, which may not be null or blank
+     * @param pathInSource the path in the source for this contributed information; may not be null
+     * @param expirationTime the time (in UTC) after which this contribution should be considered expired, or null if there is no
+     *        expiration time
+     * @param child1 the first child from the source; may not be null or empty
+     * @param child2 the second child from the source; may not be null or empty
+     * @return the contribution
+     */
+    public static Contribution create( String sourceName,
+                                       Path pathInSource,
+                                       DateTime expirationTime,
+                                       Segment child1,
+                                       Segment child2 ) {
+        if (child1 != null) {
+            if (child2 != null) {
+                return new TwoChildContribution(sourceName, pathInSource, expirationTime, child1, child2);
+            }
+            return new OneChildContribution(sourceName, pathInSource, expirationTime, child1);
+        }
+        if (child2 != null) {
+            return new OneChildContribution(sourceName, pathInSource, expirationTime, child2);
+        }
+        return new EmptyContribution(sourceName, expirationTime);
     }
 
     /**
@@ -92,41 +129,50 @@ public abstract class Contribution implements Serializable {
      * 
      * @param sourceName the name of the source, which may not be null or blank
      * @param pathInSource the path in the source for this contributed information; may not be null
+     * @param expirationTime the time (in UTC) after which this contribution should be considered expired, or null if there is no
+     *        expiration time
      * @param properties the properties from the source; may not be null
      * @param children the children from the source; may not be null or empty
      * @return the contribution
      */
     public static Contribution create( String sourceName,
                                        Path pathInSource,
+                                       DateTime expirationTime,
                                        Collection<Property> properties,
                                        Collection<Segment> children ) {
         if (properties == null || properties.isEmpty()) {
             // There are no properties ...
             if (children == null || children.isEmpty()) {
-                return new EmptyContribution(sourceName);
+                return new EmptyContribution(sourceName, expirationTime);
             }
             if (children.size() == 1) {
-                return new OneChildContribution(sourceName, pathInSource, children.iterator().next());
+                return new OneChildContribution(sourceName, pathInSource, expirationTime, children.iterator().next());
             }
-            return new MultiChildContribution(sourceName, pathInSource, children);
+            if (children.size() == 2) {
+                Iterator<Segment> iter = children.iterator();
+                return new TwoChildContribution(sourceName, pathInSource, expirationTime, iter.next(), iter.next());
+            }
+            return new MultiChildContribution(sourceName, pathInSource, expirationTime, children);
         }
         // There are some properties ...
         if (children == null || children.isEmpty()) {
             // There are no children ...
-            switch (properties.size()) {
-                case 1:
-                    return new OnePropertyContribution(sourceName, pathInSource, properties.iterator().next());
-                case 2:
-                    Iterator<Property> iter = properties.iterator();
-                    return new TwoPropertyContribution(sourceName, pathInSource, iter.next(), iter.next());
-                case 3:
-                    Iterator<Property> iter3 = properties.iterator();
-                    return new ThreePropertyContribution(sourceName, pathInSource, iter3.next(), iter3.next(), iter3.next());
+            if (properties.size() == 1) {
+                return new OnePropertyContribution(sourceName, pathInSource, expirationTime, properties.iterator().next());
             }
-            return new MultiPropertyContribution(sourceName, pathInSource, properties);
+            if (properties.size() == 2) {
+                Iterator<Property> iter = properties.iterator();
+                return new TwoPropertyContribution(sourceName, pathInSource, expirationTime, iter.next(), iter.next());
+            }
+            if (properties.size() == 3) {
+                Iterator<Property> iter = properties.iterator();
+                return new ThreePropertyContribution(sourceName, pathInSource, expirationTime, iter.next(), iter.next(),
+                                                     iter.next());
+            }
+            return new MultiPropertyContribution(sourceName, pathInSource, expirationTime, properties);
         }
         // There are some properties AND some children ...
-        return new NodeContribution(sourceName, pathInSource, properties, children);
+        return new NodeContribution(sourceName, pathInSource, expirationTime, properties, children);
     }
 
     /**
@@ -144,10 +190,15 @@ public abstract class Contribution implements Serializable {
      * Create a contribution for the source with the supplied name and path.
      * 
      * @param sourceName the name of the source, which may not be null or blank
+     * @param expirationTime the time (in UTC) after which this contribution should be considered expired, or null if there is no
+     *        expiration time
      */
-    protected Contribution( String sourceName ) {
+    protected Contribution( String sourceName,
+                            DateTime expirationTime ) {
         assert sourceName != null && sourceName.trim().length() != 0;
+        assert expirationTime == null || expirationTime.equals(expirationTime.toUtcTimeZone());
         this.sourceName = sourceName;
+        this.expirationTimeInUtc = expirationTime;
     }
 
     /**
@@ -336,6 +387,7 @@ public abstract class Contribution implements Serializable {
         private boolean next = true;
 
         protected OneValueIterator( T value ) {
+            assert value != null;
             this.value = value;
         }
 
@@ -354,7 +406,7 @@ public abstract class Contribution implements Serializable {
          * @see java.util.Iterator#next()
          */
         public T next() {
-            if (!next) {
+            if (next) {
                 next = false;
                 return value;
             }

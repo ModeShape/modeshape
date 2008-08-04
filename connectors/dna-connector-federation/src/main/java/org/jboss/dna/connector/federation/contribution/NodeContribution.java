@@ -25,6 +25,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import net.jcip.annotations.Immutable;
+import org.jboss.dna.spi.graph.DateTime;
 import org.jboss.dna.spi.graph.Path;
 import org.jboss.dna.spi.graph.Property;
 import org.jboss.dna.spi.graph.Path.Segment;
@@ -49,18 +50,24 @@ public class NodeContribution extends MultiPropertyContribution {
      * 
      * @param sourceName the name of the source, which may not be null or blank
      * @param pathInSource the path in the source for this contributed information; may not be null
+     * @param expirationTime the time (in UTC) after which this contribution should be considered expired, or null if there is no
+     *        expiration time
      * @param properties the properties from the source; may not be null
      * @param children the children from the source; may not be null or empty
      */
     public NodeContribution( String sourceName,
                              Path pathInSource,
+                             DateTime expirationTime,
                              Iterable<Property> properties,
                              Iterable<Segment> children ) {
-        super(sourceName, pathInSource, properties);
+        super(sourceName, pathInSource, expirationTime, properties);
+        assert children != null;
         this.children = new LinkedList<Segment>();
         for (Segment child : children) {
             if (child != null) this.children.add(child);
         }
+        assert this.children.isEmpty() == false;
+        if (ContributionStatistics.RECORD) ContributionStatistics.record(this.properties.size(), this.children.size());
     }
 
     /**

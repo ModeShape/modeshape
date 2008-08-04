@@ -23,11 +23,12 @@ package org.jboss.dna.connector.federation.contribution;
 
 import java.util.Iterator;
 import net.jcip.annotations.Immutable;
+import org.jboss.dna.spi.graph.DateTime;
 import org.jboss.dna.spi.graph.Path;
 import org.jboss.dna.spi.graph.Path.Segment;
 
 /**
- * The record of a source contributing only properties to a node.
+ * The record of a source contributing only a single child to a node.
  * 
  * @author Randall Hauch
  */
@@ -42,18 +43,22 @@ public class OneChildContribution extends NonEmptyContribution {
     private final Segment child;
 
     /**
-     * Create a contribution of node properties from the source with the supplied name.
+     * Create a contribution of a single child from the source with the supplied name.
      * 
      * @param sourceName the name of the source, which may not be null or blank
      * @param pathInSource the path in the source for this contributed information; may not be null
+     * @param expirationTime the time (in UTC) after which this contribution should be considered expired, or null if there is no
+     *        expiration time
      * @param child the child contributed from the source; may not be null
      */
     public OneChildContribution( String sourceName,
                                  Path pathInSource,
+                                 DateTime expirationTime,
                                  Segment child ) {
-        super(sourceName, pathInSource);
+        super(sourceName, pathInSource, expirationTime);
         assert child != null;
         this.child = child;
+        if (ContributionStatistics.RECORD) ContributionStatistics.record(0, 1);
     }
 
     /**

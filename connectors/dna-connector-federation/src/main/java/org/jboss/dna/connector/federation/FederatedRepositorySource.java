@@ -98,8 +98,7 @@ public class FederatedRepositorySource extends AbstractRepositorySource {
     protected static final String RETRY_LIMIT = "retryLimit";
 
     protected static final String PROJECTION_RULES_CONFIG_PROPERTY_NAME = "dna:projectionRules";
-    protected static final String CACHE_POLICY_TIME_TO_EXPIRE_CONFIG_PROPERTY_NAME = "dna:timeToExpire";
-    protected static final String CACHE_POLICY_TIME_TO_CACHE_CONFIG_PROPERTY_NAME = "dna:timeToCache";
+    protected static final String CACHE_POLICY_TIME_TO_LIVE_CONFIG_PROPERTY_NAME = "dna:timeToLive";
 
     private String repositoryName;
     private String sourceName;
@@ -698,7 +697,7 @@ public class FederatedRepositorySource extends AbstractRepositorySource {
             executor = new NoOpCommandExecutor(context, configurationSourceName);
         } else {
             // The configuration repository has more than one projection, so we need to merge the results
-            executor = new FederatingCommandExecutor(context, configurationSourceName, null, projections, factories);
+            executor = new FederatingCommandExecutor(context, configurationSourceName, projections, factories);
         }
         // Wrap the executor with a logging executor ...
         executor = new LoggingCommandExecutor(executor, Logger.getLogger(getClass()), Logger.Level.INFO);
@@ -767,13 +766,9 @@ public class FederatedRepositorySource extends AbstractRepositorySource {
 
             // Look for the default cache policy ...
             BasicCachePolicy cachePolicy = new BasicCachePolicy();
-            Property timeToExpireProperty = getRepository.getProperties().get(nameFactory.create(CACHE_POLICY_TIME_TO_EXPIRE_CONFIG_PROPERTY_NAME));
-            Property timeToCacheProperty = getRepository.getProperties().get(nameFactory.create(CACHE_POLICY_TIME_TO_CACHE_CONFIG_PROPERTY_NAME));
-            if (timeToCacheProperty != null && !timeToCacheProperty.isEmpty()) {
-                cachePolicy.setTimeToCache(longFactory.create(timeToCacheProperty.getValues().next()));
-            }
-            if (timeToExpireProperty != null && !timeToExpireProperty.isEmpty()) {
-                cachePolicy.setTimeToExpire(longFactory.create(timeToExpireProperty.getValues().next()));
+            Property timeToLiveProperty = getRepository.getProperties().get(nameFactory.create(CACHE_POLICY_TIME_TO_LIVE_CONFIG_PROPERTY_NAME));
+            if (timeToLiveProperty != null && !timeToLiveProperty.isEmpty()) {
+                cachePolicy.setTimeToLive(longFactory.create(timeToLiveProperty.getValues().next()));
             }
             CachePolicy defaultCachePolicy = cachePolicy.isEmpty() ? null : cachePolicy.getUnmodifiable();
             return new FederatedRepositoryConfig(repositoryName, cacheProjection, sourceProjections, defaultCachePolicy);

@@ -260,6 +260,19 @@ public class JodaDateTimeValueFactory extends AbstractValueFactory<DateTime> imp
 
     /**
      * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.spi.graph.DateTimeFactory#create(org.jboss.dna.spi.graph.DateTime, long)
+     */
+    public DateTime create( DateTime original,
+                            long offsetInMillis ) {
+        assert original != null;
+        if (offsetInMillis == 0l) return original;
+        long newMillis = original.getMilliseconds() + offsetInMillis;
+        return new JodaDateTime(newMillis, original.getTimeZoneId());
+    }
+
+    /**
+     * {@inheritDoc}
      */
     @Override
     protected DateTime[] createEmptyArray( int length ) {

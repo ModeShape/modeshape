@@ -22,6 +22,7 @@
 package org.jboss.dna.connector.federation.contribution;
 
 import net.jcip.annotations.Immutable;
+import org.jboss.dna.spi.graph.DateTime;
 import org.jboss.dna.spi.graph.Path;
 
 /**
@@ -46,9 +47,13 @@ public class EmptyContribution extends Contribution {
      * Create a contribution for the source with the supplied name.
      * 
      * @param sourceName the name of the source, which may not be null or blank
+     * @param expirationTime the time (in UTC) after which this contribution should be considered expired, or null if there is no
+     *        expiration time
      */
-    public EmptyContribution( String sourceName ) {
-        super(sourceName);
+    public EmptyContribution( String sourceName,
+                              DateTime expirationTime ) {
+        super(sourceName, expirationTime);
+        if (ContributionStatistics.RECORD) ContributionStatistics.record(0, 0);
     }
 
     /**
