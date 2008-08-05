@@ -13,5 +13,6 @@
   <description>JBoss DNA Documentation</description>
   <modules>
     <module>gettingstarted</module>
+    <module>reference</module>
   </modules>
 </project>
