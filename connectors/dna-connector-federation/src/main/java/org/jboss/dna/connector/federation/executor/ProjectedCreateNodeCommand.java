@@ -48,10 +48,10 @@ public class ProjectedCreateNodeCommand extends ActsOnProjectedPathCommand<Creat
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.spi.graph.commands.CreateNodeCommand#getProperties()
+     * @see org.jboss.dna.spi.graph.commands.CreateNodeCommand#getPropertyIterator()
      */
-    public Iterable<Property> getProperties() {
-        return getOriginalCommand().getProperties();
+    public Iterable<Property> getPropertyIterator() {
+        return getOriginalCommand().getPropertyIterator();
     }
 
     /**

@@ -19,31 +19,26 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.jboss.dna.spi.graph.commands;
+package org.jboss.dna.connector.federation.merge;
 
-import java.util.Iterator;
-import org.jboss.dna.spi.graph.Property;
+import java.util.List;
+import org.jboss.dna.connector.federation.contribution.Contribution;
+import org.jboss.dna.spi.ExecutionContext;
 
 /**
- * A command to get the children of a single node given its path.
- * 
  * @author Randall Hauch
  */
-public interface CreateNodeCommand
-    extends GraphCommand, ActsOnPath, ActsOnProperties, ActsAsUpdate, Comparable<CreateNodeCommand> {
+public interface MergeStrategy {
 
     /**
-     * Get the properties for this new node. The recipient of the command should {@link Iterator#remove() remove} any property
-     * that will not be stored.
+     * Merge the contributions into a single
      * 
-     * @return the property iterator; never null, but possibly empty
+     * @param federatedNode the federated node into which the contributions are to be merged; never null
+     * @param contributions the contributions to the node; never null
+     * @param context the context in which this operation is to be performed; never null
      */
-    Iterable<Property> getPropertyIterator();
+    public void merge( FederatedNode federatedNode,
+                       List<Contribution> contributions,
+                       ExecutionContext context );
 
-    /**
-     * Get the desired behavior when a node at the target {@link ActsOnPath#getPath() path} already exists.
-     * 
-     * @return the desired behavior; never null
-     */
-    NodeConflictBehavior getConflictBehavior();
 }

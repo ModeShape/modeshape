@@ -22,6 +22,7 @@
 package org.jboss.dna.connector.federation.executor;
 
 import org.jboss.dna.spi.cache.CachePolicy;
+import org.jboss.dna.spi.graph.DateTime;
 import org.jboss.dna.spi.graph.Path;
 import org.jboss.dna.spi.graph.Property;
 import org.jboss.dna.spi.graph.commands.GetPropertiesCommand;
@@ -55,7 +56,7 @@ public class ProjectedGetPropertiesCommand extends ActsOnProjectedPathCommand<Ge
      * 
      * @see org.jboss.dna.spi.cache.Cacheable#getTimeLoaded()
      */
-    public long getTimeLoaded() {
+    public DateTime getTimeLoaded() {
         return getOriginalCommand().getTimeLoaded();
     }
 

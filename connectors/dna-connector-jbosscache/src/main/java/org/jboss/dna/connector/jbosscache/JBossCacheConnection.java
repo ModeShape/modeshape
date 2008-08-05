@@ -264,12 +264,12 @@ public class JBossCacheConnection implements RepositoryConnection {
             Node<Name, Object> parentNode = getNode(parent);
             Node<Name, Object> node = parentNode.addChild(childFqn);
             // Add the UUID property (if required), which may be overwritten by a supplied property ...
-            Name uuidPropertyName = getUuidProperty(getEnvironment());
+            Name uuidPropertyName = getUuidProperty(getExecutionContext());
             if (uuidPropertyName != null) {
                 node.put(uuidPropertyName, generateUuid());
             }
             // Now add the properties to the supplied node ...
-            for (Property property : command.getProperties()) {
+            for (Property property : command.getPropertyIterator()) {
                 if (property.size() == 0) continue;
                 Name propName = property.getName();
                 Object value = null;
@@ -309,7 +309,7 @@ public class JBossCacheConnection implements RepositoryConnection {
         public void execute( SetPropertiesCommand command ) {
             Node<Name, Object> node = getNode(command.getPath());
             // Now set (or remove) the properties to the supplied node ...
-            for (Property property : command.getProperties()) {
+            for (Property property : command.getPropertyIterator()) {
                 Name propName = property.getName();
                 if (property.size() == 0) {
                     node.remove(propName);
@@ -353,7 +353,7 @@ public class JBossCacheConnection implements RepositoryConnection {
         public void execute( MoveBranchCommand command ) {
             Node<Name, Object> node = getNode(command.getPath());
             boolean recursive = true;
-            Name uuidProperty = getUuidProperty(getEnvironment());
+            Name uuidProperty = getUuidProperty(getExecutionContext());
             // Look up the new parent, which must exist ...
             Path newPath = command.getNewPath();
             Node<Name, Object> newParent = getNode(newPath.getAncestor());
@@ -389,7 +389,7 @@ public class JBossCacheConnection implements RepositoryConnection {
         }
 
         protected Node<Name, Object> getNode( Path path ) {
-            return JBossCacheConnection.this.getNode(getEnvironment(), path);
+            return JBossCacheConnection.this.getNode(getExecutionContext(), path);
         }
 
     }

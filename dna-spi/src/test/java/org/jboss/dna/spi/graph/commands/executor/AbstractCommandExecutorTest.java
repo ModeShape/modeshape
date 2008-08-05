@@ -75,7 +75,7 @@ public class AbstractCommandExecutorTest {
 
     @Test
     public void shouldHaveEnvironment() {
-        assertThat(executor.getEnvironment(), is(sameInstance(context)));
+        assertThat(executor.getExecutionContext(), is(sameInstance(context)));
     }
 
     @Test

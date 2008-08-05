@@ -27,6 +27,7 @@ import java.util.List;
 import net.jcip.annotations.NotThreadSafe;
 import org.jboss.dna.common.util.StringUtil;
 import org.jboss.dna.spi.cache.CachePolicy;
+import org.jboss.dna.spi.graph.DateTime;
 import org.jboss.dna.spi.graph.Name;
 import org.jboss.dna.spi.graph.Path;
 import org.jboss.dna.spi.graph.Path.Segment;
@@ -44,7 +45,7 @@ public class BasicGetChildrenCommand extends BasicGraphCommand implements GetChi
     private List<Segment> children;
     private final Path path;
     private CachePolicy cachePolicy;
-    private long timeLoaded;
+    private DateTime timeLoaded;
 
     /**
      * @param path the path to the node; may not be null
@@ -91,6 +92,26 @@ public class BasicGetChildrenCommand extends BasicGraphCommand implements GetChi
     }
 
     /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.spi.graph.commands.GetChildrenCommand#addChild(org.jboss.dna.spi.graph.Path.Segment)
+     */
+    public void addChild( Segment nameOfChild ) {
+        if (nameOfChild != null) this.children.add(nameOfChild);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.spi.graph.commands.GetChildrenCommand#addChildren(org.jboss.dna.spi.graph.Path.Segment[])
+     */
+    public void addChildren( Segment... namesOfChildren ) {
+        for (Segment nameOfChild : namesOfChildren) {
+            if (nameOfChild != null) this.children.add(nameOfChild);
+        }
+    }
+
+    /**
      * @return children
      */
     public List<Segment> getChildren() {
@@ -114,14 +135,14 @@ public class BasicGetChildrenCommand extends BasicGraphCommand implements GetChi
     /**
      * {@inheritDoc}
      */
-    public long getTimeLoaded() {
+    public DateTime getTimeLoaded() {
         return timeLoaded;
     }
 
     /**
      * @param timeLoaded Sets timeLoaded to the specified value.
      */
-    public void setTimeLoaded( long timeLoaded ) {
+    public void setTimeLoaded( DateTime timeLoaded ) {
         this.timeLoaded = timeLoaded;
     }
 

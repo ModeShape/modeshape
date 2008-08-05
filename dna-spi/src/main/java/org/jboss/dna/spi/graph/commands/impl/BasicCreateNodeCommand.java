@@ -69,7 +69,7 @@ public class BasicCreateNodeCommand extends BasicGraphCommand implements CreateN
     /**
      * {@inheritDoc}
      */
-    public Iterable<Property> getProperties() {
+    public Iterable<Property> getPropertyIterator() {
         return properties;
     }
 
@@ -78,6 +78,18 @@ public class BasicCreateNodeCommand extends BasicGraphCommand implements CreateN
      */
     public NodeConflictBehavior getConflictBehavior() {
         return this.conflictBehavior;
+    }
+
+    public void setProperty( Property property ) {
+        if (!properties.isEmpty()) {
+            for (Property existing : this.properties) {
+                if (existing.getName().equals(property.getName())) {
+                    this.properties.remove(existing);
+                    break;
+                }
+            }
+        }
+        this.properties.add(property);
     }
 
     /**
@@ -121,7 +133,7 @@ public class BasicCreateNodeCommand extends BasicGraphCommand implements CreateN
         sb.append(" at ");
         sb.append(this.getPath());
         boolean firstProperty = true;
-        for (Property property : this.getProperties()) {
+        for (Property property : this.getPropertyIterator()) {
             if (property.isEmpty()) continue;
             if (firstProperty) {
                 sb.append(" { ");

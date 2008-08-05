@@ -81,7 +81,7 @@ public abstract class AbstractCommandExecutor implements CommandExecutor {
      * 
      * @return the execution context; never null
      */
-    public ExecutionContext getEnvironment() {
+    public ExecutionContext getExecutionContext() {
         return context;
     }
 

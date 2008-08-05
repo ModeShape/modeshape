@@ -688,13 +688,13 @@ public class FederatedRepositorySource extends AbstractRepositorySource {
         final String configurationSourceName = configurationProjection.getSourceName();
         List<Projection> projections = Collections.singletonList(configurationProjection);
         CommandExecutor executor = null;
-        if (configurationProjection.getRules().size() == 1) {
+        if (configurationProjection.getRules().size() == 0) {
+            // There is no projection for the configuration repository, so just use a no-op executor
+            executor = new NoOpCommandExecutor(context, configurationSourceName);
+        } else if (configurationProjection.isSimple()) {
             // There is just a single projection for the configuration repository, so just use an executor that
             // translates the paths using the projection
             executor = new SingleProjectionCommandExecutor(context, configurationSourceName, configurationProjection, factories);
-        } else if (configurationProjection.getRules().size() == 0) {
-            // There is no projection for the configuration repository, so just use a no-op executor
-            executor = new NoOpCommandExecutor(context, configurationSourceName);
         } else {
             // The configuration repository has more than one projection, so we need to merge the results
             executor = new FederatingCommandExecutor(context, configurationSourceName, projections, factories);

@@ -80,7 +80,8 @@ public class BasicGetNodeCommand extends BasicGetPropertiesCommand implements Ge
         } else {
             children = new ArrayList<Segment>();
             while (namesOfChildren.hasNext()) {
-                children.add(namesOfChildren.next());
+                Segment childSegment = namesOfChildren.next();
+                if (childSegment != null) children.add(childSegment);
             }
         }
     }
@@ -94,7 +95,7 @@ public class BasicGetNodeCommand extends BasicGetPropertiesCommand implements Ge
         } else {
             children = new ArrayList<Segment>();
             for (Segment childSegment : namesOfChildren) {
-                children.add(childSegment);
+                if (childSegment != null) children.add(childSegment);
             }
         }
     }
@@ -108,8 +109,28 @@ public class BasicGetNodeCommand extends BasicGetPropertiesCommand implements Ge
         } else {
             children = new ArrayList<Segment>();
             for (Segment childSegment : namesOfChildren) {
-                children.add(childSegment);
+                if (childSegment != null) children.add(childSegment);
             }
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.spi.graph.commands.GetChildrenCommand#addChild(org.jboss.dna.spi.graph.Path.Segment)
+     */
+    public void addChild( Segment nameOfChild ) {
+        if (nameOfChild != null) this.children.add(nameOfChild);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.spi.graph.commands.GetChildrenCommand#addChildren(org.jboss.dna.spi.graph.Path.Segment[])
+     */
+    public void addChildren( Segment... namesOfChildren ) {
+        for (Segment nameOfChild : namesOfChildren) {
+            if (nameOfChild != null) this.children.add(nameOfChild);
         }
     }
 

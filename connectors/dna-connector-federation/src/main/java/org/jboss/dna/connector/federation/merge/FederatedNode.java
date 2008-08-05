@@ -21,120 +21,125 @@
  */
 package org.jboss.dna.connector.federation.merge;
 
-import java.util.Iterator;
-import java.util.Set;
 import java.util.UUID;
-import net.jcip.annotations.ThreadSafe;
-import org.jboss.dna.spi.graph.Name;
-import org.jboss.dna.spi.graph.Property;
+import org.jboss.dna.spi.graph.Path;
+import org.jboss.dna.spi.graph.commands.CreateNodeCommand;
+import org.jboss.dna.spi.graph.commands.NodeConflictBehavior;
+import org.jboss.dna.spi.graph.commands.impl.BasicGetNodeCommand;
 
 /**
+ * An in-memory (and temporary) representation of a federated node and it's merged properties and children.
+ * 
  * @author Randall Hauch
  */
-@ThreadSafe
-public interface FederatedNode {
+public class FederatedNode extends BasicGetNodeCommand implements CreateNodeCommand {
+
+    private static final long serialVersionUID = 1L;
+
+    private final UUID uuid;
+    private MergePlan mergePlan;
+    private NodeConflictBehavior nodeConflictBehavior = NodeConflictBehavior.UPDATE;
+
     /**
-     * Get the unique identifier for this federated node.
+     * Create a federated node given the path and UUID.
+     * 
+     * @param path the path of the federated node; may not be null
+     * @param uuid the UUID of the federated node; may not be null
+     */
+    public FederatedNode( Path path,
+                          UUID uuid ) {
+        super(path);
+        assert uuid != null;
+        this.uuid = uuid;
+    }
+
+    /**
+     * Get the UUID for this federated node.
      * 
      * @return the UUID; never null
      */
-    UUID getUuid();
+    public UUID getUuid() {
+        return uuid;
+    }
 
     /**
-     * Get the name of this node.
+     * Get the merge plan for this federated node
      * 
-     * @return the node name; never null
+     * @return the merge plan, or null if there is no merge plan
      */
-    Name getName();
+    public MergePlan getMergePlan() {
+        return mergePlan;
+    }
 
     /**
-     * Get the property with the given name.
+     * Set the merge plan for this federated node
      * 
-     * @param propertyName the property name
-     * @return the property, or null if the property does not exist
-     * @throws IllegalArgumentException if the name is null
+     * @param mergePlan the new merge plan for this federated node; may be null
      */
-    Property getProperty( Name propertyName );
+    public void setMergePlan( MergePlan mergePlan ) {
+        this.mergePlan = mergePlan;
+    }
 
     /**
-     * Get the number of properties on this node. This value is technically an estimate, as it may not exactly match the number of
-     * properties returned by {@link #getProperties()} or {@link #getPropertyNames()}.
+     * {@inheritDoc}
      * 
-     * @return the approximate number of properties.
+     * @see java.lang.Comparable#compareTo(java.lang.Object)
      */
-    int getPropertyCount();
+    public int compareTo( CreateNodeCommand that ) {
+        if (this == that) return 0;
+        return this.getPath().compareTo(that.getPath());
+    }
 
     /**
-     * Get the properties. This method returns a consistent set of properties at the moment this method is called, and is not
-     * affected by additions or change to the properties. In other words, it is safe for concurrent operations and is not a
-     * fail-fast iterator.
+     * {@inheritDoc}
      * 
-     * @return the properties on this node via an immutable iterator
+     * @see java.lang.Object#hashCode()
      */
-    Iterator<Property> getProperties();
+    @Override
+    public int hashCode() {
+        return this.uuid.hashCode();
+    }
 
     /**
-     * Get the names of the properties for this node. This method returns a consistent set of names at the moment this method is
-     * called, and is not affected by additions or change to the properties. In other words, it is safe for concurrent operations
-     * and is not a fail-fast iterator.
+     * {@inheritDoc}
      * 
-     * @return the property names via an immutable iterator
+     * @see java.lang.Object#equals(java.lang.Object)
      */
-    Iterator<Name> getPropertyNames();
+    @Override
+    public boolean equals( Object obj ) {
+        if (obj == this) return true;
+        if (obj instanceof FederatedNode) {
+            FederatedNode that = (FederatedNode)obj;
+            if (this.getPath().equals(that.getPath())) return true;
+            if (this.getUuid().equals(that.getUuid())) return true;
+        }
+        return false;
+    }
 
     /**
-     * Set the property if it is not already set.
+     * {@inheritDoc}
      * 
-     * @param property the property
-     * @return the existing property, or null if there was no property and the supplied property was set
-     * @throws IllegalArgumentException if the property is null
+     * @see java.lang.Object#toString()
      */
-    Property setPropertyIfAbsent( Property property );
+    @Override
+    public String toString() {
+        return getPath().toString() + " (" + this.getUuid() + ")";
+    }
 
     /**
-     * Set the supplied properties. This method will overwrite any existing properties with the new properties if they have the
-     * same {@link Property#getName() property name}. This method ignores any null property references, and does nothing if there
-     * are no properties supplied.
+     * {@inheritDoc}
      * 
-     * @param properties the properties that should be set
+     * @see org.jboss.dna.spi.graph.commands.CreateNodeCommand#getConflictBehavior()
      */
-    void setProperties( Property... properties );
+    public NodeConflictBehavior getConflictBehavior() {
+        return this.nodeConflictBehavior;
+    }
 
     /**
-     * Set the supplied properties. This method will overwrite any existing properties with the new properties if they have the
-     * same {@link Property#getName() property name}. This method ignores any null property references, and does nothing if there
-     * are no properties supplied.
-     * 
-     * @param properties the properties that should be set
+     * @param nodeConflictBehavior Sets nodeConflictBehavior to the specified value.
      */
-    void setProperties( Iterable<Property> properties );
-
-    /**
-     * Replace all existing properties with the supplied properties. This method ignores any null property references, and does
-     * nothing if there are no properties supplied.
-     * 
-     * @param properties the properties that should be set
-     */
-    void setAllProperties( Property... properties );
-
-    /**
-     * Replace all existing properties with the supplied properties. This method ignores any null property references, and does
-     * nothing if there are no properties supplied.
-     * 
-     * @param properties the properties that should replace the existing properties
-     */
-    void setAllProperties( Iterable<Property> properties );
-
-    /**
-     * Remove all properties, except for the {@link #getName() name} and {@link #getUuid() identifier}.
-     */
-    void removeAllProperties();
-
-    /**
-     * Get the sources that have contributed information to this node.
-     * 
-     * @return the names of the sources that have contributed content to this node.
-     */
-    Set<String> getContributingSources();
+    public void setNodeConflictBehavior( NodeConflictBehavior nodeConflictBehavior ) {
+        this.nodeConflictBehavior = nodeConflictBehavior;
+    }
 
 }

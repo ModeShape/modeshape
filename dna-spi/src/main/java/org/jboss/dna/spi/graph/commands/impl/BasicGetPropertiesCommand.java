@@ -26,6 +26,7 @@ import java.util.Map;
 import net.jcip.annotations.NotThreadSafe;
 import org.jboss.dna.common.util.StringUtil;
 import org.jboss.dna.spi.cache.CachePolicy;
+import org.jboss.dna.spi.graph.DateTime;
 import org.jboss.dna.spi.graph.Name;
 import org.jboss.dna.spi.graph.Path;
 import org.jboss.dna.spi.graph.Property;
@@ -43,7 +44,7 @@ public class BasicGetPropertiesCommand extends BasicGraphCommand implements GetP
     private final Map<Name, Property> properties = new HashMap<Name, Property>();
     private final Path path;
     private CachePolicy cachePolicy;
-    private long timeLoaded;
+    private DateTime timeLoaded;
 
     /**
      * @param path the path to the node; may not be null
@@ -61,6 +62,11 @@ public class BasicGetPropertiesCommand extends BasicGraphCommand implements GetP
         if (property != null) {
             properties.put(property.getName(), property);
         }
+    }
+
+    public void setProperties( Map<Name, Property> properties ) {
+        this.properties.clear();
+        if (properties != null) this.properties.putAll(properties);
     }
 
     /**
@@ -93,14 +99,14 @@ public class BasicGetPropertiesCommand extends BasicGraphCommand implements GetP
     /**
      * {@inheritDoc}
      */
-    public long getTimeLoaded() {
+    public DateTime getTimeLoaded() {
         return timeLoaded;
     }
 
     /**
      * @param timeLoaded Sets timeLoaded to the specified value.
      */
-    public void setTimeLoaded( long timeLoaded ) {
+    public void setTimeLoaded( DateTime timeLoaded ) {
         this.timeLoaded = timeLoaded;
     }
 

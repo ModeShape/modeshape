@@ -38,6 +38,6 @@ public interface ActsOnProperties extends ActsOnPath {
      * 
      * @return the properties
      */
-    Iterable<Property> getProperties();
+    Iterable<Property> getPropertyIterator();
 
 }

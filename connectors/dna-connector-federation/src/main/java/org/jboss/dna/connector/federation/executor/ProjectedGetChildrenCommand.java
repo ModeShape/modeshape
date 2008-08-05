@@ -23,6 +23,7 @@ package org.jboss.dna.connector.federation.executor;
 
 import java.util.Iterator;
 import org.jboss.dna.spi.cache.CachePolicy;
+import org.jboss.dna.spi.graph.DateTime;
 import org.jboss.dna.spi.graph.Name;
 import org.jboss.dna.spi.graph.Path;
 import org.jboss.dna.spi.graph.Path.Segment;
@@ -81,6 +82,24 @@ public class ProjectedGetChildrenCommand extends ActsOnProjectedPathCommand<GetC
     /**
      * {@inheritDoc}
      * 
+     * @see org.jboss.dna.spi.graph.commands.GetChildrenCommand#addChild(org.jboss.dna.spi.graph.Path.Segment)
+     */
+    public void addChild( Segment nameOfChild ) {
+        getOriginalCommand().addChild(nameOfChild);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.spi.graph.commands.GetChildrenCommand#addChildren(org.jboss.dna.spi.graph.Path.Segment[])
+     */
+    public void addChildren( Segment... namesOfChildren ) {
+        getOriginalCommand().addChildren(namesOfChildren);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
      * @see org.jboss.dna.spi.graph.commands.GetChildrenCommand#setNoChildren()
      */
     public void setNoChildren() {
@@ -101,7 +120,7 @@ public class ProjectedGetChildrenCommand extends ActsOnProjectedPathCommand<GetC
      * 
      * @see org.jboss.dna.spi.cache.Cacheable#getTimeLoaded()
      */
-    public long getTimeLoaded() {
+    public DateTime getTimeLoaded() {
         return getOriginalCommand().getTimeLoaded();
     }
 

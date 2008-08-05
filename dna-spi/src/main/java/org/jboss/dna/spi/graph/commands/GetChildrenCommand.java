@@ -81,9 +81,25 @@ public interface GetChildrenCommand extends GraphCommand, ActsOnPath, Cacheable 
      * replaced by those supplied to this method. Note that a {@link Path.Segment segment} is not required in this case because
      * there is only one child and (by definition) no index.
      * 
-     * @param nameOfChild
+     * @param nameOfChild the name of the only child
      */
     void setChild( Name nameOfChild );
+
+    /**
+     * Add the child to this node. This method does not affect existing children, so callers of this method should not add a child
+     * with the same segment as an existing child (this is not checked by this method).
+     * 
+     * @param nameOfChild the name of the child; should not be the same as an existing child (not checked)
+     */
+    void addChild( Path.Segment nameOfChild );
+
+    /**
+     * Adds the children to this node. This method does not affect existing children, so callers of this method should not add
+     * children with the same segment as existing children (this is not checked by this method).
+     * 
+     * @param namesOfChildren the names of the new children; these should not be the same as any other children
+     */
+    void addChildren( Path.Segment... namesOfChildren );
 
     /**
      * Set that this node has no children. Any existing child references already set on this command will be removed.

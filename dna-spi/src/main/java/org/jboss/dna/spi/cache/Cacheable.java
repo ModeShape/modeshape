@@ -22,18 +22,21 @@
 package org.jboss.dna.spi.cache;
 
 import java.io.Serializable;
+import org.jboss.dna.spi.graph.DateTime;
 
 /**
  * Interface defining an object that can be cached according to a {@link CachePolicy}.
+ * 
  * @author Randall Hauch
  */
 public interface Cacheable extends Serializable {
 
     /**
      * Get the time that this node data was originally loaded.
+     * 
      * @return the system time (in milliseconds) that the node data was loaded
      */
-    long getTimeLoaded();
+    DateTime getTimeLoaded();
 
     /**
      * Get the caching policy to be used for this object.
@@ -41,12 +44,14 @@ public interface Cacheable extends Serializable {
      * Note that the values of the policy are relative to the {@link #getTimeLoaded() time the node was loaded}, so the same
      * instance can be used for many nodes.
      * </p>
+     * 
      * @return cachePolicy the caching policy, which may not be null
      */
     public CachePolicy getCachePolicy();
 
     /**
      * Set the caching policy for this object.
+     * 
      * @param cachePolicy the caching policy to use for this object
      * @throws IllegalArgumentException if the cachePolicy is null
      */

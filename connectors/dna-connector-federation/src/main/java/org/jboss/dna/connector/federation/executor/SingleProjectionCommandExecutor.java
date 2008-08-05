@@ -127,7 +127,7 @@ public class SingleProjectionCommandExecutor extends AbstractCommandExecutor {
     @Override
     public void execute( GetChildrenCommand command ) throws RepositorySourceException, InterruptedException {
         Path pathInSource = getPathInSource(command.getPath());
-        getConnection().execute(this.getEnvironment(), new ProjectedGetChildrenCommand(command, pathInSource));
+        getConnection().execute(this.getExecutionContext(), new ProjectedGetChildrenCommand(command, pathInSource));
     }
 
     /**
@@ -138,7 +138,7 @@ public class SingleProjectionCommandExecutor extends AbstractCommandExecutor {
     @Override
     public void execute( GetPropertiesCommand command ) throws RepositorySourceException, InterruptedException {
         Path pathInSource = getPathInSource(command.getPath());
-        getConnection().execute(this.getEnvironment(), new ProjectedGetPropertiesCommand(command, pathInSource));
+        getConnection().execute(this.getExecutionContext(), new ProjectedGetPropertiesCommand(command, pathInSource));
     }
 
     /**
@@ -149,7 +149,7 @@ public class SingleProjectionCommandExecutor extends AbstractCommandExecutor {
     @Override
     public void execute( GetNodeCommand command ) throws RepositorySourceException, InterruptedException {
         Path pathInSource = getPathInSource(command.getPath());
-        getConnection().execute(this.getEnvironment(), new ProjectedGetNodeCommand(command, pathInSource));
+        getConnection().execute(this.getExecutionContext(), new ProjectedGetNodeCommand(command, pathInSource));
     }
 
     /**
@@ -160,7 +160,7 @@ public class SingleProjectionCommandExecutor extends AbstractCommandExecutor {
     @Override
     public void execute( CreateNodeCommand command ) throws RepositorySourceException, InterruptedException {
         Path pathInSource = getPathInSource(command.getPath());
-        getConnection().execute(this.getEnvironment(), new ProjectedCreateNodeCommand(command, pathInSource));
+        getConnection().execute(this.getExecutionContext(), new ProjectedCreateNodeCommand(command, pathInSource));
     }
 
     /**
@@ -171,7 +171,7 @@ public class SingleProjectionCommandExecutor extends AbstractCommandExecutor {
     @Override
     public void execute( SetPropertiesCommand command ) throws RepositorySourceException, InterruptedException {
         Path pathInSource = getPathInSource(command.getPath());
-        getConnection().execute(this.getEnvironment(), new ProjectedSetPropertiesCommand(command, pathInSource));
+        getConnection().execute(this.getExecutionContext(), new ProjectedSetPropertiesCommand(command, pathInSource));
     }
 
     /**
@@ -182,7 +182,7 @@ public class SingleProjectionCommandExecutor extends AbstractCommandExecutor {
     @Override
     public void execute( DeleteBranchCommand command ) throws RepositorySourceException, InterruptedException {
         Path pathInSource = getPathInSource(command.getPath());
-        getConnection().execute(this.getEnvironment(), new ProjectedDeleteBranchCommand(command, pathInSource));
+        getConnection().execute(this.getExecutionContext(), new ProjectedDeleteBranchCommand(command, pathInSource));
     }
 
     /**
@@ -194,7 +194,7 @@ public class SingleProjectionCommandExecutor extends AbstractCommandExecutor {
     public void execute( MoveBranchCommand command ) throws RepositorySourceException, InterruptedException {
         Path pathInSource = getPathInSource(command.getPath());
         Path newPathInSource = getPathInSource(command.getNewPath());
-        getConnection().execute(this.getEnvironment(), new ProjectedMoveBranchCommand(command, pathInSource, newPathInSource));
+        getConnection().execute(this.getExecutionContext(), new ProjectedMoveBranchCommand(command, pathInSource, newPathInSource));
     }
 
     /**
@@ -205,7 +205,7 @@ public class SingleProjectionCommandExecutor extends AbstractCommandExecutor {
     @Override
     public void execute( RecordBranchCommand command ) throws RepositorySourceException, InterruptedException {
         Path pathInSource = getPathInSource(command.getPath());
-        getConnection().execute(this.getEnvironment(), new ProjectedRecordBranchCommand(command, pathInSource));
+        getConnection().execute(this.getExecutionContext(), new ProjectedRecordBranchCommand(command, pathInSource));
     }
 
     /**
@@ -217,7 +217,7 @@ public class SingleProjectionCommandExecutor extends AbstractCommandExecutor {
     public void execute( CopyBranchCommand command ) throws RepositorySourceException, InterruptedException {
         Path pathInSource = getPathInSource(command.getPath());
         Path newPathInSource = getPathInSource(command.getNewPath());
-        getConnection().execute(this.getEnvironment(), new ProjectedCopyBranchCommand(command, pathInSource, newPathInSource));
+        getConnection().execute(this.getExecutionContext(), new ProjectedCopyBranchCommand(command, pathInSource, newPathInSource));
     }
 
     /**
@@ -229,7 +229,7 @@ public class SingleProjectionCommandExecutor extends AbstractCommandExecutor {
     public void execute( CopyNodeCommand command ) throws RepositorySourceException, InterruptedException {
         Path pathInSource = getPathInSource(command.getPath());
         Path newPathInSource = getPathInSource(command.getNewPath());
-        getConnection().execute(this.getEnvironment(), new ProjectedCopyNodeCommand(command, pathInSource, newPathInSource));
+        getConnection().execute(this.getExecutionContext(), new ProjectedCopyNodeCommand(command, pathInSource, newPathInSource));
     }
 
     protected Path getPathInSource( Path pathInRepository ) {

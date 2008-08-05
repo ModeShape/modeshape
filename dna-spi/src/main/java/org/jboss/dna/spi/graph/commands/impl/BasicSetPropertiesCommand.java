@@ -63,7 +63,7 @@ public class BasicSetPropertiesCommand extends BasicGraphCommand implements SetP
     /**
      * {@inheritDoc}
      */
-    public Iterable<Property> getProperties() {
+    public Iterable<Property> getPropertyIterator() {
         return properties;
     }
 
@@ -79,7 +79,7 @@ public class BasicSetPropertiesCommand extends BasicGraphCommand implements SetP
         sb.append(" at ");
         sb.append(this.getPath());
         boolean firstProperty = true;
-        for (Property property : this.getProperties()) {
+        for (Property property : this.getPropertyIterator()) {
             if (property.isEmpty()) continue;
             if (firstProperty) {
                 sb.append(" { ");

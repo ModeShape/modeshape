@@ -39,10 +39,10 @@ public class ProjectedSetPropertiesCommand extends ActsOnProjectedPathCommand<Se
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.spi.graph.commands.ActsOnProperties#getProperties()
+     * @see org.jboss.dna.spi.graph.commands.ActsOnProperties#getPropertyIterator()
      */
-    public Iterable<Property> getProperties() {
-        return getOriginalCommand().getProperties();
+    public Iterable<Property> getPropertyIterator() {
+        return getOriginalCommand().getPropertyIterator();
     }
 
 }

@@ -228,6 +228,7 @@ public class Projection implements Comparable<Projection>, Serializable {
 
     private final String sourceName;
     private final List<Rule> rules;
+    private final boolean simple;
 
     /**
      * Create a new federated projection for the supplied source, using the supplied rules.
@@ -247,6 +248,7 @@ public class Projection implements Comparable<Projection>, Serializable {
         }
         this.rules = Collections.unmodifiableList(rulesList);
         ArgCheck.isNotEmpty(this.rules, "rules");
+        this.simple = computeSimpleProjection(this.rules);
     }
 
     /**
@@ -310,6 +312,39 @@ public class Projection implements Comparable<Projection>, Serializable {
             if (pathInRepository != null) paths.add(pathInRepository);
         }
         return paths;
+    }
+
+    /**
+     * Determine whether this project is a simple projection that only involves for any one repository path no more than a single
+     * source path.
+     * 
+     * @return true if this projection is a simple projection, or false if the projection is not simple (or it cannot be
+     *         determined if it is simple)
+     */
+    public boolean isSimple() {
+        return simple;
+    }
+
+    protected boolean computeSimpleProjection( List<Rule> rules ) {
+        // Get the set of repository paths for the rules, and see if they overlap ...
+        Set<Path> repositoryPaths = new HashSet<Path>();
+        for (Rule rule : rules) {
+            if (rule instanceof PathRule) {
+                PathRule pathRule = (PathRule)rule;
+                Path repoPath = pathRule.getPathInRepository();
+                if (!repositoryPaths.isEmpty()) {
+                    if (repositoryPaths.contains(repoPath)) return false;
+                    for (Path path : repositoryPaths) {
+                        if (path.isAtOrAbove(repoPath)) return false;
+                        if (repoPath.isAtOrAbove(path)) return false;
+                    }
+                }
+                repositoryPaths.add(repoPath);
+            } else {
+                return false;
+            }
+        }
+        return true;
     }
 
     /**

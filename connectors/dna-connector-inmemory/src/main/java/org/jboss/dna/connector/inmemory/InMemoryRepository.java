@@ -341,9 +341,9 @@ public class InMemoryRepository {
                 Path lowestExisting = getLowestExistingPath(parent);
                 throw new PathNotFoundException(path, lowestExisting, InMemoryConnectorI18n.nodeDoesNotExist.text(parent));
             }
-            Node node = createNode(getEnvironment(), parentNode, path.getLastSegment().getName());
+            Node node = createNode(getExecutionContext(), parentNode, path.getLastSegment().getName());
             // Now add the properties to the supplied node ...
-            for (Property property : command.getProperties()) {
+            for (Property property : command.getPropertyIterator()) {
                 Name propName = property.getName();
                 if (property.size() == 0) {
                     node.getProperties().remove(propName);
@@ -378,7 +378,7 @@ public class InMemoryRepository {
         public void execute( SetPropertiesCommand command ) {
             Node node = getTargetNode(command);
             // Now set (or remove) the properties to the supplied node ...
-            for (Property property : command.getProperties()) {
+            for (Property property : command.getPropertyIterator()) {
                 Name propName = property.getName();
                 if (property.size() == 0) {
                     node.getProperties().remove(propName);
@@ -391,7 +391,7 @@ public class InMemoryRepository {
         @Override
         public void execute( DeleteBranchCommand command ) {
             Node node = getTargetNode(command);
-            removeNode(getEnvironment(), node);
+            removeNode(getExecutionContext(), node);
         }
 
         @Override
@@ -400,7 +400,7 @@ public class InMemoryRepository {
             // Look up the new parent, which must exist ...
             Path newPath = command.getNewPath();
             Node newParent = getNode(newPath.getAncestor());
-            copyNode(getEnvironment(), node, newParent, false);
+            copyNode(getExecutionContext(), node, newParent, false);
         }
 
         @Override
@@ -409,7 +409,7 @@ public class InMemoryRepository {
             // Look up the new parent, which must exist ...
             Path newPath = command.getNewPath();
             Node newParent = getNode(newPath.getAncestor());
-            copyNode(getEnvironment(), node, newParent, true);
+            copyNode(getExecutionContext(), node, newParent, true);
         }
 
         @Override
