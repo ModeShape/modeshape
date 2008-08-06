@@ -63,17 +63,16 @@ public class JBossCacheSourceTest {
 
     @Test
     public void shouldAllowSettingName() {
-        source.setName("Something");
+        assertThat(source.setName("Something"), is(true));
         assertThat(source.getName(), is("Something"));
-        source.setName("another name");
+        assertThat(source.setName("another name"), is(true));
         assertThat(source.getName(), is("another name"));
     }
 
     @Test
-    public void shouldAllowSettingNameToNull() {
-        source.setName("some name");
-        source.setName(null);
+    public void shouldNotAllowSettingNameToNull() {
+        assertThat(source.setName("some name"), is(true));
+        assertThat(source.setName(null), is(true));
         assertThat(source.getName(), is(nullValue()));
     }
-
 }

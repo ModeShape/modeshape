@@ -224,7 +224,7 @@ public class JBossCacheSource extends AbstractRepositorySource implements Object
         try {
             lock.lock();
             // Determine if this name is allowed ...
-            if (sources.containsKey(name)) return false;
+            if (name != null && sources.containsKey(name)) return false;
 
             // Remove this object under its current name
             if (this.name != null) {
@@ -232,7 +232,9 @@ public class JBossCacheSource extends AbstractRepositorySource implements Object
             }
             // Register this object under the new name
             this.name = name;
-            sources.put(this.name, this);
+            if (this.name != null) {
+                sources.put(this.name, this);
+            }
             return true;
         } finally {
             lock.unlock();
