@@ -46,7 +46,6 @@ import org.jboss.dna.common.util.ArgCheck;
 import org.jboss.dna.spi.DnaLexicon;
 import org.jboss.dna.spi.cache.CachePolicy;
 import org.jboss.dna.spi.graph.Name;
-import org.jboss.dna.spi.graph.NameFactory;
 import org.jboss.dna.spi.graph.connection.AbstractRepositorySource;
 import org.jboss.dna.spi.graph.connection.RepositoryConnection;
 
@@ -249,18 +248,6 @@ public class JBossCacheSource extends AbstractRepositorySource implements Object
             cache = factory.createCache(cacheConfigurationName);
         }
         return new JBossCacheConnection(this, this.cache);
-    }
-
-    /**
-     * Utility method to obtain a consistent {@link Name} for the property that should store the UUID value on each node. This
-     * method is properly coded so that it is threadsafe.
-     * 
-     * @param factory the name factory; may not be null
-     * @return the property name, or null if UUIDs are not to be maintained
-     */
-    /* package */synchronized Name getUuidPropertyName( NameFactory factory ) {
-        if (this.uuidPropertyName.length() == 0) return null;
-        return factory.create(this.uuidPropertyName);
     }
 
     /**

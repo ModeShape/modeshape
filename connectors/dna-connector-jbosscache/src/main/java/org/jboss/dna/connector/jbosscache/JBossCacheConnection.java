@@ -33,6 +33,7 @@ import org.jboss.cache.Node;
 import org.jboss.dna.spi.ExecutionContext;
 import org.jboss.dna.spi.cache.CachePolicy;
 import org.jboss.dna.spi.graph.Name;
+import org.jboss.dna.spi.graph.NameFactory;
 import org.jboss.dna.spi.graph.Path;
 import org.jboss.dna.spi.graph.PathFactory;
 import org.jboss.dna.spi.graph.PathNotFoundException;
@@ -84,13 +85,6 @@ public class JBossCacheConnection implements RepositoryConnection {
         assert cache != null;
         this.source = source;
         this.cache = cache;
-    }
-
-    /**
-     * @return uuidPropertyName
-     */
-    public Name getUuidPropertyName() {
-        return this.uuidPropertyName;
     }
 
     /**
@@ -164,15 +158,17 @@ public class JBossCacheConnection implements RepositoryConnection {
      * @param context the execution context
      * @return the name, or null if the UUID should not be stored
      */
-    protected Name getUuidProperty( ExecutionContext context ) {
+    protected Name getUuidPropertyName( ExecutionContext context ) {
         if (!initializedUuidPropertyName) {
-            this.uuidPropertyName = this.source.getUuidPropertyName(context.getValueFactories().getNameFactory());
+            NameFactory nameFactory = context.getValueFactories().getNameFactory();
+            this.uuidPropertyName = nameFactory.create(this.source.getUuidPropertyName());
             initializedUuidPropertyName = true;
         }
         return this.uuidPropertyName;
     }
 
     protected Fqn<Path.Segment> getFullyQualifiedName( Path path ) {
+        assert path != null;
         return Fqn.fromList(path.getSegmentsList());
     }
 
@@ -183,16 +179,13 @@ public class JBossCacheConnection implements RepositoryConnection {
      * @return the relative fully-qualified name
      */
     protected Fqn<Path.Segment> getFullyQualifiedName( Path.Segment pathSegment ) {
+        assert pathSegment != null;
         return Fqn.fromElements(pathSegment);
     }
 
     protected Path getPath( PathFactory factory,
                             Fqn<Path.Segment> fqn ) {
-        Path.Segment[] segments = new Path.Segment[fqn.size()];
-        for (int i = 0; i != segments.length; ++i) {
-            segments[i] = fqn.get(i);
-        }
-        return factory.create(factory.createRootPath(), segments);
+        return factory.create(factory.createRootPath(), fqn.peekElements());
     }
 
     protected Node<Name, Object> getNode( ExecutionContext context,
@@ -232,7 +225,7 @@ public class JBossCacheConnection implements RepositoryConnection {
         copy.clearData();
         copy.putAll(original.getData());
         if (uuidProperty != null) {
-            // Generate a new UUID for the new node ...
+            // Generate a new UUID for the new node, overwriting any existing value from the original ...
             copy.put(uuidProperty, generateUuid());
         }
         int numNodesCopied = 1;
@@ -266,7 +259,7 @@ public class JBossCacheConnection implements RepositoryConnection {
             Node<Name, Object> parentNode = getNode(parent);
             Node<Name, Object> node = parentNode.addChild(childFqn);
             // Add the UUID property (if required), which may be overwritten by a supplied property ...
-            Name uuidPropertyName = getUuidProperty(getExecutionContext());
+            Name uuidPropertyName = getUuidPropertyName(getExecutionContext());
             if (uuidPropertyName != null) {
                 node.put(uuidPropertyName, generateUuid());
             }
@@ -287,7 +280,7 @@ public class JBossCacheConnection implements RepositoryConnection {
         @Override
         public void execute( GetChildrenCommand command ) {
             Node<Name, Object> node = getNode(command.getPath());
-            Name uuidPropertyName = getUuidPropertyName();
+            Name uuidPropertyName = getUuidPropertyName(getExecutionContext());
             // Get the names of the children ...
             for (Node<Name, Object> child : node.getChildren()) {
                 Segment segment = (Segment)child.getFqn().getLastElement();
@@ -363,7 +356,7 @@ public class JBossCacheConnection implements RepositoryConnection {
         public void execute( MoveBranchCommand command ) {
             Node<Name, Object> node = getNode(command.getPath());
             boolean recursive = true;
-            Name uuidProperty = getUuidProperty(getExecutionContext());
+            Name uuidProperty = getUuidPropertyName(getExecutionContext());
             // Look up the new parent, which must exist ...
             Path newPath = command.getNewPath();
             Node<Name, Object> newParent = getNode(newPath.getAncestor());
