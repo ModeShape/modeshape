@@ -47,6 +47,7 @@ import org.jboss.dna.spi.graph.connection.RepositorySourceException;
 
 /**
  * @author Randall Hauch
+ * @author John Verhaeg
  */
 public class InMemoryRepositorySource extends AbstractRepositorySource implements ObjectFactory {
 
@@ -95,7 +96,7 @@ public class InMemoryRepositorySource extends AbstractRepositorySource implement
     private String jndiName;
     private UUID rootNodeUuid = UUID.randomUUID();
     private CachePolicy defaultCachePolicy;
-    private String configurationName;
+    // private String configurationName;
     private transient InMemoryRepository repository;
 
     /**
@@ -228,10 +229,10 @@ public class InMemoryRepositorySource extends AbstractRepositorySource implement
      */
     @Override
     protected synchronized RepositoryConnection createConnection() throws RepositorySourceException {
-        if (this.repository == null) {
-            repository = new InMemoryRepository(configurationName, this.rootNodeUuid);
+        if (repository == null) {
+            repository = new InMemoryRepository(name, rootNodeUuid);
         }
-        return new InMemoryRepositoryConnection(this, this.repository);
+        return new InMemoryRepositoryConnection(this, repository);
     }
 
     /**
