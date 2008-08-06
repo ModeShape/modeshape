@@ -23,6 +23,7 @@ package org.jboss.dna.spi.graph.commands.executor;
 
 import org.jboss.dna.common.util.Logger;
 import org.jboss.dna.spi.SpiI18n;
+import org.jboss.dna.spi.connector.RepositorySourceException;
 import org.jboss.dna.spi.graph.commands.CompositeCommand;
 import org.jboss.dna.spi.graph.commands.CopyBranchCommand;
 import org.jboss.dna.spi.graph.commands.CopyNodeCommand;
@@ -35,7 +36,6 @@ import org.jboss.dna.spi.graph.commands.GraphCommand;
 import org.jboss.dna.spi.graph.commands.MoveBranchCommand;
 import org.jboss.dna.spi.graph.commands.RecordBranchCommand;
 import org.jboss.dna.spi.graph.commands.SetPropertiesCommand;
-import org.jboss.dna.spi.graph.connection.RepositorySourceException;
 
 /**
  * @author Randall Hauch

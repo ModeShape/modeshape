@@ -25,6 +25,10 @@ import java.util.Set;
 import net.jcip.annotations.NotThreadSafe;
 import org.jboss.dna.connector.federation.Projection;
 import org.jboss.dna.spi.ExecutionContext;
+import org.jboss.dna.spi.connector.RepositoryConnection;
+import org.jboss.dna.spi.connector.RepositorySource;
+import org.jboss.dna.spi.connector.RepositorySourceException;
+import org.jboss.dna.spi.connector.RepositorySourceRegistry;
 import org.jboss.dna.spi.graph.DateTime;
 import org.jboss.dna.spi.graph.Path;
 import org.jboss.dna.spi.graph.PathFactory;
@@ -39,11 +43,6 @@ import org.jboss.dna.spi.graph.commands.MoveBranchCommand;
 import org.jboss.dna.spi.graph.commands.RecordBranchCommand;
 import org.jboss.dna.spi.graph.commands.SetPropertiesCommand;
 import org.jboss.dna.spi.graph.commands.executor.AbstractCommandExecutor;
-import org.jboss.dna.spi.graph.connection.RepositoryConnection;
-import org.jboss.dna.spi.graph.connection.RepositoryConnectionFactories;
-import org.jboss.dna.spi.graph.connection.RepositoryConnectionFactory;
-import org.jboss.dna.spi.graph.connection.RepositorySource;
-import org.jboss.dna.spi.graph.connection.RepositorySourceException;
 
 /**
  * @author Randall Hauch
@@ -53,7 +52,7 @@ public class SingleProjectionCommandExecutor extends AbstractCommandExecutor {
 
     private final Projection projection;
     private final PathFactory pathFactory;
-    private final RepositoryConnectionFactories factories;
+    private final RepositorySourceRegistry registry;
     private RepositoryConnection connection;
 
     /**
@@ -61,13 +60,13 @@ public class SingleProjectionCommandExecutor extends AbstractCommandExecutor {
      * @param sourceName the name of the {@link RepositorySource} that is making use of this executor; may not be null or empty
      * @param projection the projection used for the cached information; may not be null and must have exactly one
      *        {@link Projection#getRules() rule}
-     * @param connectionFactories the factory for connection factory instances
+     * @param sourceRegistry the registry of {@link RepositorySource} instances
      */
     public SingleProjectionCommandExecutor( ExecutionContext context,
                                             String sourceName,
                                             Projection projection,
-                                            RepositoryConnectionFactories connectionFactories ) {
-        this(context, sourceName, null, projection, connectionFactories);
+                                            RepositorySourceRegistry sourceRegistry ) {
+        this(context, sourceName, null, projection, sourceRegistry);
     }
 
     /**
@@ -76,19 +75,19 @@ public class SingleProjectionCommandExecutor extends AbstractCommandExecutor {
      * @param now the current time; may be null if the system time is to be used
      * @param projection the projection used for the cached information; may not be null and must have exactly one
      *        {@link Projection#getRules() rule}
-     * @param connectionFactories the factory for connection factory instances
+     * @param sourceRegistry the registry of {@link RepositorySource} instances
      */
     public SingleProjectionCommandExecutor( ExecutionContext context,
                                             String sourceName,
                                             DateTime now,
                                             Projection projection,
-                                            RepositoryConnectionFactories connectionFactories ) {
+                                            RepositorySourceRegistry sourceRegistry ) {
         super(context, sourceName, now);
-        assert connectionFactories != null;
+        assert sourceRegistry != null;
         assert projection != null;
         assert projection.getRules().size() == 1;
         this.projection = projection;
-        this.factories = connectionFactories;
+        this.registry = sourceRegistry;
         this.pathFactory = context.getValueFactories().getPathFactory();
         assert this.pathFactory != null;
     }
@@ -96,8 +95,8 @@ public class SingleProjectionCommandExecutor extends AbstractCommandExecutor {
     protected RepositoryConnection getConnection() throws RepositorySourceException, InterruptedException {
         if (connection == null) {
             // Create a connection ...
-            RepositoryConnectionFactory connectionFactory = this.factories.getConnectionFactory(this.projection.getSourceName());
-            connection = connectionFactory.getConnection();
+            RepositorySource source = this.registry.getRepositorySource(this.projection.getSourceName());
+            connection = source.getConnection();
         }
         return connection;
     }
@@ -194,7 +193,8 @@ public class SingleProjectionCommandExecutor extends AbstractCommandExecutor {
     public void execute( MoveBranchCommand command ) throws RepositorySourceException, InterruptedException {
         Path pathInSource = getPathInSource(command.getPath());
         Path newPathInSource = getPathInSource(command.getNewPath());
-        getConnection().execute(this.getExecutionContext(), new ProjectedMoveBranchCommand(command, pathInSource, newPathInSource));
+        getConnection().execute(this.getExecutionContext(),
+                                new ProjectedMoveBranchCommand(command, pathInSource, newPathInSource));
     }
 
     /**
@@ -217,7 +217,8 @@ public class SingleProjectionCommandExecutor extends AbstractCommandExecutor {
     public void execute( CopyBranchCommand command ) throws RepositorySourceException, InterruptedException {
         Path pathInSource = getPathInSource(command.getPath());
         Path newPathInSource = getPathInSource(command.getNewPath());
-        getConnection().execute(this.getExecutionContext(), new ProjectedCopyBranchCommand(command, pathInSource, newPathInSource));
+        getConnection().execute(this.getExecutionContext(),
+                                new ProjectedCopyBranchCommand(command, pathInSource, newPathInSource));
     }
 
     /**

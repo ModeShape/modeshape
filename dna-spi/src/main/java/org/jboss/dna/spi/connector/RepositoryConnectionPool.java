@@ -19,7 +19,7 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.jboss.dna.spi.graph.connection;
+package org.jboss.dna.spi.connector;
 
 import java.util.Collection;
 import java.util.HashSet;
@@ -44,10 +44,36 @@ import org.jboss.dna.spi.cache.CachePolicy;
 import org.jboss.dna.spi.graph.commands.GraphCommand;
 
 /**
+ * A reusable implementation of a managed pool of connections that is optimized for safe concurrent operations.
+ * 
  * @author Randall Hauch
  */
 @ThreadSafe
-public class RepositoryConnectionPool implements ManagedRepositoryConnectionFactory {
+public class RepositoryConnectionPool {
+
+    /**
+     * A factory that is used by the connection pool to create new connections.
+     * 
+     * @author Randall Hauch
+     */
+    public interface ConnectionFactory {
+
+        /**
+         * Get the name for the source that owns the pool.
+         * 
+         * @return the name; never null or empty
+         */
+        String getSourceName();
+
+        /**
+         * Create a new connection to the underlying source.
+         * 
+         * @return the new connection
+         * @throws RepositorySourceException if there is a problem obtaining a connection
+         * @throws InterruptedException if the thread is interrupted while attempting to get a connection
+         */
+        RepositoryConnection createConnection() throws RepositorySourceException, InterruptedException;
+    }
 
     /**
      * The core pool size for default-constructed pools is {@value} .
@@ -72,7 +98,7 @@ public class RepositoryConnectionPool implements ManagedRepositoryConnectionFact
     /**
      * The factory that this pool uses to create new connections.
      */
-    private final RepositoryConnectionFactory connectionFactory;
+    private final ConnectionFactory connectionFactory;
 
     /**
      * Lock held on updates to poolSize, corePoolSize, maximumPoolSize, and workers set.
@@ -166,7 +192,7 @@ public class RepositoryConnectionPool implements ManagedRepositoryConnectionFact
      * @param connectionFactory the factory for connections
      * @throws IllegalArgumentException if the connection factory is null or any of the supplied arguments are invalid
      */
-    public RepositoryConnectionPool( RepositoryConnectionFactory connectionFactory ) {
+    public RepositoryConnectionPool( ConnectionFactory connectionFactory ) {
         this(connectionFactory, DEFAULT_CORE_POOL_SIZE, DEFAULT_MAXIMUM_POOL_SIZE, DEFAULT_KEEP_ALIVE_TIME_IN_SECONDS,
              TimeUnit.SECONDS);
     }
@@ -182,7 +208,7 @@ public class RepositoryConnectionPool implements ManagedRepositoryConnectionFact
      * @param unit the time unit for the keepAliveTime argument.
      * @throws IllegalArgumentException if the connection factory is null or any of the supplied arguments are invalid
      */
-    public RepositoryConnectionPool( RepositoryConnectionFactory connectionFactory,
+    public RepositoryConnectionPool( ConnectionFactory connectionFactory,
                                      int corePoolSize,
                                      int maximumPoolSize,
                                      long keepAliveTime,
@@ -202,12 +228,12 @@ public class RepositoryConnectionPool implements ManagedRepositoryConnectionFact
     }
 
     /**
-     * {@inheritDoc}
+     * Get the name of this pool, which delegates to the connection factory.
      * 
-     * @see org.jboss.dna.spi.graph.connection.RepositoryConnectionFactory#getName()
+     * @return the name of the source
      */
-    public String getName() {
-        return this.connectionFactory.getName();
+    protected String getSourceName() {
+        return connectionFactory.getSourceName();
     }
 
     // -------------------------------------------------
@@ -455,9 +481,16 @@ public class RepositoryConnectionPool implements ManagedRepositoryConnectionFact
     }
 
     /**
-     * {@inheritDoc}
+     * Initiates an orderly shutdown of the pool in which connections that are currently in use are allowed to be used and closed
+     * as normal, but no new connections will be created. Invocation has no additional effect if already shut down.
+     * <p>
+     * Once the pool has been shutdown, it may not be used to {@link #getConnection() get connections}.
+     * </p>
      * 
-     * @see org.jboss.dna.spi.graph.connection.ManagedRepositoryConnectionFactory#shutdown()
+     * @throws SecurityException if a security manager exists and shutting down this pool may manipulate threads that the caller
+     *         is not permitted to modify because it does not hold {@link java.lang.RuntimePermission}<tt>("modifyThread")</tt>,
+     *         or the security manager's <tt>checkAccess</tt> method denies access.
+     * @see #shutdownNow()
      */
     public void shutdown() {
         // Fail if caller doesn't have modifyThread permission. We
@@ -468,7 +501,7 @@ public class RepositoryConnectionPool implements ManagedRepositoryConnectionFact
         SecurityManager security = System.getSecurityManager();
         if (security != null) java.security.AccessController.checkPermission(shutdownPerm);
 
-        this.logger.debug("Shutting down repository connection pool for {0}", getName());
+        this.logger.debug("Shutting down repository connection pool for {0}", getSourceName());
         boolean fullyTerminated = false;
         final ReentrantLock mainLock = this.mainLock;
         try {
@@ -490,10 +523,10 @@ public class RepositoryConnectionPool implements ManagedRepositoryConnectionFact
             // If there are no connections being used, trigger full termination now ...
             if (this.inUseConnections.isEmpty()) {
                 fullyTerminated = true;
-                this.logger.trace("Signalling termination of repository connection pool for {0}", getName());
+                this.logger.trace("Signalling termination of repository connection pool for {0}", getSourceName());
                 runState = TERMINATED;
                 termination.signalAll();
-                this.logger.debug("Terminated repository connection pool for {0}", getName());
+                this.logger.debug("Terminated repository connection pool for {0}", getSourceName());
             }
             // Otherwise the last connection that is closed will transition the runState to TERMINATED ...
         } finally {
@@ -503,16 +536,20 @@ public class RepositoryConnectionPool implements ManagedRepositoryConnectionFact
     }
 
     /**
-     * {@inheritDoc}
+     * Attempts to close all connections in the pool, including those connections currently in use, and prevent the use of other
+     * connections.
      * 
-     * @see org.jboss.dna.spi.graph.connection.ManagedRepositoryConnectionFactory#shutdownNow()
+     * @throws SecurityException if a security manager exists and shutting down this pool may manipulate threads that the caller
+     *         is not permitted to modify because it does not hold {@link java.lang.RuntimePermission}<tt>("modifyThread")</tt>,
+     *         or the security manager's <tt>checkAccess</tt> method denies access.
+     * @see #shutdown()
      */
     public void shutdownNow() {
         // Almost the same code as shutdown()
         SecurityManager security = System.getSecurityManager();
         if (security != null) java.security.AccessController.checkPermission(shutdownPerm);
 
-        this.logger.debug("Shutting down (immediately) repository connection pool for {0}", getName());
+        this.logger.debug("Shutting down (immediately) repository connection pool for {0}", getSourceName());
         boolean fullyTerminated = false;
         final ReentrantLock mainLock = this.mainLock;
         try {
@@ -535,7 +572,7 @@ public class RepositoryConnectionPool implements ManagedRepositoryConnectionFact
             if (!this.inUseConnections.isEmpty()) {
                 for (ConnectionWrapper connectionInUse : this.inUseConnections) {
                     try {
-                        this.logger.trace("Closing repository connection to {0}", getName());
+                        this.logger.trace("Closing repository connection to {0}", getSourceName());
                         connectionInUse.getOriginal().close();
                     } catch (InterruptedException e) {
                         // Ignore this ...
@@ -546,10 +583,10 @@ public class RepositoryConnectionPool implements ManagedRepositoryConnectionFact
             } else {
                 // There are no connections in use, so trigger full termination now ...
                 fullyTerminated = true;
-                this.logger.trace("Signalling termination of repository connection pool for {0}", getName());
+                this.logger.trace("Signalling termination of repository connection pool for {0}", getSourceName());
                 runState = TERMINATED;
                 termination.signalAll();
-                this.logger.debug("Terminated repository connection pool for {0}", getName());
+                this.logger.debug("Terminated repository connection pool for {0}", getSourceName());
             }
 
         } finally {
@@ -559,46 +596,65 @@ public class RepositoryConnectionPool implements ManagedRepositoryConnectionFact
     }
 
     /**
-     * {@inheritDoc}
+     * Return whether this connection pool is running and is able to {@link #getConnection() provide connections}. Note that this
+     * method is effectively <code>!isShutdown()</code>.
      * 
-     * @see org.jboss.dna.spi.graph.connection.ManagedRepositoryConnectionFactory#isRunning()
+     * @return true if this pool is running, or false otherwise
+     * @see #isShutdown()
+     * @see #isTerminated()
+     * @see #isTerminating()
      */
     public boolean isRunning() {
         return runState == RUNNING;
     }
 
     /**
-     * {@inheritDoc}
+     * Return whether this connection pool is in the process of shutting down or has already been shut down. A result of
+     * <code>true</code> signals that the pool may no longer be used. Note that this method is effectively
+     * <code>!isRunning()</code>.
      * 
-     * @see org.jboss.dna.spi.graph.connection.ManagedRepositoryConnectionFactory#isShutdown()
+     * @return true if this pool has been shut down, or false otherwise
+     * @see #isShutdown()
+     * @see #isTerminated()
+     * @see #isTerminating()
      */
     public boolean isShutdown() {
         return runState != RUNNING;
     }
 
     /**
-     * {@inheritDoc}
+     * Returns true if this pool is in the process of terminating after {@link #shutdown()} or {@link #shutdownNow()} has been
+     * called but has not completely terminated. This method may be useful for debugging. A return of <tt>true</tt> reported a
+     * sufficient period after shutdown may indicate that submitted tasks have ignored or suppressed interruption, causing this
+     * executor not to properly terminate.
      * 
-     * @see org.jboss.dna.spi.graph.connection.ManagedRepositoryConnectionFactory#isTerminating()
+     * @return true if terminating but not yet terminated, or false otherwise
+     * @see #isTerminated()
      */
     public boolean isTerminating() {
         return runState == STOP;
     }
 
     /**
-     * {@inheritDoc}
+     * Return true if this pool has completed its termination and no longer has any open connections.
      * 
-     * @see org.jboss.dna.spi.graph.connection.ManagedRepositoryConnectionFactory#isTerminated()
+     * @return true if terminated, or false otherwise
+     * @see #isTerminating()
      */
     public boolean isTerminated() {
         return runState == TERMINATED;
     }
 
     /**
-     * {@inheritDoc}
+     * Method that can be called after {@link #shutdown()} or {@link #shutdownNow()} to wait until all connections in use at the
+     * time those methods were called have been closed normally. This method accepts a maximum time duration, after which it will
+     * return even if all connections have not been closed.
      * 
-     * @see org.jboss.dna.spi.graph.connection.ManagedRepositoryConnectionFactory#awaitTermination(long,
-     *      java.util.concurrent.TimeUnit)
+     * @param timeout the maximum time to wait for all connections to be closed and returned to the pool
+     * @param unit the time unit for <code>timeout</code>
+     * @return true if the pool was terminated in the supplied time (or was already terminated), or false if the timeout occurred
+     *         before all the connections were closed
+     * @throws InterruptedException if the thread was interrupted
      */
     public boolean awaitTermination( long timeout,
                                      TimeUnit unit ) throws InterruptedException {
@@ -638,7 +694,14 @@ public class RepositoryConnectionPool implements ManagedRepositoryConnectionFact
     // -------------------------------------------------
 
     /**
-     * {@inheritDoc}
+     * Get a connection from the pool. This method either returns an unused connection if one is available, creates a connection
+     * if there is still room in the pool, or blocks until a connection becomes available if the pool already contains the maximum
+     * number of connections and all connections are currently being used.
+     * 
+     * @return a connection
+     * @throws RepositorySourceException if there is a problem obtaining a connection
+     * @throws InterruptedException if the thread is interrupted while attempting to get a connection
+     * @throws IllegalStateException if the factory is not in a state to create or return connections
      */
     public RepositoryConnection getConnection() throws RepositorySourceException, InterruptedException {
         int attemptsAllowed = this.maxFailedAttemptsBeforeError.get();
@@ -677,7 +740,7 @@ public class RepositoryConnectionPool implements ManagedRepositoryConnectionFact
             }
             if (connection == null) {
                 // There are not enough connections, so wait in line for the next available connection ...
-                this.logger.trace("Waiting for a repository connection from pool {0}", getName());
+                this.logger.trace("Waiting for a repository connection from pool {0}", getSourceName());
                 connection = this.availableConnections.take();
                 mainLock = this.mainLock;
                 mainLock.lock();
@@ -688,7 +751,7 @@ public class RepositoryConnectionPool implements ManagedRepositoryConnectionFact
                 } finally {
                     mainLock.unlock();
                 }
-                this.logger.trace("Recieved a repository connection from pool {0}", getName());
+                this.logger.trace("Recieved a repository connection from pool {0}", getSourceName());
             }
             if (connection != null && this.validateConnectionBeforeUse.get()) {
                 connection = validateConnection(connection);
@@ -784,7 +847,7 @@ public class RepositoryConnectionPool implements ManagedRepositoryConnectionFact
      */
     @GuardedBy( "mainLock" )
     protected ConnectionWrapper newWrappedConnection() throws RepositorySourceException, InterruptedException {
-        RepositoryConnection connection = this.connectionFactory.getConnection();
+        RepositoryConnection connection = this.connectionFactory.createConnection();
         ++this.poolSize;
         this.totalConnectionsCreated.incrementAndGet();
         return new ConnectionWrapper(connection);
@@ -802,7 +865,7 @@ public class RepositoryConnectionPool implements ManagedRepositoryConnectionFact
         RepositoryConnection original = wrapper.getOriginal();
         assert original != null;
         try {
-            this.logger.debug("Closing repository connection to {0}", getName());
+            this.logger.debug("Closing repository connection to {0}", getSourceName());
             original.close();
         } finally {
             final ReentrantLock mainLock = this.mainLock;
@@ -813,10 +876,10 @@ public class RepositoryConnectionPool implements ManagedRepositoryConnectionFact
                 // And if shutting down and this was the last connection being used...
                 if (this.runState == SHUTDOWN && this.poolSize <= 0) {
                     // then signal anybody that has called "awaitTermination(...)"
-                    this.logger.trace("Signalling termination of repository connection pool for {0}", getName());
+                    this.logger.trace("Signalling termination of repository connection pool for {0}", getSourceName());
                     this.runState = TERMINATED;
                     this.termination.signalAll();
-                    this.logger.trace("Terminated repository connection pool for {0}", getName());
+                    this.logger.trace("Terminated repository connection pool for {0}", getSourceName());
 
                     // fall through to call terminate() outside of lock.
                 }
@@ -829,13 +892,13 @@ public class RepositoryConnectionPool implements ManagedRepositoryConnectionFact
     @GuardedBy( "mainLock" )
     protected int drainUnusedConnections( int count ) {
         if (count <= 0) return 0;
-        this.logger.trace("Draining up to {0} unused repository connections to {1}", count, getName());
+        this.logger.trace("Draining up to {0} unused repository connections to {1}", count, getSourceName());
         // Drain the extra connections from those available ...
         Collection<ConnectionWrapper> extraConnections = new LinkedList<ConnectionWrapper>();
         this.availableConnections.drainTo(extraConnections, count);
         for (ConnectionWrapper connection : extraConnections) {
             try {
-                this.logger.trace("Closing repository connection to {0}", getName());
+                this.logger.trace("Closing repository connection to {0}", getSourceName());
                 connection.getOriginal().close();
             } catch (InterruptedException e) {
                 // Ignore this ...
@@ -852,7 +915,7 @@ public class RepositoryConnectionPool implements ManagedRepositoryConnectionFact
         // Add connection ...
         if (this.poolSize < this.corePoolSize) {
             this.availableConnections.offer(newWrappedConnection());
-            this.logger.trace("Added connection to {0} in undersized pool", getName());
+            this.logger.trace("Added connection to {0} in undersized pool", getSourceName());
             return true;
         }
         return false;
@@ -866,7 +929,7 @@ public class RepositoryConnectionPool implements ManagedRepositoryConnectionFact
             this.availableConnections.offer(newWrappedConnection());
             ++n;
         }
-        this.logger.trace("Added {0} connection(s) to {1} in undersized pool", n, getName());
+        this.logger.trace("Added {0} connection(s) to {1} in undersized pool", n, getSourceName());
         return n;
     }
 

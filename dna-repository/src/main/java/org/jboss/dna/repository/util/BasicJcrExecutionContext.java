@@ -22,10 +22,10 @@
 package org.jboss.dna.repository.util;
 
 import org.jboss.dna.common.util.ArgCheck;
+import org.jboss.dna.spi.connector.BasicExecutionContext;
 import org.jboss.dna.spi.graph.NamespaceRegistry;
 import org.jboss.dna.spi.graph.PropertyFactory;
 import org.jboss.dna.spi.graph.ValueFactories;
-import org.jboss.dna.spi.graph.connection.BasicExecutionContext;
 
 /**
  * @author Randall Hauch

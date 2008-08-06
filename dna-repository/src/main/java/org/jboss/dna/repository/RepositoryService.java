@@ -45,6 +45,7 @@ import org.jboss.dna.repository.services.AbstractServiceAdministrator;
 import org.jboss.dna.repository.services.AdministeredService;
 import org.jboss.dna.repository.services.ServiceAdministrator;
 import org.jboss.dna.spi.ExecutionContext;
+import org.jboss.dna.spi.connector.RepositorySource;
 import org.jboss.dna.spi.graph.Name;
 import org.jboss.dna.spi.graph.NameFactory;
 import org.jboss.dna.spi.graph.Path;
@@ -58,8 +59,6 @@ import org.jboss.dna.spi.graph.commands.executor.NoOpCommandExecutor;
 import org.jboss.dna.spi.graph.commands.impl.BasicCompositeCommand;
 import org.jboss.dna.spi.graph.commands.impl.BasicGetChildrenCommand;
 import org.jboss.dna.spi.graph.commands.impl.BasicGetNodeCommand;
-import org.jboss.dna.spi.graph.connection.RepositoryConnectionFactory;
-import org.jboss.dna.spi.graph.connection.RepositorySource;
 
 /**
  * @author Randall Hauch
@@ -197,8 +196,7 @@ public class RepositoryService implements AdministeredService {
             NameFactory nameFactory = valueFactories.getNameFactory();
 
             final String configurationSourceName = configurationProjection.getSourceName();
-            RepositoryConnectionFactory factory = sources.getConnectionFactory(configurationSourceName);
-            if (factory == null) {
+            if (sources.getRepositorySource(configurationSourceName) == null) {
                 throw new FederationException(RepositoryI18n.unableToFindRepositorySourceWithName.text(configurationSourceName));
             }
 

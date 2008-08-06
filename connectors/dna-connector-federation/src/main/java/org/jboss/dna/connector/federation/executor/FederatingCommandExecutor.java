@@ -42,6 +42,10 @@ import org.jboss.dna.connector.federation.merge.StandardMergeStrategy;
 import org.jboss.dna.spi.DnaLexicon;
 import org.jboss.dna.spi.ExecutionContext;
 import org.jboss.dna.spi.cache.CachePolicy;
+import org.jboss.dna.spi.connector.RepositoryConnection;
+import org.jboss.dna.spi.connector.RepositorySource;
+import org.jboss.dna.spi.connector.RepositorySourceException;
+import org.jboss.dna.spi.connector.RepositorySourceRegistry;
 import org.jboss.dna.spi.graph.DateTime;
 import org.jboss.dna.spi.graph.DateTimeFactory;
 import org.jboss.dna.spi.graph.Name;
@@ -59,11 +63,6 @@ import org.jboss.dna.spi.graph.commands.executor.AbstractCommandExecutor;
 import org.jboss.dna.spi.graph.commands.impl.BasicCreateNodeCommand;
 import org.jboss.dna.spi.graph.commands.impl.BasicGetChildrenCommand;
 import org.jboss.dna.spi.graph.commands.impl.BasicGetNodeCommand;
-import org.jboss.dna.spi.graph.connection.RepositoryConnection;
-import org.jboss.dna.spi.graph.connection.RepositoryConnectionFactories;
-import org.jboss.dna.spi.graph.connection.RepositoryConnectionFactory;
-import org.jboss.dna.spi.graph.connection.RepositorySource;
-import org.jboss.dna.spi.graph.connection.RepositorySourceException;
 import org.jboss.dna.spi.graph.impl.BasicSingleValueProperty;
 
 /**
@@ -78,7 +77,7 @@ public class FederatingCommandExecutor extends AbstractCommandExecutor {
     private final Projection cacheProjection;
     private final List<Projection> sourceProjections;
     private final Set<String> sourceNames;
-    private final RepositoryConnectionFactories connectionFactories;
+    private final RepositorySourceRegistry sourceRegistry;
     private final MergeStrategy mergingStrategy;
     /** The set of all connections, including the cache connection */
     private final Map<String, RepositoryConnection> connectionsBySourceName;
@@ -89,19 +88,19 @@ public class FederatingCommandExecutor extends AbstractCommandExecutor {
      * Create a command executor that federates (merges) the information from multiple sources described by the source
      * projections. The resulting command executor does not first consult a cache for the merged information; if a cache is
      * desired, see
-     * {@link #FederatingCommandExecutor(ExecutionContext, String, Projection, CachePolicy, List, RepositoryConnectionFactories)
+     * {@link #FederatingCommandExecutor(ExecutionContext, String, Projection, CachePolicy, List, RepositorySourceRegistry)
      * constructor} that takes a {@link Projection cache projection}.
      * 
      * @param context the execution context in which the executor will be run; may not be null
      * @param sourceName the name of the {@link RepositorySource} that is making use of this executor; may not be null or empty
      * @param sourceProjections the source projections; may not be null
-     * @param connectionFactories the factory for connection factory instances
+     * @param sourceRegistry the registry of {@link RepositorySource} instances
      */
     public FederatingCommandExecutor( ExecutionContext context,
                                       String sourceName,
                                       List<Projection> sourceProjections,
-                                      RepositoryConnectionFactories connectionFactories ) {
-        this(context, sourceName, null, null, sourceProjections, connectionFactories);
+                                      RepositorySourceRegistry sourceRegistry ) {
+        this(context, sourceName, null, null, sourceProjections, sourceRegistry);
     }
 
     /**
@@ -117,22 +116,22 @@ public class FederatingCommandExecutor extends AbstractCommandExecutor {
      * @param defaultCachePolicy the default caching policy that outlines the length of time that information should be cached, or
      *        null if there is no cache or no specific cache policy
      * @param sourceProjections the source projections; may not be null
-     * @param connectionFactories the factory for connection factory instances
+     * @param sourceRegistry the registry of {@link RepositorySource} instances
      */
     public FederatingCommandExecutor( ExecutionContext context,
                                       String sourceName,
                                       Projection cacheProjection,
                                       CachePolicy defaultCachePolicy,
                                       List<Projection> sourceProjections,
-                                      RepositoryConnectionFactories connectionFactories ) {
+                                      RepositorySourceRegistry sourceRegistry ) {
         super(context, sourceName);
         assert sourceProjections != null;
-        assert connectionFactories != null;
+        assert sourceRegistry != null;
         assert cacheProjection != null ? defaultCachePolicy != null : defaultCachePolicy == null;
         this.cacheProjection = cacheProjection;
         this.defaultCachePolicy = defaultCachePolicy;
         this.sourceProjections = sourceProjections;
-        this.connectionFactories = connectionFactories;
+        this.sourceRegistry = sourceRegistry;
         this.connectionsBySourceName = new HashMap<String, RepositoryConnection>();
         this.uuidPropertyName = context.getValueFactories().getNameFactory().create(DnaLexicon.PropertyNames.UUID);
         this.mergePlanPropertyName = context.getValueFactories().getNameFactory().create(DnaLexicon.PropertyNames.MERGE_PLAN);
@@ -182,9 +181,9 @@ public class FederatingCommandExecutor extends AbstractCommandExecutor {
         String sourceName = projection.getSourceName();
         RepositoryConnection connection = connectionsBySourceName.get(sourceName);
         if (connection == null) {
-            RepositoryConnectionFactory connectionFactory = connectionFactories.getConnectionFactory(sourceName);
-            if (connectionFactory != null) {
-                connection = connectionFactory.getConnection();
+            RepositorySource source = sourceRegistry.getRepositorySource(sourceName);
+            if (source != null) {
+                connection = source.getConnection();
             }
             connectionsBySourceName.put(sourceName, connection);
         }

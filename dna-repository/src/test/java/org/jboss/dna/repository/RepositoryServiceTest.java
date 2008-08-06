@@ -41,13 +41,13 @@ import org.jboss.dna.connector.federation.Projection;
 import org.jboss.dna.repository.services.ServiceAdministrator;
 import org.jboss.dna.spi.DnaLexicon;
 import org.jboss.dna.spi.ExecutionContext;
+import org.jboss.dna.spi.connector.RepositorySource;
+import org.jboss.dna.spi.connector.SimpleRepository;
+import org.jboss.dna.spi.connector.SimpleRepositorySource;
 import org.jboss.dna.spi.graph.NamespaceRegistry;
 import org.jboss.dna.spi.graph.Path;
 import org.jboss.dna.spi.graph.PathFactory;
 import org.jboss.dna.spi.graph.PropertyFactory;
-import org.jboss.dna.spi.graph.connection.RepositorySource;
-import org.jboss.dna.spi.graph.connection.SimpleRepository;
-import org.jboss.dna.spi.graph.connection.SimpleRepositorySource;
 import org.jboss.dna.spi.graph.impl.BasicNamespaceRegistry;
 import org.jboss.dna.spi.graph.impl.BasicPropertyFactory;
 import org.jboss.dna.spi.graph.impl.StandardValueFactories;
@@ -98,7 +98,7 @@ public class RepositoryServiceTest {
         configRepositorySource = new SimpleRepositorySource();
         configRepositorySource.setRepositoryName(configRepository.getRepositoryName());
         configRepositorySource.setName(configSourceName);
-        stub(sources.getConnectionFactory(configSourceName)).toReturn(configRepositorySource);
+        stub(sources.getRepositorySource(configSourceName)).toReturn(configRepositorySource);
         stub(context.getValueFactories()).toReturn(valueFactories);
         stub(context.getPropertyFactory()).toReturn(propertyFactory);
         stub(context.getNamespaceRegistry()).toReturn(registry);
@@ -158,14 +158,14 @@ public class RepositoryServiceTest {
 
     @Test( expected = FederationException.class )
     public void shouldFailToStartUpIfConfigurationRepositorySourceIsNotFound() {
-        stub(sources.getConnectionFactory(configSourceName)).toReturn(null);
+        stub(sources.getRepositorySource(configSourceName)).toReturn(null);
         service.getAdministrator().start();
     }
 
     @Test( expected = FederationException.class )
     public void shouldFailToStartUpIfUnableToConnectToConfigurationRepository() throws Exception {
         RepositorySource mockSource = mock(RepositorySource.class);
-        stub(sources.getConnectionFactory(configSourceName)).toReturn(mockSource);
+        stub(sources.getRepositorySource(configSourceName)).toReturn(mockSource);
         stub(mockSource.getConnection()).toThrow(new UnsupportedOperationException());
         service.getAdministrator().start();
     }
@@ -173,7 +173,7 @@ public class RepositoryServiceTest {
     @Test( expected = FederationException.class )
     public void shouldFailToStartUpIfInterruptedWhileConnectingToConfigurationRepository() throws Exception {
         RepositorySource mockSource = mock(RepositorySource.class);
-        stub(sources.getConnectionFactory(configSourceName)).toReturn(mockSource);
+        stub(sources.getRepositorySource(configSourceName)).toReturn(mockSource);
         stub(mockSource.getConnection()).toThrow(new InterruptedException());
         service.getAdministrator().start();
     }
@@ -207,21 +207,21 @@ public class RepositoryServiceTest {
 
         // and verify that the sources were added to the manager...
         assertThat(sources.getSources().size(), is(4));
-        assertThat(sources.getConnectionFactory("source A"), is(instanceOf(SimpleRepositorySource.class)));
-        assertThat(sources.getConnectionFactory("source B"), is(instanceOf(SimpleRepositorySource.class)));
-        assertThat(sources.getConnectionFactory("source C"), is(instanceOf(SimpleRepositorySource.class)));
+        assertThat(sources.getRepositorySource("source A"), is(instanceOf(SimpleRepositorySource.class)));
+        assertThat(sources.getRepositorySource("source B"), is(instanceOf(SimpleRepositorySource.class)));
+        assertThat(sources.getRepositorySource("source C"), is(instanceOf(SimpleRepositorySource.class)));
 
-        SimpleRepositorySource sourceA = (SimpleRepositorySource)sources.getConnectionFactory("source A");
+        SimpleRepositorySource sourceA = (SimpleRepositorySource)sources.getRepositorySource("source A");
         assertThat(sourceA.getName(), is("source A"));
         assertThat(sourceA.getRepositoryName(), is("sourceReposA"));
         assertThat(sourceA.getRetryLimit(), is(3));
 
-        SimpleRepositorySource sourceB = (SimpleRepositorySource)sources.getConnectionFactory("source B");
+        SimpleRepositorySource sourceB = (SimpleRepositorySource)sources.getRepositorySource("source B");
         assertThat(sourceB.getName(), is("source B"));
         assertThat(sourceB.getRepositoryName(), is("sourceReposB"));
         assertThat(sourceB.getRetryLimit(), is(SimpleRepositorySource.DEFAULT_RETRY_LIMIT));
 
-        SimpleRepositorySource sourceC = (SimpleRepositorySource)sources.getConnectionFactory("source C");
+        SimpleRepositorySource sourceC = (SimpleRepositorySource)sources.getRepositorySource("source C");
         assertThat(sourceC.getName(), is("source C"));
         assertThat(sourceC.getRepositoryName(), is("sourceReposC"));
         assertThat(sourceC.getRetryLimit(), is(SimpleRepositorySource.DEFAULT_RETRY_LIMIT));
@@ -236,7 +236,7 @@ public class RepositoryServiceTest {
         service.getAdministrator().start();
 
         // and verify that the configuration source was obtained from the manager ...
-        verify(sources, times(2)).getConnectionFactory(configSourceName); // once for checking source, second for getting
+        verify(sources, times(2)).getRepositorySource(configSourceName); // once for checking source, second for getting
 
         // and verify that the sources were never added to the manager...
         verifyNoMoreInteractions(sources);

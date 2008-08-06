@@ -19,16 +19,20 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.jboss.dna.spi.graph.connection;
+package org.jboss.dna.spi.connector;
 
+import static org.jboss.dna.spi.connector.RepositorySourceLoadHarness.runLoadTest;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
-import static org.jboss.dna.spi.graph.connection.RepositorySourceLoadHarness.runLoadTest;
 import static org.junit.Assert.assertThat;
 import java.util.List;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import org.jboss.dna.spi.ExecutionContext;
+import org.jboss.dna.spi.connector.RepositoryConnection;
+import org.jboss.dna.spi.connector.RepositoryConnectionPool;
+import org.jboss.dna.spi.connector.RepositorySource;
+import org.jboss.dna.spi.connector.RepositorySourceException;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -40,13 +44,22 @@ import org.junit.Test;
 public class RepositoryConnectionPoolTest {
 
     private RepositoryConnectionPool pool;
-    private TimeDelayingRepositorySource repositorySource;
+    private RepositoryConnectionPool.ConnectionFactory connectionFactory;
     private ExecutionContext context;
 
     @Before
     public void beforeEach() {
-        this.repositorySource = new TimeDelayingRepositorySource("source 1");
-        this.pool = new RepositoryConnectionPool(this.repositorySource, 1, 1, 100, TimeUnit.SECONDS);
+        final RepositorySource repositorySource = new TimeDelayingRepositorySource("source 1");
+        this.connectionFactory = new RepositoryConnectionPool.ConnectionFactory() {
+            public RepositoryConnection createConnection() throws RepositorySourceException, InterruptedException {
+                return repositorySource.getConnection();
+            }
+
+            public String getSourceName() {
+                return repositorySource.getName();
+            }
+        };
+        this.pool = new RepositoryConnectionPool(this.connectionFactory, 1, 1, 100, TimeUnit.SECONDS);
         this.context = null;
     }
 
@@ -161,7 +174,7 @@ public class RepositoryConnectionPoolTest {
     public void shouldBlockClientsWhenNotEnoughConnections() throws Exception {
         int numConnectionsInPool = 1;
         int numClients = 2;
-        RepositoryConnectionPool pool = new RepositoryConnectionPool(repositorySource);
+        RepositoryConnectionPool pool = new RepositoryConnectionPool(connectionFactory);
         pool.setCorePoolSize(numConnectionsInPool);
         pool.setMaximumPoolSize(numConnectionsInPool);
         RepositoryOperation.Factory<Integer> operationFactory = RepositorySourceLoadHarness.createMultipleLoadOperationFactory(10);
@@ -174,7 +187,7 @@ public class RepositoryConnectionPoolTest {
     public void shouldLimitClientsToRunSequentiallyWithOneConnectionInPool() throws Exception {
         int numConnectionsInPool = 1;
         int numClients = 3;
-        RepositoryConnectionPool pool = new RepositoryConnectionPool(repositorySource);
+        RepositoryConnectionPool pool = new RepositoryConnectionPool(connectionFactory);
         pool.setCorePoolSize(numConnectionsInPool);
         pool.setMaximumPoolSize(numConnectionsInPool);
         RepositoryOperation.Factory<Integer> operationFactory = RepositorySourceLoadHarness.createMultipleLoadOperationFactory(10);
@@ -187,7 +200,7 @@ public class RepositoryConnectionPoolTest {
     public void shouldClientsToRunConncurrentlyWithTwoConnectionsInPool() throws Exception {
         int numConnectionsInPool = 2;
         int numClients = 10;
-        RepositoryConnectionPool pool = new RepositoryConnectionPool(repositorySource);
+        RepositoryConnectionPool pool = new RepositoryConnectionPool(connectionFactory);
         pool.setCorePoolSize(numConnectionsInPool);
         pool.setMaximumPoolSize(numConnectionsInPool);
         RepositoryOperation.Factory<Integer> operationFactory = RepositorySourceLoadHarness.createMultipleLoadOperationFactory(10);
@@ -201,7 +214,7 @@ public class RepositoryConnectionPoolTest {
     public void shouldClientsToRunConncurrentlyWithMultipleConnectionInPool() throws Exception {
         int numConnectionsInPool = 10;
         int numClients = 50;
-        RepositoryConnectionPool pool = new RepositoryConnectionPool(repositorySource);
+        RepositoryConnectionPool pool = new RepositoryConnectionPool(connectionFactory);
         pool.setCorePoolSize(numConnectionsInPool);
         pool.setMaximumPoolSize(numConnectionsInPool);
         RepositoryOperation.Factory<Integer> operationFactory = RepositorySourceLoadHarness.createMultipleLoadOperationFactory(20);

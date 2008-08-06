@@ -29,15 +29,14 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import org.jboss.dna.repository.services.AbstractServiceAdministrator;
 import org.jboss.dna.repository.services.ServiceAdministrator;
-import org.jboss.dna.spi.graph.connection.RepositoryConnection;
-import org.jboss.dna.spi.graph.connection.RepositoryConnectionFactories;
-import org.jboss.dna.spi.graph.connection.RepositoryConnectionFactory;
-import org.jboss.dna.spi.graph.connection.RepositorySource;
+import org.jboss.dna.spi.connector.RepositoryConnection;
+import org.jboss.dna.spi.connector.RepositorySource;
+import org.jboss.dna.spi.connector.RepositorySourceRegistry;
 
 /**
  * @author Randall Hauch
  */
-public class RepositorySourceManager implements RepositoryConnectionFactories {
+public class RepositorySourceManager implements RepositorySourceRegistry {
 
     /**
      * The administrative component for this service.
@@ -89,29 +88,35 @@ public class RepositorySourceManager implements RepositoryConnectionFactories {
     private final ServiceAdministrator administrator = new Administrator();
     private final ReadWriteLock sourcesLock = new ReentrantReadWriteLock();
     private final CopyOnWriteArrayList<RepositorySource> sources = new CopyOnWriteArrayList<RepositorySource>();
-    private RepositoryConnectionFactories delegate;
+    private RepositorySourceRegistry delegate;
 
     /**
      * Create a new manager instance.
      * 
-     * @param delegate the factories object that this instance should delegate to in the event that a source is not found in this
+     * @param delegate the registry to which this instance should delegate in the event that a source is not found in this
      *        manager; may be null if there is no delegate
      */
-    public RepositorySourceManager( RepositoryConnectionFactories delegate ) {
+    public RepositorySourceManager( RepositorySourceRegistry delegate ) {
         this.delegate = delegate;
     }
 
     /**
-     * @return delegate
+     * Get the delegate registry.
+     * 
+     * @return the registry to which this instance should delegate in the event that a source is not found in this manager, or
+     *         null if there is no delegate
      */
-    public RepositoryConnectionFactories getDelegate() {
+    public RepositorySourceRegistry getDelegate() {
         return delegate;
     }
 
     /**
-     * @param delegate Sets delegate to the specified value.
+     * Set the delegate registry.
+     * 
+     * @param delegate the registry to which this instance should delegate in the event that a source is not found in this
+     *        manager; may be null if there is no delegate
      */
-    public void setDelegate( RepositoryConnectionFactories delegate ) {
+    public void setDelegate( RepositorySourceRegistry delegate ) {
         this.delegate = delegate;
     }
 
@@ -305,17 +310,17 @@ public class RepositorySourceManager implements RepositoryConnectionFactories {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.spi.graph.connection.RepositoryConnectionFactories#getConnectionFactory(java.lang.String)
+     * @see org.jboss.dna.spi.connector.RepositorySourceRegistry#getRepositorySource(java.lang.String)
      */
-    public RepositoryConnectionFactory getConnectionFactory( String sourceName ) {
+    public RepositorySource getRepositorySource( String sourceName ) {
         try {
             this.sourcesLock.readLock().lock();
             for (RepositorySource existingSource : this.sources) {
                 if (existingSource.getName().equals(sourceName)) return existingSource;
             }
-            RepositoryConnectionFactories delegate = this.delegate;
+            RepositorySourceRegistry delegate = this.delegate;
             if (delegate != null) {
-                return delegate.getConnectionFactory(sourceName);
+                return delegate.getRepositorySource(sourceName);
             }
         } finally {
             this.sourcesLock.readLock().unlock();

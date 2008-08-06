@@ -19,12 +19,26 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.jboss.dna.spi.graph.connection;
+package org.jboss.dna.spi.connector;
 
 /**
+ * The capabilities of a {@link RepositorySource}.
+ * 
  * @author Randall Hauch
  */
-public interface RepositorySourceListener {
+public interface RepositorySourceCapabilities {
 
-    void notify( String sourceName, Object... events );
+    /**
+     * Return whether the source supports same name siblings. If not, then no two siblings may share the same name.
+     * 
+     * @return true if same name siblings are supported, or false otherwise
+     */
+    boolean supportsSameNameSiblings();
+
+    /**
+     * Return whether the source supports updates.
+     * 
+     * @return true if updates are supported, or false if the source only supports reads.
+     */
+    boolean supportsUpdates();
 }

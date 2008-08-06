@@ -19,7 +19,7 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.jboss.dna.spi.graph.connection;
+package org.jboss.dna.spi.connector;
 
 import java.util.Collections;
 import java.util.LinkedList;
@@ -31,6 +31,12 @@ import javax.transaction.xa.XAResource;
 import net.jcip.annotations.ThreadSafe;
 import org.jboss.dna.spi.ExecutionContext;
 import org.jboss.dna.spi.cache.CachePolicy;
+import org.jboss.dna.spi.connector.AbstractRepositorySource;
+import org.jboss.dna.spi.connector.RepositoryConnection;
+import org.jboss.dna.spi.connector.RepositorySource;
+import org.jboss.dna.spi.connector.RepositorySourceCapabilities;
+import org.jboss.dna.spi.connector.RepositorySourceException;
+import org.jboss.dna.spi.connector.RepositorySourceListener;
 import org.jboss.dna.spi.graph.InvalidPathException;
 import org.jboss.dna.spi.graph.Name;
 import org.jboss.dna.spi.graph.Path;
@@ -61,7 +67,7 @@ public class SimpleRepositorySource extends AbstractRepositorySource {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.spi.graph.connection.RepositoryConnectionFactory#getName()
+     * @see org.jboss.dna.spi.connector.RepositorySource#getName()
      */
     public String getName() {
         return name;
@@ -127,7 +133,7 @@ public class SimpleRepositorySource extends AbstractRepositorySource {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.spi.graph.connection.RepositorySource#getCapabilities()
+     * @see org.jboss.dna.spi.connector.RepositorySource#getCapabilities()
      */
     public RepositorySourceCapabilities getCapabilities() {
         return new Capabilities();
@@ -146,7 +152,7 @@ public class SimpleRepositorySource extends AbstractRepositorySource {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.spi.graph.connection.AbstractRepositorySource#createConnection()
+     * @see org.jboss.dna.spi.connector.AbstractRepositorySource#createConnection()
      */
     @Override
     protected synchronized RepositoryConnection createConnection() throws RepositorySourceException {
@@ -171,7 +177,7 @@ public class SimpleRepositorySource extends AbstractRepositorySource {
         /**
          * {@inheritDoc}
          * 
-         * @see org.jboss.dna.spi.graph.connection.RepositoryConnection#close()
+         * @see org.jboss.dna.spi.connector.RepositoryConnection#close()
          */
         public void close() {
         }
@@ -179,7 +185,7 @@ public class SimpleRepositorySource extends AbstractRepositorySource {
         /**
          * {@inheritDoc}
          * 
-         * @see org.jboss.dna.spi.graph.connection.RepositoryConnection#execute(org.jboss.dna.spi.ExecutionContext,
+         * @see org.jboss.dna.spi.connector.RepositoryConnection#execute(org.jboss.dna.spi.ExecutionContext,
          *      org.jboss.dna.spi.graph.commands.GraphCommand[])
          */
         public void execute( ExecutionContext context,
@@ -199,7 +205,7 @@ public class SimpleRepositorySource extends AbstractRepositorySource {
         /**
          * {@inheritDoc}
          * 
-         * @see org.jboss.dna.spi.graph.connection.RepositoryConnection#getDefaultCachePolicy()
+         * @see org.jboss.dna.spi.connector.RepositoryConnection#getDefaultCachePolicy()
          */
         public CachePolicy getDefaultCachePolicy() {
             return null;
@@ -208,7 +214,7 @@ public class SimpleRepositorySource extends AbstractRepositorySource {
         /**
          * {@inheritDoc}
          * 
-         * @see org.jboss.dna.spi.graph.connection.RepositoryConnection#getSourceName()
+         * @see org.jboss.dna.spi.connector.RepositoryConnection#getSourceName()
          */
         public String getSourceName() {
             return SimpleRepositorySource.this.getName();
@@ -217,7 +223,7 @@ public class SimpleRepositorySource extends AbstractRepositorySource {
         /**
          * {@inheritDoc}
          * 
-         * @see org.jboss.dna.spi.graph.connection.RepositoryConnection#getXAResource()
+         * @see org.jboss.dna.spi.connector.RepositoryConnection#getXAResource()
          */
         public XAResource getXAResource() {
             return null;
@@ -226,7 +232,7 @@ public class SimpleRepositorySource extends AbstractRepositorySource {
         /**
          * {@inheritDoc}
          * 
-         * @see org.jboss.dna.spi.graph.connection.RepositoryConnection#ping(long, java.util.concurrent.TimeUnit)
+         * @see org.jboss.dna.spi.connector.RepositoryConnection#ping(long, java.util.concurrent.TimeUnit)
          */
         public boolean ping( long time,
                              TimeUnit unit ) {
@@ -236,7 +242,7 @@ public class SimpleRepositorySource extends AbstractRepositorySource {
         /**
          * {@inheritDoc}
          * 
-         * @see org.jboss.dna.spi.graph.connection.RepositoryConnection#setListener(org.jboss.dna.spi.graph.connection.RepositorySourceListener)
+         * @see org.jboss.dna.spi.connector.RepositoryConnection#setListener(org.jboss.dna.spi.connector.RepositorySourceListener)
          */
         public void setListener( RepositorySourceListener listener ) {
             this.listener = listener;

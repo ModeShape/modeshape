@@ -45,10 +45,10 @@ import org.jboss.cache.DefaultCacheFactory;
 import org.jboss.dna.common.util.ArgCheck;
 import org.jboss.dna.spi.DnaLexicon;
 import org.jboss.dna.spi.cache.CachePolicy;
+import org.jboss.dna.spi.connector.AbstractRepositorySource;
+import org.jboss.dna.spi.connector.RepositoryConnection;
+import org.jboss.dna.spi.connector.RepositorySourceCapabilities;
 import org.jboss.dna.spi.graph.Name;
-import org.jboss.dna.spi.graph.connection.AbstractRepositorySource;
-import org.jboss.dna.spi.graph.connection.RepositoryConnection;
-import org.jboss.dna.spi.graph.connection.RepositorySourceCapabilities;
 
 /**
  * @author Randall Hauch
@@ -282,7 +282,7 @@ public class JBossCacheSource extends AbstractRepositorySource implements Object
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.spi.graph.connection.RepositorySource#getCapabilities()
+     * @see org.jboss.dna.spi.connector.RepositorySource#getCapabilities()
      */
     public RepositorySourceCapabilities getCapabilities() {
         return new Capabilities();

@@ -52,6 +52,12 @@ import org.jboss.dna.spi.ExecutionContext;
 import org.jboss.dna.spi.ExecutionContextFactory;
 import org.jboss.dna.spi.cache.BasicCachePolicy;
 import org.jboss.dna.spi.cache.CachePolicy;
+import org.jboss.dna.spi.connector.AbstractRepositorySource;
+import org.jboss.dna.spi.connector.RepositoryConnection;
+import org.jboss.dna.spi.connector.RepositorySource;
+import org.jboss.dna.spi.connector.RepositorySourceCapabilities;
+import org.jboss.dna.spi.connector.RepositorySourceException;
+import org.jboss.dna.spi.connector.RepositorySourceRegistry;
 import org.jboss.dna.spi.graph.InvalidPathException;
 import org.jboss.dna.spi.graph.Name;
 import org.jboss.dna.spi.graph.NameFactory;
@@ -67,12 +73,6 @@ import org.jboss.dna.spi.graph.commands.executor.NoOpCommandExecutor;
 import org.jboss.dna.spi.graph.commands.impl.BasicCompositeCommand;
 import org.jboss.dna.spi.graph.commands.impl.BasicGetChildrenCommand;
 import org.jboss.dna.spi.graph.commands.impl.BasicGetNodeCommand;
-import org.jboss.dna.spi.graph.connection.AbstractRepositorySource;
-import org.jboss.dna.spi.graph.connection.RepositoryConnection;
-import org.jboss.dna.spi.graph.connection.RepositoryConnectionFactories;
-import org.jboss.dna.spi.graph.connection.RepositorySource;
-import org.jboss.dna.spi.graph.connection.RepositorySourceCapabilities;
-import org.jboss.dna.spi.graph.connection.RepositorySourceException;
 
 /**
  * @author Randall Hauch
@@ -92,7 +92,7 @@ public class FederatedRepositorySource extends AbstractRepositorySource {
     protected static final String PASSWORD = "password";
     protected static final String CONFIGURATION_SOURCE_NAME = "configurationSourceName";
     protected static final String CONFIGURATION_SOURCE_PROJECTION_RULES = "configurationSourceProjectionRules";
-    protected static final String CONNECTION_FACTORIES_JNDI_NAME = "connectionFactoriesJndiName";
+    protected static final String REPOSITORY_SOURCE_REGISTRY_JNDI_NAME = "repositorySourceRegistryJndiName";
     protected static final String EXECUTION_CONTEXT_FACTORY_JNDI_NAME = "executionContextFacotryJndiName";
     protected static final String REPOSITORY_JNDI_NAME = "repositoryJndiName";
     protected static final String SECURITY_DOMAIN = "securityDomain";
@@ -107,7 +107,7 @@ public class FederatedRepositorySource extends AbstractRepositorySource {
     private String password;
     private String configurationSourceName;
     private String[] configurationSourceProjectionRules = DEFAULT_CONFIGURATION_SOURCE_PROJECTION_RULES;
-    private String connectionFactoriesJndiName;
+    private String repositorySourceRegistryJndiName;
     private String executionContextFactoryJndiName;
     private String securityDomain;
     private String repositoryJndiName;
@@ -149,7 +149,7 @@ public class FederatedRepositorySource extends AbstractRepositorySource {
      * 
      * @param sourceName the name of this repository source
      * @see #setConfigurationSourceName(String)
-     * @see #setConnectionFactoriesJndiName(String)
+     * @see #setRepositorySourceRegistryJndiName(String)
      * @see #setConfigurationSourceProjectionRules(String[])
      * @see #setPassword(String)
      * @see #setUsername(String)
@@ -219,8 +219,8 @@ public class FederatedRepositorySource extends AbstractRepositorySource {
 
     /**
      * Get the name of a {@link RepositorySource} instance that should be used by the {@link FederatedRepository federated
-     * repository} as the configuration repository. The instance will be retrieved from the {@link RepositoryConnectionFactories}
-     * instance {@link #getConnectionFactoriesJndiName() found in JDNI}.
+     * repository} as the configuration repository. The instance will be retrieved from the {@link RepositorySourceRegistry}
+     * instance {@link #getRepositorySourceRegistryJndiName() found in JDNI}.
      * <p>
      * This is a required property (unless the {@link #getRepositoryJndiName() federated repository is to be found in JDNI}).
      * </p>
@@ -228,7 +228,7 @@ public class FederatedRepositorySource extends AbstractRepositorySource {
      * @param sourceName the name of the {@link RepositorySource} instance that should be used for the configuration, or null if
      *        the federated repository instance is to be found in JNDI
      * @see #getConfigurationSourceName()
-     * @see #setConnectionFactoriesJndiName(String)
+     * @see #setRepositorySourceRegistryJndiName(String)
      * @see #setConfigurationSourceProjectionRules(String[])
      * @see #setPassword(String)
      * @see #setUsername(String)
@@ -270,7 +270,7 @@ public class FederatedRepositorySource extends AbstractRepositorySource {
      * @param projectionRules the string array of projection rules, or null if the projection rules haven't yet been set or if the
      *        federated repository instance is to be found in JNDI
      * @see #setConfigurationSourceProjectionRules(String[])
-     * @see #setConnectionFactoriesJndiName(String)
+     * @see #setRepositorySourceRegistryJndiName(String)
      * @see #setConfigurationSourceName(String)
      * @see #setPassword(String)
      * @see #setUsername(String)
@@ -316,7 +316,7 @@ public class FederatedRepositorySource extends AbstractRepositorySource {
      * @see #getExecutionContextFactoryJndiName()
      * @see #setConfigurationSourceName(String)
      * @see #setConfigurationSourceProjectionRules(String[])
-     * @see #setConnectionFactoriesJndiName(String)
+     * @see #setRepositorySourceRegistryJndiName(String)
      * @see #setPassword(String)
      * @see #setUsername(String)
      * @see #setRepositoryName(String)
@@ -329,32 +329,32 @@ public class FederatedRepositorySource extends AbstractRepositorySource {
     }
 
     /**
-     * Get the name in JNDI where the {@link RepositoryConnectionFactories} instance that can be used by the
+     * Get the name in JNDI where the {@link RepositorySourceRegistry} instance that can be used by the
      * {@link FederatedRepository federated repository} can find any {@link RepositorySource} sources it needs, including those
      * used for {@link Projection sources} and that used for it's {@link #getConfigurationSourceName() configuration}.
      * <p>
      * This is a required property (unless the {@link #getRepositoryJndiName() federated repository is to be found in JDNI}).
      * </p>
      * 
-     * @return the JNDI name where the {@link RepositoryConnectionFactories} instance can be found, or null if the federated
-     *         repository instance is to be found in JNDI
-     * @see #setConnectionFactoriesJndiName(String)
+     * @return the JNDI name where the {@link RepositorySourceRegistry} instance can be found, or null if the federated repository
+     *         instance is to be found in JNDI
+     * @see #setRepositorySourceRegistryJndiName(String)
      */
-    public String getConnectionFactoriesJndiName() {
-        return connectionFactoriesJndiName;
+    public String getRepositorySourceRegistryJndiName() {
+        return repositorySourceRegistryJndiName;
     }
 
     /**
-     * Set the name in JNDI where the {@link RepositoryConnectionFactories} instance that can be used by the
+     * Set the name in JNDI where the {@link RepositorySourceRegistry} instance that can be used by the
      * {@link FederatedRepository federated repository} can find any {@link RepositorySource} sources it needs, including those
      * used for {@link Projection sources} and that used for it's {@link #getConfigurationSourceName() configuration}.
      * <p>
      * This is a required property (unless the {@link #getRepositoryJndiName() federated repository is to be found in JDNI}).
      * </p>
      * 
-     * @param jndiName the JNDI name where the {@link RepositoryConnectionFactories} instance can be found, or null if the
-     *        federated repository instance is to be found in JNDI
-     * @see #getConnectionFactoriesJndiName()
+     * @param jndiName the JNDI name where the {@link RepositorySourceRegistry} instance can be found, or null if the federated
+     *        repository instance is to be found in JNDI
+     * @see #getRepositorySourceRegistryJndiName()
      * @see #setConfigurationSourceName(String)
      * @see #setConfigurationSourceProjectionRules(String[])
      * @see #setPassword(String)
@@ -363,10 +363,10 @@ public class FederatedRepositorySource extends AbstractRepositorySource {
      * @see #setExecutionContextFactoryJndiName(String)
      * @see #setName(String)
      */
-    public synchronized void setConnectionFactoriesJndiName( String jndiName ) {
-        if (this.connectionFactoriesJndiName == jndiName || this.connectionFactoriesJndiName != null
-            && this.connectionFactoriesJndiName.equals(jndiName)) return; // unchanged
-        this.connectionFactoriesJndiName = jndiName;
+    public synchronized void setRepositorySourceRegistryJndiName( String jndiName ) {
+        if (this.repositorySourceRegistryJndiName == jndiName || this.repositorySourceRegistryJndiName != null
+            && this.repositorySourceRegistryJndiName.equals(jndiName)) return; // unchanged
+        this.repositorySourceRegistryJndiName = jndiName;
         changeRepositoryConfig();
     }
 
@@ -418,7 +418,7 @@ public class FederatedRepositorySource extends AbstractRepositorySource {
      * @see #setConfigurationSourceProjectionRules(String[])
      * @see #setPassword(String)
      * @see #setUsername(String)
-     * @see #setConnectionFactoriesJndiName(String)
+     * @see #setRepositorySourceRegistryJndiName(String)
      * @see #setExecutionContextFactoryJndiName(String)
      * @see #setName(String)
      */
@@ -455,7 +455,7 @@ public class FederatedRepositorySource extends AbstractRepositorySource {
      * @see #setConfigurationSourceProjectionRules(String[])
      * @see #setPassword(String)
      * @see #setRepositoryName(String)
-     * @see #setConnectionFactoriesJndiName(String)
+     * @see #setRepositorySourceRegistryJndiName(String)
      * @see #setExecutionContextFactoryJndiName(String)
      * @see #setName(String)
      */
@@ -490,7 +490,7 @@ public class FederatedRepositorySource extends AbstractRepositorySource {
      * @see #setConfigurationSourceProjectionRules(String[])
      * @see #setUsername(String)
      * @see #setRepositoryName(String)
-     * @see #setConnectionFactoriesJndiName(String)
+     * @see #setRepositorySourceRegistryJndiName(String)
      * @see #setExecutionContextFactoryJndiName(String)
      * @see #setName(String)
      */
@@ -503,16 +503,16 @@ public class FederatedRepositorySource extends AbstractRepositorySource {
     /**
      * This method is called to signal that some aspect of the configuration has changed. If a {@link #getRepository() repository}
      * instance has been created, it's configuration is
-     * {@link #getRepositoryConfiguration(ExecutionContext, RepositoryConnectionFactories) rebuilt} and updated. Nothing is done,
+     * {@link #getRepositoryConfiguration(ExecutionContext, RepositorySourceRegistry) rebuilt} and updated. Nothing is done,
      * however, if there is currently no {@link #getRepository() repository}.
      */
     protected synchronized void changeRepositoryConfig() {
         if (this.repository != null) {
-            // Find in JNDI the repository connection factories and the environment ...
+            // Find in JNDI the repository source registry and the environment ...
             ExecutionContext context = getExecutionContext();
-            RepositoryConnectionFactories factories = getRepositoryConnectionFactories();
+            RepositorySourceRegistry registry = getRepositorySourceRegistry();
             // Compute a new repository config and set it on the repository ...
-            FederatedRepositoryConfig newConfig = getRepositoryConfiguration(context, factories);
+            FederatedRepositoryConfig newConfig = getRepositoryConfiguration(context, registry);
             this.repository.setConfiguration(newConfig);
         }
     }
@@ -520,7 +520,7 @@ public class FederatedRepositorySource extends AbstractRepositorySource {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.spi.graph.connection.AbstractRepositorySource#createConnection()
+     * @see org.jboss.dna.spi.connector.AbstractRepositorySource#createConnection()
      */
     @Override
     protected synchronized RepositoryConnection createConnection() throws RepositorySourceException {
@@ -533,8 +533,8 @@ public class FederatedRepositorySource extends AbstractRepositorySource {
         if (getSecurityDomain() == null) {
             throw new RepositorySourceException(FederationI18n.propertyIsRequired.text("security domain"));
         }
-        if (getConnectionFactoriesJndiName() == null) {
-            throw new RepositorySourceException(FederationI18n.propertyIsRequired.text("connection factories JNDI name"));
+        if (getRepositorySourceRegistryJndiName() == null) {
+            throw new RepositorySourceException(FederationI18n.propertyIsRequired.text("repository source registry JNDI name"));
         }
         // Find the repository ...
         FederatedRepository repository = getRepository();
@@ -555,7 +555,7 @@ public class FederatedRepositorySource extends AbstractRepositorySource {
      * <ol>
      * <li>If a {@link FederatedRepository} already was obtained from a prior call, the same instance is returned.</li>
      * <li>A {@link FederatedRepository} is created using a {@link FederatedRepositoryConfig} is created from this instance's
-     * properties and {@link ExecutionContext} and {@link RepositoryConnectionFactories} instances obtained from JNDI.</li>
+     * properties and {@link ExecutionContext} and {@link RepositorySourceRegistry} instances obtained from JNDI.</li>
      * <li></li>
      * <li></li>
      * </ol>
@@ -579,12 +579,12 @@ public class FederatedRepositorySource extends AbstractRepositorySource {
             }
 
             if (repository == null) {
-                // Find in JNDI the repository connection factories and the environment ...
+                // Find in JNDI the repository source registry and the environment ...
                 ExecutionContext context = getExecutionContext();
-                RepositoryConnectionFactories factories = getRepositoryConnectionFactories();
+                RepositorySourceRegistry registry = getRepositorySourceRegistry();
                 // And create the configuration and the repository ...
-                FederatedRepositoryConfig config = getRepositoryConfiguration(context, factories);
-                repository = new FederatedRepository(context, factories, config);
+                FederatedRepositoryConfig config = getRepositoryConfiguration(context, registry);
+                repository = new FederatedRepository(context, registry, config);
             }
         }
         return repository;
@@ -617,14 +617,14 @@ public class FederatedRepositorySource extends AbstractRepositorySource {
         }
     }
 
-    protected RepositoryConnectionFactories getRepositoryConnectionFactories() {
-        RepositoryConnectionFactories factories = null;
+    protected RepositorySourceRegistry getRepositorySourceRegistry() {
+        RepositorySourceRegistry factories = null;
         Context context = getContext();
-        String jndiName = getConnectionFactoriesJndiName();
+        String jndiName = getRepositorySourceRegistryJndiName();
         if (jndiName != null && jndiName.trim().length() != 0) {
             try {
                 if (context == null) context = new InitialContext();
-                factories = (RepositoryConnectionFactories)context.lookup(jndiName);
+                factories = (RepositorySourceRegistry)context.lookup(jndiName);
             } catch (Throwable err) {
                 I18n msg = FederationI18n.unableToFindRepositoryConnectionFactoriesInJndi;
                 throw new RepositorySourceException(msg.text(this.sourceName, jndiName), err);
@@ -667,12 +667,11 @@ public class FederatedRepositorySource extends AbstractRepositorySource {
      * <i>not</i> modify the state of this instance.
      * 
      * @param context the execution context that should be used to read the configuration; may not be null
-     * @param factories the factories from which can be obtained the RepositoryConnectionFactory instances for each name source;
-     *        may not be null
+     * @param registry the registry from which {@link RepositorySource} instances can be obtained; may not be null
      * @return a configuration reflecting the current state of this instance
      */
     protected synchronized FederatedRepositoryConfig getRepositoryConfiguration( ExecutionContext context,
-                                                                                 RepositoryConnectionFactories factories ) {
+                                                                                 RepositorySourceRegistry registry ) {
         Problems problems = new SimpleProblems();
         ValueFactories valueFactories = context.getValueFactories();
         PathFactory pathFactory = valueFactories.getPathFactory();
@@ -695,10 +694,10 @@ public class FederatedRepositorySource extends AbstractRepositorySource {
         } else if (configurationProjection.isSimple()) {
             // There is just a single projection for the configuration repository, so just use an executor that
             // translates the paths using the projection
-            executor = new SingleProjectionCommandExecutor(context, configurationSourceName, configurationProjection, factories);
+            executor = new SingleProjectionCommandExecutor(context, configurationSourceName, configurationProjection, registry);
         } else {
             // The configuration repository has more than one projection, so we need to merge the results
-            executor = new FederatingCommandExecutor(context, configurationSourceName, projections, factories);
+            executor = new FederatingCommandExecutor(context, configurationSourceName, projections, registry);
         }
         // Wrap the executor with a logging executor ...
         executor = new LoggingCommandExecutor(executor, Logger.getLogger(getClass()), Logger.Level.INFO);
@@ -854,8 +853,8 @@ public class FederatedRepositorySource extends AbstractRepositorySource {
             }
             ref.add(new StringRefAddr(CONFIGURATION_SOURCE_PROJECTION_RULES, sb.toString()));
         }
-        if (getConnectionFactoriesJndiName() != null) {
-            ref.add(new StringRefAddr(CONNECTION_FACTORIES_JNDI_NAME, getConnectionFactoriesJndiName()));
+        if (getRepositorySourceRegistryJndiName() != null) {
+            ref.add(new StringRefAddr(REPOSITORY_SOURCE_REGISTRY_JNDI_NAME, getRepositorySourceRegistryJndiName()));
         }
         if (getExecutionContextFactoryJndiName() != null) {
             ref.add(new StringRefAddr(EXECUTION_CONTEXT_FACTORY_JNDI_NAME, getExecutionContextFactoryJndiName()));
@@ -900,7 +899,7 @@ public class FederatedRepositorySource extends AbstractRepositorySource {
                 String password = values.get(FederatedRepositorySource.PASSWORD);
                 String configurationSourceName = values.get(FederatedRepositorySource.CONFIGURATION_SOURCE_NAME);
                 String projectionRules = values.get(FederatedRepositorySource.CONFIGURATION_SOURCE_PROJECTION_RULES);
-                String connectionFactoriesJndiName = values.get(FederatedRepositorySource.CONNECTION_FACTORIES_JNDI_NAME);
+                String connectionFactoriesJndiName = values.get(FederatedRepositorySource.REPOSITORY_SOURCE_REGISTRY_JNDI_NAME);
                 String environmentJndiName = values.get(FederatedRepositorySource.EXECUTION_CONTEXT_FACTORY_JNDI_NAME);
                 String repositoryJndiName = values.get(FederatedRepositorySource.REPOSITORY_JNDI_NAME);
                 String securityDomain = values.get(FederatedRepositorySource.SECURITY_DOMAIN);
@@ -917,7 +916,7 @@ public class FederatedRepositorySource extends AbstractRepositorySource {
                     List<String> rules = StringUtil.splitLines(projectionRules);
                     source.setConfigurationSourceProjectionRules(rules.toArray(new String[rules.size()]));
                 }
-                if (connectionFactoriesJndiName != null) source.setConnectionFactoriesJndiName(connectionFactoriesJndiName);
+                if (connectionFactoriesJndiName != null) source.setRepositorySourceRegistryJndiName(connectionFactoriesJndiName);
                 if (environmentJndiName != null) source.setExecutionContextFactoryJndiName(environmentJndiName);
                 if (repositoryJndiName != null) source.setRepositoryJndiName(repositoryJndiName);
                 if (securityDomain != null) source.setSecurityDomain(securityDomain);
@@ -959,7 +958,7 @@ public class FederatedRepositorySource extends AbstractRepositorySource {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.spi.graph.connection.RepositorySource#getCapabilities()
+     * @see org.jboss.dna.spi.connector.RepositorySource#getCapabilities()
      */
     public RepositorySourceCapabilities getCapabilities() {
         return new Capabilities();

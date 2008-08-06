@@ -40,14 +40,13 @@ import javax.naming.spi.ObjectFactory;
 import net.jcip.annotations.GuardedBy;
 import org.jboss.dna.common.util.ArgCheck;
 import org.jboss.dna.spi.cache.CachePolicy;
-import org.jboss.dna.spi.graph.connection.AbstractRepositorySource;
-import org.jboss.dna.spi.graph.connection.RepositoryConnection;
-import org.jboss.dna.spi.graph.connection.RepositorySourceCapabilities;
-import org.jboss.dna.spi.graph.connection.RepositorySourceException;
+import org.jboss.dna.spi.connector.AbstractRepositorySource;
+import org.jboss.dna.spi.connector.RepositoryConnection;
+import org.jboss.dna.spi.connector.RepositorySourceCapabilities;
+import org.jboss.dna.spi.connector.RepositorySourceException;
 
 /**
  * @author Randall Hauch
- * @author John Verhaeg
  */
 public class InMemoryRepositorySource extends AbstractRepositorySource implements ObjectFactory {
 
@@ -96,7 +95,6 @@ public class InMemoryRepositorySource extends AbstractRepositorySource implement
     private String jndiName;
     private UUID rootNodeUuid = UUID.randomUUID();
     private CachePolicy defaultCachePolicy;
-    // private String configurationName;
     private transient InMemoryRepository repository;
 
     /**
@@ -225,7 +223,7 @@ public class InMemoryRepositorySource extends AbstractRepositorySource implement
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.spi.graph.connection.AbstractRepositorySource#createConnection()
+     * @see org.jboss.dna.spi.connector.AbstractRepositorySource#createConnection()
      */
     @Override
     protected synchronized RepositoryConnection createConnection() throws RepositorySourceException {
@@ -265,7 +263,7 @@ public class InMemoryRepositorySource extends AbstractRepositorySource implement
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.spi.graph.connection.RepositorySource#getCapabilities()
+     * @see org.jboss.dna.spi.connector.RepositorySource#getCapabilities()
      */
     public RepositorySourceCapabilities getCapabilities() {
         return new Capabilities();

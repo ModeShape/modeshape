@@ -19,7 +19,7 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.jboss.dna.spi.graph.connection;
+package org.jboss.dna.spi.connector;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -34,6 +34,9 @@ import java.util.concurrent.TimeUnit;
 import org.jboss.dna.common.i18n.MockI18n;
 import org.jboss.dna.common.util.Logger;
 import org.jboss.dna.spi.ExecutionContext;
+import org.jboss.dna.spi.connector.RepositoryConnection;
+import org.jboss.dna.spi.connector.RepositoryConnectionPool;
+import org.jboss.dna.spi.connector.RepositorySourceException;
 
 /**
  * A test harness for using repository connections under load.
@@ -42,24 +45,19 @@ import org.jboss.dna.spi.ExecutionContext;
  */
 public class RepositorySourceLoadHarness {
 
-    public static Future<Integer> execute( RepositoryConnectionFactory connectionFactory,
+    public static Future<Integer> execute( RepositoryConnectionPool pool,
                                            ExecutionContext context,
                                            long maxTime,
                                            TimeUnit maxTimeUnit ) throws InterruptedException {
         int numTimes = 1;
         int numClients = 1;
         RepositoryOperation.Factory<Integer> operationFactory = RepositorySourceLoadHarness.createMultipleLoadOperationFactory(numTimes);
-        List<Future<Integer>> results = runLoadTest(context,
-                                                    connectionFactory,
-                                                    numClients,
-                                                    maxTime,
-                                                    maxTimeUnit,
-                                                    operationFactory);
+        List<Future<Integer>> results = runLoadTest(context, pool, numClients, maxTime, maxTimeUnit, operationFactory);
         return results.get(0);
     }
 
     public static <T> List<Future<T>> runLoadTest( ExecutionContext context,
-                                                   RepositoryConnectionFactory connectionFactory,
+                                                   RepositoryConnectionPool pool,
                                                    int numClients,
                                                    long maxTime,
                                                    TimeUnit maxTimeUnit,
@@ -71,11 +69,11 @@ public class RepositorySourceLoadHarness {
         }
 
         // and run the test ...
-        return runLoadTest(context, connectionFactory, maxTime, maxTimeUnit, clients);
+        return runLoadTest(context, pool, maxTime, maxTimeUnit, clients);
     }
 
     public static <T> List<Future<T>> runLoadTest( ExecutionContext context,
-                                                   RepositoryConnectionFactory connectionFactory,
+                                                   RepositoryConnectionPool pool,
                                                    long maxTime,
                                                    TimeUnit maxTimeUnit,
                                                    RepositoryOperation<T>... clients ) throws InterruptedException {
@@ -85,15 +83,15 @@ public class RepositorySourceLoadHarness {
             if (client != null) clientCollection.add(client);
         }
         // and run the test ...
-        return runLoadTest(context, connectionFactory, maxTime, maxTimeUnit, clientCollection);
+        return runLoadTest(context, pool, maxTime, maxTimeUnit, clientCollection);
     }
 
     public static <T> List<Future<T>> runLoadTest( ExecutionContext context,
-                                                   RepositoryConnectionFactory connectionFactory,
+                                                   RepositoryConnectionPool pool,
                                                    long maxTime,
                                                    TimeUnit maxTimeUnit,
                                                    Collection<RepositoryOperation<T>> clients ) throws InterruptedException {
-        assert connectionFactory != null;
+        assert pool != null;
         assert clients != null;
         assert clients.size() > 0;
 
@@ -108,7 +106,7 @@ public class RepositorySourceLoadHarness {
 
         try {
             // Wrap each client by a callable and by another that uses a latch ...
-            List<Callable<T>> callables = RepositoryOperations.createCallables(context, connectionFactory, clients);
+            List<Callable<T>> callables = RepositoryOperations.createCallables(context, pool, clients);
 
             // Run the tests ...
             List<Future<T>> futures = clientPool.invokeAll(callables, maxTime, maxTimeUnit);
@@ -204,8 +202,8 @@ public class RepositorySourceLoadHarness {
         /**
          * {@inheritDoc}
          * 
-         * @see org.jboss.dna.spi.graph.connection.RepositoryOperation#run(org.jboss.dna.spi.ExecutionContext,
-         *      org.jboss.dna.spi.graph.connection.RepositoryConnection)
+         * @see org.jboss.dna.spi.connector.RepositoryOperation#run(org.jboss.dna.spi.ExecutionContext,
+         *      org.jboss.dna.spi.connector.RepositoryConnection)
          */
         public Integer run( ExecutionContext context,
                             RepositoryConnection connection ) throws RepositorySourceException, InterruptedException {

@@ -26,12 +26,12 @@ import java.util.concurrent.locks.Lock;
 import javax.transaction.xa.XAResource;
 import org.jboss.dna.spi.ExecutionContext;
 import org.jboss.dna.spi.cache.CachePolicy;
+import org.jboss.dna.spi.connector.RepositoryConnection;
+import org.jboss.dna.spi.connector.RepositorySourceException;
+import org.jboss.dna.spi.connector.RepositorySourceListener;
 import org.jboss.dna.spi.graph.commands.ActsAsUpdate;
 import org.jboss.dna.spi.graph.commands.GraphCommand;
 import org.jboss.dna.spi.graph.commands.executor.CommandExecutor;
-import org.jboss.dna.spi.graph.connection.RepositoryConnection;
-import org.jboss.dna.spi.graph.connection.RepositorySourceException;
-import org.jboss.dna.spi.graph.connection.RepositorySourceListener;
 
 /**
  * @author Randall Hauch

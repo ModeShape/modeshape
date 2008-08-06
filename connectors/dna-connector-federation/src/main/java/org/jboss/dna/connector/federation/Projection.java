@@ -39,10 +39,10 @@ import org.jboss.dna.common.util.ArgCheck;
 import org.jboss.dna.common.util.HashCode;
 import org.jboss.dna.common.util.Logger;
 import org.jboss.dna.spi.ExecutionContext;
+import org.jboss.dna.spi.connector.RepositorySource;
 import org.jboss.dna.spi.graph.NamespaceRegistry;
 import org.jboss.dna.spi.graph.Path;
 import org.jboss.dna.spi.graph.PathFactory;
-import org.jboss.dna.spi.graph.connection.RepositorySource;
 
 /**
  * A projection of content from a source into the integrated/federated repository. Each project consists of a set of {@link Rule

@@ -31,11 +31,11 @@ import net.jcip.annotations.ThreadSafe;
 import org.jboss.dna.common.util.ArgCheck;
 import org.jboss.dna.connector.federation.executor.FederatingCommandExecutor;
 import org.jboss.dna.spi.ExecutionContext;
+import org.jboss.dna.spi.connector.RepositoryConnection;
+import org.jboss.dna.spi.connector.RepositorySource;
+import org.jboss.dna.spi.connector.RepositorySourceListener;
+import org.jboss.dna.spi.connector.RepositorySourceRegistry;
 import org.jboss.dna.spi.graph.commands.executor.CommandExecutor;
-import org.jboss.dna.spi.graph.connection.RepositoryConnection;
-import org.jboss.dna.spi.graph.connection.RepositoryConnectionFactories;
-import org.jboss.dna.spi.graph.connection.RepositorySource;
-import org.jboss.dna.spi.graph.connection.RepositorySourceListener;
 
 /**
  * The component that represents a single federated repository. The federated repository uses a set of {@link RepositorySource
@@ -48,7 +48,7 @@ import org.jboss.dna.spi.graph.connection.RepositorySourceListener;
 public class FederatedRepository {
 
     private final ExecutionContext context;
-    private final RepositoryConnectionFactories connectionFactories;
+    private final RepositorySourceRegistry sources;
     private FederatedRepositoryConfig config;
     private final AtomicInteger openExecutors = new AtomicInteger(0);
     private final CountDownLatch shutdownLatch = new CountDownLatch(1);
@@ -59,18 +59,18 @@ public class FederatedRepository {
      * Create a federated repository instance.
      * 
      * @param context the execution context
-     * @param connectionFactories the set of connection factories that should be used
+     * @param sources the registry of {@link RepositorySource} instances that should be used
      * @param config the configuration for this repository
      * @throws IllegalArgumentException if any of the parameters are null, or if the name is blank
      */
     public FederatedRepository( ExecutionContext context,
-                                RepositoryConnectionFactories connectionFactories,
+                                RepositorySourceRegistry sources,
                                 FederatedRepositoryConfig config ) {
-        ArgCheck.isNotNull(connectionFactories, "connectionFactories");
+        ArgCheck.isNotNull(sources, "sources");
         ArgCheck.isNotNull(context, "context");
         ArgCheck.isNotNull(config, "config");
         this.context = context;
-        this.connectionFactories = connectionFactories;
+        this.sources = sources;
         this.config = config;
     }
 
@@ -91,10 +91,10 @@ public class FederatedRepository {
     }
 
     /**
-     * @return connectionFactories
+     * @return the sources
      */
-    protected RepositoryConnectionFactories getConnectionFactories() {
-        return connectionFactories;
+    protected RepositorySourceRegistry getRepositorySourceRegistry() {
+        return sources;
     }
 
     /**
@@ -232,7 +232,7 @@ public class FederatedRepository {
                                            String sourceName ) {
         FederatedRepositoryConfig config = this.getConfiguration();
         return new FederatingCommandExecutor(context, sourceName, config.getCacheProjection(), config.getDefaultCachePolicy(),
-                                             config.getSourceProjections(), getConnectionFactories());
+                                             config.getSourceProjections(), getRepositorySourceRegistry());
     }
 
     /**

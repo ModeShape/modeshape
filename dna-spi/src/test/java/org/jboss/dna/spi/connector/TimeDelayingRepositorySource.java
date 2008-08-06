@@ -19,7 +19,7 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.jboss.dna.spi.graph.connection;
+package org.jboss.dna.spi.connector;
 
 import static org.mockito.Mockito.mock;
 import java.util.Set;
@@ -34,6 +34,12 @@ import javax.transaction.xa.XAResource;
 import net.jcip.annotations.ThreadSafe;
 import org.jboss.dna.spi.ExecutionContext;
 import org.jboss.dna.spi.cache.CachePolicy;
+import org.jboss.dna.spi.connector.AbstractRepositorySource;
+import org.jboss.dna.spi.connector.RepositoryConnection;
+import org.jboss.dna.spi.connector.RepositorySource;
+import org.jboss.dna.spi.connector.RepositorySourceCapabilities;
+import org.jboss.dna.spi.connector.RepositorySourceException;
+import org.jboss.dna.spi.connector.RepositorySourceListener;
 import org.jboss.dna.spi.graph.commands.GraphCommand;
 
 /**
@@ -125,7 +131,7 @@ public class TimeDelayingRepositorySource extends AbstractRepositorySource {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.spi.graph.connection.AbstractRepositorySource#createConnection()
+     * @see org.jboss.dna.spi.connector.AbstractRepositorySource#createConnection()
      */
     @Override
     protected RepositoryConnection createConnection() throws RepositorySourceException {
@@ -193,7 +199,7 @@ public class TimeDelayingRepositorySource extends AbstractRepositorySource {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.spi.graph.connection.RepositorySource#getCapabilities()
+     * @see org.jboss.dna.spi.connector.RepositorySource#getCapabilities()
      */
     public RepositorySourceCapabilities getCapabilities() {
         return new Capabilities();

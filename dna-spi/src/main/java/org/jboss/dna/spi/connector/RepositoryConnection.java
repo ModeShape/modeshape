@@ -19,10 +19,11 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.jboss.dna.spi.graph.connection;
+package org.jboss.dna.spi.connector;
 
 import java.util.concurrent.TimeUnit;
 import javax.transaction.xa.XAResource;
+import net.jcip.annotations.NotThreadSafe;
 import org.jboss.dna.spi.ExecutionContext;
 import org.jboss.dna.spi.cache.CachePolicy;
 import org.jboss.dna.spi.graph.commands.GraphCommand;
@@ -30,12 +31,12 @@ import org.jboss.dna.spi.graph.commands.GraphCommand;
 /**
  * A connection to a repository source.
  * <p>
- * These connections need not support concurrent operations by multiple threads, since the federation engine never uses them this
- * way.
+ * These connections need not support concurrent operations by multiple threads.
  * </p>
  * 
  * @author Randall Hauch
  */
+@NotThreadSafe
 public interface RepositoryConnection {
 
     /**
