@@ -24,6 +24,7 @@ package org.jboss.dna.spi.graph.impl;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
 import org.jboss.dna.common.text.TextEncoder;
+import org.jboss.dna.spi.DnaLexicon;
 import org.jboss.dna.spi.graph.Name;
 import org.jboss.dna.spi.graph.Path;
 import org.jboss.dna.spi.graph.ValueFactory;
@@ -48,7 +49,7 @@ public class BasicPathSegmentTest {
     @Before
     public void beforeEach() {
         this.registry = new BasicNamespaceRegistry();
-        this.registry.register("dna", "http://www.jboss.org/dna/namespace");
+        this.registry.register(DnaLexicon.NAMESPACE_PREFIX, DnaLexicon.NAMESPACE_URI);
         this.stringValueFactory = new StringValueFactory(Path.DEFAULT_DECODER, Path.DEFAULT_ENCODER);
         this.nameFactory = new NameValueFactory(registry, Path.DEFAULT_DECODER, stringValueFactory);
         this.validName = nameFactory.create("dna:something");

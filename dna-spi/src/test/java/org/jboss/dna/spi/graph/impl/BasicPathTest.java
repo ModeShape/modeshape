@@ -32,6 +32,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import org.jboss.dna.common.text.TextEncoder;
+import org.jboss.dna.spi.DnaLexicon;
 import org.jboss.dna.spi.graph.InvalidPathException;
 import org.jboss.dna.spi.graph.Name;
 import org.jboss.dna.spi.graph.Path;
@@ -59,8 +60,8 @@ public class BasicPathTest {
 
     @Before
     public void beforeEach() {
-        validNamespacePrefix = "dna";
-        validNamespaceUri = "http://www.jboss.org/dna";
+        validNamespacePrefix = DnaLexicon.NAMESPACE_PREFIX;
+        validNamespaceUri = DnaLexicon.NAMESPACE_URI;
         validSegmentNames = new Name[] {new BasicName(validNamespaceUri, "a"), new BasicName(validNamespaceUri, "b"),
             new BasicName(validNamespaceUri, "c")};
         validSegments = new Path.Segment[] {new BasicPathSegment(validSegmentNames[0]),

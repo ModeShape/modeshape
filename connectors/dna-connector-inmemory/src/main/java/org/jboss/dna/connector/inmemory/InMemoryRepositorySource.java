@@ -54,9 +54,6 @@ public class InMemoryRepositorySource extends AbstractRepositorySource implement
      */
     private static final long serialVersionUID = 1L;
 
-    public static final String DEFAULT_UUID_PROPERTY_NAMESPACE = "http://www.jboss.org/dna/connector/jbosscache";
-    public static final String DEFAULT_UUID_PROPERTY_NAME = "uuid";
-
     private static final ConcurrentMap<String, InMemoryRepositorySource> sources = new ConcurrentHashMap<String, InMemoryRepositorySource>();
     private static final ReadWriteLock sourcesLock = new ReentrantReadWriteLock();
 

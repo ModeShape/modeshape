@@ -25,6 +25,7 @@ import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
 import static org.junit.matchers.JUnitMatchers.containsString;
 import org.jboss.dna.common.text.TextEncoder;
+import org.jboss.dna.spi.DnaLexicon;
 import org.jboss.dna.spi.graph.Name;
 import org.jboss.dna.spi.graph.Path;
 import org.junit.Before;
@@ -45,9 +46,9 @@ public class BasicNameTest {
 
     @Before
     public void beforeEach() {
-        this.validNamespaceUri = "http://www.jboss.org/dna";
+        this.validNamespacePrefix = DnaLexicon.NAMESPACE_PREFIX;
+        this.validNamespaceUri = DnaLexicon.NAMESPACE_URI;
         this.validLocalName = "localPart";
-        this.validNamespacePrefix = "dna";
         this.name = new BasicName(validNamespaceUri, validLocalName);
         this.encoder = Path.URL_ENCODER;
         this.namespaceRegistry = new BasicNamespaceRegistry();

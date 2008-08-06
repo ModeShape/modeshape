@@ -39,6 +39,7 @@ import org.jboss.dna.common.util.Logger;
 import org.jboss.dna.connector.federation.FederationException;
 import org.jboss.dna.connector.federation.Projection;
 import org.jboss.dna.repository.services.ServiceAdministrator;
+import org.jboss.dna.spi.DnaLexicon;
 import org.jboss.dna.spi.ExecutionContext;
 import org.jboss.dna.spi.graph.NamespaceRegistry;
 import org.jboss.dna.spi.graph.Path;
@@ -84,7 +85,7 @@ public class RepositoryServiceTest {
     public void beforeEach() throws Exception {
         MockitoAnnotations.initMocks(this);
         NamespaceRegistry registry = new BasicNamespaceRegistry();
-        registry.register("dna", "http://www.jboss.org/dna");
+        registry.register(DnaLexicon.NAMESPACE_PREFIX, DnaLexicon.NAMESPACE_URI);
         valueFactories = new StandardValueFactories(registry);
         pathFactory = valueFactories.getPathFactory();
         propertyFactory = new BasicPropertyFactory(valueFactories);
