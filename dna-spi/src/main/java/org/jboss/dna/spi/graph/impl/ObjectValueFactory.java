@@ -27,6 +27,7 @@ import java.math.BigDecimal;
 import java.net.URI;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.UUID;
 import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.text.TextDecoder;
 import org.jboss.dna.common.util.ArgCheck;
@@ -159,6 +160,15 @@ public class ObjectValueFactory extends AbstractValueFactory<Object> {
      * {@inheritDoc}
      */
     public Object create( URI value ) {
+        return value;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.spi.graph.ValueFactory#create(java.util.UUID)
+     */
+    public Object create( UUID value ) {
         return value;
     }
 

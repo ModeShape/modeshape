@@ -36,33 +36,43 @@ import org.jboss.dna.spi.graph.Name;
 import org.jboss.dna.spi.graph.Path;
 import org.jboss.dna.spi.graph.PropertyType;
 import org.jboss.dna.spi.graph.Reference;
+import org.jboss.dna.spi.graph.UuidFactory;
 import org.jboss.dna.spi.graph.ValueFactory;
 
 /**
- * The standard {@link ValueFactory} for {@link PropertyType#REFERENCE} values.
+ * The standard {@link ValueFactory} for {@link PropertyType#URI} values.
  * 
  * @author Randall Hauch
  * @author John Verhaeg
  */
 @Immutable
-public class UuidReferenceValueFactory extends AbstractValueFactory<Reference> {
+public class UuidValueFactory extends AbstractValueFactory<UUID> implements UuidFactory {
 
-    public UuidReferenceValueFactory( TextDecoder decoder,
-                                      ValueFactory<String> stringValueFactory ) {
-        super(PropertyType.REFERENCE, decoder, stringValueFactory);
+    public UuidValueFactory( TextDecoder decoder,
+                             ValueFactory<String> stringValueFactory ) {
+        super(PropertyType.UUID, decoder, stringValueFactory);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.spi.graph.UuidFactory#create()
+     */
+    public UUID create() {
+        return UUID.randomUUID();
     }
 
     /**
      * {@inheritDoc}
      */
-    public Reference create( String value ) {
+    public UUID create( String value ) {
         if (value == null) return null;
+        value = value.trim();
         try {
-            UUID uuid = UUID.fromString(value);
-            return new UuidReference(uuid);
+            return UUID.fromString(value);
         } catch (IllegalArgumentException err) {
             throw new IllegalArgumentException(SpiI18n.errorConvertingType.text(String.class.getSimpleName(),
-                                                                                Reference.class.getSimpleName(),
+                                                                                URI.class.getSimpleName(),
                                                                                 value), err);
         }
     }
@@ -70,8 +80,8 @@ public class UuidReferenceValueFactory extends AbstractValueFactory<Reference> {
     /**
      * {@inheritDoc}
      */
-    public Reference create( String value,
-                             TextDecoder decoder ) {
+    public UUID create( String value,
+                        TextDecoder decoder ) {
         // this probably doesn't really need to call the decoder, but by doing so then we don't care at all what the decoder does
         return create(getDecoder(decoder).decode(value));
     }
@@ -79,7 +89,7 @@ public class UuidReferenceValueFactory extends AbstractValueFactory<Reference> {
     /**
      * {@inheritDoc}
      */
-    public Reference create( int value ) {
+    public UUID create( int value ) {
         throw new UnsupportedOperationException(SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
                                                                                  Date.class.getSimpleName(),
                                                                                  value));
@@ -88,7 +98,7 @@ public class UuidReferenceValueFactory extends AbstractValueFactory<Reference> {
     /**
      * {@inheritDoc}
      */
-    public Reference create( long value ) {
+    public UUID create( long value ) {
         throw new UnsupportedOperationException(SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
                                                                                  Date.class.getSimpleName(),
                                                                                  value));
@@ -97,7 +107,7 @@ public class UuidReferenceValueFactory extends AbstractValueFactory<Reference> {
     /**
      * {@inheritDoc}
      */
-    public Reference create( boolean value ) {
+    public UUID create( boolean value ) {
         throw new UnsupportedOperationException(SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
                                                                                  Date.class.getSimpleName(),
                                                                                  value));
@@ -106,7 +116,7 @@ public class UuidReferenceValueFactory extends AbstractValueFactory<Reference> {
     /**
      * {@inheritDoc}
      */
-    public Reference create( float value ) {
+    public UUID create( float value ) {
         throw new UnsupportedOperationException(SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
                                                                                  Date.class.getSimpleName(),
                                                                                  value));
@@ -115,7 +125,7 @@ public class UuidReferenceValueFactory extends AbstractValueFactory<Reference> {
     /**
      * {@inheritDoc}
      */
-    public Reference create( double value ) {
+    public UUID create( double value ) {
         throw new UnsupportedOperationException(SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
                                                                                  Date.class.getSimpleName(),
                                                                                  value));
@@ -124,7 +134,7 @@ public class UuidReferenceValueFactory extends AbstractValueFactory<Reference> {
     /**
      * {@inheritDoc}
      */
-    public Reference create( BigDecimal value ) {
+    public UUID create( BigDecimal value ) {
         throw new UnsupportedOperationException(SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
                                                                                  Date.class.getSimpleName(),
                                                                                  value));
@@ -133,7 +143,7 @@ public class UuidReferenceValueFactory extends AbstractValueFactory<Reference> {
     /**
      * {@inheritDoc}
      */
-    public Reference create( Calendar value ) {
+    public UUID create( Calendar value ) {
         throw new UnsupportedOperationException(SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
                                                                                  Date.class.getSimpleName(),
                                                                                  value));
@@ -142,7 +152,7 @@ public class UuidReferenceValueFactory extends AbstractValueFactory<Reference> {
     /**
      * {@inheritDoc}
      */
-    public Reference create( Date value ) {
+    public UUID create( Date value ) {
         throw new UnsupportedOperationException(SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
                                                                                  Date.class.getSimpleName(),
                                                                                  value));
@@ -151,26 +161,41 @@ public class UuidReferenceValueFactory extends AbstractValueFactory<Reference> {
     /**
      * {@inheritDoc}
      */
-    public Reference create( Name value ) {
+    public UUID create( Name value ) {
         throw new UnsupportedOperationException(SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
-                                                                                 Date.class.getSimpleName(),
+                                                                                 Reference.class.getSimpleName(),
                                                                                  value));
     }
 
     /**
      * {@inheritDoc}
      */
-    public Reference create( Path value ) {
+    public UUID create( Path value ) {
         throw new UnsupportedOperationException(SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
-                                                                                 Date.class.getSimpleName(),
+                                                                                 Reference.class.getSimpleName(),
                                                                                  value));
     }
 
     /**
      * {@inheritDoc}
      */
-    public Reference create( Reference value ) {
-        return value;
+    public UUID create( Reference value ) {
+        if (value instanceof UuidReference) {
+            UuidReference ref = (UuidReference)value;
+            return ref.getUuid();
+        }
+        throw new UnsupportedOperationException(SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
+                                                                                 Reference.class.getSimpleName(),
+                                                                                 value));
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public UUID create( URI value ) {
+        throw new UnsupportedOperationException(SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
+                                                                                 Reference.class.getSimpleName(),
+                                                                                 value));
     }
 
     /**
@@ -178,23 +203,14 @@ public class UuidReferenceValueFactory extends AbstractValueFactory<Reference> {
      * 
      * @see org.jboss.dna.spi.graph.ValueFactory#create(java.util.UUID)
      */
-    public Reference create( UUID value ) throws IoException {
-        return new UuidReference(value);
+    public UUID create( UUID value ) throws IoException {
+        return value;
     }
 
     /**
      * {@inheritDoc}
      */
-    public Reference create( URI value ) {
-        throw new UnsupportedOperationException(SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
-                                                                                 Date.class.getSimpleName(),
-                                                                                 value));
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public Reference create( byte[] value ) {
+    public UUID create( byte[] value ) {
         // First attempt to create a string from the value, then a long from the string ...
         return create(getStringValueFactory().create(value));
     }
@@ -202,8 +218,8 @@ public class UuidReferenceValueFactory extends AbstractValueFactory<Reference> {
     /**
      * {@inheritDoc}
      */
-    public Reference create( InputStream stream,
-                             int approximateLength ) {
+    public UUID create( InputStream stream,
+                        int approximateLength ) {
         // First attempt to create a string from the value, then a double from the string ...
         return create(getStringValueFactory().create(stream, approximateLength));
     }
@@ -211,8 +227,8 @@ public class UuidReferenceValueFactory extends AbstractValueFactory<Reference> {
     /**
      * {@inheritDoc}
      */
-    public Reference create( Reader reader,
-                             int approximateLength ) {
+    public UUID create( Reader reader,
+                        int approximateLength ) {
         // First attempt to create a string from the value, then a double from the string ...
         return create(getStringValueFactory().create(reader, approximateLength));
     }
@@ -221,8 +237,8 @@ public class UuidReferenceValueFactory extends AbstractValueFactory<Reference> {
      * {@inheritDoc}
      */
     @Override
-    protected Reference[] createEmptyArray( int length ) {
-        return new Reference[length];
+    protected UUID[] createEmptyArray( int length ) {
+        return new UUID[length];
     }
 
 }

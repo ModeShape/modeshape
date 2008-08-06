@@ -28,6 +28,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
+import java.util.UUID;
 import net.jcip.annotations.Immutable;
 import org.jboss.dna.spi.SpiI18n;
 
@@ -47,6 +48,7 @@ public enum PropertyType {
     BOOLEAN("Boolean", ValueComparators.BOOLEAN_COMPARATOR, Boolean.class),
     NAME("Name", ValueComparators.NAME_COMPARATOR, Name.class),
     PATH("Path", ValueComparators.PATH_COMPARATOR, Path.class),
+    UUID("UUID", ValueComparators.UUID_COMPARATOR, UUID.class),
     REFERENCE("Reference", ValueComparators.REFERENCE_COMPARATOR, Reference.class),
     URI("URI", ValueComparators.URI_COMPARATOR, URI.class),
     OBJECT("Object", ValueComparators.OBJECT_COMPARATOR, Object.class);

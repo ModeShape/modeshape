@@ -27,12 +27,14 @@ import java.math.BigDecimal;
 import java.net.URI;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.text.TextDecoder;
 import org.jboss.dna.common.util.ArgCheck;
 import org.jboss.dna.spi.SpiI18n;
+import org.jboss.dna.spi.graph.IoException;
 import org.jboss.dna.spi.graph.Name;
 import org.jboss.dna.spi.graph.NameFactory;
 import org.jboss.dna.spi.graph.NamespaceException;
@@ -259,6 +261,17 @@ public class NameValueFactory extends AbstractValueFactory<Name> implements Name
         throw new IllegalArgumentException(SpiI18n.errorConvertingType.text(URI.class.getSimpleName(),
                                                                             Path.class.getSimpleName(),
                                                                             value));
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.spi.graph.ValueFactory#create(java.util.UUID)
+     */
+    public Name create( UUID value ) throws IoException {
+        throw new UnsupportedOperationException(SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
+                                                                                 UUID.class.getSimpleName(),
+                                                                                 value));
     }
 
     /**

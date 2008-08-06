@@ -78,6 +78,8 @@ public abstract class AbstractValueFactories implements ValueFactories {
                 return getStringFactory();
             case URI:
                 return getUriFactory();
+            case UUID:
+                return getUuidFactory();
         }
         return getObjectFactory();
     }

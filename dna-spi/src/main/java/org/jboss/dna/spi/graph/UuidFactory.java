@@ -19,32 +19,23 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.jboss.dna.spi.graph.commands;
+package org.jboss.dna.spi.graph;
 
-import org.jboss.dna.spi.cache.Cacheable;
-import org.jboss.dna.spi.graph.Path;
-import org.jboss.dna.spi.graph.Property;
+import java.util.UUID;
 
 /**
- * A command to get the children of a single node given its path.
+ * A factory for creating {@link UUID UUID instances}. This interface extends the {@link ValueFactory} generic interface and adds
+ * specific methods for creating UUIDs.
  * 
  * @author Randall Hauch
  */
-public interface GetChildrenCommand extends GraphCommand, ActsOnPath, Cacheable {
+public interface UuidFactory extends ValueFactory<UUID> {
 
     /**
-     * Add the child to this node. This method does not affect existing children, so callers of this method should not add a child
-     * with the same segment as an existing child (this is not checked by this method).
+     * Create a new random UUID.
      * 
-     * @param nameOfChild the name of the child; should not be the same as an existing child (not checked)
-     * @param identityProperties the property/properties that are considered identity properties (other than the name) for the
-     *        child
+     * @return the new randomly generated UUID
      */
-    void addChild( Path.Segment nameOfChild,
-                   Property... identityProperties );
+    UUID create();
 
-    /**
-     * Set that this node has no children. Any existing child references already set on this command will be removed.
-     */
-    void setNoChildren();
 }

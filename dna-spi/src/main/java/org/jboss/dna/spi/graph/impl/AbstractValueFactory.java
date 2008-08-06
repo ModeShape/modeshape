@@ -27,9 +27,11 @@ import java.math.BigDecimal;
 import java.net.URI;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.UUID;
 import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.text.TextDecoder;
 import org.jboss.dna.common.util.ArgCheck;
+import org.jboss.dna.spi.graph.IoException;
 import org.jboss.dna.spi.graph.Name;
 import org.jboss.dna.spi.graph.Path;
 import org.jboss.dna.spi.graph.PropertyType;
@@ -318,6 +320,21 @@ public abstract class AbstractValueFactory<T> implements ValueFactory<T> {
      * {@inheritDoc}
      */
     public T[] create( URI[] values ) {
+        if (values == null) return null;
+        final int length = values.length;
+        T[] result = createEmptyArray(length);
+        for (int i = 0; i != length; ++i) {
+            result[i] = create(values[i]);
+        }
+        return result;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.spi.graph.ValueFactory#create(java.util.UUID[])
+     */
+    public T[] create( UUID[] values ) throws IoException {
         if (values == null) return null;
         final int length = values.length;
         T[] result = createEmptyArray(length);

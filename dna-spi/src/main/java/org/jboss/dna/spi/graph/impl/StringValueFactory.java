@@ -29,18 +29,19 @@ import java.math.BigDecimal;
 import java.net.URI;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.UUID;
 import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.text.TextDecoder;
 import org.jboss.dna.common.text.TextEncoder;
 import org.jboss.dna.common.util.ArgCheck;
 import org.jboss.dna.common.util.IoUtil;
 import org.jboss.dna.spi.SpiI18n;
+import org.jboss.dna.spi.graph.IoException;
 import org.jboss.dna.spi.graph.Name;
 import org.jboss.dna.spi.graph.Path;
 import org.jboss.dna.spi.graph.PropertyType;
 import org.jboss.dna.spi.graph.Reference;
 import org.jboss.dna.spi.graph.ValueFactory;
-import org.jboss.dna.spi.graph.IoException;
 
 /**
  * The standard {@link ValueFactory} for {@link PropertyType#STRING} values.
@@ -179,6 +180,16 @@ public class StringValueFactory extends AbstractValueFactory<String> {
      * {@inheritDoc}
      */
     public String create( URI value ) {
+        if (value == null) return null;
+        return value.toString();
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.spi.graph.ValueFactory#create(java.util.UUID)
+     */
+    public String create( UUID value ) throws IoException {
         if (value == null) return null;
         return value.toString();
     }

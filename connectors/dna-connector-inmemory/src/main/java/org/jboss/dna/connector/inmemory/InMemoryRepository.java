@@ -21,7 +21,6 @@
  */
 package org.jboss.dna.connector.inmemory;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -31,6 +30,7 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import net.jcip.annotations.NotThreadSafe;
 import org.jboss.dna.common.util.ArgCheck;
+import org.jboss.dna.spi.DnaLexicon;
 import org.jboss.dna.spi.ExecutionContext;
 import org.jboss.dna.spi.graph.Name;
 import org.jboss.dna.spi.graph.Path;
@@ -206,7 +206,7 @@ public class InMemoryRepository {
         Path parentPath = path.getAncestor();
         Node parentNode = getNode(parentPath);
         Name name = path.getLastSegment().getName();
-        return createNode(context, parentNode, name);
+        return createNode(context, parentNode, name, null);
     }
 
     /**
@@ -215,15 +215,18 @@ public class InMemoryRepository {
      * @param context the execution context
      * @param parentNode the parent node; may not be null
      * @param name the name; may not be null
+     * @param uuid the UUID of the node, or null if the UUID is to be generated
      * @return the new node
      */
     public Node createNode( ExecutionContext context,
                             Node parentNode,
-                            Name name ) {
+                            Name name,
+                            UUID uuid ) {
         assert context != null;
         assert name != null;
         if (parentNode == null) parentNode = getRoot();
-        Node node = new Node(generateUuid());
+        if (uuid == null) uuid = generateUuid();
+        Node node = new Node(uuid);
         nodesByUuid.put(node.getUuid(), node);
         node.setParent(parentNode);
         Path.Segment newName = context.getValueFactories().getPathFactory().createSegment(name);
@@ -297,7 +300,7 @@ public class InMemoryRepository {
         assert original != null;
         assert newParent != null;
         // Get or create the new node ...
-        Node copy = createNode(context, newParent, original.getName().getName());
+        Node copy = createNode(context, newParent, original.getName().getName(), null);
 
         // Copy the properties ...
         copy.getProperties().clear();
@@ -326,9 +329,16 @@ public class InMemoryRepository {
 
     protected class Executor extends AbstractCommandExecutor {
 
+        private final Name uuidPropertyName;
+
         protected Executor( ExecutionContext context,
                             String sourceName ) {
             super(context, sourceName);
+            this.uuidPropertyName = context.getValueFactories().getNameFactory().create(DnaLexicon.PropertyNames.UUID);
+        }
+
+        protected Property getUuidProperty( Node node ) {
+            return getExecutionContext().getPropertyFactory().create(uuidPropertyName, node.getUuid());
         }
 
         @Override
@@ -341,7 +351,14 @@ public class InMemoryRepository {
                 Path lowestExisting = getLowestExistingPath(parent);
                 throw new PathNotFoundException(path, lowestExisting, InMemoryConnectorI18n.nodeDoesNotExist.text(parent));
             }
-            Node node = createNode(getExecutionContext(), parentNode, path.getLastSegment().getName());
+            UUID uuid = null;
+            for (Property property : command.getPropertyIterator()) {
+                if (property.getName().equals(uuidPropertyName)) {
+                    uuid = getExecutionContext().getValueFactories().getUuidFactory().create(property.getValues().next());
+                    break;
+                }
+            }
+            Node node = createNode(getExecutionContext(), parentNode, path.getLastSegment().getName(), uuid);
             // Now add the properties to the supplied node ...
             for (Property property : command.getPropertyIterator()) {
                 Name propName = property.getName();
@@ -349,7 +366,9 @@ public class InMemoryRepository {
                     node.getProperties().remove(propName);
                     continue;
                 }
-                node.getProperties().put(propName, property);
+                if (!propName.equals(uuidPropertyName)) {
+                    node.getProperties().put(propName, property);
+                }
             }
             assert node != null;
         }
@@ -359,11 +378,10 @@ public class InMemoryRepository {
             Node node = getTargetNode(command);
             // Get the names of the children ...
             List<Node> children = node.getChildren();
-            List<Segment> childSegments = new ArrayList<Segment>(children.size());
             for (Node child : children) {
-                childSegments.add(child.getName());
+                Segment childName = child.getName();
+                command.addChild(childName, getUuidProperty(child));
             }
-            command.setChildren(childSegments);
         }
 
         @Override
@@ -372,6 +390,7 @@ public class InMemoryRepository {
             for (Property property : node.getProperties().values()) {
                 command.setProperty(property);
             }
+            command.setProperty(getUuidProperty(node));
         }
 
         @Override
@@ -384,7 +403,9 @@ public class InMemoryRepository {
                     node.getProperties().remove(propName);
                     continue;
                 }
-                node.getProperties().put(propName, property);
+                if (!propName.equals(uuidPropertyName)) {
+                    node.getProperties().put(propName, property);
+                }
             }
         }
 

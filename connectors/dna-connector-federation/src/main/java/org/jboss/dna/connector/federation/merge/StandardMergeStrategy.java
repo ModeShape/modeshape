@@ -24,11 +24,20 @@ package org.jboss.dna.connector.federation.merge;
 import java.util.List;
 import org.jboss.dna.connector.federation.contribution.Contribution;
 import org.jboss.dna.spi.ExecutionContext;
+import org.jboss.dna.spi.graph.Name;
 
 /**
  * @author Randall Hauch
  */
 public class StandardMergeStrategy implements MergeStrategy {
+
+    private final String identityPropertyNameString;
+
+    public StandardMergeStrategy( String identityPropertyName ) {
+        assert identityPropertyName != null;
+        assert identityPropertyName.trim().length() != 0;
+        this.identityPropertyNameString = identityPropertyName;
+    }
 
     /**
      * {@inheritDoc}
@@ -39,5 +48,9 @@ public class StandardMergeStrategy implements MergeStrategy {
     public void merge( FederatedNode federatedNode,
                        List<Contribution> contributions,
                        ExecutionContext context ) {
+
+        // Children whose identity properties are the same will be considered to be the same node ...
+        Name identityPropertyName = context.getValueFactories().getNameFactory().create(this.identityPropertyNameString);
+        assert identityPropertyName != null;
     }
 }

@@ -35,10 +35,11 @@ import org.jboss.dna.spi.graph.InvalidPathException;
 import org.jboss.dna.spi.graph.Name;
 import org.jboss.dna.spi.graph.Path;
 import org.jboss.dna.spi.graph.Property;
-import org.jboss.dna.spi.graph.commands.CompositeCommand;
 import org.jboss.dna.spi.graph.commands.GetChildrenCommand;
 import org.jboss.dna.spi.graph.commands.GetPropertiesCommand;
 import org.jboss.dna.spi.graph.commands.GraphCommand;
+import org.jboss.dna.spi.graph.commands.executor.AbstractCommandExecutor;
+import org.jboss.dna.spi.graph.commands.executor.CommandExecutor;
 
 /**
  * A {@link RepositorySource} for a {@link SimpleRepository simple repository}.
@@ -163,59 +164,17 @@ public class SimpleRepositorySource extends AbstractRepositorySource {
          *      org.jboss.dna.spi.graph.commands.GraphCommand[])
          */
         public void execute( ExecutionContext context,
-                             GraphCommand... commands ) throws RepositorySourceException {
+                             GraphCommand... commands ) throws RepositorySourceException, InterruptedException {
             assert context != null;
             if (repository.isShutdown()) {
                 throw new RepositorySourceException(getName(), "The repository \"" + repository.getRepositoryName()
                                                                + "\" is no longer available");
             }
+            // Now execute the commands ...
+            CommandExecutor executor = new Executor(this.repository, context, this.getSourceName());
             for (GraphCommand command : commands) {
-                executeCommand(context, command);
+                executor.execute(command);
             }
-        }
-
-        protected void executeCommand( ExecutionContext context,
-                                       GraphCommand command ) {
-            if (command == null) return;
-            if (command instanceof CompositeCommand) {
-                CompositeCommand composite = (CompositeCommand)command;
-                for (GraphCommand nestedCommand : composite) {
-                    executeCommand(context, nestedCommand);
-                }
-            }
-            Map<Path, Map<Name, Property>> data = repository.getData();
-            // Only commands we recognize are the following; everything else is ignored ...
-            if (command instanceof GetPropertiesCommand) { // super of GetNodeCommand
-                GetPropertiesCommand getProperties = (GetPropertiesCommand)command;
-                Path targetPath = getProperties.getPath();
-                Map<Name, Property> properties = data.get(targetPath);
-                if (properties == null) {
-                    getProperties.setError(new InvalidPathException("Non-existant node: " + targetPath));
-                    return;
-                }
-                for (Property property : properties.values()) {
-                    getProperties.setProperty(property);
-                }
-            }
-            if (command instanceof GetChildrenCommand) { // super of GetNodeCommand
-                GetChildrenCommand getChildren = (GetChildrenCommand)command;
-                Path targetPath = getChildren.getPath();
-                if (data.get(targetPath) == null) {
-                    getChildren.setError(new InvalidPathException("Non-existant node: " + targetPath));
-                    return;
-                }
-                // Iterate through all of the properties, looking for any paths that are children of the path ...
-                List<Path.Segment> childSegments = new LinkedList<Path.Segment>();
-                for (Path path : data.keySet()) {
-                    if (path.getAncestor().equals(targetPath)) {
-                        childSegments.add(path.getLastSegment());
-                    }
-                }
-                // This does not store children order, so sort ...
-                Collections.sort(childSegments);
-                getChildren.setChildren(childSegments);
-            }
-
         }
 
         /**
@@ -271,6 +230,68 @@ public class SimpleRepositorySource extends AbstractRepositorySource {
             return listener;
         }
 
+    }
+
+    protected class Executor extends AbstractCommandExecutor {
+        private final SimpleRepository repository;
+        private final Name uuidPropertyName;
+
+        protected Executor( SimpleRepository repository,
+                            ExecutionContext context,
+                            String sourceName ) {
+            super(context, sourceName);
+            this.repository = repository;
+            this.uuidPropertyName = context.getValueFactories().getNameFactory().create(this.repository.getUuidPropertyName());
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.spi.graph.commands.executor.AbstractCommandExecutor#execute(org.jboss.dna.spi.graph.commands.GetChildrenCommand)
+         */
+        @Override
+        public void execute( GetChildrenCommand command ) throws RepositorySourceException {
+            Path targetPath = command.getPath();
+            Map<Path, Map<Name, Property>> data = repository.getData();
+            if (data.get(targetPath) == null) {
+                command.setError(new InvalidPathException("Non-existant node: " + targetPath));
+                return;
+            }
+            // Iterate through all of the properties, looking for any paths that are children of the path ...
+            List<Path.Segment> childSegments = new LinkedList<Path.Segment>();
+            for (Path path : data.keySet()) {
+                if (path.getAncestor().equals(targetPath)) {
+                    childSegments.add(path.getLastSegment());
+                }
+            }
+            // This does not store children order, so sort ...
+            Collections.sort(childSegments);
+            for (Path.Segment childSegment : childSegments) {
+                Map<Name, Property> properties = repository.getData().get(targetPath);
+                Property uuidProperty = properties.get(uuidPropertyName);
+                command.addChild(childSegment, uuidProperty);
+            }
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.spi.graph.commands.executor.AbstractCommandExecutor#execute(org.jboss.dna.spi.graph.commands.GetPropertiesCommand)
+         */
+        @Override
+        public void execute( GetPropertiesCommand command ) throws RepositorySourceException {
+            Path targetPath = command.getPath();
+            Map<Name, Property> properties = repository.getData().get(targetPath);
+            if (properties == null) {
+                command.setError(new InvalidPathException("Non-existant node: " + targetPath));
+                return;
+            }
+            for (Property property : properties.values()) {
+                if (!property.getName().equals(this.uuidPropertyName)) {
+                    command.setProperty(property);
+                }
+            }
+        }
     }
 
 }

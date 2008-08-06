@@ -21,29 +21,24 @@
  */
 package org.jboss.dna.spi.graph.commands.impl;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Iterator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import net.jcip.annotations.NotThreadSafe;
 import org.jboss.dna.common.util.StringUtil;
 import org.jboss.dna.spi.graph.Name;
 import org.jboss.dna.spi.graph.Path;
 import org.jboss.dna.spi.graph.Property;
-import org.jboss.dna.spi.graph.Path.Segment;
 import org.jboss.dna.spi.graph.commands.GetNodeCommand;
-import org.jboss.dna.spi.graph.impl.BasicPathSegment;
 
 /**
  * @author Randall Hauch
  */
 @NotThreadSafe
-public class BasicGetNodeCommand extends BasicGetPropertiesCommand implements GetNodeCommand {
+public class BasicGetNodeCommand extends BasicGetChildrenCommand implements GetNodeCommand {
 
-    /**
-     */
     private static final long serialVersionUID = 5355669032301356873L;
-    private List<Segment> children;
+    private final Map<Name, Property> properties = new HashMap<Name, Property>();
 
     /**
      * @param path
@@ -54,91 +49,30 @@ public class BasicGetNodeCommand extends BasicGetPropertiesCommand implements Ge
     }
 
     /**
-     * @return children
-     */
-    public List<Segment> getChildren() {
-        return children;
-    }
-
-    /**
      * {@inheritDoc}
      */
-    public void setChild( Name nameOfChild ) {
-        if (nameOfChild == null) {
-            children = Collections.emptyList();
-        } else {
-            children = Collections.singletonList((Segment)new BasicPathSegment(nameOfChild));
+    public void setProperty( Property property ) {
+        if (property != null) {
+            properties.put(property.getName(), property);
         }
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    public void setChildren( Iterator<Segment> namesOfChildren ) {
-        if (namesOfChildren == null) {
-            children = Collections.emptyList();
-        } else {
-            children = new ArrayList<Segment>();
-            while (namesOfChildren.hasNext()) {
-                Segment childSegment = namesOfChildren.next();
-                if (childSegment != null) children.add(childSegment);
-            }
-        }
+    public void setProperties( Map<Name, Property> properties ) {
+        this.properties.clear();
+        if (properties != null) this.properties.putAll(properties);
     }
 
     /**
-     * {@inheritDoc}
-     */
-    public void setChildren( Iterable<Segment> namesOfChildren ) {
-        if (namesOfChildren == null) {
-            children = Collections.emptyList();
-        } else {
-            children = new ArrayList<Segment>();
-            for (Segment childSegment : namesOfChildren) {
-                if (childSegment != null) children.add(childSegment);
-            }
-        }
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public void setChildren( Segment... namesOfChildren ) {
-        if (namesOfChildren == null || namesOfChildren.length == 0) {
-            children = Collections.emptyList();
-        } else {
-            children = new ArrayList<Segment>();
-            for (Segment childSegment : namesOfChildren) {
-                if (childSegment != null) children.add(childSegment);
-            }
-        }
-    }
-
-    /**
-     * {@inheritDoc}
+     * Get the property values that were added to the command
      * 
-     * @see org.jboss.dna.spi.graph.commands.GetChildrenCommand#addChild(org.jboss.dna.spi.graph.Path.Segment)
+     * @return the map of property name to values
      */
-    public void addChild( Segment nameOfChild ) {
-        if (nameOfChild != null) this.children.add(nameOfChild);
+    public Iterable<Property> getPropertyIterator() {
+        return this.properties.values();
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.jboss.dna.spi.graph.commands.GetChildrenCommand#addChildren(org.jboss.dna.spi.graph.Path.Segment[])
-     */
-    public void addChildren( Segment... namesOfChildren ) {
-        for (Segment nameOfChild : namesOfChildren) {
-            if (nameOfChild != null) this.children.add(nameOfChild);
-        }
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public void setNoChildren() {
-        children = Collections.emptyList();
+    public Map<Name, Property> getProperties() {
+        return this.properties;
     }
 
     /**

@@ -29,11 +29,13 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
+import java.util.UUID;
 import java.util.regex.Pattern;
 import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.text.TextDecoder;
 import org.jboss.dna.common.util.ArgCheck;
 import org.jboss.dna.spi.SpiI18n;
+import org.jboss.dna.spi.graph.IoException;
 import org.jboss.dna.spi.graph.Name;
 import org.jboss.dna.spi.graph.Path;
 import org.jboss.dna.spi.graph.PathFactory;
@@ -500,6 +502,17 @@ public class PathValueFactory extends AbstractValueFactory<Path> implements Path
         throw new IllegalArgumentException(SpiI18n.errorConvertingType.text(URI.class.getSimpleName(),
                                                                             Path.class.getSimpleName(),
                                                                             value));
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.spi.graph.ValueFactory#create(java.util.UUID)
+     */
+    public Path create( UUID value ) throws IoException {
+        throw new UnsupportedOperationException(SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
+                                                                                 UUID.class.getSimpleName(),
+                                                                                 value));
     }
 
     /**

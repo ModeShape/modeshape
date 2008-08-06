@@ -39,6 +39,7 @@ import org.jboss.dna.connector.federation.merge.MergePlan;
 import org.jboss.dna.connector.federation.merge.MergeStrategy;
 import org.jboss.dna.connector.federation.merge.OneContributionMergeStrategy;
 import org.jboss.dna.connector.federation.merge.StandardMergeStrategy;
+import org.jboss.dna.spi.DnaLexicon;
 import org.jboss.dna.spi.ExecutionContext;
 import org.jboss.dna.spi.cache.CachePolicy;
 import org.jboss.dna.spi.graph.DateTime;
@@ -58,7 +59,6 @@ import org.jboss.dna.spi.graph.commands.executor.AbstractCommandExecutor;
 import org.jboss.dna.spi.graph.commands.impl.BasicCreateNodeCommand;
 import org.jboss.dna.spi.graph.commands.impl.BasicGetChildrenCommand;
 import org.jboss.dna.spi.graph.commands.impl.BasicGetNodeCommand;
-import org.jboss.dna.spi.graph.commands.impl.BasicGetPropertiesCommand;
 import org.jboss.dna.spi.graph.connection.RepositoryConnection;
 import org.jboss.dna.spi.graph.connection.RepositoryConnectionFactories;
 import org.jboss.dna.spi.graph.connection.RepositoryConnectionFactory;
@@ -134,8 +134,8 @@ public class FederatingCommandExecutor extends AbstractCommandExecutor {
         this.sourceProjections = sourceProjections;
         this.connectionFactories = connectionFactories;
         this.connectionsBySourceName = new HashMap<String, RepositoryConnection>();
-        this.uuidPropertyName = context.getValueFactories().getNameFactory().create("dna:uuid");
-        this.mergePlanPropertyName = context.getValueFactories().getNameFactory().create("dna:mergePlan");
+        this.uuidPropertyName = context.getValueFactories().getNameFactory().create(DnaLexicon.PropertyNames.UUID);
+        this.mergePlanPropertyName = context.getValueFactories().getNameFactory().create(DnaLexicon.PropertyNames.MERGE_PLAN);
         this.sourceNames = new HashSet<String>();
         for (Projection projection : this.sourceProjections) {
             this.sourceNames.add(projection.getSourceName());
@@ -143,7 +143,7 @@ public class FederatingCommandExecutor extends AbstractCommandExecutor {
         if (this.sourceProjections.size() == 1 && this.sourceProjections.get(0).isSimple()) {
             this.mergingStrategy = new OneContributionMergeStrategy();
         } else {
-            this.mergingStrategy = new StandardMergeStrategy();
+            this.mergingStrategy = new StandardMergeStrategy(DnaLexicon.PropertyNames.UUID);
         }
     }
 
@@ -206,7 +206,9 @@ public class FederatingCommandExecutor extends AbstractCommandExecutor {
         for (Property property : nodeInfo.getProperties().values()) {
             command.setProperty(property);
         }
-        command.setChildren(nodeInfo.getChildren());
+        for (Segment child : nodeInfo.getChildren()) {
+            command.addChild(child, nodeInfo.getChildIdentityProperties(child));
+        }
     }
 
     /**
@@ -230,7 +232,9 @@ public class FederatingCommandExecutor extends AbstractCommandExecutor {
     @Override
     public void execute( GetChildrenCommand command ) throws RepositorySourceException, InterruptedException {
         BasicGetNodeCommand nodeInfo = getNode(command.getPath());
-        command.setChildren(nodeInfo.getChildren());
+        for (Segment child : nodeInfo.getChildren()) {
+            command.addChild(child, nodeInfo.getChildIdentityProperties(child));
+        }
     }
 
     /**
@@ -397,7 +401,7 @@ public class FederatingCommandExecutor extends AbstractCommandExecutor {
         return mergedNode;
     }
 
-    protected MergePlan getMergePlan( BasicGetPropertiesCommand command ) {
+    protected MergePlan getMergePlan( BasicGetNodeCommand command ) {
         Property mergePlanProperty = command.getProperties().get(mergePlanPropertyName);
         if (mergePlanProperty == null || mergePlanProperty.isEmpty()) {
             return null;

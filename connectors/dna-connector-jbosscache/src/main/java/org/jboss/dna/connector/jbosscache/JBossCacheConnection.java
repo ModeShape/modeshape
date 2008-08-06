@@ -21,7 +21,6 @@
  */
 package org.jboss.dna.connector.jbosscache;
 
-import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -39,6 +38,7 @@ import org.jboss.dna.spi.graph.PathFactory;
 import org.jboss.dna.spi.graph.PathNotFoundException;
 import org.jboss.dna.spi.graph.Property;
 import org.jboss.dna.spi.graph.PropertyFactory;
+import org.jboss.dna.spi.graph.ValueFactory;
 import org.jboss.dna.spi.graph.Path.Segment;
 import org.jboss.dna.spi.graph.commands.CopyBranchCommand;
 import org.jboss.dna.spi.graph.commands.CopyNodeCommand;
@@ -248,11 +248,13 @@ public class JBossCacheConnection implements RepositoryConnection {
     protected class Executor extends AbstractCommandExecutor {
 
         private final PropertyFactory propertyFactory;
+        private final ValueFactory<UUID> uuidFactory;
 
         protected Executor( ExecutionContext context,
                             String sourceName ) {
             super(context, sourceName);
             this.propertyFactory = context.getPropertyFactory();
+            this.uuidFactory = context.getValueFactories().getUuidFactory();
         }
 
         @Override
@@ -285,12 +287,20 @@ public class JBossCacheConnection implements RepositoryConnection {
         @Override
         public void execute( GetChildrenCommand command ) {
             Node<Name, Object> node = getNode(command.getPath());
+            Name uuidPropertyName = getUuidPropertyName();
             // Get the names of the children ...
-            List<Segment> childSegments = new ArrayList<Segment>();
             for (Node<Name, Object> child : node.getChildren()) {
-                childSegments.add((Segment)child.getFqn().getLastElement());
+                Segment segment = (Segment)child.getFqn().getLastElement();
+                Object uuid = node.getData().get(uuidPropertyName);
+                if (uuid == null) {
+                    uuid = generateUuid();
+                    node.getData().put(uuidPropertyName, uuid);
+                } else {
+                    uuid = uuidFactory.create(uuid);
+                }
+                Property uuidProperty = propertyFactory.create(uuidPropertyName, uuid);
+                command.addChild(segment, uuidProperty);
             }
-            command.setChildren(childSegments);
         }
 
         @Override

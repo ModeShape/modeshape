@@ -36,6 +36,7 @@ import org.jboss.dna.spi.graph.NamespaceRegistry;
 import org.jboss.dna.spi.graph.PathFactory;
 import org.jboss.dna.spi.graph.PropertyType;
 import org.jboss.dna.spi.graph.Reference;
+import org.jboss.dna.spi.graph.UuidFactory;
 import org.jboss.dna.spi.graph.ValueFactory;
 
 /**
@@ -58,6 +59,7 @@ public class StandardValueFactories extends AbstractValueFactories {
     private final PathFactory pathFactory;
     private final ValueFactory<Reference> referenceFactory;
     private final ValueFactory<URI> uriFactory;
+    private final UuidFactory uuidFactory;
     private final ValueFactory<Object> objectFactory;
 
     private final NamespaceRegistry namespaceRegistry;
@@ -113,6 +115,7 @@ public class StandardValueFactories extends AbstractValueFactories {
         this.pathFactory = (PathFactory)getFactory(factories, new PathValueFactory(this.decoder, this.stringFactory,
                                                                                    this.nameFactory));
         this.referenceFactory = getFactory(factories, new UuidReferenceValueFactory(this.decoder, this.stringFactory));
+        this.uuidFactory = (UuidFactory)getFactory(factories, new UuidValueFactory(this.decoder, this.stringFactory));
         this.uriFactory = getFactory(factories, new UriValueFactory(this.namespaceRegistry, this.decoder, this.stringFactory));
         this.objectFactory = getFactory(factories, new ObjectValueFactory(this.decoder, this.stringFactory, this.binaryFactory));
     }
@@ -218,6 +221,15 @@ public class StandardValueFactories extends AbstractValueFactories {
      */
     public ValueFactory<URI> getUriFactory() {
         return this.uriFactory;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.spi.graph.ValueFactories#getUuidFactory()
+     */
+    public UuidFactory getUuidFactory() {
+        return this.uuidFactory;
     }
 
     /**

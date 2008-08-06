@@ -28,6 +28,7 @@ import java.math.BigDecimal;
 import java.net.URI;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.UUID;
 import org.jboss.dna.common.text.TextDecoder;
 import org.jboss.dna.common.text.TextEncoder;
 
@@ -187,6 +188,15 @@ public interface ValueFactory<T> {
     T create( URI value ) throws IoException;
 
     /**
+     * Create a value from a UUID.
+     * 
+     * @param value the UUID from which the value is to be created
+     * @return the value, or null if the supplied URI is null
+     * @throws IoException If an unexpected problem occurs during the conversion.
+     */
+    T create( UUID value ) throws IoException;
+
+    /**
      * Create a value from the binary content given by the supplied array.
      * 
      * @param value the content to be used to create the value
@@ -218,9 +228,9 @@ public interface ValueFactory<T> {
               int approximateLength ) throws IoException;
 
     /**
-     * Create a value from the specified information by determining which other <code>create</code> method applies and
-     * delegating to that method. Note that this method only will call <code>create</code> methods that take a single parameter;
-     * so this excludes {@link #create(InputStream, int)}, {@link #create(Reader, int)} and {@link #create(String, TextDecoder)}.
+     * Create a value from the specified information by determining which other <code>create</code> method applies and delegating
+     * to that method. Note that this method only will call <code>create</code> methods that take a single parameter; so this
+     * excludes {@link #create(InputStream, int)}, {@link #create(Reader, int)} and {@link #create(String, TextDecoder)}.
      * 
      * @param value the value
      * @return the new value, or null if the supplied parameter is null
@@ -359,6 +369,15 @@ public interface ValueFactory<T> {
     T[] create( URI[] values ) throws IoException;
 
     /**
+     * Create an array of values from an array of UUIDs.
+     * 
+     * @param values the UUIDs from which the values are to be created
+     * @return the values, or null if the supplied array is null
+     * @throws IoException If an unexpected problem occurs during the conversion.
+     */
+    T[] create( UUID[] values ) throws IoException;
+
+    /**
      * Create an array of values from the array of binary content.
      * 
      * @param values the array of content to be used to create the values
@@ -368,9 +387,9 @@ public interface ValueFactory<T> {
     T[] create( byte[][] values ) throws IoException;
 
     /**
-     * Create an array of values from the specified information by determining which other <code>create</code> method applies
-     * for each object and then delegating to that method. Note that this method will not consider
-     * {@link #create(InputStream, int)}, {@link #create(Reader, int)} and {@link #create(String, TextDecoder)}.
+     * Create an array of values from the specified information by determining which other <code>create</code> method applies for
+     * each object and then delegating to that method. Note that this method will not consider {@link #create(InputStream, int)},
+     * {@link #create(Reader, int)} and {@link #create(String, TextDecoder)}.
      * 
      * @param values the values
      * @return the new value, or null if the supplied parameter is null

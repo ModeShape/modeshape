@@ -43,6 +43,7 @@ import org.jboss.cache.Cache;
 import org.jboss.cache.CacheFactory;
 import org.jboss.cache.DefaultCacheFactory;
 import org.jboss.dna.common.util.ArgCheck;
+import org.jboss.dna.spi.DnaLexicon;
 import org.jboss.dna.spi.cache.CachePolicy;
 import org.jboss.dna.spi.graph.Name;
 import org.jboss.dna.spi.graph.NameFactory;
@@ -55,11 +56,8 @@ import org.jboss.dna.spi.graph.connection.RepositoryConnection;
 @ThreadSafe
 public class JBossCacheSource extends AbstractRepositorySource implements ObjectFactory {
 
-    /**
-     */
-    private static final long serialVersionUID = 1530716494560375111L;
-    public static final String DEFAULT_UUID_PROPERTY_NAMESPACE = "http://www.jboss.org/dna/connector/jbosscache";
-    public static final String DEFAULT_UUID_PROPERTY_NAME = "uuid";
+    private static final long serialVersionUID = 1L;
+    public static final String DEFAULT_UUID_PROPERTY_NAME = DnaLexicon.PropertyNames.UUID;
 
     private static final ConcurrentMap<String, JBossCacheSource> sources = new ConcurrentHashMap<String, JBossCacheSource>();
     private static final ReadWriteLock sourcesLock = new ReentrantReadWriteLock();
@@ -103,7 +101,6 @@ public class JBossCacheSource extends AbstractRepositorySource implements Object
     private CachePolicy defaultCachePolicy;
     private String cacheConfigurationName;
     private String uuidPropertyName = DEFAULT_UUID_PROPERTY_NAME;
-    private String uuidPropertyNamespaceUri = DEFAULT_UUID_PROPERTY_NAMESPACE;
     private transient Cache<Name, Object> cache;
 
     /**
@@ -154,20 +151,6 @@ public class JBossCacheSource extends AbstractRepositorySource implements Object
      */
     public synchronized void setUuidPropertyName( String uuidPropertyName ) {
         this.uuidPropertyName = uuidPropertyName != null ? uuidPropertyName.trim() : DEFAULT_UUID_PROPERTY_NAME;
-    }
-
-    /**
-     * @return uuidPropertyNamespaceUri
-     */
-    public String getUuidPropertyNamespaceUri() {
-        return this.uuidPropertyNamespaceUri;
-    }
-
-    /**
-     * @param uuidPropertyNamespaceUri Sets uuidPropertyNamespaceUri to the specified value.
-     */
-    public synchronized void setUuidPropertyNamespaceUri( String uuidPropertyNamespaceUri ) {
-        this.uuidPropertyNamespaceUri = uuidPropertyNamespaceUri != null ? uuidPropertyNamespaceUri.trim() : DEFAULT_UUID_PROPERTY_NAMESPACE;
     }
 
     /**
@@ -276,8 +259,8 @@ public class JBossCacheSource extends AbstractRepositorySource implements Object
      * @return the property name, or null if UUIDs are not to be maintained
      */
     /* package */synchronized Name getUuidPropertyName( NameFactory factory ) {
-        if (this.uuidPropertyName.length() == 0 && this.uuidPropertyNamespaceUri.length() == 0) return null;
-        return factory.create(this.uuidPropertyNamespaceUri, this.uuidPropertyName);
+        if (this.uuidPropertyName.length() == 0) return null;
+        return factory.create(this.uuidPropertyName);
     }
 
     /**

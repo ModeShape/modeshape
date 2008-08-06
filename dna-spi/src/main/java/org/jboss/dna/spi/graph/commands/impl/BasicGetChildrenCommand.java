@@ -21,15 +21,16 @@
  */
 package org.jboss.dna.spi.graph.commands.impl;
 
-import java.util.Collections;
-import java.util.Iterator;
+import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import net.jcip.annotations.NotThreadSafe;
 import org.jboss.dna.common.util.StringUtil;
 import org.jboss.dna.spi.cache.CachePolicy;
 import org.jboss.dna.spi.graph.DateTime;
-import org.jboss.dna.spi.graph.Name;
 import org.jboss.dna.spi.graph.Path;
+import org.jboss.dna.spi.graph.Property;
 import org.jboss.dna.spi.graph.Path.Segment;
 import org.jboss.dna.spi.graph.commands.GetChildrenCommand;
 
@@ -42,7 +43,8 @@ public class BasicGetChildrenCommand extends BasicGraphCommand implements GetChi
     /**
      */
     private static final long serialVersionUID = -8515194602506918337L;
-    private List<Segment> children;
+    private final Map<Segment, Property[]> childProperties = new HashMap<Segment, Property[]>();
+    private final List<Segment> children = new LinkedList<Segment>();
     private final Path path;
     private CachePolicy cachePolicy;
     private DateTime timeLoaded;
@@ -59,56 +61,34 @@ public class BasicGetChildrenCommand extends BasicGraphCommand implements GetChi
     /**
      * {@inheritDoc}
      */
-    public void setChild( Name nameOfChild ) {
-        children = createChildrenList(nameOfChild);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public void setChildren( Iterator<Segment> namesOfChildren ) {
-        children = createChildrenList(namesOfChildren);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public void setChildren( Iterable<Segment> namesOfChildren ) {
-        children = createChildrenList(namesOfChildren);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public void setChildren( Segment... namesOfChildren ) {
-        children = createChildrenList(namesOfChildren);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
     public void setNoChildren() {
-        children = Collections.emptyList();
+        this.children.clear();
     }
 
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.spi.graph.commands.GetChildrenCommand#addChild(org.jboss.dna.spi.graph.Path.Segment)
+     * @see org.jboss.dna.spi.graph.commands.GetChildrenCommand#addChild(org.jboss.dna.spi.graph.Path.Segment,
+     *      org.jboss.dna.spi.graph.Property[])
      */
-    public void addChild( Segment nameOfChild ) {
-        if (nameOfChild != null) this.children.add(nameOfChild);
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.jboss.dna.spi.graph.commands.GetChildrenCommand#addChildren(org.jboss.dna.spi.graph.Path.Segment[])
-     */
-    public void addChildren( Segment... namesOfChildren ) {
-        for (Segment nameOfChild : namesOfChildren) {
-            if (nameOfChild != null) this.children.add(nameOfChild);
+    public void addChild( Segment nameOfChild,
+                          Property... identityProperties ) {
+        if (nameOfChild == null) return;
+        this.children.add(nameOfChild);
+        if (identityProperties != null) {
+            if (identityProperties.length == 0) identityProperties = null;
+            this.childProperties.put(nameOfChild, identityProperties);
         }
+    }
+
+    /**
+     * Get the identity properties for the supplied child.
+     * 
+     * @param child the name of the child
+     * @return the array of identity properties for the child, or null if there are none
+     */
+    public Property[] getChildIdentityProperties( Segment child ) {
+        return this.childProperties.get(child);
     }
 
     /**

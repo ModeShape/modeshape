@@ -26,12 +26,14 @@ import java.net.URI;
 
 /**
  * The set of standard {@link ValueFactory} instances.
+ * 
  * @author Randall Hauch
  */
 public interface ValueFactories extends Iterable<ValueFactory<?>> {
 
     /**
      * Get the value factory that creates values of the supplied {@link PropertyType type}.
+     * 
      * @param type the type for the values
      * @return the factory; never null
      * @throws IllegalArgumentException if the property type is null
@@ -40,6 +42,7 @@ public interface ValueFactories extends Iterable<ValueFactory<?>> {
 
     /**
      * Get the value factory that is best able to create values with the most natural type given by the supplied value.
+     * 
      * @param prototype the value that should be used to determine the best value factory
      * @return the factory; never null
      * @throws IllegalArgumentException if the prototype value is null
@@ -48,72 +51,91 @@ public interface ValueFactories extends Iterable<ValueFactory<?>> {
 
     /**
      * Get the value factory for {@link PropertyType#STRING string} properties.
+     * 
      * @return the factory; never null
      */
     ValueFactory<String> getStringFactory();
 
     /**
      * Get the value factory for {@link PropertyType#BINARY binary} properties.
+     * 
      * @return the factory; never null
      */
     ValueFactory<Binary> getBinaryFactory();
 
     /**
      * Get the value factory for {@link PropertyType#LONG long} properties.
+     * 
      * @return the factory; never null
      */
     ValueFactory<Long> getLongFactory();
 
     /**
      * Get the value factory for {@link PropertyType#DOUBLE double} properties.
+     * 
      * @return the factory; never null
      */
     ValueFactory<Double> getDoubleFactory();
 
     /**
      * Get the value factory for {@link PropertyType#DECIMAL decimal} properties.
+     * 
      * @return the factory; never null
      */
     ValueFactory<BigDecimal> getDecimalFactory();
 
     /**
      * Get the value factory for {@link PropertyType#DATE date} properties.
+     * 
      * @return the factory; never null
      */
     DateTimeFactory getDateFactory();
 
     /**
      * Get the value factory for {@link PropertyType#BOOLEAN boolean} properties.
+     * 
      * @return the factory; never null
      */
     ValueFactory<Boolean> getBooleanFactory();
 
     /**
      * Get the value factory for {@link PropertyType#NAME name} properties.
+     * 
      * @return the factory; never null
      */
     NameFactory getNameFactory();
 
     /**
      * Get the value factory for {@link PropertyType#REFERENCE reference} properties.
+     * 
      * @return the factory; never null
      */
     ValueFactory<Reference> getReferenceFactory();
 
     /**
      * Get the value factory for {@link PropertyType#PATH path} properties.
+     * 
      * @return the factory; never null
      */
     PathFactory getPathFactory();
 
     /**
      * Get the value factory for {@link PropertyType#URI URI} properties.
+     * 
      * @return the factory; never null
      */
     ValueFactory<URI> getUriFactory();
 
     /**
+     * Get the value factory for {@link PropertyType#UUID UUID} properties.
+     * 
+     * @return the factory; never null
+     */
+    UuidFactory getUuidFactory();
+
+    /**
      * Get the value factory for {@link PropertyType#OBJECT object} properties.
+     * 
      * @return the factory; never null
      */
     ValueFactory<Object> getObjectFactory();

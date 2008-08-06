@@ -32,6 +32,7 @@ import java.math.BigDecimal;
 import java.net.URI;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.UUID;
 import org.jboss.dna.common.text.NoOpEncoder;
 import org.jboss.dna.common.text.TextDecoder;
 import org.jboss.dna.spi.graph.Name;
@@ -110,6 +111,10 @@ public class AbstractValueFactoryTest {
         }
 
         public String create( URI value ) {
+            return null;
+        }
+
+        public String create( UUID value ) {
             return null;
         }
 

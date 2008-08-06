@@ -28,6 +28,7 @@ import org.jboss.dna.spi.graph.DateTimeFactory;
 import org.jboss.dna.spi.graph.NameFactory;
 import org.jboss.dna.spi.graph.PathFactory;
 import org.jboss.dna.spi.graph.Reference;
+import org.jboss.dna.spi.graph.UuidFactory;
 import org.jboss.dna.spi.graph.ValueFactories;
 import org.jboss.dna.spi.graph.ValueFactory;
 
@@ -89,6 +90,10 @@ public class DelegatingValueFactories extends AbstractValueFactories {
 
     public ValueFactory<URI> getUriFactory() {
         return delegate.getUriFactory();
+    }
+
+    public UuidFactory getUuidFactory() {
+        return delegate.getUuidFactory();
     }
 
 }

@@ -29,17 +29,18 @@ import java.math.BigDecimal;
 import java.net.URI;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.UUID;
 import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.text.TextDecoder;
 import org.jboss.dna.common.util.IoUtil;
 import org.jboss.dna.spi.SpiI18n;
 import org.jboss.dna.spi.graph.Binary;
+import org.jboss.dna.spi.graph.IoException;
 import org.jboss.dna.spi.graph.Name;
 import org.jboss.dna.spi.graph.Path;
 import org.jboss.dna.spi.graph.PropertyType;
 import org.jboss.dna.spi.graph.Reference;
 import org.jboss.dna.spi.graph.ValueFactory;
-import org.jboss.dna.spi.graph.IoException;
 
 /**
  * Teh standard {@link ValueFactory} for {@link PropertyType#BINARY} values.
@@ -172,6 +173,16 @@ public class InMemoryBinaryValueFactory extends AbstractValueFactory<Binary> {
      * {@inheritDoc}
      */
     public Binary create( URI value ) {
+        // Convert the value to a string, then to a binary ...
+        return create(this.getStringValueFactory().create(value));
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.spi.graph.ValueFactory#create(java.util.UUID)
+     */
+    public Binary create( UUID value ) throws IoException {
         // Convert the value to a string, then to a binary ...
         return create(this.getStringValueFactory().create(value));
     }

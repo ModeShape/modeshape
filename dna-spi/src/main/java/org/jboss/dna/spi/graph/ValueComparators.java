@@ -28,6 +28,7 @@ import java.net.URI;
 import java.util.Calendar;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.UUID;
 import org.jboss.dna.spi.SpiI18n;
 import org.jboss.dna.spi.graph.impl.StringValueFactory;
 
@@ -240,6 +241,19 @@ public class ValueComparators {
 
         public int compare( URI o1,
                             URI o2 ) {
+            if (o1 == o2) return 0;
+            if (o1 == null) return -1;
+            if (o2 == null) return 1;
+            return o1.compareTo(o2);
+        }
+    };
+    /**
+     * A comparator of UUID values.
+     */
+    public static final Comparator<UUID> UUID_COMPARATOR = new Comparator<UUID>() {
+
+        public int compare( UUID o1,
+                            UUID o2 ) {
             if (o1 == o2) return 0;
             if (o1 == null) return -1;
             if (o2 == null) return 1;

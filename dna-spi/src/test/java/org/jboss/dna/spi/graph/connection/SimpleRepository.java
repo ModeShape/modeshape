@@ -25,9 +25,11 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import net.jcip.annotations.ThreadSafe;
+import org.jboss.dna.spi.DnaLexicon;
 import org.jboss.dna.spi.ExecutionContext;
 import org.jboss.dna.spi.graph.Name;
 import org.jboss.dna.spi.graph.NameFactory;
@@ -50,6 +52,8 @@ import org.jboss.dna.spi.graph.PropertyFactory;
 @ThreadSafe
 public class SimpleRepository {
 
+    public static final String DEFAULT_UUID_PROPERTY_NAME = DnaLexicon.PropertyNames.UUID;
+
     private static final ConcurrentMap<String, SimpleRepository> repositoriesByName = new ConcurrentHashMap<String, SimpleRepository>();
 
     public static SimpleRepository get( String name ) {
@@ -64,6 +68,7 @@ public class SimpleRepository {
 
     private ConcurrentMap<Path, Map<Name, Property>> data = new ConcurrentHashMap<Path, Map<Name, Property>>();
     private final String repositoryName;
+    private String uuidPropertyName = DEFAULT_UUID_PROPERTY_NAME;
     private boolean shutdown = false;
 
     public SimpleRepository( String repositoryName ) {
@@ -78,6 +83,21 @@ public class SimpleRepository {
      */
     public String getRepositoryName() {
         return repositoryName;
+    }
+
+    /**
+     * @return uuidPropertyName
+     */
+    public String getUuidPropertyName() {
+        return uuidPropertyName;
+    }
+
+    /**
+     * @param uuidPropertyName Sets uuidPropertyName to the specified value.
+     */
+    public void setUuidPropertyName( String uuidPropertyName ) {
+        if (uuidPropertyName == null || uuidPropertyName.trim().length() == 0) uuidPropertyName = DEFAULT_UUID_PROPERTY_NAME;
+        this.uuidPropertyName = uuidPropertyName;
     }
 
     /**
@@ -133,6 +153,10 @@ public class SimpleRepository {
             ancestorPath = ancestorPath.getAncestor();
         }
         data.putIfAbsent(pathObj, new HashMap<Name, Property>());
+        Name uuidName = context.getValueFactories().getNameFactory().create(this.getUuidPropertyName());
+        UUID uuid = context.getValueFactories().getUuidFactory().create();
+        Property uuidProperty = context.getPropertyFactory().create(uuidName, uuid);
+        data.get(pathObj).put(uuidProperty.getName(), uuidProperty);
         return this;
     }
 

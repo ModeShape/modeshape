@@ -21,11 +21,10 @@
  */
 package org.jboss.dna.connector.federation.executor;
 
-import java.util.Iterator;
 import org.jboss.dna.spi.cache.CachePolicy;
 import org.jboss.dna.spi.graph.DateTime;
-import org.jboss.dna.spi.graph.Name;
 import org.jboss.dna.spi.graph.Path;
+import org.jboss.dna.spi.graph.Property;
 import org.jboss.dna.spi.graph.Path.Segment;
 import org.jboss.dna.spi.graph.commands.GetChildrenCommand;
 
@@ -46,55 +45,12 @@ public class ProjectedGetChildrenCommand extends ActsOnProjectedPathCommand<GetC
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.spi.graph.commands.GetChildrenCommand#setChild(org.jboss.dna.spi.graph.Name)
+     * @see org.jboss.dna.spi.graph.commands.GetChildrenCommand#addChild(org.jboss.dna.spi.graph.Path.Segment,
+     *      org.jboss.dna.spi.graph.Property[])
      */
-    public void setChild( Name nameOfChild ) {
-        getOriginalCommand().setChild(nameOfChild);
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.jboss.dna.spi.graph.commands.GetChildrenCommand#setChildren(java.util.Iterator)
-     */
-    public void setChildren( Iterator<Segment> namesOfChildren ) {
-        getOriginalCommand().setChildren(namesOfChildren);
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.jboss.dna.spi.graph.commands.GetChildrenCommand#setChildren(java.lang.Iterable)
-     */
-    public void setChildren( Iterable<Segment> namesOfChildren ) {
-        getOriginalCommand().setChildren(namesOfChildren);
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.jboss.dna.spi.graph.commands.GetChildrenCommand#setChildren(org.jboss.dna.spi.graph.Path.Segment[])
-     */
-    public void setChildren( Segment... namesOfChildren ) {
-        getOriginalCommand().setChildren(namesOfChildren);
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.jboss.dna.spi.graph.commands.GetChildrenCommand#addChild(org.jboss.dna.spi.graph.Path.Segment)
-     */
-    public void addChild( Segment nameOfChild ) {
-        getOriginalCommand().addChild(nameOfChild);
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.jboss.dna.spi.graph.commands.GetChildrenCommand#addChildren(org.jboss.dna.spi.graph.Path.Segment[])
-     */
-    public void addChildren( Segment... namesOfChildren ) {
-        getOriginalCommand().addChildren(namesOfChildren);
+    public void addChild( Segment nameOfChild,
+                          Property... identityProperties ) {
+        getOriginalCommand().addChild(nameOfChild, identityProperties);
     }
 
     /**
