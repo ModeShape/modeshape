@@ -143,6 +143,21 @@ public class FederatedRepositorySourceTest {
     }
 
     @Test
+    public void shouldReturnNonNullCapabilities() {
+        assertThat(source.getCapabilities(), is(notNullValue()));
+    }
+
+    @Test
+    public void shouldSupportSameNameSiblings() {
+        assertThat(source.getCapabilities().supportsSameNameSiblings(), is(true));
+    }
+
+    @Test
+    public void shouldSupportUpdates() {
+        assertThat(source.getCapabilities().supportsUpdates(), is(true));
+    }
+
+    @Test
     public void shouldCreateConnectionsByAuthenticateUsingFederationRepository() throws Exception {
         connection = source.getConnection();
         assertThat(connection, is(notNullValue()));
