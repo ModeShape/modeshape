@@ -60,6 +60,16 @@ public interface PathFactory extends ValueFactory<Path> {
     Path createAbsolutePath( Path.Segment... segments );
 
     /**
+     * Create an absolute path with the supplied segments, in order. If no segments are provided, the result will be the root
+     * path.
+     * 
+     * @param segments the segments
+     * @return the new path
+     * @throws IllegalArgumentException if at least one segment is provided and if any of the supplied segments are null
+     */
+    Path createAbsolutePath( Iterable<Path.Segment> segments );
+
+    /**
      * Create an empty relative path (i.e., equivalent to {@link #createRelativePath(Path.Segment...) createRelativePath}(
      * {@link Path#SELF_SEGMENT})). Subsequent calls will always return the same instance.
      * 
@@ -85,6 +95,15 @@ public interface PathFactory extends ValueFactory<Path> {
      * @throws IllegalArgumentException if at least one segment is provided and if any of the supplied segments are null
      */
     Path createRelativePath( Path.Segment... segments );
+
+    /**
+     * Create a relative path with the supplied segments, in order. If no segments are provided, the result will be the root path.
+     * 
+     * @param segments the segments
+     * @return the new path
+     * @throws IllegalArgumentException if at least one segment is provided and if any of the supplied segments are null
+     */
+    Path createRelativePath( Iterable<Path.Segment> segments );
 
     /**
      * Create a path by appending the supplied relative path to the supplied parent path. The resulting path will be
@@ -134,6 +153,18 @@ public interface PathFactory extends ValueFactory<Path> {
      */
     Path create( Path parentPath,
                  Path.Segment... segments );
+
+    /**
+     * Create a path by appending the supplied names to the parent path. If no names are appended, the parent path is returned.
+     * 
+     * @param parentPath the path that is to provide the basis for the new path
+     * @param segments the segments that are to be appended, in order, to the parent path
+     * @return the new path
+     * @throws IllegalArgumentException if the parent path reference is null, or if at least one segment name is provided and if
+     *         any of the supplied segment names are null
+     */
+    Path create( Path parentPath,
+                 Iterable<Path.Segment> segments );
 
     /**
      * Create a path by appending the supplied names to the parent path.

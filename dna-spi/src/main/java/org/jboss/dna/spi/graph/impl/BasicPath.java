@@ -53,7 +53,7 @@ public class BasicPath implements Path {
 
     public static final Path ROOT = new BasicPath(EMPTY_SEGMENTS, true);
 
-    protected static final Path SELF_PATH = new BasicPath(Collections.singletonList(Path.SELF_SEGMENT), false);
+    public static final Path SELF_PATH = new BasicPath(Collections.singletonList(Path.SELF_SEGMENT), false);
 
     private final List<Segment> segments;
     private final boolean absolute;

@@ -631,7 +631,7 @@ public final class ArgCheck {
      * @param name The name of the argument
      * @throws IllegalArgumentException If array is null or has null values
      */
-    public static void containsNoNulls( Collection<?> argument,
+    public static void containsNoNulls( Iterable<?> argument,
                                         String name ) {
         isNotNull(argument, name);
         int i = 0;

@@ -28,6 +28,7 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.UUID;
 import java.util.regex.Pattern;
@@ -281,6 +282,23 @@ public class PathValueFactory extends AbstractValueFactory<Path> implements Path
     }
 
     /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.spi.graph.PathFactory#createAbsolutePath(java.lang.Iterable)
+     */
+    public Path createAbsolutePath( Iterable<Segment> segments ) {
+        List<Segment> segmentsList = new LinkedList<Segment>();
+        for (Segment segment : segments) {
+            if (segment == null) {
+                ArgCheck.containsNoNulls(segments, "segments");
+            }
+            segmentsList.add(segment);
+        }
+        if (segmentsList.isEmpty()) return BasicPath.ROOT;
+        return new BasicPath(segmentsList, true);
+    }
+
+    /**
      * <p>
      * {@inheritDoc}
      * </p>
@@ -295,7 +313,7 @@ public class PathValueFactory extends AbstractValueFactory<Path> implements Path
      * {@inheritDoc}
      */
     public Path createRelativePath( Name... segmentNames ) {
-        if (segmentNames == null || segmentNames.length == 0) return BasicPath.ROOT;
+        if (segmentNames == null || segmentNames.length == 0) return BasicPath.SELF_PATH;
         List<Segment> segments = new ArrayList<Segment>(segmentNames.length);
         for (Name segmentName : segmentNames) {
             if (segmentName == null) {
@@ -310,7 +328,7 @@ public class PathValueFactory extends AbstractValueFactory<Path> implements Path
      * {@inheritDoc}
      */
     public Path createRelativePath( Segment... segments ) {
-        if (segments == null || segments.length == 0) return BasicPath.ROOT;
+        if (segments == null || segments.length == 0) return BasicPath.SELF_PATH;
         List<Segment> segmentsList = new ArrayList<Segment>(segments.length);
         for (Segment segment : segments) {
             if (segment == null) {
@@ -318,6 +336,23 @@ public class PathValueFactory extends AbstractValueFactory<Path> implements Path
             }
             segmentsList.add(segment);
         }
+        return new BasicPath(segmentsList, false);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.spi.graph.PathFactory#createRelativePath(java.lang.Iterable)
+     */
+    public Path createRelativePath( Iterable<Segment> segments ) {
+        List<Segment> segmentsList = new LinkedList<Segment>();
+        for (Segment segment : segments) {
+            if (segment == null) {
+                ArgCheck.containsNoNulls(segments, "segments");
+            }
+            segmentsList.add(segment);
+        }
+        if (segmentsList.isEmpty()) return BasicPath.SELF_PATH;
         return new BasicPath(segmentsList, false);
     }
 
@@ -392,6 +427,27 @@ public class PathValueFactory extends AbstractValueFactory<Path> implements Path
             }
             segmentsList.add(segment);
         }
+        return new BasicPath(segmentsList, parentPath.isAbsolute());
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.spi.graph.PathFactory#create(org.jboss.dna.spi.graph.Path, java.lang.Iterable)
+     */
+    public Path create( Path parentPath,
+                        Iterable<Segment> segments ) {
+        ArgCheck.isNotNull(parentPath, "parent path");
+
+        List<Segment> segmentsList = new LinkedList<Segment>();
+        segmentsList.addAll(parentPath.getSegmentsList());
+        for (Segment segment : segments) {
+            if (segment == null) {
+                ArgCheck.containsNoNulls(segments, "segments");
+            }
+            segmentsList.add(segment);
+        }
+        if (segmentsList.isEmpty()) return BasicPath.ROOT;
         return new BasicPath(segmentsList, parentPath.isAbsolute());
     }
 
