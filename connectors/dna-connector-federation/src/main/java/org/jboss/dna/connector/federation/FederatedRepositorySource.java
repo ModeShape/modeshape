@@ -78,7 +78,7 @@ import org.jboss.dna.spi.graph.commands.impl.BasicGetNodeCommand;
  * @author Randall Hauch
  */
 @ThreadSafe
-public class FederatedRepositorySource extends AbstractRepositorySource {
+public class FederatedRepositorySource extends AbstractRepositorySource implements ObjectFactory {
 
     /**
      */
@@ -823,7 +823,7 @@ public class FederatedRepositorySource extends AbstractRepositorySource {
      */
     public synchronized Reference getReference() {
         String className = getClass().getName();
-        String factoryClassName = NamingContextObjectFactory.class.getName();
+        String factoryClassName = this.getClass().getName();
         Reference ref = new Reference(className, factoryClassName, null);
 
         if (getRepositoryName() != null) {
@@ -869,62 +869,56 @@ public class FederatedRepositorySource extends AbstractRepositorySource {
         return ref;
     }
 
-    public static class NamingContextObjectFactory implements ObjectFactory {
-
-        public NamingContextObjectFactory() {
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        public Object getObjectInstance( Object obj,
-                                         javax.naming.Name name,
-                                         Context nameCtx,
-                                         Hashtable<?, ?> environment ) throws Exception {
-            if (obj instanceof Reference) {
-                Map<String, String> values = new HashMap<String, String>();
-                Reference ref = (Reference)obj;
-                Enumeration<?> en = ref.getAll();
-                while (en.hasMoreElements()) {
-                    RefAddr subref = (RefAddr)en.nextElement();
-                    if (subref instanceof StringRefAddr) {
-                        String key = subref.getType();
-                        Object value = subref.getContent();
-                        if (value != null) values.put(key, value.toString());
-                    }
+    /**
+     * {@inheritDoc}
+     */
+    public Object getObjectInstance( Object obj,
+                                     javax.naming.Name name,
+                                     Context nameCtx,
+                                     Hashtable<?, ?> environment ) throws Exception {
+        if (obj instanceof Reference) {
+            Map<String, String> values = new HashMap<String, String>();
+            Reference ref = (Reference)obj;
+            Enumeration<?> en = ref.getAll();
+            while (en.hasMoreElements()) {
+                RefAddr subref = (RefAddr)en.nextElement();
+                if (subref instanceof StringRefAddr) {
+                    String key = subref.getType();
+                    Object value = subref.getContent();
+                    if (value != null) values.put(key, value.toString());
                 }
-                String repositoryName = values.get(FederatedRepositorySource.REPOSITORY_NAME);
-                String sourceName = values.get(FederatedRepositorySource.SOURCE_NAME);
-                String username = values.get(FederatedRepositorySource.USERNAME);
-                String password = values.get(FederatedRepositorySource.PASSWORD);
-                String configurationSourceName = values.get(FederatedRepositorySource.CONFIGURATION_SOURCE_NAME);
-                String projectionRules = values.get(FederatedRepositorySource.CONFIGURATION_SOURCE_PROJECTION_RULES);
-                String connectionFactoriesJndiName = values.get(FederatedRepositorySource.REPOSITORY_SOURCE_REGISTRY_JNDI_NAME);
-                String environmentJndiName = values.get(FederatedRepositorySource.EXECUTION_CONTEXT_FACTORY_JNDI_NAME);
-                String repositoryJndiName = values.get(FederatedRepositorySource.REPOSITORY_JNDI_NAME);
-                String securityDomain = values.get(FederatedRepositorySource.SECURITY_DOMAIN);
-                String retryLimit = values.get(FederatedRepositorySource.RETRY_LIMIT);
-
-                // Create the source instance ...
-                FederatedRepositorySource source = new FederatedRepositorySource();
-                if (repositoryName != null) source.setRepositoryName(repositoryName);
-                if (sourceName != null) source.setName(sourceName);
-                if (username != null) source.setUsername(username);
-                if (password != null) source.setPassword(password);
-                if (configurationSourceName != null) source.setConfigurationSourceName(configurationSourceName);
-                if (projectionRules != null) {
-                    List<String> rules = StringUtil.splitLines(projectionRules);
-                    source.setConfigurationSourceProjectionRules(rules.toArray(new String[rules.size()]));
-                }
-                if (connectionFactoriesJndiName != null) source.setRepositorySourceRegistryJndiName(connectionFactoriesJndiName);
-                if (environmentJndiName != null) source.setExecutionContextFactoryJndiName(environmentJndiName);
-                if (repositoryJndiName != null) source.setRepositoryJndiName(repositoryJndiName);
-                if (securityDomain != null) source.setSecurityDomain(securityDomain);
-                if (retryLimit != null) source.setRetryLimit(Integer.parseInt(retryLimit));
-                return source;
             }
-            return null;
+            String repositoryName = values.get(FederatedRepositorySource.REPOSITORY_NAME);
+            String sourceName = values.get(FederatedRepositorySource.SOURCE_NAME);
+            String username = values.get(FederatedRepositorySource.USERNAME);
+            String password = values.get(FederatedRepositorySource.PASSWORD);
+            String configurationSourceName = values.get(FederatedRepositorySource.CONFIGURATION_SOURCE_NAME);
+            String projectionRules = values.get(FederatedRepositorySource.CONFIGURATION_SOURCE_PROJECTION_RULES);
+            String connectionFactoriesJndiName = values.get(FederatedRepositorySource.REPOSITORY_SOURCE_REGISTRY_JNDI_NAME);
+            String environmentJndiName = values.get(FederatedRepositorySource.EXECUTION_CONTEXT_FACTORY_JNDI_NAME);
+            String repositoryJndiName = values.get(FederatedRepositorySource.REPOSITORY_JNDI_NAME);
+            String securityDomain = values.get(FederatedRepositorySource.SECURITY_DOMAIN);
+            String retryLimit = values.get(FederatedRepositorySource.RETRY_LIMIT);
+
+            // Create the source instance ...
+            FederatedRepositorySource source = new FederatedRepositorySource();
+            if (repositoryName != null) source.setRepositoryName(repositoryName);
+            if (sourceName != null) source.setName(sourceName);
+            if (username != null) source.setUsername(username);
+            if (password != null) source.setPassword(password);
+            if (configurationSourceName != null) source.setConfigurationSourceName(configurationSourceName);
+            if (projectionRules != null) {
+                List<String> rules = StringUtil.splitLines(projectionRules);
+                source.setConfigurationSourceProjectionRules(rules.toArray(new String[rules.size()]));
+            }
+            if (connectionFactoriesJndiName != null) source.setRepositorySourceRegistryJndiName(connectionFactoriesJndiName);
+            if (environmentJndiName != null) source.setExecutionContextFactoryJndiName(environmentJndiName);
+            if (repositoryJndiName != null) source.setRepositoryJndiName(repositoryJndiName);
+            if (securityDomain != null) source.setSecurityDomain(securityDomain);
+            if (retryLimit != null) source.setRetryLimit(Integer.parseInt(retryLimit));
+            return source;
         }
+        return null;
     }
 
     /**

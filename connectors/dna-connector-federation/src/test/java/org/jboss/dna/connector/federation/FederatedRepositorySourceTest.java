@@ -37,6 +37,7 @@ import javax.naming.Context;
 import javax.naming.Name;
 import javax.naming.RefAddr;
 import javax.naming.Reference;
+import javax.naming.spi.ObjectFactory;
 import javax.security.auth.callback.CallbackHandler;
 import javax.security.auth.login.LoginException;
 import org.jboss.dna.spi.DnaLexicon;
@@ -272,7 +273,7 @@ public class FederatedRepositorySourceTest {
 
         Reference ref = source.getReference();
         assertThat(ref.getClassName(), is(FederatedRepositorySource.class.getName()));
-        assertThat(ref.getFactoryClassName(), is(FederatedRepositorySource.NamingContextObjectFactory.class.getName()));
+        assertThat(ref.getFactoryClassName(), is(FederatedRepositorySource.class.getName()));
 
         Map<String, Object> refAttributes = new HashMap<String, Object>();
         Enumeration<RefAddr> enumeration = ref.getAll();
@@ -300,7 +301,7 @@ public class FederatedRepositorySourceTest {
         assertThat(refAttributes.isEmpty(), is(true));
 
         // Recreate the object, use a newly constructed source ...
-        FederatedRepositorySource.NamingContextObjectFactory factory = new FederatedRepositorySource.NamingContextObjectFactory();
+        ObjectFactory factory = new FederatedRepositorySource();
         Name name = mock(Name.class);
         Context context = mock(Context.class);
         Hashtable<?, ?> env = new Hashtable<Object, Object>();
