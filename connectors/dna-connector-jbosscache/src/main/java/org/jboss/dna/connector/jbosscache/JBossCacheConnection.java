@@ -218,6 +218,8 @@ public class JBossCacheConnection implements RepositoryConnection {
                             Node<Name, Object> newParent,
                             boolean recursive,
                             Name uuidProperty ) {
+        assert original != null;
+        assert newParent != null;
         // Get or create the new node ...
         Segment name = (Segment)original.getFqn().getLastElement();
         Node<Name, Object> copy = newParent.addChild(getFullyQualifiedName(name));

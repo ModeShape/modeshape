@@ -22,6 +22,7 @@
 package org.jboss.dna.connector.jbosscache;
 
 import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.hamcrest.core.IsSame.sameInstance;
@@ -215,6 +216,7 @@ public class JBossCacheConnectionTest {
     @Test
     public void shouldGetNodeIfItExistsInCache() {
         // Set up the cache with data ...
+        stub(source.getUuidPropertyName()).toReturn(DnaLexicon.PropertyNames.UUID);
         Name uuidProperty = connection.getUuidPropertyName(context);
         Path[] paths = {pathFactory.create("/a"), pathFactory.create("/a/b"), pathFactory.create("/a/b/c")};
         Path nonExistantPath = pathFactory.create("/a/d");
@@ -239,6 +241,7 @@ public class JBossCacheConnectionTest {
     @Test
     public void shouldThrowExceptionWithLowestExistingNodeFromGetNodeIfTheNodeDoesNotExist() {
         // Set up the cache with data ...
+        stub(source.getUuidPropertyName()).toReturn(DnaLexicon.PropertyNames.UUID);
         Name uuidProperty = connection.getUuidPropertyName(context);
         Path[] paths = {pathFactory.create("/a"), pathFactory.create("/a/b"), pathFactory.create("/a/b/c")};
         Path nonExistantPath = pathFactory.create("/a/d");
@@ -260,6 +263,48 @@ public class JBossCacheConnectionTest {
         } catch (PathNotFoundException e) {
             assertThat(e.getLowestAncestorThatDoesExist(), is(paths[0]));
         }
+    }
+
+    @Test
+    public void shouldCopyNode() {
+        // Set up the cache with data ...
+        stub(source.getUuidPropertyName()).toReturn(DnaLexicon.PropertyNames.UUID);
+        Name uuidProperty = connection.getUuidPropertyName(context);
+        Path[] paths = {pathFactory.create("/a"), pathFactory.create("/a/b"), pathFactory.create("/a/b/c"),
+            pathFactory.create("/a/d")};
+        UUID[] uuids = {UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID()};
+        cache.put(Fqn.fromList(paths[0].getSegmentsList()), uuidProperty, uuids[0]);
+        cache.put(Fqn.fromList(paths[1].getSegmentsList()), uuidProperty, uuids[1]);
+        cache.put(Fqn.fromList(paths[2].getSegmentsList()), uuidProperty, uuids[2]);
+        cache.put(Fqn.fromList(paths[3].getSegmentsList()), uuidProperty, uuids[3]);
+        Node<Name, Object> nodeA = cache.getNode(Fqn.fromList(paths[0].getSegmentsList()));
+        Node<Name, Object> nodeB = cache.getNode(Fqn.fromList(paths[1].getSegmentsList()));
+        Node<Name, Object> nodeC = cache.getNode(Fqn.fromList(paths[2].getSegmentsList()));
+        Node<Name, Object> nodeD = cache.getNode(Fqn.fromList(paths[3].getSegmentsList()));
+        assertThat(nodeA, is(notNullValue()));
+        assertThat(nodeB, is(notNullValue()));
+        assertThat(nodeC, is(notNullValue()));
+        assertThat(nodeD, is(notNullValue()));
+        assertThat(nodeA.get(uuidProperty), is((Object)uuids[0]));
+        assertThat(nodeB.get(uuidProperty), is((Object)uuids[1]));
+        assertThat(nodeC.get(uuidProperty), is((Object)uuids[2]));
+        assertThat(nodeD.get(uuidProperty), is((Object)uuids[3]));
+        // Make sure the new nodes doesn't exist
+        Path newPathB = pathFactory.create("/a/d/b");
+        Path newPathC = pathFactory.create("/a/d/b/c");
+        Node<Name, Object> newNodeB = cache.getNode(Fqn.fromList(newPathB.getSegmentsList()));
+        Node<Name, Object> newNodeC = cache.getNode(Fqn.fromList(newPathC.getSegmentsList()));
+        assertThat(newNodeB, is(nullValue()));
+        assertThat(newNodeC, is(nullValue()));
+        // Copy node B and place under node D
+        assertThat(connection.copyNode(nodeB, nodeD, true, uuidProperty), is(2));
+        newNodeB = cache.getNode(Fqn.fromList(newPathB.getSegmentsList()));
+        newNodeC = cache.getNode(Fqn.fromList(newPathC.getSegmentsList()));
+        assertThat(newNodeB, is(notNullValue()));
+        assertThat(newNodeC, is(notNullValue()));
+        // Make sure the UUIDs are new ...
+        assertThat(newNodeB.get(uuidProperty), is(not(nodeB.get(uuidProperty))));
+        assertThat(newNodeC.get(uuidProperty), is(not(nodeC.get(uuidProperty))));
     }
 
 }
