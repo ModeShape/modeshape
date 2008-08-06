@@ -21,7 +21,10 @@
  */
 package org.jboss.dna.spi.graph.connection;
 
+import java.security.AccessControlContext;
+import java.security.AccessController;
 import javax.security.auth.Subject;
+import javax.security.auth.login.LoginContext;
 import org.jboss.dna.common.util.ArgCheck;
 import org.jboss.dna.spi.ExecutionContext;
 import org.jboss.dna.spi.graph.NamespaceRegistry;
@@ -33,44 +36,76 @@ import org.jboss.dna.spi.graph.impl.StandardValueFactories;
 
 /**
  * @author Randall Hauch
+ * @author John Verhaeg
  */
 public class BasicExecutionContext implements ExecutionContext {
 
+    private final LoginContext loginContext;
+    private final AccessControlContext accessControlContext;
     private final Subject subject;
     private final PropertyFactory propertyFactory;
     private final ValueFactories valueFactories;
     private final NamespaceRegistry namespaceRegistry;
 
     public BasicExecutionContext() {
-        this(new Subject(), new BasicNamespaceRegistry());
+        this(new BasicNamespaceRegistry());
     }
 
     public BasicExecutionContext( NamespaceRegistry namespaceRegistry ) {
-        this(new Subject(), namespaceRegistry, null, null);
+        this(namespaceRegistry, null, null);
+    }
+
+    public BasicExecutionContext( LoginContext loginContext ) {
+        this(loginContext, new BasicNamespaceRegistry());
+    }
+
+    public BasicExecutionContext( AccessControlContext accessControlContext ) {
+        this(accessControlContext, new BasicNamespaceRegistry());
+    }
+
+    public BasicExecutionContext( LoginContext loginContext,
+                                  NamespaceRegistry namespaceRegistry ) {
+        this(loginContext, namespaceRegistry, null, null);
+    }
+
+    public BasicExecutionContext( AccessControlContext accessControlContext,
+                                  NamespaceRegistry namespaceRegistry ) {
+        this(accessControlContext, namespaceRegistry, null, null);
     }
 
     public BasicExecutionContext( NamespaceRegistry namespaceRegistry,
                                   ValueFactories valueFactories,
                                   PropertyFactory propertyFactory ) {
-        this(new Subject(), namespaceRegistry, valueFactories, propertyFactory);
+        this(null, null, namespaceRegistry, valueFactories, propertyFactory);
     }
 
-    public BasicExecutionContext( Subject subject ) {
-        this(subject, new BasicNamespaceRegistry());
-    }
-
-    public BasicExecutionContext( Subject subject,
-                                  NamespaceRegistry namespaceRegistry ) {
-        this(subject, namespaceRegistry, null, null);
-    }
-
-    public BasicExecutionContext( Subject subject,
+    public BasicExecutionContext( LoginContext loginContext,
                                   NamespaceRegistry namespaceRegistry,
                                   ValueFactories valueFactories,
                                   PropertyFactory propertyFactory ) {
-        ArgCheck.isNotNull(subject, "subject");
-        ArgCheck.isNotNull(namespaceRegistry, "namespace registry");
-        this.subject = subject;
+        this(loginContext, null, namespaceRegistry, valueFactories, propertyFactory);
+    }
+
+    public BasicExecutionContext( AccessControlContext accessControlContext,
+                                  NamespaceRegistry namespaceRegistry,
+                                  ValueFactories valueFactories,
+                                  PropertyFactory propertyFactory ) {
+        this(null, accessControlContext, namespaceRegistry, valueFactories, propertyFactory);
+    }
+
+    private BasicExecutionContext( LoginContext loginContext,
+                                   AccessControlContext accessControlContext,
+                                   NamespaceRegistry namespaceRegistry,
+                                   ValueFactories valueFactories,
+                                   PropertyFactory propertyFactory ) {
+        ArgCheck.isNotNull(namespaceRegistry, "namespaceRegistry");
+        this.loginContext = loginContext;
+        this.accessControlContext = accessControlContext;
+        if (loginContext == null) {
+            this.subject = Subject.getSubject(accessControlContext == null ? AccessController.getContext() : accessControlContext);
+        } else {
+            this.subject = loginContext.getSubject();
+        }
         this.namespaceRegistry = namespaceRegistry;
         this.valueFactories = valueFactories != null ? valueFactories : new StandardValueFactories(this.namespaceRegistry);
         this.propertyFactory = propertyFactory != null ? propertyFactory : new BasicPropertyFactory(this.valueFactories);
@@ -78,23 +113,34 @@ public class BasicExecutionContext implements ExecutionContext {
 
     /**
      * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.spi.ExecutionContext#getAccessControlContext()
      */
-    public NamespaceRegistry getNamespaceRegistry() {
-        return this.namespaceRegistry;
+    public AccessControlContext getAccessControlContext() {
+        return accessControlContext;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.spi.ExecutionContext#getLoginContext()
+     */
+    public LoginContext getLoginContext() {
+        return loginContext;
     }
 
     /**
      * {@inheritDoc}
      */
-    public ValueFactories getValueFactories() {
-        return this.valueFactories;
+    public NamespaceRegistry getNamespaceRegistry() {
+        return namespaceRegistry;
     }
 
     /**
      * {@inheritDoc}
      */
     public PropertyFactory getPropertyFactory() {
-        return this.propertyFactory;
+        return propertyFactory;
     }
 
     /**
@@ -103,6 +149,13 @@ public class BasicExecutionContext implements ExecutionContext {
      * @see org.jboss.dna.spi.ExecutionContext#getSubject()
      */
     public Subject getSubject() {
-        return this.subject;
+        return subject;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public ValueFactories getValueFactories() {
+        return valueFactories;
     }
 }

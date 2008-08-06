@@ -21,7 +21,9 @@
  */
 package org.jboss.dna.spi;
 
+import java.security.AccessControlContext;
 import javax.security.auth.Subject;
+import javax.security.auth.login.LoginContext;
 import org.jboss.dna.spi.graph.NamespaceRegistry;
 import org.jboss.dna.spi.graph.Property;
 import org.jboss.dna.spi.graph.PropertyFactory;
@@ -29,8 +31,19 @@ import org.jboss.dna.spi.graph.ValueFactories;
 
 /**
  * @author Randall Hauch
+ * @author John Verhaeg
  */
 public interface ExecutionContext {
+
+    /**
+     * @return the access control context; may be <code>null</code>
+     */
+    AccessControlContext getAccessControlContext();
+
+    /**
+     * @return the login context; may be <code>null</code>
+     */
+    LoginContext getLoginContext();
 
     /**
      * Get the factories that should be used to create values for {@link Property properties}.
@@ -59,5 +72,4 @@ public interface ExecutionContext {
      * @return the subject; never null
      */
     Subject getSubject();
-
 }

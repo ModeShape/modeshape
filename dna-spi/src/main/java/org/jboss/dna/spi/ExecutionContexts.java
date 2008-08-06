@@ -21,7 +21,9 @@
  */
 package org.jboss.dna.spi;
 
+import java.security.AccessControlContext;
 import javax.security.auth.Subject;
+import javax.security.auth.login.LoginContext;
 import org.jboss.dna.common.util.ArgCheck;
 import org.jboss.dna.spi.graph.NameFactory;
 import org.jboss.dna.spi.graph.NamespaceRegistry;
@@ -34,6 +36,7 @@ import org.jboss.dna.spi.graph.impl.DelegatingValueFactories;
  * Utility methods for creating various execution contexts with replacement factories or components.
  * 
  * @author Randall Hauch
+ * @author John Verhaeg
  */
 public class ExecutionContexts {
 
@@ -146,6 +149,24 @@ public class ExecutionContexts {
         /**
          * {@inheritDoc}
          * 
+         * @see org.jboss.dna.spi.ExecutionContext#getAccessControlContext()
+         */
+        public AccessControlContext getAccessControlContext() {
+            return delegate.getAccessControlContext();
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.spi.ExecutionContext#getLoginContext()
+         */
+        public LoginContext getLoginContext() {
+            return delegate.getLoginContext();
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
          * @see org.jboss.dna.spi.ExecutionContext#getNamespaceRegistry()
          */
         public NamespaceRegistry getNamespaceRegistry() {
@@ -188,6 +209,5 @@ public class ExecutionContexts {
         protected ExecutionContext getDelegate() {
             return delegate;
         }
-
     }
 }

@@ -343,6 +343,11 @@
 				<artifactId>dna-repository</artifactId>
 				<version>${dna-version}</version>
 			</dependency>
+            <dependency>
+                <groupId>org.jboss.dna</groupId>
+                <artifactId>dna-jcr</artifactId>
+                <version>${dna-version}</version>
+            </dependency>
 			<dependency>
 				<groupId>org.jboss.dna</groupId>
 				<artifactId>dna-connector-federation</artifactId>
