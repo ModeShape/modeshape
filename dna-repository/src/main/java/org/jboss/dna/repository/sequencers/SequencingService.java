@@ -21,6 +21,7 @@
  */
 package org.jboss.dna.repository.sequencers;
 
+import java.security.AccessControlContext;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -39,6 +40,7 @@ import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.observation.Event;
 import javax.security.auth.Subject;
+import javax.security.auth.login.LoginContext;
 import net.jcip.annotations.Immutable;
 import net.jcip.annotations.ThreadSafe;
 import org.jboss.dna.common.component.ClassLoaderFactory;
@@ -636,8 +638,30 @@ public class SequencingService implements AdministeredService, NodeChangeListene
             };
         }
 
-        protected synchronized void recordSession( Session session ) {
-            if (session != null) sessions.add(session);
+        public synchronized void close() {
+            if (this.closed.get()) return;
+            this.closed.set(true);
+            for (Session session : sessions) {
+                if (session != null) session.logout();
+            }
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.spi.ExecutionContext#getAccessControlContext()
+         */
+        public AccessControlContext getAccessControlContext() {
+            return delegate.getAccessControlContext();
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.spi.ExecutionContext#getLoginContext()
+         */
+        public LoginContext getLoginContext() {
+            return delegate.getLoginContext();
         }
 
         /**
@@ -645,13 +669,6 @@ public class SequencingService implements AdministeredService, NodeChangeListene
          */
         public NamespaceRegistry getNamespaceRegistry() {
             return this.delegate.getNamespaceRegistry();
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        public ValueFactories getValueFactories() {
-            return this.delegate.getValueFactories();
         }
 
         /**
@@ -670,13 +687,6 @@ public class SequencingService implements AdministeredService, NodeChangeListene
 
         /**
          * {@inheritDoc}
-         */
-        public JcrTools getTools() {
-            return SequencingService.this.getExecutionContext().getTools();
-        }
-
-        /**
-         * {@inheritDoc}
          * 
          * @see org.jboss.dna.spi.ExecutionContext#getSubject()
          */
@@ -684,12 +694,22 @@ public class SequencingService implements AdministeredService, NodeChangeListene
             return this.delegate.getSubject();
         }
 
-        public synchronized void close() {
-            if (this.closed.get()) return;
-            this.closed.set(true);
-            for (Session session : sessions) {
-                if (session != null) session.logout();
-            }
+        /**
+         * {@inheritDoc}
+         */
+        public JcrTools getTools() {
+            return SequencingService.this.getExecutionContext().getTools();
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        public ValueFactories getValueFactories() {
+            return this.delegate.getValueFactories();
+        }
+
+        protected synchronized void recordSession( Session session ) {
+            if (session != null) sessions.add(session);
         }
     }
 
