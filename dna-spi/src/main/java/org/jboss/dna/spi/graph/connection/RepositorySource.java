@@ -65,4 +65,11 @@ public interface RepositorySource extends ManagedRepositoryConnectionFactory, Re
      */
     void setRetryLimit( int limit );
 
+    /**
+     * Get the capabilities for this source.
+     * 
+     * @return the capabilities for this source; never null
+     */
+    RepositorySourceCapabilities getCapabilities();
+
 }

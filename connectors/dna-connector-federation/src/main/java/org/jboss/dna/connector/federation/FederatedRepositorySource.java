@@ -71,6 +71,7 @@ import org.jboss.dna.spi.graph.connection.AbstractRepositorySource;
 import org.jboss.dna.spi.graph.connection.RepositoryConnection;
 import org.jboss.dna.spi.graph.connection.RepositoryConnectionFactories;
 import org.jboss.dna.spi.graph.connection.RepositorySource;
+import org.jboss.dna.spi.graph.connection.RepositorySourceCapabilities;
 import org.jboss.dna.spi.graph.connection.RepositorySourceException;
 
 /**
@@ -953,6 +954,25 @@ public class FederatedRepositorySource extends AbstractRepositorySource {
             return true;
         }
         return false;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.spi.graph.connection.RepositorySource#getCapabilities()
+     */
+    public RepositorySourceCapabilities getCapabilities() {
+        return new Capabilities();
+    }
+
+    protected class Capabilities implements RepositorySourceCapabilities {
+        public boolean supportsSameNameSiblings() {
+            return true;
+        }
+
+        public boolean supportsUpdates() {
+            return true;
+        }
     }
 
 }

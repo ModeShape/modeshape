@@ -127,6 +127,25 @@ public class SimpleRepositorySource extends AbstractRepositorySource {
     /**
      * {@inheritDoc}
      * 
+     * @see org.jboss.dna.spi.graph.connection.RepositorySource#getCapabilities()
+     */
+    public RepositorySourceCapabilities getCapabilities() {
+        return new Capabilities();
+    }
+
+    protected class Capabilities implements RepositorySourceCapabilities {
+        public boolean supportsSameNameSiblings() {
+            return true;
+        }
+
+        public boolean supportsUpdates() {
+            return true;
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
      * @see org.jboss.dna.spi.graph.connection.AbstractRepositorySource#createConnection()
      */
     @Override

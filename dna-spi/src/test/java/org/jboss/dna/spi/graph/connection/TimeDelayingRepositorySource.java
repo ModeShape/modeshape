@@ -190,6 +190,25 @@ public class TimeDelayingRepositorySource extends AbstractRepositorySource {
         throw new UnsupportedOperationException();
     }
 
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.spi.graph.connection.RepositorySource#getCapabilities()
+     */
+    public RepositorySourceCapabilities getCapabilities() {
+        return new Capabilities();
+    }
+
+    protected class Capabilities implements RepositorySourceCapabilities {
+        public boolean supportsSameNameSiblings() {
+            return true;
+        }
+
+        public boolean supportsUpdates() {
+            return true;
+        }
+    }
+
     public class Connection implements RepositoryConnection {
 
         private final String connectionName;
