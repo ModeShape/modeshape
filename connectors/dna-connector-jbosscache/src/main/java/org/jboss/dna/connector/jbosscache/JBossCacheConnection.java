@@ -88,6 +88,13 @@ public class JBossCacheConnection implements RepositoryConnection {
     }
 
     /**
+     * @return cache
+     */
+    /*package*/Cache<Name, Object> getCache() {
+        return cache;
+    }
+
+    /**
      * {@inheritDoc}
      */
     public String getSourceName() {

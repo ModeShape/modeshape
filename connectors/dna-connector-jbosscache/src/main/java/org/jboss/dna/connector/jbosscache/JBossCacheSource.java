@@ -390,6 +390,24 @@ public class JBossCacheSource extends AbstractRepositorySource implements Object
     /**
      * {@inheritDoc}
      */
+    @Override
+    public boolean equals( Object obj ) {
+        if (obj == this) return true;
+        if (obj instanceof JBossCacheSource) {
+            JBossCacheSource that = (JBossCacheSource)obj;
+            if (this.getName() == null) {
+                if (that.getName() != null) return false;
+            } else {
+                if (!this.getName().equals(that.getName())) return false;
+            }
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
     public synchronized Reference getReference() {
         String className = getClass().getName();
         String factoryClassName = this.getClass().getName();

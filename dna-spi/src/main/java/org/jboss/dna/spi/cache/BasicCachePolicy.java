@@ -60,4 +60,30 @@ public class BasicCachePolicy implements CachePolicy {
         return new ImmutableCachePolicy(this.getTimeToLive());
     }
 
+    /**
+     * {@inheritDoc}
+     * 
+     * @see java.lang.Object#equals(java.lang.Object)
+     */
+    @Override
+    public boolean equals( Object obj ) {
+        if (obj == this) return true;
+        if (obj instanceof CachePolicy) {
+            CachePolicy that = (CachePolicy)obj;
+            if (this.getTimeToLive() != that.getTimeToLive()) return false;
+            if (obj instanceof BasicCachePolicy) return true;
+        }
+        return false;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see java.lang.Object#toString()
+     */
+    @Override
+    public String toString() {
+        return "{ TTL=" + this.timeToLive + " }";
+    }
+
 }
