@@ -27,6 +27,7 @@ import java.math.BigDecimal;
 import java.net.URI;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -298,6 +299,15 @@ public class NameValueFactory extends AbstractValueFactory<Name> implements Name
                         int approximateLength ) {
         // First attempt to create a string from the value, then a double from the string ...
         return create(getStringValueFactory().create(reader, approximateLength));
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.spi.graph.ValueFactory#create(java.util.Iterator)
+     */
+    public Iterator<Name> create( Iterator<?> values ) throws IoException {
+        return new ConvertingIterator<Name>(values, this);
     }
 
     /**

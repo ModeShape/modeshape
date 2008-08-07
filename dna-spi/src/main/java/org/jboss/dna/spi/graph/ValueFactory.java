@@ -28,6 +28,7 @@ import java.math.BigDecimal;
 import java.net.URI;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.UUID;
 import org.jboss.dna.common.text.TextDecoder;
 import org.jboss.dna.common.text.TextEncoder;
@@ -396,5 +397,15 @@ public interface ValueFactory<T> {
      * @throws IoException If an unexpected problem occurs during the conversion.
      */
     T[] create( Object[] values ) throws IoException;
+
+    /**
+     * Create an iterator over the values (of an unknown type). The factory converts any values as required. Note that this method
+     * will not consider {@link #create(InputStream, int)}, {@link #create(Reader, int)} and {@link #create(String, TextDecoder)}.
+     * 
+     * @param values the values
+     * @return the iterator of type <code>T</code> over the values, or null if the supplied parameter is null
+     * @throws IoException If an unexpected problem occurs during the conversion.
+     */
+    Iterator<T> create( Iterator<?> values ) throws IoException;
 
 }

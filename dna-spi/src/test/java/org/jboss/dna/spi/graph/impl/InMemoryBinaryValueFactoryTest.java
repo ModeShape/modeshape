@@ -21,6 +21,7 @@
  */
 package org.jboss.dna.spi.graph.impl;
 
+import static org.hamcrest.core.Is.is;
 import static org.jboss.dna.spi.graph.impl.BinaryContains.hasContent;
 import static org.junit.Assert.assertThat;
 import java.io.ByteArrayInputStream;
@@ -28,10 +29,14 @@ import java.io.StringReader;
 import java.io.UnsupportedEncodingException;
 import java.math.BigDecimal;
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.Iterator;
+import java.util.List;
 import java.util.UUID;
 import org.jboss.dna.common.text.TextEncoder;
+import org.jboss.dna.spi.graph.Binary;
 import org.jboss.dna.spi.graph.Name;
 import org.jboss.dna.spi.graph.Path;
 import org.jboss.dna.spi.graph.Reference;
@@ -135,13 +140,15 @@ public class InMemoryBinaryValueFactoryTest {
     @Test
     public void shouldCreateBinaryFromName() throws UnsupportedEncodingException {
         Name value = nameFactory.create("jboss:localName");
-        assertThat(factory.create(value), hasContent("{" + encoder.encode("http://www.jboss.org") + "}" + encoder.encode("localName")));
+        assertThat(factory.create(value), hasContent("{" + encoder.encode("http://www.jboss.org") + "}"
+                                                     + encoder.encode("localName")));
     }
 
     @Test
     public void shouldCreateBinaryFromPath() throws UnsupportedEncodingException {
         Path value = pathFactory.create("/a/b/c/jboss:localName");
-        assertThat(factory.create(value), hasContent("/{}a/{}b/{}c/{" + encoder.encode("http://www.jboss.org") + "}" + encoder.encode("localName")));
+        assertThat(factory.create(value), hasContent("/{}a/{}b/{}c/{" + encoder.encode("http://www.jboss.org") + "}"
+                                                     + encoder.encode("localName")));
     }
 
     @Test
@@ -173,5 +180,17 @@ public class InMemoryBinaryValueFactoryTest {
     public void shouldCreateBinaryFromReader() throws Exception {
         String value = "Some test string";
         assertThat(factory.create(new StringReader(value)), hasContent(value));
+    }
+
+    @Test
+    public void shouldCreateIteratorOverValuesWhenSuppliedIteratorOfUnknownObjects() {
+        List<String> values = new ArrayList<String>();
+        for (int i = 0; i != 10; ++i)
+            values.add("some string" + i);
+        Iterator<Binary> iter = factory.create(values.iterator());
+        Iterator<String> valueIter = values.iterator();
+        while (iter.hasNext()) {
+            assertThat(iter.next(), is(factory.create(valueIter.next())));
+        }
     }
 }

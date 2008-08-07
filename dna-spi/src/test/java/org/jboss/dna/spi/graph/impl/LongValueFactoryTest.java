@@ -28,8 +28,11 @@ import java.io.ByteArrayInputStream;
 import java.io.StringReader;
 import java.math.BigDecimal;
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.Iterator;
+import java.util.List;
 import org.jboss.dna.spi.graph.Name;
 import org.jboss.dna.spi.graph.Path;
 import org.jboss.dna.spi.graph.Reference;
@@ -170,5 +173,17 @@ public class LongValueFactoryTest {
     @Test( expected = IllegalArgumentException.class )
     public void shouldNotCreateLongFromReaderContainingStringWithContentsOtherThanLong() throws Exception {
         factory.create(new ByteArrayInputStream("something".getBytes("UTF-8")));
+    }
+
+    @Test
+    public void shouldCreateIteratorOverValuesWhenSuppliedIteratorOfUnknownObjects() {
+        List<String> values = new ArrayList<String>();
+        for (int i = 0; i != 10; ++i)
+            values.add(" " + i);
+        Iterator<Long> iter = factory.create(values.iterator());
+        Iterator<String> valueIter = values.iterator();
+        while (iter.hasNext()) {
+            assertThat(iter.next(), is(factory.create(valueIter.next())));
+        }
     }
 }

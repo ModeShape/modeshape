@@ -25,6 +25,7 @@ import static org.hamcrest.core.Is.is;
 import static org.jboss.dna.spi.graph.impl.IsPathContaining.hasSegments;
 import static org.junit.Assert.assertThat;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import org.jboss.dna.common.text.TextEncoder;
 import org.jboss.dna.spi.graph.Name;
@@ -114,6 +115,19 @@ public class PathValueFactoryTest {
         path2 = factory.create("/a/b/c/d/dna:e/dna:f/");
         assertThat(path.equals(path2), is(true));
         assertThat(path.compareTo(path2), is(0));
+    }
+
+    @Test
+    public void shouldCreateIteratorOverValuesWhenSuppliedIteratorOfUnknownObjects() {
+        List<String> values = new ArrayList<String>();
+        for (int i = 0; i != 10; ++i) {
+            values.add("/a/b/c/d/dna:e/dna:f" + i);
+        }
+        Iterator<Path> iter = factory.create(values.iterator());
+        Iterator<String> valueIter = values.iterator();
+        while (iter.hasNext()) {
+            assertThat(iter.next(), is(factory.create(valueIter.next())));
+        }
     }
 
 }

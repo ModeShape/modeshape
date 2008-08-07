@@ -29,6 +29,7 @@ import java.math.BigDecimal;
 import java.net.URI;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.UUID;
 import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.text.TextDecoder;
@@ -240,6 +241,15 @@ public class StringValueFactory extends AbstractValueFactory<String> {
         } catch (IOException err) {
             throw new IoException(SpiI18n.errorConvertingIo.text(Reader.class.getSimpleName(), String.class.getSimpleName()), err);
         }
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.spi.graph.ValueFactory#create(java.util.Iterator)
+     */
+    public Iterator<String> create( Iterator<?> values ) throws IoException {
+        return new ConvertingIterator<String>(values, this);
     }
 
     /**

@@ -27,8 +27,11 @@ import static org.mockito.Mockito.mock;
 import java.io.ByteArrayInputStream;
 import java.io.StringReader;
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.Iterator;
+import java.util.List;
 import org.jboss.dna.spi.graph.Name;
 import org.jboss.dna.spi.graph.Path;
 import org.jboss.dna.spi.graph.Reference;
@@ -163,5 +166,17 @@ public class BooleanValueFactoryTest {
         assertThat(factory.create(new StringReader("TRUE")), is(true));
         assertThat(factory.create(new StringReader("FALSE")), is(false));
         assertThat(factory.create(new StringReader("something else")), is(false));
+    }
+
+    @Test
+    public void shouldCreateIteratorOverValuesWhenSuppliedIteratorOfUnknownObjects() {
+        List<String> values = new ArrayList<String>();
+        for (int i = 0; i != 10; ++i)
+            values.add((i % 2 == 0 ? "true" : "false"));
+        Iterator<Boolean> iter = factory.create(values.iterator());
+        Iterator<String> valueIter = values.iterator();
+        while (iter.hasNext()) {
+            assertThat(iter.next(), is(factory.create(valueIter.next())));
+        }
     }
 }

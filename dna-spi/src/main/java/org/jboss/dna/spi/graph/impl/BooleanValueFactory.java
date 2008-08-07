@@ -27,6 +27,7 @@ import java.math.BigDecimal;
 import java.net.URI;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.UUID;
 import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.text.TextDecoder;
@@ -210,6 +211,15 @@ public class BooleanValueFactory extends AbstractValueFactory<Boolean> {
                            int approximateLength ) {
         // First create a string and then create the boolean from the string value ...
         return create(getStringValueFactory().create(reader, approximateLength));
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.spi.graph.ValueFactory#create(java.util.Iterator)
+     */
+    public Iterator<Boolean> create( Iterator<?> values ) throws IoException {
+        return new ConvertingIterator<Boolean>(values, this);
     }
 
     /**

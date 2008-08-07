@@ -23,6 +23,9 @@ package org.jboss.dna.spi.graph.impl;
 
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 import org.jboss.dna.common.text.TextDecoder;
 import org.jboss.dna.common.text.TextEncoder;
 import org.jboss.dna.spi.graph.Name;
@@ -119,5 +122,18 @@ public class NameValueFactoryTest {
     @Test( expected = IllegalArgumentException.class )
     public void shouldNotAllowEmptyLocalNameWithEncoder() {
         factory.create("a", "", decoder);
+    }
+
+    @Test
+    public void shouldCreateIteratorOverValuesWhenSuppliedIteratorOfUnknownObjects() {
+        List<String> values = new ArrayList<String>();
+        for (int i = 0; i != 10; ++i) {
+            values.add("dna:something" + i);
+        }
+        Iterator<Name> iter = factory.create(values.iterator());
+        Iterator<String> valueIter = values.iterator();
+        while (iter.hasNext()) {
+            assertThat(iter.next(), is(factory.create(valueIter.next())));
+        }
     }
 }

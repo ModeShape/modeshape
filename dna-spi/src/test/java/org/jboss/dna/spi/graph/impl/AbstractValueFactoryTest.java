@@ -32,9 +32,11 @@ import java.math.BigDecimal;
 import java.net.URI;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.UUID;
 import org.jboss.dna.common.text.NoOpEncoder;
 import org.jboss.dna.common.text.TextDecoder;
+import org.jboss.dna.spi.graph.IoException;
 import org.jboss.dna.spi.graph.Name;
 import org.jboss.dna.spi.graph.Path;
 import org.jboss.dna.spi.graph.PropertyType;
@@ -130,6 +132,15 @@ public class AbstractValueFactoryTest {
         public String create( Reader reader,
                               int approximateLength ) {
             return null;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.spi.graph.ValueFactory#create(java.util.Iterator)
+         */
+        public Iterator<String> create( Iterator<?> values ) throws IoException {
+            return new ConvertingIterator<String>(values, this);
         }
 
         /**

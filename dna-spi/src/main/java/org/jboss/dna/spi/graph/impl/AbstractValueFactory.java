@@ -27,6 +27,7 @@ import java.math.BigDecimal;
 import java.net.URI;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.UUID;
 import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.text.TextDecoder;
@@ -342,6 +343,46 @@ public abstract class AbstractValueFactory<T> implements ValueFactory<T> {
             result[i] = create(values[i]);
         }
         return result;
+    }
+
+    protected static class ConvertingIterator<ValueType> implements Iterator<ValueType> {
+        private final Iterator<?> delegate;
+        private final ValueFactory<ValueType> factory;
+
+        protected ConvertingIterator( Iterator<?> delegate,
+                                      ValueFactory<ValueType> factory ) {
+            assert delegate != null;
+            assert factory != null;
+            this.delegate = delegate;
+            this.factory = factory;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see java.util.Iterator#hasNext()
+         */
+        public boolean hasNext() {
+            return this.delegate.hasNext();
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see java.util.Iterator#next()
+         */
+        public ValueType next() {
+            return factory.create(this.delegate.next());
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see java.util.Iterator#remove()
+         */
+        public void remove() {
+            this.delegate.remove();
+        }
     }
 
 }
