@@ -52,30 +52,6 @@ import org.jboss.dna.spi.graph.commands.GraphCommand;
 public class RepositoryConnectionPool {
 
     /**
-     * A factory that is used by the connection pool to create new connections.
-     * 
-     * @author Randall Hauch
-     */
-    public interface ConnectionFactory {
-
-        /**
-         * Get the name for the source that owns the pool.
-         * 
-         * @return the name; never null or empty
-         */
-        String getSourceName();
-
-        /**
-         * Create a new connection to the underlying source.
-         * 
-         * @return the new connection
-         * @throws RepositorySourceException if there is a problem obtaining a connection
-         * @throws InterruptedException if the thread is interrupted while attempting to get a connection
-         */
-        RepositoryConnection createConnection() throws RepositorySourceException, InterruptedException;
-    }
-
-    /**
      * The core pool size for default-constructed pools is {@value} .
      */
     public static final int DEFAULT_CORE_POOL_SIZE = 1;
@@ -96,9 +72,9 @@ public class RepositoryConnectionPool {
     private static final RuntimePermission shutdownPerm = new RuntimePermission("modifyThread");
 
     /**
-     * The factory that this pool uses to create new connections.
+     * The source that this pool uses to create new connections.
      */
-    private final ConnectionFactory connectionFactory;
+    private final RepositorySource source;
 
     /**
      * Lock held on updates to poolSize, corePoolSize, maximumPoolSize, and workers set.
@@ -189,18 +165,17 @@ public class RepositoryConnectionPool {
      * uses the {@link #DEFAULT_CORE_POOL_SIZE default core pool size}, {@link #DEFAULT_MAXIMUM_POOL_SIZE default maximum pool
      * size}, and {@link #DEFAULT_KEEP_ALIVE_TIME_IN_SECONDS default keep-alive time (in seconds)}.
      * 
-     * @param connectionFactory the factory for connections
+     * @param source the source for connections
      * @throws IllegalArgumentException if the connection factory is null or any of the supplied arguments are invalid
      */
-    public RepositoryConnectionPool( ConnectionFactory connectionFactory ) {
-        this(connectionFactory, DEFAULT_CORE_POOL_SIZE, DEFAULT_MAXIMUM_POOL_SIZE, DEFAULT_KEEP_ALIVE_TIME_IN_SECONDS,
-             TimeUnit.SECONDS);
+    public RepositoryConnectionPool( RepositorySource source ) {
+        this(source, DEFAULT_CORE_POOL_SIZE, DEFAULT_MAXIMUM_POOL_SIZE, DEFAULT_KEEP_ALIVE_TIME_IN_SECONDS, TimeUnit.SECONDS);
     }
 
     /**
      * Create the pool to use the supplied connection factory, which is typically a {@link RepositorySource}.
      * 
-     * @param connectionFactory the factory for connections
+     * @param source the source for connections
      * @param corePoolSize the number of connections to keep in the pool, even if they are idle.
      * @param maximumPoolSize the maximum number of connections to allow in the pool.
      * @param keepAliveTime when the number of connection is greater than the core, this is the maximum time that excess idle
@@ -208,7 +183,7 @@ public class RepositoryConnectionPool {
      * @param unit the time unit for the keepAliveTime argument.
      * @throws IllegalArgumentException if the connection factory is null or any of the supplied arguments are invalid
      */
-    public RepositoryConnectionPool( ConnectionFactory connectionFactory,
+    public RepositoryConnectionPool( RepositorySource source,
                                      int corePoolSize,
                                      int maximumPoolSize,
                                      long keepAliveTime,
@@ -216,15 +191,24 @@ public class RepositoryConnectionPool {
         ArgCheck.isNonNegative(corePoolSize, "corePoolSize");
         ArgCheck.isPositive(maximumPoolSize, "maximumPoolSize");
         ArgCheck.isNonNegative(keepAliveTime, "keepAliveTime");
-        ArgCheck.isNotNull(connectionFactory, "repository connection factory");
+        ArgCheck.isNotNull(source, "source");
         if (maximumPoolSize < corePoolSize) {
             throw new IllegalArgumentException(SpiI18n.maximumPoolSizeMayNotBeSmallerThanCorePoolSize.text());
         }
-        this.connectionFactory = connectionFactory;
+        this.source = source;
         this.corePoolSize = corePoolSize;
         this.maximumPoolSize = maximumPoolSize;
         this.keepAliveTime = unit.toNanos(keepAliveTime);
         this.setPingTimeout(100, TimeUnit.MILLISECONDS);
+    }
+
+    /**
+     * Get the {@link RepositorySource} that's used by this pool.
+     * 
+     * @return the repository source; never null
+     */
+    public final RepositorySource getRepositorySource() {
+        return source;
     }
 
     /**
@@ -233,7 +217,7 @@ public class RepositoryConnectionPool {
      * @return the name of the source
      */
     protected String getSourceName() {
-        return connectionFactory.getSourceName();
+        return source.getName();
     }
 
     // -------------------------------------------------
@@ -847,7 +831,7 @@ public class RepositoryConnectionPool {
      */
     @GuardedBy( "mainLock" )
     protected ConnectionWrapper newWrappedConnection() throws RepositorySourceException, InterruptedException {
-        RepositoryConnection connection = this.connectionFactory.createConnection();
+        RepositoryConnection connection = this.source.getConnection();
         ++this.poolSize;
         this.totalConnectionsCreated.incrementAndGet();
         return new ConnectionWrapper(connection);

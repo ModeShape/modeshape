@@ -29,8 +29,8 @@ import static org.junit.Assert.assertThat;
 import static org.junit.matchers.JUnitMatchers.hasItems;
 import org.jboss.dna.spi.ExecutionContext;
 import org.jboss.dna.spi.connector.BasicExecutionContext;
+import org.jboss.dna.spi.connector.RepositoryConnectionFactory;
 import org.jboss.dna.spi.connector.RepositorySourceListener;
-import org.jboss.dna.spi.connector.RepositorySourceRegistry;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.MockitoAnnotations;
@@ -50,13 +50,13 @@ public class FederatedRepositoryTest {
     @Mock
     private RepositorySourceListener listener2;
     @Mock
-    private RepositorySourceRegistry registry;
+    private RepositoryConnectionFactory connectionFactory;
 
     @Before
     public void beforeEach() {
         MockitoAnnotations.initMocks(this);
         context = new BasicExecutionContext();
-        repository = new FederatedRepository(context, registry, config);
+        repository = new FederatedRepository(context, connectionFactory, config);
     }
 
     @Test

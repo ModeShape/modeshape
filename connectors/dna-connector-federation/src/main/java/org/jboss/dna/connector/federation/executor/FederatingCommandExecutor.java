@@ -43,9 +43,9 @@ import org.jboss.dna.spi.DnaLexicon;
 import org.jboss.dna.spi.ExecutionContext;
 import org.jboss.dna.spi.cache.CachePolicy;
 import org.jboss.dna.spi.connector.RepositoryConnection;
+import org.jboss.dna.spi.connector.RepositoryConnectionFactory;
 import org.jboss.dna.spi.connector.RepositorySource;
 import org.jboss.dna.spi.connector.RepositorySourceException;
-import org.jboss.dna.spi.connector.RepositorySourceRegistry;
 import org.jboss.dna.spi.graph.DateTime;
 import org.jboss.dna.spi.graph.DateTimeFactory;
 import org.jboss.dna.spi.graph.Name;
@@ -77,7 +77,7 @@ public class FederatingCommandExecutor extends AbstractCommandExecutor {
     private final Projection cacheProjection;
     private final List<Projection> sourceProjections;
     private final Set<String> sourceNames;
-    private final RepositorySourceRegistry sourceRegistry;
+    private final RepositoryConnectionFactory connectionFactory;
     private final MergeStrategy mergingStrategy;
     /** The set of all connections, including the cache connection */
     private final Map<String, RepositoryConnection> connectionsBySourceName;
@@ -88,19 +88,19 @@ public class FederatingCommandExecutor extends AbstractCommandExecutor {
      * Create a command executor that federates (merges) the information from multiple sources described by the source
      * projections. The resulting command executor does not first consult a cache for the merged information; if a cache is
      * desired, see
-     * {@link #FederatingCommandExecutor(ExecutionContext, String, Projection, CachePolicy, List, RepositorySourceRegistry)
+     * {@link #FederatingCommandExecutor(ExecutionContext, String, Projection, CachePolicy, List, RepositoryConnectionFactory)
      * constructor} that takes a {@link Projection cache projection}.
      * 
      * @param context the execution context in which the executor will be run; may not be null
      * @param sourceName the name of the {@link RepositorySource} that is making use of this executor; may not be null or empty
      * @param sourceProjections the source projections; may not be null
-     * @param sourceRegistry the registry of {@link RepositorySource} instances
+     * @param connectionFactory the factory for {@link RepositoryConnection} instances
      */
     public FederatingCommandExecutor( ExecutionContext context,
                                       String sourceName,
                                       List<Projection> sourceProjections,
-                                      RepositorySourceRegistry sourceRegistry ) {
-        this(context, sourceName, null, null, sourceProjections, sourceRegistry);
+                                      RepositoryConnectionFactory connectionFactory ) {
+        this(context, sourceName, null, null, sourceProjections, connectionFactory);
     }
 
     /**
@@ -116,22 +116,22 @@ public class FederatingCommandExecutor extends AbstractCommandExecutor {
      * @param defaultCachePolicy the default caching policy that outlines the length of time that information should be cached, or
      *        null if there is no cache or no specific cache policy
      * @param sourceProjections the source projections; may not be null
-     * @param sourceRegistry the registry of {@link RepositorySource} instances
+     * @param connectionFactory the factory for {@link RepositoryConnection} instances
      */
     public FederatingCommandExecutor( ExecutionContext context,
                                       String sourceName,
                                       Projection cacheProjection,
                                       CachePolicy defaultCachePolicy,
                                       List<Projection> sourceProjections,
-                                      RepositorySourceRegistry sourceRegistry ) {
+                                      RepositoryConnectionFactory connectionFactory ) {
         super(context, sourceName);
         assert sourceProjections != null;
-        assert sourceRegistry != null;
+        assert connectionFactory != null;
         assert cacheProjection != null ? defaultCachePolicy != null : defaultCachePolicy == null;
         this.cacheProjection = cacheProjection;
         this.defaultCachePolicy = defaultCachePolicy;
         this.sourceProjections = sourceProjections;
-        this.sourceRegistry = sourceRegistry;
+        this.connectionFactory = connectionFactory;
         this.connectionsBySourceName = new HashMap<String, RepositoryConnection>();
         this.uuidPropertyName = context.getValueFactories().getNameFactory().create(DnaLexicon.PropertyNames.UUID);
         this.mergePlanPropertyName = context.getValueFactories().getNameFactory().create(DnaLexicon.PropertyNames.MERGE_PLAN);
@@ -181,10 +181,7 @@ public class FederatingCommandExecutor extends AbstractCommandExecutor {
         String sourceName = projection.getSourceName();
         RepositoryConnection connection = connectionsBySourceName.get(sourceName);
         if (connection == null) {
-            RepositorySource source = sourceRegistry.getRepositorySource(sourceName);
-            if (source != null) {
-                connection = source.getConnection();
-            }
+            connection = connectionFactory.createConnection(sourceName);
             connectionsBySourceName.put(sourceName, connection);
         }
         return connection;

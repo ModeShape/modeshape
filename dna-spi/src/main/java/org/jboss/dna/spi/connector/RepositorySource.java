@@ -22,7 +22,6 @@
 package org.jboss.dna.spi.connector;
 
 import java.io.Serializable;
-import java.util.concurrent.TimeUnit;
 import javax.naming.Referenceable;
 
 /**
@@ -44,10 +43,7 @@ import javax.naming.Referenceable;
  * {@link Serializable} so that such objects can be stored in any JNDI naming context and enable proper system recovery,
  * </p>
  * <p>
- * Pooling connections is not done above or outside of the RepositorySource implementations. Therefore, if an implementation would
- * benefit from pooling connections, it should use a pool within the implementation (and expose any pool parameters as desired).
- * If this is the case, the implementation class may benefit from subclassing {@link AbstractRepositorySource} (which manages a
- * pool of connections).
+ * If the connections to a source are to be pooled, see {@link RepositoryConnectionPool}.
  * </p>
  * 
  * @author Randall Hauch
@@ -70,85 +66,6 @@ public interface RepositorySource extends Referenceable, Serializable {
      * @throws IllegalStateException if the factory is not in a state to create or return connections
      */
     RepositoryConnection getConnection() throws RepositorySourceException, InterruptedException;
-
-    /**
-     * Initiates an orderly shutdown in which connections that are currently in use are allowed to be used and closed as normal,
-     * but no new connections will be created. Invocation has no additional effect if already shut down.
-     * <p>
-     * Once the source has been shutdown, it may not be used to {@link #getConnection() get connections}.
-     * </p>
-     * 
-     * @throws SecurityException if a security manager exists and shutting down this pool may manipulate threads that the caller
-     *         is not permitted to modify because it does not hold {@link java.lang.RuntimePermission}<tt>("modifyThread")</tt>,
-     *         or the security manager's <tt>checkAccess</tt> method denies access.
-     * @see #shutdownNow()
-     */
-    void shutdown();
-
-    /**
-     * Attempts to close all connections, including those connections currently in use, and prevent the use of other connections.
-     * 
-     * @throws SecurityException if a security manager exists and shutting down this pool may manipulate threads that the caller
-     *         is not permitted to modify because it does not hold {@link java.lang.RuntimePermission}<tt>("modifyThread")</tt>,
-     *         or the security manager's <tt>checkAccess</tt> method denies access.
-     * @see #shutdown()
-     */
-    void shutdownNow();
-
-    /**
-     * Return whether this source is running and is able to {@link #getConnection() provide connections}. Note that this method is
-     * effectively <code>!isShutdown()</code>.
-     * 
-     * @return true if this source is running, or false otherwise
-     * @see #isShutdown()
-     * @see #isTerminated()
-     * @see #isTerminating()
-     */
-    boolean isRunning();
-
-    /**
-     * Return whether this source is in the process of shutting down or has already been shut down. A result of <code>true</code>
-     * signals that the pool may no longer be used. Note that this method is effectively <code>!isRunning()</code>.
-     * 
-     * @return true if this source has been shut down, or false otherwise
-     * @see #isShutdown()
-     * @see #isTerminated()
-     * @see #isTerminating()
-     */
-    boolean isShutdown();
-
-    /**
-     * Returns true if this source is in the process of terminating after {@link #shutdown()} or {@link #shutdownNow()} has been
-     * called but has not completely terminated. This method may be useful for debugging. A return of <tt>true</tt> reported a
-     * sufficient period after shutdown may indicate that submitted tasks have ignored or suppressed interruption, causing this
-     * executor not to properly terminate.
-     * 
-     * @return true if terminating but not yet terminated, or false otherwise
-     * @see #isTerminated()
-     */
-    boolean isTerminating();
-
-    /**
-     * Return true if this pool has completed its termination and no longer has any open connections.
-     * 
-     * @return true if terminated, or false otherwise
-     * @see #isTerminating()
-     */
-    boolean isTerminated();
-
-    /**
-     * Method that can be called after {@link #shutdown()} or {@link #shutdownNow()} to wait until all connections in use at the
-     * time those methods were called have been closed normally. This method accepts a maximum time duration, after which it will
-     * return even if all connections have not been closed.
-     * 
-     * @param timeout the maximum time to wait for all connections to be closed and returned to the pool
-     * @param unit the time unit for <code>timeout</code>
-     * @return true if the pool was terminated in the supplied time (or was already terminated), or false if the timeout occurred
-     *         before all the connections were closed
-     * @throws InterruptedException if the thread was interrupted
-     */
-    boolean awaitTermination( long timeout,
-                              TimeUnit unit ) throws InterruptedException;
 
     /**
      * Get the maximum number of retries that may be performed on a given operation when using {@link #getConnection()

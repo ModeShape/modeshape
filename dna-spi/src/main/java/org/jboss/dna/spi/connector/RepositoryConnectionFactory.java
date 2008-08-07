@@ -22,18 +22,21 @@
 package org.jboss.dna.spi.connector;
 
 /**
- * An interface for any collection of {@link RepositorySource} instances that are accessed by their name.
+ * An interface for a factory of {@link RepositoryConnection}s using the names of the {@link RepositorySource} from which the
+ * connections are to be obtained.
  * 
  * @author Randall Hauch
  */
-public interface RepositorySourceRegistry {
+public interface RepositoryConnectionFactory {
 
     /**
-     * Obtain a {@link RepositorySource} given its name.
+     * Create a {@link RepositoryConnection} using the given {@link RepositorySource} name.
      * 
-     * @param sourceName the name of the source to obtain
+     * @param sourceName the name of the source from which a connection should be obtained
      * @return the source, or null if no such source could be found (or created)
+     * @throws RepositorySourceException if there was an error obtaining the new connection
+     * @throws InterruptedException if the thread was interrupted during the operation
      */
-    RepositorySource getRepositorySource( String sourceName );
+    RepositoryConnection createConnection( String sourceName ) throws RepositorySourceException, InterruptedException;
 
 }

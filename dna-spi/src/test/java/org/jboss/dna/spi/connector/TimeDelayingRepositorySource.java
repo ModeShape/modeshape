@@ -34,12 +34,6 @@ import javax.transaction.xa.XAResource;
 import net.jcip.annotations.ThreadSafe;
 import org.jboss.dna.spi.ExecutionContext;
 import org.jboss.dna.spi.cache.CachePolicy;
-import org.jboss.dna.spi.connector.AbstractRepositorySource;
-import org.jboss.dna.spi.connector.RepositoryConnection;
-import org.jboss.dna.spi.connector.RepositorySource;
-import org.jboss.dna.spi.connector.RepositorySourceCapabilities;
-import org.jboss.dna.spi.connector.RepositorySourceException;
-import org.jboss.dna.spi.connector.RepositorySourceListener;
 import org.jboss.dna.spi.graph.commands.GraphCommand;
 
 /**
@@ -48,11 +42,16 @@ import org.jboss.dna.spi.graph.commands.GraphCommand;
  * @author Randall Hauch
  */
 @ThreadSafe
-public class TimeDelayingRepositorySource extends AbstractRepositorySource {
+public class TimeDelayingRepositorySource implements RepositorySource {
 
     /**
      */
     private static final long serialVersionUID = -2756725117087437347L;
+    /**
+     * The default limit is {@value} for retrying {@link RepositoryConnection connection} calls to the underlying source.
+     */
+    public static final int DEFAULT_RETRY_LIMIT = 0;
+
     private String name;
     private final AtomicInteger connectionsOpenedCount = new AtomicInteger(0);
     private final AtomicInteger connectionsClosedCount = new AtomicInteger(0);
@@ -61,6 +60,7 @@ public class TimeDelayingRepositorySource extends AbstractRepositorySource {
     private final AtomicLong loadDelay = new AtomicLong(0);
     private final AtomicLong pingCount = new AtomicLong(0);
     private final AtomicLong pingDelay = new AtomicLong(0);
+    private final AtomicInteger retryLimit = new AtomicInteger(DEFAULT_RETRY_LIMIT);
     private CachePolicy defaultCachePolicy;
 
     public TimeDelayingRepositorySource( String identifier ) {
@@ -80,6 +80,24 @@ public class TimeDelayingRepositorySource extends AbstractRepositorySource {
      */
     public void setName( String name ) {
         this.name = name;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.spi.connector.RepositorySource#getRetryLimit()
+     */
+    public int getRetryLimit() {
+        return retryLimit.get();
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.spi.connector.RepositorySource#setRetryLimit(int)
+     */
+    public void setRetryLimit( int limit ) {
+        retryLimit.set(limit < 0 ? 0 : limit);
     }
 
     public CachePolicy getDefaultCachePolicy() {
@@ -131,10 +149,9 @@ public class TimeDelayingRepositorySource extends AbstractRepositorySource {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.spi.connector.AbstractRepositorySource#createConnection()
+     * @see org.jboss.dna.spi.connector.RepositorySource#getConnection()
      */
-    @Override
-    protected RepositoryConnection createConnection() throws RepositorySourceException {
+    public RepositoryConnection getConnection() throws RepositorySourceException {
         int connectionNumber = this.connectionsOpenedCount.incrementAndGet();
         String connectionName = "Connection " + connectionNumber;
         XAResource xaResource = newXaResource(connectionName);

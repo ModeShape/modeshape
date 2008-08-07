@@ -26,17 +26,12 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import javax.naming.Reference;
 import javax.transaction.xa.XAResource;
 import net.jcip.annotations.ThreadSafe;
 import org.jboss.dna.spi.ExecutionContext;
 import org.jboss.dna.spi.cache.CachePolicy;
-import org.jboss.dna.spi.connector.AbstractRepositorySource;
-import org.jboss.dna.spi.connector.RepositoryConnection;
-import org.jboss.dna.spi.connector.RepositorySource;
-import org.jboss.dna.spi.connector.RepositorySourceCapabilities;
-import org.jboss.dna.spi.connector.RepositorySourceException;
-import org.jboss.dna.spi.connector.RepositorySourceListener;
 import org.jboss.dna.spi.graph.InvalidPathException;
 import org.jboss.dna.spi.graph.Name;
 import org.jboss.dna.spi.graph.Path;
@@ -53,12 +48,17 @@ import org.jboss.dna.spi.graph.commands.executor.CommandExecutor;
  * @author Randall Hauch
  */
 @ThreadSafe
-public class SimpleRepositorySource extends AbstractRepositorySource {
+public class SimpleRepositorySource implements RepositorySource {
 
     private static final long serialVersionUID = 1L;
 
+    /**
+     * The default limit is {@value} for retrying {@link RepositoryConnection connection} calls to the underlying source.
+     */
+    public static final int DEFAULT_RETRY_LIMIT = 0;
     private String repositoryName;
     private String name;
+    private final AtomicInteger retryLimit = new AtomicInteger(DEFAULT_RETRY_LIMIT);
 
     public SimpleRepositorySource() {
         super();
@@ -92,6 +92,24 @@ public class SimpleRepositorySource extends AbstractRepositorySource {
      */
     public void setRepositoryName( String repositoryName ) {
         this.repositoryName = repositoryName;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.spi.connector.RepositorySource#getRetryLimit()
+     */
+    public int getRetryLimit() {
+        return retryLimit.get();
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.spi.connector.RepositorySource#setRetryLimit(int)
+     */
+    public void setRetryLimit( int limit ) {
+        retryLimit.set(limit < 0 ? 0 : limit);
     }
 
     /**
@@ -152,10 +170,9 @@ public class SimpleRepositorySource extends AbstractRepositorySource {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.spi.connector.AbstractRepositorySource#createConnection()
+     * @see org.jboss.dna.spi.connector.RepositorySource#getConnection()
      */
-    @Override
-    protected synchronized RepositoryConnection createConnection() throws RepositorySourceException {
+    public RepositoryConnection getConnection() throws RepositorySourceException {
         String reposName = this.getRepositoryName();
         SimpleRepository repository = SimpleRepository.get(reposName);
         if (repository == null) {

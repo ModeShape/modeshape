@@ -27,6 +27,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -40,20 +41,25 @@ import javax.naming.spi.ObjectFactory;
 import net.jcip.annotations.GuardedBy;
 import org.jboss.dna.common.util.ArgCheck;
 import org.jboss.dna.spi.cache.CachePolicy;
-import org.jboss.dna.spi.connector.AbstractRepositorySource;
 import org.jboss.dna.spi.connector.RepositoryConnection;
+import org.jboss.dna.spi.connector.RepositorySource;
 import org.jboss.dna.spi.connector.RepositorySourceCapabilities;
 import org.jboss.dna.spi.connector.RepositorySourceException;
 
 /**
  * @author Randall Hauch
  */
-public class InMemoryRepositorySource extends AbstractRepositorySource implements ObjectFactory {
+public class InMemoryRepositorySource implements RepositorySource, ObjectFactory {
 
     /**
      * The initial version is 1
      */
     private static final long serialVersionUID = 1L;
+
+    /**
+     * The default limit is {@value} for retrying {@link RepositoryConnection connection} calls to the underlying source.
+     */
+    public static final int DEFAULT_RETRY_LIMIT = 0;
 
     private static final ConcurrentMap<String, InMemoryRepositorySource> sources = new ConcurrentHashMap<String, InMemoryRepositorySource>();
     private static final ReadWriteLock sourcesLock = new ReentrantReadWriteLock();
@@ -95,6 +101,7 @@ public class InMemoryRepositorySource extends AbstractRepositorySource implement
     private String jndiName;
     private UUID rootNodeUuid = UUID.randomUUID();
     private CachePolicy defaultCachePolicy;
+    private final AtomicInteger retryLimit = new AtomicInteger(DEFAULT_RETRY_LIMIT);
     private transient InMemoryRepository repository;
 
     /**
@@ -102,6 +109,24 @@ public class InMemoryRepositorySource extends AbstractRepositorySource implement
      */
     public InMemoryRepositorySource() {
         super();
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.spi.connector.RepositorySource#getRetryLimit()
+     */
+    public int getRetryLimit() {
+        return retryLimit.get();
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.spi.connector.RepositorySource#setRetryLimit(int)
+     */
+    public void setRetryLimit( int limit ) {
+        retryLimit.set(limit < 0 ? 0 : limit);
     }
 
     /**
@@ -223,10 +248,9 @@ public class InMemoryRepositorySource extends AbstractRepositorySource implement
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.spi.connector.AbstractRepositorySource#createConnection()
+     * @see org.jboss.dna.spi.connector.RepositorySource#getConnection()
      */
-    @Override
-    protected synchronized RepositoryConnection createConnection() throws RepositorySourceException {
+    public RepositoryConnection getConnection() throws RepositorySourceException {
         if (repository == null) {
             repository = new InMemoryRepository(name, rootNodeUuid);
         }

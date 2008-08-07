@@ -26,9 +26,9 @@ import net.jcip.annotations.NotThreadSafe;
 import org.jboss.dna.connector.federation.Projection;
 import org.jboss.dna.spi.ExecutionContext;
 import org.jboss.dna.spi.connector.RepositoryConnection;
+import org.jboss.dna.spi.connector.RepositoryConnectionFactory;
 import org.jboss.dna.spi.connector.RepositorySource;
 import org.jboss.dna.spi.connector.RepositorySourceException;
-import org.jboss.dna.spi.connector.RepositorySourceRegistry;
 import org.jboss.dna.spi.graph.DateTime;
 import org.jboss.dna.spi.graph.Path;
 import org.jboss.dna.spi.graph.PathFactory;
@@ -52,7 +52,7 @@ public class SingleProjectionCommandExecutor extends AbstractCommandExecutor {
 
     private final Projection projection;
     private final PathFactory pathFactory;
-    private final RepositorySourceRegistry registry;
+    private final RepositoryConnectionFactory connectionFactory;
     private RepositoryConnection connection;
 
     /**
@@ -60,13 +60,13 @@ public class SingleProjectionCommandExecutor extends AbstractCommandExecutor {
      * @param sourceName the name of the {@link RepositorySource} that is making use of this executor; may not be null or empty
      * @param projection the projection used for the cached information; may not be null and must have exactly one
      *        {@link Projection#getRules() rule}
-     * @param sourceRegistry the registry of {@link RepositorySource} instances
+     * @param connectionFactory the factory for {@link RepositoryConnection} instances
      */
     public SingleProjectionCommandExecutor( ExecutionContext context,
                                             String sourceName,
                                             Projection projection,
-                                            RepositorySourceRegistry sourceRegistry ) {
-        this(context, sourceName, null, projection, sourceRegistry);
+                                            RepositoryConnectionFactory connectionFactory ) {
+        this(context, sourceName, null, projection, connectionFactory);
     }
 
     /**
@@ -75,19 +75,19 @@ public class SingleProjectionCommandExecutor extends AbstractCommandExecutor {
      * @param now the current time; may be null if the system time is to be used
      * @param projection the projection used for the cached information; may not be null and must have exactly one
      *        {@link Projection#getRules() rule}
-     * @param sourceRegistry the registry of {@link RepositorySource} instances
+     * @param connectionFactory the factory for {@link RepositoryConnection} instances
      */
     public SingleProjectionCommandExecutor( ExecutionContext context,
                                             String sourceName,
                                             DateTime now,
                                             Projection projection,
-                                            RepositorySourceRegistry sourceRegistry ) {
+                                            RepositoryConnectionFactory connectionFactory ) {
         super(context, sourceName, now);
-        assert sourceRegistry != null;
+        assert connectionFactory != null;
         assert projection != null;
         assert projection.getRules().size() == 1;
         this.projection = projection;
-        this.registry = sourceRegistry;
+        this.connectionFactory = connectionFactory;
         this.pathFactory = context.getValueFactories().getPathFactory();
         assert this.pathFactory != null;
     }
@@ -95,8 +95,7 @@ public class SingleProjectionCommandExecutor extends AbstractCommandExecutor {
     protected RepositoryConnection getConnection() throws RepositorySourceException, InterruptedException {
         if (connection == null) {
             // Create a connection ...
-            RepositorySource source = this.registry.getRepositorySource(this.projection.getSourceName());
-            connection = source.getConnection();
+            connection = this.connectionFactory.createConnection(this.projection.getSourceName());
         }
         return connection;
     }

@@ -32,15 +32,15 @@ import org.jboss.dna.common.util.ArgCheck;
 import org.jboss.dna.connector.federation.executor.FederatingCommandExecutor;
 import org.jboss.dna.spi.ExecutionContext;
 import org.jboss.dna.spi.connector.RepositoryConnection;
+import org.jboss.dna.spi.connector.RepositoryConnectionFactory;
 import org.jboss.dna.spi.connector.RepositorySource;
 import org.jboss.dna.spi.connector.RepositorySourceListener;
-import org.jboss.dna.spi.connector.RepositorySourceRegistry;
 import org.jboss.dna.spi.graph.commands.executor.CommandExecutor;
 
 /**
  * The component that represents a single federated repository. The federated repository uses a set of {@link RepositorySource
- * federated sources} as designated by name through the {@link #getConfiguration() configuration}, and provides the logic of
- * interacting with those sources and presenting a single unified graph.
+ * federated connectionFactory} as designated by name through the {@link #getConfiguration() configuration}, and provides the
+ * logic of interacting with those connectionFactory and presenting a single unified graph.
  * 
  * @author Randall Hauch
  */
@@ -48,7 +48,7 @@ import org.jboss.dna.spi.graph.commands.executor.CommandExecutor;
 public class FederatedRepository {
 
     private final ExecutionContext context;
-    private final RepositorySourceRegistry sources;
+    private final RepositoryConnectionFactory connectionFactory;
     private FederatedRepositoryConfig config;
     private final AtomicInteger openExecutors = new AtomicInteger(0);
     private final CountDownLatch shutdownLatch = new CountDownLatch(1);
@@ -59,18 +59,18 @@ public class FederatedRepository {
      * Create a federated repository instance.
      * 
      * @param context the execution context
-     * @param sources the registry of {@link RepositorySource} instances that should be used
+     * @param connectionFactory the factory for {@link RepositoryConnection} instances that should be used
      * @param config the configuration for this repository
      * @throws IllegalArgumentException if any of the parameters are null, or if the name is blank
      */
     public FederatedRepository( ExecutionContext context,
-                                RepositorySourceRegistry sources,
+                                RepositoryConnectionFactory connectionFactory,
                                 FederatedRepositoryConfig config ) {
-        ArgCheck.isNotNull(sources, "sources");
+        ArgCheck.isNotNull(connectionFactory, "connectionFactory");
         ArgCheck.isNotNull(context, "context");
         ArgCheck.isNotNull(config, "config");
         this.context = context;
-        this.sources = sources;
+        this.connectionFactory = connectionFactory;
         this.config = config;
     }
 
@@ -91,17 +91,17 @@ public class FederatedRepository {
     }
 
     /**
-     * @return the sources
+     * @return the connectionFactory
      */
-    protected RepositorySourceRegistry getRepositorySourceRegistry() {
-        return sources;
+    protected RepositoryConnectionFactory getConnectionFactory() {
+        return connectionFactory;
     }
 
     /**
      * Utility method called by the administrator.
      */
     public synchronized void start() {
-        // Do not establish connections to the sources; these will be established as needed
+        // Do not establish connections to the connectionFactory; these will be established as needed
     }
 
     /**
@@ -232,7 +232,7 @@ public class FederatedRepository {
                                            String sourceName ) {
         FederatedRepositoryConfig config = this.getConfiguration();
         return new FederatingCommandExecutor(context, sourceName, config.getCacheProjection(), config.getDefaultCachePolicy(),
-                                             config.getSourceProjections(), getRepositorySourceRegistry());
+                                             config.getSourceProjections(), getConnectionFactory());
     }
 
     /**

@@ -45,8 +45,8 @@ import org.jboss.dna.spi.ExecutionContext;
 import org.jboss.dna.spi.ExecutionContextFactory;
 import org.jboss.dna.spi.connector.BasicExecutionContext;
 import org.jboss.dna.spi.connector.RepositoryConnection;
+import org.jboss.dna.spi.connector.RepositoryConnectionFactory;
 import org.jboss.dna.spi.connector.RepositorySourceException;
-import org.jboss.dna.spi.connector.RepositorySourceRegistry;
 import org.jboss.dna.spi.connector.SimpleRepository;
 import org.jboss.dna.spi.connector.SimpleRepositorySource;
 import org.junit.After;
@@ -67,18 +67,19 @@ public class FederatedRepositorySourceTest {
     private String username;
     private String credentials;
     private String executionContextFactoryJndiName;
-    private String repositorySourceRegistryJndiName;
+    private String repositoryConnectionFactoryJndiName;
     private String configurationSourceName;
     private String securityDomain;
     private SimpleRepository configRepository;
     private SimpleRepositorySource configRepositorySource;
+    private RepositoryConnection configRepositoryConnection;
     private ExecutionContext context;
     @Mock
     private RepositoryConnection connection;
     @Mock
     private Context jndiContext;
     @Mock
-    private RepositorySourceRegistry sourceRegistry;
+    private RepositoryConnectionFactory connectionFactory;
     @Mock
     private ExecutionContextFactory executionContextFactory;
 
@@ -91,7 +92,7 @@ public class FederatedRepositorySourceTest {
         context = new BasicExecutionContext();
         context.getNamespaceRegistry().register(DnaLexicon.NAMESPACE_PREFIX, DnaLexicon.NAMESPACE_URI);
         executionContextFactoryJndiName = "context factory jndi name";
-        repositorySourceRegistryJndiName = "repository source registry jndi name";
+        repositoryConnectionFactoryJndiName = "repository connection factory jndi name";
         configurationSourceName = "configuration source name";
         repositoryName = "Test Repository";
         securityDomain = "security domain";
@@ -104,7 +105,7 @@ public class FederatedRepositorySourceTest {
         source.setPassword(credentials);
         source.setConfigurationSourceName(configurationSourceName);
         source.setConfigurationSourceProjectionRules(new String[] {"/dna:system/dna:federation/ => /dna:repositories/Test Repository"});
-        source.setRepositorySourceRegistryJndiName(repositorySourceRegistryJndiName);
+        source.setRepositoryConnectionFactoryJndiName(repositoryConnectionFactoryJndiName);
         source.setExecutionContextFactoryJndiName(executionContextFactoryJndiName);
         source.setContext(jndiContext);
         source.setSecurityDomain(securityDomain);
@@ -123,9 +124,10 @@ public class FederatedRepositorySourceTest {
         configRepositorySource = new SimpleRepositorySource();
         configRepositorySource.setRepositoryName(configRepository.getRepositoryName());
         configRepositorySource.setName(configurationSourceName);
-        stub(sourceRegistry.getRepositorySource(configurationSourceName)).toReturn(configRepositorySource);
+        configRepositoryConnection = configRepositorySource.getConnection();
+        stub(connectionFactory.createConnection(configurationSourceName)).toReturn(configRepositoryConnection);
         stub(jndiContext.lookup(executionContextFactoryJndiName)).toReturn(executionContextFactory);
-        stub(jndiContext.lookup(repositorySourceRegistryJndiName)).toReturn(sourceRegistry);
+        stub(jndiContext.lookup(repositoryConnectionFactoryJndiName)).toReturn(connectionFactory);
         stub(executionContextFactory.create(eq(securityDomain), anyCallbackHandler())).toReturn(context);
     }
 
@@ -267,7 +269,7 @@ public class FederatedRepositorySourceTest {
         source.setName("Some source");
         source.setConfigurationSourceName("config source");
         source.setConfigurationSourceProjectionRules(new String[] {"/dna:system => /a/b/c"});
-        source.setRepositorySourceRegistryJndiName("repository source registry jndi name");
+        source.setRepositoryConnectionFactoryJndiName("repository connection factory jndi name");
         source.setRepositoryJndiName("repository jndi name");
         source.setExecutionContextFactoryJndiName("env jndi name");
 
@@ -291,8 +293,8 @@ public class FederatedRepositorySourceTest {
                    is(source.getConfigurationSourceName()));
         assertThat((String)refAttributes.remove(FederatedRepositorySource.CONFIGURATION_SOURCE_PROJECTION_RULES),
                    is("/dna:system => /a/b/c"));
-        assertThat((String)refAttributes.remove(FederatedRepositorySource.REPOSITORY_SOURCE_REGISTRY_JNDI_NAME),
-                   is(source.getRepositorySourceRegistryJndiName()));
+        assertThat((String)refAttributes.remove(FederatedRepositorySource.REPOSITORY_CONNECTION_FACTORY_JNDI_NAME),
+                   is(source.getRepositoryConnectionFactoryJndiName()));
         assertThat((String)refAttributes.remove(FederatedRepositorySource.EXECUTION_CONTEXT_FACTORY_JNDI_NAME),
                    is(source.getExecutionContextFactoryJndiName()));
         assertThat((String)refAttributes.remove(FederatedRepositorySource.REPOSITORY_JNDI_NAME),
@@ -315,7 +317,7 @@ public class FederatedRepositorySourceTest {
         assertThat(recoveredSource.getRetryLimit(), is(source.getRetryLimit()));
         assertThat(recoveredSource.getConfigurationSourceName(), is(source.getConfigurationSourceName()));
         assertThat(recoveredSource.getConfigurationSourceProjectionRules(), is(source.getConfigurationSourceProjectionRules()));
-        assertThat(recoveredSource.getRepositorySourceRegistryJndiName(), is(source.getRepositorySourceRegistryJndiName()));
+        assertThat(recoveredSource.getRepositoryConnectionFactoryJndiName(), is(source.getRepositoryConnectionFactoryJndiName()));
         assertThat(recoveredSource.getExecutionContextFactoryJndiName(), is(source.getExecutionContextFactoryJndiName()));
         assertThat(recoveredSource.getRepositoryJndiName(), is(source.getRepositoryJndiName()));
         assertThat(recoveredSource.getSecurityDomain(), is(source.getSecurityDomain()));

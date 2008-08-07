@@ -196,9 +196,6 @@ public class RepositoryService implements AdministeredService {
             NameFactory nameFactory = valueFactories.getNameFactory();
 
             final String configurationSourceName = configurationProjection.getSourceName();
-            if (sources.getRepositorySource(configurationSourceName) == null) {
-                throw new FederationException(RepositoryI18n.unableToFindRepositorySourceWithName.text(configurationSourceName));
-            }
 
             // Create a federating command executor to execute the commands and merge the results into a single set of
             // commands.
@@ -242,7 +239,7 @@ public class RepositoryService implements AdministeredService {
                                 RepositorySource source = createRepositorySource(getSourceCommand.getPath(),
                                                                                  getSourceCommand.getProperties(),
                                                                                  problems);
-                                if (source != null) sources.addSource(source, true);
+                                if (source != null) sources.addSource(source);
                             }
                         }
                     }

@@ -23,20 +23,30 @@ package org.jboss.dna.repository;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import net.jcip.annotations.ThreadSafe;
 import org.jboss.dna.repository.services.AbstractServiceAdministrator;
 import org.jboss.dna.repository.services.ServiceAdministrator;
 import org.jboss.dna.spi.connector.RepositoryConnection;
+import org.jboss.dna.spi.connector.RepositoryConnectionFactory;
+import org.jboss.dna.spi.connector.RepositoryConnectionPool;
 import org.jboss.dna.spi.connector.RepositorySource;
-import org.jboss.dna.spi.connector.RepositorySourceRegistry;
 
 /**
+ * A manager of {@link RepositorySource} instances and the {@link RepositoryConnectionPool} used to manage the connections for
+ * each.
+ * 
  * @author Randall Hauch
  */
-public class RepositorySourceManager implements RepositorySourceRegistry {
+@ThreadSafe
+public class RepositorySourceManager implements RepositoryConnectionFactory {
 
     /**
      * The administrative component for this service.
@@ -87,36 +97,36 @@ public class RepositorySourceManager implements RepositorySourceRegistry {
 
     private final ServiceAdministrator administrator = new Administrator();
     private final ReadWriteLock sourcesLock = new ReentrantReadWriteLock();
-    private final CopyOnWriteArrayList<RepositorySource> sources = new CopyOnWriteArrayList<RepositorySource>();
-    private RepositorySourceRegistry delegate;
+    private final CopyOnWriteArrayList<RepositoryConnectionPool> pools = new CopyOnWriteArrayList<RepositoryConnectionPool>();
+    private RepositoryConnectionFactory delegate;
 
     /**
      * Create a new manager instance.
      * 
-     * @param delegate the registry to which this instance should delegate in the event that a source is not found in this
-     *        manager; may be null if there is no delegate
+     * @param delegate the connection factory to which this instance should delegate in the event that a source is not found in
+     *        this manager; may be null if there is no delegate
      */
-    public RepositorySourceManager( RepositorySourceRegistry delegate ) {
+    public RepositorySourceManager( RepositoryConnectionFactory delegate ) {
         this.delegate = delegate;
     }
 
     /**
-     * Get the delegate registry.
+     * Get the delegate connection factory.
      * 
-     * @return the registry to which this instance should delegate in the event that a source is not found in this manager, or
-     *         null if there is no delegate
+     * @return the connection factory to which this instance should delegate in the event that a source is not found in this
+     *         manager, or null if there is no delegate
      */
-    public RepositorySourceRegistry getDelegate() {
+    public RepositoryConnectionFactory getDelegate() {
         return delegate;
     }
 
     /**
-     * Set the delegate registry.
+     * Set the delegate connection factory.
      * 
-     * @param delegate the registry to which this instance should delegate in the event that a source is not found in this
-     *        manager; may be null if there is no delegate
+     * @param delegate the connection factory to which this instance should delegate in the event that a source is not found in
+     *        this manager; may be null if there is no delegate
      */
-    public void setDelegate( RepositorySourceRegistry delegate ) {
+    public void setDelegate( RepositoryConnectionFactory delegate ) {
         this.delegate = delegate;
     }
 
@@ -131,7 +141,7 @@ public class RepositorySourceManager implements RepositorySourceRegistry {
      * Utility method called by the administrator.
      */
     protected void start() {
-        // Do not establish connections to the sources; these will be established as needed
+        // Do not establish connections to the pools; these will be established as needed
 
     }
 
@@ -139,11 +149,11 @@ public class RepositorySourceManager implements RepositorySourceRegistry {
      * Utility method called by the administrator.
      */
     protected void shutdown() {
-        // Close all connections to the sources. This is done inside the sources write lock.
+        // Close all connections to the pools. This is done inside the pools write lock.
         try {
             this.sourcesLock.readLock().lock();
-            for (RepositorySource source : this.sources) {
-                source.shutdown();
+            for (RepositoryConnectionPool pool : this.pools) {
+                pool.shutdown();
             }
         } finally {
             this.sourcesLock.readLock().unlock();
@@ -161,11 +171,11 @@ public class RepositorySourceManager implements RepositorySourceRegistry {
      */
     protected boolean awaitTermination( long timeout,
                                         TimeUnit unit ) throws InterruptedException {
-        // Check whether all source pools are shut down. This is done inside the sources write lock.
+        // Check whether all source pools are shut down. This is done inside the pools write lock.
         try {
             this.sourcesLock.readLock().lock();
-            for (RepositorySource source : this.sources) {
-                if (!source.awaitTermination(timeout, unit)) return false;
+            for (RepositoryConnectionPool pool : this.pools) {
+                if (!pool.awaitTermination(timeout, unit)) return false;
             }
             return true;
         } finally {
@@ -186,8 +196,8 @@ public class RepositorySourceManager implements RepositorySourceRegistry {
     public boolean isTerminating() {
         try {
             this.sourcesLock.readLock().lock();
-            for (RepositorySource source : this.sources) {
-                if (source.isTerminating()) return true;
+            for (RepositoryConnectionPool pool : this.pools) {
+                if (pool.isTerminating()) return true;
             }
             return false;
         } finally {
@@ -204,8 +214,8 @@ public class RepositorySourceManager implements RepositorySourceRegistry {
     public boolean isTerminated() {
         try {
             this.sourcesLock.readLock().lock();
-            for (RepositorySource source : this.sources) {
-                if (!source.isTerminated()) return false;
+            for (RepositoryConnectionPool pool : this.pools) {
+                if (!pool.isTerminated()) return false;
             }
             return true;
         } finally {
@@ -214,37 +224,86 @@ public class RepositorySourceManager implements RepositorySourceRegistry {
     }
 
     /**
-     * Get an unmodifiable collection of {@link RepositorySource federated sources}.
-     * <p>
-     * This method can safely be called while the federation repository is in use.
-     * </p>
+     * Get an unmodifiable collection of {@link RepositorySource} names.
      * 
-     * @return the sources
+     * @return the pools
+     */
+    public Collection<String> getSourceNames() {
+        Set<String> sourceNames = new HashSet<String>();
+        for (RepositoryConnectionPool pool : this.pools) {
+            sourceNames.add(pool.getRepositorySource().getName());
+        }
+        return Collections.unmodifiableCollection(sourceNames);
+    }
+
+    /**
+     * Get an unmodifiable collection of {@link RepositorySource} instances managed by this instance.
+     * 
+     * @return the pools
      */
     public Collection<RepositorySource> getSources() {
-        return Collections.unmodifiableCollection(this.sources);
+        List<RepositorySource> sources = new LinkedList<RepositorySource>();
+        for (RepositoryConnectionPool pool : this.pools) {
+            sources.add(pool.getRepositorySource());
+        }
+        return Collections.unmodifiableCollection(sources);
+    }
+
+    /**
+     * Get the RepositorySource with the specified name managed by this instance.
+     * 
+     * @param sourceName the name of the source
+     * @return the source, or null if no such source exists in this instance
+     */
+    public RepositorySource getSource( String sourceName ) {
+        try {
+            this.sourcesLock.readLock().lock();
+            for (RepositoryConnectionPool existingPool : this.pools) {
+                RepositorySource source = existingPool.getRepositorySource();
+                if (source.getName().equals(sourceName)) return source;
+            }
+        } finally {
+            this.sourcesLock.readLock().unlock();
+        }
+        return null;
+    }
+
+    /**
+     * Get the connection pool managing the {@link RepositorySource} with the specified name managed by this instance.
+     * 
+     * @param sourceName the name of the source
+     * @return the pool, or null if no such pool exists in this instance
+     */
+    public RepositoryConnectionPool getConnectionPool( String sourceName ) {
+        try {
+            this.sourcesLock.readLock().lock();
+            for (RepositoryConnectionPool existingPool : this.pools) {
+                RepositorySource source = existingPool.getRepositorySource();
+                if (source.getName().equals(sourceName)) return existingPool;
+            }
+        } finally {
+            this.sourcesLock.readLock().unlock();
+        }
+        return null;
     }
 
     /**
      * Add the supplied federated source. This method returns false if the source is null.
-     * <p>
-     * This method can safely be called while the federation repository is in use.
-     * </p>
      * 
      * @param source the source to add
-     * @param force true if the valid source should be added even if there is an existing source with the supplied name
      * @return true if the source is added, or false if the reference is null or if there is already an existing source with the
      *         supplied name.
      */
-    public boolean addSource( RepositorySource source,
-                              boolean force ) {
+    public boolean addSource( RepositorySource source ) {
         if (source == null) return false;
         try {
             this.sourcesLock.writeLock().lock();
-            for (RepositorySource existingSource : this.sources) {
-                if (existingSource.getName().equals(source.getName())) return false;
+            for (RepositoryConnectionPool existingPool : this.pools) {
+                if (existingPool.getRepositorySource().getName().equals(source.getName())) return false;
             }
-            return force ? this.sources.add(source) : this.sources.addIfAbsent(source);
+            RepositoryConnectionPool pool = new RepositoryConnectionPool(source);
+            this.pools.add(pool);
+            return true;
         } finally {
             this.sourcesLock.writeLock().unlock();
         }
@@ -276,9 +335,6 @@ public class RepositorySourceManager implements RepositorySourceRegistry {
      * Remove from this federated repository the source with the supplied name. This call shuts down the connections in the source
      * in an orderly fashion, allowing those connection currently in use to be used and closed normally, but preventing further
      * connections from being used.
-     * <p>
-     * This method can safely be called while the federation repository is in use.
-     * </p>
      * 
      * @param name the name of the source to be removed
      * @param timeToAwait the amount of time to wait while all of the source's connections are closed, or non-positive if the call
@@ -293,13 +349,13 @@ public class RepositorySourceManager implements RepositorySourceRegistry {
                                           TimeUnit unit ) throws InterruptedException {
         try {
             this.sourcesLock.writeLock().lock();
-            for (RepositorySource existingSource : this.sources) {
-                if (existingSource.getName().equals(name)) {
+            for (RepositoryConnectionPool existingPool : this.pools) {
+                if (existingPool.getRepositorySource().getName().equals(name)) {
                     // Shut down the source ...
-                    existingSource.shutdown();
-                    if (timeToAwait > 0l) existingSource.awaitTermination(timeToAwait, unit);
+                    existingPool.shutdown();
+                    if (timeToAwait > 0L) existingPool.awaitTermination(timeToAwait, unit);
                 }
-                return existingSource;
+                return existingPool.getRepositorySource();
             }
         } finally {
             this.sourcesLock.writeLock().unlock();
@@ -310,22 +366,22 @@ public class RepositorySourceManager implements RepositorySourceRegistry {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.spi.connector.RepositorySourceRegistry#getRepositorySource(java.lang.String)
+     * @see org.jboss.dna.spi.connector.RepositoryConnectionFactory#createConnection(java.lang.String)
      */
-    public RepositorySource getRepositorySource( String sourceName ) {
+    public RepositoryConnection createConnection( String sourceName ) throws InterruptedException {
         try {
             this.sourcesLock.readLock().lock();
-            for (RepositorySource existingSource : this.sources) {
-                if (existingSource.getName().equals(sourceName)) return existingSource;
+            for (RepositoryConnectionPool existingPool : this.pools) {
+                RepositorySource source = existingPool.getRepositorySource();
+                if (source.getName().equals(sourceName)) return existingPool.getConnection();
             }
-            RepositorySourceRegistry delegate = this.delegate;
+            RepositoryConnectionFactory delegate = this.delegate;
             if (delegate != null) {
-                return delegate.getRepositorySource(sourceName);
+                return delegate.createConnection(sourceName);
             }
         } finally {
             this.sourcesLock.readLock().unlock();
         }
         return null;
     }
-
 }

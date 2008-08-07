@@ -32,7 +32,6 @@ import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.TimeUnit;
 import javax.naming.Context;
 import javax.naming.Name;
 import javax.naming.RefAddr;
@@ -90,9 +89,6 @@ public class JBossCacheSourceTest {
         if (connection != null) {
             connection.close();
         }
-        source.shutdownNow();
-        source.awaitTermination(4, TimeUnit.SECONDS);
-        // assertThat(source.isTerminated(), is(true));
     }
 
     @Test

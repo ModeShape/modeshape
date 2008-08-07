@@ -41,6 +41,7 @@ import org.jboss.dna.connector.federation.Projection;
 import org.jboss.dna.repository.services.ServiceAdministrator;
 import org.jboss.dna.spi.DnaLexicon;
 import org.jboss.dna.spi.ExecutionContext;
+import org.jboss.dna.spi.connector.RepositoryConnection;
 import org.jboss.dna.spi.connector.RepositorySource;
 import org.jboss.dna.spi.connector.SimpleRepository;
 import org.jboss.dna.spi.connector.SimpleRepositorySource;
@@ -76,6 +77,7 @@ public class RepositoryServiceTest {
     private String configSourceName;
     private SimpleRepository configRepository;
     private SimpleRepositorySource configRepositorySource;
+    private RepositoryConnection configRepositoryConnection;
     @Mock
     private ExecutionContext context;
     @Mock
@@ -98,7 +100,8 @@ public class RepositoryServiceTest {
         configRepositorySource = new SimpleRepositorySource();
         configRepositorySource.setRepositoryName(configRepository.getRepositoryName());
         configRepositorySource.setName(configSourceName);
-        stub(sources.getRepositorySource(configSourceName)).toReturn(configRepositorySource);
+        configRepositoryConnection = configRepositorySource.getConnection();
+        stub(sources.createConnection(configSourceName)).toReturn(configRepositoryConnection);
         stub(context.getValueFactories()).toReturn(valueFactories);
         stub(context.getPropertyFactory()).toReturn(propertyFactory);
         stub(context.getNamespaceRegistry()).toReturn(registry);
@@ -157,32 +160,28 @@ public class RepositoryServiceTest {
     }
 
     @Test( expected = FederationException.class )
-    public void shouldFailToStartUpIfConfigurationRepositorySourceIsNotFound() {
-        stub(sources.getRepositorySource(configSourceName)).toReturn(null);
+    public void shouldFailToStartUpIfConfigurationRepositorySourceIsNotFound() throws Exception {
+        stub(sources.createConnection(configSourceName)).toReturn(null);
         service.getAdministrator().start();
     }
 
     @Test( expected = FederationException.class )
     public void shouldFailToStartUpIfUnableToConnectToConfigurationRepository() throws Exception {
-        RepositorySource mockSource = mock(RepositorySource.class);
-        stub(sources.getRepositorySource(configSourceName)).toReturn(mockSource);
-        stub(mockSource.getConnection()).toThrow(new UnsupportedOperationException());
+        stub(sources.createConnection(configSourceName)).toThrow(new UnsupportedOperationException());
         service.getAdministrator().start();
     }
 
     @Test( expected = FederationException.class )
     public void shouldFailToStartUpIfInterruptedWhileConnectingToConfigurationRepository() throws Exception {
-        RepositorySource mockSource = mock(RepositorySource.class);
-        stub(sources.getRepositorySource(configSourceName)).toReturn(mockSource);
-        stub(mockSource.getConnection()).toThrow(new InterruptedException());
+        stub(sources.createConnection(configSourceName)).toThrow(new InterruptedException());
         service.getAdministrator().start();
     }
 
     @Test
-    public void shouldStartUpUsingConfigurationRepositoryThatContainsSomeSources() {
+    public void shouldStartUpUsingConfigurationRepositoryThatContainsSomeSources() throws Exception {
         // Use a real source manager for this test ...
         sources = new RepositorySourceManager(sources);
-        sources.addSource(configRepositorySource, true);
+        sources.addSource(configRepositorySource);
         assertThat(sources.getSources(), hasItems((RepositorySource)configRepositorySource));
         assertThat(sources.getSources().size(), is(1));
         service = new RepositoryService(sources, configProjection, context, null);
@@ -207,28 +206,28 @@ public class RepositoryServiceTest {
 
         // and verify that the sources were added to the manager...
         assertThat(sources.getSources().size(), is(4));
-        assertThat(sources.getRepositorySource("source A"), is(instanceOf(SimpleRepositorySource.class)));
-        assertThat(sources.getRepositorySource("source B"), is(instanceOf(SimpleRepositorySource.class)));
-        assertThat(sources.getRepositorySource("source C"), is(instanceOf(SimpleRepositorySource.class)));
+        assertThat(sources.getSource("source A"), is(instanceOf(SimpleRepositorySource.class)));
+        assertThat(sources.getSource("source B"), is(instanceOf(SimpleRepositorySource.class)));
+        assertThat(sources.getSource("source C"), is(instanceOf(SimpleRepositorySource.class)));
 
-        SimpleRepositorySource sourceA = (SimpleRepositorySource)sources.getRepositorySource("source A");
+        SimpleRepositorySource sourceA = (SimpleRepositorySource)sources.getSource("source A");
         assertThat(sourceA.getName(), is("source A"));
         assertThat(sourceA.getRepositoryName(), is("sourceReposA"));
         assertThat(sourceA.getRetryLimit(), is(3));
 
-        SimpleRepositorySource sourceB = (SimpleRepositorySource)sources.getRepositorySource("source B");
+        SimpleRepositorySource sourceB = (SimpleRepositorySource)sources.getSource("source B");
         assertThat(sourceB.getName(), is("source B"));
         assertThat(sourceB.getRepositoryName(), is("sourceReposB"));
         assertThat(sourceB.getRetryLimit(), is(SimpleRepositorySource.DEFAULT_RETRY_LIMIT));
 
-        SimpleRepositorySource sourceC = (SimpleRepositorySource)sources.getRepositorySource("source C");
+        SimpleRepositorySource sourceC = (SimpleRepositorySource)sources.getSource("source C");
         assertThat(sourceC.getName(), is("source C"));
         assertThat(sourceC.getRepositoryName(), is("sourceReposC"));
         assertThat(sourceC.getRetryLimit(), is(SimpleRepositorySource.DEFAULT_RETRY_LIMIT));
     }
 
     @Test
-    public void shouldStartUpUsingConfigurationRepositoryThatContainsNoSources() {
+    public void shouldStartUpUsingConfigurationRepositoryThatContainsNoSources() throws Exception {
         // Set up the configuration repository to contain NO sources ...
         configRepository.create(context, "/reposX/dna:sources");
 
@@ -236,7 +235,7 @@ public class RepositoryServiceTest {
         service.getAdministrator().start();
 
         // and verify that the configuration source was obtained from the manager ...
-        verify(sources, times(2)).getRepositorySource(configSourceName); // once for checking source, second for getting
+        verify(sources, times(1)).createConnection(configSourceName); // once for checking source, second for getting
 
         // and verify that the sources were never added to the manager...
         verifyNoMoreInteractions(sources);

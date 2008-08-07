@@ -31,6 +31,7 @@ import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicInteger;
 import javax.naming.BinaryRefAddr;
 import javax.naming.Context;
 import javax.naming.InitialContext;
@@ -46,7 +47,6 @@ import org.jboss.cache.DefaultCacheFactory;
 import org.jboss.dna.common.i18n.I18n;
 import org.jboss.dna.spi.DnaLexicon;
 import org.jboss.dna.spi.cache.CachePolicy;
-import org.jboss.dna.spi.connector.AbstractRepositorySource;
 import org.jboss.dna.spi.connector.RepositoryConnection;
 import org.jboss.dna.spi.connector.RepositorySource;
 import org.jboss.dna.spi.connector.RepositorySourceCapabilities;
@@ -71,9 +71,13 @@ import org.jboss.dna.spi.graph.Property;
  * @author Randall Hauch
  */
 @ThreadSafe
-public class JBossCacheSource extends AbstractRepositorySource implements ObjectFactory {
+public class JBossCacheSource implements RepositorySource, ObjectFactory {
 
     private static final long serialVersionUID = 1L;
+    /**
+     * The default limit is {@value} for retrying {@link RepositoryConnection connection} calls to the underlying source.
+     */
+    public static final int DEFAULT_RETRY_LIMIT = 0;
     public static final String DEFAULT_UUID_PROPERTY_NAME = DnaLexicon.PropertyNames.UUID;
 
     protected static final String ROOT_NODE_UUID = "rootNodeUuid";
@@ -92,6 +96,7 @@ public class JBossCacheSource extends AbstractRepositorySource implements Object
     private String cacheFactoryJndiName;
     private String cacheJndiName;
     private String uuidPropertyName = DEFAULT_UUID_PROPERTY_NAME;
+    private final AtomicInteger retryLimit = new AtomicInteger(DEFAULT_RETRY_LIMIT);
     private transient Cache<Name, Object> cache;
     private transient Context jndiContext;
 
@@ -106,6 +111,24 @@ public class JBossCacheSource extends AbstractRepositorySource implements Object
      */
     public String getName() {
         return this.name;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.spi.connector.RepositorySource#getRetryLimit()
+     */
+    public int getRetryLimit() {
+        return retryLimit.get();
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.spi.connector.RepositorySource#setRetryLimit(int)
+     */
+    public void setRetryLimit( int limit ) {
+        retryLimit.set(limit < 0 ? 0 : limit);
     }
 
     /**
@@ -317,10 +340,11 @@ public class JBossCacheSource extends AbstractRepositorySource implements Object
 
     /**
      * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.spi.connector.RepositorySource#getConnection()
      */
     @SuppressWarnings( "unchecked" )
-    @Override
-    protected synchronized RepositoryConnection createConnection() {
+    public RepositoryConnection getConnection() throws RepositorySourceException {
         if (getName() == null) {
             I18n msg = JBossCacheConnectorI18n.propertyIsRequired;
             throw new RepositorySourceException(getName(), msg.text("name"));
