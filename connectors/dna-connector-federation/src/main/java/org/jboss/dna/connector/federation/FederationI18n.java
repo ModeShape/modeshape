@@ -38,6 +38,7 @@ public final class FederationI18n {
     public static I18n unableToFindExecutionContextFactoryInJndi;
     public static I18n unableToCreateExecutionContext;
     public static I18n unableToFindRepositoryConnectionFactoriesInJndi;
+    public static I18n objectFoundInJndiWasNotOfExpectedType;
     public static I18n noRepositoryConnectionFactories;
     public static I18n federatedRepositoryCannotBeFound;
     public static I18n unableToAuthenticateConnectionToFederatedRepository;

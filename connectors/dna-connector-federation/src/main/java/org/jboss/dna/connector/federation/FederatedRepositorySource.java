@@ -525,16 +525,20 @@ public class FederatedRepositorySource extends AbstractRepositorySource implemen
     @Override
     protected synchronized RepositoryConnection createConnection() throws RepositorySourceException {
         if (getName() == null) {
-            throw new RepositorySourceException(FederationI18n.propertyIsRequired.text("name"));
+            I18n msg = FederationI18n.propertyIsRequired;
+            throw new RepositorySourceException(getName(), msg.text("name"));
         }
         if (getExecutionContextFactoryJndiName() == null) {
-            throw new RepositorySourceException(FederationI18n.propertyIsRequired.text("execution context factory JNDI name"));
+            I18n msg = FederationI18n.propertyIsRequired;
+            throw new RepositorySourceException(getName(), msg.text("execution context factory JNDI name"));
         }
         if (getSecurityDomain() == null) {
-            throw new RepositorySourceException(FederationI18n.propertyIsRequired.text("security domain"));
+            I18n msg = FederationI18n.propertyIsRequired;
+            throw new RepositorySourceException(getName(), msg.text("security domain"));
         }
         if (getRepositorySourceRegistryJndiName() == null) {
-            throw new RepositorySourceException(FederationI18n.propertyIsRequired.text("repository source registry JNDI name"));
+            I18n msg = FederationI18n.propertyIsRequired;
+            throw new RepositorySourceException(getName(), msg.text("repository source registry JNDI name"));
         }
         // Find the repository ...
         FederatedRepository repository = getRepository();
@@ -569,12 +573,21 @@ public class FederatedRepositorySource extends AbstractRepositorySource implemen
             Context jndiContext = getContext();
             if (jndiName != null && jndiName.trim().length() != 0) {
                 // Look for an existing repository in JNDI ...
+                Object object = null;
                 try {
                     if (jndiContext == null) jndiContext = new InitialContext();
-                    repository = (FederatedRepository)jndiContext.lookup(jndiName);
+                    object = jndiContext.lookup(jndiName);
+                    if (object != null) repository = (FederatedRepository)object;
+                } catch (ClassCastException err) {
+                    I18n msg = FederationI18n.objectFoundInJndiWasNotOfExpectedType;
+                    String className = object != null ? object.getClass().getName() : "null";
+                    throw new RepositorySourceException(getName(), msg.text(jndiName,
+                                                                            this.getName(),
+                                                                            FederatedRepository.class.getName(),
+                                                                            className), err);
                 } catch (Throwable err) {
                     I18n msg = FederationI18n.unableToFindFederatedRepositoryInJndi;
-                    throw new RepositorySourceException(msg.text(this.sourceName, jndiName), err);
+                    throw new RepositorySourceException(getName(), msg.text(this.sourceName, jndiName), err);
                 }
             }
 
@@ -595,17 +608,26 @@ public class FederatedRepositorySource extends AbstractRepositorySource implemen
         Context context = getContext();
         String jndiName = getExecutionContextFactoryJndiName();
         if (jndiName != null && jndiName.trim().length() != 0) {
+            Object object = null;
             try {
                 if (context == null) context = new InitialContext();
-                factory = (ExecutionContextFactory)context.lookup(jndiName);
+                object = context.lookup(jndiName);
+                if (object != null) factory = (ExecutionContextFactory)object;
+            } catch (ClassCastException err) {
+                I18n msg = FederationI18n.objectFoundInJndiWasNotOfExpectedType;
+                String className = object != null ? object.getClass().getName() : "null";
+                throw new RepositorySourceException(getName(), msg.text(jndiName,
+                                                                        this.getName(),
+                                                                        ExecutionContextFactory.class.getName(),
+                                                                        className), err);
             } catch (Throwable err) {
                 I18n msg = FederationI18n.unableToFindExecutionContextFactoryInJndi;
-                throw new RepositorySourceException(msg.text(this.sourceName, jndiName), err);
+                throw new RepositorySourceException(getName(), msg.text(this.sourceName, jndiName), err);
             }
         }
         if (factory == null) {
             I18n msg = FederationI18n.unableToFindExecutionContextFactoryInJndi;
-            throw new RepositorySourceException(msg.text(this.sourceName, jndiName));
+            throw new RepositorySourceException(getName(), msg.text(this.sourceName, jndiName));
         }
         String securityDomain = getSecurityDomain();
         CallbackHandler handler = createCallbackHandler();
@@ -613,7 +635,7 @@ public class FederatedRepositorySource extends AbstractRepositorySource implemen
             return factory.create(securityDomain, handler);
         } catch (LoginException e) {
             I18n msg = FederationI18n.unableToCreateExecutionContext;
-            throw new RepositorySourceException(msg.text(this.sourceName, jndiName, securityDomain), e);
+            throw new RepositorySourceException(getName(), msg.text(this.sourceName, jndiName, securityDomain), e);
         }
     }
 
@@ -622,17 +644,26 @@ public class FederatedRepositorySource extends AbstractRepositorySource implemen
         Context context = getContext();
         String jndiName = getRepositorySourceRegistryJndiName();
         if (jndiName != null && jndiName.trim().length() != 0) {
+            Object object = null;
             try {
                 if (context == null) context = new InitialContext();
-                factories = (RepositorySourceRegistry)context.lookup(jndiName);
+                object = context.lookup(jndiName);
+                if (object != null) factories = (RepositorySourceRegistry)object;
+            } catch (ClassCastException err) {
+                I18n msg = FederationI18n.objectFoundInJndiWasNotOfExpectedType;
+                String className = object != null ? object.getClass().getName() : "null";
+                throw new RepositorySourceException(getName(), msg.text(jndiName,
+                                                                        this.getName(),
+                                                                        RepositorySourceRegistry.class.getName(),
+                                                                        className), err);
             } catch (Throwable err) {
                 I18n msg = FederationI18n.unableToFindRepositoryConnectionFactoriesInJndi;
-                throw new RepositorySourceException(msg.text(this.sourceName, jndiName), err);
+                throw new RepositorySourceException(getName(), msg.text(this.sourceName, jndiName), err);
             }
         }
         if (factories == null) {
             I18n msg = FederationI18n.noRepositoryConnectionFactories;
-            throw new RepositorySourceException(msg.text(this.repositoryName));
+            throw new RepositorySourceException(getName(), msg.text(this.repositoryName));
         }
         return factories;
     }
