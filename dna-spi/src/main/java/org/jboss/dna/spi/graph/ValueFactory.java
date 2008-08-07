@@ -401,10 +401,14 @@ public interface ValueFactory<T> {
     /**
      * Create an iterator over the values (of an unknown type). The factory converts any values as required. Note that this method
      * will not consider {@link #create(InputStream, int)}, {@link #create(Reader, int)} and {@link #create(String, TextDecoder)}.
+     * <p>
+     * This is useful to use when iterating over the {@link Property#getValues() values} of a {@link Property}.
+     * </p>
      * 
      * @param values the values
      * @return the iterator of type <code>T</code> over the values, or null if the supplied parameter is null
      * @throws IoException If an unexpected problem occurs during the conversion.
+     * @see Property#getValues()
      */
     Iterator<T> create( Iterator<?> values ) throws IoException;
 
