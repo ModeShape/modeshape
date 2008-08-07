@@ -32,6 +32,10 @@ public final class JBossCacheConnectorI18n {
 
     public static I18n connectorName;
     public static I18n nodeDoesNotExist;
+    public static I18n propertyIsRequired;
+    public static I18n errorSerializingCachePolicyInSource;
+    public static I18n objectFoundInJndiWasNotCache;
+    public static I18n objectFoundInJndiWasNotCacheFactory;
 
     static {
         try {
