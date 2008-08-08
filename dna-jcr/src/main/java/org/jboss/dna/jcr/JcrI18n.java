@@ -26,11 +26,21 @@ import java.util.Set;
 import org.jboss.dna.common.i18n.I18n;
 
 /**
+ * @author John Verhaeg
  * @author Randall Hauch
  */
 public final class JcrI18n {
 
-    // public static I18n invalidStateString;
+    public static I18n credentialsMustProvideJaasMethod;
+    public static I18n credentialsMustReturnAccessControlContext;
+    public static I18n credentialsMustReturnLoginContext;
+    public static I18n defaultWorkspaceName;
+    public static I18n repositoryMustBeConfigured;
+    public static I18n sourceInUse;
+
+    public static I18n REP_NAME_DESC;
+    public static I18n REP_VENDOR_DESC;
+    public static I18n SPEC_NAME_DESC;
 
     static {
         try {

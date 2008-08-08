@@ -21,71 +21,42 @@
  */
 package org.jboss.dna.jcr;
 
-import javax.jcr.Credentials;
-import javax.jcr.LoginException;
-import javax.jcr.NoSuchWorkspaceException;
-import javax.jcr.Repository;
+import java.util.Set;
+import javax.jcr.Node;
+import javax.jcr.Property;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
+import net.jcip.annotations.NotThreadSafe;
 
 /**
- * @author Randall Hauch
+ * @author jverhaeg
  */
-public class DnaRepository implements Repository {
+@NotThreadSafe
+final class JcrNode extends AbstractJcrNode {
+
+    JcrNode( Session session,
+             Set<Property> properties ) {
+        super(session, properties);
+    }
 
     /**
+     * {@inheritDoc}
      * 
+     * @see javax.jcr.Item#getName()
      */
-    public DnaRepository() {
+    public String getName() throws RepositoryException {
+        Property prop = getProperty("jcr:name");
+        assert prop != null;
+        assert prop.getValue() != null;
+        return prop.getValue().getString();
     }
 
     /**
      * {@inheritDoc}
+     * 
+     * @see javax.jcr.Item#getParent()
      */
-    public String getDescriptor( String key ) {
-        return null;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String[] getDescriptorKeys() {
-        return null;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public Session login() throws LoginException, RepositoryException {
-        return null;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public Session login( Credentials credentials ) throws LoginException, RepositoryException {
-        return null;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public Session login( String workspaceName ) throws LoginException, NoSuchWorkspaceException, RepositoryException {
-        return null;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public Session login( Credentials credentials, String workspaceName ) throws LoginException, NoSuchWorkspaceException, RepositoryException {
-        return null;
-    }
-
-    protected void logout( DnaSession session ) {
-
-    }
-
-    protected String[] getWorkspaceNamesAccessibleBy( String username, Credentials credentials ) throws RepositoryException {
+    public Node getParent() {
         throw new UnsupportedOperationException();
     }
 }
