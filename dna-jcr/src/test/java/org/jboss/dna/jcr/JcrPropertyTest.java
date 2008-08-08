@@ -21,6 +21,7 @@
  */
 package org.jboss.dna.jcr;
 
+import org.junit.Test;
 
 /**
  * @author jverhaeg
@@ -61,4 +62,9 @@ public class JcrPropertyTest {
     // public void shouldProvideName() throws Exception {
     // assertThat(prop.getName(), is("name"));
     // }
+
+    @Test
+    public void should() {
+
+    }
 }
