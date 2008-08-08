@@ -19,36 +19,23 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.jboss.dna.connector.federation.merge;
+package org.jboss.dna.connector.jbosscache;
 
-import java.util.List;
-import org.jboss.dna.connector.federation.contribution.Contribution;
-import org.jboss.dna.spi.ExecutionContext;
 import org.jboss.dna.spi.graph.Name;
+import org.jboss.dna.spi.graph.impl.BasicName;
 
 /**
+ * The namespace and property names used within a {@link JBossCacheSource} to store internal information.
+ * 
  * @author Randall Hauch
  */
-public class StandardMergeStrategy implements MergeStrategy {
+public class JBossCacheLexicon {
 
-    private final Name identityPropertyName;
-
-    public StandardMergeStrategy( Name identityPropertyName ) {
-        assert identityPropertyName != null;
-        this.identityPropertyName = identityPropertyName;
+    public static class Namespace {
+        public static final String URI = "http://www.jboss.org/dna/connector/jbosscache";
+        public static final String PREFIX = "dnajbcc";
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.jboss.dna.connector.federation.merge.MergeStrategy#merge(org.jboss.dna.connector.federation.merge.FederatedNode,
-     *      java.util.List, org.jboss.dna.spi.ExecutionContext)
-     */
-    public void merge( FederatedNode federatedNode,
-                       List<Contribution> contributions,
-                       ExecutionContext context ) {
+    public static final Name CHILD_PATH_SEGMENT_LIST = new BasicName(Namespace.URI, "orderedChildNames");
 
-        // Children whose identity properties are the same will be considered to be the same node ...
-        assert identityPropertyName != null;
-    }
 }

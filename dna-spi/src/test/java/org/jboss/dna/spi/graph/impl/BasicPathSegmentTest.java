@@ -49,7 +49,7 @@ public class BasicPathSegmentTest {
     @Before
     public void beforeEach() {
         this.registry = new BasicNamespaceRegistry();
-        this.registry.register(DnaLexicon.NAMESPACE_PREFIX, DnaLexicon.NAMESPACE_URI);
+        this.registry.register(DnaLexicon.Namespace.PREFIX, DnaLexicon.Namespace.URI);
         this.stringValueFactory = new StringValueFactory(Path.DEFAULT_DECODER, Path.DEFAULT_ENCODER);
         this.nameFactory = new NameValueFactory(registry, Path.DEFAULT_DECODER, stringValueFactory);
         this.validName = nameFactory.create("dna:something");

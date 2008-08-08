@@ -334,7 +334,7 @@ public class InMemoryRepository {
         protected Executor( ExecutionContext context,
                             String sourceName ) {
             super(context, sourceName);
-            this.uuidPropertyName = context.getValueFactories().getNameFactory().create(DnaLexicon.PropertyNames.UUID);
+            this.uuidPropertyName = context.getValueFactories().getNameFactory().create(DnaLexicon.UUID);
         }
 
         protected Property getUuidProperty( Node node ) {

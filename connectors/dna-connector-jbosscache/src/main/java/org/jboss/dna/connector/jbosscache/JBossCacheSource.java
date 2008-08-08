@@ -78,7 +78,7 @@ public class JBossCacheSource implements RepositorySource, ObjectFactory {
      * The default limit is {@value} for retrying {@link RepositoryConnection connection} calls to the underlying source.
      */
     public static final int DEFAULT_RETRY_LIMIT = 0;
-    public static final String DEFAULT_UUID_PROPERTY_NAME = DnaLexicon.PropertyNames.UUID;
+    public static final String DEFAULT_UUID_PROPERTY_NAME = DnaLexicon.UUID.getString();
 
     protected static final String ROOT_NODE_UUID = "rootNodeUuid";
     protected static final String SOURCE_NAME = "sourceName";

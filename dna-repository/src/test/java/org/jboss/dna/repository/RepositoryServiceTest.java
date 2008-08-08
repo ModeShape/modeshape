@@ -87,7 +87,7 @@ public class RepositoryServiceTest {
     public void beforeEach() throws Exception {
         MockitoAnnotations.initMocks(this);
         NamespaceRegistry registry = new BasicNamespaceRegistry();
-        registry.register(DnaLexicon.NAMESPACE_PREFIX, DnaLexicon.NAMESPACE_URI);
+        registry.register(DnaLexicon.Namespace.PREFIX, DnaLexicon.Namespace.URI);
         valueFactories = new StandardValueFactories(registry);
         pathFactory = valueFactories.getPathFactory();
         propertyFactory = new BasicPropertyFactory(valueFactories);

@@ -52,7 +52,7 @@ import org.jboss.dna.spi.graph.PropertyFactory;
 @ThreadSafe
 public class SimpleRepository {
 
-    public static final String DEFAULT_UUID_PROPERTY_NAME = DnaLexicon.PropertyNames.UUID;
+    public static final Name DEFAULT_UUID_PROPERTY_NAME = DnaLexicon.UUID;
 
     private static final ConcurrentMap<String, SimpleRepository> repositoriesByName = new ConcurrentHashMap<String, SimpleRepository>();
 
@@ -68,7 +68,7 @@ public class SimpleRepository {
 
     private ConcurrentMap<Path, Map<Name, Property>> data = new ConcurrentHashMap<Path, Map<Name, Property>>();
     private final String repositoryName;
-    private String uuidPropertyName = DEFAULT_UUID_PROPERTY_NAME;
+    private Name uuidPropertyName = DEFAULT_UUID_PROPERTY_NAME;
     private boolean shutdown = false;
 
     public SimpleRepository( String repositoryName ) {
@@ -88,15 +88,15 @@ public class SimpleRepository {
     /**
      * @return uuidPropertyName
      */
-    public String getUuidPropertyName() {
+    public Name getUuidPropertyName() {
         return uuidPropertyName;
     }
 
     /**
      * @param uuidPropertyName Sets uuidPropertyName to the specified value.
      */
-    public void setUuidPropertyName( String uuidPropertyName ) {
-        if (uuidPropertyName == null || uuidPropertyName.trim().length() == 0) uuidPropertyName = DEFAULT_UUID_PROPERTY_NAME;
+    public void setUuidPropertyName( Name uuidPropertyName ) {
+        if (uuidPropertyName == null) uuidPropertyName = DEFAULT_UUID_PROPERTY_NAME;
         this.uuidPropertyName = uuidPropertyName;
     }
 

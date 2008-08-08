@@ -21,16 +21,19 @@
  */
 package org.jboss.dna.spi;
 
+import org.jboss.dna.spi.graph.Name;
+import org.jboss.dna.spi.graph.impl.BasicName;
+
 /**
  * @author Randall Hauch
  */
 public class DnaLexicon {
 
-    public static final String NAMESPACE_URI = "http://www.jboss.org/dna";
-    public static final String NAMESPACE_PREFIX = "dna";
-
-    public static class PropertyNames {
-        public static final String UUID = "dna:uuid";
-        public static final String MERGE_PLAN = "dna:mergePlan";
+    public static class Namespace {
+        public static final String URI = "http://www.jboss.org/dna";
+        public static final String PREFIX = "dna";
     }
+
+    public static final Name UUID = new BasicName(Namespace.URI, "uuid");
+    public static final Name MERGE_PLAN = new BasicName(Namespace.URI, "mergePlan");
 }

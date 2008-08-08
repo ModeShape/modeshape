@@ -70,7 +70,7 @@ public class JBossCacheConnectionTest {
     public void beforeEach() throws Exception {
         MockitoAnnotations.initMocks(this);
         context = new BasicExecutionContext();
-        context.getNamespaceRegistry().register(DnaLexicon.NAMESPACE_PREFIX, DnaLexicon.NAMESPACE_URI);
+        context.getNamespaceRegistry().register(DnaLexicon.Namespace.PREFIX, DnaLexicon.Namespace.URI);
         pathFactory = context.getValueFactories().getPathFactory();
         cacheFactory = new DefaultCacheFactory<Name, Object>();
         cache = cacheFactory.createCache();
@@ -141,11 +141,11 @@ public class JBossCacheConnectionTest {
 
     @Test
     public void shouldGetUuidPropertyNameFromSouceAndShouldNotChangeDuringLifetimeOfConnection() {
-        stub(source.getUuidPropertyName()).toReturn(DnaLexicon.PropertyNames.UUID);
+        stub(source.getUuidPropertyName()).toReturn(DnaLexicon.UUID.getString(context.getNamespaceRegistry()));
         Name name = connection.getUuidPropertyName(context);
         verify(source).getUuidPropertyName();
         assertThat(name.getLocalName(), is("uuid"));
-        assertThat(name.getNamespaceUri(), is(DnaLexicon.NAMESPACE_URI));
+        assertThat(name.getNamespaceUri(), is(DnaLexicon.Namespace.URI));
         stub(source.getUuidPropertyName()).toReturn("something else");
         for (int i = 0; i != 10; ++i) {
             Name name2 = connection.getUuidPropertyName(context);
@@ -216,7 +216,7 @@ public class JBossCacheConnectionTest {
     @Test
     public void shouldGetNodeIfItExistsInCache() {
         // Set up the cache with data ...
-        stub(source.getUuidPropertyName()).toReturn(DnaLexicon.PropertyNames.UUID);
+        stub(source.getUuidPropertyName()).toReturn(DnaLexicon.UUID.getString(context.getNamespaceRegistry()));
         Name uuidProperty = connection.getUuidPropertyName(context);
         Path[] paths = {pathFactory.create("/a"), pathFactory.create("/a/b"), pathFactory.create("/a/b/c")};
         Path nonExistantPath = pathFactory.create("/a/d");
@@ -241,7 +241,7 @@ public class JBossCacheConnectionTest {
     @Test
     public void shouldThrowExceptionWithLowestExistingNodeFromGetNodeIfTheNodeDoesNotExist() {
         // Set up the cache with data ...
-        stub(source.getUuidPropertyName()).toReturn(DnaLexicon.PropertyNames.UUID);
+        stub(source.getUuidPropertyName()).toReturn(DnaLexicon.UUID.getString(context.getNamespaceRegistry()));
         Name uuidProperty = connection.getUuidPropertyName(context);
         Path[] paths = {pathFactory.create("/a"), pathFactory.create("/a/b"), pathFactory.create("/a/b/c")};
         Path nonExistantPath = pathFactory.create("/a/d");
@@ -268,7 +268,7 @@ public class JBossCacheConnectionTest {
     @Test
     public void shouldCopyNode() {
         // Set up the cache with data ...
-        stub(source.getUuidPropertyName()).toReturn(DnaLexicon.PropertyNames.UUID);
+        stub(source.getUuidPropertyName()).toReturn(DnaLexicon.UUID.getString(context.getNamespaceRegistry()));
         Name uuidProperty = connection.getUuidPropertyName(context);
         Path[] paths = {pathFactory.create("/a"), pathFactory.create("/a/b"), pathFactory.create("/a/b/c"),
             pathFactory.create("/a/d")};

@@ -24,6 +24,7 @@ package org.jboss.dna.connector.jbosscache;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import javax.transaction.xa.XAResource;
@@ -73,7 +74,6 @@ public class JBossCacheConnection implements RepositoryConnection {
         }
     };
 
-    private boolean initializedUuidPropertyName = false;
     private Name uuidPropertyName;
     private final JBossCacheSource source;
     private final Cache<Name, Object> cache;
@@ -166,10 +166,9 @@ public class JBossCacheConnection implements RepositoryConnection {
      * @return the name, or null if the UUID should not be stored
      */
     protected Name getUuidPropertyName( ExecutionContext context ) {
-        if (!initializedUuidPropertyName) {
+        if (uuidPropertyName == null) {
             NameFactory nameFactory = context.getValueFactories().getNameFactory();
-            this.uuidPropertyName = nameFactory.create(this.source.getUuidPropertyName());
-            initializedUuidPropertyName = true;
+            uuidPropertyName = nameFactory.create(this.source.getUuidPropertyName());
         }
         return this.uuidPropertyName;
     }
@@ -247,6 +246,127 @@ public class JBossCacheConnection implements RepositoryConnection {
         return numNodesCopied;
     }
 
+    /**
+     * Update (or create) the array of {@link Path.Segment path segments} for the children of the supplied node. This array
+     * maintains the ordered list of children (since the {@link Cache} does not maintain the order). Invoking this method will
+     * change any existing children that a {@link Path.Segment#getName() name part} that matches the supplied
+     * <code>changedName</code> to have the appropriate {@link Path.Segment#getIndex() same-name sibling index}.
+     * 
+     * @param parent the parent node; may not be null
+     * @param changedName the name that should be compared to the existing node siblings to determine whether the same-name
+     *        sibling indexes should be updated; may not be null
+     * @param context the execution context; may not be null
+     */
+    @SuppressWarnings( "unchecked" )
+    protected void updateChildList( Node<Name, Object> parent,
+                                    Name changedName,
+                                    ExecutionContext context ) {
+        assert parent != null;
+        assert changedName != null;
+        assert context != null;
+        Set<Node<Name, Object>> children = parent.getChildren();
+        final int numChildren = children.size();
+        if (numChildren == 0) return;
+        // Go through the children, looking for any children with the same name as the 'changedName'
+        List<ChildInfo> childrenWithChangedName = new LinkedList<ChildInfo>();
+        Path.Segment[] childSegments = new Path.Segment[children.size()];
+        int index = 0;
+        for (Node<Name, Object> child : children) {
+            Path.Segment childSegment = (Path.Segment)child.getFqn().getLastElement();
+            Name childName = childSegment.getName();
+            if (childName.equals(changedName)) {
+                ChildInfo info = new ChildInfo(child.getFqn(), index);
+                childrenWithChangedName.add(info);
+            }
+            childSegments[index++] = childSegment;
+        }
+        // Go through the children with the same name as the 'changedName', making sure their indexes are correct ...
+        assert childrenWithChangedName.isEmpty() == false;
+        if (childrenWithChangedName.size() == 1) {
+            // The child should have no indexes ...
+            ChildInfo child = childrenWithChangedName.get(0);
+            Fqn<Path.Segment> fqn = child.getFqn();
+            Path.Segment segment = fqn.getLastElement();
+            if (segment.hasIndex()) {
+                // Determine the new name and index ...
+                Path.Segment newSegment = context.getValueFactories().getPathFactory().createSegment(changedName);
+                // Replace the child with the correct FQN ...
+                changeNodeName(parent, fqn, newSegment, context);
+                // Change the segment in the child list ...
+                childSegments[child.getChildIndex()] = newSegment;
+            }
+        } else {
+            // There is more than one child with the same name ...
+            int i = 0;
+            for (ChildInfo child : childrenWithChangedName) {
+                Fqn<Path.Segment> fqn = child.getFqn();
+                Path.Segment childSegment = fqn.getLastElement();
+                if (childSegment.getIndex() != i) {
+                    // Determine the new name and index ...
+                    Path.Segment newSegment = context.getValueFactories().getPathFactory().createSegment(changedName, i);
+                    // Replace the child with the correct FQN ...
+                    changeNodeName(parent, fqn, newSegment, context);
+                    // Change the segment in the child list ...
+                    childSegments[child.getChildIndex()] = newSegment;
+                }
+                ++i;
+            }
+        }
+        // Record the list of children as a property on the parent ...
+        // (Do this last, as it doesn't need to be done if there's an exception in the above logic)
+        parent.put(JBossCacheLexicon.CHILD_PATH_SEGMENT_LIST, childSegments); // replaces any existing value
+    }
+
+    /**
+     * Utility class used by the {@link JBossCacheConnection#updateChildList(Node, Name, ExecutionContext)} method.
+     * 
+     * @author Randall Hauch
+     */
+    private static class ChildInfo {
+        private final Fqn<Path.Segment> fqn;
+        private final int childIndex;
+
+        protected ChildInfo( Fqn<Path.Segment> fqn,
+                             int childIndex ) {
+            assert fqn != null;
+            this.fqn = fqn;
+            this.childIndex = childIndex;
+        }
+
+        public int getChildIndex() {
+            return childIndex;
+        }
+
+        public Fqn<Path.Segment> getFqn() {
+            return fqn;
+        }
+    }
+
+    /**
+     * Changes the name of the node in the cache (but does not update the list of child segments stored on the parent).
+     * 
+     * @param parent
+     * @param existing
+     * @param newSegment
+     * @param context
+     */
+    protected void changeNodeName( Node<Name, Object> parent,
+                                   Fqn<Path.Segment> existing,
+                                   Path.Segment newSegment,
+                                   ExecutionContext context ) {
+        assert parent != null;
+        assert existing != null;
+        assert newSegment != null;
+        assert context != null;
+        parent.removeChild(existing);
+        List<Path.Segment> elements = existing.peekElements();
+        assert elements.size() > 0;
+        elements.set(elements.size() - 1, newSegment);
+        existing = Fqn.fromList(elements);
+        parent.addChild(existing);
+
+    }
+
     protected class Executor extends AbstractCommandExecutor {
 
         private final PropertyFactory propertyFactory;
@@ -267,6 +387,12 @@ public class JBossCacheConnection implements RepositoryConnection {
             // Look up the parent node, which must exist ...
             Node<Name, Object> parentNode = getNode(parent);
             Node<Name, Object> node = parentNode.addChild(childFqn);
+
+            // Update the children to account for same-name siblings.
+            // This not only updates the FQN of the child nodes, but it also sets the property that stores the
+            // the array of Path.Segment for the children (since the cache doesn't maintain order).
+            updateChildList(parentNode, path.getLastSegment().getName(), getExecutionContext());
+
             // Add the UUID property (if required), which may be overwritten by a supplied property ...
             Name uuidPropertyName = getUuidPropertyName(getExecutionContext());
             if (uuidPropertyName != null) {
@@ -286,22 +412,29 @@ public class JBossCacheConnection implements RepositoryConnection {
             }
         }
 
+        @SuppressWarnings( "unchecked" )
         @Override
         public void execute( GetChildrenCommand command ) {
             Node<Name, Object> node = getNode(command.getPath());
             Name uuidPropertyName = getUuidPropertyName(getExecutionContext());
-            // Get the names of the children ...
-            for (Node<Name, Object> child : node.getChildren()) {
-                Segment segment = (Segment)child.getFqn().getLastElement();
-                Object uuid = node.getData().get(uuidPropertyName);
+            List<Path.Segment> segments = node.getFqn().peekElements();
+            segments.add(null);
+            // Get the names of the children, using the child list ...
+            Path.Segment[] childList = (Path.Segment[])node.get(JBossCacheLexicon.CHILD_PATH_SEGMENT_LIST);
+            for (Path.Segment child : childList) {
+                // We have the child segment, but we need the UUID property ...
+                segments.set(segments.size() - 1, child); // each iteration sets this last list element ...
+                Fqn<Path.Segment> fqn = Fqn.fromList(segments);
+                Node<Name, Object> childNode = node.getChild(fqn);
+                Object uuid = childNode.getData().get(uuidPropertyName);
                 if (uuid == null) {
                     uuid = generateUuid();
-                    node.getData().put(uuidPropertyName, uuid);
+                    childNode.getData().put(uuidPropertyName, uuid);
                 } else {
                     uuid = uuidFactory.create(uuid);
                 }
                 Property uuidProperty = propertyFactory.create(uuidPropertyName, uuid);
-                command.addChild(segment, uuidProperty);
+                command.addChild(child, uuidProperty);
             }
         }
 
@@ -311,6 +444,8 @@ public class JBossCacheConnection implements RepositoryConnection {
             Map<Name, Object> dataMap = node.getData();
             for (Map.Entry<Name, Object> data : dataMap.entrySet()) {
                 Name propertyName = data.getKey();
+                // Don't allow the child list property to be accessed
+                if (propertyName.equals(JBossCacheLexicon.CHILD_PATH_SEGMENT_LIST)) continue;
                 Object values = data.getValue();
                 Property property = propertyFactory.create(propertyName, values);
                 command.setProperty(property);
@@ -323,6 +458,8 @@ public class JBossCacheConnection implements RepositoryConnection {
             // Now set (or remove) the properties to the supplied node ...
             for (Property property : command.getPropertyIterator()) {
                 Name propName = property.getName();
+                // Don't allow the child list property to be removed or changed
+                if (propName.equals(JBossCacheLexicon.CHILD_PATH_SEGMENT_LIST)) continue;
                 if (property.size() == 0) {
                     node.remove(propName);
                     continue;
@@ -350,6 +487,10 @@ public class JBossCacheConnection implements RepositoryConnection {
             Path newPath = command.getNewPath();
             Node<Name, Object> newParent = getNode(newPath.getAncestor());
             copyNode(node, newParent, false, null);
+            // Update the children to account for same-name siblings.
+            // This not only updates the FQN of the child nodes, but it also sets the property that stores the
+            // the array of Path.Segment for the children (since the cache doesn't maintain order).
+            updateChildList(newParent, newPath.getLastSegment().getName(), getExecutionContext());
         }
 
         @Override
@@ -359,6 +500,10 @@ public class JBossCacheConnection implements RepositoryConnection {
             Path newPath = command.getNewPath();
             Node<Name, Object> newParent = getNode(newPath.getAncestor());
             copyNode(node, newParent, true, null);
+            // Update the children to account for same-name siblings.
+            // This not only updates the FQN of the child nodes, but it also sets the property that stores the
+            // the array of Path.Segment for the children (since the cache doesn't maintain order).
+            updateChildList(newParent, newPath.getLastSegment().getName(), getExecutionContext());
         }
 
         @Override
@@ -370,6 +515,10 @@ public class JBossCacheConnection implements RepositoryConnection {
             Path newPath = command.getNewPath();
             Node<Name, Object> newParent = getNode(newPath.getAncestor());
             copyNode(node, newParent, recursive, uuidProperty);
+            // Update the children to account for same-name siblings.
+            // This not only updates the FQN of the child nodes, but it also sets the property that stores the
+            // the array of Path.Segment for the children (since the cache doesn't maintain order).
+            updateChildList(newParent, newPath.getLastSegment().getName(), getExecutionContext());
             // Now delete the old node ...
             Node<Name, Object> oldParent = node.getParent();
             boolean removed = oldParent.removeChild(node.getFqn().getLastElement());

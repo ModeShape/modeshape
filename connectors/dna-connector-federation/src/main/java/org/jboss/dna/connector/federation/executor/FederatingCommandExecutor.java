@@ -133,8 +133,8 @@ public class FederatingCommandExecutor extends AbstractCommandExecutor {
         this.sourceProjections = sourceProjections;
         this.connectionFactory = connectionFactory;
         this.connectionsBySourceName = new HashMap<String, RepositoryConnection>();
-        this.uuidPropertyName = context.getValueFactories().getNameFactory().create(DnaLexicon.PropertyNames.UUID);
-        this.mergePlanPropertyName = context.getValueFactories().getNameFactory().create(DnaLexicon.PropertyNames.MERGE_PLAN);
+        this.uuidPropertyName = context.getValueFactories().getNameFactory().create(DnaLexicon.UUID);
+        this.mergePlanPropertyName = context.getValueFactories().getNameFactory().create(DnaLexicon.MERGE_PLAN);
         this.sourceNames = new HashSet<String>();
         for (Projection projection : this.sourceProjections) {
             this.sourceNames.add(projection.getSourceName());
@@ -142,7 +142,7 @@ public class FederatingCommandExecutor extends AbstractCommandExecutor {
         if (this.sourceProjections.size() == 1 && this.sourceProjections.get(0).isSimple()) {
             this.mergingStrategy = new OneContributionMergeStrategy();
         } else {
-            this.mergingStrategy = new StandardMergeStrategy(DnaLexicon.PropertyNames.UUID);
+            this.mergingStrategy = new StandardMergeStrategy(DnaLexicon.UUID);
         }
     }
 

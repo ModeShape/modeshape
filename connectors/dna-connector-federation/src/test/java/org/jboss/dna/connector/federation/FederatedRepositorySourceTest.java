@@ -90,7 +90,7 @@ public class FederatedRepositorySourceTest {
     public void beforeEach() throws Exception {
         MockitoAnnotations.initMocks(this);
         context = new BasicExecutionContext();
-        context.getNamespaceRegistry().register(DnaLexicon.NAMESPACE_PREFIX, DnaLexicon.NAMESPACE_URI);
+        context.getNamespaceRegistry().register(DnaLexicon.Namespace.PREFIX, DnaLexicon.Namespace.URI);
         executionContextFactoryJndiName = "context factory jndi name";
         repositoryConnectionFactoryJndiName = "repository connection factory jndi name";
         configurationSourceName = "configuration source name";

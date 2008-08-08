@@ -46,8 +46,8 @@ public class BasicNameTest {
 
     @Before
     public void beforeEach() {
-        this.validNamespacePrefix = DnaLexicon.NAMESPACE_PREFIX;
-        this.validNamespaceUri = DnaLexicon.NAMESPACE_URI;
+        this.validNamespacePrefix = DnaLexicon.Namespace.PREFIX;
+        this.validNamespaceUri = DnaLexicon.Namespace.URI;
         this.validLocalName = "localPart";
         this.name = new BasicName(validNamespaceUri, validLocalName);
         this.encoder = Path.URL_ENCODER;

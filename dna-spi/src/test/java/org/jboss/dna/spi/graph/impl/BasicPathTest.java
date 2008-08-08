@@ -60,8 +60,8 @@ public class BasicPathTest {
 
     @Before
     public void beforeEach() {
-        validNamespacePrefix = DnaLexicon.NAMESPACE_PREFIX;
-        validNamespaceUri = DnaLexicon.NAMESPACE_URI;
+        validNamespacePrefix = DnaLexicon.Namespace.PREFIX;
+        validNamespaceUri = DnaLexicon.Namespace.URI;
         validSegmentNames = new Name[] {new BasicName(validNamespaceUri, "a"), new BasicName(validNamespaceUri, "b"),
             new BasicName(validNamespaceUri, "c")};
         validSegments = new Path.Segment[] {new BasicPathSegment(validSegmentNames[0]),
