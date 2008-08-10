@@ -31,13 +31,18 @@ import java.util.*;
 public class MySource {
 
     private int i, j;
-    private double a;
+    private static double a;
     private List<String> l;
-    private A<String>.B<Integer> o;
+    private A<Integer> o;
     private X x;
 
-    public MySource() {
+    MySource() {
     }
+    public MySource(int i, int j) {
+        this.i = i;
+        this.j = j;
+    }
+    
 
     public int getI() {
         return this.i;
@@ -51,11 +56,12 @@ public class MySource {
         this.j = j;
     }
 
-    public void doSomething() {
+    public void doSomething(int p1, int p2) {
         l = new ArrayList<String>();
         l.add("N1");
     }
 
+    // nested class
     class A<E> {
         E e;
 
