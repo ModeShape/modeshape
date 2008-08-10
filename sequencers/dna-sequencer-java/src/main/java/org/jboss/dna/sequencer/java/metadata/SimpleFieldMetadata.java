@@ -24,22 +24,6 @@ package org.jboss.dna.sequencer.java.metadata;
 /**
  * field meta data for simple type.
  */
-public class SimpleFieldMetadata extends FieldMetadata {
-
-    private String name;
-
-    /**
-     * @param name
-     */
-    public void setName( String name ) {
-        this.name = name;
-    }
-
-    /**
-     * @return name
-     */
-    public String getName() {
-        return name;
-    }
+public class SimpleFieldMetadata extends ReferenceFieldMetadata {
 
 }

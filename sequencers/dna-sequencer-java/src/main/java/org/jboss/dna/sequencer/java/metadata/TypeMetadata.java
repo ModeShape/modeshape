@@ -39,7 +39,7 @@ public class TypeMetadata {
     private String name;
 
     /** All modifiers of a top level type */
-    private Map<Integer, String> modifiers = new HashMap<Integer, String>();
+    private List<ModifierMetadata> modifiers = new ArrayList<ModifierMetadata>();
 
     /** All annotations of a top level type */
     private List<AnnotationMetadata> annotations = new ArrayList<AnnotationMetadata>();
@@ -86,14 +86,14 @@ public class TypeMetadata {
      * 
      * @return modifiers
      */
-    public Map<Integer, String> getModifiers() {
+    public List<ModifierMetadata> getModifiers() {
         return modifiers;
     }
 
     /**
      * @param modifiers Sets modifiers to the specified value.
      */
-    public void setModifiers( Map<Integer, String> modifiers ) {
+    public void setModifiers( List<ModifierMetadata> modifiers ) {
         this.modifiers = modifiers;
     }
 

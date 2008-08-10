@@ -24,16 +24,20 @@ package org.jboss.dna.sequencer.java.metadata;
 /**
  * 
  */
-public class MethodTypeMemberMetadata extends MethodMetadata {
+public class ReturnType {
+    private String name;
 
     /**
-     * {@inheritDoc}
-     *
-     * @see org.jboss.dna.sequencer.java.metadata.MethodMetadata#isContructor()
+     * @return name
      */
-    @Override
-    public boolean isContructor() {
-        return false;
+    public String getName() {
+        return name;
     }
 
+    /**
+     * @param name Sets name to the specified value.
+     */
+    public void setName( String name ) {
+        this.name = name;
+    }
 }

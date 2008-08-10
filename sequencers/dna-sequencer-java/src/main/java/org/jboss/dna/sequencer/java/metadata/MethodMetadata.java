@@ -21,11 +21,24 @@
  */
 package org.jboss.dna.sequencer.java.metadata;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
- * 
+ * MethodMetadata
  */
-public class MethodMetadata {
+public abstract class MethodMetadata {
+
     private String name;
+    
+    private ReturnType returnType;
+
+    public abstract boolean isContructor();
+    
+    private List<ModifierMetadata> modifiers = new ArrayList<ModifierMetadata>();
+
+    private List<FieldMetadata> parameters = new ArrayList<FieldMetadata>();
+
     /**
      * @return name
      */
@@ -41,9 +54,44 @@ public class MethodMetadata {
     }
 
     /**
-     * @return isContructor
+     * @return modifiers
      */
-    public boolean isContructor() {
-        return false;
-    }    
+    public List<ModifierMetadata> getModifiers() {
+        return modifiers;
+    }
+
+    /**
+     * @param modifiers Sets modifiers to the specified value.
+     */
+    public void setModifiers( List<ModifierMetadata> modifiers ) {
+        this.modifiers = modifiers;
+    }
+
+    /**
+     * @return parameters
+     */
+    public List<FieldMetadata> getParameters() {
+        return parameters;
+    }
+
+    /**
+     * @param parameters Sets parameters to the specified value.
+     */
+    public void setParameters( List<FieldMetadata> parameters ) {
+        this.parameters = parameters;
+    }
+
+    /**
+     * @return returnType
+     */
+    public ReturnType getReturnType() {
+        return returnType;
+    }
+
+    /**
+     * @param returnType Sets returnType to the specified value.
+     */
+    public void setReturnType( ReturnType returnType ) {
+        this.returnType = returnType;
+    }
 }

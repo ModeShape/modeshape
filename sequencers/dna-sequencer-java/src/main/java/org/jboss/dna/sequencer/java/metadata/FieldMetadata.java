@@ -28,9 +28,14 @@ import java.util.List;
  * @author Serge Pagop
  */
 public class FieldMetadata {
-
-    /** The name */
+    
+    /** The type of the field */
+    private String type;
+    
+    /** The variables */
     private List<Variable> variables = new ArrayList<Variable>();
+    
+    private List<ModifierMetadata> modifierMetadatas = new ArrayList<ModifierMetadata>();
 
     /**
      * @return variables
@@ -44,5 +49,33 @@ public class FieldMetadata {
      */
     public void setVariables( List<Variable> variables ) {
         this.variables = variables;
+    }
+
+    /**
+     * @return type
+     */
+    public String getType() {
+        return type;
+    }
+
+    /**
+     * @param type Sets type to the specified value.
+     */
+    public void setType( String type ) {
+        this.type = type;
+    }
+
+    /**
+     * @return modifierMetadatas
+     */
+    public List<ModifierMetadata> getModifiers() {
+        return modifierMetadatas;
+    }
+
+    /**
+     * @param modifierMetadatas Sets modifierMetadatas to the specified value.
+     */
+    public void setModifiers( List<ModifierMetadata> modifierMetadatas ) {
+        this.modifierMetadatas = modifierMetadatas;
     }
 }
