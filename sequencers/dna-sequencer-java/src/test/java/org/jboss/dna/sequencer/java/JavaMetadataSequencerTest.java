@@ -104,8 +104,8 @@ public class JavaMetadataSequencerTest {
                    is(new Object[] {"java.util"}));
 
         // sequence class definition
-        assertThat(output.getPropertyValues("java:compilationUnit/java:unitType/java:classDeclaration/java:normalClass/java:normalClassDeclaration",
-                                            "java:modifier"),
+        assertThat(output.getPropertyValues("java:compilationUnit/java:unitType/java:classDeclaration/java:normalClass/java:normalClassDeclaration/java:modifier/java:modifierDeclaration[1]",
+                                            "java:name"),
                    is(new Object[] {"public"}));
         assertThat(output.getPropertyValues("java:compilationUnit/java:unitType/java:classDeclaration/java:normalClass/java:normalClassDeclaration",
                                             "java:name"),

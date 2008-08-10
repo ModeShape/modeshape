@@ -23,6 +23,7 @@ package org.jboss.dna.sequencer.java;
 
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
@@ -46,11 +47,11 @@ import org.jboss.dna.sequencer.java.metadata.MarkerAnnotationMetadata;
 import org.jboss.dna.sequencer.java.metadata.MethodMetadata;
 import org.jboss.dna.sequencer.java.metadata.MethodTypeMemberMetadata;
 import org.jboss.dna.sequencer.java.metadata.PackageMetadata;
-import org.jboss.dna.sequencer.java.metadata.ParameterizedFieldMetadata;
 import org.jboss.dna.sequencer.java.metadata.PrimitiveFieldMetadata;
-import org.jboss.dna.sequencer.java.metadata.SimpleFieldMetadata;
+import org.jboss.dna.sequencer.java.metadata.ReferenceFieldMetadata;
 import org.jboss.dna.sequencer.java.metadata.SingleImportMetadata;
 import org.jboss.dna.sequencer.java.metadata.TypeMetadata;
+import org.jboss.dna.sequencer.java.metadata.Variable;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -138,18 +139,15 @@ public class JavaMetadataTest {
     public void shouldCreateTopLevelTypeMetadata() throws Exception {
         List<TypeMetadata> data = javaMetadata.createTypeMetadata((CompilationUnit)rootNode);
         assertTrue(data.size() > 0);
-
         for (TypeMetadata typeMetadata : data) {
             // meta data of a top level class
             if (typeMetadata instanceof ClassMetadata) {
                 ClassMetadata classMetadata = (ClassMetadata)typeMetadata;
                 assertThat(classMetadata.getName(), is("MySource"));
                 // modifiers of the top level class
-                Map<Integer, String> modifiers = classMetadata.getModifiers();
-                assertNotNull(modifiers);
-                assertTrue(!modifiers.isEmpty());
-                assertThat(modifiers.get(ClassMetadata.PUBLIC_MODIFIER), is("public"));
-
+                assertNotNull(classMetadata.getModifiers());
+                assertTrue(!classMetadata.getModifiers().isEmpty());
+                assertThat(classMetadata.getModifiers().get(0).getName(), is("public"));
                 // annotations of the top level class
                 List<AnnotationMetadata> annotations = classMetadata.getAnnotations();
                 for (AnnotationMetadata annotationMetadata : annotations) {
@@ -159,54 +157,87 @@ public class JavaMetadataTest {
                         assertThat(marker.getName(), is("MyClassAnnotation"));
                     }
                 }
-
                 // get fields
                 List<FieldMetadata> fields = classMetadata.getFields();
                 assertNotNull(fields);
                 assertTrue(fields.size() == 5);
 
                 PrimitiveFieldMetadata primitiveFieldMetadata = (PrimitiveFieldMetadata)fields.get(0);
-                assertThat(primitiveFieldMetadata.getCode(), is("int"));
+                assertTrue(primitiveFieldMetadata.getModifiers().size() == 1);
+                assertThat(primitiveFieldMetadata.getType(), is("int"));
                 assertThat(primitiveFieldMetadata.getVariables().get(0).getName(), is("i"));
                 assertThat(primitiveFieldMetadata.getVariables().get(1).getName(), is("j"));
 
-                ParameterizedFieldMetadata parameterizedFieldMetadata1 = (ParameterizedFieldMetadata)fields.get(2);
+                PrimitiveFieldMetadata primitiveFieldMetadata2 = (PrimitiveFieldMetadata)fields.get(1);
+                assertTrue(primitiveFieldMetadata2.getModifiers().size() == 2);
+                assertThat(primitiveFieldMetadata2.getType(), is("double"));
+                assertThat(primitiveFieldMetadata2.getVariables().get(0).getName(), is("a"));
+
+                ReferenceFieldMetadata parameterizedFieldMetadata1 = (ReferenceFieldMetadata)fields.get(2);
                 assertNotNull(parameterizedFieldMetadata1);
-                assertThat(parameterizedFieldMetadata1.getName(), is("List"));
+                assertTrue(parameterizedFieldMetadata1.getModifiers().size() == 1);
+                assertThat(parameterizedFieldMetadata1.getType(), is("List"));
                 assertThat(parameterizedFieldMetadata1.getVariables().get(0).getName(), is("l"));
 
-                ParameterizedFieldMetadata parameterizedFieldMetadata2 = (ParameterizedFieldMetadata)fields.get(3);
+                ReferenceFieldMetadata parameterizedFieldMetadata2 = (ReferenceFieldMetadata)fields.get(3);
                 assertNotNull(parameterizedFieldMetadata2);
-                assertThat(parameterizedFieldMetadata2.getName(), is("B"));
+                assertTrue(parameterizedFieldMetadata2.getModifiers().size() == 1);
+                assertThat(parameterizedFieldMetadata2.getType(), is("A"));
                 assertThat(parameterizedFieldMetadata2.getVariables().get(0).getName(), is("o"));
 
-                SimpleFieldMetadata simpleFieldMetadata = (SimpleFieldMetadata)fields.get(4);
+                ReferenceFieldMetadata simpleFieldMetadata = (ReferenceFieldMetadata)fields.get(4);
                 assertNotNull(simpleFieldMetadata);
-                assertThat(simpleFieldMetadata.getName(), is("X"));
+                assertTrue(simpleFieldMetadata.getModifiers().size() == 1);
+                assertThat(simpleFieldMetadata.getType(), is("X"));
                 assertThat(simpleFieldMetadata.getVariables().get(0).getName(), is("x"));
 
                 // get methods
                 List<MethodMetadata> methods = classMetadata.getMethods();
                 assertNotNull(methods);
-                assertTrue(methods.size() == 5);
+                assertTrue(methods.size() == 6);
 
                 MethodMetadata methodMetadata = methods.get(0);
-                assertTrue(methodMetadata.isContructor());
                 ConstructorMetadata constructorMetadata = (ConstructorMetadata)methodMetadata;
                 assertNotNull(constructorMetadata);
+                assertTrue(constructorMetadata.getModifiers().size() == 0);
                 assertThat(constructorMetadata.getName(), is("MySource"));
+                assertTrue(constructorMetadata.getParameters().size() == 0);
 
-                MethodTypeMemberMetadata methodTypeMemberMetadata1 = (MethodTypeMemberMetadata)methods.get(1);
+                MethodMetadata methodMetadata2 = methods.get(1);
+                ConstructorMetadata constructorMetadata2 = (ConstructorMetadata)methodMetadata2;
+                assertNotNull(constructorMetadata2);
+                assertTrue(constructorMetadata2.getModifiers().size() == 1);
+                assertThat(constructorMetadata2.getName(), is("MySource"));
+                assertTrue(constructorMetadata2.getParameters().size() == 2);
+
+                MethodTypeMemberMetadata methodTypeMemberMetadata1 = (MethodTypeMemberMetadata)methods.get(2);
+                assertTrue(methodTypeMemberMetadata1.getModifiers().size() == 1);
+                assertEquals(methodTypeMemberMetadata1.getReturnType().getName(), "int");
                 assertNotNull(methodTypeMemberMetadata1);
                 assertThat(methodTypeMemberMetadata1.getName(), is("getI"));
+                assertTrue(methodTypeMemberMetadata1.getParameters().size() == 0);
 
-                MethodTypeMemberMetadata methodTypeMemberMetadata2 = (MethodTypeMemberMetadata)methods.get(2);
-                assertNotNull(methodTypeMemberMetadata2);
-                assertThat(methodTypeMemberMetadata2.getName(), is("setI"));
-
-                MethodTypeMemberMetadata methodTypeMemberMetadata3 = (MethodTypeMemberMetadata)methods.get(4);
+                MethodTypeMemberMetadata methodTypeMemberMetadata3 = (MethodTypeMemberMetadata)methods.get(3);
+                assertTrue(methodTypeMemberMetadata3.getModifiers().size() == 1);
+                assertEquals(methodTypeMemberMetadata3.getReturnType().getName(), "void");
                 assertNotNull(methodTypeMemberMetadata3);
-                assertThat(methodTypeMemberMetadata3.getName(), is("doSomething"));
+                assertThat(methodTypeMemberMetadata3.getName(), is("setI"));
+                assertTrue(methodTypeMemberMetadata3.getParameters().size() == 1);
+                
+
+                MethodTypeMemberMetadata methodTypeMemberMetadata4 = (MethodTypeMemberMetadata)methods.get(4);
+                assertTrue(methodTypeMemberMetadata4.getModifiers().size() == 1);
+                assertEquals(methodTypeMemberMetadata4.getReturnType().getName(), "void");
+                assertNotNull(methodTypeMemberMetadata4);
+                assertThat(methodTypeMemberMetadata4.getName(), is("setJ"));
+                assertTrue(methodTypeMemberMetadata4.getParameters().size() == 1);
+
+                MethodTypeMemberMetadata methodTypeMemberMetadata5 = (MethodTypeMemberMetadata)methods.get(5);
+                assertTrue(methodTypeMemberMetadata5.getModifiers().size() == 1);
+                assertEquals(methodTypeMemberMetadata5.getReturnType().getName(), "void");
+                assertNotNull(methodTypeMemberMetadata5);
+                assertThat(methodTypeMemberMetadata5.getName(), is("doSomething"));
+                assertTrue(methodTypeMemberMetadata5.getParameters().size() == 2);
             }
         }
     }
