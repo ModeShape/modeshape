@@ -191,6 +191,9 @@
  [java:importDeclaration] > nt:unstructured
  + java:singleImport (java:singleTypeImportDeclaration) = java:singleTypeImportDeclaration
  + java:importOnDemand (java:typeImportOnDemandDeclaration) = java:typeImportOnDemandDeclaration
+ 
+ [java:modifierDeclaration] > nt:unstructured
+  - java:name (string) mandatory
 
 /**
  * Class declaration
@@ -200,10 +203,7 @@
  */
 [java:normalClassDeclaration] > nt:unstructured
  - java:description (string)
- - java:modifier (string)
-  < 'public'
- - java:declaredAs (string) 
-  < 'abstract', 'final'
+ + java:modifier (java:modifierDeclaration) = java:modifierDeclaration
  - java:name (string) mandatory
  + java:field (java:fieldType)  = java:fieldType multiple
  + java:method (java:methodDeclaration) = java:methodDeclaration multiple
