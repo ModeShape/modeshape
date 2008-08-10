@@ -37,9 +37,10 @@ import org.jboss.dna.sequencer.java.metadata.JavaMetadata;
 import org.jboss.dna.sequencer.java.metadata.MarkerAnnotationMetadata;
 import org.jboss.dna.sequencer.java.metadata.MethodMetadata;
 import org.jboss.dna.sequencer.java.metadata.MethodTypeMemberMetadata;
+import org.jboss.dna.sequencer.java.metadata.ModifierMetadata;
 import org.jboss.dna.sequencer.java.metadata.NormalAnnotationMetadata;
 import org.jboss.dna.sequencer.java.metadata.PackageMetadata;
-import org.jboss.dna.sequencer.java.metadata.ParameterizedFieldMetadata;
+import org.jboss.dna.sequencer.java.metadata.ReferenceFieldMetadata;
 import org.jboss.dna.sequencer.java.metadata.PrimitiveFieldMetadata;
 import org.jboss.dna.sequencer.java.metadata.SingleImportMetadata;
 import org.jboss.dna.sequencer.java.metadata.SingleMemberAnnotationMetadata;
@@ -155,7 +156,9 @@ public class JavaMetadataSequencer implements StreamSequencer {
     public static final String JAVA_NORMAL_CLASS_CHILD_NODE = "java:normalClass";
     public static final String JAVA_NORMAL_CLASS_DECLARATION_CHILD_NODE = "java:normalClassDeclaration";
     public static final String JAVA_CLASS_NAME = "java:name";
-    public static final String JAVA_PUBLIC_CLASS_MODIFIER = "java:modifier";
+    public static final String JAVA_MODIFIER_CHILD_NODE = "java:modifier";
+    public static final String JAVA_MODIFIER_DECLARATION_CHILD_NODE = "java:modifierDeclaration";
+    public static final String JAVA_MODIFIER_NAME = "java:name";
 
     public static final String JAVA_TYPE_NAME = "java:name";
     // primitive type
@@ -174,6 +177,8 @@ public class JavaMetadataSequencer implements StreamSequencer {
 
     public static final String JAVA_CONSTRUCTOR_CHILD_NODE = "java:constructor";
     public static final String JAVA_CONSTRUCTOR_DECLARATION_CHILD_NODE = "java:constructorDeclaration";
+
+    
 
     /**
      * {@inheritDoc}
@@ -317,13 +322,21 @@ public class JavaMetadataSequencer implements StreamSequencer {
                     output.setProperty(classChildNode, nameFactory.create(JAVA_CLASS_NAME), classMetadata.getName());
 
                     // process modifiers of the class declaration
-                    Map<Integer, String> classModifiers = classMetadata.getModifiers();
-                    if (!classModifiers.isEmpty()) {
-                        String publicModifier = classModifiers.get(TypeMetadata.PUBLIC_MODIFIER);
-                        if (publicModifier != null) {
-                            output.setProperty(classChildNode, nameFactory.create(JAVA_PUBLIC_CLASS_MODIFIER), publicModifier);
-                        }
+                    List<ModifierMetadata> classModifiers = classMetadata.getModifiers();
+                    int modifierIndex = 1;
+                    for (ModifierMetadata modifierMetadata : classModifiers) {
+                        
+                        Path classModifierChildNode = pathFactory.create(JAVA_COMPILATION_UNIT_NODE + SLASH
+                                                                     + JAVA_UNIT_TYPE_CHILD_NODE + SLASH
+                                                                     + JAVA_CLASS_DECLARATION_CHILD_NODE + SLASH
+                                                                     + JAVA_NORMAL_CLASS_CHILD_NODE + SLASH
+                                                                     + JAVA_NORMAL_CLASS_DECLARATION_CHILD_NODE + SLASH
+                                                                     + JAVA_MODIFIER_CHILD_NODE  + SLASH + JAVA_MODIFIER_DECLARATION_CHILD_NODE + "["
+                                                                     + modifierIndex + "]");
+                        
+                        output.setProperty(classModifierChildNode, nameFactory.create(JAVA_MODIFIER_NAME), modifierMetadata.getName());
                     }
+                        
                     // process fields of the class unit.
                     List<FieldMetadata> fields = classMetadata.getFields();
                     int primitiveIndex = 1;
@@ -346,8 +359,8 @@ public class JavaMetadataSequencer implements StreamSequencer {
                                 primitiveIndex++;
                             }
                         }
-                        if (fieldMetadata instanceof ParameterizedFieldMetadata) {
-                            // ParameterizedFieldMetadata parameterizedFieldMetadata = (ParameterizedFieldMetadata)fieldMetadata;
+                        if (fieldMetadata instanceof ReferenceFieldMetadata) {
+                            // ReferenceFieldMetadata parameterizedFieldMetadata = (ReferenceFieldMetadata)fieldMetadata;
                             // TODO
                         }
                     }
