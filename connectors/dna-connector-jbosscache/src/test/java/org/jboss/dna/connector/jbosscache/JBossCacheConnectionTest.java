@@ -45,9 +45,14 @@ import org.jboss.dna.spi.cache.CachePolicy;
 import org.jboss.dna.spi.connector.BasicExecutionContext;
 import org.jboss.dna.spi.connector.RepositorySourceListener;
 import org.jboss.dna.spi.graph.Name;
+import org.jboss.dna.spi.graph.NameFactory;
 import org.jboss.dna.spi.graph.Path;
 import org.jboss.dna.spi.graph.PathFactory;
 import org.jboss.dna.spi.graph.PathNotFoundException;
+import org.jboss.dna.spi.graph.Property;
+import org.jboss.dna.spi.graph.PropertyFactory;
+import org.jboss.dna.spi.graph.commands.impl.BasicCreateNodeCommand;
+import org.jboss.dna.spi.graph.commands.impl.BasicGetNodeCommand;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.MockitoAnnotations;
@@ -63,6 +68,8 @@ public class JBossCacheConnectionTest {
     private Cache<Name, Object> cache;
     private ExecutionContext context;
     private PathFactory pathFactory;
+    private NameFactory nameFactory;
+    private PropertyFactory propertyFactory;
     @Mock
     private JBossCacheSource source;
 
@@ -72,9 +79,13 @@ public class JBossCacheConnectionTest {
         context = new BasicExecutionContext();
         context.getNamespaceRegistry().register(DnaLexicon.Namespace.PREFIX, DnaLexicon.Namespace.URI);
         pathFactory = context.getValueFactories().getPathFactory();
+        propertyFactory = context.getPropertyFactory();
+        nameFactory = context.getValueFactories().getNameFactory();
         cacheFactory = new DefaultCacheFactory<Name, Object>();
         cache = cacheFactory.createCache();
         connection = new JBossCacheConnection(source, cache);
+        stub(source.getUuidPropertyName()).toReturn(DnaLexicon.UUID.getString(context.getNamespaceRegistry()));
+        stub(source.getName()).toReturn("the source name");
     }
 
     @Test( expected = AssertionError.class )
@@ -164,18 +175,18 @@ public class JBossCacheConnectionTest {
     @Test
     public void shouldCreateFullyQualifiedNodeOfPathSegmentsFromPath() {
         Path path = pathFactory.create("/a/b/c/d");
-        Fqn<Path.Segment> fqn = connection.getFullyQualifiedName(path);
+        Fqn<?> fqn = connection.getFullyQualifiedName(path);
         assertThat(fqn.size(), is(4));
         assertThat(fqn.isRoot(), is(false));
         for (int i = 0; i != path.size(); ++i) {
-            assertThat(fqn.get(i), is(path.getSegment(i)));
+            assertThat((Path.Segment)fqn.get(i), is(path.getSegment(i)));
         }
     }
 
     @Test
     public void shouldCreateFullyQualifiedNodeOfPathSegmentsFromRootPath() {
         Path path = pathFactory.createRootPath();
-        Fqn<Path.Segment> fqn = connection.getFullyQualifiedName(path);
+        Fqn<?> fqn = connection.getFullyQualifiedName(path);
         assertThat(fqn.size(), is(0));
         assertThat(fqn.isRoot(), is(true));
     }
@@ -188,10 +199,10 @@ public class JBossCacheConnectionTest {
     @Test
     public void shouldCreateFullyQualifiedNodeFromPathSegment() {
         Path.Segment segment = pathFactory.createSegment("a");
-        Fqn<Path.Segment> fqn = connection.getFullyQualifiedName(segment);
+        Fqn<?> fqn = connection.getFullyQualifiedName(segment);
         assertThat(fqn.size(), is(1));
         assertThat(fqn.isRoot(), is(false));
-        assertThat(fqn.get(0), is(segment));
+        assertThat((Path.Segment)fqn.get(0), is(segment));
     }
 
     @Test( expected = AssertionError.class )
@@ -202,21 +213,20 @@ public class JBossCacheConnectionTest {
     @Test
     public void shouldCreatePathFromFullyQualifiedNode() {
         Path path = pathFactory.create("/a/b/c/d");
-        Fqn<Path.Segment> fqn = connection.getFullyQualifiedName(path);
+        Fqn<?> fqn = connection.getFullyQualifiedName(path);
         assertThat(connection.getPath(pathFactory, fqn), is(path));
     }
 
     @Test
     public void shouldCreateRootPathFromRootFullyQualifiedNode() {
         Path path = pathFactory.createRootPath();
-        Fqn<Path.Segment> fqn = connection.getFullyQualifiedName(path);
+        Fqn<?> fqn = connection.getFullyQualifiedName(path);
         assertThat(connection.getPath(pathFactory, fqn), is(path));
     }
 
     @Test
     public void shouldGetNodeIfItExistsInCache() {
         // Set up the cache with data ...
-        stub(source.getUuidPropertyName()).toReturn(DnaLexicon.UUID.getString(context.getNamespaceRegistry()));
         Name uuidProperty = connection.getUuidPropertyName(context);
         Path[] paths = {pathFactory.create("/a"), pathFactory.create("/a/b"), pathFactory.create("/a/b/c")};
         Path nonExistantPath = pathFactory.create("/a/d");
@@ -241,7 +251,6 @@ public class JBossCacheConnectionTest {
     @Test
     public void shouldThrowExceptionWithLowestExistingNodeFromGetNodeIfTheNodeDoesNotExist() {
         // Set up the cache with data ...
-        stub(source.getUuidPropertyName()).toReturn(DnaLexicon.UUID.getString(context.getNamespaceRegistry()));
         Name uuidProperty = connection.getUuidPropertyName(context);
         Path[] paths = {pathFactory.create("/a"), pathFactory.create("/a/b"), pathFactory.create("/a/b/c")};
         Path nonExistantPath = pathFactory.create("/a/d");
@@ -268,7 +277,6 @@ public class JBossCacheConnectionTest {
     @Test
     public void shouldCopyNode() {
         // Set up the cache with data ...
-        stub(source.getUuidPropertyName()).toReturn(DnaLexicon.UUID.getString(context.getNamespaceRegistry()));
         Name uuidProperty = connection.getUuidPropertyName(context);
         Path[] paths = {pathFactory.create("/a"), pathFactory.create("/a/b"), pathFactory.create("/a/b/c"),
             pathFactory.create("/a/d")};
@@ -297,7 +305,7 @@ public class JBossCacheConnectionTest {
         assertThat(newNodeB, is(nullValue()));
         assertThat(newNodeC, is(nullValue()));
         // Copy node B and place under node D
-        assertThat(connection.copyNode(nodeB, nodeD, true, uuidProperty), is(2));
+        assertThat(connection.copyNode(nodeB, nodeD, true, uuidProperty, context), is(2));
         newNodeB = cache.getNode(Fqn.fromList(newPathB.getSegmentsList()));
         newNodeC = cache.getNode(Fqn.fromList(newPathC.getSegmentsList()));
         assertThat(newNodeB, is(notNullValue()));
@@ -305,6 +313,76 @@ public class JBossCacheConnectionTest {
         // Make sure the UUIDs are new ...
         assertThat(newNodeB.get(uuidProperty), is(not(nodeB.get(uuidProperty))));
         assertThat(newNodeC.get(uuidProperty), is(not(nodeC.get(uuidProperty))));
+    }
+
+    @Test
+    public void shouldCreateSameNameSiblingsAndAutomaticallyManageSiblingIndexes() throws Exception {
+        // Set up the cache with some data, using different execute calls ...
+        Property prop1 = propertyFactory.create(nameFactory.create("dna:prop1"), "value1");
+        Property prop2 = propertyFactory.create(nameFactory.create("dna:prop2"), "value1");
+        Path pathA = pathFactory.create("/a");
+        BasicCreateNodeCommand createNode = new BasicCreateNodeCommand(pathA);
+        createNode.setProperties(prop1, prop2);
+        connection.execute(context, createNode);
+
+        for (int i = 0; i != 20; ++i) {
+            createNode = new BasicCreateNodeCommand(pathFactory.create("/a/b"));
+            createNode.setProperties(prop1, prop2);
+            connection.execute(context, createNode);
+        }
+
+        // Get the name that we'll use in later assertions ...
+        Name nameB = pathFactory.createSegment("b").getName();
+        assertThat(nameB.getLocalName(), is("b"));
+
+        // Now verify the content ...
+        BasicGetNodeCommand getNode = new BasicGetNodeCommand(pathA);
+        connection.execute(context, getNode);
+        int index = 1;
+        for (Path.Segment segment : getNode.getChildren()) {
+            assertThat(segment.getName(), is(nameB));
+            assertThat(segment.hasIndex(), is(true));
+            assertThat(segment.getIndex(), is(index));
+            ++index;
+        }
+    }
+
+    @Test
+    public void shouldCreateSameNameSiblingsAndAutomaticallyManageSiblingIndexesInterspersedWithSiblingsWithOtherNames()
+        throws Exception {
+        // Set up the cache with some data, using different execute calls ...
+        Property prop1 = propertyFactory.create(nameFactory.create("dna:prop1"), "value1");
+        Property prop2 = propertyFactory.create(nameFactory.create("dna:prop2"), "value1");
+        Path pathA = pathFactory.create("/a");
+        BasicCreateNodeCommand createNode = new BasicCreateNodeCommand(pathA);
+        createNode.setProperties(prop1, prop2);
+        connection.execute(context, createNode);
+
+        for (int i = 0; i != 20; ++i) {
+            String path = i % 5 == 0 ? "/a/b" : "/a/c" + i;
+            createNode = new BasicCreateNodeCommand(pathFactory.create(path));
+            createNode.setProperties(prop1, prop2);
+            connection.execute(context, createNode);
+        }
+
+        // Get the name that we'll use in later assertions ...
+        Name nameB = pathFactory.createSegment("b").getName();
+        assertThat(nameB.getLocalName(), is("b"));
+
+        // Now verify the content ...
+        BasicGetNodeCommand getNode = new BasicGetNodeCommand(pathA);
+        connection.execute(context, getNode);
+        int index = 1;
+        for (Path.Segment segment : getNode.getChildren()) {
+            if (segment.getName().getLocalName().equals("b")) {
+                assertThat(segment.getName(), is(nameB));
+                assertThat(segment.hasIndex(), is(true));
+                assertThat(segment.getIndex(), is(index));
+                ++index;
+            } else {
+                assertThat(segment.hasIndex(), is(false));
+            }
+        }
     }
 
 }

@@ -121,8 +121,6 @@ public class AbstractCommandExecutorTest {
         verify(validator, times(1)).execute((GraphCommand)null);
         verify(validator, times(1)).execute((GraphCommand)createNodeCommand);
         verify(validator, times(2)).execute((GraphCommand)getNodeCommand);
-        verify(validator, times(2)).execute((GetPropertiesCommand)getNodeCommand);
-        verify(validator, times(2)).execute((GetChildrenCommand)getNodeCommand);
         verify(validator, times(1)).execute(createNodeCommand);
         verify(validator, times(2)).execute(getNodeCommand);
         verifyNoMoreInteractions(validator);
@@ -138,8 +136,6 @@ public class AbstractCommandExecutorTest {
         verify(validator, times(1)).execute(command);
         verify(validator, times(1)).execute((GraphCommand)createNodeCommand);
         verify(validator, times(2)).execute((GraphCommand)getNodeCommand);
-        verify(validator, times(2)).execute((GetPropertiesCommand)getNodeCommand);
-        verify(validator, times(2)).execute((GetChildrenCommand)getNodeCommand);
         verify(validator, times(1)).execute(createNodeCommand);
         verify(validator, times(2)).execute(getNodeCommand);
         verifyNoMoreInteractions(validator);
@@ -150,8 +146,8 @@ public class AbstractCommandExecutorTest {
         GetNodeCommand getNodeCommand = mock(GetNodeCommand.class);
         executor.execute((GraphCommand)getNodeCommand);
         verify(validator, times(1)).execute((GraphCommand)getNodeCommand);
-        verify(validator, times(1)).execute((GetPropertiesCommand)getNodeCommand);
-        verify(validator, times(1)).execute((GetChildrenCommand)getNodeCommand);
+        verify(validator, times(0)).execute((GetPropertiesCommand)getNodeCommand);
+        verify(validator, times(0)).execute((GetChildrenCommand)getNodeCommand);
         verify(validator, times(1)).execute(getNodeCommand);
         verifyNoMoreInteractions(validator);
     }

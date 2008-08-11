@@ -22,6 +22,7 @@
 package org.jboss.dna.spi.graph.commands.impl;
 
 import java.util.Collection;
+import java.util.LinkedList;
 import net.jcip.annotations.NotThreadSafe;
 import org.jboss.dna.common.util.StringUtil;
 import org.jboss.dna.spi.graph.Path;
@@ -41,6 +42,13 @@ public class BasicCreateNodeCommand extends BasicGraphCommand implements CreateN
     private final Path path;
     private final Collection<Property> properties;
     private final NodeConflictBehavior conflictBehavior;
+
+    /**
+     * @param path the path to the node; may not be null
+     */
+    public BasicCreateNodeCommand( Path path ) {
+        this(path, new LinkedList<Property>(), NodeConflictBehavior.UPDATE);
+    }
 
     /**
      * @param path the path to the node; may not be null
@@ -90,6 +98,18 @@ public class BasicCreateNodeCommand extends BasicGraphCommand implements CreateN
             }
         }
         this.properties.add(property);
+    }
+
+    public void setProperties( Property... properties ) {
+        for (Property property : properties) {
+            setProperty(property);
+        }
+    }
+
+    public void setProperties( Iterable<Property> properties ) {
+        for (Property property : properties) {
+            setProperty(property);
+        }
     }
 
     /**

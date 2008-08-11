@@ -121,11 +121,9 @@ public abstract class AbstractCommandExecutor implements CommandExecutor {
         // The command could implement multiple "get" behaviors
         if (command instanceof GetNodeCommand) {
             execute((GetNodeCommand)command);
-        }
-        if (command instanceof GetPropertiesCommand) {
+        } else if (command instanceof GetPropertiesCommand) {
             execute((GetPropertiesCommand)command);
-        }
-        if (command instanceof GetChildrenCommand) {
+        } else if (command instanceof GetChildrenCommand) {
             execute((GetChildrenCommand)command);
         }
         // The command could record the branch even if deleting or moving ...
