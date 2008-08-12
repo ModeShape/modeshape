@@ -78,9 +78,12 @@
             Search index and the file system it uses.
             class: FQN of class implementing the QueryHandler interface
         -->
+				<!-- Turning off the search indexing, which is causing intermittent problems during tests.
+				     See https://jira.jboss.org/jira/browse/DNA-198
         <SearchIndex class="org.apache.jackrabbit.core.query.lucene.SearchIndex">
             <param name="path" value="${wsp.home}/index"/>
         </SearchIndex>
+			-->
     </Workspace>
 
     <!--
