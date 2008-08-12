@@ -33,7 +33,6 @@ import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.jboss.dna.sequencer.java.metadata.AnnotationMetadata;
@@ -51,7 +50,6 @@ import org.jboss.dna.sequencer.java.metadata.PrimitiveFieldMetadata;
 import org.jboss.dna.sequencer.java.metadata.ReferenceFieldMetadata;
 import org.jboss.dna.sequencer.java.metadata.SingleImportMetadata;
 import org.jboss.dna.sequencer.java.metadata.TypeMetadata;
-import org.jboss.dna.sequencer.java.metadata.Variable;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -223,7 +221,6 @@ public class JavaMetadataTest {
                 assertNotNull(methodTypeMemberMetadata3);
                 assertThat(methodTypeMemberMetadata3.getName(), is("setI"));
                 assertTrue(methodTypeMemberMetadata3.getParameters().size() == 1);
-                
 
                 MethodTypeMemberMetadata methodTypeMemberMetadata4 = (MethodTypeMemberMetadata)methods.get(4);
                 assertTrue(methodTypeMemberMetadata4.getModifiers().size() == 1);

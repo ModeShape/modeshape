@@ -276,12 +276,12 @@ public abstract class AbstractJavaMetadata {
                                                        MethodMetadata methodMetadata ) {
         Type type = methodDeclaration.getReturnType2();
         ReturnType returnType = null;
-        if(type.isPrimitiveType()) {
+        if (type.isPrimitiveType()) {
             returnType = new ReturnType();
             returnType.setName(((PrimitiveType)type).getPrimitiveTypeCode().toString());
             methodMetadata.setReturnType(returnType);
         }
-        if(type.isSimpleType()) {
+        if (type.isSimpleType()) {
             returnType = new ReturnType();
             returnType.setName(JavaMetadataUtil.getName(((SimpleType)type).getName()));
             methodMetadata.setReturnType(returnType);
@@ -375,7 +375,6 @@ public abstract class AbstractJavaMetadata {
      * @param fieldDeclaration - the declaration.
      * @return fieldMetadata - meta data.
      */
-    @SuppressWarnings( "unchecked" )
     private FieldMetadata getFieldMetadataFrom( FieldDeclaration fieldDeclaration ) {
         if (fieldDeclaration != null && fieldDeclaration.getType() != null && (!fieldDeclaration.fragments().isEmpty())) {
             // type

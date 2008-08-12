@@ -22,9 +22,7 @@
 package org.jboss.dna.sequencer.java.metadata;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Exposes meta data of a top level type.
