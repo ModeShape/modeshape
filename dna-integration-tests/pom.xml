@@ -26,7 +26,7 @@
     </dependency>
     <dependency>
       <groupId>org.jboss.dna</groupId>
-      <artifactId>dna-maven-classloader</artifactId>
+      <artifactId>dna-classloader-maven</artifactId>
     </dependency>
     <dependency>
       <groupId>org.jboss.dna</groupId>
