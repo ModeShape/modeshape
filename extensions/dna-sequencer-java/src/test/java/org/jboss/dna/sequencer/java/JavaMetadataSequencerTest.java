@@ -85,7 +85,9 @@ public class JavaMetadataSequencerTest {
         sequencer.sequence(content, output, context, progress);
         assertThat(output.getPropertyValues("java:compilationUnit", "jcr:primaryType"), is(new Object[] {"java:compilationUnit"}));
 
-        // sequencing package
+        // support sequencing package declaration( FQL name of the package). Not supported is to get information for package
+        // annotation
+        // from package-info.java
         assertThat(output.getPropertyValues("java:compilationUnit/java:package/java:packageDeclaration", "java:packageName"),
                    is(new Object[] {"org.acme"}));
 
@@ -95,7 +97,7 @@ public class JavaMetadataSequencerTest {
         // "java:typeName"),
         // is(new Object[] {"org.acme.annotation.MyPackageAnnotation"}));
 
-        // sequence imports
+        // support for sequencing imports (single import and import on demand)
         assertThat(output.getPropertyValues("java:compilationUnit/java:import/java:importDeclaration/java:singleImport/java:singleTypeImportDeclaration[1]",
                                             "java:typeName"),
                    is(new Object[] {"org.acme.annotation.MyClassAnnotation"}));
@@ -103,24 +105,49 @@ public class JavaMetadataSequencerTest {
                                             "java:typeName"),
                    is(new Object[] {"java.util"}));
 
-        // sequence class definition
+        // support for sequencing class definition (moodifiers, class name)
         assertThat(output.getPropertyValues("java:compilationUnit/java:unitType/java:classDeclaration/java:normalClass/java:normalClassDeclaration/java:modifier/java:modifierDeclaration[1]",
-                                            "java:name"),
+                                            "java:modifierName"),
                    is(new Object[] {"public"}));
         assertThat(output.getPropertyValues("java:compilationUnit/java:unitType/java:classDeclaration/java:normalClass/java:normalClassDeclaration",
                                             "java:name"),
                    is(new Object[] {"MySource"}));
 
-        // sequence fields
+        // support for primitive type sequencing (modifiers, types, variables).Not supported is the javadoc
+        assertThat(output.getPropertyValues("java:compilationUnit/java:unitType/java:classDeclaration/java:normalClass/java:normalClassDeclaration/java:field/java:fieldType/java:type/java:primitiveType[1]/java:modifier/java:modifierDeclaration[1]",
+                                            "java:modifierName"),
+                   is(new Object[] {"private"}));
+
         assertThat(output.getPropertyValues("java:compilationUnit/java:unitType/java:classDeclaration/java:normalClass/java:normalClassDeclaration/java:field/java:fieldType/java:type/java:primitiveType[1]",
-                                            "java:name"),
+                                            "java:typeName"),
+                   is(new Object[] {"int"}));
+
+        assertThat(output.getPropertyValues("java:compilationUnit/java:unitType/java:classDeclaration/java:normalClass/java:normalClassDeclaration/java:field/java:fieldType/java:type/java:primitiveType[1]/java:variable[1]",
+                                            "java:variableName"),
                    is(new Object[] {"i"}));
-        assertThat(output.getPropertyValues("java:compilationUnit/java:unitType/java:classDeclaration/java:normalClass/java:normalClassDeclaration/java:field/java:fieldType/java:type/java:primitiveType[2]",
-                                            "java:name"),
+
+        assertThat(output.getPropertyValues("java:compilationUnit/java:unitType/java:classDeclaration/java:normalClass/java:normalClassDeclaration/java:field/java:fieldType/java:type/java:primitiveType[1]/java:variable[2]",
+                                            "java:variableName"),
                    is(new Object[] {"j"}));
-        assertThat(output.getPropertyValues("java:compilationUnit/java:unitType/java:classDeclaration/java:normalClass/java:normalClassDeclaration/java:field/java:fieldType/java:type/java:primitiveType[3]",
-                                            "java:name"),
+
+        assertThat(output.getPropertyValues("java:compilationUnit/java:unitType/java:classDeclaration/java:normalClass/java:normalClassDeclaration/java:field/java:fieldType/java:type/java:primitiveType[2]/java:modifier/java:modifierDeclaration[1]",
+                                            "java:modifierName"),
+                   is(new Object[] {"private"}));
+
+        assertThat(output.getPropertyValues("java:compilationUnit/java:unitType/java:classDeclaration/java:normalClass/java:normalClassDeclaration/java:field/java:fieldType/java:type/java:primitiveType[2]/java:modifier/java:modifierDeclaration[2]",
+                                            "java:modifierName"),
+                   is(new Object[] {"static"}));
+
+        assertThat(output.getPropertyValues("java:compilationUnit/java:unitType/java:classDeclaration/java:normalClass/java:normalClassDeclaration/java:field/java:fieldType/java:type/java:primitiveType[2]",
+                                            "java:typeName"),
+                   is(new Object[] {"double"}));
+
+        assertThat(output.getPropertyValues("java:compilationUnit/java:unitType/java:classDeclaration/java:normalClass/java:normalClassDeclaration/java:field/java:fieldType/java:type/java:primitiveType[2]/java:variable[1]",
+                                            "java:variableName"),
                    is(new Object[] {"a"}));
+
+        // support for reference type sequencing ()
+
         // assertThat(output.getPropertyValues("java:compilationUnit/java:type/java:classDeclaration/java:normalClass/java:normalClassDeclaration/java:field/java:fieldType/java:type/java:referenceType",
         // "java:name"),
         // is(new Object[] {"l"}));
@@ -131,9 +158,31 @@ public class JavaMetadataSequencerTest {
         // "java:name"),
         // is(new Object[] {"x"}));
 
+        // support for methods sequencing (modifiers, return type, method name, parameters).Not supported are javadoc
         assertThat(output.getPropertyValues("java:compilationUnit/java:unitType/java:classDeclaration/java:normalClass/java:normalClassDeclaration/java:constructor/java:constructorDeclaration[1]",
                                             "java:name"),
                    is(new Object[] {"MySource"}));
+
+        assertThat(output.getPropertyValues("java:compilationUnit/java:unitType/java:classDeclaration/java:normalClass/java:normalClassDeclaration/java:constructor/java:constructorDeclaration[2]/java:modifier/java:modifierDeclaration[1]",
+                                            "java:modifierName"),
+                   is(new Object[] {"public"}));
+        assertThat(output.getPropertyValues("java:compilationUnit/java:unitType/java:classDeclaration/java:normalClass/java:normalClassDeclaration/java:constructor/java:constructorDeclaration[2]",
+                                            "java:name"),
+                   is(new Object[] {"MySource"}));
+
+        assertThat(output.getPropertyValues("java:compilationUnit/java:unitType/java:classDeclaration/java:normalClass/java:normalClassDeclaration/java:constructor/java:constructorDeclaration[2]/java:parameter/java:formalParameter[1]/java:type/java:primitiveType",
+                                            "java:typeName"),
+                   is(new Object[] {"int"}));
+        assertThat(output.getPropertyValues("java:compilationUnit/java:unitType/java:classDeclaration/java:normalClass/java:normalClassDeclaration/java:constructor/java:constructorDeclaration[2]/java:parameter/java:formalParameter[1]/java:type/java:primitiveType/java:variable",
+                                            "java:variableName"),
+                   is(new Object[] {"i"}));
+
+        assertThat(output.getPropertyValues("java:compilationUnit/java:unitType/java:classDeclaration/java:normalClass/java:normalClassDeclaration/java:constructor/java:constructorDeclaration[2]/java:parameter/java:formalParameter[1]/java:type/java:primitiveType",
+                                            "java:typeName"),
+                   is(new Object[] {"int"}));
+        assertThat(output.getPropertyValues("java:compilationUnit/java:unitType/java:classDeclaration/java:normalClass/java:normalClassDeclaration/java:constructor/java:constructorDeclaration[2]/java:parameter/java:formalParameter[2]/java:type/java:primitiveType/java:variable",
+                                            "java:variableName"),
+                   is(new Object[] {"j"}));
 
         assertThat(output.getPropertyValues("java:compilationUnit/java:unitType/java:classDeclaration/java:normalClass/java:normalClassDeclaration/java:method/java:methodDeclaration[1]",
                                             "java:name"),
