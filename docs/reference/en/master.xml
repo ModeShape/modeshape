@@ -509,7 +509,12 @@
       </sect2>
       <sect2 id="dna-sequencer-java">
         <title>Java source sequencer</title>
-        <para></para>
+        <para>The JBoss DNA makes somes extensions available to clients and one of these extensions is the <emphasis role="strong">dna-sequence-java</emphasis>, 
+		the sequencer tool for java source.
+		The Java source sequencer sequences any kind of java source with "*.java" extension and extras meaningful informations from this
+		file. The tool may have the ability to sequence any type of java compilation units (class declaration, interface declaration, 
+		and enum declaration), that are stored in a content repository.
+        </para>
       </sect2>
       <sect2 id="dna-sequencer-mp3">
         <title>MP3 audio file sequencer</title>
