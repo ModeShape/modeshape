@@ -50,6 +50,12 @@
  */
 [java:elementValue] > nt:unstructured
  + java:kindOfvalues (java:conditionalExpression, java:annotationType, java:elementValueArrayInitializer) mandatory
+ 
+/**
+ * Modifiers
+ */
+[java:modifierDeclaration] > nt:unstructured
+ - java:name (string) mandatory
 
 /**
  * Expression element-value type
@@ -105,7 +111,6 @@
  * Formal parameter
  */
 [java:formalParameter] > nt:unstructured
- - java:name (string)
  + java:type (java:primitiveType, java:referenceType) mandatory multiple
 
 /**
@@ -117,23 +122,20 @@
  */
 [java:primitiveType] > nt:unstructured
  - java:description (string)
- - java:modifier (string)
-    < 'public', 'protected', 'private'
- - java:declaredAs (string) multiple
-   < 'static','final', 'transient', 'volatile'
- - java:type (string)
+ + java:modifier (java:modifierDeclaration) = java:modifierDeclaration
+ - java:typeName (string)
    < 'byte','short','char','int,'long','float','double','boolean','void'
- - java:name (string) mandatory
+ + java:variable (java:variable) = java:variable
+ 
+ [java:variable] > nt:unstructured
+ - java:variableName (string)
  
 /** 
  * Reference type  (TODO to enhance)
- */	
+ */ 
 [java:referenceType] > nt:unstructured
-- java:description (string)
- - java:modifier (string)
-    < 'public', 'protected', 'private'
- - java:declaredAs (string) multiple
-   < 'static','final', 'transient', 'volatile'
+ - java:description (string)
+ + java:modifier (java:modifierDeclaration) = java:modifierDeclaration
  - java:name (string) mandatory
  
 /** 
@@ -147,12 +149,9 @@
   */
 [java:methodDeclaration] > nt:unstructured
  - java:description (string)
- - java:modifier (string)
-   < 'public', 'protected', 'private'
+ + java:modifier (java:modifierDeclaration) = java:modifierDeclaration
  + java:resultType (java:primitiveType, java:referenceType) mandatory
  - java:name (string) mandatory
- - java:declaredAs (string) multiple
-   < 'static','final', 'native', 'strictfp', 'synchronized'
  + java:parameter (java:formalParameter) multiple
 
 /** 
@@ -160,8 +159,7 @@
  */
 [java:constructorDeclaration] > nt:unstructured
  - java:description (string)
- - java:modifier (string)
-  < 'public', 'protected', 'private'
+ + java:modifier (java:modifierDeclaration) = java:modifierDeclaration
  - java:name (string) mandatory
  + java:parameter (java:formalParameter)
 
@@ -192,8 +190,6 @@
  + java:singleImport (java:singleTypeImportDeclaration) = java:singleTypeImportDeclaration
  + java:importOnDemand (java:typeImportOnDemandDeclaration) = java:typeImportOnDemandDeclaration
  
- [java:modifierDeclaration] > nt:unstructured
-  - java:name (string) mandatory
 
 /**
  * Class declaration
