@@ -77,7 +77,7 @@ public class BasicCreateNodeCommand extends BasicGraphCommand implements CreateN
     /**
      * {@inheritDoc}
      */
-    public Iterable<Property> getPropertyIterator() {
+    public Collection<Property> getProperties() {
         return properties;
     }
 
@@ -153,7 +153,7 @@ public class BasicCreateNodeCommand extends BasicGraphCommand implements CreateN
         sb.append(" at ");
         sb.append(this.getPath());
         boolean firstProperty = true;
-        for (Property property : this.getPropertyIterator()) {
+        for (Property property : this.getProperties()) {
             if (property.isEmpty()) continue;
             if (firstProperty) {
                 sb.append(" { ");

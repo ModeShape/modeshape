@@ -57,7 +57,7 @@ public class OneContributionMergeStrategy implements MergeStrategy {
             children.add(child);
         }
         // Copy the properties ...
-        Map<Name, Property> properties = federatedNode.getProperties();
+        Map<Name, Property> properties = federatedNode.getPropertiesByName();
         properties.clear();
         Iterator<Property> propertyIterator = contribution.getProperties();
         while (propertyIterator.hasNext()) {

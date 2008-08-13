@@ -74,11 +74,11 @@ public class BasicGetPropertiesCommand extends BasicGraphCommand implements GetP
      * 
      * @return the map of property name to values
      */
-    public Iterable<Property> getPropertyIterator() {
+    public Iterable<Property> getProperties() {
         return this.properties.values();
     }
 
-    public Map<Name, Property> getProperties() {
+    public Map<Name, Property> getPropertiesByName() {
         return this.properties;
     }
 
@@ -129,7 +129,7 @@ public class BasicGetPropertiesCommand extends BasicGraphCommand implements GetP
         sb.append(" at ");
         sb.append(this.getPath());
         boolean firstProperty = true;
-        for (Property property : this.getPropertyIterator()) {
+        for (Property property : this.getProperties()) {
             if (property.isEmpty()) continue;
             if (firstProperty) {
                 sb.append(" { ");

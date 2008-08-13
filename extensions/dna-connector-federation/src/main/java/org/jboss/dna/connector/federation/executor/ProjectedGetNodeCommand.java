@@ -21,23 +21,72 @@
  */
 package org.jboss.dna.connector.federation.executor;
 
+import org.jboss.dna.spi.cache.CachePolicy;
+import org.jboss.dna.spi.graph.DateTime;
 import org.jboss.dna.spi.graph.Path;
 import org.jboss.dna.spi.graph.Property;
-import org.jboss.dna.spi.graph.commands.GetChildrenCommand;
+import org.jboss.dna.spi.graph.Path.Segment;
 import org.jboss.dna.spi.graph.commands.GetNodeCommand;
 
 /**
  * @author Randall Hauch
  */
-public class ProjectedGetNodeCommand extends ProjectedGetChildrenCommand implements GetNodeCommand {
+public class ProjectedGetNodeCommand extends ActsOnProjectedPathCommand<GetNodeCommand> implements GetNodeCommand {
 
     /**
      */
     private static final long serialVersionUID = 1L;
 
-    public ProjectedGetNodeCommand( GetChildrenCommand delegate,
+    public ProjectedGetNodeCommand( GetNodeCommand delegate,
                                     Path projectedPath ) {
         super(delegate, projectedPath);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.spi.graph.commands.GetChildrenCommand#addChild(org.jboss.dna.spi.graph.Path.Segment,
+     *      org.jboss.dna.spi.graph.Property[])
+     */
+    public void addChild( Segment nameOfChild,
+                          Property... identityProperties ) {
+        getOriginalCommand().addChild(nameOfChild, identityProperties);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.spi.graph.commands.GetChildrenCommand#setNoChildren()
+     */
+    public void setNoChildren() {
+        getOriginalCommand().setNoChildren();
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.spi.cache.Cacheable#getCachePolicy()
+     */
+    public CachePolicy getCachePolicy() {
+        return getOriginalCommand().getCachePolicy();
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.spi.cache.Cacheable#getTimeLoaded()
+     */
+    public DateTime getTimeLoaded() {
+        return getOriginalCommand().getTimeLoaded();
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.spi.cache.Cacheable#setCachePolicy(org.jboss.dna.spi.cache.CachePolicy)
+     */
+    public void setCachePolicy( CachePolicy cachePolicy ) {
+        getOriginalCommand().setCachePolicy(cachePolicy);
     }
 
     /**
@@ -46,7 +95,7 @@ public class ProjectedGetNodeCommand extends ProjectedGetChildrenCommand impleme
      * @see org.jboss.dna.spi.graph.commands.GetPropertiesCommand#setProperty(org.jboss.dna.spi.graph.Property)
      */
     public void setProperty( Property property ) {
-        ((GetNodeCommand)getOriginalCommand()).setProperty(property);
+        getOriginalCommand().setProperty(property);
     }
 
 }

@@ -776,7 +776,7 @@ public class FederatedRepositorySource implements RepositorySource, ObjectFactor
             Projection cacheProjection = createProjection(context,
                                                           projectionParser,
                                                           getCacheRegion.getPath(),
-                                                          getCacheRegion.getProperties(),
+                                                          getCacheRegion.getPropertiesByName(),
                                                           problems);
 
             if (getCacheRegion.hasError()) {
@@ -812,7 +812,7 @@ public class FederatedRepositorySource implements RepositorySource, ObjectFactor
                         Projection projection = createProjection(context,
                                                                  projectionParser,
                                                                  getProjectionCommand.getPath(),
-                                                                 getProjectionCommand.getProperties(),
+                                                                 getProjectionCommand.getPropertiesByName(),
                                                                  problems);
                         if (projection != null) sourceProjections.add(projection);
                     }
@@ -821,7 +821,7 @@ public class FederatedRepositorySource implements RepositorySource, ObjectFactor
 
             // Look for the default cache policy ...
             BasicCachePolicy cachePolicy = new BasicCachePolicy();
-            Property timeToLiveProperty = getRepository.getProperties().get(nameFactory.create(CACHE_POLICY_TIME_TO_LIVE_CONFIG_PROPERTY_NAME));
+            Property timeToLiveProperty = getRepository.getPropertiesByName().get(nameFactory.create(CACHE_POLICY_TIME_TO_LIVE_CONFIG_PROPERTY_NAME));
             if (timeToLiveProperty != null && !timeToLiveProperty.isEmpty()) {
                 cachePolicy.setTimeToLive(longFactory.create(timeToLiveProperty.getValues().next()));
             }

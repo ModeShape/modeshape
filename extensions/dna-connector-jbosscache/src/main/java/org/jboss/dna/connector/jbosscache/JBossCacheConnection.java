@@ -478,7 +478,7 @@ public class JBossCacheConnection implements RepositoryConnection {
                 node.put(uuidPropertyName, generateUuid());
             }
             // Now add the properties to the supplied node ...
-            for (Property property : command.getPropertyIterator()) {
+            for (Property property : command.getProperties()) {
                 if (property.size() == 0) continue;
                 Name propName = property.getName();
                 Object value = null;
@@ -530,7 +530,7 @@ public class JBossCacheConnection implements RepositoryConnection {
         public void execute( SetPropertiesCommand command ) {
             Node<Name, Object> node = getNode(command.getPath());
             // Now set (or remove) the properties to the supplied node ...
-            for (Property property : command.getPropertyIterator()) {
+            for (Property property : command.getProperties()) {
                 Name propName = property.getName();
                 // Don't allow the child list property to be removed or changed
                 if (propName.equals(JBossCacheLexicon.CHILD_PATH_SEGMENT_LIST)) continue;

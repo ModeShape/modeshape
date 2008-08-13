@@ -237,7 +237,7 @@ public class RepositoryService implements AdministeredService {
                             BasicGetNodeCommand getSourceCommand = (BasicGetNodeCommand)command;
                             if (getSourceCommand.hasNoError()) {
                                 RepositorySource source = createRepositorySource(getSourceCommand.getPath(),
-                                                                                 getSourceCommand.getProperties(),
+                                                                                 getSourceCommand.getPropertiesByName(),
                                                                                  problems);
                                 if (source != null) sources.addSource(source);
                             }

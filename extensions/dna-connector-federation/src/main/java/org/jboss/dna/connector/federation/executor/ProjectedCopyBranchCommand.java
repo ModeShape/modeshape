@@ -27,11 +27,24 @@ import org.jboss.dna.spi.graph.commands.CopyBranchCommand;
 /**
  * @author Randall Hauch
  */
-public class ProjectedCopyBranchCommand extends ProjectedCopyNodeCommand implements CopyBranchCommand {
+public class ProjectedCopyBranchCommand extends ActsOnProjectedPathCommand<CopyBranchCommand> implements CopyBranchCommand {
+
+    private final Path newProjectedPath;
 
     public ProjectedCopyBranchCommand( CopyBranchCommand delegate,
                                        Path projectedPath,
                                        Path newProjectedPath ) {
-        super(delegate, projectedPath, newProjectedPath);
+        super(delegate, projectedPath);
+        assert newProjectedPath != null;
+        this.newProjectedPath = newProjectedPath;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.spi.graph.commands.CopyBranchCommand#getNewPath()
+     */
+    public Path getNewPath() {
+        return newProjectedPath;
     }
 }

@@ -21,6 +21,7 @@
  */
 package org.jboss.dna.spi.graph.commands;
 
+import java.util.Collection;
 import org.jboss.dna.spi.cache.Cacheable;
 import org.jboss.dna.spi.graph.Property;
 
@@ -38,6 +39,6 @@ public interface ActsOnProperties extends ActsOnPath {
      * 
      * @return the properties
      */
-    Iterable<Property> getPropertyIterator();
+    Collection<Property> getProperties();
 
 }

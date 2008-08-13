@@ -21,6 +21,7 @@
  */
 package org.jboss.dna.spi.graph.commands.impl;
 
+import java.util.Collection;
 import java.util.List;
 import net.jcip.annotations.NotThreadSafe;
 import org.jboss.dna.common.util.StringUtil;
@@ -63,7 +64,7 @@ public class BasicSetPropertiesCommand extends BasicGraphCommand implements SetP
     /**
      * {@inheritDoc}
      */
-    public Iterable<Property> getPropertyIterator() {
+    public Collection<Property> getProperties() {
         return properties;
     }
 
@@ -79,7 +80,7 @@ public class BasicSetPropertiesCommand extends BasicGraphCommand implements SetP
         sb.append(" at ");
         sb.append(this.getPath());
         boolean firstProperty = true;
-        for (Property property : this.getPropertyIterator()) {
+        for (Property property : this.getProperties()) {
             if (property.isEmpty()) continue;
             if (firstProperty) {
                 sb.append(" { ");

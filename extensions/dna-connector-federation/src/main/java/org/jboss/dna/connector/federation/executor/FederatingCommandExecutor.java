@@ -199,7 +199,7 @@ public class FederatingCommandExecutor extends AbstractCommandExecutor {
     @Override
     public void execute( GetNodeCommand command ) throws RepositorySourceException, InterruptedException {
         BasicGetNodeCommand nodeInfo = getNode(command.getPath());
-        for (Property property : nodeInfo.getProperties().values()) {
+        for (Property property : nodeInfo.getProperties()) {
             command.setProperty(property);
         }
         for (Segment child : nodeInfo.getChildren()) {
@@ -215,7 +215,7 @@ public class FederatingCommandExecutor extends AbstractCommandExecutor {
     @Override
     public void execute( GetPropertiesCommand command ) throws RepositorySourceException, InterruptedException {
         BasicGetNodeCommand nodeInfo = getNode(command.getPath());
-        for (Property property : nodeInfo.getProperties().values()) {
+        for (Property property : nodeInfo.getProperties()) {
             command.setProperty(property);
         }
     }
@@ -355,7 +355,7 @@ public class FederatingCommandExecutor extends AbstractCommandExecutor {
                         BasicGetNodeCommand fromSource = new BasicGetNodeCommand(pathInSource);
                         sourceConnection.execute(getExecutionContext(), fromSource);
                         if (!fromSource.hasError()) {
-                            Collection<Property> properties = fromSource.getProperties().values();
+                            Collection<Property> properties = fromSource.getProperties();
                             Collection<Segment> children = fromSource.getChildren();
                             DateTime expTime = fromSource.getCachePolicy() == null ? expirationTime : timeFactory.create(getCurrentTimeInUtc(),
                                                                                                                          fromSource.getCachePolicy().getTimeToLive());
@@ -371,7 +371,7 @@ public class FederatingCommandExecutor extends AbstractCommandExecutor {
                         sourceConnection.execute(context, fromSourceCommands);
                         for (BasicGetNodeCommand fromSource : fromSourceCommands) {
                             if (fromSource.hasError()) continue;
-                            Collection<Property> properties = fromSource.getProperties().values();
+                            Collection<Property> properties = fromSource.getProperties();
                             Collection<Segment> children = fromSource.getChildren();
                             DateTime expTime = fromSource.getCachePolicy() == null ? expirationTime : timeFactory.create(getCurrentTimeInUtc(),
                                                                                                                          fromSource.getCachePolicy().getTimeToLive());
@@ -398,7 +398,7 @@ public class FederatingCommandExecutor extends AbstractCommandExecutor {
     }
 
     protected MergePlan getMergePlan( BasicGetNodeCommand command ) {
-        Property mergePlanProperty = command.getProperties().get(mergePlanPropertyName);
+        Property mergePlanProperty = command.getPropertiesByName().get(mergePlanPropertyName);
         if (mergePlanProperty == null || mergePlanProperty.isEmpty()) {
             return null;
         }
@@ -412,7 +412,7 @@ public class FederatingCommandExecutor extends AbstractCommandExecutor {
         final Path path = mergedNode.getPath();
 
         NodeConflictBehavior conflictBehavior = NodeConflictBehavior.UPDATE;
-        BasicCreateNodeCommand newNode = new BasicCreateNodeCommand(path, mergedNode.getProperties().values(), conflictBehavior);
+        BasicCreateNodeCommand newNode = new BasicCreateNodeCommand(path, mergedNode.getProperties(), conflictBehavior);
         newNode.setProperty(new BasicSingleValueProperty(this.uuidPropertyName, mergedNode.getUuid()));
         List<Segment> children = mergedNode.getChildren();
         GraphCommand[] intoCache = new GraphCommand[1 + children.size()];

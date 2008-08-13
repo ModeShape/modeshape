@@ -21,6 +21,7 @@
  */
 package org.jboss.dna.spi.graph.commands;
 
+import java.util.Collection;
 import java.util.Iterator;
 import org.jboss.dna.spi.graph.Property;
 
@@ -38,7 +39,7 @@ public interface CreateNodeCommand
      * 
      * @return the property iterator; never null, but possibly empty
      */
-    Iterable<Property> getPropertyIterator();
+    Collection<Property> getProperties();
 
     /**
      * Get the desired behavior when a node at the target {@link ActsOnPath#getPath() path} already exists.

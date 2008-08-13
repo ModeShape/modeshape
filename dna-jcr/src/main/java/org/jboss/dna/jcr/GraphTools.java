@@ -82,21 +82,21 @@ class GraphTools {
         execute(getRootNodeCommand);
         // Get primary type
         NameFactory nameFactory = valueFactories.getNameFactory();
-        org.jboss.dna.spi.graph.Property primaryTypeProp = getRootNodeCommand.getProperties().get(nameFactory.create("jcr:primaryType"));
+        org.jboss.dna.spi.graph.Property primaryTypeProp = getRootNodeCommand.getPropertiesByName().get(nameFactory.create("jcr:primaryType"));
         org.jboss.dna.spi.graph.ValueFactory<String> stringFactory = valueFactories.getStringFactory();
         String primaryType = stringFactory.create(primaryTypeProp.getValues()).next();
         // Process node's properties
         NodeContent content = new NodeContent();
         org.jboss.dna.spi.graph.ValueFactory<Boolean> booleanFactory = valueFactories.getBooleanFactory();
-        for (org.jboss.dna.spi.graph.Property prop : getRootNodeCommand.getPropertyIterator()) {
+        for (org.jboss.dna.spi.graph.Property prop : getRootNodeCommand.getProperties()) {
             // Get property definition from node's primary type
             BasicGetNodeCommand getPropDefCommand = new BasicGetNodeCommand(pathFactory.create("/dna:system/dna:jcr/"
                                                                                                + primaryType + "/"
                                                                                                + prop.getName()));
             execute(getPropDefCommand);
             // Create either a single- or multiple-valued property, as defined by the property definition
-            org.jboss.dna.spi.graph.Property isMultipleProp = getPropDefCommand.getProperties().get(nameFactory.create("jcr:multiple"));
-            org.jboss.dna.spi.graph.Property requiredTypeProp = getPropDefCommand.getProperties().get(nameFactory.create("jcr:requiredType"));
+            org.jboss.dna.spi.graph.Property isMultipleProp = getPropDefCommand.getPropertiesByName().get(nameFactory.create("jcr:multiple"));
+            org.jboss.dna.spi.graph.Property requiredTypeProp = getPropDefCommand.getPropertiesByName().get(nameFactory.create("jcr:requiredType"));
             String type = stringFactory.create(requiredTypeProp.getValues()).next();
             if (booleanFactory.create(isMultipleProp.getValues()).next().booleanValue()) {
                 // jcrProps.add(new JcrMultiValuedProperty(dnaProp.getName(), type, dnaProp.getValues()));

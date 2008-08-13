@@ -21,6 +21,7 @@
  */
 package org.jboss.dna.connector.federation.executor;
 
+import java.util.Collection;
 import org.jboss.dna.spi.graph.Path;
 import org.jboss.dna.spi.graph.Property;
 import org.jboss.dna.spi.graph.commands.CreateNodeCommand;
@@ -48,10 +49,10 @@ public class ProjectedCreateNodeCommand extends ActsOnProjectedPathCommand<Creat
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.spi.graph.commands.CreateNodeCommand#getPropertyIterator()
+     * @see org.jboss.dna.spi.graph.commands.CreateNodeCommand#getProperties()
      */
-    public Iterable<Property> getPropertyIterator() {
-        return getOriginalCommand().getPropertyIterator();
+    public Collection<Property> getProperties() {
+        return getOriginalCommand().getProperties();
     }
 
     /**

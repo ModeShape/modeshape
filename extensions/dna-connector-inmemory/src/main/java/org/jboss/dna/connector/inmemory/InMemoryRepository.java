@@ -352,7 +352,7 @@ public class InMemoryRepository {
                 throw new PathNotFoundException(path, lowestExisting, InMemoryConnectorI18n.nodeDoesNotExist.text(parent));
             }
             UUID uuid = null;
-            for (Property property : command.getPropertyIterator()) {
+            for (Property property : command.getProperties()) {
                 if (property.getName().equals(uuidPropertyName)) {
                     uuid = getExecutionContext().getValueFactories().getUuidFactory().create(property.getValues().next());
                     break;
@@ -360,7 +360,7 @@ public class InMemoryRepository {
             }
             Node node = createNode(getExecutionContext(), parentNode, path.getLastSegment().getName(), uuid);
             // Now add the properties to the supplied node ...
-            for (Property property : command.getPropertyIterator()) {
+            for (Property property : command.getProperties()) {
                 Name propName = property.getName();
                 if (property.size() == 0) {
                     node.getProperties().remove(propName);
@@ -397,7 +397,7 @@ public class InMemoryRepository {
         public void execute( SetPropertiesCommand command ) {
             Node node = getTargetNode(command);
             // Now set (or remove) the properties to the supplied node ...
-            for (Property property : command.getPropertyIterator()) {
+            for (Property property : command.getProperties()) {
                 Name propName = property.getName();
                 if (property.size() == 0) {
                     node.getProperties().remove(propName);

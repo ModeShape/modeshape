@@ -21,6 +21,7 @@
  */
 package org.jboss.dna.spi.graph.commands.impl;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -67,11 +68,11 @@ public class BasicGetNodeCommand extends BasicGetChildrenCommand implements GetN
      * 
      * @return the map of property name to values
      */
-    public Iterable<Property> getPropertyIterator() {
+    public Collection<Property> getProperties() {
         return this.properties.values();
     }
 
-    public Map<Name, Property> getProperties() {
+    public Map<Name, Property> getPropertiesByName() {
         return this.properties;
     }
 
@@ -87,7 +88,7 @@ public class BasicGetNodeCommand extends BasicGetChildrenCommand implements GetN
         sb.append(" at ");
         sb.append(this.getPath());
         boolean firstProperty = true;
-        for (Property property : this.getPropertyIterator()) {
+        for (Property property : this.getProperties()) {
             if (property.isEmpty()) continue;
             if (firstProperty) {
                 sb.append(" { ");
