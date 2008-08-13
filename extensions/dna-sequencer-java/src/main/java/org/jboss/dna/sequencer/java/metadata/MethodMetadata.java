@@ -25,7 +25,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * MethodMetadata
+ * Represent the {@link MethodMetadata}
  */
 public abstract class MethodMetadata {
 

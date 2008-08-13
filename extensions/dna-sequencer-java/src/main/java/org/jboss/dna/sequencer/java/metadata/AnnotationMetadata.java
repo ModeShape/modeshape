@@ -29,7 +29,8 @@ public abstract class AnnotationMetadata {
     private String name;
 
     /**
-     * @return name
+     * Get the name of the modifier.
+     * @return name of the modifier.
      */
     public String getName() {
         return name;

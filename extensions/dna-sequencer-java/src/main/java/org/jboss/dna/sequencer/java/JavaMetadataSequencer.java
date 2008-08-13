@@ -157,9 +157,12 @@ public class JavaMetadataSequencer implements StreamSequencer {
     public static final String JAVA_CLASS_NAME = "java:name";
     public static final String JAVA_MODIFIER_CHILD_NODE = "java:modifier";
     public static final String JAVA_MODIFIER_DECLARATION_CHILD_NODE = "java:modifierDeclaration";
-    public static final String JAVA_MODIFIER_NAME = "java:name";
+    public static final String JAVA_MODIFIER_NAME = "java:modifierName";
 
-    public static final String JAVA_TYPE_NAME = "java:name";
+    public static final String JAVA_VARIABLE = "java:variable";
+    public static final String JAVA_VARIABLE_NAME = "java:variableName";
+    public static final String JAVA_TYPE = "java:typeName";
+
     // primitive type
     public static final String JAVA_FIELD_CHILD_NODE = "java:field";
     public static final String JAVA_FIELD_TYPE_CHILD_NODE = "java:fieldType";
@@ -174,10 +177,15 @@ public class JavaMetadataSequencer implements StreamSequencer {
     public static final String JAVA_METHOD_DECLARATION_CHILD_NODE = "java:methodDeclaration";
     public static final String JAVA_METHOD_NAME = "java:name";
 
+    // constructor
     public static final String JAVA_CONSTRUCTOR_CHILD_NODE = "java:constructor";
     public static final String JAVA_CONSTRUCTOR_DECLARATION_CHILD_NODE = "java:constructorDeclaration";
 
-    
+    // parameter
+    public static final String JAVA_PARAMETER = "java:parameter";
+    public static final String JAVA_FORMAL_PARAMETER = "java:formalParameter";
+
+    public static final String JAVA_PARAMETER_NAME = "java:parameterName";
 
     /**
      * {@inheritDoc}
@@ -324,39 +332,68 @@ public class JavaMetadataSequencer implements StreamSequencer {
                     List<ModifierMetadata> classModifiers = classMetadata.getModifiers();
                     int modifierIndex = 1;
                     for (ModifierMetadata modifierMetadata : classModifiers) {
-                        
+
                         Path classModifierChildNode = pathFactory.create(JAVA_COMPILATION_UNIT_NODE + SLASH
-                                                                     + JAVA_UNIT_TYPE_CHILD_NODE + SLASH
-                                                                     + JAVA_CLASS_DECLARATION_CHILD_NODE + SLASH
-                                                                     + JAVA_NORMAL_CLASS_CHILD_NODE + SLASH
-                                                                     + JAVA_NORMAL_CLASS_DECLARATION_CHILD_NODE + SLASH
-                                                                     + JAVA_MODIFIER_CHILD_NODE  + SLASH + JAVA_MODIFIER_DECLARATION_CHILD_NODE + "["
-                                                                     + modifierIndex + "]");
-                        
-                        output.setProperty(classModifierChildNode, nameFactory.create(JAVA_MODIFIER_NAME), modifierMetadata.getName());
+                                                                         + JAVA_UNIT_TYPE_CHILD_NODE + SLASH
+                                                                         + JAVA_CLASS_DECLARATION_CHILD_NODE + SLASH
+                                                                         + JAVA_NORMAL_CLASS_CHILD_NODE + SLASH
+                                                                         + JAVA_NORMAL_CLASS_DECLARATION_CHILD_NODE + SLASH
+                                                                         + JAVA_MODIFIER_CHILD_NODE + SLASH
+                                                                         + JAVA_MODIFIER_DECLARATION_CHILD_NODE + "["
+                                                                         + modifierIndex + "]");
+
+                        output.setProperty(classModifierChildNode,
+                                           nameFactory.create(JAVA_MODIFIER_NAME),
+                                           modifierMetadata.getName());
                     }
-                        
+
                     // process fields of the class unit.
                     List<FieldMetadata> fields = classMetadata.getFields();
                     int primitiveIndex = 1;
                     for (FieldMetadata fieldMetadata : fields) {
                         if (fieldMetadata instanceof PrimitiveFieldMetadata) {
                             PrimitiveFieldMetadata primitiveFieldMetadata = (PrimitiveFieldMetadata)fieldMetadata;
-                            List<Variable> variables = primitiveFieldMetadata.getVariables();
-                            for (Variable variable : variables) {
-                                Path primitiveChildNode = pathFactory.create(JAVA_COMPILATION_UNIT_NODE + SLASH
-                                                                             + JAVA_UNIT_TYPE_CHILD_NODE + SLASH
-                                                                             + JAVA_CLASS_DECLARATION_CHILD_NODE + SLASH
-                                                                             + JAVA_NORMAL_CLASS_CHILD_NODE + SLASH
-                                                                             + JAVA_NORMAL_CLASS_DECLARATION_CHILD_NODE + SLASH
-                                                                             + JAVA_FIELD_CHILD_NODE + SLASH
-                                                                             + JAVA_FIELD_TYPE_CHILD_NODE + SLASH
-                                                                             + JAVA_TYPE_CHILD_NODE + SLASH
-                                                                             + JAVA_PRIMITIVE_TYPE_CHILD_NODE + "["
-                                                                             + primitiveIndex + "]");
-                                output.setProperty(primitiveChildNode, nameFactory.create(JAVA_TYPE_NAME), variable.getName());
-                                primitiveIndex++;
+                            StringBuffer primitiveFieldRootPath = createPathWithIndex(JAVA_COMPILATION_UNIT_NODE + SLASH
+                                                                                      + JAVA_UNIT_TYPE_CHILD_NODE + SLASH
+                                                                                      + JAVA_CLASS_DECLARATION_CHILD_NODE + SLASH
+                                                                                      + JAVA_NORMAL_CLASS_CHILD_NODE + SLASH
+                                                                                      + JAVA_NORMAL_CLASS_DECLARATION_CHILD_NODE
+                                                                                      + SLASH + JAVA_FIELD_CHILD_NODE + SLASH
+                                                                                      + JAVA_FIELD_TYPE_CHILD_NODE + SLASH
+                                                                                      + JAVA_TYPE_CHILD_NODE + SLASH
+                                                                                      + JAVA_PRIMITIVE_TYPE_CHILD_NODE,
+                                                                                      primitiveIndex);
+                            // type
+                            Path primitiveTypeChildNode = pathFactory.create(primitiveFieldRootPath);
+                            output.setProperty(primitiveTypeChildNode,
+                                               nameFactory.create(JAVA_TYPE),
+                                               primitiveFieldMetadata.getType());
+                            // modifiers
+                            List<ModifierMetadata> modifiers = primitiveFieldMetadata.getModifiers();
+                            int primitiveModifierIndex = 1;
+                            for (ModifierMetadata modifierMetadata2 : modifiers) {
+                                String modifierPath = createPathWithIndex(primitiveFieldRootPath.toString() + SLASH
+                                                                          + JAVA_MODIFIER_CHILD_NODE + SLASH
+                                                                          + JAVA_MODIFIER_DECLARATION_CHILD_NODE,
+                                                                          primitiveModifierIndex).toString();
+                                Path modifierChildNode = pathFactory.create(modifierPath);
+                                output.setProperty(modifierChildNode,
+                                                   nameFactory.create(JAVA_MODIFIER_NAME),
+                                                   modifierMetadata2.getName());
+                                primitiveModifierIndex++;
                             }
+                            // variables
+                            List<Variable> variables = primitiveFieldMetadata.getVariables();
+                            int primitiveVariableIndex = 1;
+                            for (Variable variable : variables) {
+                                String variablePath = createPathWithIndex(primitiveFieldRootPath.toString() + SLASH
+                                                                          + JAVA_VARIABLE,
+                                                                          primitiveVariableIndex).toString();
+                                Path primitiveChildNode = pathFactory.create(variablePath);
+                                output.setProperty(primitiveChildNode, nameFactory.create(JAVA_VARIABLE_NAME), variable.getName());
+                                primitiveVariableIndex++;
+                            }
+                            primitiveIndex++;
                         }
                         if (fieldMetadata instanceof ReferenceFieldMetadata) {
                             // ReferenceFieldMetadata parameterizedFieldMetadata = (ReferenceFieldMetadata)fieldMetadata;
@@ -372,31 +409,80 @@ public class JavaMetadataSequencer implements StreamSequencer {
                         if (methodMetadata.isContructor()) {
                             // process contructor
                             ConstructorMetadata constructorMetadata = (ConstructorMetadata)methodMetadata;
-
-                            Path constructorChildNode = pathFactory.create(JAVA_COMPILATION_UNIT_NODE + SLASH
-                                                                           + JAVA_UNIT_TYPE_CHILD_NODE + SLASH
-                                                                           + JAVA_CLASS_DECLARATION_CHILD_NODE + SLASH
-                                                                           + JAVA_NORMAL_CLASS_CHILD_NODE + SLASH
-                                                                           + JAVA_NORMAL_CLASS_DECLARATION_CHILD_NODE + SLASH
-                                                                           + JAVA_CONSTRUCTOR_CHILD_NODE + SLASH
-                                                                           + JAVA_CONSTRUCTOR_DECLARATION_CHILD_NODE + "["
-                                                                           + constructorIndex + "]");
+                            StringBuffer constructorRootPath = createPathWithIndex(JAVA_COMPILATION_UNIT_NODE + SLASH
+                                                                                   + JAVA_UNIT_TYPE_CHILD_NODE + SLASH
+                                                                                   + JAVA_CLASS_DECLARATION_CHILD_NODE + SLASH
+                                                                                   + JAVA_NORMAL_CLASS_CHILD_NODE + SLASH
+                                                                                   + JAVA_NORMAL_CLASS_DECLARATION_CHILD_NODE
+                                                                                   + SLASH + JAVA_CONSTRUCTOR_CHILD_NODE + SLASH
+                                                                                   + JAVA_CONSTRUCTOR_DECLARATION_CHILD_NODE,
+                                                                                   constructorIndex);
+                            Path constructorChildNode = pathFactory.create(constructorRootPath.toString());
                             output.setProperty(constructorChildNode,
                                                nameFactory.create(JAVA_METHOD_NAME),
                                                constructorMetadata.getName());
+                            List<ModifierMetadata> modifiers = constructorMetadata.getModifiers();
+                            // modifiers
+                            int constructorModifierIndex = 1;
+                            for (ModifierMetadata modifierMetadata : modifiers) {
+                                String contructorModifierPath = createPathWithIndex(constructorRootPath.toString() + SLASH
+                                                                                    + JAVA_MODIFIER_CHILD_NODE + SLASH
+                                                                                    + JAVA_MODIFIER_DECLARATION_CHILD_NODE,
+                                                                                    constructorModifierIndex).toString();
+                                Path constructorModifierChildNode = pathFactory.create(contructorModifierPath);
+                                output.setProperty(constructorModifierChildNode,
+                                                   nameFactory.create(JAVA_MODIFIER_NAME),
+                                                   modifierMetadata.getName());
+                                constructorModifierIndex++;
+                            }
+                            // parameters
+                            List<FieldMetadata> params = constructorMetadata.getParameters();
+                            int constructorParameterIndex = 1;
+                            for (FieldMetadata fieldMetadata2 : params) {
+                                String constructorParameterPath = createPathWithIndex(constructorRootPath.toString() + SLASH
+                                                                                      + JAVA_PARAMETER + SLASH
+                                                                                      + JAVA_FORMAL_PARAMETER,
+                                                                                      constructorParameterIndex).toString();
+                                if (fieldMetadata2 instanceof PrimitiveFieldMetadata) {
+                                    PrimitiveFieldMetadata primitive = (PrimitiveFieldMetadata)fieldMetadata2;
+                                    String constructPrimitiveFormalParamRootPath = createPath(constructorParameterPath + SLASH
+                                                                                              + JAVA_TYPE_CHILD_NODE + SLASH
+                                                                                              + JAVA_PRIMITIVE_TYPE_CHILD_NODE).toString();
+                                    List<Variable> paramterVariables = primitive.getVariables();
+                                    String constructorPrimitiveParamVariablePath = createPath(constructPrimitiveFormalParamRootPath
+                                                                                              + SLASH + JAVA_VARIABLE).toString();
+                                    Path constructorParamChildNode = pathFactory.create(constructorPrimitiveParamVariablePath);
+                                    for (Variable variable : paramterVariables) {
+                                        // name
+                                        output.setProperty(constructorParamChildNode,
+                                                           nameFactory.create(JAVA_VARIABLE_NAME),
+                                                           variable.getName());
+                                    }
+                                    // type
+                                    Path constructPrimitiveTypeParamChildNode = pathFactory.create(constructPrimitiveFormalParamRootPath);
+                                    output.setProperty(constructPrimitiveTypeParamChildNode,
+                                                       nameFactory.create(JAVA_TYPE),
+                                                       primitive.getType());
+
+                                }
+                                
+                                // TODO for reference types
+                                constructorParameterIndex++;
+                            }
+
                             constructorIndex++;
                         } else {
 
                             // normal method
                             MethodTypeMemberMetadata methodTypeMemberMetadata = (MethodTypeMemberMetadata)methodMetadata;
-                            Path methodChildNode = pathFactory.create(JAVA_COMPILATION_UNIT_NODE + SLASH
-                                                                      + JAVA_UNIT_TYPE_CHILD_NODE + SLASH
-                                                                      + JAVA_CLASS_DECLARATION_CHILD_NODE + SLASH
-                                                                      + JAVA_NORMAL_CLASS_CHILD_NODE + SLASH
-                                                                      + JAVA_NORMAL_CLASS_DECLARATION_CHILD_NODE + SLASH
-                                                                      + JAVA_METHOD_CHILD_NODE + SLASH
-                                                                      + JAVA_METHOD_DECLARATION_CHILD_NODE + "[" + methodIndex
-                                                                      + "]");
+                            StringBuffer methodRootPath = createPathWithIndex(JAVA_COMPILATION_UNIT_NODE + SLASH
+                                                                              + JAVA_UNIT_TYPE_CHILD_NODE + SLASH
+                                                                              + JAVA_CLASS_DECLARATION_CHILD_NODE + SLASH
+                                                                              + JAVA_NORMAL_CLASS_CHILD_NODE + SLASH
+                                                                              + JAVA_NORMAL_CLASS_DECLARATION_CHILD_NODE + SLASH
+                                                                              + JAVA_METHOD_CHILD_NODE + SLASH
+                                                                              + JAVA_METHOD_DECLARATION_CHILD_NODE, methodIndex);
+                            Path methodChildNode = pathFactory.create(methodRootPath.toString());
                             output.setProperty(methodChildNode,
                                                nameFactory.create(JAVA_METHOD_NAME),
                                                methodTypeMemberMetadata.getName());
@@ -411,5 +497,39 @@ public class JavaMetadataSequencer implements StreamSequencer {
         }
 
         progressMonitor.done();
+    }
+
+    /**
+     * Create a path for the tree with index.
+     * 
+     * @param path - the path.
+     * @param index - the index begin with 1.
+     * @return {@link StringBuffer}
+     */
+    private StringBuffer createPathWithIndex( String path,
+                                              int index ) {
+        StringBuffer rootPath = new StringBuffer();
+
+        if (StringUtils.isEmpty(path)) {
+            throw new IllegalArgumentException("path has to be unique and not empty");
+        }
+        if (index < 1) {
+            throw new IllegalArgumentException("index must begin with 1");
+        }
+        rootPath.append(path + "[" + index + "]");
+        return rootPath;
+    }
+
+    /**
+     * Create a path for the tree without index.
+     * 
+     * @param path - the path.
+     * @return a {@link StringBuffer}
+     */
+    private StringBuffer createPath( String path ) {
+        if (StringUtils.isEmpty(path)) {
+            throw new IllegalArgumentException("path has to be unique and not empty");
+        }
+        return new StringBuffer().append(path);
     }
 }
