@@ -31,7 +31,7 @@ public abstract class MethodMetadata {
 
     private String name;
     
-    private ReturnType returnType;
+    private FieldMetadata returnType;
 
     public abstract boolean isContructor();
     
@@ -84,14 +84,14 @@ public abstract class MethodMetadata {
     /**
      * @return returnType
      */
-    public ReturnType getReturnType() {
+    public FieldMetadata getReturnType() {
         return returnType;
     }
 
     /**
      * @param returnType Sets returnType to the specified value.
      */
-    public void setReturnType( ReturnType returnType ) {
+    public void setReturnType( FieldMetadata returnType ) {
         this.returnType = returnType;
     }
 }

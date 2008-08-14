@@ -58,7 +58,7 @@ import org.jboss.dna.sequencer.java.metadata.NormalAnnotationMetadata;
 import org.jboss.dna.sequencer.java.metadata.PackageMetadata;
 import org.jboss.dna.sequencer.java.metadata.ParameterizedFieldMetadata;
 import org.jboss.dna.sequencer.java.metadata.PrimitiveFieldMetadata;
-import org.jboss.dna.sequencer.java.metadata.ReturnType;
+import org.jboss.dna.sequencer.java.metadata.ReferenceFieldMetadata;
 import org.jboss.dna.sequencer.java.metadata.SimpleFieldMetadata;
 import org.jboss.dna.sequencer.java.metadata.SingleImportMetadata;
 import org.jboss.dna.sequencer.java.metadata.SingleMemberAnnotationMetadata;
@@ -275,16 +275,15 @@ public abstract class AbstractJavaMetadata {
     private void processReturnTypeOfMethodDeclaration( MethodDeclaration methodDeclaration,
                                                        MethodMetadata methodMetadata ) {
         Type type = methodDeclaration.getReturnType2();
-        ReturnType returnType = null;
         if(type.isPrimitiveType()) {
-            returnType = new ReturnType();
-            returnType.setName(((PrimitiveType)type).getPrimitiveTypeCode().toString());
-            methodMetadata.setReturnType(returnType);
+            PrimitiveFieldMetadata primitive = new PrimitiveFieldMetadata();
+            primitive.setType(((PrimitiveType)type).getPrimitiveTypeCode().toString());
+            methodMetadata.setReturnType(primitive);
         }
         if(type.isSimpleType()) {
-            returnType = new ReturnType();
-            returnType.setName(JavaMetadataUtil.getName(((SimpleType)type).getName()));
-            methodMetadata.setReturnType(returnType);
+            ReferenceFieldMetadata referenceFieldMetadata = new ReferenceFieldMetadata();
+            referenceFieldMetadata.setType(JavaMetadataUtil.getName(((SimpleType)type).getName()));
+            methodMetadata.setReturnType(referenceFieldMetadata);
         }
     }
 
