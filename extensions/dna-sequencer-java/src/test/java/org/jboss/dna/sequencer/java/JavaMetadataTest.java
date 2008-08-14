@@ -210,28 +210,28 @@ public class JavaMetadataTest {
 
                 MethodTypeMemberMetadata methodTypeMemberMetadata1 = (MethodTypeMemberMetadata)methods.get(2);
                 assertTrue(methodTypeMemberMetadata1.getModifiers().size() == 1);
-                assertEquals(methodTypeMemberMetadata1.getReturnType().getName(), "int");
+                assertEquals(methodTypeMemberMetadata1.getReturnType().getType(), "int");
                 assertNotNull(methodTypeMemberMetadata1);
                 assertThat(methodTypeMemberMetadata1.getName(), is("getI"));
                 assertTrue(methodTypeMemberMetadata1.getParameters().size() == 0);
 
                 MethodTypeMemberMetadata methodTypeMemberMetadata3 = (MethodTypeMemberMetadata)methods.get(3);
                 assertTrue(methodTypeMemberMetadata3.getModifiers().size() == 1);
-                assertEquals(methodTypeMemberMetadata3.getReturnType().getName(), "void");
+                assertEquals(methodTypeMemberMetadata3.getReturnType().getType(), "void");
                 assertNotNull(methodTypeMemberMetadata3);
                 assertThat(methodTypeMemberMetadata3.getName(), is("setI"));
                 assertTrue(methodTypeMemberMetadata3.getParameters().size() == 1);
 
                 MethodTypeMemberMetadata methodTypeMemberMetadata4 = (MethodTypeMemberMetadata)methods.get(4);
                 assertTrue(methodTypeMemberMetadata4.getModifiers().size() == 1);
-                assertEquals(methodTypeMemberMetadata4.getReturnType().getName(), "void");
+                assertEquals(methodTypeMemberMetadata4.getReturnType().getType(), "void");
                 assertNotNull(methodTypeMemberMetadata4);
                 assertThat(methodTypeMemberMetadata4.getName(), is("setJ"));
                 assertTrue(methodTypeMemberMetadata4.getParameters().size() == 1);
 
                 MethodTypeMemberMetadata methodTypeMemberMetadata5 = (MethodTypeMemberMetadata)methods.get(5);
                 assertTrue(methodTypeMemberMetadata5.getModifiers().size() == 1);
-                assertEquals(methodTypeMemberMetadata5.getReturnType().getName(), "void");
+                assertEquals(methodTypeMemberMetadata5.getReturnType().getType(), "void");
                 assertNotNull(methodTypeMemberMetadata5);
                 assertThat(methodTypeMemberMetadata5.getName(), is("doSomething"));
                 assertTrue(methodTypeMemberMetadata5.getParameters().size() == 2);
