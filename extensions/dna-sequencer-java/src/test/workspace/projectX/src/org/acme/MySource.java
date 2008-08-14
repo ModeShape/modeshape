@@ -56,7 +56,7 @@ public class MySource {
         this.j = j;
     }
 
-    public void doSomething(int p1, int p2) {
+    public void doSomething(int p1, double p2) {
         l = new ArrayList<String>();
         l.add("N1");
     }
