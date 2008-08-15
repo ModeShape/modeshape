@@ -31,6 +31,7 @@ public class FileUtil {
     /**
      * Delete the file or directory at the supplied path. This method works on a directory that is not empty, unlike the
      * {@link File#delete()} method.
+     * 
      * @param path the path to the file or directory that is to be deleted
      * @return true if the file or directory at the supplied path existed and was successfully deleted, or false otherwise
      */
@@ -42,6 +43,7 @@ public class FileUtil {
     /**
      * Delete the file or directory given by the supplied reference. This method works on a directory that is not empty, unlike
      * the {@link File#delete()} method.
+     * 
      * @param fileOrDirectory the reference to the Java File object that is to be deleted
      * @return true if the supplied file or directory existed and was successfully deleted, or false otherwise
      */
@@ -59,19 +61,17 @@ public class FileUtil {
         // Whether this is a file or empty directory, just delete it ...
         return fileOrDirectory.delete();
     }
-    
+
     /**
      * Utility to convert {@link File} to {@link URL}.
      * 
      * @param filePath - the path of the file.
      * @return the {@link URL} representation of the file.
-     * @throws MalformedURLException 
+     * @throws MalformedURLException
      */
     public static URL convertFileToURL( String filePath ) throws MalformedURLException {
-        if(filePath == null || filePath.equals("")) {
-            throw new IllegalArgumentException("file path is nil");
-        }
-        File file = new File(filePath);
+        ArgCheck.isNotEmpty(filePath, "filePath");
+        File file = new File(filePath.trim());
         return file.toURI().toURL();
     }
 
