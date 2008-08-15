@@ -23,6 +23,8 @@
 package org.jboss.dna.common.util;
 
 import java.io.File;
+import java.net.MalformedURLException;
+import java.net.URL;
 
 public class FileUtil {
 
@@ -56,6 +58,21 @@ public class FileUtil {
         }
         // Whether this is a file or empty directory, just delete it ...
         return fileOrDirectory.delete();
+    }
+    
+    /**
+     * Utility to convert {@link File} to {@link URL}.
+     * 
+     * @param filePath - the path of the file.
+     * @return the {@link URL} representation of the file.
+     * @throws MalformedURLException 
+     */
+    public static URL convertFileToURL( String filePath ) throws MalformedURLException {
+        if(filePath == null || filePath.equals("")) {
+            throw new IllegalArgumentException("file path is nil");
+        }
+        File file = new File(filePath);
+        return file.toURI().toURL();
     }
 
 }
