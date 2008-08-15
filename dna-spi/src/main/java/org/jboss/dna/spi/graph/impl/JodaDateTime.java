@@ -25,6 +25,7 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.Locale;
+import java.util.concurrent.TimeUnit;
 import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.util.ArgCheck;
 import org.joda.time.Chronology;
@@ -401,6 +402,172 @@ public class JodaDateTime implements org.jboss.dna.spi.graph.DateTime {
      */
     public boolean isAfter( org.jboss.dna.spi.graph.DateTime other ) {
         return this.compareTo(other) > 0;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.spi.graph.DateTime#minus(long, java.util.concurrent.TimeUnit)
+     */
+    public org.jboss.dna.spi.graph.DateTime minus( long timeAmount,
+                                                   TimeUnit unit ) {
+        ArgCheck.isNotNull(unit, "unit");
+        return new JodaDateTime(this.instance.minus(TimeUnit.MILLISECONDS.convert(timeAmount, unit)));
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.spi.graph.DateTime#minusDays(int)
+     */
+    public org.jboss.dna.spi.graph.DateTime minusDays( int days ) {
+        return new JodaDateTime(this.instance.minusDays(days));
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.spi.graph.DateTime#minusHours(int)
+     */
+    public org.jboss.dna.spi.graph.DateTime minusHours( int hours ) {
+        return new JodaDateTime(this.instance.minusHours(hours));
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.spi.graph.DateTime#minusMillis(int)
+     */
+    public org.jboss.dna.spi.graph.DateTime minusMillis( int milliseconds ) {
+        return new JodaDateTime(this.instance.minusMillis(milliseconds));
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.spi.graph.DateTime#minusMinutes(int)
+     */
+    public org.jboss.dna.spi.graph.DateTime minusMinutes( int minutes ) {
+        return new JodaDateTime(this.instance.minusMinutes(minutes));
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.spi.graph.DateTime#minusMonths(int)
+     */
+    public org.jboss.dna.spi.graph.DateTime minusMonths( int months ) {
+        return new JodaDateTime(this.instance.minusMonths(months));
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.spi.graph.DateTime#minusSeconds(int)
+     */
+    public org.jboss.dna.spi.graph.DateTime minusSeconds( int seconds ) {
+        return new JodaDateTime(this.instance.minusSeconds(seconds));
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.spi.graph.DateTime#minusWeeks(int)
+     */
+    public org.jboss.dna.spi.graph.DateTime minusWeeks( int weeks ) {
+        return new JodaDateTime(this.instance.minusWeeks(weeks));
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.spi.graph.DateTime#minusYears(int)
+     */
+    public org.jboss.dna.spi.graph.DateTime minusYears( int years ) {
+        return new JodaDateTime(this.instance.minusYears(years));
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.spi.graph.DateTime#plus(long, java.util.concurrent.TimeUnit)
+     */
+    public org.jboss.dna.spi.graph.DateTime plus( long timeAmount,
+                                                  TimeUnit unit ) {
+        ArgCheck.isNotNull(unit, "unit");
+        return new JodaDateTime(this.instance.plus(TimeUnit.MILLISECONDS.convert(timeAmount, unit)));
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.spi.graph.DateTime#plusDays(int)
+     */
+    public org.jboss.dna.spi.graph.DateTime plusDays( int days ) {
+        return new JodaDateTime(this.instance.plusDays(days));
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.spi.graph.DateTime#plusHours(int)
+     */
+    public org.jboss.dna.spi.graph.DateTime plusHours( int hours ) {
+        return new JodaDateTime(this.instance.plusHours(hours));
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.spi.graph.DateTime#plusMillis(int)
+     */
+    public org.jboss.dna.spi.graph.DateTime plusMillis( int milliseconds ) {
+        return new JodaDateTime(this.instance.plusMillis(milliseconds));
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.spi.graph.DateTime#plusMinutes(int)
+     */
+    public org.jboss.dna.spi.graph.DateTime plusMinutes( int minutes ) {
+        return new JodaDateTime(this.instance.plusMinutes(minutes));
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.spi.graph.DateTime#plusMonths(int)
+     */
+    public org.jboss.dna.spi.graph.DateTime plusMonths( int months ) {
+        return new JodaDateTime(this.instance.plusMonths(months));
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.spi.graph.DateTime#plusSeconds(int)
+     */
+    public org.jboss.dna.spi.graph.DateTime plusSeconds( int seconds ) {
+        return new JodaDateTime(this.instance.plusSeconds(seconds));
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.spi.graph.DateTime#plusWeeks(int)
+     */
+    public org.jboss.dna.spi.graph.DateTime plusWeeks( int weeks ) {
+        return new JodaDateTime(this.instance.plusWeeks(weeks));
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.spi.graph.DateTime#plusYears(int)
+     */
+    public org.jboss.dna.spi.graph.DateTime plusYears( int years ) {
+        return new JodaDateTime(this.instance.plusYears(years));
     }
 
 }

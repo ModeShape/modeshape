@@ -23,6 +23,7 @@ package org.jboss.dna.spi.graph;
 
 import java.io.Serializable;
 import java.util.Locale;
+import java.util.concurrent.TimeUnit;
 import net.jcip.annotations.Immutable;
 
 /**
@@ -269,5 +270,153 @@ public interface DateTime extends Comparable<DateTime>, Serializable {
      * @see #isAfter(DateTime)
      */
     boolean isSameAs( DateTime other );
+
+    /**
+     * Subtract the specified about of time in the supplied units.
+     * 
+     * @param timeAmount the amount of time to subtract
+     * @param unit the units of the amount of time; may not be null
+     * @return the instance in time the specified number of time before this instant
+     */
+    DateTime minus( long timeAmount,
+                    TimeUnit unit );
+
+    /**
+     * Subtract the specified number of days from this time instant.
+     * 
+     * @param days the number of days to subtract
+     * @return the instance in time the specified number of days before this instant
+     */
+    DateTime minusDays( int days );
+
+    /**
+     * Subtract the specified number of hours from this time instant.
+     * 
+     * @param hours the number of hours to subtract
+     * @return the instance in time the specified number of hours before this instant
+     */
+    DateTime minusHours( int hours );
+
+    /**
+     * Subtract the specified number of milliseconds from this time instant.
+     * 
+     * @param milliseconds the number of milliseconds to subtract
+     * @return the instance in time the specified number of milliseconds before this instant
+     */
+    DateTime minusMillis( int milliseconds );
+
+    /**
+     * Subtract the specified number of minutes from this time instant.
+     * 
+     * @param minutes the number of minutes to subtract
+     * @return the instance in time the specified number of minutes before this instant
+     */
+    DateTime minusMinutes( int minutes );
+
+    /**
+     * Subtract the specified number of months from this time instant.
+     * 
+     * @param months the number of months to subtract
+     * @return the instance in time the specified number of months before this instant
+     */
+    DateTime minusMonths( int months );
+
+    /**
+     * Subtract the specified number of seconds from this time instant.
+     * 
+     * @param seconds the number of seconds to subtract
+     * @return the instance in time the specified number of seconds before this instant
+     */
+    DateTime minusSeconds( int seconds );
+
+    /**
+     * Subtract the specified number of weeks from this time instant.
+     * 
+     * @param weeks the number of weeks to subtract
+     * @return the instance in time the specified number of weeks before this instant
+     */
+    DateTime minusWeeks( int weeks );
+
+    /**
+     * Subtract the specified number of years from this time instant.
+     * 
+     * @param years the number of years to subtract
+     * @return the instance in time the specified number of years before this instant
+     */
+    DateTime minusYears( int years );
+
+    /**
+     * Add the specified about of time in the supplied units.
+     * 
+     * @param timeAmount the amount of time to add
+     * @param unit the units of the amount of time; may not be null
+     * @return the instance in time the specified number of time after this instant
+     */
+    DateTime plus( long timeAmount,
+                   TimeUnit unit );
+
+    /**
+     * Add the specified number of days from this time instant.
+     * 
+     * @param days the number of days to add
+     * @return the instance in time the specified number of days after this instant
+     */
+    DateTime plusDays( int days );
+
+    /**
+     * Add the specified number of hours from this time instant.
+     * 
+     * @param hours the number of hours to add
+     * @return the instance in time the specified number of hours after this instant
+     */
+    DateTime plusHours( int hours );
+
+    /**
+     * Add the specified number of milliseconds from this time instant.
+     * 
+     * @param milliseconds the number of milliseconds to add
+     * @return the instance in time the specified number of milliseconds after this instant
+     */
+    DateTime plusMillis( int milliseconds );
+
+    /**
+     * Add the specified number of minutes from this time instant.
+     * 
+     * @param minutes the number of minutes to add
+     * @return the instance in time the specified number of minutes after this instant
+     */
+    DateTime plusMinutes( int minutes );
+
+    /**
+     * Add the specified number of months from this time instant.
+     * 
+     * @param months the number of months to add
+     * @return the instance in time the specified number of months after this instant
+     */
+    DateTime plusMonths( int months );
+
+    /**
+     * Add the specified number of seconds from this time instant.
+     * 
+     * @param seconds the number of seconds to add
+     * @return the instance in time the specified number of seconds after this instant
+     */
+    DateTime plusSeconds( int seconds );
+
+    /**
+     * Add the specified number of weeks from this time instant.
+     * 
+     * @param weeks the number of weeks to add
+     * @return the instance in time the specified number of weeks after this instant
+     */
+    DateTime plusWeeks( int weeks );
+
+    /**
+     * Add the specified number of years from this time instant.
+     * 
+     * @param years the number of years to add
+     * @return the instance in time the specified number of years after this instant
+     */
+    DateTime plusYears( int years );
 
 }
