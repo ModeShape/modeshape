@@ -65,9 +65,10 @@ public class FileUtil {
     /**
      * Utility to convert {@link File} to {@link URL}.
      * 
-     * @param filePath - the path of the file.
+     * @param filePath the path of the file
      * @return the {@link URL} representation of the file.
      * @throws MalformedURLException
+     * @throws IllegalArgumentException if the file path is null, empty or blank
      */
     public static URL convertFileToURL( String filePath ) throws MalformedURLException {
         ArgCheck.isNotEmpty(filePath, "filePath");
