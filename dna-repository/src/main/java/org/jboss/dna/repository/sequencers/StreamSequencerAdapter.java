@@ -183,6 +183,7 @@ public class StreamSequencerAdapter implements Sequencer {
         final PathFactory pathFactory = context.getValueFactories().getPathFactory();
         final NamespaceRegistry namespaceRegistry = context.getNamespaceRegistry();
         final Path outputNodePath = pathFactory.create(outputNode.getPath());
+        final Name jcrPrimaryTypePropertyName = context.getValueFactories().getNameFactory().create("jcr:primaryType");
 
         // Iterate over the entries in the output, in Path's natural order (shorter paths first and in lexicographical order by
         // prefix and name)
@@ -223,6 +224,14 @@ public class StreamSequencerAdapter implements Sequencer {
             for (SequencerOutputMap.PropertyValue property : entry.getPropertyValues()) {
                 String propertyName = property.getName().getString(namespaceRegistry, Path.NO_OP_ENCODER);
                 Object value = property.getValue();
+                if (jcrPrimaryTypePropertyName.equals(property.getName())) {
+                    // Skip the primary type property (which is protected in Jackrabbit 1.5)
+                    Logger.getLogger(this.getClass()).trace("Skipping property {0}/{1}={2}",
+                                                            targetNode.getPath(),
+                                                            propertyName,
+                                                            value);
+                    continue;
+                }
                 Logger.getLogger(this.getClass()).trace("Writing property {0}/{1}={2}", targetNode.getPath(), propertyName, value);
                 if (value instanceof Boolean) {
                     targetNode.setProperty(propertyName, ((Boolean)value).booleanValue());
