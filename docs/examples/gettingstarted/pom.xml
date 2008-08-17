@@ -5,7 +5,7 @@
   <artifactId>getting_started</artifactId>
   <packaging>pom</packaging>
   <version>0.2-SNAPSHOT</version>
-  <name>Getting Started examples</name>
+  <name>JBoss DNA Getting Started examples</name>
   <description />
 
   <modules>

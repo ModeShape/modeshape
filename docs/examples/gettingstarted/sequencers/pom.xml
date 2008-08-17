@@ -12,7 +12,7 @@
   <artifactId>dna-example-sequencers</artifactId>
   <version>0.2-SNAPSHOT</version>
   <packaging>jar</packaging>
-  <name>Sequencer Examples</name>
+  <name>JBoss DNA Sequencer Examples</name>
   <description>Examples that showcase how to use sequencers with a JCR repository.</description>
 
   <properties>

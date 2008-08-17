@@ -110,6 +110,7 @@
 		<module>extensions/dna-connector-jbosscache</module>
 		<module>extensions/dna-mimetype-detector-aperture</module>
 		<module>dna-integration-tests</module>
+		<module>docs/examples/gettingstarted</module>
 	</modules>
 
 	<properties>
