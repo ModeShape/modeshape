@@ -25,7 +25,6 @@ import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.Locale;
 import java.util.Set;
@@ -44,7 +43,6 @@ public abstract class AbstractI18nTest {
     }
 
     @Test
-    @SuppressWarnings( "unchecked" )
     public void shouldNotHaveProblems() throws Exception {
         for (Field fld : i18nClass.getDeclaredFields()) {
             if (fld.getType() == I18n.class && (fld.getModifiers() & Modifier.PUBLIC) == Modifier.PUBLIC
@@ -57,12 +55,10 @@ public abstract class AbstractI18nTest {
             }
         }
         // Check for global problems after checking field problems since global problems are detected lazily upon field usage
-        Method method = i18nClass.getDeclaredMethod("getLocalizationProblemLocales", (Class[])null);
-        Set<Locale> locales = (Set<Locale>)method.invoke(null, (Object[])null);
+        Set<Locale> locales = I18n.getLocalizationProblemLocales(i18nClass);
         if (!locales.isEmpty()) {
-            method = i18nClass.getDeclaredMethod("getLocalizationProblems", Locale.class);
             for (Locale locale : locales) {
-                Set<String> problems = (Set<String>)method.invoke(null, locale);
+                Set<String> problems = I18n.getLocalizationProblems(i18nClass, locale);
                 try {
                     assertThat(problems.isEmpty(), is(true));
                 } catch (AssertionError error) {
