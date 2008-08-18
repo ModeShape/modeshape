@@ -45,24 +45,28 @@ public abstract class AbstractI18nTest {
 
     @Test
     @SuppressWarnings( "unchecked" )
-    public void shouldNotHaveLocalizationProblems() throws Exception {
-        Method method = i18nClass.getDeclaredMethod("getLocalizationProblemLocales", (Class[])null);
-        Set<Locale> locales = (Set<Locale>)method.invoke(null, (Object[])null);
-        method = i18nClass.getDeclaredMethod("getLocalizationProblems", Locale.class);
-        for (Locale locale : locales) {
-            assertThat(((Set<String>)method.invoke(null, locale)).isEmpty(), is(true));
-        }
-    }
-
-    @Test
-    public void shouldNotHaveProblems() throws IllegalAccessException {
+    public void shouldNotHaveProblems() throws Exception {
         for (Field fld : i18nClass.getDeclaredFields()) {
             if (fld.getType() == I18n.class && (fld.getModifiers() & Modifier.PUBLIC) == Modifier.PUBLIC
                 && (fld.getModifiers() & Modifier.STATIC) == Modifier.STATIC
                 && (fld.getModifiers() & Modifier.FINAL) != Modifier.FINAL) {
                 I18n i18n = (I18n)fld.get(null);
                 if (i18n.hasProblem()) {
-                    fail();
+                    fail(i18n.problem());
+                }
+            }
+        }
+        // Check for global problems after checking field problems since global problems are detected lazily upon field usage
+        Method method = i18nClass.getDeclaredMethod("getLocalizationProblemLocales", (Class[])null);
+        Set<Locale> locales = (Set<Locale>)method.invoke(null, (Object[])null);
+        if (!locales.isEmpty()) {
+            method = i18nClass.getDeclaredMethod("getLocalizationProblems", Locale.class);
+            for (Locale locale : locales) {
+                Set<String> problems = (Set<String>)method.invoke(null, locale);
+                try {
+                    assertThat(problems.isEmpty(), is(true));
+                } catch (AssertionError error) {
+                    fail(problems.iterator().next());
                 }
             }
         }
