@@ -68,6 +68,16 @@ public class EmptyContribution extends Contribution {
 
     /**
      * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.connector.federation.contribution.Contribution#isEmpty()
+     */
+    @Override
+    public boolean isEmpty() {
+        return true;
+    }
+
+    /**
+     * {@inheritDoc}
      */
     @Override
     public boolean equals( Object obj ) {

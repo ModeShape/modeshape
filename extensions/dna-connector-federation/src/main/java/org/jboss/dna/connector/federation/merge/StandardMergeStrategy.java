@@ -50,5 +50,8 @@ public class StandardMergeStrategy implements MergeStrategy {
 
         // Children whose identity properties are the same will be considered to be the same node ...
         assert identityPropertyName != null;
+        // Create a merge plan with the contributions ...
+        MergePlan plan = MergePlan.create(contributions);
+        federatedNode.setMergePlan(plan);
     }
 }

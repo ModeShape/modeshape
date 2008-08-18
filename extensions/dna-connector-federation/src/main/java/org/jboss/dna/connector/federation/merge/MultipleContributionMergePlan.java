@@ -34,43 +34,43 @@ import org.jboss.dna.connector.federation.contribution.Contribution;
 public class MultipleContributionMergePlan extends MergePlan {
 
     private static final long serialVersionUID = 1L;
-    private final List<Contribution> contributions;
+    private final List<Contribution> contributions = new CopyOnWriteArrayList<Contribution>();
 
     /**
      * @param contributions the contributions for this merge plan
      */
-    public MultipleContributionMergePlan( Contribution... contributions ) {
+    /*package*/MultipleContributionMergePlan( Contribution... contributions ) {
         assert contributions != null;
-        this.contributions = new CopyOnWriteArrayList<Contribution>();
         for (int i = 0; i != contributions.length; ++i) {
             assert contributions[i] != null;
             this.contributions.add(contributions[i]);
         }
+        assert checkEachContributionIsFromDistinctSource();
     }
 
     /**
      * @param contributions the contributions for this merge plan
      */
-    public MultipleContributionMergePlan( Iterable<Contribution> contributions ) {
+    /*package*/MultipleContributionMergePlan( Iterable<Contribution> contributions ) {
         assert contributions != null;
-        this.contributions = new CopyOnWriteArrayList<Contribution>();
         for (Contribution contribution : contributions) {
             assert contribution != null;
             this.contributions.add(contribution);
         }
+        assert checkEachContributionIsFromDistinctSource();
     }
 
     /**
      * @param contributions the contributions for this merge plan
      */
-    public MultipleContributionMergePlan( Iterator<Contribution> contributions ) {
+    /*package*/MultipleContributionMergePlan( Iterator<Contribution> contributions ) {
         assert contributions != null;
-        this.contributions = new CopyOnWriteArrayList<Contribution>();
         while (contributions.hasNext()) {
             Contribution contribution = contributions.next();
             assert contribution != null;
             this.contributions.add(contribution);
         }
+        assert checkEachContributionIsFromDistinctSource();
     }
 
     /**
@@ -136,6 +136,16 @@ public class MultipleContributionMergePlan extends MergePlan {
      */
     public void addContribution( Contribution contribution ) {
         this.contributions.add(contribution);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see java.lang.Object#hashCode()
+     */
+    @Override
+    public int hashCode() {
+        return contributions.hashCode();
     }
 
 }

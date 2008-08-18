@@ -59,6 +59,7 @@ public class SimpleRepositorySource implements RepositorySource {
     private String repositoryName;
     private String name;
     private final AtomicInteger retryLimit = new AtomicInteger(DEFAULT_RETRY_LIMIT);
+    private CachePolicy defaultCachePolicy;
 
     public SimpleRepositorySource() {
         super();
@@ -110,6 +111,20 @@ public class SimpleRepositorySource implements RepositorySource {
      */
     public void setRetryLimit( int limit ) {
         retryLimit.set(limit < 0 ? 0 : limit);
+    }
+
+    /**
+     * @return defaultCachePolicy
+     */
+    public CachePolicy getDefaultCachePolicy() {
+        return defaultCachePolicy;
+    }
+
+    /**
+     * @param defaultCachePolicy Sets defaultCachePolicy to the specified value.
+     */
+    public void setDefaultCachePolicy( CachePolicy defaultCachePolicy ) {
+        this.defaultCachePolicy = defaultCachePolicy;
     }
 
     /**
@@ -174,21 +189,25 @@ public class SimpleRepositorySource implements RepositorySource {
      */
     public RepositoryConnection getConnection() throws RepositorySourceException {
         String reposName = this.getRepositoryName();
+        if (reposName == null) throw new RepositorySourceException("Invalid repository source: missing repository name");
         SimpleRepository repository = SimpleRepository.get(reposName);
         if (repository == null) {
             throw new RepositorySourceException(this.getName(), "Unable to find repository \"" + reposName + "\"");
         }
-        return new Connection(repository);
+        return new Connection(repository, this.getDefaultCachePolicy());
     }
 
     protected class Connection implements RepositoryConnection {
 
         private RepositorySourceListener listener;
         private final SimpleRepository repository;
+        private final CachePolicy defaultCachePolicy;
 
-        protected Connection( SimpleRepository repository ) {
+        protected Connection( SimpleRepository repository,
+                              CachePolicy defaultCachePolicy ) {
             assert repository != null;
             this.repository = repository;
+            this.defaultCachePolicy = defaultCachePolicy;
         }
 
         /**
@@ -225,7 +244,7 @@ public class SimpleRepositorySource implements RepositorySource {
          * @see org.jboss.dna.spi.connector.RepositoryConnection#getDefaultCachePolicy()
          */
         public CachePolicy getDefaultCachePolicy() {
-            return null;
+            return defaultCachePolicy;
         }
 
         /**

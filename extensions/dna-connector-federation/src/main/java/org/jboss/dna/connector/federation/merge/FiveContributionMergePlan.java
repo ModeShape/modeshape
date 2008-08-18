@@ -24,6 +24,7 @@ package org.jboss.dna.connector.federation.merge;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 import net.jcip.annotations.ThreadSafe;
+import org.jboss.dna.common.util.HashCode;
 import org.jboss.dna.connector.federation.contribution.Contribution;
 
 /**
@@ -46,11 +47,11 @@ public class FiveContributionMergePlan extends MergePlan {
      * @param contribution4 the fourth contribution for this merge plan
      * @param contribution5 the fifth contribution for this merge plan
      */
-    public FiveContributionMergePlan( Contribution contribution1,
-                                      Contribution contribution2,
-                                      Contribution contribution3,
-                                      Contribution contribution4,
-                                      Contribution contribution5 ) {
+    /*package*/FiveContributionMergePlan( Contribution contribution1,
+                                           Contribution contribution2,
+                                           Contribution contribution3,
+                                           Contribution contribution4,
+                                           Contribution contribution5 ) {
         assert contribution1 != null;
         assert contribution2 != null;
         assert contribution3 != null;
@@ -61,6 +62,7 @@ public class FiveContributionMergePlan extends MergePlan {
         this.contribution3 = contribution3;
         this.contribution4 = contribution4;
         this.contribution5 = contribution5;
+        assert checkEachContributionIsFromDistinctSource();
     }
 
     /**
@@ -95,7 +97,7 @@ public class FiveContributionMergePlan extends MergePlan {
      */
     public Iterator<Contribution> iterator() {
         return new Iterator<Contribution>() {
-            private int next = 4;
+            private int next = 5;
 
             public boolean hasNext() {
                 return next > 0;
@@ -145,6 +147,16 @@ public class FiveContributionMergePlan extends MergePlan {
         if (contribution4.getSourceName().equals(sourceName)) return true;
         if (contribution5.getSourceName().equals(sourceName)) return true;
         return false;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see java.lang.Object#hashCode()
+     */
+    @Override
+    public int hashCode() {
+        return HashCode.compute(contribution1, contribution2, contribution3, contribution4, contribution5);
     }
 
 }

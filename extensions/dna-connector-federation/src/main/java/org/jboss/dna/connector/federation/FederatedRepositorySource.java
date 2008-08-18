@@ -28,6 +28,7 @@ import java.util.Hashtable;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import javax.naming.Context;
 import javax.naming.InitialContext;
@@ -823,7 +824,7 @@ public class FederatedRepositorySource implements RepositorySource, ObjectFactor
             BasicCachePolicy cachePolicy = new BasicCachePolicy();
             Property timeToLiveProperty = getRepository.getPropertiesByName().get(nameFactory.create(CACHE_POLICY_TIME_TO_LIVE_CONFIG_PROPERTY_NAME));
             if (timeToLiveProperty != null && !timeToLiveProperty.isEmpty()) {
-                cachePolicy.setTimeToLive(longFactory.create(timeToLiveProperty.getValues().next()));
+                cachePolicy.setTimeToLive(longFactory.create(timeToLiveProperty.getValues().next()), TimeUnit.MILLISECONDS);
             }
             CachePolicy defaultCachePolicy = cachePolicy.isEmpty() ? null : cachePolicy.getUnmodifiable();
             return new FederatedRepositoryConfig(repositoryName, cacheProjection, sourceProjections, defaultCachePolicy);

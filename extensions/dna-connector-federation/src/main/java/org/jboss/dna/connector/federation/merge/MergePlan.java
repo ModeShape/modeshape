@@ -24,11 +24,19 @@ package org.jboss.dna.connector.federation.merge;
 import java.io.InvalidClassException;
 import java.io.Serializable;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
+import net.jcip.annotations.GuardedBy;
 import net.jcip.annotations.ThreadSafe;
+import org.jboss.dna.common.CommonI18n;
 import org.jboss.dna.common.util.ArgCheck;
+import org.jboss.dna.common.util.StringUtil;
 import org.jboss.dna.connector.federation.contribution.Contribution;
 import org.jboss.dna.connector.federation.contribution.EmptyContribution;
 import org.jboss.dna.spi.graph.DateTime;
@@ -54,6 +62,8 @@ public abstract class MergePlan implements Serializable, Iterable<Contribution> 
     public static MergePlan create( Contribution... contributions ) {
         ArgCheck.isNotNull(contributions, "contributions");
         switch (contributions.length) {
+            case 0:
+                throw new IllegalArgumentException(CommonI18n.argumentMayNotBeEmpty.text("contributions"));
             case 1:
                 return new OneContributionMergePlan(contributions[0]);
             case 2:
@@ -74,6 +84,8 @@ public abstract class MergePlan implements Serializable, Iterable<Contribution> 
         ArgCheck.isNotNull(contributions, "contributions");
         Iterator<Contribution> iter = contributions.iterator();
         switch (contributions.size()) {
+            case 0:
+                throw new IllegalArgumentException(CommonI18n.argumentMayNotBeEmpty.text("contributions"));
             case 1:
                 return new OneContributionMergePlan(iter.next());
             case 2:
@@ -91,10 +103,11 @@ public abstract class MergePlan implements Serializable, Iterable<Contribution> 
 
     public static MergePlan addContribution( MergePlan plan,
                                              Contribution contribution ) {
+        ArgCheck.isNotNull(plan, "plan");
+        ArgCheck.isNotNull(contribution, "contribution");
         if (plan instanceof MultipleContributionMergePlan) {
-            MultipleContributionMergePlan multiPlan = (MultipleContributionMergePlan)plan;
-            multiPlan.addContribution(contribution);
-            return multiPlan;
+            ((MultipleContributionMergePlan)plan).addContribution(contribution);
+            return plan;
         }
         MergePlan newPlan = null;
         if (plan instanceof OneContributionMergePlan) {
@@ -160,8 +173,10 @@ public abstract class MergePlan implements Serializable, Iterable<Contribution> 
      */
     private static final long serialVersionUID = 1L;
 
-    private Map<Name, Property> annotations = null;
+    private final ReadWriteLock annotationLock = new ReentrantReadWriteLock();
     private DateTime expirationTimeInUtc;
+    @GuardedBy( "annotationLock" )
+    private Map<Name, Property> annotations = null;
 
     /**
      * Create an empty merge plan
@@ -180,7 +195,7 @@ public abstract class MergePlan implements Serializable, Iterable<Contribution> 
     public boolean isExpired( DateTime utcTime ) {
         assert utcTime != null;
         assert utcTime.toUtcTimeZone().equals(utcTime); // check that it is passed UTC time
-        return !expirationTimeInUtc.isAfter(utcTime);
+        return utcTime.isAfter(getExpirationTimeInUtc());
     }
 
     /**
@@ -190,6 +205,17 @@ public abstract class MergePlan implements Serializable, Iterable<Contribution> 
      * @return the expiration time in UTC, or null if there is no known expiration time
      */
     public DateTime getExpirationTimeInUtc() {
+        if (expirationTimeInUtc == null) {
+            // This is computed regardless of a lock, since it's not expensive and idempotent
+            DateTime earliest = null;
+            for (Contribution contribution : this) {
+                DateTime contributionTime = contribution.getExpirationTimeInUtc();
+                if (earliest == null || (contributionTime != null && contributionTime.isBefore(earliest))) {
+                    earliest = contributionTime;
+                }
+            }
+            expirationTimeInUtc = earliest;
+        }
         return expirationTimeInUtc;
     }
 
@@ -224,8 +250,13 @@ public abstract class MergePlan implements Serializable, Iterable<Contribution> 
      */
     public Property getAnnotation( Name name ) {
         if (name == null) return null;
-        if (this.annotations == null) return null;
-        return this.annotations.get(name);
+        try {
+            annotationLock.readLock().lock();
+            if (this.annotations == null) return null;
+            return this.annotations.get(name);
+        } finally {
+            annotationLock.readLock().unlock();
+        }
     }
 
     /**
@@ -239,21 +270,131 @@ public abstract class MergePlan implements Serializable, Iterable<Contribution> 
      */
     public Property setAnnotation( Property annotation ) {
         if (annotation == null) return null;
-        if (this.annotations == null) {
-            this.annotations = new HashMap<Name, Property>();
+        try {
+            annotationLock.writeLock().lock();
+            if (this.annotations == null) {
+                this.annotations = new HashMap<Name, Property>();
+            }
+            return this.annotations.put(annotation.getName(), annotation);
+        } finally {
+            annotationLock.writeLock().unlock();
         }
-        return this.annotations.put(annotation.getName(), annotation);
-    }
-
-    protected void setAnnotations( Map<Name, Property> annotations ) {
-        this.annotations = annotations;
     }
 
     /**
-     * @return annotations
+     * Get the number of annotations.
+     * 
+     * @return the number of annotations
      */
-    protected Map<Name, Property> getAnnotations() {
-        return annotations;
+    public int getAnnotationCount() {
+        try {
+            annotationLock.readLock().lock();
+            if (this.annotations == null) return 0;
+            return this.annotations.size();
+        } finally {
+            annotationLock.readLock().unlock();
+        }
+    }
+
+    /**
+     * Get the set of annotation {@link Name names}.
+     * 
+     * @return the unmodifiable set of names, or an empty set if there are no annotations
+     */
+    public Set<Name> getAnnotationNames() {
+        try {
+            annotationLock.readLock().lock();
+            if (this.annotations == null) return Collections.emptySet();
+            return Collections.unmodifiableSet(this.annotations.keySet());
+        } finally {
+            annotationLock.readLock().unlock();
+        }
+    }
+
+    /**
+     * Set the annotations. This
+     * 
+     * @param annotations
+     */
+    protected void setAnnotations( Map<Name, Property> annotations ) {
+        try {
+            annotationLock.writeLock().lock();
+            this.annotations = annotations == null || annotations.isEmpty() ? null : annotations;
+        } finally {
+            annotationLock.writeLock().unlock();
+        }
+    }
+
+    /**
+     * Get a copy of the annotations.
+     * 
+     * @return a copy of annotations; never null
+     */
+    public Map<Name, Property> getAnnotations() {
+        Map<Name, Property> result = null;
+        try {
+            annotationLock.writeLock().lock();
+            if (this.annotations != null && !this.annotations.isEmpty()) {
+                result = new HashMap<Name, Property>(this.annotations);
+            } else {
+                result = Collections.emptyMap();
+            }
+        } finally {
+            annotationLock.writeLock().unlock();
+        }
+        return result;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see java.lang.Object#toString()
+     */
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        boolean first = true;
+        for (Contribution contribution : this) {
+            if (!first) {
+                first = false;
+                sb.append(", ");
+            }
+            sb.append(contribution);
+        }
+        sb.append(StringUtil.readableString(getAnnotations()));
+        return sb.toString();
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see java.lang.Object#equals(java.lang.Object)
+     */
+    @Override
+    public boolean equals( Object obj ) {
+        if (obj == this) return true;
+        if (obj instanceof MergePlan) {
+            MergePlan that = (MergePlan)obj;
+            if (this.getContributionCount() != that.getContributionCount()) return false;
+            Iterator<Contribution> thisContribution = this.iterator();
+            Iterator<Contribution> thatContribution = that.iterator();
+            while (thisContribution.hasNext() && thatContribution.hasNext()) {
+                if (!thisContribution.next().equals(thatContribution.next())) return false;
+            }
+            if (this.getAnnotationCount() != that.getAnnotationCount()) return false;
+            if (!this.getAnnotations().equals(that.getAnnotations())) return false;
+            return true;
+        }
+        return false;
+    }
+
+    protected boolean checkEachContributionIsFromDistinctSource() {
+        Set<String> sourceNames = new HashSet<String>();
+        for (Contribution contribution : this) {
+            boolean added = sourceNames.add(contribution.getSourceName());
+            if (!added) return false;
+        }
+        return true;
     }
 
 }

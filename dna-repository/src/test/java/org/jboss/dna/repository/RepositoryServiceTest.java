@@ -96,7 +96,7 @@ public class RepositoryServiceTest {
         configSourceName = "configSource";
         Projection.Rule configProjectionRule = new Projection.PathRule(pathInRepository, pathInSource);
         configProjection = new Projection(configSourceName, configProjectionRule);
-        configRepository = new SimpleRepository("Configuration Repository");
+        configRepository = SimpleRepository.get("Configuration Repository");
         configRepositorySource = new SimpleRepositorySource();
         configRepositorySource.setRepositoryName(configRepository.getRepositoryName());
         configRepositorySource.setName(configSourceName);

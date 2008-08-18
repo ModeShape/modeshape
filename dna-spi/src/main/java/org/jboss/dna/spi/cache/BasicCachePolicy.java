@@ -21,19 +21,24 @@
  */
 package org.jboss.dna.spi.cache;
 
+import java.util.concurrent.TimeUnit;
+import org.jboss.dna.common.util.ArgCheck;
+
 /**
  * @author Randall Hauch
  */
 public class BasicCachePolicy implements CachePolicy {
 
     private static final long serialVersionUID = 1L;
-    private long timeToLive;
+    private long timeToLiveInMillis = 0L;
 
     public BasicCachePolicy() {
     }
 
-    public BasicCachePolicy( long timeToCache ) {
-        this.timeToLive = timeToCache;
+    public BasicCachePolicy( long timeToCache,
+                             TimeUnit unit ) {
+        ArgCheck.isNotNull(unit, "unit");
+        this.timeToLiveInMillis = TimeUnit.MILLISECONDS.convert(timeToCache, unit);
     }
 
     /**
@@ -42,18 +47,22 @@ public class BasicCachePolicy implements CachePolicy {
      * @see org.jboss.dna.spi.cache.CachePolicy#getTimeToLive()
      */
     public long getTimeToLive() {
-        return this.timeToLive;
+        return this.timeToLiveInMillis;
     }
 
     /**
+     * Set the time for values and information to live in the cache.
+     * 
      * @param timeToLive Sets timeToLive to the specified value.
+     * @param unit the unit in which the time to live value is defined
      */
-    public void setTimeToLive( long timeToLive ) {
-        this.timeToLive = timeToLive;
+    public void setTimeToLive( long timeToLive,
+                               TimeUnit unit ) {
+        this.timeToLiveInMillis = TimeUnit.NANOSECONDS.convert(timeToLive, unit);
     }
 
     public boolean isEmpty() {
-        return this.timeToLive == 0;
+        return this.timeToLiveInMillis == 0;
     }
 
     public CachePolicy getUnmodifiable() {
@@ -83,7 +92,7 @@ public class BasicCachePolicy implements CachePolicy {
      */
     @Override
     public String toString() {
-        return "{ TTL=" + this.timeToLive + " }";
+        return "{ TTL=" + this.timeToLiveInMillis + " ms }";
     }
 
 }

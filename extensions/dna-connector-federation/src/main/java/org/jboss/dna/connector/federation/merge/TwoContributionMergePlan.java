@@ -24,6 +24,7 @@ package org.jboss.dna.connector.federation.merge;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 import net.jcip.annotations.ThreadSafe;
+import org.jboss.dna.common.util.HashCode;
 import org.jboss.dna.connector.federation.contribution.Contribution;
 
 /**
@@ -40,12 +41,13 @@ public class TwoContributionMergePlan extends MergePlan {
      * @param contribution1 the first contribution for this merge plan
      * @param contribution2 the second contribution for this merge plan
      */
-    public TwoContributionMergePlan( Contribution contribution1,
-                                     Contribution contribution2 ) {
+    /*package*/TwoContributionMergePlan( Contribution contribution1,
+                                          Contribution contribution2 ) {
         assert contribution1 != null;
         assert contribution2 != null;
         this.contribution1 = contribution1;
         this.contribution2 = contribution2;
+        assert checkEachContributionIsFromDistinctSource();
     }
 
     /**
@@ -110,6 +112,16 @@ public class TwoContributionMergePlan extends MergePlan {
     @Override
     public boolean isSource( String sourceName ) {
         return contribution1.getSourceName().equals(sourceName) || contribution2.getSourceName().equals(sourceName);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see java.lang.Object#hashCode()
+     */
+    @Override
+    public int hashCode() {
+        return HashCode.compute(contribution1, contribution2);
     }
 
 }

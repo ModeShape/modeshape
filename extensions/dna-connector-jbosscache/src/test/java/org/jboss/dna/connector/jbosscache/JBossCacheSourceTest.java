@@ -32,6 +32,7 @@ import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 import javax.naming.Context;
 import javax.naming.Name;
 import javax.naming.RefAddr;
@@ -153,7 +154,7 @@ public class JBossCacheSourceTest {
     @Test
     public void shouldCreateJndiReferenceAndRecreatedObjectFromReference() throws Exception {
         BasicCachePolicy cachePolicy = new BasicCachePolicy();
-        cachePolicy.setTimeToLive(1000L);
+        cachePolicy.setTimeToLive(1000L, TimeUnit.MILLISECONDS);
         convertToAndFromJndiReference(validName,
                                       validRootNodeUuid,
                                       validCacheConfigurationName,
@@ -167,7 +168,7 @@ public class JBossCacheSourceTest {
     @Test
     public void shouldCreateJndiReferenceAndRecreatedObjectFromReferenceWithNullProperties() throws Exception {
         BasicCachePolicy cachePolicy = new BasicCachePolicy();
-        cachePolicy.setTimeToLive(1000L);
+        cachePolicy.setTimeToLive(1000L, TimeUnit.MILLISECONDS);
         convertToAndFromJndiReference("some source", null, null, null, null, null, null, 100);
         convertToAndFromJndiReference(null, null, null, null, null, null, null, 100);
     }

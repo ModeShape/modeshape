@@ -38,7 +38,7 @@ public class OneContributionMergePlan extends MergePlan {
     /**
      * @param contribution the contribution for this merge plan
      */
-    public OneContributionMergePlan( Contribution contribution ) {
+    /*package*/OneContributionMergePlan( Contribution contribution ) {
         assert contribution != null;
         this.contribution = contribution;
     }
@@ -99,6 +99,16 @@ public class OneContributionMergePlan extends MergePlan {
     @Override
     public boolean isSource( String sourceName ) {
         return contribution.getSourceName().equals(sourceName);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see java.lang.Object#hashCode()
+     */
+    @Override
+    public int hashCode() {
+        return contribution.hashCode();
     }
 
 }

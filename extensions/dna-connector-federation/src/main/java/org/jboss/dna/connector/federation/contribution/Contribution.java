@@ -26,11 +26,13 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 import net.jcip.annotations.Immutable;
+import org.jboss.dna.common.util.StringUtil;
 import org.jboss.dna.spi.graph.DateTime;
 import org.jboss.dna.spi.graph.Name;
 import org.jboss.dna.spi.graph.Path;
 import org.jboss.dna.spi.graph.Property;
 import org.jboss.dna.spi.graph.Path.Segment;
+import org.jboss.dna.spi.graph.impl.JodaDateTime;
 
 /**
  * The contribution of a source to the information for a single federated node. Users of this interface should treat contributions
@@ -287,6 +289,15 @@ public abstract class Contribution implements Serializable {
     }
 
     /**
+     * Return whether this contribution is an empty contribution.
+     * 
+     * @return true if this contribution is empty, or false otherwise
+     */
+    public boolean isEmpty() {
+        return false;
+    }
+
+    /**
      * {@inheritDoc}
      * <p>
      * This implementation returns the hash code of the {@link #getSourceName() source name}, and is compatible with the
@@ -296,6 +307,51 @@ public abstract class Contribution implements Serializable {
     @Override
     public int hashCode() {
         return this.sourceName.hashCode();
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see java.lang.Object#toString()
+     */
+    @Override
+    public String toString() {
+        StringBuffer sb = new StringBuffer();
+        sb.append("Contribution from \"");
+        sb.append(getSourceName());
+        if (isExpired(new JodaDateTime().toUtcTimeZone())) {
+            sb.append("\": expired ");
+        } else {
+            sb.append("\": expires ");
+        }
+        sb.append(getExpirationTimeInUtc().getString());
+        if (getPropertyCount() != 0) {
+            sb.append(" { ");
+            boolean first = true;
+            Iterator<Property> propIter = getProperties();
+            while (propIter.hasNext()) {
+                if (!first) sb.append(", ");
+                else first = false;
+                Property property = propIter.next();
+                sb.append(property.getName());
+                sb.append('=');
+                sb.append(StringUtil.readableString(property.getValuesAsArray()));
+            }
+            sb.append(" }");
+        }
+        if (getChildrenCount() != 0) {
+            sb.append("< ");
+            boolean first = true;
+            Iterator<Segment> childIter = getChildren();
+            while (childIter.hasNext()) {
+                if (!first) sb.append(", ");
+                else first = false;
+                Segment child = childIter.next();
+                sb.append(child);
+            }
+            sb.append(" >");
+        }
+        return sb.toString();
     }
 
     /**

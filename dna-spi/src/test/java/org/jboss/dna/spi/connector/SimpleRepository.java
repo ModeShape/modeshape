@@ -37,6 +37,7 @@ import org.jboss.dna.spi.graph.Path;
 import org.jboss.dna.spi.graph.PathFactory;
 import org.jboss.dna.spi.graph.Property;
 import org.jboss.dna.spi.graph.PropertyFactory;
+import org.jboss.dna.spi.graph.impl.BasicPath;
 
 /**
  * A very simple repository that maintains properties for nodes identified by a path, and computes the children based upon the set
@@ -57,7 +58,9 @@ public class SimpleRepository {
     private static final ConcurrentMap<String, SimpleRepository> repositoriesByName = new ConcurrentHashMap<String, SimpleRepository>();
 
     public static SimpleRepository get( String name ) {
-        return repositoriesByName.get(name);
+        SimpleRepository newRepository = new SimpleRepository(name);
+        SimpleRepository repository = repositoriesByName.putIfAbsent(name, newRepository);
+        return repository != null ? repository : newRepository;
     }
 
     public static void shutdownAll() {
@@ -73,9 +76,11 @@ public class SimpleRepository {
 
     public SimpleRepository( String repositoryName ) {
         this.repositoryName = repositoryName;
-        if (repositoriesByName.putIfAbsent(repositoryName, this) != null) {
-            throw new IllegalArgumentException("Repository \"" + repositoryName + "\" already exists and may not be recreated");
-        }
+        // if (repositoriesByName.putIfAbsent(repositoryName, this) != null) {
+        // throw new IllegalArgumentException("Repository \"" + repositoryName + "\" already exists and may not be recreated");
+        // }
+        // Create a root node ...
+        data.putIfAbsent(BasicPath.ROOT, new HashMap<Name, Property>());
     }
 
     /**

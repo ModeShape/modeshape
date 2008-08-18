@@ -27,7 +27,7 @@ import org.junit.Test;
 /**
  * @author Randall Hauch
  */
-public class BasicFederatedNodeTest {
+public class FederatedNodeTest {
 
     @Before
     public void beforeEach() {

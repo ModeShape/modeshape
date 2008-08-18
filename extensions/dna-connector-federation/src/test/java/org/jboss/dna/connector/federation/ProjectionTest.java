@@ -22,6 +22,8 @@
 package org.jboss.dna.connector.federation;
 
 import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsInstanceOf.instanceOf;
+import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.Assert.assertThat;
 import static org.junit.matchers.JUnitMatchers.hasItems;
 import static org.mockito.Mockito.stub;
@@ -226,5 +228,51 @@ public class ProjectionTest {
         stub(mockRule3.getPathInRepository(pathInSource, pathFactory)).toReturn(pathInRepository23);
         Set<Path> pathsInRepository = projection.getPathsInRepository(pathInSource, pathFactory);
         assertThat(pathsInRepository, hasItems(pathInRepository1, pathInRepository23));
+    }
+
+    @Test
+    public void shouldParsePathRuleFromDefinitionWithNonRootRepositoryPathAndNonRootSourcePath() {
+        Projection.Rule rule = Projection.parsePathRule("/a => /b", context);
+        assertThat(rule, is(instanceOf(Projection.PathRule.class)));
+        Projection.PathRule pathRule = (Projection.PathRule)rule;
+        assertThat(pathRule.getPathInRepository(), is(pathFactory.create("/a")));
+        assertThat(pathRule.getPathInSource(), is(pathFactory.create("/b")));
+    }
+
+    @Test
+    public void shouldParsePathRuleFromDefinitionWithRootRepositoryPathAndNonRootSourcePath() {
+        Projection.Rule rule = Projection.parsePathRule("/ => /b", context);
+        assertThat(rule, is(instanceOf(Projection.PathRule.class)));
+        Projection.PathRule pathRule = (Projection.PathRule)rule;
+        assertThat(pathRule.getPathInRepository(), is(pathFactory.createRootPath()));
+        assertThat(pathRule.getPathInSource(), is(pathFactory.create("/b")));
+    }
+
+    @Test
+    public void shouldParsePathRuleFromDefinitionWithNonRootRepositoryPathAndRootSourcePath() {
+        Projection.Rule rule = Projection.parsePathRule("/a => /", context);
+        assertThat(rule, is(instanceOf(Projection.PathRule.class)));
+        Projection.PathRule pathRule = (Projection.PathRule)rule;
+        assertThat(pathRule.getPathInRepository(), is(pathFactory.create("/a")));
+        assertThat(pathRule.getPathInSource(), is(pathFactory.createRootPath()));
+    }
+
+    @Test
+    public void shouldParsePathRuleFromDefinitionWithRootRepositoryPathAndRootSourcePath() {
+        Projection.Rule rule = Projection.parsePathRule("/ => /", context);
+        assertThat(rule, is(instanceOf(Projection.PathRule.class)));
+        Projection.PathRule pathRule = (Projection.PathRule)rule;
+        assertThat(pathRule.getPathInRepository(), is(pathFactory.createRootPath()));
+        assertThat(pathRule.getPathInSource(), is(pathFactory.createRootPath()));
+    }
+
+    @Test
+    public void shouldNotParsePathRuleFromDefinitionWithRootRepositoryPathAndNoSourcePath() {
+        assertThat(Projection.parsePathRule("/", context), is(nullValue()));
+    }
+
+    @Test
+    public void shouldNotParsePathRuleFromDefinitionWithNonRootRepositoryPathAndNoSourcePath() {
+        assertThat(Projection.parsePathRule("a/", context), is(nullValue()));
     }
 }

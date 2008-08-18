@@ -109,7 +109,7 @@ public class FederatedRepositorySourceTest {
         source.setExecutionContextFactoryJndiName(executionContextFactoryJndiName);
         source.setContext(jndiContext);
         source.setSecurityDomain(securityDomain);
-        configRepository = new SimpleRepository("Configuration Repository");
+        configRepository = SimpleRepository.get("Configuration Repository");
         configRepository.setProperty(context, "/dna:repositories/Test Repository", "dna:timeToExpire", "100000");
         configRepository.setProperty(context, "/dna:repositories/Test Repository", "dna:timeToCache", "100000");
         configRepository.setProperty(context, "/dna:repositories/Test Repository/dna:cache", "dna:projectionRules", "/ => /");

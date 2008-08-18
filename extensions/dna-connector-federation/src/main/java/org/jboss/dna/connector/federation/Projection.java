@@ -172,7 +172,7 @@ public class Projection implements Comparable<Projection>, Serializable {
      * Pattern that identifies the form:
      * 
      * <pre>
-     *    repository_path [=&gt; source_path [$ exception ]*]?
+     *    repository_path =&gt; source_path [$ exception ]*
      * </pre>
      * 
      * where the following groups are captured on the first call to {@link Matcher#find()}:
@@ -212,6 +212,10 @@ public class Projection implements Comparable<Projection>, Serializable {
         if (!matcher.find()) return null;
         String reposPathStr = matcher.group(1);
         String sourcePathStr = matcher.group(2);
+        if (reposPathStr == null || sourcePathStr == null) return null;
+        reposPathStr = reposPathStr.trim();
+        sourcePathStr = sourcePathStr.trim();
+        if (reposPathStr.length() == 0 || sourcePathStr.length() == 0) return null;
         PathFactory pathFactory = context.getValueFactories().getPathFactory();
         Path repositoryPath = pathFactory.create(reposPathStr);
         Path sourcePath = pathFactory.create(sourcePathStr);
@@ -310,6 +314,21 @@ public class Projection implements Comparable<Projection>, Serializable {
         for (Rule rule : getRules()) {
             Path pathInRepository = rule.getPathInRepository(canonicalPathInSource, factory);
             if (pathInRepository != null) paths.add(pathInRepository);
+        }
+        return paths;
+    }
+
+    /**
+     * Get the paths in the repository that serve as top-level nodes exposed by this projection.
+     * 
+     * @param factory the path factory that can be used to create new paths; may not be null
+     * @return the set of top-level paths; never null
+     */
+    public Set<Path> getTopLevelPathsInRepository( PathFactory factory ) {
+        ArgCheck.isNotNull(factory, "factory");
+        Set<Path> paths = new HashSet<Path>();
+        for (Rule rule : getRules()) {
+            paths.addAll(rule.getTopLevelPathsInRepository(factory));
         }
         return paths;
     }
@@ -415,7 +434,7 @@ public class Projection implements Comparable<Projection>, Serializable {
     }
 
     /**
-     * A rule used within a project do define how content within a source is project into the federated repository. This mapping
+     * A rule used within a project do define how content within a source is projected into the federated repository. This mapping
      * is bi-directional, meaning it's possible to determine
      * <ul>
      * <li>the path in repository given a path in source; and</li>
@@ -426,6 +445,15 @@ public class Projection implements Comparable<Projection>, Serializable {
      */
     @Immutable
     public static abstract class Rule implements Comparable<Rule> {
+
+        /**
+         * Get the paths in the repository that serve as top-level nodes exposed by this rule.
+         * 
+         * @param factory the path factory that can be used to create new paths; may not be null
+         * @return the set of top-level paths; never null
+         */
+        public abstract Set<Path> getTopLevelPathsInRepository( PathFactory factory );
+
         /**
          * Get the path in source that is projected from the supplied repository path, or null if the supplied repository path is
          * not projected into the source.
@@ -581,6 +609,16 @@ public class Projection implements Comparable<Projection>, Serializable {
                 return true;
             }
             return false;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.connector.federation.Projection.Rule#getTopLevelPathsInRepository(org.jboss.dna.spi.graph.PathFactory)
+         */
+        @Override
+        public Set<Path> getTopLevelPathsInRepository( PathFactory factory ) {
+            return Collections.singleton(getPathInRepository());
         }
 
         /**
