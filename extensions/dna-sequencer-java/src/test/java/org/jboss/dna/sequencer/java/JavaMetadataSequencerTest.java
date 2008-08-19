@@ -105,7 +105,7 @@ public class JavaMetadataSequencerTest {
                                             "java:typeName"),
                    is(new Object[] {"java.util"}));
 
-        // support for sequencing class definition (moodifiers, class name)
+        // support for sequencing class definition (modifiers, class name)
         assertThat(output.getPropertyValues("java:compilationUnit/java:unitType/java:classDeclaration/java:normalClass/java:normalClassDeclaration/java:modifier/java:modifierDeclaration[1]",
                                             "java:modifierName"),
                    is(new Object[] {"public"}));

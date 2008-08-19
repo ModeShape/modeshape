@@ -91,7 +91,7 @@ public class jackrabbitCNDSupportsTest {
         FileInputStream cndFile = new FileInputStream(TESTATA_PATH + "java-source-artifact.cnd");
         assertNotNull(cndFile);
         NodeType[] nodeTypes = ntm.registerNodeTypes(cndFile, JackrabbitNodeTypeManager.TEXT_X_JCR_CND);
-        assertEquals(29, nodeTypes.length);
+        assertEquals(26, nodeTypes.length);
         for (NodeType nodeType : nodeTypes) {
             System.out.println("node type name: " + nodeType.getName());
         }
