@@ -381,6 +381,7 @@ public class FederatingCommandExecutor extends AbstractCommandExecutor {
         // If there are no contributions from any source ...
         boolean foundNonEmptyContribution = false;
         for (Contribution contribution : contributions) {
+            assert contribution != null;
             if (!contribution.isEmpty()) {
                 foundNonEmptyContribution = true;
                 break;
@@ -398,6 +399,8 @@ public class FederatingCommandExecutor extends AbstractCommandExecutor {
         // Merge the results into a single set of results ...
         FederatedNode mergedNode = new FederatedNode(path, UUID.randomUUID());
         ExecutionContext context = getExecutionContext();
+        assert contributions.size() > 0;
+        assert context != null;
         mergingStrategy.merge(mergedNode, contributions, context);
         if (mergedNode.getCachePolicy() == null) {
             mergedNode.setCachePolicy(defaultCachePolicy);
@@ -522,138 +525,6 @@ public class FederatingCommandExecutor extends AbstractCommandExecutor {
         }
     }
 
-    // /**
-    // * Load the node at the supplied path, returning the information. This method always obtains the information from the
-    // sources
-    // * and does not use or update the cache.
-    // *
-    // * @param path the path of the node that is to be loaded
-    // * @return the federated node containing information loaded from the sources, or null if none of the sources had a
-    // * contribution
-    // * @throws InterruptedException
-    // * @throws RepositorySourceException
-    // */
-    // protected FederatedNode loadFromSources( Path path ) throws RepositorySourceException, InterruptedException {
-    // // At this point, there is no merge plan, so read information from the sources ...
-    // ExecutionContext context = getExecutionContext();
-    // PathFactory pathFactory = context.getValueFactories().getPathFactory();
-    // DateTimeFactory timeFactory = context.getValueFactories().getDateFactory();
-    // List<Contribution> contributions = new LinkedList<Contribution>();
-    // boolean foundContribution = false;
-    // for (Projection projection : this.sourceProjections) {
-    // final String source = projection.getSourceName();
-    // final RepositoryConnection sourceConnection = getConnection(projection);
-    // if (sourceConnection == null) continue; // No source exists by this name
-    // try {
-    // // Get the cached information ...
-    // CachePolicy cachePolicy = sourceConnection.getDefaultCachePolicy();
-    // if (cachePolicy == null) cachePolicy = this.defaultCachePolicy;
-    // DateTime expirationTime = null;
-    // if (cachePolicy != null) {
-    // expirationTime = getCurrentTimeInUtc().plus(cachePolicy.getTimeToLive(), TimeUnit.MILLISECONDS);
-    // }
-    // // Get the paths-in-source where we should fetch node contributions ...
-    // Set<Path> pathsInSource = projection.getPathsInSource(path, pathFactory);
-    // if (pathsInSource.isEmpty()) {
-    // // The source has no contributions, but see whether the project exists BELOW this path.
-    // // We do this by getting the top-level repository paths of the projection, and then
-    // // use those to figure out the children of the nodes.
-    // Contribution contribution = null;
-    // Set<Path> topLevelPaths = projection.getTopLevelPathsInRepository(pathFactory);
-    // switch (topLevelPaths.size()) {
-    // case 0:
-    // break;
-    // case 1: {
-    // Path topLevelPath = topLevelPaths.iterator().next();
-    // if (path.isAncestorOf(topLevelPath)) {
-    // assert topLevelPath.size() > path.size();
-    // Path.Segment child = topLevelPath.getSegment(path.size());
-    // contribution = Contribution.create(source, path, expirationTime, null, child);
-    // foundContribution = true;
-    // }
-    // break;
-    // }
-    // default: {
-    // Set<Path.Segment> children = new HashSet<Path.Segment>();
-    // for (Path topLevelPath : topLevelPaths) {
-    // if (path.isAncestorOf(topLevelPath)) {
-    // assert topLevelPath.size() > path.size();
-    // Path.Segment child = topLevelPath.getSegment(path.size());
-    // children.add(child);
-    // }
-    // }
-    // if (children.size() > 0) {
-    // contribution = Contribution.create(source, path, expirationTime, null, children);
-    // foundContribution = true;
-    // }
-    // }
-    // }
-    // if (contribution == null) contribution = Contribution.create(source, expirationTime);
-    // contributions.add(contribution);
-    // } else {
-    // // There is at least one (real) contribution ...
-    //
-    // // Get the contributions ...
-    // final int numPaths = pathsInSource.size();
-    // if (numPaths == 1) {
-    // Path pathInSource = pathsInSource.iterator().next();
-    // BasicGetNodeCommand fromSource = new BasicGetNodeCommand(pathInSource);
-    // sourceConnection.execute(getExecutionContext(), fromSource);
-    // if (!fromSource.hasError()) {
-    // Collection<Property> properties = fromSource.getProperties();
-    // Collection<Segment> children = fromSource.getChildren();
-    // DateTime expTime = fromSource.getCachePolicy() == null ? expirationTime : timeFactory.create(getCurrentTimeInUtc(),
-    // fromSource.getCachePolicy().getTimeToLive());
-    // Contribution contribution = Contribution.create(source, pathInSource, expTime, properties, children);
-    // if (!contribution.isEmpty()) foundContribution = true;
-    // contributions.add(contribution);
-    // }
-    // } else {
-    // BasicGetNodeCommand[] fromSourceCommands = new BasicGetNodeCommand[numPaths];
-    // int i = 0;
-    // for (Path pathInSource : pathsInSource) {
-    // fromSourceCommands[i++] = new BasicGetNodeCommand(pathInSource);
-    // }
-    // sourceConnection.execute(context, fromSourceCommands);
-    // for (BasicGetNodeCommand fromSource : fromSourceCommands) {
-    // if (fromSource.hasError()) continue;
-    // Collection<Property> properties = fromSource.getProperties();
-    // Collection<Segment> children = fromSource.getChildren();
-    // DateTime expTime = fromSource.getCachePolicy() == null ? expirationTime : timeFactory.create(getCurrentTimeInUtc(),
-    // fromSource.getCachePolicy().getTimeToLive());
-    // Contribution contribution = Contribution.create(source,
-    // fromSource.getPath(),
-    // expTime,
-    // properties,
-    // children);
-    // if (!contribution.isEmpty()) foundContribution = true;
-    // contributions.add(contribution);
-    // }
-    // }
-    // }
-    // } finally {
-    // sourceConnection.close();
-    // }
-    // }
-    // // If there are no contributions from any source ...
-    // if (!foundContribution) return null;
-    // if (logger.isTraceEnabled()) {
-    // logger.trace("Loaded {0} from sources, resulting in these contributions:", path);
-    // int i = 0;
-    // for (Contribution contribution : contributions) {
-    // logger.trace("  {0} {1}", ++i, contribution);
-    // }
-    // }
-    //
-    // // Merge the results into a single set of results ...
-    // FederatedNode mergedNode = new FederatedNode(path, UUID.randomUUID());
-    // mergingStrategy.merge(mergedNode, contributions, context);
-    // if (mergedNode.getCachePolicy() == null) {
-    // mergedNode.setCachePolicy(defaultCachePolicy);
-    // }
-    // return mergedNode;
-    // }
-    //
     protected MergePlan getMergePlan( BasicGetNodeCommand command ) {
         Property mergePlanProperty = command.getPropertiesByName().get(mergePlanPropertyName);
         if (mergePlanProperty == null || mergePlanProperty.isEmpty()) {

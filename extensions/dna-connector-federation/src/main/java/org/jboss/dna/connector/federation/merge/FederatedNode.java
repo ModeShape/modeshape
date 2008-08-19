@@ -38,7 +38,7 @@ public class FederatedNode extends BasicGetNodeCommand implements CreateNodeComm
 
     private static final long serialVersionUID = 1L;
 
-    private final UUID uuid;
+    private UUID uuid;
     private MergePlan mergePlan;
     private NodeConflictBehavior nodeConflictBehavior = DEFAULT_CONFLICT_BEHAVIOR;
 
@@ -62,6 +62,13 @@ public class FederatedNode extends BasicGetNodeCommand implements CreateNodeComm
      */
     public UUID getUuid() {
         return uuid;
+    }
+
+    /**
+     * @param uuid Sets uuid to the specified value.
+     */
+    public void setUuid( UUID uuid ) {
+        this.uuid = uuid;
     }
 
     /**

@@ -34,7 +34,7 @@ public interface MergeStrategy {
      * Merge the contributions into a single
      * 
      * @param federatedNode the federated node into which the contributions are to be merged; never null
-     * @param contributions the contributions to the node; never null
+     * @param contributions the contributions to the node; never null, never empty, and never containing nulls
      * @param context the context in which this operation is to be performed; never null
      */
     public void merge( FederatedNode federatedNode,

@@ -24,10 +24,13 @@ package org.jboss.dna.connector.federation.merge;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import org.jboss.dna.connector.federation.contribution.Contribution;
 import org.jboss.dna.spi.ExecutionContext;
+import org.jboss.dna.spi.graph.IoException;
 import org.jboss.dna.spi.graph.Name;
 import org.jboss.dna.spi.graph.Property;
+import org.jboss.dna.spi.graph.UuidFactory;
 import org.jboss.dna.spi.graph.Path.Segment;
 
 /**
@@ -37,6 +40,9 @@ public class OneContributionMergeStrategy implements MergeStrategy {
 
     /**
      * {@inheritDoc}
+     * <p>
+     * This method only uses the one and only one non-null {@link Contribution} in the <code>contributions</code>.
+     * </p>
      * 
      * @see org.jboss.dna.connector.federation.merge.MergeStrategy#merge(org.jboss.dna.connector.federation.merge.FederatedNode,
      *      java.util.List, org.jboss.dna.spi.ExecutionContext)
@@ -46,8 +52,9 @@ public class OneContributionMergeStrategy implements MergeStrategy {
                        ExecutionContext context ) {
         assert federatedNode != null;
         assert contributions != null;
-        assert contributions.size() == 1;
+        assert contributions.size() > 0;
         Contribution contribution = contributions.get(0);
+        assert contribution != null;
         // Copy the children ...
         List<Segment> children = federatedNode.getChildren();
         children.clear();
@@ -59,10 +66,25 @@ public class OneContributionMergeStrategy implements MergeStrategy {
         // Copy the properties ...
         Map<Name, Property> properties = federatedNode.getPropertiesByName();
         properties.clear();
+        UUID uuid = null;
+        UuidFactory uuidFactory = null;
         Iterator<Property> propertyIterator = contribution.getProperties();
         while (propertyIterator.hasNext()) {
             Property property = propertyIterator.next();
             properties.put(property.getName(), property);
+            if (uuid == null && property.getName().getLocalName().equals("uuid") && property.isSingle()) {
+                if (uuidFactory == null) uuidFactory = context.getValueFactories().getUuidFactory();
+                try {
+                    uuid = uuidFactory.create(property.getValues().next());
+                } catch (IoException e) {
+                    // Ignore conversion exceptions
+                }
+            }
+        }
+        // If we found a single "uuid" property whose value is a valid UUID ..
+        if (uuid != null) {
+            // then set the UUID on the federated node ...
+            federatedNode.setUuid(uuid);
         }
         // Assign the merge plan ...
         MergePlan mergePlan = MergePlan.create(contributions);
