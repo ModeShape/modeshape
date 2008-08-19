@@ -66,7 +66,7 @@ import org.jboss.dna.sequencer.java.metadata.TypeMetadata;
 import org.jboss.dna.sequencer.java.metadata.Variable;
 
 /**
- * Abstract definition of a <tt>JavaMetadata<tt>. This class exposes some useful methods, that can
+ * Abstract definition of a <code>JavaMetadata<code>. This class exposes some useful methods, that can
  * be used to create meta data of a compilation unit. Methods can also separately be used.
  * 
  * @author Serge Pagop
@@ -205,12 +205,14 @@ public abstract class AbstractJavaMetadata {
     }
 
     /**
-     * @param typeDeclaration
-     * @param classMetadata
+     * Process modifiers of {@link TypeDeclaration}.
+     * 
+     * @param typeDeclaration - the type declaration.
+     * @param classMetadata - class meta data.
      */
     @SuppressWarnings( "unchecked" )
-    private void processModifiersOfTypDeclaration( TypeDeclaration typeDeclaration,
-                                                   ClassMetadata classMetadata ) {
+    protected void processModifiersOfTypDeclaration( TypeDeclaration typeDeclaration,
+                                                     ClassMetadata classMetadata ) {
         List<IExtendedModifier> modifiers = typeDeclaration.modifiers();
 
         for (IExtendedModifier extendedModifier : modifiers) {
@@ -237,7 +239,7 @@ public abstract class AbstractJavaMetadata {
      * @param methodDeclaration - the MethodDeclaration.
      * @return methodMetadata - the method meta data.
      */
-    private MethodMetadata getMethodMetadataFrom( MethodDeclaration methodDeclaration ) {
+    protected MethodMetadata getMethodMetadataFrom( MethodDeclaration methodDeclaration ) {
         if (methodDeclaration != null) {
             if (methodDeclaration.isConstructor()) {
                 return getConstructorMetadataFrom(methodDeclaration);
@@ -255,7 +257,7 @@ public abstract class AbstractJavaMetadata {
      * @return methodTypeMemberMetadata
      */
     @SuppressWarnings( "unchecked" )
-    private MethodMetadata getMethodTypeMemberMetadataFrom( MethodDeclaration methodDeclaration ) {
+    protected MethodMetadata getMethodTypeMemberMetadataFrom( MethodDeclaration methodDeclaration ) {
         MethodTypeMemberMetadata methodTypeMemberMetadata = new MethodTypeMemberMetadata();
         processReturnTypeOfMethodDeclaration(methodDeclaration, methodTypeMemberMetadata);
         processModifiersOfMethodDeclaration(methodDeclaration, methodTypeMemberMetadata);
@@ -269,18 +271,20 @@ public abstract class AbstractJavaMetadata {
     }
 
     /**
-     * @param methodDeclaration
-     * @param methodMetadata
+     * Process return type of a {@link MethodDeclaration}.
+     * 
+     * @param methodDeclaration - the method declaration.
+     * @param methodMetadata - the method meta data.
      */
-    private void processReturnTypeOfMethodDeclaration( MethodDeclaration methodDeclaration,
-                                                       MethodMetadata methodMetadata ) {
+    protected void processReturnTypeOfMethodDeclaration( MethodDeclaration methodDeclaration,
+                                                         MethodMetadata methodMetadata ) {
         Type type = methodDeclaration.getReturnType2();
-        if(type.isPrimitiveType()) {
+        if (type.isPrimitiveType()) {
             PrimitiveFieldMetadata primitive = new PrimitiveFieldMetadata();
             primitive.setType(((PrimitiveType)type).getPrimitiveTypeCode().toString());
             methodMetadata.setReturnType(primitive);
         }
-        if(type.isSimpleType()) {
+        if (type.isSimpleType()) {
             ReferenceFieldMetadata referenceFieldMetadata = new ReferenceFieldMetadata();
             referenceFieldMetadata.setType(JavaMetadataUtil.getName(((SimpleType)type).getName()));
             methodMetadata.setReturnType(referenceFieldMetadata);
@@ -288,12 +292,14 @@ public abstract class AbstractJavaMetadata {
     }
 
     /**
-     * @param methodDeclaration
-     * @param methodMetadata
+     * Process parameters of a {@link MethodDeclaration}.
+     * 
+     * @param methodDeclaration - the method declaration.
+     * @param methodMetadata - the method meta data.
      */
     @SuppressWarnings( "unchecked" )
-    private void processParametersOfMethodDeclaration( MethodDeclaration methodDeclaration,
-                                                       MethodMetadata methodMetadata ) {
+    protected void processParametersOfMethodDeclaration( MethodDeclaration methodDeclaration,
+                                                         MethodMetadata methodMetadata ) {
         List<SingleVariableDeclaration> params = methodDeclaration.parameters();
         for (SingleVariableDeclaration singleVariableDeclaration : params) {
             Type type = singleVariableDeclaration.getType();
@@ -358,7 +364,7 @@ public abstract class AbstractJavaMetadata {
      * @param methodDeclaration
      * @return constructorMetadata
      */
-    private MethodMetadata getConstructorMetadataFrom( MethodDeclaration methodDeclaration ) {
+    protected MethodMetadata getConstructorMetadataFrom( MethodDeclaration methodDeclaration ) {
         ConstructorMetadata constructorMetadata = new ConstructorMetadata();
         // modifiers
         processModifiersOfMethodDeclaration(methodDeclaration, constructorMetadata);
@@ -374,8 +380,7 @@ public abstract class AbstractJavaMetadata {
      * @param fieldDeclaration - the declaration.
      * @return fieldMetadata - meta data.
      */
-    @SuppressWarnings( "unchecked" )
-    private FieldMetadata getFieldMetadataFrom( FieldDeclaration fieldDeclaration ) {
+    protected FieldMetadata getFieldMetadataFrom( FieldDeclaration fieldDeclaration ) {
         if (fieldDeclaration != null && fieldDeclaration.getType() != null && (!fieldDeclaration.fragments().isEmpty())) {
             // type
             Type type = fieldDeclaration.getType();
@@ -412,12 +417,14 @@ public abstract class AbstractJavaMetadata {
     }
 
     /**
-     * @param fieldDeclaration
-     * @param type
-     * @return SimpleFieldMetadata
+     * Process the simple type of a {@link FieldDeclaration}.
+     * 
+     * @param fieldDeclaration - the field declaration.
+     * @param type - the type.
+     * @return SimpleFieldMetadata.
      */
-    private SimpleFieldMetadata processSimpleType( FieldDeclaration fieldDeclaration,
-                                                   Type type ) {
+    protected SimpleFieldMetadata processSimpleType( FieldDeclaration fieldDeclaration,
+                                                     Type type ) {
         SimpleType simpleType = (SimpleType)type;
         SimpleFieldMetadata simpleFieldMetadata = new SimpleFieldMetadata();
         simpleFieldMetadata.setType(JavaMetadataUtil.getName(simpleType.getName()));
@@ -428,12 +435,14 @@ public abstract class AbstractJavaMetadata {
     }
 
     /**
-     * @param fieldDeclaration
-     * @param type
-     * @return ParameterizedFieldMetadata
+     * Process the parameterized type of a {@link FieldDeclaration}.
+     * 
+     * @param fieldDeclaration - the field declaration.
+     * @param type - the type.
+     * @return ParameterizedFieldMetadata.
      */
-    private ParameterizedFieldMetadata processParameterizedType( FieldDeclaration fieldDeclaration,
-                                                                 Type type ) {
+    protected ParameterizedFieldMetadata processParameterizedType( FieldDeclaration fieldDeclaration,
+                                                                   Type type ) {
         ParameterizedType parameterizedType = (ParameterizedType)type;
         Type typeOfParameterizedType = parameterizedType.getType(); // type may be a simple type or a qualified type.
         ParameterizedFieldMetadata referenceFieldMetadata = (ParameterizedFieldMetadata)createParameterizedFieldMetadataFrom(typeOfParameterizedType);
@@ -445,12 +454,14 @@ public abstract class AbstractJavaMetadata {
     }
 
     /**
-     * @param fieldDeclaration
-     * @param type
-     * @return PrimitiveFieldMetadata
+     * Process the primitive type of a {@link FieldDeclaration}.
+     * 
+     * @param fieldDeclaration - the field declaration.
+     * @param type - the type.
+     * @return PrimitiveFieldMetadata.
      */
-    private PrimitiveFieldMetadata processPrimitiveType( FieldDeclaration fieldDeclaration,
-                                                         Type type ) {
+    protected PrimitiveFieldMetadata processPrimitiveType( FieldDeclaration fieldDeclaration,
+                                                           Type type ) {
         PrimitiveType primitiveType = (PrimitiveType)type;
         PrimitiveFieldMetadata primitiveFieldMetadata = new PrimitiveFieldMetadata();
         primitiveFieldMetadata.setType(primitiveType.getPrimitiveTypeCode().toString());
@@ -491,8 +502,8 @@ public abstract class AbstractJavaMetadata {
      * @param methodMetadata
      */
     @SuppressWarnings( "unchecked" )
-    private void processModifiersOfMethodDeclaration( MethodDeclaration methodDeclaration,
-                                                      MethodMetadata methodMetadata ) {
+    protected void processModifiersOfMethodDeclaration( MethodDeclaration methodDeclaration,
+                                                        MethodMetadata methodMetadata ) {
         List<IExtendedModifier> extendedModifiers = methodDeclaration.modifiers();
         for (IExtendedModifier extendedModifier : extendedModifiers) {
             ModifierMetadata modifierMetadata = new ModifierMetadata();

@@ -81,7 +81,6 @@ public class TypeMetadata {
     }
 
     /**
-     * 
      * @return modifiers
      */
     public List<ModifierMetadata> getModifiers() {

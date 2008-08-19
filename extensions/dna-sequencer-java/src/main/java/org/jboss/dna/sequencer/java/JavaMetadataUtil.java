@@ -25,13 +25,14 @@ import java.io.IOException;
 import java.io.InputStream;
 import org.eclipse.jdt.core.dom.Name;
 import org.eclipse.jdt.internal.compiler.util.Util;
+import org.jboss.dna.common.util.ArgCheck;
 
 /**
  * @author Serge Pagop
  */
 public class JavaMetadataUtil {
     /**
-     * Get the length of the inputstream.
+     * Get the length of the input stream.
      * 
      * @param stream - the <code>InputStream</code>
      * @return the length of the stream.
@@ -46,7 +47,7 @@ public class JavaMetadataUtil {
      * 
      * @param inputStream - the <code>FileInputStream</code>.
      * @param length - the length of the java file.
-     * @param encoding - the encoding of the sourece, if there is one.
+     * @param encoding - the encoding of the source, if there is one.
      * @return the array character of the java source.
      * @throws IOException - exceptional error can be thrown during the reading of the file.
      */
@@ -64,10 +65,11 @@ public class JavaMetadataUtil {
      * @return a FQN of the name.
      */
     public static String getName( Name name ) {
-        if (name != null) {
-            return name.getFullyQualifiedName();
-        }
-        final String message = "name cannot be null";
-        throw new IllegalArgumentException(message);
+        ArgCheck.isNotNull(name, "name");
+        return name.getFullyQualifiedName();
+    }
+
+    // prevent construction
+    private JavaMetadataUtil() {
     }
 }

@@ -30,11 +30,11 @@ import java.util.List;
 public abstract class MethodMetadata {
 
     private String name;
-    
+
     private FieldMetadata returnType;
 
     public abstract boolean isContructor();
-    
+
     private List<ModifierMetadata> modifiers = new ArrayList<ModifierMetadata>();
 
     private List<FieldMetadata> parameters = new ArrayList<FieldMetadata>();

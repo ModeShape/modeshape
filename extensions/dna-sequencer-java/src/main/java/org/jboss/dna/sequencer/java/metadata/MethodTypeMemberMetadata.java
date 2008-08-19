@@ -28,7 +28,7 @@ public class MethodTypeMemberMetadata extends MethodMetadata {
 
     /**
      * {@inheritDoc}
-     *
+     * 
      * @see org.jboss.dna.sequencer.java.metadata.MethodMetadata#isContructor()
      */
     @Override

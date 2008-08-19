@@ -25,11 +25,12 @@ package org.jboss.dna.sequencer.java.metadata;
  * @author Serge Pagop
  */
 public abstract class AnnotationMetadata {
-    
+
     private String name;
 
     /**
      * Get the name of the modifier.
+     * 
      * @return name of the modifier.
      */
     public String getName() {
@@ -42,5 +43,5 @@ public abstract class AnnotationMetadata {
     public void setName( String name ) {
         this.name = name;
     }
-    
+
 }

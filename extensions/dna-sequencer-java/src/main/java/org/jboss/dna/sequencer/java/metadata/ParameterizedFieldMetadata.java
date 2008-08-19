@@ -21,11 +21,9 @@
  */
 package org.jboss.dna.sequencer.java.metadata;
 
-
 /**
  * Field meta data for parameterized type.
  */
 public class ParameterizedFieldMetadata extends ReferenceFieldMetadata {
-
 
 }

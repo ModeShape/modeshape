@@ -26,6 +26,7 @@ import java.io.InputStream;
 import java.util.List;
 import org.apache.commons.lang.StringUtils;
 import org.jboss.dna.common.monitor.ProgressMonitor;
+import org.jboss.dna.common.util.ArgCheck;
 import org.jboss.dna.sequencer.java.metadata.AnnotationMetadata;
 import org.jboss.dna.sequencer.java.metadata.ClassMetadata;
 import org.jboss.dna.sequencer.java.metadata.ConstructorMetadata;
@@ -231,11 +232,10 @@ public class JavaMetadataSequencer implements StreamSequencer {
                                        javaMetadata.getPackageMetadata().getName());
                 }
 
-                List<AnnotationMetadata> annotations = packageMetadata.getAnnotationMetada();
                 int markerAnnotationIndex = 1;
                 int singleAnnatationIndex = 1;
                 int normalAnnotationIndex = 1;
-                for (AnnotationMetadata annotationMetadata : annotations) {
+                for (AnnotationMetadata annotationMetadata : packageMetadata.getAnnotationMetada()) {
                     if (annotationMetadata instanceof MarkerAnnotationMetadata) {
                         MarkerAnnotationMetadata markerAnnotationMetadata = (MarkerAnnotationMetadata)annotationMetadata;
                         Path markerAnnotationChildNode = pathFactory.create(JAVA_COMPILATION_UNIT_NODE + SLASH
@@ -287,10 +287,9 @@ public class JavaMetadataSequencer implements StreamSequencer {
             }
 
             // sequence import declarations of a unit
-            List<ImportMetadata> imports = javaMetadata.getImports();
             int importOnDemandIndex = 1;
             int singleImportIndex = 1;
-            for (ImportMetadata importMetadata : imports) {
+            for (ImportMetadata importMetadata : javaMetadata.getImports()) {
                 if (importMetadata instanceof ImportOnDemandMetadata) {
                     ImportOnDemandMetadata importOnDemandMetadata = (ImportOnDemandMetadata)importMetadata;
                     Path importOnDemandChildNode = pathFactory.create(JAVA_COMPILATION_UNIT_NODE + SLASH + JAVA_IMPORT_CHILD_NODE
@@ -318,8 +317,7 @@ public class JavaMetadataSequencer implements StreamSequencer {
             }
 
             // sequence type declaration (class declaration) information
-            List<TypeMetadata> types = javaMetadata.getTypeMetadata();
-            for (TypeMetadata typeMetadata : types) {
+            for (TypeMetadata typeMetadata : javaMetadata.getTypeMetadata()) {
                 // class declaration
                 if (typeMetadata instanceof ClassMetadata) {
                     ClassMetadata classMetadata = (ClassMetadata)typeMetadata;
@@ -349,21 +347,19 @@ public class JavaMetadataSequencer implements StreamSequencer {
                     }
 
                     // process fields of the class unit.
-                    List<FieldMetadata> fields = classMetadata.getFields();
                     int primitiveIndex = 1;
-                    for (FieldMetadata fieldMetadata : fields) {
+                    for (FieldMetadata fieldMetadata : classMetadata.getFields()) {
                         if (fieldMetadata instanceof PrimitiveFieldMetadata) {
                             PrimitiveFieldMetadata primitiveFieldMetadata = (PrimitiveFieldMetadata)fieldMetadata;
-                            StringBuffer primitiveFieldRootPath = createPathWithIndex(JAVA_COMPILATION_UNIT_NODE + SLASH
-                                                                                      + JAVA_UNIT_TYPE_CHILD_NODE + SLASH
-                                                                                      + JAVA_CLASS_DECLARATION_CHILD_NODE + SLASH
-                                                                                      + JAVA_NORMAL_CLASS_CHILD_NODE + SLASH
-                                                                                      + JAVA_NORMAL_CLASS_DECLARATION_CHILD_NODE
-                                                                                      + SLASH + JAVA_FIELD_CHILD_NODE + SLASH
-                                                                                      + JAVA_FIELD_TYPE_CHILD_NODE + SLASH
-                                                                                      + JAVA_TYPE_CHILD_NODE + SLASH
-                                                                                      + JAVA_PRIMITIVE_TYPE_CHILD_NODE,
-                                                                                      primitiveIndex);
+                            String primitiveFieldRootPath = createPathWithIndex(JAVA_COMPILATION_UNIT_NODE + SLASH
+                                                                                + JAVA_UNIT_TYPE_CHILD_NODE + SLASH
+                                                                                + JAVA_CLASS_DECLARATION_CHILD_NODE + SLASH
+                                                                                + JAVA_NORMAL_CLASS_CHILD_NODE + SLASH
+                                                                                + JAVA_NORMAL_CLASS_DECLARATION_CHILD_NODE
+                                                                                + SLASH + JAVA_FIELD_CHILD_NODE + SLASH
+                                                                                + JAVA_FIELD_TYPE_CHILD_NODE + SLASH
+                                                                                + JAVA_TYPE_CHILD_NODE + SLASH
+                                                                                + JAVA_PRIMITIVE_TYPE_CHILD_NODE, primitiveIndex);
                             // type
                             Path primitiveTypeChildNode = pathFactory.create(primitiveFieldRootPath);
                             output.setProperty(primitiveTypeChildNode,
@@ -373,10 +369,10 @@ public class JavaMetadataSequencer implements StreamSequencer {
                             List<ModifierMetadata> modifiers = primitiveFieldMetadata.getModifiers();
                             int primitiveModifierIndex = 1;
                             for (ModifierMetadata modifierMetadata2 : modifiers) {
-                                String modifierPath = createPathWithIndex(primitiveFieldRootPath.toString() + SLASH
+                                String modifierPath = createPathWithIndex(primitiveFieldRootPath + SLASH
                                                                           + JAVA_MODIFIER_CHILD_NODE + SLASH
                                                                           + JAVA_MODIFIER_DECLARATION_CHILD_NODE,
-                                                                          primitiveModifierIndex).toString();
+                                                                          primitiveModifierIndex);
                                 Path modifierChildNode = pathFactory.create(modifierPath);
                                 output.setProperty(modifierChildNode,
                                                    nameFactory.create(JAVA_MODIFIER_NAME),
@@ -410,15 +406,15 @@ public class JavaMetadataSequencer implements StreamSequencer {
                         if (methodMetadata.isContructor()) {
                             // process contructor
                             ConstructorMetadata constructorMetadata = (ConstructorMetadata)methodMetadata;
-                            StringBuffer constructorRootPath = createPathWithIndex(JAVA_COMPILATION_UNIT_NODE + SLASH
-                                                                                   + JAVA_UNIT_TYPE_CHILD_NODE + SLASH
-                                                                                   + JAVA_CLASS_DECLARATION_CHILD_NODE + SLASH
-                                                                                   + JAVA_NORMAL_CLASS_CHILD_NODE + SLASH
-                                                                                   + JAVA_NORMAL_CLASS_DECLARATION_CHILD_NODE
-                                                                                   + SLASH + JAVA_CONSTRUCTOR_CHILD_NODE + SLASH
-                                                                                   + JAVA_CONSTRUCTOR_DECLARATION_CHILD_NODE,
-                                                                                   constructorIndex);
-                            Path constructorChildNode = pathFactory.create(constructorRootPath.toString());
+                            String constructorRootPath = createPathWithIndex(JAVA_COMPILATION_UNIT_NODE + SLASH
+                                                                             + JAVA_UNIT_TYPE_CHILD_NODE + SLASH
+                                                                             + JAVA_CLASS_DECLARATION_CHILD_NODE + SLASH
+                                                                             + JAVA_NORMAL_CLASS_CHILD_NODE + SLASH
+                                                                             + JAVA_NORMAL_CLASS_DECLARATION_CHILD_NODE + SLASH
+                                                                             + JAVA_CONSTRUCTOR_CHILD_NODE + SLASH
+                                                                             + JAVA_CONSTRUCTOR_DECLARATION_CHILD_NODE,
+                                                                             constructorIndex);
+                            Path constructorChildNode = pathFactory.create(constructorRootPath);
                             output.setProperty(constructorChildNode,
                                                nameFactory.create(JAVA_METHOD_NAME),
                                                constructorMetadata.getName());
@@ -426,10 +422,10 @@ public class JavaMetadataSequencer implements StreamSequencer {
                             // modifiers
                             int constructorModifierIndex = 1;
                             for (ModifierMetadata modifierMetadata : modifiers) {
-                                String contructorModifierPath = createPathWithIndex(constructorRootPath.toString() + SLASH
+                                String contructorModifierPath = createPathWithIndex(constructorRootPath + SLASH
                                                                                     + JAVA_MODIFIER_CHILD_NODE + SLASH
                                                                                     + JAVA_MODIFIER_DECLARATION_CHILD_NODE,
-                                                                                    constructorModifierIndex).toString();
+                                                                                    constructorModifierIndex);
                                 Path constructorModifierChildNode = pathFactory.create(contructorModifierPath);
                                 output.setProperty(constructorModifierChildNode,
                                                    nameFactory.create(JAVA_MODIFIER_NAME),
@@ -441,10 +437,10 @@ public class JavaMetadataSequencer implements StreamSequencer {
                             int constructorParameterIndex = 1;
                             for (FieldMetadata fieldMetadata2 : constructorMetadata.getParameters()) {
 
-                                String constructorParameterRootPath = createPathWithIndex(constructorRootPath.toString() + SLASH
+                                String constructorParameterRootPath = createPathWithIndex(constructorRootPath + SLASH
                                                                                           + JAVA_PARAMETER + SLASH
                                                                                           + JAVA_FORMAL_PARAMETER,
-                                                                                          constructorParameterIndex).toString();
+                                                                                          constructorParameterIndex);
 
                                 if (fieldMetadata2 instanceof PrimitiveFieldMetadata) {
 
@@ -452,9 +448,9 @@ public class JavaMetadataSequencer implements StreamSequencer {
                                     String constructPrimitiveFormalParamRootPath = createPath(constructorParameterRootPath
                                                                                               + SLASH + JAVA_TYPE_CHILD_NODE
                                                                                               + SLASH
-                                                                                              + JAVA_PRIMITIVE_TYPE_CHILD_NODE).toString();
+                                                                                              + JAVA_PRIMITIVE_TYPE_CHILD_NODE);
                                     String constructorPrimitiveParamVariablePath = createPath(constructPrimitiveFormalParamRootPath
-                                                                                              + SLASH + JAVA_VARIABLE).toString();
+                                                                                              + SLASH + JAVA_VARIABLE);
                                     Path constructorParamChildNode = pathFactory.create(constructorPrimitiveParamVariablePath);
                                     for (Variable variable : primitive.getVariables()) {
                                         // name
@@ -480,14 +476,14 @@ public class JavaMetadataSequencer implements StreamSequencer {
 
                             // normal method
                             MethodTypeMemberMetadata methodTypeMemberMetadata = (MethodTypeMemberMetadata)methodMetadata;
-                            StringBuffer methodRootPath = createPathWithIndex(JAVA_COMPILATION_UNIT_NODE + SLASH
-                                                                              + JAVA_UNIT_TYPE_CHILD_NODE + SLASH
-                                                                              + JAVA_CLASS_DECLARATION_CHILD_NODE + SLASH
-                                                                              + JAVA_NORMAL_CLASS_CHILD_NODE + SLASH
-                                                                              + JAVA_NORMAL_CLASS_DECLARATION_CHILD_NODE + SLASH
-                                                                              + JAVA_METHOD_CHILD_NODE + SLASH
-                                                                              + JAVA_METHOD_DECLARATION_CHILD_NODE, methodIndex);
-                            Path methodChildNode = pathFactory.create(methodRootPath.toString());
+                            String methodRootPath = createPathWithIndex(JAVA_COMPILATION_UNIT_NODE + SLASH
+                                                                        + JAVA_UNIT_TYPE_CHILD_NODE + SLASH
+                                                                        + JAVA_CLASS_DECLARATION_CHILD_NODE + SLASH
+                                                                        + JAVA_NORMAL_CLASS_CHILD_NODE + SLASH
+                                                                        + JAVA_NORMAL_CLASS_DECLARATION_CHILD_NODE + SLASH
+                                                                        + JAVA_METHOD_CHILD_NODE + SLASH
+                                                                        + JAVA_METHOD_DECLARATION_CHILD_NODE, methodIndex);
+                            Path methodChildNode = pathFactory.create(methodRootPath);
                             output.setProperty(methodChildNode,
                                                nameFactory.create(JAVA_METHOD_NAME),
                                                methodTypeMemberMetadata.getName());
@@ -495,10 +491,9 @@ public class JavaMetadataSequencer implements StreamSequencer {
                             // method modifiers
                             int methodModierIndex = 1;
                             for (ModifierMetadata modifierMetadata : methodTypeMemberMetadata.getModifiers()) {
-                                String methodModifierPath = createPathWithIndex(methodRootPath.toString() + SLASH
-                                                                                + JAVA_MODIFIER_CHILD_NODE + SLASH
-                                                                                + JAVA_MODIFIER_DECLARATION_CHILD_NODE,
-                                                                                methodModierIndex).toString();
+                                String methodModifierPath = createPathWithIndex(methodRootPath + SLASH + JAVA_MODIFIER_CHILD_NODE
+                                                                                + SLASH + JAVA_MODIFIER_DECLARATION_CHILD_NODE,
+                                                                                methodModierIndex);
                                 Path methodModifierChildNode = pathFactory.create(methodModifierPath);
                                 output.setProperty(methodModifierChildNode,
                                                    nameFactory.create(JAVA_MODIFIER_NAME),
@@ -509,10 +504,9 @@ public class JavaMetadataSequencer implements StreamSequencer {
                             int methodParameterIndex = 1;
                             for (FieldMetadata fieldMetadata : methodMetadata.getParameters()) {
 
-                                String methodPrimitiveParamRootPath = createPathWithIndex(methodRootPath.toString() + SLASH
-                                                                                          + JAVA_PARAMETER + SLASH
-                                                                                          + JAVA_FORMAL_PARAMETER,
-                                                                                          methodParameterIndex).toString();
+                                String methodPrimitiveParamRootPath = createPathWithIndex(methodRootPath + SLASH + JAVA_PARAMETER
+                                                                                          + SLASH + JAVA_FORMAL_PARAMETER,
+                                                                                          methodParameterIndex);
 
                                 if (fieldMetadata instanceof PrimitiveFieldMetadata) {
 
@@ -520,10 +514,10 @@ public class JavaMetadataSequencer implements StreamSequencer {
 
                                     String methodPrimitiveFormalParamRootPath = createPath(methodPrimitiveParamRootPath + SLASH
                                                                                            + JAVA_TYPE_CHILD_NODE + SLASH
-                                                                                           + JAVA_PRIMITIVE_TYPE_CHILD_NODE).toString();
+                                                                                           + JAVA_PRIMITIVE_TYPE_CHILD_NODE);
 
                                     String methodPrimitiveParamVariablePath = createPath(methodPrimitiveFormalParamRootPath
-                                                                                         + SLASH + JAVA_VARIABLE).toString();
+                                                                                         + SLASH + JAVA_VARIABLE);
 
                                     Path methodParamChildNode = pathFactory.create(methodPrimitiveParamVariablePath);
                                     for (Variable variable : primitive.getVariables()) {
@@ -547,12 +541,12 @@ public class JavaMetadataSequencer implements StreamSequencer {
 
                             // method return type
                             FieldMetadata methodReturnType = methodTypeMemberMetadata.getReturnType();
-                            
+
                             if (methodReturnType instanceof PrimitiveFieldMetadata) {
                                 PrimitiveFieldMetadata methodReturnPrimitiveType = (PrimitiveFieldMetadata)methodReturnType;
                                 String methodReturnPrimitiveTypePath = createPath(methodRootPath.toString() + SLASH
                                                                                   + JAVA_RETURN_TYPE + SLASH
-                                                                                  + JAVA_PRIMITIVE_TYPE_CHILD_NODE).toString();
+                                                                                  + JAVA_PRIMITIVE_TYPE_CHILD_NODE);
                                 Path methodReturnPrimitiveTypeChildNode = pathFactory.create(methodReturnPrimitiveTypePath);
                                 output.setProperty(methodReturnPrimitiveTypeChildNode,
                                                    nameFactory.create(JAVA_TYPE),
@@ -578,34 +572,27 @@ public class JavaMetadataSequencer implements StreamSequencer {
     /**
      * Create a path for the tree with index.
      * 
-     * @param path - the path.
-     * @param index - the index begin with 1.
-     * @return {@link StringBuffer}
+     * @param path the path.
+     * @param index the index begin with 1.
+     * @return the string
+     * @throws IllegalArgumentException if the path is null, blank or empty, or if the index is not a positive value
      */
-    private StringBuffer createPathWithIndex( String path,
-                                              int index ) {
-        StringBuffer rootPath = new StringBuffer();
-
-        if (StringUtils.isEmpty(path)) {
-            throw new IllegalArgumentException("path has to be unique and not empty");
-        }
-        if (index < 1) {
-            throw new IllegalArgumentException("index must begin with 1");
-        }
-        rootPath.append(path + "[" + index + "]");
-        return rootPath;
+    private String createPathWithIndex( String path,
+                                        int index ) {
+        ArgCheck.isNotEmpty(path, "path");
+        ArgCheck.isPositive(index, "index");
+        return path + "[" + index + "]";
     }
 
     /**
      * Create a path for the tree without index.
      * 
      * @param path - the path.
-     * @return a {@link StringBuffer}
+     * @return the string
+     * @throws IllegalArgumentException if the path is null, blank or empty
      */
-    private StringBuffer createPath( String path ) {
-        if (StringUtils.isEmpty(path)) {
-            throw new IllegalArgumentException("path has to be unique and not empty");
-        }
-        return new StringBuffer().append(path);
+    private String createPath( String path ) {
+        ArgCheck.isNotEmpty(path, "path");
+        return path;
     }
 }

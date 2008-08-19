@@ -29,7 +29,6 @@ import org.eclipse.jdt.core.dom.ASTParser;
  * The Parser, tha process the a compilation unit.
  * 
  * @author Serge Pagop
- *
  */
 public class CompilationUnitParser {
 
@@ -54,5 +53,5 @@ public class CompilationUnitParser {
         ASTNode result = parser.createAST(null);
         return result;
     }
-   
+
 }

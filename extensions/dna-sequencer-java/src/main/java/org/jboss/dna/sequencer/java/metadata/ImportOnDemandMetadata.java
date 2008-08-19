@@ -21,7 +21,6 @@
  */
 package org.jboss.dna.sequencer.java.metadata;
 
-
 /**
  * @author Serge Pagop
  */
@@ -29,7 +28,7 @@ public class ImportOnDemandMetadata extends ImportMetadata {
 
     /**
      * {@inheritDoc}
-     *
+     * 
      * @see org.jboss.dna.sequencer.java.metadata.ImportMetadata#isOnDemand()
      */
     @Override
@@ -39,12 +38,12 @@ public class ImportOnDemandMetadata extends ImportMetadata {
 
     /**
      * {@inheritDoc}
-     *
+     * 
      * @see org.jboss.dna.sequencer.java.metadata.ImportMetadata#isSingle()
      */
     @Override
     protected boolean isSingle() {
         return false;
     }
-    
+
 }

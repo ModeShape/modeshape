@@ -28,13 +28,13 @@ import java.util.List;
  * @author Serge Pagop
  */
 public class FieldMetadata {
-    
+
     /** The type of the field */
     private String type;
-    
+
     /** The variables */
     private List<Variable> variables = new ArrayList<Variable>();
-    
+
     private List<ModifierMetadata> modifierMetadatas = new ArrayList<ModifierMetadata>();
 
     /**
