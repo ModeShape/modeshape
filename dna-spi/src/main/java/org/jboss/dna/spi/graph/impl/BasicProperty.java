@@ -23,6 +23,7 @@ package org.jboss.dna.spi.graph.impl;
 
 import java.util.Iterator;
 import net.jcip.annotations.Immutable;
+import org.jboss.dna.common.util.StringUtil;
 import org.jboss.dna.spi.graph.Name;
 import org.jboss.dna.spi.graph.Property;
 
@@ -110,5 +111,23 @@ public abstract class BasicProperty implements Property {
             return true;
         }
         return false;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see java.lang.Object#toString()
+     */
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(getName());
+        sb.append(" = ");
+        if (isSingle()) {
+            sb.append(StringUtil.readableString(getValues().next()));
+        } else {
+            sb.append(StringUtil.readableString(getValuesAsArray()));
+        }
+        return sb.toString();
     }
 }
