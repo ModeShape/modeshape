@@ -68,8 +68,6 @@ public abstract class AbstractValueFactories implements ValueFactories {
                 return getLongFactory();
             case NAME:
                 return getNameFactory();
-            case OBJECT:
-                return getObjectFactory();
             case PATH:
                 return getPathFactory();
             case REFERENCE:
@@ -80,6 +78,8 @@ public abstract class AbstractValueFactories implements ValueFactories {
                 return getUriFactory();
             case UUID:
                 return getUuidFactory();
+            case OBJECT:
+                return getObjectFactory();
         }
         return getObjectFactory();
     }

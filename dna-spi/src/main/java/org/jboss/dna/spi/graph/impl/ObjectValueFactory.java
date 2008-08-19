@@ -176,6 +176,26 @@ public class ObjectValueFactory extends AbstractValueFactory<Object> {
 
     /**
      * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.spi.graph.impl.AbstractValueFactory#create(java.lang.Object)
+     */
+    @Override
+    public Object create( Object value ) {
+        return value;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.spi.graph.impl.AbstractValueFactory#create(java.lang.Object[])
+     */
+    @Override
+    public Object[] create( Object[] values ) {
+        return values;
+    }
+
+    /**
+     * {@inheritDoc}
      */
     public Object create( byte[] value ) {
         return getBinaryValueFactory().create(value);
