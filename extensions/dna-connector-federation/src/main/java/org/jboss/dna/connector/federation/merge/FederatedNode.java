@@ -34,11 +34,13 @@ import org.jboss.dna.spi.graph.commands.impl.BasicGetNodeCommand;
  */
 public class FederatedNode extends BasicGetNodeCommand implements CreateNodeCommand {
 
+    protected static final NodeConflictBehavior DEFAULT_CONFLICT_BEHAVIOR = NodeConflictBehavior.UPDATE;
+
     private static final long serialVersionUID = 1L;
 
     private final UUID uuid;
     private MergePlan mergePlan;
-    private NodeConflictBehavior nodeConflictBehavior = NodeConflictBehavior.UPDATE;
+    private NodeConflictBehavior nodeConflictBehavior = DEFAULT_CONFLICT_BEHAVIOR;
 
     /**
      * Create a federated node given the path and UUID.
@@ -136,10 +138,12 @@ public class FederatedNode extends BasicGetNodeCommand implements CreateNodeComm
     }
 
     /**
-     * @param nodeConflictBehavior Sets nodeConflictBehavior to the specified value.
+     * Set the behavior when node conflicts arise.
+     * 
+     * @param nodeConflictBehavior the conflict behavior, or null if the default should be used
      */
-    public void setNodeConflictBehavior( NodeConflictBehavior nodeConflictBehavior ) {
-        this.nodeConflictBehavior = nodeConflictBehavior;
+    public void setConflictBehavior( NodeConflictBehavior nodeConflictBehavior ) {
+        this.nodeConflictBehavior = nodeConflictBehavior != null ? nodeConflictBehavior : DEFAULT_CONFLICT_BEHAVIOR;
     }
 
 }

@@ -21,21 +21,101 @@
  */
 package org.jboss.dna.connector.federation.merge;
 
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsNot.not;
+import static org.hamcrest.core.IsNull.nullValue;
+import static org.hamcrest.core.IsSame.sameInstance;
+import static org.junit.Assert.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.stub;
+import java.util.UUID;
+import org.jboss.dna.spi.graph.Path;
+import org.jboss.dna.spi.graph.commands.NodeConflictBehavior;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.MockitoAnnotations;
+import org.mockito.MockitoAnnotations.Mock;
 
 /**
  * @author Randall Hauch
  */
 public class FederatedNodeTest {
 
+    private FederatedNode node;
+    private UUID uuid;
+    @Mock
+    private Path path;
+
     @Before
     public void beforeEach() {
+        MockitoAnnotations.initMocks(this);
+        uuid = UUID.randomUUID();
+        node = new FederatedNode(path, uuid);
     }
 
     @Test
-    public void shouldDoSomething() {
+    public void shouldHaveSameUuidSuppliedToConstructor() {
+        assertThat(node.getUuid(), is(sameInstance(uuid)));
+    }
 
+    @Test
+    public void shouldHaveSamePathSuppliedToConstructor() {
+        assertThat(node.getPath(), is(sameInstance(path)));
+    }
+
+    @Test
+    public void shouldNotHaveMergePlanUponConstruction() {
+        assertThat(node.getMergePlan(), is(nullValue()));
+    }
+
+    @Test
+    public void shouldAllowSettingMergePlan() {
+        MergePlan mergePlan = mock(MergePlan.class);
+        node.setMergePlan(mergePlan);
+        assertThat(node.getMergePlan(), is(sameInstance(mergePlan)));
+    }
+
+    @Test
+    public void shouldHaveDefaultConflictBehaviorUponConstruction() {
+        assertThat(node.getConflictBehavior(), is(FederatedNode.DEFAULT_CONFLICT_BEHAVIOR));
+    }
+
+    @Test
+    public void shouldAllowSettingConflictBehavior() {
+        NodeConflictBehavior behavior = NodeConflictBehavior.REPLACE;
+        assertThat(node.getConflictBehavior(), is(not(behavior)));
+        node.setConflictBehavior(behavior);
+        assertThat(node.getConflictBehavior(), is(behavior));
+    }
+
+    @Test
+    public void shouldAllowSettingConflictBehaviorToNull() {
+        node.setConflictBehavior(null);
+        assertThat(node.getConflictBehavior(), is(FederatedNode.DEFAULT_CONFLICT_BEHAVIOR));
+
+        // Set to something that is not the default, then set to null
+        NodeConflictBehavior behavior = NodeConflictBehavior.REPLACE;
+        assertThat(node.getConflictBehavior(), is(not(behavior)));
+        node.setConflictBehavior(behavior);
+        assertThat(node.getConflictBehavior(), is(behavior));
+        node.setConflictBehavior(null);
+        assertThat(node.getConflictBehavior(), is(FederatedNode.DEFAULT_CONFLICT_BEHAVIOR));
+    }
+
+    @Test
+    public void shouldCompareFederatedNodesBasedUponPaths() {
+        Path path2 = mock(Path.class);
+        stub(path2.compareTo(path)).toReturn(1);
+        stub(path.compareTo(path2)).toReturn(-1);
+        FederatedNode node2 = new FederatedNode(path2, UUID.randomUUID());
+        assertThat(node.compareTo(node2), is(-1));
+        assertThat(node2.compareTo(node), is(1));
+    }
+
+    @Test
+    public void shouldHaveHashCodeThatIsTheHashCodeOfTheUuid() {
+        node = new FederatedNode(path, uuid);
+        assertThat(node.hashCode(), is(uuid.hashCode()));
     }
 
 }
