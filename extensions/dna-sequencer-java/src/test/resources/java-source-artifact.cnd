@@ -49,7 +49,13 @@
  * Element-value
  */
 [java:elementValue] > nt:unstructured
- + java:kindOfvalues (java:conditionalExpression, java:annotationType, java:elementValueArrayInitializer) mandatory
+ + java:kindOfvalues (java:conditionalExpression, java:annotationDeclaration, java:elementValueArrayInitializer) mandatory
+ 
+/**
+ * Modifiers
+ */
+[java:modifierDeclaration] > nt:unstructured
+ - java:name (string) mandatory
 
 /**
  * Expression element-value type
@@ -79,8 +85,8 @@
 /**
  * Annotation type
  */
-[java:annotationType] > nt:unstructured
- + java:annotation (java:normalAnnotation, java:markerAnnotation,  java:singleElementAnnotation) mandatory
+[java:annotationDeclaration] > nt:unstructured
+ + java:annotationType (java:normalAnnotation, java:markerAnnotation,  java:singleElementAnnotation) mandatory
   
 /**
  * Normal annotation e.g. @Entity(name="Customer")
@@ -93,7 +99,7 @@
  * Marker annotation e.g. @GET
  */
 [java:markerAnnotation] > nt:unstructured
- - typeName (string)
+ - java:typeName (string) mandatory
 
 /**
  * Single element annotation  e.g. @Path("/book")
@@ -105,54 +111,36 @@
  * Formal parameter
  */
 [java:formalParameter] > nt:unstructured
- - java:name (string)
  + java:type (java:primitiveType, java:referenceType) mandatory multiple
 
-/** 
- * No Return type 
- */
-[java:noReturnType] > nt:unstructured
- - java:noReturn (string)
-   < 'void'
-
-/** 
- * Integral type
- */
-[java:integralType] > nt:unstructured
- - java:predefinedIntegralType (string) mandatory
-   < 'byte', 'short', 'int', 'long', 'char' 
-
-/** 
- * Floating point type
- */
-[java:floatingPointType] > nt:unstructured
- - java:predefinedFloatingType (string) mandatory
-  < 'float', 'double'
-
 /**
- * Primitive type 
+ * Primitive type:
+ * - Integral type ('byte', 'short', 'int', 'long', 'char')
+ * - Floating point type ('float', 'double')
+ * - Boolean type ('boolean')
+ * - No return type (''void')
  */
 [java:primitiveType] > nt:unstructured
- - java:booleanType (string)
-   < 'boolean'
- + java:numericType (java:integralType, java:floatingPointType)
+ - java:description (string)
+ + java:modifier (java:modifierDeclaration) = java:modifierDeclaration
+ - java:typeName (string)
+ + java:variable (java:variable) = java:variable
  
-
+ [java:variable] > nt:unstructured
+ - java:variableName (string)
+ 
 /** 
  * Reference type  (TODO to enhance)
- */	
+ */ 
 [java:referenceType] > nt:unstructured
-
+ - java:description (string)
+ + java:modifier (java:modifierDeclaration) = java:modifierDeclaration
+ - java:name (string) mandatory
+ 
 /** 
  * Field type 
  */
 [java:fieldType] > nt:unstructured
- - java:description (string)
- - java:modifier (string)
-   < 'public', 'protected', 'private'
- - java:declaredAs (string) multiple
-   < 'static','final', 'transient', 'volatile'
- - java:name (string) mandatory
  + java:type (java:primitiveType, java:referenceType) mandatory multiple 
  
  /** 
@@ -160,12 +148,9 @@
   */
 [java:methodDeclaration] > nt:unstructured
  - java:description (string)
- - java:modifier (string)
-   < 'public', 'protected', 'private'
- + java:resultType (java:noReturnType, java:primitiveType, java:referenceType) mandatory
+ + java:modifier (java:modifierDeclaration) = java:modifierDeclaration
+ + java:resultType (java:primitiveType, java:referenceType) mandatory
  - java:name (string) mandatory
- - java:declaredAs (string) multiple
-   < 'static','final', 'native', 'strictfp', 'synchronized'
  + java:parameter (java:formalParameter) multiple
 
 /** 
@@ -173,8 +158,7 @@
  */
 [java:constructorDeclaration] > nt:unstructured
  - java:description (string)
- - java:modifier (string)
-  < 'public', 'protected', 'private'
+ + java:modifier (java:modifierDeclaration) = java:modifierDeclaration
  - java:name (string) mandatory
  + java:parameter (java:formalParameter)
 
@@ -183,7 +167,7 @@
  * Package declarations
  */
 [java:packageDeclaration] > nt:unstructured
- + java:annotation (java:annotationType) = java:annotationType
+ + java:annotation (java:annotationDeclaration) = java:annotationDeclaration
  - java:keyword (string)
    < 'package' 
  - java:packageName (string) mandatory 
@@ -192,33 +176,19 @@
  * Import declarations
  */
 [java:singleTypeImportDeclaration] > nt:unstructured
- - keyword (string) mandatory
+ - java:keyword (string) mandatory
   < 'import'
- - typeName (string) mandatory
+ - java:typeName (string) mandatory
  
-// TODO: needs to be enhance
 [java:typeImportOnDemandDeclaration] > nt:unstructured
- - keyword (string) mandatory
+ - java:keyword (string) mandatory
   < 'import'
- - packageOrTypeName (string) mandatory
+ - java:typeName (string) mandatory
 
-// TODO: needs to be enhance
-[java:singleStaticImportDeclaration] > nt:unstructured
- - single_static (string) mandatory
-  < 'import static'
- - typeName (string) mandatory
-
-// TODO: needs to be enhance
-[java:staticImportOnDemandDeclaration] > nt:unstructured
- - static_import (string) mandatory
-  < 'import static'
- - typeName (string) mandatory
+ [java:importDeclaration] > nt:unstructured
+ + java:singleImport (java:singleTypeImportDeclaration) = java:singleTypeImportDeclaration
+ + java:importOnDemand (java:typeImportOnDemandDeclaration) = java:typeImportOnDemandDeclaration
  
-[java:importDeclaration] > nt:unstructured
- + java:singleTypeImport (java:singleTypeImportDeclaration) = java:singleTypeImportDeclaration
- + java:typeImportOnDemand (java:typeImportOnDemandDeclaration) = java:typeImportOnDemandDeclaration
- + java:singleStaticImport (java:singleStaticImportDeclaration) = java:singleStaticImportDeclaration
- + java:staticImportOnDemand (java:staticImportOnDemandDeclaration) = java:staticImportOnDemandDeclaration 
 
 /**
  * Class declaration
@@ -228,9 +198,7 @@
  */
 [java:normalClassDeclaration] > nt:unstructured
  - java:description (string)
- - java:modifier = 'public'
- - java:declaredAs (string) 
-  < 'abstract', 'final'
+ + java:modifier (java:modifierDeclaration) = java:modifierDeclaration
  - java:name (string) mandatory
  + java:field (java:fieldType)  = java:fieldType multiple
  + java:method (java:methodDeclaration) = java:methodDeclaration multiple
@@ -243,11 +211,12 @@
  + java:enum (java:enumDeclaration) = java:enumDeclaration
 
 /**
- * Interface declaration
+ * Interface declaration 
  *
  * The body of class declares members (fields and methods and nested classes and interfaces), 
  * instance and static initializers, and constructors
- */ 
+ */
+ //TODO
 [java:interfaceDeclaration] > nt:unstructured
  
  
@@ -257,4 +226,4 @@
 [java:compilationUnit] > nt:unstructured
  + java:package (java:packageDeclaration) = java:packageDeclaration
  + java:import (java:importDeclaration) = java:importDeclaration
- + java:typeDeclaration (java:classDeclaration, java:interfaceDeclaration) 
+ + java:unitType (java:classDeclaration, java:interfaceDeclaration) 
