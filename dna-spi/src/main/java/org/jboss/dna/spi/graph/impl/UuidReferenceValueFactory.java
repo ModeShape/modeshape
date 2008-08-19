@@ -32,12 +32,15 @@ import java.util.UUID;
 import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.text.TextDecoder;
 import org.jboss.dna.spi.SpiI18n;
+import org.jboss.dna.spi.graph.Binary;
+import org.jboss.dna.spi.graph.DateTime;
 import org.jboss.dna.spi.graph.IoException;
 import org.jboss.dna.spi.graph.Name;
 import org.jboss.dna.spi.graph.Path;
 import org.jboss.dna.spi.graph.PropertyType;
 import org.jboss.dna.spi.graph.Reference;
 import org.jboss.dna.spi.graph.ValueFactory;
+import org.jboss.dna.spi.graph.ValueFormatException;
 
 /**
  * The standard {@link ValueFactory} for {@link PropertyType#REFERENCE} values.
@@ -62,9 +65,10 @@ public class UuidReferenceValueFactory extends AbstractValueFactory<Reference> {
             UUID uuid = UUID.fromString(value);
             return new UuidReference(uuid);
         } catch (IllegalArgumentException err) {
-            throw new IllegalArgumentException(SpiI18n.errorConvertingType.text(String.class.getSimpleName(),
-                                                                                Reference.class.getSimpleName(),
-                                                                                value), err);
+            throw new ValueFormatException(value, getPropertyType(),
+                                           SpiI18n.errorConvertingType.text(String.class.getSimpleName(),
+                                                                            Reference.class.getSimpleName(),
+                                                                            value), err);
         }
     }
 
@@ -81,90 +85,102 @@ public class UuidReferenceValueFactory extends AbstractValueFactory<Reference> {
      * {@inheritDoc}
      */
     public Reference create( int value ) {
-        throw new UnsupportedOperationException(SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
-                                                                                 Date.class.getSimpleName(),
-                                                                                 value));
+        throw new ValueFormatException(value, getPropertyType(), SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
+                                                                                                  Integer.class.getSimpleName(),
+                                                                                                  value));
     }
 
     /**
      * {@inheritDoc}
      */
     public Reference create( long value ) {
-        throw new UnsupportedOperationException(SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
-                                                                                 Date.class.getSimpleName(),
-                                                                                 value));
+        throw new ValueFormatException(value, getPropertyType(), SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
+                                                                                                  Long.class.getSimpleName(),
+                                                                                                  value));
     }
 
     /**
      * {@inheritDoc}
      */
     public Reference create( boolean value ) {
-        throw new UnsupportedOperationException(SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
-                                                                                 Date.class.getSimpleName(),
-                                                                                 value));
+        throw new ValueFormatException(value, getPropertyType(), SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
+                                                                                                  Boolean.class.getSimpleName(),
+                                                                                                  value));
     }
 
     /**
      * {@inheritDoc}
      */
     public Reference create( float value ) {
-        throw new UnsupportedOperationException(SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
-                                                                                 Date.class.getSimpleName(),
-                                                                                 value));
+        throw new ValueFormatException(value, getPropertyType(), SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
+                                                                                                  Float.class.getSimpleName(),
+                                                                                                  value));
     }
 
     /**
      * {@inheritDoc}
      */
     public Reference create( double value ) {
-        throw new UnsupportedOperationException(SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
-                                                                                 Date.class.getSimpleName(),
-                                                                                 value));
+        throw new ValueFormatException(value, getPropertyType(), SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
+                                                                                                  Double.class.getSimpleName(),
+                                                                                                  value));
     }
 
     /**
      * {@inheritDoc}
      */
     public Reference create( BigDecimal value ) {
-        throw new UnsupportedOperationException(SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
-                                                                                 Date.class.getSimpleName(),
-                                                                                 value));
+        throw new ValueFormatException(value, getPropertyType(),
+                                       SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
+                                                                        BigDecimal.class.getSimpleName(),
+                                                                        value));
     }
 
     /**
      * {@inheritDoc}
      */
     public Reference create( Calendar value ) {
-        throw new UnsupportedOperationException(SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
-                                                                                 Date.class.getSimpleName(),
-                                                                                 value));
+        throw new ValueFormatException(value, getPropertyType(), SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
+                                                                                                  Calendar.class.getSimpleName(),
+                                                                                                  value));
     }
 
     /**
      * {@inheritDoc}
      */
     public Reference create( Date value ) {
-        throw new UnsupportedOperationException(SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
-                                                                                 Date.class.getSimpleName(),
-                                                                                 value));
+        throw new ValueFormatException(value, getPropertyType(), SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
+                                                                                                  Date.class.getSimpleName(),
+                                                                                                  value));
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.spi.graph.ValueFactory#create(org.jboss.dna.spi.graph.DateTime)
+     */
+    public Reference create( DateTime value ) throws ValueFormatException {
+        throw new ValueFormatException(value, getPropertyType(), SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
+                                                                                                  DateTime.class.getSimpleName(),
+                                                                                                  value));
     }
 
     /**
      * {@inheritDoc}
      */
     public Reference create( Name value ) {
-        throw new UnsupportedOperationException(SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
-                                                                                 Date.class.getSimpleName(),
-                                                                                 value));
+        throw new ValueFormatException(value, getPropertyType(), SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
+                                                                                                  Name.class.getSimpleName(),
+                                                                                                  value));
     }
 
     /**
      * {@inheritDoc}
      */
     public Reference create( Path value ) {
-        throw new UnsupportedOperationException(SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
-                                                                                 Date.class.getSimpleName(),
-                                                                                 value));
+        throw new ValueFormatException(value, getPropertyType(), SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
+                                                                                                  Path.class.getSimpleName(),
+                                                                                                  value));
     }
 
     /**
@@ -179,7 +195,8 @@ public class UuidReferenceValueFactory extends AbstractValueFactory<Reference> {
      * 
      * @see org.jboss.dna.spi.graph.ValueFactory#create(java.util.UUID)
      */
-    public Reference create( UUID value ) throws IoException {
+    public Reference create( UUID value ) {
+        if (value == null) return null;
         return new UuidReference(value);
     }
 
@@ -187,9 +204,9 @@ public class UuidReferenceValueFactory extends AbstractValueFactory<Reference> {
      * {@inheritDoc}
      */
     public Reference create( URI value ) {
-        throw new UnsupportedOperationException(SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
-                                                                                 Date.class.getSimpleName(),
-                                                                                 value));
+        throw new ValueFormatException(value, getPropertyType(), SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
+                                                                                                  Date.class.getSimpleName(),
+                                                                                                  value));
     }
 
     /**
@@ -202,9 +219,19 @@ public class UuidReferenceValueFactory extends AbstractValueFactory<Reference> {
 
     /**
      * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.spi.graph.ValueFactory#create(org.jboss.dna.spi.graph.Binary)
+     */
+    public Reference create( Binary value ) throws ValueFormatException, IoException {
+        // First create a string and then create the boolean from the string value ...
+        return create(getStringValueFactory().create(value));
+    }
+
+    /**
+     * {@inheritDoc}
      */
     public Reference create( InputStream stream,
-                             int approximateLength ) {
+                             long approximateLength ) throws IoException {
         // First attempt to create a string from the value, then a double from the string ...
         return create(getStringValueFactory().create(stream, approximateLength));
     }
@@ -213,7 +240,7 @@ public class UuidReferenceValueFactory extends AbstractValueFactory<Reference> {
      * {@inheritDoc}
      */
     public Reference create( Reader reader,
-                             int approximateLength ) {
+                             long approximateLength ) throws IoException {
         // First attempt to create a string from the value, then a double from the string ...
         return create(getStringValueFactory().create(reader, approximateLength));
     }

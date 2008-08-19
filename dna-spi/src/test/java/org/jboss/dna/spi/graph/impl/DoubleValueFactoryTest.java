@@ -36,6 +36,7 @@ import java.util.List;
 import org.jboss.dna.spi.graph.Name;
 import org.jboss.dna.spi.graph.Path;
 import org.jboss.dna.spi.graph.Reference;
+import org.jboss.dna.spi.graph.ValueFormatException;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -57,7 +58,7 @@ public class DoubleValueFactoryTest {
         factory = new DoubleValueFactory(Path.URL_DECODER, stringFactory);
     }
 
-    @Test( expected = UnsupportedOperationException.class )
+    @Test( expected = ValueFormatException.class )
     public void shouldNotCreateDoubleFromBooleanValue() {
         factory.create(true);
     }
@@ -114,22 +115,22 @@ public class DoubleValueFactoryTest {
         assertThat(factory.create(value), is(Double.valueOf(value.getTimeInMillis())));
     }
 
-    @Test( expected = UnsupportedOperationException.class )
+    @Test( expected = ValueFormatException.class )
     public void shouldNotCreateDoubleFromName() {
         factory.create(mock(Name.class));
     }
 
-    @Test( expected = UnsupportedOperationException.class )
+    @Test( expected = ValueFormatException.class )
     public void shouldNotCreateDoubleFromPath() {
         factory.create(mock(Path.class));
     }
 
-    @Test( expected = UnsupportedOperationException.class )
+    @Test( expected = ValueFormatException.class )
     public void shouldNotCreateDoubleFromReference() {
         factory.create(mock(Reference.class));
     }
 
-    @Test( expected = UnsupportedOperationException.class )
+    @Test( expected = ValueFormatException.class )
     public void shouldNotCreateDoubleFromUri() throws Exception {
         factory.create(new URI("http://www.jboss.org"));
     }
@@ -158,17 +159,17 @@ public class DoubleValueFactoryTest {
         assertThat(factory.create(new StringReader("1003044")), is(1003044.d));
     }
 
-    @Test( expected = IllegalArgumentException.class )
+    @Test( expected = ValueFormatException.class )
     public void shouldNotCreateDoubleFromByteArrayContainingUtf8EncodingOfStringWithContentsOtherThanDouble() throws Exception {
         factory.create("something".getBytes("UTF-8"));
     }
 
-    @Test( expected = IllegalArgumentException.class )
+    @Test( expected = ValueFormatException.class )
     public void shouldNotCreateDoubleFromInputStreamContainingUtf8EncodingOfStringWithContentsOtherThanDouble() throws Exception {
         factory.create(new ByteArrayInputStream("something".getBytes("UTF-8")));
     }
 
-    @Test( expected = IllegalArgumentException.class )
+    @Test( expected = ValueFormatException.class )
     public void shouldNotCreateDoubleFromReaderContainingStringWithContentsOtherThanDouble() throws Exception {
         factory.create(new ByteArrayInputStream("something".getBytes("UTF-8")));
     }

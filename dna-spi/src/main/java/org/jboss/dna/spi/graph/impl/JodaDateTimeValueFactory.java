@@ -32,6 +32,7 @@ import java.util.UUID;
 import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.text.TextDecoder;
 import org.jboss.dna.spi.SpiI18n;
+import org.jboss.dna.spi.graph.Binary;
 import org.jboss.dna.spi.graph.DateTime;
 import org.jboss.dna.spi.graph.DateTimeFactory;
 import org.jboss.dna.spi.graph.IoException;
@@ -40,6 +41,7 @@ import org.jboss.dna.spi.graph.Path;
 import org.jboss.dna.spi.graph.PropertyType;
 import org.jboss.dna.spi.graph.Reference;
 import org.jboss.dna.spi.graph.ValueFactory;
+import org.jboss.dna.spi.graph.ValueFormatException;
 import org.joda.time.DateTimeZone;
 
 /**
@@ -64,9 +66,10 @@ public class JodaDateTimeValueFactory extends AbstractValueFactory<DateTime> imp
         try {
             return new JodaDateTime(value.trim());
         } catch (IllegalArgumentException err) {
-            throw new IllegalArgumentException(SpiI18n.errorConvertingType.text(String.class.getSimpleName(),
-                                                                                DateTime.class.getSimpleName(),
-                                                                                value), err);
+            throw new ValueFormatException(value, getPropertyType(),
+                                           SpiI18n.errorConvertingType.text(String.class.getSimpleName(),
+                                                                            DateTime.class.getSimpleName(),
+                                                                            value), err);
         }
     }
 
@@ -97,9 +100,9 @@ public class JodaDateTimeValueFactory extends AbstractValueFactory<DateTime> imp
      * {@inheritDoc}
      */
     public DateTime create( boolean value ) {
-        throw new UnsupportedOperationException(SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
-                                                                                 Date.class.getSimpleName(),
-                                                                                 value));
+        throw new ValueFormatException(value, getPropertyType(), SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
+                                                                                                  Date.class.getSimpleName(),
+                                                                                                  value));
     }
 
     /**
@@ -142,38 +145,48 @@ public class JodaDateTimeValueFactory extends AbstractValueFactory<DateTime> imp
 
     /**
      * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.spi.graph.ValueFactory#create(org.jboss.dna.spi.graph.DateTime)
+     */
+    public DateTime create( DateTime value ) throws ValueFormatException {
+        return value;
+    }
+
+    /**
+     * {@inheritDoc}
      */
     public DateTime create( Name value ) {
-        throw new UnsupportedOperationException(SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
-                                                                                 Name.class.getSimpleName(),
-                                                                                 value));
+        throw new ValueFormatException(value, getPropertyType(), SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
+                                                                                                  Name.class.getSimpleName(),
+                                                                                                  value));
     }
 
     /**
      * {@inheritDoc}
      */
     public DateTime create( Path value ) {
-        throw new UnsupportedOperationException(SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
-                                                                                 Path.class.getSimpleName(),
-                                                                                 value));
+        throw new ValueFormatException(value, getPropertyType(), SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
+                                                                                                  Path.class.getSimpleName(),
+                                                                                                  value));
     }
 
     /**
      * {@inheritDoc}
      */
     public DateTime create( Reference value ) {
-        throw new UnsupportedOperationException(SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
-                                                                                 Reference.class.getSimpleName(),
-                                                                                 value));
+        throw new ValueFormatException(value, getPropertyType(),
+                                       SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
+                                                                        Reference.class.getSimpleName(),
+                                                                        value));
     }
 
     /**
      * {@inheritDoc}
      */
     public DateTime create( URI value ) {
-        throw new UnsupportedOperationException(SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
-                                                                                 URI.class.getSimpleName(),
-                                                                                 value));
+        throw new ValueFormatException(value, getPropertyType(), SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
+                                                                                                  URI.class.getSimpleName(),
+                                                                                                  value));
     }
 
     /**
@@ -181,10 +194,10 @@ public class JodaDateTimeValueFactory extends AbstractValueFactory<DateTime> imp
      * 
      * @see org.jboss.dna.spi.graph.ValueFactory#create(java.util.UUID)
      */
-    public DateTime create( UUID value ) throws IoException {
-        throw new UnsupportedOperationException(SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
-                                                                                 UUID.class.getSimpleName(),
-                                                                                 value));
+    public DateTime create( UUID value ) {
+        throw new ValueFormatException(value, getPropertyType(), SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
+                                                                                                  UUID.class.getSimpleName(),
+                                                                                                  value));
     }
 
     /**
@@ -197,9 +210,19 @@ public class JodaDateTimeValueFactory extends AbstractValueFactory<DateTime> imp
 
     /**
      * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.spi.graph.ValueFactory#create(org.jboss.dna.spi.graph.Binary)
+     */
+    public DateTime create( Binary value ) throws ValueFormatException, IoException {
+        // First create a string and then create the boolean from the string value ...
+        return create(getStringValueFactory().create(value));
+    }
+
+    /**
+     * {@inheritDoc}
      */
     public DateTime create( InputStream stream,
-                            int approximateLength ) {
+                            long approximateLength ) throws IoException {
         // First attempt to create a string from the value, then a double from the string ...
         return create(getStringValueFactory().create(stream, approximateLength));
     }
@@ -208,7 +231,7 @@ public class JodaDateTimeValueFactory extends AbstractValueFactory<DateTime> imp
      * {@inheritDoc}
      */
     public DateTime create( Reader reader,
-                            int approximateLength ) {
+                            long approximateLength ) throws IoException {
         // First attempt to create a string from the value, then a double from the string ...
         return create(getStringValueFactory().create(reader, approximateLength));
     }

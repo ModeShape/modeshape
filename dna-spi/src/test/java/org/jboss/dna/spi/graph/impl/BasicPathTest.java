@@ -36,6 +36,7 @@ import org.jboss.dna.spi.DnaLexicon;
 import org.jboss.dna.spi.graph.InvalidPathException;
 import org.jboss.dna.spi.graph.Name;
 import org.jboss.dna.spi.graph.Path;
+import org.jboss.dna.spi.graph.ValueFormatException;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -179,12 +180,12 @@ public class BasicPathTest {
         assertThat(pathFactory.create("/").isRoot(), is(true));
     }
 
-    @Test( expected = IllegalArgumentException.class )
+    @Test( expected = ValueFormatException.class )
     public void shouldNotConstructPathWithSuccessiveDelimiters() {
         pathFactory.create("///a/b///c//d//");
     }
 
-    @Test( expected = IllegalArgumentException.class )
+    @Test( expected = ValueFormatException.class )
     public void shouldNotConstructPathWithOnlyDelimiters() {
         pathFactory.create("///");
     }

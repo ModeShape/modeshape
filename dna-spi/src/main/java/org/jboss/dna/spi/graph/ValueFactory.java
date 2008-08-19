@@ -63,10 +63,10 @@ public interface ValueFactory<T> {
      * 
      * @param value the string from which the value is to be created
      * @return the value, or null if the supplied string is null
-     * @throws IoException If an unexpected problem occurs during the conversion.
+     * @throws ValueFormatException if the conversion from a string could not be performed
      * @see #create(String, TextDecoder)
      */
-    T create( String value ) throws IoException;
+    T create( String value ) throws ValueFormatException;
 
     /**
      * Create a value from a string, using the supplied decoder.
@@ -74,137 +74,157 @@ public interface ValueFactory<T> {
      * @param value the string from which the value is to be created
      * @param decoder the decoder that should be used; if null, the {@link #DEFAULT_DECODER default decoder} is used
      * @return the value, or null if the supplied string is null
-     * @throws IoException If an unexpected problem occurs during the conversion.
+     * @throws ValueFormatException if the conversion from a string could not be performed
      * @see #create(String)
      */
     T create( String value,
-              TextDecoder decoder ) throws IoException;
+              TextDecoder decoder ) throws ValueFormatException;
 
     /**
      * Create a value from an integer.
      * 
      * @param value the integer from which the value is to be created
      * @return the value; never null
-     * @throws IoException If an unexpected problem occurs during the conversion.
+     * @throws ValueFormatException if the conversion from an integer could not be performed
      */
-    T create( int value ) throws IoException;
+    T create( int value ) throws ValueFormatException;
 
     /**
      * Create a long from a string.
      * 
      * @param value the string from which the long is to be created
      * @return the value; never null
-     * @throws IoException If an unexpected problem occurs during the conversion.
+     * @throws ValueFormatException if the conversion from a long could not be performed
      */
-    T create( long value ) throws IoException;
+    T create( long value ) throws ValueFormatException;
 
     /**
      * Create a boolean from a string.
      * 
      * @param value the boolean from which the value is to be created
      * @return the value; never null
-     * @throws IoException If an unexpected problem occurs during the conversion.
+     * @throws ValueFormatException if the conversion from a boolean could not be performed
      */
-    T create( boolean value ) throws IoException;
+    T create( boolean value ) throws ValueFormatException;
 
     /**
      * Create a value from a float.
      * 
      * @param value the float from which the value is to be created
      * @return the value; never null
-     * @throws IoException If an unexpected problem occurs during the conversion.
+     * @throws ValueFormatException if the conversion from a float could not be performed
      */
-    T create( float value ) throws IoException;
+    T create( float value ) throws ValueFormatException;
 
     /**
      * Create a value from a double.
      * 
      * @param value the double from which the value is to be created
      * @return the value; never null
-     * @throws IoException If an unexpected problem occurs during the conversion.
+     * @throws ValueFormatException if the conversion from a double could not be performed
      */
-    T create( double value ) throws IoException;
+    T create( double value ) throws ValueFormatException;
 
     /**
      * Create a value from a decimal.
      * 
      * @param value the decimal from which the value is to be created
      * @return the value, or null if the supplied decimal is null
-     * @throws IoException If an unexpected problem occurs during the conversion.
+     * @throws ValueFormatException if the conversion from a decimal could not be performed
      */
-    T create( BigDecimal value ) throws IoException;
+    T create( BigDecimal value ) throws ValueFormatException;
 
     /**
      * Create a value from a Calendar instance.
      * 
      * @param value the Calendar instance from which the value is to be created
      * @return the value, or null if the supplied Calendar is null
-     * @throws IoException If an unexpected problem occurs during the conversion.
+     * @throws ValueFormatException if the conversion from a Calendar could not be performed
      */
-    T create( Calendar value ) throws IoException;
+    T create( Calendar value ) throws ValueFormatException;
 
     /**
      * Create a value from a date.
      * 
      * @param value the date from which the value is to be created
      * @return the value, or null if the supplied date is null
-     * @throws IoException If an unexpected problem occurs during the conversion.
+     * @throws ValueFormatException if the conversion from a Date could not be performed
      */
-    T create( Date value ) throws IoException;
+    T create( Date value ) throws ValueFormatException;
+
+    /**
+     * Create a value from a date-time instant.
+     * 
+     * @param value the date-time instant from which the value is to be created
+     * @return the value, or null if the supplied date is null
+     * @throws ValueFormatException if the conversion from a Date could not be performed
+     */
+    T create( DateTime value ) throws ValueFormatException;
 
     /**
      * Create a value from a name.
      * 
      * @param value the name from which the value is to be created
      * @return the value, or null if the supplied name is null
-     * @throws IoException If an unexpected problem occurs during the conversion.
+     * @throws ValueFormatException if the conversion from a name could not be performed
      */
-    T create( Name value ) throws IoException;
+    T create( Name value ) throws ValueFormatException;
 
     /**
      * Create a value from a path.
      * 
      * @param value the path from which the value is to be created
      * @return the value, or null if the supplied path is null
-     * @throws IoException If an unexpected problem occurs during the conversion.
+     * @throws ValueFormatException if the conversion from a path could not be performed
      */
-    T create( Path value ) throws IoException;
+    T create( Path value ) throws ValueFormatException;
 
     /**
      * Create a value from a reference.
      * 
      * @param value the reference from which the value is to be created
      * @return the value, or null if the supplied reference is null
-     * @throws IoException If an unexpected problem occurs during the conversion.
+     * @throws ValueFormatException if the conversion from a reference could not be performed
      */
-    T create( Reference value ) throws IoException;
+    T create( Reference value ) throws ValueFormatException;
 
     /**
      * Create a value from a URI.
      * 
      * @param value the URI from which the value is to be created
      * @return the value, or null if the supplied URI is null
-     * @throws IoException If an unexpected problem occurs during the conversion.
+     * @throws ValueFormatException if the conversion from a URI could not be performed
      */
-    T create( URI value ) throws IoException;
+    T create( URI value ) throws ValueFormatException;
 
     /**
      * Create a value from a UUID.
      * 
      * @param value the UUID from which the value is to be created
      * @return the value, or null if the supplied URI is null
-     * @throws IoException If an unexpected problem occurs during the conversion.
+     * @throws ValueFormatException if the conversion from a UUID could not be performed
      */
-    T create( UUID value ) throws IoException;
+    T create( UUID value ) throws ValueFormatException;
 
     /**
      * Create a value from the binary content given by the supplied array.
      * 
      * @param value the content to be used to create the value
      * @return the value, or null if the supplied stream is null
-     * @throws IoException If an unexpected problem occurs during the conversion.
+     * @throws ValueFormatException if the conversion from a byte array could not be performed
      */
-    T create( byte[] value ) throws IoException;
+    T create( byte[] value ) throws ValueFormatException;
+
+    /**
+     * Create a value from the binary content given by the supplied stream.
+     * 
+     * @param value the binary object to be used to create the value
+     * @return the value, or null if the supplied stream is null
+     * @throws ValueFormatException if the conversion from the binary object could not be performed
+     * @throws IoException If an unexpected problem occurs while accessing the supplied binary value (such as an
+     *         {@link IOException}).
+     */
+    T create( Binary value ) throws ValueFormatException, IoException;
 
     /**
      * Create a value from the binary content given by the supplied stream.
@@ -212,10 +232,11 @@ public interface ValueFactory<T> {
      * @param stream the stream containing the content to be used to create the value
      * @param approximateLength the approximate length of the content (in bytes)
      * @return the value, or null if the supplied stream is null
-     * @throws IoException If an unexpected problem occurs during the conversion (such as an {@link IOException}).
+     * @throws ValueFormatException if the conversion from an input stream could not be performed
+     * @throws IoException If an unexpected problem occurs while accessing the supplied stream (such as an {@link IOException}).
      */
     T create( InputStream stream,
-              int approximateLength ) throws IoException;
+              long approximateLength ) throws ValueFormatException, IoException;
 
     /**
      * Create a value from a the binary content given by the supplied reader.
@@ -223,31 +244,34 @@ public interface ValueFactory<T> {
      * @param reader the reader containing the content to be used to create the value
      * @param approximateLength the approximate length of the content (in bytes)
      * @return the value, or null if the supplied string is null
-     * @throws IoException If an unexpected problem occurs during the conversion (such as an {@link IOException}).
+     * @throws ValueFormatException if the conversion from a reader could not be performed
+     * @throws IoException If an unexpected problem occurs while accessing the supplied reader (such as an {@link IOException}).
      */
     T create( Reader reader,
-              int approximateLength ) throws IoException;
+              long approximateLength ) throws ValueFormatException, IoException;
 
     /**
      * Create a value from the specified information by determining which other <code>create</code> method applies and delegating
      * to that method. Note that this method only will call <code>create</code> methods that take a single parameter; so this
-     * excludes {@link #create(InputStream, int)}, {@link #create(Reader, int)} and {@link #create(String, TextDecoder)}.
+     * excludes {@link #create(InputStream, long)}, {@link #create(Reader, long)} and {@link #create(String, TextDecoder)}.
      * 
      * @param value the value
      * @return the new value, or null if the supplied parameter is null
-     * @throws IoException If an unexpected problem occurs during the conversion.
+     * @throws ValueFormatException if the conversion from an object could not be performed
+     * @throws IoException If an unexpected problem occurs while accessing the supplied binary value (such as an
+     *         {@link IOException}).
      */
-    T create( Object value ) throws IoException;
+    T create( Object value ) throws ValueFormatException, IoException;
 
     /**
      * Create an array of values from an array of string values, using no decoding.
      * 
      * @param values the values
      * @return the values, or null if the supplied string is null
-     * @throws IoException If an unexpected problem occurs during the conversion.
+     * @throws ValueFormatException if the conversion from a string array could not be performed
      * @see #create(String[], TextDecoder)
      */
-    T[] create( String[] values ) throws IoException;
+    T[] create( String[] values ) throws ValueFormatException;
 
     /**
      * Create an array of values from an array of strings, using the supplied decoder.
@@ -255,161 +279,183 @@ public interface ValueFactory<T> {
      * @param values the string values from which the values are to be created
      * @param decoder the decoder that should be used; if null, the {@link #DEFAULT_DECODER default decoder} is used
      * @return the value, or null if the supplied string is null
-     * @throws IoException If an unexpected problem occurs during the conversion.
+     * @throws ValueFormatException if the conversion from a string array could not be performed
      * @see #create(String)
      */
     T[] create( String[] values,
-                TextDecoder decoder ) throws IoException;
+                TextDecoder decoder ) throws ValueFormatException;
 
     /**
      * Create an array of values from an array of integers.
      * 
      * @param values the integers from which the values are to be created
      * @return the values, or null if the supplied array is null
-     * @throws IoException If an unexpected problem occurs during the conversion.
+     * @throws ValueFormatException if the conversion from an integer array could not be performed
      */
-    T[] create( int[] values ) throws IoException;
+    T[] create( int[] values ) throws ValueFormatException;
 
     /**
      * Create an array of values from an array of longs.
      * 
      * @param values the longs from which the values are to be created
      * @return the values, or null if the supplied array is null
-     * @throws IoException If an unexpected problem occurs during the conversion.
+     * @throws ValueFormatException if the conversion from an array of longs could not be performed
      */
-    T[] create( long[] values ) throws IoException;
+    T[] create( long[] values ) throws ValueFormatException;
 
     /**
      * Create an array of values from an array of booleans.
      * 
      * @param values the booleans from which the values are to be created
      * @return the values, or null if the supplied array is null
-     * @throws IoException If an unexpected problem occurs during the conversion.
+     * @throws ValueFormatException if the conversion from an array of booleans could not be performed
      */
-    T[] create( boolean[] values ) throws IoException;
+    T[] create( boolean[] values ) throws ValueFormatException;
 
     /**
-     * Create an array of values from an array of booleans.
+     * Create an array of values from an array of floats.
      * 
      * @param values the floats from which the values are to be created
      * @return the values, or null if the supplied array is null
-     * @throws IoException If an unexpected problem occurs during the conversion.
+     * @throws ValueFormatException if the conversion from an array of floats could not be performed
      */
-    T[] create( float[] values ) throws IoException;
+    T[] create( float[] values ) throws ValueFormatException;
 
     /**
      * Create an array of values from an array of doubles.
      * 
      * @param values the doubles from which the values are to be created
      * @return the values, or null if the supplied array is null
-     * @throws IoException If an unexpected problem occurs during the conversion.
+     * @throws ValueFormatException if the conversion from an array of doubles could not be performed
      */
-    T[] create( double[] values ) throws IoException;
+    T[] create( double[] values ) throws ValueFormatException;
 
     /**
      * Create an array of values from an array of decimal values.
      * 
      * @param values the decimals from which the values are to be created
      * @return the values, or null if the supplied array is null
-     * @throws IoException If an unexpected problem occurs during the conversion.
+     * @throws ValueFormatException if the conversion from an array of decimal values could not be performed
      */
-    T[] create( BigDecimal[] values ) throws IoException;
+    T[] create( BigDecimal[] values ) throws ValueFormatException;
 
     /**
      * Create an array of values from an array of Calendar instances.
      * 
      * @param values the Calendar instances from which the values are to be created
      * @return the values, or null if the supplied array is null
-     * @throws IoException If an unexpected problem occurs during the conversion.
+     * @throws ValueFormatException if the conversion from an array of calendar instances could not be performed
      */
-    T[] create( Calendar[] values ) throws IoException;
+    T[] create( Calendar[] values ) throws ValueFormatException;
 
     /**
      * Create an array of values from an array of dates.
      * 
      * @param values the dates from which the values are to be created
      * @return the values, or null if the supplied array is null
-     * @throws IoException If an unexpected problem occurs during the conversion.
+     * @throws ValueFormatException if the conversion from an array of date values could not be performed
      */
-    T[] create( Date[] values ) throws IoException;
+    T[] create( Date[] values ) throws ValueFormatException;
+
+    /**
+     * Create an array of values from an array of {@link DateTime} instants.
+     * 
+     * @param values the instants from which the values are to be created
+     * @return the values, or null if the supplied array is null
+     * @throws ValueFormatException if the conversion from an array of date values could not be performed
+     */
+    T[] create( DateTime[] values ) throws ValueFormatException;
 
     /**
      * Create an array of values from an array of names.
      * 
      * @param values the names from which the values are to be created
      * @return the values, or null if the supplied array is null
-     * @throws IoException If an unexpected problem occurs during the conversion.
+     * @throws ValueFormatException if the conversion from an array of names could not be performed
      */
-    T[] create( Name[] values ) throws IoException;
+    T[] create( Name[] values ) throws ValueFormatException;
 
     /**
      * Create an array of values from an array of paths.
      * 
      * @param values the paths from which the values are to be created
      * @return the values, or null if the supplied array is null
-     * @throws IoException If an unexpected problem occurs during the conversion.
+     * @throws ValueFormatException if the conversion from an array of paths could not be performed
      */
-    T[] create( Path[] values ) throws IoException;
+    T[] create( Path[] values ) throws ValueFormatException;
 
     /**
      * Create an array of values from an array of references.
      * 
      * @param values the references from which the values are to be created
      * @return the values, or null if the supplied array is null
-     * @throws IoException If an unexpected problem occurs during the conversion.
+     * @throws ValueFormatException if the conversion from an array of references could not be performed
      */
-    T[] create( Reference[] values ) throws IoException;
+    T[] create( Reference[] values ) throws ValueFormatException;
 
     /**
      * Create an array of values from an array of URIs.
      * 
      * @param values the URIs from which the values are to be created
      * @return the values, or null if the supplied array is null
-     * @throws IoException If an unexpected problem occurs during the conversion.
+     * @throws ValueFormatException if the conversion from an array of URIs could not be performed
      */
-    T[] create( URI[] values ) throws IoException;
+    T[] create( URI[] values ) throws ValueFormatException;
 
     /**
      * Create an array of values from an array of UUIDs.
      * 
      * @param values the UUIDs from which the values are to be created
      * @return the values, or null if the supplied array is null
-     * @throws IoException If an unexpected problem occurs during the conversion.
+     * @throws ValueFormatException if the conversion from an array of UUIDs could not be performed
      */
-    T[] create( UUID[] values ) throws IoException;
+    T[] create( UUID[] values ) throws ValueFormatException;
 
     /**
      * Create an array of values from the array of binary content.
      * 
      * @param values the array of content to be used to create the values
      * @return the value, or null if the supplied array is null
-     * @throws IoException If an unexpected problem occurs during the conversion.
+     * @throws ValueFormatException if the conversion from an array of byte arrays could not be performed
      */
-    T[] create( byte[][] values ) throws IoException;
+    T[] create( byte[][] values ) throws ValueFormatException;
 
     /**
-     * Create an array of values from the specified information by determining which other <code>create</code> method applies for
-     * each object and then delegating to that method. Note that this method will not consider {@link #create(InputStream, int)},
-     * {@link #create(Reader, int)} and {@link #create(String, TextDecoder)}.
+     * Create an array of values from the array of binary objects.
      * 
      * @param values the values
      * @return the new value, or null if the supplied parameter is null
+     * @throws ValueFormatException if the conversion from an array of objects could not be performed
      * @throws IoException If an unexpected problem occurs during the conversion.
      */
-    T[] create( Object[] values ) throws IoException;
+    T[] create( Binary[] values ) throws ValueFormatException, IoException;
+
+    /**
+     * Create an array of values from the specified information by determining which other <code>create</code> method applies for
+     * each object and then delegating to that method. Note that this method will not consider {@link #create(InputStream, long)},
+     * {@link #create(Reader, long)} and {@link #create(String, TextDecoder)}.
+     * 
+     * @param values the values
+     * @return the new value, or null if the supplied parameter is null
+     * @throws ValueFormatException if the conversion from an array of objects could not be performed
+     * @throws IoException If an unexpected problem occurs during the conversion.
+     */
+    T[] create( Object[] values ) throws ValueFormatException, IoException;
 
     /**
      * Create an iterator over the values (of an unknown type). The factory converts any values as required. Note that this method
-     * will not consider {@link #create(InputStream, int)}, {@link #create(Reader, int)} and {@link #create(String, TextDecoder)}.
+     * will not consider {@link #create(InputStream, long)}, {@link #create(Reader, long)} and
+     * {@link #create(String, TextDecoder)}.
      * <p>
      * This is useful to use when iterating over the {@link Property#getValues() values} of a {@link Property}.
      * </p>
      * 
      * @param values the values
      * @return the iterator of type <code>T</code> over the values, or null if the supplied parameter is null
+     * @throws ValueFormatException if the conversion from an iterator of objects could not be performed
      * @throws IoException If an unexpected problem occurs during the conversion.
      * @see Property#getValues()
      */
-    Iterator<T> create( Iterator<?> values ) throws IoException;
+    Iterator<T> create( Iterator<?> values ) throws ValueFormatException, IoException;
 
 }

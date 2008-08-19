@@ -36,6 +36,7 @@ import java.util.List;
 import java.util.UUID;
 import org.jboss.dna.spi.graph.Name;
 import org.jboss.dna.spi.graph.Path;
+import org.jboss.dna.spi.graph.ValueFormatException;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -59,7 +60,7 @@ public class UuidValueFactoryTest {
         uuid = UUID.randomUUID();
     }
 
-    @Test( expected = UnsupportedOperationException.class )
+    @Test( expected = ValueFormatException.class )
     public void shouldNotCreateDoubleFromBooleanValue() {
         factory.create(true);
     }
@@ -84,42 +85,42 @@ public class UuidValueFactoryTest {
         assertThat(factory.create("  " + uuid.toString() + "  "), is(uuid));
     }
 
-    @Test( expected = UnsupportedOperationException.class )
+    @Test( expected = ValueFormatException.class )
     public void shouldNotCreateUuidFromIntegerValue() {
         factory.create(1);
     }
 
-    @Test( expected = UnsupportedOperationException.class )
+    @Test( expected = ValueFormatException.class )
     public void shouldNotCreateUuidFromLongValue() {
         factory.create(1L);
     }
 
-    @Test( expected = UnsupportedOperationException.class )
+    @Test( expected = ValueFormatException.class )
     public void shouldNotCreateUuidFromDoubleValue() {
         factory.create(1.0d);
     }
 
-    @Test( expected = UnsupportedOperationException.class )
+    @Test( expected = ValueFormatException.class )
     public void shouldNotCreateUuidFromFloatValue() {
         factory.create(1.0f);
     }
 
-    @Test( expected = UnsupportedOperationException.class )
+    @Test( expected = ValueFormatException.class )
     public void shouldNotCreateUuidFromBooleanValue() {
         factory.create(true);
     }
 
-    @Test( expected = UnsupportedOperationException.class )
+    @Test( expected = ValueFormatException.class )
     public void shouldNotCreateUuidFromCalendarValue() {
         factory.create(Calendar.getInstance());
     }
 
-    @Test( expected = UnsupportedOperationException.class )
+    @Test( expected = ValueFormatException.class )
     public void shouldNotCreateUuidFromName() {
         factory.create(mock(Name.class));
     }
 
-    @Test( expected = UnsupportedOperationException.class )
+    @Test( expected = ValueFormatException.class )
     public void shouldNotCreateUuidFromPath() {
         factory.create(mock(Path.class));
     }
@@ -130,7 +131,7 @@ public class UuidValueFactoryTest {
         assertThat(factory.create(ref), is(uuid));
     }
 
-    @Test( expected = UnsupportedOperationException.class )
+    @Test( expected = ValueFormatException.class )
     public void shouldNotCreateUuidFromUri() throws Exception {
         factory.create(new URI("http://www.jboss.org"));
     }
@@ -150,17 +151,17 @@ public class UuidValueFactoryTest {
         assertThat(factory.create(new StringReader(uuid.toString())), is(uuid));
     }
 
-    @Test( expected = IllegalArgumentException.class )
+    @Test( expected = ValueFormatException.class )
     public void shouldNotCreateUuidFromByteArrayContainingUtf8EncodingOfStringWithContentsOtherThanUuid() throws Exception {
         factory.create("something".getBytes("UTF-8"));
     }
 
-    @Test( expected = IllegalArgumentException.class )
+    @Test( expected = ValueFormatException.class )
     public void shouldNotCreateUuuidFromInputStreamContainingUtf8EncodingOfStringWithContentsOtherThanUuuid() throws Exception {
         factory.create(new ByteArrayInputStream("something".getBytes("UTF-8")));
     }
 
-    @Test( expected = IllegalArgumentException.class )
+    @Test( expected = ValueFormatException.class )
     public void shouldNotCreateUuuidFromReaderContainingStringWithContentsOtherThanUuuid() throws Exception {
         factory.create(new ByteArrayInputStream("something".getBytes("UTF-8")));
     }

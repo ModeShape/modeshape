@@ -35,6 +35,7 @@ import java.util.List;
 import org.jboss.dna.spi.graph.Name;
 import org.jboss.dna.spi.graph.Path;
 import org.jboss.dna.spi.graph.Reference;
+import org.jboss.dna.spi.graph.ValueFormatException;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -86,57 +87,57 @@ public class BooleanValueFactoryTest {
         assertThat(factory.create("  1  "), is(false));
     }
 
-    @Test( expected = UnsupportedOperationException.class )
+    @Test( expected = ValueFormatException.class )
     public void shouldNotCreateBooleanFromIntegerValue() {
         factory.create(1);
     }
 
-    @Test( expected = UnsupportedOperationException.class )
+    @Test( expected = ValueFormatException.class )
     public void shouldNotCreateBooleanFromLongValue() {
         factory.create(1l);
     }
 
-    @Test( expected = UnsupportedOperationException.class )
+    @Test( expected = ValueFormatException.class )
     public void shouldNotCreateBooleanFromFloatValue() {
         factory.create(1.0f);
     }
 
-    @Test( expected = UnsupportedOperationException.class )
+    @Test( expected = ValueFormatException.class )
     public void shouldNotCreateBooleanFromDoubleValue() {
         factory.create(1.0d);
     }
 
-    @Test( expected = UnsupportedOperationException.class )
+    @Test( expected = ValueFormatException.class )
     public void shouldNotCreateBooleanFromBigDecimal() {
         factory.create(1.0d);
     }
 
-    @Test( expected = UnsupportedOperationException.class )
+    @Test( expected = ValueFormatException.class )
     public void shouldNotCreateBooleanFromDate() {
         factory.create(new Date());
     }
 
-    @Test( expected = UnsupportedOperationException.class )
+    @Test( expected = ValueFormatException.class )
     public void shouldNotCreateBooleanFromCalendar() {
         factory.create(Calendar.getInstance());
     }
 
-    @Test( expected = UnsupportedOperationException.class )
+    @Test( expected = ValueFormatException.class )
     public void shouldNotCreateBooleanFromName() {
         factory.create(mock(Name.class));
     }
 
-    @Test( expected = UnsupportedOperationException.class )
+    @Test( expected = ValueFormatException.class )
     public void shouldNotCreateBooleanFromPath() {
         factory.create(mock(Path.class));
     }
 
-    @Test( expected = UnsupportedOperationException.class )
+    @Test( expected = ValueFormatException.class )
     public void shouldNotCreateBooleanFromReference() {
         factory.create(mock(Reference.class));
     }
 
-    @Test( expected = UnsupportedOperationException.class )
+    @Test( expected = ValueFormatException.class )
     public void shouldNotCreateBooleanFromUri() throws Exception {
         factory.create(new URI("http://www.jboss.org"));
     }

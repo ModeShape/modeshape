@@ -37,6 +37,8 @@ import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.text.TextDecoder;
 import org.jboss.dna.common.util.ArgCheck;
 import org.jboss.dna.spi.SpiI18n;
+import org.jboss.dna.spi.graph.Binary;
+import org.jboss.dna.spi.graph.DateTime;
 import org.jboss.dna.spi.graph.IoException;
 import org.jboss.dna.spi.graph.Name;
 import org.jboss.dna.spi.graph.Path;
@@ -44,6 +46,7 @@ import org.jboss.dna.spi.graph.PathFactory;
 import org.jboss.dna.spi.graph.PropertyType;
 import org.jboss.dna.spi.graph.Reference;
 import org.jboss.dna.spi.graph.ValueFactory;
+import org.jboss.dna.spi.graph.ValueFormatException;
 import org.jboss.dna.spi.graph.Path.Segment;
 
 /**
@@ -144,7 +147,7 @@ public class PathValueFactory extends AbstractValueFactory<Path> implements Path
         List<Segment> segments = new ArrayList<Segment>();
         String[] pathSegments = DELIMITER_PATTERN.split(trimmedValue);
         if (pathSegments.length == 0) {
-            throw new IllegalArgumentException(SpiI18n.validPathMayNotContainEmptySegment.text(value));
+            throw new ValueFormatException(value, getPropertyType(), SpiI18n.validPathMayNotContainEmptySegment.text(value));
         }
         if (decoder == null) decoder = getDecoder();
         assert pathSegments.length != 0;
@@ -153,7 +156,7 @@ public class PathValueFactory extends AbstractValueFactory<Path> implements Path
             assert segment != null;
             segment = segment.trim();
             if (segment.length() == 0) {
-                throw new IllegalArgumentException(SpiI18n.validPathMayNotContainEmptySegment.text(value));
+                throw new ValueFormatException(value, getPropertyType(), SpiI18n.validPathMayNotContainEmptySegment.text(value));
             }
             // Create the name and add a segment with it ...
             segments.add(createSegment(segment, decoder));
@@ -167,72 +170,84 @@ public class PathValueFactory extends AbstractValueFactory<Path> implements Path
      * {@inheritDoc}
      */
     public Path create( int value ) {
-        throw new UnsupportedOperationException(SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
-                                                                                 Date.class.getSimpleName(),
-                                                                                 value));
+        throw new ValueFormatException(value, getPropertyType(), SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
+                                                                                                  Integer.class.getSimpleName(),
+                                                                                                  value));
     }
 
     /**
      * {@inheritDoc}
      */
     public Path create( long value ) {
-        throw new UnsupportedOperationException(SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
-                                                                                 Date.class.getSimpleName(),
-                                                                                 value));
+        throw new ValueFormatException(value, getPropertyType(), SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
+                                                                                                  Long.class.getSimpleName(),
+                                                                                                  value));
     }
 
     /**
      * {@inheritDoc}
      */
     public Path create( boolean value ) {
-        throw new UnsupportedOperationException(SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
-                                                                                 Date.class.getSimpleName(),
-                                                                                 value));
+        throw new ValueFormatException(value, getPropertyType(), SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
+                                                                                                  Boolean.class.getSimpleName(),
+                                                                                                  value));
     }
 
     /**
      * {@inheritDoc}
      */
     public Path create( float value ) {
-        throw new UnsupportedOperationException(SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
-                                                                                 Date.class.getSimpleName(),
-                                                                                 value));
+        throw new ValueFormatException(value, getPropertyType(), SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
+                                                                                                  Float.class.getSimpleName(),
+                                                                                                  value));
     }
 
     /**
      * {@inheritDoc}
      */
     public Path create( double value ) {
-        throw new UnsupportedOperationException(SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
-                                                                                 Date.class.getSimpleName(),
-                                                                                 value));
+        throw new ValueFormatException(value, getPropertyType(), SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
+                                                                                                  Double.class.getSimpleName(),
+                                                                                                  value));
     }
 
     /**
      * {@inheritDoc}
      */
     public Path create( BigDecimal value ) {
-        throw new UnsupportedOperationException(SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
-                                                                                 Date.class.getSimpleName(),
-                                                                                 value));
+        throw new ValueFormatException(value, getPropertyType(),
+                                       SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
+                                                                        BigDecimal.class.getSimpleName(),
+                                                                        value));
     }
 
     /**
      * {@inheritDoc}
      */
     public Path create( Calendar value ) {
-        throw new UnsupportedOperationException(SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
-                                                                                 Date.class.getSimpleName(),
-                                                                                 value));
+        throw new ValueFormatException(value, getPropertyType(), SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
+                                                                                                  Calendar.class.getSimpleName(),
+                                                                                                  value));
     }
 
     /**
      * {@inheritDoc}
      */
     public Path create( Date value ) {
-        throw new UnsupportedOperationException(SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
-                                                                                 Date.class.getSimpleName(),
-                                                                                 value));
+        throw new ValueFormatException(value, getPropertyType(), SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
+                                                                                                  Date.class.getSimpleName(),
+                                                                                                  value));
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.spi.graph.ValueFactory#create(org.jboss.dna.spi.graph.DateTime)
+     */
+    public Path create( DateTime value ) throws ValueFormatException {
+        throw new ValueFormatException(value, getPropertyType(), SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
+                                                                                                  DateTime.class.getSimpleName(),
+                                                                                                  value));
     }
 
     /**
@@ -240,9 +255,13 @@ public class PathValueFactory extends AbstractValueFactory<Path> implements Path
      */
     public Path create( Name value ) {
         if (value == null) return null;
-        List<Path.Segment> segments = new ArrayList<Path.Segment>(1);
-        segments.add(new BasicPathSegment(value));
-        return new BasicPath(segments, true);
+        try {
+            List<Path.Segment> segments = new ArrayList<Path.Segment>(1);
+            segments.add(new BasicPathSegment(value));
+            return new BasicPath(segments, true);
+        } catch (IllegalArgumentException e) {
+            throw new ValueFormatException(value, getPropertyType(), e);
+        }
     }
 
     /**
@@ -519,7 +538,8 @@ public class PathValueFactory extends AbstractValueFactory<Path> implements Path
             return new BasicPathSegment(this.nameValueFactory.create(segmentName.substring(0, startBracketNdx), decoder),
                                         Integer.parseInt(ndx));
         } catch (NumberFormatException err) {
-            throw new IllegalArgumentException(SpiI18n.invalidIndexInSegmentName.text(ndx, segmentName));
+            throw new ValueFormatException(segmentName, getPropertyType(), SpiI18n.invalidIndexInSegmentName.text(ndx,
+                                                                                                                  segmentName));
         }
     }
 
@@ -538,9 +558,10 @@ public class PathValueFactory extends AbstractValueFactory<Path> implements Path
      * {@inheritDoc}
      */
     public Path create( Reference value ) {
-        throw new UnsupportedOperationException(SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
-                                                                                 Reference.class.getSimpleName(),
-                                                                                 value));
+        throw new ValueFormatException(value, getPropertyType(),
+                                       SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
+                                                                        Reference.class.getSimpleName(),
+                                                                        value));
     }
 
     /**
@@ -556,9 +577,9 @@ public class PathValueFactory extends AbstractValueFactory<Path> implements Path
         if (asciiString.indexOf('/') == -1) {
             return create(asciiString);
         }
-        throw new IllegalArgumentException(SpiI18n.errorConvertingType.text(URI.class.getSimpleName(),
-                                                                            Path.class.getSimpleName(),
-                                                                            value));
+        throw new ValueFormatException(value, getPropertyType(), SpiI18n.errorConvertingType.text(URI.class.getSimpleName(),
+                                                                                                  Path.class.getSimpleName(),
+                                                                                                  value));
     }
 
     /**
@@ -566,10 +587,10 @@ public class PathValueFactory extends AbstractValueFactory<Path> implements Path
      * 
      * @see org.jboss.dna.spi.graph.ValueFactory#create(java.util.UUID)
      */
-    public Path create( UUID value ) throws IoException {
-        throw new UnsupportedOperationException(SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
-                                                                                 UUID.class.getSimpleName(),
-                                                                                 value));
+    public Path create( UUID value ) {
+        throw new ValueFormatException(value, getPropertyType(), SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
+                                                                                                  UUID.class.getSimpleName(),
+                                                                                                  value));
     }
 
     /**
@@ -582,9 +603,19 @@ public class PathValueFactory extends AbstractValueFactory<Path> implements Path
 
     /**
      * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.spi.graph.ValueFactory#create(org.jboss.dna.spi.graph.Binary)
+     */
+    public Path create( Binary value ) throws ValueFormatException, IoException {
+        // First create a string and then create the boolean from the string value ...
+        return create(getStringValueFactory().create(value));
+    }
+
+    /**
+     * {@inheritDoc}
      */
     public Path create( InputStream stream,
-                        int approximateLength ) {
+                        long approximateLength ) throws IoException {
         // First attempt to create a string from the value, then a double from the string ...
         return create(getStringValueFactory().create(stream, approximateLength));
     }
@@ -593,7 +624,7 @@ public class PathValueFactory extends AbstractValueFactory<Path> implements Path
      * {@inheritDoc}
      */
     public Path create( Reader reader,
-                        int approximateLength ) {
+                        long approximateLength ) throws IoException {
         // First attempt to create a string from the value, then a double from the string ...
         return create(getStringValueFactory().create(reader, approximateLength));
     }

@@ -36,12 +36,15 @@ import java.util.Iterator;
 import java.util.UUID;
 import org.jboss.dna.common.text.NoOpEncoder;
 import org.jboss.dna.common.text.TextDecoder;
+import org.jboss.dna.spi.graph.Binary;
+import org.jboss.dna.spi.graph.DateTime;
 import org.jboss.dna.spi.graph.IoException;
 import org.jboss.dna.spi.graph.Name;
 import org.jboss.dna.spi.graph.Path;
 import org.jboss.dna.spi.graph.PropertyType;
 import org.jboss.dna.spi.graph.Reference;
 import org.jboss.dna.spi.graph.ValueFactory;
+import org.jboss.dna.spi.graph.ValueFormatException;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -100,6 +103,10 @@ public class AbstractValueFactoryTest {
             return null;
         }
 
+        public String create( DateTime value ) throws ValueFormatException {
+            return null;
+        }
+
         public String create( Name value ) {
             return null;
         }
@@ -124,13 +131,17 @@ public class AbstractValueFactoryTest {
             return null;
         }
 
+        public String create( Binary value ) throws ValueFormatException, IoException {
+            return null;
+        }
+
         public String create( InputStream stream,
-                              int approximateLength ) {
+                              long approximateLength ) {
             return null;
         }
 
         public String create( Reader reader,
-                              int approximateLength ) {
+                              long approximateLength ) {
             return null;
         }
 

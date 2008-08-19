@@ -36,13 +36,17 @@ import org.jboss.dna.common.text.TextDecoder;
 import org.jboss.dna.common.text.TextEncoder;
 import org.jboss.dna.common.util.ArgCheck;
 import org.jboss.dna.common.util.IoUtil;
+import org.jboss.dna.common.util.Logger;
 import org.jboss.dna.spi.SpiI18n;
+import org.jboss.dna.spi.graph.Binary;
+import org.jboss.dna.spi.graph.DateTime;
 import org.jboss.dna.spi.graph.IoException;
 import org.jboss.dna.spi.graph.Name;
 import org.jboss.dna.spi.graph.Path;
 import org.jboss.dna.spi.graph.PropertyType;
 import org.jboss.dna.spi.graph.Reference;
 import org.jboss.dna.spi.graph.ValueFactory;
+import org.jboss.dna.spi.graph.ValueFormatException;
 
 /**
  * The standard {@link ValueFactory} for {@link PropertyType#STRING} values.
@@ -155,6 +159,16 @@ public class StringValueFactory extends AbstractValueFactory<String> {
 
     /**
      * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.spi.graph.ValueFactory#create(org.jboss.dna.spi.graph.DateTime)
+     */
+    public String create( DateTime value ) throws ValueFormatException {
+        if (value == null) return null;
+        return value.getString(); // ISO representation
+    }
+
+    /**
+     * {@inheritDoc}
      */
     public String create( Name value ) {
         if (value == null) return null;
@@ -203,9 +217,34 @@ public class StringValueFactory extends AbstractValueFactory<String> {
         try {
             return new String(value, "UTF-8");
         } catch (UnsupportedEncodingException err) {
-            throw new IllegalArgumentException(SpiI18n.errorConvertingType.text(byte[].class.getSimpleName(),
-                                                                                String.class.getSimpleName(),
-                                                                                value), err);
+            throw new ValueFormatException(value, getPropertyType(),
+                                           SpiI18n.errorConvertingType.text(byte[].class.getSimpleName(),
+                                                                            String.class.getSimpleName(),
+                                                                            value), err);
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.spi.graph.ValueFactory#create(org.jboss.dna.spi.graph.Binary)
+     */
+    public String create( Binary value ) throws ValueFormatException, IoException {
+        if (value == null) return null;
+        try {
+            value.acquire();
+            InputStream stream = value.getStream();
+            try {
+                return create(stream, value.getSize());
+            } finally {
+                try {
+                    stream.close();
+                } catch (IOException e) {
+                    Logger.getLogger(getClass()).debug(e, "Error closing the stream while converting from Binary to String");
+                }
+            }
+        } finally {
+            value.release();
         }
     }
 
@@ -213,16 +252,17 @@ public class StringValueFactory extends AbstractValueFactory<String> {
      * {@inheritDoc}
      */
     public String create( InputStream stream,
-                          int approximateLength ) {
+                          long approximateLength ) throws IoException {
         if (stream == null) return null;
         byte[] value = null;
         try {
             value = IoUtil.readBytes(stream);
             return new String(value, "UTF-8");
         } catch (UnsupportedEncodingException err) {
-            throw new IllegalArgumentException(SpiI18n.errorConvertingType.text(InputStream.class.getSimpleName(),
-                                                                                String.class.getSimpleName(),
-                                                                                value), err);
+            throw new ValueFormatException(value, getPropertyType(),
+                                           SpiI18n.errorConvertingType.text(InputStream.class.getSimpleName(),
+                                                                            String.class.getSimpleName(),
+                                                                            value), err);
         } catch (IOException err) {
             throw new IoException(
                                   SpiI18n.errorConvertingIo.text(InputStream.class.getSimpleName(), String.class.getSimpleName()),
@@ -234,7 +274,7 @@ public class StringValueFactory extends AbstractValueFactory<String> {
      * {@inheritDoc}
      */
     public String create( Reader reader,
-                          int approximateLength ) {
+                          long approximateLength ) throws IoException {
         if (reader == null) return null;
         try {
             return IoUtil.read(reader);

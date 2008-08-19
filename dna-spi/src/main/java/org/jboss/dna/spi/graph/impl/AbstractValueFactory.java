@@ -32,12 +32,15 @@ import java.util.UUID;
 import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.text.TextDecoder;
 import org.jboss.dna.common.util.ArgCheck;
+import org.jboss.dna.spi.graph.Binary;
+import org.jboss.dna.spi.graph.DateTime;
 import org.jboss.dna.spi.graph.IoException;
 import org.jboss.dna.spi.graph.Name;
 import org.jboss.dna.spi.graph.Path;
 import org.jboss.dna.spi.graph.PropertyType;
 import org.jboss.dna.spi.graph.Reference;
 import org.jboss.dna.spi.graph.ValueFactory;
+import org.jboss.dna.spi.graph.ValueFormatException;
 
 /**
  * Abstract {@link ValueFactory}.
@@ -177,6 +180,21 @@ public abstract class AbstractValueFactory<T> implements ValueFactory<T> {
      * {@inheritDoc}
      */
     public T[] create( Date[] values ) {
+        if (values == null) return null;
+        final int length = values.length;
+        T[] result = createEmptyArray(length);
+        for (int i = 0; i != length; ++i) {
+            result[i] = create(values[i]);
+        }
+        return result;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.spi.graph.ValueFactory#create(org.jboss.dna.spi.graph.DateTime[])
+     */
+    public T[] create( DateTime[] values ) throws ValueFormatException {
         if (values == null) return null;
         final int length = values.length;
         T[] result = createEmptyArray(length);
@@ -335,7 +353,22 @@ public abstract class AbstractValueFactory<T> implements ValueFactory<T> {
      * 
      * @see org.jboss.dna.spi.graph.ValueFactory#create(java.util.UUID[])
      */
-    public T[] create( UUID[] values ) throws IoException {
+    public T[] create( UUID[] values ) {
+        if (values == null) return null;
+        final int length = values.length;
+        T[] result = createEmptyArray(length);
+        for (int i = 0; i != length; ++i) {
+            result[i] = create(values[i]);
+        }
+        return result;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.spi.graph.ValueFactory#create(org.jboss.dna.spi.graph.Binary[])
+     */
+    public T[] create( Binary[] values ) throws ValueFormatException, IoException {
         if (values == null) return null;
         final int length = values.length;
         T[] result = createEmptyArray(length);

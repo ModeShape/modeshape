@@ -33,12 +33,14 @@ import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.text.TextDecoder;
 import org.jboss.dna.common.util.ArgCheck;
 import org.jboss.dna.spi.graph.Binary;
+import org.jboss.dna.spi.graph.DateTime;
 import org.jboss.dna.spi.graph.IoException;
 import org.jboss.dna.spi.graph.Name;
 import org.jboss.dna.spi.graph.Path;
 import org.jboss.dna.spi.graph.PropertyType;
 import org.jboss.dna.spi.graph.Reference;
 import org.jboss.dna.spi.graph.ValueFactory;
+import org.jboss.dna.spi.graph.ValueFormatException;
 
 /**
  * The standard {@link ValueFactory} for {@link PropertyType#OBJECT} values.
@@ -139,6 +141,15 @@ public class ObjectValueFactory extends AbstractValueFactory<Object> {
 
     /**
      * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.spi.graph.ValueFactory#create(org.jboss.dna.spi.graph.DateTime)
+     */
+    public Object create( DateTime value ) {
+        return value;
+    }
+
+    /**
+     * {@inheritDoc}
      */
     public Object create( Name value ) {
         return value;
@@ -203,9 +214,18 @@ public class ObjectValueFactory extends AbstractValueFactory<Object> {
 
     /**
      * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.spi.graph.ValueFactory#create(org.jboss.dna.spi.graph.Binary)
+     */
+    public Object create( Binary value ) throws ValueFormatException, IoException {
+        return value;
+    }
+
+    /**
+     * {@inheritDoc}
      */
     public Object create( InputStream stream,
-                          int approximateLength ) {
+                          long approximateLength ) {
         return getBinaryValueFactory().create(stream, approximateLength);
     }
 
@@ -213,7 +233,7 @@ public class ObjectValueFactory extends AbstractValueFactory<Object> {
      * {@inheritDoc}
      */
     public Object create( Reader reader,
-                          int approximateLength ) {
+                          long approximateLength ) {
         return getBinaryValueFactory().create(reader, approximateLength);
     }
 

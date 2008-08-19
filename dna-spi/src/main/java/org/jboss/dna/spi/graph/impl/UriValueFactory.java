@@ -34,6 +34,8 @@ import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.text.TextDecoder;
 import org.jboss.dna.common.util.ArgCheck;
 import org.jboss.dna.spi.SpiI18n;
+import org.jboss.dna.spi.graph.Binary;
+import org.jboss.dna.spi.graph.DateTime;
 import org.jboss.dna.spi.graph.IoException;
 import org.jboss.dna.spi.graph.Name;
 import org.jboss.dna.spi.graph.NamespaceRegistry;
@@ -41,6 +43,7 @@ import org.jboss.dna.spi.graph.Path;
 import org.jboss.dna.spi.graph.PropertyType;
 import org.jboss.dna.spi.graph.Reference;
 import org.jboss.dna.spi.graph.ValueFactory;
+import org.jboss.dna.spi.graph.ValueFormatException;
 
 /**
  * The standard {@link ValueFactory} for {@link PropertyType#URI} values.
@@ -69,9 +72,10 @@ public class UriValueFactory extends AbstractValueFactory<URI> {
         try {
             return new URI(value);
         } catch (URISyntaxException err) {
-            throw new IllegalArgumentException(SpiI18n.errorConvertingType.text(String.class.getSimpleName(),
-                                                                                URI.class.getSimpleName(),
-                                                                                value), err);
+            throw new ValueFormatException(value, getPropertyType(),
+                                           SpiI18n.errorConvertingType.text(String.class.getSimpleName(),
+                                                                            URI.class.getSimpleName(),
+                                                                            value), err);
         }
     }
 
@@ -88,72 +92,84 @@ public class UriValueFactory extends AbstractValueFactory<URI> {
      * {@inheritDoc}
      */
     public URI create( int value ) {
-        throw new UnsupportedOperationException(SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
-                                                                                 Date.class.getSimpleName(),
-                                                                                 value));
+        throw new ValueFormatException(value, getPropertyType(), SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
+                                                                                                  Integer.class.getSimpleName(),
+                                                                                                  value));
     }
 
     /**
      * {@inheritDoc}
      */
     public URI create( long value ) {
-        throw new UnsupportedOperationException(SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
-                                                                                 Date.class.getSimpleName(),
-                                                                                 value));
+        throw new ValueFormatException(value, getPropertyType(), SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
+                                                                                                  Long.class.getSimpleName(),
+                                                                                                  value));
     }
 
     /**
      * {@inheritDoc}
      */
     public URI create( boolean value ) {
-        throw new UnsupportedOperationException(SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
-                                                                                 Date.class.getSimpleName(),
-                                                                                 value));
+        throw new ValueFormatException(value, getPropertyType(), SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
+                                                                                                  Boolean.class.getSimpleName(),
+                                                                                                  value));
     }
 
     /**
      * {@inheritDoc}
      */
     public URI create( float value ) {
-        throw new UnsupportedOperationException(SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
-                                                                                 Date.class.getSimpleName(),
-                                                                                 value));
+        throw new ValueFormatException(value, getPropertyType(), SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
+                                                                                                  Float.class.getSimpleName(),
+                                                                                                  value));
     }
 
     /**
      * {@inheritDoc}
      */
     public URI create( double value ) {
-        throw new UnsupportedOperationException(SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
-                                                                                 Date.class.getSimpleName(),
-                                                                                 value));
+        throw new ValueFormatException(value, getPropertyType(), SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
+                                                                                                  Double.class.getSimpleName(),
+                                                                                                  value));
     }
 
     /**
      * {@inheritDoc}
      */
     public URI create( BigDecimal value ) {
-        throw new UnsupportedOperationException(SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
-                                                                                 Date.class.getSimpleName(),
-                                                                                 value));
+        throw new ValueFormatException(value, getPropertyType(),
+                                       SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
+                                                                        BigDecimal.class.getSimpleName(),
+                                                                        value));
     }
 
     /**
      * {@inheritDoc}
      */
     public URI create( Calendar value ) {
-        throw new UnsupportedOperationException(SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
-                                                                                 Date.class.getSimpleName(),
-                                                                                 value));
+        throw new ValueFormatException(value, getPropertyType(), SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
+                                                                                                  Calendar.class.getSimpleName(),
+                                                                                                  value));
     }
 
     /**
      * {@inheritDoc}
      */
     public URI create( Date value ) {
-        throw new UnsupportedOperationException(SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
-                                                                                 Date.class.getSimpleName(),
-                                                                                 value));
+        throw new ValueFormatException(value, getPropertyType(), SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
+                                                                                                  Date.class.getSimpleName(),
+                                                                                                  value));
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.spi.graph.ValueFactory#create(org.jboss.dna.spi.graph.DateTime)
+     */
+    public URI create( DateTime value ) throws ValueFormatException {
+        throw new ValueFormatException(value, getPropertyType(), SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
+                                                                                                  DateTime.class.getSimpleName(),
+                                                                                                  value));
     }
 
     /**
@@ -179,9 +195,10 @@ public class UriValueFactory extends AbstractValueFactory<URI> {
      * {@inheritDoc}
      */
     public URI create( Reference value ) {
-        throw new UnsupportedOperationException(SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
-                                                                                 Reference.class.getSimpleName(),
-                                                                                 value));
+        throw new ValueFormatException(value, getPropertyType(),
+                                       SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
+                                                                        Reference.class.getSimpleName(),
+                                                                        value));
     }
 
     /**
@@ -189,10 +206,10 @@ public class UriValueFactory extends AbstractValueFactory<URI> {
      * 
      * @see org.jboss.dna.spi.graph.ValueFactory#create(java.util.UUID)
      */
-    public URI create( UUID value ) throws IoException {
-        throw new UnsupportedOperationException(SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
-                                                                                 UUID.class.getSimpleName(),
-                                                                                 value));
+    public URI create( UUID value ) {
+        throw new ValueFormatException(value, getPropertyType(), SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
+                                                                                                  UUID.class.getSimpleName(),
+                                                                                                  value));
     }
 
     /**
@@ -212,9 +229,19 @@ public class UriValueFactory extends AbstractValueFactory<URI> {
 
     /**
      * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.spi.graph.ValueFactory#create(org.jboss.dna.spi.graph.Binary)
+     */
+    public URI create( Binary value ) throws ValueFormatException, IoException {
+        // First create a string and then create the boolean from the string value ...
+        return create(getStringValueFactory().create(value));
+    }
+
+    /**
+     * {@inheritDoc}
      */
     public URI create( InputStream stream,
-                       int approximateLength ) {
+                       long approximateLength ) throws IoException {
         // First attempt to create a string from the value, then a double from the string ...
         return create(getStringValueFactory().create(stream, approximateLength));
     }
@@ -223,7 +250,7 @@ public class UriValueFactory extends AbstractValueFactory<URI> {
      * {@inheritDoc}
      */
     public URI create( Reader reader,
-                       int approximateLength ) {
+                       long approximateLength ) throws IoException {
         // First attempt to create a string from the value, then a double from the string ...
         return create(getStringValueFactory().create(reader, approximateLength));
     }

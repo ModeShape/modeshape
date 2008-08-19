@@ -32,12 +32,15 @@ import java.util.UUID;
 import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.text.TextDecoder;
 import org.jboss.dna.spi.SpiI18n;
+import org.jboss.dna.spi.graph.Binary;
+import org.jboss.dna.spi.graph.DateTime;
 import org.jboss.dna.spi.graph.IoException;
 import org.jboss.dna.spi.graph.Name;
 import org.jboss.dna.spi.graph.Path;
 import org.jboss.dna.spi.graph.PropertyType;
 import org.jboss.dna.spi.graph.Reference;
 import org.jboss.dna.spi.graph.ValueFactory;
+import org.jboss.dna.spi.graph.ValueFormatException;
 
 /**
  * The standard {@link ValueFactory} for {@link PropertyType#DECIMAL} values.
@@ -61,9 +64,10 @@ public class DecimalValueFactory extends AbstractValueFactory<BigDecimal> {
         try {
             return new BigDecimal(value.trim());
         } catch (NumberFormatException err) {
-            throw new IllegalArgumentException(SpiI18n.errorConvertingType.text(String.class.getSimpleName(),
-                                                                                BigDecimal.class.getSimpleName(),
-                                                                                value), err);
+            throw new ValueFormatException(value, getPropertyType(),
+                                           SpiI18n.errorConvertingType.text(String.class.getSimpleName(),
+                                                                            BigDecimal.class.getSimpleName(),
+                                                                            value), err);
         }
     }
 
@@ -94,9 +98,9 @@ public class DecimalValueFactory extends AbstractValueFactory<BigDecimal> {
      * {@inheritDoc}
      */
     public BigDecimal create( boolean value ) {
-        throw new UnsupportedOperationException(SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
-                                                                                 Boolean.class.getSimpleName(),
-                                                                                 value));
+        throw new ValueFormatException(value, getPropertyType(), SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
+                                                                                                  Boolean.class.getSimpleName(),
+                                                                                                  value));
     }
 
     /**
@@ -138,38 +142,49 @@ public class DecimalValueFactory extends AbstractValueFactory<BigDecimal> {
 
     /**
      * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.spi.graph.ValueFactory#create(org.jboss.dna.spi.graph.DateTime)
+     */
+    public BigDecimal create( DateTime value ) throws ValueFormatException {
+        if (value == null) return null;
+        return create(value.getMilliseconds());
+    }
+
+    /**
+     * {@inheritDoc}
      */
     public BigDecimal create( Name value ) {
-        throw new UnsupportedOperationException(SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
-                                                                                 Name.class.getSimpleName(),
-                                                                                 value));
+        throw new ValueFormatException(value, getPropertyType(), SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
+                                                                                                  Name.class.getSimpleName(),
+                                                                                                  value));
     }
 
     /**
      * {@inheritDoc}
      */
     public BigDecimal create( Path value ) {
-        throw new UnsupportedOperationException(SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
-                                                                                 Path.class.getSimpleName(),
-                                                                                 value));
+        throw new ValueFormatException(value, getPropertyType(), SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
+                                                                                                  Path.class.getSimpleName(),
+                                                                                                  value));
     }
 
     /**
      * {@inheritDoc}
      */
     public BigDecimal create( Reference value ) {
-        throw new UnsupportedOperationException(SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
-                                                                                 Reference.class.getSimpleName(),
-                                                                                 value));
+        throw new ValueFormatException(value, getPropertyType(),
+                                       SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
+                                                                        Reference.class.getSimpleName(),
+                                                                        value));
     }
 
     /**
      * {@inheritDoc}
      */
     public BigDecimal create( URI value ) {
-        throw new UnsupportedOperationException(SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
-                                                                                 URI.class.getSimpleName(),
-                                                                                 value));
+        throw new ValueFormatException(value, getPropertyType(), SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
+                                                                                                  URI.class.getSimpleName(),
+                                                                                                  value));
     }
 
     /**
@@ -178,9 +193,9 @@ public class DecimalValueFactory extends AbstractValueFactory<BigDecimal> {
      * @see org.jboss.dna.spi.graph.ValueFactory#create(java.util.UUID)
      */
     public BigDecimal create( UUID value ) throws IoException {
-        throw new UnsupportedOperationException(SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
-                                                                                 UUID.class.getSimpleName(),
-                                                                                 value));
+        throw new ValueFormatException(value, getPropertyType(), SpiI18n.unableToCreateValue.text(getPropertyType().getName(),
+                                                                                                  UUID.class.getSimpleName(),
+                                                                                                  value));
     }
 
     /**
@@ -193,9 +208,19 @@ public class DecimalValueFactory extends AbstractValueFactory<BigDecimal> {
 
     /**
      * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.spi.graph.ValueFactory#create(org.jboss.dna.spi.graph.Binary)
+     */
+    public BigDecimal create( Binary value ) throws ValueFormatException, IoException {
+        // First create a string and then create the boolean from the string value ...
+        return create(getStringValueFactory().create(value));
+    }
+
+    /**
+     * {@inheritDoc}
      */
     public BigDecimal create( InputStream stream,
-                              int approximateLength ) {
+                              long approximateLength ) throws IoException {
         // First attempt to create a string from the value, then a double from the string ...
         return create(getStringValueFactory().create(stream, approximateLength));
     }
@@ -204,7 +229,7 @@ public class DecimalValueFactory extends AbstractValueFactory<BigDecimal> {
      * {@inheritDoc}
      */
     public BigDecimal create( Reader reader,
-                              int approximateLength ) {
+                              long approximateLength ) throws IoException {
         // First attempt to create a string from the value, then a double from the string ...
         return create(getStringValueFactory().create(reader, approximateLength));
     }

@@ -36,12 +36,14 @@ import org.jboss.dna.common.text.TextDecoder;
 import org.jboss.dna.common.util.IoUtil;
 import org.jboss.dna.spi.SpiI18n;
 import org.jboss.dna.spi.graph.Binary;
+import org.jboss.dna.spi.graph.DateTime;
 import org.jboss.dna.spi.graph.IoException;
 import org.jboss.dna.spi.graph.Name;
 import org.jboss.dna.spi.graph.Path;
 import org.jboss.dna.spi.graph.PropertyType;
 import org.jboss.dna.spi.graph.Reference;
 import org.jboss.dna.spi.graph.ValueFactory;
+import org.jboss.dna.spi.graph.ValueFormatException;
 
 /**
  * Teh standard {@link ValueFactory} for {@link PropertyType#BINARY} values.
@@ -67,9 +69,10 @@ public class InMemoryBinaryValueFactory extends AbstractValueFactory<Binary> {
         try {
             return create(value.getBytes(CHAR_SET_NAME));
         } catch (UnsupportedEncodingException err) {
-            throw new IllegalArgumentException(SpiI18n.errorConvertingType.text(String.class.getSimpleName(),
-                                                                                Binary.class.getSimpleName(),
-                                                                                value), err);
+            throw new ValueFormatException(value, getPropertyType(),
+                                           SpiI18n.errorConvertingType.text(String.class.getSimpleName(),
+                                                                            Binary.class.getSimpleName(),
+                                                                            value), err);
         }
     }
 
@@ -148,6 +151,16 @@ public class InMemoryBinaryValueFactory extends AbstractValueFactory<Binary> {
 
     /**
      * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.spi.graph.ValueFactory#create(org.jboss.dna.spi.graph.DateTime)
+     */
+    public Binary create( DateTime value ) throws ValueFormatException {
+        // Convert the value to a string, then to a binary ...
+        return create(this.getStringValueFactory().create(value));
+    }
+
+    /**
+     * {@inheritDoc}
      */
     public Binary create( Name value ) {
         // Convert the value to a string, then to a binary ...
@@ -183,7 +196,7 @@ public class InMemoryBinaryValueFactory extends AbstractValueFactory<Binary> {
      * 
      * @see org.jboss.dna.spi.graph.ValueFactory#create(java.util.UUID)
      */
-    public Binary create( UUID value ) throws IoException {
+    public Binary create( UUID value ) {
         // Convert the value to a string, then to a binary ...
         return create(this.getStringValueFactory().create(value));
     }
@@ -197,9 +210,18 @@ public class InMemoryBinaryValueFactory extends AbstractValueFactory<Binary> {
 
     /**
      * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.spi.graph.ValueFactory#create(org.jboss.dna.spi.graph.Binary)
+     */
+    public Binary create( Binary value ) throws ValueFormatException, IoException {
+        return value;
+    }
+
+    /**
+     * {@inheritDoc}
      */
     public Binary create( InputStream stream,
-                          int approximateLength ) {
+                          long approximateLength ) throws IoException {
         if (stream == null) return null;
         try {
             byte[] value = IoUtil.readBytes(stream);
@@ -215,7 +237,7 @@ public class InMemoryBinaryValueFactory extends AbstractValueFactory<Binary> {
      * {@inheritDoc}
      */
     public Binary create( Reader reader,
-                          int approximateLength ) {
+                          long approximateLength ) throws IoException {
         if (reader == null) return null;
         // Convert the value to a string, then to a binary ...
         try {
