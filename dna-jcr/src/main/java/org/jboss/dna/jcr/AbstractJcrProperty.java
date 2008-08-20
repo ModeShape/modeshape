@@ -27,10 +27,13 @@ import javax.jcr.Item;
 import javax.jcr.ItemVisitor;
 import javax.jcr.Node;
 import javax.jcr.Property;
+import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.Value;
 import javax.jcr.nodetype.PropertyDefinition;
 import net.jcip.annotations.NotThreadSafe;
+import org.jboss.dna.spi.ExecutionContext;
+import org.jboss.dna.spi.graph.Name;
 
 /**
  * @author jverhaeg
@@ -38,24 +41,19 @@ import net.jcip.annotations.NotThreadSafe;
 @NotThreadSafe
 abstract class AbstractJcrProperty implements Property {
 
-    private final Session session;
-    private final String name;
+    private final Node node;
+    private final ExecutionContext executionContext;
+    private final Name name;
 
-    AbstractJcrProperty( Session session,
-                         String name ) {
-        assert session != null;
-        this.session = session;
-        assert name != null && name.length() > 0;
+    AbstractJcrProperty( Node node,
+                         ExecutionContext executionContext,
+                         Name name ) {
+        assert node != null;
+        assert executionContext != null;
+        assert name != null;
+        this.node = node;
+        this.executionContext = executionContext;
         this.name = name;
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.Property#getDate()
-     */
-    public Calendar getDate() {
-        throw new UnsupportedOperationException();
     }
 
     /**
@@ -67,40 +65,8 @@ abstract class AbstractJcrProperty implements Property {
         throw new UnsupportedOperationException();
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.Property#getDouble()
-     */
-    public double getDouble() {
-        throw new UnsupportedOperationException();
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.Property#getLength()
-     */
-    public long getLength() {
-        throw new UnsupportedOperationException();
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.Property#getLengths()
-     */
-    public long[] getLengths() {
-        throw new UnsupportedOperationException();
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.Property#getLong()
-     */
-    public long getLong() {
-        throw new UnsupportedOperationException();
+    ExecutionContext getExecutionContext() {
+        return executionContext;
     }
 
     /**
@@ -109,43 +75,7 @@ abstract class AbstractJcrProperty implements Property {
      * @see javax.jcr.Property#getNode()
      */
     public Node getNode() {
-        throw new UnsupportedOperationException();
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.Property#getStream()
-     */
-    public InputStream getStream() {
-        throw new UnsupportedOperationException();
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.Property#getString()
-     */
-    public String getString() {
-        throw new UnsupportedOperationException();
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.Property#getType()
-     */
-    public int getType() {
-        throw new UnsupportedOperationException();
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.Property#getValue()
-     */
-    public Value getValue() {
-        throw new UnsupportedOperationException();
+        return node;
     }
 
     /**
@@ -280,7 +210,7 @@ abstract class AbstractJcrProperty implements Property {
      * @see javax.jcr.Item#getName()
      */
     public String getName() {
-        return name;
+        return name.getString();
     }
 
     /**
@@ -306,8 +236,8 @@ abstract class AbstractJcrProperty implements Property {
      * 
      * @see javax.jcr.Item#getSession()
      */
-    public Session getSession() {
-        return session;
+    public Session getSession() throws RepositoryException {
+        return node.getSession();
     }
 
     /**

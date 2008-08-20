@@ -21,22 +21,25 @@
  */
 package org.jboss.dna.jcr;
 
+import java.lang.ref.WeakReference;
 import java.lang.reflect.Method;
 import java.security.AccessControlContext;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.WeakHashMap;
 import javax.jcr.Credentials;
 import javax.jcr.LoginException;
+import javax.jcr.Node;
 import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
+import javax.jcr.SimpleCredentials;
 import javax.security.auth.login.LoginContext;
 import net.jcip.annotations.ThreadSafe;
 import org.jboss.dna.common.util.ArgCheck;
 import org.jboss.dna.spi.ExecutionContext;
 import org.jboss.dna.spi.ExecutionContextFactory;
-import org.jboss.dna.spi.connector.RepositoryConnection;
 import org.jboss.dna.spi.connector.RepositoryConnectionFactory;
 
 /**
@@ -48,13 +51,16 @@ import org.jboss.dna.spi.connector.RepositoryConnectionFactory;
  * implementation to which this JCR implementation delegates.
  * </p>
  * <p>
- * If {@link Credentials} are used to login, implementations <em>must</em> also implement one of the following methods:
+ * If {@link Credentials credentials} are used to login, implementations <em>must</em> also implement one of the following
+ * methods:
  * 
  * <pre>
  * public {@link AccessControlContext} getAccessControlContext();
  * public {@link LoginContext} getLoginContext();
  * </pre>
  * 
+ * Note, {@link Session#getAttributeNames() attributes} on credentials are not supported. JCR {@link SimpleCredentials} are also
+ * not supported.
  * </p>
  * 
  * @author John Verhaeg
@@ -246,9 +252,8 @@ public class JcrRepository implements Repository {
         if (workspaceName == null) workspaceName = JcrI18n.defaultWorkspaceName.text();
         // Create session
         try {
-            RepositoryConnection connection = connectionFactory.createConnection(workspaceName);
-            assert connection != null;
-            return new JcrSession(this, new JcrExecutionContext(execContext, connection), workspaceName);
+            return new JcrSession(this, execContext, workspaceName, connectionFactory.createConnection(workspaceName),
+                                  new WeakHashMap<String, WeakReference<Node>>());
         } catch (InterruptedException error) {
             throw new RepositoryException(error);
         }

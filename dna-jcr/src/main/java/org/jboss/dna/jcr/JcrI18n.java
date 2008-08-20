@@ -21,8 +21,6 @@
  */
 package org.jboss.dna.jcr;
 
-import java.util.Locale;
-import java.util.Set;
 import org.jboss.dna.common.i18n.I18n;
 
 /**
@@ -31,10 +29,14 @@ import org.jboss.dna.common.i18n.I18n;
  */
 public final class JcrI18n {
 
+    public static I18n cannotConvertValue;
     public static I18n credentialsMustProvideJaasMethod;
     public static I18n credentialsMustReturnAccessControlContext;
     public static I18n credentialsMustReturnLoginContext;
     public static I18n defaultWorkspaceName;
+    public static I18n inputStreamConsumed;
+    public static I18n nonInputStreamConsumed;
+    public static I18n pathNotFound;
     public static I18n repositoryMustBeConfigured;
     public static I18n sourceInUse;
 
@@ -48,17 +50,5 @@ public final class JcrI18n {
         } catch (final Exception err) {
             System.err.println(err);
         }
-    }
-
-    public static Set<Locale> getLocalizationProblemLocales() {
-        return I18n.getLocalizationProblemLocales(JcrI18n.class);
-    }
-
-    public static Set<String> getLocalizationProblems() {
-        return I18n.getLocalizationProblems(JcrI18n.class);
-    }
-
-    public static Set<String> getLocalizationProblems( Locale locale ) {
-        return I18n.getLocalizationProblems(JcrI18n.class, locale);
     }
 }

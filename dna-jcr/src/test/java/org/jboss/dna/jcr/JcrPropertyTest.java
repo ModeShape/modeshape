@@ -21,50 +21,121 @@
  */
 package org.jboss.dna.jcr;
 
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsNull.notNullValue;
+import static org.junit.Assert.assertThat;
+import java.io.InputStream;
+import java.util.Calendar;
+import java.util.UUID;
+import javax.jcr.Node;
+import javax.jcr.Property;
+import javax.jcr.PropertyType;
+import javax.jcr.Value;
+import javax.jcr.ValueFormatException;
+import org.jboss.dna.spi.ExecutionContext;
+import org.jboss.dna.spi.connector.BasicExecutionContext;
+import org.jboss.dna.spi.graph.Name;
+import org.junit.Before;
 import org.junit.Test;
+import org.mockito.MockitoAnnotations;
+import org.mockito.MockitoAnnotations.Mock;
 
 /**
  * @author jverhaeg
  */
 public class JcrPropertyTest {
-    //
-    // private AbstractJcrProperty prop;
-    // @Mock
-    // private Session session;
-    //
-    // @Before
-    // public void before() {
-    // MockitoAnnotations.initMocks(this);
-    // prop = new AbstractJcrProperty(session, "name") {};
-    // }
-    //
-    // @Test( expected = AssertionError.class )
-    // public void shouldNotAllowNoSession() throws Exception {
-    // new AbstractJcrProperty(null, "name") {};
-    // }
-    //
-    // @Test( expected = AssertionError.class )
-    // public void shouldNotAllowNoName() throws Exception {
-    // new AbstractJcrProperty(session, null) {};
-    // }
-    //
-    // @Test( expected = AssertionError.class )
-    // public void shouldNotAllowEmptyName() throws Exception {
-    // new AbstractJcrProperty(session, "") {};
-    // }
-    //
-    // @Test
-    // public void shouldProvideSession() throws Exception {
-    // assertThat(prop.getSession(), is(session));
-    // }
-    //
-    // @Test
-    // public void shouldProvideName() throws Exception {
-    // assertThat(prop.getName(), is("name"));
-    // }
+
+    @Mock
+    private Node node;
+    private ExecutionContext executionContext = new BasicExecutionContext();
+    @Mock
+    Name name;
+
+    @Before
+    public void before() {
+        MockitoAnnotations.initMocks(this);
+    }
+
+    @Test( expected = AssertionError.class )
+    public void shouldNotAllowNoValue() {
+        new JcrProperty(node, executionContext, name, null);
+    }
 
     @Test
-    public void should() {
+    public void shouldProvideBoolean() throws Exception {
+        Property prop = new JcrProperty(node, executionContext, name, true);
+        assertThat(prop.getBoolean(), is(true));
+    }
 
+    @Test
+    public void shouldProvideDate() throws Exception {
+        Calendar cal = Calendar.getInstance();
+        Property prop = new JcrProperty(node, executionContext, name, cal);
+        assertThat(prop.getDate(), is(cal));
+        prop = new JcrProperty(node, executionContext, name, cal.getTime());
+        assertThat(prop.getDate(), is(cal));
+    }
+
+    @Test
+    public void shouldProvideDouble() throws Exception {
+        Property prop = new JcrProperty(node, executionContext, name, 1.0);
+        assertThat(prop.getDouble(), is(1.0));
+        prop = new JcrProperty(node, executionContext, name, 1.0F);
+        assertThat(prop.getDouble(), is(1.0));
+    }
+
+    @Test
+    public void shouldProvideLength() throws Exception {
+        assertThat(new JcrProperty(node, executionContext, name, "value").getLength(), is(5L));
+        Object obj = new Object();
+        assertThat(new JcrProperty(node, executionContext, name, obj).getLength(), is((long)obj.toString().length()));
+    }
+
+    @Test( expected = ValueFormatException.class )
+    public void shouldNotProvideLengths() throws Exception {
+        new JcrProperty(node, executionContext, name, "value").getLengths();
+    }
+
+    @Test
+    public void shouldProvideLong() throws Exception {
+        Property prop = new JcrProperty(node, executionContext, name, 1);
+        assertThat(prop.getLong(), is(1L));
+        prop = new JcrProperty(node, executionContext, name, 1L);
+        assertThat(prop.getLong(), is(1L));
+    }
+
+    @Test
+    public void shouldProvideStream() throws Exception {
+        Property prop = new JcrProperty(node, executionContext, name, "value");
+        InputStream stream = prop.getStream();
+        assertThat(stream, notNullValue());
+        stream.close();
+    }
+
+    @Test
+    public void shouldProvideString() throws Exception {
+        Property prop = new JcrProperty(node, executionContext, name, "value");
+        assertThat(prop.getString(), is("value"));
+    }
+
+    @Test
+    public void shouldProvideUuid() throws Exception {
+        UUID uuid = UUID.randomUUID();
+        Property prop = new JcrProperty(node, executionContext, name, uuid);
+        assertThat(prop.getString(), is(uuid.toString()));
+    }
+
+    @Test
+    public void shouldProvideType() throws Exception {
+        Property prop = new JcrProperty(node, executionContext, name, UUID.randomUUID());
+        assertThat(prop.getType(), is(PropertyType.STRING));
+    }
+
+    @Test
+    public void shouldProvideValue() throws Exception {
+        Property prop = new JcrProperty(node, executionContext, name, true);
+        Value val = prop.getValue();
+        assertThat(val, notNullValue());
+        assertThat(val.getBoolean(), is(true));
     }
 }

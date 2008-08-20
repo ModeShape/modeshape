@@ -49,7 +49,8 @@ public class JcrNodeTest {
     public void before() throws Exception {
         MockitoAnnotations.initMocks(this);
         properties = new HashSet<Property>();
-        node = new JcrNode(session, properties);
+        node = new JcrNode(session);
+        node.setProperties(properties);
     }
 
     @Test

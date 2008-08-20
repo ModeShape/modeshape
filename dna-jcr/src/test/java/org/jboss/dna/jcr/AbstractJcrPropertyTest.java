@@ -23,9 +23,17 @@ package org.jboss.dna.jcr;
 
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
+import static org.mockito.Mockito.stub;
+import java.io.InputStream;
+import java.util.Calendar;
+import javax.jcr.Node;
 import javax.jcr.Session;
+import javax.jcr.Value;
+import org.jboss.dna.spi.ExecutionContext;
+import org.jboss.dna.spi.graph.Name;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.mockito.MockitoAnnotations.Mock;
 
@@ -36,56 +44,152 @@ public class AbstractJcrPropertyTest {
 
     private AbstractJcrProperty prop;
     @Mock
-    private Session session;
+    private Node node;
+    @Mock
+    private ExecutionContext executionContext;
+    @Mock
+    private Name name;
 
     @Before
     public void before() {
         MockitoAnnotations.initMocks(this);
-        prop = new AbstractJcrProperty(session, "name") {
-
-            public boolean getBoolean() {
-                return false;
-            }
-        };
+        prop = new MockAbstractJcrProperty(node, executionContext, name);
     }
 
     @Test( expected = AssertionError.class )
     public void shouldNotAllowNoSession() throws Exception {
-        new AbstractJcrProperty(null, "name") {
+        new MockAbstractJcrProperty(null, executionContext, name);
+    }
 
-            public boolean getBoolean() {
-                return false;
-            }
-        };
+    @Test( expected = AssertionError.class )
+    public void shouldNotAllowNoExecutionContext() throws Exception {
+        new MockAbstractJcrProperty(node, null, name);
     }
 
     @Test( expected = AssertionError.class )
     public void shouldNotAllowNoName() throws Exception {
-        new AbstractJcrProperty(session, null) {
-
-            public boolean getBoolean() {
-                return false;
-            }
-        };
-    }
-
-    @Test( expected = AssertionError.class )
-    public void shouldNotAllowEmptyName() throws Exception {
-        new AbstractJcrProperty(session, "") {
-
-            public boolean getBoolean() {
-                return false;
-            }
-        };
+        new MockAbstractJcrProperty(node, executionContext, null);
     }
 
     @Test
     public void shouldProvideSession() throws Exception {
+        Session session = Mockito.mock(Session.class);
+        stub(node.getSession()).toReturn(session);
         assertThat(prop.getSession(), is(session));
     }
 
     @Test
+    public void shouldProvideExecutionContext() throws Exception {
+        assertThat(prop.getExecutionContext(), is(executionContext));
+    }
+
+    @Test
+    public void shouldProvideNode() throws Exception {
+        assertThat(prop.getNode(), is(node));
+    }
+
+    @Test
     public void shouldProvideName() throws Exception {
+        stub(name.getString()).toReturn("name");
         assertThat(prop.getName(), is("name"));
+    }
+
+    private class MockAbstractJcrProperty extends AbstractJcrProperty {
+
+        MockAbstractJcrProperty( Node node,
+                                 ExecutionContext executionContext,
+                                 Name name ) {
+            super(node, executionContext, name);
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see javax.jcr.Property#getBoolean()
+         */
+        public boolean getBoolean() {
+            return false;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see javax.jcr.Property#getDate()
+         */
+        public Calendar getDate() {
+            return null;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see javax.jcr.Property#getDouble()
+         */
+        public double getDouble() {
+            return 0;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see javax.jcr.Property#getLength()
+         */
+        public long getLength() {
+            return 0;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see javax.jcr.Property#getLengths()
+         */
+        public long[] getLengths() {
+            return null;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see javax.jcr.Property#getLong()
+         */
+        public long getLong() {
+            return 0;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see javax.jcr.Property#getStream()
+         */
+        public InputStream getStream() {
+            return null;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see javax.jcr.Property#getString()
+         */
+        public String getString() {
+            return null;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see javax.jcr.Property#getType()
+         */
+        public int getType() {
+            return 0;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see javax.jcr.Property#getValue()
+         */
+        public Value getValue() {
+            return null;
+        }
     }
 }

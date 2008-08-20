@@ -23,7 +23,7 @@ package org.jboss.dna.jcr;
 
 import java.io.InputStream;
 import java.util.Calendar;
-import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import javax.jcr.Item;
 import javax.jcr.ItemVisitor;
@@ -41,6 +41,8 @@ import javax.jcr.version.Version;
 import javax.jcr.version.VersionHistory;
 import net.jcip.annotations.NotThreadSafe;
 import org.jboss.dna.common.util.ArgCheck;
+import org.jboss.dna.spi.DnaLexicon;
+import org.jboss.dna.spi.graph.Path.Segment;
 
 /**
  * @author jverhaeg
@@ -49,13 +51,12 @@ import org.jboss.dna.common.util.ArgCheck;
 abstract class AbstractJcrNode implements Node {
 
     private final Session session;
-    private final Set<Property> properties;
+    private Set<Property> properties;
+    private List<Segment> children;
 
-    AbstractJcrNode( Session session,
-                     Set<Property> properties ) {
+    AbstractJcrNode( Session session ) {
         assert session != null;
         this.session = session;
-        this.properties = (properties == null ? new HashSet<Property>() : properties);
     }
 
     /**
@@ -325,8 +326,8 @@ abstract class AbstractJcrNode implements Node {
      */
     public String getUUID() throws RepositoryException {
         // TODO: Check if node is referenceable
-        Property prop = getProperty("jcr:uuid");
-        return (prop == null ? null : prop.getValue().getString());
+        Property prop = getProperty(DnaLexicon.UUID.getString());
+        return (prop == null ? null : prop.getString());
     }
 
     /**
@@ -551,6 +552,16 @@ abstract class AbstractJcrNode implements Node {
      */
     public void save() {
         throw new UnsupportedOperationException();
+    }
+
+    void setChildren( List<Segment> children ) {
+        assert children != null;
+        this.children = children;
+    }
+
+    void setProperties( Set<Property> properties ) {
+        assert properties != null;
+        this.properties = properties;
     }
 
     /**

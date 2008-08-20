@@ -21,7 +21,6 @@
  */
 package org.jboss.dna.jcr;
 
-import java.util.Set;
 import javax.jcr.Node;
 import javax.jcr.Property;
 import javax.jcr.RepositoryException;
@@ -34,9 +33,8 @@ import net.jcip.annotations.NotThreadSafe;
 @NotThreadSafe
 final class JcrNode extends AbstractJcrNode {
 
-    JcrNode( Session session,
-             Set<Property> properties ) {
-        super(session, properties);
+    JcrNode( Session session ) {
+        super(session);
     }
 
     /**

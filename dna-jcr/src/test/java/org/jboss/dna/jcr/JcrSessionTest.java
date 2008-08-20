@@ -22,19 +22,32 @@
 package org.jboss.dna.jcr;
 
 import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsInstanceOf.instanceOf;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.stub;
+import java.lang.ref.WeakReference;
 import java.security.Principal;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import javax.jcr.Item;
+import javax.jcr.Node;
+import javax.jcr.Property;
+import javax.jcr.Repository;
+import javax.jcr.Session;
 import javax.security.auth.Subject;
 import javax.security.auth.login.LoginContext;
-import org.jboss.dna.jcr.GraphTools.NodeContent;
-import org.jboss.dna.spi.graph.PathFactory;
-import org.jboss.dna.spi.graph.ValueFactories;
-import org.jboss.dna.spi.graph.impl.BasicPath;
+import org.jboss.dna.spi.ExecutionContext;
+import org.jboss.dna.spi.ExecutionContextFactory;
+import org.jboss.dna.spi.connector.RepositoryConnection;
+import org.jboss.dna.spi.connector.RepositoryConnectionFactory;
+import org.jboss.dna.spi.connector.SimpleRepository;
+import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
@@ -45,42 +58,87 @@ import org.mockito.MockitoAnnotations.Mock;
  */
 public class JcrSessionTest {
 
-    private JcrSession session;
+    private static final String WORKSPACE_NAME = JcrI18n.defaultWorkspaceName.text();
+
+    private static ExecutionContext executionContext;
+    private static SimpleRepository simpleRepository;
+    private static RepositoryConnectionFactory connectionFactory;
+    private static RepositoryConnection connection;
+    private static Repository repository;
+
+    @BeforeClass
+    public static void beforeClass() throws Exception {
+        ExecutionContextFactory factory = TestUtil.getExecutionContextFactory();
+        executionContext = factory.create();
+        simpleRepository = SimpleRepository.get(WORKSPACE_NAME);
+        simpleRepository.setProperty(executionContext, "/a/b", "booleanProperty", true);
+        simpleRepository.setProperty(executionContext, "/a/b/c", "stringProperty", "value");
+        connectionFactory = TestUtil.createJackRabbitConnectionFactory(simpleRepository, executionContext);
+        repository = new JcrRepository(factory, connectionFactory);
+    }
+
+    @AfterClass
+    public static void afterClass() {
+        SimpleRepository.shutdownAll();
+    }
+
+    private Session session;
     @Mock
-    private JcrRepository repository;
-    @Mock
-    private JcrExecutionContext executionContext;
-    @Mock
-    private GraphTools tools;
-    @Mock
-    private LoginContext loginContext;
+    private Map<String, WeakReference<Node>> uuid2NodeMap;
 
     @Before
     public void before() throws Exception {
         MockitoAnnotations.initMocks(this);
-        stub(executionContext.getLoginContext()).toReturn(loginContext);
-        stub(executionContext.getGraphTools()).toReturn(tools);
-        session = new JcrSession(repository, executionContext, JcrI18n.defaultWorkspaceName.text());
+        session = repository.login();
+    }
+
+    @After
+    public void after() throws Exception {
+        if (session.isLive()) {
+            session.logout();
+        }
     }
 
     @Test( expected = AssertionError.class )
     public void shouldNotAllowNoRepository() throws Exception {
-        new JcrSession(null, executionContext, JcrI18n.defaultWorkspaceName.text());
+        new JcrSession(null, executionContext, WORKSPACE_NAME, connection, uuid2NodeMap);
     }
 
     @Test( expected = AssertionError.class )
     public void shouldNotAllowNoExecutionContext() throws Exception {
-        new JcrSession(repository, null, JcrI18n.defaultWorkspaceName.text());
+        new JcrSession(repository, null, WORKSPACE_NAME, connection, uuid2NodeMap);
     }
 
     @Test( expected = AssertionError.class )
     public void shouldNotAllowNoWorkspaceName() throws Exception {
-        new JcrSession(repository, executionContext, null);
+        new JcrSession(repository, executionContext, null, connection, uuid2NodeMap);
+    }
+
+    @Test( expected = AssertionError.class )
+    public void shouldNotAllowNoConnection() throws Exception {
+        new JcrSession(repository, executionContext, WORKSPACE_NAME, null, uuid2NodeMap);
+    }
+
+    @Test( expected = AssertionError.class )
+    public void shouldNotAllowNoUuid2NodeMap() throws Exception {
+        new JcrSession(repository, executionContext, WORKSPACE_NAME, connection, null);
+    }
+
+    @Test
+    public void shouldProvideNoAttributes() throws Exception {
+        assertThat(session.getAttribute(null), nullValue());
+    }
+
+    @Test
+    public void shouldProvideEmptyAttributeNames() throws Exception {
+        String[] names = session.getAttributeNames();
+        assertThat(names, notNullValue());
+        assertThat(names.length, is(0));
     }
 
     @Test
     public void shouldProvideAccessToRepository() throws Exception {
-        assertThat((JcrRepository)session.getRepository(), is(repository));
+        assertThat(session.getRepository(), is(repository));
     }
 
     @Test
@@ -110,19 +168,40 @@ public class JcrSessionTest {
         Principal principal = Mockito.mock(Principal.class);
         stub(principal.getName()).toReturn("name");
         Subject subject = new Subject(false, Collections.singleton(principal), Collections.EMPTY_SET, Collections.EMPTY_SET);
+        ExecutionContext executionContext = Mockito.mock(ExecutionContext.class);
         stub(executionContext.getSubject()).toReturn(subject);
-        assertThat(session.getUserID(), is("name"));
+        stub(executionContext.getLoginContext()).toReturn(Mockito.mock(LoginContext.class));
+        Session session = new JcrSession(repository, executionContext, WORKSPACE_NAME, Mockito.mock(RepositoryConnection.class),
+                                         uuid2NodeMap);
+        try {
+            assertThat(session.getUserID(), is("name"));
+        } finally {
+            session.logout();
+        }
     }
 
     @Test
     public void shouldProvideRootNode() throws Exception {
-        ValueFactories valueFactories = Mockito.mock(ValueFactories.class);
-        PathFactory pathFactory = Mockito.mock(PathFactory.class);
-        stub(pathFactory.createRootPath()).toReturn(BasicPath.ROOT);
-        stub(valueFactories.getPathFactory()).toReturn(pathFactory);
-        stub(executionContext.getValueFactories()).toReturn(valueFactories);
-        NodeContent content = tools.new NodeContent();
-        stub(tools.getNodeContent(BasicPath.ROOT)).toReturn(content);
-        assertThat(session.getRootNode(), notNullValue());
+        Map<String, WeakReference<Node>> uuid2NodeMap = new HashMap<String, WeakReference<Node>>();
+        Session session = new JcrSession(repository, executionContext, WORKSPACE_NAME,
+                                         connectionFactory.createConnection(WORKSPACE_NAME), uuid2NodeMap);
+        assertThat(uuid2NodeMap.isEmpty(), is(true));
+        Node root = session.getRootNode();
+        assertThat(root, notNullValue());
+        String uuid = root.getUUID();
+        assertThat(uuid, notNullValue());
+        WeakReference<Node> ref = uuid2NodeMap.get(uuid);
+        assertThat(ref, notNullValue());
+        assertThat(ref.get(), is(root));
+    }
+
+    @Test
+    public void shouldProvideItemsByPath() throws Exception {
+        Item item = session.getItem("/a");
+        assertThat(item, instanceOf(Node.class));
+        item = session.getItem("/a/b");
+        assertThat(item, instanceOf(Node.class));
+        item = session.getItem("/a/b/booleanProperty");
+        assertThat(item, instanceOf(Property.class));
     }
 }

@@ -21,10 +21,8 @@
  */
 package org.jboss.dna.jcr;
 
-import java.util.Set;
 import javax.jcr.ItemNotFoundException;
 import javax.jcr.Node;
-import javax.jcr.Property;
 import javax.jcr.Session;
 import net.jcip.annotations.NotThreadSafe;
 
@@ -34,9 +32,8 @@ import net.jcip.annotations.NotThreadSafe;
 @NotThreadSafe
 final class JcrRootNode extends AbstractJcrNode {
 
-    JcrRootNode( Session session,
-                 Set<Property> properties ) {
-        super(session, properties);
+    JcrRootNode( Session session ) {
+        super(session);
     }
 
     /**

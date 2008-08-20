@@ -29,7 +29,7 @@ import java.util.Set;
 import javax.jcr.Node;
 import javax.jcr.Property;
 import javax.jcr.Session;
-import javax.jcr.Value;
+import org.jboss.dna.spi.DnaLexicon;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
@@ -50,7 +50,7 @@ public class AbstractJcrNodeTest {
     public void before() {
         MockitoAnnotations.initMocks(this);
         properties = new HashSet<Property>();
-        node = new AbstractJcrNode(session, properties) {
+        node = new AbstractJcrNode(session) {
 
             public String getName() {
                 return null;
@@ -60,11 +60,12 @@ public class AbstractJcrNodeTest {
                 return null;
             }
         };
+        node.setProperties(properties);
     }
 
     @Test( expected = AssertionError.class )
     public void shouldNotAllowNoSession() throws Exception {
-        new AbstractJcrNode(null, properties) {
+        new AbstractJcrNode(null) {
 
             public String getName() {
                 return null;
@@ -84,10 +85,8 @@ public class AbstractJcrNodeTest {
     @Test
     public void shouldProvideUuid() throws Exception {
         Property property = Mockito.mock(Property.class);
-        stub(property.getName()).toReturn("jcr:uuid");
-        Value value = Mockito.mock(Value.class);
-        stub(value.getString()).toReturn("uuid");
-        stub(property.getValue()).toReturn(value);
+        stub(property.getName()).toReturn(DnaLexicon.UUID.getString());
+        stub(property.getString()).toReturn("uuid");
         properties.add(property);
         assertThat(node.getUUID(), is("uuid"));
     }

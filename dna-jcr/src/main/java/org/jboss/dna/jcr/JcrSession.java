@@ -23,11 +23,17 @@ package org.jboss.dna.jcr;
 
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.lang.ref.WeakReference;
 import java.security.Principal;
+import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import javax.jcr.Credentials;
 import javax.jcr.Item;
 import javax.jcr.Node;
+import javax.jcr.PathNotFoundException;
+import javax.jcr.Property;
 import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
@@ -36,7 +42,16 @@ import javax.jcr.Workspace;
 import javax.security.auth.Subject;
 import javax.security.auth.login.LoginException;
 import net.jcip.annotations.NotThreadSafe;
-import org.jboss.dna.jcr.GraphTools.NodeContent;
+import org.jboss.dna.common.util.ArgCheck;
+import org.jboss.dna.common.util.StringUtil;
+import org.jboss.dna.spi.DnaLexicon;
+import org.jboss.dna.spi.ExecutionContext;
+import org.jboss.dna.spi.connector.RepositoryConnection;
+import org.jboss.dna.spi.graph.Name;
+import org.jboss.dna.spi.graph.Path;
+import org.jboss.dna.spi.graph.Path.Segment;
+import org.jboss.dna.spi.graph.commands.GraphCommand;
+import org.jboss.dna.spi.graph.commands.impl.BasicGetNodeCommand;
 import org.xml.sax.ContentHandler;
 
 /**
@@ -46,23 +61,28 @@ import org.xml.sax.ContentHandler;
 @NotThreadSafe
 final class JcrSession implements Session {
 
-    private final JcrRepository repository;
-    private final JcrExecutionContext executionContext;
+    private final Repository repository;
+    private final ExecutionContext executionContext;
+    private RepositoryConnection connection;
+    private final Map<String, WeakReference<Node>> uuid2NodeMap;
     private boolean isLive;
-    private JcrWorkspace workspace;
-    private Node rootNode;
+    private Workspace workspace;
+    private JcrRootNode rootNode;
 
-    // private final Map<String, Node> uuid2NodeMap = new HashMap<String, Node>();
-
-    JcrSession( JcrRepository repository,
-                JcrExecutionContext executionContext,
-                String workspaceName ) throws RepositoryException {
+    JcrSession( Repository repository,
+                ExecutionContext executionContext,
+                String workspaceName,
+                RepositoryConnection connection,
+                Map<String, WeakReference<Node>> uuid2NodeMap ) throws RepositoryException {
         assert repository != null;
         assert executionContext != null;
         assert workspaceName != null;
+        assert connection != null;
+        assert uuid2NodeMap != null;
         this.repository = repository;
         this.executionContext = executionContext;
-        executionContext.getGraphTools().setSession(this);
+        this.connection = connection;
+        this.uuid2NodeMap = uuid2NodeMap;
         this.isLive = true;
         // Following must be initialized after session's state is initialized
         this.workspace = new JcrWorkspace(this, workspaceName);
@@ -85,6 +105,16 @@ final class JcrSession implements Session {
     public void checkPermission( String absPath,
                                  String actions ) {
         throw new UnsupportedOperationException();
+    }
+
+    private void execute( GraphCommand... commands ) throws RepositoryException {
+        try {
+            connection.execute(executionContext, commands);
+        } catch (RuntimeException error) {
+            throw error;
+        } catch (Exception error) {
+            throw new RepositoryException(error);
+        }
     }
 
     /**
@@ -141,7 +171,7 @@ final class JcrSession implements Session {
      * @see javax.jcr.Session#getAttribute(java.lang.String)
      */
     public Object getAttribute( String name ) {
-        throw new UnsupportedOperationException();
+        return null;
     }
 
     /**
@@ -150,7 +180,7 @@ final class JcrSession implements Session {
      * @see javax.jcr.Session#getAttributeNames()
      */
     public String[] getAttributeNames() {
-        throw new UnsupportedOperationException();
+        return StringUtil.EMPTY_STRING_ARRAY;
     }
 
     /**
@@ -168,8 +198,32 @@ final class JcrSession implements Session {
      * 
      * @see javax.jcr.Session#getItem(java.lang.String)
      */
-    public Item getItem( String absPath ) {
-        throw new UnsupportedOperationException();
+    public Item getItem( String absolutePath ) throws RepositoryException {
+        ArgCheck.isNotEmpty(absolutePath, "absolutePath");
+        // Return root node if path is "/"
+        Path path = executionContext.getValueFactories().getPathFactory().create(absolutePath);
+        if (path.isRoot()) {
+            return getRootNode();
+        }
+        // Since we don't know whether path refers to a node or property, get the parent contents, which must refer to a node
+        Path parentPath = path.getAncestor();
+        BasicGetNodeCommand getNodeCommand = new BasicGetNodeCommand(parentPath);
+        execute(getNodeCommand);
+        // First search for a child with the last name in the path
+        Name name = path.getLastSegment().getName();
+        for (Segment seg : getNodeCommand.getChildren()) {
+            if (seg.getName().equals(name)) {
+                return getNode(path);
+            }
+        }
+        // If a node isn't found & last segment contains no index, get parent node & search for a property with the last name in
+        // the path
+        Segment seg = path.getLastSegment();
+        if (!seg.hasIndex()) {
+            return getNode(parentPath).getProperty(seg.getString());
+        }
+        // If a property isn't found, throw a PathNotFoundException
+        throw new PathNotFoundException(JcrI18n.pathNotFound.text(path));
     }
 
     /**
@@ -208,6 +262,28 @@ final class JcrSession implements Session {
         throw new UnsupportedOperationException();
     }
 
+    private Node getNode( Path path ) throws RepositoryException {
+        // Get node from source
+        BasicGetNodeCommand command = new BasicGetNodeCommand(path);
+        execute(command);
+        // First check if node already exists. We don't need to check for changes since that will be handled by an observer
+        org.jboss.dna.spi.graph.Property dnaUuidProp = command.getPropertiesByName().get(DnaLexicon.UUID);
+        if (dnaUuidProp != null) {
+            String uuid = executionContext.getValueFactories().getStringFactory().create(dnaUuidProp.getValues()).next();
+            WeakReference<Node> ref = uuid2NodeMap.get(uuid);
+            if (ref != null) {
+                Node node = ref.get();
+                if (node != null) {
+                    return node;
+                }
+            }
+        }
+        // If not create a new one & populate it
+        JcrNode node = new JcrNode(this);
+        populateNode(node, command);
+        return node;
+    }
+
     /**
      * {@inheritDoc}
      * 
@@ -232,16 +308,19 @@ final class JcrSession implements Session {
      * @see javax.jcr.Session#getRootNode()
      */
     public Node getRootNode() throws RepositoryException {
-        // If root has no UUID, populate its contents from source
+        // Return cached root node if available
         if (rootNode != null) {
             return rootNode;
         }
         // Get root node from source
-        assert executionContext.getGraphTools() != null;
         assert executionContext.getValueFactories() != null;
         assert executionContext.getValueFactories().getPathFactory() != null;
-        NodeContent content = executionContext.getGraphTools().getNodeContent(executionContext.getValueFactories().getPathFactory().createRootPath());
-        rootNode = new JcrRootNode(this, content.properties);
+        rootNode = new JcrRootNode(this);
+        // Get root node from source
+        BasicGetNodeCommand getNodeCommand = new BasicGetNodeCommand(
+                                                                     executionContext.getValueFactories().getPathFactory().createRootPath());
+        execute(getNodeCommand);
+        populateNode(rootNode, getNodeCommand);
         return rootNode;
     }
 
@@ -329,9 +408,13 @@ final class JcrSession implements Session {
      * @see javax.jcr.Session#logout()
      */
     public void logout() {
+        if (!isLive()) {
+            return;
+        }
         try {
-            if (executionContext.getRepositoryConnection() != null) {
-                executionContext.getRepositoryConnection().close();
+            if (connection != null) {
+                connection.close();
+                connection = null;
             }
             assert executionContext.getLoginContext() != null;
             executionContext.getLoginContext().logout();
@@ -351,6 +434,31 @@ final class JcrSession implements Session {
     public void move( String srcAbsPath,
                       String destAbsPath ) {
         throw new UnsupportedOperationException();
+    }
+
+    private void populateNode( AbstractJcrNode node,
+                               BasicGetNodeCommand getNodeCommand ) throws RepositoryException {
+        // TODO: What do we do to validate node against its primary type?
+        assert node != null;
+        assert getNodeCommand != null;
+        // Create JCR children for corresponding DNA children
+        node.setChildren(getNodeCommand.getChildren());
+        // Create JCR properties for corresponding DNA properties
+        Set<Property> properties = new HashSet<Property>();
+        boolean uuidFound = false;
+        for (org.jboss.dna.spi.graph.Property dnaProp : getNodeCommand.getProperties()) {
+            if (DnaLexicon.UUID.equals(dnaProp.getName())) {
+                uuidFound = true;
+            }
+            properties.add(new JcrProperty(node, executionContext, dnaProp.getName(), dnaProp.getValues().next()));
+        }
+        // Ensure a UUID property exists
+        if (!uuidFound) {
+            properties.add(new JcrProperty(node, executionContext, DnaLexicon.UUID, UUID.randomUUID()));
+        }
+        node.setProperties(properties);
+        // Setup node to be retrieved by UUID
+        uuid2NodeMap.put(node.getUUID(), new WeakReference<Node>(node));
     }
 
     /**

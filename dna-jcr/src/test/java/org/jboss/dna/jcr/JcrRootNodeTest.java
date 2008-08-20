@@ -48,7 +48,8 @@ public class JcrRootNodeTest {
     public void before() {
         MockitoAnnotations.initMocks(this);
         properties = new HashSet<Property>();
-        root = new JcrRootNode(session, properties);
+        root = new JcrRootNode(session);
+        root.setProperties(properties);
     }
 
     @Test
