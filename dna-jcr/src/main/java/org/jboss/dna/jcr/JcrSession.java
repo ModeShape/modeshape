@@ -206,7 +206,7 @@ final class JcrSession implements Session {
             return getRootNode();
         }
         // Since we don't know whether path refers to a node or property, get the parent contents, which must refer to a node
-        Path parentPath = path.getAncestor();
+        Path parentPath = path.getParent();
         BasicGetNodeCommand getNodeCommand = new BasicGetNodeCommand(parentPath);
         execute(getNodeCommand);
         // First search for a child with the last name in the path

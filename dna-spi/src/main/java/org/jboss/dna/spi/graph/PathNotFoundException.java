@@ -98,7 +98,7 @@ public class PathNotFoundException extends RuntimeException {
     }
     
     /**
-     * Get the lowest (closest) existing {@link Path#getAncestor() ancestor} of the {@link #getPath() non-existant path}.
+     * Get the lowest (closest) existing {@link Path#getParent() ancestor} of the {@link #getPath() non-existant path}.
      * @return the lowest ancestor that does exist
      */
     public Path getLowestAncestorThatDoesExist() {

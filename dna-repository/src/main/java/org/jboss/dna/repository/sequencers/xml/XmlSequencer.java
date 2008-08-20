@@ -313,7 +313,7 @@ public class XmlSequencer implements StreamSequencer {
 
         private void endElement() {
             // Recover parent's path, namespace, and indexedName map, clearing the ended element's map to free memory
-            path = path.getAncestor();
+            path = path.getParent();
             nameToIndexedNamesMap.clear();
             nameToIndexedNamesMap = nameToIndexedNamesMapStack.removeFirst();
             nsStack.removeFirst();

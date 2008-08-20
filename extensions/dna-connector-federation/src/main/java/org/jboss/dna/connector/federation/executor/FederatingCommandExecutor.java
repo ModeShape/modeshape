@@ -310,11 +310,11 @@ public class FederatingCommandExecutor extends AbstractCommandExecutor {
             // that already exists in the cache.
             PathNotFoundException notFound = (PathNotFoundException)fromCache.getError();
             Path lowestExistingAncestor = notFound.getLowestAncestorThatDoesExist();
-            Path ancestor = path.getAncestor();
+            Path ancestor = path.getParent();
 
             if (!ancestor.equals(lowestExistingAncestor)) {
                 // Load the nodes along the path below the existing ancestor, down to (but excluding) the desired path
-                Path pathToLoad = path.getAncestor();
+                Path pathToLoad = path.getParent();
                 while (!pathToLoad.equals(lowestExistingAncestor)) {
                     loadContributionsFromSources(pathToLoad, null, contributions); // sourceNames may be null or empty
                     FederatedNode mergedNode = createFederatedNode(pathToLoad, contributions, true);
@@ -326,7 +326,7 @@ public class FederatingCommandExecutor extends AbstractCommandExecutor {
                     }
                     contributions.clear();
                     // Move to the next child along the path ...
-                    pathToLoad = pathToLoad.getAncestor();
+                    pathToLoad = pathToLoad.getParent();
                 }
             }
             // At this point, all ancestors exist ...
@@ -366,7 +366,7 @@ public class FederatingCommandExecutor extends AbstractCommandExecutor {
         FederatedNode mergedNode = createFederatedNode(path, contributions, true);
         if (mergedNode == null) {
             // No source had a contribution ...
-            Path ancestor = path.getAncestor();
+            Path ancestor = path.getParent();
             I18n msg = FederationI18n.nodeDoesNotExistAtPath;
             fromCache.setError(new PathNotFoundException(path, ancestor, msg.text(path, ancestor)));
             return fromCache;

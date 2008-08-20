@@ -461,7 +461,7 @@ public class JBossCacheConnection implements RepositoryConnection {
         @Override
         public void execute( CreateNodeCommand command ) {
             Path path = command.getPath();
-            Path parent = path.getAncestor();
+            Path parent = path.getParent();
             // Look up the parent node, which must exist ...
             Node<Name, Object> parentNode = getNode(parent);
 
@@ -559,7 +559,7 @@ public class JBossCacheConnection implements RepositoryConnection {
             Node<Name, Object> node = getNode(command.getPath());
             // Look up the new parent, which must exist ...
             Path newPath = command.getNewPath();
-            Node<Name, Object> newParent = getNode(newPath.getAncestor());
+            Node<Name, Object> newParent = getNode(newPath.getParent());
             copyNode(node, newParent, false, null, getExecutionContext());
         }
 
@@ -568,7 +568,7 @@ public class JBossCacheConnection implements RepositoryConnection {
             Node<Name, Object> node = getNode(command.getPath());
             // Look up the new parent, which must exist ...
             Path newPath = command.getNewPath();
-            Node<Name, Object> newParent = getNode(newPath.getAncestor());
+            Node<Name, Object> newParent = getNode(newPath.getParent());
             copyNode(node, newParent, true, null, getExecutionContext());
         }
 
@@ -579,7 +579,7 @@ public class JBossCacheConnection implements RepositoryConnection {
             Name uuidProperty = getUuidPropertyName(getExecutionContext());
             // Look up the new parent, which must exist ...
             Path newPath = command.getNewPath();
-            Node<Name, Object> newParent = getNode(newPath.getAncestor());
+            Node<Name, Object> newParent = getNode(newPath.getParent());
             copyNode(node, newParent, recursive, uuidProperty, getExecutionContext());
 
             // Now delete the old node ...

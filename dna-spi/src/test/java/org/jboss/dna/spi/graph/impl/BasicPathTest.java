@@ -225,14 +225,14 @@ public class BasicPathTest {
 
     @Test
     public void shouldReturnNoAncestorForRoot() {
-        assertThat(BasicPath.ROOT.getAncestor(), nullValue());
+        assertThat(BasicPath.ROOT.getParent(), nullValue());
     }
 
     @Test
     public void shouldReturnAncestorForNodeOtherThanRoot() {
-        assertThat(path.getAncestor(), is(pathFactory.create("/dna:a/dna:b")));
-        assertThat(path.getAncestor().getAncestor(), is(pathFactory.create("/dna:a")));
-        assertThat(path.getAncestor().getAncestor().getAncestor(), is(ROOT));
+        assertThat(path.getParent(), is(pathFactory.create("/dna:a/dna:b")));
+        assertThat(path.getParent().getParent(), is(pathFactory.create("/dna:a")));
+        assertThat(path.getParent().getParent().getParent(), is(ROOT));
     }
 
     @Test
@@ -306,7 +306,7 @@ public class BasicPathTest {
         assertThat(common.isAncestorOf(path2), is(true));
         assertThat(common.isAncestorOf(path3), is(false));
 
-        assertThat(path1.getAncestor().isAncestorOf(path1), is(true));
+        assertThat(path1.getParent().isAncestorOf(path1), is(true));
         for (int i = 1; i < path1.size(); ++i) {
             assertThat(path1.getAncestor(i).isAncestorOf(path1), is(true));
         }
@@ -332,7 +332,7 @@ public class BasicPathTest {
         assertThat(path2.isDecendantOf(common), is(true));
         assertThat(path3.isDecendantOf(common), is(false));
 
-        assertThat(path1.getAncestor().isAncestorOf(path1), is(true));
+        assertThat(path1.getParent().isAncestorOf(path1), is(true));
         for (int i = 1; i < path1.size(); ++i) {
             assertThat(path1.isDecendantOf(path1.getAncestor(i)), is(true));
         }
@@ -844,7 +844,7 @@ public class BasicPathTest {
     @Test
     public void shouldResolveRelativePathToParent() {
         path = pathFactory.create("/a/b/c/d/e/f");
-        assertThat(path.resolve(pathFactory.create("..")), is(path.getAncestor()));
+        assertThat(path.resolve(pathFactory.create("..")), is(path.getParent()));
         assertThat(path.resolve(pathFactory.create("..")), hasSegments(pathFactory, "a", "b", "c", "d", "e"));
     }
 
@@ -852,9 +852,9 @@ public class BasicPathTest {
     public void shouldResolveRelativePaths() {
         path = pathFactory.create("/a/b/c/d/e/f");
         assertThat(path.resolve(pathFactory.create("../../../../../..")), is(sameInstance(ROOT)));
-        assertThat(path.resolve(pathFactory.create("../..")), is(path.getAncestor().getAncestor()));
+        assertThat(path.resolve(pathFactory.create("../..")), is(path.getParent().getParent()));
         assertThat(path.resolve(pathFactory.create("../..")), hasSegments(pathFactory, "a", "b", "c", "d"));
-        assertThat(path.resolve(pathFactory.create("../x/../y/../z/..")), is(path.getAncestor()));
+        assertThat(path.resolve(pathFactory.create("../x/../y/../z/..")), is(path.getParent()));
         assertThat(path.resolve(pathFactory.create("../x/../y/../z/..")), hasSegments(pathFactory, "a", "b", "c", "d", "e"));
         assertThat(path.resolve(pathFactory.create("../x")), hasSegments(pathFactory, "a", "b", "c", "d", "e", "x"));
     }

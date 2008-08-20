@@ -203,7 +203,7 @@ public class InMemoryRepository {
         assert pathToNewNode != null;
         Path path = context.getValueFactories().getPathFactory().create(pathToNewNode);
         if (path.isRoot()) return getRoot();
-        Path parentPath = path.getAncestor();
+        Path parentPath = path.getParent();
         Node parentNode = getNode(parentPath);
         Name name = path.getLastSegment().getName();
         return createNode(context, parentNode, name, null);
@@ -344,7 +344,7 @@ public class InMemoryRepository {
         @Override
         public void execute( CreateNodeCommand command ) {
             Path path = command.getPath();
-            Path parent = path.getAncestor();
+            Path parent = path.getParent();
             // Look up the parent node, which must exist ...
             Node parentNode = getNode(parent);
             if (parentNode == null) {
@@ -420,7 +420,7 @@ public class InMemoryRepository {
             Node node = getTargetNode(command);
             // Look up the new parent, which must exist ...
             Path newPath = command.getNewPath();
-            Node newParent = getNode(newPath.getAncestor());
+            Node newParent = getNode(newPath.getParent());
             copyNode(getExecutionContext(), node, newParent, false);
         }
 
@@ -429,7 +429,7 @@ public class InMemoryRepository {
             Node node = getTargetNode(command);
             // Look up the new parent, which must exist ...
             Path newPath = command.getNewPath();
-            Node newParent = getNode(newPath.getAncestor());
+            Node newParent = getNode(newPath.getParent());
             copyNode(getExecutionContext(), node, newParent, true);
         }
 
@@ -438,7 +438,7 @@ public class InMemoryRepository {
             Node node = getTargetNode(command);
             // Look up the new parent, which must exist ...
             Path newPath = command.getNewPath();
-            Node newParent = getNode(newPath.getAncestor());
+            Node newParent = getNode(newPath.getParent());
             node.setParent(newParent);
         }
 

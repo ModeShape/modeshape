@@ -323,7 +323,7 @@ public class SimpleRepositorySource implements RepositorySource {
             // Iterate through all of the properties, looking for any paths that are children of the path ...
             List<Path.Segment> childSegments = new LinkedList<Path.Segment>();
             for (Path path : data.keySet()) {
-                if (!path.isRoot() && path.getAncestor().equals(targetPath)) {
+                if (!path.isRoot() && path.getParent().equals(targetPath)) {
                     childSegments.add(path.getLastSegment());
                 }
             }

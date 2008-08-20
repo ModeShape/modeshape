@@ -63,7 +63,7 @@ import org.jboss.dna.spi.graph.impl.BasicPathSegment;
  * This class simplifies working with paths and using a <code>Path</code> is often more efficient that processing and
  * manipulating the equivalent <code>String</code>. This class can easily {@link #iterator() iterate} over the segments, return
  * the {@link #size() number of segments}, {@link #compareTo(Path) compare} with other paths, {@link #resolve(Path) resolve}
- * relative paths, return the {@link #getAncestor() ancestor (or parent)}, determine whether one path is an
+ * relative paths, return the {@link #getParent() ancestor (or parent)}, determine whether one path is an
  * {@link #isAncestorOf(Path) ancestor} or {@link #isDecendantOf(Path) decendent} of another path, and
  * {@link #getCommonAncestor(Path) finding a common ancestor}.
  * </p>
@@ -389,7 +389,7 @@ public interface Path extends Comparable<Path>, Iterable<Path.Segment>, Serializ
      * 
      * @return the parent path, or this path if it is already the root
      */
-    public Path getAncestor();
+    public Path getParent();
 
     /**
      * Return the path to the ancestor of the supplied degree. An ancestor of degree <code>x</code> is the path that is <code>x

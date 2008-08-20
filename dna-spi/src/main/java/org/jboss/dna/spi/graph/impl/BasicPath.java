@@ -82,7 +82,7 @@ public class BasicPath implements Path {
     /**
      * {@inheritDoc}
      */
-    public Path getAncestor() {
+    public Path getParent() {
         if (this.isRoot()) return null;
         if (this.segments.size() == 1) return ROOT;
         return subpath(0, this.segments.size() - 1);
@@ -435,7 +435,7 @@ public class BasicPath implements Path {
         if (relativePath.size() == 1) {
             Segment onlySegment = relativePath.getSegment(0);
             if (onlySegment.isSelfReference()) return this;
-            if (onlySegment.isParentReference()) return this.getAncestor();
+            if (onlySegment.isParentReference()) return this.getParent();
         }
         List<Segment> segments = new ArrayList<Segment>(this.size() + relativePath.size());
         segments.addAll(this.segments);
