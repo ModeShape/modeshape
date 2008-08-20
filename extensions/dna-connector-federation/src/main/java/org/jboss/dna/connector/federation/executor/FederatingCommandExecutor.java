@@ -155,7 +155,7 @@ public class FederatingCommandExecutor extends AbstractCommandExecutor {
             if (this.sourceProjections.size() == 1 && this.sourceProjections.get(0).isSimple()) {
                 this.mergingStrategy = new OneContributionMergeStrategy();
             } else {
-                this.mergingStrategy = new StandardMergeStrategy(DnaLexicon.UUID);
+                this.mergingStrategy = new StandardMergeStrategy();
             }
         }
         assert this.mergingStrategy != null;

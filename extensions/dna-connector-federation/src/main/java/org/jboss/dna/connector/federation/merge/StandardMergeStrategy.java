@@ -24,19 +24,11 @@ package org.jboss.dna.connector.federation.merge;
 import java.util.List;
 import org.jboss.dna.connector.federation.contribution.Contribution;
 import org.jboss.dna.spi.ExecutionContext;
-import org.jboss.dna.spi.graph.Name;
 
 /**
  * @author Randall Hauch
  */
 public class StandardMergeStrategy implements MergeStrategy {
-
-    private final Name identityPropertyName;
-
-    public StandardMergeStrategy( Name identityPropertyName ) {
-        assert identityPropertyName != null;
-        this.identityPropertyName = identityPropertyName;
-    }
 
     /**
      * {@inheritDoc}
@@ -49,7 +41,11 @@ public class StandardMergeStrategy implements MergeStrategy {
                        ExecutionContext context ) {
 
         // Children whose identity properties are the same will be considered to be the same node ...
-        assert identityPropertyName != null;
+
+        // Assemble the children ...
+
+        // Assemble the properties (and look for UUID property) ...
+
         // Create a merge plan with the contributions ...
         MergePlan plan = MergePlan.create(contributions);
         federatedNode.setMergePlan(plan);
