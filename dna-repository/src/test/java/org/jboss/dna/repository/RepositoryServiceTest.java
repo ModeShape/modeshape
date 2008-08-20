@@ -41,17 +41,13 @@ import org.jboss.dna.connector.federation.Projection;
 import org.jboss.dna.repository.services.ServiceAdministrator;
 import org.jboss.dna.spi.DnaLexicon;
 import org.jboss.dna.spi.ExecutionContext;
+import org.jboss.dna.spi.connector.BasicExecutionContext;
 import org.jboss.dna.spi.connector.RepositoryConnection;
 import org.jboss.dna.spi.connector.RepositorySource;
 import org.jboss.dna.spi.connector.SimpleRepository;
 import org.jboss.dna.spi.connector.SimpleRepositorySource;
-import org.jboss.dna.spi.graph.NamespaceRegistry;
 import org.jboss.dna.spi.graph.Path;
 import org.jboss.dna.spi.graph.PathFactory;
-import org.jboss.dna.spi.graph.PropertyFactory;
-import org.jboss.dna.spi.graph.impl.BasicNamespaceRegistry;
-import org.jboss.dna.spi.graph.impl.BasicPropertyFactory;
-import org.jboss.dna.spi.graph.impl.StandardValueFactories;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -71,14 +67,11 @@ public class RepositoryServiceTest {
 
     private RepositoryService service;
     private Projection configProjection;
-    private StandardValueFactories valueFactories;
-    private PropertyFactory propertyFactory;
     private PathFactory pathFactory;
     private String configSourceName;
     private SimpleRepository configRepository;
     private SimpleRepositorySource configRepositorySource;
     private RepositoryConnection configRepositoryConnection;
-    @Mock
     private ExecutionContext context;
     @Mock
     private RepositorySourceManager sources;
@@ -86,11 +79,9 @@ public class RepositoryServiceTest {
     @Before
     public void beforeEach() throws Exception {
         MockitoAnnotations.initMocks(this);
-        NamespaceRegistry registry = new BasicNamespaceRegistry();
-        registry.register(DnaLexicon.Namespace.PREFIX, DnaLexicon.Namespace.URI);
-        valueFactories = new StandardValueFactories(registry);
-        pathFactory = valueFactories.getPathFactory();
-        propertyFactory = new BasicPropertyFactory(valueFactories);
+        context = new BasicExecutionContext();
+        context.getNamespaceRegistry().register(DnaLexicon.Namespace.PREFIX, DnaLexicon.Namespace.URI);
+        pathFactory = context.getValueFactories().getPathFactory();
         Path pathInRepository = pathFactory.create("/");
         Path pathInSource = pathFactory.create("/reposX");
         configSourceName = "configSource";
@@ -102,9 +93,6 @@ public class RepositoryServiceTest {
         configRepositorySource.setName(configSourceName);
         configRepositoryConnection = configRepositorySource.getConnection();
         stub(sources.createConnection(configSourceName)).toReturn(configRepositoryConnection);
-        stub(context.getValueFactories()).toReturn(valueFactories);
-        stub(context.getPropertyFactory()).toReturn(propertyFactory);
-        stub(context.getNamespaceRegistry()).toReturn(registry);
         service = new RepositoryService(sources, configProjection, context, null);
     }
 
