@@ -25,6 +25,7 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import javax.naming.Reference;
@@ -41,6 +42,7 @@ import org.jboss.dna.spi.graph.commands.GetPropertiesCommand;
 import org.jboss.dna.spi.graph.commands.GraphCommand;
 import org.jboss.dna.spi.graph.commands.executor.AbstractCommandExecutor;
 import org.jboss.dna.spi.graph.commands.executor.CommandExecutor;
+import org.jboss.dna.spi.graph.impl.BasicSingleValueProperty;
 
 /**
  * A {@link RepositorySource} for a {@link SimpleRepository simple repository}.
@@ -321,7 +323,7 @@ public class SimpleRepositorySource implements RepositorySource {
             // Iterate through all of the properties, looking for any paths that are children of the path ...
             List<Path.Segment> childSegments = new LinkedList<Path.Segment>();
             for (Path path : data.keySet()) {
-                if (path.getAncestor().equals(targetPath)) {
+                if (!path.isRoot() && path.getAncestor().equals(targetPath)) {
                     childSegments.add(path.getLastSegment());
                 }
             }
@@ -330,7 +332,8 @@ public class SimpleRepositorySource implements RepositorySource {
             for (Path.Segment childSegment : childSegments) {
                 Map<Name, Property> properties = repository.getData().get(targetPath);
                 Property uuidProperty = properties.get(uuidPropertyName);
-                command.addChild(childSegment, uuidProperty);
+                command.addChild(childSegment,
+                                 uuidProperty == null ? new BasicSingleValueProperty(uuidPropertyName, UUID.randomUUID()) : uuidProperty);
             }
         }
 

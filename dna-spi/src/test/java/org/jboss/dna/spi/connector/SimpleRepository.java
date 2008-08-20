@@ -132,7 +132,9 @@ public class SimpleRepository {
         NameFactory nameFactory = context.getValueFactories().getNameFactory();
         PropertyFactory propertyFactory = context.getPropertyFactory();
         Path pathObj = pathFactory.create(path);
-        create(context, pathObj.getAncestor().getString(context.getNamespaceRegistry()));
+        if (!pathObj.isRoot()) {
+            create(context, pathObj.getAncestor().getString(context.getNamespaceRegistry()));
+        }
         Property property = propertyFactory.create(nameFactory.create(propertyName), values);
         Map<Name, Property> properties = new HashMap<Name, Property>();
         Map<Name, Property> existingProperties = data.putIfAbsent(pathObj, properties);
@@ -152,12 +154,11 @@ public class SimpleRepository {
                                     String path ) {
         PathFactory pathFactory = context.getValueFactories().getPathFactory();
         Path pathObj = pathFactory.create(path);
-        Path ancestorPath = pathObj.getAncestor();
+        Path ancestorPath = pathObj;
         while (!ancestorPath.isRoot()) {
             data.putIfAbsent(ancestorPath, new HashMap<Name, Property>());
             ancestorPath = ancestorPath.getAncestor();
         }
-        data.putIfAbsent(pathObj, new HashMap<Name, Property>());
         Name uuidName = context.getValueFactories().getNameFactory().create(this.getUuidPropertyName());
         UUID uuid = context.getValueFactories().getUuidFactory().create();
         Property uuidProperty = context.getPropertyFactory().create(uuidName, uuid);

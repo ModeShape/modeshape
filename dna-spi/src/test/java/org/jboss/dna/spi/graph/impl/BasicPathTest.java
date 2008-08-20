@@ -224,8 +224,8 @@ public class BasicPathTest {
     }
 
     @Test
-    public void shouldReturnRootForAncestorOfRoot() {
-        assertThat(BasicPath.ROOT.getAncestor(), is(ROOT));
+    public void shouldReturnNoAncestorForRoot() {
+        assertThat(BasicPath.ROOT.getAncestor(), nullValue());
     }
 
     @Test

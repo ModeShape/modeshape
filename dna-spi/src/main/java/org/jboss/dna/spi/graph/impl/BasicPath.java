@@ -83,7 +83,7 @@ public class BasicPath implements Path {
      * {@inheritDoc}
      */
     public Path getAncestor() {
-        if (this.isRoot()) return this;
+        if (this.isRoot()) return null;
         if (this.segments.size() == 1) return ROOT;
         return subpath(0, this.segments.size() - 1);
     }
@@ -93,8 +93,8 @@ public class BasicPath implements Path {
      */
     public Path getAncestor( int degree ) {
         ArgCheck.isNonNegative(degree, "degree");
-        if (this.isRoot()) return this;
         if (degree == 0) return this;
+        if (this.isRoot()) return null;
         int endIndex = this.segments.size() - degree;
         if (endIndex < 0) {
             String msg = SpiI18n.pathAncestorDegreeIsInvalid.text(this.getString(), Inflector.getInstance().ordinalize(degree));
