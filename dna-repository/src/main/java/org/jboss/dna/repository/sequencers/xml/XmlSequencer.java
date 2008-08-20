@@ -105,7 +105,7 @@ public class XmlSequencer implements StreamSequencer {
             // Parse XML document
             reader.parse(new InputSource(stream));
         } catch (Exception error) {
-            LOGGER.error(error, RepositoryI18n.fatalErrorSequencingXmlDocument, error);
+            context.getLogger(getClass()).error(error, RepositoryI18n.fatalErrorSequencingXmlDocument, error);
             monitor.getProblems().addError(error, RepositoryI18n.fatalErrorSequencingXmlDocument, error);
         } finally {
             monitor.done();

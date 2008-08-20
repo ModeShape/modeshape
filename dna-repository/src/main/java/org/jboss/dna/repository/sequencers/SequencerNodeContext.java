@@ -33,6 +33,7 @@ import javax.jcr.RepositoryException;
 import javax.jcr.Value;
 import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.util.ArgCheck;
+import org.jboss.dna.common.util.Logger;
 import org.jboss.dna.repository.RepositoryI18n;
 import org.jboss.dna.repository.mimetype.MimeType;
 import org.jboss.dna.repository.util.JcrExecutionContext;
@@ -57,6 +58,7 @@ public class SequencerNodeContext implements SequencerContext {
     private final ValueFactories factories;
     private final Path path;
     private final Set<Property> props;
+    private final JcrExecutionContext context;
 
     SequencerNodeContext( Node input,
                           javax.jcr.Property sequencedProperty,
@@ -64,6 +66,7 @@ public class SequencerNodeContext implements SequencerContext {
         assert input != null;
         assert sequencedProperty != null;
         assert context != null;
+        this.context = context;
         this.sequencedProperty = sequencedProperty;
         this.factories = context.getValueFactories();
         // Translate JCR path and property values to DNA constructs and cache them to improve performance and prevent
@@ -206,5 +209,23 @@ public class SequencerNodeContext implements SequencerContext {
      */
     public NamespaceRegistry getNamespaceRegistry() {
         return factories.getNameFactory().getNamespaceRegistry();
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.spi.sequencers.SequencerContext#getLogger(java.lang.Class)
+     */
+    public Logger getLogger( Class<?> clazz ) {
+        return context.getLogger(clazz);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.spi.sequencers.SequencerContext#getLogger(java.lang.String)
+     */
+    public Logger getLogger( String name ) {
+        return context.getLogger(name);
     }
 }

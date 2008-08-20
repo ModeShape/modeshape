@@ -22,6 +22,7 @@
 package org.jboss.dna.spi.sequencers;
 
 import java.util.Set;
+import org.jboss.dna.common.util.Logger;
 import org.jboss.dna.spi.graph.Name;
 import org.jboss.dna.spi.graph.NamespaceRegistry;
 import org.jboss.dna.spi.graph.Path;
@@ -75,4 +76,27 @@ public interface SequencerContext {
      * @return the namespace registry; never <code>null</code>.
      */
     NamespaceRegistry getNamespaceRegistry();
+
+    /**
+     * Return a logger associated with this context. This logger records only those activities within the context and provide a
+     * way to capture the context-specific activities. All log messages are also sent to the system logger, so classes that log
+     * via this mechanism should <i>not</i> also {@link Logger#getLogger(Class) obtain a system logger}.
+     * 
+     * @param clazz the class that is doing the logging
+     * @return the logger, named after <code>clazz</code>; never null
+     * @see #getLogger(String)
+     */
+    Logger getLogger( Class<?> clazz );
+
+    /**
+     * Return a logger associated with this context. This logger records only those activities within the context and provide a
+     * way to capture the context-specific activities. All log messages are also sent to the system logger, so classes that log
+     * via this mechanism should <i>not</i> also {@link Logger#getLogger(Class) obtain a system logger}.
+     * 
+     * @param name the name for the logger
+     * @return the logger, named after <code>clazz</code>; never null
+     * @see #getLogger(Class)
+     */
+    Logger getLogger( String name );
+
 }

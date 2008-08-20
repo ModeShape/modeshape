@@ -25,7 +25,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 import org.jboss.dna.common.monitor.ProgressMonitor;
-import org.jboss.dna.common.util.Logger;
 import org.jboss.dna.sequencer.msoffice.excel.ExcelMetadata;
 import org.jboss.dna.sequencer.msoffice.excel.ExcelMetadataReader;
 import org.jboss.dna.sequencer.msoffice.powerpoint.PowerPointMetadataReader;
@@ -163,7 +162,7 @@ public class MSOfficeMetadataSequencer implements StreamSequencer {
                 }
             } catch (IOException e) {
                 // There was an error reading, so log and continue ...
-                Logger.getLogger(this.getClass()).debug(e, "Error while extracting the PowerPoint metadata");
+                context.getLogger(this.getClass()).debug(e, "Error while extracting the PowerPoint metadata");
             }
         }
         progressMonitor.worked(2);
@@ -174,7 +173,7 @@ public class MSOfficeMetadataSequencer implements StreamSequencer {
                 /*WordMetadata wordMetadata =*/WordMetadataReader.invoke(stream);
             } catch (IOException e) {
                 // There was an error reading, so log and continue ...
-                Logger.getLogger(this.getClass()).debug(e, "Error while extracting the Word document metadata");
+                context.getLogger(this.getClass()).debug(e, "Error while extracting the Word document metadata");
             }
 
         }
@@ -191,7 +190,7 @@ public class MSOfficeMetadataSequencer implements StreamSequencer {
                 }
             } catch (IOException e) {
                 // There was an error reading, so log and continue ...
-                Logger.getLogger(this.getClass()).debug(e, "Error while extracting the Excel metadata");
+                context.getLogger(this.getClass()).debug(e, "Error while extracting the Excel metadata");
             }
         }
         progressMonitor.worked(2);
