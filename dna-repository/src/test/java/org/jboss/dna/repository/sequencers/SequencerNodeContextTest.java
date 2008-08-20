@@ -30,11 +30,11 @@ import javax.jcr.Node;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import org.jboss.dna.common.jcr.AbstractJcrRepositoryTest;
+import org.jboss.dna.repository.util.BasicJcrExecutionContext;
 import org.jboss.dna.repository.util.JcrExecutionContext;
 import org.jboss.dna.repository.util.JcrNamespaceRegistry;
 import org.jboss.dna.repository.util.JcrTools;
 import org.jboss.dna.repository.util.SessionFactory;
-import org.jboss.dna.repository.util.BasicJcrExecutionContext;
 import org.jboss.dna.spi.graph.NameFactory;
 import org.jboss.dna.spi.graph.NamespaceRegistry;
 import org.jboss.dna.spi.graph.Property;
@@ -96,8 +96,7 @@ public class SequencerNodeContextTest extends AbstractJcrRepositoryTest {
         assertThat(prop.isEmpty(), is(false));
         assertThat(prop.size(), is(values.length));
         assertThat(prop.isMultiple(), is(values.length > 1));
-        // TODO: Uncomment after DNA-163 has been addressed
-        // assertThat(prop.isSingle(), is(values.length == 1));
+        assertThat(prop.isSingle(), is(values.length == 1));
         Iterator<?> iter = prop.getValues();
         for (Object val : values) {
             assertThat(iter.hasNext(), is(true));
