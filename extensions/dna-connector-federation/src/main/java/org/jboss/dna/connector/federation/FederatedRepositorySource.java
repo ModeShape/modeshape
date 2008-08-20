@@ -756,7 +756,7 @@ public class FederatedRepositorySource implements RepositorySource, ObjectFactor
             executor = new FederatingCommandExecutor(context, configurationSourceName, projections, connectionFactory);
         }
         // Wrap the executor with a logging executor ...
-        executor = new LoggingCommandExecutor(executor, Logger.getLogger(getClass()), Logger.Level.INFO);
+        executor = new LoggingCommandExecutor(executor, context.getLogger(getClass()), Logger.Level.INFO);
 
         // The configuration projection (via "executor") will convert this path into a path that exists in the configuration
         // repository

@@ -162,7 +162,7 @@ public class Projection implements Comparable<Projection>, Serializable {
                 if (rule != null) return rule;
             } catch (Throwable err) {
                 String msg = "Error while parsing project rule definition \"{0}\" using {1}";
-                Logger.getLogger(Projection.class).trace(err, msg, definition, method);
+                context.getLogger(Projection.class).trace(err, msg, definition, method);
             }
         }
         return null;

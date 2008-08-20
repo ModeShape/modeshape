@@ -33,7 +33,6 @@ import javax.transaction.xa.XAResource;
 import org.jboss.cache.Cache;
 import org.jboss.cache.Fqn;
 import org.jboss.cache.Node;
-import org.jboss.dna.common.util.Logger;
 import org.jboss.dna.common.util.StringUtil;
 import org.jboss.dna.spi.ExecutionContext;
 import org.jboss.dna.spi.cache.CachePolicy;
@@ -352,9 +351,9 @@ public class JBossCacheConnection implements RepositoryConnection {
 
         // Record the list of children as a property on the parent ...
         // (Do this last, as it doesn't need to be done if there's an exception in the above logic)
-        Logger.getLogger(getClass()).trace("Updating child list of {0} to: {1}",
-                                           parent.getFqn(),
-                                           StringUtil.readableString(childNames));
+        context.getLogger(getClass()).trace("Updating child list of {0} to: {1}",
+                                            parent.getFqn(),
+                                            StringUtil.readableString(childNames));
         parent.put(JBossCacheLexicon.CHILD_PATH_SEGMENT_LIST, childNames); // replaces any existing value
 
         if (addChildWithName) {
@@ -421,7 +420,7 @@ public class JBossCacheConnection implements RepositoryConnection {
         assert context != null;
 
         if (existing.equals(newSegment)) return;
-        Logger.getLogger(getClass()).trace("Renaming {0} to {1} under {2}", existing, newSegment, parent.getFqn());
+        context.getLogger(getClass()).trace("Renaming {0} to {1} under {2}", existing, newSegment, parent.getFqn());
         Node<Name, Object> existingChild = parent.getChild(existing);
         assert existingChild != null;
 

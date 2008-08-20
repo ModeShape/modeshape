@@ -62,10 +62,8 @@ public class ProjectionParser {
     }
 
     private final List<Method> parserMethods = new CopyOnWriteArrayList<Method>();
-    protected final Logger logger;
 
     public ProjectionParser() {
-        this.logger = Logger.getLogger(this.getClass());
     }
 
     /**
@@ -184,6 +182,7 @@ public class ProjectionParser {
         ArgCheck.isNotNull(context, "env");
         definition = definition != null ? definition.trim() : "";
         if (definition.length() == 0) return null;
+        Logger logger = context.getLogger(getClass());
         for (Method method : parserMethods) {
             try {
                 Rule rule = (Rule)method.invoke(null, definition, context);
@@ -199,7 +198,7 @@ public class ProjectionParser {
                 }
             } catch (Throwable err) {
                 String msg = "Error while parsing project rule definition \"{0}\" using {1}";
-                Logger.getLogger(Projection.class).trace(err, msg, definition, method);
+                logger.trace(err, msg, definition, method);
             }
         }
         return null;

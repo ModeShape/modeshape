@@ -134,6 +134,7 @@ public class FederatingCommandExecutor extends AbstractCommandExecutor {
         this.defaultCachePolicy = defaultCachePolicy;
         this.sourceProjections = sourceProjections;
         this.connectionFactory = connectionFactory;
+        this.logger = context.getLogger(getClass());
         this.connectionsBySourceName = new HashMap<String, RepositoryConnection>();
         this.uuidPropertyName = context.getValueFactories().getNameFactory().create(DnaLexicon.UUID);
         this.mergePlanPropertyName = context.getValueFactories().getNameFactory().create(DnaLexicon.MERGE_PLAN);
@@ -141,15 +142,7 @@ public class FederatingCommandExecutor extends AbstractCommandExecutor {
         for (Projection projection : this.sourceProjections) {
             this.sourceNames.add(projection.getSourceName());
         }
-        setLogger(null);
         setMergingStrategy(null);
-    }
-
-    /**
-     * @param logger Sets logger to the specified value.
-     */
-    public void setLogger( Logger logger ) {
-        this.logger = logger != null ? logger : Logger.getLogger(getClass());
     }
 
     /**
@@ -202,7 +195,7 @@ public class FederatingCommandExecutor extends AbstractCommandExecutor {
                 try {
                     connection.close();
                 } catch (Throwable t) {
-                    Logger.getLogger(getClass()).debug("Error while closing connection to {0}", connection.getSourceName());
+                    logger.debug("Error while closing connection to {0}", connection.getSourceName());
                 }
             }
             connectionsBySourceName.clear();

@@ -29,6 +29,8 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import net.jcip.annotations.ThreadSafe;
+import org.jboss.dna.common.util.Logger;
+import org.jboss.dna.common.util.StringUtil;
 import org.jboss.dna.spi.DnaLexicon;
 import org.jboss.dna.spi.ExecutionContext;
 import org.jboss.dna.spi.graph.Name;
@@ -128,6 +130,10 @@ public class SimpleRepository {
                                          String path,
                                          String propertyName,
                                          Object... values ) {
+        Logger logger = context.getLogger(getClass());
+        if (logger.isTraceEnabled()) {
+            logger.trace("Setting property {0} on {1} to {2}", propertyName, path, StringUtil.readableString(values));
+        }
         PathFactory pathFactory = context.getValueFactories().getPathFactory();
         NameFactory nameFactory = context.getValueFactories().getNameFactory();
         PropertyFactory propertyFactory = context.getPropertyFactory();
@@ -152,6 +158,7 @@ public class SimpleRepository {
      */
     public SimpleRepository create( ExecutionContext context,
                                     String path ) {
+        context.getLogger(getClass()).trace("Creating node {0}", path);
         PathFactory pathFactory = context.getValueFactories().getPathFactory();
         Path pathObj = pathFactory.create(path);
         Path ancestorPath = pathObj;
@@ -175,6 +182,7 @@ public class SimpleRepository {
      */
     public SimpleRepository delete( ExecutionContext context,
                                     String path ) {
+        context.getLogger(getClass()).trace("Deleting node {0}", path);
         PathFactory pathFactory = context.getValueFactories().getPathFactory();
         Path pathObj = pathFactory.create(path);
         List<Path> pathsToRemove = new LinkedList<Path>();
