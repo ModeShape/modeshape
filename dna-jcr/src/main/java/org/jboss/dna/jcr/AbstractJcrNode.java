@@ -52,7 +52,8 @@ abstract class AbstractJcrNode implements Node {
 
     private final Session session;
     private Set<Property> properties;
-    private List<Segment> children;
+
+    // private List<Segment> children;
 
     AbstractJcrNode( Session session ) {
         assert session != null;
@@ -556,7 +557,7 @@ abstract class AbstractJcrNode implements Node {
 
     void setChildren( List<Segment> children ) {
         assert children != null;
-        this.children = children;
+        // this.children = children;
     }
 
     void setProperties( Set<Property> properties ) {
