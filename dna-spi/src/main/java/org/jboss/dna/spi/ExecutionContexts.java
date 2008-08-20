@@ -25,6 +25,7 @@ import java.security.AccessControlContext;
 import javax.security.auth.Subject;
 import javax.security.auth.login.LoginContext;
 import org.jboss.dna.common.util.ArgCheck;
+import org.jboss.dna.common.util.Logger;
 import org.jboss.dna.spi.graph.NameFactory;
 import org.jboss.dna.spi.graph.NamespaceRegistry;
 import org.jboss.dna.spi.graph.PathFactory;
@@ -201,6 +202,24 @@ public class ExecutionContexts {
          */
         public Subject getSubject() {
             return delegate.getSubject();
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.spi.ExecutionContext#getLogger(java.lang.Class)
+         */
+        public Logger getLogger( Class<?> clazz ) {
+            return delegate.getLogger(clazz);
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.spi.ExecutionContext#getLogger(java.lang.String)
+         */
+        public Logger getLogger( String name ) {
+            return delegate.getLogger(name);
         }
 
         /**

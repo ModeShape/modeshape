@@ -24,6 +24,7 @@ package org.jboss.dna.spi;
 import java.security.AccessControlContext;
 import javax.security.auth.Subject;
 import javax.security.auth.login.LoginContext;
+import org.jboss.dna.common.util.Logger;
 import org.jboss.dna.spi.graph.NamespaceRegistry;
 import org.jboss.dna.spi.graph.Property;
 import org.jboss.dna.spi.graph.PropertyFactory;
@@ -72,4 +73,26 @@ public interface ExecutionContext {
      * @return the subject; never null
      */
     Subject getSubject();
+
+    /**
+     * Return a logger associated with this context. This logger records only those activities within the context and provide a
+     * way to capture the context-specific activities. All log messages are also sent to the system logger, so classes that log
+     * via this mechanism should <i>not</i> also {@link Logger#getLogger(Class) obtain a system logger}.
+     * 
+     * @param clazz the class that is doing the logging
+     * @return the logger, named after <code>clazz</code>; never null
+     * @see #getLogger(String)
+     */
+    Logger getLogger( Class<?> clazz );
+
+    /**
+     * Return a logger associated with this context. This logger records only those activities within the context and provide a
+     * way to capture the context-specific activities. All log messages are also sent to the system logger, so classes that log
+     * via this mechanism should <i>not</i> also {@link Logger#getLogger(Class) obtain a system logger}.
+     * 
+     * @param name the name for the logger
+     * @return the logger, named after <code>clazz</code>; never null
+     * @see #getLogger(Class)
+     */
+    Logger getLogger( String name );
 }

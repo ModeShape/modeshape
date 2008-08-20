@@ -26,6 +26,7 @@ import java.security.AccessController;
 import javax.security.auth.Subject;
 import javax.security.auth.login.LoginContext;
 import org.jboss.dna.common.util.ArgCheck;
+import org.jboss.dna.common.util.Logger;
 import org.jboss.dna.spi.ExecutionContext;
 import org.jboss.dna.spi.graph.NamespaceRegistry;
 import org.jboss.dna.spi.graph.PropertyFactory;
@@ -157,5 +158,23 @@ public class BasicExecutionContext implements ExecutionContext {
      */
     public ValueFactories getValueFactories() {
         return valueFactories;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.spi.ExecutionContext#getLogger(java.lang.Class)
+     */
+    public Logger getLogger( Class<?> clazz ) {
+        return Logger.getLogger(clazz);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.spi.ExecutionContext#getLogger(java.lang.String)
+     */
+    public Logger getLogger( String name ) {
+        return Logger.getLogger(name);
     }
 }

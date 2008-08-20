@@ -211,7 +211,6 @@ public class SequencingService implements AdministeredService, NodeChangeListene
     private Selector sequencerSelector = DEFAULT_SEQUENCER_SELECTOR;
     private NodeFilter nodeFilter = DEFAULT_NODE_FILTER;
     private ExecutorService executorService;
-    private Logger logger = Logger.getLogger(this.getClass());
     private final Statistics statistics = new Statistics();
     private final Administrator administrator = new Administrator();
 
@@ -314,24 +313,6 @@ public class SequencingService implements AdministeredService, NodeChangeListene
      */
     public boolean removeSequencer( SequencerConfig config ) {
         return this.sequencerLibrary.remove(config);
-    }
-
-    /**
-     * Get the logger for this system
-     * 
-     * @return the logger
-     */
-    public Logger getLogger() {
-        return this.logger;
-    }
-
-    /**
-     * Set the logger for this system.
-     * 
-     * @param logger the logger, or null if the standard logging should be used
-     */
-    public void setLogger( Logger logger ) {
-        this.logger = logger != null ? logger : Logger.getLogger(this.getClass());
     }
 
     /**
@@ -498,6 +479,9 @@ public class SequencingService implements AdministeredService, NodeChangeListene
      * @param changedNode the node to be processed.
      */
     protected void processChangedNode( NodeChange changedNode ) {
+        final JcrExecutionContext context = this.getExecutionContext();
+        final Logger logger = context.getLogger(getClass());
+        assert logger != null;
         try {
             final String repositoryWorkspaceName = changedNode.getRepositoryWorkspaceName();
             Session session = null;
@@ -536,7 +520,7 @@ public class SequencingService implements AdministeredService, NodeChangeListene
                 Node node = null;
                 if (!sequencers.isEmpty()) {
                     // Create a session that we'll use for all sequencing ...
-                    session = this.getExecutionContext().getSessionFactory().createSession(repositoryWorkspaceName);
+                    session = context.getSessionFactory().createSession(repositoryWorkspaceName);
 
                     // Find the changed node ...
                     String relPath = changedNode.getAbsolutePath().replaceAll("^/+", "");
@@ -547,14 +531,14 @@ public class SequencingService implements AdministeredService, NodeChangeListene
                 }
                 if (sequencers.isEmpty()) {
                     this.statistics.recordNodeSkipped();
-                    if (this.logger.isDebugEnabled()) {
-                        this.logger.trace("Skipping '{0}': no sequencers matched this condition", changedNode);
+                    if (logger.isDebugEnabled()) {
+                        logger.trace("Skipping '{0}': no sequencers matched this condition", changedNode);
                     }
                 } else {
                     // Run each of those sequencers ...
                     ProgressMonitor progressMonitor = new SimpleProgressMonitor(RepositoryI18n.sequencerTask.text(changedNode));
-                    if (this.logger.isTraceEnabled()) {
-                        progressMonitor = new LoggingProgressMonitor(progressMonitor, this.logger, Logger.Level.TRACE);
+                    if (logger.isTraceEnabled()) {
+                        progressMonitor = new LoggingProgressMonitor(progressMonitor, logger, Logger.Level.TRACE);
                     }
                     try {
                         progressMonitor.beginTask(sequencerCalls.size(), RepositoryI18n.sequencerTask, changedNode);
@@ -569,7 +553,7 @@ public class SequencingService implements AdministeredService, NodeChangeListene
                             assert outputPaths != null && outputPaths.size() != 0;
 
                             // Create a new execution context for each sequencer
-                            final Context executionContext = new Context();
+                            final Context executionContext = new Context(context);
                             final ProgressMonitor sequenceMonitor = progressMonitor.createSubtask(1);
                             try {
                                 sequenceMonitor.beginTask(100, RepositoryI18n.sequencerSubtask, sequencerName);
@@ -580,12 +564,9 @@ public class SequencingService implements AdministeredService, NodeChangeListene
                                                   executionContext,
                                                   sequenceMonitor.createSubtask(80)); // 80%
                             } catch (RepositoryException e) {
-                                this.logger.error(e,
-                                                  RepositoryI18n.errorInRepositoryWhileSequencingNode,
-                                                  sequencerName,
-                                                  changedNode);
+                                logger.error(e, RepositoryI18n.errorInRepositoryWhileSequencingNode, sequencerName, changedNode);
                             } catch (SequencerException e) {
-                                this.logger.error(e, RepositoryI18n.errorWhileSequencingNode, sequencerName, changedNode);
+                                logger.error(e, RepositoryI18n.errorWhileSequencingNode, sequencerName, changedNode);
                             } finally {
                                 try {
                                     // Save the changes made by each sequencer ...
@@ -611,9 +592,9 @@ public class SequencingService implements AdministeredService, NodeChangeListene
                 if (session != null) session.logout();
             }
         } catch (RepositoryException e) {
-            this.logger.error(e, RepositoryI18n.errorInRepositoryWhileFindingSequencersToRunAgainstNode, changedNode);
+            logger.error(e, RepositoryI18n.errorInRepositoryWhileFindingSequencersToRunAgainstNode, changedNode);
         } catch (Throwable e) {
-            this.logger.error(e, RepositoryI18n.errorFindingSequencersToRunAgainstNode, changedNode);
+            logger.error(e, RepositoryI18n.errorFindingSequencersToRunAgainstNode, changedNode);
         }
     }
 
@@ -624,8 +605,8 @@ public class SequencingService implements AdministeredService, NodeChangeListene
         private final Set<Session> sessions = new HashSet<Session>();
         protected final AtomicBoolean closed = new AtomicBoolean(false);
 
-        protected Context() {
-            this.delegate = SequencingService.this.getExecutionContext();
+        protected Context( JcrExecutionContext context ) {
+            this.delegate = context;
             final SessionFactory delegateSessionFactory = this.delegate.getSessionFactory();
             this.factory = new SessionFactory() {
 
@@ -706,6 +687,24 @@ public class SequencingService implements AdministeredService, NodeChangeListene
          */
         public ValueFactories getValueFactories() {
             return this.delegate.getValueFactories();
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.spi.ExecutionContext#getLogger(java.lang.Class)
+         */
+        public Logger getLogger( Class<?> clazz ) {
+            return this.delegate.getLogger(clazz);
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.spi.ExecutionContext#getLogger(java.lang.String)
+         */
+        public Logger getLogger( String name ) {
+            return this.delegate.getLogger(name);
         }
 
         protected synchronized void recordSession( Session session ) {
