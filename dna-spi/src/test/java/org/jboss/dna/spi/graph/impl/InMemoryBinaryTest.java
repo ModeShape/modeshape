@@ -28,6 +28,7 @@ import static org.junit.Assert.assertThat;
 import java.io.IOException;
 import java.io.InputStream;
 import org.jboss.dna.common.util.IoUtil;
+import org.jboss.dna.common.util.StringUtil;
 import org.jboss.dna.spi.graph.Binary;
 import org.junit.Before;
 import org.junit.Test;
@@ -107,6 +108,26 @@ public class InMemoryBinaryTest {
         assertThat(binary.compareTo(another), is(1));
         assertThat(another.compareTo(binary), is(-1));
         assertThat(another, hasContent(shorterContent));
+    }
+
+    @Test
+    public void shouldComputeSha1HashOfEmptyContent() throws Exception {
+        validByteArrayContent = new byte[0];
+        binary = new InMemoryBinary(validByteArrayContent);
+        assertThat(binary.getSize(), is(0l));
+        assertThat(binary, hasNoContent());
+        byte[] hash = binary.getHash();
+        assertThat(hash.length, is(20));
+        assertThat(StringUtil.getHexString(hash), is("da39a3ee5e6b4b0d3255bfef95601890afd80709"));
+    }
+
+    @Test
+    public void shouldComputeSha1HashOfNonEmptyContent() throws Exception {
+        binary = new InMemoryBinary(validByteArrayContent);
+        assertThat(binary.getSize(), is((long)validByteArrayContent.length));
+        byte[] hash = binary.getHash();
+        assertThat(hash.length, is(20));
+        assertThat(StringUtil.getHexString(hash), is("14abe696257e85ba18b7c784d6c7855f46ce50ea"));
     }
 
 }

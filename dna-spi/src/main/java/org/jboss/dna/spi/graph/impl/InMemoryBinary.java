@@ -23,17 +23,28 @@ package org.jboss.dna.spi.graph.impl;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.Set;
+import java.util.concurrent.CopyOnWriteArraySet;
 import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.util.ArgCheck;
+import org.jboss.dna.common.util.Logger;
+import org.jboss.dna.spi.SpiI18n;
 import org.jboss.dna.spi.graph.Binary;
 import org.jboss.dna.spi.graph.ValueComparators;
 
 /**
  * An implementation of {@link Binary} that keeps the binary data in-memory.
+ * 
  * @author Randall Hauch
  */
 @Immutable
 public class InMemoryBinary implements Binary {
+
+    protected static final Set<String> ALGORITHMS_NOT_FOUND_AND_LOGGED = new CopyOnWriteArraySet<String>();
+    private static final String SHA1DIGEST_NAME = "SHA-1";
+    private static final byte[] NO_HASH = new byte[] {};
 
     /**
      */
@@ -42,6 +53,7 @@ public class InMemoryBinary implements Binary {
     protected static final byte[] EMPTY_CONTENT = new byte[0];
 
     private final byte[] bytes;
+    private byte[] sha1hash;
 
     public InMemoryBinary( byte[] bytes ) {
         ArgCheck.isNotNull(bytes, "bytes");
@@ -53,6 +65,39 @@ public class InMemoryBinary implements Binary {
      */
     public long getSize() {
         return this.bytes.length;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.spi.graph.Binary#getHash()
+     */
+    public byte[] getHash() {
+        if (sha1hash == null) {
+            // Omnipotent, so doesn't matter if we recompute in concurrent threads ...
+            try {
+                sha1hash = getHash(SHA1DIGEST_NAME);
+            } catch (NoSuchAlgorithmException e) {
+                if (ALGORITHMS_NOT_FOUND_AND_LOGGED.add(SHA1DIGEST_NAME)) {
+                    Logger.getLogger(getClass()).error(e, SpiI18n.messageDigestNotFound, SHA1DIGEST_NAME);
+                }
+                sha1hash = NO_HASH;
+            }
+        }
+        return sha1hash;
+    }
+
+    /**
+     * Get the hash of the contents, using the digest identified by the supplied name.
+     * 
+     * @param digestName the name of the hashing function (or {@link MessageDigest message digest}) that should be used
+     * @return the hash of the contents as a byte array
+     * @throws NoSuchAlgorithmException if the supplied algorithm could not be found
+     */
+    protected byte[] getHash( String digestName ) throws NoSuchAlgorithmException {
+        MessageDigest digest = MessageDigest.getInstance(digestName);
+        assert digest != null;
+        return digest.digest(bytes);
     }
 
     /**

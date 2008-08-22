@@ -336,8 +336,8 @@ public class StringUtil {
     }
 
     /**
-     * Read and return the entire contents of the supplied {@link InputStream}. This method always closes the stream when
-     * finished reading.
+     * Read and return the entire contents of the supplied {@link InputStream}. This method always closes the stream when finished
+     * reading.
      * 
      * @param stream the streamed contents; may be null
      * @return the contents, or an empty string if the supplied stream is null
@@ -383,8 +383,8 @@ public class StringUtil {
      * <li>A string is written wrapped by double quotes.</li>
      * <li>A boolean is written using {@link Boolean#toString()}.</li>
      * <li>A {@link Number number} is written using the standard {@link Number#toString() toString()} method.</li>
-     * <li>A {@link java.util.Date date} is written using the the {@link DateUtil#getDateAsStandardString(java.util.Date)}
-     * utility method.</li>
+     * <li>A {@link java.util.Date date} is written using the the {@link DateUtil#getDateAsStandardString(java.util.Date)} utility
+     * method.</li>
      * <li>A {@link java.sql.Date SQL date} is written using the the {@link DateUtil#getDateAsStandardString(java.util.Date)}
      * utility method.</li>
      * <li>A {@link Calendar Calendar instance} is written using the the {@link DateUtil#getDateAsStandardString(Calendar)}
@@ -392,10 +392,10 @@ public class StringUtil {
      * <li>An array of bytes is written with a leading "[ " and trailing " ]" surrounding the bytes written as UTF-8.
      * <li>An array of objects is written with a leading "[ " and trailing " ]", and with all objects sent through
      * {@link #readableString(Object)} and separated by ", ".</li>
-     * <li>A collection of objects (e.g, <code>Collection<?></code>) is written with a leading "[ " and trailing " ]", and
-     * with all objects sent through {@link #readableString(Object)} and separated by ", ".</li>
-     * <li>A map of objects (e.g, <code>Map<?></code>) is written with a leading "{ " and trailing " }", and with all map
-     * entries written in the form "key => value" and separated by ", ". All key and value objects are sent through the
+     * <li>A collection of objects (e.g, <code>Collection<?></code>) is written with a leading "[ " and trailing " ]", and with
+     * all objects sent through {@link #readableString(Object)} and separated by ", ".</li>
+     * <li>A map of objects (e.g, <code>Map<?></code>) is written with a leading "{ " and trailing " }", and with all map entries
+     * written in the form "key => value" and separated by ", ". All key and value objects are sent through the
      * {@link #readableString(Object)} method.</li>
      * <li>Any other object is written using the object's {@link Object#toString() toString()} method.</li>
      * </ul>
@@ -647,6 +647,28 @@ public class StringUtil {
         ArgCheck.isNotNull(text, "text");
         // This could be much more efficient.
         return NORMALIZE_PATTERN.matcher(text).replaceAll(" ").trim();
+    }
+
+    private static final byte[] HEX_CHAR_TABLE = {(byte)'0', (byte)'1', (byte)'2', (byte)'3', (byte)'4', (byte)'5', (byte)'6',
+        (byte)'7', (byte)'8', (byte)'9', (byte)'a', (byte)'b', (byte)'c', (byte)'d', (byte)'e', (byte)'f'};
+
+    /**
+     * Get the hexadecimal string representation of the supplied byte array.
+     * 
+     * @param bytes the byte array
+     * @return the hex string representation of the byte array; never null
+     * @throws UnsupportedEncodingException
+     */
+    public static String getHexString( byte[] bytes ) throws UnsupportedEncodingException {
+        byte[] hex = new byte[2 * bytes.length];
+        int index = 0;
+
+        for (byte b : bytes) {
+            int v = b & 0xFF;
+            hex[index++] = HEX_CHAR_TABLE[v >>> 4];
+            hex[index++] = HEX_CHAR_TABLE[v & 0xF];
+        }
+        return new String(hex, "ASCII");
     }
 
     private StringUtil() {

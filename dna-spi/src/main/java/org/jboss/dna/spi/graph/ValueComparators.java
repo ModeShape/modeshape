@@ -109,6 +109,19 @@ public class ValueComparators {
                     final long len2 = o2.getSize();
                     if (len1 < len2) return -1;
                     if (len1 > len2) return 1;
+
+                    // Compare using the hashes, if available
+                    byte[] hash1 = o1.getHash();
+                    byte[] hash2 = o2.getHash();
+                    if (hash1.length != 0 || hash2.length != 0) {
+                        assert hash1.length == hash2.length;
+                        for (int i = 0; i != hash1.length; ++i) {
+                            int diff = hash1[i] - hash2[i];
+                            if (diff != 0) return diff;
+                        }
+                        return 0;
+                    }
+
                     // Otherwise they are the same length ...
                     InputStream stream1 = null;
                     InputStream stream2 = null;

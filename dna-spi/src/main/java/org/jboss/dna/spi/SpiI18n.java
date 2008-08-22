@@ -58,6 +58,7 @@ public final class SpiI18n {
     public static I18n pathExpressionIsInvalid;
     public static I18n pathExpressionHasInvalidSelect;
     public static I18n pathExpressionHasInvalidMatch;
+    public static I18n messageDigestNotFound;
 
     public static I18n executingGraphCommand;
     public static I18n executedGraphCommand;
