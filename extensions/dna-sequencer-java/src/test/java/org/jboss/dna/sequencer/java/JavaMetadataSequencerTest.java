@@ -99,10 +99,10 @@ public class JavaMetadataSequencerTest {
 
         // support for sequencing imports (single import and import on demand)
         assertThat(output.getPropertyValues("java:compilationUnit/java:import/java:importDeclaration/java:singleImport/java:singleTypeImportDeclaration[1]",
-                                            "java:typeName"),
+                                            "java:singleImportName"),
                    is(new Object[] {"org.acme.annotation.MyClassAnnotation"}));
         assertThat(output.getPropertyValues("java:compilationUnit/java:import/java:importDeclaration/java:importOnDemand/java:typeImportOnDemandDeclaration[1]",
-                                            "java:typeName"),
+                                            "java:onDemandImportName"),
                    is(new Object[] {"java.util"}));
 
         // support for sequencing class definition (modifiers, class name)
@@ -110,7 +110,7 @@ public class JavaMetadataSequencerTest {
                                             "java:modifierName"),
                    is(new Object[] {"public"}));
         assertThat(output.getPropertyValues("java:compilationUnit/java:unitType/java:classDeclaration/java:normalClass/java:normalClassDeclaration",
-                                            "java:name"),
+                                            "java:normalClassName"),
                    is(new Object[] {"MySource"}));
 
         // support for primitive type sequencing (modifiers, types, variables).Not supported is the javadoc
@@ -119,7 +119,7 @@ public class JavaMetadataSequencerTest {
                    is(new Object[] {"private"}));
 
         assertThat(output.getPropertyValues("java:compilationUnit/java:unitType/java:classDeclaration/java:normalClass/java:normalClassDeclaration/java:field/java:fieldType/java:type/java:primitiveType[1]",
-                                            "java:typeName"),
+                                            "java:primitiveTypeName"),
                    is(new Object[] {"int"}));
 
         assertThat(output.getPropertyValues("java:compilationUnit/java:unitType/java:classDeclaration/java:normalClass/java:normalClassDeclaration/java:field/java:fieldType/java:type/java:primitiveType[1]/java:variable[1]",
@@ -139,7 +139,7 @@ public class JavaMetadataSequencerTest {
                    is(new Object[] {"static"}));
 
         assertThat(output.getPropertyValues("java:compilationUnit/java:unitType/java:classDeclaration/java:normalClass/java:normalClassDeclaration/java:field/java:fieldType/java:type/java:primitiveType[2]",
-                                            "java:typeName"),
+                                            "java:primitiveTypeName"),
                    is(new Object[] {"double"}));
 
         assertThat(output.getPropertyValues("java:compilationUnit/java:unitType/java:classDeclaration/java:normalClass/java:normalClassDeclaration/java:field/java:fieldType/java:type/java:primitiveType[2]/java:variable[1]",
@@ -162,7 +162,7 @@ public class JavaMetadataSequencerTest {
 
         // MySource() constructor
         assertThat(output.getPropertyValues("java:compilationUnit/java:unitType/java:classDeclaration/java:normalClass/java:normalClassDeclaration/java:constructor/java:constructorDeclaration[1]",
-                                            "java:name"),
+                                            "java:constructorName"),
                    is(new Object[] {"MySource"}));
 
         // public MySource(int i, int j) constructor with parameters
@@ -171,18 +171,18 @@ public class JavaMetadataSequencerTest {
                    is(new Object[] {"public"}));
 
         assertThat(output.getPropertyValues("java:compilationUnit/java:unitType/java:classDeclaration/java:normalClass/java:normalClassDeclaration/java:constructor/java:constructorDeclaration[2]",
-                                            "java:name"),
+                                            "java:constructorName"),
                    is(new Object[] {"MySource"}));
 
         assertThat(output.getPropertyValues("java:compilationUnit/java:unitType/java:classDeclaration/java:normalClass/java:normalClassDeclaration/java:constructor/java:constructorDeclaration[2]/java:parameter/java:formalParameter[1]/java:type/java:primitiveType",
-                                            "java:typeName"),
+                                            "java:primitiveTypeName"),
                    is(new Object[] {"int"}));
         assertThat(output.getPropertyValues("java:compilationUnit/java:unitType/java:classDeclaration/java:normalClass/java:normalClassDeclaration/java:constructor/java:constructorDeclaration[2]/java:parameter/java:formalParameter[1]/java:type/java:primitiveType/java:variable",
                                             "java:variableName"),
                    is(new Object[] {"i"}));
 
         assertThat(output.getPropertyValues("java:compilationUnit/java:unitType/java:classDeclaration/java:normalClass/java:normalClassDeclaration/java:constructor/java:constructorDeclaration[2]/java:parameter/java:formalParameter[1]/java:type/java:primitiveType",
-                                            "java:typeName"),
+                                            "java:primitiveTypeName"),
                    is(new Object[] {"int"}));
         assertThat(output.getPropertyValues("java:compilationUnit/java:unitType/java:classDeclaration/java:normalClass/java:normalClassDeclaration/java:constructor/java:constructorDeclaration[2]/java:parameter/java:formalParameter[2]/java:type/java:primitiveType/java:variable",
                                             "java:variableName"),
@@ -193,10 +193,10 @@ public class JavaMetadataSequencerTest {
                                             "java:modifierName"),
                    is(new Object[] {"public"}));
         assertThat(output.getPropertyValues("java:compilationUnit/java:unitType/java:classDeclaration/java:normalClass/java:normalClassDeclaration/java:method/java:methodDeclaration[1]/java:resultType/java:primitiveType",
-                                            "java:typeName"),
+                                            "java:primitiveTypeName"),
                    is(new Object[] {"int"}));
         assertThat(output.getPropertyValues("java:compilationUnit/java:unitType/java:classDeclaration/java:normalClass/java:normalClassDeclaration/java:method/java:methodDeclaration[1]",
-                                            "java:name"),
+                                            "java:methodName"),
                    is(new Object[] {"getI"}));
 
         // public void setI(int i) method
@@ -204,13 +204,13 @@ public class JavaMetadataSequencerTest {
                                             "java:modifierName"),
                    is(new Object[] {"public"}));
         assertThat(output.getPropertyValues("java:compilationUnit/java:unitType/java:classDeclaration/java:normalClass/java:normalClassDeclaration/java:method/java:methodDeclaration[2]/java:resultType/java:primitiveType",
-                                            "java:typeName"),
+                                            "java:primitiveTypeName"),
                    is(new Object[] {"void"}));
         assertThat(output.getPropertyValues("java:compilationUnit/java:unitType/java:classDeclaration/java:normalClass/java:normalClassDeclaration/java:method/java:methodDeclaration[2]",
-                                            "java:name"),
+                                            "java:methodName"),
                    is(new Object[] {"setI"}));
         assertThat(output.getPropertyValues("java:compilationUnit/java:unitType/java:classDeclaration/java:normalClass/java:normalClassDeclaration/java:method/java:methodDeclaration[2]/java:parameter/java:formalParameter[1]/java:type/java:primitiveType",
-                                            "java:typeName"),
+                                            "java:primitiveTypeName"),
                    is(new Object[] {"int"}));
         assertThat(output.getPropertyValues("java:compilationUnit/java:unitType/java:classDeclaration/java:normalClass/java:normalClassDeclaration/java:method/java:methodDeclaration[2]/java:parameter/java:formalParameter[1]/java:type/java:primitiveType/java:variable",
                                             "java:variableName"),
@@ -221,19 +221,19 @@ public class JavaMetadataSequencerTest {
                                             "java:modifierName"),
                    is(new Object[] {"public"}));
         assertThat(output.getPropertyValues("java:compilationUnit/java:unitType/java:classDeclaration/java:normalClass/java:normalClassDeclaration/java:method/java:methodDeclaration[4]/java:resultType/java:primitiveType",
-                                            "java:typeName"),
+                                            "java:primitiveTypeName"),
                    is(new Object[] {"void"}));
         assertThat(output.getPropertyValues("java:compilationUnit/java:unitType/java:classDeclaration/java:normalClass/java:normalClassDeclaration/java:method/java:methodDeclaration[4]",
-                                            "java:name"),
+                                            "java:methodName"),
                    is(new Object[] {"doSomething"}));
         assertThat(output.getPropertyValues("java:compilationUnit/java:unitType/java:classDeclaration/java:normalClass/java:normalClassDeclaration/java:method/java:methodDeclaration[4]/java:parameter/java:formalParameter[1]/java:type/java:primitiveType",
-                                            "java:typeName"),
+                                            "java:primitiveTypeName"),
                    is(new Object[] {"int"}));
         assertThat(output.getPropertyValues("java:compilationUnit/java:unitType/java:classDeclaration/java:normalClass/java:normalClassDeclaration/java:method/java:methodDeclaration[4]/java:parameter/java:formalParameter[1]/java:type/java:primitiveType/java:variable",
                                             "java:variableName"),
                    is(new Object[] {"p1"}));
         assertThat(output.getPropertyValues("java:compilationUnit/java:unitType/java:classDeclaration/java:normalClass/java:normalClassDeclaration/java:method/java:methodDeclaration[4]/java:parameter/java:formalParameter[2]/java:type/java:primitiveType",
-                                            "java:typeName"),
+                                            "java:primitiveTypeName"),
                    is(new Object[] {"double"}));
         assertThat(output.getPropertyValues("java:compilationUnit/java:unitType/java:classDeclaration/java:normalClass/java:normalClassDeclaration/java:method/java:methodDeclaration[4]/java:parameter/java:formalParameter[2]/java:type/java:primitiveType/java:variable",
                                             "java:variableName"),
