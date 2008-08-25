@@ -1,0 +1,121 @@
+<?xml version="1.0"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+	
+	<parent>
+		<artifactId>getting_started</artifactId>
+		<groupId>org.jboss.dna.examples</groupId>
+		<version>0.2-SNAPSHOT</version>
+	</parent>
+	
+	<modelVersion>4.0.0</modelVersion>
+	<groupId>org.jboss.dna.sequencer.java</groupId>
+	<artifactId>dna-example-java-sequencer</artifactId>
+	<version>0.2-SNAPSHOT</version>
+	<packaging>jar</packaging>
+	<name>Java Sequencer Example</name>
+	<description>
+		Examples that show case how to use Java Sequencer with a JCR
+		repository.
+	</description>
+	<properties>
+		<dna-version>0.2-SNAPSHOT</dna-version>
+	</properties>
+
+	<dependencies>
+		<dependency>
+			<groupId>org.jboss.dna</groupId>
+			<artifactId>dna-repository</artifactId>
+			<version>${dna-version}</version>
+			<scope>compile</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.jboss.dna</groupId>
+			<artifactId>dna-common</artifactId>
+			<version>${dna-version}</version>
+			<scope>compile</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.jboss.dna</groupId>
+			<artifactId>dna-sequencer-java</artifactId>
+			<version>${dna-version}</version>
+			<scope>runtime</scope>
+		</dependency>
+
+		<!-- collection framework -->
+		<dependency>
+			<groupId>com.google.code.google-collections</groupId>
+			<artifactId>google-collect</artifactId>
+			<version>snapshot-20080530</version>
+		</dependency>
+		<!-- 
+			Logging (require SLF4J API for compiling, but use Log4J and its SLF4J binding for testing) 
+		-->
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-api</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-log4j12</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>log4j</groupId>
+			<artifactId>log4j</artifactId>
+		</dependency>
+
+		<!-- 
+			Java Content Repository API 
+		-->
+		<dependency>
+			<groupId>javax.jcr</groupId>
+			<artifactId>jcr</artifactId>
+		</dependency>
+		<!-- 
+			Apache Jackrabbit (JCR Implementation) for repository implementation
+		-->
+		<dependency>
+			<groupId>org.apache.jackrabbit</groupId>
+			<artifactId>jackrabbit-api</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.jackrabbit</groupId>
+			<artifactId>jackrabbit-core</artifactId>
+		</dependency>
+		<!-- 
+			Test cases use JUnit
+		-->
+		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<scope>test</scope>
+		</dependency>
+	</dependencies>
+
+	<!--
+		<build>
+		<plugins>
+		<plugin>
+		<artifactId>maven-assembly-plugin</artifactId>
+		<configuration>
+		<descriptors>
+		<descriptor>src/main/assembly/basic.xml</descriptor>
+		</descriptors>
+		<finalName>${pom.artifactId}</finalName>
+		</configuration>
+		<executions>
+		<execution>
+		<phase>package</phase>
+		<goals>
+		<goal>directory-inline</goal>
+		</goals>
+		</execution>
+		</executions>
+		</plugin>
+		</plugins>
+		</build>
+	-->
+
+
+</project>
