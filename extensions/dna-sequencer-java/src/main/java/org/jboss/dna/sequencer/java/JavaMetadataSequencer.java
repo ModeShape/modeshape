@@ -130,57 +130,82 @@ public class JavaMetadataSequencer implements StreamSequencer {
 
     public static final String JAVA_COMPILATION_UNIT_NODE = "java:compilationUnit";
     public static final String JAVA_COMPILATION_UNIT_PRIMARY_TYPE = "jcr:primaryType";
+    
     // package declaration
     public static final String JAVA_PACKAGE_CHILD_NODE = "java:package";
     public static final String JAVA_PACKAGE_DECLARATION_CHILD_NODE = "java:packageDeclaration";
     public static final String JAVA_PACKAGE_NAME = "java:packageName";
+    
     // Annnotation declaration
     public static final String JAVA_ANNOTATION_CHILD_NODE = "java:annotation";
     public static final String JAVA_ANNOTATION_DECLARATION_CHILD_NODE = "java:annotationDeclaration";
     public static final String JAVA_ANNOTATION_TYPE_CHILD_NODE = "java:annotationType";
+    
+    // Marker annotation
     public static final String JAVA_MARKER_ANNOTATION_CHILD_NODE = "java:markerAnnotation";
+    public static final String JAVA_MARKER_ANNOTATION_NAME ="java:markerAnnotationName ";
+    
+    // Normal annotation 
     public static final String JAVA_NORMAL_ANNOTATION_CHILD_NODE = "java:normalAnnotation";
+    public static final String JAVA_NORMALANNOTATION_NAME ="java:normalAnnotationName";
+    
+    // Single element annotation
     public static final String JAVA_SINGLE_ELEMENT_ANNOTATION_CHILD_NODE = "java:singleElementAnnotation";
-    public static final String JAVA_ANNOTATION_TYPE_NAME = "java:typeName";
+    public static final String JAVA_SINGLE_ANNOTATION_NAME ="java:singleElementAnnotationName";
+    
     // Import declaration
     public static final String JAVA_IMPORT_CHILD_NODE = "java:import";
     public static final String JAVA_IMPORT_DECLARATION_CHILD_NODE = "java:importDeclaration";
+    
+    // Single import declaration 
     public static final String JAVA_SINGLE_IMPORT_CHILD_NODE = "java:singleImport";
-    public static final String JAVA_SINGLE_TYPE_IMPORT_DECLARATION_CHILD_NODE = "java:singleTypeImportDeclaration";
-    public static final String JAVA_IMPORT_ON_DEMAND_CHILD_NODE = "java:importOnDemand";
-    public static final String JAVA_TYPE_IMPORT_ON_DEMAND_DECLARATION_CHILD_NODE = "java:typeImportOnDemandDeclaration";
-    public static final String JAVA_IMPORT_TYPE_NAME = "java:typeName";
-    // normal class declaration
+    public static final String JAVA_SINGLE_IMPORT_TYPE_DECLARATION_CHILD_NODE = "java:singleTypeImportDeclaration";
+    public static final String JAVA_SINGLE_IMPORT_NAME = "java:singleImportName ";
+    
+    
+    // OnDemand import declaration
+    public static final String JAVA_ON_DEMAND_IMPORT_CHILD_NODE = "java:importOnDemand";
+    public static final String JAVA_ON_DEMAND_IMPORT_TYPE_DECLARATION_CHILD_NODE = "java:typeImportOnDemandDeclaration";
+    public static final String JAVA_ON_DEMAND_IMPORT_NAME ="java:onDemandImportName";
+   
+    
+    // Class declaration
     public static final String JAVA_UNIT_TYPE_CHILD_NODE = "java:unitType";
     public static final String JAVA_CLASS_DECLARATION_CHILD_NODE = "java:classDeclaration";
+    
+    // Normal class declaration
     public static final String JAVA_NORMAL_CLASS_CHILD_NODE = "java:normalClass";
     public static final String JAVA_NORMAL_CLASS_DECLARATION_CHILD_NODE = "java:normalClassDeclaration";
-    public static final String JAVA_CLASS_NAME = "java:name";
+    public static final String JAVA_NORMAL_CLASS_NAME = "java:normalClassName";
+    
+    // Modifier declaration
     public static final String JAVA_MODIFIER_CHILD_NODE = "java:modifier";
     public static final String JAVA_MODIFIER_DECLARATION_CHILD_NODE = "java:modifierDeclaration";
     public static final String JAVA_MODIFIER_NAME = "java:modifierName";
 
+    // Variable declaration
     public static final String JAVA_VARIABLE = "java:variable";
     public static final String JAVA_VARIABLE_NAME = "java:variableName";
-    public static final String JAVA_TYPE = "java:typeName";
 
-    // primitive type
+    // Primitive type
     public static final String JAVA_FIELD_CHILD_NODE = "java:field";
     public static final String JAVA_FIELD_TYPE_CHILD_NODE = "java:fieldType";
     public static final String JAVA_TYPE_CHILD_NODE = "java:type";
     public static final String JAVA_PRIMITIVE_TYPE_CHILD_NODE = "java:primitiveType";
+    public static final String JAVA_PRIMITIVE_TYPE_NAME="java:primitiveTypeName";
 
-    // reference type
+    // Reference type
     public static final String JAVA_REFERENCE_TYPE_CHILD_NODE = "java:referenceType";
 
     // method declaration
     public static final String JAVA_METHOD_CHILD_NODE = "java:method";
     public static final String JAVA_METHOD_DECLARATION_CHILD_NODE = "java:methodDeclaration";
-    public static final String JAVA_METHOD_NAME = "java:name";
+    public static final String JAVA_METHOD_NAME = "java:methodName";
 
     // constructor
     public static final String JAVA_CONSTRUCTOR_CHILD_NODE = "java:constructor";
     public static final String JAVA_CONSTRUCTOR_DECLARATION_CHILD_NODE = "java:constructorDeclaration";
+    public static final String JAVA_CONSTRUCTOR_NAME = "java:constructorName";
 
     // parameter
     public static final String JAVA_PARAMETER = "java:parameter";
@@ -188,6 +213,9 @@ public class JavaMetadataSequencer implements StreamSequencer {
     public static final String JAVA_PARAMETER_NAME = "java:parameterName";
 
     public static final String JAVA_RETURN_TYPE = "java:resultType";
+
+    
+
 
     /**
      * {@inheritDoc}
@@ -247,7 +275,7 @@ public class JavaMetadataSequencer implements StreamSequencer {
                                                                             + JAVA_MARKER_ANNOTATION_CHILD_NODE + "["
                                                                             + markerAnnotationIndex + "]");
                         output.setProperty(markerAnnotationChildNode,
-                                           nameFactory.create(JAVA_ANNOTATION_TYPE_NAME),
+                                           nameFactory.create(JAVA_MARKER_ANNOTATION_NAME),
                                            markerAnnotationMetadata.getName());
                         markerAnnotationIndex++;
                     }
@@ -263,7 +291,7 @@ public class JavaMetadataSequencer implements StreamSequencer {
                                                                                   + JAVA_SINGLE_ELEMENT_ANNOTATION_CHILD_NODE
                                                                                   + "[" + singleAnnatationIndex + "]");
                         output.setProperty(singleMemberAnnotationChildNode,
-                                           nameFactory.create(JAVA_ANNOTATION_TYPE_NAME),
+                                           nameFactory.create(JAVA_SINGLE_ANNOTATION_NAME),
                                            singleMemberAnnotationMetadata.getName());
                         singleAnnatationIndex++;
                     }
@@ -279,7 +307,7 @@ public class JavaMetadataSequencer implements StreamSequencer {
                                                                             + normalAnnotationIndex + "]");
 
                         output.setProperty(normalAnnotationChildNode,
-                                           nameFactory.create(JAVA_ANNOTATION_TYPE_NAME),
+                                           nameFactory.create(JAVA_NORMALANNOTATION_NAME),
                                            normalAnnotationMetadata.getName());
                         normalAnnotationIndex++;
                     }
@@ -294,11 +322,11 @@ public class JavaMetadataSequencer implements StreamSequencer {
                     ImportOnDemandMetadata importOnDemandMetadata = (ImportOnDemandMetadata)importMetadata;
                     Path importOnDemandChildNode = pathFactory.create(JAVA_COMPILATION_UNIT_NODE + SLASH + JAVA_IMPORT_CHILD_NODE
                                                                       + SLASH + JAVA_IMPORT_DECLARATION_CHILD_NODE + SLASH
-                                                                      + JAVA_IMPORT_ON_DEMAND_CHILD_NODE + SLASH
-                                                                      + JAVA_TYPE_IMPORT_ON_DEMAND_DECLARATION_CHILD_NODE + "["
+                                                                      + JAVA_ON_DEMAND_IMPORT_CHILD_NODE + SLASH
+                                                                      + JAVA_ON_DEMAND_IMPORT_TYPE_DECLARATION_CHILD_NODE + "["
                                                                       + importOnDemandIndex + "]");
                     output.setProperty(importOnDemandChildNode,
-                                       nameFactory.create(JAVA_IMPORT_TYPE_NAME),
+                                       nameFactory.create(JAVA_ON_DEMAND_IMPORT_NAME),
                                        importOnDemandMetadata.getName());
                     importOnDemandIndex++;
                 }
@@ -307,10 +335,10 @@ public class JavaMetadataSequencer implements StreamSequencer {
                     Path singleImportChildNode = pathFactory.create(JAVA_COMPILATION_UNIT_NODE + SLASH + JAVA_IMPORT_CHILD_NODE
                                                                     + SLASH + JAVA_IMPORT_DECLARATION_CHILD_NODE + SLASH
                                                                     + JAVA_SINGLE_IMPORT_CHILD_NODE + SLASH
-                                                                    + JAVA_SINGLE_TYPE_IMPORT_DECLARATION_CHILD_NODE + "["
+                                                                    + JAVA_SINGLE_IMPORT_TYPE_DECLARATION_CHILD_NODE + "["
                                                                     + singleImportIndex + "]");
                     output.setProperty(singleImportChildNode,
-                                       nameFactory.create(JAVA_IMPORT_TYPE_NAME),
+                                       nameFactory.create(JAVA_SINGLE_IMPORT_NAME),
                                        singleImportMetadata.getName());
                     singleImportIndex++;
                 }
@@ -325,7 +353,7 @@ public class JavaMetadataSequencer implements StreamSequencer {
                                                              + SLASH + JAVA_CLASS_DECLARATION_CHILD_NODE + SLASH
                                                              + JAVA_NORMAL_CLASS_CHILD_NODE + SLASH
                                                              + JAVA_NORMAL_CLASS_DECLARATION_CHILD_NODE);
-                    output.setProperty(classChildNode, nameFactory.create(JAVA_CLASS_NAME), classMetadata.getName());
+                    output.setProperty(classChildNode, nameFactory.create(JAVA_NORMAL_CLASS_NAME), classMetadata.getName());
 
                     // process modifiers of the class declaration
                     List<ModifierMetadata> classModifiers = classMetadata.getModifiers();
@@ -363,7 +391,7 @@ public class JavaMetadataSequencer implements StreamSequencer {
                             // type
                             Path primitiveTypeChildNode = pathFactory.create(primitiveFieldRootPath);
                             output.setProperty(primitiveTypeChildNode,
-                                               nameFactory.create(JAVA_TYPE),
+                                               nameFactory.create(JAVA_PRIMITIVE_TYPE_NAME),
                                                primitiveFieldMetadata.getType());
                             // modifiers
                             List<ModifierMetadata> modifiers = primitiveFieldMetadata.getModifiers();
@@ -416,7 +444,7 @@ public class JavaMetadataSequencer implements StreamSequencer {
                                                                              constructorIndex);
                             Path constructorChildNode = pathFactory.create(constructorRootPath);
                             output.setProperty(constructorChildNode,
-                                               nameFactory.create(JAVA_METHOD_NAME),
+                                               nameFactory.create(JAVA_CONSTRUCTOR_NAME),
                                                constructorMetadata.getName());
                             List<ModifierMetadata> modifiers = constructorMetadata.getModifiers();
                             // modifiers
@@ -452,8 +480,8 @@ public class JavaMetadataSequencer implements StreamSequencer {
                                     String constructorPrimitiveParamVariablePath = createPath(constructPrimitiveFormalParamRootPath
                                                                                               + SLASH + JAVA_VARIABLE);
                                     Path constructorParamChildNode = pathFactory.create(constructorPrimitiveParamVariablePath);
+                                    // variables
                                     for (Variable variable : primitive.getVariables()) {
-                                        // name
                                         output.setProperty(constructorParamChildNode,
                                                            nameFactory.create(JAVA_VARIABLE_NAME),
                                                            variable.getName());
@@ -461,9 +489,8 @@ public class JavaMetadataSequencer implements StreamSequencer {
                                     // type
                                     Path constructPrimitiveTypeParamChildNode = pathFactory.create(constructPrimitiveFormalParamRootPath);
                                     output.setProperty(constructPrimitiveTypeParamChildNode,
-                                                       nameFactory.create(JAVA_TYPE),
+                                                       nameFactory.create(JAVA_PRIMITIVE_TYPE_NAME),
                                                        primitive.getType());
-
                                 }
 
                                 // TODO parameter reference types
@@ -520,8 +547,8 @@ public class JavaMetadataSequencer implements StreamSequencer {
                                                                                          + SLASH + JAVA_VARIABLE);
 
                                     Path methodParamChildNode = pathFactory.create(methodPrimitiveParamVariablePath);
+                                    // variables
                                     for (Variable variable : primitive.getVariables()) {
-                                        // name
                                         output.setProperty(methodParamChildNode,
                                                            nameFactory.create(JAVA_VARIABLE_NAME),
                                                            variable.getName());
@@ -529,7 +556,7 @@ public class JavaMetadataSequencer implements StreamSequencer {
                                     // type
                                     Path methodPrimitiveTypeParamChildNode = pathFactory.create(methodPrimitiveFormalParamRootPath);
                                     output.setProperty(methodPrimitiveTypeParamChildNode,
-                                                       nameFactory.create(JAVA_TYPE),
+                                                       nameFactory.create(JAVA_PRIMITIVE_TYPE_NAME),
                                                        primitive.getType());
 
                                 }
@@ -549,7 +576,7 @@ public class JavaMetadataSequencer implements StreamSequencer {
                                                                                   + JAVA_PRIMITIVE_TYPE_CHILD_NODE);
                                 Path methodReturnPrimitiveTypeChildNode = pathFactory.create(methodReturnPrimitiveTypePath);
                                 output.setProperty(methodReturnPrimitiveTypeChildNode,
-                                                   nameFactory.create(JAVA_TYPE),
+                                                   nameFactory.create(JAVA_PRIMITIVE_TYPE_NAME),
                                                    methodReturnPrimitiveType.getType());
 
                             }
