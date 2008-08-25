@@ -55,7 +55,7 @@
  * Modifiers
  */
 [java:modifierDeclaration] > nt:unstructured
- - java:name (string) mandatory
+ - java:modifierName (string) mandatory
 
 /**
  * Expression element-value type
@@ -73,7 +73,7 @@
  * Identifier
  */
 [java:identifier] > nt:unstructured
- - java:sampleName (String) mandatory
+ - java:identifierName (String) mandatory
  + java:value (java:elementValue) = java:elementValue mandatory
  
 /**
@@ -92,19 +92,20 @@
  * Normal annotation e.g. @Entity(name="Customer")
  */
 [java:normalAnnotation] > nt:unstructured
- - java:typeName (string) mandatory
+ - java:normalAnnotationName (string) mandatory
  + java:elementValuePair (java:elementValuePair)
 
 /**
  * Marker annotation e.g. @GET
  */
 [java:markerAnnotation] > nt:unstructured
- - java:typeName (string) mandatory
+ - java:markerAnnotationName (string) mandatory
 
 /**
  * Single element annotation  e.g. @Path("/book")
  */
 [java:singleElementAnnotation] > nt:unstructured
+ - java:singleElementAnnotationNam
  + java:value (java:elementValue) = java:elementValue mandatory
 
 /** 
@@ -118,13 +119,13 @@
  * - Integral type ('byte', 'short', 'int', 'long', 'char')
  * - Floating point type ('float', 'double')
  * - Boolean type ('boolean')
- * - No return type (''void')
+ * - No return type ('void')
  */
 [java:primitiveType] > nt:unstructured
- - java:description (string)
+ - java:primitiveTypeDescription (string)
  + java:modifier (java:modifierDeclaration) = java:modifierDeclaration
- - java:typeName (string)
- + java:variable (java:variable) = java:variable
+ - java:primitiveTypeName (string) mandatory
+ + java:primitiveVariable (java:variable) = java:variable
  
  [java:variable] > nt:unstructured
  - java:variableName (string)
@@ -133,9 +134,9 @@
  * Reference type  (TODO to enhance)
  */ 
 [java:referenceType] > nt:unstructured
- - java:description (string)
+ - java:ReferenceDescription (string)
  + java:modifier (java:modifierDeclaration) = java:modifierDeclaration
- - java:name (string) mandatory
+ - java:referenceName (string) mandatory
  
 /** 
  * Field type 
@@ -147,19 +148,19 @@
   * Method declaration 
   */
 [java:methodDeclaration] > nt:unstructured
- - java:description (string)
+ - java:methodDescription (string)
  + java:modifier (java:modifierDeclaration) = java:modifierDeclaration
  + java:resultType (java:primitiveType, java:referenceType) mandatory
- - java:name (string) mandatory
+ - java:methodName (string) mandatory
  + java:parameter (java:formalParameter) multiple
 
 /** 
  * Constructor declarations 
  */
 [java:constructorDeclaration] > nt:unstructured
- - java:description (string)
+ - java:constructorDescription (string)
  + java:modifier (java:modifierDeclaration) = java:modifierDeclaration
- - java:name (string) mandatory
+ - java:constructorName (string) mandatory
  + java:parameter (java:formalParameter)
 
 
@@ -168,7 +169,7 @@
  */
 [java:packageDeclaration] > nt:unstructured
  + java:annotation (java:annotationDeclaration) = java:annotationDeclaration
- - java:keyword (string)
+ - java:packageKeyword (string)
    < 'package' 
  - java:packageName (string) mandatory 
 
@@ -176,14 +177,14 @@
  * Import declarations
  */
 [java:singleTypeImportDeclaration] > nt:unstructured
- - java:keyword (string) mandatory
+ - java:singleTypeImportkeyword (string) mandatory
   < 'import'
- - java:typeName (string) mandatory
+ - java:singleImportName (string) mandatory
  
 [java:typeImportOnDemandDeclaration] > nt:unstructured
- - java:keyword (string) mandatory
+ - java:onDemandImportKeyword (string) mandatory
   < 'import'
- - java:typeName (string) mandatory
+ - java:onDemandImportName (string) mandatory
 
  [java:importDeclaration] > nt:unstructured
  + java:singleImport (java:singleTypeImportDeclaration) = java:singleTypeImportDeclaration
@@ -199,7 +200,7 @@
 [java:normalClassDeclaration] > nt:unstructured
  - java:description (string)
  + java:modifier (java:modifierDeclaration) = java:modifierDeclaration
- - java:name (string) mandatory
+ - java:normalClassName (string) mandatory
  + java:field (java:fieldType)  = java:fieldType multiple
  + java:method (java:methodDeclaration) = java:methodDeclaration multiple
  + java:constructor (java:constructorDeclaration) = java:constructorDeclaration multiple
