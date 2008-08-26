@@ -14,7 +14,7 @@
 	<artifactId>dna-example-java-sequencer</artifactId>
 	<version>0.2-SNAPSHOT</version>
 	<packaging>jar</packaging>
-	<name>Java Sequencer Example</name>
+	<name>JBoss DNA Java Sequencer Example</name>
 	<description>
 		Examples that show case how to use Java Sequencer with a JCR
 		repository.
