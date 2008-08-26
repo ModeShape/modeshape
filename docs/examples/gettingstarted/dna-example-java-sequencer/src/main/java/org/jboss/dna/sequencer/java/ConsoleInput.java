@@ -179,13 +179,13 @@ public class ConsoleInput implements UserInterface {
             return;
         }
         if (javaInfos.size() == 1) {
-            System.out.println("1 image was found:");
+            System.out.println("1 java source was found:");
         } else {
             System.out.println("" + javaInfos.size() + " java sources were found:");
         }
         int counter = 1;
         for (JavaInfo javaInfo : javaInfos) {
-            System.out.println(" Media " + counter++);
+            System.out.println(" Java Compilation unit " + counter++);
             System.out.println("   Name: " + javaInfo.getName());
             System.out.println("   Path: " + javaInfo.getPath());
             System.out.println("   Type: " + javaInfo.getType());
