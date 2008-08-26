@@ -10,6 +10,7 @@
 
   <modules>
     <module>sequencers</module>
+	<module>dna-example-java-sequencer</module>
   </modules>
 
   <properties>
