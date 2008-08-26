@@ -32,6 +32,7 @@ import java.security.Principal;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 import javax.jcr.Item;
 import javax.jcr.Node;
 import javax.jcr.Property;
@@ -84,7 +85,7 @@ public class JcrSessionTest {
 
     private Session session;
     @Mock
-    private Map<String, WeakReference<Node>> uuid2NodeMap;
+    private Map<UUID, WeakReference<Node>> nodesByUuid;
 
     @Before
     public void before() throws Exception {
@@ -101,22 +102,22 @@ public class JcrSessionTest {
 
     @Test( expected = AssertionError.class )
     public void shouldNotAllowNoRepository() throws Exception {
-        new JcrSession(null, executionContext, WORKSPACE_NAME, connection, uuid2NodeMap);
+        new JcrSession(null, executionContext, WORKSPACE_NAME, connection, nodesByUuid);
     }
 
     @Test( expected = AssertionError.class )
     public void shouldNotAllowNoExecutionContext() throws Exception {
-        new JcrSession(repository, null, WORKSPACE_NAME, connection, uuid2NodeMap);
+        new JcrSession(repository, null, WORKSPACE_NAME, connection, nodesByUuid);
     }
 
     @Test( expected = AssertionError.class )
     public void shouldNotAllowNoWorkspaceName() throws Exception {
-        new JcrSession(repository, executionContext, null, connection, uuid2NodeMap);
+        new JcrSession(repository, executionContext, null, connection, nodesByUuid);
     }
 
     @Test( expected = AssertionError.class )
     public void shouldNotAllowNoConnection() throws Exception {
-        new JcrSession(repository, executionContext, WORKSPACE_NAME, null, uuid2NodeMap);
+        new JcrSession(repository, executionContext, WORKSPACE_NAME, null, nodesByUuid);
     }
 
     @Test( expected = AssertionError.class )
@@ -172,7 +173,7 @@ public class JcrSessionTest {
         stub(executionContext.getSubject()).toReturn(subject);
         stub(executionContext.getLoginContext()).toReturn(Mockito.mock(LoginContext.class));
         Session session = new JcrSession(repository, executionContext, WORKSPACE_NAME, Mockito.mock(RepositoryConnection.class),
-                                         uuid2NodeMap);
+                                         nodesByUuid);
         try {
             assertThat(session.getUserID(), is("name"));
         } finally {
@@ -182,15 +183,15 @@ public class JcrSessionTest {
 
     @Test
     public void shouldProvideRootNode() throws Exception {
-        Map<String, WeakReference<Node>> uuid2NodeMap = new HashMap<String, WeakReference<Node>>();
+        Map<UUID, WeakReference<Node>> nodesByUuid = new HashMap<UUID, WeakReference<Node>>();
         Session session = new JcrSession(repository, executionContext, WORKSPACE_NAME,
-                                         connectionFactory.createConnection(WORKSPACE_NAME), uuid2NodeMap);
-        assertThat(uuid2NodeMap.isEmpty(), is(true));
+                                         connectionFactory.createConnection(WORKSPACE_NAME), nodesByUuid);
+        assertThat(nodesByUuid.isEmpty(), is(true));
         Node root = session.getRootNode();
         assertThat(root, notNullValue());
-        String uuid = root.getUUID();
+        UUID uuid = ((JcrRootNode)root).getInternalUuid();
         assertThat(uuid, notNullValue());
-        WeakReference<Node> ref = uuid2NodeMap.get(uuid);
+        WeakReference<Node> ref = nodesByUuid.get(uuid);
         assertThat(ref, notNullValue());
         assertThat(ref.get(), is(root));
     }

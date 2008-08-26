@@ -49,6 +49,7 @@ import org.jboss.dna.spi.ExecutionContext;
 import org.jboss.dna.spi.connector.RepositoryConnection;
 import org.jboss.dna.spi.graph.Name;
 import org.jboss.dna.spi.graph.Path;
+import org.jboss.dna.spi.graph.UuidFactory;
 import org.jboss.dna.spi.graph.Path.Segment;
 import org.jboss.dna.spi.graph.commands.GraphCommand;
 import org.jboss.dna.spi.graph.commands.impl.BasicGetNodeCommand;
@@ -64,7 +65,7 @@ final class JcrSession implements Session {
     private final Repository repository;
     private final ExecutionContext executionContext;
     private RepositoryConnection connection;
-    private final Map<String, WeakReference<Node>> uuid2NodeMap;
+    private final Map<UUID, WeakReference<Node>> nodesByUuid;
     private boolean isLive;
     private Workspace workspace;
     private JcrRootNode rootNode;
@@ -73,16 +74,16 @@ final class JcrSession implements Session {
                 ExecutionContext executionContext,
                 String workspaceName,
                 RepositoryConnection connection,
-                Map<String, WeakReference<Node>> uuid2NodeMap ) throws RepositoryException {
+                Map<UUID, WeakReference<Node>> nodesByUuid ) throws RepositoryException {
         assert repository != null;
         assert executionContext != null;
         assert workspaceName != null;
         assert connection != null;
-        assert uuid2NodeMap != null;
+        assert nodesByUuid != null;
         this.repository = repository;
         this.executionContext = executionContext;
         this.connection = connection;
-        this.uuid2NodeMap = uuid2NodeMap;
+        this.nodesByUuid = nodesByUuid;
         this.isLive = true;
         // Following must be initialized after session's state is initialized
         this.workspace = new JcrWorkspace(this, workspaceName);
@@ -210,7 +211,8 @@ final class JcrSession implements Session {
         BasicGetNodeCommand getNodeCommand = new BasicGetNodeCommand(parentPath);
         execute(getNodeCommand);
         // First search for a child with the last name in the path
-        Name name = path.getLastSegment().getName();
+        Segment lastSeg = path.getLastSegment();
+        Name name = lastSeg.getName();
         for (Segment seg : getNodeCommand.getChildren()) {
             if (seg.getName().equals(name)) {
                 return getNode(path);
@@ -218,9 +220,8 @@ final class JcrSession implements Session {
         }
         // If a node isn't found & last segment contains no index, get parent node & search for a property with the last name in
         // the path
-        Segment seg = path.getLastSegment();
-        if (!seg.hasIndex()) {
-            return getNode(parentPath).getProperty(seg.getString());
+        if (!lastSeg.hasIndex()) {
+            return getNode(parentPath).getProperty(lastSeg.getString());
         }
         // If a property isn't found, throw a PathNotFoundException
         throw new PathNotFoundException(JcrI18n.pathNotFound.text(path));
@@ -267,10 +268,11 @@ final class JcrSession implements Session {
         BasicGetNodeCommand command = new BasicGetNodeCommand(path);
         execute(command);
         // First check if node already exists. We don't need to check for changes since that will be handled by an observer
-        org.jboss.dna.spi.graph.Property dnaUuidProp = command.getPropertiesByName().get(DnaLexicon.UUID);
+        org.jboss.dna.spi.graph.Property dnaUuidProp = command.getPropertiesByName().get(executionContext.getValueFactories().getNameFactory().create("jcr:uuid"));
+        if (dnaUuidProp == null) dnaUuidProp = command.getPropertiesByName().get(DnaLexicon.UUID);
         if (dnaUuidProp != null) {
-            String uuid = executionContext.getValueFactories().getStringFactory().create(dnaUuidProp.getValues()).next();
-            WeakReference<Node> ref = uuid2NodeMap.get(uuid);
+            UUID uuid = executionContext.getValueFactories().getUuidFactory().create(dnaUuidProp.getValues()).next();
+            WeakReference<Node> ref = nodesByUuid.get(uuid);
             if (ref != null) {
                 Node node = ref.get();
                 if (node != null) {
@@ -279,7 +281,11 @@ final class JcrSession implements Session {
             }
         }
         // If not create a new one & populate it
-        JcrNode node = new JcrNode(this);
+        JcrNode node;
+        Path parentPath = path.getParent();
+        if (parentPath.isRoot()) node = new JcrNode(this, ((JcrRootNode)getRootNode()).getInternalUuid(),
+                                                    path.getLastSegment().getName());
+        else node = new JcrNode(this, ((JcrNode)getNode(parentPath)).getInternalUuid(), path.getLastSegment().getName());
         populateNode(node, command);
         return node;
     }
@@ -437,7 +443,7 @@ final class JcrSession implements Session {
     }
 
     private void populateNode( AbstractJcrNode node,
-                               BasicGetNodeCommand getNodeCommand ) throws RepositoryException {
+                               BasicGetNodeCommand getNodeCommand ) {
         // TODO: What do we do to validate node against its primary type?
         assert node != null;
         assert getNodeCommand != null;
@@ -445,20 +451,23 @@ final class JcrSession implements Session {
         node.setChildren(getNodeCommand.getChildren());
         // Create JCR properties for corresponding DNA properties
         Set<Property> properties = new HashSet<Property>();
-        boolean uuidFound = false;
+        UUID uuid = null;
+        Name jcrUuidName = executionContext.getValueFactories().getNameFactory().create("jcr:uuid");
+        UuidFactory uuidFactory = executionContext.getValueFactories().getUuidFactory();
         for (org.jboss.dna.spi.graph.Property dnaProp : getNodeCommand.getProperties()) {
-            if (DnaLexicon.UUID.equals(dnaProp.getName())) {
-                uuidFound = true;
+            Name name = dnaProp.getName();
+            if (uuid == null && DnaLexicon.UUID.equals(name)) uuid = uuidFactory.create(dnaProp.getValues()).next();
+            else {
+                if (jcrUuidName.equals(name)) uuid = uuidFactory.create(dnaProp.getValues()).next();
+                properties.add(new JcrProperty(node, executionContext, name, dnaProp.getValues().next()));
             }
-            properties.add(new JcrProperty(node, executionContext, dnaProp.getName(), dnaProp.getValues().next()));
-        }
-        // Ensure a UUID property exists
-        if (!uuidFound) {
-            properties.add(new JcrProperty(node, executionContext, DnaLexicon.UUID, UUID.randomUUID()));
         }
         node.setProperties(properties);
-        // Setup node to be retrieved by UUID
-        uuid2NodeMap.put(node.getUUID(), new WeakReference<Node>(node));
+        // Set node's UUID, creating one if necessary
+        if (uuid == null) uuid = UUID.randomUUID();
+        node.setInternalUuid(uuid);
+        // Setup node to be retrieved by DNA UUID
+        nodesByUuid.put(node.getInternalUuid(), new WeakReference<Node>(node));
     }
 
     /**

@@ -21,11 +21,13 @@
  */
 package org.jboss.dna.jcr;
 
+import java.util.UUID;
 import javax.jcr.Node;
-import javax.jcr.Property;
+import javax.jcr.NodeIterator;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import net.jcip.annotations.NotThreadSafe;
+import org.jboss.dna.spi.graph.Name;
 
 /**
  * @author jverhaeg
@@ -33,8 +35,26 @@ import net.jcip.annotations.NotThreadSafe;
 @NotThreadSafe
 final class JcrNode extends AbstractJcrNode {
 
-    JcrNode( Session session ) {
+    private final UUID parentUuid;
+    private final Name name;
+
+    JcrNode( Session session,
+             UUID parentUuid,
+             Name name ) {
         super(session);
+        assert parentUuid != null;
+        assert name != null;
+        this.parentUuid = parentUuid;
+        this.name = name;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see javax.jcr.Item#getDepth()
+     */
+    public int getDepth() throws RepositoryException {
+        return getParent().getDepth() + 1;
     }
 
     /**
@@ -42,11 +62,8 @@ final class JcrNode extends AbstractJcrNode {
      * 
      * @see javax.jcr.Item#getName()
      */
-    public String getName() throws RepositoryException {
-        Property prop = getProperty("jcr:name");
-        assert prop != null;
-        assert prop.getValue() != null;
-        return prop.getValue().getString();
+    public String getName() {
+        return name.getString();
     }
 
     /**
@@ -54,7 +71,30 @@ final class JcrNode extends AbstractJcrNode {
      * 
      * @see javax.jcr.Item#getParent()
      */
-    public Node getParent() {
-        throw new UnsupportedOperationException();
+    public Node getParent() throws RepositoryException {
+        return getSession().getNodeByUUID(parentUuid.toString());
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see javax.jcr.Item#getPath()
+     */
+    public String getPath() throws RepositoryException {
+        Node parent = getParent();
+        StringBuilder builder = new StringBuilder(parent.getPath());
+        assert builder.length() > 0;
+        if (builder.charAt(builder.length() - 1) != '/') {
+            builder.append('/');
+        }
+        String name = getName();
+        builder.append(name);
+        NodeIterator iter = parent.getNodes(name);
+        if (iter.getSize() > 1) {
+            builder.append('[');
+            builder.append(getIndex());
+            builder.append(']');
+        }
+        return builder.toString();
     }
 }

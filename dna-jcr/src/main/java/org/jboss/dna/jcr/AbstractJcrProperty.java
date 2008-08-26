@@ -39,7 +39,7 @@ import org.jboss.dna.spi.graph.Name;
  * @author jverhaeg
  */
 @NotThreadSafe
-abstract class AbstractJcrProperty implements Property {
+abstract class AbstractJcrProperty extends AbstractJcrItem implements Property {
 
     private final Node node;
     private final ExecutionContext executionContext;
@@ -59,13 +59,32 @@ abstract class AbstractJcrProperty implements Property {
     /**
      * {@inheritDoc}
      * 
+     * @see javax.jcr.Item#accept(javax.jcr.ItemVisitor)
+     */
+    public void accept( ItemVisitor visitor ) throws RepositoryException {
+        visitor.visit(this);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @throws IllegalArgumentException if <code>depth</code> is negative.
+     * @see javax.jcr.Item#getAncestor(int)
+     */
+    public final Item getAncestor( int depth ) throws RepositoryException {
+        return (depth == 0 ? this : node.getAncestor(depth - 1));
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
      * @see javax.jcr.Property#getDefinition()
      */
     public PropertyDefinition getDefinition() {
         throw new UnsupportedOperationException();
     }
 
-    ExecutionContext getExecutionContext() {
+    final ExecutionContext getExecutionContext() {
         return executionContext;
     }
 
@@ -74,17 +93,66 @@ abstract class AbstractJcrProperty implements Property {
      * 
      * @see javax.jcr.Property#getNode()
      */
-    public Node getNode() {
+    final public Node getNode() {
         return node;
     }
 
     /**
      * {@inheritDoc}
      * 
-     * @see javax.jcr.Property#getValues()
+     * @see javax.jcr.Item#getName()
      */
-    public Value[] getValues() {
-        throw new UnsupportedOperationException();
+    public final String getName() {
+        return name.getString();
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see javax.jcr.Item#getParent()
+     */
+    public final Node getParent() {
+        return node;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see javax.jcr.Item#getPath()
+     */
+    public String getPath() throws RepositoryException {
+        return node.getPath() + '/' + getName();
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see javax.jcr.Item#getSession()
+     */
+    public final Session getSession() throws RepositoryException {
+        return node.getSession();
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see javax.jcr.Item#isNode()
+     */
+    public final boolean isNode() {
+        return false;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see javax.jcr.Item#isSame(javax.jcr.Item)
+     */
+    public boolean isSame( Item otherItem ) throws RepositoryException {
+        if (otherItem instanceof Property) {
+            Property otherProp = (Property)otherItem;
+            return (getName().equals(otherProp.getName()) && getNode().isSame(otherProp.getNode()));
+        }
+        return false;
     }
 
     /**
@@ -174,132 +242,6 @@ abstract class AbstractJcrProperty implements Property {
      * @see javax.jcr.Property#setValue(javax.jcr.Node)
      */
     public void setValue( Node value ) {
-        throw new UnsupportedOperationException();
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.Item#accept(javax.jcr.ItemVisitor)
-     */
-    public void accept( ItemVisitor visitor ) {
-        throw new UnsupportedOperationException();
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.Item#getAncestor(int)
-     */
-    public Item getAncestor( int depth ) {
-        throw new UnsupportedOperationException();
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.Item#getDepth()
-     */
-    public int getDepth() {
-        throw new UnsupportedOperationException();
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.Item#getName()
-     */
-    public String getName() {
-        return name.getString();
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.Item#getParent()
-     */
-    public Node getParent() {
-        throw new UnsupportedOperationException();
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.Item#getPath()
-     */
-    public String getPath() {
-        throw new UnsupportedOperationException();
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.Item#getSession()
-     */
-    public Session getSession() throws RepositoryException {
-        return node.getSession();
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.Item#isModified()
-     */
-    public boolean isModified() {
-        throw new UnsupportedOperationException();
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.Item#isNew()
-     */
-    public boolean isNew() {
-        throw new UnsupportedOperationException();
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.Item#isNode()
-     */
-    public boolean isNode() {
-        throw new UnsupportedOperationException();
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.Item#isSame(javax.jcr.Item)
-     */
-    public boolean isSame( Item otherItem ) {
-        throw new UnsupportedOperationException();
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.Item#refresh(boolean)
-     */
-    public void refresh( boolean keepChanges ) {
-        throw new UnsupportedOperationException();
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.Item#remove()
-     */
-    public void remove() {
-        throw new UnsupportedOperationException();
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.Item#save()
-     */
-    public void save() {
         throw new UnsupportedOperationException();
     }
 }

@@ -22,9 +22,14 @@
 package org.jboss.dna.jcr;
 
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
+import java.util.Map.Entry;
 import javax.jcr.Item;
 import javax.jcr.ItemVisitor;
 import javax.jcr.Node;
@@ -33,6 +38,7 @@ import javax.jcr.Property;
 import javax.jcr.PropertyIterator;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
+import javax.jcr.UnsupportedRepositoryOperationException;
 import javax.jcr.Value;
 import javax.jcr.lock.Lock;
 import javax.jcr.nodetype.NodeDefinition;
@@ -41,19 +47,20 @@ import javax.jcr.version.Version;
 import javax.jcr.version.VersionHistory;
 import net.jcip.annotations.NotThreadSafe;
 import org.jboss.dna.common.util.ArgCheck;
-import org.jboss.dna.spi.DnaLexicon;
+import org.jboss.dna.spi.graph.Name;
 import org.jboss.dna.spi.graph.Path.Segment;
+import org.jboss.dna.spi.graph.impl.BasicPathSegment;
 
 /**
  * @author jverhaeg
  */
 @NotThreadSafe
-abstract class AbstractJcrNode implements Node {
+abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
 
     private final Session session;
     private Set<Property> properties;
-
-    // private List<Segment> children;
+    private Map<Name, Integer> childCountsByName;
+    private UUID uuid;
 
     AbstractJcrNode( Session session ) {
         assert session != null;
@@ -65,8 +72,8 @@ abstract class AbstractJcrNode implements Node {
      * 
      * @see javax.jcr.Item#accept(javax.jcr.ItemVisitor)
      */
-    public void accept( ItemVisitor visitor ) {
-        throw new UnsupportedOperationException();
+    public void accept( ItemVisitor visitor ) throws RepositoryException {
+        visitor.visit(this);
     }
 
     /**
@@ -145,10 +152,16 @@ abstract class AbstractJcrNode implements Node {
     /**
      * {@inheritDoc}
      * 
+     * @throws IllegalArgumentException if <code>depth</code> is negative.
      * @see javax.jcr.Item#getAncestor(int)
      */
-    public Item getAncestor( int depth ) {
-        throw new UnsupportedOperationException();
+    public final Item getAncestor( int depth ) throws RepositoryException {
+        ArgCheck.isNonNegative(depth, "depth");
+        Node ancestor = this;
+        while (--depth >= 0) {
+            ancestor = ancestor.getParent();
+        }
+        return ancestor;
     }
 
     /**
@@ -158,6 +171,13 @@ abstract class AbstractJcrNode implements Node {
      */
     public Version getBaseVersion() {
         throw new UnsupportedOperationException();
+    }
+
+    private Map<Name, Integer> getChildCountsByName() {
+        if (childCountsByName == null) {
+            childCountsByName = new HashMap<Name, Integer>();
+        }
+        return childCountsByName;
     }
 
     /**
@@ -181,19 +201,14 @@ abstract class AbstractJcrNode implements Node {
     /**
      * {@inheritDoc}
      * 
-     * @see javax.jcr.Item#getDepth()
-     */
-    public int getDepth() {
-        throw new UnsupportedOperationException();
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
      * @see javax.jcr.Node#getIndex()
      */
     public int getIndex() {
         throw new UnsupportedOperationException();
+    }
+
+    final UUID getInternalUuid() {
+        return uuid;
     }
 
     /**
@@ -219,7 +234,7 @@ abstract class AbstractJcrNode implements Node {
      * 
      * @see javax.jcr.Node#getNode(java.lang.String)
      */
-    public Node getNode( String relPath ) {
+    public final Node getNode( String relativePath ) {
         throw new UnsupportedOperationException();
     }
 
@@ -238,16 +253,55 @@ abstract class AbstractJcrNode implements Node {
      * @see javax.jcr.Node#getNodes(java.lang.String)
      */
     public NodeIterator getNodes( String namePattern ) {
-        throw new UnsupportedOperationException();
-    }
+        ArgCheck.isNotEmpty(namePattern, "namePattern");
+        String[] disjuncts = namePattern.split("\\|");
+        List<Segment> nodes = new ArrayList<Segment>();
+        for (String disjunct : disjuncts) {
+            String pattern = disjunct.trim();
+            ArgCheck.isNotEmpty(pattern, "namePattern");
+            String ndxPattern;
+            int endNdx = pattern.length() - 1;
+            if (pattern.charAt(endNdx) == ']') {
+                int ndx = pattern.indexOf('[');
+                ndxPattern = pattern.substring(ndx + 1, endNdx);
+                pattern = pattern.substring(0, ndx);
+            } else ndxPattern = null;
+            for (Entry<Name, Integer> entry : getChildCountsByName().entrySet()) {
+                if (entry.getKey().getString().matches(pattern)) {
+                    if (ndxPattern != null && !entry.getValue().toString().matches(ndxPattern)) continue;
+                    if (entry.getValue() > 1) nodes.add(new BasicPathSegment(entry.getKey(), entry.getValue()));
+                    else nodes.add(new BasicPathSegment(entry.getKey()));
+                }
+            }
+        }
+        return new NodeIterator() {
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.Item#getPath()
-     */
-    public String getPath() {
-        throw new UnsupportedOperationException();
+            public Node nextNode() {
+                return null;
+            }
+
+            public long getPosition() {
+                return 0;
+            }
+
+            public long getSize() {
+                return 0;
+            }
+
+            public void skip( long skipNum ) {
+            }
+
+            public boolean hasNext() {
+                return false;
+            }
+
+            public Object next() {
+                return null;
+            }
+
+            public void remove() {
+            }
+        };
     }
 
     /**
@@ -291,13 +345,11 @@ abstract class AbstractJcrNode implements Node {
      * 
      * @see javax.jcr.Node#getProperty(java.lang.String)
      */
-    public Property getProperty( String relativePath ) throws RepositoryException {
+    public final Property getProperty( String relativePath ) throws RepositoryException {
         ArgCheck.isNotEmpty(relativePath, "relativePath");
         // TODO: Handle multi-segment paths
         for (Property property : properties) {
-            if (relativePath.equals(property.getName())) {
-                return property;
-            }
+            if (relativePath.equals(property.getName())) return property;
         }
         return null;
     }
@@ -316,7 +368,7 @@ abstract class AbstractJcrNode implements Node {
      * 
      * @see javax.jcr.Item#getSession()
      */
-    public Session getSession() {
+    public final Session getSession() {
         return session;
     }
 
@@ -325,10 +377,15 @@ abstract class AbstractJcrNode implements Node {
      * 
      * @see javax.jcr.Node#getUUID()
      */
-    public String getUUID() throws RepositoryException {
-        // TODO: Check if node is referenceable
-        Property prop = getProperty(DnaLexicon.UUID.getString());
-        return (prop == null ? null : prop.getString());
+    public final String getUUID() throws RepositoryException {
+        // Check if node is referenceable
+        Property mixinsProp = getProperty("jcr:mixinTypes");
+        if (mixinsProp != null) {
+            for (Value value : mixinsProp.getValues()) {
+                if ("mix:referenceable".equals(value.getString())) return getProperty("jcr:uuid").getString();
+            }
+        }
+        throw new UnsupportedRepositoryOperationException();
     }
 
     /**
@@ -406,28 +463,10 @@ abstract class AbstractJcrNode implements Node {
     /**
      * {@inheritDoc}
      * 
-     * @see javax.jcr.Item#isModified()
-     */
-    public boolean isModified() {
-        throw new UnsupportedOperationException();
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.Item#isNew()
-     */
-    public boolean isNew() {
-        throw new UnsupportedOperationException();
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
      * @see javax.jcr.Item#isNode()
      */
-    public boolean isNode() {
-        throw new UnsupportedOperationException();
+    public final boolean isNode() {
+        return true;
     }
 
     /**
@@ -445,7 +484,7 @@ abstract class AbstractJcrNode implements Node {
      * @see javax.jcr.Item#isSame(javax.jcr.Item)
      */
     public boolean isSame( Item otherItem ) {
-        throw new UnsupportedOperationException();
+        return false;
     }
 
     /**
@@ -475,24 +514,6 @@ abstract class AbstractJcrNode implements Node {
      */
     public void orderBefore( String srcChildRelPath,
                              String destChildRelPath ) {
-        throw new UnsupportedOperationException();
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.Item#refresh(boolean)
-     */
-    public void refresh( boolean keepChanges ) {
-        throw new UnsupportedOperationException();
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.Item#remove()
-     */
-    public void remove() {
         throw new UnsupportedOperationException();
     }
 
@@ -546,21 +567,22 @@ abstract class AbstractJcrNode implements Node {
         throw new UnsupportedOperationException();
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.Item#save()
-     */
-    public void save() {
-        throw new UnsupportedOperationException();
-    }
-
-    void setChildren( List<Segment> children ) {
+    final void setChildren( List<Segment> children ) {
         assert children != null;
-        // this.children = children;
+        for (Segment seg : children) {
+            Name name = seg.getName();
+            Integer count = getChildCountsByName().get(name);
+            if (count == null) getChildCountsByName().put(name, 1);
+            else getChildCountsByName().put(name, count + 1);
+        }
     }
 
-    void setProperties( Set<Property> properties ) {
+    final void setInternalUuid( UUID uuid ) {
+        assert uuid != null;
+        this.uuid = uuid;
+    }
+
+    final void setProperties( Set<Property> properties ) {
         assert properties != null;
         this.properties = properties;
     }

@@ -26,10 +26,12 @@ import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.stub;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.UUID;
+import javax.jcr.Item;
+import javax.jcr.ItemVisitor;
 import javax.jcr.Node;
 import javax.jcr.Property;
 import javax.jcr.Session;
-import org.jboss.dna.spi.DnaLexicon;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
@@ -52,20 +54,39 @@ public class AbstractJcrNodeTest {
         properties = new HashSet<Property>();
         node = new AbstractJcrNode(session) {
 
+            public int getDepth() {
+                return 0;
+            }
+
             public String getName() {
                 return null;
             }
 
             public Node getParent() {
+                return null;
+            }
+
+            public String getPath() {
                 return null;
             }
         };
         node.setProperties(properties);
     }
 
+    @Test
+    public void shouldAllowVisitation() throws Exception {
+        ItemVisitor visitor = Mockito.mock(ItemVisitor.class);
+        node.accept(visitor);
+        Mockito.verify(visitor).visit(node);
+    }
+
     @Test( expected = AssertionError.class )
     public void shouldNotAllowNoSession() throws Exception {
         new AbstractJcrNode(null) {
+
+            public int getDepth() {
+                return 0;
+            }
 
             public String getName() {
                 return null;
@@ -74,7 +95,21 @@ public class AbstractJcrNodeTest {
             public Node getParent() {
                 return null;
             }
+
+            public String getPath() {
+                return null;
+            }
         };
+    }
+
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldNotAllowNegativeAncestorDepth() throws Exception {
+        node.getAncestor(-1);
+    }
+
+    @Test
+    public void shouldProvideAncestor() throws Exception {
+        assertThat(node.getAncestor(0), is((Item)node));
     }
 
     @Test
@@ -83,12 +118,10 @@ public class AbstractJcrNodeTest {
     }
 
     @Test
-    public void shouldProvideUuid() throws Exception {
-        Property property = Mockito.mock(Property.class);
-        stub(property.getName()).toReturn(DnaLexicon.UUID.getString());
-        stub(property.getString()).toReturn("uuid");
-        properties.add(property);
-        assertThat(node.getUUID(), is("uuid"));
+    public void shouldProvideInternalUuid() throws Exception {
+        UUID uuid = UUID.randomUUID();
+        node.setInternalUuid(uuid);
+        assertThat(node.getInternalUuid(), is(uuid));
     }
 
     @Test
@@ -97,5 +130,10 @@ public class AbstractJcrNodeTest {
         stub(property.getName()).toReturn("test");
         properties.add(property);
         assertThat(node.getProperty("test"), is(property));
+    }
+
+    @Test
+    public void shouldBeANode() {
+        assertThat(node.isNode(), is(true));
     }
 }

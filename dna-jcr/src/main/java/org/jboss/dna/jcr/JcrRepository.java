@@ -27,6 +27,7 @@ import java.security.AccessControlContext;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 import java.util.WeakHashMap;
 import javax.jcr.Credentials;
 import javax.jcr.LoginException;
@@ -253,7 +254,7 @@ public class JcrRepository implements Repository {
         // Create session
         try {
             return new JcrSession(this, execContext, workspaceName, connectionFactory.createConnection(workspaceName),
-                                  new WeakHashMap<String, WeakReference<Node>>());
+                                  new WeakHashMap<UUID, WeakReference<Node>>());
         } catch (InterruptedException error) {
             throw new RepositoryException(error);
         }

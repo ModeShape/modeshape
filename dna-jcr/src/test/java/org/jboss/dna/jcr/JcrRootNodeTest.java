@@ -52,6 +52,16 @@ public class JcrRootNodeTest {
         root.setProperties(properties);
     }
 
+    @Test( expected = ItemNotFoundException.class )
+    public void shouldNotAllowAncestorDepthGreaterThanNodeDepth() throws Exception {
+        root.getAncestor(1);
+    }
+
+    @Test
+    public void shouldHaveZeroDepth() {
+        assertThat(root.getDepth(), is(0));
+    }
+
     @Test
     public void shouldHaveEmptyName() {
         String name = root.getName();
@@ -62,5 +72,10 @@ public class JcrRootNodeTest {
     @Test( expected = ItemNotFoundException.class )
     public void shouldHaveNoParent() throws Exception {
         root.getParent();
+    }
+
+    @Test
+    public void shouldProvidePath() {
+        assertThat(root.getPath(), is("/"));
     }
 }

@@ -22,6 +22,7 @@
 package org.jboss.dna.jcr;
 
 import java.io.InputStream;
+import java.io.Reader;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.UUID;
@@ -32,6 +33,7 @@ import javax.jcr.Value;
 import javax.jcr.ValueFormatException;
 import org.jboss.dna.spi.ExecutionContext;
 import org.jboss.dna.spi.graph.Name;
+import org.jboss.dna.spi.graph.Path;
 import org.jboss.dna.spi.graph.ValueFactories;
 
 /**
@@ -63,11 +65,19 @@ final class JcrProperty extends AbstractJcrProperty {
         } else if (value instanceof Long) {
             jcrValue = new JcrValue<Long>(valueFactories, PropertyType.LONG, (Long)value);
         } else if (value instanceof UUID) {
-            jcrValue = new JcrValue<UUID>(valueFactories, PropertyType.STRING, (UUID)value);
+            jcrValue = new JcrValue<UUID>(valueFactories, PropertyType.REFERENCE, (UUID)value);
         } else if (value instanceof String) {
             jcrValue = new JcrValue<String>(valueFactories, PropertyType.STRING, (String)value);
+        } else if (value instanceof Name) {
+            jcrValue = new JcrValue<Name>(valueFactories, PropertyType.NAME, (Name)value);
+        } else if (value instanceof Path) {
+            jcrValue = new JcrValue<Path>(valueFactories, PropertyType.PATH, (Path)value);
+        } else if (value instanceof InputStream) {
+            jcrValue = new JcrValue<InputStream>(valueFactories, PropertyType.BINARY, (InputStream)value);
+        } else if (value instanceof Reader) {
+            jcrValue = new JcrValue<Reader>(valueFactories, PropertyType.BINARY, (Reader)value);
         } else {
-            jcrValue = new JcrValue<Object>(valueFactories, PropertyType.BINARY, value);
+            jcrValue = new JcrValue<Object>(getExecutionContext().getValueFactories(), PropertyType.BINARY, value);
         }
     }
 
@@ -87,6 +97,15 @@ final class JcrProperty extends AbstractJcrProperty {
      */
     public Calendar getDate() throws RepositoryException {
         return jcrValue.getDate();
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see javax.jcr.Item#getDepth()
+     */
+    public int getDepth() throws RepositoryException {
+        return getParent().getDepth() + 1;
     }
 
     /**
@@ -160,4 +179,69 @@ final class JcrProperty extends AbstractJcrProperty {
     public Value getValue() {
         return jcrValue;
     }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see javax.jcr.Property#getValues()
+     */
+    public Value[] getValues() throws ValueFormatException {
+        throw new ValueFormatException();
+    }
+    //
+    // /**
+    // * {@inheritDoc}
+    // *
+    // * @throws IllegalArgumentException if <code>value</code> is <code>null</code>.
+    // * @see javax.jcr.Property#setValue(javax.jcr.Value)
+    // */
+    // @SuppressWarnings( "fallthrough" )
+    // public void setValue( Value value ) throws RepositoryException {
+    // ArgCheck.isNotNull(value, "value");
+    // // TODOx: Check node type constraint
+    // try {
+    // jcrValue = JcrValue.class.cast(value);
+    // } catch (ClassCastException error) {
+    // // TODOx: not sure if this is even possible
+    // ValueFactories valueFactories = getExecutionContext().getValueFactories();
+    // int type = value.getType();
+    // switch (type) {
+    // case PropertyType.BINARY: {
+    // jcrValue = new JcrValue<InputStream>(valueFactories, type, value.getStream());
+    // break;
+    // }
+    // case PropertyType.BOOLEAN: {
+    // jcrValue = new JcrValue<Boolean>(valueFactories, type, value.getBoolean());
+    // break;
+    // }
+    // case PropertyType.DATE: {
+    // jcrValue = new JcrValue<Calendar>(valueFactories, type, value.getDate());
+    // break;
+    // }
+    // case PropertyType.DOUBLE: {
+    // jcrValue = new JcrValue<Double>(valueFactories, type, value.getDouble());
+    // break;
+    // }
+    // case PropertyType.LONG: {
+    // jcrValue = new JcrValue<Long>(valueFactories, type, value.getLong());
+    // break;
+    // }
+    // case PropertyType.REFERENCE: {
+    // try {
+    // jcrValue = new JcrValue<UUID>(valueFactories, type, UUID.fromString(value.getString()));
+    // } catch (IllegalArgumentException fallsThroughToString) {
+    // }
+    // }
+    // case PropertyType.NAME:
+    // case PropertyType.PATH:
+    // case PropertyType.STRING: {
+    // jcrValue = new JcrValue<String>(valueFactories, type, value.getString());
+    // break;
+    // }
+    // default: {
+    // throw new AssertionError("Unsupported PropertyType: " + value.getType());
+    // }
+    // }
+    // }
+    // }
 }

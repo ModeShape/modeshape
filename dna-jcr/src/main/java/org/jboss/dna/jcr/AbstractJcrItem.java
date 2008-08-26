@@ -21,54 +21,60 @@
  */
 package org.jboss.dna.jcr;
 
-import javax.jcr.ItemNotFoundException;
-import javax.jcr.Node;
-import javax.jcr.Session;
-import net.jcip.annotations.NotThreadSafe;
+import javax.jcr.Item;
 
 /**
  * @author jverhaeg
  */
-@NotThreadSafe
-final class JcrRootNode extends AbstractJcrNode {
+abstract class AbstractJcrItem implements Item {
 
-    JcrRootNode( Session session ) {
-        super(session);
+    /**
+     * {@inheritDoc}
+     * 
+     * @see javax.jcr.Item#isModified()
+     */
+    public final boolean isModified() {
+        // TODO: Update when level 2
+        return false;
     }
 
     /**
      * {@inheritDoc}
      * 
-     * @see javax.jcr.Item#getDepth()
+     * @see javax.jcr.Item#isNew()
      */
-    public int getDepth() {
-        return 0;
+    public final boolean isNew() {
+        // TODO: Update when level 2
+        return false;
     }
 
     /**
      * {@inheritDoc}
      * 
-     * @see javax.jcr.Item#getName()
+     * @see javax.jcr.Item#refresh(boolean)
      */
-    public String getName() {
-        return "";
+    public void refresh( boolean keepChanges ) {
+        // TODO: Update when level 2
+        throw new UnsupportedOperationException();
     }
 
     /**
      * {@inheritDoc}
      * 
-     * @see javax.jcr.Item#getParent()
+     * @see javax.jcr.Item#remove()
      */
-    public Node getParent() throws ItemNotFoundException {
-        throw new ItemNotFoundException();
+    public void remove() {
+        // TODO: Update when level 2
+        throw new UnsupportedOperationException();
     }
 
     /**
      * {@inheritDoc}
      * 
-     * @see javax.jcr.Item#getPath()
+     * @see javax.jcr.Item#save()
      */
-    public String getPath() {
-        return "/";
+    public void save() {
+        // TODO: Update when level 2
+        throw new UnsupportedOperationException();
     }
 }

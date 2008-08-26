@@ -26,7 +26,11 @@ import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.stub;
 import java.io.InputStream;
 import java.util.Calendar;
+import javax.jcr.Item;
+import javax.jcr.ItemNotFoundException;
+import javax.jcr.ItemVisitor;
 import javax.jcr.Node;
+import javax.jcr.Property;
 import javax.jcr.Session;
 import javax.jcr.Value;
 import org.jboss.dna.spi.ExecutionContext;
@@ -56,6 +60,13 @@ public class AbstractJcrPropertyTest {
         prop = new MockAbstractJcrProperty(node, executionContext, name);
     }
 
+    @Test
+    public void shouldAllowVisitation() throws Exception {
+        ItemVisitor visitor = Mockito.mock(ItemVisitor.class);
+        prop.accept(visitor);
+        Mockito.verify(visitor).visit(prop);
+    }
+
     @Test( expected = AssertionError.class )
     public void shouldNotAllowNoSession() throws Exception {
         new MockAbstractJcrProperty(null, executionContext, name);
@@ -69,6 +80,25 @@ public class AbstractJcrPropertyTest {
     @Test( expected = AssertionError.class )
     public void shouldNotAllowNoName() throws Exception {
         new MockAbstractJcrProperty(node, executionContext, null);
+    }
+
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldNotAllowNegativeAncestorDepth() throws Exception {
+        stub(node.getAncestor(-2)).toThrow(new IllegalArgumentException());
+        prop.getAncestor(-1);
+    }
+
+    @Test
+    public void shouldProvideAncestor() throws Exception {
+        assertThat(prop.getAncestor(0), is((Item)prop));
+        stub(node.getAncestor(0)).toReturn(node);
+        assertThat(prop.getAncestor(1), is((Item)node));
+    }
+
+    @Test( expected = ItemNotFoundException.class )
+    public void shouldNotAllowAncestorDepthGreaterThanNodeDepth() throws Exception {
+        stub(node.getAncestor(1)).toThrow(new ItemNotFoundException());
+        prop.getAncestor(2);
     }
 
     @Test
@@ -92,6 +122,56 @@ public class AbstractJcrPropertyTest {
     public void shouldProvideName() throws Exception {
         stub(name.getString()).toReturn("name");
         assertThat(prop.getName(), is("name"));
+    }
+
+    @Test
+    public void shouldProvideParent() throws Exception {
+        assertThat(prop.getParent(), is(node));
+    }
+
+    @Test
+    public void shouldProvidePath() throws Exception {
+        stub(node.getPath()).toReturn("/nodeName");
+        stub(name.getString()).toReturn("propertyName");
+        assertThat(prop.getPath(), is("/nodeName/propertyName"));
+    }
+
+    @Test
+    public void shouldNotBeANode() {
+        assertThat(prop.isNode(), is(false));
+    }
+
+    @Test
+    public void shouldIndicateSameAsNodeWithSameParentAndName() throws Exception {
+        stub(name.getString()).toReturn("propertyName");
+        Node otherNode = Mockito.mock(Node.class);
+        Name otherName = Mockito.mock(Name.class);
+        stub(otherName.getString()).toReturn("propertyName");
+        stub(node.isSame(otherNode)).toReturn(true);
+        Property otherProp = new MockAbstractJcrProperty(otherNode, executionContext, otherName);
+        assertThat(prop.isSame(otherProp), is(true));
+    }
+
+    @Test
+    public void shouldIndicateDifferentThanNodeWithDifferentParent() throws Exception {
+        stub(name.getString()).toReturn("propertyName");
+        Node otherNode = Mockito.mock(Node.class);
+        Name otherName = Mockito.mock(Name.class);
+        stub(otherName.getString()).toReturn("propertyName");
+        stub(node.isSame(otherNode)).toReturn(false);
+        Property otherProp = new MockAbstractJcrProperty(otherNode, executionContext, otherName);
+        assertThat(prop.isSame(otherProp), is(false));
+    }
+
+    @Test
+    public void shouldIndicateDifferentThanNodeWithDifferentName() throws Exception {
+        stub(name.getString()).toReturn("propertyName");
+        Node otherNode = Mockito.mock(Node.class);
+        Name otherName = Mockito.mock(Name.class);
+        stub(otherName.getString()).toReturn("propertyName2");
+        stub(node.isSame(otherNode)).toReturn(true);
+        Property otherProp = new MockAbstractJcrProperty(otherNode, executionContext, otherName);
+        assertThat(prop.isSame(otherProp), is(false));
     }
 
     private class MockAbstractJcrProperty extends AbstractJcrProperty {
@@ -118,6 +198,15 @@ public class AbstractJcrPropertyTest {
          */
         public Calendar getDate() {
             return null;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see javax.jcr.Item#getDepth()
+         */
+        public int getDepth() {
+            return 0;
         }
 
         /**
@@ -189,6 +278,15 @@ public class AbstractJcrPropertyTest {
          * @see javax.jcr.Property#getValue()
          */
         public Value getValue() {
+            return null;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see javax.jcr.Property#getValues()
+         */
+        public Value[] getValues() {
             return null;
         }
     }

@@ -24,11 +24,15 @@ package org.jboss.dna.jcr;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.stub;
+import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.Set;
+import java.util.UUID;
+import javax.jcr.ItemNotFoundException;
+import javax.jcr.Node;
 import javax.jcr.Property;
 import javax.jcr.Session;
-import javax.jcr.Value;
+import org.jboss.dna.spi.graph.Name;
+import org.jboss.dna.spi.graph.Path.Segment;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
@@ -41,26 +45,40 @@ import org.mockito.MockitoAnnotations.Mock;
 public class JcrNodeTest {
 
     private JcrNode node;
+    private Node root;
     @Mock
     private Session session;
-    private Set<Property> properties;
 
     @Before
     public void before() throws Exception {
         MockitoAnnotations.initMocks(this);
-        properties = new HashSet<Property>();
-        node = new JcrNode(session);
-        node.setProperties(properties);
+        root = new JcrRootNode(session);
+        Name name = Mockito.mock(Name.class);
+        stub(name.getString()).toReturn("name");
+        UUID uuid = UUID.randomUUID();
+        node = new JcrNode(session, uuid, name);
+        stub(session.getNodeByUUID(uuid.toString())).toReturn(root);
+        node.setProperties(new HashSet<Property>());
+        node.setChildren(new ArrayList<Segment>());
+    }
+
+    @Test( expected = ItemNotFoundException.class )
+    public void shouldNotAllowAncestorDepthGreaterThanNodeDepth() throws Exception {
+        node.getAncestor(2);
+    }
+
+    @Test
+    public void shouldHaveZeroDepth() throws Exception {
+        assertThat(node.getDepth(), is(1));
     }
 
     @Test
     public void shouldProvideName() throws Exception {
-        Property property = Mockito.mock(Property.class);
-        stub(property.getName()).toReturn("jcr:name");
-        Value value = Mockito.mock(Value.class);
-        stub(value.getString()).toReturn("name");
-        stub(property.getValue()).toReturn(value);
-        properties.add(property);
         assertThat(node.getName(), is("name"));
+    }
+
+    @Test
+    public void shouldProvidePath() throws Exception {
+        assertThat(node.getPath(), is("/name"));
     }
 }
