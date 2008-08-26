@@ -25,6 +25,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import net.jcip.annotations.ThreadSafe;
 import org.jboss.dna.connector.federation.contribution.Contribution;
 import org.jboss.dna.spi.ExecutionContext;
 import org.jboss.dna.spi.graph.IoException;
@@ -34,9 +35,30 @@ import org.jboss.dna.spi.graph.UuidFactory;
 import org.jboss.dna.spi.graph.Path.Segment;
 
 /**
+ * A merge strategy that is optimized for merging when there is a single contribution.
+ * 
  * @author Randall Hauch
  */
+@ThreadSafe
 public class OneContributionMergeStrategy implements MergeStrategy {
+
+    public static final boolean DEFAULT_REUSE_UUID_FROM_CONTRIBUTION = true;
+
+    private boolean useUuidFromContribution = DEFAULT_REUSE_UUID_FROM_CONTRIBUTION;
+
+    /**
+     * @return reuseUuidFromContribution
+     */
+    public boolean isContributionUuidUsedForFederatedNode() {
+        return useUuidFromContribution;
+    }
+
+    /**
+     * @param useUuidFromContribution Sets useUuidFromContribution to the specified value.
+     */
+    public void setContributionUuidUsedForFederatedNode( boolean useUuidFromContribution ) {
+        this.useUuidFromContribution = useUuidFromContribution;
+    }
 
     /**
      * {@inheritDoc}
@@ -51,10 +73,12 @@ public class OneContributionMergeStrategy implements MergeStrategy {
                        List<Contribution> contributions,
                        ExecutionContext context ) {
         assert federatedNode != null;
+        assert context != null;
         assert contributions != null;
         assert contributions.size() > 0;
         Contribution contribution = contributions.get(0);
         assert contribution != null;
+        final boolean findUuid = isContributionUuidUsedForFederatedNode();
         // Copy the children ...
         List<Segment> children = federatedNode.getChildren();
         children.clear();
@@ -72,7 +96,7 @@ public class OneContributionMergeStrategy implements MergeStrategy {
         while (propertyIterator.hasNext()) {
             Property property = propertyIterator.next();
             properties.put(property.getName(), property);
-            if (uuid == null && property.getName().getLocalName().equals("uuid") && property.isSingle()) {
+            if (findUuid && uuid == null && property.getName().getLocalName().equals("uuid") && property.isSingle()) {
                 if (uuidFactory == null) uuidFactory = context.getValueFactories().getUuidFactory();
                 try {
                     uuid = uuidFactory.create(property.getValues().next());

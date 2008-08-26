@@ -82,7 +82,7 @@ public class OneContributionMergeStrategyTest {
     }
 
     @Test
-    public void shouldMegeTheChildrenFromTheFirstContribution() {
+    public void shouldMergeTheChildrenFromTheFirstContribution() {
         stub(contribution.getChildren()).toReturn(children.iterator());
         stub(contribution.getProperties()).toReturn(properties.values().iterator());
         strategy.merge(node, contributions, context);
@@ -90,7 +90,7 @@ public class OneContributionMergeStrategyTest {
     }
 
     @Test
-    public void shouldMegeThePropertiesFromTheFirstContribution() {
+    public void shouldMergeThePropertiesFromTheFirstContribution() {
         stub(contribution.getChildren()).toReturn(children.iterator());
         stub(contribution.getProperties()).toReturn(properties.values().iterator());
         stub(contribution.getProperties()).toReturn(properties.values().iterator());

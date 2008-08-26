@@ -41,7 +41,7 @@ import org.jboss.dna.connector.federation.merge.FederatedNode;
 import org.jboss.dna.connector.federation.merge.MergePlan;
 import org.jboss.dna.connector.federation.merge.MergeStrategy;
 import org.jboss.dna.connector.federation.merge.OneContributionMergeStrategy;
-import org.jboss.dna.connector.federation.merge.StandardMergeStrategy;
+import org.jboss.dna.connector.federation.merge.SimpleMergeStrategy;
 import org.jboss.dna.spi.DnaLexicon;
 import org.jboss.dna.spi.ExecutionContext;
 import org.jboss.dna.spi.cache.CachePolicy;
@@ -155,7 +155,7 @@ public class FederatingCommandExecutor extends AbstractCommandExecutor {
             if (this.sourceProjections.size() == 1 && this.sourceProjections.get(0).isSimple()) {
                 this.mergingStrategy = new OneContributionMergeStrategy();
             } else {
-                this.mergingStrategy = new StandardMergeStrategy();
+                this.mergingStrategy = new SimpleMergeStrategy();
             }
         }
         assert this.mergingStrategy != null;
