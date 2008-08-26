@@ -39,7 +39,6 @@ import org.jboss.dna.spi.graph.Name;
 import org.jboss.dna.spi.graph.Path;
 import org.jboss.dna.spi.graph.Property;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.MockitoAnnotations;
 import org.mockito.MockitoAnnotations.Mock;
@@ -190,7 +189,6 @@ public class OneContributionMergeStrategyTest {
         assertThat(node.getUuid(), is(originalUuid));
     }
 
-    @Ignore
     @Test
     public void shouldNotSetTheUuidOnTheNodeIfThereIsASingleValuedPropertyNamedUuidWithValueThatDoesNotConvertToUuidInstance() {
         final UUID originalUuid = node.getUuid();

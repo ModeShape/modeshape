@@ -44,7 +44,6 @@ import org.jboss.dna.spi.graph.Name;
 import org.jboss.dna.spi.graph.Path;
 import org.jboss.dna.spi.graph.Property;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
@@ -188,12 +187,6 @@ public class SimpleMergeStrategyTest {
         addContribution("source1").addChildren("childA", "childB[1]", "childB[2]").setProperty("p1", "p1 value");
         assertThat(contributions.size(), is(1));
         assertThat(contributions.get(0).getChildren(), hasSegmentIterator("childA", "childB[1]", "childB[2]"));
-    }
-
-    @Ignore
-    @Test
-    public void shouldCreateMergePlanInTheFederatedNode() {
-        strategy.merge(node, contributions, context);
     }
 
     protected Matcher<List<Path.Segment>> hasSegments( String... segment ) {

@@ -28,10 +28,10 @@ import java.util.UUID;
 import net.jcip.annotations.ThreadSafe;
 import org.jboss.dna.connector.federation.contribution.Contribution;
 import org.jboss.dna.spi.ExecutionContext;
-import org.jboss.dna.spi.graph.IoException;
 import org.jboss.dna.spi.graph.Name;
 import org.jboss.dna.spi.graph.Property;
 import org.jboss.dna.spi.graph.UuidFactory;
+import org.jboss.dna.spi.graph.ValueFormatException;
 import org.jboss.dna.spi.graph.Path.Segment;
 
 /**
@@ -100,7 +100,7 @@ public class OneContributionMergeStrategy implements MergeStrategy {
                 if (uuidFactory == null) uuidFactory = context.getValueFactories().getUuidFactory();
                 try {
                     uuid = uuidFactory.create(property.getValues().next());
-                } catch (IoException e) {
+                } catch (ValueFormatException e) {
                     // Ignore conversion exceptions
                 }
             }

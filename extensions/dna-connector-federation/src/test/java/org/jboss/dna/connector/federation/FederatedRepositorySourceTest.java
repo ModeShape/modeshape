@@ -104,21 +104,24 @@ public class FederatedRepositorySourceTest {
         source.setUsername(username);
         source.setPassword(credentials);
         source.setConfigurationSourceName(configurationSourceName);
-        source.setConfigurationSourceProjectionRules(new String[] {"/dna:system/dna:federation/ => /dna:repositories/Test Repository"});
+        source.setConfigurationSourcePath("/dna:repositories/Test Repository");
         source.setRepositoryConnectionFactoryJndiName(repositoryConnectionFactoryJndiName);
         source.setExecutionContextFactoryJndiName(executionContextFactoryJndiName);
         source.setContext(jndiContext);
         source.setSecurityDomain(securityDomain);
         configRepository = SimpleRepository.get("Configuration Repository");
-        configRepository.setProperty(context, "/dna:repositories/Test Repository", "dna:timeToExpire", "100000");
-        configRepository.setProperty(context, "/dna:repositories/Test Repository", "dna:timeToCache", "100000");
-        configRepository.setProperty(context, "/dna:repositories/Test Repository/dna:cache", "dna:projectionRules", "/ => /");
+        configRepository.setProperty(context, "/dna:repositories/Test Repository/dna:federation/", "dna:timeToExpire", "100000");
+        configRepository.setProperty(context, "/dna:repositories/Test Repository/dna:federation/", "dna:timeToCache", "100000");
         configRepository.setProperty(context,
-                                     "/dna:repositories/Test Repository/dna:projections/source 1/",
+                                     "/dna:repositories/Test Repository/dna:federation/dna:cache/cache source",
+                                     "dna:projectionRules",
+                                     "/ => /");
+        configRepository.setProperty(context,
+                                     "/dna:repositories/Test Repository/dna:federation/dna:projections/source 1/",
                                      "dna:projectionRules",
                                      "/ => /s1");
         configRepository.setProperty(context,
-                                     "/dna:repositories/Test Repository/dna:projections/source 2/",
+                                     "/dna:repositories/Test Repository/dna:federation/dna:projections/source 2/",
                                      "dna:projectionRules",
                                      "/ => /s1");
         configRepositorySource = new SimpleRepositorySource();
@@ -268,7 +271,7 @@ public class FederatedRepositorySourceTest {
         source.setRetryLimit(retryLimit);
         source.setName("Some source");
         source.setConfigurationSourceName("config source");
-        source.setConfigurationSourceProjectionRules(new String[] {"/dna:system => /a/b/c"});
+        source.setConfigurationSourcePath("/a/b/c");
         source.setRepositoryConnectionFactoryJndiName("repository connection factory jndi name");
         source.setRepositoryJndiName("repository jndi name");
         source.setExecutionContextFactoryJndiName("env jndi name");
@@ -291,8 +294,7 @@ public class FederatedRepositorySourceTest {
         assertThat((String)refAttributes.remove(FederatedRepositorySource.RETRY_LIMIT), is(Integer.toString(retryLimit)));
         assertThat((String)refAttributes.remove(FederatedRepositorySource.CONFIGURATION_SOURCE_NAME),
                    is(source.getConfigurationSourceName()));
-        assertThat((String)refAttributes.remove(FederatedRepositorySource.CONFIGURATION_SOURCE_PROJECTION_RULES),
-                   is("/dna:system => /a/b/c"));
+        assertThat((String)refAttributes.remove(FederatedRepositorySource.CONFIGURATION_SOURCE_PATH), is("/a/b/c"));
         assertThat((String)refAttributes.remove(FederatedRepositorySource.REPOSITORY_CONNECTION_FACTORY_JNDI_NAME),
                    is(source.getRepositoryConnectionFactoryJndiName()));
         assertThat((String)refAttributes.remove(FederatedRepositorySource.EXECUTION_CONTEXT_FACTORY_JNDI_NAME),
@@ -316,7 +318,7 @@ public class FederatedRepositorySourceTest {
         assertThat(recoveredSource.getRepositoryName(), is(source.getRepositoryName()));
         assertThat(recoveredSource.getRetryLimit(), is(source.getRetryLimit()));
         assertThat(recoveredSource.getConfigurationSourceName(), is(source.getConfigurationSourceName()));
-        assertThat(recoveredSource.getConfigurationSourceProjectionRules(), is(source.getConfigurationSourceProjectionRules()));
+        assertThat(recoveredSource.getConfigurationSourcePath(), is(source.getConfigurationSourcePath()));
         assertThat(recoveredSource.getRepositoryConnectionFactoryJndiName(), is(source.getRepositoryConnectionFactoryJndiName()));
         assertThat(recoveredSource.getExecutionContextFactoryJndiName(), is(source.getExecutionContextFactoryJndiName()));
         assertThat(recoveredSource.getRepositoryJndiName(), is(source.getRepositoryJndiName()));

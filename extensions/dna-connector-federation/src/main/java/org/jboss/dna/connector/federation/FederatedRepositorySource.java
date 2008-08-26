@@ -47,7 +47,6 @@ import org.jboss.dna.common.collection.SimpleProblems;
 import org.jboss.dna.common.i18n.I18n;
 import org.jboss.dna.common.util.ArgCheck;
 import org.jboss.dna.common.util.Logger;
-import org.jboss.dna.common.util.StringUtil;
 import org.jboss.dna.connector.federation.executor.FederatingCommandExecutor;
 import org.jboss.dna.connector.federation.executor.SingleProjectionCommandExecutor;
 import org.jboss.dna.spi.ExecutionContext;
@@ -90,29 +89,32 @@ public class FederatedRepositorySource implements RepositorySource, ObjectFactor
      */
     public static final int DEFAULT_RETRY_LIMIT = 0;
 
-    public static final String[] DEFAULT_CONFIGURATION_SOURCE_PROJECTION_RULES = {"/dna:system => /"};
+    public static final String DEFAULT_CONFIGURATION_SOURCE_PATH = "/";
 
     protected static final String REPOSITORY_NAME = "repositoryName";
     protected static final String SOURCE_NAME = "sourceName";
     protected static final String USERNAME = "username";
     protected static final String PASSWORD = "password";
     protected static final String CONFIGURATION_SOURCE_NAME = "configurationSourceName";
-    protected static final String CONFIGURATION_SOURCE_PROJECTION_RULES = "configurationSourceProjectionRules";
+    protected static final String CONFIGURATION_SOURCE_PATH = "configurationSourcePath";
     protected static final String REPOSITORY_CONNECTION_FACTORY_JNDI_NAME = "repositoryConnectionFactoryJndiName";
     protected static final String EXECUTION_CONTEXT_FACTORY_JNDI_NAME = "executionContextFacotryJndiName";
     protected static final String REPOSITORY_JNDI_NAME = "repositoryJndiName";
     protected static final String SECURITY_DOMAIN = "securityDomain";
     protected static final String RETRY_LIMIT = "retryLimit";
 
-    protected static final String PROJECTION_RULES_CONFIG_PROPERTY_NAME = "dna:projectionRules";
-    protected static final String CACHE_POLICY_TIME_TO_LIVE_CONFIG_PROPERTY_NAME = "dna:timeToLive";
+    public static final String PATH_TO_CONFIGURATION_INFORMATION = "/dna:system/dna:federation";
+    public static final String DNA_CACHE_SEGMENT = "dna:cache";
+    public static final String DNA_PROJECTIONS_SEGMENT = "dna:projections";
+    public static final String PROJECTION_RULES_CONFIG_PROPERTY_NAME = "dna:projectionRules";
+    public static final String CACHE_POLICY_TIME_TO_LIVE_CONFIG_PROPERTY_NAME = "dna:timeToLive";
 
     private String repositoryName;
     private String sourceName;
     private String username;
     private String password;
     private String configurationSourceName;
-    private String[] configurationSourceProjectionRules = DEFAULT_CONFIGURATION_SOURCE_PROJECTION_RULES;
+    private String configurationSourcePath = DEFAULT_CONFIGURATION_SOURCE_PATH;
     private String repositoryConnectionFactoryJndiName;
     private String executionContextFactoryJndiName;
     private String securityDomain;
@@ -157,7 +159,7 @@ public class FederatedRepositorySource implements RepositorySource, ObjectFactor
      * @param sourceName the name of this repository source
      * @see #setConfigurationSourceName(String)
      * @see #setRepositoryConnectionFactoryJndiName(String)
-     * @see #setConfigurationSourceProjectionRules(String[])
+     * @see #setConfigurationSourcePath(String)
      * @see #setPassword(String)
      * @see #setUsername(String)
      * @see #setRepositoryName(String)
@@ -254,7 +256,7 @@ public class FederatedRepositorySource implements RepositorySource, ObjectFactor
      *        the federated repository instance is to be found in JNDI
      * @see #getConfigurationSourceName()
      * @see #setRepositoryConnectionFactoryJndiName(String)
-     * @see #setConfigurationSourceProjectionRules(String[])
+     * @see #setConfigurationSourcePath(String)
      * @see #setPassword(String)
      * @see #setUsername(String)
      * @see #setRepositoryName(String)
@@ -270,31 +272,32 @@ public class FederatedRepositorySource implements RepositorySource, ObjectFactor
 
     /**
      * Get the projection rule definitions used for the {@link #getConfigurationSourceName() configuration source}. The
-     * {@link #DEFAULT_CONFIGURATION_SOURCE_PROJECTION_RULES default projection rules} map the root of the configuration source
-     * into the <code>/dna:system</code> branch of the repository.
+     * {@link #DEFAULT_CONFIGURATION_SOURCE_PATH default path} is mapped into the <code>/dna:system</code> branch of the
+     * repository.
      * <p>
      * This is a required property (unless the {@link #getRepositoryJndiName() federated repository is to be found in JDNI}).
      * </p>
      * 
      * @return the string array of projection rules, or null if the projection rules haven't yet been set or if the federated
      *         repository instance is to be found in JNDI
-     * @see #setConfigurationSourceProjectionRules(String[])
+     * @see #setConfigurationSourcePath(String)
      */
-    public String[] getConfigurationSourceProjectionRules() {
-        return configurationSourceProjectionRules;
+    public String getConfigurationSourcePath() {
+        return configurationSourcePath;
     }
 
     /**
      * Get the projection rule definitions used for the {@link #getConfigurationSourceName() configuration source}. The
-     * {@link #DEFAULT_CONFIGURATION_SOURCE_PROJECTION_RULES default projection rules} map the root of the configuration source
-     * into the <code>/dna:system</code> branch of the repository.
+     * {@link #DEFAULT_CONFIGURATION_SOURCE_PATH default path} is mapped into the <code>/dna:system</code> branch of the
+     * repository.
      * <p>
      * This is a required property (unless the {@link #getRepositoryJndiName() federated repository is to be found in JDNI}).
      * </p>
      * 
-     * @param projectionRules the string array of projection rules, or null if the projection rules haven't yet been set or if the
-     *        federated repository instance is to be found in JNDI
-     * @see #setConfigurationSourceProjectionRules(String[])
+     * @param pathInSourceToConfigurationRoot the path within the configuration source to the node that should be the root of the
+     *        configuration information, or null if the path hasn't yet been set or if the federated repository instance is to be
+     *        found in JNDI
+     * @see #setConfigurationSourcePath(String)
      * @see #setRepositoryConnectionFactoryJndiName(String)
      * @see #setConfigurationSourceName(String)
      * @see #setPassword(String)
@@ -303,15 +306,10 @@ public class FederatedRepositorySource implements RepositorySource, ObjectFactor
      * @see #setExecutionContextFactoryJndiName(String)
      * @see #setName(String)
      */
-    public void setConfigurationSourceProjectionRules( String[] projectionRules ) {
-        if (projectionRules != null) {
-            List<String> rules = new LinkedList<String>();
-            for (String rule : projectionRules) {
-                if (rule != null && rule.trim().length() != 0) rules.add(rule);
-            }
-            projectionRules = rules.toArray(new String[rules.size()]);
-        }
-        this.configurationSourceProjectionRules = projectionRules != null ? projectionRules : DEFAULT_CONFIGURATION_SOURCE_PROJECTION_RULES;
+    public void setConfigurationSourcePath( String pathInSourceToConfigurationRoot ) {
+        if (this.configurationSourcePath == pathInSourceToConfigurationRoot || this.configurationSourcePath != null
+            && this.configurationSourcePath.equals(pathInSourceToConfigurationRoot)) return;
+        this.configurationSourcePath = pathInSourceToConfigurationRoot != null ? pathInSourceToConfigurationRoot : DEFAULT_CONFIGURATION_SOURCE_PATH;
     }
 
     /**
@@ -340,7 +338,7 @@ public class FederatedRepositorySource implements RepositorySource, ObjectFactor
      *        repository instance is to be found in JNDI
      * @see #getExecutionContextFactoryJndiName()
      * @see #setConfigurationSourceName(String)
-     * @see #setConfigurationSourceProjectionRules(String[])
+     * @see #setConfigurationSourcePath(String)
      * @see #setRepositoryConnectionFactoryJndiName(String)
      * @see #setPassword(String)
      * @see #setUsername(String)
@@ -381,7 +379,7 @@ public class FederatedRepositorySource implements RepositorySource, ObjectFactor
      *        repository instance is to be found in JNDI
      * @see #getRepositoryConnectionFactoryJndiName()
      * @see #setConfigurationSourceName(String)
-     * @see #setConfigurationSourceProjectionRules(String[])
+     * @see #setConfigurationSourcePath(String)
      * @see #setPassword(String)
      * @see #setUsername(String)
      * @see #setRepositoryName(String)
@@ -440,7 +438,7 @@ public class FederatedRepositorySource implements RepositorySource, ObjectFactor
      * @throws IllegalArgumentException if the repository name is null, empty or blank
      * @see #getRepositoryName()
      * @see #setConfigurationSourceName(String)
-     * @see #setConfigurationSourceProjectionRules(String[])
+     * @see #setConfigurationSourcePath(String)
      * @see #setPassword(String)
      * @see #setUsername(String)
      * @see #setRepositoryConnectionFactoryJndiName(String)
@@ -477,7 +475,7 @@ public class FederatedRepositorySource implements RepositorySource, ObjectFactor
      * @see #getUsername()
      * @see #setPassword(String)
      * @see #setConfigurationSourceName(String)
-     * @see #setConfigurationSourceProjectionRules(String[])
+     * @see #setConfigurationSourcePath(String)
      * @see #setPassword(String)
      * @see #setRepositoryName(String)
      * @see #setRepositoryConnectionFactoryJndiName(String)
@@ -512,7 +510,7 @@ public class FederatedRepositorySource implements RepositorySource, ObjectFactor
      * @param password the password, or null if no password have been set or are not to be used
      * @see #getPassword()
      * @see #setConfigurationSourceName(String)
-     * @see #setConfigurationSourceProjectionRules(String[])
+     * @see #setConfigurationSourcePath(String)
      * @see #setUsername(String)
      * @see #setRepositoryName(String)
      * @see #setRepositoryConnectionFactoryJndiName(String)
@@ -735,7 +733,8 @@ public class FederatedRepositorySource implements RepositorySource, ObjectFactor
 
         // Create the configuration projection ...
         ProjectionParser projectionParser = ProjectionParser.getInstance();
-        Projection.Rule[] rules = projectionParser.rulesFromStrings(context, this.getConfigurationSourceProjectionRules());
+        String ruleStr = "/dna:system => " + this.getConfigurationSourcePath();
+        Projection.Rule[] rules = projectionParser.rulesFromStrings(context, ruleStr);
         Projection configurationProjection = new Projection(this.getConfigurationSourceName(), rules);
 
         // Create a federating command executor to execute the commands and merge the results into a single set of
@@ -760,7 +759,7 @@ public class FederatedRepositorySource implements RepositorySource, ObjectFactor
 
         // The configuration projection (via "executor") will convert this path into a path that exists in the configuration
         // repository
-        Path configNode = pathFactory.create("/dna:system/dna:federation");
+        Path configNode = pathFactory.create(PATH_TO_CONFIGURATION_INFORMATION);
 
         try {
             // Get the repository node ...
@@ -770,8 +769,18 @@ public class FederatedRepositorySource implements RepositorySource, ObjectFactor
                 throw new FederationException(FederationI18n.federatedRepositoryCannotBeFound.text(repositoryName));
             }
 
+            // Get the first child node of the "dna:cache" node, since this represents the source used as the cache ...
+            Path cacheNode = pathFactory.create(configNode, nameFactory.create(DNA_CACHE_SEGMENT));
+            BasicGetChildrenCommand getCacheSource = new BasicGetChildrenCommand(cacheNode);
+
+            executor.execute(getCacheSource);
+            if (getCacheSource.hasError() || getCacheSource.getChildren().size() < 1) {
+                I18n msg = FederationI18n.requiredNodeDoesNotExistRelativeToNode;
+                throw new FederationException(msg.text(DNA_CACHE_SEGMENT, configNode));
+            }
+
             // Add a command to get the projection defining the cache ...
-            Path pathToCacheRegion = pathFactory.create(configNode, nameFactory.create("dna:cache"));
+            Path pathToCacheRegion = pathFactory.create(cacheNode, getCacheSource.getChildren().get(0));
             BasicGetNodeCommand getCacheRegion = new BasicGetNodeCommand(pathToCacheRegion);
             executor.execute(getCacheRegion);
             Projection cacheProjection = createProjection(context,
@@ -782,17 +791,17 @@ public class FederatedRepositorySource implements RepositorySource, ObjectFactor
 
             if (getCacheRegion.hasError()) {
                 I18n msg = FederationI18n.requiredNodeDoesNotExistRelativeToNode;
-                throw new FederationException(msg.text("dna:cache", configNode));
+                throw new FederationException(msg.text(DNA_CACHE_SEGMENT, configNode));
             }
 
             // Get the source projections for the repository ...
-            Path projectionsNode = pathFactory.create(configNode, nameFactory.create("dna:projections"));
+            Path projectionsNode = pathFactory.create(configNode, nameFactory.create(DNA_PROJECTIONS_SEGMENT));
             BasicGetChildrenCommand getProjections = new BasicGetChildrenCommand(projectionsNode);
 
             executor.execute(getProjections);
             if (getProjections.hasError()) {
                 I18n msg = FederationI18n.requiredNodeDoesNotExistRelativeToNode;
-                throw new FederationException(msg.text("dna:projections", configNode));
+                throw new FederationException(msg.text(DNA_PROJECTIONS_SEGMENT, configNode));
             }
 
             // Build the commands to get each of the projections (children of the "dna:projections" node) ...
@@ -897,17 +906,8 @@ public class FederatedRepositorySource implements RepositorySource, ObjectFactor
         if (getConfigurationSourceName() != null) {
             ref.add(new StringRefAddr(CONFIGURATION_SOURCE_NAME, getConfigurationSourceName()));
         }
-        if (getConfigurationSourceProjectionRules() != null) {
-            StringBuilder sb = new StringBuilder();
-            boolean first = true;
-            for (String rule : getConfigurationSourceProjectionRules()) {
-                if (!first) {
-                    sb.append("\n");
-                    first = false;
-                }
-                sb.append(rule);
-            }
-            ref.add(new StringRefAddr(CONFIGURATION_SOURCE_PROJECTION_RULES, sb.toString()));
+        if (getConfigurationSourcePath() != null) {
+            ref.add(new StringRefAddr(CONFIGURATION_SOURCE_PATH, getConfigurationSourcePath()));
         }
         if (getRepositoryConnectionFactoryJndiName() != null) {
             ref.add(new StringRefAddr(REPOSITORY_CONNECTION_FACTORY_JNDI_NAME, getRepositoryConnectionFactoryJndiName()));
@@ -949,7 +949,7 @@ public class FederatedRepositorySource implements RepositorySource, ObjectFactor
             String username = values.get(FederatedRepositorySource.USERNAME);
             String password = values.get(FederatedRepositorySource.PASSWORD);
             String configurationSourceName = values.get(FederatedRepositorySource.CONFIGURATION_SOURCE_NAME);
-            String projectionRules = values.get(FederatedRepositorySource.CONFIGURATION_SOURCE_PROJECTION_RULES);
+            String configurationSourcePath = values.get(FederatedRepositorySource.CONFIGURATION_SOURCE_PATH);
             String connectionFactoriesJndiName = values.get(FederatedRepositorySource.REPOSITORY_CONNECTION_FACTORY_JNDI_NAME);
             String environmentJndiName = values.get(FederatedRepositorySource.EXECUTION_CONTEXT_FACTORY_JNDI_NAME);
             String repositoryJndiName = values.get(FederatedRepositorySource.REPOSITORY_JNDI_NAME);
@@ -963,10 +963,7 @@ public class FederatedRepositorySource implements RepositorySource, ObjectFactor
             if (username != null) source.setUsername(username);
             if (password != null) source.setPassword(password);
             if (configurationSourceName != null) source.setConfigurationSourceName(configurationSourceName);
-            if (projectionRules != null) {
-                List<String> rules = StringUtil.splitLines(projectionRules);
-                source.setConfigurationSourceProjectionRules(rules.toArray(new String[rules.size()]));
-            }
+            if (configurationSourcePath != null) source.setConfigurationSourcePath(configurationSourcePath);
             if (connectionFactoriesJndiName != null) source.setRepositoryConnectionFactoryJndiName(connectionFactoriesJndiName);
             if (environmentJndiName != null) source.setExecutionContextFactoryJndiName(environmentJndiName);
             if (repositoryJndiName != null) source.setRepositoryJndiName(repositoryJndiName);
