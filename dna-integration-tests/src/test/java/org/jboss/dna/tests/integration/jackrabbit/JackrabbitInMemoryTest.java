@@ -21,7 +21,10 @@
  */
 package org.jboss.dna.tests.integration.jackrabbit;
 
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThat;
 import javax.jcr.Node;
 import javax.jcr.Repository;
 import javax.jcr.Session;
@@ -157,4 +160,25 @@ public class JackrabbitInMemoryTest {
         this.session.exportDocumentView("/jcr:system", System.out, true, false);
     }
 
+    @Test
+    public void shouldNotHaveNamePropertyForNodes() throws Exception {
+        Node node = session.getRootNode().addNode("test");
+        assertThat(node, notNullValue());
+        assertThat(node.hasProperty("jcr:name"), is(false));
+    }
+
+    @Test
+    public void shouldNotHaveUuidPropertyForNonReferenceableNodes() throws Exception {
+        Node node = session.getRootNode().addNode("test");
+        assertThat(node, notNullValue());
+        assertThat(node.hasProperty("jcr:uuid"), is(false));
+    }
+
+    @Test
+    public void shouldHaveUuidPropertyForReferenceableNodes() throws Exception {
+        Node node = session.getRootNode().addNode("test");
+        node.addMixin("mix:referenceable");
+        assertThat(node, notNullValue());
+        assertThat(node.hasProperty("jcr:uuid"), is(true));
+    }
 }
