@@ -21,6 +21,7 @@
  */
 package org.jboss.dna.connector.federation.executor;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -380,7 +381,7 @@ public class FederatingCommandExecutor extends AbstractCommandExecutor {
                 break;
             }
         }
-        if (foundNonEmptyContribution) return null;
+        if (!foundNonEmptyContribution) return null;
         if (logger.isTraceEnabled()) {
             logger.trace("Loaded {0} from sources, resulting in these contributions:", path);
             int i = 0;
@@ -533,8 +534,9 @@ public class FederatingCommandExecutor extends AbstractCommandExecutor {
         final Path path = mergedNode.getPath();
 
         NodeConflictBehavior conflictBehavior = NodeConflictBehavior.UPDATE;
-        BasicCreateNodeCommand newNode = new BasicCreateNodeCommand(path, mergedNode.getProperties(), conflictBehavior);
-        newNode.setProperty(new BasicSingleValueProperty(this.uuidPropertyName, mergedNode.getUuid()));
+        Collection<Property> properties = new ArrayList<Property>(mergedNode.getPropertiesByName().size() + 1);
+        properties.add(new BasicSingleValueProperty(this.uuidPropertyName, mergedNode.getUuid()));
+        BasicCreateNodeCommand newNode = new BasicCreateNodeCommand(path, properties, conflictBehavior);
         List<Segment> children = mergedNode.getChildren();
         GraphCommand[] intoCache = new GraphCommand[1 + children.size()];
         int i = 0;

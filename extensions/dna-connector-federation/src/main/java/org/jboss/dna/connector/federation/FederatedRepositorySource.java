@@ -107,7 +107,7 @@ public class FederatedRepositorySource implements RepositorySource, ObjectFactor
     public static final String DNA_CACHE_SEGMENT = "dna:cache";
     public static final String DNA_PROJECTIONS_SEGMENT = "dna:projections";
     public static final String PROJECTION_RULES_CONFIG_PROPERTY_NAME = "dna:projectionRules";
-    public static final String CACHE_POLICY_TIME_TO_LIVE_CONFIG_PROPERTY_NAME = "dna:timeToLive";
+    public static final String CACHE_POLICY_TIME_TO_LIVE_CONFIG_PROPERTY_NAME = "dna:timeToCache";
 
     private String repositoryName;
     private String sourceName;
@@ -271,9 +271,7 @@ public class FederatedRepositorySource implements RepositorySource, ObjectFactor
     }
 
     /**
-     * Get the projection rule definitions used for the {@link #getConfigurationSourceName() configuration source}. The
-     * {@link #DEFAULT_CONFIGURATION_SOURCE_PATH default path} is mapped into the <code>/dna:system</code> branch of the
-     * repository.
+     * Get the path in the source that will be subgraph below the <code>/dna:system</code> branch of the repository.
      * <p>
      * This is a required property (unless the {@link #getRepositoryJndiName() federated repository is to be found in JDNI}).
      * </p>
@@ -287,9 +285,7 @@ public class FederatedRepositorySource implements RepositorySource, ObjectFactor
     }
 
     /**
-     * Get the projection rule definitions used for the {@link #getConfigurationSourceName() configuration source}. The
-     * {@link #DEFAULT_CONFIGURATION_SOURCE_PATH default path} is mapped into the <code>/dna:system</code> branch of the
-     * repository.
+     * Set the path in the source that will be subgraph below the <code>/dna:system</code> branch of the repository.
      * <p>
      * This is a required property (unless the {@link #getRepositoryJndiName() federated repository is to be found in JDNI}).
      * </p>
@@ -310,6 +306,7 @@ public class FederatedRepositorySource implements RepositorySource, ObjectFactor
         if (this.configurationSourcePath == pathInSourceToConfigurationRoot || this.configurationSourcePath != null
             && this.configurationSourcePath.equals(pathInSourceToConfigurationRoot)) return;
         this.configurationSourcePath = pathInSourceToConfigurationRoot != null ? pathInSourceToConfigurationRoot : DEFAULT_CONFIGURATION_SOURCE_PATH;
+        changeRepositoryConfig();
     }
 
     /**
@@ -824,7 +821,15 @@ public class FederatedRepositorySource implements RepositorySource, ObjectFactor
                                                                  getProjectionCommand.getPath(),
                                                                  getProjectionCommand.getPropertiesByName(),
                                                                  problems);
-                        if (projection != null) sourceProjections.add(projection);
+                        if (projection != null) {
+                            Logger logger = context.getLogger(getClass());
+                            if (logger.isTraceEnabled()) {
+                                logger.trace("Adding projection to federated repository {1}: {2}",
+                                             getRepositoryName(),
+                                             projection);
+                            }
+                            sourceProjections.add(projection);
+                        }
                     }
                 }
             }

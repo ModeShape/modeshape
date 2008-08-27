@@ -430,7 +430,7 @@ public class Projection implements Comparable<Projection>, Serializable {
             first = false;
         }
         sb.append(" }");
-        return super.toString();
+        return sb.toString();
     }
 
     /**
