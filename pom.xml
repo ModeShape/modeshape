@@ -84,6 +84,24 @@
 			</roles>
 			<timezone>+1</timezone>
 		</developer>
+		<developer>
+			<name>Alexandre Porcelli</name>
+			<id>porcelli</id>
+			<email>porcelli@devexp.com.br</email>
+			<roles>
+				<role>Developer</role>
+			</roles>
+			<timezone>-3</timezone>
+		</developer>
+		<developer>
+			<name>Ben Abernathy</name>
+			<id>babernat</id>
+			<email>ben.abernathy@gmail.com</email>
+			<roles>
+				<role>Developer</role>
+			</roles>
+			<timezone>+2</timezone>
+		</developer>
 	</developers>
 	<contributors>
 		<contributor>
