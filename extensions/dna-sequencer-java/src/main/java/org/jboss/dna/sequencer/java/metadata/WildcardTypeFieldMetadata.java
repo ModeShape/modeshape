@@ -21,9 +21,38 @@
  */
 package org.jboss.dna.sequencer.java.metadata;
 
-/**
- * Field meta data for parameterized type.
- */
-public class ParameterizedFieldMetadata extends ReferenceFieldMetadata {
 
+/**
+ * WildcardTypeFieldMetadata represents meta data for wild card type.
+ * <p>
+ * It is important to know that, it is nonsense if a wild card type appears anywhere other than as an argument of a
+ * <code>ParameterizedTypeFieldMetadata</code> node.
+ * </p>
+ * 
+ * @author Serge Pagop
+ */
+public class WildcardTypeFieldMetadata extends FieldMetadata {
+
+    public WildcardTypeFieldMetadata() {
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @see org.jboss.dna.sequencer.java.metadata.FieldMetadata#isWildcardType()
+     */
+    @Override
+    public boolean isWildcardType() {
+        return true;
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @see java.lang.Object#toString()
+     */
+    @Override
+    public String toString() {
+        return "WildcardTypeFieldMetadata [ " + getType() + " ]";
+    }
 }

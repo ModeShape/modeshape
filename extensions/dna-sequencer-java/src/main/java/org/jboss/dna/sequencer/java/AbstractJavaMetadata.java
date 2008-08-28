@@ -26,6 +26,7 @@ import java.util.List;
 import org.eclipse.jdt.core.dom.AbstractTypeDeclaration;
 import org.eclipse.jdt.core.dom.Annotation;
 import org.eclipse.jdt.core.dom.AnnotationTypeDeclaration;
+import org.eclipse.jdt.core.dom.ArrayType;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.EnumDeclaration;
 import org.eclipse.jdt.core.dom.FieldDeclaration;
@@ -44,6 +45,7 @@ import org.eclipse.jdt.core.dom.SingleVariableDeclaration;
 import org.eclipse.jdt.core.dom.Type;
 import org.eclipse.jdt.core.dom.TypeDeclaration;
 import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
+import org.jboss.dna.sequencer.java.metadata.ArrayTypeFieldMetadata;
 import org.jboss.dna.sequencer.java.metadata.ClassMetadata;
 import org.jboss.dna.sequencer.java.metadata.ConstructorMetadata;
 import org.jboss.dna.sequencer.java.metadata.FieldMetadata;
@@ -56,10 +58,9 @@ import org.jboss.dna.sequencer.java.metadata.MethodTypeMemberMetadata;
 import org.jboss.dna.sequencer.java.metadata.ModifierMetadata;
 import org.jboss.dna.sequencer.java.metadata.NormalAnnotationMetadata;
 import org.jboss.dna.sequencer.java.metadata.PackageMetadata;
-import org.jboss.dna.sequencer.java.metadata.ParameterizedFieldMetadata;
+import org.jboss.dna.sequencer.java.metadata.ParameterizedTypeFieldMetadata;
 import org.jboss.dna.sequencer.java.metadata.PrimitiveFieldMetadata;
-import org.jboss.dna.sequencer.java.metadata.ReferenceFieldMetadata;
-import org.jboss.dna.sequencer.java.metadata.SimpleFieldMetadata;
+import org.jboss.dna.sequencer.java.metadata.SimpleTypeFieldMetadata;
 import org.jboss.dna.sequencer.java.metadata.SingleImportMetadata;
 import org.jboss.dna.sequencer.java.metadata.SingleMemberAnnotationMetadata;
 import org.jboss.dna.sequencer.java.metadata.TypeMetadata;
@@ -285,9 +286,9 @@ public abstract class AbstractJavaMetadata {
             methodMetadata.setReturnType(primitive);
         }
         if (type.isSimpleType()) {
-            ReferenceFieldMetadata referenceFieldMetadata = new ReferenceFieldMetadata();
-            referenceFieldMetadata.setType(JavaMetadataUtil.getName(((SimpleType)type).getName()));
-            methodMetadata.setReturnType(referenceFieldMetadata);
+            SimpleTypeFieldMetadata simpleTypeFieldMetadata = new SimpleTypeFieldMetadata();
+            simpleTypeFieldMetadata.setType(JavaMetadataUtil.getName(((SimpleType)type).getName()));
+            methodMetadata.setReturnType(simpleTypeFieldMetadata);
         }
     }
 
@@ -326,15 +327,15 @@ public abstract class AbstractJavaMetadata {
                 // TODO
             }
             if (type.isQualifiedType()) {
-
+                // TODO
             }
             if (type.isSimpleType()) {
                 SimpleType simpleType = (SimpleType)type;
-                SimpleFieldMetadata simpleFieldMetadata = new SimpleFieldMetadata();
-                simpleFieldMetadata.setType(JavaMetadataUtil.getName(simpleType.getName()));
+                SimpleTypeFieldMetadata simpleTypeFieldMetadata = new SimpleTypeFieldMetadata();
+                simpleTypeFieldMetadata.setType(JavaMetadataUtil.getName(simpleType.getName()));
                 Variable variable = new Variable();
                 variable.setName(JavaMetadataUtil.getName(singleVariableDeclaration.getName()));
-                simpleFieldMetadata.getVariables().add(variable);
+                simpleTypeFieldMetadata.getVariables().add(variable);
                 List<IExtendedModifier> extendedModifiers = singleVariableDeclaration.modifiers();
                 for (IExtendedModifier extendedModifier2 : extendedModifiers) {
                     ModifierMetadata modifierMetadata = new ModifierMetadata();
@@ -343,10 +344,10 @@ public abstract class AbstractJavaMetadata {
                     } else {
                         Modifier modifier = (Modifier)extendedModifier2;
                         modifierMetadata.setName(modifier.getKeyword().toString());
-                        simpleFieldMetadata.getModifiers().add(modifierMetadata);
+                        simpleTypeFieldMetadata.getModifiers().add(modifierMetadata);
                     }
                 }
-                methodMetadata.getParameters().add(simpleFieldMetadata);
+                methodMetadata.getParameters().add(simpleTypeFieldMetadata);
             }
             if (type.isArrayType()) {
                 // TODO
@@ -386,22 +387,22 @@ public abstract class AbstractJavaMetadata {
             Type type = fieldDeclaration.getType();
             // Primitive type
             if (type.isPrimitiveType()) {
-                PrimitiveFieldMetadata primitiveFieldMetadata = processPrimitiveType(fieldDeclaration, type);
+                PrimitiveFieldMetadata primitiveFieldMetadata = processPrimitiveType(fieldDeclaration);
                 return primitiveFieldMetadata;
             }
             // ParameterizedType
             if (type.isParameterizedType()) {
-                ParameterizedFieldMetadata referenceFieldMetadata = processParameterizedType(fieldDeclaration, type);
+                ParameterizedTypeFieldMetadata referenceFieldMetadata = processParameterizedType(fieldDeclaration);
                 return referenceFieldMetadata;
             }
             // SimpleType
             if (type.isSimpleType()) {
-                SimpleFieldMetadata simpleFieldMetadata = processSimpleType(fieldDeclaration, type);
-                return simpleFieldMetadata;
+                SimpleTypeFieldMetadata simpleTypeFieldMetadata = processSimpleType(fieldDeclaration);
+                return simpleTypeFieldMetadata;
             }
             // ArrayType
             if (type.isArrayType()) {
-                // TODO
+                ArrayTypeFieldMetadata arrayFieldMetadata = processArrayTypeFrom(fieldDeclaration);
             }
             // QualifiedType
             if (type.isQualifiedType()) {
@@ -417,35 +418,51 @@ public abstract class AbstractJavaMetadata {
     }
 
     /**
+     * Process a {@link FieldDeclaration} to win information for an array type.
+     * 
+     * @param fieldDeclaration - field declaration
+     * @return an ArrayTypeFieldMetadata, that contains information about an array type.
+     */
+    private ArrayTypeFieldMetadata processArrayTypeFrom( FieldDeclaration fieldDeclaration ) {
+        ArrayType arrayType = (ArrayType)fieldDeclaration.getType();
+        
+        // the element type is never an array type
+        Type type = arrayType.getElementType();
+        // can't be an array type
+        if(type.isSimpleType()) {
+            
+        }
+        
+        
+        return null;
+    }
+
+    /**
      * Process the simple type of a {@link FieldDeclaration}.
      * 
      * @param fieldDeclaration - the field declaration.
-     * @param type - the type.
-     * @return SimpleFieldMetadata.
+     * @return SimpleTypeFieldMetadata.
      */
-    protected SimpleFieldMetadata processSimpleType( FieldDeclaration fieldDeclaration,
-                                                     Type type ) {
-        SimpleType simpleType = (SimpleType)type;
-        SimpleFieldMetadata simpleFieldMetadata = new SimpleFieldMetadata();
-        simpleFieldMetadata.setType(JavaMetadataUtil.getName(simpleType.getName()));
+    protected SimpleTypeFieldMetadata processSimpleType( FieldDeclaration fieldDeclaration ) {
+        SimpleType simpleType = (SimpleType)fieldDeclaration.getType();
+        SimpleTypeFieldMetadata simpleTypeFieldMetadata = new SimpleTypeFieldMetadata();
+        simpleTypeFieldMetadata.setType(JavaMetadataUtil.getName(simpleType.getName()));
         // modifiers
-        processModifiersOfFieldDeclaration(fieldDeclaration, simpleFieldMetadata);
-        processVariablesOfVariableDeclarationFragment(fieldDeclaration, simpleFieldMetadata);
-        return simpleFieldMetadata;
+        processModifiersOfFieldDeclaration(fieldDeclaration, simpleTypeFieldMetadata);
+        processVariablesOfVariableDeclarationFragment(fieldDeclaration, simpleTypeFieldMetadata);
+        return simpleTypeFieldMetadata;
     }
 
     /**
      * Process the parameterized type of a {@link FieldDeclaration}.
      * 
      * @param fieldDeclaration - the field declaration.
-     * @param type - the type.
-     * @return ParameterizedFieldMetadata.
+     * @return ParameterizedTypeFieldMetadata.
      */
-    protected ParameterizedFieldMetadata processParameterizedType( FieldDeclaration fieldDeclaration,
-                                                                   Type type ) {
-        ParameterizedType parameterizedType = (ParameterizedType)type;
+    protected ParameterizedTypeFieldMetadata processParameterizedType( FieldDeclaration fieldDeclaration ) {
+        ParameterizedType parameterizedType = (ParameterizedType)fieldDeclaration.getType();
         Type typeOfParameterizedType = parameterizedType.getType(); // type may be a simple type or a qualified type.
-        ParameterizedFieldMetadata referenceFieldMetadata = (ParameterizedFieldMetadata)createParameterizedFieldMetadataFrom(typeOfParameterizedType);
+        ParameterizedTypeFieldMetadata referenceFieldMetadata = (ParameterizedTypeFieldMetadata)createParameterizedFieldMetadataFrom(typeOfParameterizedType);
         // modifiers
         processModifiersOfFieldDeclaration(fieldDeclaration, referenceFieldMetadata);
         // variables
@@ -457,12 +474,10 @@ public abstract class AbstractJavaMetadata {
      * Process the primitive type of a {@link FieldDeclaration}.
      * 
      * @param fieldDeclaration - the field declaration.
-     * @param type - the type.
      * @return PrimitiveFieldMetadata.
      */
-    protected PrimitiveFieldMetadata processPrimitiveType( FieldDeclaration fieldDeclaration,
-                                                           Type type ) {
-        PrimitiveType primitiveType = (PrimitiveType)type;
+    protected PrimitiveFieldMetadata processPrimitiveType( FieldDeclaration fieldDeclaration ) {
+        PrimitiveType primitiveType = (PrimitiveType)fieldDeclaration.getType();
         PrimitiveFieldMetadata primitiveFieldMetadata = new PrimitiveFieldMetadata();
         primitiveFieldMetadata.setType(primitiveType.getPrimitiveTypeCode().toString());
         // modifiers
@@ -524,14 +539,14 @@ public abstract class AbstractJavaMetadata {
      * @return the specific type of <code>FieldMetadata</code>
      */
     protected FieldMetadata createParameterizedFieldMetadataFrom( Type type ) {
-        ParameterizedFieldMetadata parameterizedFieldMetadata = null;
+        ParameterizedTypeFieldMetadata parameterizedTypeFieldMetadata = null;
         if (type.isSimpleType()) {
             SimpleType simpleType = (SimpleType)type;
-            parameterizedFieldMetadata = new ParameterizedFieldMetadata();
-            parameterizedFieldMetadata.setType(JavaMetadataUtil.getName(simpleType.getName()));
+            parameterizedTypeFieldMetadata = new ParameterizedTypeFieldMetadata();
+            parameterizedTypeFieldMetadata.setType(JavaMetadataUtil.getName(simpleType.getName()));
         }
         // TODO also process QualifiedType
-        return parameterizedFieldMetadata;
+        return parameterizedTypeFieldMetadata;
     }
 
     /**

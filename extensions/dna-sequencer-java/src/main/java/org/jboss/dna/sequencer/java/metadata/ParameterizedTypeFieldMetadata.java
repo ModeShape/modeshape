@@ -22,7 +22,34 @@
 package org.jboss.dna.sequencer.java.metadata;
 
 /**
- * Field meta data for parameterized type.
+ * ParameterizedTypeFieldMetadata is a meta data for a parameterized type.
+ * 
+ * @author Serge Pagop
  */
-public class ReferenceFieldMetadata extends FieldMetadata {
+public class ParameterizedTypeFieldMetadata extends FieldMetadata {
+    
+    public ParameterizedTypeFieldMetadata() {}
+
+    /**
+     * {@inheritDoc}
+     *
+     * @see org.jboss.dna.sequencer.java.metadata.FieldMetadata#isParameterizedType()
+     */
+    @Override
+    public boolean isParameterizedType() {
+        return true;
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @see java.lang.Object#toString()
+     */
+    @Override
+    public String toString() {
+        return "ParameterizedTypeFieldMetadata [ " + getType() + " ]";
+    }
+    
+    
+
 }

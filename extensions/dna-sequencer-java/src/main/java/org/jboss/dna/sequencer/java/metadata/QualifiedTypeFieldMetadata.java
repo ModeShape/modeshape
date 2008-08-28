@@ -21,9 +21,35 @@
  */
 package org.jboss.dna.sequencer.java.metadata;
 
+
 /**
- * field meta data for simple type.
+ * QualifiedTypeFieldMetadata meta data for a qualified type.
+ * 
+ * @author Serge Pagop
  */
-public class SimpleFieldMetadata extends ReferenceFieldMetadata {
+public class QualifiedTypeFieldMetadata extends FieldMetadata {
+
+    public QualifiedTypeFieldMetadata() {
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @see org.jboss.dna.sequencer.java.metadata.FieldMetadata#isQualifiedType()
+     */
+    @Override
+    public boolean isQualifiedType() {
+        return super.isQualifiedType();
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @see java.lang.Object#toString()
+     */
+    @Override
+    public String toString() {
+        return "QualifiedTypeFieldMetadata [ " + getType() + "]";
+    }
 
 }
