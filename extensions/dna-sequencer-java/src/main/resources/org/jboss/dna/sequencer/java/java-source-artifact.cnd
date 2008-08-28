@@ -112,7 +112,7 @@
  * Formal parameter
  */
 [java:formalParameter] > nt:unstructured
- + java:type (java:primitiveType, java:referenceType) mandatory multiple
+ + java:type (java:primitiveType, java:arrayType, java:simpleType, java:qualifiedType, java:wildcardType, java:parameterizedType)
 
 /**
  * Primitive type:
@@ -128,21 +128,46 @@
  + java:primitiveVariable (java:variable) = java:variable
  
  [java:variable] > nt:unstructured
- - java:variableName (string)
+ - java:variableName (string) mandatory
  
 /** 
- * Reference type  (TODO to enhance)
+ * java:arrayType 
  */ 
-[java:referenceType] > nt:unstructured
- - java:ReferenceDescription (string)
- + java:modifier (java:modifierDeclaration) = java:modifierDeclaration
- - java:referenceName (string) mandatory
+[java:arrayType] > nt:unstructured
+ - java:arrayTypeDescription (string)
+ + java:arrayTypeModifier (java:modifierDeclaration) = java:modifierDeclaration
+ - java:arrayTypeName (string) mandatory
+ + java:arrayTypeVariable (java:variable) = java:variable
  
+[java:simpleType] > nt:unstructured
+ - java:simpleTypeDescription (string)
+ + java:simpleTypeModifier (java:modifierDeclaration) = java:modifierDeclaration
+ - java:simpleTypeName (string) mandatory
+ + java:simpleTypeVariable (java:variable) = java:variable
+
+[java:qualifiedType] > nt:unstructured
+ - java:qualifiedTypeDescription (string)
+ + java:qualifiedTypeModifier (java:modifierDeclaration) = java:modifierDeclaration
+ - java:qualifiedTypeName (string) mandatory
+ + java:qualifiedTypeVariable (java:variable) = java:variable
+    
+[java:wildcardType] > nt:unstructured
+ - java:wildcardTypeDescription (string)
+ + java:wildcardTypeModifier (java:modifierDeclaration) = java:modifierDeclaration
+ - java:wildcardTypeName (string) mandatory
+ + java:wildcardTypeVariable (java:variable) = java:variable
+
+[java:parameterizedType] > nt:unstructured
+ - java:parameterizedTypeDescription (string)
+ + java:parameterizedTypeModifier (java:modifierDeclaration) = java:modifierDeclaration
+ - java:parameterizedTypeName (string) mandatory
+ + java:parameterizedTypeVariable (java:variable) = java:variable
+
 /** 
  * Field type 
  */
 [java:fieldType] > nt:unstructured
- + java:type (java:primitiveType, java:referenceType) mandatory multiple 
+ + java:type (java:primitiveType, java:arrayType, java:simpleType, java:qualifiedType, java:wildcardType, java:parameterizedType) mandatory multiple 
  
  /** 
   * Method declaration 
@@ -150,7 +175,7 @@
 [java:methodDeclaration] > nt:unstructured
  - java:methodDescription (string)
  + java:modifier (java:modifierDeclaration) = java:modifierDeclaration
- + java:resultType (java:primitiveType, java:referenceType) mandatory
+ + java:resultType (java:primitiveType, java:arrayType, java:simpleType, java:qualifiedType, java:wildcardType, java:parameterizedType) mandatory
  - java:methodName (string) mandatory
  + java:parameter (java:formalParameter) multiple
 
