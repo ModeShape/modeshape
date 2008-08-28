@@ -21,7 +21,6 @@
  */
 package org.jboss.dna.sequencer.java;
 
-import org.jboss.dna.common.util.JcrUtil;
 import org.jboss.dna.sequencer.java.metadata.MethodMetadata;
 import org.jboss.dna.spi.graph.Path;
 import org.jboss.dna.spi.graph.PathFactory;
@@ -42,7 +41,7 @@ public class MethodMetadataSequencer implements JavaSourceCndDefinition {
      */
     public static Path createMethodParamPath( PathFactory pathFactory,
                                         String rootPath ) {
-        String methodPrimitiveParamVariablePath = JcrUtil.createPath(rootPath
+        String methodPrimitiveParamVariablePath = JavaMetadataUtil.createPath(rootPath
                                                                           + SLASH
                                                                           + JAVA_PRIMITIVE_TYPE_VARIABLE
                                                                           + SLASH + JAVA_VARIABLE);
@@ -57,7 +56,7 @@ public class MethodMetadataSequencer implements JavaSourceCndDefinition {
      * @return root path for a method parameter.
      */
     public static String createMethodParamRootPath( String constructorParameterRootPath ) {
-        String constructPrimitiveFormalParamRootPath = JcrUtil.createPath(constructorParameterRootPath + SLASH
+        String constructPrimitiveFormalParamRootPath = JavaMetadataUtil.createPath(constructorParameterRootPath + SLASH
                                                                           + JAVA_TYPE_CHILD_NODE + SLASH
                                                                           + JAVA_PRIMITIVE_TYPE_CHILD_NODE);
         return constructPrimitiveFormalParamRootPath;

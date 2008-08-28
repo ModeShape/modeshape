@@ -21,7 +21,6 @@
  */
 package org.jboss.dna.sequencer.java;
 
-import org.jboss.dna.common.util.JcrUtil;
 import org.jboss.dna.sequencer.java.metadata.ModifierMetadata;
 import org.jboss.dna.sequencer.java.metadata.ParameterizedTypeFieldMetadata;
 import org.jboss.dna.spi.graph.NameFactory;
@@ -43,7 +42,7 @@ public class ParameterizedTypeFieldMetadataSequencer implements JavaSourceCndDef
      * @return a path with a index starting by 1.
      */
     public static String getParameterizedTypeFieldRootPath( int parameterizedIndex ) {
-        String simpleTypeFieldRootPath = JcrUtil.createPathWithIndex(JAVA_COMPILATION_UNIT_NODE + SLASH
+        String simpleTypeFieldRootPath = JavaMetadataUtil.createPathWithIndex(JAVA_COMPILATION_UNIT_NODE + SLASH
                                                                      + JAVA_UNIT_TYPE_CHILD_NODE + SLASH
                                                                      + JAVA_CLASS_DECLARATION_CHILD_NODE + SLASH
                                                                      + JAVA_NORMAL_CLASS_CHILD_NODE + SLASH
@@ -83,7 +82,7 @@ public class ParameterizedTypeFieldMetadataSequencer implements JavaSourceCndDef
      */
     public static String getParameterizedTypeFieldRModifierPath( String parameterizedTypeFieldRootPath,
                                                                  int parameterizedTypeModifierIndex ) {
-        String parameterizedTypeModifierPath = JcrUtil.createPathWithIndex(parameterizedTypeFieldRootPath + SLASH
+        String parameterizedTypeModifierPath = JavaMetadataUtil.createPathWithIndex(parameterizedTypeFieldRootPath + SLASH
                                                                            + JAVA_PARAMETERIZED_TYPE_MODIFIER_CHILD_NODE + SLASH
                                                                            + JAVA_MODIFIER_DECLARATION_CHILD_NODE,
                                                                            parameterizedTypeModifierIndex);
@@ -119,7 +118,7 @@ public class ParameterizedTypeFieldMetadataSequencer implements JavaSourceCndDef
     public static Path getParameterizedTypeFieldVariablePath( PathFactory pathFactory,
                                                               String parameterizedTypeFieldRootPath,
                                                               int parameterizedTypeVariableIndex ) {
-        String variablePath = JcrUtil.createPathWithIndex(parameterizedTypeFieldRootPath + SLASH
+        String variablePath = JavaMetadataUtil.createPathWithIndex(parameterizedTypeFieldRootPath + SLASH
                                                           + JAVA_PARAMETERIZED_TYPE_VARIABLE + SLASH + JAVA_VARIABLE,
                                                           parameterizedTypeVariableIndex);
         Path parameterizedTypeVariableChildNode = pathFactory.create(variablePath);

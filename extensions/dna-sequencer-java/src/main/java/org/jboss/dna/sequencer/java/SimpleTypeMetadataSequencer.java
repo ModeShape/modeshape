@@ -21,7 +21,6 @@
  */
 package org.jboss.dna.sequencer.java;
 
-import org.jboss.dna.common.util.JcrUtil;
 import org.jboss.dna.sequencer.java.metadata.SimpleTypeFieldMetadata;
 import org.jboss.dna.spi.graph.NameFactory;
 import org.jboss.dna.spi.graph.Path;
@@ -46,7 +45,7 @@ public class SimpleTypeMetadataSequencer implements JavaSourceCndDefinition {
      * @return the root path, that is compose from other base path.
      */
     public static String createRootPath( String basePath ) {
-        return JcrUtil.createPath(basePath + SLASH + JAVA_TYPE_CHILD_NODE + SLASH + JAVA_SIMPLE_TYPE_CHILD_NODE);
+        return JavaMetadataUtil.createPath(basePath + SLASH + JAVA_TYPE_CHILD_NODE + SLASH + JAVA_SIMPLE_TYPE_CHILD_NODE);
     }
 
     /**
@@ -80,7 +79,7 @@ public class SimpleTypeMetadataSequencer implements JavaSourceCndDefinition {
      */
     public static Path createSimpleTypeParamPath( PathFactory pathFactory,
                                                   String rootPath ) {
-        String paramVariablePath = JcrUtil.createPath(rootPath + SLASH + JAVA_SIMPLE_TYPE_VARIABLE + SLASH + JAVA_VARIABLE);
+        String paramVariablePath = JavaMetadataUtil.createPath(rootPath + SLASH + JAVA_SIMPLE_TYPE_VARIABLE + SLASH + JAVA_VARIABLE);
         return pathFactory.create(paramVariablePath);
     }
 
