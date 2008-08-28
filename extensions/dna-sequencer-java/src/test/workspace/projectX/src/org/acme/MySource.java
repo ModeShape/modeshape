@@ -38,7 +38,7 @@ public class MySource {
 
     MySource() {
     }
-    public MySource(int i, int j) {
+    public MySource(int i, int j, Object o) {
         this.i = i;
         this.j = j;
     }
@@ -56,7 +56,7 @@ public class MySource {
         this.j = j;
     }
 
-    public void doSomething(int p1, double p2) {
+    public void doSomething(int p1, double p2, Object o) {
         l = new ArrayList<String>();
         l.add("N1");
     }
