@@ -350,7 +350,8 @@ public abstract class AbstractJavaMetadata {
                 methodMetadata.getParameters().add(simpleTypeFieldMetadata);
             }
             if (type.isArrayType()) {
-                // TODO
+                
+                
             }
             if (type.isWildcardType()) {
                 // TODO
@@ -403,6 +404,7 @@ public abstract class AbstractJavaMetadata {
             // ArrayType
             if (type.isArrayType()) {
                 ArrayTypeFieldMetadata arrayFieldMetadata = processArrayTypeFrom(fieldDeclaration);
+                return arrayFieldMetadata;
             }
             // QualifiedType
             if (type.isQualifiedType()) {
@@ -423,18 +425,41 @@ public abstract class AbstractJavaMetadata {
      * @param fieldDeclaration - field declaration
      * @return an ArrayTypeFieldMetadata, that contains information about an array type.
      */
-    private ArrayTypeFieldMetadata processArrayTypeFrom( FieldDeclaration fieldDeclaration ) {
+    protected ArrayTypeFieldMetadata processArrayTypeFrom( FieldDeclaration fieldDeclaration ) {
+        ArrayTypeFieldMetadata arrayTypeFieldMetadata = null;
         ArrayType arrayType = (ArrayType)fieldDeclaration.getType();
-        
         // the element type is never an array type
         Type type = arrayType.getElementType();
+        if (type.isPrimitiveType()) {
+            PrimitiveType primitiveType = (PrimitiveType)type;
+            arrayTypeFieldMetadata = new ArrayTypeFieldMetadata();
+            arrayTypeFieldMetadata.setType(primitiveType.getPrimitiveTypeCode().toString());
+            processModifiersAndVariablesOfFieldDeclaration(fieldDeclaration, arrayTypeFieldMetadata);
+            return arrayTypeFieldMetadata;
+
+        }
         // can't be an array type
-        if(type.isSimpleType()) {
-            
+        if (type.isSimpleType()) {
+            SimpleType simpleType = (SimpleType)type;
+            arrayTypeFieldMetadata = new ArrayTypeFieldMetadata();
+            arrayTypeFieldMetadata.setType(JavaMetadataUtil.getName(simpleType.getName()));
+            processModifiersAndVariablesOfFieldDeclaration(fieldDeclaration, arrayTypeFieldMetadata);
+            return arrayTypeFieldMetadata;
         }
         
-        
         return null;
+    }
+
+    /**
+     * Process together modifiers and variables of a {@link FieldDeclaration}.
+     * 
+     * @param fieldDeclaration - the field declaration instance.
+     * @param arrayTypeFieldMetadata - the meta data.
+     */
+    private void processModifiersAndVariablesOfFieldDeclaration( FieldDeclaration fieldDeclaration,
+                                                                 ArrayTypeFieldMetadata arrayTypeFieldMetadata ) {
+        processModifiersOfFieldDeclaration(fieldDeclaration, arrayTypeFieldMetadata);
+        processVariablesOfVariableDeclarationFragment(fieldDeclaration, arrayTypeFieldMetadata);
     }
 
     /**

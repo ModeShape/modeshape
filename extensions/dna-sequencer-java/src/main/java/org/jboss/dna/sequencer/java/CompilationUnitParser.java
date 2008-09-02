@@ -50,8 +50,7 @@ public class CompilationUnitParser {
         parser.setKind(ASTParser.K_COMPILATION_UNIT);
         parser.setResolveBindings(resolveBindings);
         // Parse compilation unit
-        ASTNode result = parser.createAST(null);
-        return result;
+        return parser.createAST(null);
     }
 
 }

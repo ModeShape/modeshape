@@ -230,7 +230,7 @@
  + java:method (java:methodDeclaration) = java:methodDeclaration multiple
  + java:constructor (java:constructorDeclaration) = java:constructorDeclaration multiple
  
-[java:enumDeclaration] > nt:unstructured
+[java:enumDeclaration] > nt:unstructured // TODO
  
 [java:classDeclaration] > nt:unstructured
  + java:normalClass (java:normalClassDeclaration) = java:normalClassDeclaration

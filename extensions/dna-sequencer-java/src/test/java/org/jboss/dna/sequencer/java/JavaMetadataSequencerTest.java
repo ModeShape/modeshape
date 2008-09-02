@@ -226,7 +226,7 @@ public class JavaMetadataSequencerTest {
                                             "java:variableName"),
                    is(new Object[] {"i"}));
 
-        // public void doSomething(int p1, int p2) method
+        // public void doSomething(int p1, int p2, Object o) method
         assertThat(output.getPropertyValues("java:compilationUnit/java:unitType/java:classDeclaration/java:normalClass/java:normalClassDeclaration/java:method/java:methodDeclaration[4]/java:modifier/java:modifierDeclaration[1]",
                                             "java:modifierName"),
                    is(new Object[] {"public"}));

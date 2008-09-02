@@ -36,6 +36,7 @@ import java.util.List;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.jboss.dna.sequencer.java.metadata.AnnotationMetadata;
+import org.jboss.dna.sequencer.java.metadata.ArrayTypeFieldMetadata;
 import org.jboss.dna.sequencer.java.metadata.ClassMetadata;
 import org.jboss.dna.sequencer.java.metadata.ConstructorMetadata;
 import org.jboss.dna.sequencer.java.metadata.FieldMetadata;
@@ -162,13 +163,13 @@ public class JavaMetadataTest {
                 assertTrue(fields.size() > 0);
 
                 PrimitiveFieldMetadata primitiveFieldMetadata = (PrimitiveFieldMetadata)fields.get(0);
-                assertTrue(primitiveFieldMetadata.getModifiers().size() == 1);
+                assertTrue(primitiveFieldMetadata.getModifiers().size() > 0);
                 assertThat(primitiveFieldMetadata.getType(), is("int"));
                 assertThat(primitiveFieldMetadata.getVariables().get(0).getName(), is("i"));
                 assertThat(primitiveFieldMetadata.getVariables().get(1).getName(), is("j"));
 
                 PrimitiveFieldMetadata primitiveFieldMetadata2 = (PrimitiveFieldMetadata)fields.get(1);
-                assertTrue(primitiveFieldMetadata2.getModifiers().size() == 2);
+                assertTrue(primitiveFieldMetadata2.getModifiers().size() > 0);
                 assertThat(primitiveFieldMetadata2.getType(), is("double"));
                 assertThat(primitiveFieldMetadata2.getVariables().get(0).getName(), is("a"));
 
@@ -187,14 +188,26 @@ public class JavaMetadataTest {
                 
                 SimpleTypeFieldMetadata simpleFieldMetadata = (SimpleTypeFieldMetadata)fields.get(4);
                 assertNotNull(simpleFieldMetadata);
-                assertTrue(simpleFieldMetadata.getModifiers().size() == 1);
+                assertTrue(simpleFieldMetadata.getModifiers().size() > 0);
                 assertThat(simpleFieldMetadata.getType(), is("X"));
                 assertThat(simpleFieldMetadata.getVariables().get(0).getName(), is("x"));
+                
+                ArrayTypeFieldMetadata arrayTypeFieldMetadata1 = (ArrayTypeFieldMetadata)fields.get(5);
+                assertNotNull(arrayTypeFieldMetadata1);
+                assertTrue(arrayTypeFieldMetadata1.getModifiers().size() > 0);
+                assertThat(arrayTypeFieldMetadata1.getType(), is("int"));
+                assertThat(arrayTypeFieldMetadata1.getVariables().get(0).getName(), is("ai"));
+                
+                ArrayTypeFieldMetadata arrayTypeFieldMetadata2 = (ArrayTypeFieldMetadata)fields.get(6);
+                assertNotNull(arrayTypeFieldMetadata2);
+                assertTrue(arrayTypeFieldMetadata2.getModifiers().size() > 0);
+                assertThat(arrayTypeFieldMetadata2.getType(), is("Object"));
+                assertThat(arrayTypeFieldMetadata2.getVariables().get(0).getName(), is("ao"));
 
                 // get methods
                 List<MethodMetadata> methods = classMetadata.getMethods();
                 assertNotNull(methods);
-                assertTrue(methods.size() == 6);
+                assertTrue(methods.size() > 0);
 
                 MethodMetadata methodMetadata = methods.get(0);
                 ConstructorMetadata constructorMetadata = (ConstructorMetadata)methodMetadata;
