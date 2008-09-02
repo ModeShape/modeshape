@@ -35,6 +35,8 @@ public class MySource {
     private List<String> l;
     private A<Integer> o;
     private X x;
+    private int[] ai;
+    private Object[] ao;
 
     MySource() {
     }
