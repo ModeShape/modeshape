@@ -21,28 +21,30 @@
  */
 package org.jboss.dna.sequencer.java;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import com.google.common.collect.ArrayListMultimap;
-import com.google.common.collect.Multimap;
+import java.util.TreeMap;
 
 /**
  * @author Serge Pagop
- *
  */
 public class JavaInfo {
-    
-    private final  Multimap<String, String> map =  new ArrayListMultimap<String, String>();
-    
+
+    private final Map<String, List<Properties>> javaElements = new TreeMap<String, List<Properties>>();
+
     private final String name;
     private final String path;
     private final String type;
 
-    protected JavaInfo( String path, String name, String type, Multimap<String, String> map) {
+    protected JavaInfo( String path,
+                        String name,
+                        String type,
+                        Map<String, List<Properties>> javaElements ) {
         this.name = name;
         this.path = path;
         this.type = type;
-        if (map != null) this.map.putAll(map);
+        if (javaElements != null) this.javaElements.putAll(javaElements);
     }
 
     public String getName() {
@@ -57,28 +59,31 @@ public class JavaInfo {
         return this.type;
     }
 
-
-
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        boolean first = true;
-        for (Map.Entry<String, String> entry : map.entries()) {
-            sb.append(entry.getKey()).append("=>").append(entry.getValue());
-            if (first) {
-                first = false;
-            } else {
-                sb.append(", ");
+
+        for (Map.Entry<String, List<Properties>> javaElement : getJavaElements().entrySet()) {
+            sb.append("\n------ " + javaElement.getKey() + " ------\n");
+            for (Properties props : javaElement.getValue()) {
+                for (Map.Entry<Object, Object> entry : props.entrySet()) {
+                    if (!entry.getKey().equals("jcr:primaryType")) {
+                        sb.append(entry.getKey()).append(" => ").append(entry.getValue());
+                        sb.append("; ");
+                    }
+                }
             }
         }
-        return this.name + " (at " + this.path + ") of type \"" + this.type + "\" with properties {" + sb.toString() + "}";
+
+        return this.name + " (at " + this.path + ") of type \"" + this.type + "\" with elements \n{\n" + sb.toString()
+               + " \n}\n";
     }
 
     /**
-     * @return map
+     * @return javaElements
      */
-    public Multimap<String, String> getMap() {
-        return map;
+    public Map<String, List<Properties>> getJavaElements() {
+        return javaElements;
     }
 
 }

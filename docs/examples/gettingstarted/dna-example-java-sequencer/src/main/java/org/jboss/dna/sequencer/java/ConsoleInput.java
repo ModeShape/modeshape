@@ -28,6 +28,7 @@ import java.io.InputStreamReader;
 import java.net.URL;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import org.jboss.dna.repository.sequencers.SequencingService;
 
 /**
@@ -189,9 +190,17 @@ public class ConsoleInput implements UserInterface {
             System.out.println("   Name: " + javaInfo.getName());
             System.out.println("   Path: " + javaInfo.getPath());
             System.out.println("   Type: " + javaInfo.getType());
-            for (Map.Entry<String, String> entry : javaInfo.getMap().entries()) {
-                System.out.println("   " + entry.getKey() + ": " + entry.getValue());
+            for (Map.Entry<String, List<Properties>> javaElement : javaInfo.getJavaElements().entrySet()) {
+                System.out.println("\n------ " + javaElement.getKey() + " ------\n");
+                for (Properties props : javaElement.getValue()) {
+                    for (Map.Entry<Object, Object> entry : props.entrySet()) {
+                        if (!entry.getKey().equals("jcr:primaryType")) {
+                            System.out.println(entry.getKey() + " => "+ entry.getValue());
+                        }
+                    }
+                }
             }
+            
         }
         System.out.println();
     }

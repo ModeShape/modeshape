@@ -25,15 +25,9 @@ import java.io.File;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.Set;
-import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.concurrent.TimeUnit;
 import javax.jcr.Credentials;
@@ -46,7 +40,6 @@ import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.SimpleCredentials;
-import javax.jcr.Value;
 import javax.jcr.ValueFormatException;
 import javax.jcr.observation.Event;
 import org.apache.jackrabbit.api.JackrabbitNodeTypeManager;
@@ -60,9 +53,6 @@ import org.jboss.dna.repository.util.JcrExecutionContext;
 import org.jboss.dna.repository.util.JcrTools;
 import org.jboss.dna.repository.util.SessionFactory;
 import org.jboss.dna.repository.util.SimpleSessionFactory;
-import com.google.common.collect.ArrayListMultimap;
-import com.google.common.collect.Multimap;
-import com.google.common.collect.Multiset.Entry;
 
 /**
  * @author serge pagop
@@ -75,8 +65,6 @@ public class JavaSequencingClient {
     public static final String DEFAULT_WORKSPACE_NAME = "default";
     public static final String DEFAULT_USERNAME = "jsmith";
     public static final char[] DEFAULT_PASSWORD = "secret".toCharArray();
-
-    private Map<String, String> map = new HashMap<String, String>();
 
     public static void main( String[] args ) {
         JavaSequencingClient client = new JavaSequencingClient();
@@ -335,44 +323,88 @@ public class JavaSequencingClient {
      */
     public void search() throws Exception {
         // Use JCR to search the repository for image meta data ...
+        Map<String, List<Properties>> tree = new TreeMap<String, List<Properties>>();
         List<JavaInfo> javaInfos = new ArrayList<JavaInfo>();
-        Multimap<String, String> multimap = new ArrayListMultimap<String, String>();
         Session session = createSession();
         try {
             // Find the compilation unit node ...
             Node root = session.getRootNode();
-            JavaInfo javaInfo = null;
+            JavaInfo javaInfo;
+            List<Properties> javaElements;
             if (root.hasNode("compilationUnits")) {
                 Node javaSourcesNode = root.getNode("compilationUnits");
                 for (NodeIterator i = javaSourcesNode.getNodes(); i.hasNext();) {
-                    for (NodeIterator j = javaSourcesNode.getNodes(); i.hasNext();) {
-                        Node javaSourceNode = i.nextNode();
-                        if (javaSourceNode.hasNodes()) {
-                            Node javaCompilationUnit = javaSourceNode.getNodes().nextNode();
-                            // package info
-                            if (javaCompilationUnit.hasNode("java:package")) {
-                                Node javaPackageDeclarationNode = javaCompilationUnit.getNode("java:package");
-                                extractInfo(javaPackageDeclarationNode, multimap);
-                            }
-                            // import infos
-                            if (javaCompilationUnit.hasNode("java:import")) {
-                                // single type import
-                                Node javaImport = javaCompilationUnit.getNode("java:import")
-                                    .getNode("java:importDeclaration");
-                                extractInfo(javaImport, multimap);
-                            }
-                            // class infos
-                            if (javaCompilationUnit.hasNode("java:unitType")) {
-                                Node javaNormalClassNode = javaCompilationUnit.getNode("java:unitType")
-                                    .getNode("java:classDeclaration")
-                                    .getNode("java:normalClass")
-                                    .getNode("java:normalClassDeclaration");
-                                extractInfo(javaNormalClassNode, multimap);
 
-                            }
-                            javaInfo = new JavaInfo(javaCompilationUnit.getPath(), javaCompilationUnit.getName(), "java:compilationUnit", multimap);
-                            javaInfos.add(javaInfo);
+                    Node javaSourceNode = i.nextNode();
+
+                    if (javaSourceNode.hasNodes()) {
+                        Node javaCompilationUnit = javaSourceNode.getNodes().nextNode();
+                        // package informations
+
+                        javaElements = new ArrayList<Properties>();
+                        try {
+                            Node javaPackageDeclarationNode = javaCompilationUnit.getNode("java:package/java:packageDeclaration");
+                            javaElements.add(extractInfo(javaPackageDeclarationNode));
+                            tree.put("Package", javaElements);
+                        } catch (PathNotFoundException e) {
+                            // do nothing
                         }
+
+                        // import informations
+                        javaElements = new ArrayList<Properties>();
+                        try {
+                            for (NodeIterator singleImportIterator = javaCompilationUnit.getNode("java:import/java:importDeclaration/java:singleImport").getNodes(); singleImportIterator.hasNext();) {
+                                Node javasingleTypeImportDeclarationNode = singleImportIterator.nextNode();
+                                javaElements.add(extractInfo(javasingleTypeImportDeclarationNode));
+                            }
+                            tree.put("Single Imports", javaElements);
+                        } catch (PathNotFoundException e) {
+                            // do nothing
+                        }
+
+                        javaElements = new ArrayList<Properties>();
+                        try {
+                            for (NodeIterator javaImportOnDemandIterator = javaCompilationUnit.getNode("java:import/java:importDeclaration/java:importOnDemand").getNodes(); javaImportOnDemandIterator.hasNext();) {
+                                Node javaImportOnDemandtDeclarationNode = javaImportOnDemandIterator.nextNode();
+                                javaElements.add(extractInfo(javaImportOnDemandtDeclarationNode));
+                            }
+                            tree.put("On demand imports", javaElements);
+
+                        } catch (PathNotFoundException e) {
+                            // do nothing
+                        }
+                        // class head informations
+                        javaElements = new ArrayList<Properties>();
+                        Node javaNormalDeclarationClassNode = javaCompilationUnit.getNode("java:unitType/java:classDeclaration/java:normalClass/java:normalClassDeclaration");
+                        javaElements.add(extractInfo(javaNormalDeclarationClassNode));
+                        tree.put("class head information", javaElements);
+
+                        // field member informations
+                        javaElements = new ArrayList<Properties>();
+                        for (NodeIterator javaFieldTypeIterator = javaCompilationUnit.getNode("java:unitType/java:classDeclaration/java:normalClass/java:normalClassDeclaration/java:field/java:fieldType").getNodes(); javaFieldTypeIterator.hasNext();) {
+                            Node rootFieldTypeNode = javaFieldTypeIterator.nextNode();
+                            if (rootFieldTypeNode.hasNode("java:primitiveType")) {
+                                Node javaPrimitiveTypeNode = rootFieldTypeNode.getNode("java:primitiveType");
+                                javaElements.add(extractInfo(javaPrimitiveTypeNode));
+                                // more informations
+                            }
+
+                            if (rootFieldTypeNode.hasNode("java:simpleType")) {
+                                Node javaSimpleTypeNode = rootFieldTypeNode.getNode("java:simpleType");
+                                javaElements.add(extractInfo(javaSimpleTypeNode));
+                            }
+                            if (rootFieldTypeNode.hasNode("java:parameterizedType")) {
+                                Node javaParameterizedType = rootFieldTypeNode.getNode("java:parameterizedType");
+                                javaElements.add(extractInfo(javaParameterizedType));
+                            }
+                        }
+                        tree.put("Class field members", javaElements);
+
+                        // constructor informations
+
+                        // method informations
+                        javaInfo = new JavaInfo(javaCompilationUnit.getPath(), javaCompilationUnit.getName(), "java source", tree);
+                        javaInfos.add(javaInfo);
                     }
                 }
             }
@@ -380,7 +412,7 @@ public class JavaSequencingClient {
         } finally {
             session.logout();
         }
-         
+
         // Display the search results ...
         this.userInterface.displaySearchResults(javaInfos);
     }
@@ -389,30 +421,23 @@ public class JavaSequencingClient {
      * Extract informations from a specific node.
      * 
      * @param node - node, that contains informations.
-     * @param multimap - a google collection, that support duplicate keys.
-     * @throws RepositoryException 
+     * @return a properties of keys/values.
+     * @throws RepositoryException
      * @throws IllegalStateException
      * @throws ValueFormatException
      */
-    private void extractInfo( Node node,
-                              Multimap<String, String> multimap )
-        throws ValueFormatException, IllegalStateException, RepositoryException {
+    private Properties extractInfo( Node node ) throws ValueFormatException, IllegalStateException, RepositoryException {
         if (node.hasProperties()) {
-            int index = 1;
+            Properties properties = new Properties();
             for (PropertyIterator propertyIter = node.getProperties(); propertyIter.hasNext();) {
                 Property property = propertyIter.nextProperty();
                 String name = property.getName();
                 String stringValue = property.getValue().getString();
-                if (!name.equals("jcr:primaryType")) {
-                    multimap.put(name, stringValue);
-                }
+                properties.put(name, stringValue);
             }
+            return properties;
         }
-        if (node.hasNodes()) {
-            for (NodeIterator iterator = node.getNodes(); iterator.hasNext();) {
-                extractInfo(iterator.nextNode(), multimap);
-            }
-        }
+        return null;
     }
 
     /**
