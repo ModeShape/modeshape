@@ -18,10 +18,6 @@
         <version>2.1.2</version>
         <extensions>true</extensions>
         <dependencies>
-          <!--
-            <dependency> <groupId>org.hibernate</groupId> <artifactId>hibernate-jdocbook-style</artifactId>
-            <version>1.0.2</version> <type>jdocbook-style</type> </dependency>
-          -->
           <dependency>
             <groupId>org.jboss</groupId>
             <artifactId>jbossorg-docbook-xslt</artifactId>
@@ -35,7 +31,7 @@
           </dependency>
         </dependencies>
         <configuration>
-          <sourceDocumentName>Getting_Started.xml</sourceDocumentName>
+          <sourceDocumentName>master.xml</sourceDocumentName>
                     <imageResource>
                         <directory>${basedir}/src/main/docbook/en-US/images</directory>
                         <includes>

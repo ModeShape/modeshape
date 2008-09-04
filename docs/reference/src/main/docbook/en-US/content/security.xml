@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ JBoss, Home of Professional Open Source.
+  ~
+  ~ Copyright (c) 2008, Red Hat Middleware LLC or third-party contributors as
+  ~ indicated by the @author tags or express copyright attribution
+  ~ statements applied by the authors.  All third-party contributions are
+  ~ distributed under license by Red Hat Middleware LLC.
+  ~
+  ~ This copyrighted material is made available to anyone wishing to use, modify,
+  ~ copy, or redistribute it subject to the terms and conditions of the GNU
+  ~ Lesser General Public License, as published by the Free Software Foundation.
+  ~
+  ~ This program is distributed in the hope that it will be useful,
+  ~ but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+  ~ or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License
+  ~ for more details.
+  ~
+  ~ You should have received a copy of the GNU Lesser General Public License
+  ~ along with this distribution; if not, write to:
+  ~ Free Software Foundation, Inc.
+  ~ 51 Franklin Street, Fifth Floor
+  ~ Boston, MA  02110-1301  USA
+  -->
+<!DOCTYPE preface PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd">
+<chapter id="security">
+  <title>Security</title>
+  <para>
+    JBoss DNA uses the
+    <ulink url="http://java.sun.com/javase/technologies/security/">Java Authentication and Authorization Service (JAAS)</ulink>
+    for its security mechanism. This offers the greatest flexibility and power for integrating JBoss DNA into other
+    applications.
+  </para>
+  <sect1 id="jboss-security">
+    <title>JBoss Security</title>
+    <para>
+      The
+      <ulink url="http://www.jboss.org/jbosssecurity/">JBoss Security</ulink>
+      provides one of the best and most powerful implementations of the JAAS specification - plus it's open source. JBoss
+      Security offers a number of login modules, including:
+      <itemizedlist>
+        <listitem>
+          <para>
+            <emphasis role="strong">User-Roles Login Module</emphasis>
+            is a simple
+            <code>javax.security.auth.login.LoginContext</code>
+            implementation that uses usernames and passwords stored in a properties file.
+          </para>
+        </listitem>
+        <listitem>
+          <para>
+            <emphasis role="strong">Client Login Module</emphasis>
+            prompts the user for their username and password.
+          </para>
+        </listitem>
+        <listitem>
+          <para>
+            <emphasis role="strong">Database Server Login Module</emphasis>
+            uses a JDBC database to authenticate principals and associate them with roles.
+          </para>
+        </listitem>
+        <listitem>
+          <para>
+            <emphasis role="strong">LDAP Login Module</emphasis>
+            uses an LDAP directory to authenticate principals. Two implementations are available.
+          </para>
+        </listitem>
+        <listitem>
+          <para>
+            <emphasis role="strong">Certificate Login Module</emphasis>
+            authenticates using X509 certificates, obtaining roles from either property files or a JDBC database.
+          </para>
+        </listitem>
+        <listitem>
+          <para>
+            <emphasis role="strong">Operating System Login Module</emphasis>
+            authenticates using the operating system's mechanism.
+          </para>
+        </listitem>
+      </itemizedlist>
+      and many others.
+    </para>
+    <para>
+      JBoss Security also provides other capabilities, such as using XACML policies or using federated single sign-on. For more
+      detail, see the
+      <ulink url="http://www.jboss.org/jbosssecurity/">JBoss Security</ulink>
+      project.
+    </para>
+  </sect1>
+</chapter>
+
