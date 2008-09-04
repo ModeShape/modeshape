@@ -336,19 +336,21 @@ public class JavaMetadataSequencer implements JavaSourceCndDefinition, StreamSeq
                             // primitive type
                             PrimitiveFieldMetadata primitiveFieldMetadata = (PrimitiveFieldMetadata)fieldMetadata;
                             String primitiveFieldRootPath = JavaMetadataUtil.createPathWithIndex(JAVA_COMPILATION_UNIT_NODE
-                                                                                        + SLASH
-                                                                                        + JAVA_UNIT_TYPE_CHILD_NODE
-                                                                                        + SLASH
-                                                                                        + JAVA_CLASS_DECLARATION_CHILD_NODE
-                                                                                        + SLASH
-                                                                                        + JAVA_NORMAL_CLASS_CHILD_NODE
-                                                                                        + SLASH
-                                                                                        + JAVA_NORMAL_CLASS_DECLARATION_CHILD_NODE
-                                                                                        + SLASH + JAVA_FIELD_CHILD_NODE + SLASH
-                                                                                        + JAVA_FIELD_TYPE_CHILD_NODE + SLASH
-                                                                                        + JAVA_TYPE_CHILD_NODE + SLASH
-                                                                                        + JAVA_PRIMITIVE_TYPE_CHILD_NODE,
-                                                                                        primitiveIndex);
+                                                                                                 + SLASH
+                                                                                                 + JAVA_UNIT_TYPE_CHILD_NODE
+                                                                                                 + SLASH
+                                                                                                 + JAVA_CLASS_DECLARATION_CHILD_NODE
+                                                                                                 + SLASH
+                                                                                                 + JAVA_NORMAL_CLASS_CHILD_NODE
+                                                                                                 + SLASH
+                                                                                                 + JAVA_NORMAL_CLASS_DECLARATION_CHILD_NODE
+                                                                                                 + SLASH + JAVA_FIELD_CHILD_NODE
+                                                                                                 + SLASH
+                                                                                                 + JAVA_FIELD_TYPE_CHILD_NODE
+                                                                                                 + SLASH + JAVA_TYPE_CHILD_NODE
+                                                                                                 + SLASH
+                                                                                                 + JAVA_PRIMITIVE_TYPE_CHILD_NODE,
+                                                                                                 primitiveIndex);
                             // type
                             Path primitiveTypeChildNode = pathFactory.create(primitiveFieldRootPath);
                             output.setProperty(primitiveTypeChildNode,
@@ -359,9 +361,9 @@ public class JavaMetadataSequencer implements JavaSourceCndDefinition, StreamSeq
                             int primitiveModifierIndex = 1;
                             for (ModifierMetadata modifierMetadata : modifiers) {
                                 String modifierPath = JavaMetadataUtil.createPathWithIndex(primitiveFieldRootPath + SLASH
-                                                                                  + JAVA_MODIFIER_CHILD_NODE + SLASH
-                                                                                  + JAVA_MODIFIER_DECLARATION_CHILD_NODE,
-                                                                                  primitiveModifierIndex);
+                                                                                           + JAVA_MODIFIER_CHILD_NODE + SLASH
+                                                                                           + JAVA_MODIFIER_DECLARATION_CHILD_NODE,
+                                                                                           primitiveModifierIndex);
                                 Path modifierChildNode = pathFactory.create(modifierPath);
                                 output.setProperty(modifierChildNode,
                                                    nameFactory.create(JAVA_MODIFIER_NAME),
@@ -373,8 +375,9 @@ public class JavaMetadataSequencer implements JavaSourceCndDefinition, StreamSeq
                             int primitiveVariableIndex = 1;
                             for (Variable variable : variables) {
                                 String variablePath = JavaMetadataUtil.createPathWithIndex(primitiveFieldRootPath + SLASH
-                                                                                  + JAVA_PRIMITIVE_TYPE_VARIABLE + SLASH
-                                                                                  + JAVA_VARIABLE, primitiveVariableIndex);
+                                                                                           + JAVA_PRIMITIVE_TYPE_VARIABLE + SLASH
+                                                                                           + JAVA_VARIABLE,
+                                                                                           primitiveVariableIndex);
                                 Path primitiveChildNode = pathFactory.create(variablePath);
                                 sequenceTheVariable(output, nameFactory, variable, primitiveChildNode);
                                 primitiveVariableIndex++;
@@ -384,6 +387,7 @@ public class JavaMetadataSequencer implements JavaSourceCndDefinition, StreamSeq
 
                         // Array type
                         if (fieldMetadata instanceof ArrayTypeFieldMetadata) {
+                            @SuppressWarnings( "unused" )
                             ArrayTypeFieldMetadata arrayTypeFieldMetadata = (ArrayTypeFieldMetadata)fieldMetadata;
                         }
 
@@ -391,19 +395,21 @@ public class JavaMetadataSequencer implements JavaSourceCndDefinition, StreamSeq
                         if (fieldMetadata instanceof SimpleTypeFieldMetadata) {
                             SimpleTypeFieldMetadata simpleTypeFieldMetadata = (SimpleTypeFieldMetadata)fieldMetadata;
                             String simpleTypeFieldRootPath = JavaMetadataUtil.createPathWithIndex(JAVA_COMPILATION_UNIT_NODE
-                                                                                         + SLASH
-                                                                                         + JAVA_UNIT_TYPE_CHILD_NODE
-                                                                                         + SLASH
-                                                                                         + JAVA_CLASS_DECLARATION_CHILD_NODE
-                                                                                         + SLASH
-                                                                                         + JAVA_NORMAL_CLASS_CHILD_NODE
-                                                                                         + SLASH
-                                                                                         + JAVA_NORMAL_CLASS_DECLARATION_CHILD_NODE
-                                                                                         + SLASH + JAVA_FIELD_CHILD_NODE + SLASH
-                                                                                         + JAVA_FIELD_TYPE_CHILD_NODE + SLASH
-                                                                                         + JAVA_TYPE_CHILD_NODE + SLASH
-                                                                                         + JAVA_SIMPLE_TYPE_CHILD_NODE,
-                                                                                         simpleIndex);
+                                                                                                  + SLASH
+                                                                                                  + JAVA_UNIT_TYPE_CHILD_NODE
+                                                                                                  + SLASH
+                                                                                                  + JAVA_CLASS_DECLARATION_CHILD_NODE
+                                                                                                  + SLASH
+                                                                                                  + JAVA_NORMAL_CLASS_CHILD_NODE
+                                                                                                  + SLASH
+                                                                                                  + JAVA_NORMAL_CLASS_DECLARATION_CHILD_NODE
+                                                                                                  + SLASH + JAVA_FIELD_CHILD_NODE
+                                                                                                  + SLASH
+                                                                                                  + JAVA_FIELD_TYPE_CHILD_NODE
+                                                                                                  + SLASH + JAVA_TYPE_CHILD_NODE
+                                                                                                  + SLASH
+                                                                                                  + JAVA_SIMPLE_TYPE_CHILD_NODE,
+                                                                                                  simpleIndex);
                             Path simpleTypeFieldChildNode = pathFactory.create(simpleTypeFieldRootPath);
                             output.setProperty(simpleTypeFieldChildNode,
                                                nameFactory.create(JAVA_SIMPLE_TYPE_NAME),
@@ -414,11 +420,11 @@ public class JavaMetadataSequencer implements JavaSourceCndDefinition, StreamSeq
                             int simpleTypeModifierIndex = 1;
                             for (ModifierMetadata modifierMetadata : simpleModifiers) {
                                 String simpleTypeModifierPath = JavaMetadataUtil.createPathWithIndex(simpleTypeFieldRootPath
-                                                                                            + SLASH
-                                                                                            + JAVA_SIMPLE_TYPE_MODIFIER_CHILD_NODE
-                                                                                            + SLASH
-                                                                                            + JAVA_MODIFIER_DECLARATION_CHILD_NODE,
-                                                                                            simpleTypeModifierIndex);
+                                                                                                     + SLASH
+                                                                                                     + JAVA_SIMPLE_TYPE_MODIFIER_CHILD_NODE
+                                                                                                     + SLASH
+                                                                                                     + JAVA_MODIFIER_DECLARATION_CHILD_NODE,
+                                                                                                     simpleTypeModifierIndex);
                                 Path simpleTypeModifierChildNode = pathFactory.create(simpleTypeModifierPath);
                                 output.setProperty(simpleTypeModifierChildNode,
                                                    nameFactory.create(JAVA_MODIFIER_NAME),
@@ -431,8 +437,9 @@ public class JavaMetadataSequencer implements JavaSourceCndDefinition, StreamSeq
                             int simpleTypeVariableIndex = 1;
                             for (Variable variable : variables) {
                                 String variablePath = JavaMetadataUtil.createPathWithIndex(simpleTypeFieldRootPath + SLASH
-                                                                                  + JAVA_SIMPLE_TYPE_VARIABLE + SLASH
-                                                                                  + JAVA_VARIABLE, simpleTypeVariableIndex);
+                                                                                           + JAVA_SIMPLE_TYPE_VARIABLE + SLASH
+                                                                                           + JAVA_VARIABLE,
+                                                                                           simpleTypeVariableIndex);
                                 Path primitiveChildNode = pathFactory.create(variablePath);
                                 sequenceTheVariable(output, nameFactory, variable, primitiveChildNode);
                                 simpleTypeVariableIndex++;
@@ -443,8 +450,8 @@ public class JavaMetadataSequencer implements JavaSourceCndDefinition, StreamSeq
 
                         // Qualified type
                         if (fieldMetadata instanceof QualifiedTypeFieldMetadata) {
+                            @SuppressWarnings( "unused" )
                             QualifiedTypeFieldMetadata qualifiedTypeFieldMetadata = (QualifiedTypeFieldMetadata)fieldMetadata;
-
                         }
 
                         // Parameterized type
@@ -494,15 +501,20 @@ public class JavaMetadataSequencer implements JavaSourceCndDefinition, StreamSeq
                         if (methodMetadata.isContructor()) {
                             // process constructor
                             ConstructorMetadata constructorMetadata = (ConstructorMetadata)methodMetadata;
-                            String constructorRootPath = JavaMetadataUtil.createPathWithIndex(JAVA_COMPILATION_UNIT_NODE + SLASH
-                                                                                     + JAVA_UNIT_TYPE_CHILD_NODE + SLASH
-                                                                                     + JAVA_CLASS_DECLARATION_CHILD_NODE + SLASH
-                                                                                     + JAVA_NORMAL_CLASS_CHILD_NODE + SLASH
-                                                                                     + JAVA_NORMAL_CLASS_DECLARATION_CHILD_NODE
-                                                                                     + SLASH + JAVA_CONSTRUCTOR_CHILD_NODE
-                                                                                     + SLASH
-                                                                                     + JAVA_CONSTRUCTOR_DECLARATION_CHILD_NODE,
-                                                                                     constructorIndex);
+                            String constructorRootPath = JavaMetadataUtil.createPathWithIndex(JAVA_COMPILATION_UNIT_NODE
+                                                                                              + SLASH
+                                                                                              + JAVA_UNIT_TYPE_CHILD_NODE
+                                                                                              + SLASH
+                                                                                              + JAVA_CLASS_DECLARATION_CHILD_NODE
+                                                                                              + SLASH
+                                                                                              + JAVA_NORMAL_CLASS_CHILD_NODE
+                                                                                              + SLASH
+                                                                                              + JAVA_NORMAL_CLASS_DECLARATION_CHILD_NODE
+                                                                                              + SLASH
+                                                                                              + JAVA_CONSTRUCTOR_CHILD_NODE
+                                                                                              + SLASH
+                                                                                              + JAVA_CONSTRUCTOR_DECLARATION_CHILD_NODE,
+                                                                                              constructorIndex);
                             Path constructorChildNode = pathFactory.create(constructorRootPath);
                             output.setProperty(constructorChildNode,
                                                nameFactory.create(JAVA_CONSTRUCTOR_NAME),
@@ -512,11 +524,11 @@ public class JavaMetadataSequencer implements JavaSourceCndDefinition, StreamSeq
                             int constructorModifierIndex = 1;
                             for (ModifierMetadata modifierMetadata : modifiers) {
                                 String contructorModifierPath = JavaMetadataUtil.createPathWithIndex(constructorRootPath
-                                                                                            + SLASH
-                                                                                            + JAVA_MODIFIER_CHILD_NODE
-                                                                                            + SLASH
-                                                                                            + JAVA_MODIFIER_DECLARATION_CHILD_NODE,
-                                                                                            constructorModifierIndex);
+                                                                                                     + SLASH
+                                                                                                     + JAVA_MODIFIER_CHILD_NODE
+                                                                                                     + SLASH
+                                                                                                     + JAVA_MODIFIER_DECLARATION_CHILD_NODE,
+                                                                                                     constructorModifierIndex);
 
                                 Path constructorModifierChildNode = pathFactory.create(contructorModifierPath);
                                 output.setProperty(constructorModifierChildNode,
@@ -529,10 +541,12 @@ public class JavaMetadataSequencer implements JavaSourceCndDefinition, StreamSeq
                             int constructorParameterIndex = 1;
                             for (FieldMetadata fieldMetadata : constructorMetadata.getParameters()) {
 
-                                String constructorParameterRootPath = JavaMetadataUtil.createPathWithIndex(constructorRootPath + SLASH
-                                                                                                  + JAVA_PARAMETER + SLASH
-                                                                                                  + JAVA_FORMAL_PARAMETER,
-                                                                                                  constructorParameterIndex);
+                                String constructorParameterRootPath = JavaMetadataUtil.createPathWithIndex(constructorRootPath
+                                                                                                           + SLASH
+                                                                                                           + JAVA_PARAMETER
+                                                                                                           + SLASH
+                                                                                                           + JAVA_FORMAL_PARAMETER,
+                                                                                                           constructorParameterIndex);
                                 // primitive type
                                 if (fieldMetadata instanceof PrimitiveFieldMetadata) {
 
@@ -562,6 +576,7 @@ public class JavaMetadataSequencer implements JavaSourceCndDefinition, StreamSeq
                                 }
                                 // parameterized type
                                 if (fieldMetadata instanceof ParameterizedTypeFieldMetadata) {
+                                    @SuppressWarnings( "unused" )
                                     ParameterizedTypeFieldMetadata parameterizedTypeFieldMetadata = (ParameterizedTypeFieldMetadata)fieldMetadata;
 
                                 }
@@ -575,13 +590,18 @@ public class JavaMetadataSequencer implements JavaSourceCndDefinition, StreamSeq
 
                             // normal method
                             MethodTypeMemberMetadata methodTypeMemberMetadata = (MethodTypeMemberMetadata)methodMetadata;
-                            String methodRootPath = JavaMetadataUtil.createPathWithIndex(JAVA_COMPILATION_UNIT_NODE + SLASH
-                                                                                + JAVA_UNIT_TYPE_CHILD_NODE + SLASH
-                                                                                + JAVA_CLASS_DECLARATION_CHILD_NODE + SLASH
-                                                                                + JAVA_NORMAL_CLASS_CHILD_NODE + SLASH
-                                                                                + JAVA_NORMAL_CLASS_DECLARATION_CHILD_NODE
-                                                                                + SLASH + JAVA_METHOD_CHILD_NODE + SLASH
-                                                                                + JAVA_METHOD_DECLARATION_CHILD_NODE, methodIndex);
+                            String methodRootPath = JavaMetadataUtil.createPathWithIndex(JAVA_COMPILATION_UNIT_NODE
+                                                                                         + SLASH
+                                                                                         + JAVA_UNIT_TYPE_CHILD_NODE
+                                                                                         + SLASH
+                                                                                         + JAVA_CLASS_DECLARATION_CHILD_NODE
+                                                                                         + SLASH
+                                                                                         + JAVA_NORMAL_CLASS_CHILD_NODE
+                                                                                         + SLASH
+                                                                                         + JAVA_NORMAL_CLASS_DECLARATION_CHILD_NODE
+                                                                                         + SLASH + JAVA_METHOD_CHILD_NODE + SLASH
+                                                                                         + JAVA_METHOD_DECLARATION_CHILD_NODE,
+                                                                                         methodIndex);
                             Path methodChildNode = pathFactory.create(methodRootPath);
                             output.setProperty(methodChildNode,
                                                nameFactory.create(JAVA_METHOD_NAME),
@@ -590,10 +610,12 @@ public class JavaMetadataSequencer implements JavaSourceCndDefinition, StreamSeq
                             // method modifiers
                             int methodModierIndex = 1;
                             for (ModifierMetadata modifierMetadata : methodTypeMemberMetadata.getModifiers()) {
-                                String methodModifierPath = JavaMetadataUtil.createPathWithIndex(methodRootPath + SLASH
-                                                                                        + JAVA_MODIFIER_CHILD_NODE + SLASH
-                                                                                        + JAVA_MODIFIER_DECLARATION_CHILD_NODE,
-                                                                                        methodModierIndex);
+                                String methodModifierPath = JavaMetadataUtil.createPathWithIndex(methodRootPath
+                                                                                                 + SLASH
+                                                                                                 + JAVA_MODIFIER_CHILD_NODE
+                                                                                                 + SLASH
+                                                                                                 + JAVA_MODIFIER_DECLARATION_CHILD_NODE,
+                                                                                                 methodModierIndex);
                                 Path methodModifierChildNode = pathFactory.create(methodModifierPath);
                                 output.setProperty(methodModifierChildNode,
                                                    nameFactory.create(JAVA_MODIFIER_NAME),
@@ -604,19 +626,20 @@ public class JavaMetadataSequencer implements JavaSourceCndDefinition, StreamSeq
                             int methodParameterIndex = 1;
                             for (FieldMetadata fieldMetadata : methodMetadata.getParameters()) {
 
-                                String methodParamRootPath = JavaMetadataUtil.createPathWithIndex(methodRootPath + SLASH + JAVA_PARAMETER
-                                                                                         + SLASH + JAVA_FORMAL_PARAMETER,
-                                                                                         methodParameterIndex);
+                                String methodParamRootPath = JavaMetadataUtil.createPathWithIndex(methodRootPath + SLASH
+                                                                                                  + JAVA_PARAMETER + SLASH
+                                                                                                  + JAVA_FORMAL_PARAMETER,
+                                                                                                  methodParameterIndex);
 
                                 if (fieldMetadata instanceof PrimitiveFieldMetadata) {
 
                                     PrimitiveFieldMetadata primitive = (PrimitiveFieldMetadata)fieldMetadata;
 
                                     String methodPrimitiveFormalParamRootPath = JavaMetadataUtil.createPath(methodParamRootPath
-                                                                                                   + SLASH
-                                                                                                   + JAVA_TYPE_CHILD_NODE
-                                                                                                   + SLASH
-                                                                                                   + JAVA_PRIMITIVE_TYPE_CHILD_NODE);
+                                                                                                            + SLASH
+                                                                                                            + JAVA_TYPE_CHILD_NODE
+                                                                                                            + SLASH
+                                                                                                            + JAVA_PRIMITIVE_TYPE_CHILD_NODE);
 
                                     Path methodParamChildNode = MethodMetadataSequencer.createMethodParamPath(pathFactory,
                                                                                                               methodPrimitiveFormalParamRootPath);
@@ -650,9 +673,11 @@ public class JavaMetadataSequencer implements JavaSourceCndDefinition, StreamSeq
 
                             if (methodReturnType instanceof PrimitiveFieldMetadata) {
                                 PrimitiveFieldMetadata methodReturnPrimitiveType = (PrimitiveFieldMetadata)methodReturnType;
-                                String methodReturnPrimitiveTypePath = JavaMetadataUtil.createPath(methodRootPath + SLASH
-                                                                                          + JAVA_RETURN_TYPE + SLASH
-                                                                                          + JAVA_PRIMITIVE_TYPE_CHILD_NODE);
+                                String methodReturnPrimitiveTypePath = JavaMetadataUtil.createPath(methodRootPath
+                                                                                                   + SLASH
+                                                                                                   + JAVA_RETURN_TYPE
+                                                                                                   + SLASH
+                                                                                                   + JAVA_PRIMITIVE_TYPE_CHILD_NODE);
                                 Path methodReturnPrimitiveTypeChildNode = pathFactory.create(methodReturnPrimitiveTypePath);
                                 output.setProperty(methodReturnPrimitiveTypeChildNode,
                                                    nameFactory.create(JAVA_PRIMITIVE_TYPE_NAME),
