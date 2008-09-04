@@ -34,9 +34,6 @@ import java.util.concurrent.TimeUnit;
 import org.jboss.dna.common.i18n.MockI18n;
 import org.jboss.dna.common.util.Logger;
 import org.jboss.dna.spi.ExecutionContext;
-import org.jboss.dna.spi.connector.RepositoryConnection;
-import org.jboss.dna.spi.connector.RepositoryConnectionPool;
-import org.jboss.dna.spi.connector.RepositorySourceException;
 
 /**
  * A test harness for using repository connections under load.
@@ -206,7 +203,7 @@ public class RepositorySourceLoadHarness {
          *      org.jboss.dna.spi.connector.RepositoryConnection)
          */
         public Integer run( ExecutionContext context,
-                            RepositoryConnection connection ) throws RepositorySourceException, InterruptedException {
+                            RepositoryConnection connection ) throws RepositorySourceException {
             Logger.getLogger(RepositorySourceLoadHarness.class).debug("Running {0} operation", this.getClass().getSimpleName());
             int total = count;
             for (int i = 0; i != count; ++i) {

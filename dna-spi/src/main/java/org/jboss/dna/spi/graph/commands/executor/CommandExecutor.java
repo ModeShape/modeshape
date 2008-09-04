@@ -46,9 +46,8 @@ public interface CommandExecutor {
      * 
      * @param command the command to be executed
      * @throws RepositorySourceException if there is an error executing the command
-     * @throws InterruptedException if the thread is interrupted during execution
      */
-    void execute( GraphCommand command ) throws RepositorySourceException, InterruptedException;
+    void execute( GraphCommand command ) throws RepositorySourceException;
 
     /**
      * Execute a composite command that contains other commands. This method should simply obtain and execute each of the nested
@@ -56,9 +55,8 @@ public interface CommandExecutor {
      * 
      * @param command the command to be executed; may not be null
      * @throws RepositorySourceException if there is an error executing the command
-     * @throws InterruptedException if the thread is interrupted during execution
      */
-    void execute( CompositeCommand command ) throws RepositorySourceException, InterruptedException;
+    void execute( CompositeCommand command ) throws RepositorySourceException;
 
     /**
      * Execute a command to get the properties and children of a node. {@link GetNodeCommand} is a subtype of both
@@ -67,95 +65,83 @@ public interface CommandExecutor {
      * 
      * @param command the command to be executed; may not be null
      * @throws RepositorySourceException if there is an error executing the command
-     * @throws InterruptedException if the thread is interrupted during execution
      */
-    void execute( GetNodeCommand command ) throws RepositorySourceException, InterruptedException;
+    void execute( GetNodeCommand command ) throws RepositorySourceException;
 
     /**
      * Execute a command to get the properties of a node.
      * 
      * @param command the command to be executed; may not be null
      * @throws RepositorySourceException if there is an error executing the command
-     * @throws InterruptedException if the thread is interrupted during execution
      */
-    void execute( GetPropertiesCommand command ) throws RepositorySourceException, InterruptedException;
+    void execute( GetPropertiesCommand command ) throws RepositorySourceException;
 
     /**
      * Execute a command to get the children of a node.
      * 
      * @param command the command to be executed; may not be null
      * @throws RepositorySourceException if there is an error executing the command
-     * @throws InterruptedException if the thread is interrupted during execution
      */
-    void execute( GetChildrenCommand command ) throws RepositorySourceException, InterruptedException;
+    void execute( GetChildrenCommand command ) throws RepositorySourceException;
 
     /**
      * Execute a command to create a node and set the node's properties.
      * 
      * @param command the command to be executed; may not be null
      * @throws RepositorySourceException if there is an error executing the command
-     * @throws InterruptedException if the thread is interrupted during execution
      */
-    void execute( CreateNodeCommand command ) throws RepositorySourceException, InterruptedException;
+    void execute( CreateNodeCommand command ) throws RepositorySourceException;
 
     /**
      * Execute a command to set some (or all) of the properties on a node.
      * 
      * @param command the command to be executed; may not be null
      * @throws RepositorySourceException if there is an error executing the command
-     * @throws InterruptedException if the thread is interrupted during execution
      */
-    void execute( SetPropertiesCommand command ) throws RepositorySourceException, InterruptedException;
+    void execute( SetPropertiesCommand command ) throws RepositorySourceException;
 
     /**
      * Execute a command to copy a node to a new location.
      * 
      * @param command the command to be executed; may not be null
      * @throws RepositorySourceException if there is an error executing the command
-     * @throws InterruptedException if the thread is interrupted during execution
      */
-    void execute( CopyNodeCommand command ) throws RepositorySourceException, InterruptedException;
+    void execute( CopyNodeCommand command ) throws RepositorySourceException;
 
     /**
      * Execute a command to copy an entire branch to a new location.
      * 
      * @param command the command to be executed; may not be null
      * @throws RepositorySourceException if there is an error executing the command
-     * @throws InterruptedException if the thread is interrupted during execution
      */
-    void execute( CopyBranchCommand command ) throws RepositorySourceException, InterruptedException;
+    void execute( CopyBranchCommand command ) throws RepositorySourceException;
 
     /**
      * Execute a command to record the structure of a branch.
      * 
      * @param command the command to be executed; may not be null
      * @throws RepositorySourceException if there is an error executing the command
-     * @throws InterruptedException if the thread is interrupted during execution
      */
-    void execute( RecordBranchCommand command ) throws RepositorySourceException, InterruptedException;
+    void execute( RecordBranchCommand command ) throws RepositorySourceException;
 
     /**
      * Execute a command to delete an entire branch.
      * 
      * @param command the command to be executed; may not be null
      * @throws RepositorySourceException if there is an error executing the command
-     * @throws InterruptedException if the thread is interrupted during execution
      */
-    void execute( DeleteBranchCommand command ) throws RepositorySourceException, InterruptedException;
+    void execute( DeleteBranchCommand command ) throws RepositorySourceException;
 
     /**
      * Execute a command to move a branch from one location to another.
      * 
      * @param command the command to be executed; may not be null
      * @throws RepositorySourceException if there is an error executing the command
-     * @throws InterruptedException if the thread is interrupted during execution
      */
-    void execute( MoveBranchCommand command ) throws RepositorySourceException, InterruptedException;
+    void execute( MoveBranchCommand command ) throws RepositorySourceException;
 
     /**
      * Close this executor, allowing it to clean up any open resources.
-     * 
-     * @throws InterruptedException if the thread is interrupted while the connection is being closed
      */
-    void close() throws InterruptedException;
+    void close();
 }

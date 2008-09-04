@@ -112,7 +112,7 @@ public class FederatedRepositoryConnection implements RepositoryConnection {
      * {@inheritDoc}
      */
     public void execute( ExecutionContext context,
-                         GraphCommand... commands ) throws RepositorySourceException, InterruptedException {
+                         GraphCommand... commands ) throws RepositorySourceException {
         if (!this.repository.isRunning()) {
             throw new RepositorySourceException(FederationI18n.repositoryHasBeenShutDown.text(this.repository.getName()));
         }

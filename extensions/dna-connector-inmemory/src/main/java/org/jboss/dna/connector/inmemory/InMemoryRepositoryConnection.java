@@ -108,11 +108,10 @@ public class InMemoryRepositoryConnection implements RepositoryConnection {
     /**
      * {@inheritDoc}
      * 
-     * @throws InterruptedException
      * @throws RepositorySourceException
      */
     public void execute( ExecutionContext context,
-                         GraphCommand... commands ) throws RepositorySourceException, InterruptedException {
+                         GraphCommand... commands ) throws RepositorySourceException {
         // Do any commands update/write?
         Lock lock = this.content.getLock().readLock();
         for (GraphCommand command : commands) {

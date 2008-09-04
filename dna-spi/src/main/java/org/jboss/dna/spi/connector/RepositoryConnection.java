@@ -86,15 +86,12 @@ public interface RepositoryConnection {
      * @param context the environment in which the commands are being executed; never null
      * @param commands the commands to be executed; never null
      * @throws RepositorySourceException if there is a problem loading the node data
-     * @throws InterruptedException if the thread has been interrupted during the operation
      */
     void execute( ExecutionContext context,
-                  GraphCommand... commands ) throws RepositorySourceException, InterruptedException;
+                  GraphCommand... commands ) throws RepositorySourceException;
 
     /**
      * Close this connection to signal that it is no longer needed and that any accumulated resources are to be released.
-     * 
-     * @throws InterruptedException if the thread has been interrupted while the close was in progress
      */
-    void close() throws InterruptedException;
+    void close();
 }

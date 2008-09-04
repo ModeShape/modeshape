@@ -252,11 +252,7 @@ public class JcrRepository implements Repository {
         // Ensure valid workspace name
         if (workspaceName == null) workspaceName = JcrI18n.defaultWorkspaceName.text();
         // Create session
-        try {
-            return new JcrSession(this, execContext, workspaceName, connectionFactory.createConnection(workspaceName),
-                                  new WeakHashMap<UUID, WeakReference<Node>>());
-        } catch (InterruptedException error) {
-            throw new RepositoryException(error);
-        }
+        return new JcrSession(this, execContext, workspaceName, connectionFactory.createConnection(workspaceName),
+                              new WeakHashMap<UUID, WeakReference<Node>>());
     }
 }

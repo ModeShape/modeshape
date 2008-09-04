@@ -35,8 +35,7 @@ public interface RepositoryConnectionFactory {
      * @param sourceName the name of the source from which a connection should be obtained
      * @return the source, or null if no such source could be found (or created)
      * @throws RepositorySourceException if there was an error obtaining the new connection
-     * @throws InterruptedException if the thread was interrupted during the operation
      */
-    RepositoryConnection createConnection( String sourceName ) throws RepositorySourceException, InterruptedException;
+    RepositoryConnection createConnection( String sourceName ) throws RepositorySourceException;
 
 }

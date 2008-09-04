@@ -92,7 +92,7 @@ public class SingleProjectionCommandExecutor extends AbstractCommandExecutor {
         assert this.pathFactory != null;
     }
 
-    protected RepositoryConnection getConnection() throws RepositorySourceException, InterruptedException {
+    protected RepositoryConnection getConnection() throws RepositorySourceException {
         if (connection == null) {
             // Create a connection ...
             connection = this.connectionFactory.createConnection(this.projection.getSourceName());
@@ -106,7 +106,7 @@ public class SingleProjectionCommandExecutor extends AbstractCommandExecutor {
      * @see org.jboss.dna.spi.graph.commands.executor.AbstractCommandExecutor#close()
      */
     @Override
-    public void close() throws InterruptedException {
+    public void close() {
         if (this.connection != null) {
             try {
                 this.connection.close();
@@ -123,7 +123,7 @@ public class SingleProjectionCommandExecutor extends AbstractCommandExecutor {
      * @see org.jboss.dna.spi.graph.commands.executor.AbstractCommandExecutor#execute(org.jboss.dna.spi.graph.commands.GetChildrenCommand)
      */
     @Override
-    public void execute( GetChildrenCommand command ) throws RepositorySourceException, InterruptedException {
+    public void execute( GetChildrenCommand command ) throws RepositorySourceException {
         Path pathInSource = getPathInSource(command.getPath());
         getConnection().execute(this.getExecutionContext(), new ProjectedGetChildrenCommand(command, pathInSource));
     }
@@ -134,7 +134,7 @@ public class SingleProjectionCommandExecutor extends AbstractCommandExecutor {
      * @see org.jboss.dna.spi.graph.commands.executor.AbstractCommandExecutor#execute(org.jboss.dna.spi.graph.commands.GetPropertiesCommand)
      */
     @Override
-    public void execute( GetPropertiesCommand command ) throws RepositorySourceException, InterruptedException {
+    public void execute( GetPropertiesCommand command ) throws RepositorySourceException {
         Path pathInSource = getPathInSource(command.getPath());
         getConnection().execute(this.getExecutionContext(), new ProjectedGetPropertiesCommand(command, pathInSource));
     }
@@ -145,7 +145,7 @@ public class SingleProjectionCommandExecutor extends AbstractCommandExecutor {
      * @see org.jboss.dna.spi.graph.commands.executor.AbstractCommandExecutor#execute(org.jboss.dna.spi.graph.commands.GetNodeCommand)
      */
     @Override
-    public void execute( GetNodeCommand command ) throws RepositorySourceException, InterruptedException {
+    public void execute( GetNodeCommand command ) throws RepositorySourceException {
         Path pathInSource = getPathInSource(command.getPath());
         getConnection().execute(this.getExecutionContext(), new ProjectedGetNodeCommand(command, pathInSource));
     }
@@ -156,7 +156,7 @@ public class SingleProjectionCommandExecutor extends AbstractCommandExecutor {
      * @see org.jboss.dna.spi.graph.commands.executor.AbstractCommandExecutor#execute(org.jboss.dna.spi.graph.commands.CreateNodeCommand)
      */
     @Override
-    public void execute( CreateNodeCommand command ) throws RepositorySourceException, InterruptedException {
+    public void execute( CreateNodeCommand command ) throws RepositorySourceException {
         Path pathInSource = getPathInSource(command.getPath());
         getConnection().execute(this.getExecutionContext(), new ProjectedCreateNodeCommand(command, pathInSource));
     }
@@ -167,7 +167,7 @@ public class SingleProjectionCommandExecutor extends AbstractCommandExecutor {
      * @see org.jboss.dna.spi.graph.commands.executor.AbstractCommandExecutor#execute(org.jboss.dna.spi.graph.commands.SetPropertiesCommand)
      */
     @Override
-    public void execute( SetPropertiesCommand command ) throws RepositorySourceException, InterruptedException {
+    public void execute( SetPropertiesCommand command ) throws RepositorySourceException {
         Path pathInSource = getPathInSource(command.getPath());
         getConnection().execute(this.getExecutionContext(), new ProjectedSetPropertiesCommand(command, pathInSource));
     }
@@ -178,7 +178,7 @@ public class SingleProjectionCommandExecutor extends AbstractCommandExecutor {
      * @see org.jboss.dna.spi.graph.commands.executor.AbstractCommandExecutor#execute(org.jboss.dna.spi.graph.commands.DeleteBranchCommand)
      */
     @Override
-    public void execute( DeleteBranchCommand command ) throws RepositorySourceException, InterruptedException {
+    public void execute( DeleteBranchCommand command ) throws RepositorySourceException {
         Path pathInSource = getPathInSource(command.getPath());
         getConnection().execute(this.getExecutionContext(), new ProjectedDeleteBranchCommand(command, pathInSource));
     }
@@ -189,7 +189,7 @@ public class SingleProjectionCommandExecutor extends AbstractCommandExecutor {
      * @see org.jboss.dna.spi.graph.commands.executor.AbstractCommandExecutor#execute(org.jboss.dna.spi.graph.commands.MoveBranchCommand)
      */
     @Override
-    public void execute( MoveBranchCommand command ) throws RepositorySourceException, InterruptedException {
+    public void execute( MoveBranchCommand command ) throws RepositorySourceException {
         Path pathInSource = getPathInSource(command.getPath());
         Path newPathInSource = getPathInSource(command.getNewPath());
         getConnection().execute(this.getExecutionContext(),
@@ -202,7 +202,7 @@ public class SingleProjectionCommandExecutor extends AbstractCommandExecutor {
      * @see org.jboss.dna.spi.graph.commands.executor.AbstractCommandExecutor#execute(org.jboss.dna.spi.graph.commands.RecordBranchCommand)
      */
     @Override
-    public void execute( RecordBranchCommand command ) throws RepositorySourceException, InterruptedException {
+    public void execute( RecordBranchCommand command ) throws RepositorySourceException {
         Path pathInSource = getPathInSource(command.getPath());
         getConnection().execute(this.getExecutionContext(), new ProjectedRecordBranchCommand(command, pathInSource));
     }
@@ -213,7 +213,7 @@ public class SingleProjectionCommandExecutor extends AbstractCommandExecutor {
      * @see org.jboss.dna.spi.graph.commands.executor.AbstractCommandExecutor#execute(org.jboss.dna.spi.graph.commands.CopyBranchCommand)
      */
     @Override
-    public void execute( CopyBranchCommand command ) throws RepositorySourceException, InterruptedException {
+    public void execute( CopyBranchCommand command ) throws RepositorySourceException {
         Path pathInSource = getPathInSource(command.getPath());
         Path newPathInSource = getPathInSource(command.getNewPath());
         getConnection().execute(this.getExecutionContext(),
@@ -226,7 +226,7 @@ public class SingleProjectionCommandExecutor extends AbstractCommandExecutor {
      * @see org.jboss.dna.spi.graph.commands.executor.AbstractCommandExecutor#execute(org.jboss.dna.spi.graph.commands.CopyNodeCommand)
      */
     @Override
-    public void execute( CopyNodeCommand command ) throws RepositorySourceException, InterruptedException {
+    public void execute( CopyNodeCommand command ) throws RepositorySourceException {
         Path pathInSource = getPathInSource(command.getPath());
         Path newPathInSource = getPathInSource(command.getNewPath());
         getConnection().execute(this.getExecutionContext(), new ProjectedCopyNodeCommand(command, pathInSource, newPathInSource));

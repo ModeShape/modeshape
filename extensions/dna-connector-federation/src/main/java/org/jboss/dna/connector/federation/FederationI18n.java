@@ -35,7 +35,6 @@ public final class FederationI18n {
     public static I18n nodeDoesNotExistAtPath;
     public static I18n errorRemovingNodeFromCache;
 
-    public static I18n interruptedWhileUsingFederationConfigurationRepository;
     public static I18n unableToFindFederatedRepositoryInJndi;
     public static I18n unableToFindExecutionContextFactoryInJndi;
     public static I18n unableToCreateExecutionContext;

@@ -845,9 +845,6 @@ public class FederatedRepositorySource implements RepositorySource, ObjectFactor
         } catch (InvalidPathException err) {
             I18n msg = FederationI18n.federatedRepositoryCannotBeFound;
             throw new FederationException(msg.text(repositoryName));
-        } catch (InterruptedException err) {
-            I18n msg = FederationI18n.interruptedWhileUsingFederationConfigurationRepository;
-            throw new FederationException(msg.text(repositoryName));
         }
 
     }

@@ -111,7 +111,7 @@ public abstract class AbstractCommandExecutor implements CommandExecutor {
      * 
      * @see org.jboss.dna.spi.graph.commands.executor.CommandExecutor#execute(org.jboss.dna.spi.graph.commands.GraphCommand)
      */
-    public void execute( GraphCommand command ) throws RepositorySourceException, InterruptedException {
+    public void execute( GraphCommand command ) throws RepositorySourceException {
         if (command == null) return;
         if (command instanceof CompositeCommand) {
             execute((CompositeCommand)command);
@@ -155,7 +155,7 @@ public abstract class AbstractCommandExecutor implements CommandExecutor {
      * 
      * @see org.jboss.dna.spi.graph.commands.executor.CommandExecutor#execute(org.jboss.dna.spi.graph.commands.CompositeCommand)
      */
-    public void execute( CompositeCommand command ) throws RepositorySourceException, InterruptedException {
+    public void execute( CompositeCommand command ) throws RepositorySourceException {
         assert command != null;
         for (GraphCommand nestedCommand : command) {
             execute(nestedCommand);
@@ -172,7 +172,7 @@ public abstract class AbstractCommandExecutor implements CommandExecutor {
      * 
      * @see org.jboss.dna.spi.graph.commands.executor.CommandExecutor#execute(org.jboss.dna.spi.graph.commands.GetNodeCommand)
      */
-    public void execute( GetNodeCommand command ) throws RepositorySourceException, InterruptedException {
+    public void execute( GetNodeCommand command ) throws RepositorySourceException {
         execute((GetPropertiesCommand)command);
         execute((GetChildrenCommand)command);
     }
@@ -182,8 +182,7 @@ public abstract class AbstractCommandExecutor implements CommandExecutor {
      * 
      * @see org.jboss.dna.spi.graph.commands.executor.CommandExecutor#execute(org.jboss.dna.spi.graph.commands.GetPropertiesCommand)
      */
-    @SuppressWarnings( "unused" )
-    public void execute( GetPropertiesCommand command ) throws RepositorySourceException, InterruptedException {
+    public void execute( GetPropertiesCommand command ) throws RepositorySourceException {
     }
 
     /**
@@ -191,8 +190,7 @@ public abstract class AbstractCommandExecutor implements CommandExecutor {
      * 
      * @see org.jboss.dna.spi.graph.commands.executor.CommandExecutor#execute(org.jboss.dna.spi.graph.commands.GetChildrenCommand)
      */
-    @SuppressWarnings( "unused" )
-    public void execute( GetChildrenCommand command ) throws RepositorySourceException, InterruptedException {
+    public void execute( GetChildrenCommand command ) throws RepositorySourceException {
     }
 
     /**
@@ -200,8 +198,7 @@ public abstract class AbstractCommandExecutor implements CommandExecutor {
      * 
      * @see org.jboss.dna.spi.graph.commands.executor.CommandExecutor#execute(org.jboss.dna.spi.graph.commands.CreateNodeCommand)
      */
-    @SuppressWarnings( "unused" )
-    public void execute( CreateNodeCommand command ) throws RepositorySourceException, InterruptedException {
+    public void execute( CreateNodeCommand command ) throws RepositorySourceException {
     }
 
     /**
@@ -209,8 +206,7 @@ public abstract class AbstractCommandExecutor implements CommandExecutor {
      * 
      * @see org.jboss.dna.spi.graph.commands.executor.CommandExecutor#execute(org.jboss.dna.spi.graph.commands.SetPropertiesCommand)
      */
-    @SuppressWarnings( "unused" )
-    public void execute( SetPropertiesCommand command ) throws RepositorySourceException, InterruptedException {
+    public void execute( SetPropertiesCommand command ) throws RepositorySourceException {
     }
 
     /**
@@ -218,8 +214,7 @@ public abstract class AbstractCommandExecutor implements CommandExecutor {
      * 
      * @see org.jboss.dna.spi.graph.commands.executor.CommandExecutor#execute(org.jboss.dna.spi.graph.commands.CopyNodeCommand)
      */
-    @SuppressWarnings( "unused" )
-    public void execute( CopyNodeCommand command ) throws RepositorySourceException, InterruptedException {
+    public void execute( CopyNodeCommand command ) throws RepositorySourceException {
     }
 
     /**
@@ -227,8 +222,7 @@ public abstract class AbstractCommandExecutor implements CommandExecutor {
      * 
      * @see org.jboss.dna.spi.graph.commands.executor.CommandExecutor#execute(org.jboss.dna.spi.graph.commands.CopyBranchCommand)
      */
-    @SuppressWarnings( "unused" )
-    public void execute( CopyBranchCommand command ) throws RepositorySourceException, InterruptedException {
+    public void execute( CopyBranchCommand command ) throws RepositorySourceException {
     }
 
     /**
@@ -236,8 +230,7 @@ public abstract class AbstractCommandExecutor implements CommandExecutor {
      * 
      * @see org.jboss.dna.spi.graph.commands.executor.CommandExecutor#execute(org.jboss.dna.spi.graph.commands.DeleteBranchCommand)
      */
-    @SuppressWarnings( "unused" )
-    public void execute( DeleteBranchCommand command ) throws RepositorySourceException, InterruptedException {
+    public void execute( DeleteBranchCommand command ) throws RepositorySourceException {
     }
 
     /**
@@ -245,8 +238,7 @@ public abstract class AbstractCommandExecutor implements CommandExecutor {
      * 
      * @see org.jboss.dna.spi.graph.commands.executor.CommandExecutor#execute(org.jboss.dna.spi.graph.commands.MoveBranchCommand)
      */
-    @SuppressWarnings( "unused" )
-    public void execute( MoveBranchCommand command ) throws RepositorySourceException, InterruptedException {
+    public void execute( MoveBranchCommand command ) throws RepositorySourceException {
     }
 
     /**
@@ -254,8 +246,7 @@ public abstract class AbstractCommandExecutor implements CommandExecutor {
      * 
      * @see org.jboss.dna.spi.graph.commands.executor.CommandExecutor#execute(org.jboss.dna.spi.graph.commands.RecordBranchCommand)
      */
-    @SuppressWarnings( "unused" )
-    public void execute( RecordBranchCommand command ) throws RepositorySourceException, InterruptedException {
+    public void execute( RecordBranchCommand command ) throws RepositorySourceException {
     }
 
     /**
@@ -263,8 +254,7 @@ public abstract class AbstractCommandExecutor implements CommandExecutor {
      * 
      * @see org.jboss.dna.spi.graph.commands.executor.CommandExecutor#close()
      */
-    @SuppressWarnings( "unused" )
-    public void close() throws InterruptedException {
+    public void close() {
     }
 
 }

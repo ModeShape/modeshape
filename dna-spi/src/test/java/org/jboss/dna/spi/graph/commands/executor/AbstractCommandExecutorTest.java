@@ -218,64 +218,64 @@ public class AbstractCommandExecutorTest {
         }
 
         @Override
-        public void execute( GraphCommand command ) throws RepositorySourceException, InterruptedException {
+        public void execute( GraphCommand command ) throws RepositorySourceException {
             super.execute(command);
             validator.execute(command);
         }
 
         @Override
-        public void execute( CompositeCommand command ) throws RepositorySourceException, InterruptedException {
+        public void execute( CompositeCommand command ) throws RepositorySourceException {
             super.execute(command);
             validator.execute(command);
         }
 
         @Override
-        public void execute( CopyBranchCommand command ) throws RepositorySourceException, InterruptedException {
+        public void execute( CopyBranchCommand command ) throws RepositorySourceException {
             validator.execute(command);
         }
 
         @Override
-        public void execute( CopyNodeCommand command ) throws RepositorySourceException, InterruptedException {
+        public void execute( CopyNodeCommand command ) throws RepositorySourceException {
             validator.execute(command);
         }
 
         @Override
-        public void execute( CreateNodeCommand command ) throws RepositorySourceException, InterruptedException {
+        public void execute( CreateNodeCommand command ) throws RepositorySourceException {
             validator.execute(command);
         }
 
         @Override
-        public void execute( DeleteBranchCommand command ) throws RepositorySourceException, InterruptedException {
+        public void execute( DeleteBranchCommand command ) throws RepositorySourceException {
             validator.execute(command);
         }
 
         @Override
-        public void execute( GetChildrenCommand command ) throws RepositorySourceException, InterruptedException {
+        public void execute( GetChildrenCommand command ) throws RepositorySourceException {
             validator.execute(command);
         }
 
         @Override
-        public void execute( GetPropertiesCommand command ) throws RepositorySourceException, InterruptedException {
+        public void execute( GetPropertiesCommand command ) throws RepositorySourceException {
             validator.execute(command);
         }
 
         @Override
-        public void execute( MoveBranchCommand command ) throws RepositorySourceException, InterruptedException {
+        public void execute( MoveBranchCommand command ) throws RepositorySourceException {
             validator.execute(command);
         }
 
         @Override
-        public void execute( GetNodeCommand command ) throws RepositorySourceException, InterruptedException {
+        public void execute( GetNodeCommand command ) throws RepositorySourceException {
             validator.execute(command);
         }
 
         @Override
-        public void execute( RecordBranchCommand command ) throws RepositorySourceException, InterruptedException {
+        public void execute( RecordBranchCommand command ) throws RepositorySourceException {
             validator.execute(command);
         }
 
         @Override
-        public void execute( SetPropertiesCommand command ) throws RepositorySourceException, InterruptedException {
+        public void execute( SetPropertiesCommand command ) throws RepositorySourceException {
             validator.execute(command);
         }
     }

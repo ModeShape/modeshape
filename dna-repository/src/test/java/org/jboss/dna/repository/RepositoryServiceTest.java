@@ -159,12 +159,6 @@ public class RepositoryServiceTest {
         service.getAdministrator().start();
     }
 
-    @Test( expected = FederationException.class )
-    public void shouldFailToStartUpIfInterruptedWhileConnectingToConfigurationRepository() throws Exception {
-        stub(sources.createConnection(configSourceName)).toThrow(new InterruptedException());
-        service.getAdministrator().start();
-    }
-
     @Test
     public void shouldStartUpUsingConfigurationRepositoryThatContainsSomeSources() throws Exception {
         // Use a real source manager for this test ...

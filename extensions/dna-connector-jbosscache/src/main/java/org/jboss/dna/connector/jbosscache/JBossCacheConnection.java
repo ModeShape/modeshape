@@ -147,7 +147,7 @@ public class JBossCacheConnection implements RepositoryConnection {
      * {@inheritDoc}
      */
     public void execute( ExecutionContext context,
-                         GraphCommand... commands ) throws RepositorySourceException, InterruptedException {
+                         GraphCommand... commands ) throws RepositorySourceException {
         // Now execute the commands ...
         CommandExecutor executor = new Executor(context, this.getSourceName());
         for (GraphCommand command : commands) {

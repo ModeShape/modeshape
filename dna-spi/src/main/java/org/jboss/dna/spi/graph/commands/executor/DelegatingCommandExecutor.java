@@ -52,7 +52,7 @@ public class DelegatingCommandExecutor implements CommandExecutor {
      * 
      * @see org.jboss.dna.spi.graph.commands.executor.CommandExecutor#close()
      */
-    public void close() throws InterruptedException {
+    public void close() {
         delegate.close();
     }
 
@@ -61,7 +61,7 @@ public class DelegatingCommandExecutor implements CommandExecutor {
      * 
      * @see org.jboss.dna.spi.graph.commands.executor.CommandExecutor#execute(org.jboss.dna.spi.graph.commands.GraphCommand)
      */
-    public void execute( GraphCommand command ) throws RepositorySourceException, InterruptedException {
+    public void execute( GraphCommand command ) throws RepositorySourceException {
         delegate.execute(command);
     }
 
@@ -70,7 +70,7 @@ public class DelegatingCommandExecutor implements CommandExecutor {
      * 
      * @see org.jboss.dna.spi.graph.commands.executor.CommandExecutor#execute(org.jboss.dna.spi.graph.commands.CompositeCommand)
      */
-    public void execute( CompositeCommand command ) throws RepositorySourceException, InterruptedException {
+    public void execute( CompositeCommand command ) throws RepositorySourceException {
         delegate.execute(command);
     }
 
@@ -79,7 +79,7 @@ public class DelegatingCommandExecutor implements CommandExecutor {
      * 
      * @see org.jboss.dna.spi.graph.commands.executor.CommandExecutor#execute(org.jboss.dna.spi.graph.commands.GetNodeCommand)
      */
-    public void execute( GetNodeCommand command ) throws RepositorySourceException, InterruptedException {
+    public void execute( GetNodeCommand command ) throws RepositorySourceException {
         delegate.execute(command);
     }
 
@@ -88,7 +88,7 @@ public class DelegatingCommandExecutor implements CommandExecutor {
      * 
      * @see org.jboss.dna.spi.graph.commands.executor.CommandExecutor#execute(org.jboss.dna.spi.graph.commands.GetPropertiesCommand)
      */
-    public void execute( GetPropertiesCommand command ) throws RepositorySourceException, InterruptedException {
+    public void execute( GetPropertiesCommand command ) throws RepositorySourceException {
         delegate.execute(command);
     }
 
@@ -97,7 +97,7 @@ public class DelegatingCommandExecutor implements CommandExecutor {
      * 
      * @see org.jboss.dna.spi.graph.commands.executor.CommandExecutor#execute(org.jboss.dna.spi.graph.commands.GetChildrenCommand)
      */
-    public void execute( GetChildrenCommand command ) throws RepositorySourceException, InterruptedException {
+    public void execute( GetChildrenCommand command ) throws RepositorySourceException {
         delegate.execute(command);
     }
 
@@ -106,7 +106,7 @@ public class DelegatingCommandExecutor implements CommandExecutor {
      * 
      * @see org.jboss.dna.spi.graph.commands.executor.CommandExecutor#execute(org.jboss.dna.spi.graph.commands.CreateNodeCommand)
      */
-    public void execute( CreateNodeCommand command ) throws RepositorySourceException, InterruptedException {
+    public void execute( CreateNodeCommand command ) throws RepositorySourceException {
         delegate.execute(command);
     }
 
@@ -115,7 +115,7 @@ public class DelegatingCommandExecutor implements CommandExecutor {
      * 
      * @see org.jboss.dna.spi.graph.commands.executor.CommandExecutor#execute(org.jboss.dna.spi.graph.commands.SetPropertiesCommand)
      */
-    public void execute( SetPropertiesCommand command ) throws RepositorySourceException, InterruptedException {
+    public void execute( SetPropertiesCommand command ) throws RepositorySourceException {
         delegate.execute(command);
     }
 
@@ -124,7 +124,7 @@ public class DelegatingCommandExecutor implements CommandExecutor {
      * 
      * @see org.jboss.dna.spi.graph.commands.executor.CommandExecutor#execute(org.jboss.dna.spi.graph.commands.CopyNodeCommand)
      */
-    public void execute( CopyNodeCommand command ) throws RepositorySourceException, InterruptedException {
+    public void execute( CopyNodeCommand command ) throws RepositorySourceException {
         delegate.execute(command);
     }
 
@@ -133,7 +133,7 @@ public class DelegatingCommandExecutor implements CommandExecutor {
      * 
      * @see org.jboss.dna.spi.graph.commands.executor.CommandExecutor#execute(org.jboss.dna.spi.graph.commands.CopyBranchCommand)
      */
-    public void execute( CopyBranchCommand command ) throws RepositorySourceException, InterruptedException {
+    public void execute( CopyBranchCommand command ) throws RepositorySourceException {
         delegate.execute(command);
     }
 
@@ -142,7 +142,7 @@ public class DelegatingCommandExecutor implements CommandExecutor {
      * 
      * @see org.jboss.dna.spi.graph.commands.executor.CommandExecutor#execute(org.jboss.dna.spi.graph.commands.RecordBranchCommand)
      */
-    public void execute( RecordBranchCommand command ) throws RepositorySourceException, InterruptedException {
+    public void execute( RecordBranchCommand command ) throws RepositorySourceException {
         delegate.execute(command);
     }
 
@@ -151,7 +151,7 @@ public class DelegatingCommandExecutor implements CommandExecutor {
      * 
      * @see org.jboss.dna.spi.graph.commands.executor.CommandExecutor#execute(org.jboss.dna.spi.graph.commands.DeleteBranchCommand)
      */
-    public void execute( DeleteBranchCommand command ) throws RepositorySourceException, InterruptedException {
+    public void execute( DeleteBranchCommand command ) throws RepositorySourceException {
         delegate.execute(command);
     }
 
@@ -160,7 +160,7 @@ public class DelegatingCommandExecutor implements CommandExecutor {
      * 
      * @see org.jboss.dna.spi.graph.commands.executor.CommandExecutor#execute(org.jboss.dna.spi.graph.commands.MoveBranchCommand)
      */
-    public void execute( MoveBranchCommand command ) throws RepositorySourceException, InterruptedException {
+    public void execute( MoveBranchCommand command ) throws RepositorySourceException {
         delegate.execute(command);
     }
 

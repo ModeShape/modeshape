@@ -186,7 +186,7 @@ public class FederatingCommandExecutor extends AbstractCommandExecutor {
      * @see org.jboss.dna.spi.graph.commands.executor.AbstractCommandExecutor#close()
      */
     @Override
-    public void close() throws InterruptedException {
+    public void close() {
         try {
             super.close();
         } finally {
@@ -203,7 +203,7 @@ public class FederatingCommandExecutor extends AbstractCommandExecutor {
         }
     }
 
-    protected RepositoryConnection getConnectionToCache() throws RepositorySourceException, InterruptedException {
+    protected RepositoryConnection getConnectionToCache() throws RepositorySourceException {
         if (this.cacheConnection == null) {
             this.cacheConnection = getConnection(this.cacheProjection);
         }
@@ -211,7 +211,7 @@ public class FederatingCommandExecutor extends AbstractCommandExecutor {
         return this.cacheConnection;
     }
 
-    protected RepositoryConnection getConnection( Projection projection ) throws RepositorySourceException, InterruptedException {
+    protected RepositoryConnection getConnection( Projection projection ) throws RepositorySourceException {
         String sourceName = projection.getSourceName();
         RepositoryConnection connection = connectionsBySourceName.get(sourceName);
         if (connection == null) {
@@ -235,7 +235,7 @@ public class FederatingCommandExecutor extends AbstractCommandExecutor {
      * @see org.jboss.dna.spi.graph.commands.executor.AbstractCommandExecutor#execute(org.jboss.dna.spi.graph.commands.GetNodeCommand)
      */
     @Override
-    public void execute( GetNodeCommand command ) throws RepositorySourceException, InterruptedException {
+    public void execute( GetNodeCommand command ) throws RepositorySourceException {
         BasicGetNodeCommand nodeInfo = getNode(command.getPath());
         if (nodeInfo.hasError()) return;
         for (Property property : nodeInfo.getProperties()) {
@@ -252,7 +252,7 @@ public class FederatingCommandExecutor extends AbstractCommandExecutor {
      * @see org.jboss.dna.spi.graph.commands.executor.AbstractCommandExecutor#execute(org.jboss.dna.spi.graph.commands.GetPropertiesCommand)
      */
     @Override
-    public void execute( GetPropertiesCommand command ) throws RepositorySourceException, InterruptedException {
+    public void execute( GetPropertiesCommand command ) throws RepositorySourceException {
         BasicGetNodeCommand nodeInfo = getNode(command.getPath());
         if (nodeInfo.hasError()) return;
         for (Property property : nodeInfo.getProperties()) {
@@ -266,7 +266,7 @@ public class FederatingCommandExecutor extends AbstractCommandExecutor {
      * @see org.jboss.dna.spi.graph.commands.executor.AbstractCommandExecutor#execute(org.jboss.dna.spi.graph.commands.GetChildrenCommand)
      */
     @Override
-    public void execute( GetChildrenCommand command ) throws RepositorySourceException, InterruptedException {
+    public void execute( GetChildrenCommand command ) throws RepositorySourceException {
         BasicGetNodeCommand nodeInfo = getNode(command.getPath());
         if (nodeInfo.hasError()) return;
         for (Segment child : nodeInfo.getChildren()) {
@@ -280,9 +280,8 @@ public class FederatingCommandExecutor extends AbstractCommandExecutor {
      * @param path the path of the node to be returned
      * @return the node information
      * @throws RepositorySourceException
-     * @throws InterruptedException
      */
-    protected BasicGetNodeCommand getNode( Path path ) throws RepositorySourceException, InterruptedException {
+    protected BasicGetNodeCommand getNode( Path path ) throws RepositorySourceException {
         // Check the cache first ...
         final ExecutionContext context = getExecutionContext();
         RepositoryConnection cacheConnection = getConnectionToCache();
@@ -370,7 +369,7 @@ public class FederatingCommandExecutor extends AbstractCommandExecutor {
 
     protected FederatedNode createFederatedNode( Path path,
                                                  List<Contribution> contributions,
-                                                 boolean updateCache ) throws RepositorySourceException, InterruptedException {
+                                                 boolean updateCache ) throws RepositorySourceException {
 
         // If there are no contributions from any source ...
         boolean foundNonEmptyContribution = false;
@@ -415,13 +414,11 @@ public class FederatingCommandExecutor extends AbstractCommandExecutor {
      * @param sourceNames the names of the sources from which contributions are to be loaded; may be empty or null if all
      *        contributions from all sources are to be loaded
      * @param contributions the list into which the contributions are to be placed
-     * @throws InterruptedException
      * @throws RepositorySourceException
      */
     protected void loadContributionsFromSources( Path path,
                                                  Set<String> sourceNames,
-                                                 List<Contribution> contributions )
-        throws RepositorySourceException, InterruptedException {
+                                                 List<Contribution> contributions ) throws RepositorySourceException {
         // At this point, there is no merge plan, so read information from the sources ...
         ExecutionContext context = getExecutionContext();
         PathFactory pathFactory = context.getValueFactories().getPathFactory();
@@ -528,7 +525,7 @@ public class FederatingCommandExecutor extends AbstractCommandExecutor {
         return value instanceof MergePlan ? (MergePlan)value : null;
     }
 
-    protected void updateCache( FederatedNode mergedNode ) throws RepositorySourceException, InterruptedException {
+    protected void updateCache( FederatedNode mergedNode ) throws RepositorySourceException {
         final ExecutionContext context = getExecutionContext();
         final RepositoryConnection cacheConnection = getConnectionToCache();
         final Path path = mergedNode.getPath();

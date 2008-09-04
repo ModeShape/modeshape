@@ -555,12 +555,8 @@ public class RepositoryConnectionPool {
             // If there are connections being used, close them now ...
             if (!this.inUseConnections.isEmpty()) {
                 for (ConnectionWrapper connectionInUse : this.inUseConnections) {
-                    try {
-                        this.logger.trace("Closing repository connection to {0}", getSourceName());
-                        connectionInUse.getOriginal().close();
-                    } catch (InterruptedException e) {
-                        // Ignore this ...
-                    }
+                    this.logger.trace("Closing repository connection to {0}", getSourceName());
+                    connectionInUse.getOriginal().close();
                 }
                 this.poolSize -= this.inUseConnections.size();
                 // The last connection that is closed will transition the runState to TERMINATED ...
@@ -684,10 +680,9 @@ public class RepositoryConnectionPool {
      * 
      * @return a connection
      * @throws RepositorySourceException if there is a problem obtaining a connection
-     * @throws InterruptedException if the thread is interrupted while attempting to get a connection
      * @throws IllegalStateException if the factory is not in a state to create or return connections
      */
-    public RepositoryConnection getConnection() throws RepositorySourceException, InterruptedException {
+    public RepositoryConnection getConnection() throws RepositorySourceException {
         int attemptsAllowed = this.maxFailedAttemptsBeforeError.get();
         ConnectionWrapper connection = null;
         // Do this until we get a good connection ...
@@ -709,7 +704,13 @@ public class RepositoryConnectionPool {
                 // Peek to see if there is a connection available ...
                 else if (this.availableConnections.peek() != null) {
                     // There is, so take it and return it ...
-                    connection = this.availableConnections.take();
+                    try {
+                        connection = this.availableConnections.take();
+                    } catch (InterruptedException e) {
+                        this.logger.trace("Cancelled obtaining a repository connection from pool {0}", getSourceName());
+                        Thread.interrupted();
+                        throw new RepositorySourceException(getSourceName(), e);
+                    }
                 }
                 // There is no connection available. If there are fewer total connections than the maximum size ...
                 else if (this.poolSize < this.maximumPoolSize) {
@@ -725,7 +726,13 @@ public class RepositoryConnectionPool {
             if (connection == null) {
                 // There are not enough connections, so wait in line for the next available connection ...
                 this.logger.trace("Waiting for a repository connection from pool {0}", getSourceName());
-                connection = this.availableConnections.take();
+                try {
+                    connection = this.availableConnections.take();
+                } catch (InterruptedException e) {
+                    this.logger.trace("Cancelled obtaining a repository connection from pool {0}", getSourceName());
+                    Thread.interrupted();
+                    throw new RepositorySourceException(getSourceName(), e);
+                }
                 mainLock = this.mainLock;
                 mainLock.lock();
                 try {
@@ -738,7 +745,14 @@ public class RepositoryConnectionPool {
                 this.logger.trace("Recieved a repository connection from pool {0}", getSourceName());
             }
             if (connection != null && this.validateConnectionBeforeUse.get()) {
-                connection = validateConnection(connection);
+                try {
+                    connection = validateConnection(connection);
+                } catch (InterruptedException e) {
+                    this.logger.trace("Cancelled validating a repository connection obtained from pool {0}", getSourceName());
+                    returnConnection(connection);
+                    Thread.interrupted();
+                    throw new RepositorySourceException(getSourceName(), e);
+                }
             }
         }
         if (connection == null) {
@@ -784,12 +798,7 @@ public class RepositoryConnectionPool {
         }
         // Close the connection if we're supposed to (do it outside of the main lock)...
         if (wrapperToClose != null) {
-            try {
-                closeConnection(wrapper);
-            } catch (InterruptedException e) {
-                // catch this, as there's not much we can do and the caller doesn't care or know how to handle it
-                this.logger.trace(e, "Interrupted while closing a repository connection");
-            }
+            closeConnection(wrapper);
         }
     }
 
@@ -798,18 +807,15 @@ public class RepositoryConnectionPool {
      * 
      * @param connection the connection to be validated; may not be null
      * @return the validated connection, or null if the connection did not validate and was removed from the pool
+     * @throws InterruptedException if the thread is interrupted while validating the connection
      */
-    protected ConnectionWrapper validateConnection( ConnectionWrapper connection ) {
+    protected ConnectionWrapper validateConnection( ConnectionWrapper connection ) throws InterruptedException {
         assert connection != null;
         ConnectionWrapper invalidConnection = null;
         try {
             if (!connection.ping(this.pingTimeout.get(), TimeUnit.NANOSECONDS)) {
                 invalidConnection = connection;
             }
-        } catch (InterruptedException e) {
-            // catch this, as there's not much we can do and the caller doesn't care or know how to handle it
-            this.logger.trace(e, "Interrupted while pinging a repository connection");
-            invalidConnection = connection;
         } finally {
             if (invalidConnection != null) {
                 connection = null;
@@ -827,10 +833,9 @@ public class RepositoryConnectionPool {
      * 
      * @return the connection wrapper with a new connection
      * @throws RepositorySourceException if there was an error obtaining the new connection
-     * @throws InterruptedException if the thread was interrupted during the operation
      */
     @GuardedBy( "mainLock" )
-    protected ConnectionWrapper newWrappedConnection() throws RepositorySourceException, InterruptedException {
+    protected ConnectionWrapper newWrappedConnection() throws RepositorySourceException {
         RepositoryConnection connection = this.source.getConnection();
         ++this.poolSize;
         this.totalConnectionsCreated.incrementAndGet();
@@ -842,9 +847,8 @@ public class RepositoryConnectionPool {
      * method does decrement the {@link #poolSize pool size}.
      * 
      * @param wrapper the wrapper for the connection to be closed
-     * @throws InterruptedException if the thread was interrupted during the operation
      */
-    protected void closeConnection( ConnectionWrapper wrapper ) throws InterruptedException {
+    protected void closeConnection( ConnectionWrapper wrapper ) {
         assert wrapper != null;
         RepositoryConnection original = wrapper.getOriginal();
         assert original != null;
@@ -881,12 +885,8 @@ public class RepositoryConnectionPool {
         Collection<ConnectionWrapper> extraConnections = new LinkedList<ConnectionWrapper>();
         this.availableConnections.drainTo(extraConnections, count);
         for (ConnectionWrapper connection : extraConnections) {
-            try {
-                this.logger.trace("Closing repository connection to {0}", getSourceName());
-                connection.getOriginal().close();
-            } catch (InterruptedException e) {
-                // Ignore this ...
-            }
+            this.logger.trace("Closing repository connection to {0}", getSourceName());
+            connection.getOriginal().close();
         }
         int numClosed = extraConnections.size();
         this.poolSize -= numClosed;
@@ -895,7 +895,7 @@ public class RepositoryConnectionPool {
     }
 
     @GuardedBy( "mainLock" )
-    protected boolean addConnectionIfUnderCorePoolSize() throws RepositorySourceException, InterruptedException {
+    protected boolean addConnectionIfUnderCorePoolSize() throws RepositorySourceException {
         // Add connection ...
         if (this.poolSize < this.corePoolSize) {
             this.availableConnections.offer(newWrappedConnection());
@@ -906,7 +906,7 @@ public class RepositoryConnectionPool {
     }
 
     @GuardedBy( "mainLock" )
-    protected int addConnectionsIfUnderCorePoolSize() throws RepositorySourceException, InterruptedException {
+    protected int addConnectionsIfUnderCorePoolSize() throws RepositorySourceException {
         // Add connections ...
         int n = 0;
         while (this.poolSize < this.corePoolSize) {
@@ -978,7 +978,7 @@ public class RepositoryConnectionPool {
          * {@inheritDoc}
          */
         public void execute( ExecutionContext context,
-                             GraphCommand... commands ) throws RepositorySourceException, InterruptedException {
+                             GraphCommand... commands ) throws RepositorySourceException {
             if (closed) throw new IllegalStateException(SpiI18n.closedConnectionMayNotBeUsed.text());
             this.original.execute(context, commands);
         }
@@ -995,7 +995,7 @@ public class RepositoryConnectionPool {
         /**
          * {@inheritDoc}
          */
-        public void close() throws InterruptedException {
+        public void close() {
             if (!closed) {
                 this.lastUsed = System.currentTimeMillis();
                 this.original.close();

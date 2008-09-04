@@ -62,10 +62,9 @@ public interface RepositorySource extends Referenceable, Serializable {
      * 
      * @return a connection
      * @throws RepositorySourceException if there is a problem obtaining a connection
-     * @throws InterruptedException if the thread is interrupted while attempting to get a connection
      * @throws IllegalStateException if the factory is not in a state to create or return connections
      */
-    RepositoryConnection getConnection() throws RepositorySourceException, InterruptedException;
+    RepositoryConnection getConnection() throws RepositorySourceException;
 
     /**
      * Get the maximum number of retries that may be performed on a given operation when using {@link #getConnection()

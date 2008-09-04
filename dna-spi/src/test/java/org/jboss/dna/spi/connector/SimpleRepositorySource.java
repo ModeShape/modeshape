@@ -231,7 +231,7 @@ public class SimpleRepositorySource implements RepositorySource {
          *      org.jboss.dna.spi.graph.commands.GraphCommand[])
          */
         public void execute( ExecutionContext context,
-                             GraphCommand... commands ) throws RepositorySourceException, InterruptedException {
+                             GraphCommand... commands ) throws RepositorySourceException {
             assert context != null;
             if (repository.isShutdown()) {
                 throw new RepositorySourceException(getName(), "The repository \"" + repository.getRepositoryName()

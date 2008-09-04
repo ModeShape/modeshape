@@ -84,7 +84,7 @@ public class RepositoryConnectionPoolTest {
     }
 
     @Test
-    public void shouldCreateConnectionAndRecoverWhenClosed() throws RepositorySourceException, InterruptedException {
+    public void shouldCreateConnectionAndRecoverWhenClosed() throws RepositorySourceException {
         assertThat(pool.getTotalConnectionsCreated(), is(0l));
         assertThat(pool.getTotalConnectionsUsed(), is(0l));
 
@@ -142,8 +142,7 @@ public class RepositoryConnectionPoolTest {
     }
 
     @Test
-    public void shouldAllowConnectionsToBeClosedMoreThanOnceWithNoIllEffects()
-        throws RepositorySourceException, InterruptedException {
+    public void shouldAllowConnectionsToBeClosedMoreThanOnceWithNoIllEffects() throws RepositorySourceException {
         assertThat(pool.getTotalConnectionsCreated(), is(0l));
         assertThat(pool.getTotalConnectionsUsed(), is(0l));
 

@@ -368,7 +368,7 @@ public class RepositorySourceManager implements RepositoryConnectionFactory {
      * 
      * @see org.jboss.dna.spi.connector.RepositoryConnectionFactory#createConnection(java.lang.String)
      */
-    public RepositoryConnection createConnection( String sourceName ) throws InterruptedException {
+    public RepositoryConnection createConnection( String sourceName ) {
         try {
             this.sourcesLock.readLock().lock();
             for (RepositoryConnectionPool existingPool : this.pools) {

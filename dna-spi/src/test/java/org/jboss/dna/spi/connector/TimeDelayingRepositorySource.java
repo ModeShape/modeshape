@@ -296,9 +296,16 @@ public class TimeDelayingRepositorySource implements RepositorySource {
          * {@inheritDoc}
          */
         public void execute( ExecutionContext context,
-                             GraphCommand... commands ) throws InterruptedException {
+                             GraphCommand... commands ) {
             long delay = this.loadDelay.get();
-            if (delay > 0l) Thread.sleep(delay);
+            if (delay > 0l) {
+                try {
+                    Thread.sleep(delay);
+                } catch (InterruptedException e) {
+                    Thread.interrupted();
+                    throw new RepositorySourceException(this.getSourceName(), e);
+                }
+            }
             this.loadCount.incrementAndGet();
         }
 
@@ -315,8 +322,13 @@ public class TimeDelayingRepositorySource implements RepositorySource {
          * {@inheritDoc}
          */
         public boolean ping( long time,
-                             TimeUnit unit ) throws InterruptedException {
-            Thread.sleep(this.pingDelay.get());
+                             TimeUnit unit ) {
+            try {
+                Thread.sleep(this.pingDelay.get());
+            } catch (InterruptedException e) {
+                Thread.interrupted();
+                return false;
+            }
             return this.pingResponse.get();
         }
 

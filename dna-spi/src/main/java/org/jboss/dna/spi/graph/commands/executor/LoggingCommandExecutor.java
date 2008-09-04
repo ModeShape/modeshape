@@ -80,7 +80,7 @@ public class LoggingCommandExecutor extends DelegatingCommandExecutor {
      * @see org.jboss.dna.spi.graph.commands.executor.DelegatingCommandExecutor#close()
      */
     @Override
-    public void close() throws InterruptedException {
+    public void close() {
         this.logger.log(level, SpiI18n.closingCommandExecutor);
         super.close();
         this.logger.log(level, SpiI18n.closedCommandExecutor);
@@ -92,7 +92,7 @@ public class LoggingCommandExecutor extends DelegatingCommandExecutor {
      * @see org.jboss.dna.spi.graph.commands.executor.DelegatingCommandExecutor#execute(org.jboss.dna.spi.graph.commands.CompositeCommand)
      */
     @Override
-    public void execute( CompositeCommand command ) throws RepositorySourceException, InterruptedException {
+    public void execute( CompositeCommand command ) throws RepositorySourceException {
         this.logger.log(level, SpiI18n.executingGraphCommand, command);
         super.execute(command);
         this.logger.log(level, SpiI18n.executedGraphCommand, command);
@@ -104,7 +104,7 @@ public class LoggingCommandExecutor extends DelegatingCommandExecutor {
      * @see org.jboss.dna.spi.graph.commands.executor.DelegatingCommandExecutor#execute(org.jboss.dna.spi.graph.commands.CopyBranchCommand)
      */
     @Override
-    public void execute( CopyBranchCommand command ) throws RepositorySourceException, InterruptedException {
+    public void execute( CopyBranchCommand command ) throws RepositorySourceException {
         this.logger.log(level, SpiI18n.executingGraphCommand, command);
         super.execute(command);
         this.logger.log(level, SpiI18n.executedGraphCommand, command);
@@ -116,7 +116,7 @@ public class LoggingCommandExecutor extends DelegatingCommandExecutor {
      * @see org.jboss.dna.spi.graph.commands.executor.DelegatingCommandExecutor#execute(org.jboss.dna.spi.graph.commands.CopyNodeCommand)
      */
     @Override
-    public void execute( CopyNodeCommand command ) throws RepositorySourceException, InterruptedException {
+    public void execute( CopyNodeCommand command ) throws RepositorySourceException {
         this.logger.log(level, SpiI18n.executingGraphCommand, command);
         super.execute(command);
         this.logger.log(level, SpiI18n.executedGraphCommand, command);
@@ -128,7 +128,7 @@ public class LoggingCommandExecutor extends DelegatingCommandExecutor {
      * @see org.jboss.dna.spi.graph.commands.executor.DelegatingCommandExecutor#execute(org.jboss.dna.spi.graph.commands.CreateNodeCommand)
      */
     @Override
-    public void execute( CreateNodeCommand command ) throws RepositorySourceException, InterruptedException {
+    public void execute( CreateNodeCommand command ) throws RepositorySourceException {
         this.logger.log(level, SpiI18n.executingGraphCommand, command);
         super.execute(command);
         this.logger.log(level, SpiI18n.executedGraphCommand, command);
@@ -140,7 +140,7 @@ public class LoggingCommandExecutor extends DelegatingCommandExecutor {
      * @see org.jboss.dna.spi.graph.commands.executor.DelegatingCommandExecutor#execute(org.jboss.dna.spi.graph.commands.DeleteBranchCommand)
      */
     @Override
-    public void execute( DeleteBranchCommand command ) throws RepositorySourceException, InterruptedException {
+    public void execute( DeleteBranchCommand command ) throws RepositorySourceException {
         this.logger.log(level, SpiI18n.executingGraphCommand, command);
         super.execute(command);
         this.logger.log(level, SpiI18n.executedGraphCommand, command);
@@ -152,7 +152,7 @@ public class LoggingCommandExecutor extends DelegatingCommandExecutor {
      * @see org.jboss.dna.spi.graph.commands.executor.DelegatingCommandExecutor#execute(org.jboss.dna.spi.graph.commands.GetChildrenCommand)
      */
     @Override
-    public void execute( GetChildrenCommand command ) throws RepositorySourceException, InterruptedException {
+    public void execute( GetChildrenCommand command ) throws RepositorySourceException {
         this.logger.log(level, SpiI18n.executingGraphCommand, command);
         super.execute(command);
         this.logger.log(level, SpiI18n.executedGraphCommand, command);
@@ -164,7 +164,7 @@ public class LoggingCommandExecutor extends DelegatingCommandExecutor {
      * @see org.jboss.dna.spi.graph.commands.executor.DelegatingCommandExecutor#execute(org.jboss.dna.spi.graph.commands.GetNodeCommand)
      */
     @Override
-    public void execute( GetNodeCommand command ) throws RepositorySourceException, InterruptedException {
+    public void execute( GetNodeCommand command ) throws RepositorySourceException {
         this.logger.log(level, SpiI18n.executingGraphCommand, command);
         super.execute(command);
         this.logger.log(level, SpiI18n.executedGraphCommand, command);
@@ -176,7 +176,7 @@ public class LoggingCommandExecutor extends DelegatingCommandExecutor {
      * @see org.jboss.dna.spi.graph.commands.executor.DelegatingCommandExecutor#execute(org.jboss.dna.spi.graph.commands.GetPropertiesCommand)
      */
     @Override
-    public void execute( GetPropertiesCommand command ) throws RepositorySourceException, InterruptedException {
+    public void execute( GetPropertiesCommand command ) throws RepositorySourceException {
         this.logger.log(level, SpiI18n.executingGraphCommand, command);
         super.execute(command);
         this.logger.log(level, SpiI18n.executedGraphCommand, command);
@@ -188,7 +188,7 @@ public class LoggingCommandExecutor extends DelegatingCommandExecutor {
      * @see org.jboss.dna.spi.graph.commands.executor.DelegatingCommandExecutor#execute(org.jboss.dna.spi.graph.commands.GraphCommand)
      */
     @Override
-    public void execute( GraphCommand command ) throws RepositorySourceException, InterruptedException {
+    public void execute( GraphCommand command ) throws RepositorySourceException {
         this.logger.log(level, SpiI18n.executingGraphCommand, command);
         super.execute(command);
         this.logger.log(level, SpiI18n.executedGraphCommand, command);
@@ -200,7 +200,7 @@ public class LoggingCommandExecutor extends DelegatingCommandExecutor {
      * @see org.jboss.dna.spi.graph.commands.executor.DelegatingCommandExecutor#execute(org.jboss.dna.spi.graph.commands.MoveBranchCommand)
      */
     @Override
-    public void execute( MoveBranchCommand command ) throws RepositorySourceException, InterruptedException {
+    public void execute( MoveBranchCommand command ) throws RepositorySourceException {
         this.logger.log(level, SpiI18n.executingGraphCommand, command);
         super.execute(command);
         this.logger.log(level, SpiI18n.executedGraphCommand, command);
@@ -212,7 +212,7 @@ public class LoggingCommandExecutor extends DelegatingCommandExecutor {
      * @see org.jboss.dna.spi.graph.commands.executor.DelegatingCommandExecutor#execute(org.jboss.dna.spi.graph.commands.RecordBranchCommand)
      */
     @Override
-    public void execute( RecordBranchCommand command ) throws RepositorySourceException, InterruptedException {
+    public void execute( RecordBranchCommand command ) throws RepositorySourceException {
         this.logger.log(level, SpiI18n.executingGraphCommand, command);
         super.execute(command);
         this.logger.log(level, SpiI18n.executedGraphCommand, command);
@@ -224,7 +224,7 @@ public class LoggingCommandExecutor extends DelegatingCommandExecutor {
      * @see org.jboss.dna.spi.graph.commands.executor.DelegatingCommandExecutor#execute(org.jboss.dna.spi.graph.commands.SetPropertiesCommand)
      */
     @Override
-    public void execute( SetPropertiesCommand command ) throws RepositorySourceException, InterruptedException {
+    public void execute( SetPropertiesCommand command ) throws RepositorySourceException {
         this.logger.log(level, SpiI18n.executingGraphCommand, command);
         super.execute(command);
         this.logger.log(level, SpiI18n.executedGraphCommand, command);

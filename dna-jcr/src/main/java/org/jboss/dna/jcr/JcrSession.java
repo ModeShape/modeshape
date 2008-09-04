@@ -425,9 +425,6 @@ final class JcrSession implements Session {
             assert executionContext.getLoginContext() != null;
             executionContext.getLoginContext().logout();
             isLive = false;
-        } catch (InterruptedException error) {
-            // TODO: Change to DnaException once DNA-180 is addressed
-            throw new RuntimeException(error);
         } catch (LoginException error) {
         }
     }
