@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ JBoss, Home of Professional Open Source.
+  ~
+  ~ Copyright (c) 2008, Red Hat Middleware LLC or third-party contributors as
+  ~ indicated by the @author tags or express copyright attribution
+  ~ statements applied by the authors.  All third-party contributions are
+  ~ distributed under license by Red Hat Middleware LLC.
+  ~
+  ~ This copyrighted material is made available to anyone wishing to use, modify,
+  ~ copy, or redistribute it subject to the terms and conditions of the GNU
+  ~ Lesser General Public License, as published by the Free Software Foundation.
+  ~
+  ~ This program is distributed in the hope that it will be useful,
+  ~ but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+  ~ or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License
+  ~ for more details.
+  ~
+  ~ You should have received a copy of the GNU Lesser General Public License
+  ~ along with this distribution; if not, write to:
+  ~ Free Software Foundation, Inc.
+  ~ 51 Franklin Street, Fifth Floor
+  ~ Boston, MA  02110-1301  USA
+  -->
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+<!ENTITY versionNumber "0.3">
+<!ENTITY copyrightYear "2008">
+<!ENTITY copyrightHolder "Red Hat Middleware, LLC.">
+]>
+<book lang="en">
+	<bookinfo>
+		<title>JBoss DNA</title>
+		<subtitle>Getting Started Guide</subtitle>
+		<releaseinfo>&versionNumber;</releaseinfo>
+		<productnumber>&versionNumber;</productnumber>
+		<issuenum>1</issuenum>
+		<mediaobject>
+			<imageobject role="fo">
+				<imagedata fileref="dna-logo.png" align="center"/>
+			</imageobject>
+			<imageobject role="html">
+				<imagedata fileref="dna-logo.png" depth="3cm"/>
+			</imageobject>
+		</mediaobject>
+		<copyright>
+			<year>&copyrightYear;</year>
+			<holder>&copyrightHolder;</holder>
+		</copyright>
+		<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/author_group.xml"/>
+		<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/legal_notice.xml"/>
+	</bookinfo>
+	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/preface.xml"/>
+	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/introduction.xml"/>
+	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/understanding_dna.xml"/>
+	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/downloading_and_running.xml"/>
+	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/using_dna.xml"/>
+	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/custom_sequencers.xml"/>
+	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/future.xml"/>
+</book>

@@ -30,7 +30,7 @@
 	  <!--
 		Gather into the distribution the Getting Started document
 	  -->
-	  <directory>docs/gettingstarted/target/docbook</directory>
+	  <directory>docs/gettingstarted/target/docbook/publish/en-US</directory>
 	  <outputDirectory>manuals/gettingstarted</outputDirectory>
 	</fileSet>
   </fileSets>

@@ -1,4 +1,4 @@
-<?xml version='1.0' encoding='UTF-8'?>
+<?xml version="1.0" encoding="UTF-8"?>
 <!--
   ~ JBoss, Home of Professional Open Source.
   ~
@@ -24,5 +24,8 @@
   -->
 <!DOCTYPE authorgroup PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd">
 <authorgroup>
-  <corpauthor>Randall Hauch</corpauthor>
+  <corpauthor>Randall M. Hauch</corpauthor>
+  <corpauthor>John Verhaeg</corpauthor>
+  <corpauthor>Stefano Maestri</corpauthor>
+  <corpauthor>Serge Emmanuel Pagop</corpauthor>
 </authorgroup>

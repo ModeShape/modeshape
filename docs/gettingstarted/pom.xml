@@ -1,17 +1,79 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-
-    <modelVersion>4.0.0</modelVersion>
-
-    <parent>
-        <groupId>org.jboss</groupId>
-        <artifactId>documentation</artifactId>
-        <version>1.0</version>
-    </parent>
-    
-    <groupId>org.jboss.dna</groupId>
-    <artifactId>getting-started-${translation}</artifactId>
-    <version>0.2-SNAPSHOT</version>
-    <packaging>jdocbook</packaging>
-    <name>JBoss DNA Getting Started Document (${translation})</name>
-
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <!--
+    parent> <groupId>org.jboss</groupId> <artifactId>documentation</artifactId> <version>1.0</version> </parent
+  -->
+  <groupId>org.jboss.dna</groupId>
+  <artifactId>getting-started-en</artifactId>
+  <version>0.2-SNAPSHOT</version>
+  <packaging>jdocbook</packaging>
+  <name>JBoss DNA Getting Started manual</name>
+  <description>The JBoss DNA Getting Started manual</description>
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.jboss.maven.plugins</groupId>
+        <artifactId>maven-jdocbook-plugin</artifactId>
+        <version>2.1.2</version>
+        <extensions>true</extensions>
+        <dependencies>
+          <!--
+            <dependency> <groupId>org.hibernate</groupId> <artifactId>hibernate-jdocbook-style</artifactId>
+            <version>1.0.2</version> <type>jdocbook-style</type> </dependency>
+          -->
+          <dependency>
+            <groupId>org.jboss</groupId>
+            <artifactId>jbossorg-docbook-xslt</artifactId>
+            <version>1.1.0.Beta1</version>
+          </dependency>
+          <dependency>
+            <groupId>org.jboss</groupId>
+            <artifactId>jbossorg-jdocbook-style</artifactId>
+            <version>1.1.0.Beta1</version>
+            <type>jdocbook-style</type>
+          </dependency>
+        </dependencies>
+        <configuration>
+          <sourceDocumentName>Getting_Started.xml</sourceDocumentName>
+                    <imageResource>
+                        <directory>${basedir}/src/main/docbook/en-US/images</directory>
+                        <includes>
+                          <include>*.png</include>
+                        </includes>
+                    </imageResource>
+          <!-- cssResource>
+            <directory>${basedir}/src/main/docbook/css</directory>
+          </cssResource-->
+          <targetDirectory>${basedir}/target/docbook/en-US</targetDirectory>
+          <formats>
+            <format>
+              <formatName>html</formatName>
+              <stylesheetResource>classpath:/xslt/org/jboss/xhtml.xsl</stylesheetResource>
+              <finalName>index.html</finalName>
+            </format>
+          <!--
+            <format>
+              <formatName>html_single</formatName>
+              <stylesheetResource>classpath:/xslt/org/jboss/xhtml-single.xsl</stylesheetResource>
+              <finalName>index.html</finalName>
+            </format>
+            -->
+            <format>
+              <formatName>pdf</formatName>
+              <stylesheetResource>classpath:/xslt/org/jboss/pdf.xsl</stylesheetResource>
+              <finalName>userguide_en.pdf</finalName>
+            </format>
+          </formats>
+          <options>
+            <xincludeSupported>true</xincludeSupported>
+            <xmlTransformerType>saxon</xmlTransformerType>
+            <!-- needed for uri-resolvers; can be ommitted if using 'current' uri scheme -->
+            <!--     could also locate the docbook dependency and inspect its version... -->
+            <docbookVersion>1.72.0</docbookVersion>          
+          </options>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
 </project>
