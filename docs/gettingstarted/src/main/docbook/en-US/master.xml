@@ -53,7 +53,8 @@
 	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/introduction.xml"/>
 	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/understanding_dna.xml"/>
 	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/downloading_and_running.xml"/>
-	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/using_dna.xml"/>
+	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/using_dna_for_sequencing.xml"/>
+	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/using_dna_repositories.xml"/>
 	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/custom_sequencers.xml"/>
 	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/future.xml"/>
 </book>

@@ -23,16 +23,16 @@
   ~ Boston, MA  02110-1301  USA
   -->
 <!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd">
-<chapter id="using_dna">
-	<title>Using JBoss DNA</title>
+<chapter id="using_dna_for_sequencing">
+	<title>Using JBoss DNA for Sequencing</title>
 	<para>As we've mentioned before, JBoss DNA is able to work with existing JCR repositories.  Your client applications
   	make changes to the information in those repositories, and JBoss DNA automatically uses its sequencers to extract
   	additional information from the uploaded files.</para>
 	<note>
 		<para>Configuring JBoss DNA sequencers is a bit more manual than is ideal. As you'll see, JBoss DNA uses dependency
       injection to allow a great deal of flexibility in how it can be configured and customized. However, the next release will
-      provide a much easier mechanism for configuring not only the sequencer service but also the upcoming federation engine and
-      JCR implementation.</para>
+      provide a much easier mechanism for configuring the services using DNA repositories and configuration files.  Current
+      plans are to use the <a href="http://www.jboss.org/jbossmc">JBoss Microcontainer</a>.</para>
 	</note>
 	<sect1 id="sequencing_service">
 		<title>Configuring the Sequencing Service</title>
@@ -102,7 +102,10 @@ sequencingService.setExecutionContext(executionContext);
 ]]></programlisting>
 		<para>The sequencing service must also be configured with the sequencers that it will use.  This is done using the
       <code>addSequencer(SequencerConfig)</code> method and passing a <code>SequencerConfig</code> instance that
-      you create.  Here's an example:</para>
+      you create.  Here's the code that defines 3 sequencer configurations: 1 that places image metadata into
+      "<code><![CDATA[/images/<filename>]]></code>", another that places MP3 metadata into "<code><![CDATA[/mp3s/<filename>]]></code>",
+      and a third that places a structure that represents the classes, methods, and attributes found within Java source into 
+      "<code><![CDATA[/java/<filename>]]></code>".</para>
     <programlisting role="JAVA"><![CDATA[
 String name = "Image Sequencer";
 String desc = "Sequences image files to extract the characteristics of the image";
@@ -116,59 +119,71 @@ sequencingService.addSequencer(imageSequencerConfig);
 name = "Mp3 Sequencer";
 desc = "Sequences mp3 files to extract the id3 tags of the audio file";
 classname = "org.jboss.dna.sequencer.mp3.Mp3MetadataSequencer";
-String[] mp3PathExpressions = {"//(*.mp3[*])/jcr:content[@jcr:data] =&gt; /mp3s/$1"};
+pathExpressions = {"//(*.mp3[*])/jcr:content[@jcr:data] =&gt; /mp3s/$1"};
 SequencerConfig mp3SequencerConfig = new SequencerConfig(name, desc, classname, 
-                                                         classpath, mp3PathExpressions);
+                                                         classpath, pathExpressions);
 sequencingService.addSequencer(mp3SequencerConfig);
+
+name = "Java Sequencer";
+desc = "Sequences java files to extract the characteristics of the Java source";
+classname = "org.jboss.dna.sequencer.java.JavaMetadataSequencer";
+pathExpressions = {"//(*.java[*])/jcr:content[@jcr:data] => /java/$1"};
+SequencerConfig javaSequencerConfig = new SequencerConfig(name, desc, classname, 
+                                                          classpath, pathExpressions);
+this.sequencingService.addSequencer(javaSequencerConfig);
   ]]></programlisting>
-		<para>This code fragment is pretty self-explanatory, except for the <code>classpath</code> and <code>pathExpression</code> parameters.
-      The classpath parameter defines the classpath that is passed to the class loader factory mentioned above.
-      Our sequencer is on the classpath, so we can simply use <code>null</code> here.</para>
-		<para>The path expression is more complicated.  Sequencer path expressions are used by the sequencing service to
-      determine whether a particular changed node should be sequenced.  The expressions consist of two parts: a selection
-      criteria and an output expression:</para>
-    <programlisting><![CDATA[  inputPath => outputPath ]]></programlisting>
-		<para>The <emphasis>inputPath</emphasis> part defines an expression for the path that is to change and that should be sequenced.
-		  Input paths consist of '<code>/</code>' separated segments, where each segment represents a pattern for a single node's
-		  name (including the same-name-sibling indexes) and '<code>@</code>' signifies a property name.</para>
-		<para>Before getting into the details, let's look at some simple examples:</para>
-		<table frame='all'>
-			<title>Simple Input Path Examples</title>
-			<tgroup cols='2' align='left' colsep='1' rowsep='1'>
-	      <colspec colname='c1' colwidth="1*"/>
-	      <colspec colname='c2' colwidth="1*"/>
-				<thead>
-					<row>
-			  		<entry>Input Path</entry>
-			  		<entry>Description</entry>
-					</row>
-				</thead>
-				<tbody>
-					<row><entry>/a/b</entry><entry>Match node "<code>b</code>" that is a child of the top level node "<code>a</code>". Neither node
-					     may have any same-name-sibilings.</entry></row>
-					<row><entry>/a/*</entry><entry>Match any child node of the top level node "<code>a</code>".</entry></row>
-					<row><entry>/a/*.txt</entry><entry>Match any child node of the top level node "<code>a</code>" that also has a name ending in "<code>.txt</code>".</entry></row>
-					<row><entry>/a/*.txt</entry><entry>Match any child node of the top level node "<code>a</code>" that also has a name ending in "<code>.txt</code>".</entry></row>
-					<row><entry>/a/b@c</entry><entry>Match the property "<code>c</code>" of node "<code>/a/b</code>".</entry></row>
-					<row><entry>/a/b[2]</entry><entry>The second child named "<code>b</code>" below the top level node "<code>a</code>".</entry></row>
-					<row><entry>/a/b[2,3,4]</entry><entry>The second, third or fourth child named "<code>b</code>" below the top level node "<code>a</code>".</entry></row>
-					<row><entry>/a/b[*]</entry><entry>Any (and every) child named "<code>b</code>" below the top level node "<code>a</code>".</entry></row>
-					<row><entry>//a/b</entry><entry>Any node named "<code>b</code>" that exists below a node named "<code>a</code>", regardless 
-					     of where node "<code>a</code>" occurs.  Again, neither node may have any same-name-sibilings.</entry></row>
-				</tbody>
-			</tgroup>
-		</table>
-		<para>With these simple examples, you can probably discern the most important rules.  First, the '<code>*</code>' is a wildcard character
-		  that matches any character or sequence of characters in a node's name (or index if appearing in between square brackets), and
-		  can be used in conjunction with other characters (e.g., "<code>*.txt</code>").</para>
-		<para>Second, square brackets (i.e., '<code>[</code>' and '<code>]</code>') are used to match a node's same-name-sibiling index.
-		  You can put a single non-negative number or a comma-separated list of non-negative numbers.  Use '0' to match a node that has no
-		  same-name-sibilings, or any positive number to match the specific same-name-sibling.</para>
-		<para>Third, combining two delimiters (e.g., "<code>//</code>") matches any sequence of nodes, regardless of what their names are 
-		  or how many nodes.  Often used with other patterns to identify nodes at any level matching other patterns. 
-			Three or more sequential slash characters are treated as two.</para>
-		<para>Many input paths can be created using just these simple rules.  However, input paths can be more complicated.  Here are some
-			more examples:</para>
+    <para>Each configuration defines several things, including the name, description, and sequencer implementation class.
+	    The configuration also defines the classpath information, which can be passed to the class loader factory to get
+	    a Java classloader with which the sequencer class can be loaded.  (If no classpath information is provided, as is done
+	    in the code above, the application class loader is used.)  The configuration also specifies the path expressions that
+	    identify the nodes that should be sequenced with the sequencer and where to store the output generated by the sequencer.
+	    Path expressions are pretty straightforward but are quite powerful, so before we go any further with the example,
+	    let's dive into path expressions in more detail.</para>
+		<sect2 id="path_expressions">
+			<title>Path Expressions</title>
+			<para>Path expressions consist of two parts: a selection criteria (or an input path) and an output path:</para>
+	    <programlisting><![CDATA[  inputPath => outputPath ]]></programlisting>
+			<para>The <emphasis>inputPath</emphasis> part defines an expression for the path of a node that is to be sequenced.
+			  Input paths consist of '<code>/</code>' separated segments, where each segment represents a pattern for a single node's
+			  name (including the same-name-sibling indexes) and '<code>@</code>' signifies a property name.</para>
+			<para>Let's first look at some simple examples:</para>
+			<table frame='all'>
+				<title>Simple Input Path Examples</title>
+				<tgroup cols='2' align='left' colsep='1' rowsep='1'>
+		      <colspec colname='c1' colwidth="1*"/>
+		      <colspec colname='c2' colwidth="1*"/>
+					<thead>
+						<row>
+				  		<entry>Input Path</entry>
+				  		<entry>Description</entry>
+						</row>
+					</thead>
+					<tbody>
+						<row><entry>/a/b</entry><entry>Match node "<code>b</code>" that is a child of the top level node "<code>a</code>". Neither node
+						     may have any same-name-sibilings.</entry></row>
+						<row><entry>/a/*</entry><entry>Match any child node of the top level node "<code>a</code>".</entry></row>
+						<row><entry>/a/*.txt</entry><entry>Match any child node of the top level node "<code>a</code>" that also has a name ending in "<code>.txt</code>".</entry></row>
+						<row><entry>/a/*.txt</entry><entry>Match any child node of the top level node "<code>a</code>" that also has a name ending in "<code>.txt</code>".</entry></row>
+						<row><entry>/a/b@c</entry><entry>Match the property "<code>c</code>" of node "<code>/a/b</code>".</entry></row>
+						<row><entry>/a/b[2]</entry><entry>The second child named "<code>b</code>" below the top level node "<code>a</code>".</entry></row>
+						<row><entry>/a/b[2,3,4]</entry><entry>The second, third or fourth child named "<code>b</code>" below the top level node "<code>a</code>".</entry></row>
+						<row><entry>/a/b[*]</entry><entry>Any (and every) child named "<code>b</code>" below the top level node "<code>a</code>".</entry></row>
+						<row><entry>//a/b</entry><entry>Any node named "<code>b</code>" that exists below a node named "<code>a</code>", regardless 
+						     of where node "<code>a</code>" occurs.  Again, neither node may have any same-name-sibilings.</entry></row>
+					</tbody>
+				</tgroup>
+			</table>
+			<para>With these simple examples, you can probably discern the most important rules.  First, the '<code>*</code>' is a wildcard character
+			  that matches any character or sequence of characters in a node's name (or index if appearing in between square brackets), and
+			  can be used in conjunction with other characters (e.g., "<code>*.txt</code>").</para>
+			<para>Second, square brackets (i.e., '<code>[</code>' and '<code>]</code>') are used to match a node's same-name-sibiling index.
+			  You can put a single non-negative number or a comma-separated list of non-negative numbers.  Use '0' to match a node that has no
+			  same-name-sibilings, or any positive number to match the specific same-name-sibling.</para>
+			<para>Third, combining two delimiters (e.g., "<code>//</code>") matches any sequence of nodes, regardless of what their names are 
+			  or how many nodes.  Often used with other patterns to identify nodes at any level matching other patterns. 
+				Three or more sequential slash characters are treated as two.</para>
+			<para>Many input paths can be created using just these simple rules.  However, input paths can be more complicated.  Here are some
+				more examples:</para>
 			<table frame='all'>
 				<title>More Complex Input Path Examples</title>
 				<tgroup cols='2' align='left' colsep='1' rowsep='1'>
@@ -207,10 +222,56 @@ sequencingService.addSequencer(mp3SequencerConfig);
 		    or  "<code>.png</code>" that may have any same-name-sibling index.  These nodes can appear at any level in the repository.
 			  Note how the input path capture the filename (the segment containing the file extension), including any same-name-sibling index.
 			  This filename is then used in the output path, which is where the sequenced content is placed.</para>
-			<para>Now that we've covered path expressions, let's get back to the <code>SequencingService</code>. 
-			  After the service is started, it is ready to start reacting to changes in the repository.  But it first
-	      must be wired to the repositories using a listener.  This is accomplished using the <code>ObservationService</code>
+		</sect2>
+		<sect2 id="path_expressions_in_example">
+			<title>Path Expressions Used in the Example</title>
+			<para>Now that we've covered path expressions, let's go back to the three sequencer configuration in the example.
+				Here they are again, with a description of what each path means:</para>
+			<table frame='all'>
+				<title>Path Expressions for the 3 Sequencers</title>
+				<tgroup cols='3' align='left' colsep='1' rowsep='1'>
+		      <colspec colname='c1' colwidth="1*"/>
+		      <colspec colname='c2' colwidth="1*"/>
+		      <colspec colname='c2' colwidth="1*"/>
+					<thead>
+						<row>
+				  		<entry>Input Path</entry>
+				  		<entry>Output Path</entry>
+				  		<entry>Description</entry>
+						</row>
+					</thead>
+					<tbody>
+						<row>
+							<entry><![CDATA[//(*.(jpg|jpeg|gif|bmp|pcx|png)[*])/jcr:content[@jcr:data]]]></entry>
+							<entry><![CDATA[/images/$1]]></entry>
+							<entry>Any node with a name ending in "<code>.jpg</code>", "<code>.jpeg</code>", "<code>.gif</code>", "<code>.bmp</code>", 
+							  "<code>.pcx</code>", or "<code>.png</code>", whether or not it has a same-name-sibling index, but that has a child named 
+								"<code>jcr:content</code>" with "<code>jcr:data</code>" property.  The node name representing the filename (including any
+								same-name-sibling index) is captured, and used to place the output in "<code><![CDATA[/images/<filename>]]></code>".</entry>
+						</row>
+						<row>
+							<entry><![CDATA[//(*.mp3[*])/jcr:content[@jcr:data]]]></entry>
+							<entry><![CDATA[/mp3s/$1]]></entry>
+							<entry>Any node with a name ending in "<code>.mp3</code>", whether or not it has a same-name-sibling index, but that has a child named 
+								"<code>jcr:content</code>" with "<code>jcr:data</code>" property.  The node name representing the filename (including any
+								same-name-sibling index) is captured, and used to place the output in "<code><![CDATA[/mp3s/<filename>]]></code>".</entry>
+						</row>
+						<row>
+							<entry><![CDATA[//(*.java[*])/jcr:content[@jcr:data]]]></entry>
+							<entry><![CDATA[/java/$1]]></entry>
+							<entry>Any node with a name ending in "<code>.java</code>", whether or not it has a same-name-sibling index, but that has a child named 
+								"<code>jcr:content</code>" with "<code>jcr:data</code>" property.  The node name representing the filename (including any
+								same-name-sibling index) is captured, and used to place the output in "<code><![CDATA[/java/<filename>]]></code>".</entry>
+						</row>
+					</tbody>
+				</tgroup>
+			</table>
+			<para>After these sequencer configurations are defined and added to the <code>SequencingService</code>,
+				the service is now ready to start reacting to changes in the repository and automatically looking for nodes to sequence.  
+				But we first need to wire the service into the repository to receive those change events.
+	      This is accomplished using the <code>ObservationService</code>
 	      described in the <link linkend="observation_service">next section</link>.</para>
+		</sect2>
 	</sect1>
 	<sect1 id="observation_service">
 		<title>Configuring the Observation Service</title>
@@ -394,9 +455,16 @@ public void startDnaServices() throws Exception {
         name = "Mp3 Sequencer";
         desc = "Sequences mp3 files to extract the id3 tags of the audio file";
         classname = "org.jboss.dna.sequencer.mp3.Mp3MetadataSequencer";
-        String[] mp3PathExpressions = {"//(*.mp3)[*]/jcr:content[@jcr:data] =&gt; /mp3s/$1"};
-        SequencerConfig mp3SequencerConfig = new SequencerConfig(name, desc, classname, classpath, mp3PathExpressions);
+        pathExpressions = {"//(*.mp3)[*]/jcr:content[@jcr:data] =&gt; /mp3s/$1"};
+        SequencerConfig mp3SequencerConfig = new SequencerConfig(name, desc, classname, classpath, pathExpressions);
         this.sequencingService.addSequencer(mp3SequencerConfig);
+
+				name = "Java Sequencer";
+				desc = "Sequences java files to extract the characteristics of the Java source";
+				classname = "org.jboss.dna.sequencer.java.JavaMetadataSequencer";
+				pathExpressions = {"//(*.java[*])/jcr:content[@jcr:data] => /java/$1"};
+				SequencerConfig javaSequencerConfig = new SequencerConfig(name, desc, classname,classpath, pathExpressions);
+				this.sequencingService.addSequencer(javaSequencerConfig);
 
         // Use the DNA observation service to listen to the JCR repository (or multiple ones), and
         // then register the sequencing service as a listener to this observation service...

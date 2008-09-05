@@ -24,7 +24,7 @@
   -->
 <!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd">
 <chapter id="downloading_and_running">
-	<title>Running the example application</title>
+	<title>Running the example applications</title>
 	<para>
     This chapter provides instructions for downloading and running a sample application that demonstrates how JBoss DNA works
     with a JCR repository to automatically sequence changing content to extract useful information. So read on to get the simple
@@ -105,9 +105,17 @@ examples/pom.xml
                             /resources
                        /test/java
                             /resources
+         repository/pom.xml
+                   /src/main/assembly
+                            /config
+                            /java
+                            /resources
+                       /test/java
+                            /resources
 ]]></programlisting>
-		<para>There are essentially two Maven projects: a <code>sequencers</code> project and a parent project.  All of the source
-      for the example is located in the <code>sequencers</code> subdirectory.  And you may have noticed that none
+		<para>There are essentially three Maven projects: a <code>sequencers</code> project, a <code>repository</code> project, 
+		  and a parent project.  All of the source for the sequencing example is located in the <code>sequencers</code> subdirectory,
+		  while all of the source for the federation example is located in the <code>repository</code> subdirectory.  And you may have noticed that none
       of the JBoss DNA libraries are there.  This is where Maven comes in.  The two <code>pom.xml</code> files tell
       Maven everything it needs to know about what libraries are required and how to build the example.</para>
 		<para>In a terminal, go to the <code>examples</code> directory and run <emphasis role="strong"><code>mvn install</code></emphasis>.  
@@ -136,10 +144,11 @@ $ ]]></programlisting>
 		<para>If there are errors, check whether you have the correct version of Maven installed and that you've correctly updated
       your Maven settings as described above.</para>
 		<para>If you've successfully built the examples, there will be a new <code>examples/sequencers/target/</code> directory that contains
-			all of the generated output, including a <code>dna-example-sequencers-basic.dir/</code> subdirectory that contains the following:
+			all of the generated output for the sequencers example, including a <code>dna-example-sequencers-basic.dir/</code> subdirectory 
+			that contains the following:
 			<itemizedlist>
 				<listitem>
-					<para><emphasis role="strong"><code>run.sh</code></emphasis> is the *nix shell script that will run the example.</para>
+					<para><emphasis role="strong"><code>run.sh</code></emphasis> is the *nix shell script that will run the sequencer example application.</para>
 				</listitem>
 				<listitem>
 					<para><emphasis role="strong"><code>log4j.properties</code></emphasis>
@@ -167,26 +176,42 @@ $ ]]></programlisting>
 			      </para>
 				</listitem>
 				<listitem>
-					<para><emphasis role="strong"><code>lib</code></emphasis>
-			        subdirectory contains the JARs for all of the JBoss DNA artifacts as well as those for other libraries required
-			    by JBoss DNA and the example.
+					<para><emphasis role="strong"><code>lib</code></emphasis> subdirectory contains the JARs for all of the JBoss DNA artifacts 
+					  as well as those for other libraries required by JBoss DNA and the sequencer example.
 			      </para>
 				</listitem>
 			</itemizedlist>
-    </para>
+		</para>
     <note>
-			<para>JBoss DNA 0.1 and the examples are currently tested with <ulink url="http://jackrabbit.apache.org/">Apache Jackrabbit</ulink> version 1.3.3.  
-      	This version is stable and used by a number of other projects and applications.  However, you should be able to use a newer
-      	version of Jackrabbit, as long as that version uses the same JCR API.  For example, version 1.4.2 was released on March 26, 2008 and
-      	should be compatible.</para>
+			<para>JBoss DNA &versionNumber; and the sequencer example uses <ulink url="http://jackrabbit.apache.org/">Apache Jackrabbit</ulink> version 1.4.5.  
+      	This version is stable and used by a number of other projects and applications.  However, you should be able to use any
+      	version of Jackrabbit, as long as that version uses the same JCR API.</para>
 			<para>Just remember, if the version of Jackrabbit you want to use for these examples is not in the Maven repository,
       	you'll have to either add it or add it locally.  For more information, see the <ulink url="http://maven.apache.org/">Maven documentation</ulink>.
       </para>
 		</note>
+		<para>Similarly, the <code>examples/repository/target/</code> directory contains all of the generated output for the repository example, including
+			a <code>dna-example-repository-basic.dir/</code> subdirectory that contains the following:
+			<itemizedlist>
+				<listitem>
+					<para><emphasis role="strong"><code>run.sh</code></emphasis> is the *nix shell script that will run the repository example application.</para>
+				</listitem>
+				<listitem>
+					<para><emphasis role="strong"><code>log4j.properties</code></emphasis>
+			        is the Log4J configuration file.
+			      </para>
+				</listitem>
+				<listitem>
+					<para><emphasis role="strong"><code>lib</code></emphasis> subdirectory contains the JARs for all of the JBoss DNA artifacts
+					  as well as those for other libraries required by JBoss DNA and the repository example.
+			      </para>
+				</listitem>
+			</itemizedlist>
+    </para>
 	</sect1>
-	<sect1 id="running">
-		<title>Running the example</title>
-		<para>This example consists of a client application that sets up an in-memory JCR repository and that allows a user to
+	<sect1 id="running_sequencer_example">
+		<title>Running the sequencing example</title>
+		<para>The sequencing example consists of a client application that sets up an in-memory JCR repository and that allows a user to
       upload files into that repository. The client also sets up the DNA services with two sequencers so that if any of the
       uploaded files are PNG, JPEG, GIF, BMP or other images, DNA will automatically extract the image's metadata (e.g., image
       format, physical size, pixel density, etc.) and store that in the repository.  Alternatively, if the uploaded file 
@@ -196,8 +221,8 @@ $ ]]></programlisting>
       To run the client application, go to the <code>examples/sequencers/target/dna-example-sequencers-basic.dir/</code>
       directory and type <code>./run.sh</code>. You should see the command-line client and its menus in your terminal:
       <figure id="xample-sequencer-cli-client">
-				<title>Example Client</title>
-				<graphic align="center" scale="100" fileref="example-sequencer-cli-client.png"/>
+				<title>Example client</title>
+				<graphic align="center" scale="100" fileref="example-sequencer-client.png"/>
 			</figure>
       From this menu, you can upload a file into the repository, search for media in the repository, print sequencing statistics,
       or quit the application.</para>
@@ -207,7 +232,7 @@ $ ]]></programlisting>
       <code>examples/sequencers/target/dna-example-sequencers-basic.dir/</code> directory, you can specify any of the files 
 			in that directory without specifying the path:
       <figure id="example-sequencer-upload">
-				<title>Uploading an image using the Example Client</title>
+				<title>Uploading an image using the example client</title>
 				<graphic align="center" scale="100" fileref="example-sequencer-upload.png"/>
 			</figure>
       You can specify any fully-qualified or relative path. The application will notify you if it cannot find the file you
@@ -245,17 +270,17 @@ $ ]]></programlisting>
     	activities.</para>
 		<para>So, after the file is uploaded, you can search the repository for the image metadata using the "s" menu option:
     	<figure id="example-sequencer-search">
-				<title>Searching for media using the Example Client</title>
+				<title>Searching for media using the example client</title>
 				<graphic align="center" scale="100" fileref="example-sequencer-search.png"/>
 			</figure>
     	Here are the search results after the <code>sample1.mp3</code> audio file has been uploaded (to the <code>/a/b/sample1.mp3</code> location):
     	<figure id="example-sequencer-search-with-mp3">
-				<title>Searching for media using the Example Client</title>
+				<title>Searching for media using the example client</title>
 				<graphic align="center" scale="100" fileref="example-sequencer-search-with-mp3.png"/>
 			</figure>
     	You can also display the sequencing statistics using the "d" menu option:
     	<figure id="example-sequencer-statistics">
-				<title>Sequencing statistics using the Example Client</title>
+				<title>Sequencing statistics using the example client</title>
 				<graphic align="center" scale="100" fileref="example-sequencer-statistics.png"/>
 			</figure>
     	These stats show how many nodes were sequenced, and how many nodes were skipped because they didn't apply to the sequencer's
@@ -268,14 +293,52 @@ $ ]]></programlisting>
 		<para>You can repeat this process with other files. Any file that isn't an image or MP3 files (as recognized by the sequencing configurations
     	that we'll describe later) will not be sequenced.</para>
 	</sect1>
+	<sect1 id="running_repository_example">
+		<title>Running the repository example</title>
+		<para>The repository example consists of a client application that sets up several DNA repositories, including one that 
+			is a federation of several of the others, and then allows you to navigate those repositories.</para>
+		<para>
+      To run the client application, go to the <code>examples/repository/target/dna-example-repository-basic.dir/</code>
+      directory and type <code>./run.sh</code>. You should see the command-line client and its menus in your terminal:
+      <figure id="example-repository-client">
+				<title>Example Client</title>
+				<graphic align="center" scale="100" fileref="example-repository-client.png"/>
+			</figure>
+      From this menu, you can see the list of repositories, select one, and navigate through that repository in a manner similar
+      to a *nix command-line shell (although the client itself uses the JCR API to interact with the repositories).
+      Here are some of the commands you can use:</para>
+			<table frame='all'>
+				<title>Repository client commands to navigate a repository</title>
+				<tgroup cols='2' align='left' colsep='1' rowsep='1'>
+		      <colspec colname='c1' colwidth="1*"/>
+		      <colspec colname='c2' colwidth="1*"/>
+					<thead>
+						<row><entry>Command</entry><entry>Description</entry></row>
+					</thead>
+					<tbody>
+						<row><entry>pwd</entry><entry>Print the path of the current node (e.g., the "working directory")</entry></row>
+						<row><entry>ls [<emphasis>path</emphasis>]</entry><entry>List the children and properties of the node at the supplied path,
+						     where "<emphasis>path</emphasis>" can be any relative path or absolute path.  If "<emphasis>path</emphasis>" is not supplied,
+						     the current working node's path is used.</entry></row>
+						<row><entry>cd <emphasis>path</emphasis></entry><entry>Change to the specified node, where "<emphasis>path</emphasis>"
+						     can be any relative path or absolute path.  For example, "<code>cd alpha</code>" changes the current node to be a child named
+						     "<code>alpha</code>"; "<code>cd ..</code>" changes the current node to the parent node; "<code>cd /a/b</code>" changes 
+						     the current node to be the "<code>/a/b</code>" node.</entry></row>
+						<row><entry>exit</entry><entry>Exit this repository and return the list of repositories.</entry></row>
+					</tbody>
+				</tgroup>
+			</table>
+			<para>Try using the client to walk the different repositories.  And while this is a contrived application, it does demonstrate
+				the use of JBoss DNA to federate repositories and provide access through JCR.</para>
+  </sect1>
 	<sect1 id="downloading_and_running_review">
 		<title>Summarizing what we just did</title>
-		<para>In this chapter you downloaded and installed the example application and used it to upload files into a
-    	JCR repository.  JBoss DNA automatically sequenced the image and/or MP3 files you uploaded, extracted the metadata from the
-    	files, and stored that metadata inside the repository.  The application allowed you to see this metadata
-    	and the sequencing statistics.</para>
-		<para>This application was very simplistic.  In fact, running through the example probably only took you a minute or two.
-    	So while this application won't win any awards, it does show the basics of what JBoss DNA can do.</para>
+		<para>In this chapter you downloaded, installed, and built the example applications.  With the sequencer client, you could upload files into a
+    	JCR repository, while JBoss DNA automatically sequenced the image, MP3, or Java source files you uploaded, extracted the metadata from the
+    	files, and stored that metadata inside the repository.  The repository client allowed you to walk through multiple repositories,
+      including one whose content was federated from multiple other repositories.</para>
+		<para>These example applications were very simplistic.  In fact, running through the examples probably only took you a few minutes.
+    	So while these applications won't win any awards, they hopefully showed you the basics of what JBoss DNA can do.</para>
 		<para>In the <link linkend="using_dna">next chapter</link> we'll venture into the code to get an understanding
    		of how JBoss DNA actually works and how you can use it in your own applications.</para>
 	</sect1>
