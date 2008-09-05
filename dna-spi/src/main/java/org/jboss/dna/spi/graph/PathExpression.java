@@ -37,7 +37,7 @@ import org.jboss.dna.spi.SpiI18n;
  * </p>
  * 
  * <pre>
- * inputPath =&lt; outputPath
+ * inputPath =&gt; outputPath
  * </pre>
  * <p>
  * The <i>inputPath</i> part defines an expression for the path of a node that is to be sequenced. Input paths consist of '
