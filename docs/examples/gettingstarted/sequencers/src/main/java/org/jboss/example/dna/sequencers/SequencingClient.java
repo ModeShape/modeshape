@@ -47,10 +47,10 @@ import org.jboss.dna.common.SystemFailureException;
 import org.jboss.dna.repository.observation.ObservationService;
 import org.jboss.dna.repository.sequencers.SequencerConfig;
 import org.jboss.dna.repository.sequencers.SequencingService;
+import org.jboss.dna.repository.util.BasicJcrExecutionContext;
 import org.jboss.dna.repository.util.JcrExecutionContext;
 import org.jboss.dna.repository.util.JcrTools;
 import org.jboss.dna.repository.util.SessionFactory;
-import org.jboss.dna.repository.util.BasicJcrExecutionContext;
 import org.jboss.dna.repository.util.SimpleSessionFactory;
 
 /**
@@ -241,7 +241,7 @@ public class SequencingClient {
             String desc = "Sequences image files to extract the characteristics of the image";
             String classname = "org.jboss.dna.sequencer.images.ImageMetadataSequencer";
             String[] classpath = null; // Use the current classpath
-            String[] pathExpressions = {"//(*.(jpg|jpeg|gif|bmp|pcx|png|iff|ras|pbm|pgm|ppm|psd))[*]/jcr:content[@jcr:data] => /images/$1"};
+            String[] pathExpressions = {"//(*.(jpg|jpeg|gif|bmp|pcx|png|iff|ras|pbm|pgm|ppm|psd)[*])/jcr:content[@jcr:data] => /images/$1"};
             SequencerConfig imageSequencerConfig = new SequencerConfig(name, desc, classname, classpath, pathExpressions);
             this.sequencingService.addSequencer(imageSequencerConfig);
 
@@ -249,7 +249,7 @@ public class SequencingClient {
             name = "Mp3 Sequencer";
             desc = "Sequences mp3 files to extract the id3 tags of the audio file";
             classname = "org.jboss.dna.sequencer.mp3.Mp3MetadataSequencer";
-            String[] mp3PathExpressions = {"//(*.mp3)[*]/jcr:content[@jcr:data] => /mp3s/$1"};
+            String[] mp3PathExpressions = {"//(*.mp3[*])/jcr:content[@jcr:data] => /mp3s/$1"};
             SequencerConfig mp3SequencerConfig = new SequencerConfig(name, desc, classname, classpath, mp3PathExpressions);
             this.sequencingService.addSequencer(mp3SequencerConfig);
 
