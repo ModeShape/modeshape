@@ -33,13 +33,112 @@ import org.jboss.dna.spi.SpiI18n;
  * An expression that defines an acceptable path using a regular-expression-like language. Path expressions can be used to
  * represent node paths or properties.
  * <p>
- * Here are some simple examples:
- * <ul>
- * <li><code>/a/b/c</code> - selects the node "c" that is a child of node "b" that is a child of node "a".</li>
- * <li><code>//a</code> - selects any node named "a" that is at any location (with any ancestors).</li>
- * <li><code></code> -</li>
- * <li><code></code> -</li>
- * </ul>
+ * Path expressions consist of two parts: a selection criteria (or an input path) and an output path:
+ * </p>
+ * 
+ * <pre>
+ * inputPath =&lt; outputPath
+ * </pre>
+ * <p>
+ * The <i>inputPath</i> part defines an expression for the path of a node that is to be sequenced. Input paths consist of '
+ * <code>/</code>' separated segments, where each segment represents a pattern for a single node's name (including the
+ * same-name-sibling indexes) and '<code>@</code>' signifies a property name.
+ * </p>
+ * <p>
+ * Let's first look at some simple examples:
+ * </p>
+ * <table>
+ * <tr>
+ * <th>Input Path</th>
+ * <th>Description</th>
+ * </tr>
+ * <tr>
+ * <td>/a/b</td>
+ * <td>Match node "<code>b</code>" that is a child of the top level node "<code>a</code>". Neither node may have any
+ * same-name-sibilings.</td>
+ * </tr>
+ * <tr>
+ * <td>/a/*</td>
+ * <td>Match any child node of the top level node "<code>a</code>".</td>
+ * </tr>
+ * <tr>
+ * <td>/a/*.txt</td>
+ * <td>Match any child node of the top level node "<code>a</code>" that also has a name ending in "<code>.txt</code>".</td>
+ * </tr>
+ * <tr>
+ * <td>/a/b@c</td>
+ * <td>Match the property "<code>c</code>" of node "<code>/a/b</code>".</td>
+ * </tr>
+ * <tr>
+ * <td>/a/b[2]</td>
+ * <td>The second child named "<code>b</code>" below the top level node "<code>a</code>".</td>
+ * </tr>
+ * <tr>
+ * <td>/a/b[2,3,4]</td>
+ * <td>The second, third or fourth child named "<code>b</code>" below the top level node "<code>a</code>".</td>
+ * </tr>
+ * <tr>
+ * <td>/a/b[*]</td>
+ * <td>Any (and every) child named "<code>b</code>" below the top level node "<code>a</code>".</td>
+ * </tr>
+ * <tr>
+ * <td>//a/b</td>
+ * <td>Any node named "<code>b</code>" that exists below a node named "<code>a</code>", regardless of where node "<code>a</code>"
+ * occurs. Again, neither node may have any same-name-sibilings.</td>
+ * </tr>
+ * </table>
+ * <p>
+ * With these simple examples, you can probably discern the most important rules. First, the '<code>*</code>' is a wildcard
+ * character that matches any character or sequence of characters in a node's name (or index if appearing in between square
+ * brackets), and can be used in conjunction with other characters (e.g., "<code>*.txt</code>").
+ * </p>
+ * <p>
+ * Second, square brackets (i.e., '<code>[</code>' and '<code>]</code>') are used to match a node's same-name-sibiling index. You
+ * can put a single non-negative number or a comma-separated list of non-negative numbers. Use '0' to match a node that has no
+ * same-name-sibilings, or any positive number to match the specific same-name-sibling.
+ * </p>
+ * <p>
+ * Third, combining two delimiters (e.g., "<code>//</code>") matches any sequence of nodes, regardless of what their names are or
+ * how many nodes. Often used with other patterns to identify nodes at any level matching other patterns. Three or more sequential
+ * slash characters are treated as two.
+ * </p>
+ * <p>
+ * Many input paths can be created using just these simple rules. However, input paths can be more complicated. Here are some more
+ * examples:
+ * </p>
+ * <table>
+ * <tr>
+ * <th>Input Path</th>
+ * <th>Description</th>
+ * </tr>
+ * <tr>
+ * <td>/a/(b|c|d)</td>
+ * <td>Match children of the top level node "<code>a</code>" that are named "<code>a</code>", "<code>b</code>" or "<code>c</code>
+ * ". None of the nodes may have same-name-sibling indexes.</td>
+ * </tr>
+ * <tr>
+ * <td>/a/b[c/d]</td>
+ * <td>Match node "<code>b</code>" child of the top level node "<code>a</code>", when node "<code>b</code>" has a child named "
+ * <code>c</code>", and "<code>c</code>" has a child named "<code>d</code>". Node "<code>b</code>
+ * " is the selected node, while nodes "<code>b</code>" and "<code>b</code>" are used as criteria but are not selected.</td>
+ * </tr>
+ * <tr>
+ * <td>/a(/(b|c|d|)/e)[f/g/@something]</td>
+ * <td>Match node "<code>/a/b/e</code>", "<code>/a/c/e</code>", "<code>/a/d/e</code>", or "<code>/a/e</code>
+ * " when they also have a child "<code>f</code>" that itself has a child "<code>g</code>" with property "<code>something</code>".
+ * None of the nodes may have same-name-sibling indexes.</td>
+ * </tr>
+ * </table>
+ * <p>
+ * These examples show a few more advanced rules. Parentheses (i.e., '<code>(</code>' and '<code>)</code>') can be used to define
+ * a set of options for names, as shown in the first and third rules. Whatever part of the selected node's path appears between
+ * the parentheses is captured for use within the output path. Thus, the first input path in the previous table would match node "
+ * <code>/a/b</code>", and "b" would be captured and could be used within the output path using "<code>$1</code>", where the
+ * number used in the output path identifies the parentheses.
+ * </p>
+ * <p>
+ * Square brackets can also be used to specify criteria on a node's properties or children. Whatever appears in between the square
+ * brackets does not appear in the selected node.
  * </p>
  * 
  * @author Randall Hauch
