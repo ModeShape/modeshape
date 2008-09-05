@@ -242,7 +242,7 @@ public class JavaSequencingClient {
             String desc = "Sequences java files to extract the characteristics of the java sources";
             String classname = "org.jboss.dna.sequencer.java.JavaMetadataSequencer";
             String[] classpath = null; // Use the current class path
-            String[] pathExpressions = {"//(*.java)[*]/jcr:content[@jcr:data] => /compilationUnits/$1"};
+            String[] pathExpressions = {"//(*.java[*])/jcr:content[@jcr:data] => /compilationUnits/$1"};
             SequencerConfig javaSequencerConfig = new SequencerConfig(name, desc, classname, classpath, pathExpressions);
             this.sequencingService.addSequencer(javaSequencerConfig);
 
