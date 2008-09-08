@@ -125,5 +125,12 @@ public interface JavaSourceCndDefinition {
     public static final String JAVA_PARAMETERIZED_TYPE_MODIFIER_CHILD_NODE ="java:parameterizedTypeModifier";
     public static final String JAVA_PARAMETERIZED_TYPE_NAME ="java:parameterizedTypeName";
     public static final String JAVA_PARAMETERIZED_TYPE_VARIABLE ="java:parameterizedTypeVariable";
+    
+    // Array type
+    public static final String JAVA_ARRAY_TYPE_CHILD_NODE="java:arrayType";
+    public static final String JAVA_ARRAY_TYPE_DESCRIPTION ="java:arrayTypeDescription";
+    public static final String JAVA_ARRAY_TYPE_MODIFIER_CHILD_NODE ="java:arrayTypeModifier";
+    public static final String JAVA_ARRAY_TYPE_NAME ="java:arrayTypeName";
+    public static final String JAVA_ARRAY_TYPE_VARIABLE ="java:arrayTypeVariable";
 
 }

@@ -45,6 +45,7 @@ import org.eclipse.jdt.core.dom.SingleVariableDeclaration;
 import org.eclipse.jdt.core.dom.Type;
 import org.eclipse.jdt.core.dom.TypeDeclaration;
 import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
+import org.jboss.dna.common.util.ArgCheck;
 import org.jboss.dna.sequencer.java.metadata.ArrayTypeFieldMetadata;
 import org.jboss.dna.sequencer.java.metadata.ClassMetadata;
 import org.jboss.dna.sequencer.java.metadata.ConstructorMetadata;
@@ -301,63 +302,159 @@ public abstract class AbstractJavaMetadata {
     @SuppressWarnings( "unchecked" )
     protected void processParametersOfMethodDeclaration( MethodDeclaration methodDeclaration,
                                                          MethodMetadata methodMetadata ) {
-        List<SingleVariableDeclaration> params = methodDeclaration.parameters();
-        for (SingleVariableDeclaration singleVariableDeclaration : params) {
+        for (SingleVariableDeclaration singleVariableDeclaration : (List<SingleVariableDeclaration>)methodDeclaration.parameters()) {
             Type type = singleVariableDeclaration.getType();
             if (type.isPrimitiveType()) {
-                PrimitiveFieldMetadata primitiveFieldMetadata = new PrimitiveFieldMetadata();
-                primitiveFieldMetadata.setType(((PrimitiveType)type).getPrimitiveTypeCode().toString());
-                Variable variable = new Variable();
-                variable.setName(JavaMetadataUtil.getName(singleVariableDeclaration.getName()));
-                primitiveFieldMetadata.getVariables().add(variable);
-                List<IExtendedModifier> extendedModifiers = singleVariableDeclaration.modifiers();
-                for (IExtendedModifier extendedModifier : extendedModifiers) {
-                    ModifierMetadata modifierMetadata = new ModifierMetadata();
-                    if (extendedModifier.isAnnotation()) {
-                        // TODO
-                    } else {
-                        Modifier modifier = (Modifier)extendedModifier;
-                        modifierMetadata.setName(modifier.getKeyword().toString());
-                        primitiveFieldMetadata.getModifiers().add(modifierMetadata);
-                    }
-                }
+                PrimitiveFieldMetadata primitiveFieldMetadata = (PrimitiveFieldMetadata)processVariableDeclaration(singleVariableDeclaration,
+                                                                                                                   type);
                 methodMetadata.getParameters().add(primitiveFieldMetadata);
             }
             if (type.isParameterizedType()) {
-                // TODO
+                ParameterizedTypeFieldMetadata parameterizedTypeFieldMetadata = (ParameterizedTypeFieldMetadata)processVariableDeclaration(singleVariableDeclaration,
+                                                                                                                                           type);
+                methodMetadata.getParameters().add(parameterizedTypeFieldMetadata);
             }
             if (type.isQualifiedType()) {
                 // TODO
             }
             if (type.isSimpleType()) {
-                SimpleType simpleType = (SimpleType)type;
-                SimpleTypeFieldMetadata simpleTypeFieldMetadata = new SimpleTypeFieldMetadata();
-                simpleTypeFieldMetadata.setType(JavaMetadataUtil.getName(simpleType.getName()));
-                Variable variable = new Variable();
-                variable.setName(JavaMetadataUtil.getName(singleVariableDeclaration.getName()));
-                simpleTypeFieldMetadata.getVariables().add(variable);
-                List<IExtendedModifier> extendedModifiers = singleVariableDeclaration.modifiers();
-                for (IExtendedModifier extendedModifier2 : extendedModifiers) {
-                    ModifierMetadata modifierMetadata = new ModifierMetadata();
-                    if (extendedModifier2.isAnnotation()) {
-                        // TODO
-                    } else {
-                        Modifier modifier = (Modifier)extendedModifier2;
-                        modifierMetadata.setName(modifier.getKeyword().toString());
-                        simpleTypeFieldMetadata.getModifiers().add(modifierMetadata);
-                    }
-                }
+                SimpleTypeFieldMetadata simpleTypeFieldMetadata = (SimpleTypeFieldMetadata)processVariableDeclaration(singleVariableDeclaration, type);
                 methodMetadata.getParameters().add(simpleTypeFieldMetadata);
             }
             if (type.isArrayType()) {
-                
-                
+                ArrayTypeFieldMetadata arrayTypeFieldMetadata = (ArrayTypeFieldMetadata)processVariableDeclaration(singleVariableDeclaration, type);
+                methodMetadata.getParameters().add(arrayTypeFieldMetadata);
             }
             if (type.isWildcardType()) {
                 // TODO
             }
         }
 
+    }
+
+    /**
+     * Process a {@link SingleVariableDeclaration} of a {@link MethodDeclaration}.
+     * 
+     * @param singleVariableDeclaration
+     * @param type
+     * @return a field meta data.
+     */
+    @SuppressWarnings( "unchecked" )
+    private FieldMetadata processVariableDeclaration( SingleVariableDeclaration singleVariableDeclaration,
+                                                      Type type ) {
+
+        Variable variable;
+        if (type.isPrimitiveType()) {
+            PrimitiveFieldMetadata primitiveFieldMetadata = new PrimitiveFieldMetadata();
+            primitiveFieldMetadata.setType(((PrimitiveType)type).getPrimitiveTypeCode().toString());
+            variable = new Variable();
+            variable.setName(JavaMetadataUtil.getName(singleVariableDeclaration.getName()));
+            primitiveFieldMetadata.getVariables().add(variable);
+            for (IExtendedModifier extendedModifier : (List<IExtendedModifier>)singleVariableDeclaration.modifiers()) {
+                ModifierMetadata modifierMetadata = new ModifierMetadata();
+                if (extendedModifier.isAnnotation()) {
+                    // TODO
+                } else {
+                    Modifier modifier = (Modifier)extendedModifier;
+                    modifierMetadata.setName(modifier.getKeyword().toString());
+                    primitiveFieldMetadata.getModifiers().add(modifierMetadata);
+                }
+            }
+            return primitiveFieldMetadata;
+        }
+        if(type.isSimpleType()) {
+            SimpleType simpleType = (SimpleType)type;
+            SimpleTypeFieldMetadata simpleTypeFieldMetadata = new SimpleTypeFieldMetadata();
+            simpleTypeFieldMetadata.setType(JavaMetadataUtil.getName(simpleType.getName()));
+            variable = new Variable();
+            variable.setName(JavaMetadataUtil.getName(singleVariableDeclaration.getName()));
+            simpleTypeFieldMetadata.getVariables().add(variable);
+            for (IExtendedModifier simpleTypeExtendedModifier : (List<IExtendedModifier> )singleVariableDeclaration.modifiers()) {
+                ModifierMetadata modifierMetadata = new ModifierMetadata();
+                if (simpleTypeExtendedModifier.isAnnotation()) {
+                    // TODO
+                } else {
+                    Modifier modifier = (Modifier)simpleTypeExtendedModifier;
+                    modifierMetadata.setName(modifier.getKeyword().toString());
+                    simpleTypeFieldMetadata.getModifiers().add(modifierMetadata);
+                }
+            }
+            return simpleTypeFieldMetadata;
+        }
+        if (type.isParameterizedType()) {
+            ParameterizedTypeFieldMetadata parameterizedTypeFieldMetadata = new ParameterizedTypeFieldMetadata();
+            ParameterizedType parameterizedType = (ParameterizedType)type;
+            parameterizedTypeFieldMetadata.setType(getTypeName(parameterizedType));
+            variable = new Variable();
+            variable.setName(JavaMetadataUtil.getName(singleVariableDeclaration.getName()));
+            parameterizedTypeFieldMetadata.getVariables().add(variable);
+            for (IExtendedModifier parameterizedExtendedModifier : (List<IExtendedModifier>)singleVariableDeclaration.modifiers()) {
+                ModifierMetadata modifierMetadata = new ModifierMetadata();
+                if(parameterizedExtendedModifier.isAnnotation()) {
+                    // TODO
+                } else {
+                    Modifier modifier = (Modifier)parameterizedExtendedModifier;
+                    modifierMetadata.setName(modifier.getKeyword().toString());
+                    parameterizedTypeFieldMetadata.getModifiers().add(modifierMetadata); 
+                }
+            }
+            return parameterizedTypeFieldMetadata;
+        }
+        if(type.isArrayType()) {
+            ArrayTypeFieldMetadata arrayTypeFieldMetadata = new ArrayTypeFieldMetadata();
+            ArrayType arrayType = (ArrayType)type;
+            arrayTypeFieldMetadata.setType(getTypeName(arrayType));
+            variable = new Variable();
+            variable.setName(JavaMetadataUtil.getName(singleVariableDeclaration.getName()));
+            arrayTypeFieldMetadata.getVariables().add(variable);
+            
+            for (IExtendedModifier arrayTypeExtendedModifier : (List<IExtendedModifier>)singleVariableDeclaration.modifiers()) {
+                ModifierMetadata modifierMetadata = new ModifierMetadata();
+                if(arrayTypeExtendedModifier.isAnnotation()) {
+                    // TODO
+                } else {
+                    Modifier modifier = (Modifier)arrayTypeExtendedModifier;
+                    modifierMetadata.setName(modifier.getKeyword().toString());
+                    arrayTypeFieldMetadata.getModifiers().add(modifierMetadata); 
+                }
+            }
+            return arrayTypeFieldMetadata;
+        }
+        return null;
+    }
+
+    /**
+     * Extract the type name
+     * 
+     * @param type - the type to be processed. This can be primitive, simple, parameterized ...
+     * @return the name of a type.
+     * @throws IllegalArgumentException if type is null.
+     */
+    private String getTypeName( Type type ) {
+        ArgCheck.isNotNull(type, "type");
+        if (type.isPrimitiveType()) {
+            PrimitiveType primitiveType = (PrimitiveType)type;
+            return primitiveType.getPrimitiveTypeCode().toString();
+        }
+        if (type.isSimpleType()) {
+            SimpleType simpleType = (SimpleType)type;
+            return JavaMetadataUtil.getName(simpleType.getName());
+        }
+        if(type.isArrayType()) {
+            ArrayType arrayType = (ArrayType)type;
+            // the element type is never an array type
+            Type elementType = arrayType.getElementType();
+            if (elementType.isPrimitiveType()) {
+             return ((PrimitiveType)elementType).getPrimitiveTypeCode().toString();
+
+            }
+            // can't be an array type
+            if (elementType.isSimpleType()) {
+                return JavaMetadataUtil.getName(((SimpleType)elementType).getName());
+            }
+            
+        }
+        return null;
     }
 
     /**
@@ -446,7 +543,7 @@ public abstract class AbstractJavaMetadata {
             processModifiersAndVariablesOfFieldDeclaration(fieldDeclaration, arrayTypeFieldMetadata);
             return arrayTypeFieldMetadata;
         }
-        
+
         return null;
     }
 

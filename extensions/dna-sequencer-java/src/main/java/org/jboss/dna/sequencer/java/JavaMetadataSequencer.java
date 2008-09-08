@@ -301,11 +301,13 @@ public class JavaMetadataSequencer implements JavaSourceCndDefinition, StreamSeq
             for (TypeMetadata typeMetadata : javaMetadata.getTypeMetadata()) {
                 // class declaration
                 if (typeMetadata instanceof ClassMetadata) {
+
+                    String normalClassRootPath = JAVA_COMPILATION_UNIT_NODE + SLASH + JAVA_UNIT_TYPE_CHILD_NODE + SLASH
+                                                 + JAVA_CLASS_DECLARATION_CHILD_NODE + SLASH + JAVA_NORMAL_CLASS_CHILD_NODE
+                                                 + SLASH + JAVA_NORMAL_CLASS_DECLARATION_CHILD_NODE;
+
                     ClassMetadata classMetadata = (ClassMetadata)typeMetadata;
-                    Path classChildNode = pathFactory.create(JAVA_COMPILATION_UNIT_NODE + SLASH + JAVA_UNIT_TYPE_CHILD_NODE
-                                                             + SLASH + JAVA_CLASS_DECLARATION_CHILD_NODE + SLASH
-                                                             + JAVA_NORMAL_CLASS_CHILD_NODE + SLASH
-                                                             + JAVA_NORMAL_CLASS_DECLARATION_CHILD_NODE);
+                    Path classChildNode = pathFactory.create(normalClassRootPath);
                     output.setProperty(classChildNode, nameFactory.create(JAVA_NORMAL_CLASS_NAME), classMetadata.getName());
 
                     // process modifiers of the class declaration
@@ -313,13 +315,8 @@ public class JavaMetadataSequencer implements JavaSourceCndDefinition, StreamSeq
                     int modifierIndex = 1;
                     for (ModifierMetadata modifierMetadata : classModifiers) {
 
-                        Path classModifierChildNode = pathFactory.create(JAVA_COMPILATION_UNIT_NODE + SLASH
-                                                                         + JAVA_UNIT_TYPE_CHILD_NODE + SLASH
-                                                                         + JAVA_CLASS_DECLARATION_CHILD_NODE + SLASH
-                                                                         + JAVA_NORMAL_CLASS_CHILD_NODE + SLASH
-                                                                         + JAVA_NORMAL_CLASS_DECLARATION_CHILD_NODE + SLASH
-                                                                         + JAVA_MODIFIER_CHILD_NODE + SLASH
-                                                                         + JAVA_MODIFIER_DECLARATION_CHILD_NODE + "["
+                        Path classModifierChildNode = pathFactory.create(normalClassRootPath + SLASH + JAVA_MODIFIER_CHILD_NODE
+                                                                         + SLASH + JAVA_MODIFIER_DECLARATION_CHILD_NODE + "["
                                                                          + modifierIndex + "]");
 
                         output.setProperty(classModifierChildNode,
@@ -331,24 +328,16 @@ public class JavaMetadataSequencer implements JavaSourceCndDefinition, StreamSeq
                     int primitiveIndex = 1;
                     int simpleIndex = 1;
                     int parameterizedIndex = 1;
+                    int arrayIndex = 1;
                     for (FieldMetadata fieldMetadata : classMetadata.getFields()) {
+                        String fieldMemberDataRootPath = JavaMetadataUtil.createPath(normalClassRootPath + SLASH
+                                                                                     + JAVA_FIELD_CHILD_NODE + SLASH
+                                                                                     + JAVA_FIELD_TYPE_CHILD_NODE + SLASH
+                                                                                     + JAVA_TYPE_CHILD_NODE);
                         if (fieldMetadata instanceof PrimitiveFieldMetadata) {
                             // primitive type
                             PrimitiveFieldMetadata primitiveFieldMetadata = (PrimitiveFieldMetadata)fieldMetadata;
-                            String primitiveFieldRootPath = JavaMetadataUtil.createPathWithIndex(JAVA_COMPILATION_UNIT_NODE
-                                                                                                 + SLASH
-                                                                                                 + JAVA_UNIT_TYPE_CHILD_NODE
-                                                                                                 + SLASH
-                                                                                                 + JAVA_CLASS_DECLARATION_CHILD_NODE
-                                                                                                 + SLASH
-                                                                                                 + JAVA_NORMAL_CLASS_CHILD_NODE
-                                                                                                 + SLASH
-                                                                                                 + JAVA_NORMAL_CLASS_DECLARATION_CHILD_NODE
-                                                                                                 + SLASH + JAVA_FIELD_CHILD_NODE
-                                                                                                 + SLASH
-                                                                                                 + JAVA_FIELD_TYPE_CHILD_NODE
-                                                                                                 + SLASH + JAVA_TYPE_CHILD_NODE
-                                                                                                 + SLASH
+                            String primitiveFieldRootPath = JavaMetadataUtil.createPathWithIndex(fieldMemberDataRootPath + SLASH
                                                                                                  + JAVA_PRIMITIVE_TYPE_CHILD_NODE,
                                                                                                  primitiveIndex);
                             // type
@@ -379,7 +368,7 @@ public class JavaMetadataSequencer implements JavaSourceCndDefinition, StreamSeq
                                                                                            + JAVA_VARIABLE,
                                                                                            primitiveVariableIndex);
                                 Path primitiveChildNode = pathFactory.create(variablePath);
-                                sequenceTheVariable(output, nameFactory, variable, primitiveChildNode);
+                                VariableSequencer.sequenceTheVariable(output, nameFactory, variable, primitiveChildNode);
                                 primitiveVariableIndex++;
                             }
                             primitiveIndex++;
@@ -387,8 +376,17 @@ public class JavaMetadataSequencer implements JavaSourceCndDefinition, StreamSeq
 
                         // Array type
                         if (fieldMetadata instanceof ArrayTypeFieldMetadata) {
-                            @SuppressWarnings( "unused" )
                             ArrayTypeFieldMetadata arrayTypeFieldMetadata = (ArrayTypeFieldMetadata)fieldMetadata;
+                            String arrayTypeRootPath = JavaMetadataUtil.createPathWithIndex(fieldMemberDataRootPath + SLASH
+                                                                                            + JAVA_ARRAY_TYPE_CHILD_NODE,
+                                                                                            arrayIndex);
+                            ArrayTypeFieldMetadataSequencer.sequenceFieldMemberData(arrayTypeFieldMetadata,
+                                                                                    pathFactory,
+                                                                                    nameFactory,
+                                                                                    output,
+                                                                                    arrayTypeRootPath,
+                                                                                    arrayIndex);
+                            arrayIndex++;
                         }
 
                         // Simple type
@@ -441,7 +439,7 @@ public class JavaMetadataSequencer implements JavaSourceCndDefinition, StreamSeq
                                                                                            + JAVA_VARIABLE,
                                                                                            simpleTypeVariableIndex);
                                 Path primitiveChildNode = pathFactory.create(variablePath);
-                                sequenceTheVariable(output, nameFactory, variable, primitiveChildNode);
+                                VariableSequencer.sequenceTheVariable(output, nameFactory, variable, primitiveChildNode);
                                 simpleTypeVariableIndex++;
                             }
 
@@ -484,7 +482,10 @@ public class JavaMetadataSequencer implements JavaSourceCndDefinition, StreamSeq
                                 Path parameterizedTypeVariableChildNode = ParameterizedTypeFieldMetadataSequencer.getParameterizedTypeFieldVariablePath(pathFactory,
                                                                                                                                                         parameterizedTypeFieldRootPath,
                                                                                                                                                         parameterizedTypeVariableIndex);
-                                sequenceTheVariable(output, nameFactory, variable, parameterizedTypeVariableChildNode);
+                                VariableSequencer.sequenceTheVariable(output,
+                                                                      nameFactory,
+                                                                      variable,
+                                                                      parameterizedTypeVariableChildNode);
                                 parameterizedTypeVariableIndex++;
                             }
 
@@ -562,16 +563,20 @@ public class JavaMetadataSequencer implements JavaSourceCndDefinition, StreamSeq
                                                                                                                             constructPrimitiveFormalParamRootPath);
                                     // variables
                                     for (Variable variable : primitiveMetadata.getVariables()) {
-                                        sequenceTheVariable(output, nameFactory, variable, constructorPrimitiveParamChildNode);
+                                        VariableSequencer.sequenceTheVariable(output,
+                                                                              nameFactory,
+                                                                              variable,
+                                                                              constructorPrimitiveParamChildNode);
                                     }
                                 }
                                 // Simple type
                                 if (fieldMetadata instanceof SimpleTypeFieldMetadata) {
-                                    processMethodFormalParamOfSimpleType(output,
-                                                                         nameFactory,
-                                                                         pathFactory,
-                                                                         fieldMetadata,
-                                                                         constructorParameterRootPath);
+                                    SimpleTypeFieldMetadata simpleTypeFieldMetadata = (SimpleTypeFieldMetadata)fieldMetadata;
+                                    SimpleTypeMetadataSequencer.sequenceMethodFormalParam(output,
+                                                                                          nameFactory,
+                                                                                          pathFactory,
+                                                                                          simpleTypeFieldMetadata,
+                                                                                          constructorParameterRootPath);
 
                                 }
                                 // parameterized type
@@ -645,7 +650,7 @@ public class JavaMetadataSequencer implements JavaSourceCndDefinition, StreamSeq
                                                                                                               methodPrimitiveFormalParamRootPath);
                                     // variables
                                     for (Variable variable : primitive.getVariables()) {
-                                        sequenceTheVariable(output, nameFactory, variable, methodParamChildNode);
+                                        VariableSequencer.sequenceTheVariable(output, nameFactory, variable, methodParamChildNode);
                                     }
                                     // type
                                     Path methodPrimitiveTypeParamChildNode = pathFactory.create(methodPrimitiveFormalParamRootPath);
@@ -656,11 +661,21 @@ public class JavaMetadataSequencer implements JavaSourceCndDefinition, StreamSeq
                                 }
 
                                 if (fieldMetadata instanceof SimpleTypeFieldMetadata) {
-                                    processMethodFormalParamOfSimpleType(output,
-                                                                         nameFactory,
-                                                                         pathFactory,
-                                                                         fieldMetadata,
-                                                                         methodParamRootPath);
+                                    SimpleTypeFieldMetadata simpleTypeFieldMetadata = (SimpleTypeFieldMetadata)fieldMetadata;
+                                    SimpleTypeMetadataSequencer.sequenceMethodFormalParam(output,
+                                                                                          nameFactory,
+                                                                                          pathFactory,
+                                                                                          simpleTypeFieldMetadata,
+                                                                                          methodParamRootPath);
+                                }
+                                if (fieldMetadata instanceof ArrayTypeFieldMetadata) {
+                                    ArrayTypeFieldMetadata arrayTypeFieldMetadata = (ArrayTypeFieldMetadata)fieldMetadata;
+                                    ArrayTypeFieldMetadataSequencer.sequenceMethodFormalParam(output,
+                                                                                              nameFactory,
+                                                                                              pathFactory,
+                                                                                              arrayTypeFieldMetadata,
+                                                                                              methodParamRootPath);
+
                                 }
 
                                 // TODO parameter reference types
@@ -684,6 +699,10 @@ public class JavaMetadataSequencer implements JavaSourceCndDefinition, StreamSeq
                                                    methodReturnPrimitiveType.getType());
 
                             }
+                            if(methodReturnType instanceof SimpleTypeFieldMetadata) {
+                                SimpleTypeFieldMetadata simpleTypeFieldMetadata = (SimpleTypeFieldMetadata) methodReturnType;
+                                SimpleTypeMetadataSequencer.sequenceMethodReturnType(output,nameFactory,pathFactory,simpleTypeFieldMetadata,methodRootPath);
+                            }
 
                             // TODO method return reference type
 
@@ -699,48 +718,4 @@ public class JavaMetadataSequencer implements JavaSourceCndDefinition, StreamSeq
 
         progressMonitor.done();
     }
-
-    /**
-     * Process formal parameter of type simple type .
-     * 
-     * @param output - the {@link SequencerOutput}.
-     * @param nameFactory - The {@link NameFactory}.
-     * @param pathFactory - the {@link PathFactory}.
-     * @param fieldMetadata - the meta data.
-     * @param methodParamRootPath - base path of the parameter.
-     */
-    private void processMethodFormalParamOfSimpleType( SequencerOutput output,
-                                                       NameFactory nameFactory,
-                                                       PathFactory pathFactory,
-                                                       FieldMetadata fieldMetadata,
-                                                       String methodParamRootPath ) {
-        SimpleTypeFieldMetadata simpleTypeFieldMetadata = (SimpleTypeFieldMetadata)fieldMetadata;
-        String methodSimpleTypeFormalParamRootPath = SimpleTypeMetadataSequencer.createRootPath(methodParamRootPath);
-        SimpleTypeMetadataSequencer.sequenceConstructorSimpleTypeName(simpleTypeFieldMetadata,
-                                                                      methodSimpleTypeFormalParamRootPath,
-                                                                      output,
-                                                                      nameFactory,
-                                                                      pathFactory);
-        Path constructorSimpleTypeParamChildNode = SimpleTypeMetadataSequencer.createSimpleTypeParamPath(pathFactory,
-                                                                                                         methodSimpleTypeFormalParamRootPath);
-        for (Variable variable : simpleTypeFieldMetadata.getVariables()) {
-            sequenceTheVariable(output, nameFactory, variable, constructorSimpleTypeParamChildNode);
-        }
-    }
-
-    /**
-     * Sequence a variable.
-     * 
-     * @param output - the {@link SequencerOutput}.
-     * @param nameFactory - the {@link NameFactory}.
-     * @param variable - the variable to be added in the tree.
-     * @param path - the path
-     */
-    private void sequenceTheVariable( SequencerOutput output,
-                                      NameFactory nameFactory,
-                                      Variable variable,
-                                      Path path ) {
-        output.setProperty(path, nameFactory.create(JAVA_VARIABLE_NAME), variable.getName());
-    }
-
 }

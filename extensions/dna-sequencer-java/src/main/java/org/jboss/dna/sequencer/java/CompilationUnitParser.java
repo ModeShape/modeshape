@@ -26,7 +26,7 @@ import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTParser;
 
 /**
- * The Parser, tha process the a compilation unit.
+ * The Parser, that process the a compilation unit.
  * 
  * @author Serge Pagop
  */

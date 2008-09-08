@@ -157,7 +157,7 @@ public class JavaMetadataTest {
                         assertThat(marker.getName(), is("MyClassAnnotation"));
                     }
                 }
-                // get fields
+                // get fields (member data)
                 List<FieldMetadata> fields = classMetadata.getFields();
                 assertNotNull(fields);
                 assertTrue(fields.size() > 0);
@@ -196,15 +196,15 @@ public class JavaMetadataTest {
                 assertNotNull(arrayTypeFieldMetadata1);
                 assertTrue(arrayTypeFieldMetadata1.getModifiers().size() > 0);
                 assertThat(arrayTypeFieldMetadata1.getType(), is("int"));
-                assertThat(arrayTypeFieldMetadata1.getVariables().get(0).getName(), is("ai"));
+                assertThat(arrayTypeFieldMetadata1.getVariables().get(0).getName(), is("ia"));
                 
                 ArrayTypeFieldMetadata arrayTypeFieldMetadata2 = (ArrayTypeFieldMetadata)fields.get(6);
                 assertNotNull(arrayTypeFieldMetadata2);
                 assertTrue(arrayTypeFieldMetadata2.getModifiers().size() > 0);
                 assertThat(arrayTypeFieldMetadata2.getType(), is("Object"));
-                assertThat(arrayTypeFieldMetadata2.getVariables().get(0).getName(), is("ao"));
+                assertThat(arrayTypeFieldMetadata2.getVariables().get(0).getName(), is("oa"));
 
-                // get methods
+                // get methods (member functions)
                 List<MethodMetadata> methods = classMetadata.getMethods();
                 assertNotNull(methods);
                 assertTrue(methods.size() > 0);
@@ -250,6 +250,13 @@ public class JavaMetadataTest {
                 assertNotNull(methodTypeMemberMetadata5);
                 assertThat(methodTypeMemberMetadata5.getName(), is("doSomething"));
                 assertTrue(methodTypeMemberMetadata5.getParameters().size() > 0);
+                
+                MethodTypeMemberMetadata methodTypeMemberMetadata6 = (MethodTypeMemberMetadata)methods.get(6);
+                assertTrue(methodTypeMemberMetadata6.getModifiers().size() == 1);
+                assertEquals(methodTypeMemberMetadata6.getReturnType().getType(), "double");
+                assertNotNull(methodTypeMemberMetadata6);
+                assertThat(methodTypeMemberMetadata6.getName(), is("doSomething2"));
+                assertTrue(methodTypeMemberMetadata6.getParameters().size() > 0);
             }
         }
     }
