@@ -345,7 +345,7 @@ public class JavaSequencingClient {
                         try {
                             Node javaPackageDeclarationNode = javaCompilationUnit.getNode("java:package/java:packageDeclaration");
                             javaElements.add(extractInfo(javaPackageDeclarationNode));
-                            tree.put("Package", javaElements);
+                            tree.put("Class package", javaElements);
                         } catch (PathNotFoundException e) {
                             // do nothing
                         }
@@ -357,7 +357,7 @@ public class JavaSequencingClient {
                                 Node javasingleTypeImportDeclarationNode = singleImportIterator.nextNode();
                                 javaElements.add(extractInfo(javasingleTypeImportDeclarationNode));
                             }
-                            tree.put("Single Imports", javaElements);
+                            tree.put("Class single Imports", javaElements);
                         } catch (PathNotFoundException e) {
                             // do nothing
                         }
@@ -368,7 +368,7 @@ public class JavaSequencingClient {
                                 Node javaImportOnDemandtDeclarationNode = javaImportOnDemandIterator.nextNode();
                                 javaElements.add(extractInfo(javaImportOnDemandtDeclarationNode));
                             }
-                            tree.put("On demand imports", javaElements);
+                            tree.put("Class on demand imports", javaElements);
 
                         } catch (PathNotFoundException e) {
                             // do nothing
@@ -377,7 +377,7 @@ public class JavaSequencingClient {
                         javaElements = new ArrayList<Properties>();
                         Node javaNormalDeclarationClassNode = javaCompilationUnit.getNode("java:unitType/java:classDeclaration/java:normalClass/java:normalClassDeclaration");
                         javaElements.add(extractInfo(javaNormalDeclarationClassNode));
-                        tree.put("class head information", javaElements);
+                        tree.put("Class head information", javaElements);
 
                         // field member informations
                         javaElements = new ArrayList<Properties>();
@@ -397,12 +397,29 @@ public class JavaSequencingClient {
                                 Node javaParameterizedType = rootFieldTypeNode.getNode("java:parameterizedType");
                                 javaElements.add(extractInfo(javaParameterizedType));
                             }
+                            if(rootFieldTypeNode.hasNode("java:arrayType")) {
+                                Node javaArrayType = rootFieldTypeNode.getNode("java:arrayType[2]");
+                                javaElements.add(extractInfo(javaArrayType));
+                            }
                         }
                         tree.put("Class field members", javaElements);
 
                         // constructor informations
-
+                        javaElements = new ArrayList<Properties>();
+                        for (NodeIterator javaConstructorIterator = javaCompilationUnit.getNode("java:unitType/java:classDeclaration/java:normalClass/java:normalClassDeclaration/java:constructor").getNodes(); javaConstructorIterator.hasNext();) {
+                            Node javaConstructor = javaConstructorIterator.nextNode();
+                            javaElements.add(extractInfo(javaConstructor));
+                        }
+                        tree.put("Class constructors", javaElements);
+                        
                         // method informations
+                        javaElements = new ArrayList<Properties>();
+                        for (NodeIterator javaMethodIterator = javaCompilationUnit.getNode("java:unitType/java:classDeclaration/java:normalClass/java:normalClassDeclaration/java:method").getNodes(); javaMethodIterator.hasNext();) {
+                            Node javaMethod = javaMethodIterator.nextNode();
+                            javaElements.add(extractInfo(javaMethod));
+                        }
+                        tree.put("Class member functions", javaElements);
+                        
                         javaInfo = new JavaInfo(javaCompilationUnit.getPath(), javaCompilationUnit.getName(), "java source", tree);
                         javaInfos.add(javaInfo);
                     }

@@ -35,14 +35,19 @@ public class MySource {
     private List<String> l;
     private A<Integer> o;
     private X x;
+    private int[] ia;
+    private Object[] oa;
+    private Collection[] ca;
 
     MySource() {
     }
-    public MySource(int i, int j, Object o) {
+
+    public MySource( int i,
+                     int j,
+                     Object o ) {
         this.i = i;
         this.j = j;
     }
-    
 
     public int getI() {
         return this.i;
@@ -56,9 +61,20 @@ public class MySource {
         this.j = j;
     }
 
-    public void doSomething(int p1, double p2, Object o) {
+    public void doSomething( int p1,
+                             double p2,
+                             Object o ) {
         l = new ArrayList<String>();
         l.add("N1");
+    }
+
+    private double doSomething2( Object[] oa,
+                                 int[] ia ) {
+        System.out.println("genial");
+    }
+
+    public Object doSomething3() {
+        return null;
     }
 
     // nested class
@@ -92,3 +108,4 @@ public class MySource {
 
     }
 }
+    
