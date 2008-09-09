@@ -36,10 +36,8 @@ import javax.jcr.Item;
 import javax.jcr.ItemNotFoundException;
 import javax.jcr.ItemVisitor;
 import javax.jcr.Node;
-import javax.jcr.NodeIterator;
 import javax.jcr.PathNotFoundException;
 import javax.jcr.Property;
-import javax.jcr.PropertyIterator;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.UnsupportedRepositoryOperationException;
@@ -58,6 +56,53 @@ import org.mockito.MockitoAnnotations.Mock;
  * @author jverhaeg
  */
 public class AbstractJcrNodeTest {
+
+    static MockAbstractJcrNode createChild( Session session,
+                                            String name,
+                                            int index,
+                                            List<Segment> children,
+                                            Node parent ) throws Exception {
+        MockAbstractJcrNode child = new MockAbstractJcrNode(session, name, parent);
+        Segment seg = Mockito.mock(Segment.class);
+        stub(seg.getName()).toReturn(new BasicName(null, name));
+        children.add(seg);
+        stub(session.getItem(parent.getPath() + "/{}" + name + '[' + index + ']')).toReturn(child);
+        return child;
+    }
+
+    static class MockAbstractJcrNode extends AbstractJcrNode {
+
+        String name;
+        Node parent;
+
+        MockAbstractJcrNode( Session session,
+                             String name,
+                             Node parent ) {
+            super(session);
+            this.name = name;
+            this.parent = parent;
+        }
+
+        public int getDepth() {
+            return 0;
+        }
+
+        public int getIndex() {
+            return 0;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public Node getParent() {
+            return parent;
+        }
+
+        public String getPath() throws RepositoryException {
+            return (parent == null ? '/' + getName() : parent.getPath() + '/' + getName());
+        }
+    }
 
     private AbstractJcrNode node;
     @Mock
@@ -173,7 +218,7 @@ public class AbstractJcrNodeTest {
 
     @Test
     public void shouldProvideNode() throws Exception {
-        Node child = createChild("child", 1, children, node);
+        Node child = createChild(session, "child", 1, children, node);
         node.setChildren(children);
         stub(session.getItem("/node/child")).toReturn(child);
         assertThat(node.getNode("child"), is(child));
@@ -198,43 +243,7 @@ public class AbstractJcrNodeTest {
 
     @Test
     public void shouldProvideNodeIterator() throws Exception {
-        Node child1 = createChild("child1", 1, children, node);
-        Node child2_1 = createChild("child2", 1, children, node);
-        Node child2_2 = createChild("child2", 2, children, node);
-        createChild("child3", 1, children, node);
-        createChild("child4", 1, children, node);
-        Node child5 = createChild("child5", 1, children, node);
-        node.setChildren(children);
-        NodeIterator iter = node.getNodes();
-        assertThat(iter, notNullValue());
-        assertThat(iter.getSize(), is(-1L));
-        assertThat(iter.getPosition(), is(0L));
-        assertThat(iter.hasNext(), is(true));
-        assertThat((Node)iter.next(), is(child1));
-        assertThat(iter.getPosition(), is(1L));
-        assertThat(iter.hasNext(), is(true));
-        assertThat(iter.nextNode(), is(child2_1));
-        assertThat(iter.getPosition(), is(2L));
-        assertThat(iter.hasNext(), is(true));
-        assertThat(iter.nextNode(), is(child2_2));
-        assertThat(iter.getPosition(), is(3L));
-        assertThat(iter.hasNext(), is(true));
-        iter.skip(2);
-        assertThat(iter.getPosition(), is(5L));
-        assertThat(iter.hasNext(), is(true));
-        assertThat(iter.nextNode(), is(child5));
-        assertThat(iter.getPosition(), is(6L));
-        assertThat(iter.hasNext(), is(false));
-    }
-
-    @Test( expected = UnsupportedOperationException.class )
-    public void shouldNotAllowNodeIteratorRemove() throws Exception {
-        node.getNodes().remove();
-    }
-
-    @Test( expected = IllegalArgumentException.class )
-    public void shouldNotAllowNodeIteratorNegativeSkip() throws Exception {
-        node.getNodes().skip(-1);
+        assertThat(node.getNodes(), notNullValue());
     }
 
     @Test
@@ -254,51 +263,19 @@ public class AbstractJcrNodeTest {
     }
 
     @Test
-    public void shouldProvidePropertyIterator() throws Exception {
-        properties.add(Mockito.mock(Property.class));
-        properties.add(Mockito.mock(Property.class));
-        properties.add(Mockito.mock(Property.class));
-        properties.add(Mockito.mock(Property.class));
-        PropertyIterator iter = node.getProperties();
-        assertThat(iter, notNullValue());
-        assertThat(iter.getSize(), is(-1L));
-        assertThat(iter.getPosition(), is(0L));
-        assertThat(iter.hasNext(), is(true));
-        assertThat(iter.next(), notNullValue());
-        assertThat(iter.getPosition(), is(1L));
-        assertThat(iter.hasNext(), is(true));
-        iter.skip(2);
-        assertThat(iter.getPosition(), is(3L));
-        assertThat(iter.hasNext(), is(true));
-        assertThat(iter.nextProperty(), notNullValue());
-        assertThat(iter.getPosition(), is(4L));
-        assertThat(iter.hasNext(), is(false));
-    }
-
-    @Test( expected = UnsupportedOperationException.class )
-    public void shouldNotAllowPropertyIteratorRemove() throws Exception {
-        node.getProperties().remove();
-    }
-
-    @Test( expected = IllegalArgumentException.class )
-    public void shouldNotAllowPropertyIteratorNegativeSkip() throws Exception {
-        node.getProperties().skip(-1);
-    }
-
-    @Test
     public void shouldProvideProperty() throws Exception {
         Property prop1 = Mockito.mock(Property.class);
         stub(prop1.getName()).toReturn("prop1");
         properties.add(prop1);
         assertThat(node.getProperty("prop1"), is(prop1));
-        MockAbstractJcrNode child = createChild("child", 1, children, node);
+        MockAbstractJcrNode child = createChild(session, "child", 1, children, node);
         Set<Property> properties = new HashSet<Property>();
         child.setProperties(properties);
         Property prop2 = Mockito.mock(Property.class);
         stub(prop2.getName()).toReturn("prop2");
         stub(session.getItem("/node/child/prop2")).toReturn(prop2);
         properties.add(prop2);
-        MockAbstractJcrNode prop3Node = createChild("prop3", 1, children, child);
+        MockAbstractJcrNode prop3Node = createChild(session, "prop3", 1, children, child);
         node.setChildren(children);
         assertThat(node.getProperty("child/prop2"), is(prop2));
         // Ensure we return a property even when a child exists with the same name
@@ -326,10 +303,10 @@ public class AbstractJcrNodeTest {
 
     @Test( expected = PathNotFoundException.class )
     public void shouldNotProvideDescendentPropertyIfNotAvailable() throws Exception {
-        MockAbstractJcrNode child = createChild("child", 1, children, node);
+        MockAbstractJcrNode child = createChild(session, "child", 1, children, node);
         Set<Property> properties = new HashSet<Property>();
         child.setProperties(properties);
-        MockAbstractJcrNode propNode = createChild("prop", 1, children, child);
+        MockAbstractJcrNode propNode = createChild(session, "prop", 1, children, child);
         node.setChildren(children);
         stub(session.getItem("/node/child/prop")).toReturn(propNode);
         node.getProperty("child/prop");
@@ -398,16 +375,12 @@ public class AbstractJcrNodeTest {
         stub(prop.getName()).toReturn("prop");
         properties.add(prop);
         assertThat(node.hasNode("prop"), is(false));
-        Node child = createChild("child", 1, children, node);
-        Node child2 = createChild("child2", 1, children, child);
+        Node child = createChild(session, "child", 1, children, node);
+        Node child2 = createChild(session, "child2", 1, children, child);
         node.setChildren(children);
         assertThat(node.hasNode("{}child"), is(true));
         stub(session.getItem("/node/child/{}child2")).toReturn(child2);
         assertThat(node.hasNode("child/{}child2"), is(true));
-    }
-
-    @Test
-    public void shouldNotIndicateHasNodeIfPathIsChildProperty() throws Exception {
     }
 
     @Test( expected = IllegalArgumentException.class )
@@ -423,7 +396,7 @@ public class AbstractJcrNodeTest {
     @Test
     public void shouldProvideHasNodes() throws Exception {
         assertThat(node.hasNodes(), is(false));
-        createChild("child", 1, children, node);
+        createChild(session, "child", 1, children, node);
         node.setChildren(children);
         assertThat(node.hasNodes(), is(true));
     }
@@ -438,7 +411,7 @@ public class AbstractJcrNodeTest {
     @Test
     public void shouldIndicateHasProperty() throws Exception {
         assertThat(node.hasProperty("prop"), is(false));
-        MockAbstractJcrNode child = createChild("child", 1, children, node);
+        MockAbstractJcrNode child = createChild(session, "child", 1, children, node);
         node.setChildren(children);
         assertThat(node.hasProperty("child"), is(false));
         Property prop = Mockito.mock(Property.class);
@@ -628,51 +601,5 @@ public class AbstractJcrNodeTest {
     @Test( expected = UnsupportedOperationException.class )
     public void shouldNotAllowUpdate() throws Exception {
         node.update(null);
-    }
-
-    private MockAbstractJcrNode createChild( String name,
-                                             int index,
-                                             List<Segment> children,
-                                             Node parent ) throws Exception {
-        MockAbstractJcrNode child = new MockAbstractJcrNode(session, name, parent);
-        Segment seg = Mockito.mock(Segment.class);
-        stub(seg.getName()).toReturn(new BasicName(null, name));
-        children.add(seg);
-        stub(session.getItem(parent.getPath() + "/{}" + name + '[' + index + ']')).toReturn(child);
-        return child;
-    }
-
-    private class MockAbstractJcrNode extends AbstractJcrNode {
-
-        String name;
-        Node parent;
-
-        MockAbstractJcrNode( Session session,
-                             String name,
-                             Node parent ) {
-            super(session);
-            this.name = name;
-            this.parent = parent;
-        }
-
-        public int getDepth() {
-            return 0;
-        }
-
-        public int getIndex() {
-            return 0;
-        }
-
-        public String getName() {
-            return name;
-        }
-
-        public Node getParent() {
-            return parent;
-        }
-
-        public String getPath() throws RepositoryException {
-            return (parent == null ? '/' + getName() : parent.getPath() + '/' + getName());
-        }
     }
 }

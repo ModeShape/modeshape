@@ -24,9 +24,7 @@ package org.jboss.dna.jcr;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Iterator;
 import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.UUID;
 import javax.jcr.Item;
@@ -250,63 +248,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
      * @see javax.jcr.Node#getNodes()
      */
     public final NodeIterator getNodes() {
-        return new NodeIterator() {
-
-            private final Iterator<Name> childIterator = (children == null ? null : children.iterator());
-            private final Iterator<Integer> childNameCountIterator = (childNameCounts == null ? null : childNameCounts.iterator());
-            private Name child;
-            private int childNameCount;
-            private int childNdx = 1;
-            private int ndx;
-            private Node node;
-
-            public long getPosition() {
-                return ndx;
-            }
-
-            public long getSize() {
-                return -1;
-            }
-
-            public boolean hasNext() {
-                return ((childIterator != null && childIterator.hasNext()) || (child != null && childNdx <= childNameCount));
-            }
-
-            public Object next() {
-                return nextNode();
-            }
-
-            public Node nextNode() {
-                if (childIterator == null) {
-                    throw new NoSuchElementException();
-                }
-                if (child == null || childNdx > childNameCount) {
-                    child = childIterator.next();
-                    childNameCount = childNameCountIterator.next();
-                    childNdx = 1;
-                }
-                try {
-                    node = getNode(child.getString() + '[' + childNdx + ']');
-                    childNdx++;
-                    ndx++;
-                    return node;
-                } catch (RepositoryException error) {
-                    // TODO: Change to DnaException once DNA-180 is addressed
-                    throw new RuntimeException(error);
-                }
-            }
-
-            public void remove() {
-                throw new UnsupportedOperationException();
-            }
-
-            public void skip( long count ) {
-                ArgCheck.isNonNegative(count, "count");
-                while (--count >= 0) {
-                    nextNode();
-                }
-            }
-        };
+        return new JcrNodeIterator(this, children, childNameCounts);
     }
 
     /**
@@ -374,45 +316,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
      * @see javax.jcr.Node#getProperties()
      */
     public final PropertyIterator getProperties() {
-        assert properties != null;
-        return new PropertyIterator() {
-
-            private final Iterator<Property> iterator = properties.iterator();
-            private int ndx;
-
-            public long getPosition() {
-                return ndx;
-            }
-
-            public long getSize() {
-                return -1;
-            }
-
-            public boolean hasNext() {
-                return iterator.hasNext();
-            }
-
-            public Object next() {
-                return nextProperty();
-            }
-
-            public Property nextProperty() {
-                Property property = iterator.next();
-                ndx++;
-                return property;
-            }
-
-            public void remove() {
-                throw new UnsupportedOperationException();
-            }
-
-            public void skip( long count ) {
-                ArgCheck.isNonNegative(count, "count");
-                while (--count >= 0) {
-                    nextProperty();
-                }
-            }
-        };
+        return new JcrPropertyIterator(properties);
     }
 
     /**
