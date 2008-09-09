@@ -470,7 +470,11 @@ final class JcrSession implements Session {
      * @see javax.jcr.Session#itemExists(java.lang.String)
      */
     public boolean itemExists( String absolutePath ) throws RepositoryException {
-        return (getItem(absolutePath) != null);
+        try {
+            return (getItem(absolutePath) != null);
+        } catch (PathNotFoundException error) {
+            return false;
+        }
     }
 
     /**

@@ -274,6 +274,17 @@ public class JcrSessionTest {
 
     @Test
     public void shouldProvideItemExists() throws Exception {
-        assertThat(session.itemExists(""), is(false));
+        assertThat(session.itemExists("/a/b"), is(true));
+        assertThat(session.itemExists("/a/c"), is(false));
+    }
+
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldNotAllowItemExistsWithNoPath() throws Exception {
+        session.itemExists(null);
+    }
+
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldNotAllowItemExistsWithEmptyPath() throws Exception {
+        session.itemExists("");
     }
 }
