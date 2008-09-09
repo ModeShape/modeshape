@@ -22,11 +22,8 @@
 package org.jboss.dna.repository;
 
 import java.lang.reflect.InvocationTargetException;
-import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import net.jcip.annotations.ThreadSafe;
@@ -36,14 +33,11 @@ import org.jboss.dna.common.component.ClassLoaderFactory;
 import org.jboss.dna.common.component.StandardClassLoaderFactory;
 import org.jboss.dna.common.util.ArgCheck;
 import org.jboss.dna.common.util.Reflection;
-import org.jboss.dna.connector.federation.FederatedRepositorySource;
 import org.jboss.dna.connector.federation.FederationException;
-import org.jboss.dna.connector.federation.Projection;
-import org.jboss.dna.connector.federation.executor.FederatingCommandExecutor;
-import org.jboss.dna.connector.federation.executor.SingleProjectionCommandExecutor;
 import org.jboss.dna.repository.services.AbstractServiceAdministrator;
 import org.jboss.dna.repository.services.AdministeredService;
 import org.jboss.dna.repository.services.ServiceAdministrator;
+import org.jboss.dna.spi.DnaLexicon;
 import org.jboss.dna.spi.ExecutionContext;
 import org.jboss.dna.spi.connector.RepositorySource;
 import org.jboss.dna.spi.graph.Name;
@@ -55,7 +49,7 @@ import org.jboss.dna.spi.graph.ValueFactories;
 import org.jboss.dna.spi.graph.ValueFactory;
 import org.jboss.dna.spi.graph.commands.GraphCommand;
 import org.jboss.dna.spi.graph.commands.executor.CommandExecutor;
-import org.jboss.dna.spi.graph.commands.executor.NoOpCommandExecutor;
+import org.jboss.dna.spi.graph.commands.executor.SingleSourceCommandExecutor;
 import org.jboss.dna.spi.graph.commands.impl.BasicCompositeCommand;
 import org.jboss.dna.spi.graph.commands.impl.BasicGetChildrenCommand;
 import org.jboss.dna.spi.graph.commands.impl.BasicGetNodeCommand;
@@ -65,12 +59,6 @@ import org.jboss.dna.spi.graph.commands.impl.BasicGetNodeCommand;
  */
 @ThreadSafe
 public class RepositoryService implements AdministeredService {
-
-    protected static final String CLASSNAME_PROPERTY_NAME = "dna:classname";
-    protected static final String CLASSPATH_PROPERTY_NAME = "dna:classpath";
-    protected static final String PROJECTION_RULES_PROPERTY_NAME = "dna:projectionRules";
-    protected static final String CACHE_POLICY_TIME_TO_EXPIRE = "dna:timeToExpire";
-    protected static final String CACHE_POLICY_TIME_TO_CACHE = "dna:timeToCache";
 
     /**
      * The administrative component for this service.
@@ -114,16 +102,17 @@ public class RepositoryService implements AdministeredService {
     private final ClassLoaderFactory classLoaderFactory;
     private final ExecutionContext context;
     private final RepositorySourceManager sources;
-    private final Projection configurationProjection;
+    private final String configurationSourceName;
+    private final Path pathToConfigurationRoot;
     private final Administrator administrator = new Administrator();
     private final AtomicBoolean started = new AtomicBoolean(false);
 
     /**
-     * Create a federation service instance
+     * Create a service instance, reading the configuration describing new {@link RepositorySource} instances from the source with
+     * the supplied name.
      * 
      * @param sources the source manager
-     * @param configurationProjection the projection defining where the service can find configuration information for the
-     *        different repositories that it is to manage
+     * @param configurationSourceName the name of the {@link RepositorySource} that is the configuration repository
      * @param context the execution context in which this service should run
      * @param classLoaderFactory the class loader factory used to instantiate {@link RepositorySource} instances; may be null if
      *        this instance should use a default factory that attempts to load classes first from the
@@ -132,14 +121,39 @@ public class RepositoryService implements AdministeredService {
      * @throws IllegalArgumentException if the bootstrap source is null or the execution context is null
      */
     public RepositoryService( RepositorySourceManager sources,
-                              Projection configurationProjection,
+                              String configurationSourceName,
                               ExecutionContext context,
                               ClassLoaderFactory classLoaderFactory ) {
-        ArgCheck.isNotNull(configurationProjection, "configurationProjection");
+        this(sources, configurationSourceName, null, context, classLoaderFactory);
+    }
+
+    /**
+     * Create a service instance, reading the configuration describing new {@link RepositorySource} instances from the source with
+     * the supplied name and path within the repository.
+     * 
+     * @param sources the source manager
+     * @param configurationSourceName the name of the {@link RepositorySource} that is the configuration repository
+     * @param pathToConfigurationRoot the path of the node in the configuration source repository that should be treated by this
+     *        service as the root of the service's configuration; if null, then "/" is used
+     * @param context the execution context in which this service should run
+     * @param classLoaderFactory the class loader factory used to instantiate {@link RepositorySource} instances; may be null if
+     *        this instance should use a default factory that attempts to load classes first from the
+     *        {@link Thread#getContextClassLoader() thread's current context class loader} and then from the class loader that
+     *        loaded this class.
+     * @throws IllegalArgumentException if the bootstrap source is null or the execution context is null
+     */
+    public RepositoryService( RepositorySourceManager sources,
+                              String configurationSourceName,
+                              Path pathToConfigurationRoot,
+                              ExecutionContext context,
+                              ClassLoaderFactory classLoaderFactory ) {
+        ArgCheck.isNotNull(configurationSourceName, "configurationSourceName");
         ArgCheck.isNotNull(sources, "sources");
         ArgCheck.isNotNull(context, "context");
+        if (pathToConfigurationRoot == null) pathToConfigurationRoot = context.getValueFactories().getPathFactory().createRootPath();
         this.sources = sources;
-        this.configurationProjection = configurationProjection;
+        this.pathToConfigurationRoot = pathToConfigurationRoot;
+        this.configurationSourceName = configurationSourceName;
         this.context = context;
         this.classLoaderFactory = classLoaderFactory != null ? classLoaderFactory : new StandardClassLoaderFactory();
     }
@@ -152,10 +166,10 @@ public class RepositoryService implements AdministeredService {
     }
 
     /**
-     * @return configurationProjection
+     * @return configurationSourceName
      */
-    public Projection getConfigurationProjection() {
-        return configurationProjection;
+    public String getConfigurationSourceName() {
+        return configurationSourceName;
     }
 
     /**
@@ -195,27 +209,12 @@ public class RepositoryService implements AdministeredService {
             PathFactory pathFactory = valueFactories.getPathFactory();
             NameFactory nameFactory = valueFactories.getNameFactory();
 
-            final String configurationSourceName = configurationProjection.getSourceName();
-
-            // Create a federating command executor to execute the commands and merge the results into a single set of
-            // commands.
-            List<Projection> projections = Collections.singletonList(configurationProjection);
-            CommandExecutor executor = null;
-            if (configurationProjection.getRules().size() == 0) {
-                // There is no projection for the configuration repository, so just use a no-op executor
-                executor = new NoOpCommandExecutor(context, configurationSourceName);
-            } else if (configurationProjection.isSimple()) {
-                // There is just a single projection for the configuration repository, so just use an executor that
-                // translates the paths using the projection
-                executor = new SingleProjectionCommandExecutor(context, configurationSourceName, configurationProjection, sources);
-            } else {
-                // The configuration repository has more than one projection, so we need to merge the results
-                executor = new FederatingCommandExecutor(context, configurationSourceName, projections, sources);
-            }
+            // Create a command executor to execute the commands.
+            CommandExecutor executor = new SingleSourceCommandExecutor(context, configurationSourceName, sources);
 
             // Read the configuration and the repository sources, located as child nodes/branches under "/dna:sources",
             // and then instantiate and register each in the "sources" manager
-            Path configurationRoot = pathFactory.create("/");
+            Path configurationRoot = this.pathToConfigurationRoot;
             try {
                 Path sourcesNode = pathFactory.create(configurationRoot, nameFactory.create("dna:sources"));
                 BasicGetChildrenCommand getSources = new BasicGetChildrenCommand(sourcesNode);
@@ -264,14 +263,13 @@ public class RepositoryService implements AdministeredService {
                                                        Map<Name, Property> properties,
                                                        Problems problems ) {
         ValueFactories valueFactories = context.getValueFactories();
-        NameFactory nameFactory = valueFactories.getNameFactory();
         ValueFactory<String> stringFactory = valueFactories.getStringFactory();
 
         // Get the classname and classpath ...
-        Property classnameProperty = properties.get(nameFactory.create(CLASSNAME_PROPERTY_NAME));
-        Property classpathProperty = properties.get(nameFactory.create(CLASSPATH_PROPERTY_NAME));
+        Property classnameProperty = properties.get(DnaLexicon.CLASSNAME);
+        Property classpathProperty = properties.get(DnaLexicon.CLASSPATH);
         if (classnameProperty == null) {
-            problems.addError(RepositoryI18n.requiredPropertyIsMissingFromNode, CLASSNAME_PROPERTY_NAME, path);
+            problems.addError(RepositoryI18n.requiredPropertyIsMissingFromNode, DnaLexicon.CLASSNAME, path);
         }
         // If the classpath property is null or empty, the default classpath will be used
         if (problems.hasErrors()) return null;
@@ -335,21 +333,6 @@ public class RepositoryService implements AdministeredService {
             }
         }
         return source;
-    }
-
-    /**
-     * Get the current set of federated repository names.
-     * 
-     * @return the names of the repository, which is a mutable copy of the names that is not backed by the actual sources
-     */
-    public Set<String> getFederatedRepositoryNames() {
-        Set<String> repositoryNames = new HashSet<String>();
-        for (RepositorySource source : sources.getSources()) {
-            if (source instanceof FederatedRepositorySource) {
-                repositoryNames.add(source.getName());
-            }
-        }
-        return repositoryNames;
     }
 
     /**

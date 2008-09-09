@@ -130,18 +130,35 @@ public class SimpleRepository {
                                          String path,
                                          String propertyName,
                                          Object... values ) {
+        NameFactory nameFactory = context.getValueFactories().getNameFactory();
+        return setProperty(context, path, nameFactory.create(propertyName), values);
+    }
+
+    /**
+     * Utility method to help set the property on the node given by the supplied path. If the node does not exist, it will be
+     * created.
+     * 
+     * @param context the execution context; may not be null
+     * @param path the path to the node; may not be null
+     * @param propertyName the property name; may not be null
+     * @param values the values of the property
+     * @return this repository, for method chaining
+     */
+    public SimpleRepository setProperty( ExecutionContext context,
+                                         String path,
+                                         Name propertyName,
+                                         Object... values ) {
         Logger logger = context.getLogger(getClass());
         if (logger.isTraceEnabled()) {
             logger.trace("Setting property {0} on {1} to {2}", propertyName, path, StringUtil.readableString(values));
         }
         PathFactory pathFactory = context.getValueFactories().getPathFactory();
-        NameFactory nameFactory = context.getValueFactories().getNameFactory();
         PropertyFactory propertyFactory = context.getPropertyFactory();
         Path pathObj = pathFactory.create(path);
         if (!pathObj.isRoot()) {
             create(context, pathObj.getParent().getString(context.getNamespaceRegistry()));
         }
-        Property property = propertyFactory.create(nameFactory.create(propertyName), values);
+        Property property = propertyFactory.create(propertyName, values);
         Map<Name, Property> properties = new HashMap<Name, Property>();
         Map<Name, Property> existingProperties = data.putIfAbsent(pathObj, properties);
         if (existingProperties == null) existingProperties = properties;

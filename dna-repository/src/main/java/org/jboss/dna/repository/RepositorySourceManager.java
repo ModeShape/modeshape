@@ -102,6 +102,13 @@ public class RepositorySourceManager implements RepositoryConnectionFactory {
 
     /**
      * Create a new manager instance.
+     */
+    public RepositorySourceManager() {
+        this(null);
+    }
+
+    /**
+     * Create a new manager instance.
      * 
      * @param delegate the connection factory to which this instance should delegate in the event that a source is not found in
      *        this manager; may be null if there is no delegate

@@ -37,7 +37,6 @@ import java.util.concurrent.TimeUnit;
 import org.jboss.dna.common.component.ClassLoaderFactory;
 import org.jboss.dna.common.util.Logger;
 import org.jboss.dna.connector.federation.FederationException;
-import org.jboss.dna.connector.federation.Projection;
 import org.jboss.dna.repository.services.ServiceAdministrator;
 import org.jboss.dna.spi.DnaLexicon;
 import org.jboss.dna.spi.ExecutionContext;
@@ -46,8 +45,6 @@ import org.jboss.dna.spi.connector.RepositoryConnection;
 import org.jboss.dna.spi.connector.RepositorySource;
 import org.jboss.dna.spi.connector.SimpleRepository;
 import org.jboss.dna.spi.connector.SimpleRepositorySource;
-import org.jboss.dna.spi.graph.Path;
-import org.jboss.dna.spi.graph.PathFactory;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -59,15 +56,7 @@ import org.mockito.MockitoAnnotations.Mock;
  */
 public class RepositoryServiceTest {
 
-    public static final String CLASSNAME = RepositoryService.CLASSNAME_PROPERTY_NAME;
-    public static final String CLASSPATH = RepositoryService.CLASSPATH_PROPERTY_NAME;
-    public static final String PROJECTION_RULES = RepositoryService.PROJECTION_RULES_PROPERTY_NAME;
-    public static final String TIME_TO_EXPIRE = RepositoryService.CACHE_POLICY_TIME_TO_EXPIRE;
-    public static final String TIME_TO_CACHE = RepositoryService.CACHE_POLICY_TIME_TO_CACHE;
-
     private RepositoryService service;
-    private Projection configProjection;
-    private PathFactory pathFactory;
     private String configSourceName;
     private SimpleRepository configRepository;
     private SimpleRepositorySource configRepositorySource;
@@ -81,19 +70,14 @@ public class RepositoryServiceTest {
         MockitoAnnotations.initMocks(this);
         context = new BasicExecutionContext();
         context.getNamespaceRegistry().register(DnaLexicon.Namespace.PREFIX, DnaLexicon.Namespace.URI);
-        pathFactory = context.getValueFactories().getPathFactory();
-        Path pathInRepository = pathFactory.create("/");
-        Path pathInSource = pathFactory.create("/reposX");
         configSourceName = "configSource";
-        Projection.Rule configProjectionRule = new Projection.PathRule(pathInRepository, pathInSource);
-        configProjection = new Projection(configSourceName, configProjectionRule);
         configRepository = SimpleRepository.get("Configuration Repository");
         configRepositorySource = new SimpleRepositorySource();
         configRepositorySource.setRepositoryName(configRepository.getRepositoryName());
         configRepositorySource.setName(configSourceName);
         configRepositoryConnection = configRepositorySource.getConnection();
         stub(sources.createConnection(configSourceName)).toReturn(configRepositoryConnection);
-        service = new RepositoryService(sources, configProjection, context, null);
+        service = new RepositoryService(sources, configSourceName, context, null);
     }
 
     @After
@@ -110,9 +94,9 @@ public class RepositoryServiceTest {
     }
 
     @Test
-    public void shouldHaveConfigurationRegionAfterInstantiation() {
-        assertThat(service.getConfigurationProjection(), is(notNullValue()));
-        assertThat(service.getConfigurationProjection(), is(sameInstance(configProjection)));
+    public void shouldHaveConfigurationSourceAfterInstantiation() {
+        assertThat(service.getConfigurationSourceName(), is(notNullValue()));
+        assertThat(service.getConfigurationSourceName(), is(configSourceName));
     }
 
     @Test
@@ -129,7 +113,7 @@ public class RepositoryServiceTest {
     @Test
     public void shouldHaveNonNullClassLoaderFactoryAfterInstantiatingWithClassLoaderFactoryReference() {
         ClassLoaderFactory classLoaderFactory = mock(ClassLoaderFactory.class);
-        service = new RepositoryService(sources, configProjection, context, classLoaderFactory);
+        service = new RepositoryService(sources, configSourceName, context, classLoaderFactory);
         assertThat(service.getClassLoaderFactory(), is(notNullValue()));
         assertThat(service.getClassLoaderFactory(), is(sameInstance(classLoaderFactory)));
     }
@@ -166,22 +150,23 @@ public class RepositoryServiceTest {
         sources.addSource(configRepositorySource);
         assertThat(sources.getSources(), hasItems((RepositorySource)configRepositorySource));
         assertThat(sources.getSources().size(), is(1));
-        service = new RepositoryService(sources, configProjection, context, null);
+        service = new RepositoryService(sources, configSourceName, context, null);
 
         // Set up the configuration repository to contain 3 sources ...
-        configRepository.create(context, "/reposX/dna:sources");
-        configRepository.setProperty(context, "/reposX/dna:sources/source A", CLASSNAME, SimpleRepositorySource.class.getName());
-        configRepository.setProperty(context, "/reposX/dna:sources/source A", CLASSPATH, "");
-        configRepository.setProperty(context, "/reposX/dna:sources/source A", "repositoryName", "sourceReposA");
-        configRepository.setProperty(context, "/reposX/dna:sources/source A", "retryLimit", 3);
+        final String className = SimpleRepositorySource.class.getName();
+        configRepository.create(context, "/dna:sources");
+        configRepository.setProperty(context, "/dna:sources/source A", DnaLexicon.CLASSNAME, className);
+        configRepository.setProperty(context, "/dna:sources/source A", DnaLexicon.CLASSPATH, "");
+        configRepository.setProperty(context, "/dna:sources/source A", "repositoryName", "sourceReposA");
+        configRepository.setProperty(context, "/dna:sources/source A", "retryLimit", 3);
 
-        configRepository.setProperty(context, "/reposX/dna:sources/source B", CLASSNAME, SimpleRepositorySource.class.getName());
-        configRepository.setProperty(context, "/reposX/dna:sources/source B", CLASSPATH, "");
-        configRepository.setProperty(context, "/reposX/dna:sources/source B", "repositoryName", "sourceReposB");
+        configRepository.setProperty(context, "/dna:sources/source B", DnaLexicon.CLASSNAME, className);
+        configRepository.setProperty(context, "/dna:sources/source B", DnaLexicon.CLASSPATH, "");
+        configRepository.setProperty(context, "/dna:sources/source B", "repositoryName", "sourceReposB");
 
-        configRepository.setProperty(context, "/reposX/dna:sources/source C", CLASSNAME, SimpleRepositorySource.class.getName());
-        configRepository.setProperty(context, "/reposX/dna:sources/source C", CLASSPATH, "");
-        configRepository.setProperty(context, "/reposX/dna:sources/source C", "repositoryName", "sourceReposC");
+        configRepository.setProperty(context, "/dna:sources/source C", DnaLexicon.CLASSNAME, className);
+        configRepository.setProperty(context, "/dna:sources/source C", DnaLexicon.CLASSPATH, "");
+        configRepository.setProperty(context, "/dna:sources/source C", "repositoryName", "sourceReposC");
 
         // Now, start up the service ...
         service.getAdministrator().start();
@@ -211,7 +196,7 @@ public class RepositoryServiceTest {
     @Test
     public void shouldStartUpUsingConfigurationRepositoryThatContainsNoSources() throws Exception {
         // Set up the configuration repository to contain NO sources ...
-        configRepository.create(context, "/reposX/dna:sources");
+        configRepository.create(context, "/dna:sources");
 
         // Now, start up the service ...
         service.getAdministrator().start();
@@ -226,19 +211,24 @@ public class RepositoryServiceTest {
     @Test
     public void shouldStartUpAndCreateRepositoryUsingConfigurationRepositoryThatContainsNoSources() {
         // Set up the configuration repository ...
-        configRepository.create(context, "/reposX/dna:sources");
-        configRepository.setProperty(context, "/reposX/dna:sources/source A", CLASSNAME, SimpleRepositorySource.class.getName());
-        configRepository.setProperty(context, "/reposX/dna:sources/source A", CLASSPATH, "");
-        configRepository.setProperty(context, "/reposX/dna:sources/source A", "repositoryName", "sourceReposA");
-        configRepository.setProperty(context, "/reposX/dna:sources/source A", "retryLimit", 3);
+        configRepository.create(context, "/dna:sources");
+        configRepository.setProperty(context,
+                                     "/dna:sources/source A",
+                                     DnaLexicon.CLASSNAME,
+                                     SimpleRepositorySource.class.getName());
+        configRepository.setProperty(context, "/dna:sources/source A", DnaLexicon.CLASSPATH, "");
+        configRepository.setProperty(context, "/dna:sources/source A", "repositoryName", "sourceReposA");
+        configRepository.setProperty(context, "/dna:sources/source A", "retryLimit", 3);
 
-        String fedReposPath = "/reposX/dna:repositories/fed repos/";
-        configRepository.setProperty(context, fedReposPath, TIME_TO_CACHE, "10000");
-        configRepository.setProperty(context, fedReposPath, TIME_TO_EXPIRE, "20000");
-        configRepository.setProperty(context, fedReposPath + "dna:regions/source A", PROJECTION_RULES, "/a/b/c => /sx/sy");
-        configRepository.setProperty(context, fedReposPath + "dna:regions/source B", PROJECTION_RULES, "/ => /");
-        configRepository.setProperty(context, fedReposPath + "dna:regions/source C", PROJECTION_RULES, "/d/e/f => /");
-        configRepository.setProperty(context, fedReposPath + "dna:regions/source D", PROJECTION_RULES, "/ => /x/y/z");
+        String fedReposPath = "/dna:repositories/fed repos/";
+        configRepository.setProperty(context, fedReposPath, DnaLexicon.TIME_TO_EXPIRE, "20000");
+        configRepository.setProperty(context,
+                                     fedReposPath + "dna:regions/source A",
+                                     DnaLexicon.PROJECTION_RULES,
+                                     "/a/b/c => /sx/sy");
+        configRepository.setProperty(context, fedReposPath + "dna:regions/source B", DnaLexicon.PROJECTION_RULES, "/ => /");
+        configRepository.setProperty(context, fedReposPath + "dna:regions/source C", DnaLexicon.PROJECTION_RULES, "/d/e/f => /");
+        configRepository.setProperty(context, fedReposPath + "dna:regions/source D", DnaLexicon.PROJECTION_RULES, "/ => /x/y/z");
 
         // Now, start up the service ...
         service.getAdministrator().start();
