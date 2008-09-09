@@ -24,19 +24,24 @@ package org.jboss.dna.jcr;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.ref.WeakReference;
+import java.security.AccessControlException;
 import java.security.Principal;
+import java.util.Calendar;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.WeakHashMap;
 import javax.jcr.Credentials;
 import javax.jcr.Item;
 import javax.jcr.Node;
 import javax.jcr.PathNotFoundException;
 import javax.jcr.Property;
+import javax.jcr.PropertyType;
 import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
+import javax.jcr.Value;
 import javax.jcr.ValueFactory;
 import javax.jcr.Workspace;
 import javax.security.auth.Subject;
@@ -50,6 +55,7 @@ import org.jboss.dna.spi.connector.RepositoryConnection;
 import org.jboss.dna.spi.graph.Name;
 import org.jboss.dna.spi.graph.Path;
 import org.jboss.dna.spi.graph.UuidFactory;
+import org.jboss.dna.spi.graph.ValueFactories;
 import org.jboss.dna.spi.graph.Path.Segment;
 import org.jboss.dna.spi.graph.commands.GraphCommand;
 import org.jboss.dna.spi.graph.commands.impl.BasicGetNodeCommand;
@@ -66,6 +72,7 @@ final class JcrSession implements Session {
     private final ExecutionContext executionContext;
     private RepositoryConnection connection;
     private final Map<UUID, WeakReference<Node>> nodesByUuid;
+    private final Map<String, WeakReference<Node>> nodesByJcrUuid;
     private boolean isLive;
     private Workspace workspace;
     private JcrRootNode rootNode;
@@ -84,6 +91,7 @@ final class JcrSession implements Session {
         this.executionContext = executionContext;
         this.connection = connection;
         this.nodesByUuid = nodesByUuid;
+        this.nodesByJcrUuid = new WeakHashMap<String, WeakReference<Node>>();
         this.isLive = true;
         // Following must be initialized after session's state is initialized
         this.workspace = new JcrWorkspace(this, workspaceName);
@@ -92,6 +100,7 @@ final class JcrSession implements Session {
     /**
      * {@inheritDoc}
      * 
+     * @throws UnsupportedOperationException always
      * @see javax.jcr.Session#addLockToken(java.lang.String)
      */
     public void addLockToken( String lt ) {
@@ -101,11 +110,16 @@ final class JcrSession implements Session {
     /**
      * {@inheritDoc}
      * 
+     * @throws IllegalArgumentException if either <code>path</code> or <code>actions</code> is empty or <code>null</code>.
      * @see javax.jcr.Session#checkPermission(java.lang.String, java.lang.String)
      */
-    public void checkPermission( String absPath,
+    public void checkPermission( String path,
                                  String actions ) {
-        throw new UnsupportedOperationException();
+        ArgCheck.isNotEmpty(path, "path");
+        ArgCheck.isNotEmpty(actions, "actions");
+        if (!"read".equals(actions)) {
+            throw new AccessControlException(JcrI18n.permissionDenied.text(path, actions));
+        }
     }
 
     private void execute( GraphCommand... commands ) throws RepositoryException {
@@ -121,6 +135,7 @@ final class JcrSession implements Session {
     /**
      * {@inheritDoc}
      * 
+     * @throws UnsupportedOperationException always
      * @see javax.jcr.Session#exportDocumentView(java.lang.String, org.xml.sax.ContentHandler, boolean, boolean)
      */
     public void exportDocumentView( String absPath,
@@ -133,6 +148,7 @@ final class JcrSession implements Session {
     /**
      * {@inheritDoc}
      * 
+     * @throws UnsupportedOperationException always
      * @see javax.jcr.Session#exportDocumentView(java.lang.String, java.io.OutputStream, boolean, boolean)
      */
     public void exportDocumentView( String absPath,
@@ -145,6 +161,7 @@ final class JcrSession implements Session {
     /**
      * {@inheritDoc}
      * 
+     * @throws UnsupportedOperationException always
      * @see javax.jcr.Session#exportSystemView(java.lang.String, org.xml.sax.ContentHandler, boolean, boolean)
      */
     public void exportSystemView( String absPath,
@@ -157,6 +174,7 @@ final class JcrSession implements Session {
     /**
      * {@inheritDoc}
      * 
+     * @throws UnsupportedOperationException always
      * @see javax.jcr.Session#exportSystemView(java.lang.String, java.io.OutputStream, boolean, boolean)
      */
     public void exportSystemView( String absPath,
@@ -169,6 +187,7 @@ final class JcrSession implements Session {
     /**
      * {@inheritDoc}
      * 
+     * @return <code>null</code>
      * @see javax.jcr.Session#getAttribute(java.lang.String)
      */
     public Object getAttribute( String name ) {
@@ -178,6 +197,7 @@ final class JcrSession implements Session {
     /**
      * {@inheritDoc}
      * 
+     * @return An empty array
      * @see javax.jcr.Session#getAttributeNames()
      */
     public String[] getAttributeNames() {
@@ -187,6 +207,7 @@ final class JcrSession implements Session {
     /**
      * {@inheritDoc}
      * 
+     * @throws UnsupportedOperationException always
      * @see javax.jcr.Session#getImportContentHandler(java.lang.String, int)
      */
     public ContentHandler getImportContentHandler( String parentAbsPath,
@@ -197,6 +218,7 @@ final class JcrSession implements Session {
     /**
      * {@inheritDoc}
      * 
+     * @throws IllegalArgumentException if <code>absolutePath</code> is empty or <code>null</code>.
      * @see javax.jcr.Session#getItem(java.lang.String)
      */
     public Item getItem( String absolutePath ) throws RepositoryException {
@@ -230,6 +252,7 @@ final class JcrSession implements Session {
     /**
      * {@inheritDoc}
      * 
+     * @throws UnsupportedOperationException always
      * @see javax.jcr.Session#getLockTokens()
      */
     public String[] getLockTokens() {
@@ -239,6 +262,7 @@ final class JcrSession implements Session {
     /**
      * {@inheritDoc}
      * 
+     * @throws UnsupportedOperationException always
      * @see javax.jcr.Session#getNamespacePrefix(java.lang.String)
      */
     public String getNamespacePrefix( String uri ) {
@@ -248,6 +272,7 @@ final class JcrSession implements Session {
     /**
      * {@inheritDoc}
      * 
+     * @throws UnsupportedOperationException always
      * @see javax.jcr.Session#getNamespacePrefixes()
      */
     public String[] getNamespacePrefixes() {
@@ -257,6 +282,7 @@ final class JcrSession implements Session {
     /**
      * {@inheritDoc}
      * 
+     * @throws UnsupportedOperationException always
      * @see javax.jcr.Session#getNamespaceURI(java.lang.String)
      */
     public String getNamespaceURI( String prefix ) {
@@ -283,9 +309,8 @@ final class JcrSession implements Session {
         // If not create a new one & populate it
         JcrNode node;
         Path parentPath = path.getParent();
-        if (parentPath.isRoot()) node = new JcrNode(this, ((JcrRootNode)getRootNode()).getInternalUuid(),
-                                                    path.getLastSegment().getName());
-        else node = new JcrNode(this, ((JcrNode)getNode(parentPath)).getInternalUuid(), path.getLastSegment().getName());
+        if (parentPath.isRoot()) node = new JcrNode(this, ((JcrRootNode)getRootNode()).getInternalUuid(), path.getLastSegment());
+        else node = new JcrNode(this, ((JcrNode)getNode(parentPath)).getInternalUuid(), path.getLastSegment());
         populateNode(node, command);
         return node;
     }
@@ -293,9 +318,11 @@ final class JcrSession implements Session {
     /**
      * {@inheritDoc}
      * 
+     * @throws UnsupportedOperationException always
      * @see javax.jcr.Session#getNodeByUUID(java.lang.String)
      */
     public Node getNodeByUUID( String uuid ) {
+        // TODO: Need DNA command to get node by UUID before implementing
         throw new UnsupportedOperationException();
     }
 
@@ -349,7 +376,42 @@ final class JcrSession implements Session {
      * @see javax.jcr.Session#getValueFactory()
      */
     public ValueFactory getValueFactory() {
-        throw new UnsupportedOperationException();
+        final ValueFactories valueFactories = executionContext.getValueFactories();
+        return new ValueFactory() {
+
+            public Value createValue( String value,
+                                      int propertyType ) {
+                return new JcrValue<String>(valueFactories, propertyType, value);
+            }
+
+            public Value createValue( Node value ) throws RepositoryException {
+                return new JcrValue<UUID>(valueFactories, PropertyType.REFERENCE, UUID.fromString(value.getUUID()));
+            }
+
+            public Value createValue( InputStream value ) {
+                return new JcrValue<InputStream>(valueFactories, PropertyType.BINARY, value);
+            }
+
+            public Value createValue( Calendar value ) {
+                return new JcrValue<Calendar>(valueFactories, PropertyType.DATE, value);
+            }
+
+            public Value createValue( boolean value ) {
+                return new JcrValue<Boolean>(valueFactories, PropertyType.BOOLEAN, value);
+            }
+
+            public Value createValue( double value ) {
+                return new JcrValue<Double>(valueFactories, PropertyType.DOUBLE, value);
+            }
+
+            public Value createValue( long value ) {
+                return new JcrValue<Long>(valueFactories, PropertyType.LONG, value);
+            }
+
+            public Value createValue( String value ) {
+                return new JcrValue<String>(valueFactories, PropertyType.STRING, value);
+            }
+        };
     }
 
     /**
@@ -364,10 +426,11 @@ final class JcrSession implements Session {
     /**
      * {@inheritDoc}
      * 
+     * @return false
      * @see javax.jcr.Session#hasPendingChanges()
      */
     public boolean hasPendingChanges() {
-        throw new UnsupportedOperationException();
+        return false;
     }
 
     /**
@@ -375,13 +438,14 @@ final class JcrSession implements Session {
      * 
      * @see javax.jcr.Session#impersonate(javax.jcr.Credentials)
      */
-    public Session impersonate( Credentials credentials ) {
-        throw new UnsupportedOperationException();
+    public Session impersonate( Credentials credentials ) throws RepositoryException {
+        return repository.login(credentials);
     }
 
     /**
      * {@inheritDoc}
      * 
+     * @throws UnsupportedOperationException always
      * @see javax.jcr.Session#importXML(java.lang.String, java.io.InputStream, int)
      */
     public void importXML( String parentAbsPath,
@@ -402,10 +466,11 @@ final class JcrSession implements Session {
     /**
      * {@inheritDoc}
      * 
+     * @throws IllegalArgumentException if <code>absolutePath</code> is empty or <code>null</code>.
      * @see javax.jcr.Session#itemExists(java.lang.String)
      */
-    public boolean itemExists( String absPath ) {
-        throw new UnsupportedOperationException();
+    public boolean itemExists( String absolutePath ) throws RepositoryException {
+        return (getItem(absolutePath) != null);
     }
 
     /**
@@ -426,12 +491,14 @@ final class JcrSession implements Session {
             executionContext.getLoginContext().logout();
             isLive = false;
         } catch (LoginException error) {
+            // TODO; Log error
         }
     }
 
     /**
      * {@inheritDoc}
      * 
+     * @throws UnsupportedOperationException always
      * @see javax.jcr.Session#move(java.lang.String, java.lang.String)
      */
     public void move( String srcAbsPath,
@@ -454,22 +521,27 @@ final class JcrSession implements Session {
         for (org.jboss.dna.spi.graph.Property dnaProp : getNodeCommand.getProperties()) {
             Name name = dnaProp.getName();
             if (uuid == null && DnaLexicon.UUID.equals(name)) uuid = uuidFactory.create(dnaProp.getValues()).next();
+            else if (dnaProp.isMultiple()) properties.add(new JcrMultiValueProperty(node, executionContext, name, dnaProp));
             else {
-                if (jcrUuidName.equals(name)) uuid = uuidFactory.create(dnaProp.getValues()).next();
-                properties.add(new JcrProperty(node, executionContext, name, dnaProp.getValues().next()));
+                if (jcrUuidName.equals(name)) {
+                    uuid = uuidFactory.create(dnaProp.getValues()).next();
+                    nodesByJcrUuid.put(uuid.toString(), new WeakReference<Node>(node));
+                } else properties.add(new JcrProperty(node, executionContext, name, dnaProp.getValues().next()));
             }
+
         }
         node.setProperties(properties);
         // Set node's UUID, creating one if necessary
         if (uuid == null) uuid = UUID.randomUUID();
         node.setInternalUuid(uuid);
         // Setup node to be retrieved by DNA UUID
-        nodesByUuid.put(node.getInternalUuid(), new WeakReference<Node>(node));
+        nodesByUuid.put(new UUID(uuid.getMostSignificantBits(), uuid.getLeastSignificantBits()), new WeakReference<Node>(node));
     }
 
     /**
      * {@inheritDoc}
      * 
+     * @throws UnsupportedOperationException always
      * @see javax.jcr.Session#refresh(boolean)
      */
     public void refresh( boolean keepChanges ) {
@@ -479,6 +551,7 @@ final class JcrSession implements Session {
     /**
      * {@inheritDoc}
      * 
+     * @throws UnsupportedOperationException always
      * @see javax.jcr.Session#removeLockToken(java.lang.String)
      */
     public void removeLockToken( String lt ) {
@@ -488,6 +561,7 @@ final class JcrSession implements Session {
     /**
      * {@inheritDoc}
      * 
+     * @throws UnsupportedOperationException always
      * @see javax.jcr.Session#save()
      */
     public void save() {
@@ -497,6 +571,7 @@ final class JcrSession implements Session {
     /**
      * {@inheritDoc}
      * 
+     * @throws UnsupportedOperationException always
      * @see javax.jcr.Session#setNamespacePrefix(java.lang.String, java.lang.String)
      */
     public void setNamespacePrefix( String newPrefix,

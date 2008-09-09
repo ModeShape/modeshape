@@ -39,6 +39,7 @@ final class JcrRootNode extends AbstractJcrNode {
     /**
      * {@inheritDoc}
      * 
+     * @return 0;
      * @see javax.jcr.Item#getDepth()
      */
     public int getDepth() {
@@ -48,6 +49,17 @@ final class JcrRootNode extends AbstractJcrNode {
     /**
      * {@inheritDoc}
      * 
+     * @return 1;
+     * @see javax.jcr.Node#getIndex()
+     */
+    public int getIndex() {
+        return 1;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @return "";
      * @see javax.jcr.Item#getName()
      */
     public String getName() {
@@ -57,6 +69,7 @@ final class JcrRootNode extends AbstractJcrNode {
     /**
      * {@inheritDoc}
      * 
+     * @throws ItemNotFoundException always
      * @see javax.jcr.Item#getParent()
      */
     public Node getParent() throws ItemNotFoundException {
@@ -66,6 +79,7 @@ final class JcrRootNode extends AbstractJcrNode {
     /**
      * {@inheritDoc}
      * 
+     * @return "/";
      * @see javax.jcr.Item#getPath()
      */
     public String getPath() {

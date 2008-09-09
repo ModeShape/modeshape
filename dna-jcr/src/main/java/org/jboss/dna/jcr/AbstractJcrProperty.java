@@ -22,18 +22,25 @@
 package org.jboss.dna.jcr;
 
 import java.io.InputStream;
+import java.io.Reader;
 import java.util.Calendar;
+import java.util.Date;
+import java.util.UUID;
 import javax.jcr.Item;
 import javax.jcr.ItemVisitor;
 import javax.jcr.Node;
 import javax.jcr.Property;
+import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.Value;
 import javax.jcr.nodetype.PropertyDefinition;
 import net.jcip.annotations.NotThreadSafe;
+import org.jboss.dna.common.util.ArgCheck;
 import org.jboss.dna.spi.ExecutionContext;
 import org.jboss.dna.spi.graph.Name;
+import org.jboss.dna.spi.graph.Path;
+import org.jboss.dna.spi.graph.ValueFactories;
 
 /**
  * @author jverhaeg
@@ -59,10 +66,25 @@ abstract class AbstractJcrProperty extends AbstractJcrItem implements Property {
     /**
      * {@inheritDoc}
      * 
+     * @throws IllegalArgumentException if <code>visitor</code> is <code>null</code>.
      * @see javax.jcr.Item#accept(javax.jcr.ItemVisitor)
      */
-    public void accept( ItemVisitor visitor ) throws RepositoryException {
+    public final void accept( ItemVisitor visitor ) throws RepositoryException {
+        ArgCheck.isNotNull(visitor, "visitor");
         visitor.visit(this);
+    }
+
+    JcrValue<?> createValue( ValueFactories valueFactories,
+                             ValueInfo valueInfo,
+                             Object value ) {
+        return createValue(valueFactories, valueInfo.valueClass, valueInfo.propertyType, value);
+    }
+
+    private <T> JcrValue<T> createValue( ValueFactories valueFactories,
+                                         Class<T> valueClass,
+                                         int propertyType,
+                                         Object value ) {
+        return new JcrValue<T>(valueFactories, propertyType, valueClass.cast(value));
     }
 
     /**
@@ -78,10 +100,20 @@ abstract class AbstractJcrProperty extends AbstractJcrItem implements Property {
     /**
      * {@inheritDoc}
      * 
+     * @throws UnsupportedOperationException always
      * @see javax.jcr.Property#getDefinition()
      */
     public PropertyDefinition getDefinition() {
         throw new UnsupportedOperationException();
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see javax.jcr.Item#getDepth()
+     */
+    public int getDepth() throws RepositoryException {
+        return getParent().getDepth() + 1;
     }
 
     final ExecutionContext getExecutionContext() {
@@ -93,7 +125,7 @@ abstract class AbstractJcrProperty extends AbstractJcrItem implements Property {
      * 
      * @see javax.jcr.Property#getNode()
      */
-    final public Node getNode() {
+    public final Node getNode() {
         return node;
     }
 
@@ -120,8 +152,8 @@ abstract class AbstractJcrProperty extends AbstractJcrItem implements Property {
      * 
      * @see javax.jcr.Item#getPath()
      */
-    public String getPath() throws RepositoryException {
-        return node.getPath() + '/' + getName();
+    public final String getPath() throws RepositoryException {
+        return getPath(node.getPath(), getName());
     }
 
     /**
@@ -136,6 +168,7 @@ abstract class AbstractJcrProperty extends AbstractJcrItem implements Property {
     /**
      * {@inheritDoc}
      * 
+     * @return false
      * @see javax.jcr.Item#isNode()
      */
     public final boolean isNode() {
@@ -147,8 +180,9 @@ abstract class AbstractJcrProperty extends AbstractJcrItem implements Property {
      * 
      * @see javax.jcr.Item#isSame(javax.jcr.Item)
      */
-    public boolean isSame( Item otherItem ) throws RepositoryException {
-        if (otherItem instanceof Property) {
+    @Override
+    public final boolean isSame( Item otherItem ) throws RepositoryException {
+        if (super.isSame(otherItem) && otherItem instanceof Property) {
             Property otherProp = (Property)otherItem;
             return (getName().equals(otherProp.getName()) && getNode().isSame(otherProp.getNode()));
         }
@@ -158,90 +192,152 @@ abstract class AbstractJcrProperty extends AbstractJcrItem implements Property {
     /**
      * {@inheritDoc}
      * 
+     * @throws UnsupportedOperationException always
      * @see javax.jcr.Property#setValue(javax.jcr.Value)
      */
-    public void setValue( Value value ) {
+    public final void setValue( Value value ) {
         throw new UnsupportedOperationException();
     }
 
     /**
      * {@inheritDoc}
      * 
+     * @throws UnsupportedOperationException always
      * @see javax.jcr.Property#setValue(javax.jcr.Value[])
      */
-    public void setValue( Value[] values ) {
+    public final void setValue( Value[] values ) {
         throw new UnsupportedOperationException();
     }
 
     /**
      * {@inheritDoc}
      * 
+     * @throws UnsupportedOperationException always
      * @see javax.jcr.Property#setValue(java.lang.String)
      */
-    public void setValue( String value ) {
+    public final void setValue( String value ) {
         throw new UnsupportedOperationException();
     }
 
     /**
      * {@inheritDoc}
      * 
+     * @throws UnsupportedOperationException always
      * @see javax.jcr.Property#setValue(java.lang.String[])
      */
-    public void setValue( String[] values ) {
+    public final void setValue( String[] values ) {
         throw new UnsupportedOperationException();
     }
 
     /**
      * {@inheritDoc}
      * 
+     * @throws UnsupportedOperationException always
      * @see javax.jcr.Property#setValue(java.io.InputStream)
      */
-    public void setValue( InputStream value ) {
+    public final void setValue( InputStream value ) {
         throw new UnsupportedOperationException();
     }
 
     /**
      * {@inheritDoc}
      * 
+     * @throws UnsupportedOperationException always
      * @see javax.jcr.Property#setValue(long)
      */
-    public void setValue( long value ) {
+    public final void setValue( long value ) {
         throw new UnsupportedOperationException();
     }
 
     /**
      * {@inheritDoc}
      * 
+     * @throws UnsupportedOperationException always
      * @see javax.jcr.Property#setValue(double)
      */
-    public void setValue( double value ) {
+    public final void setValue( double value ) {
         throw new UnsupportedOperationException();
     }
 
     /**
      * {@inheritDoc}
      * 
+     * @throws UnsupportedOperationException always
      * @see javax.jcr.Property#setValue(java.util.Calendar)
      */
-    public void setValue( Calendar value ) {
+    public final void setValue( Calendar value ) {
         throw new UnsupportedOperationException();
     }
 
     /**
      * {@inheritDoc}
      * 
+     * @throws UnsupportedOperationException always
      * @see javax.jcr.Property#setValue(boolean)
      */
-    public void setValue( boolean value ) {
+    public final void setValue( boolean value ) {
         throw new UnsupportedOperationException();
     }
 
     /**
      * {@inheritDoc}
      * 
+     * @throws UnsupportedOperationException always
      * @see javax.jcr.Property#setValue(javax.jcr.Node)
      */
-    public void setValue( Node value ) {
+    public final void setValue( Node value ) {
         throw new UnsupportedOperationException();
+    }
+
+    final class ValueInfo {
+
+        final Class<?> valueClass;
+        final int propertyType;
+
+        ValueInfo( Object value ) {
+            if (value instanceof Boolean) {
+                valueClass = Boolean.class;
+                propertyType = PropertyType.BOOLEAN;
+            } else if (value instanceof Date) {
+                valueClass = Date.class;
+                propertyType = PropertyType.DATE;
+            } else if (value instanceof Calendar) {
+                valueClass = Calendar.class;
+                propertyType = PropertyType.DATE;
+            } else if (value instanceof Double) {
+                valueClass = Double.class;
+                propertyType = PropertyType.DOUBLE;
+            } else if (value instanceof Float) {
+                valueClass = Float.class;
+                propertyType = PropertyType.DOUBLE;
+            } else if (value instanceof Integer) {
+                valueClass = Integer.class;
+                propertyType = PropertyType.LONG;
+            } else if (value instanceof Long) {
+                valueClass = Long.class;
+                propertyType = PropertyType.LONG;
+            } else if (value instanceof UUID) {
+                valueClass = UUID.class;
+                propertyType = PropertyType.REFERENCE;
+            } else if (value instanceof String) {
+                valueClass = String.class;
+                propertyType = PropertyType.STRING;
+            } else if (value instanceof Name) {
+                valueClass = Name.class;
+                propertyType = PropertyType.NAME;
+            } else if (value instanceof Path) {
+                valueClass = Path.class;
+                propertyType = PropertyType.PATH;
+            } else if (value instanceof InputStream) {
+                valueClass = InputStream.class;
+                propertyType = PropertyType.BINARY;
+            } else if (value instanceof Reader) {
+                valueClass = Reader.class;
+                propertyType = PropertyType.BINARY;
+            } else {
+                valueClass = Object.class;
+                propertyType = PropertyType.BINARY;
+            }
+        }
     }
 }

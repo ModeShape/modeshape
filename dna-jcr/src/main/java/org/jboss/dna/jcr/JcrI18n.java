@@ -37,6 +37,7 @@ public final class JcrI18n {
     public static I18n inputStreamConsumed;
     public static I18n nonInputStreamConsumed;
     public static I18n pathNotFound;
+    public static I18n permissionDenied;
     public static I18n repositoryMustBeConfigured;
     public static I18n sourceInUse;
 

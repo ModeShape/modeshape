@@ -27,8 +27,11 @@ import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.stub;
+import java.io.InputStream;
 import java.lang.ref.WeakReference;
+import java.security.AccessControlException;
 import java.security.Principal;
+import java.util.Calendar;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -36,8 +39,10 @@ import java.util.UUID;
 import javax.jcr.Item;
 import javax.jcr.Node;
 import javax.jcr.Property;
+import javax.jcr.PropertyType;
 import javax.jcr.Repository;
 import javax.jcr.Session;
+import javax.jcr.ValueFactory;
 import javax.security.auth.Subject;
 import javax.security.auth.login.LoginContext;
 import org.jboss.dna.spi.ExecutionContext;
@@ -125,6 +130,41 @@ public class JcrSessionTest {
         new JcrSession(repository, executionContext, WORKSPACE_NAME, connection, null);
     }
 
+    @Test( expected = UnsupportedOperationException.class )
+    public void shouldNotAllowAddLockToken() throws Exception {
+        session.addLockToken(null);
+    }
+
+    @Test
+    public void shouldAllowCheckReadPermission() throws Exception {
+        session.checkPermission("/", "read");
+    }
+
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldNotAllowCheckPermissionWithNoPath() throws Exception {
+        session.checkPermission(null, "read");
+    }
+
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldNotAllowCheckPermissionWithEmptyPath() throws Exception {
+        session.checkPermission("", "read");
+    }
+
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldNotAllowCheckPermissionWithNoActions() throws Exception {
+        session.checkPermission("/", null);
+    }
+
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldNotAllowCheckPermissionWithEmptyActions() throws Exception {
+        session.checkPermission("/", "");
+    }
+
+    @Test( expected = AccessControlException.class )
+    public void shouldNotAllowCheckNonReadPermission() throws Exception {
+        session.checkPermission("/", "any");
+    }
+
     @Test
     public void shouldProvideNoAttributes() throws Exception {
         assertThat(session.getAttribute(null), nullValue());
@@ -148,7 +188,7 @@ public class JcrSessionTest {
     }
 
     @Test
-    public void shouldBeLiveBeforeLogout() throws Exception {
+    public void shouldIndicateLiveBeforeLogout() throws Exception {
         assertThat(session.isLive(), is(true));
     }
 
@@ -158,7 +198,7 @@ public class JcrSessionTest {
     }
 
     @Test
-    public void shouldNotBeLiveAfterLogout() throws Exception {
+    public void shouldIndicateNotLiveAfterLogout() throws Exception {
         session.logout();
         assertThat(session.isLive(), is(false));
     }
@@ -204,5 +244,36 @@ public class JcrSessionTest {
         assertThat(item, instanceOf(Node.class));
         item = session.getItem("/a/b/booleanProperty");
         assertThat(item, instanceOf(Property.class));
+    }
+
+    @Test
+    public void shouldProvideValueFactory() throws Exception {
+        ValueFactory factory = session.getValueFactory();
+        assertThat(factory, notNullValue());
+        assertThat(factory.createValue(false), notNullValue());
+        assertThat(factory.createValue(Calendar.getInstance()), notNullValue());
+        assertThat(factory.createValue(0.0), notNullValue());
+        assertThat(factory.createValue(Mockito.mock(InputStream.class)), notNullValue());
+        assertThat(factory.createValue(0L), notNullValue());
+        Node node = Mockito.mock(Node.class);
+        stub(node.getUUID()).toReturn(UUID.randomUUID().toString());
+        assertThat(factory.createValue(node), notNullValue());
+        assertThat(factory.createValue(""), notNullValue());
+        assertThat(factory.createValue("", PropertyType.BINARY), notNullValue());
+    }
+
+    @Test
+    public void shouldNotHavePendingChanges() throws Exception {
+        assertThat(session.hasPendingChanges(), is(false));
+    }
+
+    @Test
+    public void shouldAllowImpersonation() throws Exception {
+        assertThat(session.impersonate(null), notNullValue());
+    }
+
+    @Test
+    public void shouldProvideItemExists() throws Exception {
+        assertThat(session.itemExists(""), is(false));
     }
 }

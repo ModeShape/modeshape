@@ -45,7 +45,7 @@ public class JcrRootNodeTest {
     private Set<Property> properties;
 
     @Before
-    public void before() {
+    public void before() throws Exception {
         MockitoAnnotations.initMocks(this);
         properties = new HashSet<Property>();
         root = new JcrRootNode(session);
@@ -58,12 +58,17 @@ public class JcrRootNodeTest {
     }
 
     @Test
-    public void shouldHaveZeroDepth() {
+    public void shouldHaveZeroDepth() throws Exception {
         assertThat(root.getDepth(), is(0));
     }
 
     @Test
-    public void shouldHaveEmptyName() {
+    public void shouldIndicateIndexIsOne() throws Exception {
+        assertThat(root.getIndex(), is(1));
+    }
+
+    @Test
+    public void shouldHaveEmptyName() throws Exception {
         String name = root.getName();
         assertThat(name, notNullValue());
         assertThat(name.length(), is(0));
@@ -75,7 +80,7 @@ public class JcrRootNodeTest {
     }
 
     @Test
-    public void shouldProvidePath() {
+    public void shouldProvidePath() throws Exception {
         assertThat(root.getPath(), is("/"));
     }
 }

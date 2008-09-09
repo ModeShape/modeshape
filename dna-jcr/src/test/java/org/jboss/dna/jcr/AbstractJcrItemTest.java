@@ -71,10 +71,6 @@ public class AbstractJcrItemTest {
             public boolean isNode() {
                 return false;
             }
-
-            public boolean isSame( Item otherItem ) {
-                return false;
-            }
         };
     }
 

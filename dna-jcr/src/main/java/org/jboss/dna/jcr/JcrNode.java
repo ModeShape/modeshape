@@ -23,11 +23,10 @@ package org.jboss.dna.jcr;
 
 import java.util.UUID;
 import javax.jcr.Node;
-import javax.jcr.NodeIterator;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import net.jcip.annotations.NotThreadSafe;
-import org.jboss.dna.spi.graph.Name;
+import org.jboss.dna.spi.graph.Path.Segment;
 
 /**
  * @author jverhaeg
@@ -36,16 +35,16 @@ import org.jboss.dna.spi.graph.Name;
 final class JcrNode extends AbstractJcrNode {
 
     private final UUID parentUuid;
-    private final Name name;
+    private final Segment segment;
 
     JcrNode( Session session,
              UUID parentUuid,
-             Name name ) {
+             Segment segment ) {
         super(session);
         assert parentUuid != null;
-        assert name != null;
+        assert segment != null;
         this.parentUuid = parentUuid;
-        this.name = name;
+        this.segment = segment;
     }
 
     /**
@@ -60,10 +59,19 @@ final class JcrNode extends AbstractJcrNode {
     /**
      * {@inheritDoc}
      * 
+     * @see javax.jcr.Node#getIndex()
+     */
+    public int getIndex() {
+        return segment.getIndex();
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
      * @see javax.jcr.Item#getName()
      */
     public String getName() {
-        return name.getString();
+        return segment.getName().getString();
     }
 
     /**
@@ -89,10 +97,10 @@ final class JcrNode extends AbstractJcrNode {
         }
         String name = getName();
         builder.append(name);
-        NodeIterator iter = parent.getNodes(name);
-        if (iter.getSize() > 1) {
+        int ndx = getIndex();
+        if (ndx > 1) {
             builder.append('[');
-            builder.append(getIndex());
+            builder.append(ndx);
             builder.append(']');
         }
         return builder.toString();

@@ -99,6 +99,16 @@ public class JcrRepositoryTest {
         new JcrRepository(executionContextFactory, null);
     }
 
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldNotAllowNoDescriptorKey() {
+        repository.getDescriptor(null);
+    }
+
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldNotAllowEmptyDescriptorKey() {
+        repository.getDescriptor("");
+    }
+
     @Test
     public void shouldProvideBuiltInDescriptorKeys() {
         testDescriptorKeys(repository);

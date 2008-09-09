@@ -113,22 +113,15 @@ public class JcrRepository implements Repository {
         }
         // Initialize required JCR descriptors.
         modifiableDescriptors.put(Repository.LEVEL_1_SUPPORTED, "true");
-        // TODO: Change to true once level 2 supported
         modifiableDescriptors.put(Repository.LEVEL_2_SUPPORTED, "false");
-        // TODO: Change to true once locking supported
         modifiableDescriptors.put(Repository.OPTION_LOCKING_SUPPORTED, "false");
-        // TODO: Change to true once observation supported
         modifiableDescriptors.put(Repository.OPTION_OBSERVATION_SUPPORTED, "false");
-        // TODO: Change to true once query SQL supported
         modifiableDescriptors.put(Repository.OPTION_QUERY_SQL_SUPPORTED, "false");
-        // TODO: Change to true once transactions supported
         modifiableDescriptors.put(Repository.OPTION_TRANSACTIONS_SUPPORTED, "false");
-        // TODO: Change to true once versioning supported
         modifiableDescriptors.put(Repository.OPTION_VERSIONING_SUPPORTED, "false");
         modifiableDescriptors.put(Repository.QUERY_XPATH_DOC_ORDER, "true");
         modifiableDescriptors.put(Repository.QUERY_XPATH_POS_INDEX, "true");
         // Vendor-specific descriptors (REP_XXX) will only be initialized if not already present, allowing for customer branding.
-        // TODO: Should allow for branding via configuration
         if (!modifiableDescriptors.containsKey(Repository.REP_NAME_DESC)) {
             modifiableDescriptors.put(Repository.REP_NAME_DESC, JcrI18n.REP_NAME_DESC.text());
         }
@@ -139,7 +132,6 @@ public class JcrRepository implements Repository {
             modifiableDescriptors.put(Repository.REP_VENDOR_URL_DESC, "http://www.jboss.org/dna");
         }
         if (!modifiableDescriptors.containsKey(Repository.REP_VERSION_DESC)) {
-            // TODO: Permanent to-do to update the version for each release
             modifiableDescriptors.put(Repository.REP_VERSION_DESC, "0.2");
         }
         modifiableDescriptors.put(Repository.SPEC_NAME_DESC, JcrI18n.SPEC_NAME_DESC.text());
@@ -150,9 +142,11 @@ public class JcrRepository implements Repository {
     /**
      * {@inheritDoc}
      * 
+     * @throws IllegalArgumentException if <code>key</code> is <code>null</code>.
      * @see javax.jcr.Repository#getDescriptor(java.lang.String)
      */
     public String getDescriptor( String key ) {
+        ArgCheck.isNotEmpty(key, "key");
         return descriptors.get(key);
     }
 
@@ -195,6 +189,16 @@ public class JcrRepository implements Repository {
     /**
      * {@inheritDoc}
      * 
+     * @throws IllegalArgumentException if <code>credentials</code> is not <code>null</code> but:
+     *         <ul>
+     *         <li>provides neither a <code>getLoginContext()</code> nor a <code>getAccessControlContext()</code> method.</li>
+     *         <li>provides a <code>getLoginContext()</code> method that doesn't return a {@link LoginContext}.
+     *         <li>provides a <code>getLoginContext()</code> method that returns a <code>null</code> {@link LoginContext}.
+     *         <li>does not provide a <code>getLoginContext()</code> method, but provides a <code>getAccessControlContext()</code>
+     *         method that doesn't return an {@link AccessControlContext}.
+     *         <li>does not provide a <code>getLoginContext()</code> method, but provides a <code>getAccessControlContext()</code>
+     *         method that returns a <code>null</code> {@link AccessControlContext}.
+     *         </ul>
      * @see javax.jcr.Repository#login(javax.jcr.Credentials, java.lang.String)
      */
     public synchronized Session login( Credentials credentials,

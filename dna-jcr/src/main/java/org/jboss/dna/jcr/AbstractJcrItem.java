@@ -22,59 +22,80 @@
 package org.jboss.dna.jcr;
 
 import javax.jcr.Item;
+import javax.jcr.RepositoryException;
 
 /**
  * @author jverhaeg
  */
 abstract class AbstractJcrItem implements Item {
 
+    protected final String getPath( String absolutePath,
+                                    String relativePath ) {
+        assert absolutePath != null;
+        assert absolutePath.length() > 0;
+        assert relativePath != null;
+        if (absolutePath.charAt(absolutePath.length() - 1) == '/') {
+            return absolutePath + relativePath;
+        }
+        return absolutePath + '/' + relativePath;
+    }
+
     /**
      * {@inheritDoc}
      * 
+     * @return <code>false</code>
      * @see javax.jcr.Item#isModified()
      */
     public final boolean isModified() {
-        // TODO: Update when level 2
         return false;
     }
 
     /**
      * {@inheritDoc}
      * 
+     * @return <code>false</code>
      * @see javax.jcr.Item#isNew()
      */
     public final boolean isNew() {
-        // TODO: Update when level 2
         return false;
     }
 
     /**
      * {@inheritDoc}
      * 
+     * @see javax.jcr.Item#isSame(javax.jcr.Item)
+     */
+    public boolean isSame( Item otherItem ) throws RepositoryException {
+        return (getSession().getWorkspace() == otherItem.getSession().getWorkspace());
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @throws UnsupportedOperationException always
      * @see javax.jcr.Item#refresh(boolean)
      */
     public void refresh( boolean keepChanges ) {
-        // TODO: Update when level 2
         throw new UnsupportedOperationException();
     }
 
     /**
      * {@inheritDoc}
      * 
+     * @throws UnsupportedOperationException always
      * @see javax.jcr.Item#remove()
      */
     public void remove() {
-        // TODO: Update when level 2
         throw new UnsupportedOperationException();
     }
 
     /**
      * {@inheritDoc}
      * 
+     * @throws UnsupportedOperationException always
      * @see javax.jcr.Item#save()
      */
     public void save() {
-        // TODO: Update when level 2
         throw new UnsupportedOperationException();
     }
 }

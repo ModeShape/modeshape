@@ -24,7 +24,6 @@ package org.jboss.dna.jcr;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
-import static org.mockito.Mockito.stub;
 import java.io.InputStream;
 import java.io.Reader;
 import java.util.Calendar;
@@ -105,10 +104,16 @@ public class JcrPropertyTest {
 
     @Test
     public void shouldProvideStream() throws Exception {
-        Property prop = new JcrProperty(node, executionContext, name, "value");
+        Property prop = new JcrProperty(node, executionContext, name, new Object());
         InputStream stream = prop.getStream();
-        assertThat(stream, notNullValue());
-        stream.close();
+        try {
+            assertThat(stream, notNullValue());
+            assertThat(prop.getType(), is(PropertyType.BINARY));
+        } finally {
+            if (stream != null) {
+                stream.close();
+            }
+        }
     }
 
     @Test
@@ -171,12 +176,5 @@ public class JcrPropertyTest {
     @Test( expected = ValueFormatException.class )
     public void shouldNotProvideLengths() throws Exception {
         new JcrProperty(node, executionContext, name, "value").getLengths();
-    }
-
-    @Test
-    public void shouldProvideDepth() throws Exception {
-        Property prop = new JcrProperty(node, executionContext, name, true);
-        stub(node.getDepth()).toReturn(0);
-        assertThat(prop.getDepth(), is(1));
     }
 }

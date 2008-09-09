@@ -53,10 +53,13 @@ public class JcrNodeTest {
     public void before() throws Exception {
         MockitoAnnotations.initMocks(this);
         root = new JcrRootNode(session);
+        Segment segment = Mockito.mock(Segment.class);
         Name name = Mockito.mock(Name.class);
         stub(name.getString()).toReturn("name");
+        stub(segment.getName()).toReturn(name);
+        stub(segment.getIndex()).toReturn(2);
         UUID uuid = UUID.randomUUID();
-        node = new JcrNode(session, uuid, name);
+        node = new JcrNode(session, uuid, segment);
         stub(session.getNodeByUUID(uuid.toString())).toReturn(root);
         node.setProperties(new HashSet<Property>());
         node.setChildren(new ArrayList<Segment>());
@@ -68,8 +71,13 @@ public class JcrNodeTest {
     }
 
     @Test
-    public void shouldHaveZeroDepth() throws Exception {
+    public void shouldProvideDepth() throws Exception {
         assertThat(node.getDepth(), is(1));
+    }
+
+    @Test
+    public void shouldProvideIndex() throws Exception {
+        assertThat(node.getIndex(), is(2));
     }
 
     @Test
@@ -79,6 +87,6 @@ public class JcrNodeTest {
 
     @Test
     public void shouldProvidePath() throws Exception {
-        assertThat(node.getPath(), is("/name"));
+        assertThat(node.getPath(), is("/name[2]"));
     }
 }

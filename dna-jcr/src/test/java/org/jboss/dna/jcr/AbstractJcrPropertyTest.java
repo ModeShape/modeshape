@@ -33,6 +33,7 @@ import javax.jcr.Node;
 import javax.jcr.Property;
 import javax.jcr.Session;
 import javax.jcr.Value;
+import org.jboss.dna.common.util.StringUtil;
 import org.jboss.dna.spi.ExecutionContext;
 import org.jboss.dna.spi.graph.Name;
 import org.junit.Before;
@@ -48,6 +49,8 @@ public class AbstractJcrPropertyTest {
 
     private AbstractJcrProperty prop;
     @Mock
+    private Session session;
+    @Mock
     private Node node;
     @Mock
     private ExecutionContext executionContext;
@@ -55,8 +58,9 @@ public class AbstractJcrPropertyTest {
     private Name name;
 
     @Before
-    public void before() {
+    public void before() throws Exception {
         MockitoAnnotations.initMocks(this);
+        stub(node.getSession()).toReturn(session);
         prop = new MockAbstractJcrProperty(node, executionContext, name);
     }
 
@@ -65,6 +69,11 @@ public class AbstractJcrPropertyTest {
         ItemVisitor visitor = Mockito.mock(ItemVisitor.class);
         prop.accept(visitor);
         Mockito.verify(visitor).visit(prop);
+    }
+
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldNotAllowVisitationIfNoVisitor() throws Exception {
+        prop.accept(null);
     }
 
     @Test( expected = AssertionError.class )
@@ -102,10 +111,8 @@ public class AbstractJcrPropertyTest {
     }
 
     @Test
-    public void shouldProvideSession() throws Exception {
-        Session session = Mockito.mock(Session.class);
-        stub(node.getSession()).toReturn(session);
-        assertThat(prop.getSession(), is(session));
+    public void shouldProvideDepth() throws Exception {
+        assertThat(prop.getDepth(), is(1));
     }
 
     @Test
@@ -137,7 +144,14 @@ public class AbstractJcrPropertyTest {
     }
 
     @Test
-    public void shouldNotBeANode() {
+    public void shouldProvideSession() throws Exception {
+        Session session = Mockito.mock(Session.class);
+        stub(node.getSession()).toReturn(session);
+        assertThat(prop.getSession(), is(session));
+    }
+
+    @Test
+    public void shouldIndicateIsNotANode() {
         assertThat(prop.isNode(), is(false));
     }
 
@@ -145,6 +159,7 @@ public class AbstractJcrPropertyTest {
     public void shouldIndicateSameAsNodeWithSameParentAndName() throws Exception {
         stub(name.getString()).toReturn("propertyName");
         Node otherNode = Mockito.mock(Node.class);
+        stub(otherNode.getSession()).toReturn(session);
         Name otherName = Mockito.mock(Name.class);
         stub(otherName.getString()).toReturn("propertyName");
         stub(node.isSame(otherNode)).toReturn(true);
@@ -156,6 +171,7 @@ public class AbstractJcrPropertyTest {
     public void shouldIndicateDifferentThanNodeWithDifferentParent() throws Exception {
         stub(name.getString()).toReturn("propertyName");
         Node otherNode = Mockito.mock(Node.class);
+        stub(otherNode.getSession()).toReturn(session);
         Name otherName = Mockito.mock(Name.class);
         stub(otherName.getString()).toReturn("propertyName");
         stub(node.isSame(otherNode)).toReturn(false);
@@ -167,11 +183,62 @@ public class AbstractJcrPropertyTest {
     public void shouldIndicateDifferentThanNodeWithDifferentName() throws Exception {
         stub(name.getString()).toReturn("propertyName");
         Node otherNode = Mockito.mock(Node.class);
+        stub(otherNode.getSession()).toReturn(session);
         Name otherName = Mockito.mock(Name.class);
         stub(otherName.getString()).toReturn("propertyName2");
         stub(node.isSame(otherNode)).toReturn(true);
         Property otherProp = new MockAbstractJcrProperty(otherNode, executionContext, otherName);
         assertThat(prop.isSame(otherProp), is(false));
+    }
+
+    @Test( expected = UnsupportedOperationException.class )
+    public void shouldNotAllowSetBooleanValue() {
+        prop.setValue(false);
+    }
+
+    @Test( expected = UnsupportedOperationException.class )
+    public void shouldNotAllowSetCalendarValue() {
+        prop.setValue(Calendar.getInstance());
+    }
+
+    @Test( expected = UnsupportedOperationException.class )
+    public void shouldNotAllowSetDoubleValue() {
+        prop.setValue(0.0);
+    }
+
+    @Test( expected = UnsupportedOperationException.class )
+    public void shouldNotAllowSetInputStreamValue() {
+        prop.setValue(Mockito.mock(InputStream.class));
+    }
+
+    @Test( expected = UnsupportedOperationException.class )
+    public void shouldNotAllowSetLongValue() {
+        prop.setValue(0L);
+    }
+
+    @Test( expected = UnsupportedOperationException.class )
+    public void shouldNotAllowSetNodeValue() {
+        prop.setValue(Mockito.mock(Node.class));
+    }
+
+    @Test( expected = UnsupportedOperationException.class )
+    public void shouldNotAllowSetStringValue() {
+        prop.setValue("");
+    }
+
+    @Test( expected = UnsupportedOperationException.class )
+    public void shouldNotAllowSetStringArrayValue() {
+        prop.setValue(StringUtil.EMPTY_STRING_ARRAY);
+    }
+
+    @Test( expected = UnsupportedOperationException.class )
+    public void shouldNotAllowSetValueValue() {
+        prop.setValue(Mockito.mock(Value.class));
+    }
+
+    @Test( expected = UnsupportedOperationException.class )
+    public void shouldNotAllowSetValueArrayValue() {
+        prop.setValue(new Value[0]);
     }
 
     private class MockAbstractJcrProperty extends AbstractJcrProperty {
@@ -198,15 +265,6 @@ public class AbstractJcrPropertyTest {
          */
         public Calendar getDate() {
             return null;
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see javax.jcr.Item#getDepth()
-         */
-        public int getDepth() {
-            return 0;
         }
 
         /**
