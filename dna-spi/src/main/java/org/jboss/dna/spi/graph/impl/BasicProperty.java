@@ -26,6 +26,7 @@ import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.util.StringUtil;
 import org.jboss.dna.spi.graph.Name;
 import org.jboss.dna.spi.graph.Property;
+import org.jboss.dna.spi.graph.ValueComparators;
 
 /**
  * @author Randall Hauch
@@ -101,12 +102,7 @@ public abstract class BasicProperty implements Property {
             while (thisIter.hasNext()) { // && thatIter.hasNext()
                 Object thisValue = thisIter.next();
                 Object thatValue = thatIter.next();
-                if (thisValue == null) {
-                    if (thatValue != null) return false;
-                    // else both are null
-                } else {
-                    if (!thisValue.equals(thatValue)) return false;
-                }
+                if (ValueComparators.OBJECT_COMPARATOR.compare(thisValue, thatValue) != 0) return false;
             }
             return true;
         }

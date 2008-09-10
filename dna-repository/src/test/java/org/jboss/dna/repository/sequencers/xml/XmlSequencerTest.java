@@ -46,6 +46,21 @@ import org.mockito.MockitoAnnotations.Mock;
  */
 public class XmlSequencerTest {
 
+    private static final String CDATA = "dnaxml:cData";
+    private static final String CDATA_CONTENT = "dnaxml:cDataContent";
+    private static final String COMMENT = "dnaxml:comment";
+    private static final String COMMENT_CONTENT = "dnaxml:commentContent";
+    private static final String DOCUMENT = "dnaxml:document";
+    private static final String DTD_NAME = "dnadtd:name";
+    private static final String DTD_PUBLIC_ID = "dnadtd:publicId";
+    private static final String DTD_SYSTEM_ID = "dnadtd:systemId";
+    private static final String DTD_VALUE = "dnadtd:value";
+    private static final String ELEMENT_CONTENT = "dnaxml:elementContent";
+    private static final String ENTITY = "dnadtd:entity";
+    private static final String PI = "dnaxml:processingInstruction";
+    private static final String PI_CONTENT = "dnaxml:processingInstructionContent";
+    private static final String TARGET = "dnaxml:target";
+
     private XmlSequencer sequencer;
     private InputStream stream;
     private MockSequencerOutput output;
@@ -92,67 +107,67 @@ public class XmlSequencerTest {
     @Test
     public void shouldSequenceXml() throws IOException {
         verifyDocument(xml1);
-        verifyName(XmlSequencer.COMMENT + "[1]", NameFactory.JCR_PRIMARY_TYPE, XmlSequencer.COMMENT);
-        String text = verify(XmlSequencer.COMMENT + "[1]", XmlSequencer.COMMENT_CONTENT, String.class);
+        verifyName(COMMENT + "[1]", NameFactory.JCR_PRIMARY_TYPE, COMMENT);
+        String text = verify(COMMENT + "[1]", COMMENT_CONTENT, String.class);
         assertThat(text.startsWith("\n   Licensed to the Apache Software Foundation (ASF)"), is(true));
         assertThat(text.endsWith("   limitations under the License.\n"), is(true));
-        verifyString("", XmlSequencer.DTD_NAME, "Repository");
-        verifyString("", XmlSequencer.DTD_PUBLIC_ID, "-//The Apache Software Foundation//DTD Jackrabbit 1.2//EN");
-        verifyString("", XmlSequencer.DTD_SYSTEM_ID, "http://jackrabbit.apache.org/dtd/repository-1.2.dtd");
-        verifyName(XmlSequencer.COMMENT + "[2]", NameFactory.JCR_PRIMARY_TYPE, XmlSequencer.COMMENT);
-        verifyString(XmlSequencer.COMMENT + "[2]", XmlSequencer.COMMENT_CONTENT, " Example Repository Configuration File ");
-        verifyName("Repository[1]", NameFactory.JCR_PRIMARY_TYPE, "Repository");
-        verifyName("Repository[1]/" + XmlSequencer.COMMENT + "[1]", NameFactory.JCR_PRIMARY_TYPE, XmlSequencer.COMMENT);
+        verifyString("/", DTD_NAME, "Repository");
+        verifyString("/", DTD_PUBLIC_ID, "-//The Apache Software Foundation//DTD Jackrabbit 1.2//EN");
+        verifyString("/", DTD_SYSTEM_ID, "http://jackrabbit.apache.org/dtd/repository-1.2.dtd");
+        verifyName(COMMENT + "[2]", NameFactory.JCR_PRIMARY_TYPE, COMMENT);
+        verifyString(COMMENT + "[2]", COMMENT_CONTENT, " Example Repository Configuration File ");
+        verifyName("Repository[1]", NameFactory.JCR_PRIMARY_TYPE, "nt:unstructured");
+        verifyName("Repository[1]/" + COMMENT + "[1]", NameFactory.JCR_PRIMARY_TYPE, COMMENT);
     }
 
     @Test
     public void shouldHandleNamespaces() throws IOException {
         verifyDocument(xml2);
-        verifyName("book[1]/bookinfo[1]/xi:include[1]", NameFactory.JCR_PRIMARY_TYPE, "xi:include");
+        verifyName("book[1]/bookinfo[1]/xi:include[1]", NameFactory.JCR_PRIMARY_TYPE, "nt:unstructured");
         verifyString("book[1]/bookinfo[1]/xi:include[1]", "xi:href", "Author_Group.xml");
-        verifyName("book[1]/bookinfo[1]/xi:include[2]", NameFactory.JCR_PRIMARY_TYPE, "xi:include");
+        verifyName("book[1]/bookinfo[1]/xi:include[2]", NameFactory.JCR_PRIMARY_TYPE, "nt:unstructured");
         verifyString("book[1]/bookinfo[1]/xi:include[2]", "xi:href", "Legal_Notice.xml");
     }
 
     @Test
     public void shouldSequenceEntityDeclarations() throws IOException {
         verifyDocument(xml2);
-        verifyName(XmlSequencer.ENTITY + "[1]", NameFactory.JCR_PRIMARY_TYPE, XmlSequencer.ENTITY);
-        verifyString(XmlSequencer.ENTITY + "[1]", XmlSequencer.DTD_NAME, "%RH-ENTITIES");
-        verifyString(XmlSequencer.ENTITY + "[1]", XmlSequencer.DTD_SYSTEM_ID, "Common_Config/rh-entities.ent");
-        verifyName(XmlSequencer.ENTITY + "[2]", NameFactory.JCR_PRIMARY_TYPE, XmlSequencer.ENTITY);
-        verifyString(XmlSequencer.ENTITY + "[2]", XmlSequencer.DTD_NAME, "versionNumber");
-        verifyString(XmlSequencer.ENTITY + "[2]", XmlSequencer.DTD_VALUE, "0.1");
-        verifyName(XmlSequencer.ENTITY + "[3]", NameFactory.JCR_PRIMARY_TYPE, XmlSequencer.ENTITY);
-        verifyString(XmlSequencer.ENTITY + "[3]", XmlSequencer.DTD_NAME, "copyrightYear");
-        verifyString(XmlSequencer.ENTITY + "[3]", XmlSequencer.DTD_VALUE, "2008");
+        verifyName(ENTITY + "[1]", NameFactory.JCR_PRIMARY_TYPE, ENTITY);
+        verifyString(ENTITY + "[1]", DTD_NAME, "%RH-ENTITIES");
+        verifyString(ENTITY + "[1]", DTD_SYSTEM_ID, "Common_Config/rh-entities.ent");
+        verifyName(ENTITY + "[2]", NameFactory.JCR_PRIMARY_TYPE, ENTITY);
+        verifyString(ENTITY + "[2]", DTD_NAME, "versionNumber");
+        verifyString(ENTITY + "[2]", DTD_VALUE, "0.1");
+        verifyName(ENTITY + "[3]", NameFactory.JCR_PRIMARY_TYPE, ENTITY);
+        verifyString(ENTITY + "[3]", DTD_NAME, "copyrightYear");
+        verifyString(ENTITY + "[3]", DTD_VALUE, "2008");
     }
 
     @Test
     public void shouldSequenceElementContent() throws IOException {
         verifyDocument(xml2);
-        verifyString("book[1]/chapter[4]/sect1[1]/para[8]/" + XmlSequencer.ELEMENT_CONTENT + "[1]",
-                     XmlSequencer.ELEMENT_CONTENT,
+        verifyString("book[1]/chapter[4]/sect1[1]/para[8]/" + ELEMENT_CONTENT + "[1]",
+                     ELEMENT_CONTENT,
                      "The path expression is more complicated."
                      + " Sequencer path expressions are used by the sequencing service to determine whether a particular changed node should be sequenced."
                      + " The expressions consist of two parts: a selection criteria and an output expression."
                      + " Here's a simple example:");
-        verifyString("book[1]/chapter[4]/sect1[1]/para[8]/programlisting[1]/" + XmlSequencer.ELEMENT_CONTENT + "[1]",
-                     XmlSequencer.ELEMENT_CONTENT,
+        verifyString("book[1]/chapter[4]/sect1[1]/para[8]/programlisting[1]/" + ELEMENT_CONTENT + "[1]",
+                     ELEMENT_CONTENT,
                      "/a/b/c@title =&gt; /d/e/f");
     }
 
     @Test
     public void shouldSequenceCData() throws IOException {
         verifyDocument(xml3);
-        verifyString("mx:Application[1]/mx:Script[1]/" + XmlSequencer.CDATA + "[1]",
-                     XmlSequencer.CDATA_CONTENT,
+        verifyString("mx:Application[1]/mx:Script[1]/" + CDATA + "[1]",
+                     CDATA_CONTENT,
                      "\n\n" + "              import mx.events.ValidationResultEvent;\t\t\t\n"
                      + "              private var vResult:ValidationResultEvent;\n" + "\t\t\t\n"
                      + "              // Event handler to validate and format input.\n"
                      + "              private function Format():void {\n" + "              \n"
-                     + "                 	vResult = numVal.validate();\n\n"
-                     + "    				if (vResult.type==ValidationResultEvent.VALID) {\n"
+                     + "                    vResult = numVal.validate();\n\n"
+                     + "                    if (vResult.type==ValidationResultEvent.VALID) {\n"
                      + "                        var temp:Number=Number(priceUS.text); \n"
                      + "                        formattedUSPrice.text= usdFormatter.format(temp);\n" + "                    }\n"
                      + "                    \n" + "                    else {\n"
@@ -163,25 +178,25 @@ public class XmlSequencerTest {
     @Test
     public void shouldSequenceProcessingInstructions() throws IOException {
         verifyDocument(xml4);
-        verifyName(XmlSequencer.PI + "[1]", NameFactory.JCR_PRIMARY_TYPE, XmlSequencer.PI);
-        verifyString(XmlSequencer.PI + "[1]", XmlSequencer.TARGET, "eclipse");
-        verifyString(XmlSequencer.PI + "[1]", XmlSequencer.PI_CONTENT, "version=\"3.0\"");
+        verifyName(PI + "[1]", NameFactory.JCR_PRIMARY_TYPE, PI);
+        verifyString(PI + "[1]", TARGET, "eclipse");
+        verifyString(PI + "[1]", PI_CONTENT, "version=\"3.0\"");
     }
 
     @Test
     public void shouldSequenceXsds() throws IOException {
         verifyDocument(xsd);
-        verifyName("xs:schema[1]", NameFactory.JCR_PRIMARY_TYPE, "xs:schema");
+        verifyName("xs:schema[1]", NameFactory.JCR_PRIMARY_TYPE, "nt:unstructured");
         verifyString("xs:schema[1]", "xs:targetNamespace", "http://ns.adobe.com/air/application/1.0");
         verifyString("xs:schema[1]", "xs:elementFormDefault", "qualified");
-        verifyName("xs:schema[1]/xs:element[1]", NameFactory.JCR_PRIMARY_TYPE, "xs:element");
+        verifyName("xs:schema[1]/xs:element[1]", NameFactory.JCR_PRIMARY_TYPE, "nt:unstructured");
         verifyString("xs:schema[1]/xs:element[1]", "xs:name", "application");
     }
 
     private <T> T verify( String nodePath,
                           String property,
                           Class<T> expectedClass ) {
-        Object[] values = output.getPropertyValues(nodePath.length() == 0 ? "." : "./" + nodePath, property);
+        Object[] values = output.getPropertyValues(nodePath.length() == 0 ? "." : nodePath, property);
         assertThat(values, notNullValue());
         assertThat(values.length, is(1));
         Object value = values[0];
@@ -193,7 +208,7 @@ public class XmlSequencerTest {
         stream = url.openStream();
         assertThat(stream, is(notNullValue()));
         sequencer.sequence(stream, output, context, monitor);
-        verifyName("", NameFactory.JCR_PRIMARY_TYPE, XmlSequencer.DOCUMENT);
+        verifyName("", NameFactory.JCR_PRIMARY_TYPE, DOCUMENT);
     }
 
     private void verifyName( String nodePath,

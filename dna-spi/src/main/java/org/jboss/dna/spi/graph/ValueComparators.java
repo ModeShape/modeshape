@@ -303,10 +303,10 @@ public class ValueComparators {
                 if (type1 == type2) return ((Comparator<Object>)type1.getComparator()).compare(o1, o2);
 
                 // The types are different but the classes are the same ...
-                if (type1.getDeclaringClass().isAssignableFrom(type2.getDeclaringClass())) {
+                if (type1.getValueClass().isAssignableFrom(type2.getValueClass())) {
                     return ((Comparator<Object>)type1.getComparator()).compare(o1, o2);
                 }
-                if (type2.getDeclaringClass().isAssignableFrom(type1.getDeclaringClass())) {
+                if (type2.getValueClass().isAssignableFrom(type1.getValueClass())) {
                     return ((Comparator<Object>)type2.getComparator()).compare(o1, o2);
                 }
             }

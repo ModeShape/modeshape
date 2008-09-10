@@ -11,9 +11,9 @@
               // Event handler to validate and format input.
               private function Format():void {
               
-                 	vResult = numVal.validate();
+                    vResult = numVal.validate();
 
-    				if (vResult.type==ValidationResultEvent.VALID) {
+                    if (vResult.type==ValidationResultEvent.VALID) {
                         var temp:Number=Number(priceUS.text); 
                         formattedUSPrice.text= usdFormatter.format(temp);
                     }

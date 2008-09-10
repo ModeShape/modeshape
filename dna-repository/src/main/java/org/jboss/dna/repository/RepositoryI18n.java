@@ -122,8 +122,9 @@ public final class RepositoryI18n {
     public static I18n canceledSequencingXmlDocument;
     public static I18n warningSequencingXmlDocument;
 
-    // Federation
+    // Repository
     public static I18n errorStartingRepositoryService;
+    public static I18n errorImportingContent;
 
     static {
         try {
