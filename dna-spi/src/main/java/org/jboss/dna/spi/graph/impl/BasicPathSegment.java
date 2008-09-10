@@ -125,7 +125,7 @@ public class BasicPathSegment implements Path.Segment {
         if (obj instanceof Path.Segment) {
             Path.Segment that = (Path.Segment)obj;
             if (!this.getName().equals(that.getName())) return false;
-            return this.getIndex() == that.getIndex();
+            return Math.abs(getIndex()) == Math.abs(that.getIndex());
         }
         return false;
     }

@@ -22,6 +22,7 @@
 package org.jboss.dna.spi.graph.impl;
 
 import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsNot.not;
 import static org.junit.Assert.assertThat;
 import org.jboss.dna.common.text.TextEncoder;
 import org.jboss.dna.spi.DnaLexicon;
@@ -139,6 +140,22 @@ public class BasicPathSegmentTest {
     public void shouldConsiderSegmentCreatedWithParentReferenceToBeEqualToStaticSingleton() {
         segment = factory.createSegment(Path.PARENT);
         assertThat(segment.equals(Path.PARENT_SEGMENT), is(true));
+    }
+
+    @Test
+    public void shouldConsiderSegmentWithSameNameSiblingIndexOfOneToBeEqualToSegmentWithSameNameButNoIndex() {
+        segment = new BasicPathSegment(validName, Path.NO_INDEX);
+        Path.Segment segment2 = new BasicPathSegment(validName, 1);
+        assertThat(segment, is(segment2));
+    }
+
+    @Test
+    public void shouldConsiderSegmentWithSameNameSiblingIndexOfTwoOrMoreToNotBeEqualToSegmentWithSameNameButNoIndex() {
+        segment = new BasicPathSegment(validName, Path.NO_INDEX);
+        Path.Segment segment2 = new BasicPathSegment(validName, 2);
+        assertThat(segment, is(not(segment2)));
+        segment2 = new BasicPathSegment(validName, 3);
+        assertThat(segment, is(not(segment2)));
     }
 
 }

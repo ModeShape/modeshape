@@ -187,7 +187,13 @@ public class InMemoryRepositoryTest {
         /*Node node_c =*/repository.createNode(context, node_b, nameFactory.create("c"), null);
 
         assertThat(repository.getNodesByUuid().size(), is(4));
-        assertThat(repository.getNode(pathFactory.create("/a[1]")), is(nullValue()));
+        assertThat(repository.getNode(pathFactory.create("/a")), is(node_a));
+        assertThat(repository.getNode(pathFactory.create("/a/b")), is(node_b));
+        assertThat(repository.getNode(pathFactory.create("/a[1]")), is(node_a));
+        assertThat(repository.getNode(pathFactory.create("/a/b[1]")), is(node_b));
+        assertThat(repository.getNode(pathFactory.create("/a[1]/b[1]")), is(node_b));
+        assertThat(repository.getNode(pathFactory.create("/a[2]")), is(nullValue()));
+        assertThat(repository.getNode(pathFactory.create("/b[2]")), is(nullValue()));
         assertThat(repository.getNode(pathFactory.create("/d")), is(nullValue()));
     }
 
