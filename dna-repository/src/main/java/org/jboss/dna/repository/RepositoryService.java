@@ -134,7 +134,7 @@ public class RepositoryService implements AdministeredService {
      * @param sources the source manager
      * @param configurationSourceName the name of the {@link RepositorySource} that is the configuration repository
      * @param pathToConfigurationRoot the path of the node in the configuration source repository that should be treated by this
-     *        service as the root of the service's configuration; if null, then "/" is used
+     *        service as the root of the service's configuration; if null, then "/dna:system" is used
      * @param context the execution context in which this service should run
      * @param classLoaderFactory the class loader factory used to instantiate {@link RepositorySource} instances; may be null if
      *        this instance should use a default factory that attempts to load classes first from the
@@ -150,7 +150,7 @@ public class RepositoryService implements AdministeredService {
         ArgCheck.isNotNull(configurationSourceName, "configurationSourceName");
         ArgCheck.isNotNull(sources, "sources");
         ArgCheck.isNotNull(context, "context");
-        if (pathToConfigurationRoot == null) pathToConfigurationRoot = context.getValueFactories().getPathFactory().createRootPath();
+        if (pathToConfigurationRoot == null) pathToConfigurationRoot = context.getValueFactories().getPathFactory().create("/dna:system");
         this.sources = sources;
         this.pathToConfigurationRoot = pathToConfigurationRoot;
         this.configurationSourceName = configurationSourceName;
@@ -245,6 +245,8 @@ public class RepositoryService implements AdministeredService {
                 }
             } catch (Throwable err) {
                 throw new FederationException(RepositoryI18n.errorStartingRepositoryService.text());
+            } finally {
+                executor.close();
             }
             this.started.set(true);
         }

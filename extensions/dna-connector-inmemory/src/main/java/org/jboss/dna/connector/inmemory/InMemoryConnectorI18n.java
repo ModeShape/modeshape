@@ -32,6 +32,7 @@ public final class InMemoryConnectorI18n {
 
     public static I18n connectorName;
     public static I18n nodeDoesNotExist;
+    public static I18n errorSerializingCachePolicyInSource;
 
     static {
         try {

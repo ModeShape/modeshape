@@ -24,6 +24,8 @@ package org.jboss.dna.connector.inmemory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import javax.transaction.xa.XAResource;
+import org.jboss.dna.common.stats.Stopwatch;
+import org.jboss.dna.common.util.Logger;
 import org.jboss.dna.spi.ExecutionContext;
 import org.jboss.dna.spi.cache.CachePolicy;
 import org.jboss.dna.spi.connector.RepositoryConnection;
@@ -112,6 +114,12 @@ public class InMemoryRepositoryConnection implements RepositoryConnection {
      */
     public void execute( ExecutionContext context,
                          GraphCommand... commands ) throws RepositorySourceException {
+        Logger logger = context.getLogger(getClass());
+        Stopwatch sw = null;
+        if (logger.isTraceEnabled()) {
+            sw = new Stopwatch();
+            sw.start();
+        }
         // Do any commands update/write?
         Lock lock = this.content.getLock().readLock();
         for (GraphCommand command : commands) {
@@ -130,6 +138,11 @@ public class InMemoryRepositoryConnection implements RepositoryConnection {
             }
         } finally {
             lock.unlock();
+        }
+        if (logger.isTraceEnabled()) {
+            assert sw != null;
+            sw.stop();
+            logger.trace("InMemoryRepositoryConnection.execute(...) took " + sw.getTotalDuration());
         }
     }
 

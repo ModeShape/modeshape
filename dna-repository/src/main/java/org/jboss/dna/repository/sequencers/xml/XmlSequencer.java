@@ -568,8 +568,21 @@ public class XmlSequencer implements StreamSequencer {
                                   String name,
                                   Attributes attributes ) throws SAXException {
             stopIfCancelled();
-            startElement(nameFactory.create(name));
-            output.setProperty(path, getPrimaryTypeName(), getDefaultPrimaryType());
+            // Look for the "jcr:name" attribute, and use that if it's there
+            Name type = getDefaultPrimaryType();
+            Name nameObj = nameFactory.create(name);
+            for (int ndx = 0, len = attributes.getLength(); ndx < len; ++ndx) {
+                String ns = attributes.getURI(ndx);
+                String attrLocalName = attributes.getLocalName(ndx);
+                Object value = attributes.getValue(ndx);
+                String jcrNsUri = context.getNamespaceRegistry().getNamespaceForPrefix("jcr");
+                if (jcrNsUri != null && jcrNsUri.equals(ns) && attrLocalName.equals("name")) {
+                    nameObj = nameFactory.create(value);
+                    break;
+                }
+            }
+            startElement(nameObj);
+            output.setProperty(path, getPrimaryTypeName(), type);
             // Output this element's attributes using the attribute's namespace, if supplied, or the current namespace in scope.
             String inheritedNs = nsStack.getFirst();
             for (int ndx = 0, len = attributes.getLength(); ndx < len; ++ndx) {
@@ -579,6 +592,9 @@ public class XmlSequencer implements StreamSequencer {
                 String jcrNsUri = context.getNamespaceRegistry().getNamespaceForPrefix("jcr");
                 if (jcrNsUri != null && jcrNsUri.equals(ns) && attrLocalName.equals("primaryType")) {
                     value = nameFactory.create(value);
+                }
+                if (jcrNsUri != null && jcrNsUri.equals(ns) && attrLocalName.equals("name")) {
+                    continue;
                 }
                 output.setProperty(path, nameFactory.create(ns.length() == 0 ? inheritedNs : ns, attrLocalName), value);
             }

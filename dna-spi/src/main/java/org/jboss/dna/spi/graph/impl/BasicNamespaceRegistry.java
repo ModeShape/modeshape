@@ -109,7 +109,8 @@ public class BasicNamespaceRegistry implements NamespaceRegistry {
     /**
      * {@inheritDoc}
      */
-    public String getPrefixForNamespaceUri( String namespaceUri, boolean generateIfMissing ) {
+    public String getPrefixForNamespaceUri( String namespaceUri,
+                                            boolean generateIfMissing ) {
         ArgCheck.isNotNull(namespaceUri, "namespaceUri");
         String prefix = null;
         Lock lock = this.registryLock.readLock();
@@ -169,7 +170,8 @@ public class BasicNamespaceRegistry implements NamespaceRegistry {
     /**
      * {@inheritDoc}
      */
-    public String register( String prefix, String namespaceUri ) {
+    public String register( String prefix,
+                            String namespaceUri ) {
         ArgCheck.isNotNull(namespaceUri, "namespaceUri");
         String previousNamespaceForPrefix = null;
         namespaceUri = namespaceUri.trim();
@@ -180,8 +182,11 @@ public class BasicNamespaceRegistry implements NamespaceRegistry {
             prefix = prefix.trim();
             previousNamespaceForPrefix = this.namespacesByPrefix.put(prefix, namespaceUri);
             String previousPrefix = this.prefixesByNamespace.put(namespaceUri, prefix);
-            if (previousPrefix != null) {
+            if (previousPrefix != null && !previousPrefix.equals(prefix)) {
                 this.namespacesByPrefix.remove(previousPrefix);
+            }
+            if (previousNamespaceForPrefix != null && !previousNamespaceForPrefix.equals(namespaceUri)) {
+                this.prefixesByNamespace.remove(previousNamespaceForPrefix);
             }
         } finally {
             lock.unlock();

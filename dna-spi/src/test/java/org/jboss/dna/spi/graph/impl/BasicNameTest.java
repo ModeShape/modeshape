@@ -155,4 +155,18 @@ public class BasicNameTest {
         assertThat(result, is("dna:some%3aname%3awith%3acolons"));
     }
 
+    @Test
+    public void shouldNotIncludeNamespacePrefixOrColonInResultFromGetStringWithNamespaceRegistry() {
+        validNamespaceUri = namespaceRegistry.getDefaultNamespaceUri();
+        name = new BasicName(validNamespaceUri, validLocalName);
+        String result = name.getString(namespaceRegistry, encoder);
+        assertThat(result, is(validLocalName));
+        result = name.getString(namespaceRegistry); // default encoder
+        assertThat(result, is(validLocalName));
+
+        validLocalName = "some:name:with:colons";
+        name = new BasicName(validNamespaceUri, validLocalName);
+        result = name.getString(namespaceRegistry, encoder);
+        assertThat(result, is("some:name:with:colons"));
+    }
 }

@@ -83,7 +83,7 @@ public class RepositoryImporterTest {
         context.getNamespaceRegistry().register("nt", "http://www.jcp.org/jcr/nt/1.0");
         sourceName = "sourceA";
         destinationPath = context.getValueFactories().getPathFactory().create("/a/b");
-        importer = new RepositoryImporter(sources, sourceName, context);
+        importer = new RepositoryImporter(sources, context);
         connection = new MockRepositoryConnection();
         stub(sources.createConnection(sourceName)).toReturn(connection);
     }
@@ -91,10 +91,11 @@ public class RepositoryImporterTest {
     @Test
     public void shouldImportXmlContentAndGenerateTheCorrectCommands() throws Exception {
         System.out.println(xmlContent);
-        importer.importXml(xmlContent, destinationPath); // writes commands as CompositeCommand to 'lastExecutedCommand'
+        importer.importXml(xmlContent).into(sourceName, destinationPath); // writes commands as CompositeCommand to
+        // 'lastExecutedCommand'
         assertThat(lastExecutedCommand, is(instanceOf(CompositeCommand.class)));
         Iterator<GraphCommand> iter = ((CompositeCommand)lastExecutedCommand).iterator();
-        assertCreateNode(iter, "/a/b/", "jcr:primaryType={http://www.jboss.org/dna/xml/1.0}document");
+        // assertCreateNode(iter, "/a/b/", "jcr:primaryType={http://www.jboss.org/dna/xml/1.0}document");
         assertCreateNode(iter, "/a/b/dnaxml:comment[1]", "any properties"); // jcr:primaryType and dnaxml:commentContent
         assertCreateNode(iter, "/a/b/dna:system[1]", "jcr:primaryType={http://www.jcp.org/jcr/nt/1.0}unstructured");
         assertCreateNode(iter, "/a/b/dna:system[1]/dnaxml:comment[1]", "any properties");

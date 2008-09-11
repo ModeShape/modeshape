@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+  ~ JBoss, Home of Professional Open Source.
+  ~
+  ~ Copyright (c) 2008, Red Hat Middleware LLC or third-party contributors as
+  ~ indicated by the @author tags or express copyright attribution
+  ~ statements applied by the authors.  All third-party contributions are
+  ~ distributed under license by Red Hat Middleware LLC.
+  ~
+  ~ This copyrighted material is made available to anyone wishing to use, modify,
+  ~ copy, or redistribute it subject to the terms and conditions of the GNU
+  ~ Lesser General Public License, as published by the Free Software Foundation.
+  ~
+  ~ This program is distributed in the hope that it will be useful,
+  ~ but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+  ~ or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License
+  ~ for more details.
+  ~
+  ~ You should have received a copy of the GNU Lesser General Public License
+  ~ along with this distribution; if not, write to:
+  ~ Free Software Foundation, Inc.
+  ~ 51 Franklin Street, Fifth Floor
+  ~ Boston, MA  02110-1301  USA
+  -->
+<dna:system xmlns:dna="http://www.jboss.org/dna" xmlns:jcr="http://www.jcp.org/jcr/1.0">
+    <!-- Define the sources from which content is made available -->
+    <dna:sources>
+        <sourceA name="Cars" dna:classname="org.jboss.dna.connector.inmemory.InMemoryRepositorySource" retryLimit="3" />
+        <sourceB name="Aircraft" dna:classname="org.jboss.dna.connector.inmemory.InMemoryRepositorySource" />
+        <sourceC name="Vehicles" dna:classname="org.jboss.dna.connector.federation.FederatedRepositorySource" configurationSourceName="Configuration" configurationSourcePath="/dna:system/dna:federatedRepositories/Vehicles" />
+        <sourceD name="Cache" dna:classname="org.jboss.dna.connector.inmemory.InMemoryRepositorySource" />
+    </dna:sources>
+    <dna:federatedRepositories>
+        <Vehicles>
+            <!-- This section defines from where the content of the 'Vehicles' federated repository is obtained -->
+            <dna:federation dna:timeToCache="100000">
+                <dna:cache>
+                    <!-- Define how the content in the 'Cache' source is to map to the federated cache -->
+                    <Cache dna:projectionRules="/ => /" />
+                </dna:cache>
+                <dna:projections>
+                    <!-- Define how the content in the difference sources maps to the federated/unified repository.
+                         This example puts the 'Cars' and 'Aircraft' content underneath '/vehicles', but the
+                         'Configuration' content (which is defined by this file) will appear under '/'. -->
+                    <Cars dna:projectionRules="/vehicles => /" />
+                    <Aircraft dna:projectionRules="/vehicles => /" />
+                    <Configuration dna:projectionRules="/ => /" />
+                </dna:projections>
+            </dna:federation>
+        </Vehicles>
+    </dna:federatedRepositories>
+</dna:system>

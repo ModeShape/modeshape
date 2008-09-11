@@ -45,6 +45,7 @@ import org.jboss.dna.spi.connector.RepositoryConnection;
 import org.jboss.dna.spi.connector.RepositorySource;
 import org.jboss.dna.spi.connector.SimpleRepository;
 import org.jboss.dna.spi.connector.SimpleRepositorySource;
+import org.jboss.dna.spi.graph.Path;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -62,6 +63,7 @@ public class RepositoryServiceTest {
     private SimpleRepositorySource configRepositorySource;
     private RepositoryConnection configRepositoryConnection;
     private ExecutionContext context;
+    private Path root;
     @Mock
     private RepositorySourceManager sources;
 
@@ -77,6 +79,7 @@ public class RepositoryServiceTest {
         configRepositorySource.setName(configSourceName);
         configRepositoryConnection = configRepositorySource.getConnection();
         stub(sources.createConnection(configSourceName)).toReturn(configRepositoryConnection);
+        root = context.getValueFactories().getPathFactory().createRootPath();
         service = new RepositoryService(sources, configSourceName, context, null);
     }
 
@@ -150,7 +153,7 @@ public class RepositoryServiceTest {
         sources.addSource(configRepositorySource);
         assertThat(sources.getSources(), hasItems((RepositorySource)configRepositorySource));
         assertThat(sources.getSources().size(), is(1));
-        service = new RepositoryService(sources, configSourceName, context, null);
+        service = new RepositoryService(sources, configSourceName, root, context, null);
 
         // Set up the configuration repository to contain 3 sources ...
         final String className = SimpleRepositorySource.class.getName();

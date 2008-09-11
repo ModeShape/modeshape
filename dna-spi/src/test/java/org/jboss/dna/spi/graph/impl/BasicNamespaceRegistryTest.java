@@ -25,6 +25,7 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.Assert.assertThat;
+import static org.junit.matchers.JUnitMatchers.hasItem;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -122,6 +123,9 @@ public class BasicNamespaceRegistryTest {
         namespaceRegistry.register(validPrefix1, validNamespaceUri1);
         namespaceRegistry.register("", validNamespaceUri2);
         assertThat(namespaceRegistry.getDefaultNamespaceUri(), is(validNamespaceUri2));
+        assertThat(namespaceRegistry.getNamespaceForPrefix(""), is(validNamespaceUri2));
+        assertThat(namespaceRegistry.getRegisteredNamespaceUris(), hasItem(validNamespaceUri2));
+        assertThat(namespaceRegistry.getPrefixForNamespaceUri(validNamespaceUri2, false), is(""));
     }
 
     @Test
@@ -142,6 +146,38 @@ public class BasicNamespaceRegistryTest {
         namespaceRegistry.register(validPrefix2, validNamespaceUri2);
         assertThat(namespaceRegistry.isRegisteredNamespaceUri(validNamespaceUri1), is(true));
         assertThat(namespaceRegistry.isRegisteredNamespaceUri(validNamespaceUri2), is(true));
+    }
+
+    @Test
+    public void shouldBeAbleToCopyNamespacesToAnotherRegistry() {
+        namespaceRegistry.register(validPrefix1, validNamespaceUri1);
+        namespaceRegistry.register(validPrefix2, validNamespaceUri2);
+        namespaceRegistry.register("", validNamespaceUri3);
+        assertThat(namespaceRegistry.isRegisteredNamespaceUri(validNamespaceUri1), is(true));
+        assertThat(namespaceRegistry.isRegisteredNamespaceUri(validNamespaceUri2), is(true));
+        assertThat(namespaceRegistry.isRegisteredNamespaceUri(validNamespaceUri3), is(true));
+        assertThat(namespaceRegistry.getPrefixForNamespaceUri(validNamespaceUri1, false), is(validPrefix1));
+        assertThat(namespaceRegistry.getPrefixForNamespaceUri(validNamespaceUri2, false), is(validPrefix2));
+        assertThat(namespaceRegistry.getPrefixForNamespaceUri(validNamespaceUri3, false), is(""));
+        assertThat(namespaceRegistry.getNamespaceForPrefix(validPrefix1), is(validNamespaceUri1));
+        assertThat(namespaceRegistry.getNamespaceForPrefix(validPrefix2), is(validNamespaceUri2));
+        assertThat(namespaceRegistry.getNamespaceForPrefix(""), is(validNamespaceUri3));
+
+        BasicNamespaceRegistry newRegistry = new BasicNamespaceRegistry();
+        for (String uri : this.namespaceRegistry.getRegisteredNamespaceUris()) {
+            String prefix = this.namespaceRegistry.getPrefixForNamespaceUri(uri, false);
+            newRegistry.register(prefix, uri);
+        }
+        assertThat(newRegistry.isRegisteredNamespaceUri(validNamespaceUri1), is(true));
+        assertThat(newRegistry.isRegisteredNamespaceUri(validNamespaceUri2), is(true));
+        assertThat(newRegistry.isRegisteredNamespaceUri(validNamespaceUri3), is(true));
+        assertThat(newRegistry.getPrefixForNamespaceUri(validNamespaceUri1, false), is(validPrefix1));
+        assertThat(newRegistry.getPrefixForNamespaceUri(validNamespaceUri2, false), is(validPrefix2));
+        assertThat(newRegistry.getPrefixForNamespaceUri(validNamespaceUri3, false), is(""));
+        assertThat(newRegistry.getNamespaceForPrefix(validPrefix1), is(validNamespaceUri1));
+        assertThat(newRegistry.getNamespaceForPrefix(validPrefix2), is(validNamespaceUri2));
+        assertThat(newRegistry.getNamespaceForPrefix(""), is(validNamespaceUri3));
+
     }
 
 }

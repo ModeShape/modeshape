@@ -44,6 +44,7 @@ import org.jboss.dna.spi.graph.commands.CreateNodeCommand;
 import org.jboss.dna.spi.graph.commands.DeleteBranchCommand;
 import org.jboss.dna.spi.graph.commands.GetChildrenCommand;
 import org.jboss.dna.spi.graph.commands.GetPropertiesCommand;
+import org.jboss.dna.spi.graph.commands.GraphCommand;
 import org.jboss.dna.spi.graph.commands.MoveBranchCommand;
 import org.jboss.dna.spi.graph.commands.RecordBranchCommand;
 import org.jboss.dna.spi.graph.commands.SetPropertiesCommand;
@@ -344,12 +345,15 @@ public class InMemoryRepository {
         @Override
         public void execute( CreateNodeCommand command ) {
             Path path = command.getPath();
-            Path parent = path.getParent();
-            // Look up the parent node, which must exist ...
-            Node parentNode = getNode(parent);
-            if (parentNode == null) {
-                Path lowestExisting = getLowestExistingPath(parent);
-                throw new PathNotFoundException(path, lowestExisting, InMemoryConnectorI18n.nodeDoesNotExist.text(parent));
+            Node parentNode = null;
+            if (!path.isRoot()) {
+                Path parent = path.getParent();
+                // Look up the parent node, which must exist ...
+                parentNode = getNode(parent);
+                if (parentNode == null) {
+                    Path lowestExisting = getLowestExistingPath(parent);
+                    throw new PathNotFoundException(path, lowestExisting, InMemoryConnectorI18n.nodeDoesNotExist.text(parent));
+                }
             }
             UUID uuid = null;
             for (Property property : command.getProperties()) {
@@ -376,6 +380,7 @@ public class InMemoryRepository {
         @Override
         public void execute( GetChildrenCommand command ) {
             Node node = getTargetNode(command);
+            if (node == null) return;
             // Get the names of the children ...
             List<Node> children = node.getChildren();
             for (Node child : children) {
@@ -387,6 +392,7 @@ public class InMemoryRepository {
         @Override
         public void execute( GetPropertiesCommand command ) {
             Node node = getTargetNode(command);
+            if (node == null) return;
             for (Property property : node.getProperties().values()) {
                 command.setProperty(property);
             }
@@ -396,6 +402,7 @@ public class InMemoryRepository {
         @Override
         public void execute( SetPropertiesCommand command ) {
             Node node = getTargetNode(command);
+            if (node == null) return;
             // Now set (or remove) the properties to the supplied node ...
             for (Property property : command.getProperties()) {
                 Name propName = property.getName();
@@ -412,12 +419,14 @@ public class InMemoryRepository {
         @Override
         public void execute( DeleteBranchCommand command ) {
             Node node = getTargetNode(command);
+            if (node == null) return;
             removeNode(getExecutionContext(), node);
         }
 
         @Override
         public void execute( CopyNodeCommand command ) {
             Node node = getTargetNode(command);
+            if (node == null) return;
             // Look up the new parent, which must exist ...
             Path newPath = command.getNewPath();
             Node newParent = getNode(newPath.getParent());
@@ -427,6 +436,7 @@ public class InMemoryRepository {
         @Override
         public void execute( CopyBranchCommand command ) {
             Node node = getTargetNode(command);
+            if (node == null) return;
             // Look up the new parent, which must exist ...
             Path newPath = command.getNewPath();
             Node newParent = getNode(newPath.getParent());
@@ -436,6 +446,7 @@ public class InMemoryRepository {
         @Override
         public void execute( MoveBranchCommand command ) {
             Node node = getTargetNode(command);
+            if (node == null) return;
             // Look up the new parent, which must exist ...
             Path newPath = command.getNewPath();
             Node newParent = getNode(newPath.getParent());
@@ -445,6 +456,7 @@ public class InMemoryRepository {
         @Override
         public void execute( RecordBranchCommand command ) {
             Node node = getTargetNode(command);
+            if (node == null) return;
             recordNode(command, node);
         }
 
@@ -456,15 +468,17 @@ public class InMemoryRepository {
             }
         }
 
-        protected Node getTargetNode( ActsOnPath command ) {
+        protected <T extends ActsOnPath & GraphCommand> Node getTargetNode( T command ) {
             Path path = command.getPath();
             // Look up the node with the supplied path ...
             Node node = InMemoryRepository.this.getNode(path);
             if (node == null) {
                 Path lowestExisting = getLowestExistingPath(path);
-                throw new PathNotFoundException(path, lowestExisting, InMemoryConnectorI18n.nodeDoesNotExist.text(path));
+                command.setError(new PathNotFoundException(path, lowestExisting,
+                                                           InMemoryConnectorI18n.nodeDoesNotExist.text(path)));
+                return null;
             }
-            return null;
+            return node;
         }
 
     }

@@ -21,16 +21,18 @@
  */
 package org.jboss.dna.connector.inmemory;
 
-import java.util.Collections;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.Hashtable;
-import java.util.Set;
+import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
+import javax.naming.BinaryRefAddr;
 import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
@@ -39,6 +41,7 @@ import javax.naming.Reference;
 import javax.naming.StringRefAddr;
 import javax.naming.spi.ObjectFactory;
 import net.jcip.annotations.GuardedBy;
+import org.jboss.dna.common.i18n.I18n;
 import org.jboss.dna.common.util.ArgCheck;
 import org.jboss.dna.spi.cache.CachePolicy;
 import org.jboss.dna.spi.connector.RepositoryConnection;
@@ -61,39 +64,11 @@ public class InMemoryRepositorySource implements RepositorySource, ObjectFactory
      */
     public static final int DEFAULT_RETRY_LIMIT = 0;
 
-    private static final ConcurrentMap<String, InMemoryRepositorySource> sources = new ConcurrentHashMap<String, InMemoryRepositorySource>();
-    private static final ReadWriteLock sourcesLock = new ReentrantReadWriteLock();
-
-    /**
-     * Get the names of the in-memory repository sources that are currently registered
-     * 
-     * @return the unmodifiable set of names
-     */
-    public static Set<String> getSourceNames() {
-        Lock lock = sourcesLock.readLock();
-        try {
-            lock.lock();
-            return Collections.unmodifiableSet(sources.keySet());
-        } finally {
-            lock.unlock();
-        }
-    }
-
-    /**
-     * Get the source with the supplied name.
-     * 
-     * @param name the name
-     * @return the source, or null if there is no source with the supplied name
-     */
-    public static InMemoryRepositorySource getSource( String name ) {
-        Lock lock = sourcesLock.readLock();
-        try {
-            lock.lock();
-            return sources.get(name);
-        } finally {
-            lock.unlock();
-        }
-    }
+    protected static final String ROOT_NODE_UUID = "rootNodeUuid";
+    protected static final String SOURCE_NAME = "sourceName";
+    protected static final String DEFAULT_CACHE_POLICY = "defaultCachePolicy";
+    protected static final String JNDI_NAME = "jndiName";
+    protected static final String RETRY_LIMIT = "retryLimit";
 
     @GuardedBy( "sourcesLock" )
     private String name;
@@ -212,37 +187,14 @@ public class InMemoryRepositorySource implements RepositorySource, ObjectFactory
      * {@inheritDoc}
      */
     public String getName() {
-        Lock lock = sourcesLock.readLock();
-        try {
-            lock.lock();
-            return this.name;
-        } finally {
-            lock.unlock();
-        }
+        return this.name;
     }
 
     /**
      * @param name Sets name to the specified value.
-     * @return true if the name was changed, or false if an existing instance already exists with that name
      */
-    public boolean setName( String name ) {
-        Lock lock = sourcesLock.writeLock();
-        try {
-            lock.lock();
-            // Determine if this name is allowed ...
-            if (sources.containsKey(name)) return false;
-
-            // Remove this object under its current name
-            if (this.name != null) {
-                sources.remove(this.name);
-            }
-            // Register this object under the new name
-            this.name = name;
-            sources.put(this.name, this);
-            return true;
-        } finally {
-            lock.unlock();
-        }
+    public void setName( String name ) {
+        this.name = name;
     }
 
     /**
@@ -260,11 +212,34 @@ public class InMemoryRepositorySource implements RepositorySource, ObjectFactory
     /**
      * {@inheritDoc}
      */
-    public Reference getReference() {
+    public synchronized Reference getReference() {
         String className = getClass().getName();
-        String factoryClassName = className;
-        return new Reference(className, new StringRefAddr("DnaConnectorInMemoryRepositorySource", getName()), factoryClassName,
-                             null);
+        String factoryClassName = this.getClass().getName();
+        Reference ref = new Reference(className, factoryClassName, null);
+
+        if (getName() != null) {
+            ref.add(new StringRefAddr(SOURCE_NAME, getName()));
+        }
+        if (getRootNodeUuid() != null) {
+            ref.add(new StringRefAddr(ROOT_NODE_UUID, getRootNodeUuid().toString()));
+        }
+        if (getJndiName() != null) {
+            ref.add(new StringRefAddr(JNDI_NAME, getJndiName()));
+        }
+        if (getDefaultCachePolicy() != null) {
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            CachePolicy policy = getDefaultCachePolicy();
+            try {
+                ObjectOutputStream oos = new ObjectOutputStream(baos);
+                oos.writeObject(policy);
+                ref.add(new BinaryRefAddr(DEFAULT_CACHE_POLICY, baos.toByteArray()));
+            } catch (IOException e) {
+                I18n msg = InMemoryConnectorI18n.errorSerializingCachePolicyInSource;
+                throw new RepositorySourceException(getName(), msg.text(policy.getClass().getName(), getName()), e);
+            }
+        }
+        ref.add(new StringRefAddr(RETRY_LIMIT, Integer.toString(getRetryLimit())));
+        return ref;
     }
 
     /**
@@ -273,13 +248,45 @@ public class InMemoryRepositorySource implements RepositorySource, ObjectFactory
     public Object getObjectInstance( Object obj,
                                      javax.naming.Name name,
                                      Context nameCtx,
-                                     Hashtable<?, ?> environment ) {
+                                     Hashtable<?, ?> environment ) throws Exception {
         if (obj instanceof Reference) {
+            Map<String, Object> values = new HashMap<String, Object>();
             Reference ref = (Reference)obj;
-            if (ref.getClassName().equals(getClass().getName())) {
-                RefAddr addr = ref.get("DnaConnectorInMemoryRepositorySource");
-                return InMemoryRepositorySource.getSource((String)addr.getContent());
+            Enumeration<?> en = ref.getAll();
+            while (en.hasMoreElements()) {
+                RefAddr subref = (RefAddr)en.nextElement();
+                if (subref instanceof StringRefAddr) {
+                    String key = subref.getType();
+                    Object value = subref.getContent();
+                    if (value != null) values.put(key, value.toString());
+                } else if (subref instanceof BinaryRefAddr) {
+                    String key = subref.getType();
+                    Object value = subref.getContent();
+                    if (value instanceof byte[]) {
+                        // Deserialize ...
+                        ByteArrayInputStream bais = new ByteArrayInputStream((byte[])value);
+                        ObjectInputStream ois = new ObjectInputStream(bais);
+                        value = ois.readObject();
+                        values.put(key, value);
+                    }
+                }
             }
+            String sourceName = (String)values.get(SOURCE_NAME);
+            String rootNodeUuidString = (String)values.get(ROOT_NODE_UUID);
+            String jndiName = (String)values.get(JNDI_NAME);
+            Object defaultCachePolicy = values.get(DEFAULT_CACHE_POLICY);
+            String retryLimit = (String)values.get(RETRY_LIMIT);
+
+            // Create the source instance ...
+            InMemoryRepositorySource source = new InMemoryRepositorySource();
+            if (sourceName != null) source.setName(sourceName);
+            if (rootNodeUuidString != null) source.setRootNodeUuid(UUID.fromString(rootNodeUuidString));
+            if (jndiName != null) source.setJndiName(jndiName);
+            if (defaultCachePolicy instanceof CachePolicy) {
+                source.setDefaultCachePolicy((CachePolicy)defaultCachePolicy);
+            }
+            if (retryLimit != null) source.setRetryLimit(Integer.parseInt(retryLimit));
+            return source;
         }
         return null;
     }

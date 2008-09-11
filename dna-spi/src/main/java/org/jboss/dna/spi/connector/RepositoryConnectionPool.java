@@ -638,19 +638,22 @@ public class RepositoryConnectionPool {
      */
     public boolean awaitTermination( long timeout,
                                      TimeUnit unit ) throws InterruptedException {
+        this.logger.trace("Awaiting termination");
         long nanos = unit.toNanos(timeout);
         final ReentrantLock mainLock = this.mainLock;
         try {
             mainLock.lock();
             for (;;) {
-                // this.logger.debug("---> Run state = {}; condition = {}", runState, termination);
+                // this.logger.trace("---> Run state = {0}; condition = {1}, {2} open", runState, termination, poolSize);
                 if (runState == TERMINATED) return true;
                 if (nanos <= 0) return false;
                 nanos = termination.awaitNanos(nanos);
-                // this.logger.debug("---> Done waiting: run state = {}; condition = {}", runState, termination);
+                //this.logger.trace("---> Done waiting: run state = {0}; condition = {1}, {2} open",runState,termination,poolSize)
+                // ;
             }
         } finally {
             mainLock.unlock();
+            this.logger.trace("Finished awaiting termination");
         }
     }
 
@@ -798,7 +801,7 @@ public class RepositoryConnectionPool {
         }
         // Close the connection if we're supposed to (do it outside of the main lock)...
         if (wrapperToClose != null) {
-            closeConnection(wrapper);
+            closeConnection(wrapperToClose);
         }
     }
 
@@ -853,7 +856,7 @@ public class RepositoryConnectionPool {
         RepositoryConnection original = wrapper.getOriginal();
         assert original != null;
         try {
-            this.logger.debug("Closing repository connection to {0}", getSourceName());
+            this.logger.debug("Closing repository connection to {0} ({1} open connections remain)", getSourceName(), poolSize);
             original.close();
         } finally {
             final ReentrantLock mainLock = this.mainLock;
@@ -862,7 +865,7 @@ public class RepositoryConnectionPool {
                 // No matter what reduce the pool size count
                 --this.poolSize;
                 // And if shutting down and this was the last connection being used...
-                if (this.runState == SHUTDOWN && this.poolSize <= 0) {
+                if ((runState == SHUTDOWN || runState == STOP) && this.poolSize <= 0) {
                     // then signal anybody that has called "awaitTermination(...)"
                     this.logger.trace("Signalling termination of repository connection pool for {0}", getSourceName());
                     this.runState = TERMINATED;
@@ -890,7 +893,7 @@ public class RepositoryConnectionPool {
         }
         int numClosed = extraConnections.size();
         this.poolSize -= numClosed;
-        this.logger.trace("Drained {0} unused connections", numClosed);
+        this.logger.trace("Drained {0} unused connections ({1} open connections remain)", numClosed, poolSize);
         return numClosed;
     }
 
