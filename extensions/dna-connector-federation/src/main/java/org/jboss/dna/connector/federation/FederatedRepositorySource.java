@@ -98,7 +98,7 @@ public class FederatedRepositorySource implements RepositorySource, ObjectFactor
     protected static final String CONFIGURATION_SOURCE_NAME = "configurationSourceName";
     protected static final String CONFIGURATION_SOURCE_PATH = "configurationSourcePath";
     protected static final String REPOSITORY_CONNECTION_FACTORY_JNDI_NAME = "repositoryConnectionFactoryJndiName";
-    protected static final String EXECUTION_CONTEXT_FACTORY_JNDI_NAME = "executionContextFacotryJndiName";
+    protected static final String EXECUTION_CONTEXT_FACTORY_JNDI_NAME = "executionContextFactoryJndiName";
     protected static final String REPOSITORY_JNDI_NAME = "repositoryJndiName";
     protected static final String SECURITY_DOMAIN = "securityDomain";
     protected static final String RETRY_LIMIT = "retryLimit";
