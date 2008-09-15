@@ -23,6 +23,7 @@ package org.jboss.dna.jcr;
 
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsInstanceOf.instanceOf;
+import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.Assert.assertThat;
@@ -37,6 +38,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 import javax.jcr.Item;
+import javax.jcr.NamespaceException;
 import javax.jcr.Node;
 import javax.jcr.Property;
 import javax.jcr.PropertyType;
@@ -64,13 +66,13 @@ import org.mockito.MockitoAnnotations.Mock;
  */
 public class JcrSessionTest {
 
-    private static final String WORKSPACE_NAME = JcrI18n.defaultWorkspaceName.text();
+    static final String WORKSPACE_NAME = JcrI18n.defaultWorkspaceName.text();
 
-    private static ExecutionContext executionContext;
-    private static SimpleRepository simpleRepository;
-    private static RepositoryConnectionFactory connectionFactory;
-    private static RepositoryConnection connection;
-    private static Repository repository;
+    static ExecutionContext executionContext;
+    static SimpleRepository simpleRepository;
+    static RepositoryConnectionFactory connectionFactory;
+    static RepositoryConnection connection;
+    static Repository repository;
 
     @BeforeClass
     public static void beforeClass() throws Exception {
@@ -286,5 +288,52 @@ public class JcrSessionTest {
     @Test( expected = IllegalArgumentException.class )
     public void shouldNotAllowItemExistsWithEmptyPath() throws Exception {
         session.itemExists("");
+    }
+
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldNotAllowNoNamespaceUri() throws Exception {
+        session.getNamespacePrefix(null);
+    }
+
+    @Test( expected = NamespaceException.class )
+    public void shouldNotProvidePrefixForUnknownUri() throws Exception {
+        session.getNamespacePrefix("bogus");
+    }
+
+    @Test
+    public void shouldProvideNamespacePrefix() throws Exception {
+        assertThat(session.getNamespacePrefix("http://www.jboss.org/dna/1.0"), is("dna"));
+        assertThat(session.getNamespacePrefix("http://www.jcp.org/jcr/1.0"), is("jcr"));
+        assertThat(session.getNamespacePrefix("http://www.jcp.org/jcr/mix/1.0"), is("mix"));
+        assertThat(session.getNamespacePrefix("http://www.jcp.org/jcr/nt/1.0"), is("nt"));
+        assertThat(session.getNamespacePrefix("http://www.jcp.org/jcr/sv/1.0"), is("sv"));
+        // assertThat(session.getNamespacePrefix("http://www.w3.org/XML/1998/namespace"), is("xml"));
+    }
+
+    @Test
+    public void shouldProvideNamespacePrefixes() throws Exception {
+        String[] prefixes = session.getNamespacePrefixes();
+        assertThat(prefixes, notNullValue());
+        assertThat(prefixes.length, is(not(0)));
+    }
+
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldNotAllowNoNamespacePrefix() throws Exception {
+        session.getNamespaceURI(null);
+    }
+
+    @Test( expected = NamespaceException.class )
+    public void shouldNotProvideUriForUnknownPrefix() throws Exception {
+        session.getNamespaceURI("bogus");
+    }
+
+    @Test
+    public void shouldProvideNamespaceUri() throws Exception {
+        assertThat(session.getNamespaceURI("dna"), is("http://www.jboss.org/dna/1.0"));
+        assertThat(session.getNamespaceURI("jcr"), is("http://www.jcp.org/jcr/1.0"));
+        assertThat(session.getNamespaceURI("mix"), is("http://www.jcp.org/jcr/mix/1.0"));
+        assertThat(session.getNamespaceURI("nt"), is("http://www.jcp.org/jcr/nt/1.0"));
+        assertThat(session.getNamespaceURI("sv"), is("http://www.jcp.org/jcr/sv/1.0"));
+        // assertThat(session.getNamespaceURI("xml"), is("http://www.w3.org/XML/1998/namespace"));
     }
 }

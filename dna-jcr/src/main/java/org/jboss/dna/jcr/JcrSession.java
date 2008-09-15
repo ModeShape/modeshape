@@ -204,6 +204,10 @@ final class JcrSession implements Session {
         return StringUtil.EMPTY_STRING_ARRAY;
     }
 
+    ExecutionContext getExecutionContext() {
+        return executionContext;
+    }
+
     /**
      * {@inheritDoc}
      * 
@@ -262,31 +266,28 @@ final class JcrSession implements Session {
     /**
      * {@inheritDoc}
      * 
-     * @throws UnsupportedOperationException always
      * @see javax.jcr.Session#getNamespacePrefix(java.lang.String)
      */
-    public String getNamespacePrefix( String uri ) {
-        throw new UnsupportedOperationException();
+    public String getNamespacePrefix( String uri ) throws RepositoryException {
+        return workspace.getNamespaceRegistry().getPrefix(uri);
     }
 
     /**
      * {@inheritDoc}
      * 
-     * @throws UnsupportedOperationException always
      * @see javax.jcr.Session#getNamespacePrefixes()
      */
-    public String[] getNamespacePrefixes() {
-        throw new UnsupportedOperationException();
+    public String[] getNamespacePrefixes() throws RepositoryException {
+        return workspace.getNamespaceRegistry().getPrefixes();
     }
 
     /**
      * {@inheritDoc}
      * 
-     * @throws UnsupportedOperationException always
      * @see javax.jcr.Session#getNamespaceURI(java.lang.String)
      */
-    public String getNamespaceURI( String prefix ) {
-        throw new UnsupportedOperationException();
+    public String getNamespaceURI( String prefix ) throws RepositoryException {
+        return workspace.getNamespaceRegistry().getURI(prefix);
     }
 
     private Node getNode( Path path ) throws RepositoryException {

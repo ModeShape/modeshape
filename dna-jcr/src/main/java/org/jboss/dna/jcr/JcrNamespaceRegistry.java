@@ -21,73 +21,74 @@
  */
 package org.jboss.dna.jcr;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Map.Entry;
+import java.util.Iterator;
+import java.util.Set;
 import javax.jcr.NamespaceException;
 import javax.jcr.NamespaceRegistry;
+import javax.jcr.RepositoryException;
 import javax.jcr.UnsupportedRepositoryOperationException;
-import net.jcip.annotations.Immutable;
-import org.jboss.dna.common.util.ArgCheck;
 
 /**
  * @author John Verhaeg
  * @author Randall Hauch
  */
-@Immutable
-class JcrNamespaceRegistry implements NamespaceRegistry {
+final class JcrNamespaceRegistry implements NamespaceRegistry {
 
-    private Map<String, String> prefix2UriMap = new HashMap<String, String>();
+    private org.jboss.dna.spi.graph.NamespaceRegistry dnaNamespaceRegistry;
 
-    JcrNamespaceRegistry() {
-        prefix2UriMap.put("", "");
-        prefix2UriMap.put("dna", "http://www.jboss.org/dna/1.0");
-        prefix2UriMap.put("jcr", "http://www.jcp.org/jcr/1.0");
-        prefix2UriMap.put("mix", "http://www.jcp.org/jcr/mix/1.0");
-        prefix2UriMap.put("nt", "http://www.jcp.org/jcr/nt/1.0");
-        prefix2UriMap.put("xml", "http://www.w3.org/XML/1998/namespace");
+    JcrNamespaceRegistry( org.jboss.dna.spi.graph.NamespaceRegistry dnaNamespaceRegistry ) {
+        this.dnaNamespaceRegistry = dnaNamespaceRegistry;
     }
 
     /**
      * {@inheritDoc}
+     * 
+     * @see javax.jcr.NamespaceRegistry#getPrefix(java.lang.String)
      */
-    public String getPrefix( String uri ) throws NamespaceException {
-        ArgCheck.isNotNull(uri, "uri");
-        for (Entry<String, String> entry : prefix2UriMap.entrySet()) {
-            if (uri.equals(entry.getValue())) {
-                return entry.getKey();
-            }
+    public String getPrefix( String uri ) throws NamespaceException, RepositoryException {
+        String prefix = dnaNamespaceRegistry.getPrefixForNamespaceUri(uri, false);
+        if (prefix == null) {
+            throw new NamespaceException();
         }
-        throw new NamespaceException();
+        return prefix;
     }
 
     /**
      * {@inheritDoc}
+     * 
+     * @see javax.jcr.NamespaceRegistry#getPrefixes()
      */
     public String[] getPrefixes() {
-        String[] prefixes = prefix2UriMap.keySet().toArray(new String[prefix2UriMap.size()]);
-        Arrays.sort(prefixes);
+        Set<String> uris = dnaNamespaceRegistry.getRegisteredNamespaceUris();
+        String[] prefixes = new String[uris.size()];
+        Iterator<String> iter = uris.iterator();
+        for (int ndx = 0; iter.hasNext(); ndx++) {
+            prefixes[ndx] = dnaNamespaceRegistry.getPrefixForNamespaceUri(iter.next(), false);
+        }
         return prefixes;
     }
 
     /**
      * {@inheritDoc}
+     * 
+     * @see javax.jcr.NamespaceRegistry#getURI(java.lang.String)
      */
     public String getURI( String prefix ) throws NamespaceException {
-        ArgCheck.isNotNull(prefix, "prefix");
-        String uri = prefix2UriMap.get(prefix);
-        if (uri == null) throw new NamespaceException();
+        String uri = dnaNamespaceRegistry.getNamespaceForPrefix(prefix);
+        if (uri == null) {
+            throw new NamespaceException();
+        }
         return uri;
     }
 
     /**
      * {@inheritDoc}
+     * 
+     * @see javax.jcr.NamespaceRegistry#getURIs()
      */
     public String[] getURIs() {
-        String[] uris = prefix2UriMap.values().toArray(new String[prefix2UriMap.size()]);
-        Arrays.sort(uris);
-        return uris;
+        Set<String> uris = dnaNamespaceRegistry.getRegisteredNamespaceUris();
+        return uris.toArray(new String[uris.size()]);
     }
 
     /**

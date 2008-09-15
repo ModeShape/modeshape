@@ -40,6 +40,7 @@ final class JcrWorkspace implements Workspace {
 
     private final String name;
     private final JcrSession session;
+    private final NamespaceRegistry namespaceRegistry;
 
     /**
      * @param session the session that owns this workspace; may not be null
@@ -52,6 +53,7 @@ final class JcrWorkspace implements Workspace {
         assert name != null;
         this.session = session;
         this.name = name;
+        this.namespaceRegistry = new JcrNamespaceRegistry(session.getExecutionContext().getNamespaceRegistry());
         // Ensure workspace with supplied name is accessible
         // if (name == null) name = session.getDnaRepository().getSource(session.getSubject()).getName();
         // String matchedName = null;
@@ -68,6 +70,8 @@ final class JcrWorkspace implements Workspace {
 
     /**
      * {@inheritDoc}
+     * 
+     * @see javax.jcr.Workspace#clone(java.lang.String, java.lang.String, java.lang.String, boolean)
      */
     public void clone( String srcWorkspace,
                        String srcAbsPath,
@@ -137,9 +141,11 @@ final class JcrWorkspace implements Workspace {
 
     /**
      * {@inheritDoc}
+     * 
+     * @see javax.jcr.Workspace#getNamespaceRegistry()
      */
     public NamespaceRegistry getNamespaceRegistry() {
-        throw new UnsupportedOperationException();
+        return namespaceRegistry;
     }
 
     /**

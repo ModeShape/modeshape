@@ -27,7 +27,10 @@ import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
 import javax.jcr.NamespaceException;
 import javax.jcr.UnsupportedRepositoryOperationException;
+import org.jboss.dna.spi.ExecutionContext;
+import org.jboss.dna.spi.ExecutionContextFactory;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 /**
@@ -35,37 +38,42 @@ import org.junit.Test;
  */
 public class JcrNamespaceRegistryTest {
 
+    static ExecutionContext executionContext;
     private JcrNamespaceRegistry registry;
+
+    @BeforeClass
+    public static void beforeClass() throws Exception {
+        ExecutionContextFactory factory = TestUtil.getExecutionContextFactory();
+        executionContext = factory.create();
+    }
 
     @Before
     public void before() {
-        registry = new JcrNamespaceRegistry();
+        registry = new JcrNamespaceRegistry(executionContext.getNamespaceRegistry());
     }
 
     @Test
     public void shouldProvidePrefixes() {
         String[] prefixes = registry.getPrefixes();
         assertThat(prefixes, notNullValue());
-        assertThat(prefixes.length, is(6));
         assertThat(prefixes, hasItemInArray(""));
         assertThat(prefixes, hasItemInArray("dna"));
         assertThat(prefixes, hasItemInArray("jcr"));
         assertThat(prefixes, hasItemInArray("mix"));
         assertThat(prefixes, hasItemInArray("nt"));
-        assertThat(prefixes, hasItemInArray("xml"));
+        // assertThat(prefixes, hasItemInArray("xml"));
     }
 
     @Test
     public void shouldProvideUris() {
         String[] uris = registry.getURIs();
         assertThat(uris, notNullValue());
-        assertThat(uris.length, is(6));
         assertThat(uris, hasItemInArray(""));
         assertThat(uris, hasItemInArray("http://www.jboss.org/dna/1.0"));
         assertThat(uris, hasItemInArray("http://www.jcp.org/jcr/1.0"));
         assertThat(uris, hasItemInArray("http://www.jcp.org/jcr/mix/1.0"));
         assertThat(uris, hasItemInArray("http://www.jcp.org/jcr/nt/1.0"));
-        assertThat(uris, hasItemInArray("http://www.w3.org/XML/1998/namespace"));
+        // assertThat(uris, hasItemInArray("http://www.w3.org/XML/1998/namespace"));
     }
 
     @Test( expected = UnsupportedRepositoryOperationException.class )
@@ -95,7 +103,7 @@ public class JcrNamespaceRegistryTest {
         assertThat(registry.getPrefix("http://www.jcp.org/jcr/1.0"), is("jcr"));
         assertThat(registry.getPrefix("http://www.jcp.org/jcr/mix/1.0"), is("mix"));
         assertThat(registry.getPrefix("http://www.jcp.org/jcr/nt/1.0"), is("nt"));
-        assertThat(registry.getPrefix("http://www.w3.org/XML/1998/namespace"), is("xml"));
+//        assertThat(registry.getPrefix("http://www.w3.org/XML/1998/namespace"), is("xml"));
     }
 
     @Test
@@ -105,7 +113,7 @@ public class JcrNamespaceRegistryTest {
         assertThat(registry.getURI("jcr"), is("http://www.jcp.org/jcr/1.0"));
         assertThat(registry.getURI("mix"), is("http://www.jcp.org/jcr/mix/1.0"));
         assertThat(registry.getURI("nt"), is("http://www.jcp.org/jcr/nt/1.0"));
-        assertThat(registry.getURI("xml"), is("http://www.w3.org/XML/1998/namespace"));
+//        assertThat(registry.getURI("xml"), is("http://www.w3.org/XML/1998/namespace"));
     }
 
     @Test( expected = NamespaceException.class )
