@@ -31,7 +31,6 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import javax.naming.Context;
-import javax.naming.InitialContext;
 import javax.naming.RefAddr;
 import javax.naming.Reference;
 import javax.naming.StringRefAddr;
@@ -55,6 +54,7 @@ import org.jboss.dna.spi.cache.BasicCachePolicy;
 import org.jboss.dna.spi.cache.CachePolicy;
 import org.jboss.dna.spi.connector.RepositoryConnection;
 import org.jboss.dna.spi.connector.RepositoryConnectionFactory;
+import org.jboss.dna.spi.connector.RepositoryContext;
 import org.jboss.dna.spi.connector.RepositorySource;
 import org.jboss.dna.spi.connector.RepositorySourceCapabilities;
 import org.jboss.dna.spi.connector.RepositorySourceException;
@@ -97,9 +97,6 @@ public class FederatedRepositorySource implements RepositorySource, ObjectFactor
     protected static final String PASSWORD = "password";
     protected static final String CONFIGURATION_SOURCE_NAME = "configurationSourceName";
     protected static final String CONFIGURATION_SOURCE_PATH = "configurationSourcePath";
-    protected static final String REPOSITORY_CONNECTION_FACTORY_JNDI_NAME = "repositoryConnectionFactoryJndiName";
-    protected static final String EXECUTION_CONTEXT_FACTORY_JNDI_NAME = "executionContextFactoryJndiName";
-    protected static final String REPOSITORY_JNDI_NAME = "repositoryJndiName";
     protected static final String SECURITY_DOMAIN = "securityDomain";
     protected static final String RETRY_LIMIT = "retryLimit";
 
@@ -115,13 +112,10 @@ public class FederatedRepositorySource implements RepositorySource, ObjectFactor
     private String password;
     private String configurationSourceName;
     private String configurationSourcePath = DEFAULT_CONFIGURATION_SOURCE_PATH;
-    private String repositoryConnectionFactoryJndiName;
-    private String executionContextFactoryJndiName;
     private String securityDomain;
-    private String repositoryJndiName;
     private final AtomicInteger retryLimit = new AtomicInteger(DEFAULT_RETRY_LIMIT);
     private transient FederatedRepository repository;
-    private transient Context jndiContext;
+    private transient RepositoryContext repositoryContext;
 
     /**
      * Create a new instance of the source, which must still be properly initialized with a {@link #setRepositoryName(String)
@@ -145,6 +139,22 @@ public class FederatedRepositorySource implements RepositorySource, ObjectFactor
 
     /**
      * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.spi.connector.RepositorySource#initialize(org.jboss.dna.spi.connector.RepositoryContext)
+     */
+    public void initialize( RepositoryContext context ) throws RepositorySourceException {
+        this.repositoryContext = context;
+    }
+
+    /**
+     * @return repositoryContext
+     */
+    public RepositoryContext getRepositoryContext() {
+        return repositoryContext;
+    }
+
+    /**
+     * {@inheritDoc}
      */
     public synchronized String getName() {
         return sourceName;
@@ -158,12 +168,10 @@ public class FederatedRepositorySource implements RepositorySource, ObjectFactor
      * 
      * @param sourceName the name of this repository source
      * @see #setConfigurationSourceName(String)
-     * @see #setRepositoryConnectionFactoryJndiName(String)
      * @see #setConfigurationSourcePath(String)
      * @see #setPassword(String)
      * @see #setUsername(String)
      * @see #setRepositoryName(String)
-     * @see #setExecutionContextFactoryJndiName(String)
      * @see #setPassword(String)
      * @see #setUsername(String)
      * @see #setName(String)
@@ -193,47 +201,10 @@ public class FederatedRepositorySource implements RepositorySource, ObjectFactor
     }
 
     /**
-     * Get the name in JNDI of a {@link FederatedRepository} instance that should be used. If this is set (and an instance can be
-     * found at that location), few of the remaining properties on this instance may not be used (basically just
-     * {@link #getUsername() username}, {@link #getPassword() password}, and {@link #getName() source name}).
-     * <p>
-     * This is an optional property.
-     * </p>
-     * 
-     * @return the location in JNDI of the {@link FederatedRepository} that should be used by this source, or null if the
-     *         {@link FederatedRepository} instance will be created from the properties of this instance
-     * @see #setRepositoryJndiName(String)
-     */
-    public String getRepositoryJndiName() {
-        return repositoryJndiName;
-    }
-
-    /**
-     * Set the name in JNDI of a {@link FederatedRepository} instance that should be used. If this is set (and an instance can be
-     * found at that location), few of the remaining properties on this instance may not be used (basically just
-     * {@link #getUsername() username}, {@link #getPassword() password}, and {@link #getName() source name}).
-     * <p>
-     * This is an optional property.
-     * </p>
-     * 
-     * @param jndiName the JNDI name where the {@link FederatedRepository} instance can be found, or null if the instance is not
-     *        to be found in JNDI but one should be instantiated from this instance's properties
-     * @see #getRepositoryJndiName()
-     * @see #setPassword(String)
-     * @see #setUsername(String)
-     * @see #setName(String)
-     */
-    public void setRepositoryJndiName( String jndiName ) {
-        if (this.repositoryJndiName == jndiName || this.repositoryJndiName != null && this.repositoryJndiName.equals(jndiName)) return; // unchanged
-        this.repositoryJndiName = jndiName;
-        changeRepositoryConfig();
-    }
-
-    /**
      * Get the name in JNDI of a {@link RepositorySource} instance that should be used by the {@link FederatedRepository federated
      * repository} as the configuration repository.
      * <p>
-     * This is a required property (unless the {@link #getRepositoryJndiName() federated repository is to be found in JDNI}).
+     * This is a required property.
      * </p>
      * 
      * @return the JNDI name of the {@link RepositorySource} instance that should be used for the configuration, or null if the
@@ -247,20 +218,19 @@ public class FederatedRepositorySource implements RepositorySource, ObjectFactor
     /**
      * Get the name of a {@link RepositorySource} instance that should be used by the {@link FederatedRepository federated
      * repository} as the configuration repository. The instance will be retrieved from the {@link RepositoryConnectionFactory}
-     * instance {@link #getRepositoryConnectionFactoryJndiName() found in JDNI}.
+     * instance from the {@link RepositoryContext#getRepositoryConnectionFactory() repository context} supplied during
+     * {@link RepositorySource#initialize(RepositoryContext) initialization}.
      * <p>
-     * This is a required property (unless the {@link #getRepositoryJndiName() federated repository is to be found in JDNI}).
+     * This is a required property.
      * </p>
      * 
      * @param sourceName the name of the {@link RepositorySource} instance that should be used for the configuration, or null if
      *        the federated repository instance is to be found in JNDI
      * @see #getConfigurationSourceName()
-     * @see #setRepositoryConnectionFactoryJndiName(String)
      * @see #setConfigurationSourcePath(String)
      * @see #setPassword(String)
      * @see #setUsername(String)
      * @see #setRepositoryName(String)
-     * @see #setExecutionContextFactoryJndiName(String)
      * @see #setName(String)
      */
     public void setConfigurationSourceName( String sourceName ) {
@@ -273,7 +243,7 @@ public class FederatedRepositorySource implements RepositorySource, ObjectFactor
     /**
      * Get the path in the source that will be subgraph below the <code>/dna:system</code> branch of the repository.
      * <p>
-     * This is a required property (unless the {@link #getRepositoryJndiName() federated repository is to be found in JDNI}).
+     * This is a required property.
      * </p>
      * 
      * @return the string array of projection rules, or null if the projection rules haven't yet been set or if the federated
@@ -287,106 +257,23 @@ public class FederatedRepositorySource implements RepositorySource, ObjectFactor
     /**
      * Set the path in the source that will be subgraph below the <code>/dna:system</code> branch of the repository.
      * <p>
-     * This is a required property (unless the {@link #getRepositoryJndiName() federated repository is to be found in JDNI}).
+     * This is a required property.
      * </p>
      * 
      * @param pathInSourceToConfigurationRoot the path within the configuration source to the node that should be the root of the
      *        configuration information, or null if the path hasn't yet been set or if the federated repository instance is to be
      *        found in JNDI
      * @see #setConfigurationSourcePath(String)
-     * @see #setRepositoryConnectionFactoryJndiName(String)
      * @see #setConfigurationSourceName(String)
      * @see #setPassword(String)
      * @see #setUsername(String)
      * @see #setRepositoryName(String)
-     * @see #setExecutionContextFactoryJndiName(String)
      * @see #setName(String)
      */
     public void setConfigurationSourcePath( String pathInSourceToConfigurationRoot ) {
         if (this.configurationSourcePath == pathInSourceToConfigurationRoot || this.configurationSourcePath != null
             && this.configurationSourcePath.equals(pathInSourceToConfigurationRoot)) return;
         this.configurationSourcePath = pathInSourceToConfigurationRoot != null ? pathInSourceToConfigurationRoot : DEFAULT_CONFIGURATION_SOURCE_PATH;
-        changeRepositoryConfig();
-    }
-
-    /**
-     * Get the name in JNDI of a {@link ExecutionContextFactory} instance that should be used to obtain the
-     * {@link ExecutionContext execution context} used by the {@link FederatedRepository federated repository}.
-     * <p>
-     * This is a required property (unless the {@link #getRepositoryJndiName() federated repository is to be found in JDNI}).
-     * </p>
-     * 
-     * @return the JNDI name of the {@link ExecutionContextFactory} instance that should be used, or null if the federated
-     *         repository instance is to be found in JNDI
-     * @see #setExecutionContextFactoryJndiName(String)
-     */
-    public String getExecutionContextFactoryJndiName() {
-        return executionContextFactoryJndiName;
-    }
-
-    /**
-     * Set the name in JNDI of a {@link ExecutionContextFactory} instance that should be used to obtain the
-     * {@link ExecutionContext execution context} used by the {@link FederatedRepository federated repository}.
-     * <p>
-     * This is a required property (unless the {@link #getRepositoryJndiName() federated repository is to be found in JDNI}).
-     * </p>
-     * 
-     * @param jndiName the JNDI name where the {@link ExecutionContextFactory} instance can be found, or null if the federated
-     *        repository instance is to be found in JNDI
-     * @see #getExecutionContextFactoryJndiName()
-     * @see #setConfigurationSourceName(String)
-     * @see #setConfigurationSourcePath(String)
-     * @see #setRepositoryConnectionFactoryJndiName(String)
-     * @see #setPassword(String)
-     * @see #setUsername(String)
-     * @see #setRepositoryName(String)
-     * @see #setName(String)
-     */
-    public synchronized void setExecutionContextFactoryJndiName( String jndiName ) {
-        if (this.repositoryJndiName == jndiName || this.repositoryJndiName != null && this.repositoryJndiName.equals(jndiName)) return;
-        this.executionContextFactoryJndiName = jndiName; // unchanged
-        changeRepositoryConfig();
-    }
-
-    /**
-     * Get the name in JNDI where the {@link RepositoryConnectionFactory} instance that can be used by the
-     * {@link FederatedRepository federated repository} can find any {@link RepositorySource} sources it needs, including those
-     * used for {@link Projection sources} and that used for it's {@link #getConfigurationSourceName() configuration}.
-     * <p>
-     * This is a required property (unless the {@link #getRepositoryJndiName() federated repository is to be found in JDNI}).
-     * </p>
-     * 
-     * @return the JNDI name where the {@link RepositoryConnectionFactory} instance can be found, or null if the federated
-     *         repository instance is to be found in JNDI
-     * @see #setRepositoryConnectionFactoryJndiName(String)
-     */
-    public String getRepositoryConnectionFactoryJndiName() {
-        return repositoryConnectionFactoryJndiName;
-    }
-
-    /**
-     * Set the name in JNDI where the {@link RepositoryConnectionFactory} instance that can be used by the
-     * {@link FederatedRepository federated repository} can find any {@link RepositorySource} sources it needs, including those
-     * used for {@link Projection sources} and that used for it's {@link #getConfigurationSourceName() configuration}.
-     * <p>
-     * This is a required property (unless the {@link #getRepositoryJndiName() federated repository is to be found in JDNI}).
-     * </p>
-     * 
-     * @param jndiName the JNDI name where the {@link RepositoryConnectionFactory} instance can be found, or null if the federated
-     *        repository instance is to be found in JNDI
-     * @see #getRepositoryConnectionFactoryJndiName()
-     * @see #setConfigurationSourceName(String)
-     * @see #setConfigurationSourcePath(String)
-     * @see #setPassword(String)
-     * @see #setUsername(String)
-     * @see #setRepositoryName(String)
-     * @see #setExecutionContextFactoryJndiName(String)
-     * @see #setName(String)
-     */
-    public synchronized void setRepositoryConnectionFactoryJndiName( String jndiName ) {
-        if (this.repositoryConnectionFactoryJndiName == jndiName || this.repositoryConnectionFactoryJndiName != null
-            && this.repositoryConnectionFactoryJndiName.equals(jndiName)) return; // unchanged
-        this.repositoryConnectionFactoryJndiName = jndiName;
         changeRepositoryConfig();
     }
 
@@ -415,7 +302,7 @@ public class FederatedRepositorySource implements RepositorySource, ObjectFactor
     /**
      * Get the name of the federated repository.
      * <p>
-     * This is a required property (unless the {@link #getRepositoryJndiName() federated repository is to be found in JDNI}).
+     * This is a required property.
      * </p>
      * 
      * @return the name of the repository
@@ -428,7 +315,7 @@ public class FederatedRepositorySource implements RepositorySource, ObjectFactor
     /**
      * Get the name of the federated repository.
      * <p>
-     * This is a required property (unless the {@link #getRepositoryJndiName() federated repository is to be found in JDNI}).
+     * This is a required property.
      * </p>
      * 
      * @param repositoryName the new name of the repository
@@ -438,8 +325,6 @@ public class FederatedRepositorySource implements RepositorySource, ObjectFactor
      * @see #setConfigurationSourcePath(String)
      * @see #setPassword(String)
      * @see #setUsername(String)
-     * @see #setRepositoryConnectionFactoryJndiName(String)
-     * @see #setExecutionContextFactoryJndiName(String)
      * @see #setName(String)
      */
     public synchronized void setRepositoryName( String repositoryName ) {
@@ -475,8 +360,6 @@ public class FederatedRepositorySource implements RepositorySource, ObjectFactor
      * @see #setConfigurationSourcePath(String)
      * @see #setPassword(String)
      * @see #setRepositoryName(String)
-     * @see #setRepositoryConnectionFactoryJndiName(String)
-     * @see #setExecutionContextFactoryJndiName(String)
      * @see #setName(String)
      */
     public void setUsername( String username ) {
@@ -510,8 +393,6 @@ public class FederatedRepositorySource implements RepositorySource, ObjectFactor
      * @see #setConfigurationSourcePath(String)
      * @see #setUsername(String)
      * @see #setRepositoryName(String)
-     * @see #setRepositoryConnectionFactoryJndiName(String)
-     * @see #setExecutionContextFactoryJndiName(String)
      * @see #setName(String)
      */
     public void setPassword( String password ) {
@@ -528,12 +409,15 @@ public class FederatedRepositorySource implements RepositorySource, ObjectFactor
      */
     protected synchronized void changeRepositoryConfig() {
         if (this.repository != null) {
-            // Find in JNDI the repository source registry and the environment ...
-            ExecutionContext context = getExecutionContext();
-            RepositoryConnectionFactory factory = getConnectionFactory();
-            // Compute a new repository config and set it on the repository ...
-            FederatedRepositoryConfig newConfig = getRepositoryConfiguration(context, factory);
-            this.repository.setConfiguration(newConfig);
+            RepositoryContext repositoryContext = getRepositoryContext();
+            if (repositoryContext != null) {
+                // Find in JNDI the repository source registry and the environment ...
+                ExecutionContext context = getExecutionContext();
+                RepositoryConnectionFactory factory = getRepositoryContext().getRepositoryConnectionFactory();
+                // Compute a new repository config and set it on the repository ...
+                FederatedRepositoryConfig newConfig = getRepositoryConfiguration(context, factory);
+                this.repository.setConfiguration(newConfig);
+            }
         }
     }
 
@@ -547,17 +431,13 @@ public class FederatedRepositorySource implements RepositorySource, ObjectFactor
             I18n msg = FederationI18n.propertyIsRequired;
             throw new RepositorySourceException(getName(), msg.text("name"));
         }
-        if (getExecutionContextFactoryJndiName() == null) {
+        if (getRepositoryContext() == null) {
             I18n msg = FederationI18n.propertyIsRequired;
-            throw new RepositorySourceException(getName(), msg.text("execution context factory JNDI name"));
+            throw new RepositorySourceException(getName(), msg.text("repository context"));
         }
-        if (getSecurityDomain() == null) {
+        if (getUsername() != null && getSecurityDomain() == null) {
             I18n msg = FederationI18n.propertyIsRequired;
             throw new RepositorySourceException(getName(), msg.text("security domain"));
-        }
-        if (getRepositoryConnectionFactoryJndiName() == null) {
-            I18n msg = FederationI18n.propertyIsRequired;
-            throw new RepositorySourceException(getName(), msg.text("repository source registry JNDI name"));
         }
         // Find the repository ...
         FederatedRepository repository = getRepository();
@@ -588,103 +468,28 @@ public class FederatedRepositorySource implements RepositorySource, ObjectFactor
      */
     protected synchronized FederatedRepository getRepository() throws RepositorySourceException {
         if (repository == null) {
-            String jndiName = this.getRepositoryJndiName();
-            Context jndiContext = getContext();
-            if (jndiName != null && jndiName.trim().length() != 0) {
-                // Look for an existing repository in JNDI ...
-                Object object = null;
-                try {
-                    if (jndiContext == null) jndiContext = new InitialContext();
-                    object = jndiContext.lookup(jndiName);
-                    if (object != null) repository = (FederatedRepository)object;
-                } catch (ClassCastException err) {
-                    I18n msg = FederationI18n.objectFoundInJndiWasNotOfExpectedType;
-                    String className = object != null ? object.getClass().getName() : "null";
-                    throw new RepositorySourceException(getName(), msg.text(jndiName,
-                                                                            this.getName(),
-                                                                            FederatedRepository.class.getName(),
-                                                                            className), err);
-                } catch (Throwable err) {
-                    I18n msg = FederationI18n.unableToFindFederatedRepositoryInJndi;
-                    throw new RepositorySourceException(getName(), msg.text(this.sourceName, jndiName), err);
-                }
-            }
-
-            if (repository == null) {
-                // Find in JNDI the repository source registry and the environment ...
-                ExecutionContext context = getExecutionContext();
-                RepositoryConnectionFactory connectionFactory = getConnectionFactory();
-                // And create the configuration and the repository ...
-                FederatedRepositoryConfig config = getRepositoryConfiguration(context, connectionFactory);
-                repository = new FederatedRepository(context, connectionFactory, config);
-            }
+            ExecutionContext context = getExecutionContext();
+            RepositoryConnectionFactory connectionFactory = getRepositoryContext().getRepositoryConnectionFactory();
+            // And create the configuration and the repository ...
+            FederatedRepositoryConfig config = getRepositoryConfiguration(context, connectionFactory);
+            repository = new FederatedRepository(context, connectionFactory, config);
         }
         return repository;
     }
 
     protected ExecutionContext getExecutionContext() {
-        ExecutionContextFactory factory = null;
-        Context context = getContext();
-        String jndiName = getExecutionContextFactoryJndiName();
-        if (jndiName != null && jndiName.trim().length() != 0) {
-            Object object = null;
-            try {
-                if (context == null) context = new InitialContext();
-                object = context.lookup(jndiName);
-                if (object != null) factory = (ExecutionContextFactory)object;
-            } catch (ClassCastException err) {
-                I18n msg = FederationI18n.objectFoundInJndiWasNotOfExpectedType;
-                String className = object != null ? object.getClass().getName() : "null";
-                throw new RepositorySourceException(getName(), msg.text(jndiName,
-                                                                        this.getName(),
-                                                                        ExecutionContextFactory.class.getName(),
-                                                                        className), err);
-            } catch (Throwable err) {
-                I18n msg = FederationI18n.unableToFindExecutionContextFactoryInJndi;
-                throw new RepositorySourceException(getName(), msg.text(this.sourceName, jndiName), err);
-            }
-        }
-        if (factory == null) {
-            I18n msg = FederationI18n.unableToFindExecutionContextFactoryInJndi;
-            throw new RepositorySourceException(getName(), msg.text(this.sourceName, jndiName));
-        }
-        String securityDomain = getSecurityDomain();
+        ExecutionContextFactory factory = getRepositoryContext().getExecutionContextFactory();
         CallbackHandler handler = createCallbackHandler();
         try {
-            return factory.create(securityDomain, handler);
+            String securityDomain = getSecurityDomain();
+            if (securityDomain != null || getUsername() != null) {
+                return factory.create(securityDomain, handler);
+            }
+            return factory.create();
         } catch (LoginException e) {
             I18n msg = FederationI18n.unableToCreateExecutionContext;
-            throw new RepositorySourceException(getName(), msg.text(this.sourceName, jndiName, securityDomain), e);
+            throw new RepositorySourceException(getName(), msg.text(this.sourceName, securityDomain), e);
         }
-    }
-
-    protected RepositoryConnectionFactory getConnectionFactory() {
-        RepositoryConnectionFactory factories = null;
-        Context context = getContext();
-        String jndiName = getRepositoryConnectionFactoryJndiName();
-        if (jndiName != null && jndiName.trim().length() != 0) {
-            Object object = null;
-            try {
-                if (context == null) context = new InitialContext();
-                object = context.lookup(jndiName);
-                if (object != null) factories = (RepositoryConnectionFactory)object;
-            } catch (ClassCastException err) {
-                I18n msg = FederationI18n.objectFoundInJndiWasNotOfExpectedType;
-                String className = object != null ? object.getClass().getName() : "null";
-                throw new RepositorySourceException(getName(), msg.text(jndiName,
-                                                                        this.getName(),
-                                                                        RepositoryConnectionFactory.class.getName(),
-                                                                        className), err);
-            } catch (Throwable err) {
-                I18n msg = FederationI18n.unableToFindRepositoryConnectionFactoriesInJndi;
-                throw new RepositorySourceException(getName(), msg.text(this.sourceName, jndiName), err);
-            }
-        }
-        if (factories == null) {
-            I18n msg = FederationI18n.noRepositoryConnectionFactories;
-            throw new RepositorySourceException(getName(), msg.text(this.repositoryName));
-        }
-        return factories;
     }
 
     protected CallbackHandler createCallbackHandler() {
@@ -702,14 +507,6 @@ public class FederatedRepositorySource implements RepositorySource, ObjectFactor
                 }
             }
         };
-    }
-
-    protected Context getContext() {
-        return this.jndiContext;
-    }
-
-    protected synchronized void setContext( Context context ) {
-        this.jndiContext = context;
     }
 
     /**
@@ -752,7 +549,7 @@ public class FederatedRepositorySource implements RepositorySource, ObjectFactor
             executor = new FederatingCommandExecutor(context, configurationSourceName, projections, connectionFactory);
         }
         // Wrap the executor with a logging executor ...
-        executor = new LoggingCommandExecutor(executor, context.getLogger(getClass()), Logger.Level.INFO);
+        executor = new LoggingCommandExecutor(executor, context.getLogger(getClass()), Logger.Level.DEBUG);
 
         // The configuration projection (via "executor") will convert this path into a path that exists in the configuration
         // repository
@@ -824,7 +621,7 @@ public class FederatedRepositorySource implements RepositorySource, ObjectFactor
                         if (projection != null) {
                             Logger logger = context.getLogger(getClass());
                             if (logger.isTraceEnabled()) {
-                                logger.trace("Adding projection to federated repository {1}: {2}",
+                                logger.trace("Adding projection to federated repository {0}: {1}",
                                              getRepositoryName(),
                                              projection);
                             }
@@ -845,6 +642,8 @@ public class FederatedRepositorySource implements RepositorySource, ObjectFactor
         } catch (InvalidPathException err) {
             I18n msg = FederationI18n.federatedRepositoryCannotBeFound;
             throw new FederationException(msg.text(repositoryName));
+        } finally {
+            executor.close();
         }
 
     }
@@ -911,17 +710,8 @@ public class FederatedRepositorySource implements RepositorySource, ObjectFactor
         if (getConfigurationSourcePath() != null) {
             ref.add(new StringRefAddr(CONFIGURATION_SOURCE_PATH, getConfigurationSourcePath()));
         }
-        if (getRepositoryConnectionFactoryJndiName() != null) {
-            ref.add(new StringRefAddr(REPOSITORY_CONNECTION_FACTORY_JNDI_NAME, getRepositoryConnectionFactoryJndiName()));
-        }
-        if (getExecutionContextFactoryJndiName() != null) {
-            ref.add(new StringRefAddr(EXECUTION_CONTEXT_FACTORY_JNDI_NAME, getExecutionContextFactoryJndiName()));
-        }
         if (getSecurityDomain() != null) {
             ref.add(new StringRefAddr(SECURITY_DOMAIN, getSecurityDomain()));
-        }
-        if (getRepositoryJndiName() != null) {
-            ref.add(new StringRefAddr(REPOSITORY_JNDI_NAME, getRepositoryJndiName()));
         }
         ref.add(new StringRefAddr(RETRY_LIMIT, Integer.toString(getRetryLimit())));
         return ref;
@@ -952,9 +742,6 @@ public class FederatedRepositorySource implements RepositorySource, ObjectFactor
             String password = values.get(FederatedRepositorySource.PASSWORD);
             String configurationSourceName = values.get(FederatedRepositorySource.CONFIGURATION_SOURCE_NAME);
             String configurationSourcePath = values.get(FederatedRepositorySource.CONFIGURATION_SOURCE_PATH);
-            String connectionFactoriesJndiName = values.get(FederatedRepositorySource.REPOSITORY_CONNECTION_FACTORY_JNDI_NAME);
-            String environmentJndiName = values.get(FederatedRepositorySource.EXECUTION_CONTEXT_FACTORY_JNDI_NAME);
-            String repositoryJndiName = values.get(FederatedRepositorySource.REPOSITORY_JNDI_NAME);
             String securityDomain = values.get(FederatedRepositorySource.SECURITY_DOMAIN);
             String retryLimit = values.get(FederatedRepositorySource.RETRY_LIMIT);
 
@@ -966,9 +753,6 @@ public class FederatedRepositorySource implements RepositorySource, ObjectFactor
             if (password != null) source.setPassword(password);
             if (configurationSourceName != null) source.setConfigurationSourceName(configurationSourceName);
             if (configurationSourcePath != null) source.setConfigurationSourcePath(configurationSourcePath);
-            if (connectionFactoriesJndiName != null) source.setRepositoryConnectionFactoryJndiName(connectionFactoriesJndiName);
-            if (environmentJndiName != null) source.setExecutionContextFactoryJndiName(environmentJndiName);
-            if (repositoryJndiName != null) source.setRepositoryJndiName(repositoryJndiName);
             if (securityDomain != null) source.setSecurityDomain(securityDomain);
             if (retryLimit != null) source.setRetryLimit(Integer.parseInt(retryLimit));
             return source;

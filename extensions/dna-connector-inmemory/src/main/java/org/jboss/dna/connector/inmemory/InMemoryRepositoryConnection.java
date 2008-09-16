@@ -129,15 +129,19 @@ public class InMemoryRepositoryConnection implements RepositoryConnection {
             }
         }
 
+        CommandExecutor executor = this.content.getCommandExecutor(context, this.getSourceName());
         try {
             // Obtain the lock and execute the commands ...
-            CommandExecutor executor = this.content.getCommandExecutor(context, this.getSourceName());
             lock.lock();
             for (GraphCommand command : commands) {
                 executor.execute(command);
             }
         } finally {
-            lock.unlock();
+            try {
+                executor.close();
+            } finally {
+                lock.unlock();
+            }
         }
         if (logger.isTraceEnabled()) {
             assert sw != null;

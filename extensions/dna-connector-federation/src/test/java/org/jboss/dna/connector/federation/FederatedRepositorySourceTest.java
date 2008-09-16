@@ -46,6 +46,7 @@ import org.jboss.dna.spi.ExecutionContextFactory;
 import org.jboss.dna.spi.connector.BasicExecutionContext;
 import org.jboss.dna.spi.connector.RepositoryConnection;
 import org.jboss.dna.spi.connector.RepositoryConnectionFactory;
+import org.jboss.dna.spi.connector.RepositoryContext;
 import org.jboss.dna.spi.connector.RepositorySourceException;
 import org.jboss.dna.spi.connector.SimpleRepository;
 import org.jboss.dna.spi.connector.SimpleRepositorySource;
@@ -66,8 +67,6 @@ public class FederatedRepositorySourceTest {
     private String repositoryName;
     private String username;
     private String credentials;
-    private String executionContextFactoryJndiName;
-    private String repositoryConnectionFactoryJndiName;
     private String configurationSourceName;
     private String securityDomain;
     private SimpleRepository configRepository;
@@ -77,11 +76,11 @@ public class FederatedRepositorySourceTest {
     @Mock
     private RepositoryConnection connection;
     @Mock
-    private Context jndiContext;
-    @Mock
     private RepositoryConnectionFactory connectionFactory;
     @Mock
     private ExecutionContextFactory executionContextFactory;
+    @Mock
+    private RepositoryContext repositoryContext;
 
     /**
      * @throws java.lang.Exception
@@ -91,8 +90,6 @@ public class FederatedRepositorySourceTest {
         MockitoAnnotations.initMocks(this);
         context = new BasicExecutionContext();
         context.getNamespaceRegistry().register(DnaLexicon.Namespace.PREFIX, DnaLexicon.Namespace.URI);
-        executionContextFactoryJndiName = "context factory jndi name";
-        repositoryConnectionFactoryJndiName = "repository connection factory jndi name";
         configurationSourceName = "configuration source name";
         repositoryName = "Test Repository";
         securityDomain = "security domain";
@@ -105,10 +102,8 @@ public class FederatedRepositorySourceTest {
         source.setPassword(credentials);
         source.setConfigurationSourceName(configurationSourceName);
         source.setConfigurationSourcePath("/dna:repositories/Test Repository");
-        source.setRepositoryConnectionFactoryJndiName(repositoryConnectionFactoryJndiName);
-        source.setExecutionContextFactoryJndiName(executionContextFactoryJndiName);
-        source.setContext(jndiContext);
         source.setSecurityDomain(securityDomain);
+        source.initialize(repositoryContext);
         configRepository = SimpleRepository.get("Configuration Repository");
         configRepository.setProperty(context, "/dna:repositories/Test Repository/dna:federation/", "dna:timeToExpire", "100000");
         configRepository.setProperty(context, "/dna:repositories/Test Repository/dna:federation/", "dna:timeToCache", "100000");
@@ -128,9 +123,9 @@ public class FederatedRepositorySourceTest {
         configRepositorySource.setRepositoryName(configRepository.getRepositoryName());
         configRepositorySource.setName(configurationSourceName);
         configRepositoryConnection = configRepositorySource.getConnection();
+        stub(repositoryContext.getExecutionContextFactory()).toReturn(executionContextFactory);
+        stub(repositoryContext.getRepositoryConnectionFactory()).toReturn(connectionFactory);
         stub(connectionFactory.createConnection(configurationSourceName)).toReturn(configRepositoryConnection);
-        stub(jndiContext.lookup(executionContextFactoryJndiName)).toReturn(executionContextFactory);
-        stub(jndiContext.lookup(repositoryConnectionFactoryJndiName)).toReturn(connectionFactory);
         stub(executionContextFactory.create(eq(securityDomain), anyCallbackHandler())).toReturn(context);
     }
 
@@ -272,9 +267,6 @@ public class FederatedRepositorySourceTest {
         source.setName("Some source");
         source.setConfigurationSourceName("config source");
         source.setConfigurationSourcePath("/a/b/c");
-        source.setRepositoryConnectionFactoryJndiName("repository connection factory jndi name");
-        source.setRepositoryJndiName("repository jndi name");
-        source.setExecutionContextFactoryJndiName("env jndi name");
 
         Reference ref = source.getReference();
         assertThat(ref.getClassName(), is(FederatedRepositorySource.class.getName()));
@@ -295,12 +287,6 @@ public class FederatedRepositorySourceTest {
         assertThat((String)refAttributes.remove(FederatedRepositorySource.CONFIGURATION_SOURCE_NAME),
                    is(source.getConfigurationSourceName()));
         assertThat((String)refAttributes.remove(FederatedRepositorySource.CONFIGURATION_SOURCE_PATH), is("/a/b/c"));
-        assertThat((String)refAttributes.remove(FederatedRepositorySource.REPOSITORY_CONNECTION_FACTORY_JNDI_NAME),
-                   is(source.getRepositoryConnectionFactoryJndiName()));
-        assertThat((String)refAttributes.remove(FederatedRepositorySource.EXECUTION_CONTEXT_FACTORY_JNDI_NAME),
-                   is(source.getExecutionContextFactoryJndiName()));
-        assertThat((String)refAttributes.remove(FederatedRepositorySource.REPOSITORY_JNDI_NAME),
-                   is(source.getRepositoryJndiName()));
         assertThat((String)refAttributes.remove(FederatedRepositorySource.SECURITY_DOMAIN), is(securityDomain));
         assertThat(refAttributes.isEmpty(), is(true));
 
@@ -319,9 +305,6 @@ public class FederatedRepositorySourceTest {
         assertThat(recoveredSource.getRetryLimit(), is(source.getRetryLimit()));
         assertThat(recoveredSource.getConfigurationSourceName(), is(source.getConfigurationSourceName()));
         assertThat(recoveredSource.getConfigurationSourcePath(), is(source.getConfigurationSourcePath()));
-        assertThat(recoveredSource.getRepositoryConnectionFactoryJndiName(), is(source.getRepositoryConnectionFactoryJndiName()));
-        assertThat(recoveredSource.getExecutionContextFactoryJndiName(), is(source.getExecutionContextFactoryJndiName()));
-        assertThat(recoveredSource.getRepositoryJndiName(), is(source.getRepositoryJndiName()));
         assertThat(recoveredSource.getSecurityDomain(), is(source.getSecurityDomain()));
 
         assertThat(recoveredSource.equals(source), is(true));

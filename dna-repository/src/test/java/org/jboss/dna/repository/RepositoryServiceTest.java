@@ -65,7 +65,7 @@ public class RepositoryServiceTest {
     private ExecutionContext context;
     private Path root;
     @Mock
-    private RepositorySourceManager sources;
+    private RepositoryLibrary sources;
 
     @Before
     public void beforeEach() throws Exception {
@@ -149,7 +149,7 @@ public class RepositoryServiceTest {
     @Test
     public void shouldStartUpUsingConfigurationRepositoryThatContainsSomeSources() throws Exception {
         // Use a real source manager for this test ...
-        sources = new RepositorySourceManager(sources);
+        sources = new RepositoryLibrary(sources);
         sources.addSource(configRepositorySource);
         assertThat(sources.getSources(), hasItems((RepositorySource)configRepositorySource));
         assertThat(sources.getSources().size(), is(1));

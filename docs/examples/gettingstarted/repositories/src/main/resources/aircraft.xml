@@ -35,7 +35,7 @@
         <aircraft jcr:name="Airbus A380" maker="Airbus" model="A380-800" introduced="2007" numberBuilt="18" range="8200nm" maxWeight="1235000lb" cruiseSpeed="647mph" url="http://en.wikipedia.org/wiki/Airbus_a380"/>
         <aircraft jcr:name="Airbus A340" maker="Airbus" model="A340-200" introduced="1993" numberBuilt="354" range="8000nm" maxWeight="606300lb" cruiseSpeed="557mph" url="http://en.wikipedia.org/wiki/Airbus_A-340"/>
         <aircraft jcr:name="Airbus A310" maker="Airbus" model="A310-200" introduced="1983" numberBuilt="255" cruiseSpeed="850km/h" emptyWeight="176312lb" range="3670nm" url="http://en.wikipedia.org/wiki/Airbus_A-310"/>
-        <aircraft jcr:name="Embraer " maker="Embraer" model="ERJ170-200" introduced="2004" range="3334km" cruiseSpeed="481kt" emptyWeight="21810kg" url="http://en.wikipedia.org/wiki/EMBRAER_170"/>
+        <aircraft jcr:name="Embraer RJ-175" maker="Embraer" model="ERJ170-200" introduced="2004" range="3334km" cruiseSpeed="481kt" emptyWeight="21810kg" url="http://en.wikipedia.org/wiki/EMBRAER_170"/>
     </Commercial>
     <Vintage>
         <aircraft jcr:name="Fokker Trimotor" maker="Fokker" model="F.VII" introduced="1925" cruiseSpeed="170km/h" emptyWeight="3050kg" crew="2" url="http://en.wikipedia.org/wiki/Fokker_trimotor"/>

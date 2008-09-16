@@ -40,6 +40,7 @@ import org.jboss.dna.spi.ExecutionContextFactory;
 import org.jboss.dna.spi.connector.BasicExecutionContext;
 import org.jboss.dna.spi.connector.RepositoryConnection;
 import org.jboss.dna.spi.connector.RepositoryConnectionFactory;
+import org.jboss.dna.spi.connector.RepositoryContext;
 import org.jboss.dna.spi.connector.RepositorySource;
 import org.jboss.dna.spi.connector.SimpleRepository;
 import org.jboss.dna.spi.connector.SimpleRepositorySource;
@@ -90,6 +91,8 @@ public class FederatedRepositorySourceIntegrationTest {
     private RepositoryConnectionFactory connectionFactory;
     @Mock
     private ExecutionContextFactory executionContextFactory;
+    @Mock
+    private RepositoryContext repositoryContext;
 
     @Before
     public void beforeEach() throws Exception {
@@ -105,6 +108,8 @@ public class FederatedRepositorySourceIntegrationTest {
         stub(jndiContext.lookup(executionContextFactoryJndiName)).toReturn(executionContextFactory);
         stub(jndiContext.lookup(repositoryConnectionFactoryJndiName)).toReturn(connectionFactory);
         stub(executionContextFactory.create(eq(securityDomain), anyCallbackHandler())).toReturn(context);
+        stub(repositoryContext.getExecutionContextFactory()).toReturn(executionContextFactory);
+        stub(repositoryContext.getRepositoryConnectionFactory()).toReturn(connectionFactory);
 
         // Set up the federated repository source ...
         source = new FederatedRepositorySource("Test Repository");
@@ -116,10 +121,8 @@ public class FederatedRepositorySourceIntegrationTest {
         source.setPassword(credentials);
         source.setConfigurationSourceName(configurationSourceName);
         source.setConfigurationSourcePath("/repos/RepoX");
-        source.setRepositoryConnectionFactoryJndiName(repositoryConnectionFactoryJndiName);
-        source.setExecutionContextFactoryJndiName(executionContextFactoryJndiName);
-        source.setContext(jndiContext);
         source.setSecurityDomain(securityDomain);
+        source.initialize(repositoryContext);
 
         // Set up the configuration repository with its content ...
         config = SimpleRepository.get("Configuration Repository");

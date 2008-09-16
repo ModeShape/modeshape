@@ -66,9 +66,26 @@ public class SimpleRepositorySource implements RepositorySource {
     private String name;
     private final AtomicInteger retryLimit = new AtomicInteger(DEFAULT_RETRY_LIMIT);
     private CachePolicy defaultCachePolicy;
+    private transient RepositoryContext repositoryContext;
 
     public SimpleRepositorySource() {
         super();
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.spi.connector.RepositorySource#initialize(org.jboss.dna.spi.connector.RepositoryContext)
+     */
+    public void initialize( RepositoryContext context ) throws RepositorySourceException {
+        this.repositoryContext = context;
+    }
+
+    /**
+     * @return repositoryContext
+     */
+    public RepositoryContext getRepositoryContext() {
+        return repositoryContext;
     }
 
     /**

@@ -30,10 +30,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.jboss.dna.common.util.StringUtil;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.MockitoAnnotations;
 import org.mockito.MockitoAnnotations.Mock;
@@ -56,12 +54,17 @@ public class RepositoryClientTest {
         children = new ArrayList<String>();
         client = new RepositoryClient();
         client.setUserInterface(userInterface);
+        client.setApi(getApi());
         stub(userInterface.getLocationOfRepositoryFiles()).toReturn(new File("src/main/resources").getAbsolutePath());
     }
 
     @After
     public void afterEach() throws Exception {
         client.shutdown();
+    }
+
+    protected RepositoryClient.Api getApi() {
+        return RepositoryClient.Api.DNA;
     }
 
     protected void assertProperty( String propertyName,
@@ -82,7 +85,6 @@ public class RepositoryClientTest {
         assertThat(client.getNamesOfRepositories(), hasItems("Aircraft", "Cars", "Configuration", "Vehicles", "Cache"));
     }
 
-    @Ignore
     @Test
     public void shouldHaveContentFromConfigurationRepository() throws Throwable {
         client.startRepositories();
@@ -95,22 +97,21 @@ public class RepositoryClientTest {
         properties.clear();
         children.clear();
         assertThat(client.getNodeInfo("Configuration", "/dna:system/dna:sources", properties, children), is(true));
-        assertThat(children, hasItems("sourceA", "sourceB", "sourceC", "sourceD"));
+        assertThat(children, hasItems("SourceA", "SourceB", "SourceC", "SourceD"));
         assertThat(properties.containsKey("jcr:primaryType"), is(true));
         assertThat(properties.containsKey("dna:uuid"), is(true));
         assertThat(properties.size(), is(2));
 
         properties.clear();
         children.clear();
-        assertThat(client.getNodeInfo("Configuration", "/dna:system/dna:sources/sourceA", properties, children), is(true));
+        assertThat(client.getNodeInfo("Configuration", "/dna:system/dna:sources/SourceA", properties, children), is(true));
         assertThat(children.size(), is(0));
-        System.out.println(StringUtil.readableString(properties));
         assertThat(properties.containsKey("jcr:primaryType"), is(true));
         assertThat(properties.containsKey("dna:uuid"), is(true));
         assertProperty("dna:classname", "org.jboss.dna.connector.inmemory.InMemoryRepositorySource");
-        assertProperty("name", "Cars");
-        assertProperty("retryLimit", "3");
-        assertThat(properties.size(), is(4));
+        assertProperty("dna:name", "Cars");
+        assertProperty("dna:retryLimit", "3");
+        assertThat(properties.size(), is(5));
     }
 
     @Test
@@ -148,6 +149,96 @@ public class RepositoryClientTest {
         assertProperty("wheelbaseInInches", "108.0");
         assertProperty("engine", "5,935 cc 5.9 liters V 12");
         assertThat(properties.size(), is(12));
+    }
+
+    @Test
+    public void shouldLoadAircraftRepository() throws Throwable {
+        client.startRepositories();
+        assertThat(client.getNodeInfo("Aircraft", "/Aircraft", properties, children), is(true));
+        assertThat(children, hasItems("Business", "Commercial", "Vintage", "Homebuilt"));
+        assertThat(properties.containsKey("jcr:primaryType"), is(true));
+        assertThat(properties.containsKey("dna:uuid"), is(true));
+        assertThat(properties.size(), is(2));
+
+        properties.clear();
+        children.clear();
+        assertThat(client.getNodeInfo("Aircraft", "/Aircraft/Commercial", properties, children), is(true));
+        assertThat(children, hasItems("Boeing 777",
+                                      "Boeing 767",
+                                      "Boeing 787",
+                                      "Boeing 757",
+                                      "Airbus A380",
+                                      "Airbus A340",
+                                      "Airbus A310",
+                                      "Embraer RJ-175"));
+        assertThat(properties.containsKey("jcr:primaryType"), is(true));
+        assertThat(properties.containsKey("dna:uuid"), is(true));
+        assertThat(properties.size(), is(2));
+
+        properties.clear();
+        children.clear();
+        assertThat(client.getNodeInfo("Aircraft", "/Aircraft/Vintage/Wright Flyer", properties, children), is(true));
+        assertThat(children.size(), is(0));
+        assertThat(properties.containsKey("jcr:primaryType"), is(true));
+        assertThat(properties.containsKey("dna:uuid"), is(true));
+        assertProperty("maker", "Wright Brothers");
+        assertProperty("introduced", "1903");
+        assertProperty("range", "852ft");
+        assertProperty("maxSpeed", "30mph");
+        assertProperty("emptyWeight", "605lb");
+        assertProperty("crew", "1");
+        assertThat(properties.size(), is(8));
+    }
+
+    @Test
+    public void shouldLoadVehiclesRepository() throws Throwable {
+        client.startRepositories();
+        assertThat(client.getNodeInfo("Vehicles", "/Vehicles", properties, children), is(true));
+        assertThat(children, hasItems("Cars", "Aircraft"));
+        assertThat(properties.containsKey("jcr:primaryType"), is(false));
+        assertThat(properties.containsKey("dna:uuid"), is(true));
+        assertThat(properties.size(), is(1));
+
+        properties.clear();
+        children.clear();
+        assertThat(client.getNodeInfo("Vehicles", "/Vehicles/Cars/Hybrid", properties, children), is(true));
+        assertThat(children, hasItems("Toyota Prius", "Toyota Highlander", "Nissan Altima"));
+        assertThat(properties.containsKey("jcr:primaryType"), is(true));
+        assertThat(properties.containsKey("dna:uuid"), is(true));
+        assertThat(properties.size(), is(2));
+
+        properties.clear();
+        children.clear();
+        assertThat(client.getNodeInfo("Vehicles", "/Vehicles/Cars/Sports/Aston Martin DB9", properties, children), is(true));
+        assertThat(children.size(), is(0));
+        assertThat(properties.containsKey("jcr:primaryType"), is(true));
+        assertThat(properties.containsKey("dna:uuid"), is(true));
+        assertProperty("maker", "Aston Martin");
+        assertProperty("maker", "Aston Martin");
+        assertProperty("model", "DB9");
+        assertProperty("year", "2008");
+        assertProperty("msrp", "$171,600");
+        assertProperty("userRating", "5");
+        assertProperty("mpgCity", "12");
+        assertProperty("mpgHighway", "19");
+        assertProperty("lengthInInches", "185.5");
+        assertProperty("wheelbaseInInches", "108.0");
+        assertProperty("engine", "5,935 cc 5.9 liters V 12");
+        assertThat(properties.size(), is(12));
+
+        properties.clear();
+        children.clear();
+        assertThat(client.getNodeInfo("Vehicles", "/Vehicles/Aircraft/Vintage/Wright Flyer", properties, children), is(true));
+        assertThat(children.size(), is(0));
+        assertThat(properties.containsKey("jcr:primaryType"), is(true));
+        assertThat(properties.containsKey("dna:uuid"), is(true));
+        assertProperty("maker", "Wright Brothers");
+        assertProperty("introduced", "1903");
+        assertProperty("range", "852ft");
+        assertProperty("maxSpeed", "30mph");
+        assertProperty("emptyWeight", "605lb");
+        assertProperty("crew", "1");
+        assertThat(properties.size(), is(8));
     }
 
     @Test

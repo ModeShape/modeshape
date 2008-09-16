@@ -45,6 +45,7 @@ import org.jboss.dna.common.i18n.I18n;
 import org.jboss.dna.common.util.ArgCheck;
 import org.jboss.dna.spi.cache.CachePolicy;
 import org.jboss.dna.spi.connector.RepositoryConnection;
+import org.jboss.dna.spi.connector.RepositoryContext;
 import org.jboss.dna.spi.connector.RepositorySource;
 import org.jboss.dna.spi.connector.RepositorySourceCapabilities;
 import org.jboss.dna.spi.connector.RepositorySourceException;
@@ -78,12 +79,29 @@ public class InMemoryRepositorySource implements RepositorySource, ObjectFactory
     private CachePolicy defaultCachePolicy;
     private final AtomicInteger retryLimit = new AtomicInteger(DEFAULT_RETRY_LIMIT);
     private transient InMemoryRepository repository;
+    private transient RepositoryContext repositoryContext;
 
     /**
      * Create a repository source instance.
      */
     public InMemoryRepositorySource() {
         super();
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.spi.connector.RepositorySource#initialize(org.jboss.dna.spi.connector.RepositoryContext)
+     */
+    public void initialize( RepositoryContext context ) throws RepositorySourceException {
+        this.repositoryContext = context;
+    }
+
+    /**
+     * @return repositoryContext
+     */
+    public RepositoryContext getRepositoryContext() {
+        return repositoryContext;
     }
 
     /**

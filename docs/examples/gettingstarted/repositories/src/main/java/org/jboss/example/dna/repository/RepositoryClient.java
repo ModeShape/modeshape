@@ -32,14 +32,15 @@ import javax.jcr.NodeIterator;
 import javax.jcr.PropertyIterator;
 import javax.jcr.Session;
 import javax.jcr.SimpleCredentials;
+import javax.naming.NamingException;
 import javax.security.auth.callback.PasswordCallback;
 import org.jboss.dna.common.component.ClassLoaderFactory;
 import org.jboss.dna.common.component.StandardClassLoaderFactory;
 import org.jboss.dna.connector.inmemory.InMemoryRepositorySource;
 import org.jboss.dna.jcr.JcrRepository;
 import org.jboss.dna.repository.RepositoryImporter;
+import org.jboss.dna.repository.RepositoryLibrary;
 import org.jboss.dna.repository.RepositoryService;
-import org.jboss.dna.repository.RepositorySourceManager;
 import org.jboss.dna.spi.ExecutionContext;
 import org.jboss.dna.spi.ExecutionContextFactory;
 import org.jboss.dna.spi.connector.BasicExecutionContextFactory;
@@ -78,7 +79,7 @@ public class RepositoryClient {
     }
 
     private ClassLoaderFactory classLoaderFactory;
-    private RepositorySourceManager sources;
+    private RepositoryLibrary sources;
     private ExecutionContextFactory contextFactory;
     private RepositoryService repositoryService;
     private Api api = Api.DNA;
@@ -138,8 +139,9 @@ public class RepositoryClient {
      * repositories.
      * 
      * @throws IOException if there is a problem initializing the repositories from the files.
+     * @throws NamingException if there is a problem registering or looking up objects in JNDI
      */
-    public void startRepositories() throws IOException {
+    public void startRepositories() throws IOException, NamingException {
         if (repositoryService != null) return; // already started
 
         // Create the class loader factory, which for this example will simply use this class' class loader...
@@ -152,8 +154,8 @@ public class RepositoryClient {
         // by supply LoginContext, AccessControlContext, or even Subject with CallbackHandlers. But no JAAS in this example.
         ExecutionContext context = contextFactory.create();
 
-        // Create the manager for the RepositorySource instances ...
-        sources = new RepositorySourceManager();
+        // Create the library for the RepositorySource instances ...
+        sources = new RepositoryLibrary(contextFactory);
 
         // Load into the source manager the repository source for the configuration repository ...
         InMemoryRepositorySource configSource = new InMemoryRepositorySource();

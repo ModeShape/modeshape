@@ -119,9 +119,13 @@ public class FederatedRepositoryConnection implements RepositoryConnection {
         if (commands == null || commands.length == 0) return;
 
         CommandExecutor executor = this.repository.getExecutor(context, sourceName);
-        assert executor != null;
-        for (GraphCommand command : commands) {
-            executor.execute(command);
+        try {
+            assert executor != null;
+            for (GraphCommand command : commands) {
+                executor.execute(command);
+            }
+        } finally {
+            executor.close();
         }
     }
 

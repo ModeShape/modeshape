@@ -101,7 +101,7 @@ public class RepositoryService implements AdministeredService {
 
     private final ClassLoaderFactory classLoaderFactory;
     private final ExecutionContext context;
-    private final RepositorySourceManager sources;
+    private final RepositoryLibrary sources;
     private final String configurationSourceName;
     private final Path pathToConfigurationRoot;
     private final Administrator administrator = new Administrator();
@@ -120,7 +120,7 @@ public class RepositoryService implements AdministeredService {
      *        loaded this class.
      * @throws IllegalArgumentException if the bootstrap source is null or the execution context is null
      */
-    public RepositoryService( RepositorySourceManager sources,
+    public RepositoryService( RepositoryLibrary sources,
                               String configurationSourceName,
                               ExecutionContext context,
                               ClassLoaderFactory classLoaderFactory ) {
@@ -142,7 +142,7 @@ public class RepositoryService implements AdministeredService {
      *        loaded this class.
      * @throws IllegalArgumentException if the bootstrap source is null or the execution context is null
      */
-    public RepositoryService( RepositorySourceManager sources,
+    public RepositoryService( RepositoryLibrary sources,
                               String configurationSourceName,
                               Path pathToConfigurationRoot,
                               ExecutionContext context,
@@ -175,7 +175,7 @@ public class RepositoryService implements AdministeredService {
     /**
      * @return sources
      */
-    public RepositorySourceManager getRepositorySourceManager() {
+    public RepositoryLibrary getRepositorySourceManager() {
         return sources;
     }
 

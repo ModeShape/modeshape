@@ -200,6 +200,11 @@ public class FederatingCommandExecutor extends AbstractCommandExecutor {
                 }
             }
             connectionsBySourceName.clear();
+            try {
+                if (this.cacheConnection != null) this.cacheConnection.close();
+            } finally {
+                this.cacheConnection = null;
+            }
         }
     }
 
@@ -427,92 +432,88 @@ public class FederatingCommandExecutor extends AbstractCommandExecutor {
             if (sourceNames != null && !sourceNames.contains(source)) continue;
             final RepositoryConnection sourceConnection = getConnection(projection);
             if (sourceConnection == null) continue; // No source exists by this name
-            try {
-                // Get the cached information ...
-                CachePolicy cachePolicy = sourceConnection.getDefaultCachePolicy();
-                if (cachePolicy == null) cachePolicy = this.defaultCachePolicy;
-                DateTime expirationTime = null;
-                if (cachePolicy != null) {
-                    expirationTime = getCurrentTimeInUtc().plus(cachePolicy.getTimeToLive(), TimeUnit.MILLISECONDS);
-                }
-                // Get the paths-in-source where we should fetch node contributions ...
-                Set<Path> pathsInSource = projection.getPathsInSource(path, pathFactory);
-                if (pathsInSource.isEmpty()) {
-                    // The source has no contributions, but see whether the project exists BELOW this path.
-                    // We do this by getting the top-level repository paths of the projection, and then
-                    // use those to figure out the children of the nodes.
-                    Contribution contribution = null;
-                    List<Path> topLevelPaths = projection.getTopLevelPathsInRepository(pathFactory);
-                    switch (topLevelPaths.size()) {
-                        case 0:
-                            break;
-                        case 1: {
-                            Path topLevelPath = topLevelPaths.iterator().next();
+            // Get the cached information ...
+            CachePolicy cachePolicy = sourceConnection.getDefaultCachePolicy();
+            if (cachePolicy == null) cachePolicy = this.defaultCachePolicy;
+            DateTime expirationTime = null;
+            if (cachePolicy != null) {
+                expirationTime = getCurrentTimeInUtc().plus(cachePolicy.getTimeToLive(), TimeUnit.MILLISECONDS);
+            }
+            // Get the paths-in-source where we should fetch node contributions ...
+            Set<Path> pathsInSource = projection.getPathsInSource(path, pathFactory);
+            if (pathsInSource.isEmpty()) {
+                // The source has no contributions, but see whether the project exists BELOW this path.
+                // We do this by getting the top-level repository paths of the projection, and then
+                // use those to figure out the children of the nodes.
+                Contribution contribution = null;
+                List<Path> topLevelPaths = projection.getTopLevelPathsInRepository(pathFactory);
+                switch (topLevelPaths.size()) {
+                    case 0:
+                        break;
+                    case 1: {
+                        Path topLevelPath = topLevelPaths.iterator().next();
+                        if (path.isAncestorOf(topLevelPath)) {
+                            assert topLevelPath.size() > path.size();
+                            Path.Segment child = topLevelPath.getSegment(path.size());
+                            contribution = Contribution.create(source, path, expirationTime, null, child);
+                        }
+                        break;
+                    }
+                    default: {
+                        // We assume that the top-level paths do not overlap ...
+                        List<Path.Segment> children = new ArrayList<Path.Segment>(topLevelPaths.size());
+                        for (Path topLevelPath : topLevelPaths) {
                             if (path.isAncestorOf(topLevelPath)) {
                                 assert topLevelPath.size() > path.size();
                                 Path.Segment child = topLevelPath.getSegment(path.size());
-                                contribution = Contribution.create(source, path, expirationTime, null, child);
-                            }
-                            break;
-                        }
-                        default: {
-                            // We assume that the top-level paths do not overlap ...
-                            List<Path.Segment> children = new ArrayList<Path.Segment>(topLevelPaths.size());
-                            for (Path topLevelPath : topLevelPaths) {
-                                if (path.isAncestorOf(topLevelPath)) {
-                                    assert topLevelPath.size() > path.size();
-                                    Path.Segment child = topLevelPath.getSegment(path.size());
-                                    children.add(child);
-                                }
-                            }
-                            if (children.size() > 0) {
-                                contribution = Contribution.create(source, path, expirationTime, null, children);
+                                children.add(child);
                             }
                         }
-                    }
-                    if (contribution == null) contribution = Contribution.create(source, expirationTime);
-                    contributions.add(contribution);
-                } else {
-                    // There is at least one (real) contribution ...
-
-                    // Get the contributions ...
-                    final int numPaths = pathsInSource.size();
-                    if (numPaths == 1) {
-                        Path pathInSource = pathsInSource.iterator().next();
-                        BasicGetNodeCommand fromSource = new BasicGetNodeCommand(pathInSource);
-                        sourceConnection.execute(getExecutionContext(), fromSource);
-                        if (!fromSource.hasError()) {
-                            Collection<Property> properties = fromSource.getProperties();
-                            List<Segment> children = fromSource.getChildren();
-                            DateTime expTime = fromSource.getCachePolicy() == null ? expirationTime : getCurrentTimeInUtc().plus(fromSource.getCachePolicy().getTimeToLive(),
-                                                                                                                                 TimeUnit.MILLISECONDS);
-                            Contribution contribution = Contribution.create(source, pathInSource, expTime, properties, children);
-                            contributions.add(contribution);
-                        }
-                    } else {
-                        BasicGetNodeCommand[] fromSourceCommands = new BasicGetNodeCommand[numPaths];
-                        int i = 0;
-                        for (Path pathInSource : pathsInSource) {
-                            fromSourceCommands[i++] = new BasicGetNodeCommand(pathInSource);
-                        }
-                        sourceConnection.execute(context, fromSourceCommands);
-                        for (BasicGetNodeCommand fromSource : fromSourceCommands) {
-                            if (fromSource.hasError()) continue;
-                            Collection<Property> properties = fromSource.getProperties();
-                            List<Segment> children = fromSource.getChildren();
-                            DateTime expTime = fromSource.getCachePolicy() == null ? expirationTime : getCurrentTimeInUtc().plus(fromSource.getCachePolicy().getTimeToLive(),
-                                                                                                                                 TimeUnit.MILLISECONDS);
-                            Contribution contribution = Contribution.create(source,
-                                                                            fromSource.getPath(),
-                                                                            expTime,
-                                                                            properties,
-                                                                            children);
-                            contributions.add(contribution);
+                        if (children.size() > 0) {
+                            contribution = Contribution.create(source, path, expirationTime, null, children);
                         }
                     }
                 }
-            } finally {
-                sourceConnection.close();
+                if (contribution == null) contribution = Contribution.create(source, expirationTime);
+                contributions.add(contribution);
+            } else {
+                // There is at least one (real) contribution ...
+
+                // Get the contributions ...
+                final int numPaths = pathsInSource.size();
+                if (numPaths == 1) {
+                    Path pathInSource = pathsInSource.iterator().next();
+                    BasicGetNodeCommand fromSource = new BasicGetNodeCommand(pathInSource);
+                    sourceConnection.execute(getExecutionContext(), fromSource);
+                    if (!fromSource.hasError()) {
+                        Collection<Property> properties = fromSource.getProperties();
+                        List<Segment> children = fromSource.getChildren();
+                        DateTime expTime = fromSource.getCachePolicy() == null ? expirationTime : getCurrentTimeInUtc().plus(fromSource.getCachePolicy().getTimeToLive(),
+                                                                                                                             TimeUnit.MILLISECONDS);
+                        Contribution contribution = Contribution.create(source, pathInSource, expTime, properties, children);
+                        contributions.add(contribution);
+                    }
+                } else {
+                    BasicGetNodeCommand[] fromSourceCommands = new BasicGetNodeCommand[numPaths];
+                    int i = 0;
+                    for (Path pathInSource : pathsInSource) {
+                        fromSourceCommands[i++] = new BasicGetNodeCommand(pathInSource);
+                    }
+                    sourceConnection.execute(context, fromSourceCommands);
+                    for (BasicGetNodeCommand fromSource : fromSourceCommands) {
+                        if (fromSource.hasError()) continue;
+                        Collection<Property> properties = fromSource.getProperties();
+                        List<Segment> children = fromSource.getChildren();
+                        DateTime expTime = fromSource.getCachePolicy() == null ? expirationTime : getCurrentTimeInUtc().plus(fromSource.getCachePolicy().getTimeToLive(),
+                                                                                                                             TimeUnit.MILLISECONDS);
+                        Contribution contribution = Contribution.create(source,
+                                                                        fromSource.getPath(),
+                                                                        expTime,
+                                                                        properties,
+                                                                        children);
+                        contributions.add(contribution);
+                    }
+                }
             }
         }
     }

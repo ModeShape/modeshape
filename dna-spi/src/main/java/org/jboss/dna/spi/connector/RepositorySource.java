@@ -51,6 +51,16 @@ import javax.naming.Referenceable;
 public interface RepositorySource extends Referenceable, Serializable {
 
     /**
+     * Initialize this source to use the supplied {@link RepositoryContext}, from which this source can obtain
+     * {@link RepositoryContext#getRepositoryConnectionFactory() connections} to other {@link RepositorySource sources} as well as
+     * {@link RepositoryContext#getExecutionContextFactory() execution contexts}.
+     * 
+     * @param context
+     * @throws RepositorySourceException
+     */
+    void initialize( RepositoryContext context ) throws RepositorySourceException;
+
+    /**
      * Get the name for this repository source.
      * 
      * @return the name; never null or empty

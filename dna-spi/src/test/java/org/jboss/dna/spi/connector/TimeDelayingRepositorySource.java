@@ -62,10 +62,27 @@ public class TimeDelayingRepositorySource implements RepositorySource {
     private final AtomicLong pingDelay = new AtomicLong(0);
     private final AtomicInteger retryLimit = new AtomicInteger(DEFAULT_RETRY_LIMIT);
     private CachePolicy defaultCachePolicy;
+    private transient RepositoryContext repositoryContext;
 
     public TimeDelayingRepositorySource( String identifier ) {
         super();
         this.name = identifier;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.spi.connector.RepositorySource#initialize(org.jboss.dna.spi.connector.RepositoryContext)
+     */
+    public void initialize( RepositoryContext context ) throws RepositorySourceException {
+        this.repositoryContext = context;
+    }
+
+    /**
+     * @return repositoryContext
+     */
+    public RepositoryContext getRepositoryContext() {
+        return repositoryContext;
     }
 
     /**

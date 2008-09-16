@@ -48,6 +48,7 @@ import org.jboss.dna.common.i18n.I18n;
 import org.jboss.dna.spi.DnaLexicon;
 import org.jboss.dna.spi.cache.CachePolicy;
 import org.jboss.dna.spi.connector.RepositoryConnection;
+import org.jboss.dna.spi.connector.RepositoryContext;
 import org.jboss.dna.spi.connector.RepositorySource;
 import org.jboss.dna.spi.connector.RepositorySourceCapabilities;
 import org.jboss.dna.spi.connector.RepositorySourceException;
@@ -99,11 +100,28 @@ public class JBossCacheSource implements RepositorySource, ObjectFactory {
     private final AtomicInteger retryLimit = new AtomicInteger(DEFAULT_RETRY_LIMIT);
     private transient Cache<Name, Object> cache;
     private transient Context jndiContext;
+    private transient RepositoryContext repositoryContext;
 
     /**
      * Create a repository source instance.
      */
     public JBossCacheSource() {
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.spi.connector.RepositorySource#initialize(org.jboss.dna.spi.connector.RepositoryContext)
+     */
+    public void initialize( RepositoryContext context ) throws RepositorySourceException {
+        this.repositoryContext = context;
+    }
+
+    /**
+     * @return repositoryContext
+     */
+    public RepositoryContext getRepositoryContext() {
+        return repositoryContext;
     }
 
     /**

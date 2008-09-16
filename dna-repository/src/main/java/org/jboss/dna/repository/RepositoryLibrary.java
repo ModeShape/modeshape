@@ -32,21 +32,26 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import net.jcip.annotations.ThreadSafe;
+import org.jboss.dna.common.util.ArgCheck;
 import org.jboss.dna.repository.services.AbstractServiceAdministrator;
 import org.jboss.dna.repository.services.ServiceAdministrator;
+import org.jboss.dna.spi.ExecutionContext;
+import org.jboss.dna.spi.ExecutionContextFactory;
+import org.jboss.dna.spi.connector.BasicExecutionContextFactory;
 import org.jboss.dna.spi.connector.RepositoryConnection;
 import org.jboss.dna.spi.connector.RepositoryConnectionFactory;
 import org.jboss.dna.spi.connector.RepositoryConnectionPool;
+import org.jboss.dna.spi.connector.RepositoryContext;
 import org.jboss.dna.spi.connector.RepositorySource;
 
 /**
- * A manager of {@link RepositorySource} instances and the {@link RepositoryConnectionPool} used to manage the connections for
+ * A library of {@link RepositorySource} instances and the {@link RepositoryConnectionPool} used to manage the connections for
  * each.
  * 
  * @author Randall Hauch
  */
 @ThreadSafe
-public class RepositorySourceManager implements RepositoryConnectionFactory {
+public class RepositoryLibrary implements RepositoryConnectionFactory {
 
     /**
      * The administrative component for this service.
@@ -65,7 +70,7 @@ public class RepositorySourceManager implements RepositoryConnectionFactory {
         @Override
         protected void doStart( State fromState ) {
             super.doStart(fromState);
-            RepositorySourceManager.this.start();
+            RepositoryLibrary.this.start();
         }
 
         /**
@@ -74,7 +79,7 @@ public class RepositorySourceManager implements RepositoryConnectionFactory {
         @Override
         protected void doShutdown( State fromState ) {
             super.doShutdown(fromState);
-            RepositorySourceManager.this.shutdown();
+            RepositoryLibrary.this.shutdown();
         }
 
         /**
@@ -82,7 +87,7 @@ public class RepositorySourceManager implements RepositoryConnectionFactory {
          */
         public boolean awaitTermination( long timeout,
                                          TimeUnit unit ) throws InterruptedException {
-            return RepositorySourceManager.this.awaitTermination(timeout, unit);
+            return RepositoryLibrary.this.awaitTermination(timeout, unit);
         }
 
         /**
@@ -90,7 +95,7 @@ public class RepositorySourceManager implements RepositoryConnectionFactory {
          */
         @Override
         protected boolean doCheckIsTerminated() {
-            return RepositorySourceManager.this.isTerminated();
+            return RepositoryLibrary.this.isTerminated();
         }
 
     }
@@ -99,12 +104,14 @@ public class RepositorySourceManager implements RepositoryConnectionFactory {
     private final ReadWriteLock sourcesLock = new ReentrantReadWriteLock();
     private final CopyOnWriteArrayList<RepositoryConnectionPool> pools = new CopyOnWriteArrayList<RepositoryConnectionPool>();
     private RepositoryConnectionFactory delegate;
+    private final ExecutionContextFactory executionContextFactory;
+    private final RepositoryContext repositoryContext;
 
     /**
      * Create a new manager instance.
      */
-    public RepositorySourceManager() {
-        this(null);
+    public RepositoryLibrary() {
+        this(new BasicExecutionContextFactory(), null);
     }
 
     /**
@@ -113,8 +120,59 @@ public class RepositorySourceManager implements RepositoryConnectionFactory {
      * @param delegate the connection factory to which this instance should delegate in the event that a source is not found in
      *        this manager; may be null if there is no delegate
      */
-    public RepositorySourceManager( RepositoryConnectionFactory delegate ) {
+    public RepositoryLibrary( RepositoryConnectionFactory delegate ) {
+        this(new BasicExecutionContextFactory(), delegate);
+    }
+
+    /**
+     * Create a new manager instance.
+     * 
+     * @param executionContextFactory the execution context factory, used by sources to create {@link ExecutionContext} instances
+     * @throws IllegalArgumentException if the <code>executionContextFactory</code> reference is null
+     */
+    public RepositoryLibrary( ExecutionContextFactory executionContextFactory ) {
+        this(executionContextFactory, null);
+    }
+
+    /**
+     * Create a new manager instance.
+     * 
+     * @param executionContextFactory the execution context factory, used by sources to create {@link ExecutionContext} instances
+     * @param delegate the connection factory to which this instance should delegate in the event that a source is not found in
+     *        this manager; may be null if there is no delegate
+     * @throws IllegalArgumentException if the <code>executionContextFactory</code> reference is null
+     */
+    public RepositoryLibrary( ExecutionContextFactory executionContextFactory,
+                              RepositoryConnectionFactory delegate ) {
+        ArgCheck.isNotNull(executionContextFactory, "executionContextFactory");
         this.delegate = delegate;
+        this.executionContextFactory = executionContextFactory;
+        this.repositoryContext = new RepositoryContext() {
+            /**
+             * {@inheritDoc}
+             * 
+             * @see org.jboss.dna.spi.connector.RepositoryContext#getExecutionContextFactory()
+             */
+            public ExecutionContextFactory getExecutionContextFactory() {
+                return RepositoryLibrary.this.getExecutionContextFactory();
+            }
+
+            /**
+             * {@inheritDoc}
+             * 
+             * @see org.jboss.dna.spi.connector.RepositoryContext#getRepositoryConnectionFactory()
+             */
+            public RepositoryConnectionFactory getRepositoryConnectionFactory() {
+                return RepositoryLibrary.this;
+            }
+        };
+    }
+
+    /**
+     * @return executionContextFactory
+     */
+    public ExecutionContextFactory getExecutionContextFactory() {
+        return executionContextFactory;
     }
 
     /**
@@ -308,6 +366,7 @@ public class RepositorySourceManager implements RepositoryConnectionFactory {
             for (RepositoryConnectionPool existingPool : this.pools) {
                 if (existingPool.getRepositorySource().getName().equals(source.getName())) return false;
             }
+            source.initialize(repositoryContext);
             RepositoryConnectionPool pool = new RepositoryConnectionPool(source);
             this.pools.add(pool);
             return true;
