@@ -121,8 +121,7 @@ public class MSOfficeMetadataSequencer implements StreamSequencer {
         MSOfficeMetadata metadata = MSOfficeMetadataReader.instance(stream);
         progressMonitor.worked(3);
 
-        // TODO
-        String mimeType = "get mimetype here"; // This will be finished when the Sequencing Context class is done
+        String mimeType = context.getMimeType();
 
         if (metadata != null) {
             output.setProperty(METADATA_NODE, MSOFFICE_PRIMARY_TYPE, "msoffice:metadata");
