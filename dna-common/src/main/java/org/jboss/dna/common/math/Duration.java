@@ -38,6 +38,7 @@ public class Duration extends Number implements Comparable<Duration> {
 
     /**
      * Create a duration given the number of nanoseconds.
+     * 
      * @param nanos the number of nanoseconds in the duration
      */
     public Duration( long nanos ) {
@@ -46,11 +47,13 @@ public class Duration extends Number implements Comparable<Duration> {
 
     /**
      * Create a duration and the time unit.
+     * 
      * @param duration the duration in the supplied time units
      * @param unit the time unit
      */
-    public Duration( long duration, TimeUnit unit ) {
-        this.durationInNanos = getTimeInNanos(duration, unit);
+    public Duration( long duration,
+                     TimeUnit unit ) {
+        this.durationInNanos = TimeUnit.NANOSECONDS.convert(duration, unit);
     }
 
     /**
@@ -91,28 +94,33 @@ public class Duration extends Number implements Comparable<Duration> {
 
     /**
      * Add the supplied duration to this duration, and return the result.
+     * 
      * @param duration the duration to add to this object
      * @param unit the unit of the duration being added; may not be null
      * @return the total duration
      */
-    public Duration add( long duration, TimeUnit unit ) {
-        long durationInNanos = getTimeInNanos(duration, unit);
+    public Duration add( long duration,
+                         TimeUnit unit ) {
+        long durationInNanos = TimeUnit.NANOSECONDS.convert(duration, unit);
         return new Duration(this.durationInNanos + durationInNanos);
     }
 
     /**
      * Subtract the supplied duration from this duration, and return the result.
+     * 
      * @param duration the duration to subtract from this object
      * @param unit the unit of the duration being subtracted; may not be null
      * @return the total duration
      */
-    public Duration subtract( long duration, TimeUnit unit ) {
-        long durationInNanos = getTimeInNanos(duration, unit);
+    public Duration subtract( long duration,
+                              TimeUnit unit ) {
+        long durationInNanos = TimeUnit.NANOSECONDS.convert(duration, unit);
         return new Duration(this.durationInNanos - durationInNanos);
     }
 
     /**
      * Add the supplied duration to this duration, and return the result. A null value is treated as a duration of 0 nanoseconds.
+     * 
      * @param duration the duration to add to this object
      * @return the total duration
      */
@@ -123,6 +131,7 @@ public class Duration extends Number implements Comparable<Duration> {
     /**
      * Subtract the supplied duration from this duration, and return the result. A null value is treated as a duration of 0
      * nanoseconds.
+     * 
      * @param duration the duration to subtract from this object
      * @return the resulting duration
      */
@@ -132,6 +141,7 @@ public class Duration extends Number implements Comparable<Duration> {
 
     /**
      * Multiply the duration by the supplied scale factor, and return the result.
+     * 
      * @param scale the factor by which the duration is to be scaled.
      * @return the scaled duration
      */
@@ -141,6 +151,7 @@ public class Duration extends Number implements Comparable<Duration> {
 
     /**
      * Divide the duration by the supplied number, and return the result.
+     * 
      * @param denominator the factor by which the duration is to be divided.
      * @return the resulting duration
      */
@@ -150,6 +161,7 @@ public class Duration extends Number implements Comparable<Duration> {
 
     /**
      * Divide the duration by another duration to calculate the ratio.
+     * 
      * @param duration the duration that this duration is to be divided by; may not be null
      * @return the resulting duration
      */
@@ -167,6 +179,7 @@ public class Duration extends Number implements Comparable<Duration> {
 
     /**
      * Return the total duration in nanoseconds.
+     * 
      * @return the total duration in nanoseconds
      */
     public long getDuratinInNanoseconds() {
@@ -175,6 +188,7 @@ public class Duration extends Number implements Comparable<Duration> {
 
     /**
      * Return the total duration in microseconds, which may contain a fraction part for the sub-microsecond component.
+     * 
      * @return the total duration in microseconds
      */
     public BigDecimal getDurationInMicroseconds() {
@@ -183,6 +197,7 @@ public class Duration extends Number implements Comparable<Duration> {
 
     /**
      * Return the total duration in microseconds, which may contain a fraction part for the sub-microsecond component.
+     * 
      * @return the total duration in microseconds
      */
     public BigDecimal getDurationInMilliseconds() {
@@ -191,6 +206,7 @@ public class Duration extends Number implements Comparable<Duration> {
 
     /**
      * Return the total duration in microseconds, which may contain a fraction part for the sub-microsecond component.
+     * 
      * @return the total duration in microseconds
      */
     public BigDecimal getDurationInSeconds() {
@@ -199,6 +215,7 @@ public class Duration extends Number implements Comparable<Duration> {
 
     /**
      * Return the duration components.
+     * 
      * @return the individual time components of this duration
      */
     public Components getComponents() {
@@ -220,22 +237,13 @@ public class Duration extends Number implements Comparable<Duration> {
 
     /**
      * Get the duration value in the supplied unit of time.
+     * 
      * @param unit the unit of time for the returned value; may not be null
      * @return the value of this duration in the supplied unit of time
      */
     public long getDuration( TimeUnit unit ) {
         if (unit == null) throw new IllegalArgumentException();
-        switch (unit) {
-            case NANOSECONDS:
-                return this.durationInNanos;
-            case MICROSECONDS:
-                return this.toBigDecimal().divide(new BigDecimal(1000)).longValue();
-            case MILLISECONDS:
-                return this.toBigDecimal().divide(new BigDecimal(1000000)).longValue();
-            case SECONDS:
-                return this.toBigDecimal().divide(new BigDecimal(1000000000)).longValue();
-        }
-        return this.durationInNanos; // should never get here
+        return unit.convert(durationInNanos, TimeUnit.NANOSECONDS);
     }
 
     /**
@@ -249,30 +257,16 @@ public class Duration extends Number implements Comparable<Duration> {
      * <dt>SS</dt>
      * <dd>is the number of hours written in at least 2 digits (e.g., "03")</dd>
      * <dt>mmm,mmm</dt>
-     * <dd>is the fractional part of seconds, written in at least millisecond precision and up to microsecond precision. The
-     * comma appears if more than 3 digits are used.
+     * <dd>is the fractional part of seconds, written in at least millisecond precision and up to microsecond precision. The comma
+     * appears if more than 3 digits are used.
      * </dl>
+     * 
      * @return a string representation of the duration
      */
     @Override
     public String toString() {
         // Insert a comma after the milliseconds, if there are enough digits ..
         return this.getComponents().toString().replaceAll("(\\d{2}).(\\d{3})(\\d{1,3})", "$1.$2,$3");
-    }
-
-    protected static long getTimeInNanos( long duration, TimeUnit unit ) {
-        if (unit == null) throw new IllegalArgumentException();
-        switch (unit) {
-            case NANOSECONDS:
-                return duration;
-            case MICROSECONDS:
-                return new BigDecimal(duration).multiply(new BigDecimal(1000)).longValue();
-            case MILLISECONDS:
-                return new BigDecimal(duration).multiply(new BigDecimal(1000000)).longValue();
-            case SECONDS:
-                return new BigDecimal(duration).multiply(new BigDecimal(1000000000)).longValue();
-        }
-        return duration; // should never get here
     }
 
     /**
@@ -284,7 +278,9 @@ public class Duration extends Number implements Comparable<Duration> {
         private final int minutes;
         private final double seconds;
 
-        protected Components( int hours, int minutes, double seconds ) {
+        protected Components( int hours,
+                              int minutes,
+                              double seconds ) {
             this.hours = hours;
             this.minutes = minutes;
             this.seconds = seconds;
@@ -292,6 +288,7 @@ public class Duration extends Number implements Comparable<Duration> {
 
         /**
          * Get the whole hours in this duration.
+         * 
          * @return the hours
          */
         public int getHours() {
@@ -300,6 +297,7 @@ public class Duration extends Number implements Comparable<Duration> {
 
         /**
          * Get the whole minutes in this duration.
+         * 
          * @return the minutes, from 0 to 59.
          */
         public int getMinutes() {
@@ -308,6 +306,7 @@ public class Duration extends Number implements Comparable<Duration> {
 
         /**
          * Get the duration's seconds component.
+         * 
          * @return the number of seconds, including fractional part.
          */
         public double getSeconds() {
@@ -327,13 +326,15 @@ public class Duration extends Number implements Comparable<Duration> {
          * <dt>mmm</dt>
          * <dd>is the fractional part of seconds, written with 3-6 digits (any trailing zeros are dropped)
          * </dl>
+         * 
          * @return a string representation of the duration components
          */
         @Override
         public String toString() {
             // Format the string, and have at least 2 digits for the hours, minutes and whole seconds,
             // and between 3 and 6 digits for the fractional part of the seconds...
-            String result = new DecimalFormat("######00").format(hours) + ':' + new DecimalFormat("00").format(minutes) + ':' + new DecimalFormat("00.000###").format(seconds);
+            String result = new DecimalFormat("######00").format(hours) + ':' + new DecimalFormat("00").format(minutes) + ':'
+                            + new DecimalFormat("00.000###").format(seconds);
             return result;
         }
     }

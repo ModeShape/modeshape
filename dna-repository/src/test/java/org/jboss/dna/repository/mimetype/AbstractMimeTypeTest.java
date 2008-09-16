@@ -58,7 +58,7 @@ public abstract class AbstractMimeTypeTest {
 
     protected void testMimeType( String name,
                                  String mimeType ) throws Exception {
-        InputStream content = new File("../../dna-repository/src/test/resources/" + name).toURL().openStream();
+        InputStream content = new File("../../dna-repository/src/test/resources/" + name).toURI().toURL().openStream();
         assertThat(MimeType.of(name, content), is(mimeType));
     }
 

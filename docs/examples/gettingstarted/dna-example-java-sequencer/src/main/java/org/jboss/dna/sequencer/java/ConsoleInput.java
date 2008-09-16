@@ -109,7 +109,8 @@ public class ConsoleInput implements UserInterface {
                             System.out.println();
                             System.out.println();
                         } catch (Exception err) {
-                            System.out.println("Error shutting down sequencing service and repository: " + err.getLocalizedMessage());
+                            System.out.println("Error shutting down sequencing service and repository: "
+                                               + err.getLocalizedMessage());
                             err.printStackTrace(System.err);
                         }
                     }
@@ -152,9 +153,10 @@ public class ConsoleInput implements UserInterface {
             throw new IllegalArgumentException("Unable to read \"" + file.getAbsolutePath() + "\".");
         }
         if (!file.isFile()) {
-            throw new IllegalArgumentException("Please specify a file.  The file \"" + file.getAbsolutePath() + "\" is a directory.");
+            throw new IllegalArgumentException("Please specify a file.  The file \"" + file.getAbsolutePath()
+                                               + "\" is a directory.");
         }
-        return file.toURL();
+        return file.toURI().toURL();
     }
 
     public String getRepositoryPath( String defaultPath ) throws IllegalArgumentException, IOException {
@@ -195,12 +197,12 @@ public class ConsoleInput implements UserInterface {
                 for (Properties props : javaElement.getValue()) {
                     for (Map.Entry<Object, Object> entry : props.entrySet()) {
                         if (!entry.getKey().equals("jcr:primaryType")) {
-                            System.out.println(entry.getKey() + " => "+ entry.getValue());
+                            System.out.println(entry.getKey() + " => " + entry.getValue());
                         }
                     }
                 }
             }
-            
+
         }
         System.out.println();
     }

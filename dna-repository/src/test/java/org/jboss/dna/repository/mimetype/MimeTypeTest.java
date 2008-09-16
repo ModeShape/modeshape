@@ -34,7 +34,7 @@ public class MimeTypeTest {
 
     private final void testMimeType( String name,
                                      String mimeType ) throws Exception {
-        InputStream content = new File("src/test/resources/" + name).toURL().openStream();
+        InputStream content = new File("src/test/resources/" + name).toURI().toURL().openStream();
         assertThat(MimeType.of(name, content), is(mimeType));
     }
 
