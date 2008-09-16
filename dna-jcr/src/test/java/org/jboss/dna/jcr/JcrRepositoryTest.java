@@ -77,7 +77,6 @@ public class JcrRepositoryTest {
     @Before
     public void before() throws Exception {
         MockitoAnnotations.initMocks(this);
-        stub(executionContext.getLoginContext()).toReturn(loginContext);
         stub(executionContextFactory.create()).toReturn(executionContext);
         stub(executionContextFactory.create(accessControlContext)).toReturn(executionContext);
         stub(connectionFactory.createConnection(JcrI18n.defaultWorkspaceName.text())).toReturn(connection);

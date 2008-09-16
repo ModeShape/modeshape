@@ -245,13 +245,15 @@ public class JcrRepository implements Repository {
                 throw new RepositoryException(error);
             }
         }
-        // Authenticate
-        try {
-            assert execContext != null;
-            assert execContext.getLoginContext() != null;
-            execContext.getLoginContext().login();
-        } catch (javax.security.auth.login.LoginException error) {
-            throw new LoginException(error);
+        // Authenticate if possible
+        assert execContext != null;
+        LoginContext loginContext = execContext.getLoginContext();
+        if (loginContext != null) {
+            try {
+                loginContext.login();
+            } catch (javax.security.auth.login.LoginException error) {
+                throw new LoginException(error);
+            }
         }
         // Ensure valid workspace name
         if (workspaceName == null) workspaceName = JcrI18n.defaultWorkspaceName.text();

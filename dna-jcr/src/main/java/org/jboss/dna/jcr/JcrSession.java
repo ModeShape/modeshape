@@ -45,6 +45,7 @@ import javax.jcr.Value;
 import javax.jcr.ValueFactory;
 import javax.jcr.Workspace;
 import javax.security.auth.Subject;
+import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
 import net.jcip.annotations.NotThreadSafe;
 import org.jboss.dna.common.util.ArgCheck;
@@ -487,17 +488,20 @@ final class JcrSession implements Session {
         if (!isLive()) {
             return;
         }
-        try {
-            if (connection != null) {
-                connection.close();
-                connection = null;
-            }
-            assert executionContext.getLoginContext() != null;
-            executionContext.getLoginContext().logout();
-            isLive = false;
-        } catch (LoginException error) {
-            // TODO; Log error
+        if (connection != null) {
+            connection.close();
+            connection = null;
         }
+        LoginContext loginContext = executionContext.getLoginContext();
+        if (loginContext != null) {
+            try {
+                loginContext.logout();
+            } catch (LoginException error) {
+                // TODO: Change to DnaException once DNA-180 is addressed
+                throw new RuntimeException(error);
+            }
+        }
+        isLive = false;
     }
 
     /**
