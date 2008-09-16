@@ -442,7 +442,7 @@ public class FederatingCommandExecutor extends AbstractCommandExecutor {
                     // We do this by getting the top-level repository paths of the projection, and then
                     // use those to figure out the children of the nodes.
                     Contribution contribution = null;
-                    Set<Path> topLevelPaths = projection.getTopLevelPathsInRepository(pathFactory);
+                    List<Path> topLevelPaths = projection.getTopLevelPathsInRepository(pathFactory);
                     switch (topLevelPaths.size()) {
                         case 0:
                             break;
@@ -456,7 +456,8 @@ public class FederatingCommandExecutor extends AbstractCommandExecutor {
                             break;
                         }
                         default: {
-                            Set<Path.Segment> children = new HashSet<Path.Segment>();
+                            // We assume that the top-level paths do not overlap ...
+                            List<Path.Segment> children = new ArrayList<Path.Segment>(topLevelPaths.size());
                             for (Path topLevelPath : topLevelPaths) {
                                 if (path.isAncestorOf(topLevelPath)) {
                                     assert topLevelPath.size() > path.size();
@@ -482,7 +483,7 @@ public class FederatingCommandExecutor extends AbstractCommandExecutor {
                         sourceConnection.execute(getExecutionContext(), fromSource);
                         if (!fromSource.hasError()) {
                             Collection<Property> properties = fromSource.getProperties();
-                            Collection<Segment> children = fromSource.getChildren();
+                            List<Segment> children = fromSource.getChildren();
                             DateTime expTime = fromSource.getCachePolicy() == null ? expirationTime : getCurrentTimeInUtc().plus(fromSource.getCachePolicy().getTimeToLive(),
                                                                                                                                  TimeUnit.MILLISECONDS);
                             Contribution contribution = Contribution.create(source, pathInSource, expTime, properties, children);
@@ -498,7 +499,7 @@ public class FederatingCommandExecutor extends AbstractCommandExecutor {
                         for (BasicGetNodeCommand fromSource : fromSourceCommands) {
                             if (fromSource.hasError()) continue;
                             Collection<Property> properties = fromSource.getProperties();
-                            Collection<Segment> children = fromSource.getChildren();
+                            List<Segment> children = fromSource.getChildren();
                             DateTime expTime = fromSource.getCachePolicy() == null ? expirationTime : getCurrentTimeInUtc().plus(fromSource.getCachePolicy().getTimeToLive(),
                                                                                                                                  TimeUnit.MILLISECONDS);
                             Contribution contribution = Contribution.create(source,

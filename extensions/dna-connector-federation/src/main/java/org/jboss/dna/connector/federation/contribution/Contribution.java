@@ -24,6 +24,7 @@ package org.jboss.dna.connector.federation.contribution;
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.List;
 import java.util.NoSuchElementException;
 import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.util.StringUtil;
@@ -141,7 +142,7 @@ public abstract class Contribution implements Serializable {
                                        Path pathInSource,
                                        DateTime expirationTime,
                                        Collection<Property> properties,
-                                       Collection<Segment> children ) {
+                                       List<Segment> children ) {
         if (properties == null || properties.isEmpty()) {
             // There are no properties ...
             if (children == null || children.isEmpty()) {

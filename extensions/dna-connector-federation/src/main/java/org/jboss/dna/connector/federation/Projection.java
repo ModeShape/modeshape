@@ -322,13 +322,20 @@ public class Projection implements Comparable<Projection>, Serializable {
      * Get the paths in the repository that serve as top-level nodes exposed by this projection.
      * 
      * @param factory the path factory that can be used to create new paths; may not be null
-     * @return the set of top-level paths; never null
+     * @return the list of top-level paths, in the proper order and containing no duplicates; never null
      */
-    public Set<Path> getTopLevelPathsInRepository( PathFactory factory ) {
+    public List<Path> getTopLevelPathsInRepository( PathFactory factory ) {
         ArgCheck.isNotNull(factory, "factory");
-        Set<Path> paths = new HashSet<Path>();
+        List<Rule> rules = getRules();
+        Set<Path> uniquePaths = new HashSet<Path>();
+        List<Path> paths = new ArrayList<Path>(rules.size());
         for (Rule rule : getRules()) {
-            paths.addAll(rule.getTopLevelPathsInRepository(factory));
+            for (Path path : rule.getTopLevelPathsInRepository(factory)) {
+                if (!uniquePaths.contains(path)) {
+                    paths.add(path);
+                    uniquePaths.add(path);
+                }
+            }
         }
         return paths;
     }
@@ -450,9 +457,9 @@ public class Projection implements Comparable<Projection>, Serializable {
          * Get the paths in the repository that serve as top-level nodes exposed by this rule.
          * 
          * @param factory the path factory that can be used to create new paths; may not be null
-         * @return the set of top-level paths; never null
+         * @return the list of top-level paths, which are ordered and which must be unique; never null
          */
-        public abstract Set<Path> getTopLevelPathsInRepository( PathFactory factory );
+        public abstract List<Path> getTopLevelPathsInRepository( PathFactory factory );
 
         /**
          * Get the path in source that is projected from the supplied repository path, or null if the supplied repository path is
@@ -500,6 +507,7 @@ public class Projection implements Comparable<Projection>, Serializable {
         /** The paths (relative to the source path) that identify exceptions to this rule */
         private final List<Path> exceptions;
         private final int hc;
+        private final List<Path> topLevelRepositoryPaths;
 
         public PathRule( Path repositoryPath,
                          Path sourcePath ) {
@@ -524,6 +532,7 @@ public class Projection implements Comparable<Projection>, Serializable {
             }
             this.hc = HashCode.compute(sourcePath, repositoryPath, exceptions);
             assert exceptionPathsAreRelative();
+            this.topLevelRepositoryPaths = Collections.singletonList(getPathInRepository());
         }
 
         public PathRule( Path repositoryPath,
@@ -540,6 +549,7 @@ public class Projection implements Comparable<Projection>, Serializable {
             }
             this.hc = HashCode.compute(sourcePath, repositoryPath, exceptions);
             assert exceptionPathsAreRelative();
+            this.topLevelRepositoryPaths = Collections.singletonList(getPathInRepository());
         }
 
         private boolean exceptionPathsAreRelative() {
@@ -617,8 +627,8 @@ public class Projection implements Comparable<Projection>, Serializable {
          * @see org.jboss.dna.connector.federation.Projection.Rule#getTopLevelPathsInRepository(org.jboss.dna.spi.graph.PathFactory)
          */
         @Override
-        public Set<Path> getTopLevelPathsInRepository( PathFactory factory ) {
-            return Collections.singleton(getPathInRepository());
+        public List<Path> getTopLevelPathsInRepository( PathFactory factory ) {
+            return topLevelRepositoryPaths;
         }
 
         /**
