@@ -100,5 +100,10 @@
       <groupId>org.apache.jackrabbit</groupId>
       <artifactId>jackrabbit-jcr-tests</artifactId>
     </dependency>
+    <dependency>
+      <groupId>com.google.code.google-collections</groupId>
+      <artifactId>google-collect</artifactId>
+      <version>snapshot-20080530</version>
+    </dependency>
   </dependencies>
 </project>

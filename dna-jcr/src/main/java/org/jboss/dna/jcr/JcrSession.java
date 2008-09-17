@@ -23,15 +23,12 @@ package org.jboss.dna.jcr;
 
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.lang.ref.WeakReference;
 import java.security.AccessControlException;
 import java.security.Principal;
 import java.util.Calendar;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-import java.util.WeakHashMap;
 import javax.jcr.Credentials;
 import javax.jcr.Item;
 import javax.jcr.Node;
@@ -61,6 +58,8 @@ import org.jboss.dna.spi.graph.Path.Segment;
 import org.jboss.dna.spi.graph.commands.GraphCommand;
 import org.jboss.dna.spi.graph.commands.impl.BasicGetNodeCommand;
 import org.xml.sax.ContentHandler;
+import com.google.common.base.ReferenceType;
+import com.google.common.collect.ReferenceMap;
 
 /**
  * @author John Verhaeg
@@ -72,8 +71,8 @@ class JcrSession implements Session {
     private final Repository repository;
     private final ExecutionContext executionContext;
     private RepositoryConnection connection;
-    private final Map<UUID, WeakReference<Node>> nodesByUuid;
-    private final Map<String, WeakReference<Node>> nodesByJcrUuid;
+    private final ReferenceMap<UUID, Node> nodesByUuid;
+    private final ReferenceMap<String, Node> nodesByJcrUuid;
     private boolean isLive;
     private Workspace workspace;
     private JcrRootNode rootNode;
@@ -82,7 +81,7 @@ class JcrSession implements Session {
                 ExecutionContext executionContext,
                 String workspaceName,
                 RepositoryConnection connection,
-                Map<UUID, WeakReference<Node>> nodesByUuid ) throws RepositoryException {
+                ReferenceMap<UUID, Node> nodesByUuid ) throws RepositoryException {
         assert repository != null;
         assert executionContext != null;
         assert workspaceName != null;
@@ -92,7 +91,7 @@ class JcrSession implements Session {
         this.executionContext = executionContext;
         this.connection = connection;
         this.nodesByUuid = nodesByUuid;
-        this.nodesByJcrUuid = new WeakHashMap<String, WeakReference<Node>>();
+        this.nodesByJcrUuid = new ReferenceMap<String, Node>(ReferenceType.STRONG, ReferenceType.SOFT);
         this.isLive = true;
         // Following must be initialized after session's state is initialized
         this.workspace = new JcrWorkspace(this, workspaceName);
@@ -315,8 +314,7 @@ class JcrSession implements Session {
     }
 
     Node getNode( UUID uuid ) {
-        WeakReference<Node> ref = nodesByUuid.get(uuid);
-        return (ref == null ? null : ref.get());
+        return nodesByUuid.get(uuid);
     }
 
     /**
@@ -554,12 +552,12 @@ class JcrSession implements Session {
             if (dnaUuidProp == null || !referenceable) uuid = UUID.randomUUID();
             else {
                 uuid = uuidFactory.create(dnaUuidProp.getValues()).next();
-                nodesByJcrUuid.put(uuid.toString(), new WeakReference<Node>(node));
+                nodesByJcrUuid.put(uuid.toString(), node);
             }
         }
         node.setInternalUuid(uuid);
         // Setup node to be retrieved by DNA UUID
-        nodesByUuid.put(new UUID(uuid.getMostSignificantBits(), uuid.getLeastSignificantBits()), new WeakReference<Node>(node));
+        nodesByUuid.put(uuid, node);
     }
 
     /**

@@ -21,14 +21,12 @@
  */
 package org.jboss.dna.jcr;
 
-import java.lang.ref.WeakReference;
 import java.lang.reflect.Method;
 import java.security.AccessControlContext;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
-import java.util.WeakHashMap;
 import javax.jcr.Credentials;
 import javax.jcr.LoginException;
 import javax.jcr.Node;
@@ -42,6 +40,8 @@ import org.jboss.dna.common.util.ArgCheck;
 import org.jboss.dna.spi.ExecutionContext;
 import org.jboss.dna.spi.ExecutionContextFactory;
 import org.jboss.dna.spi.connector.RepositoryConnectionFactory;
+import com.google.common.base.ReferenceType;
+import com.google.common.collect.ReferenceMap;
 
 /**
  * Creates JCR {@link Session sessions} to an underlying repository (which may be a federated repository).
@@ -259,6 +259,6 @@ public class JcrRepository implements Repository {
         if (workspaceName == null) workspaceName = JcrI18n.defaultWorkspaceName.text();
         // Create session
         return new JcrSession(this, execContext, workspaceName, connectionFactory.createConnection(workspaceName),
-                              new WeakHashMap<UUID, WeakReference<Node>>());
+                              new ReferenceMap<UUID, Node>(ReferenceType.STRONG, ReferenceType.SOFT));
     }
 }

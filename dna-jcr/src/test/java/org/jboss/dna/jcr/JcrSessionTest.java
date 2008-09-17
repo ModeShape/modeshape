@@ -29,13 +29,10 @@ import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.stub;
 import java.io.InputStream;
-import java.lang.ref.WeakReference;
 import java.security.AccessControlException;
 import java.security.Principal;
 import java.util.Calendar;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.UUID;
 import javax.jcr.Item;
 import javax.jcr.NamespaceException;
@@ -59,7 +56,8 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
-import org.mockito.MockitoAnnotations.Mock;
+import com.google.common.base.ReferenceType;
+import com.google.common.collect.ReferenceMap;
 
 /**
  * @author jverhaeg
@@ -91,12 +89,12 @@ public class JcrSessionTest {
     }
 
     private Session session;
-    @Mock
-    private Map<UUID, WeakReference<Node>> nodesByUuid;
+    private ReferenceMap<UUID, Node> nodesByUuid;
 
     @Before
     public void before() throws Exception {
         MockitoAnnotations.initMocks(this);
+        nodesByUuid = new ReferenceMap<UUID, Node>(ReferenceType.STRONG, ReferenceType.SOFT);
         session = repository.login();
     }
 
@@ -225,7 +223,7 @@ public class JcrSessionTest {
 
     @Test
     public void shouldProvideRootNode() throws Exception {
-        Map<UUID, WeakReference<Node>> nodesByUuid = new HashMap<UUID, WeakReference<Node>>();
+        ReferenceMap<UUID, Node> nodesByUuid = new ReferenceMap<UUID, Node>(ReferenceType.STRONG, ReferenceType.SOFT);
         Session session = new JcrSession(repository, executionContext, WORKSPACE_NAME,
                                          connectionFactory.createConnection(WORKSPACE_NAME), nodesByUuid);
         assertThat(nodesByUuid.isEmpty(), is(true));
@@ -233,9 +231,7 @@ public class JcrSessionTest {
         assertThat(root, notNullValue());
         UUID uuid = ((JcrRootNode)root).getInternalUuid();
         assertThat(uuid, notNullValue());
-        WeakReference<Node> ref = nodesByUuid.get(uuid);
-        assertThat(ref, notNullValue());
-        assertThat(ref.get(), is(root));
+        assertThat(nodesByUuid.get(uuid), is(root));
     }
 
     @Test
