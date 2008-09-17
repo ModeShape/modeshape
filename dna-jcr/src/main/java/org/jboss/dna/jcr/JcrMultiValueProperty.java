@@ -30,6 +30,7 @@ import javax.jcr.Node;
 import javax.jcr.RepositoryException;
 import javax.jcr.Value;
 import javax.jcr.ValueFormatException;
+import javax.jcr.nodetype.PropertyDefinition;
 import net.jcip.annotations.NotThreadSafe;
 import org.jboss.dna.spi.ExecutionContext;
 import org.jboss.dna.spi.graph.Name;
@@ -77,6 +78,20 @@ final class JcrMultiValueProperty extends AbstractJcrProperty {
      */
     public Calendar getDate() throws ValueFormatException {
         throw new ValueFormatException();
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see javax.jcr.Property#getDefinition()
+     */
+    public PropertyDefinition getDefinition() {
+        return new AbstractJcrPropertyDefinition() {
+
+            public boolean isMultiple() {
+                return true;
+            }
+        };
     }
 
     /**

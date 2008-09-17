@@ -27,6 +27,7 @@ import javax.jcr.Node;
 import javax.jcr.RepositoryException;
 import javax.jcr.Value;
 import javax.jcr.ValueFormatException;
+import javax.jcr.nodetype.PropertyDefinition;
 import org.jboss.dna.spi.ExecutionContext;
 import org.jboss.dna.spi.graph.Name;
 import org.jboss.dna.spi.graph.ValueFactories;
@@ -64,6 +65,20 @@ final class JcrProperty extends AbstractJcrProperty {
      */
     public Calendar getDate() throws RepositoryException {
         return jcrValue.getDate();
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see javax.jcr.Property#getDefinition()
+     */
+    public PropertyDefinition getDefinition() {
+        return new AbstractJcrPropertyDefinition() {
+
+            public boolean isMultiple() {
+                return false;
+            }
+        };
     }
 
     /**

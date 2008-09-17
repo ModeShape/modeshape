@@ -34,7 +34,6 @@ import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.Value;
-import javax.jcr.nodetype.PropertyDefinition;
 import net.jcip.annotations.NotThreadSafe;
 import org.jboss.dna.common.util.ArgCheck;
 import org.jboss.dna.spi.ExecutionContext;
@@ -95,16 +94,6 @@ abstract class AbstractJcrProperty extends AbstractJcrItem implements Property {
      */
     public final Item getAncestor( int depth ) throws RepositoryException {
         return (depth == 0 ? this : node.getAncestor(depth - 1));
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @throws UnsupportedOperationException always
-     * @see javax.jcr.Property#getDefinition()
-     */
-    public PropertyDefinition getDefinition() {
-        throw new UnsupportedOperationException();
     }
 
     /**

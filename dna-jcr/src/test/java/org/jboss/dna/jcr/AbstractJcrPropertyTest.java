@@ -33,6 +33,7 @@ import javax.jcr.Node;
 import javax.jcr.Property;
 import javax.jcr.Session;
 import javax.jcr.Value;
+import javax.jcr.nodetype.PropertyDefinition;
 import org.jboss.dna.common.util.StringUtil;
 import org.jboss.dna.spi.ExecutionContext;
 import org.jboss.dna.spi.graph.Name;
@@ -264,6 +265,15 @@ public class AbstractJcrPropertyTest {
          * @see javax.jcr.Property#getDate()
          */
         public Calendar getDate() {
+            return null;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see javax.jcr.Property#getDefinition()
+         */
+        public PropertyDefinition getDefinition() {
             return null;
         }
 

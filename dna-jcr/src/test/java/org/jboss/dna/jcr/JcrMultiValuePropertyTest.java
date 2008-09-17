@@ -34,6 +34,7 @@ import javax.jcr.Property;
 import javax.jcr.PropertyType;
 import javax.jcr.Value;
 import javax.jcr.ValueFormatException;
+import javax.jcr.nodetype.PropertyDefinition;
 import org.jboss.dna.spi.ExecutionContext;
 import org.jboss.dna.spi.connector.BasicExecutionContext;
 import org.jboss.dna.spi.graph.Name;
@@ -49,6 +50,7 @@ import org.mockito.MockitoAnnotations.Mock;
  */
 public class JcrMultiValuePropertyTest {
 
+    private Property prop;
     @Mock
     private Node node;
     private ExecutionContext executionContext = new BasicExecutionContext();
@@ -58,6 +60,7 @@ public class JcrMultiValuePropertyTest {
     @Before
     public void before() {
         MockitoAnnotations.initMocks(this);
+        prop = new JcrMultiValueProperty(node, executionContext, name, Arrays.asList(true));
     }
 
     @Test( expected = AssertionError.class )
@@ -67,10 +70,9 @@ public class JcrMultiValuePropertyTest {
 
     @Test
     public void shouldProvideAppropriateType() throws Exception {
-        Property prop = new JcrMultiValueProperty(node, executionContext, name, Arrays.asList(true));
         assertThat(prop.getType(), is(PropertyType.BOOLEAN));
         Calendar cal = Calendar.getInstance();
-        prop = new JcrMultiValueProperty(node, executionContext, name, Arrays.asList(cal));
+        Property prop = new JcrMultiValueProperty(node, executionContext, name, Arrays.asList(cal));
         assertThat(prop.getType(), is(PropertyType.DATE));
         prop = new JcrMultiValueProperty(node, executionContext, name, Arrays.asList(cal.getTime()));
         assertThat(prop.getType(), is(PropertyType.DATE));
@@ -102,7 +104,7 @@ public class JcrMultiValuePropertyTest {
 
     @Test( expected = ValueFormatException.class )
     public void shouldNotProvideBoolean() throws Exception {
-        new JcrMultiValueProperty(node, executionContext, name, Arrays.asList(true)).getBoolean();
+        prop.getBoolean();
     }
 
     @Test( expected = ValueFormatException.class )
@@ -113,6 +115,63 @@ public class JcrMultiValuePropertyTest {
     @Test( expected = ValueFormatException.class )
     public void shouldNotProvideDateForDate() throws Exception {
         new JcrMultiValueProperty(node, executionContext, name, Arrays.asList(Calendar.getInstance().getTime())).getDate();
+    }
+
+    @Test
+    public void shouldProvidePropertyDefinition() throws Exception {
+        assertThat(prop.getDefinition(), notNullValue());
+    }
+
+    @Test( expected = UnsupportedOperationException.class )
+    public void shouldNotAllowPropertyDefinitionDeclaringNodeType() throws Exception {
+        prop.getDefinition().getDeclaringNodeType();
+    }
+
+    @Test( expected = UnsupportedOperationException.class )
+    public void shouldNotAllowPropertyDefinitionDefaultValues() throws Exception {
+        prop.getDefinition().getDefaultValues();
+    }
+
+    @Test( expected = UnsupportedOperationException.class )
+    public void shouldNotAllowPropertyDefinitionName() throws Exception {
+        prop.getDefinition().getName();
+    }
+
+    @Test( expected = UnsupportedOperationException.class )
+    public void shouldNotAllowPropertyDefinitionGetOnParentVersion() throws Exception {
+        prop.getDefinition().getOnParentVersion();
+    }
+
+    @Test( expected = UnsupportedOperationException.class )
+    public void shouldNotAllowPropertyDefinitionGetRequiredType() throws Exception {
+        prop.getDefinition().getRequiredType();
+    }
+
+    @Test( expected = UnsupportedOperationException.class )
+    public void shouldNotAllowPropertyDefinitionGetValueConstraints() throws Exception {
+        prop.getDefinition().getValueConstraints();
+    }
+
+    @Test( expected = UnsupportedOperationException.class )
+    public void shouldNotAllowPropertyDefinitionIsAutoCreated() throws Exception {
+        prop.getDefinition().isAutoCreated();
+    }
+
+    @Test( expected = UnsupportedOperationException.class )
+    public void shouldNotAllowPropertyDefinitionIsMandatory() throws Exception {
+        prop.getDefinition().isMandatory();
+    }
+
+    @Test( expected = UnsupportedOperationException.class )
+    public void shouldNotAllowPropertyDefinitionIsProtected() throws Exception {
+        prop.getDefinition().isProtected();
+    }
+
+    @Test
+    public void shouldIndicateHasMultipleValues() throws Exception {
+        PropertyDefinition def = prop.getDefinition();
+        assertThat(def, notNullValue());
+        assertThat(def.isMultiple(), is(true));
     }
 
     @Test( expected = ValueFormatException.class )
@@ -147,12 +206,11 @@ public class JcrMultiValuePropertyTest {
 
     @Test( expected = ValueFormatException.class )
     public void shouldNotProvideValue() throws Exception {
-        new JcrMultiValueProperty(node, executionContext, name, Arrays.asList(true)).getValue();
+        prop.getValue();
     }
 
     @Test
     public void shouldProvideValues() throws Exception {
-        Property prop = new JcrMultiValueProperty(node, executionContext, name, Arrays.asList(true));
         Value[] vals = prop.getValues();
         assertThat(vals, notNullValue());
         assertThat(vals.length, is(1));
@@ -161,12 +219,16 @@ public class JcrMultiValuePropertyTest {
 
     @Test( expected = ValueFormatException.class )
     public void shouldNotProvideLength() throws Exception {
-        new JcrMultiValueProperty(node, executionContext, name, Arrays.asList("value")).getLength();
+        prop.getLength();
     }
 
     @Test
     public void shouldProvideLengths() throws Exception {
-        long[] lengths = new JcrMultiValueProperty(node, executionContext, name, Arrays.asList("value")).getLengths();
+        long[] lengths = prop.getLengths();
+        assertThat(lengths, notNullValue());
+        assertThat(lengths.length, is(1));
+        assertThat(lengths[0], is(4L));
+        lengths = new JcrMultiValueProperty(node, executionContext, name, Arrays.asList("value")).getLengths();
         assertThat(lengths, notNullValue());
         assertThat(lengths.length, is(1));
         assertThat(lengths[0], is(5L));

@@ -33,6 +33,7 @@ import javax.jcr.Property;
 import javax.jcr.PropertyType;
 import javax.jcr.Value;
 import javax.jcr.ValueFormatException;
+import javax.jcr.nodetype.PropertyDefinition;
 import org.jboss.dna.spi.ExecutionContext;
 import org.jboss.dna.spi.connector.BasicExecutionContext;
 import org.jboss.dna.spi.graph.Name;
@@ -48,6 +49,7 @@ import org.mockito.MockitoAnnotations.Mock;
  */
 public class JcrPropertyTest {
 
+    private Property prop;
     @Mock
     private Node node;
     private ExecutionContext executionContext = new BasicExecutionContext();
@@ -57,6 +59,7 @@ public class JcrPropertyTest {
     @Before
     public void before() {
         MockitoAnnotations.initMocks(this);
+        prop = new JcrProperty(node, executionContext, name, true);
     }
 
     @Test( expected = AssertionError.class )
@@ -66,7 +69,6 @@ public class JcrPropertyTest {
 
     @Test
     public void shouldProvideBoolean() throws Exception {
-        Property prop = new JcrProperty(node, executionContext, name, true);
         assertThat(prop.getBoolean(), is(true));
         assertThat(prop.getType(), is(PropertyType.BOOLEAN));
     }
@@ -80,6 +82,63 @@ public class JcrPropertyTest {
         prop = new JcrProperty(node, executionContext, name, cal.getTime());
         assertThat(prop.getDate(), is(cal));
         assertThat(prop.getType(), is(PropertyType.DATE));
+    }
+
+    @Test
+    public void shouldProvidePropertyDefinition() throws Exception {
+        assertThat(prop.getDefinition(), notNullValue());
+    }
+
+    @Test( expected = UnsupportedOperationException.class )
+    public void shouldNotAllowPropertyDefinitionDeclaringNodeType() throws Exception {
+        prop.getDefinition().getDeclaringNodeType();
+    }
+
+    @Test( expected = UnsupportedOperationException.class )
+    public void shouldNotAllowPropertyDefinitionDefaultValues() throws Exception {
+        prop.getDefinition().getDefaultValues();
+    }
+
+    @Test( expected = UnsupportedOperationException.class )
+    public void shouldNotAllowPropertyDefinitionName() throws Exception {
+        prop.getDefinition().getName();
+    }
+
+    @Test( expected = UnsupportedOperationException.class )
+    public void shouldNotAllowPropertyDefinitionGetOnParentVersion() throws Exception {
+        prop.getDefinition().getOnParentVersion();
+    }
+
+    @Test( expected = UnsupportedOperationException.class )
+    public void shouldNotAllowPropertyDefinitionGetRequiredType() throws Exception {
+        prop.getDefinition().getRequiredType();
+    }
+
+    @Test( expected = UnsupportedOperationException.class )
+    public void shouldNotAllowPropertyDefinitionGetValueConstraints() throws Exception {
+        prop.getDefinition().getValueConstraints();
+    }
+
+    @Test( expected = UnsupportedOperationException.class )
+    public void shouldNotAllowPropertyDefinitionIsAutoCreated() throws Exception {
+        prop.getDefinition().isAutoCreated();
+    }
+
+    @Test( expected = UnsupportedOperationException.class )
+    public void shouldNotAllowPropertyDefinitionIsMandatory() throws Exception {
+        prop.getDefinition().isMandatory();
+    }
+
+    @Test( expected = UnsupportedOperationException.class )
+    public void shouldNotAllowPropertyDefinitionIsProtected() throws Exception {
+        prop.getDefinition().isProtected();
+    }
+
+    @Test
+    public void shouldIndicateHasSingleValue() throws Exception {
+        PropertyDefinition def = prop.getDefinition();
+        assertThat(def, notNullValue());
+        assertThat(def.isMultiple(), is(false));
     }
 
     @Test
@@ -155,7 +214,6 @@ public class JcrPropertyTest {
 
     @Test
     public void shouldProvideValue() throws Exception {
-        Property prop = new JcrProperty(node, executionContext, name, true);
         Value val = prop.getValue();
         assertThat(val, notNullValue());
         assertThat(val.getBoolean(), is(true));
@@ -163,11 +221,12 @@ public class JcrPropertyTest {
 
     @Test( expected = ValueFormatException.class )
     public void shouldNotProvideValues() throws Exception {
-        new JcrProperty(node, executionContext, name, true).getValues();
+        prop.getValues();
     }
 
     @Test
     public void shouldProvideLength() throws Exception {
+        assertThat(prop.getLength(), is(4L));
         assertThat(new JcrProperty(node, executionContext, name, "value").getLength(), is(5L));
         Object obj = new Object();
         assertThat(new JcrProperty(node, executionContext, name, obj).getLength(), is((long)obj.toString().length()));
@@ -175,6 +234,6 @@ public class JcrPropertyTest {
 
     @Test( expected = ValueFormatException.class )
     public void shouldNotProvideLengths() throws Exception {
-        new JcrProperty(node, executionContext, name, "value").getLengths();
+        prop.getLengths();
     }
 }
