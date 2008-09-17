@@ -22,7 +22,8 @@
 package org.jboss.example.dna.repository;
 
 import java.io.IOException;
-import java.util.Collection;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -31,11 +32,14 @@ import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import javax.jcr.PropertyIterator;
 import javax.jcr.Session;
-import javax.jcr.SimpleCredentials;
 import javax.naming.NamingException;
-import javax.security.auth.callback.PasswordCallback;
+import javax.security.auth.login.LoginContext;
+import javax.security.auth.login.LoginException;
+import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.component.ClassLoaderFactory;
 import org.jboss.dna.common.component.StandardClassLoaderFactory;
+import org.jboss.dna.common.text.NoOpEncoder;
+import org.jboss.dna.common.util.ArgCheck;
 import org.jboss.dna.connector.inmemory.InMemoryRepositorySource;
 import org.jboss.dna.jcr.JcrRepository;
 import org.jboss.dna.repository.RepositoryImporter;
@@ -68,7 +72,8 @@ public class RepositoryClient {
             arg = arg.trim();
             if (arg.equals("--api=jcr")) client.setApi(Api.JCR);
             if (arg.equals("--api=dna")) client.setApi(Api.DNA);
-            if (arg.startsWith("--user=") && arg.length() > 7) client.setUsername(arg.substring(7).trim());
+            if (arg.equals("--jaas")) client.setJaasContextName(JAAS_LOGIN_CONTEXT_NAME);
+            if (arg.startsWith("--jaas=") && arg.length() > 7) client.setJaasContextName(arg.substring(7).trim());
         }
         client.setUserInterface(new ConsoleInput(client, args));
     }
@@ -82,10 +87,11 @@ public class RepositoryClient {
     private RepositoryLibrary sources;
     private ExecutionContextFactory contextFactory;
     private RepositoryService repositoryService;
-    private Api api = Api.DNA;
-    private String username = null;
-    private char[] password = null;
+    private Api api = Api.JCR;
+    private String jaasContextName;
     private UserInterface userInterface;
+    private LoginContext loginContext;
+    private ExecutionContext context;
 
     /**
      * @param userInterface Sets userInterface to the specified value.
@@ -104,34 +110,12 @@ public class RepositoryClient {
     }
 
     /**
-     * Set the username that this client should use.
+     * Set the JAAS context name that should be used. If null (which is the default), then no authentication will be used.
      * 
-     * @param username the new username, or null if no username should be used.
+     * @param jaasContextName the JAAS context name, or null if no authentication should be performed
      */
-    public void setUsername( String username ) {
-        this.username = username;
-        this.password = null;
-    }
-
-    /**
-     * Clear any cached password.
-     */
-    public void clearPassword() {
-        password = null;
-    }
-
-    /**
-     * Method used internally to obtain the password, which is obtained from the user (only once per process) if needed
-     * 
-     * @return the user's password, or null if no username is known
-     */
-    private char[] getPassword() {
-        if (username == null) return null;
-        if (password == null) {
-            PasswordCallback callback = new PasswordCallback("Password:", false);
-            password = callback.getPassword();
-        }
-        return password;
+    public void setJaasContextName( String jaasContextName ) {
+        this.jaasContextName = jaasContextName;
     }
 
     /**
@@ -152,7 +136,7 @@ public class RepositoryClient {
 
         // Create the execution context that we'll use for the services. If we'd want to use JAAS, we'd create the context
         // by supply LoginContext, AccessControlContext, or even Subject with CallbackHandlers. But no JAAS in this example.
-        ExecutionContext context = contextFactory.create();
+        context = contextFactory.create();
 
         // Create the library for the RepositorySource instances ...
         sources = new RepositoryLibrary(contextFactory);
@@ -183,16 +167,20 @@ public class RepositoryClient {
      * 
      * @return the repository names
      */
-    public Collection<String> getNamesOfRepositories() {
-        return sources.getSourceNames();
+    public List<String> getNamesOfRepositories() {
+        List<String> names = new ArrayList<String>(sources.getSourceNames());
+        Collections.sort(names);
+        return names;
     }
 
     /**
      * Shut down the components and services and blocking until all resources have been released.
      * 
      * @throws InterruptedException if the thread was interrupted before completing the shutdown.
+     * @throws LoginException
      */
-    public void shutdown() throws InterruptedException {
+    public void shutdown() throws InterruptedException, LoginException {
+        logout();
         if (repositoryService == null) return;
         try {
             // Shut down the various services ...
@@ -204,6 +192,37 @@ public class RepositoryClient {
         } finally {
             repositoryService = null;
             sources = null;
+        }
+    }
+
+    /**
+     * Get the current JAAS LoginContext (if there is one).
+     * 
+     * @return the current login context, or null if no JAAS authentication is to be used.
+     * @throws LoginException if authentication was attempted but failed
+     */
+    protected LoginContext getLoginContext() throws LoginException {
+        if (loginContext == null) {
+            if (jaasContextName != null) {
+                loginContext = new LoginContext(jaasContextName, this.userInterface.getCallbackHandler());
+                loginContext.login();
+            }
+        }
+        return loginContext;
+    }
+
+    /**
+     * Calling this will lose the context
+     * 
+     * @throws LoginException
+     */
+    public void logout() throws LoginException {
+        if (loginContext != null) {
+            try {
+                loginContext.logout();
+            } finally {
+                loginContext = null;
+            }
         }
     }
 
@@ -223,17 +242,20 @@ public class RepositoryClient {
                                 String pathToNode,
                                 Map<String, Object[]> properties,
                                 List<String> children ) throws Throwable {
+        LoginContext loginContext = getLoginContext(); // will ask user to authenticate if needed
         switch (api) {
             case JCR: {
                 JcrRepository jcrRepository = new JcrRepository(contextFactory, sources);
                 Session session = null;
-                if (username != null) {
-                    Credentials credentials = new SimpleCredentials(username, getPassword());
+                if (loginContext != null) {
+                    Credentials credentials = new JaasCredentials(loginContext);
                     session = jcrRepository.login(credentials, sourceName);
                 } else {
                     session = jcrRepository.login(sourceName);
                 }
                 try {
+                    // Make the path relative to the root by removing the leading slash(es) ...
+                    pathToNode = pathToNode.replaceAll("^/+", "");
                     // Get the node by path ...
                     Node root = session.getRootNode();
                     Node node = root.getNode(pathToNode);
@@ -242,7 +264,8 @@ public class RepositoryClient {
                     if (properties != null) {
                         for (PropertyIterator iter = node.getProperties(); iter.hasNext();) {
                             javax.jcr.Property property = iter.nextProperty();
-                            properties.put(property.getName(), property.getValues());
+                            Object[] values = property.getDefinition().isMultiple() ? property.getValues() : new Object[] {property.getValue()};
+                            properties.put(property.getName(), values);
                         }
                     }
                     if (children != null) {
@@ -259,12 +282,7 @@ public class RepositoryClient {
                 break;
             }
             case DNA: {
-                ExecutionContext context = null;
-                if (username != null) {
-                    context = contextFactory.create(JAAS_LOGIN_CONTEXT_NAME);
-                } else {
-                    context = contextFactory.create();
-                }
+                ExecutionContext context = loginContext != null ? contextFactory.create(loginContext) : contextFactory.create();
                 PathFactory pathFactory = context.getValueFactories().getPathFactory();
 
                 // Get the node submitting a graph command to a repository connection.
@@ -302,5 +320,54 @@ public class RepositoryClient {
             }
         }
         return true;
+    }
+
+    /**
+     * Utility to build a path given the current path and the input path as string, where the input path could be an absolute path
+     * or relative to the current and where the input may use "." and "..".
+     * 
+     * @param current the current path
+     * @param input the input path
+     * @return the resulting full and normalized path
+     */
+    protected String buildPath( String current,
+                                String input ) {
+        if (current == null) current = "/";
+        if (input == null || input.length() == 0) return current;
+        PathFactory factory = context.getValueFactories().getPathFactory();
+        Path inputPath = factory.create(input);
+        if (inputPath.isAbsolute()) {
+            return inputPath.getNormalizedPath().getString(context.getNamespaceRegistry(), NoOpEncoder.getInstance());
+        }
+        Path currentPath = factory.create(current);
+        currentPath = factory.create(currentPath, inputPath);
+        currentPath = currentPath.getNormalizedPath();
+        return currentPath.getString(context.getNamespaceRegistry(), NoOpEncoder.getInstance());
+    }
+
+    /**
+     * A class that represents JCR Credentials containing the JAAS LoginContext.
+     * 
+     * @author Randall Hauch
+     */
+    @Immutable
+    protected static class JaasCredentials implements Credentials {
+        private static final long serialVersionUID = 1L;
+        private final LoginContext context;
+
+        public JaasCredentials( LoginContext context ) {
+            ArgCheck.isNotNull(context, "context");
+            this.context = context;
+        }
+
+        /**
+         * JBoss DNA's JCR implementation will reflectively look for and call this method to get the JAAS LoginContext.
+         * 
+         * @return the current LoginContext
+         */
+        public LoginContext getLoginContext() {
+            return context;
+        }
+
     }
 }

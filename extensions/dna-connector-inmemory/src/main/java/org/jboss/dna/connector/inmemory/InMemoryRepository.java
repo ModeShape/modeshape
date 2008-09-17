@@ -345,24 +345,26 @@ public class InMemoryRepository {
         @Override
         public void execute( CreateNodeCommand command ) {
             Path path = command.getPath();
-            Node parentNode = null;
+            Node node = null;
             if (!path.isRoot()) {
                 Path parent = path.getParent();
                 // Look up the parent node, which must exist ...
-                parentNode = getNode(parent);
+                Node parentNode = getNode(parent);
                 if (parentNode == null) {
                     Path lowestExisting = getLowestExistingPath(parent);
                     throw new PathNotFoundException(path, lowestExisting, InMemoryConnectorI18n.nodeDoesNotExist.text(parent));
                 }
-            }
-            UUID uuid = null;
-            for (Property property : command.getProperties()) {
-                if (property.getName().equals(uuidPropertyName)) {
-                    uuid = getExecutionContext().getValueFactories().getUuidFactory().create(property.getValues().next());
-                    break;
+                UUID uuid = null;
+                for (Property property : command.getProperties()) {
+                    if (property.getName().equals(uuidPropertyName)) {
+                        uuid = getExecutionContext().getValueFactories().getUuidFactory().create(property.getValues().next());
+                        break;
+                    }
                 }
+                node = createNode(getExecutionContext(), parentNode, path.getLastSegment().getName(), uuid);
+            } else {
+                node = getRoot();
             }
-            Node node = createNode(getExecutionContext(), parentNode, path.getLastSegment().getName(), uuid);
             // Now add the properties to the supplied node ...
             for (Property property : command.getProperties()) {
                 Name propName = property.getName();

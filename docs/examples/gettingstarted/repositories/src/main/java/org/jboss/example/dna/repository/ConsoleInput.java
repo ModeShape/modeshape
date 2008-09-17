@@ -29,7 +29,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import javax.security.auth.callback.CallbackHandler;
 import org.jboss.dna.common.util.StringUtil;
+import com.sun.security.auth.callback.TextCallbackHandler;
 
 /**
  * @author Randall Hauch
@@ -41,17 +43,37 @@ public class ConsoleInput implements UserInterface {
     private final RepositoryClient repositoryClient;
     private final Map<Integer, String> selectionToSourceName = new HashMap<Integer, String>();
 
+    /**
+     * Construct the console input and prompt for user input to interact with the RepositoryClient.
+     * 
+     * @param client the client that should be used; may not be null
+     * @param args the command-line arguments; may not be null but may be empty
+     */
     public ConsoleInput( final RepositoryClient client,
                          final String[] args ) {
+        assert client != null;
         this.repositoryClient = client;
+        for (String arg : args) {
+            arg = arg.trim().toLowerCase();
+            if (arg.equals("--help")) {
+                System.out.println();
+                System.out.println("Usage:   run.sh [options]");
+                System.out.println();
+                System.out.println("Options:");
+                System.out.println("  --api=value    Specify which API should be used to obtain the content.");
+                System.out.println("                 The 'value' must be either 'jcr' or 'dna', and defaults");
+                System.out.println("                 to 'jcr'.");
+                System.out.println("  --jaas         Specify that JAAS should be used to authenticate the user.");
+                System.out.println("  --jaas=name    With no 'name', use JAAS with an application context");
+                System.out.println("                 named \"" + RepositoryClient.JAAS_LOGIN_CONTEXT_NAME + "\".");
+                System.out.println("                 If another application context is to be used, then specify");
+                System.out.println("                 the name.");
+                System.out.println("  --help         Print these instructions and exit.");
+                System.out.println();
+                return;
+            }
+        }
         try {
-            System.out.println();
-            System.out.print("Starting repositories ... ");
-            client.startRepositories();
-            System.out.println("done.");
-            System.out.println();
-
-            System.out.println(getMenu());
             Thread eventThread = new Thread(new Runnable() {
 
                 private boolean quit = false;
@@ -59,33 +81,29 @@ public class ConsoleInput implements UserInterface {
                 @SuppressWarnings( "synthetic-access" )
                 public void run() {
                     try {
+                        System.out.println();
+                        System.out.print("Starting repositories ... ");
+                        client.startRepositories();
+                        System.out.println("done.");
+                        System.out.println();
+                        displayMainMenu();
+
                         while (!quit) {
                             System.out.print(">");
                             try {
-                                String input = in.readLine();
-                                if (input.length() != 1) {
-                                    System.out.println("Please enter a valid option.");
-                                    continue;
-                                }
-
-                                char option = input.charAt(0);
-                                switch (option) {
-                                    case '?':
-                                    case 'h':
-                                        System.out.println(getMenu());
-                                        break;
-                                    case 'q':
-                                        quit = true;
-                                        break;
-                                    default:
-                                        try {
-                                            int selection = Integer.parseInt("" + option);
-                                            String sourceName = selectionToSourceName.get(selection);
-                                            navigate(sourceName);
-                                        } catch (NumberFormatException e) {
-                                            System.out.println("Invalid option.");
-                                            break;
-                                        }
+                                String input = in.readLine().trim();
+                                if ("?".equals(input) || "h".equals(input)) displayMainMenu();
+                                else if ("q".equals(input)) quit = true;
+                                else {
+                                    try {
+                                        int selection = Integer.parseInt(input);
+                                        String sourceName = selectionToSourceName.get(selection);
+                                        displayNavigationMenu(sourceName);
+                                        displayMainMenu();
+                                    } catch (NumberFormatException e) {
+                                        System.out.println("Invalid option.");
+                                        displayMainMenu();
+                                    }
                                 }
                             } catch (NumberFormatException e) {
                                 System.out.println("Invalid integer " + e.getMessage());
@@ -97,6 +115,9 @@ public class ConsoleInput implements UserInterface {
                                 e.printStackTrace();
                             }
                         }
+                    } catch (Exception err) {
+                        System.out.println("Error: " + err.getLocalizedMessage());
+                        err.printStackTrace(System.err);
                     } finally {
                         try {
                             // Terminate ...
@@ -122,72 +143,98 @@ public class ConsoleInput implements UserInterface {
         }
     }
 
-    protected String getMenu() {
+    /**
+     * Generate the main menu for the console-based application.
+     */
+    protected void displayMainMenu() {
         selectionToSourceName.clear();
-        StringBuilder buffer = new StringBuilder();
-        buffer.append("-----------------------------------\n");
-        buffer.append("Menu:\n");
-        buffer.append("\n");
-        buffer.append(" Select a repository to view:\n");
+        System.out.println("-----------------------------------");
+        System.out.println("Menu:");
+        System.out.println();
+        System.out.println("Select a repository to view:");
         int selection = 1;
-        for (String sourceName : this.repositoryClient.getNamesOfRepositories()) {
+        for (String sourceName : repositoryClient.getNamesOfRepositories()) {
             selectionToSourceName.put(selection, sourceName);
-            buffer.append("  " + selection + ") " + sourceName + "\n");
+            System.out.println(StringUtil.justifyRight("" + selection++, 3, ' ') + ") " + sourceName);
         }
-        buffer.append(" or\n");
-        buffer.append("  ?) Show this menu\n");
-        buffer.append("  q) Quit");
-        return buffer.toString();
+        System.out.println("or");
+        System.out.println("  ?) Show this menu");
+        System.out.println("  q) Quit");
     }
 
-    protected void navigate( String sourceName ) {
+    /**
+     * Display the menu for navigating the source with the supplied name. This method returns as soon as the user exits the
+     * source.
+     * 
+     * @param sourceName the source to be navigated; may not be null
+     */
+    protected void displayNavigationMenu( String sourceName ) {
+        assert sourceName != null;
         String currentPath = "/";
+        System.out.println();
+        System.out.println("Entering the \"" + sourceName + "\" repository.");
+        displayNavigationHelp();
         while (true) {
-
-            // Ask for the command ...
-            System.out.print("> ");
             try {
+                // Print the prompt and read the input command ...
+                System.out.print(sourceName + "> ");
                 String input = in.readLine().trim();
-                if (input.length() == 0) {
-                    continue;
-                }
 
+                // Process the command ...
+                if (input.length() == 0) continue;
                 if ("?".equals(input) || "help".equals(input) || "h".equals(input)) {
-                    System.out.println("  Enter a command:");
-                    System.out.println("      pwd          print the current node's path");
-                    System.out.println("      ls [path]    to list the details of the node at the specified absolute or relative path");
-                    System.out.println("                   (or the current path if none is supplied)");
-                    System.out.println("      cd path      to change to the node at the specified absolute or relative path");
-                    System.out.println("      exit         to exit this repository and return to the main menu");
-                    System.out.println("  and press return:");
+                    displayNavigationHelp();
                 } else if ("pwd".equals(input)) {
-                    System.out.println(" " + currentPath);
+                    System.out.println(currentPath);
                 } else if ("exit".equals(input)) {
                     return;
-                } else if (input.startsWith("ls")) {
-                    input = input.substring("ls".length()).trim();
-                    String path = currentPath;
-                    if (input.length() != 0) path = input;
+                } else if (input.startsWith("ls") || input.startsWith("ll")) {
+                    input = input.substring(2).trim();
+                    String path = repositoryClient.buildPath(currentPath, input);
                     displayNode(sourceName, path);
                 } else if (input.startsWith("cd ")) {
                     input = input.substring("cd ".length()).trim();
                     if (input.length() == 0) continue;
-                    // Check to see if the new path exists ...
-                    if (!repositoryClient.getNodeInfo(sourceName, input, null, null)) {
-                        System.out.println(" \"" + input + "\" does not exist");
+                    // Change the current path to the new location
+                    String oldPath = currentPath;
+                    currentPath = repositoryClient.buildPath(currentPath, input);
+                    // If the current path does not exist, then go back to the previous path ...
+                    if (!repositoryClient.getNodeInfo(sourceName, currentPath, null, null)) {
+                        System.out.println("\"" + currentPath + "\" does not exist");
+                        currentPath = oldPath;
                     } else {
-                        currentPath = input;
+                        System.out.println(currentPath);
                     }
                 }
             } catch (Throwable e) {
                 displayError(" processing your command", e);
             }
         }
-
     }
 
+    protected void displayNavigationHelp() {
+        System.out.println();
+        System.out.println("Enter one of the following commands followed by RETURN:");
+        System.out.println("      pwd          print the current node's path");
+        System.out.println("      ls [path]    to list the details of the node at the specified absolute or relative path");
+        System.out.println("                   (or the current path if none is supplied)");
+        System.out.println("      cd path      to change to the node at the specified absolute or relative path");
+        System.out.println("      exit         to exit this repository and return to the main menu");
+        System.out.println();
+    }
+
+    /**
+     * Display the node with the given path found in the supplied source.
+     * 
+     * @param sourceName the name of the source; may not be null
+     * @param path the path to the node; may not be null
+     */
     protected void displayNode( String sourceName,
                                 String path ) {
+        assert sourceName != null;
+        assert path != null;
+
+        // Retrieve the node information from the client ...
         Map<String, Object[]> properties = new HashMap<String, Object[]>();
         List<String> children = new ArrayList<String>();
         try {
@@ -196,29 +243,39 @@ public class ConsoleInput implements UserInterface {
             displayError(" displaying node \"" + path + "\"", t);
         }
 
-        System.out.println("  Path:" + path);
-        System.out.println("  Properties:");
-        int maxLength = 0;
+        // Print the './' and '../' options ...
+        System.out.println(" ./");
+        System.out.println(" ../");
+
+        // Display the children ...
+        for (String childName : children) {
+            System.out.println(" " + childName + "/");
+        }
+        // Determine the maximum length of the properties so that we can left-justify the values
+        int maxLength = 5;
         for (String propertyName : properties.keySet()) {
             maxLength = Math.max(maxLength, propertyName.length());
         }
+        // Display the properties ...
         for (Map.Entry<String, Object[]> property : properties.entrySet()) {
-            String name = property.getKey();
-            name = StringUtil.justifyLeft(name, maxLength, ' ');
+            String name = StringUtil.justifyLeft(property.getKey(), maxLength, ' ');
             Object[] values = property.getValue();
             String valueStr = StringUtil.readableString(values);
-            if (values.length == 1) StringUtil.readableString(values[0]);
-            System.out.println("     " + name + " = " + valueStr);
+            if (values.length == 1) valueStr = StringUtil.readableString(values[0]);
+            System.out.println(" " + name + " = " + valueStr);
         }
-        System.out.println("  Children:");
-        for (String childName : children) {
-            System.out.println("     " + childName);
-        }
-        System.out.println();
     }
 
+    /**
+     * Display the supplied error that happened during the activity.
+     * 
+     * @param activity the activity; may not be null but may be empty
+     * @param t the exception; may not be null
+     */
     protected void displayError( String activity,
                                  Throwable t ) {
+        assert activity != null;
+        assert t != null;
         System.err.println();
         System.err.println("There has been an error" + activity);
         System.err.println("  " + t.getMessage());
@@ -240,4 +297,14 @@ public class ConsoleInput implements UserInterface {
     public String getLocationOfRepositoryFiles() {
         return new File("").getAbsolutePath();
     }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.example.dna.repository.UserInterface#getCallbackHandler()
+     */
+    public CallbackHandler getCallbackHandler() {
+        return new TextCallbackHandler();
+    }
+
 }

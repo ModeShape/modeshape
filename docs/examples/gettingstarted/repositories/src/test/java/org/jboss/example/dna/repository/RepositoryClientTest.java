@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.Map;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.MockitoAnnotations;
 import org.mockito.MockitoAnnotations.Mock;
@@ -190,12 +191,27 @@ public class RepositoryClientTest {
         assertThat(properties.size(), is(8));
     }
 
+    @Ignore
     @Test
     public void shouldLoadVehiclesRepository() throws Throwable {
         client.startRepositories();
+        assertThat(client.getNodeInfo("Vehicles", "/", properties, children), is(true));
+        assertThat(children, hasItems("Vehicles"));
+        assertThat(properties.containsKey("dna:uuid"), is(true));
+        assertThat(properties.size(), is(1));
+
+        properties.clear();
+        children.clear();
         assertThat(client.getNodeInfo("Vehicles", "/Vehicles", properties, children), is(true));
         assertThat(children, hasItems("Cars", "Aircraft"));
         assertThat(properties.containsKey("jcr:primaryType"), is(false));
+        assertThat(properties.containsKey("dna:uuid"), is(true));
+        assertThat(properties.size(), is(1));
+
+        properties.clear();
+        children.clear();
+        assertThat(client.getNodeInfo("Vehicles", "/", properties, children), is(true));
+        assertThat(children, hasItems("Vehicles"));
         assertThat(properties.containsKey("dna:uuid"), is(true));
         assertThat(properties.size(), is(1));
 

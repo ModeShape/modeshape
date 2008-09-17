@@ -21,11 +21,15 @@
  */
 package org.jboss.example.dna.repository;
 
+import javax.security.auth.callback.CallbackHandler;
+
 /**
  * @author Randall Hauch
  */
 public interface UserInterface {
 
     String getLocationOfRepositoryFiles();
+
+    CallbackHandler getCallbackHandler();
 
 }
