@@ -528,22 +528,35 @@ class JcrSession implements Session {
         Set<Property> properties = new HashSet<Property>();
         UUID uuid = null;
         Name jcrUuidName = executionContext.getValueFactories().getNameFactory().create("jcr:uuid");
+        Name jcrMixinTypesName = executionContext.getValueFactories().getNameFactory().create("jcr:mixinTypes");
         UuidFactory uuidFactory = executionContext.getValueFactories().getUuidFactory();
+        org.jboss.dna.spi.graph.Property dnaUuidProp = null;
+        boolean referenceable = false;
         for (org.jboss.dna.spi.graph.Property dnaProp : getNodeCommand.getProperties()) {
             Name name = dnaProp.getName();
-            if (uuid == null && DnaLexicon.UUID.equals(name)) uuid = uuidFactory.create(dnaProp.getValues()).next();
-            else if (dnaProp.isMultiple()) properties.add(new JcrMultiValueProperty(node, executionContext, name, dnaProp));
+            if (dnaProp.isMultiple()) properties.add(new JcrMultiValueProperty(node, executionContext, name, dnaProp));
             else {
-                if (jcrUuidName.equals(name)) {
-                    uuid = uuidFactory.create(dnaProp.getValues()).next();
-                    nodesByJcrUuid.put(uuid.toString(), new WeakReference<Node>(node));
-                } else properties.add(new JcrProperty(node, executionContext, name, dnaProp.getValues().next()));
+                if (uuid == null && DnaLexicon.UUID.equals(name)) uuid = uuidFactory.create(dnaProp.getValues()).next();
+                else if (jcrUuidName.equals(name)) dnaUuidProp = dnaProp;
+                else if (jcrMixinTypesName.equals(name)) {
+                    org.jboss.dna.spi.graph.ValueFactory<String> stringFactory = executionContext.getValueFactories().getStringFactory();
+                    for (String mixin : stringFactory.create(dnaProp)) {
+                        if ("mix:referenceable".equals(mixin)) referenceable = true;
+                    }
+                }
+                properties.add(new JcrProperty(node, executionContext, name, dnaProp.getValues().next()));
             }
 
         }
         node.setProperties(properties);
         // Set node's UUID, creating one if necessary
-        if (uuid == null) uuid = UUID.randomUUID();
+        if (uuid == null) {
+            if (dnaUuidProp == null || !referenceable) uuid = UUID.randomUUID();
+            else {
+                uuid = uuidFactory.create(dnaUuidProp.getValues()).next();
+                nodesByJcrUuid.put(uuid.toString(), new WeakReference<Node>(node));
+            }
+        }
         node.setInternalUuid(uuid);
         // Setup node to be retrieved by DNA UUID
         nodesByUuid.put(new UUID(uuid.getMostSignificantBits(), uuid.getLeastSignificantBits()), new WeakReference<Node>(node));
