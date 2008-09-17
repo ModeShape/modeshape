@@ -24,15 +24,18 @@ package org.jboss.dna.jcr;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
+import static org.mockito.Mockito.stub;
 import java.util.ArrayList;
 import java.util.List;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
-import javax.jcr.Session;
 import org.jboss.dna.jcr.AbstractJcrNodeTest.MockAbstractJcrNode;
+import org.jboss.dna.spi.ExecutionContext;
+import org.jboss.dna.spi.graph.NamespaceRegistry;
 import org.jboss.dna.spi.graph.Path.Segment;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.mockito.MockitoAnnotations.Mock;
 
@@ -43,12 +46,16 @@ public class JcrNodeIteratorTest {
 
     private AbstractJcrNode node;
     @Mock
-    private Session session;
+    private JcrSession session;
     private List<Segment> children;
 
     @Before
     public void before() throws Exception {
         MockitoAnnotations.initMocks(this);
+        NamespaceRegistry registry = Mockito.mock(NamespaceRegistry.class);
+        ExecutionContext context = Mockito.mock(ExecutionContext.class);
+        stub(context.getNamespaceRegistry()).toReturn(registry);
+        stub(session.getExecutionContext()).toReturn(context);
         children = new ArrayList<Segment>();
         node = new MockAbstractJcrNode(session, "node", null);
     }

@@ -25,7 +25,6 @@ import java.util.UUID;
 import javax.jcr.ItemNotFoundException;
 import javax.jcr.Node;
 import javax.jcr.RepositoryException;
-import javax.jcr.Session;
 import net.jcip.annotations.NotThreadSafe;
 import org.jboss.dna.spi.graph.Path.Segment;
 
@@ -38,7 +37,7 @@ final class JcrNode extends AbstractJcrNode {
     private final UUID parentUuid;
     private final Segment segment;
 
-    JcrNode( Session session,
+    JcrNode( JcrSession session,
              UUID parentUuid,
              Segment segment ) {
         super(session);
@@ -72,7 +71,7 @@ final class JcrNode extends AbstractJcrNode {
      * @see javax.jcr.Item#getName()
      */
     public String getName() {
-        return segment.getName().getString();
+        return segment.getName().getString(((JcrSession)getSession()).getExecutionContext().getNamespaceRegistry());
     }
 
     /**

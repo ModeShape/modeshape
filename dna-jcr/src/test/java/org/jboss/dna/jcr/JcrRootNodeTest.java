@@ -28,7 +28,6 @@ import java.util.HashSet;
 import java.util.Set;
 import javax.jcr.ItemNotFoundException;
 import javax.jcr.Property;
-import javax.jcr.Session;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.MockitoAnnotations;
@@ -41,7 +40,7 @@ public class JcrRootNodeTest {
 
     private JcrRootNode root;
     @Mock
-    private Session session;
+    private JcrSession session;
     private Set<Property> properties;
 
     @Before

@@ -105,7 +105,8 @@ final class JcrNodeIterator implements NodeIterator {
             childNdx = 1;
         }
         try {
-            node = parent.getNode(child.getString() + '[' + childNdx + ']');
+            node = parent.getNode(child.getString(((JcrSession)parent.getSession()).getExecutionContext().getNamespaceRegistry())
+                                  + '[' + childNdx + ']');
             childNdx++;
             ndx++;
             return node;

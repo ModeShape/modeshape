@@ -248,7 +248,7 @@ class JcrSession implements Session {
         // If a node isn't found & last segment contains no index, get parent node & search for a property with the last name in
         // the path
         if (!lastSeg.hasIndex()) {
-            return getNode(parentPath).getProperty(lastSeg.getString());
+            return getNode(parentPath).getProperty(lastSeg.getString(executionContext.getNamespaceRegistry()));
         }
         // If a property isn't found, throw a PathNotFoundException
         throw new PathNotFoundException(JcrI18n.pathNotFound.text(path));

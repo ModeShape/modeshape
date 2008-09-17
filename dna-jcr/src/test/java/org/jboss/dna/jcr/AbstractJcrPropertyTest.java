@@ -37,6 +37,7 @@ import javax.jcr.nodetype.PropertyDefinition;
 import org.jboss.dna.common.util.StringUtil;
 import org.jboss.dna.spi.ExecutionContext;
 import org.jboss.dna.spi.graph.Name;
+import org.jboss.dna.spi.graph.NamespaceRegistry;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
@@ -54,6 +55,8 @@ public class AbstractJcrPropertyTest {
     @Mock
     private Node node;
     @Mock
+    private NamespaceRegistry namespaceRegistry;
+    @Mock
     private ExecutionContext executionContext;
     @Mock
     private Name name;
@@ -62,6 +65,7 @@ public class AbstractJcrPropertyTest {
     public void before() throws Exception {
         MockitoAnnotations.initMocks(this);
         stub(node.getSession()).toReturn(session);
+        stub(executionContext.getNamespaceRegistry()).toReturn(namespaceRegistry);
         prop = new MockAbstractJcrProperty(node, executionContext, name);
     }
 
@@ -128,7 +132,7 @@ public class AbstractJcrPropertyTest {
 
     @Test
     public void shouldProvideName() throws Exception {
-        stub(name.getString()).toReturn("name");
+        stub(name.getString(namespaceRegistry)).toReturn("name");
         assertThat(prop.getName(), is("name"));
     }
 
@@ -140,7 +144,7 @@ public class AbstractJcrPropertyTest {
     @Test
     public void shouldProvidePath() throws Exception {
         stub(node.getPath()).toReturn("/nodeName");
-        stub(name.getString()).toReturn("propertyName");
+        stub(name.getString(namespaceRegistry)).toReturn("propertyName");
         assertThat(prop.getPath(), is("/nodeName/propertyName"));
     }
 
@@ -158,11 +162,11 @@ public class AbstractJcrPropertyTest {
 
     @Test
     public void shouldIndicateSameAsNodeWithSameParentAndName() throws Exception {
-        stub(name.getString()).toReturn("propertyName");
+        stub(name.getString(namespaceRegistry)).toReturn("propertyName");
         Node otherNode = Mockito.mock(Node.class);
         stub(otherNode.getSession()).toReturn(session);
         Name otherName = Mockito.mock(Name.class);
-        stub(otherName.getString()).toReturn("propertyName");
+        stub(otherName.getString(namespaceRegistry)).toReturn("propertyName");
         stub(node.isSame(otherNode)).toReturn(true);
         Property otherProp = new MockAbstractJcrProperty(otherNode, executionContext, otherName);
         assertThat(prop.isSame(otherProp), is(true));
@@ -170,11 +174,11 @@ public class AbstractJcrPropertyTest {
 
     @Test
     public void shouldIndicateDifferentThanNodeWithDifferentParent() throws Exception {
-        stub(name.getString()).toReturn("propertyName");
+        stub(name.getString(namespaceRegistry)).toReturn("propertyName");
         Node otherNode = Mockito.mock(Node.class);
         stub(otherNode.getSession()).toReturn(session);
         Name otherName = Mockito.mock(Name.class);
-        stub(otherName.getString()).toReturn("propertyName");
+        stub(otherName.getString(namespaceRegistry)).toReturn("propertyName");
         stub(node.isSame(otherNode)).toReturn(false);
         Property otherProp = new MockAbstractJcrProperty(otherNode, executionContext, otherName);
         assertThat(prop.isSame(otherProp), is(false));
@@ -182,11 +186,11 @@ public class AbstractJcrPropertyTest {
 
     @Test
     public void shouldIndicateDifferentThanNodeWithDifferentName() throws Exception {
-        stub(name.getString()).toReturn("propertyName");
+        stub(name.getString(namespaceRegistry)).toReturn("propertyName");
         Node otherNode = Mockito.mock(Node.class);
         stub(otherNode.getSession()).toReturn(session);
         Name otherName = Mockito.mock(Name.class);
-        stub(otherName.getString()).toReturn("propertyName2");
+        stub(otherName.getString(namespaceRegistry)).toReturn("propertyName2");
         stub(node.isSame(otherNode)).toReturn(true);
         Property otherProp = new MockAbstractJcrProperty(otherNode, executionContext, otherName);
         assertThat(prop.isSame(otherProp), is(false));

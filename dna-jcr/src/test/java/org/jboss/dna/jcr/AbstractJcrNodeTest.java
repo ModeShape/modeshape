@@ -39,11 +39,12 @@ import javax.jcr.Node;
 import javax.jcr.PathNotFoundException;
 import javax.jcr.Property;
 import javax.jcr.RepositoryException;
-import javax.jcr.Session;
 import javax.jcr.UnsupportedRepositoryOperationException;
 import javax.jcr.Value;
 import javax.jcr.Workspace;
 import javax.jcr.version.Version;
+import org.jboss.dna.spi.ExecutionContext;
+import org.jboss.dna.spi.graph.NamespaceRegistry;
 import org.jboss.dna.spi.graph.Path.Segment;
 import org.jboss.dna.spi.graph.impl.BasicName;
 import org.junit.Before;
@@ -57,7 +58,7 @@ import org.mockito.MockitoAnnotations.Mock;
  */
 public class AbstractJcrNodeTest {
 
-    static MockAbstractJcrNode createChild( Session session,
+    static MockAbstractJcrNode createChild( JcrSession session,
                                             String name,
                                             int index,
                                             List<Segment> children,
@@ -66,7 +67,7 @@ public class AbstractJcrNodeTest {
         Segment seg = Mockito.mock(Segment.class);
         stub(seg.getName()).toReturn(new BasicName(null, name));
         children.add(seg);
-        stub(session.getItem(parent.getPath() + "/{}" + name + '[' + index + ']')).toReturn(child);
+        stub(session.getItem(parent.getPath() + "/" + name + '[' + index + ']')).toReturn(child);
         return child;
     }
 
@@ -75,7 +76,7 @@ public class AbstractJcrNodeTest {
         String name;
         Node parent;
 
-        MockAbstractJcrNode( Session session,
+        MockAbstractJcrNode( JcrSession session,
                              String name,
                              Node parent ) {
             super(session);
@@ -106,13 +107,17 @@ public class AbstractJcrNodeTest {
 
     private AbstractJcrNode node;
     @Mock
-    private Session session;
+    private JcrSession session;
     private List<Segment> children;
     private Set<Property> properties;
 
     @Before
     public void before() throws Exception {
         MockitoAnnotations.initMocks(this);
+        NamespaceRegistry registry = Mockito.mock(NamespaceRegistry.class);
+        ExecutionContext context = Mockito.mock(ExecutionContext.class);
+        stub(context.getNamespaceRegistry()).toReturn(registry);
+        stub(session.getExecutionContext()).toReturn(context);
         children = new ArrayList<Segment>();
         properties = new HashSet<Property>();
         node = new MockAbstractJcrNode(session, "node", null);
@@ -319,7 +324,7 @@ public class AbstractJcrNodeTest {
 
     @Test
     public void shouldProvideSession() throws Exception {
-        assertThat(node.getSession(), is(session));
+        assertThat((JcrSession)node.getSession(), is(session));
     }
 
     @Test
@@ -378,7 +383,7 @@ public class AbstractJcrNodeTest {
         Node child = createChild(session, "child", 1, children, node);
         Node child2 = createChild(session, "child2", 1, children, child);
         node.setChildren(children);
-        assertThat(node.hasNode("{}child"), is(true));
+        assertThat(node.hasNode("child"), is(true));
         stub(session.getItem("/node/child/{}child2")).toReturn(child2);
         assertThat(node.hasNode("child/{}child2"), is(true));
     }
@@ -460,7 +465,7 @@ public class AbstractJcrNodeTest {
     @Test
     public void shouldProvideIsSame() throws Exception {
         stub(session.getWorkspace()).toReturn(Mockito.mock(Workspace.class));
-        Session session2 = Mockito.mock(Session.class);
+        JcrSession session2 = Mockito.mock(JcrSession.class);
         Node node2 = new MockAbstractJcrNode(session2, node.getName(), node.getParent());
         assertThat(node.isSame(node2), is(false));
         Property prop = Mockito.mock(Property.class);

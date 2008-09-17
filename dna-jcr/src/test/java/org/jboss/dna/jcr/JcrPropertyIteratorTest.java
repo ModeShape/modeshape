@@ -28,7 +28,6 @@ import java.util.HashSet;
 import java.util.Set;
 import javax.jcr.Property;
 import javax.jcr.PropertyIterator;
-import javax.jcr.Session;
 import org.jboss.dna.jcr.AbstractJcrNodeTest.MockAbstractJcrNode;
 import org.junit.Before;
 import org.junit.Test;
@@ -43,7 +42,7 @@ public class JcrPropertyIteratorTest {
 
     private AbstractJcrNode node;
     @Mock
-    private Session session;
+    private JcrSession session;
     private Set<Property> properties;
 
     @Before

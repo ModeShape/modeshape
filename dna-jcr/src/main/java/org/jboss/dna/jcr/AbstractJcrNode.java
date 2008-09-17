@@ -55,13 +55,13 @@ import org.jboss.dna.spi.graph.Path.Segment;
 @NotThreadSafe
 abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
 
-    private final Session session;
+    private final JcrSession session;
     Set<Property> properties;
     List<Name> children;
     List<Integer> childNameCounts;
     private UUID uuid;
 
-    AbstractJcrNode( Session session ) {
+    AbstractJcrNode( JcrSession session ) {
         assert session != null;
         this.session = session;
     }
@@ -423,7 +423,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         int childNdx = 0;
         if (children != null) {
             for (Name child : children) {
-                if (name.equals(child.getString())) {
+                if (name.equals(child.getString(session.getExecutionContext().getNamespaceRegistry()))) {
                     if (ndxNdx >= 0) {
                         return (Integer.parseInt(relativePath.substring(ndxNdx + 1, relativePath.length() - 1)) <= childNameCounts.get(childNdx));
                     }

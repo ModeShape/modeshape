@@ -124,7 +124,7 @@ abstract class AbstractJcrProperty extends AbstractJcrItem implements Property {
      * @see javax.jcr.Item#getName()
      */
     public final String getName() {
-        return name.getString();
+        return name.getString(executionContext.getNamespaceRegistry());
     }
 
     /**
