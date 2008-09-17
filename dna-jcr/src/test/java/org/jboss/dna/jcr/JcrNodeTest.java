@@ -30,7 +30,6 @@ import java.util.UUID;
 import javax.jcr.ItemNotFoundException;
 import javax.jcr.Node;
 import javax.jcr.Property;
-import javax.jcr.Session;
 import org.jboss.dna.spi.graph.Name;
 import org.jboss.dna.spi.graph.Path.Segment;
 import org.junit.Before;
@@ -47,7 +46,7 @@ public class JcrNodeTest {
     private JcrNode node;
     private Node root;
     @Mock
-    private Session session;
+    private JcrSession session;
 
     @Before
     public void before() throws Exception {
@@ -60,7 +59,7 @@ public class JcrNodeTest {
         stub(segment.getIndex()).toReturn(2);
         UUID uuid = UUID.randomUUID();
         node = new JcrNode(session, uuid, segment);
-        stub(session.getNodeByUUID(uuid.toString())).toReturn(root);
+        stub(session.getNode(uuid)).toReturn(root);
         node.setProperties(new HashSet<Property>());
         node.setChildren(new ArrayList<Segment>());
     }

@@ -67,7 +67,7 @@ import org.xml.sax.ContentHandler;
  * @author Randall Hauch
  */
 @NotThreadSafe
-final class JcrSession implements Session {
+class JcrSession implements Session {
 
     private final Repository repository;
     private final ExecutionContext executionContext;
@@ -300,12 +300,9 @@ final class JcrSession implements Session {
         if (dnaUuidProp == null) dnaUuidProp = command.getPropertiesByName().get(DnaLexicon.UUID);
         if (dnaUuidProp != null) {
             UUID uuid = executionContext.getValueFactories().getUuidFactory().create(dnaUuidProp.getValues()).next();
-            WeakReference<Node> ref = nodesByUuid.get(uuid);
-            if (ref != null) {
-                Node node = ref.get();
-                if (node != null) {
-                    return node;
-                }
+            Node node = getNode(uuid);
+            if (node != null) {
+                return node;
             }
         }
         // If not create a new one & populate it
@@ -315,6 +312,11 @@ final class JcrSession implements Session {
         else node = new JcrNode(this, ((JcrNode)getNode(parentPath)).getInternalUuid(), path.getLastSegment());
         populateNode(node, command);
         return node;
+    }
+
+    Node getNode( UUID uuid ) {
+        WeakReference<Node> ref = nodesByUuid.get(uuid);
+        return (ref == null ? null : ref.get());
     }
 
     /**

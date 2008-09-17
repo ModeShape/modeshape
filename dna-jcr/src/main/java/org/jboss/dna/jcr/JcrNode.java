@@ -22,6 +22,7 @@
 package org.jboss.dna.jcr;
 
 import java.util.UUID;
+import javax.jcr.ItemNotFoundException;
 import javax.jcr.Node;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
@@ -79,8 +80,12 @@ final class JcrNode extends AbstractJcrNode {
      * 
      * @see javax.jcr.Item#getParent()
      */
-    public Node getParent() throws RepositoryException {
-        return getSession().getNodeByUUID(parentUuid.toString());
+    public Node getParent() throws ItemNotFoundException {
+        Node node = ((JcrSession)getSession()).getNode(parentUuid);
+        if (node == null) {
+            throw new ItemNotFoundException();
+        }
+        return node;
     }
 
     /**
