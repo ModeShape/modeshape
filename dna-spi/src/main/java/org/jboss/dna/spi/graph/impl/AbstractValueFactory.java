@@ -378,6 +378,29 @@ public abstract class AbstractValueFactory<T> implements ValueFactory<T> {
         return result;
     }
 
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.spi.graph.ValueFactory#create(java.util.Iterator)
+     */
+    public Iterator<T> create( Iterator<?> values ) throws ValueFormatException, IoException {
+        return new ConvertingIterator<T>(values, this);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.spi.graph.ValueFactory#create(java.lang.Iterable)
+     */
+    public Iterable<T> create( final Iterable<?> valueIterable ) throws ValueFormatException, IoException {
+        return new Iterable<T>() {
+
+            public Iterator<T> iterator() {
+                return create(valueIterable.iterator());
+            }
+        };
+    }
+
     protected static class ConvertingIterator<ValueType> implements Iterator<ValueType> {
         private final Iterator<?> delegate;
         private final ValueFactory<ValueType> factory;

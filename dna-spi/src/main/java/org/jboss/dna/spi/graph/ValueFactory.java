@@ -458,4 +458,29 @@ public interface ValueFactory<T> {
      */
     Iterator<T> create( Iterator<?> values ) throws ValueFormatException, IoException;
 
+    /**
+     * Create an iterable with the values (of an unknown type). The factory converts any values as required. Note that this method
+     * will not consider {@link #create(InputStream, long)}, {@link #create(Reader, long)} and
+     * {@link #create(String, TextDecoder)}.
+     * <p>
+     * This is useful to use when converting all the {@link Property#getValues() values} of a {@link Property}.
+     * </p>
+     * Example:
+     * 
+     * <pre>
+     *      Property property = ...
+     *      ExecutionContext executionContext = ...
+     *      ValueFactory&lt;String&gt; stringFactory = executionContext.getValueFactories().getStringFactory();
+     *      for (String token : stringFactory.create(property)) {
+     *          ...
+     *      }
+     * </pre>
+     * 
+     * @param valueIterable the values
+     * @return the iterator of type <code>T</code> over the values, or null if the supplied parameter is null
+     * @throws ValueFormatException if the conversion from an iterator of objects could not be performed
+     * @throws IoException If an unexpected problem occurs during the conversion.
+     * @see Property#getValues()
+     */
+    Iterable<T> create( Iterable<?> valueIterable ) throws ValueFormatException, IoException;
 }

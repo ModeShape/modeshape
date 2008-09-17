@@ -28,7 +28,6 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.UUID;
@@ -627,15 +626,6 @@ public class PathValueFactory extends AbstractValueFactory<Path> implements Path
                         long approximateLength ) throws IoException {
         // First attempt to create a string from the value, then a double from the string ...
         return create(getStringValueFactory().create(reader, approximateLength));
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.jboss.dna.spi.graph.ValueFactory#create(java.util.Iterator)
-     */
-    public Iterator<Path> create( Iterator<?> values ) throws IoException {
-        return new ConvertingIterator<Path>(values, this);
     }
 
     /**

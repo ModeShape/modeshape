@@ -27,7 +27,6 @@ import java.math.BigDecimal;
 import java.net.URI;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.Iterator;
 import java.util.UUID;
 import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.text.TextDecoder;
@@ -306,15 +305,6 @@ public class JodaDateTimeValueFactory extends AbstractValueFactory<DateTime> imp
         if (offsetInMillis == 0l) return original;
         long newMillis = original.getMilliseconds() + offsetInMillis;
         return new JodaDateTime(newMillis, original.getTimeZoneId());
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.jboss.dna.spi.graph.ValueFactory#create(java.util.Iterator)
-     */
-    public Iterator<DateTime> create( Iterator<?> values ) throws IoException {
-        return new ConvertingIterator<DateTime>(values, this);
     }
 
     /**

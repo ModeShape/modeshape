@@ -32,7 +32,6 @@ import java.math.BigDecimal;
 import java.net.URI;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.Iterator;
 import java.util.UUID;
 import org.jboss.dna.common.text.NoOpEncoder;
 import org.jboss.dna.common.text.TextDecoder;
@@ -143,15 +142,6 @@ public class AbstractValueFactoryTest {
         public String create( Reader reader,
                               long approximateLength ) {
             return null;
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.jboss.dna.spi.graph.ValueFactory#create(java.util.Iterator)
-         */
-        public Iterator<String> create( Iterator<?> values ) throws IoException {
-            return new ConvertingIterator<String>(values, this);
         }
 
         /**

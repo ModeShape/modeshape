@@ -29,7 +29,6 @@ import java.math.BigDecimal;
 import java.net.URI;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.Iterator;
 import java.util.UUID;
 import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.text.TextDecoder;
@@ -246,15 +245,6 @@ public class InMemoryBinaryValueFactory extends AbstractValueFactory<Binary> {
         } catch (IOException err) {
             throw new IoException(SpiI18n.errorConvertingIo.text(Reader.class.getSimpleName(), Binary.class.getSimpleName()), err);
         }
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.jboss.dna.spi.graph.ValueFactory#create(java.util.Iterator)
-     */
-    public Iterator<Binary> create( Iterator<?> values ) throws IoException {
-        return new ConvertingIterator<Binary>(values, this);
     }
 
     /**
