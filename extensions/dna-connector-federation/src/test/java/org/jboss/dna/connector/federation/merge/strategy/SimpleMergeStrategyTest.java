@@ -19,7 +19,7 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.jboss.dna.connector.federation.merge;
+package org.jboss.dna.connector.federation.merge.strategy;
 
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
@@ -38,6 +38,8 @@ import java.util.UUID;
 import org.hamcrest.Matcher;
 import org.jboss.dna.common.collection.IsIteratorContaining;
 import org.jboss.dna.connector.federation.contribution.Contribution;
+import org.jboss.dna.connector.federation.merge.FederatedNode;
+import org.jboss.dna.spi.DnaLexicon;
 import org.jboss.dna.spi.ExecutionContext;
 import org.jboss.dna.spi.connector.BasicExecutionContext;
 import org.jboss.dna.spi.graph.Name;
@@ -83,7 +85,8 @@ public class SimpleMergeStrategyTest {
     public void shouldCombinePropertiesFromOneContribution() {
         addContribution("source1").setProperty("p1", "p1 value");
         strategy.merge(node, contributions, context);
-        assertThat(node.getProperties().size(), is(1));
+        assertThat(node.getProperties().size(), is(2));
+        assertThat(node.getPropertiesByName().get(DnaLexicon.UUID), is(notNullValue()));
         assertThat(node.getPropertiesByName().get(name("p1")), is(property("p1", "p1 value")));
     }
 
@@ -116,7 +119,8 @@ public class SimpleMergeStrategyTest {
         addContribution("source1").setProperty("p1", "p1 value");
         addContribution("source2").setProperty("p2", "p2 value");
         strategy.merge(node, contributions, context);
-        assertThat(node.getProperties().size(), is(2));
+        assertThat(node.getProperties().size(), is(3));
+        assertThat(node.getPropertiesByName().get(DnaLexicon.UUID), is(notNullValue()));
         assertThat(node.getPropertiesByName().get(name("p1")), is(property("p1", "p1 value")));
         assertThat(node.getPropertiesByName().get(name("p2")), is(property("p2", "p2 value")));
     }
@@ -126,7 +130,8 @@ public class SimpleMergeStrategyTest {
         addContribution("source1").setProperty("p1", "p1 value").setProperty("p12", "1", "2", "3");
         addContribution("source2").setProperty("p2", "p2 value").setProperty("p12", "3", "4");
         strategy.merge(node, contributions, context);
-        assertThat(node.getProperties().size(), is(3));
+        assertThat(node.getProperties().size(), is(4));
+        assertThat(node.getPropertiesByName().get(DnaLexicon.UUID), is(notNullValue()));
         assertThat(node.getPropertiesByName().get(name("p1")), is(property("p1", "p1 value")));
         assertThat(node.getPropertiesByName().get(name("p2")), is(property("p2", "p2 value")));
         assertThat(node.getPropertiesByName().get(name("p12")), is(property("p12", "1", "2", "3", "4")));
@@ -137,7 +142,8 @@ public class SimpleMergeStrategyTest {
         addContribution("source1").setProperty("p1", "p1 value").setProperty("p12", "1", "2", "3");
         addContribution("source2").setProperty("p2", "p2 value").setProperty("p12", "3", "4");
         strategy.merge(node, contributions, context);
-        assertThat(node.getProperties().size(), is(3));
+        assertThat(node.getProperties().size(), is(4));
+        assertThat(node.getPropertiesByName().get(DnaLexicon.UUID), is(notNullValue()));
         for (Contribution contribution : contributions) {
             Iterator<Property> iter = contribution.getProperties();
             while (iter.hasNext()) {
@@ -164,7 +170,8 @@ public class SimpleMergeStrategyTest {
         addContribution("source1").setProperty("p1", "p1 value").setProperty("p12", "1", "2", "3");
         addContribution("source2").setProperty("p2", "p2 value").setProperty("p12", 3, 4);
         strategy.merge(node, contributions, context);
-        assertThat(node.getProperties().size(), is(3));
+        assertThat(node.getProperties().size(), is(4));
+        assertThat(node.getPropertiesByName().get(DnaLexicon.UUID), is(notNullValue()));
         assertThat(node.getPropertiesByName().get(name("p1")), is(property("p1", "p1 value")));
         assertThat(node.getPropertiesByName().get(name("p2")), is(property("p2", "p2 value")));
         assertThat(node.getPropertiesByName().get(name("p12")), is(property("p12", "1", "2", "3", 4)));

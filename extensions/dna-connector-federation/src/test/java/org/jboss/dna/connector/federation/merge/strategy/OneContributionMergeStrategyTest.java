@@ -19,7 +19,7 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.jboss.dna.connector.federation.merge;
+package org.jboss.dna.connector.federation.merge.strategy;
 
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNot.not;
@@ -33,6 +33,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import org.jboss.dna.connector.federation.contribution.Contribution;
+import org.jboss.dna.connector.federation.merge.FederatedNode;
+import org.jboss.dna.connector.federation.merge.MergePlan;
+import org.jboss.dna.spi.DnaLexicon;
 import org.jboss.dna.spi.ExecutionContext;
 import org.jboss.dna.spi.connector.BasicExecutionContext;
 import org.jboss.dna.spi.graph.Name;
@@ -94,6 +97,7 @@ public class OneContributionMergeStrategyTest {
         stub(contribution.getProperties()).toReturn(properties.values().iterator());
         stub(contribution.getProperties()).toReturn(properties.values().iterator());
         strategy.merge(node, contributions, context);
+        properties.put(DnaLexicon.UUID, node.getPropertiesByName().get(DnaLexicon.UUID));
         assertThat(node.getPropertiesByName(), is(properties));
     }
 

@@ -32,7 +32,6 @@ import java.util.List;
 import java.util.Map;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.MockitoAnnotations;
 import org.mockito.MockitoAnnotations.Mock;
@@ -44,6 +43,7 @@ public class RepositoryClientTest {
 
     private RepositoryClient client;
     private Map<String, Object[]> properties;
+    private Map<String, Object> uuids;
     private List<String> children;
     @Mock
     private UserInterface userInterface;
@@ -51,6 +51,7 @@ public class RepositoryClientTest {
     @Before
     public void beforeEach() {
         MockitoAnnotations.initMocks(this);
+        uuids = new HashMap<String, Object>();
         properties = new HashMap<String, Object[]>();
         children = new ArrayList<String>();
         client = new RepositoryClient();
@@ -74,6 +75,22 @@ public class RepositoryClientTest {
         assertThat(actualValues, is(values));
     }
 
+    protected void getNodeInfo( String source,
+                                String path ) throws Throwable {
+        properties.clear();
+        children.clear();
+        assertThat(client.getNodeInfo(source, path, properties, children), is(true));
+        // Record the UUID of the node ...
+        final Object uuid = properties.get("dna:uuid");
+        final String key = source + "\n" + path;
+        final Object existingUuid = uuids.get(key);
+        if (existingUuid != null) {
+            assertThat(uuid, is(existingUuid));
+        } else {
+            uuids.put(key, uuid);
+        }
+    }
+
     @Test
     public void shouldStartupWithoutError() throws Exception {
         client.startRepositories();
@@ -89,23 +106,20 @@ public class RepositoryClientTest {
     @Test
     public void shouldHaveContentFromConfigurationRepository() throws Throwable {
         client.startRepositories();
-        assertThat(client.getNodeInfo("Configuration", "/dna:system", properties, children), is(true));
+
+        getNodeInfo("Configuration", "/dna:system");
         assertThat(children, hasItems("dna:sources", "dna:federatedRepositories"));
         assertThat(properties.containsKey("jcr:primaryType"), is(true));
         assertThat(properties.containsKey("dna:uuid"), is(true));
         assertThat(properties.size(), is(2));
 
-        properties.clear();
-        children.clear();
-        assertThat(client.getNodeInfo("Configuration", "/dna:system/dna:sources", properties, children), is(true));
+        getNodeInfo("Configuration", "/dna:system/dna:sources");
         assertThat(children, hasItems("SourceA", "SourceB", "SourceC", "SourceD"));
         assertThat(properties.containsKey("jcr:primaryType"), is(true));
         assertThat(properties.containsKey("dna:uuid"), is(true));
         assertThat(properties.size(), is(2));
 
-        properties.clear();
-        children.clear();
-        assertThat(client.getNodeInfo("Configuration", "/dna:system/dna:sources/SourceA", properties, children), is(true));
+        getNodeInfo("Configuration", "/dna:system/dna:sources/SourceA");
         assertThat(children.size(), is(0));
         assertThat(properties.containsKey("jcr:primaryType"), is(true));
         assertThat(properties.containsKey("dna:uuid"), is(true));
@@ -116,25 +130,22 @@ public class RepositoryClientTest {
     }
 
     @Test
-    public void shouldLoadCarsRepository() throws Throwable {
+    public void shouldHaveContentFromCarsRepository() throws Throwable {
         client.startRepositories();
-        assertThat(client.getNodeInfo("Cars", "/Cars", properties, children), is(true));
+
+        getNodeInfo("Cars", "/Cars");
         assertThat(children, hasItems("Hybrid", "Sports", "Luxury", "Utility"));
         assertThat(properties.containsKey("jcr:primaryType"), is(true));
         assertThat(properties.containsKey("dna:uuid"), is(true));
         assertThat(properties.size(), is(2));
 
-        properties.clear();
-        children.clear();
-        assertThat(client.getNodeInfo("Cars", "/Cars/Hybrid", properties, children), is(true));
+        getNodeInfo("Cars", "/Cars/Hybrid");
         assertThat(children, hasItems("Toyota Prius", "Toyota Highlander", "Nissan Altima"));
         assertThat(properties.containsKey("jcr:primaryType"), is(true));
         assertThat(properties.containsKey("dna:uuid"), is(true));
         assertThat(properties.size(), is(2));
 
-        properties.clear();
-        children.clear();
-        assertThat(client.getNodeInfo("Cars", "/Cars/Sports/Aston Martin DB9", properties, children), is(true));
+        getNodeInfo("Cars", "/Cars/Sports/Aston Martin DB9");
         assertThat(children.size(), is(0));
         assertThat(properties.containsKey("jcr:primaryType"), is(true));
         assertThat(properties.containsKey("dna:uuid"), is(true));
@@ -153,17 +164,16 @@ public class RepositoryClientTest {
     }
 
     @Test
-    public void shouldLoadAircraftRepository() throws Throwable {
+    public void shouldHaveContentFromAircraftRepository() throws Throwable {
         client.startRepositories();
-        assertThat(client.getNodeInfo("Aircraft", "/Aircraft", properties, children), is(true));
+
+        getNodeInfo("Aircraft", "/Aircraft");
         assertThat(children, hasItems("Business", "Commercial", "Vintage", "Homebuilt"));
         assertThat(properties.containsKey("jcr:primaryType"), is(true));
         assertThat(properties.containsKey("dna:uuid"), is(true));
         assertThat(properties.size(), is(2));
 
-        properties.clear();
-        children.clear();
-        assertThat(client.getNodeInfo("Aircraft", "/Aircraft/Commercial", properties, children), is(true));
+        getNodeInfo("Aircraft", "/Aircraft/Commercial");
         assertThat(children, hasItems("Boeing 777",
                                       "Boeing 767",
                                       "Boeing 787",
@@ -176,9 +186,7 @@ public class RepositoryClientTest {
         assertThat(properties.containsKey("dna:uuid"), is(true));
         assertThat(properties.size(), is(2));
 
-        properties.clear();
-        children.clear();
-        assertThat(client.getNodeInfo("Aircraft", "/Aircraft/Vintage/Wright Flyer", properties, children), is(true));
+        getNodeInfo("Aircraft", "/Aircraft/Vintage/Wright Flyer");
         assertThat(children.size(), is(0));
         assertThat(properties.containsKey("jcr:primaryType"), is(true));
         assertThat(properties.containsKey("dna:uuid"), is(true));
@@ -191,41 +199,32 @@ public class RepositoryClientTest {
         assertThat(properties.size(), is(8));
     }
 
-    @Ignore
     @Test
-    public void shouldLoadVehiclesRepository() throws Throwable {
+    public void shouldHaveContentFromVehiclesRepository() throws Throwable {
         client.startRepositories();
-        assertThat(client.getNodeInfo("Vehicles", "/", properties, children), is(true));
+
+        getNodeInfo("Vehicles", "/");
         assertThat(children, hasItems("Vehicles"));
         assertThat(properties.containsKey("dna:uuid"), is(true));
         assertThat(properties.size(), is(1));
 
-        properties.clear();
-        children.clear();
-        assertThat(client.getNodeInfo("Vehicles", "/Vehicles", properties, children), is(true));
+        getNodeInfo("Vehicles", "/Vehicles");
         assertThat(children, hasItems("Cars", "Aircraft"));
-        assertThat(properties.containsKey("jcr:primaryType"), is(false));
         assertThat(properties.containsKey("dna:uuid"), is(true));
         assertThat(properties.size(), is(1));
 
-        properties.clear();
-        children.clear();
-        assertThat(client.getNodeInfo("Vehicles", "/", properties, children), is(true));
+        getNodeInfo("Vehicles", "/");
         assertThat(children, hasItems("Vehicles"));
         assertThat(properties.containsKey("dna:uuid"), is(true));
         assertThat(properties.size(), is(1));
 
-        properties.clear();
-        children.clear();
-        assertThat(client.getNodeInfo("Vehicles", "/Vehicles/Cars/Hybrid", properties, children), is(true));
+        getNodeInfo("Vehicles", "/Vehicles/Cars/Hybrid");
         assertThat(children, hasItems("Toyota Prius", "Toyota Highlander", "Nissan Altima"));
         assertThat(properties.containsKey("jcr:primaryType"), is(true));
         assertThat(properties.containsKey("dna:uuid"), is(true));
         assertThat(properties.size(), is(2));
 
-        properties.clear();
-        children.clear();
-        assertThat(client.getNodeInfo("Vehicles", "/Vehicles/Cars/Sports/Aston Martin DB9", properties, children), is(true));
+        getNodeInfo("Vehicles", "/Vehicles/Cars/Sports/Aston Martin DB9");
         assertThat(children.size(), is(0));
         assertThat(properties.containsKey("jcr:primaryType"), is(true));
         assertThat(properties.containsKey("dna:uuid"), is(true));
@@ -242,9 +241,7 @@ public class RepositoryClientTest {
         assertProperty("engine", "5,935 cc 5.9 liters V 12");
         assertThat(properties.size(), is(12));
 
-        properties.clear();
-        children.clear();
-        assertThat(client.getNodeInfo("Vehicles", "/Vehicles/Aircraft/Vintage/Wright Flyer", properties, children), is(true));
+        getNodeInfo("Vehicles", "/Vehicles/Aircraft/Vintage/Wright Flyer");
         assertThat(children.size(), is(0));
         assertThat(properties.containsKey("jcr:primaryType"), is(true));
         assertThat(properties.containsKey("dna:uuid"), is(true));
@@ -261,5 +258,15 @@ public class RepositoryClientTest {
     public void shouldReturnNullForNonExistantNode() throws Throwable {
         client.startRepositories();
         assertThat(client.getNodeInfo("Cars", "/Cars/Sports/Non Existant Car", properties, children), is(false));
+    }
+
+    @Test
+    public void shouldBeAbleToExecuteTestsRepeatedly() throws Throwable {
+        for (int i = 0; i != 10; ++i) {
+            shouldHaveContentFromConfigurationRepository();
+            shouldHaveContentFromCarsRepository();
+            shouldHaveContentFromAircraftRepository();
+            // shouldHaveContentFromVehiclesRepository();
+        }
     }
 }

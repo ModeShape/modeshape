@@ -19,7 +19,7 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.jboss.dna.connector.federation.merge;
+package org.jboss.dna.connector.federation.merge.strategy;
 
 import java.util.HashMap;
 import java.util.Iterator;
@@ -29,6 +29,9 @@ import java.util.NoSuchElementException;
 import java.util.UUID;
 import net.jcip.annotations.ThreadSafe;
 import org.jboss.dna.connector.federation.contribution.Contribution;
+import org.jboss.dna.connector.federation.merge.FederatedNode;
+import org.jboss.dna.connector.federation.merge.MergePlan;
+import org.jboss.dna.spi.DnaLexicon;
 import org.jboss.dna.spi.ExecutionContext;
 import org.jboss.dna.spi.graph.IoException;
 import org.jboss.dna.spi.graph.Name;
@@ -69,7 +72,7 @@ public class SimpleMergeStrategy implements MergeStrategy {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.connector.federation.merge.MergeStrategy#merge(org.jboss.dna.connector.federation.merge.FederatedNode,
+     * @see org.jboss.dna.connector.federation.merge.strategy.MergeStrategy#merge(org.jboss.dna.connector.federation.merge.FederatedNode,
      *      java.util.List, org.jboss.dna.spi.ExecutionContext)
      */
     public void merge( FederatedNode federatedNode,
@@ -91,52 +94,55 @@ public class SimpleMergeStrategy implements MergeStrategy {
         final boolean removeDuplicateProperties = isRemoveDuplicateProperties();
         // Iterate over the set of contributions (in order) ...
         for (Contribution contribution : contributions) {
-            // Copy the children ...
-            int childListIndex = 0;
-            Iterator<Segment> childIterator = contribution.getChildren();
-            while (childIterator.hasNext()) {
-                Segment child = childIterator.next();
-                int index = Path.NO_INDEX;
-                Integer previous = childNames.put(child.getName(), 1);
-                if (previous != null) {
-                    int previousValue = previous.intValue();
-                    if (previousValue == 1) {
-                        // If the previous value was 1, then go back and look for the child that has no index but that should ...
-                        // Walk backwards, just in case the previous same-name-sibling is closer to the end
-                        for (int i = children.size() - 1; i >= 0; --i) {
-                            Path.Segment childSegment = children.get(i);
-                            if (childSegment.getName().equals(child.getName())) {
-                                children.set(i, pathFactory.createSegment(child.getName(), 1));
-                                break;
-                            }
-                        }
+            // If the contribution is a placeholder contribution, then the children should be merged into other children ...
+            if (contribution.isPlaceholder()) {
+                // Iterate over the children and add only if there is not already one ...
+                Iterator<Segment> childIterator = contribution.getChildren();
+                while (childIterator.hasNext()) {
+                    Segment child = childIterator.next();
+                    if (!childNames.containsKey(child)) {
+                        childNames.put(child.getName(), 1);
+                        children.add(pathFactory.createSegment(child.getName()));
                     }
-                    // Add the previous value back in ...
-                    childNames.put(child.getName(), ++previousValue);
-                    index = previousValue;
-                }
-                children.add(pathFactory.createSegment(child.getName(), index));
-                ++childListIndex;
-            }
-
-            // Copy the properties ...
-            Iterator<Property> propertyIterator = contribution.getProperties();
-            while (propertyIterator.hasNext()) {
-                Property property = propertyIterator.next();
-                Property existing = properties.put(property.getName(), property);
-                if (existing != null) {
-                    // There's already an existing property, so we need to merge them ...
-                    Property merged = merge(existing, property, context.getPropertyFactory(), removeDuplicateProperties);
-                    properties.put(property.getName(), merged);
                 }
 
-                if (uuid == null && property.getName().getLocalName().equals("uuid") && property.isSingle()) {
-                    if (uuidFactory == null) uuidFactory = context.getValueFactories().getUuidFactory();
-                    try {
-                        uuid = uuidFactory.create(property.getValues().next());
-                    } catch (IoException e) {
-                        // Ignore conversion exceptions
-                        assert uuid == null;
+            } else {
+                // Copy the children ...
+                Iterator<Segment> childIterator = contribution.getChildren();
+                while (childIterator.hasNext()) {
+                    Segment child = childIterator.next();
+                    int index = Path.NO_INDEX;
+                    Integer previous = childNames.put(child.getName(), 1);
+                    if (previous != null) {
+                        int previousValue = previous.intValue();
+                        // Correct the index in the child name map ...
+                        childNames.put(child.getName(), ++previousValue);
+                        index = previousValue;
+                    }
+                    children.add(pathFactory.createSegment(child.getName(), index));
+                }
+
+                // Copy the properties ...
+                Iterator<Property> propertyIterator = contribution.getProperties();
+                while (propertyIterator.hasNext()) {
+                    Property property = propertyIterator.next();
+                    // Skip the "uuid" property on all root nodes ...
+                    if (federatedNode.getPath().isRoot() && property.getName().getLocalName().equals("uuid")) continue;
+                    Property existing = properties.put(property.getName(), property);
+                    if (existing != null) {
+                        // There's already an existing property, so we need to merge them ...
+                        Property merged = merge(existing, property, context.getPropertyFactory(), removeDuplicateProperties);
+                        properties.put(property.getName(), merged);
+                    }
+
+                    if (uuid == null && property.getName().getLocalName().equals("uuid") && property.isSingle()) {
+                        if (uuidFactory == null) uuidFactory = context.getValueFactories().getUuidFactory();
+                        try {
+                            uuid = uuidFactory.create(property.getValues().next());
+                        } catch (IoException e) {
+                            // Ignore conversion exceptions
+                            assert uuid == null;
+                        }
                     }
                 }
             }
@@ -146,6 +152,10 @@ public class SimpleMergeStrategy implements MergeStrategy {
             // then set the UUID on the federated node ...
             federatedNode.setUuid(uuid);
         }
+        // Set the UUID as a property ...
+        Property uuidProperty = context.getPropertyFactory().create(DnaLexicon.UUID, federatedNode.getUuid());
+        properties.put(uuidProperty.getName(), uuidProperty);
+
         // Assign the merge plan ...
         MergePlan mergePlan = MergePlan.create(contributions);
         federatedNode.setMergePlan(mergePlan);

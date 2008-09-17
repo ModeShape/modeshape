@@ -19,10 +19,11 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.jboss.dna.connector.federation.merge;
+package org.jboss.dna.connector.federation.merge.strategy;
 
 import java.util.List;
 import org.jboss.dna.connector.federation.contribution.Contribution;
+import org.jboss.dna.connector.federation.merge.FederatedNode;
 import org.jboss.dna.spi.ExecutionContext;
 
 /**

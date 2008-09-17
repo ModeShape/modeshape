@@ -32,6 +32,7 @@ import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import javax.jcr.PropertyIterator;
 import javax.jcr.Session;
+import javax.jcr.Value;
 import javax.naming.NamingException;
 import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
@@ -258,13 +259,26 @@ public class RepositoryClient {
                     pathToNode = pathToNode.replaceAll("^/+", "");
                     // Get the node by path ...
                     Node root = session.getRootNode();
-                    Node node = root.getNode(pathToNode);
+                    Node node = root;
+                    if (pathToNode.length() != 0) {
+                        if (!pathToNode.endsWith("]")) pathToNode = pathToNode + "[1]";
+                        node = pathToNode.equals("") ? root : root.getNode(pathToNode);
+                    }
 
                     // Now populate the properties and children ...
                     if (properties != null) {
                         for (PropertyIterator iter = node.getProperties(); iter.hasNext();) {
                             javax.jcr.Property property = iter.nextProperty();
-                            Object[] values = property.getDefinition().isMultiple() ? property.getValues() : new Object[] {property.getValue()};
+                            Object[] values = null;
+                            if (property.getDefinition().isMultiple()) {
+                                Value[] jcrValues = property.getValues();
+                                values = new String[jcrValues.length];
+                                for (int i = 0; i < jcrValues.length; i++) {
+                                    values[i] = jcrValues[i].getString();
+                                }
+                            } else {
+                                values = new Object[] {property.getValue().getString()};
+                            }
                             properties.put(property.getName(), values);
                         }
                     }

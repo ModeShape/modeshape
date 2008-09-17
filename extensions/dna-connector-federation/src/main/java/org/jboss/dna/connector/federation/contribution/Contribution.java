@@ -23,6 +23,7 @@ package org.jboss.dna.connector.federation.contribution;
 
 import java.io.Serializable;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -179,6 +180,46 @@ public abstract class Contribution implements Serializable {
     }
 
     /**
+     * Create a placeholder contribution of a single child from the named source.
+     * 
+     * @param sourceName the name of the source, which may not be null or blank
+     * @param pathInSource the path in the source for this contributed information; may not be null
+     * @param expirationTime the time (in UTC) after which this contribution should be considered expired, or null if there is no
+     *        expiration time
+     * @param child the child from the source; may not be null or empty
+     * @return the contribution
+     */
+    public static Contribution createPlaceholder( String sourceName,
+                                                  Path pathInSource,
+                                                  DateTime expirationTime,
+                                                  Segment child ) {
+        if (child == null) {
+            return new EmptyContribution(sourceName, expirationTime);
+        }
+        return new PlaceholderContribution(sourceName, pathInSource, expirationTime, Collections.singletonList(child));
+    }
+
+    /**
+     * Create a placeholder contribution of the supplied properties and children from the named source.
+     * 
+     * @param sourceName the name of the source, which may not be null or blank
+     * @param pathInSource the path in the source for this contributed information; may not be null
+     * @param expirationTime the time (in UTC) after which this contribution should be considered expired, or null if there is no
+     *        expiration time
+     * @param children the children from the source; may not be null or empty
+     * @return the contribution
+     */
+    public static Contribution createPlaceholder( String sourceName,
+                                                  Path pathInSource,
+                                                  DateTime expirationTime,
+                                                  List<Segment> children ) {
+        if (children == null || children.isEmpty()) {
+            return new EmptyContribution(sourceName, expirationTime);
+        }
+        return new PlaceholderContribution(sourceName, pathInSource, expirationTime, children);
+    }
+
+    /**
      * This is the first version of this class. See the documentation of BasicMergePlan.serialVersionUID.
      */
     private static final long serialVersionUID = 1L;
@@ -295,6 +336,16 @@ public abstract class Contribution implements Serializable {
      * @return true if this contribution is empty, or false otherwise
      */
     public boolean isEmpty() {
+        return false;
+    }
+
+    /**
+     * Determine whether this contribution is considered a placeholder necessary solely because the same source has contributions
+     * at or below the children.
+     * 
+     * @return true if a placeholder contribution, or false otherwise
+     */
+    public boolean isPlaceholder() {
         return false;
     }
 

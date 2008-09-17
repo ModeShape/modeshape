@@ -40,9 +40,9 @@ import org.jboss.dna.connector.federation.Projection;
 import org.jboss.dna.connector.federation.contribution.Contribution;
 import org.jboss.dna.connector.federation.merge.FederatedNode;
 import org.jboss.dna.connector.federation.merge.MergePlan;
-import org.jboss.dna.connector.federation.merge.MergeStrategy;
-import org.jboss.dna.connector.federation.merge.OneContributionMergeStrategy;
-import org.jboss.dna.connector.federation.merge.SimpleMergeStrategy;
+import org.jboss.dna.connector.federation.merge.strategy.MergeStrategy;
+import org.jboss.dna.connector.federation.merge.strategy.OneContributionMergeStrategy;
+import org.jboss.dna.connector.federation.merge.strategy.SimpleMergeStrategy;
 import org.jboss.dna.spi.DnaLexicon;
 import org.jboss.dna.spi.ExecutionContext;
 import org.jboss.dna.spi.cache.CachePolicy;
@@ -315,7 +315,7 @@ public class FederatingCommandExecutor extends AbstractCommandExecutor {
                 Path pathToLoad = path.getParent();
                 while (!pathToLoad.equals(lowestExistingAncestor)) {
                     loadContributionsFromSources(pathToLoad, null, contributions); // sourceNames may be null or empty
-                    FederatedNode mergedNode = createFederatedNode(pathToLoad, contributions, true);
+                    FederatedNode mergedNode = createFederatedNode(null, pathToLoad, contributions, true);
                     if (mergedNode == null) {
                         // No source had a contribution ...
                         I18n msg = FederationI18n.nodeDoesNotExistAtPath;
@@ -361,7 +361,7 @@ public class FederatingCommandExecutor extends AbstractCommandExecutor {
 
         // Get the contributions from the sources given their names ...
         loadContributionsFromSources(path, sourceNames, contributions); // sourceNames may be null or empty
-        FederatedNode mergedNode = createFederatedNode(path, contributions, true);
+        FederatedNode mergedNode = createFederatedNode(fromCache, path, contributions, true);
         if (mergedNode == null) {
             // No source had a contribution ...
             Path ancestor = path.getParent();
@@ -372,7 +372,8 @@ public class FederatingCommandExecutor extends AbstractCommandExecutor {
         return mergedNode;
     }
 
-    protected FederatedNode createFederatedNode( Path path,
+    protected FederatedNode createFederatedNode( BasicGetNodeCommand fromCache,
+                                                 Path path,
                                                  List<Contribution> contributions,
                                                  boolean updateCache ) throws RepositorySourceException {
 
@@ -394,11 +395,21 @@ public class FederatingCommandExecutor extends AbstractCommandExecutor {
             }
         }
 
-        // Merge the results into a single set of results ...
-        FederatedNode mergedNode = new FederatedNode(path, UUID.randomUUID());
+        // Create the node, and use the existing UUID if one is found in the cache ...
         ExecutionContext context = getExecutionContext();
-        assert contributions.size() > 0;
         assert context != null;
+        UUID uuid = null;
+        if (fromCache != null) {
+            Property uuidProperty = fromCache.getPropertiesByName().get(DnaLexicon.UUID);
+            if (uuidProperty != null && !uuidProperty.isEmpty()) {
+                uuid = context.getValueFactories().getUuidFactory().create(uuidProperty.getValues().next());
+            }
+        }
+        if (uuid == null) uuid = UUID.randomUUID();
+        FederatedNode mergedNode = new FederatedNode(path, uuid);
+
+        // Merge the results into a single set of results ...
+        assert contributions.size() > 0;
         mergingStrategy.merge(mergedNode, contributions, context);
         if (mergedNode.getCachePolicy() == null) {
             mergedNode.setCachePolicy(defaultCachePolicy);
@@ -455,7 +466,7 @@ public class FederatingCommandExecutor extends AbstractCommandExecutor {
                         if (path.isAncestorOf(topLevelPath)) {
                             assert topLevelPath.size() > path.size();
                             Path.Segment child = topLevelPath.getSegment(path.size());
-                            contribution = Contribution.create(source, path, expirationTime, null, child);
+                            contribution = Contribution.createPlaceholder(source, path, expirationTime, child);
                         }
                         break;
                     }
@@ -470,7 +481,7 @@ public class FederatingCommandExecutor extends AbstractCommandExecutor {
                             }
                         }
                         if (children.size() > 0) {
-                            contribution = Contribution.create(source, path, expirationTime, null, children);
+                            contribution = Contribution.createPlaceholder(source, path, expirationTime, children);
                         }
                     }
                 }
@@ -549,37 +560,4 @@ public class FederatingCommandExecutor extends AbstractCommandExecutor {
         }
         cacheConnection.execute(context, intoCache);
     }
-
-    /**
-     * Determine if the supplied plan is considered current
-     * 
-     * @param path the path of the node at which (or below which) the merge plan applies
-     * @param plan the merge plan
-     * @return true if the merge plan is current, or false if it needs to be (at least partially) rebuilt
-     */
-    protected boolean isCurrent( Path path,
-                                 MergePlan plan ) {
-        // First check the time ...
-        DateTime now = getCurrentTimeInUtc();
-        if (plan.isExpired(now)) return false;
-
-        // Does the plan have any contributions from sources that don't exist ?
-        for (Contribution contribution : plan) {
-            if (!sourceNames.contains(contribution.getSourceName())) return false;
-        }
-        //
-        // // Determine if any new source projections exists that aren't part of the plan ...
-        // for (String sourceName : sourceNames) {
-        // if (plan.isSource(sourceName)) continue;
-        // // The source is new ... see whether there are any regions that apply ...
-        // // for (FederatedRegion region : this.regionsBySourceName.get(sourceName)) {
-        // // // If the region's path is not at/above the path, the region doesn't matter
-        // // if (!region.appliesTo(path)) continue;
-        // // // The region applies to the path ...
-        // // return false;
-        // // }
-        // }
-        return true;
-    }
-
 }

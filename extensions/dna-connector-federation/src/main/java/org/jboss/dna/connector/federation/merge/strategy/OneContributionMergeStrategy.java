@@ -19,7 +19,7 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.jboss.dna.connector.federation.merge;
+package org.jboss.dna.connector.federation.merge.strategy;
 
 import java.util.Iterator;
 import java.util.List;
@@ -27,6 +27,9 @@ import java.util.Map;
 import java.util.UUID;
 import net.jcip.annotations.ThreadSafe;
 import org.jboss.dna.connector.federation.contribution.Contribution;
+import org.jboss.dna.connector.federation.merge.FederatedNode;
+import org.jboss.dna.connector.federation.merge.MergePlan;
+import org.jboss.dna.spi.DnaLexicon;
 import org.jboss.dna.spi.ExecutionContext;
 import org.jboss.dna.spi.graph.Name;
 import org.jboss.dna.spi.graph.Property;
@@ -66,7 +69,7 @@ public class OneContributionMergeStrategy implements MergeStrategy {
      * This method only uses the one and only one non-null {@link Contribution} in the <code>contributions</code>.
      * </p>
      * 
-     * @see org.jboss.dna.connector.federation.merge.MergeStrategy#merge(org.jboss.dna.connector.federation.merge.FederatedNode,
+     * @see org.jboss.dna.connector.federation.merge.strategy.MergeStrategy#merge(org.jboss.dna.connector.federation.merge.FederatedNode,
      *      java.util.List, org.jboss.dna.spi.ExecutionContext)
      */
     public void merge( FederatedNode federatedNode,
@@ -95,14 +98,17 @@ public class OneContributionMergeStrategy implements MergeStrategy {
         Iterator<Property> propertyIterator = contribution.getProperties();
         while (propertyIterator.hasNext()) {
             Property property = propertyIterator.next();
-            properties.put(property.getName(), property);
-            if (findUuid && uuid == null && property.getName().getLocalName().equals("uuid") && property.isSingle()) {
-                if (uuidFactory == null) uuidFactory = context.getValueFactories().getUuidFactory();
-                try {
-                    uuid = uuidFactory.create(property.getValues().next());
-                } catch (ValueFormatException e) {
-                    // Ignore conversion exceptions
+            if (findUuid && uuid == null && property.getName().getLocalName().equals("uuid")) {
+                if (property.isSingle()) {
+                    if (uuidFactory == null) uuidFactory = context.getValueFactories().getUuidFactory();
+                    try {
+                        uuid = uuidFactory.create(property.getValues().next());
+                    } catch (ValueFormatException e) {
+                        // Ignore conversion exceptions
+                    }
                 }
+            } else {
+                properties.put(property.getName(), property);
             }
         }
         // If we found a single "uuid" property whose value is a valid UUID ..
@@ -110,6 +116,10 @@ public class OneContributionMergeStrategy implements MergeStrategy {
             // then set the UUID on the federated node ...
             federatedNode.setUuid(uuid);
         }
+        // Set the UUID as a property ...
+        Property uuidProperty = context.getPropertyFactory().create(DnaLexicon.UUID, federatedNode.getUuid());
+        properties.put(uuidProperty.getName(), uuidProperty);
+
         // Assign the merge plan ...
         MergePlan mergePlan = MergePlan.create(contributions);
         federatedNode.setMergePlan(mergePlan);
