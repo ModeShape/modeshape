@@ -10,7 +10,7 @@
 
   <modules>
     <module>sequencers</module>
-	<module>dna-example-java-sequencer</module>
+    <module>repositories</module>
   </modules>
 
   <properties>
@@ -36,6 +36,11 @@
       </dependency>
       <dependency>
         <groupId>org.jboss.dna</groupId>
+        <artifactId>dna-jcr</artifactId>
+        <version>${dna-version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.jboss.dna</groupId>
         <artifactId>dna-maven-classloader</artifactId>
         <version>${dna-version}</version>
       </dependency>
@@ -43,6 +48,27 @@
         <groupId>org.jboss.dna</groupId>
         <artifactId>dna-sequencer-images</artifactId>
         <version>${dna-version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.jboss.dna</groupId>
+        <artifactId>dna-sequencer-java</artifactId>
+        <version>${dna-version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.jboss.dna</groupId>
+        <artifactId>dna-connector-inmemory</artifactId>
+        <version>${dna-version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.jboss.dna</groupId>
+        <artifactId>dna-connector-jbosscache</artifactId>
+        <version>${dna-version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.jboss.dna</groupId>
+        <artifactId>dna-connector-federation</artifactId>
+        <version>${dna-version}</version>
+        <scope>runtime</scope>
       </dependency>
       <!-- Logging (require SLF4J API for compiling, but use Log4J and its SLF4J binding for testing) -->
       <dependency>
@@ -109,6 +135,12 @@
         <version>4.4</version>
         <scope>test</scope>
       </dependency>
+			<dependency>
+				<groupId>org.mockito</groupId>
+				<artifactId>mockito-all</artifactId>
+				<version>1.5</version>
+				<scope>test</scope>
+			</dependency>
     </dependencies>
   </dependencyManagement>
 

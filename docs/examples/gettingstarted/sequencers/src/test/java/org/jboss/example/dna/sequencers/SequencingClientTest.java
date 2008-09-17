@@ -24,6 +24,9 @@ package org.jboss.example.dna.sequencers;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.MalformedURLException;
 import java.net.URL;
 import org.jboss.dna.common.util.FileUtil;
 import org.junit.After;
@@ -39,14 +42,18 @@ public class SequencingClientTest {
     private URL pictImageUrl;
     private URL jpegImageUrl;
     private URL mp3Url;
+    private URL javaSourceUrl;
     private SequencingClient client;
 
     @Before
-    public void beforeEach() {
+    public void beforeEach() throws MalformedURLException {
         this.pngImageUrl = Thread.currentThread().getContextClassLoader().getResource("caution.png");
         this.pictImageUrl = Thread.currentThread().getContextClassLoader().getResource("caution.pict");
         this.jpegImageUrl = Thread.currentThread().getContextClassLoader().getResource("caution.jpg");
         this.mp3Url = Thread.currentThread().getContextClassLoader().getResource("sample1.mp3");
+        // Get the URL of source (MySource.java), that have to be sequencing
+        this.javaSourceUrl = FileUtil.convertFileToURL("workspace/project1/src/org/acme/MySource.java");
+
         client = new SequencingClient();
         client.setWorkingDirectory("target/repositoryData");
         client.setJackrabbitConfigPath("src/main/resources/jackrabbitConfig.xml");
@@ -157,6 +164,37 @@ public class SequencingClientTest {
         client.search();
 
         assertThat(client.getStatistics().getNumberOfNodesSequenced(), is(1l));
+    }
+
+    @Test
+    public void shouldFindCompilationUnitSource() throws IOException {
+        assertThat(this.javaSourceUrl, is(notNullValue()));
+        InputStream stream = this.javaSourceUrl.openStream();
+        try {
+            byte[] buffer = new byte[1024];
+            while (stream.read(buffer) != -1) {
+            }
+        } finally {
+            stream.close();
+        }
+    }
+
+    @Test
+    public void shouldUploadAndSequenceJavaSourceFile() throws Exception {
+        client.setUserInterface(new MockUserInterface(this.javaSourceUrl, "/a/b/MySource.java", 1));
+        client.startRepository();
+        client.startDnaServices();
+        client.uploadFile();
+
+        // Use a trick to wait until the sequencing has been done by sleeping (to give the sequencing time to start)
+        // and to then shut down the DNA services (which will block until all sequencing has been completed) ...
+        Thread.sleep(1000);
+        client.shutdownDnaServices();
+
+        // The sequencers should have run, so perform the search.
+        // The mock user interface checks the results.
+        client.search();
+        assertThat(client.getStatistics().getNumberOfNodesSequenced(), is(1L));
     }
 
 }

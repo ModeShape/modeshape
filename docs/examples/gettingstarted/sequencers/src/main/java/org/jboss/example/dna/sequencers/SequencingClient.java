@@ -26,7 +26,9 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
+import java.util.TreeMap;
 import java.util.concurrent.TimeUnit;
 import javax.jcr.Credentials;
 import javax.jcr.Node;
@@ -253,6 +255,14 @@ public class SequencingClient {
             SequencerConfig mp3SequencerConfig = new SequencerConfig(name, desc, classname, classpath, mp3PathExpressions);
             this.sequencingService.addSequencer(mp3SequencerConfig);
 
+            // Set up the MP3 sequencer ...
+            name = "Java Sequencer";
+            desc = "Sequences java files to extract the characteristics of the java sources";
+            classname = "org.jboss.dna.sequencer.java.JavaMetadataSequencer";
+            String[] javaPathExpressions = {"//(*.java[*])/jcr:content[@jcr:data] => /compilationUnits/$1"};
+            SequencerConfig javaSequencerConfig = new SequencerConfig(name, desc, classname, classpath, javaPathExpressions);
+            this.sequencingService.addSequencer(javaSequencerConfig);
+
             // Use the DNA observation service to listen to the JCR repository (or multiple ones), and
             // then register the sequencing service as a listener to this observation service...
             this.observationService = new ObservationService(this.executionContext.getSessionFactory());
@@ -330,10 +340,10 @@ public class SequencingClient {
      */
     public void search() throws Exception {
         // Use JCR to search the repository for image metadata ...
-        List<MediaInfo> medias = new ArrayList<MediaInfo>();
+        List<ContentInfo> infos = new ArrayList<ContentInfo>();
         Session session = createSession();
         try {
-            // Find the image node ...
+            // Find the node ...
             Node root = session.getRootNode();
 
             if (root.hasNode("images") || root.hasNode("mp3s")) {
@@ -344,7 +354,7 @@ public class SequencingClient {
                     for (NodeIterator iter = mediasNode.getNodes(); iter.hasNext();) {
                         Node mediaNode = iter.nextNode();
                         if (mediaNode.hasNode("image:metadata")) {
-                            medias.add(extractMediaInfo("image:metadata", "image", mediaNode));
+                            infos.add(extractMediaInfo("image:metadata", "image", mediaNode));
                         }
                     }
                 }
@@ -354,7 +364,107 @@ public class SequencingClient {
                     for (NodeIterator iter = mediasNode.getNodes(); iter.hasNext();) {
                         Node mediaNode = iter.nextNode();
                         if (mediaNode.hasNode("mp3:metadata")) {
-                            medias.add(extractMediaInfo("mp3:metadata", "mp3", mediaNode));
+                            infos.add(extractMediaInfo("mp3:metadata", "mp3", mediaNode));
+                        }
+                    }
+                }
+
+            } else if (root.hasNode("compilationUnits")) {
+                Map<String, List<Properties>> tree = new TreeMap<String, List<Properties>>();
+                // Find the compilation unit node ...
+                List<Properties> javaElements;
+                if (root.hasNode("compilationUnits")) {
+                    Node javaSourcesNode = root.getNode("compilationUnits");
+                    for (NodeIterator i = javaSourcesNode.getNodes(); i.hasNext();) {
+
+                        Node javaSourceNode = i.nextNode();
+
+                        if (javaSourceNode.hasNodes()) {
+                            Node javaCompilationUnit = javaSourceNode.getNodes().nextNode();
+                            // package informations
+
+                            javaElements = new ArrayList<Properties>();
+                            try {
+                                Node javaPackageDeclarationNode = javaCompilationUnit.getNode("java:package/java:packageDeclaration");
+                                javaElements.add(extractJavaInfo(javaPackageDeclarationNode));
+                                tree.put("Class package", javaElements);
+                            } catch (PathNotFoundException e) {
+                                // do nothing
+                            }
+
+                            // import informations
+                            javaElements = new ArrayList<Properties>();
+                            try {
+                                for (NodeIterator singleImportIterator = javaCompilationUnit.getNode("java:import/java:importDeclaration/java:singleImport").getNodes(); singleImportIterator.hasNext();) {
+                                    Node javasingleTypeImportDeclarationNode = singleImportIterator.nextNode();
+                                    javaElements.add(extractJavaInfo(javasingleTypeImportDeclarationNode));
+                                }
+                                tree.put("Class single Imports", javaElements);
+                            } catch (PathNotFoundException e) {
+                                // do nothing
+                            }
+
+                            javaElements = new ArrayList<Properties>();
+                            try {
+                                for (NodeIterator javaImportOnDemandIterator = javaCompilationUnit.getNode("java:import/java:importDeclaration/java:importOnDemand").getNodes(); javaImportOnDemandIterator.hasNext();) {
+                                    Node javaImportOnDemandtDeclarationNode = javaImportOnDemandIterator.nextNode();
+                                    javaElements.add(extractJavaInfo(javaImportOnDemandtDeclarationNode));
+                                }
+                                tree.put("Class on demand imports", javaElements);
+
+                            } catch (PathNotFoundException e) {
+                                // do nothing
+                            }
+                            // class head informations
+                            javaElements = new ArrayList<Properties>();
+                            Node javaNormalDeclarationClassNode = javaCompilationUnit.getNode("java:unitType/java:classDeclaration/java:normalClass/java:normalClassDeclaration");
+                            javaElements.add(extractJavaInfo(javaNormalDeclarationClassNode));
+                            tree.put("Class head information", javaElements);
+
+                            // field member informations
+                            javaElements = new ArrayList<Properties>();
+                            for (NodeIterator javaFieldTypeIterator = javaCompilationUnit.getNode("java:unitType/java:classDeclaration/java:normalClass/java:normalClassDeclaration/java:field/java:fieldType").getNodes(); javaFieldTypeIterator.hasNext();) {
+                                Node rootFieldTypeNode = javaFieldTypeIterator.nextNode();
+                                if (rootFieldTypeNode.hasNode("java:primitiveType")) {
+                                    Node javaPrimitiveTypeNode = rootFieldTypeNode.getNode("java:primitiveType");
+                                    javaElements.add(extractJavaInfo(javaPrimitiveTypeNode));
+                                    // more informations
+                                }
+
+                                if (rootFieldTypeNode.hasNode("java:simpleType")) {
+                                    Node javaSimpleTypeNode = rootFieldTypeNode.getNode("java:simpleType");
+                                    javaElements.add(extractJavaInfo(javaSimpleTypeNode));
+                                }
+                                if (rootFieldTypeNode.hasNode("java:parameterizedType")) {
+                                    Node javaParameterizedType = rootFieldTypeNode.getNode("java:parameterizedType");
+                                    javaElements.add(extractJavaInfo(javaParameterizedType));
+                                }
+                                if (rootFieldTypeNode.hasNode("java:arrayType")) {
+                                    Node javaArrayType = rootFieldTypeNode.getNode("java:arrayType[2]");
+                                    javaElements.add(extractJavaInfo(javaArrayType));
+                                }
+                            }
+                            tree.put("Class field members", javaElements);
+
+                            // constructor informations
+                            javaElements = new ArrayList<Properties>();
+                            for (NodeIterator javaConstructorIterator = javaCompilationUnit.getNode("java:unitType/java:classDeclaration/java:normalClass/java:normalClassDeclaration/java:constructor").getNodes(); javaConstructorIterator.hasNext();) {
+                                Node javaConstructor = javaConstructorIterator.nextNode();
+                                javaElements.add(extractJavaInfo(javaConstructor));
+                            }
+                            tree.put("Class constructors", javaElements);
+
+                            // method informations
+                            javaElements = new ArrayList<Properties>();
+                            for (NodeIterator javaMethodIterator = javaCompilationUnit.getNode("java:unitType/java:classDeclaration/java:normalClass/java:normalClassDeclaration/java:method").getNodes(); javaMethodIterator.hasNext();) {
+                                Node javaMethod = javaMethodIterator.nextNode();
+                                javaElements.add(extractJavaInfo(javaMethod));
+                            }
+                            tree.put("Class member functions", javaElements);
+
+                            JavaInfo javaInfo = new JavaInfo(javaCompilationUnit.getPath(), javaCompilationUnit.getName(),
+                                                             "java source", tree);
+                            infos.add(javaInfo);
                         }
                     }
                 }
@@ -365,7 +475,7 @@ public class SequencingClient {
         }
 
         // Display the search results ...
-        this.userInterface.displaySearchResults(medias);
+        this.userInterface.displaySearchResults(infos);
     }
 
     private MediaInfo extractMediaInfo( String metadataNodeName,
@@ -402,6 +512,29 @@ public class SequencingClient {
     }
 
     /**
+     * Extract informations from a specific node.
+     * 
+     * @param node - node, that contains informations.
+     * @return a properties of keys/values.
+     * @throws RepositoryException
+     * @throws IllegalStateException
+     * @throws ValueFormatException
+     */
+    private Properties extractJavaInfo( Node node ) throws ValueFormatException, IllegalStateException, RepositoryException {
+        if (node.hasProperties()) {
+            Properties properties = new Properties();
+            for (PropertyIterator propertyIter = node.getProperties(); propertyIter.hasNext();) {
+                Property property = propertyIter.nextProperty();
+                String name = property.getName();
+                String stringValue = property.getValue().getString();
+                properties.put(name, stringValue);
+            }
+            return properties;
+        }
+        return null;
+    }
+
+    /**
      * Utility method to create a new JCR session from the execution context's {@link SessionFactory}.
      * 
      * @return the session
@@ -422,6 +555,7 @@ public class SequencingClient {
         if (filename.endsWith(".jpeg")) return "image/jpeg";
         if (filename.endsWith(".ras")) return "image/x-cmu-raster";
         if (filename.endsWith(".mp3")) return "audio/mpeg";
+        if (filename.endsWith(".java")) return "text/x-java-source";
         throw new SystemFailureException("Unknown mime type for " + file);
     }
 

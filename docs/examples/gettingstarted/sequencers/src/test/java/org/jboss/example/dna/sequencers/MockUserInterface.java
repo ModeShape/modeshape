@@ -46,10 +46,11 @@ public class MockUserInterface implements UserInterface {
     /**
      * {@inheritDoc}
      */
-    public void displaySearchResults( List<MediaInfo> images ) {
-        assertThat(images.size(), is(this.numberOfSearchResults));
-        for (MediaInfo image : images) {
-            System.out.println("Image: " + image);
+    public void displaySearchResults( List<ContentInfo> infos ) {
+        assertThat(infos.size(), is(this.numberOfSearchResults));
+        for (ContentInfo info : infos) {
+            System.out.println("Info: ");
+            System.out.println(info);
         }
     }
 

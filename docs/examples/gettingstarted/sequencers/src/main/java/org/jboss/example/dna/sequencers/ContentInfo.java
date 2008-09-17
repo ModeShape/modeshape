@@ -19,32 +19,28 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.jboss.dna.sequencer.java;
+package org.jboss.example.dna.sequencers;
 
-import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.TreeMap;
+import net.jcip.annotations.Immutable;
 
 /**
- * @author Serge Pagop
+ * @author Randall Hauch
  */
-public class JavaInfo {
+@Immutable
+public class ContentInfo {
 
-    private final Map<String, List<Properties>> javaElements = new TreeMap<String, List<Properties>>();
-
+    private final Properties properties = new Properties();
     private final String name;
     private final String path;
-    private final String type;
 
-    protected JavaInfo( String path,
-                        String name,
-                        String type,
-                        Map<String, List<Properties>> javaElements ) {
+    protected ContentInfo( String path,
+                           String name,
+                           Properties props ) {
         this.name = name;
         this.path = path;
-        this.type = type;
-        if (javaElements != null) this.javaElements.putAll(javaElements);
+        if (props != null) this.properties.putAll(props);
     }
 
     public String getName() {
@@ -55,35 +51,23 @@ public class JavaInfo {
         return this.path;
     }
 
-    public String getType() {
-        return this.type;
+    public Properties getProperties() {
+        return this.properties;
+    }
+
+    public String getInfoType() {
+        return this.getClass().getSimpleName().replaceAll("Info$", "");
     }
 
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-
-        for (Map.Entry<String, List<Properties>> javaElement : getJavaElements().entrySet()) {
-            sb.append("\n------ " + javaElement.getKey() + " ------\n");
-            for (Properties props : javaElement.getValue()) {
-                for (Map.Entry<Object, Object> entry : props.entrySet()) {
-                    if (!entry.getKey().equals("jcr:primaryType")) {
-                        sb.append(entry.getKey()).append(" => ").append(entry.getValue());
-                        sb.append("; ");
-                    }
-                }
-            }
+        sb.append("   Name: " + getName() + "\n");
+        sb.append("   Path: " + getPath() + "\n");
+        for (Map.Entry<Object, Object> entry : getProperties().entrySet()) {
+            sb.append("   " + entry.getKey() + ": " + entry.getValue() + "\n");
         }
-
-        return this.name + " (at " + this.path + ") of type \"" + this.type + "\" with elements \n{\n" + sb.toString()
-               + " \n}\n";
-    }
-
-    /**
-     * @return javaElements
-     */
-    public Map<String, List<Properties>> getJavaElements() {
-        return javaElements;
+        return sb.toString();
     }
 
 }

@@ -23,6 +23,11 @@
         <include>*.mp3</include>
       </includes>
     </fileSet>
+    <fileSet>
+      <directory>workspace/</directory>
+      <outputDirectory/>
+      <useDefaultExcludes>true</useDefaultExcludes>
+    </fileSet>
   </fileSets>
   <files>
     <file>

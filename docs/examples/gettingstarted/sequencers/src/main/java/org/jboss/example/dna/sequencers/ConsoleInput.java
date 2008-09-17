@@ -27,7 +27,6 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URL;
 import java.util.List;
-import java.util.Map;
 import org.jboss.dna.repository.sequencers.SequencingService;
 
 /**
@@ -173,27 +172,22 @@ public class ConsoleInput implements UserInterface {
         return path;
     }
 
-    public void displaySearchResults( List<MediaInfo> medias ) {
+    public void displaySearchResults( List<ContentInfo> contentInfos ) {
         System.out.println();
-        if (medias.isEmpty()) {
+        if (contentInfos.isEmpty()) {
             System.out.println("No results were found.");
             System.out.println();
             return;
         }
-        if (medias.size() == 1) {
-            System.out.println("1 image was found:");
+        if (contentInfos.size() == 1) {
+            System.out.println("1 result was found:");
         } else {
-            System.out.println("" + medias.size() + " images were found:");
+            System.out.println("" + contentInfos.size() + " results were found:");
         }
         int counter = 1;
-        for (MediaInfo media : medias) {
-            System.out.println(" Media " + counter++);
-            System.out.println("   Name: " + media.getName());
-            System.out.println("   Path: " + media.getPath());
-            System.out.println("   Type: " + media.getMediaType());
-            for (Map.Entry<Object, Object> entry : media.getProperties().entrySet()) {
-                System.out.println("   " + entry.getKey() + ": " + entry.getValue());
-            }
+        for (ContentInfo info : contentInfos) {
+            System.out.println(" " + info.getInfoType() + " " + counter++);
+            System.out.println(info.toString());
         }
         System.out.println();
     }

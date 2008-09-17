@@ -21,28 +21,40 @@
  */
 package org.jboss.example.dna.sequencers;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.TreeMap;
 import net.jcip.annotations.Immutable;
 
 /**
+ * @author Serge Pagop
  * @author Randall Hauch
  */
 @Immutable
-public class MediaInfo extends ContentInfo {
+public class JavaInfo extends ContentInfo {
 
-    private final String mediaType;
+    private final Map<String, List<Properties>> javaElements;
+    private final String type;
 
-    protected MediaInfo( String path,
-                         String name,
-                         String mediaType,
-                         Properties props ) {
-        super(path, name, props);
-        this.mediaType = mediaType;
+    protected JavaInfo( String path,
+                        String name,
+                        String type,
+                        Map<String, List<Properties>> javaElements ) {
+        super(path, name, null);
+        this.type = type;
+        this.javaElements = javaElements != null ? new TreeMap<String, List<Properties>>(javaElements) : new TreeMap<String, List<Properties>>();
     }
 
-    public String getMediaType() {
-        return this.mediaType;
+    public String getType() {
+        return this.type;
+    }
+
+    /**
+     * @return javaElements
+     */
+    public Map<String, List<Properties>> getJavaElements() {
+        return javaElements;
     }
 
     @Override
@@ -50,9 +62,19 @@ public class MediaInfo extends ContentInfo {
         StringBuilder sb = new StringBuilder();
         sb.append("   Name: " + getName() + "\n");
         sb.append("   Path: " + getPath() + "\n");
-        sb.append("   Type: " + getMediaType() + "\n");
+        sb.append("   Type: " + getType() + "\n");
         for (Map.Entry<Object, Object> entry : getProperties().entrySet()) {
             sb.append("   " + entry.getKey() + ": " + entry.getValue() + "\n");
+        }
+        for (Map.Entry<String, List<Properties>> javaElement : getJavaElements().entrySet()) {
+            sb.append("\n   ------ " + javaElement.getKey() + " ------\n");
+            for (Properties props : javaElement.getValue()) {
+                for (Map.Entry<Object, Object> entry : props.entrySet()) {
+                    if (!entry.getKey().equals("jcr:primaryType")) {
+                        sb.append("   " + entry.getKey() + " => " + entry.getValue() + "\n");
+                    }
+                }
+            }
         }
         return sb.toString();
     }
