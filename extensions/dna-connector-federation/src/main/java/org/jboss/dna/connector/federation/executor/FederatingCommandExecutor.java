@@ -43,29 +43,29 @@ import org.jboss.dna.connector.federation.merge.MergePlan;
 import org.jboss.dna.connector.federation.merge.strategy.MergeStrategy;
 import org.jboss.dna.connector.federation.merge.strategy.OneContributionMergeStrategy;
 import org.jboss.dna.connector.federation.merge.strategy.SimpleMergeStrategy;
-import org.jboss.dna.spi.DnaLexicon;
-import org.jboss.dna.spi.ExecutionContext;
-import org.jboss.dna.spi.cache.CachePolicy;
-import org.jboss.dna.spi.connector.RepositoryConnection;
-import org.jboss.dna.spi.connector.RepositoryConnectionFactory;
-import org.jboss.dna.spi.connector.RepositorySource;
-import org.jboss.dna.spi.connector.RepositorySourceException;
-import org.jboss.dna.spi.graph.DateTime;
-import org.jboss.dna.spi.graph.Name;
-import org.jboss.dna.spi.graph.Path;
-import org.jboss.dna.spi.graph.PathFactory;
-import org.jboss.dna.spi.graph.PathNotFoundException;
-import org.jboss.dna.spi.graph.Property;
-import org.jboss.dna.spi.graph.Path.Segment;
-import org.jboss.dna.spi.graph.commands.GetChildrenCommand;
-import org.jboss.dna.spi.graph.commands.GetNodeCommand;
-import org.jboss.dna.spi.graph.commands.GetPropertiesCommand;
-import org.jboss.dna.spi.graph.commands.GraphCommand;
-import org.jboss.dna.spi.graph.commands.NodeConflictBehavior;
-import org.jboss.dna.spi.graph.commands.executor.AbstractCommandExecutor;
-import org.jboss.dna.spi.graph.commands.impl.BasicCreateNodeCommand;
-import org.jboss.dna.spi.graph.commands.impl.BasicGetNodeCommand;
-import org.jboss.dna.spi.graph.impl.BasicSingleValueProperty;
+import org.jboss.dna.graph.DnaLexicon;
+import org.jboss.dna.graph.ExecutionContext;
+import org.jboss.dna.graph.cache.CachePolicy;
+import org.jboss.dna.graph.commands.GetChildrenCommand;
+import org.jboss.dna.graph.commands.GetNodeCommand;
+import org.jboss.dna.graph.commands.GetPropertiesCommand;
+import org.jboss.dna.graph.commands.GraphCommand;
+import org.jboss.dna.graph.commands.NodeConflictBehavior;
+import org.jboss.dna.graph.commands.basic.BasicCreateNodeCommand;
+import org.jboss.dna.graph.commands.basic.BasicGetNodeCommand;
+import org.jboss.dna.graph.commands.executor.AbstractCommandExecutor;
+import org.jboss.dna.graph.connectors.RepositoryConnection;
+import org.jboss.dna.graph.connectors.RepositoryConnectionFactory;
+import org.jboss.dna.graph.connectors.RepositorySource;
+import org.jboss.dna.graph.connectors.RepositorySourceException;
+import org.jboss.dna.graph.properties.DateTime;
+import org.jboss.dna.graph.properties.Name;
+import org.jboss.dna.graph.properties.Path;
+import org.jboss.dna.graph.properties.PathFactory;
+import org.jboss.dna.graph.properties.PathNotFoundException;
+import org.jboss.dna.graph.properties.Property;
+import org.jboss.dna.graph.properties.Path.Segment;
+import org.jboss.dna.graph.properties.basic.BasicSingleValueProperty;
 
 /**
  * @author Randall Hauch
@@ -183,7 +183,7 @@ public class FederatingCommandExecutor extends AbstractCommandExecutor {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.spi.graph.commands.executor.AbstractCommandExecutor#close()
+     * @see org.jboss.dna.graph.commands.executor.AbstractCommandExecutor#close()
      */
     @Override
     public void close() {
@@ -237,7 +237,7 @@ public class FederatingCommandExecutor extends AbstractCommandExecutor {
      * command in a more efficient manner.
      * </p>
      * 
-     * @see org.jboss.dna.spi.graph.commands.executor.AbstractCommandExecutor#execute(org.jboss.dna.spi.graph.commands.GetNodeCommand)
+     * @see org.jboss.dna.graph.commands.executor.AbstractCommandExecutor#execute(org.jboss.dna.graph.commands.GetNodeCommand)
      */
     @Override
     public void execute( GetNodeCommand command ) throws RepositorySourceException {
@@ -254,7 +254,7 @@ public class FederatingCommandExecutor extends AbstractCommandExecutor {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.spi.graph.commands.executor.AbstractCommandExecutor#execute(org.jboss.dna.spi.graph.commands.GetPropertiesCommand)
+     * @see org.jboss.dna.graph.commands.executor.AbstractCommandExecutor#execute(org.jboss.dna.graph.commands.GetPropertiesCommand)
      */
     @Override
     public void execute( GetPropertiesCommand command ) throws RepositorySourceException {
@@ -268,7 +268,7 @@ public class FederatingCommandExecutor extends AbstractCommandExecutor {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.spi.graph.commands.executor.AbstractCommandExecutor#execute(org.jboss.dna.spi.graph.commands.GetChildrenCommand)
+     * @see org.jboss.dna.graph.commands.executor.AbstractCommandExecutor#execute(org.jboss.dna.graph.commands.GetChildrenCommand)
      */
     @Override
     public void execute( GetChildrenCommand command ) throws RepositorySourceException {

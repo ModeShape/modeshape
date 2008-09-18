@@ -31,8 +31,8 @@ import org.jboss.dna.common.util.ArgCheck;
 import org.jboss.dna.common.util.Logger;
 import org.jboss.dna.common.util.StringUtil;
 import org.jboss.dna.connector.federation.Projection.Rule;
-import org.jboss.dna.spi.ExecutionContext;
-import org.jboss.dna.spi.graph.NamespaceRegistry;
+import org.jboss.dna.graph.ExecutionContext;
+import org.jboss.dna.graph.properties.NamespaceRegistry;
 
 /**
  * A parser library for {@link Projection projections} and {@link Projection.Rule projection rules}.

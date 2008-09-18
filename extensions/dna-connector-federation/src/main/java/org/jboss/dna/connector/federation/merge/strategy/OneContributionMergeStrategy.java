@@ -29,13 +29,13 @@ import net.jcip.annotations.ThreadSafe;
 import org.jboss.dna.connector.federation.contribution.Contribution;
 import org.jboss.dna.connector.federation.merge.FederatedNode;
 import org.jboss.dna.connector.federation.merge.MergePlan;
-import org.jboss.dna.spi.DnaLexicon;
-import org.jboss.dna.spi.ExecutionContext;
-import org.jboss.dna.spi.graph.Name;
-import org.jboss.dna.spi.graph.Property;
-import org.jboss.dna.spi.graph.UuidFactory;
-import org.jboss.dna.spi.graph.ValueFormatException;
-import org.jboss.dna.spi.graph.Path.Segment;
+import org.jboss.dna.graph.DnaLexicon;
+import org.jboss.dna.graph.ExecutionContext;
+import org.jboss.dna.graph.properties.Name;
+import org.jboss.dna.graph.properties.Property;
+import org.jboss.dna.graph.properties.UuidFactory;
+import org.jboss.dna.graph.properties.ValueFormatException;
+import org.jboss.dna.graph.properties.Path.Segment;
 
 /**
  * A merge strategy that is optimized for merging when there is a single contribution.
@@ -70,7 +70,7 @@ public class OneContributionMergeStrategy implements MergeStrategy {
      * </p>
      * 
      * @see org.jboss.dna.connector.federation.merge.strategy.MergeStrategy#merge(org.jboss.dna.connector.federation.merge.FederatedNode,
-     *      java.util.List, org.jboss.dna.spi.ExecutionContext)
+     *      java.util.List, org.jboss.dna.graph.ExecutionContext)
      */
     public void merge( FederatedNode federatedNode,
                        List<Contribution> contributions,

@@ -41,7 +41,6 @@ public final class RepositoryI18n {
     public static I18n unableToUnregisterRepositoryInJndi;
     public static I18n unableToRemoveRepository;
     public static I18n unableToFindRepositoryWithName;
-    public static I18n unableToFindRepositorySourceWithName;
     public static I18n errorProcessingEvents;
     public static I18n errorFindingPropertyNameInPropertyAddedEvent;
     public static I18n errorFindingPropertyNameInPropertyChangedEvent;
@@ -115,16 +114,8 @@ public final class RepositoryI18n {
     public static I18n unableToInstantiateClassUsingClasspath;
     public static I18n unableToAccessClassUsingClasspath;
 
-    // XML Sequencer
-    public static I18n errorSequencingXmlDocument;
-    public static I18n fatalErrorSequencingXmlDocument;
-    public static I18n sequencingXmlDocument;
-    public static I18n canceledSequencingXmlDocument;
-    public static I18n warningSequencingXmlDocument;
-
     // Repository
     public static I18n errorStartingRepositoryService;
-    public static I18n errorImportingContent;
 
     static {
         try {

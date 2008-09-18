@@ -32,13 +32,13 @@ import net.jcip.annotations.Immutable;
 import net.jcip.annotations.NotThreadSafe;
 import org.jboss.dna.common.util.ArgCheck;
 import org.jboss.dna.common.util.StringUtil;
-import org.jboss.dna.spi.graph.Name;
-import org.jboss.dna.spi.graph.NameFactory;
-import org.jboss.dna.spi.graph.NamespaceRegistry;
-import org.jboss.dna.spi.graph.Path;
-import org.jboss.dna.spi.graph.PathFactory;
-import org.jboss.dna.spi.graph.ValueFactories;
-import org.jboss.dna.spi.sequencers.SequencerOutput;
+import org.jboss.dna.graph.properties.Name;
+import org.jboss.dna.graph.properties.NameFactory;
+import org.jboss.dna.graph.properties.NamespaceRegistry;
+import org.jboss.dna.graph.properties.Path;
+import org.jboss.dna.graph.properties.PathFactory;
+import org.jboss.dna.graph.properties.ValueFactories;
+import org.jboss.dna.graph.sequencers.SequencerOutput;
 
 /**
  * A basic {@link SequencerOutput} that records all information in-memory and which organizes the properties by
@@ -75,7 +75,7 @@ public class SequencerOutputMap implements SequencerOutput, Iterable<SequencerOu
 	 * {@inheritDoc}
 	 * </p>
 	 *
-	 * @see org.jboss.dna.spi.sequencers.SequencerOutput#getNamespaceRegistry()
+	 * @see org.jboss.dna.graph.sequencers.SequencerOutput#getNamespaceRegistry()
 	 */
 	public NamespaceRegistry getNamespaceRegistry() {
 		return factories.getNameFactory().getNamespaceRegistry();

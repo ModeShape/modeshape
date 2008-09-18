@@ -48,31 +48,31 @@ import org.jboss.dna.common.util.ArgCheck;
 import org.jboss.dna.common.util.Logger;
 import org.jboss.dna.connector.federation.executor.FederatingCommandExecutor;
 import org.jboss.dna.connector.federation.executor.SingleProjectionCommandExecutor;
-import org.jboss.dna.spi.ExecutionContext;
-import org.jboss.dna.spi.ExecutionContextFactory;
-import org.jboss.dna.spi.cache.BasicCachePolicy;
-import org.jboss.dna.spi.cache.CachePolicy;
-import org.jboss.dna.spi.connector.RepositoryConnection;
-import org.jboss.dna.spi.connector.RepositoryConnectionFactory;
-import org.jboss.dna.spi.connector.RepositoryContext;
-import org.jboss.dna.spi.connector.RepositorySource;
-import org.jboss.dna.spi.connector.RepositorySourceCapabilities;
-import org.jboss.dna.spi.connector.RepositorySourceException;
-import org.jboss.dna.spi.graph.InvalidPathException;
-import org.jboss.dna.spi.graph.Name;
-import org.jboss.dna.spi.graph.NameFactory;
-import org.jboss.dna.spi.graph.Path;
-import org.jboss.dna.spi.graph.PathFactory;
-import org.jboss.dna.spi.graph.Property;
-import org.jboss.dna.spi.graph.ValueFactories;
-import org.jboss.dna.spi.graph.ValueFactory;
-import org.jboss.dna.spi.graph.commands.GraphCommand;
-import org.jboss.dna.spi.graph.commands.executor.CommandExecutor;
-import org.jboss.dna.spi.graph.commands.executor.LoggingCommandExecutor;
-import org.jboss.dna.spi.graph.commands.executor.NoOpCommandExecutor;
-import org.jboss.dna.spi.graph.commands.impl.BasicCompositeCommand;
-import org.jboss.dna.spi.graph.commands.impl.BasicGetChildrenCommand;
-import org.jboss.dna.spi.graph.commands.impl.BasicGetNodeCommand;
+import org.jboss.dna.graph.ExecutionContext;
+import org.jboss.dna.graph.ExecutionContextFactory;
+import org.jboss.dna.graph.cache.BasicCachePolicy;
+import org.jboss.dna.graph.cache.CachePolicy;
+import org.jboss.dna.graph.commands.GraphCommand;
+import org.jboss.dna.graph.commands.basic.BasicCompositeCommand;
+import org.jboss.dna.graph.commands.basic.BasicGetChildrenCommand;
+import org.jboss.dna.graph.commands.basic.BasicGetNodeCommand;
+import org.jboss.dna.graph.commands.executor.CommandExecutor;
+import org.jboss.dna.graph.commands.executor.LoggingCommandExecutor;
+import org.jboss.dna.graph.commands.executor.NoOpCommandExecutor;
+import org.jboss.dna.graph.connectors.RepositoryConnection;
+import org.jboss.dna.graph.connectors.RepositoryConnectionFactory;
+import org.jboss.dna.graph.connectors.RepositoryContext;
+import org.jboss.dna.graph.connectors.RepositorySource;
+import org.jboss.dna.graph.connectors.RepositorySourceCapabilities;
+import org.jboss.dna.graph.connectors.RepositorySourceException;
+import org.jboss.dna.graph.properties.InvalidPathException;
+import org.jboss.dna.graph.properties.Name;
+import org.jboss.dna.graph.properties.NameFactory;
+import org.jboss.dna.graph.properties.Path;
+import org.jboss.dna.graph.properties.PathFactory;
+import org.jboss.dna.graph.properties.Property;
+import org.jboss.dna.graph.properties.ValueFactories;
+import org.jboss.dna.graph.properties.ValueFactory;
 
 /**
  * @author Randall Hauch
@@ -140,7 +140,7 @@ public class FederatedRepositorySource implements RepositorySource, ObjectFactor
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.spi.connector.RepositorySource#initialize(org.jboss.dna.spi.connector.RepositoryContext)
+     * @see org.jboss.dna.graph.connectors.RepositorySource#initialize(org.jboss.dna.graph.connectors.RepositoryContext)
      */
     public void initialize( RepositoryContext context ) throws RepositorySourceException {
         this.repositoryContext = context;
@@ -185,7 +185,7 @@ public class FederatedRepositorySource implements RepositorySource, ObjectFactor
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.spi.connector.RepositorySource#getRetryLimit()
+     * @see org.jboss.dna.graph.connectors.RepositorySource#getRetryLimit()
      */
     public int getRetryLimit() {
         return retryLimit.get();
@@ -194,7 +194,7 @@ public class FederatedRepositorySource implements RepositorySource, ObjectFactor
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.spi.connector.RepositorySource#setRetryLimit(int)
+     * @see org.jboss.dna.graph.connectors.RepositorySource#setRetryLimit(int)
      */
     public void setRetryLimit( int limit ) {
         retryLimit.set(limit < 0 ? 0 : limit);
@@ -424,7 +424,7 @@ public class FederatedRepositorySource implements RepositorySource, ObjectFactor
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.spi.connector.RepositorySource#getConnection()
+     * @see org.jboss.dna.graph.connectors.RepositorySource#getConnection()
      */
     public RepositoryConnection getConnection() throws RepositorySourceException {
         if (getName() == null) {
@@ -791,7 +791,7 @@ public class FederatedRepositorySource implements RepositorySource, ObjectFactor
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.spi.connector.RepositorySource#getCapabilities()
+     * @see org.jboss.dna.graph.connectors.RepositorySource#getCapabilities()
      */
     public RepositorySourceCapabilities getCapabilities() {
         return new Capabilities();

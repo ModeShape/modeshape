@@ -21,9 +21,9 @@
  */
 package org.jboss.dna.connector.federation.executor;
 
-import org.jboss.dna.spi.graph.Path;
-import org.jboss.dna.spi.graph.commands.ActsOnPath;
-import org.jboss.dna.spi.graph.commands.GraphCommand;
+import org.jboss.dna.graph.commands.ActsOnPath;
+import org.jboss.dna.graph.commands.GraphCommand;
+import org.jboss.dna.graph.properties.Path;
 
 /**
  * @author Randall Hauch
@@ -45,7 +45,7 @@ public class ActsOnProjectedPathCommand<T extends ActsOnPath & GraphCommand> imp
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.spi.graph.commands.ActsOnPath#getPath()
+     * @see org.jboss.dna.graph.commands.ActsOnPath#getPath()
      */
     public Path getPath() {
         return projectedPath;
@@ -54,7 +54,7 @@ public class ActsOnProjectedPathCommand<T extends ActsOnPath & GraphCommand> imp
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.spi.graph.commands.GraphCommand#getError()
+     * @see org.jboss.dna.graph.commands.GraphCommand#getError()
      */
     public Throwable getError() {
         return delegate.getError();
@@ -63,7 +63,7 @@ public class ActsOnProjectedPathCommand<T extends ActsOnPath & GraphCommand> imp
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.spi.graph.commands.GraphCommand#hasError()
+     * @see org.jboss.dna.graph.commands.GraphCommand#hasError()
      */
     public boolean hasError() {
         return delegate.hasError();
@@ -72,7 +72,7 @@ public class ActsOnProjectedPathCommand<T extends ActsOnPath & GraphCommand> imp
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.spi.graph.commands.GraphCommand#hasNoError()
+     * @see org.jboss.dna.graph.commands.GraphCommand#hasNoError()
      */
     public boolean hasNoError() {
         return delegate.hasNoError();
@@ -81,7 +81,7 @@ public class ActsOnProjectedPathCommand<T extends ActsOnPath & GraphCommand> imp
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.spi.graph.commands.GraphCommand#isCancelled()
+     * @see org.jboss.dna.graph.commands.GraphCommand#isCancelled()
      */
     public boolean isCancelled() {
         return delegate.isCancelled();
@@ -90,7 +90,7 @@ public class ActsOnProjectedPathCommand<T extends ActsOnPath & GraphCommand> imp
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.spi.graph.commands.GraphCommand#setError(java.lang.Throwable)
+     * @see org.jboss.dna.graph.commands.GraphCommand#setError(java.lang.Throwable)
      */
     public void setError( Throwable error ) {
         delegate.setError(error);

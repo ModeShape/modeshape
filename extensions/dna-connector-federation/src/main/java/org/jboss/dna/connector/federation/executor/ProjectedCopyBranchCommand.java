@@ -21,8 +21,8 @@
  */
 package org.jboss.dna.connector.federation.executor;
 
-import org.jboss.dna.spi.graph.Path;
-import org.jboss.dna.spi.graph.commands.CopyBranchCommand;
+import org.jboss.dna.graph.commands.CopyBranchCommand;
+import org.jboss.dna.graph.properties.Path;
 
 /**
  * @author Randall Hauch
@@ -42,7 +42,7 @@ public class ProjectedCopyBranchCommand extends ActsOnProjectedPathCommand<CopyB
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.spi.graph.commands.CopyBranchCommand#getNewPath()
+     * @see org.jboss.dna.graph.commands.CopyBranchCommand#getNewPath()
      */
     public Path getNewPath() {
         return newProjectedPath;

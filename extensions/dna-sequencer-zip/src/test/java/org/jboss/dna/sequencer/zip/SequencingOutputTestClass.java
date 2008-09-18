@@ -24,11 +24,11 @@ package org.jboss.dna.sequencer.zip;
 
 import java.util.ArrayList;
 import java.util.List;
-import org.jboss.dna.spi.graph.Name;
-import org.jboss.dna.spi.graph.NamespaceRegistry;
-import org.jboss.dna.spi.graph.Path;
-import org.jboss.dna.spi.graph.ValueFactories;
-import org.jboss.dna.spi.sequencers.SequencerOutput;
+import org.jboss.dna.graph.properties.Name;
+import org.jboss.dna.graph.properties.NamespaceRegistry;
+import org.jboss.dna.graph.properties.Path;
+import org.jboss.dna.graph.properties.ValueFactories;
+import org.jboss.dna.graph.sequencers.SequencerOutput;
 import org.junit.Ignore;
 
 /**

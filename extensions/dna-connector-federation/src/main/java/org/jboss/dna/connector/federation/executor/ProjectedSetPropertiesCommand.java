@@ -22,9 +22,9 @@
 package org.jboss.dna.connector.federation.executor;
 
 import java.util.Collection;
-import org.jboss.dna.spi.graph.Path;
-import org.jboss.dna.spi.graph.Property;
-import org.jboss.dna.spi.graph.commands.SetPropertiesCommand;
+import org.jboss.dna.graph.commands.SetPropertiesCommand;
+import org.jboss.dna.graph.properties.Path;
+import org.jboss.dna.graph.properties.Property;
 
 /**
  * @author Randall Hauch
@@ -40,7 +40,7 @@ public class ProjectedSetPropertiesCommand extends ActsOnProjectedPathCommand<Se
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.spi.graph.commands.ActsOnProperties#getProperties()
+     * @see org.jboss.dna.graph.commands.ActsOnProperties#getProperties()
      */
     public Collection<Property> getProperties() {
         return getOriginalCommand().getProperties();

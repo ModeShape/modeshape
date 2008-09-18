@@ -47,16 +47,16 @@ import javax.security.auth.login.LoginException;
 import net.jcip.annotations.NotThreadSafe;
 import org.jboss.dna.common.util.ArgCheck;
 import org.jboss.dna.common.util.StringUtil;
-import org.jboss.dna.spi.DnaLexicon;
-import org.jboss.dna.spi.ExecutionContext;
-import org.jboss.dna.spi.connector.RepositoryConnection;
-import org.jboss.dna.spi.graph.Name;
-import org.jboss.dna.spi.graph.Path;
-import org.jboss.dna.spi.graph.UuidFactory;
-import org.jboss.dna.spi.graph.ValueFactories;
-import org.jboss.dna.spi.graph.Path.Segment;
-import org.jboss.dna.spi.graph.commands.GraphCommand;
-import org.jboss.dna.spi.graph.commands.impl.BasicGetNodeCommand;
+import org.jboss.dna.graph.DnaLexicon;
+import org.jboss.dna.graph.ExecutionContext;
+import org.jboss.dna.graph.commands.GraphCommand;
+import org.jboss.dna.graph.commands.basic.BasicGetNodeCommand;
+import org.jboss.dna.graph.connectors.RepositoryConnection;
+import org.jboss.dna.graph.properties.Name;
+import org.jboss.dna.graph.properties.Path;
+import org.jboss.dna.graph.properties.UuidFactory;
+import org.jboss.dna.graph.properties.ValueFactories;
+import org.jboss.dna.graph.properties.Path.Segment;
 import org.xml.sax.ContentHandler;
 import com.google.common.base.ReferenceType;
 import com.google.common.collect.ReferenceMap;
@@ -295,7 +295,7 @@ class JcrSession implements Session {
         BasicGetNodeCommand command = new BasicGetNodeCommand(path);
         execute(command);
         // First check if node already exists. We don't need to check for changes since that will be handled by an observer
-        org.jboss.dna.spi.graph.Property dnaUuidProp = command.getPropertiesByName().get(executionContext.getValueFactories().getNameFactory().create("jcr:uuid"));
+        org.jboss.dna.graph.properties.Property dnaUuidProp = command.getPropertiesByName().get(executionContext.getValueFactories().getNameFactory().create("jcr:uuid"));
         if (dnaUuidProp == null) dnaUuidProp = command.getPropertiesByName().get(DnaLexicon.UUID);
         if (dnaUuidProp != null) {
             UUID uuid = executionContext.getValueFactories().getUuidFactory().create(dnaUuidProp.getValues()).next();
@@ -528,16 +528,16 @@ class JcrSession implements Session {
         Name jcrUuidName = executionContext.getValueFactories().getNameFactory().create("jcr:uuid");
         Name jcrMixinTypesName = executionContext.getValueFactories().getNameFactory().create("jcr:mixinTypes");
         UuidFactory uuidFactory = executionContext.getValueFactories().getUuidFactory();
-        org.jboss.dna.spi.graph.Property dnaUuidProp = null;
+        org.jboss.dna.graph.properties.Property dnaUuidProp = null;
         boolean referenceable = false;
-        for (org.jboss.dna.spi.graph.Property dnaProp : getNodeCommand.getProperties()) {
+        for (org.jboss.dna.graph.properties.Property dnaProp : getNodeCommand.getProperties()) {
             Name name = dnaProp.getName();
             if (dnaProp.isMultiple()) properties.add(new JcrMultiValueProperty(node, executionContext, name, dnaProp));
             else {
                 if (uuid == null && DnaLexicon.UUID.equals(name)) uuid = uuidFactory.create(dnaProp.getValues()).next();
                 else if (jcrUuidName.equals(name)) dnaUuidProp = dnaProp;
                 else if (jcrMixinTypesName.equals(name)) {
-                    org.jboss.dna.spi.graph.ValueFactory<String> stringFactory = executionContext.getValueFactories().getStringFactory();
+                    org.jboss.dna.graph.properties.ValueFactory<String> stringFactory = executionContext.getValueFactories().getStringFactory();
                     for (String mixin : stringFactory.create(dnaProp)) {
                         if ("mix:referenceable".equals(mixin)) referenceable = true;
                     }

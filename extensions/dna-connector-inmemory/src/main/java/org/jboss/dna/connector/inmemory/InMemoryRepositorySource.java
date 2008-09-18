@@ -43,12 +43,12 @@ import javax.naming.spi.ObjectFactory;
 import net.jcip.annotations.GuardedBy;
 import org.jboss.dna.common.i18n.I18n;
 import org.jboss.dna.common.util.ArgCheck;
-import org.jboss.dna.spi.cache.CachePolicy;
-import org.jboss.dna.spi.connector.RepositoryConnection;
-import org.jboss.dna.spi.connector.RepositoryContext;
-import org.jboss.dna.spi.connector.RepositorySource;
-import org.jboss.dna.spi.connector.RepositorySourceCapabilities;
-import org.jboss.dna.spi.connector.RepositorySourceException;
+import org.jboss.dna.graph.cache.CachePolicy;
+import org.jboss.dna.graph.connectors.RepositoryConnection;
+import org.jboss.dna.graph.connectors.RepositoryContext;
+import org.jboss.dna.graph.connectors.RepositorySource;
+import org.jboss.dna.graph.connectors.RepositorySourceCapabilities;
+import org.jboss.dna.graph.connectors.RepositorySourceException;
 
 /**
  * @author Randall Hauch
@@ -91,7 +91,7 @@ public class InMemoryRepositorySource implements RepositorySource, ObjectFactory
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.spi.connector.RepositorySource#initialize(org.jboss.dna.spi.connector.RepositoryContext)
+     * @see org.jboss.dna.graph.connectors.RepositorySource#initialize(org.jboss.dna.graph.connectors.RepositoryContext)
      */
     public void initialize( RepositoryContext context ) throws RepositorySourceException {
         this.repositoryContext = context;
@@ -107,7 +107,7 @@ public class InMemoryRepositorySource implements RepositorySource, ObjectFactory
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.spi.connector.RepositorySource#getRetryLimit()
+     * @see org.jboss.dna.graph.connectors.RepositorySource#getRetryLimit()
      */
     public int getRetryLimit() {
         return retryLimit.get();
@@ -116,7 +116,7 @@ public class InMemoryRepositorySource implements RepositorySource, ObjectFactory
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.spi.connector.RepositorySource#setRetryLimit(int)
+     * @see org.jboss.dna.graph.connectors.RepositorySource#setRetryLimit(int)
      */
     public void setRetryLimit( int limit ) {
         retryLimit.set(limit < 0 ? 0 : limit);
@@ -218,7 +218,7 @@ public class InMemoryRepositorySource implements RepositorySource, ObjectFactory
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.spi.connector.RepositorySource#getConnection()
+     * @see org.jboss.dna.graph.connectors.RepositorySource#getConnection()
      */
     public RepositoryConnection getConnection() throws RepositorySourceException {
         if (repository == null) {
@@ -312,7 +312,7 @@ public class InMemoryRepositorySource implements RepositorySource, ObjectFactory
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.spi.connector.RepositorySource#getCapabilities()
+     * @see org.jboss.dna.graph.connectors.RepositorySource#getCapabilities()
      */
     public RepositorySourceCapabilities getCapabilities() {
         return new Capabilities();

@@ -22,7 +22,7 @@
 package org.jboss.dna.repository.util;
 
 import javax.jcr.Session;
-import org.jboss.dna.spi.ExecutionContext;
+import org.jboss.dna.graph.ExecutionContext;
 
 /**
  * The context of an execution within a JCR environment.

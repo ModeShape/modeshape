@@ -23,12 +23,12 @@ package org.jboss.dna.sequencer.images;
 
 import java.io.InputStream;
 import org.jboss.dna.common.monitor.ProgressMonitor;
-import org.jboss.dna.spi.graph.NameFactory;
-import org.jboss.dna.spi.graph.Path;
-import org.jboss.dna.spi.graph.PathFactory;
-import org.jboss.dna.spi.sequencers.SequencerContext;
-import org.jboss.dna.spi.sequencers.SequencerOutput;
-import org.jboss.dna.spi.sequencers.StreamSequencer;
+import org.jboss.dna.graph.properties.NameFactory;
+import org.jboss.dna.graph.properties.Path;
+import org.jboss.dna.graph.properties.PathFactory;
+import org.jboss.dna.graph.sequencers.SequencerContext;
+import org.jboss.dna.graph.sequencers.SequencerOutput;
+import org.jboss.dna.graph.sequencers.StreamSequencer;
 
 /**
  * A sequencer that processes the binary content of an image file, extracts the metadata for the image, and then writes that image

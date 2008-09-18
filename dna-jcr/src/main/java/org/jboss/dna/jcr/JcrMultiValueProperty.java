@@ -32,9 +32,9 @@ import javax.jcr.Value;
 import javax.jcr.ValueFormatException;
 import javax.jcr.nodetype.PropertyDefinition;
 import net.jcip.annotations.NotThreadSafe;
-import org.jboss.dna.spi.ExecutionContext;
-import org.jboss.dna.spi.graph.Name;
-import org.jboss.dna.spi.graph.ValueFactories;
+import org.jboss.dna.graph.ExecutionContext;
+import org.jboss.dna.graph.properties.Name;
+import org.jboss.dna.graph.properties.ValueFactories;
 
 /**
  * @author jverhaeg

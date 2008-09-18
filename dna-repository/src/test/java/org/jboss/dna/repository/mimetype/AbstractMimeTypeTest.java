@@ -26,7 +26,7 @@ import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
 import java.io.File;
 import java.io.InputStream;
-import org.jboss.dna.spi.mimetype.MimeTypeDetector;
+import org.jboss.dna.graph.mimetype.MimeTypeDetector;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;

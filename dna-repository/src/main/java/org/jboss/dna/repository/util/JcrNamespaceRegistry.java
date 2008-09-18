@@ -27,8 +27,8 @@ import java.util.Set;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import org.jboss.dna.common.util.ArgCheck;
-import org.jboss.dna.spi.graph.NamespaceException;
-import org.jboss.dna.spi.graph.NamespaceRegistry;
+import org.jboss.dna.graph.properties.NamespaceException;
+import org.jboss.dna.graph.properties.NamespaceRegistry;
 
 /**
  * @author Randall Hauch

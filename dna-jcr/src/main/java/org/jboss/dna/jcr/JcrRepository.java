@@ -37,9 +37,9 @@ import javax.jcr.SimpleCredentials;
 import javax.security.auth.login.LoginContext;
 import net.jcip.annotations.ThreadSafe;
 import org.jboss.dna.common.util.ArgCheck;
-import org.jboss.dna.spi.ExecutionContext;
-import org.jboss.dna.spi.ExecutionContextFactory;
-import org.jboss.dna.spi.connector.RepositoryConnectionFactory;
+import org.jboss.dna.graph.ExecutionContext;
+import org.jboss.dna.graph.ExecutionContextFactory;
+import org.jboss.dna.graph.connectors.RepositoryConnectionFactory;
 import com.google.common.base.ReferenceType;
 import com.google.common.collect.ReferenceMap;
 

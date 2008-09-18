@@ -29,7 +29,7 @@ import org.jboss.dna.common.component.ClassLoaderFactory;
 import org.jboss.dna.common.component.ComponentLibrary;
 import org.jboss.dna.common.component.StandardClassLoaderFactory;
 import org.jboss.dna.common.util.Logger;
-import org.jboss.dna.spi.mimetype.MimeTypeDetector;
+import org.jboss.dna.graph.mimetype.MimeTypeDetector;
 
 /**
  * @author jverhaeg

@@ -28,11 +28,11 @@ import static org.junit.Assert.assertThat;
 import static org.junit.matchers.JUnitMatchers.hasItems;
 import org.jboss.dna.common.text.TextEncoder;
 import org.jboss.dna.common.text.UrlEncoder;
-import org.jboss.dna.spi.ExecutionContext;
-import org.jboss.dna.spi.connector.BasicExecutionContext;
-import org.jboss.dna.spi.graph.NamespaceRegistry;
-import org.jboss.dna.spi.graph.Path;
-import org.jboss.dna.spi.graph.PathFactory;
+import org.jboss.dna.graph.ExecutionContext;
+import org.jboss.dna.graph.connectors.BasicExecutionContext;
+import org.jboss.dna.graph.properties.NamespaceRegistry;
+import org.jboss.dna.graph.properties.Path;
+import org.jboss.dna.graph.properties.PathFactory;
 import org.junit.Before;
 import org.junit.Test;
 

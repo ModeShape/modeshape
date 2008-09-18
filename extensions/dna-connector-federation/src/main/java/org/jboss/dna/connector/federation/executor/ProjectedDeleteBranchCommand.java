@@ -21,8 +21,8 @@
  */
 package org.jboss.dna.connector.federation.executor;
 
-import org.jboss.dna.spi.graph.Path;
-import org.jboss.dna.spi.graph.commands.DeleteBranchCommand;
+import org.jboss.dna.graph.commands.DeleteBranchCommand;
+import org.jboss.dna.graph.properties.Path;
 
 /**
  * @author Randall Hauch

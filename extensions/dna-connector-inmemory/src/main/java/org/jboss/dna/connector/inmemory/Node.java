@@ -27,11 +27,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import net.jcip.annotations.NotThreadSafe;
-import org.jboss.dna.spi.ExecutionContext;
-import org.jboss.dna.spi.graph.Name;
-import org.jboss.dna.spi.graph.Path;
-import org.jboss.dna.spi.graph.Property;
-import org.jboss.dna.spi.graph.PropertyFactory;
+import org.jboss.dna.graph.ExecutionContext;
+import org.jboss.dna.graph.properties.Name;
+import org.jboss.dna.graph.properties.Path;
+import org.jboss.dna.graph.properties.Property;
+import org.jboss.dna.graph.properties.PropertyFactory;
 
 /**
  * @author Randall Hauch

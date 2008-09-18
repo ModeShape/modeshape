@@ -22,10 +22,10 @@
 package org.jboss.dna.connector.federation.merge;
 
 import java.util.UUID;
-import org.jboss.dna.spi.graph.Path;
-import org.jboss.dna.spi.graph.commands.CreateNodeCommand;
-import org.jboss.dna.spi.graph.commands.NodeConflictBehavior;
-import org.jboss.dna.spi.graph.commands.impl.BasicGetNodeCommand;
+import org.jboss.dna.graph.commands.CreateNodeCommand;
+import org.jboss.dna.graph.commands.NodeConflictBehavior;
+import org.jboss.dna.graph.commands.basic.BasicGetNodeCommand;
+import org.jboss.dna.graph.properties.Path;
 
 /**
  * An in-memory (and temporary) representation of a federated node and it's merged properties and children.
@@ -138,7 +138,7 @@ public class FederatedNode extends BasicGetNodeCommand implements CreateNodeComm
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.spi.graph.commands.CreateNodeCommand#getConflictBehavior()
+     * @see org.jboss.dna.graph.commands.CreateNodeCommand#getConflictBehavior()
      */
     public NodeConflictBehavior getConflictBehavior() {
         return this.nodeConflictBehavior;

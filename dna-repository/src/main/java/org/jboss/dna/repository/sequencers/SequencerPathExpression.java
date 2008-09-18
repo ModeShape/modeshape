@@ -28,8 +28,8 @@ import java.util.regex.Pattern;
 import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.util.ArgCheck;
 import org.jboss.dna.common.util.HashCode;
+import org.jboss.dna.graph.properties.PathExpression;
 import org.jboss.dna.repository.RepositoryI18n;
-import org.jboss.dna.spi.graph.PathExpression;
 
 /**
  * An expression that defines a selection of some change in the repository that signals a sequencing operation should be run, and

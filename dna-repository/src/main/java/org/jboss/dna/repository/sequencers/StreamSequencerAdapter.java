@@ -33,17 +33,17 @@ import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import org.jboss.dna.common.monitor.ProgressMonitor;
 import org.jboss.dna.common.util.Logger;
+import org.jboss.dna.graph.properties.Binary;
+import org.jboss.dna.graph.properties.DateTime;
+import org.jboss.dna.graph.properties.Name;
+import org.jboss.dna.graph.properties.NamespaceRegistry;
+import org.jboss.dna.graph.properties.Path;
+import org.jboss.dna.graph.properties.PathFactory;
+import org.jboss.dna.graph.sequencers.StreamSequencer;
 import org.jboss.dna.repository.RepositoryI18n;
 import org.jboss.dna.repository.observation.NodeChange;
 import org.jboss.dna.repository.util.JcrExecutionContext;
 import org.jboss.dna.repository.util.RepositoryNodePath;
-import org.jboss.dna.spi.graph.Binary;
-import org.jboss.dna.spi.graph.DateTime;
-import org.jboss.dna.spi.graph.Name;
-import org.jboss.dna.spi.graph.NamespaceRegistry;
-import org.jboss.dna.spi.graph.Path;
-import org.jboss.dna.spi.graph.PathFactory;
-import org.jboss.dna.spi.sequencers.StreamSequencer;
 
 /**
  * An adapter class that wraps a {@link StreamSequencer} instance to be a {@link Sequencer}.

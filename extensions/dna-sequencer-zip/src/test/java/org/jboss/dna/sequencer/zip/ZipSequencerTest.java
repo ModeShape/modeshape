@@ -25,7 +25,7 @@ package org.jboss.dna.sequencer.zip;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
 import java.io.InputStream;
-import org.jboss.dna.spi.sequencers.SequencerContext;
+import org.jboss.dna.graph.sequencers.SequencerContext;
 import org.junit.After;
 import org.junit.Test;
 

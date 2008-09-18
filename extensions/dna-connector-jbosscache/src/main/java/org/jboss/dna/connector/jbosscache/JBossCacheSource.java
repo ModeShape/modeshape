@@ -45,15 +45,15 @@ import org.jboss.cache.Cache;
 import org.jboss.cache.CacheFactory;
 import org.jboss.cache.DefaultCacheFactory;
 import org.jboss.dna.common.i18n.I18n;
-import org.jboss.dna.spi.DnaLexicon;
-import org.jboss.dna.spi.cache.CachePolicy;
-import org.jboss.dna.spi.connector.RepositoryConnection;
-import org.jboss.dna.spi.connector.RepositoryContext;
-import org.jboss.dna.spi.connector.RepositorySource;
-import org.jboss.dna.spi.connector.RepositorySourceCapabilities;
-import org.jboss.dna.spi.connector.RepositorySourceException;
-import org.jboss.dna.spi.graph.Name;
-import org.jboss.dna.spi.graph.Property;
+import org.jboss.dna.graph.DnaLexicon;
+import org.jboss.dna.graph.cache.CachePolicy;
+import org.jboss.dna.graph.connectors.RepositoryConnection;
+import org.jboss.dna.graph.connectors.RepositoryContext;
+import org.jboss.dna.graph.connectors.RepositorySource;
+import org.jboss.dna.graph.connectors.RepositorySourceCapabilities;
+import org.jboss.dna.graph.connectors.RepositorySourceException;
+import org.jboss.dna.graph.properties.Name;
+import org.jboss.dna.graph.properties.Property;
 
 /**
  * A repository source that uses a JBoss Cache instance to manage the content. This source is capable of using an existing
@@ -111,7 +111,7 @@ public class JBossCacheSource implements RepositorySource, ObjectFactory {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.spi.connector.RepositorySource#initialize(org.jboss.dna.spi.connector.RepositoryContext)
+     * @see org.jboss.dna.graph.connectors.RepositorySource#initialize(org.jboss.dna.graph.connectors.RepositoryContext)
      */
     public void initialize( RepositoryContext context ) throws RepositorySourceException {
         this.repositoryContext = context;
@@ -134,7 +134,7 @@ public class JBossCacheSource implements RepositorySource, ObjectFactory {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.spi.connector.RepositorySource#getRetryLimit()
+     * @see org.jboss.dna.graph.connectors.RepositorySource#getRetryLimit()
      */
     public int getRetryLimit() {
         return retryLimit.get();
@@ -143,7 +143,7 @@ public class JBossCacheSource implements RepositorySource, ObjectFactory {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.spi.connector.RepositorySource#setRetryLimit(int)
+     * @see org.jboss.dna.graph.connectors.RepositorySource#setRetryLimit(int)
      */
     public void setRetryLimit( int limit ) {
         retryLimit.set(limit < 0 ? 0 : limit);
@@ -359,7 +359,7 @@ public class JBossCacheSource implements RepositorySource, ObjectFactory {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.spi.connector.RepositorySource#getConnection()
+     * @see org.jboss.dna.graph.connectors.RepositorySource#getConnection()
      */
     @SuppressWarnings( "unchecked" )
     public RepositoryConnection getConnection() throws RepositorySourceException {
@@ -547,7 +547,7 @@ public class JBossCacheSource implements RepositorySource, ObjectFactory {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.spi.connector.RepositorySource#getCapabilities()
+     * @see org.jboss.dna.graph.connectors.RepositorySource#getCapabilities()
      */
     public RepositorySourceCapabilities getCapabilities() {
         return new Capabilities();

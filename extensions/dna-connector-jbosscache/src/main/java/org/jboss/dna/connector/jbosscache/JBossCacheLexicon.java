@@ -21,8 +21,8 @@
  */
 package org.jboss.dna.connector.jbosscache;
 
-import org.jboss.dna.spi.graph.Name;
-import org.jboss.dna.spi.graph.impl.BasicName;
+import org.jboss.dna.graph.properties.Name;
+import org.jboss.dna.graph.properties.basic.BasicName;
 
 /**
  * The namespace and property names used within a {@link JBossCacheSource} to store internal information.

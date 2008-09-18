@@ -21,9 +21,9 @@
  */
 package org.jboss.dna.connector.federation.executor;
 
-import org.jboss.dna.spi.graph.Path;
-import org.jboss.dna.spi.graph.commands.MoveBranchCommand;
-import org.jboss.dna.spi.graph.commands.NodeConflictBehavior;
+import org.jboss.dna.graph.commands.MoveBranchCommand;
+import org.jboss.dna.graph.commands.NodeConflictBehavior;
+import org.jboss.dna.graph.properties.Path;
 
 /**
  * @author Randall Hauch
@@ -43,7 +43,7 @@ public class ProjectedMoveBranchCommand extends ActsOnProjectedPathCommand<MoveB
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.spi.graph.commands.MoveBranchCommand#getConflictBehavior()
+     * @see org.jboss.dna.graph.commands.MoveBranchCommand#getConflictBehavior()
      */
     public NodeConflictBehavior getConflictBehavior() {
         return getOriginalCommand().getConflictBehavior();
@@ -52,7 +52,7 @@ public class ProjectedMoveBranchCommand extends ActsOnProjectedPathCommand<MoveB
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.spi.graph.commands.MoveBranchCommand#getNewPath()
+     * @see org.jboss.dna.graph.commands.MoveBranchCommand#getNewPath()
      */
     public Path getNewPath() {
         return this.newProjectedPath;

@@ -24,25 +24,25 @@ package org.jboss.dna.connector.federation.executor;
 import java.util.Set;
 import net.jcip.annotations.NotThreadSafe;
 import org.jboss.dna.connector.federation.Projection;
-import org.jboss.dna.spi.ExecutionContext;
-import org.jboss.dna.spi.connector.RepositoryConnection;
-import org.jboss.dna.spi.connector.RepositoryConnectionFactory;
-import org.jboss.dna.spi.connector.RepositorySource;
-import org.jboss.dna.spi.connector.RepositorySourceException;
-import org.jboss.dna.spi.graph.DateTime;
-import org.jboss.dna.spi.graph.Path;
-import org.jboss.dna.spi.graph.PathFactory;
-import org.jboss.dna.spi.graph.commands.CopyBranchCommand;
-import org.jboss.dna.spi.graph.commands.CopyNodeCommand;
-import org.jboss.dna.spi.graph.commands.CreateNodeCommand;
-import org.jboss.dna.spi.graph.commands.DeleteBranchCommand;
-import org.jboss.dna.spi.graph.commands.GetChildrenCommand;
-import org.jboss.dna.spi.graph.commands.GetNodeCommand;
-import org.jboss.dna.spi.graph.commands.GetPropertiesCommand;
-import org.jboss.dna.spi.graph.commands.MoveBranchCommand;
-import org.jboss.dna.spi.graph.commands.RecordBranchCommand;
-import org.jboss.dna.spi.graph.commands.SetPropertiesCommand;
-import org.jboss.dna.spi.graph.commands.executor.AbstractCommandExecutor;
+import org.jboss.dna.graph.ExecutionContext;
+import org.jboss.dna.graph.commands.CopyBranchCommand;
+import org.jboss.dna.graph.commands.CopyNodeCommand;
+import org.jboss.dna.graph.commands.CreateNodeCommand;
+import org.jboss.dna.graph.commands.DeleteBranchCommand;
+import org.jboss.dna.graph.commands.GetChildrenCommand;
+import org.jboss.dna.graph.commands.GetNodeCommand;
+import org.jboss.dna.graph.commands.GetPropertiesCommand;
+import org.jboss.dna.graph.commands.MoveBranchCommand;
+import org.jboss.dna.graph.commands.RecordBranchCommand;
+import org.jboss.dna.graph.commands.SetPropertiesCommand;
+import org.jboss.dna.graph.commands.executor.AbstractCommandExecutor;
+import org.jboss.dna.graph.connectors.RepositoryConnection;
+import org.jboss.dna.graph.connectors.RepositoryConnectionFactory;
+import org.jboss.dna.graph.connectors.RepositorySource;
+import org.jboss.dna.graph.connectors.RepositorySourceException;
+import org.jboss.dna.graph.properties.DateTime;
+import org.jboss.dna.graph.properties.Path;
+import org.jboss.dna.graph.properties.PathFactory;
 
 /**
  * @author Randall Hauch
@@ -103,7 +103,7 @@ public class SingleProjectionCommandExecutor extends AbstractCommandExecutor {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.spi.graph.commands.executor.AbstractCommandExecutor#close()
+     * @see org.jboss.dna.graph.commands.executor.AbstractCommandExecutor#close()
      */
     @Override
     public void close() {
@@ -120,7 +120,7 @@ public class SingleProjectionCommandExecutor extends AbstractCommandExecutor {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.spi.graph.commands.executor.AbstractCommandExecutor#execute(org.jboss.dna.spi.graph.commands.GetChildrenCommand)
+     * @see org.jboss.dna.graph.commands.executor.AbstractCommandExecutor#execute(org.jboss.dna.graph.commands.GetChildrenCommand)
      */
     @Override
     public void execute( GetChildrenCommand command ) throws RepositorySourceException {
@@ -131,7 +131,7 @@ public class SingleProjectionCommandExecutor extends AbstractCommandExecutor {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.spi.graph.commands.executor.AbstractCommandExecutor#execute(org.jboss.dna.spi.graph.commands.GetPropertiesCommand)
+     * @see org.jboss.dna.graph.commands.executor.AbstractCommandExecutor#execute(org.jboss.dna.graph.commands.GetPropertiesCommand)
      */
     @Override
     public void execute( GetPropertiesCommand command ) throws RepositorySourceException {
@@ -142,7 +142,7 @@ public class SingleProjectionCommandExecutor extends AbstractCommandExecutor {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.spi.graph.commands.executor.AbstractCommandExecutor#execute(org.jboss.dna.spi.graph.commands.GetNodeCommand)
+     * @see org.jboss.dna.graph.commands.executor.AbstractCommandExecutor#execute(org.jboss.dna.graph.commands.GetNodeCommand)
      */
     @Override
     public void execute( GetNodeCommand command ) throws RepositorySourceException {
@@ -153,7 +153,7 @@ public class SingleProjectionCommandExecutor extends AbstractCommandExecutor {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.spi.graph.commands.executor.AbstractCommandExecutor#execute(org.jboss.dna.spi.graph.commands.CreateNodeCommand)
+     * @see org.jboss.dna.graph.commands.executor.AbstractCommandExecutor#execute(org.jboss.dna.graph.commands.CreateNodeCommand)
      */
     @Override
     public void execute( CreateNodeCommand command ) throws RepositorySourceException {
@@ -164,7 +164,7 @@ public class SingleProjectionCommandExecutor extends AbstractCommandExecutor {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.spi.graph.commands.executor.AbstractCommandExecutor#execute(org.jboss.dna.spi.graph.commands.SetPropertiesCommand)
+     * @see org.jboss.dna.graph.commands.executor.AbstractCommandExecutor#execute(org.jboss.dna.graph.commands.SetPropertiesCommand)
      */
     @Override
     public void execute( SetPropertiesCommand command ) throws RepositorySourceException {
@@ -175,7 +175,7 @@ public class SingleProjectionCommandExecutor extends AbstractCommandExecutor {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.spi.graph.commands.executor.AbstractCommandExecutor#execute(org.jboss.dna.spi.graph.commands.DeleteBranchCommand)
+     * @see org.jboss.dna.graph.commands.executor.AbstractCommandExecutor#execute(org.jboss.dna.graph.commands.DeleteBranchCommand)
      */
     @Override
     public void execute( DeleteBranchCommand command ) throws RepositorySourceException {
@@ -186,7 +186,7 @@ public class SingleProjectionCommandExecutor extends AbstractCommandExecutor {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.spi.graph.commands.executor.AbstractCommandExecutor#execute(org.jboss.dna.spi.graph.commands.MoveBranchCommand)
+     * @see org.jboss.dna.graph.commands.executor.AbstractCommandExecutor#execute(org.jboss.dna.graph.commands.MoveBranchCommand)
      */
     @Override
     public void execute( MoveBranchCommand command ) throws RepositorySourceException {
@@ -199,7 +199,7 @@ public class SingleProjectionCommandExecutor extends AbstractCommandExecutor {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.spi.graph.commands.executor.AbstractCommandExecutor#execute(org.jboss.dna.spi.graph.commands.RecordBranchCommand)
+     * @see org.jboss.dna.graph.commands.executor.AbstractCommandExecutor#execute(org.jboss.dna.graph.commands.RecordBranchCommand)
      */
     @Override
     public void execute( RecordBranchCommand command ) throws RepositorySourceException {
@@ -210,7 +210,7 @@ public class SingleProjectionCommandExecutor extends AbstractCommandExecutor {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.spi.graph.commands.executor.AbstractCommandExecutor#execute(org.jboss.dna.spi.graph.commands.CopyBranchCommand)
+     * @see org.jboss.dna.graph.commands.executor.AbstractCommandExecutor#execute(org.jboss.dna.graph.commands.CopyBranchCommand)
      */
     @Override
     public void execute( CopyBranchCommand command ) throws RepositorySourceException {
@@ -223,7 +223,7 @@ public class SingleProjectionCommandExecutor extends AbstractCommandExecutor {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.spi.graph.commands.executor.AbstractCommandExecutor#execute(org.jboss.dna.spi.graph.commands.CopyNodeCommand)
+     * @see org.jboss.dna.graph.commands.executor.AbstractCommandExecutor#execute(org.jboss.dna.graph.commands.CopyNodeCommand)
      */
     @Override
     public void execute( CopyNodeCommand command ) throws RepositorySourceException {

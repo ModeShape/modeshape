@@ -30,12 +30,12 @@ import java.util.concurrent.atomic.AtomicInteger;
 import net.jcip.annotations.ThreadSafe;
 import org.jboss.dna.common.util.ArgCheck;
 import org.jboss.dna.connector.federation.executor.FederatingCommandExecutor;
-import org.jboss.dna.spi.ExecutionContext;
-import org.jboss.dna.spi.connector.RepositoryConnection;
-import org.jboss.dna.spi.connector.RepositoryConnectionFactory;
-import org.jboss.dna.spi.connector.RepositorySource;
-import org.jboss.dna.spi.connector.RepositorySourceListener;
-import org.jboss.dna.spi.graph.commands.executor.CommandExecutor;
+import org.jboss.dna.graph.ExecutionContext;
+import org.jboss.dna.graph.commands.executor.CommandExecutor;
+import org.jboss.dna.graph.connectors.RepositoryConnection;
+import org.jboss.dna.graph.connectors.RepositoryConnectionFactory;
+import org.jboss.dna.graph.connectors.RepositorySource;
+import org.jboss.dna.graph.connectors.RepositorySourceListener;
 
 /**
  * The component that represents a single federated repository. The federated repository uses a set of {@link RepositorySource
@@ -221,8 +221,7 @@ public class FederatedRepository {
     }
 
     /**
-     * Called by {@link FederatedRepositoryConnection#execute(ExecutionContext, org.jboss.dna.spi.graph.commands.GraphCommand...)}
-     * .
+     * Called by {@link FederatedRepositoryConnection#execute(ExecutionContext, org.jboss.dna.graph.commands.GraphCommand...)} .
      * 
      * @param context the execution context in which the executor will be run; may not be null
      * @param sourceName the name of the {@link RepositorySource} that is making use of this executor; may not be null or empty

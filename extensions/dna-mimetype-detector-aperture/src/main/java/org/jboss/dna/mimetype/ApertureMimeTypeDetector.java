@@ -23,7 +23,7 @@ package org.jboss.dna.mimetype;
 
 import java.io.IOException;
 import java.io.InputStream;
-import org.jboss.dna.spi.mimetype.MimeTypeDetector;
+import org.jboss.dna.graph.mimetype.MimeTypeDetector;
 import org.semanticdesktop.aperture.mime.identifier.MimeTypeIdentifier;
 import org.semanticdesktop.aperture.mime.identifier.magic.MagicMimeTypeIdentifier;
 import org.semanticdesktop.aperture.util.IOUtil;
@@ -37,7 +37,7 @@ public class ApertureMimeTypeDetector implements MimeTypeDetector {
      * {@inheritDoc}
      * 
      * @throws IOException
-     * @see org.jboss.dna.spi.mimetype.MimeTypeDetector#mimeTypeOf(java.lang.String, java.io.InputStream)
+     * @see org.jboss.dna.graph.mimetype.MimeTypeDetector#mimeTypeOf(java.lang.String, java.io.InputStream)
      */
     public String mimeTypeOf( String name,
                               InputStream content ) throws IOException {

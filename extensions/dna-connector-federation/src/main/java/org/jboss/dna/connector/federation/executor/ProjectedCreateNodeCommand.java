@@ -22,10 +22,10 @@
 package org.jboss.dna.connector.federation.executor;
 
 import java.util.Collection;
-import org.jboss.dna.spi.graph.Path;
-import org.jboss.dna.spi.graph.Property;
-import org.jboss.dna.spi.graph.commands.CreateNodeCommand;
-import org.jboss.dna.spi.graph.commands.NodeConflictBehavior;
+import org.jboss.dna.graph.commands.CreateNodeCommand;
+import org.jboss.dna.graph.commands.NodeConflictBehavior;
+import org.jboss.dna.graph.properties.Path;
+import org.jboss.dna.graph.properties.Property;
 
 /**
  * @author Randall Hauch
@@ -40,7 +40,7 @@ public class ProjectedCreateNodeCommand extends ActsOnProjectedPathCommand<Creat
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.spi.graph.commands.CreateNodeCommand#getConflictBehavior()
+     * @see org.jboss.dna.graph.commands.CreateNodeCommand#getConflictBehavior()
      */
     public NodeConflictBehavior getConflictBehavior() {
         return getOriginalCommand().getConflictBehavior();
@@ -49,7 +49,7 @@ public class ProjectedCreateNodeCommand extends ActsOnProjectedPathCommand<Creat
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.spi.graph.commands.CreateNodeCommand#getProperties()
+     * @see org.jboss.dna.graph.commands.CreateNodeCommand#getProperties()
      */
     public Collection<Property> getProperties() {
         return getOriginalCommand().getProperties();

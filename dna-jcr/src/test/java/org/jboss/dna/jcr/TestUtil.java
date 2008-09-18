@@ -26,14 +26,14 @@ import javax.security.auth.Subject;
 import javax.security.auth.callback.CallbackHandler;
 import javax.security.auth.login.LoginContext;
 import net.jcip.annotations.NotThreadSafe;
-import org.jboss.dna.spi.ExecutionContext;
-import org.jboss.dna.spi.ExecutionContextFactory;
-import org.jboss.dna.spi.connector.BasicExecutionContext;
-import org.jboss.dna.spi.connector.RepositoryConnection;
-import org.jboss.dna.spi.connector.RepositoryConnectionFactory;
-import org.jboss.dna.spi.connector.SimpleRepository;
-import org.jboss.dna.spi.connector.SimpleRepositorySource;
-import org.jboss.dna.spi.graph.NamespaceRegistry;
+import org.jboss.dna.graph.ExecutionContext;
+import org.jboss.dna.graph.ExecutionContextFactory;
+import org.jboss.dna.graph.connectors.BasicExecutionContext;
+import org.jboss.dna.graph.connectors.RepositoryConnection;
+import org.jboss.dna.graph.connectors.RepositoryConnectionFactory;
+import org.jboss.dna.graph.connectors.SimpleRepository;
+import org.jboss.dna.graph.connectors.SimpleRepositorySource;
+import org.jboss.dna.graph.properties.NamespaceRegistry;
 import org.mockito.Mockito;
 
 /**

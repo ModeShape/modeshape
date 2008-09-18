@@ -26,6 +26,12 @@ import java.io.InputStream;
 import java.util.List;
 import org.apache.commons.lang.StringUtils;
 import org.jboss.dna.common.monitor.ProgressMonitor;
+import org.jboss.dna.graph.properties.NameFactory;
+import org.jboss.dna.graph.properties.Path;
+import org.jboss.dna.graph.properties.PathFactory;
+import org.jboss.dna.graph.sequencers.SequencerContext;
+import org.jboss.dna.graph.sequencers.SequencerOutput;
+import org.jboss.dna.graph.sequencers.StreamSequencer;
 import org.jboss.dna.sequencer.java.metadata.AnnotationMetadata;
 import org.jboss.dna.sequencer.java.metadata.ArrayTypeFieldMetadata;
 import org.jboss.dna.sequencer.java.metadata.ClassMetadata;
@@ -48,12 +54,6 @@ import org.jboss.dna.sequencer.java.metadata.SingleImportMetadata;
 import org.jboss.dna.sequencer.java.metadata.SingleMemberAnnotationMetadata;
 import org.jboss.dna.sequencer.java.metadata.TypeMetadata;
 import org.jboss.dna.sequencer.java.metadata.Variable;
-import org.jboss.dna.spi.graph.NameFactory;
-import org.jboss.dna.spi.graph.Path;
-import org.jboss.dna.spi.graph.PathFactory;
-import org.jboss.dna.spi.sequencers.SequencerContext;
-import org.jboss.dna.spi.sequencers.SequencerOutput;
-import org.jboss.dna.spi.sequencers.StreamSequencer;
 
 /**
  * A Java sequencer that processes a compilation unit, extracts the meta data for the compilation unit, and then writes these
@@ -173,8 +173,8 @@ public class JavaMetadataSequencer implements JavaSourceCndDefinition, StreamSeq
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.spi.sequencers.StreamSequencer#sequence(java.io.InputStream,
-     *      org.jboss.dna.spi.sequencers.SequencerOutput, org.jboss.dna.spi.sequencers.SequencerContext,
+     * @see org.jboss.dna.graph.sequencers.StreamSequencer#sequence(java.io.InputStream,
+     *      org.jboss.dna.graph.sequencers.SequencerOutput, org.jboss.dna.graph.sequencers.SequencerContext,
      *      org.jboss.dna.common.monitor.ProgressMonitor)
      */
     public void sequence( InputStream stream,

@@ -23,9 +23,9 @@ package org.jboss.dna.sequencer.mp3;
 
 import java.io.InputStream;
 import org.jboss.dna.common.monitor.ProgressMonitor;
-import org.jboss.dna.spi.sequencers.SequencerContext;
-import org.jboss.dna.spi.sequencers.SequencerOutput;
-import org.jboss.dna.spi.sequencers.StreamSequencer;
+import org.jboss.dna.graph.sequencers.SequencerContext;
+import org.jboss.dna.graph.sequencers.SequencerOutput;
+import org.jboss.dna.graph.sequencers.StreamSequencer;
 
 /**
  * A sequencer that processes the binary content of an MP3 audio file, extracts the metadata for the file, and then writes that

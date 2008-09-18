@@ -25,7 +25,7 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.Assert.assertThat;
-import org.jboss.dna.spi.graph.PathExpression;
+import org.jboss.dna.graph.properties.PathExpression;
 import org.junit.Before;
 import org.junit.Test;
 

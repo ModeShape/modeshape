@@ -24,7 +24,7 @@ package org.jboss.dna.connector.federation.merge.strategy;
 import java.util.List;
 import org.jboss.dna.connector.federation.contribution.Contribution;
 import org.jboss.dna.connector.federation.merge.FederatedNode;
-import org.jboss.dna.spi.ExecutionContext;
+import org.jboss.dna.graph.ExecutionContext;
 
 /**
  * @author Randall Hauch

@@ -42,19 +42,19 @@ import org.jboss.dna.common.component.StandardClassLoaderFactory;
 import org.jboss.dna.common.text.NoOpEncoder;
 import org.jboss.dna.common.util.ArgCheck;
 import org.jboss.dna.connector.inmemory.InMemoryRepositorySource;
+import org.jboss.dna.graph.ExecutionContext;
+import org.jboss.dna.graph.ExecutionContextFactory;
+import org.jboss.dna.graph.commands.basic.BasicGetNodeCommand;
+import org.jboss.dna.graph.connectors.BasicExecutionContextFactory;
+import org.jboss.dna.graph.connectors.RepositoryConnection;
+import org.jboss.dna.graph.properties.Path;
+import org.jboss.dna.graph.properties.PathFactory;
+import org.jboss.dna.graph.properties.PathNotFoundException;
+import org.jboss.dna.graph.properties.Property;
+import org.jboss.dna.graph.util.GraphImporter;
 import org.jboss.dna.jcr.JcrRepository;
-import org.jboss.dna.repository.RepositoryImporter;
 import org.jboss.dna.repository.RepositoryLibrary;
 import org.jboss.dna.repository.RepositoryService;
-import org.jboss.dna.spi.ExecutionContext;
-import org.jboss.dna.spi.ExecutionContextFactory;
-import org.jboss.dna.spi.connector.BasicExecutionContextFactory;
-import org.jboss.dna.spi.connector.RepositoryConnection;
-import org.jboss.dna.spi.graph.Path;
-import org.jboss.dna.spi.graph.PathFactory;
-import org.jboss.dna.spi.graph.PathNotFoundException;
-import org.jboss.dna.spi.graph.Property;
-import org.jboss.dna.spi.graph.commands.impl.BasicGetNodeCommand;
 
 /**
  * @author Randall Hauch
@@ -151,7 +151,7 @@ public class RepositoryClient {
         // Normally, these would exist already and would simply be accessed. But in this example, we're going to
         // populate these repositories here by importing from files. First do the configuration repository ...
         String location = this.userInterface.getLocationOfRepositoryFiles();
-        RepositoryImporter importer = new RepositoryImporter(sources, context);
+        GraphImporter importer = new GraphImporter(sources, context);
         importer.importXml(location + "/configRepository.xml").into(configSource.getName());
 
         // Now instantiate the Repository Service ...

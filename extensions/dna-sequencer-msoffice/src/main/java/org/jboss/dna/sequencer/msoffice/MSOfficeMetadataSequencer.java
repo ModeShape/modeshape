@@ -25,14 +25,14 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 import org.jboss.dna.common.monitor.ProgressMonitor;
+import org.jboss.dna.graph.sequencers.SequencerContext;
+import org.jboss.dna.graph.sequencers.SequencerOutput;
+import org.jboss.dna.graph.sequencers.StreamSequencer;
 import org.jboss.dna.sequencer.msoffice.excel.ExcelMetadata;
 import org.jboss.dna.sequencer.msoffice.excel.ExcelMetadataReader;
 import org.jboss.dna.sequencer.msoffice.powerpoint.PowerPointMetadataReader;
 import org.jboss.dna.sequencer.msoffice.powerpoint.SlideMetadata;
 import org.jboss.dna.sequencer.msoffice.word.WordMetadataReader;
-import org.jboss.dna.spi.sequencers.SequencerContext;
-import org.jboss.dna.spi.sequencers.SequencerOutput;
-import org.jboss.dna.spi.sequencers.StreamSequencer;
 
 /**
  * A sequencer that processes the content of an MS Office document, extracts the metadata for the file, and then writes that

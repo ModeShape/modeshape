@@ -34,16 +34,16 @@ import javax.jcr.Value;
 import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.util.ArgCheck;
 import org.jboss.dna.common.util.Logger;
+import org.jboss.dna.graph.properties.Name;
+import org.jboss.dna.graph.properties.NamespaceRegistry;
+import org.jboss.dna.graph.properties.Path;
+import org.jboss.dna.graph.properties.Property;
+import org.jboss.dna.graph.properties.ValueFactories;
+import org.jboss.dna.graph.sequencers.SequencerContext;
+import org.jboss.dna.graph.sequencers.StreamSequencer;
 import org.jboss.dna.repository.RepositoryI18n;
 import org.jboss.dna.repository.mimetype.MimeType;
 import org.jboss.dna.repository.util.JcrExecutionContext;
-import org.jboss.dna.spi.graph.Name;
-import org.jboss.dna.spi.graph.NamespaceRegistry;
-import org.jboss.dna.spi.graph.Path;
-import org.jboss.dna.spi.graph.Property;
-import org.jboss.dna.spi.graph.ValueFactories;
-import org.jboss.dna.spi.sequencers.SequencerContext;
-import org.jboss.dna.spi.sequencers.StreamSequencer;
 
 /**
  * Contains context information that is passed to {@link StreamSequencer stream sequencers}, including information about the input
@@ -143,7 +143,7 @@ public class SequencerNodeContext implements SequencerContext {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.spi.sequencers.SequencerContext#getInputPath()
+     * @see org.jboss.dna.graph.sequencers.SequencerContext#getInputPath()
      */
     public Path getInputPath() {
         return path;
@@ -152,7 +152,7 @@ public class SequencerNodeContext implements SequencerContext {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.spi.sequencers.SequencerContext#getInputProperties()
+     * @see org.jboss.dna.graph.sequencers.SequencerContext#getInputProperties()
      */
     public Set<Property> getInputProperties() {
         return props;
@@ -161,7 +161,7 @@ public class SequencerNodeContext implements SequencerContext {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.spi.sequencers.SequencerContext#getInputProperty(org.jboss.dna.spi.graph.Name)
+     * @see org.jboss.dna.graph.sequencers.SequencerContext#getInputProperty(org.jboss.dna.graph.properties.Name)
      */
     public Property getInputProperty( Name name ) {
         ArgCheck.isNotNull(name, "name");
@@ -176,7 +176,7 @@ public class SequencerNodeContext implements SequencerContext {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.spi.sequencers.SequencerContext#getMimeType()
+     * @see org.jboss.dna.graph.sequencers.SequencerContext#getMimeType()
      */
     @SuppressWarnings( "null" )
     // The need for the SuppressWarnings looks like an Eclipse bug
@@ -214,7 +214,7 @@ public class SequencerNodeContext implements SequencerContext {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.spi.sequencers.SequencerContext#getLogger(java.lang.Class)
+     * @see org.jboss.dna.graph.sequencers.SequencerContext#getLogger(java.lang.Class)
      */
     public Logger getLogger( Class<?> clazz ) {
         return context.getLogger(clazz);
@@ -223,7 +223,7 @@ public class SequencerNodeContext implements SequencerContext {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.spi.sequencers.SequencerContext#getLogger(java.lang.String)
+     * @see org.jboss.dna.graph.sequencers.SequencerContext#getLogger(java.lang.String)
      */
     public Logger getLogger( String name ) {
         return context.getLogger(name);

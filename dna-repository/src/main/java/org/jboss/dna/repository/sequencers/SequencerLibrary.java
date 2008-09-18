@@ -22,7 +22,7 @@
 package org.jboss.dna.repository.sequencers;
 
 import org.jboss.dna.common.component.ComponentLibrary;
-import org.jboss.dna.spi.sequencers.StreamSequencer;
+import org.jboss.dna.graph.sequencers.StreamSequencer;
 
 /**
  * @author Randall Hauch

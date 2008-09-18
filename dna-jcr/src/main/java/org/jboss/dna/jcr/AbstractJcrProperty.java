@@ -36,10 +36,10 @@ import javax.jcr.Session;
 import javax.jcr.Value;
 import net.jcip.annotations.NotThreadSafe;
 import org.jboss.dna.common.util.ArgCheck;
-import org.jboss.dna.spi.ExecutionContext;
-import org.jboss.dna.spi.graph.Name;
-import org.jboss.dna.spi.graph.Path;
-import org.jboss.dna.spi.graph.ValueFactories;
+import org.jboss.dna.graph.ExecutionContext;
+import org.jboss.dna.graph.properties.Name;
+import org.jboss.dna.graph.properties.Path;
+import org.jboss.dna.graph.properties.ValueFactories;
 
 /**
  * @author jverhaeg

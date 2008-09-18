@@ -22,9 +22,9 @@
 package org.jboss.dna.connector.federation.executor;
 
 import java.util.Iterator;
-import org.jboss.dna.spi.graph.Path;
-import org.jboss.dna.spi.graph.Property;
-import org.jboss.dna.spi.graph.commands.RecordBranchCommand;
+import org.jboss.dna.graph.commands.RecordBranchCommand;
+import org.jboss.dna.graph.properties.Path;
+import org.jboss.dna.graph.properties.Property;
 
 /**
  * @author Randall Hauch
@@ -39,7 +39,7 @@ public class ProjectedRecordBranchCommand extends ActsOnProjectedPathCommand<Rec
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.spi.graph.commands.RecordBranchCommand#record(org.jboss.dna.spi.graph.Path, java.lang.Iterable)
+     * @see org.jboss.dna.graph.commands.RecordBranchCommand#record(org.jboss.dna.graph.properties.Path, java.lang.Iterable)
      */
     public boolean record( Path path,
                            Iterable<Property> properties ) {
@@ -50,7 +50,7 @@ public class ProjectedRecordBranchCommand extends ActsOnProjectedPathCommand<Rec
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.spi.graph.commands.RecordBranchCommand#record(org.jboss.dna.spi.graph.Path, java.util.Iterator)
+     * @see org.jboss.dna.graph.commands.RecordBranchCommand#record(org.jboss.dna.graph.properties.Path, java.util.Iterator)
      */
     public boolean record( Path path,
                            Iterator<Property> properties ) {
@@ -61,8 +61,8 @@ public class ProjectedRecordBranchCommand extends ActsOnProjectedPathCommand<Rec
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.spi.graph.commands.RecordBranchCommand#record(org.jboss.dna.spi.graph.Path,
-     *      org.jboss.dna.spi.graph.Property[])
+     * @see org.jboss.dna.graph.commands.RecordBranchCommand#record(org.jboss.dna.graph.properties.Path,
+     *      org.jboss.dna.graph.properties.Property[])
      */
     public boolean record( Path path,
                            Property... properties ) {

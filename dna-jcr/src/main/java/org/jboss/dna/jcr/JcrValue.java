@@ -28,7 +28,7 @@ import javax.jcr.RepositoryException;
 import javax.jcr.Value;
 import javax.jcr.ValueFormatException;
 import net.jcip.annotations.NotThreadSafe;
-import org.jboss.dna.spi.graph.ValueFactories;
+import org.jboss.dna.graph.properties.ValueFactories;
 
 /**
  * @param <T> the type of value to create.

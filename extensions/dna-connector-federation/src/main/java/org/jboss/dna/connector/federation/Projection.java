@@ -38,11 +38,11 @@ import org.jboss.dna.common.text.TextEncoder;
 import org.jboss.dna.common.util.ArgCheck;
 import org.jboss.dna.common.util.HashCode;
 import org.jboss.dna.common.util.Logger;
-import org.jboss.dna.spi.ExecutionContext;
-import org.jboss.dna.spi.connector.RepositorySource;
-import org.jboss.dna.spi.graph.NamespaceRegistry;
-import org.jboss.dna.spi.graph.Path;
-import org.jboss.dna.spi.graph.PathFactory;
+import org.jboss.dna.graph.ExecutionContext;
+import org.jboss.dna.graph.connectors.RepositorySource;
+import org.jboss.dna.graph.properties.NamespaceRegistry;
+import org.jboss.dna.graph.properties.Path;
+import org.jboss.dna.graph.properties.PathFactory;
 
 /**
  * A projection of content from a source into the integrated/federated repository. Each project consists of a set of {@link Rule
@@ -624,7 +624,7 @@ public class Projection implements Comparable<Projection>, Serializable {
         /**
          * {@inheritDoc}
          * 
-         * @see org.jboss.dna.connector.federation.Projection.Rule#getTopLevelPathsInRepository(org.jboss.dna.spi.graph.PathFactory)
+         * @see org.jboss.dna.connector.federation.Projection.Rule#getTopLevelPathsInRepository(org.jboss.dna.graph.properties.PathFactory)
          */
         @Override
         public List<Path> getTopLevelPathsInRepository( PathFactory factory ) {
@@ -654,8 +654,8 @@ public class Projection implements Comparable<Projection>, Serializable {
         /**
          * {@inheritDoc}
          * 
-         * @see org.jboss.dna.connector.federation.Projection.Rule#getPathInRepository(org.jboss.dna.spi.graph.Path,
-         *      org.jboss.dna.spi.graph.PathFactory)
+         * @see org.jboss.dna.connector.federation.Projection.Rule#getPathInRepository(org.jboss.dna.graph.properties.Path,
+         *      org.jboss.dna.graph.properties.PathFactory)
          */
         @Override
         public Path getPathInRepository( Path pathInSource,

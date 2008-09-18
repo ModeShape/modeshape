@@ -21,10 +21,10 @@
  */
 package org.jboss.dna.sequencer.java;
 
+import org.jboss.dna.graph.properties.NameFactory;
+import org.jboss.dna.graph.properties.Path;
+import org.jboss.dna.graph.sequencers.SequencerOutput;
 import org.jboss.dna.sequencer.java.metadata.Variable;
-import org.jboss.dna.spi.graph.NameFactory;
-import org.jboss.dna.spi.graph.Path;
-import org.jboss.dna.spi.sequencers.SequencerOutput;
 
 /**
  * Sequencer for variabels.

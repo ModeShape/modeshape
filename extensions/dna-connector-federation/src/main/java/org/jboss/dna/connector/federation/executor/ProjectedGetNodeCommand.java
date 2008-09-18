@@ -21,12 +21,12 @@
  */
 package org.jboss.dna.connector.federation.executor;
 
-import org.jboss.dna.spi.cache.CachePolicy;
-import org.jboss.dna.spi.graph.DateTime;
-import org.jboss.dna.spi.graph.Path;
-import org.jboss.dna.spi.graph.Property;
-import org.jboss.dna.spi.graph.Path.Segment;
-import org.jboss.dna.spi.graph.commands.GetNodeCommand;
+import org.jboss.dna.graph.cache.CachePolicy;
+import org.jboss.dna.graph.commands.GetNodeCommand;
+import org.jboss.dna.graph.properties.DateTime;
+import org.jboss.dna.graph.properties.Path;
+import org.jboss.dna.graph.properties.Property;
+import org.jboss.dna.graph.properties.Path.Segment;
 
 /**
  * @author Randall Hauch
@@ -45,8 +45,8 @@ public class ProjectedGetNodeCommand extends ActsOnProjectedPathCommand<GetNodeC
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.spi.graph.commands.GetChildrenCommand#addChild(org.jboss.dna.spi.graph.Path.Segment,
-     *      org.jboss.dna.spi.graph.Property[])
+     * @see org.jboss.dna.graph.commands.GetChildrenCommand#addChild(org.jboss.dna.graph.properties.Path.Segment,
+     *      org.jboss.dna.graph.properties.Property[])
      */
     public void addChild( Segment nameOfChild,
                           Property... identityProperties ) {
@@ -56,7 +56,7 @@ public class ProjectedGetNodeCommand extends ActsOnProjectedPathCommand<GetNodeC
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.spi.graph.commands.GetChildrenCommand#setNoChildren()
+     * @see org.jboss.dna.graph.commands.GetChildrenCommand#setNoChildren()
      */
     public void setNoChildren() {
         getOriginalCommand().setNoChildren();
@@ -65,7 +65,7 @@ public class ProjectedGetNodeCommand extends ActsOnProjectedPathCommand<GetNodeC
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.spi.cache.Cacheable#getCachePolicy()
+     * @see org.jboss.dna.graph.cache.Cacheable#getCachePolicy()
      */
     public CachePolicy getCachePolicy() {
         return getOriginalCommand().getCachePolicy();
@@ -74,7 +74,7 @@ public class ProjectedGetNodeCommand extends ActsOnProjectedPathCommand<GetNodeC
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.spi.cache.Cacheable#getTimeLoaded()
+     * @see org.jboss.dna.graph.cache.Cacheable#getTimeLoaded()
      */
     public DateTime getTimeLoaded() {
         return getOriginalCommand().getTimeLoaded();
@@ -83,7 +83,7 @@ public class ProjectedGetNodeCommand extends ActsOnProjectedPathCommand<GetNodeC
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.spi.cache.Cacheable#setCachePolicy(org.jboss.dna.spi.cache.CachePolicy)
+     * @see org.jboss.dna.graph.cache.Cacheable#setCachePolicy(org.jboss.dna.graph.cache.CachePolicy)
      */
     public void setCachePolicy( CachePolicy cachePolicy ) {
         getOriginalCommand().setCachePolicy(cachePolicy);
@@ -92,7 +92,7 @@ public class ProjectedGetNodeCommand extends ActsOnProjectedPathCommand<GetNodeC
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.spi.graph.commands.GetPropertiesCommand#setProperty(org.jboss.dna.spi.graph.Property)
+     * @see org.jboss.dna.graph.commands.GetPropertiesCommand#setProperty(org.jboss.dna.graph.properties.Property)
      */
     public void setProperty( Property property ) {
         getOriginalCommand().setProperty(property);

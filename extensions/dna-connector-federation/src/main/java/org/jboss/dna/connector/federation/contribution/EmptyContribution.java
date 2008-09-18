@@ -22,8 +22,8 @@
 package org.jboss.dna.connector.federation.contribution;
 
 import net.jcip.annotations.Immutable;
-import org.jboss.dna.spi.graph.DateTime;
-import org.jboss.dna.spi.graph.Path;
+import org.jboss.dna.graph.properties.DateTime;
+import org.jboss.dna.graph.properties.Path;
 
 /**
  * A source contribution that is empty. In other words, the source has no contribution to make.

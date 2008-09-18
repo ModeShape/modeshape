@@ -25,13 +25,13 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import javax.transaction.xa.XAResource;
 import net.jcip.annotations.ThreadSafe;
-import org.jboss.dna.spi.ExecutionContext;
-import org.jboss.dna.spi.cache.CachePolicy;
-import org.jboss.dna.spi.connector.RepositoryConnection;
-import org.jboss.dna.spi.connector.RepositorySourceException;
-import org.jboss.dna.spi.connector.RepositorySourceListener;
-import org.jboss.dna.spi.graph.commands.GraphCommand;
-import org.jboss.dna.spi.graph.commands.executor.CommandExecutor;
+import org.jboss.dna.graph.ExecutionContext;
+import org.jboss.dna.graph.cache.CachePolicy;
+import org.jboss.dna.graph.commands.GraphCommand;
+import org.jboss.dna.graph.commands.executor.CommandExecutor;
+import org.jboss.dna.graph.connectors.RepositoryConnection;
+import org.jboss.dna.graph.connectors.RepositorySourceException;
+import org.jboss.dna.graph.connectors.RepositorySourceListener;
 
 /**
  * @author Randall Hauch

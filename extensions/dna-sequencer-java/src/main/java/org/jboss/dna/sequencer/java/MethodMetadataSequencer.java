@@ -21,9 +21,9 @@
  */
 package org.jboss.dna.sequencer.java;
 
+import org.jboss.dna.graph.properties.Path;
+import org.jboss.dna.graph.properties.PathFactory;
 import org.jboss.dna.sequencer.java.metadata.MethodMetadata;
-import org.jboss.dna.spi.graph.Path;
-import org.jboss.dna.spi.graph.PathFactory;
 
 /**
  * Sequencer for a {@link MethodMetadata}.

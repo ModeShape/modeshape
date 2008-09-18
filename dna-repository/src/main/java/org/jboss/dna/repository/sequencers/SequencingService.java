@@ -52,6 +52,9 @@ import org.jboss.dna.common.monitor.SimpleProgressMonitor;
 import org.jboss.dna.common.util.ArgCheck;
 import org.jboss.dna.common.util.HashCode;
 import org.jboss.dna.common.util.Logger;
+import org.jboss.dna.graph.properties.NamespaceRegistry;
+import org.jboss.dna.graph.properties.PropertyFactory;
+import org.jboss.dna.graph.properties.ValueFactories;
 import org.jboss.dna.repository.RepositoryI18n;
 import org.jboss.dna.repository.observation.NodeChange;
 import org.jboss.dna.repository.observation.NodeChangeListener;
@@ -63,9 +66,6 @@ import org.jboss.dna.repository.util.JcrExecutionContext;
 import org.jboss.dna.repository.util.JcrTools;
 import org.jboss.dna.repository.util.RepositoryNodePath;
 import org.jboss.dna.repository.util.SessionFactory;
-import org.jboss.dna.spi.graph.NamespaceRegistry;
-import org.jboss.dna.spi.graph.PropertyFactory;
-import org.jboss.dna.spi.graph.ValueFactories;
 
 /**
  * A sequencing system is used to monitor changes in the content of {@link Repository JCR repositories} and to sequence the
@@ -630,7 +630,7 @@ public class SequencingService implements AdministeredService, NodeChangeListene
         /**
          * {@inheritDoc}
          * 
-         * @see org.jboss.dna.spi.ExecutionContext#getAccessControlContext()
+         * @see org.jboss.dna.graph.ExecutionContext#getAccessControlContext()
          */
         public AccessControlContext getAccessControlContext() {
             return delegate.getAccessControlContext();
@@ -639,7 +639,7 @@ public class SequencingService implements AdministeredService, NodeChangeListene
         /**
          * {@inheritDoc}
          * 
-         * @see org.jboss.dna.spi.ExecutionContext#getLoginContext()
+         * @see org.jboss.dna.graph.ExecutionContext#getLoginContext()
          */
         public LoginContext getLoginContext() {
             return delegate.getLoginContext();
@@ -669,7 +669,7 @@ public class SequencingService implements AdministeredService, NodeChangeListene
         /**
          * {@inheritDoc}
          * 
-         * @see org.jboss.dna.spi.ExecutionContext#getSubject()
+         * @see org.jboss.dna.graph.ExecutionContext#getSubject()
          */
         public Subject getSubject() {
             return this.delegate.getSubject();
@@ -692,7 +692,7 @@ public class SequencingService implements AdministeredService, NodeChangeListene
         /**
          * {@inheritDoc}
          * 
-         * @see org.jboss.dna.spi.ExecutionContext#getLogger(java.lang.Class)
+         * @see org.jboss.dna.graph.ExecutionContext#getLogger(java.lang.Class)
          */
         public Logger getLogger( Class<?> clazz ) {
             return this.delegate.getLogger(clazz);
@@ -701,7 +701,7 @@ public class SequencingService implements AdministeredService, NodeChangeListene
         /**
          * {@inheritDoc}
          * 
-         * @see org.jboss.dna.spi.ExecutionContext#getLogger(java.lang.String)
+         * @see org.jboss.dna.graph.ExecutionContext#getLogger(java.lang.String)
          */
         public Logger getLogger( String name ) {
             return this.delegate.getLogger(name);

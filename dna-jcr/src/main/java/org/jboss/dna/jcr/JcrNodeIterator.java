@@ -28,7 +28,7 @@ import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import javax.jcr.RepositoryException;
 import org.jboss.dna.common.util.ArgCheck;
-import org.jboss.dna.spi.graph.Name;
+import org.jboss.dna.graph.properties.Name;
 
 /**
  * @author jverhaeg

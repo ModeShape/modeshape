@@ -31,17 +31,17 @@ import net.jcip.annotations.ThreadSafe;
 import org.jboss.dna.connector.federation.contribution.Contribution;
 import org.jboss.dna.connector.federation.merge.FederatedNode;
 import org.jboss.dna.connector.federation.merge.MergePlan;
-import org.jboss.dna.spi.DnaLexicon;
-import org.jboss.dna.spi.ExecutionContext;
-import org.jboss.dna.spi.graph.IoException;
-import org.jboss.dna.spi.graph.Name;
-import org.jboss.dna.spi.graph.Path;
-import org.jboss.dna.spi.graph.PathFactory;
-import org.jboss.dna.spi.graph.Property;
-import org.jboss.dna.spi.graph.PropertyFactory;
-import org.jboss.dna.spi.graph.UuidFactory;
-import org.jboss.dna.spi.graph.ValueComparators;
-import org.jboss.dna.spi.graph.Path.Segment;
+import org.jboss.dna.graph.DnaLexicon;
+import org.jboss.dna.graph.ExecutionContext;
+import org.jboss.dna.graph.properties.IoException;
+import org.jboss.dna.graph.properties.Name;
+import org.jboss.dna.graph.properties.Path;
+import org.jboss.dna.graph.properties.PathFactory;
+import org.jboss.dna.graph.properties.Property;
+import org.jboss.dna.graph.properties.PropertyFactory;
+import org.jboss.dna.graph.properties.UuidFactory;
+import org.jboss.dna.graph.properties.ValueComparators;
+import org.jboss.dna.graph.properties.Path.Segment;
 
 /**
  * This merge strategy simply merges all of the contributions' properties and combines the children according to the order of the
@@ -73,7 +73,7 @@ public class SimpleMergeStrategy implements MergeStrategy {
      * {@inheritDoc}
      * 
      * @see org.jboss.dna.connector.federation.merge.strategy.MergeStrategy#merge(org.jboss.dna.connector.federation.merge.FederatedNode,
-     *      java.util.List, org.jboss.dna.spi.ExecutionContext)
+     *      java.util.List, org.jboss.dna.graph.ExecutionContext)
      */
     public void merge( FederatedNode federatedNode,
                        List<Contribution> contributions,
