@@ -6,10 +6,10 @@
     <version>0.2-SNAPSHOT</version>
   </parent>
   <!-- The groupId and version values are inherited from parent -->
-  <artifactId>dna-spi</artifactId>
-  <description>The JBoss DNA Service Provider Interface (SPI) used to create extensions</description>
+  <artifactId>dna-graph</artifactId>
+  <description>The JBoss DNA Graph API and SPI interfaces</description>
   <packaging>jar</packaging>
-  <name>JBoss DNA Service Provider Interface (SPI)</name>
+  <name>JBoss DNA Graph</name>
   <url>http://labs.jboss.org/dna</url>
   
   <properties>

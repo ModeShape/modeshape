@@ -43,7 +43,7 @@
         </SOURCES>
       </library>
     </orderEntry>
-    <orderEntry type="module" module-name="dna-spi" exported="" />
+    <orderEntry type="module" module-name="dna-graph" exported="" />
     <orderEntry type="module-library" exported="">
       <library name="joda-time:joda-time:1.4">
         <CLASSES>

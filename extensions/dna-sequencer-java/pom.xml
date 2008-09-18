@@ -34,7 +34,7 @@
 		</dependency>
 		<dependency>
 			<groupId>org.jboss.dna</groupId>
-			<artifactId>dna-spi</artifactId>
+			<artifactId>dna-graph</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>org.jboss.dna</groupId>
@@ -45,7 +45,7 @@
 		</dependency>
 		<dependency>
 			<groupId>org.jboss.dna</groupId>
-			<artifactId>dna-spi</artifactId>
+			<artifactId>dna-graph</artifactId>
 			<version>${dna-version}</version>
 			<type>test-jar</type>
 			<scope>test</scope>

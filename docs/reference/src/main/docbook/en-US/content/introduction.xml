@@ -135,9 +135,9 @@
         </listitem>
         <listitem>
           <para>
-            <emphasis role="strong">dna-spi</emphasis>
-            defines the Service Provider Interface (SPI) for DNA, including the repository connectors, sequencers, graph
-            interfaces, and MIME type detectors.
+            <emphasis role="strong">dna-graph</emphasis>
+            defines the graph Application Programming Interface (API) and Service Provider Interface (SPI) for DNA, 
+						including the repository connectors, sequencers, graph interfaces, and MIME type detectors.
           </para>
         </listitem>
         <listitem>

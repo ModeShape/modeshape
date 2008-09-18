@@ -112,7 +112,7 @@
 	</contributors>
 	<modules>
 		<module>dna-common</module>
-		<module>dna-spi</module>
+		<module>dna-graph</module>
 		<module>dna-repository</module>
 		<module>dna-jcr</module>
 		<module>extensions/dna-classloader-maven</module>
@@ -354,7 +354,7 @@
 			</dependency>
 			<dependency>
 				<groupId>org.jboss.dna</groupId>
-				<artifactId>dna-spi</artifactId>
+				<artifactId>dna-graph</artifactId>
 				<version>${dna-version}</version>
 			</dependency>
 			<dependency>

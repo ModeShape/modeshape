@@ -19,7 +19,7 @@
     </dependency>
     <dependency>
       <groupId>org.jboss.dna</groupId>
-      <artifactId>dna-spi</artifactId>
+      <artifactId>dna-graph</artifactId>
     </dependency>
     <dependency>
       <groupId>junit</groupId>
