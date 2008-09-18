@@ -32,7 +32,7 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import net.jcip.annotations.GuardedBy;
 import net.jcip.annotations.ThreadSafe;
-import org.jboss.dna.common.util.ArgCheck;
+import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.graph.properties.NamespaceRegistry;
 
 /**
@@ -96,7 +96,7 @@ public class BasicNamespaceRegistry implements NamespaceRegistry {
      * {@inheritDoc}
      */
     public String getNamespaceForPrefix( String prefix ) {
-        ArgCheck.isNotNull(prefix, "prefix");
+        CheckArg.isNotNull(prefix, "prefix");
         Lock lock = this.registryLock.readLock();
         try {
             lock.lock();
@@ -111,7 +111,7 @@ public class BasicNamespaceRegistry implements NamespaceRegistry {
      */
     public String getPrefixForNamespaceUri( String namespaceUri,
                                             boolean generateIfMissing ) {
-        ArgCheck.isNotNull(namespaceUri, "namespaceUri");
+        CheckArg.isNotNull(namespaceUri, "namespaceUri");
         String prefix = null;
         Lock lock = this.registryLock.readLock();
         try {
@@ -144,7 +144,7 @@ public class BasicNamespaceRegistry implements NamespaceRegistry {
      * {@inheritDoc}
      */
     public boolean isRegisteredNamespaceUri( String namespaceUri ) {
-        ArgCheck.isNotNull(namespaceUri, "namespaceUri");
+        CheckArg.isNotNull(namespaceUri, "namespaceUri");
         Lock lock = this.registryLock.readLock();
         try {
             lock.lock();
@@ -172,7 +172,7 @@ public class BasicNamespaceRegistry implements NamespaceRegistry {
      */
     public String register( String prefix,
                             String namespaceUri ) {
-        ArgCheck.isNotNull(namespaceUri, "namespaceUri");
+        CheckArg.isNotNull(namespaceUri, "namespaceUri");
         String previousNamespaceForPrefix = null;
         namespaceUri = namespaceUri.trim();
         Lock lock = this.registryLock.writeLock();

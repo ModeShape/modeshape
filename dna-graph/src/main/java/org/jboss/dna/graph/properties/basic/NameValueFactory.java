@@ -32,7 +32,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.text.TextDecoder;
-import org.jboss.dna.common.util.ArgCheck;
+import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.graph.GraphI18n;
 import org.jboss.dna.graph.properties.Binary;
 import org.jboss.dna.graph.properties.DateTime;
@@ -70,7 +70,7 @@ public class NameValueFactory extends AbstractValueFactory<Name> implements Name
                              TextDecoder decoder,
                              ValueFactory<String> stringValueFactory ) {
         super(PropertyType.NAME, decoder, stringValueFactory);
-        ArgCheck.isNotNull(namespaceRegistry, "namespaceRegistry");
+        CheckArg.isNotNull(namespaceRegistry, "namespaceRegistry");
         this.namespaceRegistry = namespaceRegistry;
     }
 
@@ -140,7 +140,7 @@ public class NameValueFactory extends AbstractValueFactory<Name> implements Name
     public Name create( String namespaceUri,
                         String localName,
                         TextDecoder decoder ) {
-        ArgCheck.isNotEmpty(localName, "localName");
+        CheckArg.isNotEmpty(localName, "localName");
         if (decoder == null) decoder = getDecoder();
         namespaceUri = namespaceUri != null ? decoder.decode(namespaceUri.trim()) : null;
         localName = decoder.decode(localName.trim());

@@ -26,7 +26,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Pattern;
 import net.jcip.annotations.Immutable;
-import org.jboss.dna.common.util.ArgCheck;
+import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.common.util.HashCode;
 import org.jboss.dna.graph.properties.PathExpression;
 import org.jboss.dna.repository.RepositoryI18n;
@@ -80,7 +80,7 @@ public class SequencerPathExpression implements Serializable {
      * @throws InvalidSequencerPathExpression if the expression is blank or is not a valid expression
      */
     public static final SequencerPathExpression compile( String expression ) throws InvalidSequencerPathExpression {
-        ArgCheck.isNotNull(expression, "sequencer path expression");
+        CheckArg.isNotNull(expression, "sequencer path expression");
         expression = expression.trim();
         if (expression.length() == 0) {
             throw new InvalidSequencerPathExpression(RepositoryI18n.pathExpressionMayNotBeBlank.text());
@@ -100,7 +100,7 @@ public class SequencerPathExpression implements Serializable {
 
     protected SequencerPathExpression( PathExpression selectExpression,
                                        String outputExpression ) throws InvalidSequencerPathExpression {
-        ArgCheck.isNotNull(selectExpression, "select expression");
+        CheckArg.isNotNull(selectExpression, "select expression");
         this.selectExpression = selectExpression;
         this.outputExpression = outputExpression != null ? outputExpression.trim() : DEFAULT_OUTPUT_EXPRESSION;
         this.hc = HashCode.compute(this.selectExpression, this.outputExpression);

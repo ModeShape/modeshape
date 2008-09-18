@@ -22,7 +22,7 @@
 package org.jboss.dna.graph.cache;
 
 import java.util.concurrent.TimeUnit;
-import org.jboss.dna.common.util.ArgCheck;
+import org.jboss.dna.common.util.CheckArg;
 
 /**
  * @author Randall Hauch
@@ -37,7 +37,7 @@ public class BasicCachePolicy implements CachePolicy {
 
     public BasicCachePolicy( long timeToCache,
                              TimeUnit unit ) {
-        ArgCheck.isNotNull(unit, "unit");
+        CheckArg.isNotNull(unit, "unit");
         this.timeToLiveInMillis = TimeUnit.MILLISECONDS.convert(timeToCache, unit);
     }
 

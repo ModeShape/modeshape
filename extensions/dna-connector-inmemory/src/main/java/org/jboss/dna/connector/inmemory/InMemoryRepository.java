@@ -29,7 +29,7 @@ import java.util.UUID;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import net.jcip.annotations.NotThreadSafe;
-import org.jboss.dna.common.util.ArgCheck;
+import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.graph.DnaLexicon;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.commands.ActsOnPath;
@@ -65,8 +65,8 @@ public class InMemoryRepository {
 
     public InMemoryRepository( String name,
                                UUID rootNodeUUID ) {
-        ArgCheck.isNotNull(rootNodeUUID, "rootNodeUUID");
-        ArgCheck.isNotEmpty(name, "name");
+        CheckArg.isNotNull(rootNodeUUID, "rootNodeUUID");
+        CheckArg.isNotEmpty(name, "name");
         this.name = name;
         this.rootNodeUuid = rootNodeUUID;
         // Create the root node ...

@@ -38,7 +38,7 @@ import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.i18n.I18n;
 import org.jboss.dna.common.monitor.ProgressMonitor;
 import org.jboss.dna.common.monitor.SimpleProgressMonitor;
-import org.jboss.dna.common.util.ArgCheck;
+import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.common.util.Logger;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.GraphI18n;
@@ -163,8 +163,8 @@ public class GraphImporter {
          */
         public void into( String sourceName,
                           Path pathInSource ) throws IOException, RepositorySourceException {
-            ArgCheck.isNotNull(sourceName, "sourceName");
-            ArgCheck.isNotNull(pathInSource, "pathInSource");
+            CheckArg.isNotNull(sourceName, "sourceName");
+            CheckArg.isNotNull(pathInSource, "pathInSource");
             importWithSequencer(getSequencer(), uri, mimeType, sourceName, pathInSource, getConflictBehavior());
         }
     }
@@ -174,8 +174,8 @@ public class GraphImporter {
 
     public GraphImporter( RepositoryConnectionFactory sources,
                           ExecutionContext context ) {
-        ArgCheck.isNotNull(sources, "sources");
-        ArgCheck.isNotNull(context, "context");
+        CheckArg.isNotNull(sources, "sources");
+        CheckArg.isNotNull(context, "context");
         this.sources = sources;
         this.context = context;
     }
@@ -198,7 +198,7 @@ public class GraphImporter {
      * @throws IllegalArgumentException if the <code>uri</code> or destination path are null
      */
     public ImportSpecification importXml( URI uri ) {
-        ArgCheck.isNotNull(uri, "uri");
+        CheckArg.isNotNull(uri, "uri");
 
         // Create the sequencer ...
         StreamSequencer sequencer = new XmlSequencer();
@@ -214,7 +214,7 @@ public class GraphImporter {
      * @throws IllegalArgumentException if the <code>uri</code> or destination path are null
      */
     public ImportSpecification importXml( String pathToFile ) {
-        ArgCheck.isNotNull(pathToFile, "pathToFile");
+        CheckArg.isNotNull(pathToFile, "pathToFile");
         return importXml(new File(pathToFile).toURI());
     }
 
@@ -227,7 +227,7 @@ public class GraphImporter {
      * @throws IllegalArgumentException if the <code>uri</code> or destination path are null
      */
     public ImportSpecification importXml( File file ) {
-        ArgCheck.isNotNull(file, "file");
+        CheckArg.isNotNull(file, "file");
         return importXml(file.toURI());
     }
 
@@ -246,8 +246,8 @@ public class GraphImporter {
     public void importXml( URI uri,
                            String sourceName,
                            Path destinationPathInSource ) throws IOException, RepositorySourceException {
-        ArgCheck.isNotNull(uri, "uri");
-        ArgCheck.isNotNull(destinationPathInSource, "destinationPathInSource");
+        CheckArg.isNotNull(uri, "uri");
+        CheckArg.isNotNull(destinationPathInSource, "destinationPathInSource");
 
         // Create the sequencer ...
         StreamSequencer sequencer = new XmlSequencer();
@@ -354,7 +354,7 @@ public class GraphImporter {
         private final RepositorySource source;
 
         protected SingleRepositorySourceConnectionFactory( RepositorySource source ) {
-            ArgCheck.isNotNull(source, "source");
+            CheckArg.isNotNull(source, "source");
             this.source = source;
         }
 
@@ -381,8 +381,8 @@ public class GraphImporter {
 
         protected ImporterCommands( Path destinationPath,
                                     NodeConflictBehavior conflictBehavior ) {
-            ArgCheck.isNotNull(destinationPath, "destinationPath");
-            ArgCheck.isNotNull(conflictBehavior, "conflictBehavior");
+            CheckArg.isNotNull(destinationPath, "destinationPath");
+            CheckArg.isNotNull(conflictBehavior, "conflictBehavior");
             this.conflictBehavior = conflictBehavior;
             this.destinationPath = destinationPath;
             this.nameFactory = getContext().getValueFactories().getNameFactory();

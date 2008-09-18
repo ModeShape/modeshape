@@ -27,7 +27,7 @@ import java.util.NoSuchElementException;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import javax.jcr.RepositoryException;
-import org.jboss.dna.common.util.ArgCheck;
+import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.graph.properties.Name;
 
 /**
@@ -133,7 +133,7 @@ final class JcrNodeIterator implements NodeIterator {
      * @see javax.jcr.RangeIterator#skip(long)
      */
     public void skip( long count ) {
-        ArgCheck.isNonNegative(count, "count");
+        CheckArg.isNonNegative(count, "count");
         while (--count >= 0) {
             nextNode();
         }

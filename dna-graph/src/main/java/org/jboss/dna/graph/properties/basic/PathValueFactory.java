@@ -34,7 +34,7 @@ import java.util.UUID;
 import java.util.regex.Pattern;
 import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.text.TextDecoder;
-import org.jboss.dna.common.util.ArgCheck;
+import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.graph.GraphI18n;
 import org.jboss.dna.graph.properties.Binary;
 import org.jboss.dna.graph.properties.DateTime;
@@ -85,7 +85,7 @@ public class PathValueFactory extends AbstractValueFactory<Path> implements Path
                              ValueFactory<String> stringValueFactory,
                              ValueFactory<Name> nameValueFactory ) {
         super(PropertyType.PATH, decoder, stringValueFactory);
-        ArgCheck.isNotNull(nameValueFactory, "nameValueFactory");
+        CheckArg.isNotNull(nameValueFactory, "nameValueFactory");
         this.nameValueFactory = nameValueFactory;
     }
 
@@ -278,7 +278,7 @@ public class PathValueFactory extends AbstractValueFactory<Path> implements Path
         List<Segment> segments = new ArrayList<Segment>(segmentNames.length);
         for (Name segmentName : segmentNames) {
             if (segmentName == null) {
-                ArgCheck.containsNoNulls(segmentNames, "segment names");
+                CheckArg.containsNoNulls(segmentNames, "segment names");
             }
             segments.add(new BasicPathSegment(segmentName));
         }
@@ -293,7 +293,7 @@ public class PathValueFactory extends AbstractValueFactory<Path> implements Path
         List<Segment> segmentsList = new ArrayList<Segment>(segments.length);
         for (Segment segment : segments) {
             if (segment == null) {
-                ArgCheck.containsNoNulls(segments, "segments");
+                CheckArg.containsNoNulls(segments, "segments");
             }
             segmentsList.add(segment);
         }
@@ -309,7 +309,7 @@ public class PathValueFactory extends AbstractValueFactory<Path> implements Path
         List<Segment> segmentsList = new LinkedList<Segment>();
         for (Segment segment : segments) {
             if (segment == null) {
-                ArgCheck.containsNoNulls(segments, "segments");
+                CheckArg.containsNoNulls(segments, "segments");
             }
             segmentsList.add(segment);
         }
@@ -336,7 +336,7 @@ public class PathValueFactory extends AbstractValueFactory<Path> implements Path
         List<Segment> segments = new ArrayList<Segment>(segmentNames.length);
         for (Name segmentName : segmentNames) {
             if (segmentName == null) {
-                ArgCheck.containsNoNulls(segmentNames, "segment names");
+                CheckArg.containsNoNulls(segmentNames, "segment names");
             }
             segments.add(new BasicPathSegment(segmentName));
         }
@@ -351,7 +351,7 @@ public class PathValueFactory extends AbstractValueFactory<Path> implements Path
         List<Segment> segmentsList = new ArrayList<Segment>(segments.length);
         for (Segment segment : segments) {
             if (segment == null) {
-                ArgCheck.containsNoNulls(segments, "segments");
+                CheckArg.containsNoNulls(segments, "segments");
             }
             segmentsList.add(segment);
         }
@@ -367,7 +367,7 @@ public class PathValueFactory extends AbstractValueFactory<Path> implements Path
         List<Segment> segmentsList = new LinkedList<Segment>();
         for (Segment segment : segments) {
             if (segment == null) {
-                ArgCheck.containsNoNulls(segments, "segments");
+                CheckArg.containsNoNulls(segments, "segments");
             }
             segmentsList.add(segment);
         }
@@ -382,8 +382,8 @@ public class PathValueFactory extends AbstractValueFactory<Path> implements Path
      */
     public Path create( Path parentPath,
                         Path childPath ) {
-        ArgCheck.isNotNull(parentPath, "parent path");
-        ArgCheck.isNotNull(childPath, "child path");
+        CheckArg.isNotNull(parentPath, "parent path");
+        CheckArg.isNotNull(childPath, "child path");
         if (childPath.size() == 0) return parentPath;
         if (parentPath.size() == 0) {
             // Just need to return the child path, but it must be absolute if the parent is ...
@@ -403,8 +403,8 @@ public class PathValueFactory extends AbstractValueFactory<Path> implements Path
     public Path create( Path parentPath,
                         Name segmentName,
                         int index ) {
-        ArgCheck.isNotNull(parentPath, "parent path");
-        ArgCheck.isNotNull(segmentName, "segment name");
+        CheckArg.isNotNull(parentPath, "parent path");
+        CheckArg.isNotNull(segmentName, "segment name");
         List<Segment> segments = new ArrayList<Segment>(parentPath.size() + 1);
         segments.addAll(parentPath.getSegmentsList());
         segments.add(new BasicPathSegment(segmentName, index));
@@ -416,14 +416,14 @@ public class PathValueFactory extends AbstractValueFactory<Path> implements Path
      */
     public Path create( Path parentPath,
                         Name... segmentNames ) {
-        ArgCheck.isNotNull(parentPath, "parent path");
+        CheckArg.isNotNull(parentPath, "parent path");
         if (segmentNames == null || segmentNames.length == 0) return parentPath;
 
         List<Segment> segments = new ArrayList<Segment>(parentPath.size() + 1);
         segments.addAll(parentPath.getSegmentsList());
         for (Name segmentName : segmentNames) {
             if (segmentName == null) {
-                ArgCheck.containsNoNulls(segmentNames, "segment names");
+                CheckArg.containsNoNulls(segmentNames, "segment names");
             }
             segments.add(new BasicPathSegment(segmentName));
         }
@@ -435,14 +435,14 @@ public class PathValueFactory extends AbstractValueFactory<Path> implements Path
      */
     public Path create( Path parentPath,
                         Segment... segments ) {
-        ArgCheck.isNotNull(parentPath, "parent path");
+        CheckArg.isNotNull(parentPath, "parent path");
         if (segments == null || segments.length == 0) return BasicPath.ROOT;
 
         List<Segment> segmentsList = new ArrayList<Segment>(parentPath.size() + 1);
         segmentsList.addAll(parentPath.getSegmentsList());
         for (Segment segment : segments) {
             if (segment == null) {
-                ArgCheck.containsNoNulls(segments, "segments");
+                CheckArg.containsNoNulls(segments, "segments");
             }
             segmentsList.add(segment);
         }
@@ -456,13 +456,13 @@ public class PathValueFactory extends AbstractValueFactory<Path> implements Path
      */
     public Path create( Path parentPath,
                         Iterable<Segment> segments ) {
-        ArgCheck.isNotNull(parentPath, "parent path");
+        CheckArg.isNotNull(parentPath, "parent path");
 
         List<Segment> segmentsList = new LinkedList<Segment>();
         segmentsList.addAll(parentPath.getSegmentsList());
         for (Segment segment : segments) {
             if (segment == null) {
-                ArgCheck.containsNoNulls(segments, "segments");
+                CheckArg.containsNoNulls(segments, "segments");
             }
             segmentsList.add(segment);
         }
@@ -486,7 +486,7 @@ public class PathValueFactory extends AbstractValueFactory<Path> implements Path
      * {@inheritDoc}
      */
     public Segment createSegment( Name segmentName ) {
-        ArgCheck.isNotNull(segmentName, "segment name");
+        CheckArg.isNotNull(segmentName, "segment name");
         if (Path.SELF_NAME.equals(segmentName)) return Path.SELF_SEGMENT;
         if (Path.PARENT_NAME.equals(segmentName)) return Path.PARENT_SEGMENT;
         return new BasicPathSegment(segmentName);
@@ -497,7 +497,7 @@ public class PathValueFactory extends AbstractValueFactory<Path> implements Path
      */
     public Segment createSegment( Name segmentName,
                                   int index ) {
-        ArgCheck.isNotNull(segmentName, "segment name");
+        CheckArg.isNotNull(segmentName, "segment name");
         if (Path.SELF_NAME.equals(segmentName)) return Path.SELF_SEGMENT;
         if (Path.PARENT_NAME.equals(segmentName)) return Path.PARENT_SEGMENT;
         return new BasicPathSegment(segmentName, index);
@@ -521,7 +521,7 @@ public class PathValueFactory extends AbstractValueFactory<Path> implements Path
      */
     public Segment createSegment( String segmentName,
                                   TextDecoder decoder ) {
-        ArgCheck.isNotNull(segmentName, "segment name");
+        CheckArg.isNotNull(segmentName, "segment name");
         if (Path.SELF.equals(segmentName)) return Path.SELF_SEGMENT;
         if (Path.PARENT.equals(segmentName)) return Path.PARENT_SEGMENT;
         int startBracketNdx = segmentName.indexOf('[');
@@ -547,7 +547,7 @@ public class PathValueFactory extends AbstractValueFactory<Path> implements Path
      */
     public Segment createSegment( String segmentName,
                                   int index ) {
-        ArgCheck.isNotNull(segmentName, "segment name");
+        CheckArg.isNotNull(segmentName, "segment name");
         if (Path.SELF.equals(segmentName)) return Path.SELF_SEGMENT;
         if (Path.PARENT.equals(segmentName)) return Path.PARENT_SEGMENT;
         return new BasicPathSegment(this.nameValueFactory.create(segmentName), index);

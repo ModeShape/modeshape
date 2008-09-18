@@ -25,7 +25,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import org.eclipse.jdt.core.dom.Name;
 import org.eclipse.jdt.internal.compiler.util.Util;
-import org.jboss.dna.common.util.ArgCheck;
+import org.jboss.dna.common.util.CheckArg;
 
 /**
  * @author Serge Pagop
@@ -65,7 +65,7 @@ public class JavaMetadataUtil {
      * @return a FQN of the name.
      */
     public static String getName( Name name ) {
-        ArgCheck.isNotNull(name, "name");
+        CheckArg.isNotNull(name, "name");
         return name.getFullyQualifiedName();
     }
     
@@ -79,8 +79,8 @@ public class JavaMetadataUtil {
      */
     public static String createPathWithIndex( String path,
                                         int index ) {
-        ArgCheck.isNotEmpty(path, "path");
-        ArgCheck.isPositive(index, "index");
+        CheckArg.isNotEmpty(path, "path");
+        CheckArg.isPositive(index, "index");
         return path + "[" + index + "]";
     }
 
@@ -92,7 +92,7 @@ public class JavaMetadataUtil {
      * @throws IllegalArgumentException if the path is null, blank or empty
      */
     public static String createPath( String path ) {
-        ArgCheck.isNotEmpty(path, "path");
+        CheckArg.isNotEmpty(path, "path");
         return path;
     }
 

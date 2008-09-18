@@ -32,7 +32,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import net.jcip.annotations.ThreadSafe;
-import org.jboss.dna.common.util.ArgCheck;
+import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.ExecutionContextFactory;
 import org.jboss.dna.graph.connectors.BasicExecutionContextFactory;
@@ -144,7 +144,7 @@ public class RepositoryLibrary implements RepositoryConnectionFactory {
      */
     public RepositoryLibrary( ExecutionContextFactory executionContextFactory,
                               RepositoryConnectionFactory delegate ) {
-        ArgCheck.isNotNull(executionContextFactory, "executionContextFactory");
+        CheckArg.isNotNull(executionContextFactory, "executionContextFactory");
         this.delegate = delegate;
         this.executionContextFactory = executionContextFactory;
         this.repositoryContext = new RepositoryContext() {

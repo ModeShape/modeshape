@@ -29,7 +29,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
-import org.jboss.dna.common.util.ArgCheck;
+import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.common.util.HashCode;
 
 /**
@@ -81,7 +81,7 @@ public class ContributionStatistics {
      * @return the list of N (or fewer)
      */
     public static List<Data> getTop( int n ) {
-        ArgCheck.isPositive(n, "n");
+        CheckArg.isPositive(n, "n");
         LinkedList<Data> results = new LinkedList<Data>();
         for (Map.Entry<Stats, AtomicLong> entry : DATA.entrySet()) {
             long value = entry.getValue().get();

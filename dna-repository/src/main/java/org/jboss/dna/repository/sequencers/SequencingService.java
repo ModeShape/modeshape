@@ -49,7 +49,7 @@ import org.jboss.dna.common.component.StandardClassLoaderFactory;
 import org.jboss.dna.common.monitor.LoggingProgressMonitor;
 import org.jboss.dna.common.monitor.ProgressMonitor;
 import org.jboss.dna.common.monitor.SimpleProgressMonitor;
-import org.jboss.dna.common.util.ArgCheck;
+import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.common.util.HashCode;
 import org.jboss.dna.common.util.Logger;
 import org.jboss.dna.graph.properties.NamespaceRegistry;
@@ -326,7 +326,7 @@ public class SequencingService implements AdministeredService, NodeChangeListene
      * @param executionContext Sets executionContext to the specified value.
      */
     public void setExecutionContext( JcrExecutionContext executionContext ) {
-        ArgCheck.isNotNull(executionContext, "execution context");
+        CheckArg.isNotNull(executionContext, "execution context");
         if (this.getAdministrator().isStarted()) {
             throw new IllegalStateException(RepositoryI18n.unableToChangeExecutionContextWhileRunning.text());
         }
@@ -361,7 +361,7 @@ public class SequencingService implements AdministeredService, NodeChangeListene
      * @see Executors#newSingleThreadScheduledExecutor(java.util.concurrent.ThreadFactory)
      */
     public void setExecutorService( ExecutorService executorService ) {
-        ArgCheck.isNotNull(executorService, "executor service");
+        CheckArg.isNotNull(executorService, "executor service");
         if (this.getAdministrator().isStarted()) {
             throw new IllegalStateException(RepositoryI18n.unableToChangeExecutionContextWhileRunning.text());
         }

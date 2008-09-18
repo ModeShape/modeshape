@@ -27,7 +27,7 @@ import java.util.GregorianCalendar;
 import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 import net.jcip.annotations.Immutable;
-import org.jboss.dna.common.util.ArgCheck;
+import org.jboss.dna.common.util.CheckArg;
 import org.joda.time.Chronology;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
@@ -372,7 +372,7 @@ public class JodaDateTime implements org.jboss.dna.graph.properties.DateTime {
      * {@inheritDoc}
      */
     public org.jboss.dna.graph.properties.DateTime toTimeZone( String timeZoneId ) {
-        ArgCheck.isNotNull(timeZoneId, "time zone identifier");
+        CheckArg.isNotNull(timeZoneId, "time zone identifier");
         DateTime jodaTime = this.instance.withZone(DateTimeZone.forID(timeZoneId));
         return new JodaDateTime(jodaTime);
     }
@@ -411,7 +411,7 @@ public class JodaDateTime implements org.jboss.dna.graph.properties.DateTime {
      */
     public org.jboss.dna.graph.properties.DateTime minus( long timeAmount,
                                                    TimeUnit unit ) {
-        ArgCheck.isNotNull(unit, "unit");
+        CheckArg.isNotNull(unit, "unit");
         return new JodaDateTime(this.instance.minus(TimeUnit.MILLISECONDS.convert(timeAmount, unit)));
     }
 
@@ -494,7 +494,7 @@ public class JodaDateTime implements org.jboss.dna.graph.properties.DateTime {
      */
     public org.jboss.dna.graph.properties.DateTime plus( long timeAmount,
                                                   TimeUnit unit ) {
-        ArgCheck.isNotNull(unit, "unit");
+        CheckArg.isNotNull(unit, "unit");
         return new JodaDateTime(this.instance.plus(TimeUnit.MILLISECONDS.convert(timeAmount, unit)));
     }
 

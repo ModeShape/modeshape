@@ -172,7 +172,7 @@ final class JcrProperty extends AbstractJcrProperty {
      *
     @SuppressWarnings( "fallthrough" )
     public void setValue( Value value ) throws RepositoryException {
-        ArgCheck.isNotNull(value, "value");
+        CheckArg.isNotNull(value, "value");
         // TODOx: Check node type constraint
         try {
             jcrValue = JcrValue.class.cast(value);

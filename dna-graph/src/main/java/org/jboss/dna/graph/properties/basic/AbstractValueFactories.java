@@ -22,7 +22,7 @@
 package org.jboss.dna.graph.properties.basic;
 
 import java.util.Iterator;
-import org.jboss.dna.common.util.ArgCheck;
+import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.graph.properties.PropertyType;
 import org.jboss.dna.graph.properties.ValueFactories;
 import org.jboss.dna.graph.properties.ValueFactory;
@@ -52,7 +52,7 @@ public abstract class AbstractValueFactories implements ValueFactories {
      * {@inheritDoc}
      */
     public ValueFactory<?> getValueFactory( PropertyType type ) {
-        ArgCheck.isNotNull(type, "type");
+        CheckArg.isNotNull(type, "type");
         switch (type) {
             case BINARY:
                 return getBinaryFactory();
@@ -88,7 +88,7 @@ public abstract class AbstractValueFactories implements ValueFactories {
      * {@inheritDoc}
      */
     public ValueFactory<?> getValueFactory( Object prototype ) {
-        ArgCheck.isNotNull(prototype, "prototype");
+        CheckArg.isNotNull(prototype, "prototype");
         PropertyType inferredType = PropertyType.discoverType(prototype);
         assert inferredType != null;
         return getValueFactory(inferredType);

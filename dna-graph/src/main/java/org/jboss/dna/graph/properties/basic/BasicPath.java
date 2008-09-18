@@ -30,7 +30,7 @@ import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.CommonI18n;
 import org.jboss.dna.common.text.Inflector;
 import org.jboss.dna.common.text.TextEncoder;
-import org.jboss.dna.common.util.ArgCheck;
+import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.graph.GraphI18n;
 import org.jboss.dna.graph.properties.InvalidPathException;
 import org.jboss.dna.graph.properties.NamespaceRegistry;
@@ -66,7 +66,7 @@ public class BasicPath implements Path {
      */
     public BasicPath( List<Segment> segments,
                       boolean absolute ) {
-        ArgCheck.isNotNull(segments, "segments");
+        CheckArg.isNotNull(segments, "segments");
         this.segments = segments.isEmpty() ? EMPTY_SEGMENTS : Collections.unmodifiableList(segments);
         this.absolute = absolute;
         this.normalized = isNormalized(this.segments);
@@ -92,7 +92,7 @@ public class BasicPath implements Path {
      * {@inheritDoc}
      */
     public Path getAncestor( int degree ) {
-        ArgCheck.isNonNegative(degree, "degree");
+        CheckArg.isNonNegative(degree, "degree");
         if (degree == 0) return this;
         if (this.isRoot()) return null;
         int endIndex = this.segments.size() - degree;
@@ -213,7 +213,7 @@ public class BasicPath implements Path {
      * {@inheritDoc}
      */
     public String getString( NamespaceRegistry namespaceRegistry ) {
-        ArgCheck.isNotNull(namespaceRegistry, "namespaceRegistry");
+        CheckArg.isNotNull(namespaceRegistry, "namespaceRegistry");
         return doGetString(namespaceRegistry, null);
     }
 
@@ -222,7 +222,7 @@ public class BasicPath implements Path {
      */
     public String getString( NamespaceRegistry namespaceRegistry,
                              TextEncoder encoder ) {
-        ArgCheck.isNotNull(namespaceRegistry, "namespaceRegistry");
+        CheckArg.isNotNull(namespaceRegistry, "namespaceRegistry");
         return doGetString(namespaceRegistry, encoder);
     }
 
@@ -378,7 +378,7 @@ public class BasicPath implements Path {
      * {@inheritDoc}
      */
     public Path relativeTo( Path startingPath ) {
-        ArgCheck.isNotNull(startingPath, "to");
+        CheckArg.isNotNull(startingPath, "to");
         if (!this.isAbsolute()) {
             String msg = GraphI18n.pathIsNotAbsolute.text(this);
             throw new InvalidPathException(msg);
@@ -421,7 +421,7 @@ public class BasicPath implements Path {
      * {@inheritDoc}
      */
     public Path resolve( Path relativePath ) {
-        ArgCheck.isNotNull(relativePath, "relative path");
+        CheckArg.isNotNull(relativePath, "relative path");
         if (!this.isAbsolute()) {
             String msg = GraphI18n.pathIsAlreadyAbsolute.text(this.path);
             throw new InvalidPathException(msg);
@@ -447,7 +447,7 @@ public class BasicPath implements Path {
      * {@inheritDoc}
      */
     public Path resolveAgainst( Path absolutePath ) {
-        ArgCheck.isNotNull(absolutePath, "absolute path");
+        CheckArg.isNotNull(absolutePath, "absolute path");
         return absolutePath.resolve(this);
     }
 

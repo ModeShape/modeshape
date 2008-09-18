@@ -44,7 +44,7 @@ import net.jcip.annotations.ThreadSafe;
 import org.jboss.dna.common.collection.Problems;
 import org.jboss.dna.common.collection.SimpleProblems;
 import org.jboss.dna.common.i18n.I18n;
-import org.jboss.dna.common.util.ArgCheck;
+import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.common.util.Logger;
 import org.jboss.dna.connector.federation.executor.FederatingCommandExecutor;
 import org.jboss.dna.connector.federation.executor.SingleProjectionCommandExecutor;
@@ -133,7 +133,7 @@ public class FederatedRepositorySource implements RepositorySource, ObjectFactor
      */
     public FederatedRepositorySource( String repositoryName ) {
         super();
-        ArgCheck.isNotNull(repositoryName, "repositoryName");
+        CheckArg.isNotNull(repositoryName, "repositoryName");
         this.repositoryName = repositoryName;
     }
 
@@ -328,7 +328,7 @@ public class FederatedRepositorySource implements RepositorySource, ObjectFactor
      * @see #setName(String)
      */
     public synchronized void setRepositoryName( String repositoryName ) {
-        ArgCheck.isNotEmpty(repositoryName, "repositoryName");
+        CheckArg.isNotEmpty(repositoryName, "repositoryName");
         if (this.repositoryName != null && this.repositoryName.equals(repositoryName)) return; // unchanged
         this.repositoryName = repositoryName;
         changeRepositoryConfig();

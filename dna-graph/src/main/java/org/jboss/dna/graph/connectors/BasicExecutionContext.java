@@ -25,7 +25,7 @@ import java.security.AccessControlContext;
 import java.security.AccessController;
 import javax.security.auth.Subject;
 import javax.security.auth.login.LoginContext;
-import org.jboss.dna.common.util.ArgCheck;
+import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.common.util.Logger;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.properties.NamespaceRegistry;
@@ -99,7 +99,7 @@ public class BasicExecutionContext implements ExecutionContext {
                                    NamespaceRegistry namespaceRegistry,
                                    ValueFactories valueFactories,
                                    PropertyFactory propertyFactory ) {
-        ArgCheck.isNotNull(namespaceRegistry, "namespaceRegistry");
+        CheckArg.isNotNull(namespaceRegistry, "namespaceRegistry");
         this.loginContext = loginContext;
         this.accessControlContext = accessControlContext;
         if (loginContext == null) {

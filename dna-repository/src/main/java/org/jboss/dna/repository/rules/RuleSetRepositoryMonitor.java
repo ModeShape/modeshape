@@ -35,7 +35,7 @@ import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import net.jcip.annotations.ThreadSafe;
 import org.jboss.dna.common.collection.SimpleProblems;
-import org.jboss.dna.common.util.ArgCheck;
+import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.common.util.Logger;
 import org.jboss.dna.repository.RepositoryI18n;
 import org.jboss.dna.repository.observation.NodeChange;
@@ -85,8 +85,8 @@ public class RuleSetRepositoryMonitor implements NodeChangeListener {
     public RuleSetRepositoryMonitor( RuleService ruleService,
                                      String jcrAbsolutePath,
                                      JcrExecutionContext executionContext ) {
-        ArgCheck.isNotNull(ruleService, "rule service");
-        ArgCheck.isNotNull(executionContext, "execution context");
+        CheckArg.isNotNull(ruleService, "rule service");
+        CheckArg.isNotNull(executionContext, "execution context");
         this.ruleService = ruleService;
         this.executionContext = executionContext;
         this.executorService = Executors.newSingleThreadExecutor();

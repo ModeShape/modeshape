@@ -43,7 +43,7 @@ import javax.xml.xpath.XPathExpression;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 import org.jboss.dna.common.component.ClassLoaderFactory;
-import org.jboss.dna.common.util.ArgCheck;
+import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.common.util.Logger;
 import org.jboss.dna.common.xml.SimpleNamespaceContext;
 import org.jboss.dna.maven.spi.JcrMavenUrlProvider;
@@ -73,7 +73,7 @@ public class MavenRepository implements ClassLoaderFactory {
     private final Logger logger;
 
     public MavenRepository( final MavenUrlProvider urlProvider ) {
-        ArgCheck.isNotNull(urlProvider, "urlProvider");
+        CheckArg.isNotNull(urlProvider, "urlProvider");
         this.urlProvider = urlProvider;
         this.classLoaders = new MavenClassLoaders(this);
         this.logger = Logger.getLogger(this.getClass());
@@ -94,8 +94,8 @@ public class MavenRepository implements ClassLoaderFactory {
      * @throws IllegalArgumentException if no Maven IDs are passed in or if any of the IDs are null
      */
     public ClassLoader getClassLoader( ClassLoader parent, MavenId... mavenIds ) {
-        ArgCheck.isNotEmpty(mavenIds, "mavenIds");
-        ArgCheck.containsNoNulls(mavenIds, "mavenIds");
+        CheckArg.isNotEmpty(mavenIds, "mavenIds");
+        CheckArg.containsNoNulls(mavenIds, "mavenIds");
         return this.classLoaders.getClassLoader(parent, mavenIds);
     }
 
@@ -121,8 +121,8 @@ public class MavenRepository implements ClassLoaderFactory {
      * @throws IllegalArgumentException if no coordinates are passed in or if any of the coordinate references is null
      */
     public ClassLoader getClassLoader( ClassLoader parent, String... coordinates ) {
-        ArgCheck.isNotEmpty(coordinates, "coordinates");
-        ArgCheck.containsNoNulls(coordinates, "coordinates");
+        CheckArg.isNotEmpty(coordinates, "coordinates");
+        CheckArg.containsNoNulls(coordinates, "coordinates");
         MavenId[] mavenIds = new MavenId[coordinates.length];
         for (int i = 0; i < coordinates.length; i++) {
             String coordinate = coordinates[i];
@@ -212,8 +212,8 @@ public class MavenRepository implements ClassLoaderFactory {
      * @throws MavenRepositoryException if there is a problem reading the POM file given the supplied stream and MavenId
      */
     protected List<MavenDependency> getDependencies( MavenId mavenId, InputStream pomStream, MavenDependency.Scope... allowedScopes ) throws IOException {
-        ArgCheck.isNotNull(mavenId, "mavenId");
-        ArgCheck.isNotNull(pomStream, "pomStream");
+        CheckArg.isNotNull(mavenId, "mavenId");
+        CheckArg.isNotNull(pomStream, "pomStream");
         EnumSet<MavenDependency.Scope> includedScopes = MavenDependency.Scope.getRuntimeScopes();
         if (allowedScopes != null && allowedScopes.length > 0) includedScopes = EnumSet.of(allowedScopes[0], allowedScopes);
         List<MavenDependency> results = new ArrayList<MavenDependency>();

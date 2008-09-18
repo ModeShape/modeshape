@@ -35,7 +35,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import net.jcip.annotations.GuardedBy;
 import net.jcip.annotations.ThreadSafe;
 import org.jboss.dna.common.CommonI18n;
-import org.jboss.dna.common.util.ArgCheck;
+import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.common.util.StringUtil;
 import org.jboss.dna.connector.federation.contribution.Contribution;
 import org.jboss.dna.connector.federation.contribution.EmptyContribution;
@@ -60,7 +60,7 @@ import org.jboss.dna.graph.properties.Property;
 public abstract class MergePlan implements Serializable, Iterable<Contribution> {
 
     public static MergePlan create( Contribution... contributions ) {
-        ArgCheck.isNotNull(contributions, "contributions");
+        CheckArg.isNotNull(contributions, "contributions");
         switch (contributions.length) {
             case 0:
                 throw new IllegalArgumentException(CommonI18n.argumentMayNotBeEmpty.text("contributions"));
@@ -81,7 +81,7 @@ public abstract class MergePlan implements Serializable, Iterable<Contribution> 
     }
 
     public static MergePlan create( Collection<Contribution> contributions ) {
-        ArgCheck.isNotNull(contributions, "contributions");
+        CheckArg.isNotNull(contributions, "contributions");
         Iterator<Contribution> iter = contributions.iterator();
         switch (contributions.size()) {
             case 0:
@@ -103,8 +103,8 @@ public abstract class MergePlan implements Serializable, Iterable<Contribution> 
 
     public static MergePlan addContribution( MergePlan plan,
                                              Contribution contribution ) {
-        ArgCheck.isNotNull(plan, "plan");
-        ArgCheck.isNotNull(contribution, "contribution");
+        CheckArg.isNotNull(plan, "plan");
+        CheckArg.isNotNull(contribution, "contribution");
         if (plan instanceof MultipleContributionMergePlan) {
             ((MultipleContributionMergePlan)plan).addContribution(contribution);
             return plan;

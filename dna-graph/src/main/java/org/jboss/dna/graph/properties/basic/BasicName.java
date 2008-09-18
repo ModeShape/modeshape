@@ -23,7 +23,7 @@ package org.jboss.dna.graph.properties.basic;
 
 import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.text.TextEncoder;
-import org.jboss.dna.common.util.ArgCheck;
+import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.common.util.HashCode;
 import org.jboss.dna.graph.properties.Name;
 import org.jboss.dna.graph.properties.NamespaceRegistry;
@@ -47,7 +47,7 @@ public class BasicName implements Name {
 
     public BasicName( String namespaceUri,
                       String localName ) {
-        ArgCheck.isNotEmpty(localName, "localName");
+        CheckArg.isNotEmpty(localName, "localName");
         this.namespaceUri = namespaceUri != null ? namespaceUri.trim() : "";
         this.localName = localName != null ? localName.trim() : "";
         this.hc = HashCode.compute(this.namespaceUri, this.localName);
@@ -90,7 +90,7 @@ public class BasicName implements Name {
      * {@inheritDoc}
      */
     public String getString( NamespaceRegistry namespaceRegistry ) {
-        ArgCheck.isNotNull(namespaceRegistry, "namespaceRegistry");
+        CheckArg.isNotNull(namespaceRegistry, "namespaceRegistry");
         String prefix = namespaceRegistry.getPrefixForNamespaceUri(this.namespaceUri, true);
         if (prefix != null && prefix.length() != 0) {
             return prefix + ":" + this.localName;
@@ -103,7 +103,7 @@ public class BasicName implements Name {
      */
     public String getString( NamespaceRegistry namespaceRegistry,
                              TextEncoder encoder ) {
-        ArgCheck.isNotNull(namespaceRegistry, "namespaceRegistry");
+        CheckArg.isNotNull(namespaceRegistry, "namespaceRegistry");
         String prefix = namespaceRegistry.getPrefixForNamespaceUri(this.namespaceUri, true);
         if (prefix != null && prefix.length() != 0) {
             return encoder.encode(prefix) + ":" + encoder.encode(this.localName);

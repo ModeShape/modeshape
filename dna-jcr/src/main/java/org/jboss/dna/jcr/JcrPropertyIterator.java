@@ -25,7 +25,7 @@ import java.util.Iterator;
 import java.util.Set;
 import javax.jcr.Property;
 import javax.jcr.PropertyIterator;
-import org.jboss.dna.common.util.ArgCheck;
+import org.jboss.dna.common.util.CheckArg;
 
 /**
  * @author jverhaeg
@@ -105,7 +105,7 @@ final class JcrPropertyIterator implements PropertyIterator {
      * @see javax.jcr.RangeIterator#skip(long)
      */
     public void skip( long count ) {
-        ArgCheck.isNonNegative(count, "count");
+        CheckArg.isNonNegative(count, "count");
         while (--count >= 0) {
             nextProperty();
         }

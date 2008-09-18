@@ -29,7 +29,7 @@ import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import org.jboss.dna.common.SystemFailureException;
-import org.jboss.dna.common.util.ArgCheck;
+import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.repository.RepositoryI18n;
 
 /**
@@ -96,7 +96,7 @@ public class JndiSessionFactory extends AbstractSessionFactory {
      */
     public JndiSessionFactory( Context context, char... workspaceDelimiters ) {
         super(workspaceDelimiters);
-        ArgCheck.isNotNull(context, "initial context");
+        CheckArg.isNotNull(context, "initial context");
         this.context = context;
     }
 

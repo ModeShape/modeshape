@@ -52,7 +52,7 @@ import net.jcip.annotations.ThreadSafe;
 import org.jboss.dna.common.SystemFailureException;
 import org.jboss.dna.common.component.ClassLoaderFactory;
 import org.jboss.dna.common.component.StandardClassLoaderFactory;
-import org.jboss.dna.common.util.ArgCheck;
+import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.common.util.Logger;
 import org.jboss.dna.common.util.StringUtil;
 import org.jboss.dna.repository.RepositoryI18n;
@@ -194,7 +194,7 @@ public class RuleService implements AdministeredService {
      * @see #removeRuleSet(String)
      */
     public boolean addRuleSet( RuleSet ruleSet ) {
-        ArgCheck.isNotNull(ruleSet, "rule set");
+        CheckArg.isNotNull(ruleSet, "rule set");
         final String providerUri = ruleSet.getProviderUri();
         final String ruleSetName = ruleSet.getName();
         final String rules = ruleSet.getRules();
@@ -304,7 +304,7 @@ public class RuleService implements AdministeredService {
      * @see #updateRuleSet(RuleSet)
      */
     public boolean removeRuleSet( String ruleSetName ) {
-        ArgCheck.isNotEmpty(ruleSetName, "rule set");
+        CheckArg.isNotEmpty(ruleSetName, "rule set");
         try {
             this.lock.writeLock().lock();
             RuleSet ruleSet = this.ruleSets.remove(ruleSetName);
@@ -358,7 +358,7 @@ public class RuleService implements AdministeredService {
      * {@link RuleSet#getProviderUri() RuleSet's provider URI}.
      */
     public List<?> executeRules( String ruleSetName, Map<String, Object> globals, Object... facts ) {
-        ArgCheck.isNotEmpty(ruleSetName, "rule set name");
+        CheckArg.isNotEmpty(ruleSetName, "rule set name");
         List<?> result = null;
         List<?> factList = Arrays.asList(facts);
         try {

@@ -45,7 +45,7 @@ import org.eclipse.jdt.core.dom.SingleVariableDeclaration;
 import org.eclipse.jdt.core.dom.Type;
 import org.eclipse.jdt.core.dom.TypeDeclaration;
 import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
-import org.jboss.dna.common.util.ArgCheck;
+import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.sequencer.java.metadata.ArrayTypeFieldMetadata;
 import org.jboss.dna.sequencer.java.metadata.ClassMetadata;
 import org.jboss.dna.sequencer.java.metadata.ConstructorMetadata;
@@ -431,7 +431,7 @@ public abstract class AbstractJavaMetadata {
      * @throws IllegalArgumentException if type is null.
      */
     private String getTypeName( Type type ) {
-        ArgCheck.isNotNull(type, "type");
+        CheckArg.isNotNull(type, "type");
         if (type.isPrimitiveType()) {
             PrimitiveType primitiveType = (PrimitiveType)type;
             return primitiveType.getPrimitiveTypeCode().toString();

@@ -32,7 +32,7 @@ import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
 import javax.jcr.Value;
 import net.jcip.annotations.Immutable;
-import org.jboss.dna.common.util.ArgCheck;
+import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.common.util.Logger;
 import org.jboss.dna.graph.properties.Name;
 import org.jboss.dna.graph.properties.NamespaceRegistry;
@@ -164,7 +164,7 @@ public class SequencerNodeContext implements SequencerContext {
      * @see org.jboss.dna.graph.sequencers.SequencerContext#getInputProperty(org.jboss.dna.graph.properties.Name)
      */
     public Property getInputProperty( Name name ) {
-        ArgCheck.isNotNull(name, "name");
+        CheckArg.isNotNull(name, "name");
         for (Property prop : props) {
             if (name.equals(prop.getName())) {
                 return prop;

@@ -41,7 +41,7 @@ import javax.jcr.observation.EventListener;
 import javax.jcr.observation.ObservationManager;
 import net.jcip.annotations.GuardedBy;
 import net.jcip.annotations.ThreadSafe;
-import org.jboss.dna.common.util.ArgCheck;
+import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.common.util.Logger;
 import org.jboss.dna.repository.RepositoryI18n;
 import org.jboss.dna.repository.services.AbstractServiceAdministrator;
@@ -141,7 +141,7 @@ public class ObservationService implements AdministeredService {
     private final Administrator administrator = new Administrator();
 
     public ObservationService( SessionFactory sessionFactory ) {
-        ArgCheck.isNotNull(sessionFactory, "session factory");
+        CheckArg.isNotNull(sessionFactory, "session factory");
         this.sessionFactory = sessionFactory;
     }
 

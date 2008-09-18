@@ -31,7 +31,7 @@ import org.jboss.dna.common.collection.Problems;
 import org.jboss.dna.common.collection.SimpleProblems;
 import org.jboss.dna.common.component.ClassLoaderFactory;
 import org.jboss.dna.common.component.StandardClassLoaderFactory;
-import org.jboss.dna.common.util.ArgCheck;
+import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.common.util.Reflection;
 import org.jboss.dna.connector.federation.FederationException;
 import org.jboss.dna.graph.DnaLexicon;
@@ -147,9 +147,9 @@ public class RepositoryService implements AdministeredService {
                               Path pathToConfigurationRoot,
                               ExecutionContext context,
                               ClassLoaderFactory classLoaderFactory ) {
-        ArgCheck.isNotNull(configurationSourceName, "configurationSourceName");
-        ArgCheck.isNotNull(sources, "sources");
-        ArgCheck.isNotNull(context, "context");
+        CheckArg.isNotNull(configurationSourceName, "configurationSourceName");
+        CheckArg.isNotNull(sources, "sources");
+        CheckArg.isNotNull(context, "context");
         if (pathToConfigurationRoot == null) pathToConfigurationRoot = context.getValueFactories().getPathFactory().create("/dna:system");
         this.sources = sources;
         this.pathToConfigurationRoot = pathToConfigurationRoot;

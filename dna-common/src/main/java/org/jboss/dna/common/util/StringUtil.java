@@ -79,7 +79,7 @@ public class StringUtil {
      */
     public static String createString( String pattern,
                                        Object... parameters ) {
-        ArgCheck.isNotNull(pattern, "pattern");
+        CheckArg.isNotNull(pattern, "pattern");
         if (parameters == null) parameters = EMPTY_STRING_ARRAY;
         Matcher matcher = PARAMETER_COUNT_PATTERN.matcher(pattern);
         StringBuffer text = new StringBuffer();
@@ -306,7 +306,7 @@ public class StringUtil {
     public static String truncate( Object obj,
                                    int maxLength,
                                    String suffix ) {
-        ArgCheck.isNonNegative(maxLength, "maxLength");
+        CheckArg.isNonNegative(maxLength, "maxLength");
         if (obj == null || maxLength == 0) {
             return "";
         }
@@ -644,7 +644,7 @@ public class StringUtil {
      * @return the normalized text
      */
     public static String normalize( String text ) {
-        ArgCheck.isNotNull(text, "text");
+        CheckArg.isNotNull(text, "text");
         // This could be much more efficient.
         return NORMALIZE_PATTERN.matcher(text).replaceAll(" ").trim();
     }

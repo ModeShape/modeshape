@@ -39,7 +39,7 @@ import java.util.concurrent.CopyOnWriteArraySet;
 import net.jcip.annotations.ThreadSafe;
 import org.jboss.dna.common.CommonI18n;
 import org.jboss.dna.common.SystemFailureException;
-import org.jboss.dna.common.util.ArgCheck;
+import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.common.util.ClassUtil;
 import org.jboss.dna.common.util.StringUtil;
 
@@ -71,7 +71,7 @@ public final class I18n {
      *         class; never <code>null</code>.
      */
     public static Set<Locale> getLocalizationProblemLocales( Class<?> i18nClass ) {
-        ArgCheck.isNotNull(i18nClass, "i18nClass");
+        CheckArg.isNotNull(i18nClass, "i18nClass");
         Set<Locale> locales = new HashSet<Locale>(LOCALE_TO_CLASS_TO_PROBLEMS_MAP.size());
         for (Entry<Locale, Map<Class<?>, Set<String>>> localeEntry : LOCALE_TO_CLASS_TO_PROBLEMS_MAP.entrySet()) {
             for (Entry<Class<?>, Set<String>> classEntry : localeEntry.getValue().entrySet()) {
@@ -106,7 +106,7 @@ public final class I18n {
      */
     public static Set<String> getLocalizationProblems( Class<?> i18nClass,
                                                        Locale locale ) {
-        ArgCheck.isNotNull(i18nClass, "i18nClass");
+        CheckArg.isNotNull(i18nClass, "i18nClass");
         Map<Class<?>, Set<String>> classToProblemsMap = LOCALE_TO_CLASS_TO_PROBLEMS_MAP.get(locale == null ? Locale.getDefault() : locale);
         if (classToProblemsMap == null) {
             return Collections.emptySet();
@@ -147,7 +147,7 @@ public final class I18n {
      * @param i18nClass A class declaring one or more public, static, non-final fields of type <code>I18n</code>.
      */
     public static void initialize( Class<?> i18nClass ) {
-        ArgCheck.isNotNull(i18nClass, "i18nClass");
+        CheckArg.isNotNull(i18nClass, "i18nClass");
         if (i18nClass.isInterface()) {
             throw new IllegalArgumentException(CommonI18n.i18nClassInterface.text(i18nClass.getName()));
         }

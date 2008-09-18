@@ -25,7 +25,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
-import org.jboss.dna.common.util.ArgCheck;
+import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.graph.properties.Name;
 import org.jboss.dna.graph.properties.Property;
 import org.jboss.dna.graph.properties.PropertyFactory;
@@ -45,7 +45,7 @@ public class BasicPropertyFactory implements PropertyFactory {
      * @throws IllegalArgumentException if the reference to the value factories is null
      */
     public BasicPropertyFactory( ValueFactories valueFactories ) {
-        ArgCheck.isNotNull(valueFactories, "value factories");
+        CheckArg.isNotNull(valueFactories, "value factories");
         this.factories = valueFactories;
     }
 
@@ -79,7 +79,7 @@ public class BasicPropertyFactory implements PropertyFactory {
     public Property create( Name name,
                             PropertyType desiredType,
                             Object... values ) {
-        ArgCheck.isNotNull(name, "name");
+        CheckArg.isNotNull(name, "name");
         if (values == null || values.length == 0) {
             return new BasicEmptyProperty(name);
         }
@@ -111,7 +111,7 @@ public class BasicPropertyFactory implements PropertyFactory {
     public Property create( Name name,
                             PropertyType desiredType,
                             Iterable<?> values ) {
-        ArgCheck.isNotNull(name, "name");
+        CheckArg.isNotNull(name, "name");
         List<Object> valueList = null;
         if (values instanceof Collection) {
             Collection<Object> originalValues = (Collection<Object>)values;
@@ -144,7 +144,7 @@ public class BasicPropertyFactory implements PropertyFactory {
     public Property create( Name name,
                             PropertyType desiredType,
                             Iterator<?> values ) {
-        ArgCheck.isNotNull(name, "name");
+        CheckArg.isNotNull(name, "name");
         final List<Object> valueList = new ArrayList<Object>();
         if (desiredType == null) desiredType = PropertyType.OBJECT;
         final ValueFactory<?> factory = factories.getValueFactory(desiredType);

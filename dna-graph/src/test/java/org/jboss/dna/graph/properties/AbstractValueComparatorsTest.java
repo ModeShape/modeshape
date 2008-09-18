@@ -29,7 +29,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
-import org.jboss.dna.common.util.ArgCheck;
+import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.graph.properties.ValueFactories;
 import org.jboss.dna.graph.properties.basic.BasicNamespaceRegistry;
 import org.jboss.dna.graph.properties.basic.StandardValueFactories;
@@ -48,8 +48,8 @@ public abstract class AbstractValueComparatorsTest<T> {
     protected final T[] validNonNullValues;
 
     protected AbstractValueComparatorsTest( Comparator<T> comparator, T... validNonNullValues ) {
-        ArgCheck.isNotNull(comparator, "comparator");
-        ArgCheck.isNotEmpty(validNonNullValues, "validNonNullValues");
+        CheckArg.isNotNull(comparator, "comparator");
+        CheckArg.isNotEmpty(validNonNullValues, "validNonNullValues");
         this.comparator = comparator;
         this.validNonNullValues = validNonNullValues;
     }

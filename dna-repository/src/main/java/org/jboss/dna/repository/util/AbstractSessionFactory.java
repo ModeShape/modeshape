@@ -30,7 +30,7 @@ import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.SimpleCredentials;
 import org.jboss.dna.common.SystemFailureException;
-import org.jboss.dna.common.util.ArgCheck;
+import org.jboss.dna.common.util.CheckArg;
 
 /**
  * A SessionFactory implementation that creates {@link Session} instances using {@link Repository} instances.
@@ -174,7 +174,7 @@ public abstract class AbstractSessionFactory implements SessionFactory {
      * {@inheritDoc}
      */
     public Session createSession( String name ) throws RepositoryException {
-        ArgCheck.isNotNull(name, "session name");
+        CheckArg.isNotNull(name, "session name");
         name = name.trim();
         // Look up the Repository object in JNDI ...
         String repositoryName = getRepositoryName(name);

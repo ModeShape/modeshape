@@ -33,7 +33,7 @@ import java.util.UUID;
 import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.text.TextDecoder;
 import org.jboss.dna.common.text.TextEncoder;
-import org.jboss.dna.common.util.ArgCheck;
+import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.common.util.IoUtil;
 import org.jboss.dna.common.util.Logger;
 import org.jboss.dna.graph.GraphI18n;
@@ -61,7 +61,7 @@ public class StringValueFactory extends AbstractValueFactory<String> {
     public StringValueFactory( TextDecoder decoder,
                                TextEncoder encoder ) {
         super(PropertyType.STRING, decoder, null);
-        ArgCheck.isNotNull(encoder, "encoder");
+        CheckArg.isNotNull(encoder, "encoder");
         this.encoder = encoder;
     }
 

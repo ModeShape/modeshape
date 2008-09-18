@@ -25,7 +25,7 @@ import java.io.Serializable;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 import net.jcip.annotations.Immutable;
-import org.jboss.dna.common.util.ArgCheck;
+import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.common.util.HashCode;
 import org.jboss.dna.graph.GraphI18n;
 
@@ -201,7 +201,7 @@ public class PathExpression implements Serializable {
      * @throws InvalidPathExpressionException if the expression is blank or is not a valid expression
      */
     public PathExpression( String expression ) throws InvalidPathExpressionException {
-        ArgCheck.isNotNull(expression, "path expression");
+        CheckArg.isNotNull(expression, "path expression");
         this.expression = expression.trim();
         if (this.expression.length() == 0) {
             throw new InvalidPathExpressionException(GraphI18n.pathExpressionMayNotBeBlank.text());

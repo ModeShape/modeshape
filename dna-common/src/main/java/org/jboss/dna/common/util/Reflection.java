@@ -205,7 +205,7 @@ public class Reflection {
      * @throws IllegalArgumentException if the target class is null
      */
     public Reflection( Class<?> targetClass ) {
-        ArgCheck.isNotNull(targetClass, "targetClass");
+        CheckArg.isNotNull(targetClass, "targetClass");
         this.targetClass = targetClass;
     }
 

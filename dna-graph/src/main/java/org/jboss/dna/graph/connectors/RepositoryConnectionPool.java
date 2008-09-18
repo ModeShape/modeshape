@@ -36,7 +36,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import javax.transaction.xa.XAResource;
 import net.jcip.annotations.GuardedBy;
 import net.jcip.annotations.ThreadSafe;
-import org.jboss.dna.common.util.ArgCheck;
+import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.common.util.Logger;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.GraphI18n;
@@ -188,10 +188,10 @@ public class RepositoryConnectionPool {
                                      int maximumPoolSize,
                                      long keepAliveTime,
                                      TimeUnit unit ) {
-        ArgCheck.isNonNegative(corePoolSize, "corePoolSize");
-        ArgCheck.isPositive(maximumPoolSize, "maximumPoolSize");
-        ArgCheck.isNonNegative(keepAliveTime, "keepAliveTime");
-        ArgCheck.isNotNull(source, "source");
+        CheckArg.isNonNegative(corePoolSize, "corePoolSize");
+        CheckArg.isPositive(maximumPoolSize, "maximumPoolSize");
+        CheckArg.isNonNegative(keepAliveTime, "keepAliveTime");
+        CheckArg.isNotNull(source, "source");
         if (maximumPoolSize < corePoolSize) {
             throw new IllegalArgumentException(GraphI18n.maximumPoolSizeMayNotBeSmallerThanCorePoolSize.text());
         }
@@ -251,7 +251,7 @@ public class RepositoryConnectionPool {
      */
     public void setPingTimeout( long pingTimeout,
                                 TimeUnit unit ) {
-        ArgCheck.isNonNegative(pingTimeout, "time");
+        CheckArg.isNonNegative(pingTimeout, "time");
         this.pingTimeout.set(unit.toNanos(pingTimeout));
     }
 
@@ -282,7 +282,7 @@ public class RepositoryConnectionPool {
      */
     public void setKeepAliveTime( long time,
                                   TimeUnit unit ) {
-        ArgCheck.isNonNegative(time, "time");
+        CheckArg.isNonNegative(time, "time");
         this.keepAliveTime = unit.toNanos(time);
     }
 
@@ -315,7 +315,7 @@ public class RepositoryConnectionPool {
      * @see #getMaximumPoolSize
      */
     public void setMaximumPoolSize( int maximumPoolSize ) {
-        ArgCheck.isPositive(maximumPoolSize, "maximum pool size");
+        CheckArg.isPositive(maximumPoolSize, "maximum pool size");
         if (maximumPoolSize < corePoolSize) {
             throw new IllegalArgumentException(GraphI18n.maximumPoolSizeMayNotBeSmallerThanCorePoolSize.text());
         }
@@ -355,7 +355,7 @@ public class RepositoryConnectionPool {
      * @see #getCorePoolSize()
      */
     public void setCorePoolSize( int corePoolSize ) throws RepositorySourceException, InterruptedException {
-        ArgCheck.isNonNegative(corePoolSize, "core pool size");
+        CheckArg.isNonNegative(corePoolSize, "core pool size");
         if (maximumPoolSize < corePoolSize) {
             throw new IllegalArgumentException(GraphI18n.maximumPoolSizeMayNotBeSmallerThanCorePoolSize.text());
         }

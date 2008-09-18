@@ -27,7 +27,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import org.jboss.dna.common.text.TextEncoder;
-import org.jboss.dna.common.util.ArgCheck;
+import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.common.util.Logger;
 import org.jboss.dna.common.util.StringUtil;
 import org.jboss.dna.connector.federation.Projection.Rule;
@@ -99,8 +99,8 @@ public class ProjectionParser {
      */
     public void addRuleParser( Class<?> clazz,
                                String methodName ) throws SecurityException, NoSuchMethodException {
-        ArgCheck.isNotNull(clazz, "clazz");
-        ArgCheck.isNotEmpty(methodName, "methodName");
+        CheckArg.isNotNull(clazz, "clazz");
+        CheckArg.isNotEmpty(methodName, "methodName");
         parserMethods.add(clazz.getMethod(methodName, String.class, ExecutionContext.class));
     }
 
@@ -125,9 +125,9 @@ public class ProjectionParser {
     public void addRuleParser( ClassLoader classLoader,
                                String className,
                                String methodName ) throws SecurityException, NoSuchMethodException, ClassNotFoundException {
-        ArgCheck.isNotNull(classLoader, "classLoader");
-        ArgCheck.isNotEmpty(className, "className");
-        ArgCheck.isNotEmpty(methodName, "methodName");
+        CheckArg.isNotNull(classLoader, "classLoader");
+        CheckArg.isNotEmpty(className, "className");
+        CheckArg.isNotEmpty(methodName, "methodName");
         Class<?> clazz = Class.forName(className, true, classLoader);
         parserMethods.add(clazz.getMethod(methodName, String.class, ExecutionContext.class));
     }
@@ -153,8 +153,8 @@ public class ProjectionParser {
      */
     public boolean removeRuleParser( String declaringClassName,
                                      String methodName ) {
-        ArgCheck.isNotEmpty(declaringClassName, "declaringClassName");
-        ArgCheck.isNotEmpty(methodName, "methodName");
+        CheckArg.isNotEmpty(declaringClassName, "declaringClassName");
+        CheckArg.isNotEmpty(methodName, "methodName");
         for (Method method : parserMethods) {
             if (method.getName().equals(methodName) && method.getDeclaringClass().getName().equals(declaringClassName)) {
                 return parserMethods.remove(method);
@@ -179,7 +179,7 @@ public class ProjectionParser {
      */
     public Rule ruleFromString( String definition,
                                 ExecutionContext context ) {
-        ArgCheck.isNotNull(context, "env");
+        CheckArg.isNotNull(context, "env");
         definition = definition != null ? definition.trim() : "";
         if (definition.length() == 0) return null;
         Logger logger = context.getLogger(getClass());

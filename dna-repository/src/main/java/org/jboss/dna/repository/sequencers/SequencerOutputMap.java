@@ -30,7 +30,7 @@ import java.util.List;
 import java.util.Map;
 import net.jcip.annotations.Immutable;
 import net.jcip.annotations.NotThreadSafe;
-import org.jboss.dna.common.util.ArgCheck;
+import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.common.util.StringUtil;
 import org.jboss.dna.graph.properties.Name;
 import org.jboss.dna.graph.properties.NameFactory;
@@ -57,7 +57,7 @@ public class SequencerOutputMap implements SequencerOutput, Iterable<SequencerOu
 	private final Name jcrName;
 
 	public SequencerOutputMap( ValueFactories factories ) {
-		ArgCheck.isNotNull(factories, "factories");
+		CheckArg.isNotNull(factories, "factories");
 		this.data = new HashMap<Path, List<PropertyValue>>();
 		this.factories = factories;
 		this.jcrName = this.factories.getNameFactory().create(JCR_NAME_PROPERTY_NAME);
@@ -87,8 +87,8 @@ public class SequencerOutputMap implements SequencerOutput, Iterable<SequencerOu
 	public void setProperty( Path nodePath,
 	                         Name propertyName,
 	                         Object... values ) {
-		ArgCheck.isNotNull(nodePath, "nodePath");
-		ArgCheck.isNotNull(propertyName, "property");
+		CheckArg.isNotNull(nodePath, "nodePath");
+		CheckArg.isNotNull(propertyName, "property");
 		// Ignore the "jcr:name" property, as that's handled by the path ...
 		if (this.jcrName.equals(propertyName)) return;
 
@@ -115,8 +115,8 @@ public class SequencerOutputMap implements SequencerOutput, Iterable<SequencerOu
 	public void setProperty( String nodePath,
 	                         String property,
 	                         Object... values ) {
-		ArgCheck.isNotEmpty(nodePath, "nodePath");
-		ArgCheck.isNotEmpty(property, "property");
+		CheckArg.isNotEmpty(nodePath, "nodePath");
+		CheckArg.isNotEmpty(property, "property");
 		Path path = this.factories.getPathFactory().create(nodePath);
 		Name propertyName = this.factories.getNameFactory().create(property);
 		setProperty(path, propertyName, values);

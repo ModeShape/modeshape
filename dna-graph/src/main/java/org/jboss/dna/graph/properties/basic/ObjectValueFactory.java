@@ -30,7 +30,7 @@ import java.util.Date;
 import java.util.UUID;
 import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.text.TextDecoder;
-import org.jboss.dna.common.util.ArgCheck;
+import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.graph.properties.Binary;
 import org.jboss.dna.graph.properties.DateTime;
 import org.jboss.dna.graph.properties.IoException;
@@ -56,7 +56,7 @@ public class ObjectValueFactory extends AbstractValueFactory<Object> {
                                ValueFactory<String> stringValueFactory,
                                ValueFactory<Binary> binaryValueFactory ) {
         super(PropertyType.OBJECT, decoder, stringValueFactory);
-        ArgCheck.isNotNull(binaryValueFactory, "binaryValueFactory");
+        CheckArg.isNotNull(binaryValueFactory, "binaryValueFactory");
         this.binaryValueFactory = binaryValueFactory;
     }
 

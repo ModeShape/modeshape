@@ -33,7 +33,7 @@ import javax.rules.admin.RuleExecutionSetProvider;
 import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.component.ClassLoaderFactory;
 import org.jboss.dna.common.component.ComponentConfig;
-import org.jboss.dna.common.util.ArgCheck;
+import org.jboss.dna.common.util.CheckArg;
 
 /**
  * A description of a set of rules compatible with a JSR-94 rule engine.
@@ -64,9 +64,9 @@ public class RuleSet extends ComponentConfig implements Cloneable {
     public RuleSet( String name, String description, String classname, String[] classpath, String providerUri, String ruleSetUri, String rules, Map<String, Object> properties ) {
         super(name, description, System.currentTimeMillis(), classname, classpath);
         if (ruleSetUri == null) ruleSetUri = name.trim();
-        ArgCheck.isNotEmpty(ruleSetUri, "rule set URI");
-        ArgCheck.isNotEmpty(providerUri, "provider URI");
-        ArgCheck.isNotEmpty(rules, "rules");
+        CheckArg.isNotEmpty(ruleSetUri, "rule set URI");
+        CheckArg.isNotEmpty(providerUri, "provider URI");
+        CheckArg.isNotEmpty(rules, "rules");
         this.providerUri = providerUri;
         this.ruleSetUri = ruleSetUri;
         this.rules = rules;

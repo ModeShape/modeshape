@@ -26,7 +26,7 @@ import java.util.HashSet;
 import java.util.Set;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
-import org.jboss.dna.common.util.ArgCheck;
+import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.graph.properties.NamespaceException;
 import org.jboss.dna.graph.properties.NamespaceRegistry;
 
@@ -39,8 +39,8 @@ public class JcrNamespaceRegistry implements NamespaceRegistry {
     private final SessionFactory sessionFactory;
 
     public JcrNamespaceRegistry( SessionFactory sessionFactory, String repositoryWorkspaceName ) {
-        ArgCheck.isNotNull(sessionFactory, "sessionFactory");
-        ArgCheck.isNotNull(repositoryWorkspaceName, "repositoryWorkspaceName");
+        CheckArg.isNotNull(sessionFactory, "sessionFactory");
+        CheckArg.isNotNull(repositoryWorkspaceName, "repositoryWorkspaceName");
         this.repositoryWorkspaceName = repositoryWorkspaceName;
         this.sessionFactory = sessionFactory;
     }

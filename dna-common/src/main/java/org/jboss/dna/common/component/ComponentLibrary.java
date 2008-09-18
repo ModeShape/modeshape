@@ -32,7 +32,7 @@ import net.jcip.annotations.GuardedBy;
 import net.jcip.annotations.ThreadSafe;
 import org.jboss.dna.common.CommonI18n;
 import org.jboss.dna.common.SystemFailureException;
-import org.jboss.dna.common.util.ArgCheck;
+import org.jboss.dna.common.util.CheckArg;
 
 /**
  * Maintains the list of component instances for the system. This class does not actively update the component configurations, but
@@ -128,7 +128,7 @@ public class ComponentLibrary<ComponentType, ConfigType extends ComponentConfig>
      * @see #remove(ComponentConfig)
      */
     public boolean add( ConfigType config ) {
-        ArgCheck.isNotNull(config, "component configuration");
+        CheckArg.isNotNull(config, "component configuration");
         try {
             this.lock.lock();
             // Find an existing configuration that matches ...
@@ -182,7 +182,7 @@ public class ComponentLibrary<ComponentType, ConfigType extends ComponentConfig>
      * @see #update(ComponentConfig)
      */
     public boolean remove( ConfigType config ) {
-        ArgCheck.isNotNull(config, "component configuration");
+        CheckArg.isNotNull(config, "component configuration");
         try {
             this.lock.lock();
             // Find an existing configuration that matches ...

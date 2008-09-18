@@ -36,7 +36,7 @@ import javax.jcr.Session;
 import javax.jcr.SimpleCredentials;
 import javax.security.auth.login.LoginContext;
 import net.jcip.annotations.ThreadSafe;
-import org.jboss.dna.common.util.ArgCheck;
+import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.ExecutionContextFactory;
 import org.jboss.dna.graph.connectors.RepositoryConnectionFactory;
@@ -101,8 +101,8 @@ public class JcrRepository implements Repository {
     public JcrRepository( Map<String, String> descriptors,
                           ExecutionContextFactory executionContextFactory,
                           RepositoryConnectionFactory connectionFactory ) {
-        ArgCheck.isNotNull(executionContextFactory, "executionContextFactory");
-        ArgCheck.isNotNull(connectionFactory, "connectionFactory");
+        CheckArg.isNotNull(executionContextFactory, "executionContextFactory");
+        CheckArg.isNotNull(connectionFactory, "connectionFactory");
         this.executionContextFactory = executionContextFactory;
         this.connectionFactory = connectionFactory;
         Map<String, String> modifiableDescriptors;
@@ -146,7 +146,7 @@ public class JcrRepository implements Repository {
      * @see javax.jcr.Repository#getDescriptor(java.lang.String)
      */
     public String getDescriptor( String key ) {
-        ArgCheck.isNotEmpty(key, "key");
+        CheckArg.isNotEmpty(key, "key");
         return descriptors.get(key);
     }
 

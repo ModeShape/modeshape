@@ -35,7 +35,7 @@ import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.Value;
 import net.jcip.annotations.NotThreadSafe;
-import org.jboss.dna.common.util.ArgCheck;
+import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.properties.Name;
 import org.jboss.dna.graph.properties.Path;
@@ -69,7 +69,7 @@ abstract class AbstractJcrProperty extends AbstractJcrItem implements Property {
      * @see javax.jcr.Item#accept(javax.jcr.ItemVisitor)
      */
     public final void accept( ItemVisitor visitor ) throws RepositoryException {
-        ArgCheck.isNotNull(visitor, "visitor");
+        CheckArg.isNotNull(visitor, "visitor");
         visitor.visit(this);
     }
 

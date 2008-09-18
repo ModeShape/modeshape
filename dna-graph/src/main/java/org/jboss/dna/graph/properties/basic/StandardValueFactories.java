@@ -28,7 +28,7 @@ import java.util.Map;
 import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.text.TextDecoder;
 import org.jboss.dna.common.text.TextEncoder;
-import org.jboss.dna.common.util.ArgCheck;
+import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.graph.properties.Binary;
 import org.jboss.dna.graph.properties.DateTimeFactory;
 import org.jboss.dna.graph.properties.NameFactory;
@@ -90,7 +90,7 @@ public class StandardValueFactories extends AbstractValueFactories {
                                    TextDecoder decoder,
                                    TextEncoder encoder,
                                    ValueFactory<?>... extraFactories ) {
-        ArgCheck.isNotNull(namespaceRegistry, "namespaceRegistry");
+        CheckArg.isNotNull(namespaceRegistry, "namespaceRegistry");
         this.namespaceRegistry = namespaceRegistry;
         this.decoder = decoder != null ? decoder : ValueFactory.DEFAULT_DECODER;
         this.encoder = encoder != null ? encoder : ValueFactory.DEFAULT_ENCODER;

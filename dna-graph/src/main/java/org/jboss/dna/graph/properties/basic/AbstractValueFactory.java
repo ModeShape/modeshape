@@ -31,7 +31,7 @@ import java.util.Iterator;
 import java.util.UUID;
 import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.text.TextDecoder;
-import org.jboss.dna.common.util.ArgCheck;
+import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.graph.properties.Binary;
 import org.jboss.dna.graph.properties.DateTime;
 import org.jboss.dna.graph.properties.IoException;
@@ -59,7 +59,7 @@ public abstract class AbstractValueFactory<T> implements ValueFactory<T> {
     protected AbstractValueFactory( PropertyType type,
                                     TextDecoder decoder,
                                     ValueFactory<String> stringValueFactory ) {
-        ArgCheck.isNotNull(type, "type");
+        CheckArg.isNotNull(type, "type");
         this.propertyType = type;
         this.decoder = decoder != null ? decoder : DEFAULT_DECODER;
         this.stringValueFactory = stringValueFactory;

@@ -26,7 +26,7 @@ import java.util.Collections;
 import java.util.List;
 import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.CommonI18n;
-import org.jboss.dna.common.util.ArgCheck;
+import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.common.util.ClassUtil;
 
 /**
@@ -65,7 +65,7 @@ public class ComponentConfig implements Comparable<ComponentConfig> {
      * Java classname
      */
     public ComponentConfig( String name, String description, long timestamp, String classname, String... classpath ) {
-        ArgCheck.isNotEmpty(name, "name");
+        CheckArg.isNotEmpty(name, "name");
         this.name = name.trim();
         this.description = description != null ? description.trim() : "";
         this.componentClassname = classname;
@@ -181,8 +181,8 @@ public class ComponentConfig implements Comparable<ComponentConfig> {
      * this object
      */
     public boolean hasChanged( ComponentConfig component ) {
-        ArgCheck.isNotNull(component, "component");
-        ArgCheck.isInstanceOf(component, this.getClass(), "component");
+        CheckArg.isNotNull(component, "component");
+        CheckArg.isInstanceOf(component, this.getClass(), "component");
         if (!this.getName().equalsIgnoreCase(component.getName())) return true;
         if (!this.getDescription().equals(component.getDescription())) return true;
         if (!this.getComponentClassname().equals(component.getComponentClassname())) return true;

@@ -27,7 +27,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.jboss.dna.common.text.TextEncoder;
 import org.jboss.dna.common.text.NoOpEncoder;
-import org.jboss.dna.common.util.ArgCheck;
+import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.common.util.HashCode;
 import org.jboss.dna.common.util.StringUtil;
 
@@ -110,9 +110,9 @@ public class MavenId implements Comparable<MavenId>, Cloneable {
      * @throws IllegalArgumentException if the supplied string is null or if the string does not match the expected format
      */
     public MavenId( String coordinates ) {
-        ArgCheck.isNotNull(coordinates, "coordinates");
+        CheckArg.isNotNull(coordinates, "coordinates");
         coordinates = coordinates.trim();
-        ArgCheck.isNotEmpty(coordinates, "coordinates");
+        CheckArg.isNotEmpty(coordinates, "coordinates");
 
         // This regular expression has the following groups:
         // 1) groupId
@@ -131,8 +131,8 @@ public class MavenId implements Comparable<MavenId>, Cloneable {
         String artifactId = matcher.group(3);
         String version = matcher.group(5);
         String classifier = matcher.group(7);
-        ArgCheck.isNotEmpty(groupId, "groupId");
-        ArgCheck.isNotEmpty(artifactId, "artifactId");
+        CheckArg.isNotEmpty(groupId, "groupId");
+        CheckArg.isNotEmpty(artifactId, "artifactId");
         this.groupId = groupId.trim();
         this.artifactId = artifactId.trim();
         this.classifier = classifier != null ? classifier.trim() : "";
@@ -169,8 +169,8 @@ public class MavenId implements Comparable<MavenId>, Cloneable {
      * @throws IllegalArgumentException if the group or artifact identifiers are null, empty or blank
      */
     public MavenId( String groupId, String artifactId, String version, String classifier ) {
-        ArgCheck.isNotEmpty(groupId, "groupId");
-        ArgCheck.isNotEmpty(artifactId, "artifactId");
+        CheckArg.isNotEmpty(groupId, "groupId");
+        CheckArg.isNotEmpty(artifactId, "artifactId");
         this.groupId = groupId.trim();
         this.artifactId = artifactId.trim();
         this.classifier = classifier != null ? classifier.trim() : "";

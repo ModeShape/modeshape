@@ -26,7 +26,7 @@ import java.util.LinkedList;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import org.jboss.dna.common.util.ArgCheck;
+import org.jboss.dna.common.util.CheckArg;
 
 /**
  * Transforms words to singular, plural, humanized (human readable), underscore, camel case, or ordinal form. This is inspired by
@@ -469,8 +469,8 @@ public class Inflector {
 
     public void addIrregular( String singular,
                               String plural ) {
-        ArgCheck.isNotEmpty(singular, "singular rule");
-        ArgCheck.isNotEmpty(plural, "plural rule");
+        CheckArg.isNotEmpty(singular, "singular rule");
+        CheckArg.isNotEmpty(plural, "plural rule");
         String singularRemainder = singular.length() > 1 ? singular.substring(1) : "";
         String pluralRemainder = plural.length() > 1 ? plural.substring(1) : "";
         addPluralize("(" + singular.charAt(0) + ")" + singularRemainder + "$", "$1" + pluralRemainder);

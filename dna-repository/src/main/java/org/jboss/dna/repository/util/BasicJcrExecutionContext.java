@@ -21,7 +21,7 @@
  */
 package org.jboss.dna.repository.util;
 
-import org.jboss.dna.common.util.ArgCheck;
+import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.graph.connectors.BasicExecutionContext;
 import org.jboss.dna.graph.properties.NamespaceRegistry;
 import org.jboss.dna.graph.properties.PropertyFactory;
@@ -50,7 +50,7 @@ public class BasicJcrExecutionContext extends BasicExecutionContext implements J
                                    ValueFactories valueFactories,
                                    PropertyFactory propertyFactory ) {
         super(namespaceRegistry, valueFactories, propertyFactory);
-        ArgCheck.isNotNull(sessionFactory, "session factory");
+        CheckArg.isNotNull(sessionFactory, "session factory");
         this.sessionFactory = sessionFactory;
     }
 

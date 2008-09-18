@@ -28,7 +28,7 @@ import java.util.List;
 import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.collection.Problems;
 import org.jboss.dna.common.collection.ThreadSafeProblems;
-import org.jboss.dna.common.util.ArgCheck;
+import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.graph.cache.CachePolicy;
 import org.jboss.dna.graph.connectors.RepositorySource;
 
@@ -61,8 +61,8 @@ public class FederatedRepositoryConfig implements Comparable<FederatedRepository
                                       Projection cacheProjection,
                                       Iterable<Projection> sourceProjections,
                                       CachePolicy defaultCachePolicy ) {
-        ArgCheck.isNotEmpty(repositoryName, "repositoryName");
-        ArgCheck.isNotNull(cacheProjection, "cacheProjection");
+        CheckArg.isNotEmpty(repositoryName, "repositoryName");
+        CheckArg.isNotNull(cacheProjection, "cacheProjection");
         this.name = repositoryName;
         this.problems = new ThreadSafeProblems();
         this.defaultCachePolicy = defaultCachePolicy;
@@ -75,7 +75,7 @@ public class FederatedRepositoryConfig implements Comparable<FederatedRepository
             }
         }
         this.sourceProjections = Collections.unmodifiableList(projectionList);
-        ArgCheck.isNotEmpty(this.sourceProjections, "sourceProjections");
+        CheckArg.isNotEmpty(this.sourceProjections, "sourceProjections");
     }
 
     /**

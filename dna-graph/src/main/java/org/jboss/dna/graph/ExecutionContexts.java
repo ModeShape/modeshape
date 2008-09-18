@@ -24,7 +24,7 @@ package org.jboss.dna.graph;
 import java.security.AccessControlContext;
 import javax.security.auth.Subject;
 import javax.security.auth.login.LoginContext;
-import org.jboss.dna.common.util.ArgCheck;
+import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.common.util.Logger;
 import org.jboss.dna.graph.properties.NameFactory;
 import org.jboss.dna.graph.properties.NamespaceRegistry;
@@ -51,8 +51,8 @@ public class ExecutionContexts {
      */
     public static ExecutionContext replace( ExecutionContext context,
                                             PathFactory pathFactory ) {
-        ArgCheck.isNotNull(context, "context");
-        ArgCheck.isNotNull(pathFactory, "pathFactory");
+        CheckArg.isNotNull(context, "context");
+        CheckArg.isNotNull(pathFactory, "pathFactory");
         return new DelegatingExecutionEnvironment(context, null, null, null, pathFactory);
     }
 
@@ -66,8 +66,8 @@ public class ExecutionContexts {
      */
     public static ExecutionContext replace( ExecutionContext context,
                                             NameFactory nameFactory ) {
-        ArgCheck.isNotNull(context, "context");
-        ArgCheck.isNotNull(nameFactory, "nameFactory");
+        CheckArg.isNotNull(context, "context");
+        CheckArg.isNotNull(nameFactory, "nameFactory");
         return new DelegatingExecutionEnvironment(context, null, null, nameFactory, null);
     }
 
@@ -83,9 +83,9 @@ public class ExecutionContexts {
     public static ExecutionContext replace( ExecutionContext context,
                                             NameFactory nameFactory,
                                             PathFactory pathFactory ) {
-        ArgCheck.isNotNull(context, "context");
-        ArgCheck.isNotNull(nameFactory, "nameFactory");
-        ArgCheck.isNotNull(pathFactory, "pathFactory");
+        CheckArg.isNotNull(context, "context");
+        CheckArg.isNotNull(nameFactory, "nameFactory");
+        CheckArg.isNotNull(pathFactory, "pathFactory");
         return new DelegatingExecutionEnvironment(context, null, null, nameFactory, pathFactory);
     }
 
@@ -99,8 +99,8 @@ public class ExecutionContexts {
      */
     public static ExecutionContext replace( ExecutionContext context,
                                             NamespaceRegistry namespaceRegistry ) {
-        ArgCheck.isNotNull(context, "context");
-        ArgCheck.isNotNull(namespaceRegistry, "namespaceRegistry");
+        CheckArg.isNotNull(context, "context");
+        CheckArg.isNotNull(namespaceRegistry, "namespaceRegistry");
         return new DelegatingExecutionEnvironment(context, namespaceRegistry, null, null, null);
     }
 

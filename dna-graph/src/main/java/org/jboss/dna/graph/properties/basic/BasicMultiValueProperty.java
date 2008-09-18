@@ -25,7 +25,7 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import net.jcip.annotations.Immutable;
-import org.jboss.dna.common.util.ArgCheck;
+import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.graph.properties.Name;
 
 /**
@@ -50,8 +50,8 @@ public class BasicMultiValueProperty extends BasicProperty {
     public BasicMultiValueProperty( Name name,
                                     List<Object> values ) {
         super(name);
-        ArgCheck.isNotNull(values, "values");
-        ArgCheck.hasSizeOfAtLeast(values, 2, "values");
+        CheckArg.isNotNull(values, "values");
+        CheckArg.hasSizeOfAtLeast(values, 2, "values");
         this.values = values;
     }
 
@@ -65,8 +65,8 @@ public class BasicMultiValueProperty extends BasicProperty {
     public BasicMultiValueProperty( Name name,
                                     Object... values ) {
         super(name);
-        ArgCheck.isNotNull(values, "values");
-        ArgCheck.hasSizeOfAtLeast(values, 2, "values");
+        CheckArg.isNotNull(values, "values");
+        CheckArg.hasSizeOfAtLeast(values, 2, "values");
         this.values = Arrays.asList(values);
     }
 

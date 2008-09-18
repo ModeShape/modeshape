@@ -42,7 +42,7 @@ import javax.naming.StringRefAddr;
 import javax.naming.spi.ObjectFactory;
 import net.jcip.annotations.GuardedBy;
 import org.jboss.dna.common.i18n.I18n;
-import org.jboss.dna.common.util.ArgCheck;
+import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.graph.cache.CachePolicy;
 import org.jboss.dna.graph.connectors.RepositoryConnection;
 import org.jboss.dna.graph.connectors.RepositoryContext;
@@ -176,7 +176,7 @@ public class InMemoryRepositorySource implements RepositorySource, ObjectFactory
      */
     public synchronized void setJndiName( String name,
                                           Context context ) throws NamingException {
-        ArgCheck.isNotNull(name, "name");
+        CheckArg.isNotNull(name, "name");
         if (context == null) context = new InitialContext();
 
         // First register in JNDI under the new name ...

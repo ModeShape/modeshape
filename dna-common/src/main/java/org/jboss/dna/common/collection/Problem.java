@@ -23,7 +23,7 @@ package org.jboss.dna.common.collection;
 
 import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.i18n.I18n;
-import org.jboss.dna.common.util.ArgCheck;
+import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.common.util.HashCode;
 
 /**
@@ -55,8 +55,8 @@ public class Problem {
                     String resource,
                     String location,
                     Throwable throwable ) {
-        ArgCheck.isNotNull(status, "status");
-        ArgCheck.isNotNull(message, "message");
+        CheckArg.isNotNull(status, "status");
+        CheckArg.isNotNull(message, "message");
         this.status = status;
         this.code = code;
         this.message = message;

@@ -25,7 +25,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.Callable;
-import org.jboss.dna.common.util.ArgCheck;
+import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.common.util.LogContext;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.connectors.RepositoryConnection;
@@ -55,7 +55,7 @@ public class RepositoryOperations {
     public static <T> T call( ExecutionContext context,
                               RepositoryConnectionPool pool,
                               RepositoryOperation<T> operation ) throws RepositorySourceException, InterruptedException {
-        ArgCheck.isNotNull(operation, "repository operation");
+        CheckArg.isNotNull(operation, "repository operation");
         // Get a connection ...
         T result = null;
         LogContext.set("context", operation.getName());
@@ -86,7 +86,7 @@ public class RepositoryOperations {
     public static <T> Callable<T> createCallable( final ExecutionContext context,
                                                   final RepositoryConnectionPool pool,
                                                   final RepositoryOperation<T> operation ) {
-        ArgCheck.isNotNull(operation, "repository operation");
+        CheckArg.isNotNull(operation, "repository operation");
         return new Callable<T>() {
 
             /**

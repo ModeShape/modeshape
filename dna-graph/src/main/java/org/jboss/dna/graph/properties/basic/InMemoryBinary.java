@@ -28,7 +28,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 import net.jcip.annotations.Immutable;
-import org.jboss.dna.common.util.ArgCheck;
+import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.common.util.Logger;
 import org.jboss.dna.graph.GraphI18n;
 import org.jboss.dna.graph.properties.Binary;
@@ -56,7 +56,7 @@ public class InMemoryBinary implements Binary {
     private byte[] sha1hash;
 
     public InMemoryBinary( byte[] bytes ) {
-        ArgCheck.isNotNull(bytes, "bytes");
+        CheckArg.isNotNull(bytes, "bytes");
         this.bytes = bytes;
     }
 

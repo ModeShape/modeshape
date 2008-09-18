@@ -45,7 +45,7 @@ import javax.jcr.nodetype.NodeType;
 import javax.jcr.version.Version;
 import javax.jcr.version.VersionHistory;
 import net.jcip.annotations.NotThreadSafe;
-import org.jboss.dna.common.util.ArgCheck;
+import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.graph.properties.Name;
 import org.jboss.dna.graph.properties.Path.Segment;
 
@@ -73,7 +73,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
      * @see javax.jcr.Item#accept(javax.jcr.ItemVisitor)
      */
     public final void accept( ItemVisitor visitor ) throws RepositoryException {
-        ArgCheck.isNotNull(visitor, "visitor");
+        CheckArg.isNotNull(visitor, "visitor");
         visitor.visit(this);
     }
 
@@ -165,7 +165,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
      * @see javax.jcr.Item#getAncestor(int)
      */
     public final Item getAncestor( int depth ) throws RepositoryException {
-        ArgCheck.isNonNegative(depth, "depth");
+        CheckArg.isNonNegative(depth, "depth");
         Node ancestor = this;
         while (--depth >= 0) {
             ancestor = ancestor.getParent();
@@ -234,7 +234,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
      * @see javax.jcr.Node#getNode(java.lang.String)
      */
     public final Node getNode( String relativePath ) throws RepositoryException {
-        ArgCheck.isNotEmpty(relativePath, "relativePath");
+        CheckArg.isNotEmpty(relativePath, "relativePath");
         Item item = getSession().getItem(getPath(getPath(), relativePath));
         if (item instanceof Node) {
             return (Node)item;
@@ -261,12 +261,12 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         // TODO: Implement after changing impl to delegate to Graph API
         throw new UnsupportedOperationException();
         /*
-        ArgCheck.isNotEmpty(namePattern, "namePattern");
+        CheckArg.isNotEmpty(namePattern, "namePattern");
         String[] disjuncts = namePattern.split("\\|");
         List<Segment> nodes = new ArrayList<Segment>();
         for (String disjunct : disjuncts) {
             String pattern = disjunct.trim();
-            ArgCheck.isNotEmpty(pattern, "namePattern");
+            CheckArg.isNotEmpty(pattern, "namePattern");
             String ndxPattern;
             int endNdx = pattern.length() - 1;
             if (pattern.charAt(endNdx) == ']') {
@@ -337,7 +337,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
      * @see javax.jcr.Node#getProperty(java.lang.String)
      */
     public final Property getProperty( String relativePath ) throws RepositoryException {
-        ArgCheck.isNotEmpty(relativePath, "relativePath");
+        CheckArg.isNotEmpty(relativePath, "relativePath");
         if (relativePath.indexOf('/') >= 0) {
             Item item = session.getItem(getPath(getPath(), relativePath));
             if (item instanceof Property) {
@@ -413,13 +413,13 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
      * @see javax.jcr.Node#hasNode(java.lang.String)
      */
     public final boolean hasNode( String relativePath ) throws RepositoryException {
-        ArgCheck.isNotEmpty(relativePath, "relativePath");
+        CheckArg.isNotEmpty(relativePath, "relativePath");
         if (relativePath.indexOf('/') >= 0) {
             return (getNode(relativePath) != null);
         }
         int ndxNdx = relativePath.indexOf('[');
         String name = (ndxNdx < 0 ? relativePath : relativePath.substring(0, ndxNdx));
-        ArgCheck.isNotEmpty(name, "relativePath");
+        CheckArg.isNotEmpty(name, "relativePath");
         int childNdx = 0;
         if (children != null) {
             for (Name child : children) {
@@ -461,7 +461,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
      * @see javax.jcr.Node#hasProperty(java.lang.String)
      */
     public final boolean hasProperty( String relativePath ) throws RepositoryException {
-        ArgCheck.isNotEmpty(relativePath, "relativePath");
+        CheckArg.isNotEmpty(relativePath, "relativePath");
         if (relativePath.indexOf('/') >= 0) {
             return (getProperty(relativePath) != null);
         }
@@ -532,7 +532,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
      */
     @Override
     public final boolean isSame( Item otherItem ) throws RepositoryException {
-        ArgCheck.isNotNull(otherItem, "otherItem");
+        CheckArg.isNotNull(otherItem, "otherItem");
         if (super.isSame(otherItem) && otherItem instanceof Node) {
             if (otherItem instanceof AbstractJcrNode) {
                 return getInternalUuid().equals(((AbstractJcrNode)otherItem).getInternalUuid());

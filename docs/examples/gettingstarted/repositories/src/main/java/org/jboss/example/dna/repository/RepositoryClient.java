@@ -40,7 +40,7 @@ import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.component.ClassLoaderFactory;
 import org.jboss.dna.common.component.StandardClassLoaderFactory;
 import org.jboss.dna.common.text.NoOpEncoder;
-import org.jboss.dna.common.util.ArgCheck;
+import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.connector.inmemory.InMemoryRepositorySource;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.ExecutionContextFactory;
@@ -370,7 +370,7 @@ public class RepositoryClient {
         private final LoginContext context;
 
         public JaasCredentials( LoginContext context ) {
-            ArgCheck.isNotNull(context, "context");
+            CheckArg.isNotNull(context, "context");
             this.context = context;
         }
 

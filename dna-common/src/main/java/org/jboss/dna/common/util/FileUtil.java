@@ -71,7 +71,7 @@ public class FileUtil {
      * @throws IllegalArgumentException if the file path is null, empty or blank
      */
     public static URL convertFileToURL( String filePath ) throws MalformedURLException {
-        ArgCheck.isNotEmpty(filePath, "filePath");
+        CheckArg.isNotEmpty(filePath, "filePath");
         File file = new File(filePath.trim());
         return file.toURI().toURL();
     }

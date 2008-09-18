@@ -45,7 +45,7 @@ import javax.security.auth.Subject;
 import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
 import net.jcip.annotations.NotThreadSafe;
-import org.jboss.dna.common.util.ArgCheck;
+import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.common.util.StringUtil;
 import org.jboss.dna.graph.DnaLexicon;
 import org.jboss.dna.graph.ExecutionContext;
@@ -115,8 +115,8 @@ class JcrSession implements Session {
      */
     public void checkPermission( String path,
                                  String actions ) {
-        ArgCheck.isNotEmpty(path, "path");
-        ArgCheck.isNotEmpty(actions, "actions");
+        CheckArg.isNotEmpty(path, "path");
+        CheckArg.isNotEmpty(actions, "actions");
         if (!"read".equals(actions)) {
             throw new AccessControlException(JcrI18n.permissionDenied.text(path, actions));
         }
@@ -226,7 +226,7 @@ class JcrSession implements Session {
      * @see javax.jcr.Session#getItem(java.lang.String)
      */
     public Item getItem( String absolutePath ) throws RepositoryException {
-        ArgCheck.isNotEmpty(absolutePath, "absolutePath");
+        CheckArg.isNotEmpty(absolutePath, "absolutePath");
         // Return root node if path is "/"
         Path path = executionContext.getValueFactories().getPathFactory().create(absolutePath);
         if (path.isRoot()) {

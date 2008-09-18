@@ -35,7 +35,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.text.TextEncoder;
-import org.jboss.dna.common.util.ArgCheck;
+import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.common.util.HashCode;
 import org.jboss.dna.common.util.Logger;
 import org.jboss.dna.graph.ExecutionContext;
@@ -106,9 +106,9 @@ public class Projection implements Comparable<Projection>, Serializable {
     public static void addRuleParser( ClassLoader classLoader,
                                       String className,
                                       String methodName ) throws SecurityException, NoSuchMethodException, ClassNotFoundException {
-        ArgCheck.isNotNull(classLoader, "classLoader");
-        ArgCheck.isNotEmpty(className, "className");
-        ArgCheck.isNotEmpty(methodName, "methodName");
+        CheckArg.isNotNull(classLoader, "classLoader");
+        CheckArg.isNotEmpty(className, "className");
+        CheckArg.isNotEmpty(methodName, "methodName");
         Class<?> clazz = Class.forName(className, true, classLoader);
         parserMethods.add(clazz.getMethod(className, String.class, ExecutionContext.class));
     }
@@ -134,8 +134,8 @@ public class Projection implements Comparable<Projection>, Serializable {
      */
     public static boolean removeRuleParser( String declaringClassName,
                                             String methodName ) {
-        ArgCheck.isNotEmpty(declaringClassName, "declaringClassName");
-        ArgCheck.isNotEmpty(methodName, "methodName");
+        CheckArg.isNotEmpty(declaringClassName, "declaringClassName");
+        CheckArg.isNotEmpty(methodName, "methodName");
         for (Method method : parserMethods) {
             if (method.getName().equals(methodName) && method.getDeclaringClass().getName().equals(declaringClassName)) {
                 return parserMethods.remove(method);
@@ -153,7 +153,7 @@ public class Projection implements Comparable<Projection>, Serializable {
      */
     public static Rule fromString( String definition,
                                    ExecutionContext context ) {
-        ArgCheck.isNotNull(context, "env");
+        CheckArg.isNotNull(context, "env");
         definition = definition != null ? definition.trim() : "";
         if (definition.length() == 0) return null;
         for (Method method : parserMethods) {
@@ -243,15 +243,15 @@ public class Projection implements Comparable<Projection>, Serializable {
      */
     public Projection( String sourceName,
                        Rule... rules ) {
-        ArgCheck.isNotEmpty(sourceName, "sourceName");
-        ArgCheck.isNotEmpty(rules, "rules");
+        CheckArg.isNotEmpty(sourceName, "sourceName");
+        CheckArg.isNotEmpty(rules, "rules");
         this.sourceName = sourceName;
         List<Rule> rulesList = new ArrayList<Rule>();
         for (Rule rule : rules) {
             if (rule != null) rulesList.add(rule);
         }
         this.rules = Collections.unmodifiableList(rulesList);
-        ArgCheck.isNotEmpty(this.rules, "rules");
+        CheckArg.isNotEmpty(this.rules, "rules");
         this.simple = computeSimpleProjection(this.rules);
     }
 
@@ -286,7 +286,7 @@ public class Projection implements Comparable<Projection>, Serializable {
      */
     public Set<Path> getPathsInSource( Path canonicalPathInRepository,
                                        PathFactory factory ) {
-        ArgCheck.isNotNull(factory, "factory");
+        CheckArg.isNotNull(factory, "factory");
         assert canonicalPathInRepository == null ? true : canonicalPathInRepository.equals(canonicalPathInRepository.getCanonicalPath());
         Set<Path> paths = new HashSet<Path>();
         for (Rule rule : getRules()) {
@@ -308,7 +308,7 @@ public class Projection implements Comparable<Projection>, Serializable {
      */
     public Set<Path> getPathsInRepository( Path canonicalPathInSource,
                                            PathFactory factory ) {
-        ArgCheck.isNotNull(factory, "factory");
+        CheckArg.isNotNull(factory, "factory");
         assert canonicalPathInSource == null ? true : canonicalPathInSource.equals(canonicalPathInSource.getCanonicalPath());
         Set<Path> paths = new HashSet<Path>();
         for (Rule rule : getRules()) {
@@ -325,7 +325,7 @@ public class Projection implements Comparable<Projection>, Serializable {
      * @return the list of top-level paths, in the proper order and containing no duplicates; never null
      */
     public List<Path> getTopLevelPathsInRepository( PathFactory factory ) {
-        ArgCheck.isNotNull(factory, "factory");
+        CheckArg.isNotNull(factory, "factory");
         List<Rule> rules = getRules();
         Set<Path> uniquePaths = new HashSet<Path>();
         List<Path> paths = new ArrayList<Path>(rules.size());

@@ -28,7 +28,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import net.jcip.annotations.ThreadSafe;
-import org.jboss.dna.common.util.ArgCheck;
+import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.connector.federation.executor.FederatingCommandExecutor;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.commands.executor.CommandExecutor;
@@ -66,9 +66,9 @@ public class FederatedRepository {
     public FederatedRepository( ExecutionContext context,
                                 RepositoryConnectionFactory connectionFactory,
                                 FederatedRepositoryConfig config ) {
-        ArgCheck.isNotNull(connectionFactory, "connectionFactory");
-        ArgCheck.isNotNull(context, "context");
-        ArgCheck.isNotNull(config, "config");
+        CheckArg.isNotNull(connectionFactory, "connectionFactory");
+        CheckArg.isNotNull(context, "context");
+        CheckArg.isNotNull(config, "config");
         this.context = context;
         this.connectionFactory = connectionFactory;
         this.config = config;
@@ -216,7 +216,7 @@ public class FederatedRepository {
      * @throws IllegalArgumentException if the configuration is null
      */
     public void setConfiguration( FederatedRepositoryConfig config ) {
-        ArgCheck.isNotNull(config, "config");
+        CheckArg.isNotNull(config, "config");
         this.config = config;
     }
 

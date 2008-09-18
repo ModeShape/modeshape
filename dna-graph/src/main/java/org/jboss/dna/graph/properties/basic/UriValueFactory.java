@@ -31,7 +31,7 @@ import java.util.Date;
 import java.util.UUID;
 import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.text.TextDecoder;
-import org.jboss.dna.common.util.ArgCheck;
+import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.graph.GraphI18n;
 import org.jboss.dna.graph.properties.Binary;
 import org.jboss.dna.graph.properties.DateTime;
@@ -59,7 +59,7 @@ public class UriValueFactory extends AbstractValueFactory<URI> {
                             TextDecoder decoder,
                             ValueFactory<String> stringValueFactory ) {
         super(PropertyType.URI, decoder, stringValueFactory);
-        ArgCheck.isNotNull(namespaceRegistry, "namespaceRegistry");
+        CheckArg.isNotNull(namespaceRegistry, "namespaceRegistry");
         this.namespaceRegistry = namespaceRegistry;
     }
 
