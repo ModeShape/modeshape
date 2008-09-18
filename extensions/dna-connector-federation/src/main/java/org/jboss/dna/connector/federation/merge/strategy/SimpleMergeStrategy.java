@@ -100,7 +100,7 @@ public class SimpleMergeStrategy implements MergeStrategy {
                 Iterator<Segment> childIterator = contribution.getChildren();
                 while (childIterator.hasNext()) {
                     Segment child = childIterator.next();
-                    if (!childNames.containsKey(child)) {
+                    if (!childNames.containsKey(child.getName())) {
                         childNames.put(child.getName(), 1);
                         children.add(pathFactory.createSegment(child.getName()));
                     }

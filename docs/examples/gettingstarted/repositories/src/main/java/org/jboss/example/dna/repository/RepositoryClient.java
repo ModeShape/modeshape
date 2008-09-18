@@ -24,8 +24,10 @@ package org.jboss.example.dna.repository;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import javax.jcr.Credentials;
 import javax.jcr.Node;
@@ -270,6 +272,7 @@ public class RepositoryClient {
                         for (PropertyIterator iter = node.getProperties(); iter.hasNext();) {
                             javax.jcr.Property property = iter.nextProperty();
                             Object[] values = null;
+                            // Must call either 'getValue()' or 'getValues()' depending upon # of values
                             if (property.getDefinition().isMultiple()) {
                                 Value[] jcrValues = property.getValues();
                                 values = new String[jcrValues.length];
@@ -283,9 +286,17 @@ public class RepositoryClient {
                         }
                     }
                     if (children != null) {
+                        // Figure out which children need same-name sibling indexes ...
+                        Set<String> sameNameSiblings = new HashSet<String>();
                         for (NodeIterator iter = node.getNodes(); iter.hasNext();) {
                             javax.jcr.Node child = iter.nextNode();
-                            children.add(child.getName());
+                            if (child.getIndex() > 1) sameNameSiblings.add(child.getName());
+                        }
+                        for (NodeIterator iter = node.getNodes(); iter.hasNext();) {
+                            javax.jcr.Node child = iter.nextNode();
+                            String name = child.getName();
+                            if (sameNameSiblings.contains(name)) name = name + "[" + child.getIndex() + "]";
+                            children.add(name);
                         }
                     }
                 } catch (javax.jcr.PathNotFoundException e) {
