@@ -176,6 +176,11 @@ $ ]]></programlisting>
 			      </para>
 				</listitem>
 				<listitem>
+					<para><emphasis role="strong"><code>project1</code></emphasis> subdirectory contains some Java source that can be loaded
+					  into the repository.
+				  </para>
+				</listitem>
+				<listitem>
 					<para><emphasis role="strong"><code>lib</code></emphasis> subdirectory contains the JARs for all of the JBoss DNA artifacts 
 					  as well as those for other libraries required by JBoss DNA and the sequencer example.
 			      </para>
@@ -197,9 +202,23 @@ $ ]]></programlisting>
 					<para><emphasis role="strong"><code>run.sh</code></emphasis> is the *nix shell script that will run the repository example application.</para>
 				</listitem>
 				<listitem>
-					<para><emphasis role="strong"><code>log4j.properties</code></emphasis>
-			        is the Log4J configuration file.
-			      </para>
+					<para><emphasis role="strong"><code>log4j.properties</code></emphasis> is the Log4J configuration file.</para>
+				</listitem>
+				<listitem>
+					<para><emphasis role="strong"><code>aircraft.xml</code></emphasis> is an XML file containing the information that the
+					  example application imports into its "Aircraft" repository.
+					</para>
+				</listitem>
+				<listitem>
+					<para><emphasis role="strong"><code>cars.xml</code></emphasis> is an XML file containing the information that the
+					  example application imports into its "Cars" repository.
+					</para>
+				</listitem>
+				<listitem>
+					<para><emphasis role="strong"><code>configRepository.xml</code></emphasis> is an XML file containing the information that the
+					  example application imports into its "Configuration" repository and which defines how the application sets up access
+					  to the other example repositories.
+					</para>
 				</listitem>
 				<listitem>
 					<para><emphasis role="strong"><code>lib</code></emphasis> subdirectory contains the JARs for all of the JBoss DNA artifacts
@@ -236,7 +255,7 @@ $ ]]></programlisting>
 				<graphic align="center" scale="100" fileref="example-sequencer-upload.png"/>
 			</figure>
       You can specify any fully-qualified or relative path. The application will notify you if it cannot find the file you
-      specified. The example client configures JBoss DNA to sequence and MP3 audio files and image files with one of
+      specified. The example client configures JBoss DNA to sequence MP3 audio files, Java source files, or image files with one of
       the following extensions (technically, nodes that have names ending in the following):
       <code>jpg</code>, <code>jpeg</code>, <code>gif</code>, <code>bmp</code>, <code>pcx</code>, <code>png</code>,
       <code>iff</code>, <code>ras</code>, <code>pbm</code>, <code>pgm</code>, <code>ppm</code>, and <code>psd</code>.
@@ -266,8 +285,9 @@ $ ]]></programlisting>
     	any of them are interested in the new or updated content, and if so runs those sequencers. The image sequencer processes image
     	files for metadata, and any metadata found is stored under the <code>/images</code> branch of the repository. The MP3 sequencer 
 			processes MP3 audio files for metadata, and any metadata found is stored under the <code>/mp3s</code>
-    	branch of the repository.  All of this happens asynchronously, so any DNA activity doesn't impede or slow down the client
-    	activities.</para>
+    	branch of the repository.  And metadata about Java classes are stored under the <code>/java</code> area of the repository.
+      All of this happens asynchronously, so any DNA activity doesn't impede or slow down the client activities.
+    </para>
 		<para>So, after the file is uploaded, you can search the repository for the image metadata using the "s" menu option:
     	<figure id="example-sequencer-search">
 				<title>Searching for media using the example client</title>
@@ -295,14 +315,29 @@ $ ]]></programlisting>
 	</sect1>
 	<sect1 id="running_repository_example">
 		<title>Running the repository example</title>
-		<para>The repository example consists of a client application that sets up several DNA repositories, including one that 
-			is a federation of several of the others, and then allows you to navigate those repositories.</para>
+		<para>The repository example consists of a client application that sets up three DNA repositories (named "Cars", "Airplanes", and 
+			"Configuration") as well as a federated repository ("Vehicles") that dynamically federates the information from the three other 
+			repositories and a cache repository (named "Cache") in which the federated content is stored.  
+			The client application allows you to interactively navigate each of these repositories just as you would navigate the
+			directory structure on a file system.</para>
+		<para>This collection of repositories is shown in the following figure:
+	  	<figure id="example-repositories">
+				<title>Repositories used in the example client</title>
+				<graphic align="center" scale="100" fileref="example-repositories.png"/>
+			</figure>
+			Most of the repositories are in-memory repositories (using the In-Memory repository connector), but the federated "Vehicles" repository
+			content is federated from the other repositories and cached into the "Cache" repository.  This is shown in the following figure: 
+	  	<figure id="example-federated-repository">
+				<title>Vehicles repository content is federated from the Cars, Airplanes and Configuration repositories</title>
+				<graphic align="center" scale="100" fileref="example-federated-repository.png"/>
+			</figure>
+	  </para>
 		<para>
-      To run the client application, go to the <code>examples/repository/target/dna-example-repository-basic.dir/</code>
+      To run the client application, go to the <code>examples/repository/target/dna-example-repositories-basic.dir/</code>
       directory and type <code>./run.sh</code>. You should see the command-line client and its menus in your terminal:
-      <figure id="example-repository-client">
+      <figure id="example-repositories-client">
 				<title>Example Client</title>
-				<graphic align="center" scale="100" fileref="example-repository-client.png"/>
+				<graphic align="center" scale="100" fileref="example-repositories-client.png"/>
 			</figure>
       From this menu, you can see the list of repositories, select one, and navigate through that repository in a manner similar
       to a *nix command-line shell (although the client itself uses the JCR API to interact with the repositories).
@@ -328,18 +363,31 @@ $ ]]></programlisting>
 					</tbody>
 				</tgroup>
 			</table>
+			<para>If you were to select the "Cars" repository and use some of the commands, you should see something similar to: 
+	      <figure id="example-repositories-navigating">
+					<title>Navigating the Cars repository</title>
+					<graphic align="center" scale="100" fileref="example-repositories-navigating.png"/>
+				</figure>
+			</para>
+			<para>You can also choose to navigate the "Vehicles" repository, which projects the "Cars" repository content under the
+				<code>/Vehicles/Cars</code> node, the "Airplanes" content under the <code>/Vehicles/Airplanes</code> branch,
+				and the "Configuration" content under <code>/dna:system</code>.
+			</para>
 			<para>Try using the client to walk the different repositories.  And while this is a contrived application, it does demonstrate
 				the use of JBoss DNA to federate repositories and provide access through JCR.</para>
   </sect1>
 	<sect1 id="downloading_and_running_review">
 		<title>Summarizing what we just did</title>
-		<para>In this chapter you downloaded, installed, and built the example applications.  With the sequencer client, you could upload files into a
+		<para>In this chapter you downloaded, installed, and built the two example applicationss.  With the sequencer client, you could upload files into a
     	JCR repository, while JBoss DNA automatically sequenced the image, MP3, or Java source files you uploaded, extracted the metadata from the
     	files, and stored that metadata inside the repository.  The repository client allowed you to walk through multiple repositories,
       including one whose content was federated from multiple other repositories.</para>
 		<para>These example applications were very simplistic.  In fact, running through the examples probably only took you a few minutes.
     	So while these applications won't win any awards, they hopefully showed you the basics of what JBoss DNA can do.</para>
-		<para>In the <link linkend="using_dna">next chapter</link> we'll venture into the code to get an understanding
-   		of how JBoss DNA actually works and how you can use it in your own applications.</para>
+		<para>In the next two chapters, we'll venture into the code to get an understanding	of how JBoss DNA actually works.  
+			The <link linkend="using_dna_for_sequencing">next chapter</link> reviews the sequencer application and talks about 
+			how you can use DNA sequencers in your own applications.  Then in the <link linkend="using_dna_repositories">following chapter</link>
+			we'll venture into the repositories example code to show how you can use DNA repositories, including federated repositories,
+			in your own applications.</para>
 	</sect1>
 </chapter>

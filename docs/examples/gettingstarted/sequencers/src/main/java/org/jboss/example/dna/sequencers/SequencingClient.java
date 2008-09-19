@@ -259,7 +259,7 @@ public class SequencingClient {
             name = "Java Sequencer";
             desc = "Sequences java files to extract the characteristics of the java sources";
             classname = "org.jboss.dna.sequencer.java.JavaMetadataSequencer";
-            String[] javaPathExpressions = {"//(*.java[*])/jcr:content[@jcr:data] => /compilationUnits/$1"};
+            String[] javaPathExpressions = {"//(*.java[*])/jcr:content[@jcr:data] => /java/$1"};
             SequencerConfig javaSequencerConfig = new SequencerConfig(name, desc, classname, classpath, javaPathExpressions);
             this.sequencingService.addSequencer(javaSequencerConfig);
 
@@ -369,12 +369,12 @@ public class SequencingClient {
                     }
                 }
 
-            } else if (root.hasNode("compilationUnits")) {
+            } else if (root.hasNode("java")) {
                 Map<String, List<Properties>> tree = new TreeMap<String, List<Properties>>();
                 // Find the compilation unit node ...
                 List<Properties> javaElements;
-                if (root.hasNode("compilationUnits")) {
-                    Node javaSourcesNode = root.getNode("compilationUnits");
+                if (root.hasNode("java")) {
+                    Node javaSourcesNode = root.getNode("java");
                     for (NodeIterator i = javaSourcesNode.getNodes(); i.hasNext();) {
 
                         Node javaSourceNode = i.nextNode();

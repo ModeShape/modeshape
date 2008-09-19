@@ -138,7 +138,7 @@ public class RepositoryClient {
         contextFactory = new BasicExecutionContextFactory();
 
         // Create the execution context that we'll use for the services. If we'd want to use JAAS, we'd create the context
-        // by supply LoginContext, AccessControlContext, or even Subject with CallbackHandlers. But no JAAS in this example.
+        // by supplying LoginContext, AccessControlContext, or even Subject with CallbackHandlers. But no JAAS in this example.
         context = contextFactory.create();
 
         // Create the library for the RepositorySource instances ...
