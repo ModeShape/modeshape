@@ -38,6 +38,7 @@ import java.util.Map.Entry;
 import org.jboss.dna.common.CommonI18n;
 import org.jboss.dna.common.SystemFailureException;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 /**
@@ -45,6 +46,11 @@ import org.junit.Test;
  * @author Randall Hauch
  */
 public final class I18nTest {
+
+    @BeforeClass
+    public static void beforeClass() {
+        Locale.setDefault(Locale.US);
+    }
 
     @Before
     public void beforeEach() throws Exception {
