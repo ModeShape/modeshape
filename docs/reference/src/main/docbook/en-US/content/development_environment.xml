@@ -26,6 +26,269 @@
 <chapter id="development-environment">
   <title>Developer environment and tooling</title>
   <para>
-    Discuss our use of Maven, Eclipse, coding styles/preferences, SVN, Hudson, etc.
+		The JBoss DNA project uses <link linkend="maven">Maven</link> as its primary build tool, <link linkend="svn">Subversion</link>
+		for its source code repository, <link linkend="jira">JIRA</link> for the issue management and bug tracking system,
+		and <link linkend="hudson">Hudson</link> for the continuous integration system.  We do not stipulate a specific integrated
+		development environment (IDE), although most of us use <link linkend="eclipse">Eclipse</link> and rely upon the code formatting
+		and compile preferences to ensure no warnings or errors.
   </para>
+	<para>
+		The rest of this chapter talks in more detail about these different tools and how to set them up.
+	</para>
+	<sect1 id="jdk">
+		<title>JDK</title>
+		<para>
+			Currently, JBoss DNA is developed and built using <ulink url="http://java.sun.com/javase/downloads/index_jdk5.jsp">JDK 5</ulink>,
+			so if you're a contributor, you should have that installed and should use it before committing any changes.  Note that you
+			should be able to use the <ulink url="http://java.sun.com/javase/downloads/index.jsp">latest JDK</ulink> (which is currently
+			JDK 6). 
+		</para>
+		<para>
+			Why do we build using JDK 5 and not 6? The main reason is that if we were to use JDK 6, then JBoss DNA couldn't really be used in any
+			applications or projects that still used JDK 5.  Plus, anybody using JDK 6 can still use JBoss DNA.
+			However, considering that the end-of-life for Java 5 is 
+			<ulink url="http://java.sun.com/products/archive/eol.policy.html">October 2009</ulink>, we may be switching to 
+			Java 6 in the coming months.
+		</para>
+		<para>
+			When installing, simply follow the procedure for your particular platform.  On most platforms, this should set the
+			<code>JAVA_HOME</code> environment variable.  But if you run into any problems, first check that this environment
+			variable was set to the correct location, and then check that you're running the version you expect by running
+			the following command:
+		</para>
+		<programlisting role="XML"><![CDATA[ java -version ]]></programlisting>
+		<para>
+			If you don't see the correct version, double-check your installation.
+		</para>
+	</sect1>
+	<sect1 id="svn">
+		<title>Subversion</title>
+		<para>JBoss DNA uses Subversion as its source code management system, and specifically the instance at 
+			<ulink url="http://www.jboss.org">JBoss.org</ulink>.  Although you can view the
+			<ulink url="http://anonsvn.jboss.org/repos/dna/trunk/">trunk</ulink> of the Subversion repository
+			(or using <ulink url="http://fisheye.jboss.org/browse/DNA/trunk">FishEye</ulink>) through your browser,
+			it order to get more than just a few files of the latest version of the source code, you probably want
+		 	to have an SVN client installed.  Several IDE's have SVN support included (or available as plugins),
+			but having the command-line SVN client is recommended.  See 
+			<ulink url="http://subversion.tigris.org/">http://subversion.tigris.org/</ulink> for downloads and instructions for your
+			particular platform.
+		</para>
+		<para>
+			Here are some useful URLs for the JBoss DNA Subversion:
+		</para>
+		<table frame='all'>
+			<title>SVN URLs for JBoss DNA</title>
+			<tgroup cols='2' align='left' colsep='1' rowsep='1'>
+	      <colspec colname='c1' colwidth="1*"/>
+	      <colspec colname='c2' colwidth="1*"/>
+				<thead>
+					<row>
+			  		<entry>Repository</entry>
+			  		<entry>URL</entry>
+					</row>
+				</thead>
+				<tbody>
+					<row>
+						<entry>Anonymous Access URL</entry>
+						<entry><ulink url="http://anonsvn.jboss.org/repos/dna/trunk">http://anonsvn.jboss.org/repos/dna/trunk</ulink></entry>
+					</row>
+					<row>
+						<entry>Secure Developer Access URL</entry>
+						<entry><ulink url="https://svn.jboss.org/repos/dna/trunk/">https://svn.jboss.org/repos/dna/trunk/</ulink></entry>
+					</row>
+					<row>
+						<entry>FishEye Code Browser</entry>
+						<entry><ulink url="http://fisheye.jboss.org/browse/DNA/trunk">http://fisheye.jboss.org/browse/DNA/trunk</ulink></entry>
+					</row>
+				</tbody>
+			</tgroup>
+		</table>
+	</sect1>
+	<sect1 id="maven">
+		<title>Maven</title>
+		<para>JBoss DNA uses Maven 2 for its build system, as is this example. Using Maven 2 has several advantages, including
+	    the ability to manage dependencies. If a library is needed, Maven automatically finds and downloads that library, plus
+	    everything that library needs. This means that it's very easy to build the examples - or even create a maven project that
+	    depends on the JBoss DNA JARs.</para>
+		<para>
+      To use Maven with JBoss DNA, you'll need to have <link linkend="jdk">JDK 5 or 6</link> and Maven 2.0.9 (or higher).</para>
+		<para>
+      Maven can be downloaded from <ulink url="http://maven.apache.org/">http://maven.apache.org/</ulink>, and is installed by unzipping the
+      <code>maven-2.0.7-bin.zip</code> file to a convenient location on your local disk. Simply add <code>$MAVEN_HOME/bin</code>
+      to your path and add the following profile to your <code>~/.m2/settings.xml</code> file:
+		</para>
+		<programlisting role="XML"><![CDATA[
+<settings>
+  <profiles>
+    <profile>
+      <id>jboss.repository</id>
+      <activation>
+        <property>
+          <name>!jboss.repository.off</name>
+        </property>
+      </activation>
+      <repositories>
+        <repository>
+          <id>snapshots.jboss.org</id>
+          <url>http://snapshots.jboss.org/maven2</url>
+          <snapshots>
+            <enabled>true</enabled>
+          </snapshots>
+        </repository>
+        <repository>
+          <id>repository.jboss.org</id>
+          <url>http://repository.jboss.org/maven2</url>
+          <snapshots>
+            <enabled>false</enabled>
+          </snapshots>
+        </repository>
+      </repositories>
+      <pluginRepositories>
+        <pluginRepository>
+          <id>repository.jboss.org</id>
+          <url>http://repository.jboss.org/maven2</url>
+          <snapshots>
+            <enabled>false</enabled>
+          </snapshots>
+        </pluginRepository>
+        <pluginRepository>
+          <id>snapshots.jboss.org</id>
+          <url>http://snapshots.jboss.org/maven2</url>
+          <snapshots>
+            <enabled>true</enabled>
+          </snapshots>
+        </pluginRepository>
+      </pluginRepositories>
+    </profile>
+  </profiles>
+</settings>
+]]></programlisting>
+		<para>This profile informs Maven of the two JBoss repositories (<ulink url="http://repository.jboss.org/maven2">snapshots</ulink> 
+		  and <ulink url="http://snapshots.jboss.org/maven2">releases</ulink>) that contain all of the JARs for JBoss DNA and all dependent libraries.
+		</para>
+		<note>
+			<para>
+		    It is a policy of the project that the <emphasis>source code and JARs</emphasis> for <emphasis>all</emphasis> dependencies 
+		    <emphasis>must</emphasis> be loaded into the JBoss repository.  This is so that the project can always be built
+				and that all source code is always available.
+			</para>
+			<para>
+				For more information about the JBoss Maven repository, see the <ulink url="http://wiki.jboss.org/wiki/Maven">JBoss.org Wiki</ulink>.
+			</para>
+		</note>
+		<para>
+			There are just a few commands that are useful for building JBoss DNA (and it's <link linkend="modules">subprojects</link>).
+			Usually, these are issued while at the top level of the code (usually just below <code>trunk/</code>), although issuing
+			them inside a subproject just applies to that subproject.
+		</para>
+		<table frame='all'>
+			<title>Useful Maven commands</title>
+			<tgroup cols='2' align='left' colsep='1' rowsep='1'>
+	      <colspec colname='c1' colwidth="1*"/>
+	      <colspec colname='c2' colwidth="1*"/>
+				<thead>
+					<row>
+			  		<entry>Command</entry>
+			  		<entry>Description</entry>
+					</row>
+				</thead>
+				<tbody>
+					<row>
+						<entry><code>mvn clean</code></entry>
+						<entry>Clean up all built artifacts (e.g., the <code>target/</code> directory in each project)</entry>
+					</row>
+					<row>
+						<entry><code>mvn clean install</code></entry>
+						<entry>Clean up all built artifacts, then compile, run the unit tests, and install the resulting JAR artifact(s)
+							into your local Maven repository (e.g, usually <code>~/.m2/repository</code>).
+						</entry>
+					</row>
+				</tbody>
+			</tgroup>
+		</table>
+	</sect1>
+	<sect1 id="hudson">
+		<title>Continuous integration with Hudson</title>
+		<para>JBoss DNA's continuous integration is done with several Hudson jobs on <ulink url="http://www.jboss.org">JBoss.org</ulink>.
+		  These jobs run periodically and basically run the Maven build process.  Any build failures or test failures are reported,
+		  as are basic statistics and history for each job.
+		</para>
+		<table frame='all'>
+			<title>Continuous integration jobs</title>
+			<tgroup cols='2' align='left' colsep='1' rowsep='1'>
+	      <colspec colname='c1' colwidth="1*"/>
+	      <colspec colname='c2' colwidth="1*"/>
+				<thead>
+					<row>
+			  		<entry>Job</entry>
+			  		<entry>Description</entry>
+					</row>
+				</thead>
+				<tbody>
+					<row>
+						<entry><ulink url="http://hudson.jboss.org/hudson/job/DNA%20continuous%20on%20JDK1.5/">Continuous on JDK 5</ulink></entry>
+						<entry>Continuous build that runs after changes are committed to SVN.  SVN is polled every 15 minutes.</entry>
+					</row>
+					<row>
+						<entry><ulink url="http://hudson.jboss.org/hudson/job/DNA%20nightly%20integration%20on%20JDK1.5/">Nightly on JDK 5</ulink></entry>
+						<entry>Build that runs every night (about 2 a.m. EDT), regardless of whether changes have been committed to SVN
+							since the previous night.</entry>
+					</row>
+				</tbody>
+			</tgroup>
+		</table>
+	</sect1>
+	<sect1 id="eclipse">
+		<title>Eclipse IDE</title>
+		<para>Many of the JBoss DNA committers use the Eclipse IDE, and all project files required by Eclipse are committed in SVN, making
+			it pretty easy to get an Eclipse workspace running with all of the JBoss DNA projects.
+			Many of the JBoss DNA committers use the Eclipse IDE, and all project files required by Eclipse are committed in SVN, making
+			it pretty easy to get an Eclipse workspace running with all of the JBoss DNA projects.
+		</para>
+		<para>We're using the latest released version of Eclipse (3.4, called "Ganymede"), 
+			available from <ulink url="http://www.eclipse.org/">Eclipse.org</ulink>.  Simply follow the instructions for your platform.
+		</para>
+		<para>
+			After Eclipse is installed, create a new workspace.  Before importing the JBoss DNA projects, import (via "File->Import->Preferences")
+			the subset of the	Eclipse preferences by importing the <code>eclipse-preferences.epf</code> file (located under <code>trunk</code>).
+			Then, open the Eclipse preferences and open the "Java->Code Style-> Formatter" preference page, and press the "Import" button and
+			choose the <code>eclipse-code-formatter-profile.xml</code> file (located under <code>trunk</code>).  This will load the code
+			formatting preferences for the JBoss DNA project.
+		</para>
+		<para>
+			Then install Eclipse plugins for SVN and Maven.  (Remember, you will have to restart Eclipse after installing them.)
+			We use the following plugins:
+		</para>
+		<table frame='all'>
+			<title>Continuous integration jobs</title>
+			<tgroup cols='2' align='left' colsep='1' rowsep='1'>
+	      <colspec colname='c1' colwidth="1*"/>
+	      <colspec colname='c2' colwidth="1*"/>
+				<thead>
+					<row>
+			  		<entry>Eclipse Plugin Site</entry>
+						<entry>Update Site URL</entry>
+					</row>
+				</thead>
+				<tbody>
+					<row>
+						<entry>Subversive SVN Client</entry>
+						<entry>
+							<ulink url="http://www.polarion.org/projects/subversive/download/eclipse/2.0/update-site/">http://www.polarion.org/projects/subversive/download/eclipse/2.0/update-site/</ulink>
+						  <ulink url="http://www.polarion.org/projects/subversive/download/integrations/update-site/">http://www.polarion.org/projects/subversive/download/integrations/update-site/</ulink>
+						</entry>
+					</row>
+					<row>
+						<entry>Maven Integration for Eclipse</entry>
+						<entry><ulink url="http://m2eclipse.sonatype.org/update/">http://m2eclipse.sonatype.org/update/</ulink></entry>
+					</row>
+				</tbody>
+			</tgroup>
+		</table>
+		<para>
+			After you check out the JBoss DNA codebase, you can import the JBoss DNA Maven projects into Eclipse as Eclipse projects.
+			To do this, go to "File->Import->Existing Projects", navigate to the <code>trunk/</code> folder in the import wizard,
+			and then check each of the <link linkend="modules">subprojects</link> that you want to have in your workspace.
+		</para>
+	</sect1>
 </chapter>
