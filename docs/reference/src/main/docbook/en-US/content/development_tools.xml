@@ -22,9 +22,12 @@
   ~ 51 Franklin Street, Fifth Floor
   ~ Boston, MA  02110-1301  USA
   -->
-<!DOCTYPE preface PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd">
-<chapter id="development-environment">
-  <title>Developer environment and tooling</title>
+<!DOCTYPE preface PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd"	[
+<!ENTITY % CustomDTD SYSTEM "../custom.dtd">
+%CustomDTD;
+]>
+<chapter id="development-tools">
+  <title>Developer tools</title>
   <para>
 		The JBoss DNA project uses <link linkend="maven">Maven</link> as its primary build tool, <link linkend="svn">Subversion</link>
 		for its source code repository, <link linkend="jira">JIRA</link> for the issue management and bug tracking system,
@@ -65,8 +68,8 @@
 		<title>Subversion</title>
 		<para>JBoss DNA uses Subversion as its source code management system, and specifically the instance at 
 			<ulink url="http://www.jboss.org">JBoss.org</ulink>.  Although you can view the
-			<ulink url="http://anonsvn.jboss.org/repos/dna/trunk/">trunk</ulink> of the Subversion repository
-			(or using <ulink url="http://fisheye.jboss.org/browse/DNA/trunk">FishEye</ulink>) through your browser,
+			<ulink url="&Subversion;trunk/">trunk</ulink> of the Subversion repository
+			(or using <ulink url="&Fisheye;trunk">FishEye</ulink>) through your browser,
 			it order to get more than just a few files of the latest version of the source code, you probably want
 		 	to have an SVN client installed.  Several IDE's have SVN support included (or available as plugins),
 			but having the command-line SVN client is recommended.  See 
@@ -90,15 +93,15 @@
 				<tbody>
 					<row>
 						<entry>Anonymous Access URL</entry>
-						<entry><ulink url="http://anonsvn.jboss.org/repos/dna/trunk">http://anonsvn.jboss.org/repos/dna/trunk</ulink></entry>
+						<entry><ulink url="&Subversion;trunk/">&Subversion;trunk/</ulink></entry>
 					</row>
 					<row>
 						<entry>Secure Developer Access URL</entry>
-						<entry><ulink url="https://svn.jboss.org/repos/dna/trunk/">https://svn.jboss.org/repos/dna/trunk/</ulink></entry>
+						<entry><ulink url="&Fisheye;trunk/">&Fisheye;trunk/</ulink></entry>
 					</row>
 					<row>
 						<entry>FishEye Code Browser</entry>
-						<entry><ulink url="http://fisheye.jboss.org/browse/DNA/trunk">http://fisheye.jboss.org/browse/DNA/trunk</ulink></entry>
+						<entry><ulink url="&SecureSubversion;trunk/">&SecureSubversion;trunk/</ulink></entry>
 					</row>
 				</tbody>
 			</tgroup>
@@ -266,8 +269,8 @@
 	      <colspec colname='c2' colwidth="1*"/>
 				<thead>
 					<row>
-			  		<entry>Eclipse Plugin Site</entry>
-						<entry>Update Site URL</entry>
+			  		<entry>Eclipse Plugins</entry>
+						<entry>Update Site URLs</entry>
 					</row>
 				</thead>
 				<tbody>

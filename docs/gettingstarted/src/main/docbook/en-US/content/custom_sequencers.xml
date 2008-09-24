@@ -25,8 +25,7 @@
 <!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd">
 <chapter id="custom_sequencers">
   <title>Creating custom sequencers</title>
-  <para>The current release of JBoss DNA comes with two sequencers: one that extracts metadata from a variety of image file formats,
-  and another that extracts some of the ID3 metadata from MP3 audio files.  However, it's very easy to create your own
+  <para>The current release of JBoss DNA comes with six sequencers.  However, it's very easy to create your own
   sequencers and to then configure JBoss DNA to use them in your own application.
   </para>
   <para>

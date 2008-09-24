@@ -28,13 +28,11 @@ import static org.hamcrest.core.IsNull.nullValue;
 import static org.hamcrest.core.IsSame.sameInstance;
 import static org.junit.Assert.assertThat;
 import static org.junit.matchers.JUnitMatchers.hasItems;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.stub;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import java.util.concurrent.TimeUnit;
-import org.jboss.dna.common.component.ClassLoaderFactory;
 import org.jboss.dna.common.util.Logger;
 import org.jboss.dna.connector.federation.FederationException;
 import org.jboss.dna.graph.DnaLexicon;
@@ -80,7 +78,7 @@ public class RepositoryServiceTest {
         configRepositoryConnection = configRepositorySource.getConnection();
         stub(sources.createConnection(configSourceName)).toReturn(configRepositoryConnection);
         root = context.getValueFactories().getPathFactory().createRootPath();
-        service = new RepositoryService(sources, configSourceName, context, null);
+        service = new RepositoryService(sources, configSourceName, context);
     }
 
     @After
@@ -106,19 +104,6 @@ public class RepositoryServiceTest {
     public void shouldHaveAnExecutionEnvironmentAfterInstantiation() {
         assertThat(service.getExecutionEnvironment(), is(notNullValue()));
         assertThat(service.getExecutionEnvironment(), is(sameInstance(context)));
-    }
-
-    @Test
-    public void shouldHaveNonNullClassLoaderFactoryAfterInstantiatingWithNullClassLoaderFactoryReference() {
-        assertThat(service.getClassLoaderFactory(), is(notNullValue()));
-    }
-
-    @Test
-    public void shouldHaveNonNullClassLoaderFactoryAfterInstantiatingWithClassLoaderFactoryReference() {
-        ClassLoaderFactory classLoaderFactory = mock(ClassLoaderFactory.class);
-        service = new RepositoryService(sources, configSourceName, context, classLoaderFactory);
-        assertThat(service.getClassLoaderFactory(), is(notNullValue()));
-        assertThat(service.getClassLoaderFactory(), is(sameInstance(classLoaderFactory)));
     }
 
     @Test
@@ -153,7 +138,7 @@ public class RepositoryServiceTest {
         sources.addSource(configRepositorySource);
         assertThat(sources.getSources(), hasItems((RepositorySource)configRepositorySource));
         assertThat(sources.getSources().size(), is(1));
-        service = new RepositoryService(sources, configSourceName, root, context, null);
+        service = new RepositoryService(sources, configSourceName, root, context);
 
         // Set up the configuration repository to contain 3 sources ...
         final String className = SimpleRepositorySource.class.getName();

@@ -25,6 +25,8 @@ import java.security.AccessControlContext;
 import java.security.AccessController;
 import javax.security.auth.Subject;
 import javax.security.auth.login.LoginContext;
+import org.jboss.dna.common.component.ClassLoaderFactory;
+import org.jboss.dna.common.component.StandardClassLoaderFactory;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.common.util.Logger;
 import org.jboss.dna.graph.ExecutionContext;
@@ -41,6 +43,7 @@ import org.jboss.dna.graph.properties.basic.StandardValueFactories;
  */
 public class BasicExecutionContext implements ExecutionContext {
 
+    private final ClassLoaderFactory classLoaderFactory;
     private final LoginContext loginContext;
     private final AccessControlContext accessControlContext;
     private final Subject subject;
@@ -110,6 +113,16 @@ public class BasicExecutionContext implements ExecutionContext {
         this.namespaceRegistry = namespaceRegistry;
         this.valueFactories = valueFactories != null ? valueFactories : new StandardValueFactories(this.namespaceRegistry);
         this.propertyFactory = propertyFactory != null ? propertyFactory : new BasicPropertyFactory(this.valueFactories);
+        this.classLoaderFactory = new StandardClassLoaderFactory();
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.common.component.ClassLoaderFactory#getClassLoader(java.lang.String[])
+     */
+    public ClassLoader getClassLoader( String... classpath ) {
+        return this.classLoaderFactory.getClassLoader(classpath);
     }
 
     /**

@@ -22,15 +22,200 @@
   ~ 51 Franklin Street, Fifth Floor
   ~ Boston, MA  02110-1301  USA
   -->
-<!DOCTYPE preface PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd">
+<!DOCTYPE preface PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+<!ENTITY % CustomDTD SYSTEM "../custom.dtd">
+%CustomDTD;
+]>
 <chapter id="repositories">
   <title>Repositories</title>
   <para></para>
+  <para>There is a lot of information stored in many of different places: databases, repositories, SCM systems,
+    registries, file systems, services, etc. The purpose of the federation engine is to allow applications to use the JCR API
+    to access that information as if it were all stored in a single JCR repository, but to really leave the information where
+    it is.</para>
+  <para>Why not just copy or move the information into a JCR repository?  Moving it is probably pretty difficult, since most 
+		likely there are existing applications that rely upon that information being where it is.  All of those applications
+		would break or have to change.  And copying the information means that we'd have to continually synchronize the changes.
+		This not only is a lot of work, but it often creates issues with knowing which information is accurate.
+	</para>
+  <para>The JBoss DNA allows lets us leave information where it is, yet provide access to it through the JCR API.
+		The first benefit is that any existing applications that already use that information can keep using it.
+		Plus, if the underlying information changes, all the client applications see the correct information.  JCR clients
+		even get the benefit of using JCR observation to be notified of the changes.  And if a JBoss DNA repository is
+    configured to allow updates, client applications can change the information in the repository and JBoss DNA will propagate
+    those changes down to the original source.</para>
+  <sect1 id="connectors">
+    <title>Repository connectors</title>
+		<para>As we've mentioned above, one of the capabilities of JBoss DNA is to provide access through 
+			<ulink url="&JSR170;">JCR</ulink> to different kinds of repositories and storage systems.
+			Your applications work with the JCR API, but through JBoss DNA are able to accesses the content from where the information
+			exists - not just a single purpose-built repository.  This is fundamentally what makes JBoss DNA different.</para>
+		<para>How does JBoss DNA do this?  At the heart of JBoss DNA and it's JCR implementation is a simple graph-based connector
+			system.  Essentially, the JBoss DNA JCR implementation makes use of a single repository source, from which all the
+			content is accessed.  
+			<figure id="dnajcr-and-connector">
+				<title>JBoss DNA's JCR implementation delegates to a repository source</title>
+				<graphic align="center" scale="100" fileref="dnajcr-and-connector.png"/>
+			</figure>
+			That single repository source could be an in-memory repository, a JBoss Cache instance, or a federated repository.
+			<figure id="dna-connectors-0.2">
+				<title>JBoss DNA can put JCR on top of multiple kinds of systems</title>
+				<graphic align="center" scale="100" fileref="dna-connectors-0.2.png"/>
+			</figure>
+	  	And the JBoss DNA project has plans to create other connectors, too.  For instance, we're going to build a connector 
+	    to other JCR repositories.  And another to a file system, so that the files and directories on an area of the file system
+	    can be accessed through JCR.  Of course, if we don't have a connector to suit your needs, you can write your own.
+			<figure id="dna-connectors-future">
+				<title>Future JBoss DNA connectors</title>
+				<graphic align="center" scale="100" fileref="dna-connectors-future.png"/>
+			</figure>
+		</para>
+    <para>Before we go further, let's define some terminology regarding connectors.</para>
+ 		<itemizedlist>
+			<listitem>
+				<para>
+					A <emphasis role="strong">connector</emphasis> is the runnable code packaged in one or more JAR files that
+					contains implementations of several interfaces (described below).  A Java developer <emphasis>writes</emphasis>
+					a connector to a type of source, such as a particular database management system, LDAP directory, source code
+					management system, etc.  It is then packaged into one or more JAR files (including dependent JARs) and deployed
+					for use in applications that use JBoss DNA repositories.
+				</para>
+			</listitem>
+			<listitem>
+				<para>
+					The description of a particular source system is called a <emphasis role="strong">repository source</emphasis>.
+					A connector contains a JavaBean class that implements the &RepositorySource; interface, with JavaBean properties for
+					all of the connector-specific properties required to fully describe a system.  Applications that use JBoss DNA
+					create an instance that describes each external source that a repository is to access.
+				</para>
+			</listitem>
+			<listitem>
+				<para>
+					A repository source instance is then used to establish <emphasis role="strong">connections</emphasis> to
+					that source.  A connector provides an implementation of the &RepositoryConnection; interface, which
+					defines methods for interacting with the external system.  In particular, the <code>execute(...)</code> method
+					takes an <code>ExecutionContext</code> instance and one or more <code>GraphCommand</code> objects describing the
+					operations that are to be executed against the graph of information the connector is exposing.
+					Examples of commands include getting a node, moving a node, creating a node, changing a node, and deleting a node.
+					And, if the repository source is able to participate in JTA/JTS distributed transactions, then the
+					&RepositoryConnection; must implement the <code>getXaResource()</code> method by returning 
+					a valid <code>javax.transaction.xa.XAResource</code> object that can be used by the transaction monitor.
+				</para>
+			</listitem>
+		</itemizedlist>
+		<para>As an example, consider that we want JBoss DNA to give us access through JCR to the schema information contained in a
+			relational databases.  We first have to develop a connector that allows us to interact with relational databases using JDBC.
+			That connector would contain a <code>JdbcRepositorySource</code> Java class that implements &RepositorySource;,
+			and that has all of the various JavaBean properties for setting the name of the driver class, URL, username, password,
+			and other properties.  (Or we might have a JavaBean property that defines the JNDI name where we can find a JDBC
+			<code>DataSource</code> instance pointing to our JDBC database.)
+		</para>
+		<para>
+			That connector would also have a <code>JdbcRepositoryConnection</code> Java class that implements the 
+			&RepositoryConnection; interface.  This class would probably wrap a JDBC database connection,
+			and would implement the <code>execute(...)</code> method such that the nodes exposed by the connector
+			describe the database schema of the database.  For example, the connector might represent each database table
+			as a node wit the table's name, with properties that describe the table (e.g., the description, whether it's a
+			temporary table), and with child nodes that represent each of the columns, keys and constraints.
+		</para>
+		<para>
+			To use the connector, we need to create an instance of the <classname>JdbcRepositorySource</classname> for each database instance
+			that we want to access.  If we have 3 MySQL databases, 9 Oracle databases, and 4 PostgreSQL databases, then we'd need
+			to create a total of 16 <classname>JdbcRepositorySource</classname> instances, each with the properties describing a single database instance.
+			Those sources are then available for use by the JBoss DNA components, including <link linkend="jcr">JCR</link>.
+		</para>
+		<para>
+			So, we've so far learned what a repository connector is and how they're used to create &RepositorySource; instances.
+			In the <link linkend="repository-service">next section</link>, we'll show how these source instances can be configured,
+			managed, and their connections pooled.
+		</para>
+  </sect1>
   <sect1 id="repository-service">
     <title>Repository Service</title>
-    <para></para>
+		<para>The JBoss DNA &RepositoryService; is the component that manages the <emphasis>repository sources</emphasis>
+		  and the connections to them.  &RepositorySource; instances can be programmatically added to the service, but
+			the service can actually read its configuration from a configuration repository (which is represented by a
+			&RepositorySource; instance that's usually added programmatically to the service).  The service connects to
+			the configuration repository and automatically sets up the repositories given the &RepositorySource; instances
+		  found in the configuration repository.  It also transparently maintains for each source a pool of reusable connections.
+		</para>
+    <para>
+			To use a repository, then, involves simply asking the &RepositoryService; for a &RepositoryConnection;
+			to the repository given the repository's name.  If a source exists with that name, the service checks out a connection from
+			the pool and returns it.  The resulting connection is actually a wrapper around the underlying pooled connection - when
+			the returned connection is closed, it returns the underlying connection to the pool.
+    </para>
+		<para>To instantiate the &RepositoryService;, we need to first have a few other objects:
+			<itemizedlist>
+				<listitem>
+					<para>
+						A &ExecutionContextFactory; instance, as discussed <link linkend="execution-context">earlier</link>.
+					</para>
+				</listitem>
+				<listitem>
+					<para>
+						A &RepositoryLibrary; instance that manages the list of &RepositorySource; instances,
+						properly injects the execution contexts into each repository source, and provides a configurable pool of connections
+						for each source.
+					</para>
+				</listitem>
+				<listitem>
+					<para>
+						A <emphasis>configuration repository</emphasis> that contains descriptions of all of the repository sources
+					  as well as any information those sources need.  Because this is a regular repository, this could be a simple 
+					  repository with content loaded from an XML file (as in this example).  Or it could be a shared
+					  central repository with information about all of the JBoss DNA processes across your company.
+					</para>
+				</listitem>
+			</itemizedlist>
+			With these components in place, we can then instantiate the &RepositoryService; and start it (using its
+			&ServiceAdministrator;).  During startup, the service reads the configuration repository and loads any
+			defined &RepositorySource; instances into the repository library, using the class loader factory 
+			(available in the &ExecutionContext;) to obtain.
+    </para>
+		<para>
+			Here's sample code that shows how to set up and start the repository service.  You can see something similar
+			in the example application in the <code>startRepositories()</code> method of the 
+			<code>org.jboss.example.dna.repository.RepositoryClient</code> class.
+		</para>
+    <programlisting>
+ // Create the factory for execution contexts, and create one ...
+ &ExecutionContextFactory; contextFactory = new &BasicExecutionContextFactory;();
+ &ExecutionContext; context = contextFactory.create();
+
+ // Create the library for the RepositorySource instances ...
+ &RepositoryLibrary; sources = new &RepositoryLibrary;(contextFactory);
+
+ // Load into the source manager the repository source for the configuration repository ...
+ &InMemoryRepositorySource; configSource = new &InMemoryRepositorySource;();
+ configSource.setName("Configuration");
+ sources.addSource(configSource);
+
+ // Now instantiate the Repository Service ...
+ &RepositoryService; service = new &RepositoryService;(sources, configSource.getName(), context);
+ service.getAdministrator().start();
+ </programlisting>
+
+		<para>After startup completes, the repositories are ready to be used.  The client application obtains the list of repositories
+			and presents them to the user.  When the user selects one, the client application starts navigating that repository
+			starting at its root node (e.g., the "/" path).  As you type a command to list the contents of the current node or to
+			"change directories" to a different node, the client application obtains the information for the node using a simple
+			procedure:
+			<orderedlist>
+				<listitem>
+					<para>Get a connection to the repository.</para>
+				</listitem>
+				<listitem>
+					<para>Using the connection, find the current node and read its properties and children, putting the information
+						into a simple Java plain old Java object (POJO).</para>
+				</listitem>
+				<listitem>
+					<para>Close the connection to the repository (in a finally block to ensure it always happens).</para>
+				</listitem>
+			</orderedlist>
+		</para>
   </sect1>
-  <sect1 id="connectors">
+  <sect1 id="connector-library">
     <title>Repository connectors and sources</title>
     <para></para>
     <sect2 id="dna-connector-inmemory">

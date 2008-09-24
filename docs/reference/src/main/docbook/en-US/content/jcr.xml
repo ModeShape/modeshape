@@ -22,7 +22,10 @@
   ~ 51 Franklin Street, Fifth Floor
   ~ Boston, MA  02110-1301  USA
   -->
-<!DOCTYPE preface PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd">
+<!DOCTYPE preface PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd"	[
+<!ENTITY % CustomDTD SYSTEM "../custom.dtd">
+%CustomDTD;
+]>
 <chapter id="jcr">
   <title>Content Repositories for Java (JCR)</title>
   <para></para>
@@ -34,5 +37,44 @@
     <title>Creating JCR sessions</title>
     <para>Discuss how to obtain JCR sessions and how the credentials work. Also discuss that sessions should be created,
       used, and closed.</para>
+		<para>But how does JAAS authentication work with the JCR API and the JBoss DNA JCR implementation?  
+			In JCR, a &Session; represents our connection. So after we create a &JcrRepository; instance,
+			we just have to call one of the <code>login(...)</code> methods:
+		</para>
+    <programlisting role="JAVA"><![CDATA[
+JcrRepository jcrRepository = new JcrRepository(contextFactory, sources);
+Session session = jcrRepository.login(sourceName);
+ ]]></programlisting>
+		<para>Now, this code doesn't do any authentication; it essentially trusts the caller has the appropriate privileges.
+			Normally, your application will need to authenticate the user, so let's look at how that's done.
+		</para>
+		<para>The JCR API defines a &Credentials; marker interface, an instance of which can be passed to the
+		  <code>&Session;.login(...)</code> method.  Rather than provide a concrete implementation of this interface, JBoss DNA
+		  allows you to pass any implementation of &Credentials; that also has one of the following methods:
+		  <itemizedlist>
+			  <listitem>
+					<para><code>getLoginContext()</code> that returns a &LoginContext; instance.</para>
+				</listitem>
+			  <listitem>
+					<para><code>getAccessControlContext()</code> that returns a &AccessControlContext; instance.</para>
+				</listitem>
+			</itemizedlist>
+			This way, your application can obtain the JAAS &LoginContext; or &AccessControlContext; however it wants,
+			and then merely passes that into DNA through the JCR &Credentials;.  No interfaces or classes specific to JBoss DNA are required.
+		</para>
+		<para>
+			The following code shows how this is done, using an anonymous inner class for the &Credentials; implementation.
+		</para>
+    <programlisting>
+&CallbackHandler; callbackHandler = // as needed by your app, according to JAAS
+final &LoginContext; loginContext = new &LoginContext;("MyAppContextName",callbackHandler);
+
+// Now pass to JBoss DNA to create a JCR Session ...
+&Credentials; credentials = new &Credentials;() {
+public &LoginContext; getLoginContext() { return loginContext; }
+};
+&JcrRepository; jcrRepository = new &JcrRepository;(contextFactory, sources);
+&Session; session = jcrRepository.login(credentials, sourceName);
+</programlisting>
   </sect1>
 </chapter>

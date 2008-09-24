@@ -22,12 +22,89 @@
   ~ 51 Franklin Street, Fifth Floor
   ~ Boston, MA  02110-1301  USA
   -->
-<!DOCTYPE preface PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd">
+<!DOCTYPE preface PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd"	[
+<!ENTITY % CustomDTD SYSTEM "../custom.dtd">
+%CustomDTD;
+]>
 <chapter id="classloaders">
   <title>Class loaders</title>
-  <para></para>
+  <para>
+  	JBoss DNA is designed around extensions: sequencers, connectors, MIME type detectors, and class loader factories.
+		The core part of JBoss DNA is relatively small and has few dependencies, while all of the "interesting" components
+		are extensions that plug into and are used by different parts of the core.  The core doesn't really care what
+		the extensions do or what external libraries they require, as long as the extension fulfills its end of the
+		extension contract.
+	</para>
+	<para>
+		This means that you only need the core modules of JBoss DNA on the application classpath, while the extensions
+		do not have to be on the application classpath.  And because the core modules of JBoss DNA have few dependencies,
+		the risk of JBoss DNA libraries conflicting with the application's are lower.  Extensions, on the other hand,
+		will likely have a lot of unique dependencies. By separating the core of JBoss DNA from the class loaders used
+		to load the extensions, your application is isolated from the extensions and their dependencies.  Of course,
+		you can put all the JARs on the application classpath, too.  (This is what the examples in the &GettingStarted; document do.)
+	</para>
+	<para>
+		This design also allows you to select only those extensions that are interesting and useful for your application.
+		Not every application needs all of the JBoss DNA functionality.
+		Some applications may only need JBoss DNA sequencing, and specifically just a few types of sequencers.
+		Other applications may not need sequencing but do want to use JBoss DNA federation capabilities.
+  </para>
+	<para>
+		Finally, the use of these formal extensions also makes it easier for you to write your own customized extensions.
+		You may have proprietary file formats that you want to sequence.  Or, you may have a non-JCR repository system that you
+		want to access via JCR and maybe even federate with information from other sources.  Since extensions do
+		only one thing (e.g., be a sequencer, or a connector, etc.), its easier to develop those customizations.
+  </para>
+  <sect1 id="dna-classloader-factory">
+    <title>Class loader factory</title>
+		<para>
+			JBoss DNA loads all of the extension classes using class loaders returned by a <emphasis>class loader factory</emphasis>.
+			Each time JBoss DNA wants to load a class, it needs the name of the class and an optional "class loader name".
+			The meaning of the names is dependent upon the implementation of the class loader factory.  For example, the
+			<link linkend="dna-maven-classloader">Maven class loader factory</link> expects the names to be 
+			<ulink url="http://maven.apache.org/pom.html#Maven_Coordinates">Maven coordinates</ulink>.  Either way,
+			the class loader factory implementation uses the name to create and return a &ClassLoader;
+			instance that can be used to load the class.  Of course, if no name is provided, then a JBoss DNA service
+			just uses its class loader to load the class. (This is why putting all the extension jars on the classpath works.)
+		</para>
+		<para>
+			The class loader factory interface is pretty simple:
+		</para>
+		<programlisting>
+public interface &ClassLoaderFactory; {
+
+    /**
+     * Get a class loader given the supplied classpath.  The meaning of the classpath is implementation-dependent.
+     * @param classpath the classpath to use
+     * @return the class loader; may not be null
+     */
+    &ClassLoader; getClassLoader( String... classpath );
+}
+</programlisting>
+    <para>In the <link linkend="environment">next chapter</link> we'll describe an &ExecutionContext; interface that is
+ 			supplied to each of the JBoss DNA core services.  This context interface actually extends the &ClassLoaderFactory;
+ 			interface, so setting up an &ExecutionContext; implicitly sets up the class loader factory.</para>
+  </sect1>
+  <sect1 id="dna-standard-classloader">
+    <title>Standard class loader factory</title>
+    <para>JBoss DNA includes and uses as a default a standard class loader factory that just loads the classes using the Thread's current context
+	    class loader (if there is one), or a delegate class loader that defaults to the class loader that loaded
+	    the &StandardClassLoaderFactory; class.  The class ignores any class loader names that are supplied.
+		</para>
+  </sect1>
   <sect1 id="dna-maven-classloader">
-    <title>Maven Repository class loader</title>
-    <para></para>
+    <title>Maven Repository class loader factory</title>
+    <para>
+    	The <code>dna-classloader-maven</code> project has a class loader factory implementation that parses the names into
+			<ulink url="http://maven.apache.org/pom.html#Maven_Coordinates">Maven coordinates</ulink>, then uses those coordinates
+			to look up artifacts in a Maven 2 repository.  The artifact's POM file is used to determine the dependencies,
+			which is done transitively to obtain the complete dependency graph.  The resulting class loader has access
+			to these artifacts in dependency order.
+		</para>
+		<para>
+			This class loader is also able to use a JCR repository that contains the equivalent contents of a Maven repository.
+			However, JBoss DNA doesn't currently have any tooling to help populate that repository, so this component may be
+			of limited use right now.
+		</para>
   </sect1>
 </chapter>

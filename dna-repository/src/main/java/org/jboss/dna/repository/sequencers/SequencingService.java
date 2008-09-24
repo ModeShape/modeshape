@@ -249,30 +249,6 @@ public class SequencingService implements AdministeredService, NodeChangeListene
     }
 
     /**
-     * Get the class loader factory that should be used to load sequencers. By default, this service uses a factory that will
-     * return either the {@link Thread#getContextClassLoader() current thread's context class loader} (if not null) or the class
-     * loader that loaded this class.
-     * 
-     * @return the class loader factory; never null
-     * @see #setClassLoaderFactory(ClassLoaderFactory)
-     */
-    public ClassLoaderFactory getClassLoaderFactory() {
-        return this.sequencerLibrary.getClassLoaderFactory();
-    }
-
-    /**
-     * Set the Maven Repository that should be used to load the sequencer classes. By default, this service uses a class loader
-     * factory that will return either the {@link Thread#getContextClassLoader() current thread's context class loader} (if not
-     * null) or the class loader that loaded this class.
-     * 
-     * @param classLoaderFactory the class loader factory reference, or null if the default class loader factory should be used.
-     * @see #getClassLoaderFactory()
-     */
-    public void setClassLoaderFactory( ClassLoaderFactory classLoaderFactory ) {
-        this.sequencerLibrary.setClassLoaderFactory(classLoaderFactory != null ? classLoaderFactory : DEFAULT_CLASSLOADER_FACTORY);
-    }
-
-    /**
      * Add the configuration for a sequencer, or update any existing one that represents the
      * {@link SequencerConfig#equals(Object) same configuration}
      * 
@@ -331,6 +307,7 @@ public class SequencingService implements AdministeredService, NodeChangeListene
             throw new IllegalStateException(RepositoryI18n.unableToChangeExecutionContextWhileRunning.text());
         }
         this.executionContext = executionContext;
+        this.sequencerLibrary.setClassLoaderFactory(executionContext);
     }
 
     /**
@@ -625,6 +602,15 @@ public class SequencingService implements AdministeredService, NodeChangeListene
             for (Session session : sessions) {
                 if (session != null) session.logout();
             }
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.common.component.ClassLoaderFactory#getClassLoader(java.lang.String[])
+         */
+        public ClassLoader getClassLoader( String... classpath ) {
+            return delegate.getClassLoader(classpath);
         }
 
         /**

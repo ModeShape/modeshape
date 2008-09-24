@@ -22,13 +22,17 @@
   ~ 51 Franklin Street, Fifth Floor
   ~ Boston, MA  02110-1301  USA
   -->
-<!DOCTYPE preface PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd">
+<!DOCTYPE preface PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd"	[
+<!ENTITY % CustomDTD SYSTEM "../custom.dtd">
+%CustomDTD;
+]>
 <chapter id="configuration">
   <title>Configuration</title>
-  <para>
-    Discuss how to configure JBoss DNA and how configuration repositories are used to bootstrap the various services and
-    components. Describe how the next release will focus on making this easier and will detail configuration using the
-    <ulink url="http://www.jboss.org/jbossmc/">JBoss Microcontainer</ulink>
-    .
-  </para>
+	<para>
+		Configuring JBoss DNA services is a bit more manual than is ideal. JBoss DNA currently consists of classes that uses dependency
+    injection to allow a great deal of flexibility in how it can be configured and customized. But this flexibility
+    makes it more difficult for you to configure.  We understand this, and will soon provide a much easier way to set up 
+		and manage JBoss DNA.  Current plans are to use the <ulink url="http://www.jboss.org/jbossmc">JBoss Microcontainer</ulink>
+		along with a configuration repository.
+	</para>
 </chapter>

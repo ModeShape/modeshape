@@ -31,11 +31,6 @@
 	  <ulink url="http://jira.jboss.org/jira/browse/DNA?report=com.atlassian.jira.plugin.system.project:roadmap-panel">roadmap</ulink>.
 	  Or, check out <ulink url="http://jira.jboss.org/jira/secure/IssueNavigator.jspa?reset=true&amp;mode=hide&amp;pid=12310520&amp;sorter/order=DESC&amp;sorter/field=priority&amp;resolution=-1&amp;component=12311436">JIRA</ulink>
 	  for the list of sequencers we've thought of.  If you think of one that's not there, please add it to JIRA! </para>
-	<para>The next release will focus on creating the <link linkend="federation">federation engine</link> and connectors
-	  for several popular and ubiquitous systems.  The 0.2 release will likely only federate information in a read-only manner,
-	  but updates will soon follow.  Also, during the early part of the next release, the JBoss DNA project will switch to use JDK 6.  
-	  Java 5 is being end-of-lifed, so we want to move to a supported JDK. However, a number of JBoss projects and products continue to
-	  require Java 5, so our next release will most likely use JDK 6 with Java 5 compatibility.</para>
 	<para>Other components on our roadmap include a web user interface, a REST-ful server, and a view system that allows domain-specific
 	  views of information in the repository.  These components are farther out on our roadmap, and at this time have not been
 	  targeted to a particular release.  If any of these are of interest to you, please <link linkend="preface">get involved</link>

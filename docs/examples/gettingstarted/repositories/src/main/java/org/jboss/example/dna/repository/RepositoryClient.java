@@ -39,8 +39,6 @@ import javax.naming.NamingException;
 import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
 import net.jcip.annotations.Immutable;
-import org.jboss.dna.common.component.ClassLoaderFactory;
-import org.jboss.dna.common.component.StandardClassLoaderFactory;
 import org.jboss.dna.common.text.NoOpEncoder;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.connector.inmemory.InMemoryRepositorySource;
@@ -86,7 +84,6 @@ public class RepositoryClient {
         DNA;
     }
 
-    private ClassLoaderFactory classLoaderFactory;
     private RepositoryLibrary sources;
     private ExecutionContextFactory contextFactory;
     private RepositoryService repositoryService;
@@ -131,9 +128,6 @@ public class RepositoryClient {
     public void startRepositories() throws IOException, NamingException {
         if (repositoryService != null) return; // already started
 
-        // Create the class loader factory, which for this example will simply use this class' class loader...
-        classLoaderFactory = new StandardClassLoaderFactory();
-
         // Create the factory for execution contexts.
         contextFactory = new BasicExecutionContextFactory();
 
@@ -157,7 +151,7 @@ public class RepositoryClient {
         importer.importXml(location + "/configRepository.xml").into(configSource.getName());
 
         // Now instantiate the Repository Service ...
-        repositoryService = new RepositoryService(sources, configSource.getName(), context, classLoaderFactory);
+        repositoryService = new RepositoryService(sources, configSource.getName(), context);
         repositoryService.getAdministrator().start();
 
         // Now import the conten for two of the other in-memory repositories ...

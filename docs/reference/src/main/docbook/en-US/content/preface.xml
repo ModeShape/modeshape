@@ -22,22 +22,23 @@
   ~ 51 Franklin Street, Fifth Floor
   ~ Boston, MA  02110-1301  USA
   -->
-<!DOCTYPE preface PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd">
+<!DOCTYPE preface PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd"	[
+<!ENTITY % CustomDTD SYSTEM "../custom.dtd">
+%CustomDTD;
+]>
 <preface id="preface">
   <title>Target audience</title>
   <para>
     This guide is for the developers of JBoss DNA and those users that want to have a better understanding of how JBoss DNA
-    works or how to extend the functionality. For a higher-level introduction to JBoss DNA, see the
-    <ulink url="http://www.jboss.org/file-access/default/members/dna/freezone/docs/0.2/manuals/gettingstarted/html/index.html">Getting Started</ulink>
-    document.
+    works or how to extend the functionality. For a higher-level introduction to JBoss DNA, see the &GettingStarted; document.
   </para>
   <para>
     If you have any questions or comments, please feel free to contact JBoss DNA's
-    <ulink url="mailto:dna-users@jboss.org">user mailing list</ulink> or use the
-    <ulink url="http://www.jboss.com/index.html?module=bb&amp;op=viewforum&amp;f=272">user forums</ulink>. 
-    If you'd like to get involved on the project, join the <ulink url="http://www.jboss.org/dna/lists.html">mailing lists</ulink>,
-    <ulink url="http://www.jboss.org/dna/subversion.html">download the code</ulink> and get it building, and visit our
-    <ulink url="http://jira.jboss.org/jira/browse/DNA">JIRA issue management system</ulink>.
+    <ulink url="&MailTo;">user mailing list</ulink> or use the
+    <ulink url="&Forums;">user forums</ulink>. 
+    If you'd like to get involved on the project, join the <ulink url="&Home;lists.html">mailing lists</ulink>,
+    <ulink url="&Home;subversion.html">download the code</ulink> and get it building, and visit our
+    <ulink url="&JIRA;">JIRA issue management system</ulink>.
     If there's something in particular you're interested in, talk with the community - there may be others interested in the
     same thing.
   </para>

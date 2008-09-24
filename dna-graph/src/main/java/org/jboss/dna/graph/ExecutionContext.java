@@ -24,6 +24,7 @@ package org.jboss.dna.graph;
 import java.security.AccessControlContext;
 import javax.security.auth.Subject;
 import javax.security.auth.login.LoginContext;
+import org.jboss.dna.common.component.ClassLoaderFactory;
 import org.jboss.dna.common.util.Logger;
 import org.jboss.dna.graph.properties.NamespaceRegistry;
 import org.jboss.dna.graph.properties.Property;
@@ -31,10 +32,16 @@ import org.jboss.dna.graph.properties.PropertyFactory;
 import org.jboss.dna.graph.properties.ValueFactories;
 
 /**
+ * An ExecutionContext is a representation of the environment or context in which a component or operation is operating. Some
+ * components require this context to be passed into individual methods, allowing the context to vary with each method invocation.
+ * Other components require the context to be provided before it's used, and will use that context for all its operations (until
+ * it is given a different one).
+ * 
  * @author Randall Hauch
  * @author John Verhaeg
+ * @see ExecutionContextFactory
  */
-public interface ExecutionContext {
+public interface ExecutionContext extends ClassLoaderFactory {
 
     /**
      * @return the access control context; may be <code>null</code>

@@ -64,7 +64,7 @@
 	<sect1 id="repository_service">
 		<title>Configuring the Repository Service</title>
 		<para>The JBoss DNA <emphasis>repository service</emphasis> is the component that manages the <emphasis>repositories</emphasis>
-		  and connections to them.  The service reads it's configuration from a <code>RepositorySource</code> instance (i.e., the
+		  and connections to them.  The service reads its configuration from a <code>RepositorySource</code> instance (i.e., the
 		  "configuration repository") and automatically sets up the repositories given the <code>RepositorySource</code> instances
 		  found in the configuration repository.</para>
 		<note>
@@ -77,15 +77,10 @@
 		<para>To set up the repository service, we need to first set up a few other objects:
 			<itemizedlist>
 				<listitem>
-					<para>A <emphasis>factory for class loaders</emphasis> used to load the classes that make up the connectors. 
-					    If no factory is supplied, the service uses the current thread's context class loader (or if that is null, 
-							the class loader that loaded the <code>RepositoryService</code> class).</para>
-				</listitem>
-				<listitem>
 					<para>A <emphasis>factory for execution contexts</emphasis>.  Execution contexts define the context (or environment) 
 					    in which the service runs and in which operations against repositories are performed.  <code>ExecutionContext</code>
 					    instances can be created using JAAS application contexts, meaning that they contain the information about the subject
-					    that the software represents.  Execution contexts also provides access to the all of the factories and utilities
+					    that the software represents.  Execution contexts also provide access to the all of the factories and utilities
 					    used throughout the services and components, and it is through this mechanism that you can inject your own behavior.
 							For example, if your application already had a notion of namespaces, you could override the execution context's
 							<code>NamespaceRegistry</code> to use the namespaces defined in your application.</para>
@@ -104,15 +99,12 @@
 			</itemizedlist>
 			With these components in place, we can then instantiate the <code>RepositoryService</code> and start it (using its
 			<code>ServiceAdministrator</code>).  During startup, the service reads the configuration repository and loads any
-			defined <code>RepositorySource</code> instances into the repository library, using the class loader factory to obtain
-			class loaders that it can use to load the actual <code>RepositorySource</code> implementation classes.
+			defined <code>RepositorySource</code> instances into the repository library, using the class loader factory 
+			(available in the <code>ExecutionContext</code>) to obtain.
     </para>
 		<para>Here's sample code that shows how to set up and start the repository service.  You can see something similar
 			in the example application in the <code>startRepositories()</code> method of the <code>org.jboss.example.dna.repository.RepositoryClient</code> class.</para>
     <programlisting role="JAVA"><![CDATA[
-  // Create the class loader factory, which for this example will simply use this class' class loader...
-  ClassLoaderFactory classLoaderFactory = new StandardClassLoaderFactory();
-
   // Create the factory for execution contexts.
   ExecutionContextFactory contextFactory = new BasicExecutionContextFactory();
 
@@ -130,9 +122,8 @@
   sources.addSource(configSource);
 
   // Now instantiate the Repository Service ...
-  RepositoryService repositoryService = new RepositoryService(sources, configSource.getName(), 
-                                                              context, classLoaderFactory);
-  repositoryService.getAdministrator().start();
+  RepositoryService service = new RepositoryService(sources, configSource.getName(), context);
+  service.getAdministrator().start();
  ]]></programlisting>
 		<para>After startup completes, the repositories are ready to be used.  The client application obtains the list of repositories
 			and presents them to the user.  When the user selects one, the client application starts navigating that repository

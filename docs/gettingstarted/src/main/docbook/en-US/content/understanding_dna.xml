@@ -332,95 +332,111 @@
       registries, file systems, services, etc. The purpose of the federation engine is to allow applications to use the JCR API
       to access that information as if it were all stored in a single JCR repository, but to really leave the information where
       it is.</para>
-    <para>Why not just move the information into a JCR repository? Most likely there are existing applications that rely upon
-      that information being where it is. If we were to move it, then all those applications would break. Or they'd have to be
-      changed to use JCR. If the information is being used, the most practical thing is to leave it where it is.</para>
-    <para>
-      Then why not just copy the information into a JCR repository? Actually, there are times when it's perfectly reasonable to
-      make a copy of the data. Perhaps the system managing the existing information cannot handle the additional load of more
-      clients. Or, perhaps the information doesn't change, or it does change and we want snapshots that don't change. But more
-      likely, the data
-      <emphasis>does</emphasis>
-      change. So if applications are to use the most current information and we make copies of the data, we have to keep the
-      copies synchronized with the master. That's generally a lot of work.
-    </para>
-    <para>The JBoss DNA federation engine lets us leave the information where it is, yet lets client applications use the JCR
-      API to access all the information without caring where the information really exists. If the underlying information
-      changes, client applications using JCR observation will be notified of the changes. If a JBoss DNA federated repository is
+    <para>Why not just copy or move the information into a JCR repository?  Moving it is probably pretty difficult, since most 
+			likely there are existing applications that rely upon that information being where it is.  All of those applications
+			would break or have to change.  And copying the information means that we'd have to continually synchronize the changes.
+			This not only is a lot of work, but it often creates issues with knowing which information is accurate.
+		</para>
+    <para>The JBoss DNA allows lets us leave the information where it is, yet provide access to that information through
+			the JCR API.  The first benefit is that any existing applications that already use that information can keep using it.
+			Plus, if the underlying information changes, all the client applications see the correct information.  JCR clients
+			even get the benefit of using JCR observation to be notified of the changes.  And if a JBoss DNA repository is
       configured to allow updates, client applications can change the information in the repository and JBoss DNA will propagate
       those changes down to the original source.</para>
     <sect2 id="federation_connectors">
       <title>Connecting to information sources</title>
       <para>
-        The JBoss DNA federation engine will use connectors to interact with different information sources to get at the content
-        in those systems. Some ideas for connectors include:
-        <itemizedlist>
-          <listitem>
-            <para>
-              <emphasis role="strong">JCR Repository Connector</emphasis>
-              - Connect to and interact with other JCR repositories.
-            </para>
-          </listitem>
-          <listitem>
-            <para>
-              <emphasis role="strong">File System Connector</emphasis>
-              - Expose the files and directories on a file system through JCR.
-            </para>
-          </listitem>
-          <listitem>
-            <para>
-              <emphasis role="strong">Maven 2 Repository Connector</emphasis>
-              - Access and expose the contents of a Maven 2 repository (either on the local file system or via HTTP) through
-              JCR.
-            </para>
-          </listitem>
-          <listitem>
-            <para>
-              <emphasis role="strong">JDBC Metadata Connector</emphasis>
-              - Connect to relational databases via JDBC and expose their schema as content in a repository.
-            </para>
-          </listitem>
-          <listitem>
-            <para>
-              <emphasis role="strong">UDDI Connector</emphasis>
-              - Interact with UDDI registries to integrate their content into a repository.
-            </para>
-          </listitem>
-          <listitem>
-            <para>
-              <emphasis role="strong">SVN Connector</emphasis>
-              - Interact with Subversion software configuration management (SCM) repositories to expose the managed resources
-              through JCR. Consider using the
-              <ulink url="http://svnkit.com/">SVNkit</ulink>
-              (dual license) library for an API into Subversion.
-            </para>
-          </listitem>
-          <listitem>
-            <para>
-              <emphasis role="strong">CVS Connector</emphasis>
-              - Interact with CVS software configuration management (SCM) repositories to expose the managed resources through
-              JCR.
-            </para>
-          </listitem>
-          <listitem>
-            <para>
-              <emphasis role="strong">JDBC Storage Connector</emphasis>
-              - Store and access information in a relational database. Also useful for persisting information in the federated
-              repository not stored elsewhere.
-            </para>
-          </listitem>
-          <listitem>
-            <para>
-              <emphasis role="strong">Distributed Database Connector</emphasis>
-              - Store and access information in a
-              <ulink url="http://www.hypertable.org/">Hypertable</ulink>
-              or
-              <ulink url="http://hadoop.apache.org/hbase/">HBase</ulink>
-              distributed databases. Also useful for persisting information in the federated repository not stored elsewhere.
-            </para>
-          </listitem>
-        </itemizedlist>
-      </para>
+        JBoss DNA uses connectors to interact with different information sources to get at the content
+        in those systems. Some ideas for connectors include:</para>
+      <itemizedlist>
+        <listitem>
+          <para>
+            <emphasis role="strong">In-Memory Connector</emphasis>
+            - Creates a transient, in-memory repository.
+          </para>
+        </listitem>
+        <listitem>
+          <para>
+            <emphasis role="strong">JBoss Cache Connector</emphasis>
+            - Uses a JBoss Cache instance as a repository.  JBoss Cache is a powerful cache capable of persisting the information
+ 						and being clustered for concurrent use by multiple processes.
+          </para>
+        </listitem>
+        <listitem>
+          <para>
+            <emphasis role="strong">Federation Connector</emphasis>
+            - Creates a single repository by accessing and federating the information in multiple other repository sources.
+						This is a powerful connector that is discussed in more detail in the <link linkend="federated_repositories">next section</link>.
+          </para>
+        </listitem>
+			</itemizedlist>
+			<para>There are also a number of connectors that are planned:</para>
+      <itemizedlist>
+        <listitem>
+          <para>
+            <emphasis role="strong">JCR Repository Connector</emphasis>
+            - Connect to and interact with other JCR repositories.
+          </para>
+        </listitem>
+        <listitem>
+          <para>
+            <emphasis role="strong">File System Connector</emphasis>
+            - Expose the files and directories on a file system through JCR.
+          </para>
+        </listitem>
+        <listitem>
+          <para>
+            <emphasis role="strong">Maven 2 Repository Connector</emphasis>
+            - Access and expose the contents of a Maven 2 repository (either on the local file system or via HTTP) through
+            JCR.
+          </para>
+        </listitem>
+        <listitem>
+          <para>
+            <emphasis role="strong">JDBC Metadata Connector</emphasis>
+            - Connect to relational databases via JDBC and expose their schema as content in a repository.
+          </para>
+        </listitem>
+        <listitem>
+          <para>
+            <emphasis role="strong">UDDI Connector</emphasis>
+            - Interact with UDDI registries to integrate their content into a repository.
+          </para>
+        </listitem>
+        <listitem>
+          <para>
+            <emphasis role="strong">SVN Connector</emphasis>
+            - Interact with Subversion software configuration management (SCM) repositories to expose the managed resources
+            through JCR. Consider using the
+            <ulink url="http://svnkit.com/">SVNkit</ulink>
+            (dual license) library for an API into Subversion.
+          </para>
+        </listitem>
+        <listitem>
+          <para>
+            <emphasis role="strong">CVS Connector</emphasis>
+            - Interact with CVS software configuration management (SCM) repositories to expose the managed resources through
+            JCR.
+          </para>
+        </listitem>
+        <listitem>
+          <para>
+            <emphasis role="strong">JDBC Storage Connector</emphasis>
+            - Store and access information in a relational database. Also useful for persisting information in the federated
+            repository not stored elsewhere.
+          </para>
+        </listitem>
+        <listitem>
+          <para>
+            <emphasis role="strong">Distributed Database Connector</emphasis>
+            - Store and access information in a
+            <ulink url="http://www.hypertable.org/">Hypertable</ulink>
+            or
+            <ulink url="http://hadoop.apache.org/hbase/">HBase</ulink>
+            distributed databases. Also useful for persisting information in the federated repository not stored elsewhere.
+          </para>
+        </listitem>
+      </itemizedlist>
       <para>
         If the connectors allow the information they contribute to be updated, they must provide an
         <code>XAResource</code>
@@ -436,9 +452,9 @@
         And of course, sources can be added or removed without having to stop and restart the federated repository.
       </para>
     </sect2>
-    <sect2 id="federation_graph">
-      <title>Building the unified graph</title>
-      <para> The federation engine works by effectively building up a single graph by querying each source and merging or
+    <sect2 id="federated_repositories">
+      <title>Federated repositories</title>
+      <para> The federation connector works by effectively building up a single graph by querying each source and merging or
         unifying the responses. This information is cached, which improves performance, reduces the number of (potentially
         expensive) remote calls, reduces the load on the sources, and helps mitigate problems with source availability. As
         clients interact with the repository, this cache is consulted first. When the requested portion of the graph (or

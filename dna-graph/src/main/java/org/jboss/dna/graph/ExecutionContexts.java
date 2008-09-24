@@ -150,6 +150,15 @@ public class ExecutionContexts {
         /**
          * {@inheritDoc}
          * 
+         * @see org.jboss.dna.common.component.ClassLoaderFactory#getClassLoader(java.lang.String[])
+         */
+        public ClassLoader getClassLoader( String... classpath ) {
+            return this.delegate.getClassLoader(classpath);
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
          * @see org.jboss.dna.graph.ExecutionContext#getAccessControlContext()
          */
         public AccessControlContext getAccessControlContext() {

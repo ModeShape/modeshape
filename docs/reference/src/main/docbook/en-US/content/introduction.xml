@@ -22,7 +22,10 @@
   ~ 51 Franklin Street, Fifth Floor
   ~ Boston, MA  02110-1301  USA
   -->
-<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd">
+<!DOCTYPE preface PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd"	[
+<!ENTITY % CustomDTD SYSTEM "../custom.dtd">
+%CustomDTD;
+]>
 <chapter id="introduction">
   <title>Introduction to JBoss DNA</title>
 	<para>
@@ -31,7 +34,7 @@
 		regular JCR repository that they search, navigate, version, and listen for changes.  But under the covers, JBoss DNA
 		gets its content by federating multiple back-end systems (like databases, services, other repositories, etc.),
 		allowing those systems to continue "owning" the information but ensuring the unified repository stays up-to-date
-		and in sync.
+		and in sync.  JBoss DNA also analyzes the content you put into the repository and turns it into information you can use more effectively.
 	</para>
 	<para>
 		This document goes into detail about JBoss DNA and its capabilities, features, architecture, components, extension points,
@@ -151,12 +154,12 @@
 	    transactions, and observation. Because of this, content repositories are used by content management systems (CMS), document
 	    management systems (DMS), and other applications that manage electronic files (e.g., documents, images, multi-media, web
 	    content, etc.) and metadata associated with them (e.g., author, date, status, security information, etc.). The
-	    <ulink url="http://www.jcp.org/en/jsr/detail?id=170">Content Repository for Java technology API</ulink>
+	    <ulink url="&JSR170;">Content Repository for Java technology API</ulink>
 	    provides a standard Java API for working with content repositories. Abbreviated "JCR", this API was developed as part of the
 	    Java Community Process under
-	    <ulink url="http://www.jcp.org/en/jsr/detail?id=170">JSR-170</ulink>
+	    <ulink url="&JSR170;">JSR-170</ulink>
 	    and is being revised under
-	    <ulink url="http://www.jcp.org/en/jsr/detail?id=283">JSR-283</ulink>
+	    <ulink url="&JSR283;">JSR-283</ulink>
 	    .
 	  </para>
 	  <para>
@@ -179,17 +182,17 @@
     <title>Project roadmap</title>
     <para>
       The roadmap for JBoss DNA is managed in the project's
-      <ulink url="https://jira.jboss.org/jira/browse/DNA">JIRA instance</ulink>
+      <ulink url="&JIRA;">JIRA instance</ulink>
       . The roadmap shows the different tasks, requirements, issues and other activities that have been targeted to each of the
       upcoming releases. (The
-      <ulink url="https://jira.jboss.org/jira/browse/DNA?report=com.atlassian.jira.plugin.system.project:roadmap-panel">roadmap report</ulink>
+      <ulink url="&JIRA;?report=com.atlassian.jira.plugin.system.project:roadmap-panel">roadmap report</ulink>
       always shows the next three releases.)
     </para>
     <para>
       By convention, JIRA issues not immediately targeted to a release will be reviewed periodically to determine the
       appropriate release where they can be targeted. Any issue that is reviewed and that does not fit in a known release will
       be targeted to the
-      <ulink url="https://jira.jboss.org/jira/browse/DNA?report=com.atlassian.jira.plugin.system.project:roadmap-panel">Future Releases</ulink>
+      <ulink url="&JIRA;?report=com.atlassian.jira.plugin.system.project:roadmap-panel">Future Releases</ulink>
       bucket.
 		</para>
 		<para>
@@ -209,7 +212,7 @@
 			<itemizedlist>
 				<listitem>
 					<para>
-						<emphasis role="strong"><ulink url="http://en.wikipedia.org/wiki/Agile_software_development">Agile software development</ulink></emphasis>
+						<emphasis role="strong"><ulink url="&Wikipedia;Agile_software_development">Agile software development</ulink></emphasis>
 					  includes those software methodologies (e.g., Scrum) that promote development iterations and open collaboration.  While the
 						JBoss DNA project doesn't follow these closely, we do emphasize the importance of always having running software
 						and using running software as a measure of progress.  The JBoss DNA project also wants to move to more frequent
@@ -218,7 +221,7 @@
 				</listitem>
 				<listitem>
 					<para>
-						<emphasis role="strong"><ulink url="http://en.wikipedia.org/wiki/Test-driven_development">Test-driven development (TDD)</ulink></emphasis>
+						<emphasis role="strong"><ulink url="&Wikipedia;Test-driven_development">Test-driven development (TDD)</ulink></emphasis>
 						techniques encourage first writing test cases for new features and functionality, then changing the code to add the
 						new features and functionality, and finally the code is refactored to clean-up and address any duplication or inconsistencies.
 					</para>
@@ -239,8 +242,8 @@
 				</listitem>
 				<listitem>
 					<para>
-						<emphasis role="strong"><ulink url="http://en.wikipedia.org/wiki/Lean_software_development">Lean software development</ulink></emphasis>
-						is an adaptation of <ulink url="http://en.wikipedia.org/wiki/Lean_manufacturing">lean manufacturing techniques</ulink>,
+						<emphasis role="strong"><ulink url="&Wikipedia;Lean_software_development">Lean software development</ulink></emphasis>
+						is an adaptation of <ulink url="&Wikipedia;Lean_manufacturing">lean manufacturing techniques</ulink>,
 						where emphasis is placed on eliminating waste (e.g., defects, unnecessary complexity, unnecessary code/functionality/features), 
 						delivering as fast as passible, deferring irrevocable decisions as much as possible,
 						continuous learning (continuously adapting and improving the process), empowering the team (or community, in our case),
@@ -427,7 +430,7 @@
       Each of these modules is a Maven project with a group ID of
       <code>org.jboss.dna</code>
       . All of these projects correspond to artifacts in the
-      <ulink url="http://repository.jboss.com/maven2/">JBoss Maven 2 Repository</ulink>
+      <ulink url="&JBossMaven;">JBoss Maven 2 Repository</ulink>
       .
     </para>
   </sect1>

@@ -1,0 +1,233 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ JBoss, Home of Professional Open Source.
+  ~
+  ~ Copyright (c) 2008, Red Hat Middleware LLC or third-party contributors as
+  ~ indicated by the @author tags or express copyright attribution
+  ~ statements applied by the authors.  All third-party contributions are
+  ~ distributed under license by Red Hat Middleware LLC.
+  ~
+  ~ This copyrighted material is made available to anyone wishing to use, modify,
+  ~ copy, or redistribute it subject to the terms and conditions of the GNU
+  ~ Lesser General Public License, as published by the Free Software Foundation.
+  ~
+  ~ This program is distributed in the hope that it will be useful,
+  ~ but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+  ~ or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License
+  ~ for more details.
+  ~
+  ~ You should have received a copy of the GNU Lesser General Public License
+  ~ along with this distribution; if not, write to:
+  ~ Free Software Foundation, Inc.
+  ~ 51 Franklin Street, Fifth Floor
+  ~ Boston, MA  02110-1301  USA
+  -->
+<!DOCTYPE preface PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd"	[
+<!ENTITY % CustomDTD SYSTEM "../custom.dtd">
+%CustomDTD;
+]>
+<chapter id="environment">
+  <title>Environment</title>
+  <para>
+		The various components of JBoss DNA are designed as plain old Java objects, or POJOs.  And rather than making assumptions
+		about their environment, each component instead requires that any external dependencies necessary for it to operate
+		must be supplied to it.  This pattern is known as Dependency Injection, and it allows the components to be simpler
+		and allows for a great deal of flexibility and customization in how the components are configured.  
+		And, JBoss DNA will soon provide a higher-level component that leverages the 
+		<ulink url="http://www.jboss.org/jbossmc">JBoss Microcontainer</ulink> to automatically assemble and wire together
+		all the lower-level components.
+  </para>
+	<sect1 id="security">
+		<title>Security</title>
+	  <para>
+	    JBoss DNA uses the
+	    <ulink url="http://java.sun.com/javase/technologies/security/">Java Authentication and Authorization Service (JAAS)</ulink>
+	    for its security mechanism. Not only is this the standard approach for authenticating and authorizing in Java, but
+			it also enables JBoss DNA to integrate existing security systems.  
+	  </para>
+	  <para>
+			There are quite a few JAAS providers available, but one of the best and most powerful providers is
+	    <ulink url="http://www.jboss.org/jbosssecurity/">JBoss Security</ulink>, which is the open source
+			security framework used by JBoss.  JBoss Security offers a number of JAAS login modules, including:
+	    <itemizedlist>
+	      <listitem>
+	        <para>
+	          <emphasis role="strong">User-Roles Login Module</emphasis>
+	          is a simple
+	          <code>javax.security.auth.login.LoginContext</code>
+	          implementation that uses usernames and passwords stored in a properties file.
+	        </para>
+	      </listitem>
+	      <listitem>
+	        <para>
+	          <emphasis role="strong">Client Login Module</emphasis>
+	          prompts the user for their username and password.
+	        </para>
+	      </listitem>
+	      <listitem>
+	        <para>
+	          <emphasis role="strong">Database Server Login Module</emphasis>
+	          uses a JDBC database to authenticate principals and associate them with roles.
+	        </para>
+	      </listitem>
+	      <listitem>
+	        <para>
+	          <emphasis role="strong">LDAP Login Module</emphasis>
+	          uses an LDAP directory to authenticate principals. Two implementations are available.
+	        </para>
+	      </listitem>
+	      <listitem>
+	        <para>
+	          <emphasis role="strong">Certificate Login Module</emphasis>
+	          authenticates using X509 certificates, obtaining roles from either property files or a JDBC database.
+	        </para>
+	      </listitem>
+	      <listitem>
+	        <para>
+	          <emphasis role="strong">Operating System Login Module</emphasis>
+	          authenticates using the operating system's mechanism.
+	        </para>
+	      </listitem>
+	    </itemizedlist>
+	    and many others.  Plus, JBoss Security also provides other capabilities, such as using XACML policies or using federated single sign-on. 
+			For more detail, see the <ulink url="http://www.jboss.org/jbosssecurity/">JBoss Security</ulink> project.
+	  </para>
+		<sect2 id="authentication">
+			<title>Authenticating with JAAS</title>
+			<para>
+				JBoss DNA defers to JAAS to authenticate clients creating repository connections (known as JCR Sessions if using the JCR API),
+				and generally expects the client application to obtain the JAAS &LoginContext; or &AppControlContext;.
+				These are then passed to JBoss DNA, which merely verifies that authentication has been done.
+			</para>
+			<para>
+				As we'll see in the <link linkend="execution-context">next section</link>, JBoss DNA has the notion of an &ExecutionContext;
+				that can be created using JAAS login or access control contexts.  These execution contexts therefore contain information
+				about the subject.
+			</para>
+			<para>
+				We'll also see in the <link linkend="jcr">chapter on JCR</link> how JAAS can be used for authentication when
+				JCR Sessions are created.
+			</para>
+		</sect2>
+		<sect2 id="authorization">
+			<title>Authorization with JAAS</title>
+			<para>
+				JBoss DNA does not currently use any of the authorization features of JAAS.  However, in future releases where authorization
+				is supported, JBoss DNA will rely upon JAAS authorization just as it currently does for authentication.
+			</para>
+		</sect2>
+	</sect1>
+	<sect1 id="execution-context">
+		<title>Execution contexts</title>
+		<para>
+			One of the objects that must be supplied to many JBoss DNA components is an &ExecutionContext;.  Some components 
+			require this context to be passed into individual methods, allowing the context to vary with each method invocation.
+			Other components require the context to be provided before it's used, and will use that context for all its operations
+			(until it is given a different one).
+		</para>
+		<para>
+			What does an &ExecutionContext; represent?  Quite simply, it's the set of objects that define the environment
+			or context in which the method or component is currently operating.  It includes a way for recording and reporting 
+			errors and problems.  It includes the ability to <link linkend="classloaders">create class loaders</link> 
+			given a classpath of class loader names. It also includes information about the current <link linkend="security">user</link>.
+			It includes access to factories that can be used to create and convert property values. And it includes factories 
+			for working with namespaces and fully-qualified names.  In fact, as JBoss DNA evolves, more things may need to be
+			added.  Here is what the &ExecutionContext; interface looks like:
+		</para>
+	  <programlisting>
+public interface &ExecutionContext; extends &ClassLoaderFactory; {
+
+    /**
+     * Get the factories that should be used to create values for {@link Property properties}.
+     * @return the property value factory; never null
+     */
+    &ValueFactories; getValueFactories();
+
+    /**
+     * Get the namespace registry for this context.
+     * @return the namespace registry; never null
+     */
+    &NamespaceRegistry; getNamespaceRegistry();
+
+    /**
+     * Get the factory for creating {@link Property} objects.
+     * @return the property factory; never null
+     */
+    &PropertyFactory; getPropertyFactory();
+
+    /**
+     * Get the current JAAS access control context.
+     * @return the access control context; may be <code>null</code>
+     */
+    &AccessControlContext; getAccessControlContext();
+
+    /**
+     * Get the current JAAS login context.
+     * @return the login context; may be <code>null</code>
+     */
+    &LoginContext; getLoginContext();
+
+    /**
+     * Get the JAAS subject for which this context was created.
+     * @return the subject; never null
+     */
+    &Subject; getSubject();
+
+    /**
+     * Return a logger associated with this context. This logger records only those activities within the 
+     * context and provide a way to capture the context-specific activities. All log messages are also
+     * sent to the system logger, so classes that log via this mechanism should <i>not</i> also 
+     * {@link Logger#getLogger(Class) obtain a system logger}.
+     * @param clazz the class that is doing the logging
+     * @return the logger, named after <code>clazz</code>; never null
+     */
+    &Logger; getLogger( Class&lt;?> clazz );
+
+    /**
+    * Return a logger associated with this context. This logger records only those activities within the 
+    * context and provide a way to capture the context-specific activities. All log messages are also
+    * sent to the system logger, so classes that log via this mechanism should <i>not</i> also 
+    * {@link Logger#getLogger(Class) obtain a system logger}.
+     * @param name the name for the logger
+     * @return the logger, named after <code>clazz</code>; never null
+     */
+    &Logger; getLogger( String name );
+}
+</programlisting>
+		<para>
+			Notice that &ExecutionContext; extends the &ClassLoaderFactory; interface described in the
+			<link linkend="classloaders">previous chapter</link>.
+		</para>
+	  <para>
+			The fact that so many of the JBoss DNA components take &ExecutionContext; instances gives us some interesting possibilities.  
+			For example, one execution context instance can be used as the highest-level (or "application-level") context for all of the services 
+			(e.g., &RepositoryService;, &SequencingService;, etc.).
+			Then, an execution context could be created for each user that will be performing operations, and that user's context can
+			be passed around to not only provide security information about the user but also to allow the activities being performed
+			to be recorded for user feedback, monitoring and/or auditing purposes.
+		</para>
+		<para>
+			While execution contexts may sound complicated, they're actually very simple to use.  In fact, JBoss DNA provides an factory interface
+			for creating &ExecutionContext; instances.  Not surprisingly it's called &ExecutionContextFactory;
+			and it has methods for creating contexts using <link linkend="security">JAAS</link> login or access control contexts.
+			JBoss DNA even provides a &BasicExecutionContextFactory; implementation that can be created using its no-arg
+			constructor.
+		</para>
+		<para>
+			The following code fragment shows how easy it is to create various execution contexts:
+		</para>
+	  <programlisting>
+&ExecutionContextFactory; factory = new &BasicExecutionContextFactory;();
+&ExecutionContext; context1 = factory.create();
+
+// Create a context for a user, authenticating using JAAS ...
+&CallbackHandler; callbackHandler = ...
+&LoginContext; loginContext = new LoginContext("username",callbackHandler);
+&ExecutionContext; context2 = factory.create(loginContext);
+</programlisting>
+		<para>
+			These contexts (or the context factory) can then be passed to the various components as needed.
+		</para>
+	</sect1>
+</chapter>
+

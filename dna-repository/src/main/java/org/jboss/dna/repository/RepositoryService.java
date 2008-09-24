@@ -29,8 +29,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import net.jcip.annotations.ThreadSafe;
 import org.jboss.dna.common.collection.Problems;
 import org.jboss.dna.common.collection.SimpleProblems;
-import org.jboss.dna.common.component.ClassLoaderFactory;
-import org.jboss.dna.common.component.StandardClassLoaderFactory;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.common.util.Reflection;
 import org.jboss.dna.connector.federation.FederationException;
@@ -99,7 +97,6 @@ public class RepositoryService implements AdministeredService {
         }
     }
 
-    private final ClassLoaderFactory classLoaderFactory;
     private final ExecutionContext context;
     private final RepositoryLibrary sources;
     private final String configurationSourceName;
@@ -114,17 +111,12 @@ public class RepositoryService implements AdministeredService {
      * @param sources the source manager
      * @param configurationSourceName the name of the {@link RepositorySource} that is the configuration repository
      * @param context the execution context in which this service should run
-     * @param classLoaderFactory the class loader factory used to instantiate {@link RepositorySource} instances; may be null if
-     *        this instance should use a default factory that attempts to load classes first from the
-     *        {@link Thread#getContextClassLoader() thread's current context class loader} and then from the class loader that
-     *        loaded this class.
      * @throws IllegalArgumentException if the bootstrap source is null or the execution context is null
      */
     public RepositoryService( RepositoryLibrary sources,
                               String configurationSourceName,
-                              ExecutionContext context,
-                              ClassLoaderFactory classLoaderFactory ) {
-        this(sources, configurationSourceName, null, context, classLoaderFactory);
+                              ExecutionContext context ) {
+        this(sources, configurationSourceName, null, context);
     }
 
     /**
@@ -136,17 +128,12 @@ public class RepositoryService implements AdministeredService {
      * @param pathToConfigurationRoot the path of the node in the configuration source repository that should be treated by this
      *        service as the root of the service's configuration; if null, then "/dna:system" is used
      * @param context the execution context in which this service should run
-     * @param classLoaderFactory the class loader factory used to instantiate {@link RepositorySource} instances; may be null if
-     *        this instance should use a default factory that attempts to load classes first from the
-     *        {@link Thread#getContextClassLoader() thread's current context class loader} and then from the class loader that
-     *        loaded this class.
      * @throws IllegalArgumentException if the bootstrap source is null or the execution context is null
      */
     public RepositoryService( RepositoryLibrary sources,
                               String configurationSourceName,
                               Path pathToConfigurationRoot,
-                              ExecutionContext context,
-                              ClassLoaderFactory classLoaderFactory ) {
+                              ExecutionContext context ) {
         CheckArg.isNotNull(configurationSourceName, "configurationSourceName");
         CheckArg.isNotNull(sources, "sources");
         CheckArg.isNotNull(context, "context");
@@ -155,7 +142,6 @@ public class RepositoryService implements AdministeredService {
         this.pathToConfigurationRoot = pathToConfigurationRoot;
         this.configurationSourceName = configurationSourceName;
         this.context = context;
-        this.classLoaderFactory = classLoaderFactory != null ? classLoaderFactory : new StandardClassLoaderFactory();
     }
 
     /**
@@ -184,13 +170,6 @@ public class RepositoryService implements AdministeredService {
      */
     public ExecutionContext getExecutionEnvironment() {
         return context;
-    }
-
-    /**
-     * @return classLoaderFactory
-     */
-    public ClassLoaderFactory getClassLoaderFactory() {
-        return this.classLoaderFactory;
     }
 
     public String getJndiName() {
@@ -279,7 +258,7 @@ public class RepositoryService implements AdministeredService {
         // Create the instance ...
         String classname = stringFactory.create(classnameProperty.getValues().next());
         String[] classpath = classpathProperty == null ? new String[] {} : stringFactory.create(classpathProperty.getValuesAsArray());
-        ClassLoader classLoader = this.classLoaderFactory.getClassLoader(classpath);
+        ClassLoader classLoader = context.getClassLoader(classpath);
         RepositorySource source = null;
         try {
             Class<?> sourceClass = classLoader.loadClass(classname);
