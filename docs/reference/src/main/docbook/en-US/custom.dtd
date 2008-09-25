@@ -26,7 +26,9 @@
 
 <!-- Types in JRE -->
 
+<!ENTITY String							      		"<ulink url='&Java;java/lang/String.html'><interface>String</interface></ulink>">
 <!ENTITY InputStream				      		"<ulink url='&Java;java/io/InputStream.html'><interface>InputStream</interface></ulink>">
+<!ENTITY IOException				      		"<ulink url='&Java;java/io/IOException.html'><classname>IOException</classname></ulink>">
 <!ENTITY ClassLoader				      		"<ulink url='&Java;java/lang/ClassLoader.html'><interface>ClassLoader</interface></ulink>">
 <!ENTITY AccessControlContext      		"<ulink url='&Java;java/security/AccessController.html'><classname>AccessControlContext</classname></ulink>">
 <!ENTITY LoginContext				      		"<ulink url='&Java;javax/security/auth/login/LoginContext.html'><classname>LoginContext</classname></ulink>">
@@ -61,6 +63,7 @@
 <!ENTITY RepositoryConnection    			"<ulink url='&API;graph/connectors/RepositoryConnection.html'><interface>RepositoryConnection</interface></ulink>">
 <!ENTITY StreamSequencer		    			"<ulink url='&API;graph/sequencers/StreamSequencer.html'><interface>StreamSequencer</interface></ulink>">
 <!ENTITY SequencerOutput		    			"<ulink url='&API;graph/sequencers/SequencerOutput.html'><interface>SequencerOutput</interface></ulink>">
+<!ENTITY MimeTypeDetector					  	"<ulink url='&API;graph/mimetype/MimeTypeDetector.html'><interface>MimeTypeDetector</interface></ulink>">
 
 <!-- Types in dna-repository -->
 
@@ -74,6 +77,9 @@
 <!ENTITY SimpleSessionFactory				 	"<ulink url='&API;repository/util/SimpleSessionFactory.html'><classname>SimpleSessionFactory</classname></ulink>">
 <!ENTITY JcrExecutionContext	   			"<ulink url='&API;repository/util/JcrExecutionContext.html'><interface>JcrExecutionContext</interface></ulink>">
 <!ENTITY BasicJcrExecutionContext	  	"<ulink url='&API;repository/util/BasicJcrExecutionContext.html'><classname>BasicJcrExecutionContext</classname></ulink>">
+<!ENTITY MimeType									  	"<ulink url='&API;repository/mimetype/MimeType.html'><classname>MimeType</classname></ulink>">
+<!ENTITY MimeTypeDetectorConfig		  	"<ulink url='&API;repository/mimetype/MimeTypeDetectorConfig.html'><interface>MimeTypeDetectorConfig</interface></ulink>">
+
 
 <!-- Types in dna-jcr -->
 
@@ -87,4 +93,5 @@
 <!ENTITY ImageMetadataSequencer		  	"<ulink url='&API;sequencer/image/ImageMetadataSequencer.html'><classname>ImageMetadataSequencer</classname></ulink>">
 <!ENTITY ImageMetadata						  	"<ulink url='&API;sequencer/image/ImageMetadata.html'><classname>ImageMetadata</classname></ulink>">
 <!ENTITY ImageSequencerI18n				  	"<ulink url='&API;sequencer/image/ImageSequencerI18n.html'><classname>ImageSequencerI18n</classname></ulink>">
+<!ENTITY ApertureMimeTypeDetector	  	"<ulink url='&API;mimetype/ApertureMimeTypeDetector.html'><classname>ApertureMimeTypeDetector</classname></ulink>">
 

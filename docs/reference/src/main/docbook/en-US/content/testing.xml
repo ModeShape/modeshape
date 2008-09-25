@@ -28,13 +28,103 @@
 ]>
 <chapter id="testing">
   <title>Testing</title>
-  <para></para>
+  <para>
+  	The JBoss DNA project uses automated testing to verify that the software is doing what it's supposed to
+		and not doing what it shouldn't do.  These automated tests are run continuously and also act as regression tests,
+		ensuring that we known if any problems we find and fix reappear later.  All of our tests are executed as part of
+		our <link linkend="maven">Maven</link> build process, and the entire build process (including the tests)
+		is automatically run using <link linkend="hudson">Hudson</link> continuous integration system.
+  </para>
   <sect1 id="unit-tests">
     <title>Unit tests</title>
-    <para></para>
+    <para>
+    	<emphasis role="strong">Unit tests</emphasis> verify the behavior of a single class (or small set of classes) in isolation
+			from other classes.
+ 			We use the JUnit 4.4 testing framework, which has significant improvements over earlier versions and makes
+			it very easy to quickly write unit tests with little extra code.  We also frequently use the Mockito library
+			to help create mock implementations of other classes that are not under test but are used in the tests.
+    </para>
+  	<para>
+			Unit tests should generally run quickly and should not require large assemblies of components.  Additionally,
+			they may rely upon the file resources included in the project, but these tests should require no external resources
+			(like databases or servers).  Note that our unit tests are run during the "test" phase of the standard
+			<ulink url="http://maven.apache.org/guides/introduction/introduction-to-the-lifecycle.html">Maven lifecycle</ulink>.
+			This means that they are executed against the raw .class files created during complication.
+		</para>
+		<para>
+			Developers are expected to run all of the JBoss DNA unit tests in their local environment before committing changes to SVN.
+			So, if you're a developer and you've made changes to your local copy of the source, you can run those tests that are
+			related to your changes using your IDE or with Maven (or any other mechanism).  But before you commit your changes, 
+			you are expected to run a full Maven build using <code>mvn clean install</code> (in the "trunk/" directory).
+			Please do <emphasis>not</emphasis> rely upon continuous integration to run all of the tests for you - the CI
+			system is there to catch the occasional mistakes and to also run the <link linkend="integration-tests">integration tests</link>.
+    </para>
   </sect1>
   <sect1 id="integration-tests">
     <title>Integration tests</title>
-    <para></para>
+    <para>
+    	While <link linkend="unit-tests">unit tests</link> test individual classes in (relative) isolation, the purpose of
+			<emphasis role="strong">integration tests</emphasis> are to verify that assemblies of classes and components are
+			behaving correctly.  These assemblies are often the same ones that end users will actually use.  In fact,
+			integration tests are executed during the "integration-test" phase of the standard
+			<ulink url="http://maven.apache.org/guides/introduction/introduction-to-the-lifecycle.html">Maven lifecycle</ulink>,
+			meaning they are executed against the packaged JARs and artifacts of the project.
+    </para>
+		<para>
+			Integration tests also use the JUnit 4.4 framework, so they are again easy to write and follow the same pattern
+			as unit tests. However, because they're working with larger assemblies of components, they often will take longer
+			to set up, longer to run, and longer to tear down.  They also may require initializing "external resources", like
+			databases or servers.  
+		</para>
+		<para>
+			Note, that while external resources may be required, care should be taken to minimize these dependencies and to
+			ensure that most (if not all) integration tests may be run by anyone who downloads the source code.  This means
+			that these external resources should be available and set up within the tests.  For example, use in-memory databases
+			where possible.  Or, if a database is required, use an open-source database (e.g., MySQL or PostgreSQL).  And when
+			these external resources are not available, it should be obvious from the test class names and/or test method names 
+			that it involved an external resource (e.g., "<code>MySqlConnectorIntegrationTest.shouldFindNodeStoredInDatabase()</code>").
+		</para>
   </sect1>
+  <sect1 id="writing-tests">
+    <title>Writing tests</title>
+		<para>
+			As mentioned in <link linkend="methodology">the introduction</link>, the JBoss DNA project doesn't follow any one methodology
+			or process.  Instead, we simply have a goal that as much code as possible is tested to ensure it behaves as expected.
+			Do we expect 100% of the code is covered by automated tests?  No, but we do want to test as much as we can.
+			Maybe a simple JavaBean class doesn't need many tests, but any class with non-trivial logic should be tested.
+		</para>
+		<para>
+			We do encourage writing tests either before or while you write the code.  Again, we're not blindly following a methodology.
+			Instead, there's a very practical reason: writing the tests early on helps you write classes that are testable.  
+			If you wait until after the class (or classes) are done, you'll probably find that it's not easy to test all
+			of the logic (especially the complicated logic).
+		</para>
+		<para>
+			Another suggestion is to write tests so that they specify and verify the behavior that is expected from a class or component.
+			One challenge developers often have is knowing what they should even test and what the tests should look like.
+			This is where <emphasis role="strong"><ulink url="http://behaviour-driven.org/">Behavior-driven development (BDD)</ulink></emphasis>
+			helps out.  If you think about what a class' behaviors are supposed to be (e.g., requirements), simply capture those
+			requirements as test methods (with no implementations).  For example, a test class for sequencer 
+			implementation might have a test method	<code>shouldNotThrowAnErrorWhenTheSuppliedStreamIsNull() { }</code>.  Then, after you enumerate
+			all the requirements you can think of, go back and start implementing the test methods.
+		</para>
+		<para>
+			If you look at the existing test cases, you'll find that the names of the unit and integration tests in JBoss DNA 
+			follow a naming style, where the test method names are readable sentences.  Actually, we try to name the test methods
+			<emphasis>and</emphasis> the test classes such that they form a concisely-worded requirement.  For example,
+		</para>
+		<programlisting>InMemorySequencerTest.shouldNotThrowAnErrorWhenTheSuppliedStreamIsNull()</programlisting>
+		<para>
+			is easily translated into a readable requirement:
+		</para>
+		<programlisting>InMemorySequencer should not throw an error when the supplied stream is null.</programlisting>
+		<para>
+			In fact, at some point in the future, we'd like to process the source to automatically generate a list of the behavior specifications
+			that are asserted by the tests.
+		</para>
+		<para>
+			But for now, we write tests - a lot of them.  And by following a few simple conventions and practices, we're able
+			to do it quickly and in a way that makes it easy to understand what the code is supposed to do (or not do).
+		</para>
+	</sect1>
 </chapter>

@@ -28,17 +28,175 @@
 ]>
 <chapter id="mimetypes">
   <title>MIME types</title>
-  <para></para>
+  <para>
+  	JBoss DNA often needs the ability to determine the MIME type for some binary content.  When uploading content into
+		a repository, we may want to add the MIME type as metadata.  Or, we may want to make some processing decisions
+		based upon the MIME type.  So, JBoss DNA created a small pluggable framework for determining the MIME type by using
+		the name of the file (e.g., extensions) and/or by reading the actual content.  Technically, the framework
+		delegates this to one or more extensions.  And we've provided one extension that does a very good job at 
+		determining the MIME type from a large variety of file types.  But if that isn't sufficient, you can always
+		incorporate your own detector into JBoss DNA.
+  </para>
+	<para>
+		To use this system, you simply invoke a static method and supply the name of the content (e.g., the name of the file, with the extension)
+		and the &InputStream; to the actual binary content:
+	</para>
+	<programlisting>&MimeType;.of(name,content)</programlisting>
+	<para>
+		The result is a &String; containing the <ulink url="http://www.iana.org/assignments/media-types/">MIME type</ulink>
+	  (e.g., "text/plain") or null if the MIME type cannot be determined.  Note that the name or &InputStream; may be
+		null, making this a very versatile utility.
+	</para>
   <sect1 id="detectors">
     <title>JBoss DNA MIME type detectors</title>
-    <para></para>
+    <para>
+    	The principle component in this framework is the concept of a <emphasis role="strong">detector</emphasis>.
+			A detector attempts to determine the MIME type using the name of the content (e.g., the file name)
+			and the actual content itself.  If the detector is able to determine the MIME type, it simply returns
+			it as a string.  If not, it merely returns null.  Note, however, that a detector must be thread-safe.
+    </para>
+		<para>
+			Here is the interface:
+		</para>
+		<programlisting>
+package org.jboss.dna.graph.mimetype;
+@ThreadSafe
+public interface &MimeTypeDetector; {
+
+    /**
+     * Returns the MIME-type of a data source, using its supplied content and/or
+     * its supplied name, depending upon the implementation. If the MIME-type 
+     * cannot be determined, either a "default" MIME-type or <code>null</code> may 
+     * be returned, where the former will prevent earlier registered MIME-type 
+     * detectors from being consulted.
+     * 
+     * @param name The name of the data source; may be <code>null</code>.
+     * @param content The content of the data source; may be <code>null</code>.
+     * @return The MIME-type of the data source, or optionally <code>null</code> 
+     * if the MIME-type could not be determined.
+     * @throws &IOException; If an error occurs reading the supplied content.
+     */
+    &String; mimeTypeOf( &String; name,
+                       &InputStream; content ) throws &IOException;;
+}</programlisting>
+		<para>
+			Detectors can be added to the &MimeType; class using the <code>addDetector(&MimeTypeDetectorConfig; config)</code>
+			method, where the &MimeTypeDetectorConfig; defines the name of the detector class, the name of the
+			<link linkend="classloaders">class loader</link>, a name, and a description.  It is also possible
+			to set the &ClassLoaderFactory; that the &MimeType; singleton will use.
+		</para>
+		<para>
+			We'll next look at the MIME type detectors that are provided out by JBoss DNA out of the box, and how to write your own. 
+		</para>
     <sect2 id="dna-mimetype-detector-aperture">
       <title>Aperture MIME type detector</title>
-      <para></para>
+      <para>
+      	The &ApertureMimeTypeDetector; class is an implementation of &MimeTypeDetector; that uses the
+				<ulink url="http://aperture.sourceforge.net/">Aperture</ulink> open-source library, which
+				is a very capable utility for determining the MIME type for a wide range of file types,
+				using both the file name and the actual content.
+      </para>
     </sect2>
   </sect1>
   <sect1 id="custom-detectors">
     <title>Writing custom detectors</title>
-    <para></para>
+	  <para>
+	  Creating a custom detector involves the following steps:
+	  <itemizedlist>
+	    <listitem>
+	      <para>Create a Maven 2 project for your detector;</para>
+	    </listitem>
+	    <listitem>
+	      <para>Implement the &MimeTypeDetector; interface with your own implementation, and create unit tests to verify
+	      the functionality and expected behavior;</para>
+	    </listitem>
+	    <listitem>
+	      <para>Add a &MimeTypeDetectorConfig; to the &MimeType; class in your application
+	      as described <link linkend="detectors">earlier</link>; and</para>
+	    </listitem>
+	    <listitem>
+	      <para>Deploy the JAR file with your implementation (as well as any dependencies), and make them available to JBoss DNA
+	      in your application.</para>
+	    </listitem>
+	  </itemizedlist>
+	  It's that simple.
+	  </para>
+	  <sect2 id="custom_detector_project">
+	    <title>Creating the Maven 2 project</title>
+	    <para>The first step is to create the Maven 2 project that you can use to compile your code and build the JARs.
+	    Maven 2 automates a lot of the work, and since you're already <link linkend="maven">set up to use Maven</link>,
+	    using Maven for your project will save you a lot of time and effort.  Of course, you don't have to use Maven 2, but then you'll
+	    have to get the required libraries and manage the compiling and building process yourself.</para>
+	    <note>
+	      <para>JBoss DNA may provide in the future a Maven archetype for creating detector projects.  If you'd find this useful
+	        and would like to help create it, please <link linkend="preface">join the community</link>.</para>
+	    </note>
+			<note>
+		    <para>
+					The <emphasis role="strong">dna-mimetype-detector-aperture</emphasis> project is a small, self-contained detector implementation that
+			    that you can use to help you get going.  Starting with this project's source and modifying it to suit your needs
+			 		may be the easiest way to get started.
+			    See the subversion repository: 
+					<ulink url="&Subversion;trunk/extensions/dna-mimetype-detector-aperture/">&Subversion;trunk/sequencers/dna-mimetype-detector-aperture/</ulink>
+			  </para>
+			</note>
+	    <para>You can create your Maven project any way you'd like.  For examples, see the <ulink url="http://maven.apache.org/guides/getting-started/index.html#How_do_I_make_my_first_Maven_project">Maven 2 documentation</ulink>.  
+	    Once you've done that, just add the dependencies in your project's <code>pom.xml</code> dependencies section:</para>
+	  	<programlisting role="XML"><![CDATA[<dependency>
+  <groupId>org.jboss.dna</groupId>
+  <artifactId>dna-common</artifactId>
+  <version>0.1</version>
+</dependency>
+<dependency>
+  <groupId>org.jboss.dna</groupId>
+  <artifactId>dna-graph</artifactId>
+  <version>0.1</version>
+</dependency>
+<dependency>
+  <groupId>org.slf4j</groupId>
+  <artifactId>slf4j-api</artifactId>
+</dependency>
+]]></programlisting>
+			<para>These are minimum dependencies required for compiling a detector.  Of course, you'll have to add
+	  		other dependencies that your sequencer needs.</para>
+	  	<para>As for testing, you probably will want to add more dependencies, such as those listed here:</para>
+			<programlisting role="XML"><![CDATA[<dependency>
+  <groupId>junit</groupId>
+  <artifactId>junit</artifactId>
+  <version>4.4</version>
+  <scope>test</scope>
+</dependency>
+<dependency>
+  <groupId>org.hamcrest</groupId>
+  <artifactId>hamcrest-library</artifactId>
+  <version>1.1</version>
+  <scope>test</scope>
+</dependency>
+<!-- Logging with Log4J -->
+<dependency>
+  <groupId>org.slf4j</groupId>
+  <artifactId>slf4j-log4j12</artifactId>
+  <version>1.4.3</version>
+  <scope>test</scope>
+</dependency>
+<dependency>
+  <groupId>log4j</groupId>
+  <artifactId>log4j</artifactId>
+  <version>1.2.14</version>
+  <scope>test</scope>
+</dependency>
+]]></programlisting>
+			<para>
+				After you've created the project, simply implement the &MimeTypeDetector; interface.  And testing should be
+				quite straightforward, MIME type detectors don't require any other components.  In your tests,
+				simply instantiate your &MimeTypeDetector; implementation, supply various combinations of names and/or &InputStream;s,
+				and verify the output is what you expect.
+	  	</para>
+			<para>
+				To use in your application, create a &MimeTypeDetectorConfig; object with the name, description, and class information
+				for your detector, and add to the &MimeType; class using the <code>addDetector(&MimeTypeDetectorConfig; config)</code> method.
+				Then, just use the &MimeType; class.
+			</para>
+		</sect2>
   </sect1>
 </chapter>
