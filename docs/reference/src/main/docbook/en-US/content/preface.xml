@@ -29,7 +29,7 @@
 <preface id="preface">
   <title>Target audience</title>
   <para>
-    This guide is for the developers of JBoss DNA and those users that want to have a better understanding of how JBoss DNA
+    This reference guide is for the developers of JBoss DNA and those users that want to have a better understanding of how JBoss DNA
     works or how to extend the functionality. For a higher-level introduction to JBoss DNA, see the &GettingStarted; document.
   </para>
   <para>

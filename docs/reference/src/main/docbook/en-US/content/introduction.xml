@@ -245,7 +245,7 @@
 						<emphasis role="strong"><ulink url="&Wikipedia;Lean_software_development">Lean software development</ulink></emphasis>
 						is an adaptation of <ulink url="&Wikipedia;Lean_manufacturing">lean manufacturing techniques</ulink>,
 						where emphasis is placed on eliminating waste (e.g., defects, unnecessary complexity, unnecessary code/functionality/features), 
-						delivering as fast as passible, deferring irrevocable decisions as much as possible,
+						delivering as fast as possible, deferring irrevocable decisions as much as possible,
 						continuous learning (continuously adapting and improving the process), empowering the team (or community, in our case),
 						and several other guidelines.  Lean software development can be thought of as an evolution of agile techniques
 						in the same way that behavior-driven development is an evolution of test-driven development.  Lean techniques

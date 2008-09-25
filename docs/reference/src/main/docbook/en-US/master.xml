@@ -29,7 +29,7 @@
 <book lang="en">
 	<bookinfo>
 		<title>JBoss DNA</title>
-		<subtitle>Getting Started Guide</subtitle>
+		<subtitle>Reference Guide</subtitle>
 		<releaseinfo>&versionNumber;</releaseinfo>
 		<productnumber>&versionNumber;</productnumber>
 		<issuenum>1</issuenum>

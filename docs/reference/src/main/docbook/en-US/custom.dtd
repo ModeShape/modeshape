@@ -1,4 +1,4 @@
-<!ENTITY versionNumber "0.3">
+<!ENTITY versionNumber "0.2">
 <!ENTITY copyrightYear "2008">
 <!ENTITY copyrightHolder "Red Hat Middleware, LLC.">
 
@@ -88,8 +88,13 @@
 
 <!-- Types in extensions/ -->
 
+<!ENTITY InMemoryRepository			  		"<ulink url='&API;connector/inmemory/InMemoryRepository.html'><classname>InMemoryRepository</classname></ulink>">
 <!ENTITY InMemoryRepositorySource  		"<ulink url='&API;connector/inmemory/InMemoryRepositorySource.html'><classname>InMemoryRepositorySource</classname></ulink>">
-<!ENTITY FederatedRepositorySource  	"<ulink url='&API;connector/federated/FederatedRepositorySource.html'><classname>FederatedRepositorySource</classname></ulink>">
+<!ENTITY JBossCacheRepository			  	"<ulink url='&API;connector/jbosscache/JBossCacheRepository.html'><classname>JBossCacheRepository</classname></ulink>">
+<!ENTITY JBossCacheSource  						"<ulink url='&API;connector/jbosscache/JBossCacheSource.html'><classname>JBossCacheSource</classname></ulink>">
+<!ENTITY FederatedRepositorySource  	"<ulink url='&API;connector/federation/FederatedRepositorySource.html'><classname>FederatedRepositorySource</classname></ulink>">
+<!ENTITY FederatedRepository			  	"<ulink url='&API;connector/federation/FederatedRepository.html'><classname>FederatedRepository</classname></ulink>">
+<!ENTITY Projection								  	"<ulink url='&API;connector/federation/Projection.html'><classname>Projection</classname></ulink>">
 <!ENTITY ImageMetadataSequencer		  	"<ulink url='&API;sequencer/image/ImageMetadataSequencer.html'><classname>ImageMetadataSequencer</classname></ulink>">
 <!ENTITY ImageMetadata						  	"<ulink url='&API;sequencer/image/ImageMetadata.html'><classname>ImageMetadata</classname></ulink>">
 <!ENTITY ImageSequencerI18n				  	"<ulink url='&API;sequencer/image/ImageSequencerI18n.html'><classname>ImageSequencerI18n</classname></ulink>">

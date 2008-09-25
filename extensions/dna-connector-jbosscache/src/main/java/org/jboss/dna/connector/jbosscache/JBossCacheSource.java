@@ -68,6 +68,7 @@ import org.jboss.dna.graph.properties.Property;
  * <p>
  * Like other {@link RepositorySource} classes, instances of JBossCacheSource can be placed into JNDI and do support the creation
  * of {@link Referenceable JNDI referenceable} objects and resolution of references into JBossCacheSource.
+ * </p>
  * 
  * @author Randall Hauch
  */

@@ -28,25 +28,46 @@
 ]>
 <chapter id="jcr">
   <title>Content Repositories for Java (JCR)</title>
-  <para></para>
+  <para>
+  	The
+    <ulink url="&JSR170;">Content Repository for Java technology API</ulink>
+    provides a standard Java API for working with content repositories. Abbreviated "JCR", this API was developed as part of the
+    Java Community Process under <ulink url="&JSR170;">JSR-170</ulink> (JCR 1.0) and is being revised under <ulink url="&JSR283;">JSR-283</ulink>.
+		JBoss DNA provides a JCR 1.0 implementation that allows you to work with the contents of a repository using the
+		JCR API.  For information about how to use the JCR API, please see the <ulink url="&JSR170;">JSR-170</ulink> specification.
+  </para>
   <sect1 id="jcr-repositories">
     <title>Obtaining JCR repositories</title>
-    <para>Discuss how to obtain JCR repository instances (from the Repository Service).</para>
+		<para>The JCR API doesn't define how your application first obtains a reference to a &Repository; implementation.
+			With JBoss DNA, you simply creating a &JcrRepository; object and supply
+			an &ExecutionContextFactory; and a &RepositoryConnectionFactory; (such as a &RepositoryLibrary; or &RepositoryService;).
+			Since &JcrRepository; implements the JCR &Repository; interface, from this point forward you can just use the
+			standard JCR API.
+		</para>
+		<note>
+			<para>
+				For more information about the &ExecutionContextFactory; and &RepositoryConnectionFactory; classes, see
+				the chapter on <link linkend="environment">setting up a JBoss DNA environment</link> and
+				<link linkend="repositories">setting up the &RepositoryService;</link>.
+			</para>
+		</note>
   </sect1>
   <sect1 id="jcr-sessions">
     <title>Creating JCR sessions</title>
-    <para>Discuss how to obtain JCR sessions and how the credentials work. Also discuss that sessions should be created,
-      used, and closed.</para>
-		<para>But how does JAAS authentication work with the JCR API and the JBoss DNA JCR implementation?  
-			In JCR, a &Session; represents our connection. So after we create a &JcrRepository; instance,
-			we just have to call one of the <code>login(...)</code> methods:
+		<para>Creating sessions is done using a &Repository; one of its <code>login(...)</code> methods, where the
+			name of the workspace corresponds to the name of the &RepositorySource;:
 		</para>
-    <programlisting role="JAVA"><![CDATA[
-JcrRepository jcrRepository = new JcrRepository(contextFactory, sources);
-Session session = jcrRepository.login(sourceName);
- ]]></programlisting>
-		<para>Now, this code doesn't do any authentication; it essentially trusts the caller has the appropriate privileges.
+    <programlisting>
+&JcrRepository; jcrRepository = new &JcrRepository;(contextFactory, sources);
+&Session; session = jcrRepository.login(sourceName);
+</programlisting>
+		<para>
+			Now, this code doesn't do any authentication; it essentially trusts the caller has the appropriate privileges.
 			Normally, your application will need to authenticate the user, so let's look at how that's done.
+		</para>
+		<para>
+			As we mentioned in the <link linkend="security">security section</link>, JBoss DNA uses JAAS for authentication
+			and authorization.  So how does this work with the JCR API?
 		</para>
 		<para>The JCR API defines a &Credentials; marker interface, an instance of which can be passed to the
 		  <code>&Session;.login(...)</code> method.  Rather than provide a concrete implementation of this interface, JBoss DNA
