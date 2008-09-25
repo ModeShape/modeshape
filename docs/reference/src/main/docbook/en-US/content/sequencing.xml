@@ -401,10 +401,11 @@ this.sequencingService.addSequencer(sequencerConfig);
 				in your application and configure	the Sequencing Service to use this sequencer using something similar to:
       </para>
 	    <programlisting>
-String name = "MP3 Sequencer";
-String desc = "Sequences MP3 files to extract the ID3 tags of the audio file";
-String classname = "org.jboss.dna.sequencer.mp3.Mp3MetadataSequencer";
-String[] pathExpressions = {"//(*.mp3[*])/jcr:content[@jcr:data] =&gt; /mp3s/$1"};
+String name = "Java Sequencer";
+String desc = "Sequences java files to extract the characteristics of the Java source";
+String classname = "org.jboss.dna.sequencer.java.JavaMetadataSequencer";
+String[] classpath = null; // Use the current classpath
+String[] pathExpressions = {"//(*.java[*])/jcr:content[@jcr:data] =&gt; /java/$1"};
 &SequencerConfig; sequencerConfig = new &SequencerConfig;(name, desc, classname, 
                                                       classpath, pathExpressions);
 this.sequencingService.addSequencer(sequencerConfig);
@@ -424,11 +425,10 @@ this.sequencingService.addSequencer(sequencerConfig);
 				library in your application and configure	the Sequencing Service to use this sequencer using something similar to:
       </para>
 	    <programlisting>
-String name = "Java Sequencer";
-String desc = "Sequences java files to extract the characteristics of the Java source";
-String classname = "org.jboss.dna.sequencer.java.JavaMetadataSequencer";
-String[] classpath = null; // Use the current classpath
-String[] pathExpressions = {"//(*.java[*])/jcr:content[@jcr:data] =&gt; /java/$1"};
+String name = "MP3 Sequencer";
+String desc = "Sequences MP3 files to extract the ID3 tags of the audio file";
+String classname = "org.jboss.dna.sequencer.mp3.Mp3MetadataSequencer";
+String[] pathExpressions = {"//(*.mp3[*])/jcr:content[@jcr:data] =&gt; /mp3s/$1"};
 &SequencerConfig; sequencerConfig = new &SequencerConfig;(name, desc, classname, 
                                                       classpath, pathExpressions);
 this.sequencingService.addSequencer(sequencerConfig);
