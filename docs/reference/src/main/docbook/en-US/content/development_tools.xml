@@ -300,6 +300,23 @@
 			This section outlines the basic process of releasing JBoss DNA.  This <emphasis role="strong">must</emphasis> be done
 			either by the project lead or only after communicating with the project lead.
 		</para>
+		<para>
+			Before continuing, your local workspace should contain no changes and should be a perfect reflection of Subversion.
+			You can verify this by getting the latest from Subversion
+		</para>
+		<programlisting>$ svn update</programlisting> 
+		<para>
+			and ensuring that you have no additional changes with
+		</para>
+		<programlisting>$ svn status</programlisting>
+		<para>
+			You may also want to note the revision number for use later on in the process.  The release number is returned by
+			the <code>svn update</code> command, but may also be found using
+		</para>
+		<programlisting>$ svn info</programlisting>
+		<para>
+			At this point, you're ready to verify that everything builds normally.
+		</para>
 		<sect2 id="build-all-artifacts-and-assemblies">
 			<title>Building all artifacts and assemblies</title>
 			<para>
@@ -325,10 +342,7 @@
 			</para>
 			<para>
 				After completed, verify that the assemblies under <code>target/</code> have actually been created and that
-				they contain the correct information.  Now, clean up your workspace:
-			</para>
-			<programlisting>$ mvn -Passembly clean</programlisting>
-			<para>
+				they contain the correct information.
 				At this point, we know that the actual Maven build process is building
 				everything we want and will complete without errors.  We can now proceed with preparing for the release.
 			</para>
