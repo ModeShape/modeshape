@@ -41,11 +41,16 @@
 	<sect1 id="jdk">
 		<title>JDK</title>
 		<para>
-			Currently, JBoss DNA is developed and built using <ulink url="http://java.sun.com/javase/downloads/index_jdk5.jsp">JDK 5</ulink>,
-			so if you're a contributor, you should have that installed and should use it before committing any changes.  Note that you
-			should be able to use the <ulink url="http://java.sun.com/javase/downloads/index.jsp">latest JDK</ulink> (which is currently
-			JDK 6). 
+			Currently, JBoss DNA is developed and built using <ulink url="http://java.sun.com/javase/downloads/index_jdk5.jsp">JDK 5</ulink>.
+			So if you're trying to get JBoss DNA to compile locally, you should make sure you have the JDK 5 installed and are using it.
+			If you're a contributor, you should make sure that you're using JDK 5 before committing any changes.  
 		</para>
+		<note>
+			<para>
+				You should be able to use the <ulink url="http://java.sun.com/javase/downloads/index.jsp">latest JDK</ulink>,
+				which is currently JDK 6.  We periodically try to build JBoss DNA using JDK 6, but it's not our official JDK (yet).
+			</para>
+		</note>
 		<para>
 			Why do we build using JDK 5 and not 6? The main reason is that if we were to use JDK 6, then JBoss DNA couldn't really be used in any
 			applications or projects that still used JDK 5.  Plus, anybody using JDK 6 can still use JBoss DNA.
@@ -54,21 +59,21 @@
 			Java 6 in the coming months.
 		</para>
 		<para>
-			When installing, simply follow the procedure for your particular platform.  On most platforms, this should set the
+			When installing a JDK, simply follow the procedure for your particular platform.  On most platforms, this should set the
 			<code>JAVA_HOME</code> environment variable.  But if you run into any problems, first check that this environment
 			variable was set to the correct location, and then check that you're running the version you expect by running
 			the following command:
 		</para>
-		<programlisting role="XML"><![CDATA[ java -version ]]></programlisting>
+		<programlisting>$ java -version</programlisting>
 		<para>
-			If you don't see the correct version, double-check your installation.
+			If you don't see the correct version, double-check your JDK installation.
 		</para>
 	</sect1>
 	<sect1 id="svn">
 		<title>Subversion</title>
 		<para>JBoss DNA uses Subversion as its source code management system, and specifically the instance at 
 			<ulink url="http://www.jboss.org">JBoss.org</ulink>.  Although you can view the
-			<ulink url="&Subversion;trunk/">trunk</ulink> of the Subversion repository
+			<ulink url="&Subversion;trunk/">trunk</ulink> of the Subversion repository directly
 			(or using <ulink url="&Fisheye;trunk">FishEye</ulink>) through your browser,
 			it order to get more than just a few files of the latest version of the source code, you probably want
 		 	to have an SVN client installed.  Several IDE's have SVN support included (or available as plugins),
@@ -234,7 +239,7 @@
 					</row>
 					<row>
 						<entry><ulink url="http://hudson.jboss.org/hudson/job/DNA%20nightly%20integration%20on%20JDK1.5/">Nightly on JDK 5</ulink></entry>
-						<entry>Build that runs every night (about 2 a.m. EDT), regardless of whether changes have been committed to SVN
+						<entry>Build that runs every night (usually around 2 a.m. EDT), regardless of whether changes have been committed to SVN
 							since the previous night.</entry>
 					</row>
 				</tbody>
@@ -292,6 +297,7 @@
 			After you check out the JBoss DNA codebase, you can import the JBoss DNA Maven projects into Eclipse as Eclipse projects.
 			To do this, go to "File->Import->Existing Projects", navigate to the <code>trunk/</code> folder in the import wizard,
 			and then check each of the <link linkend="modules">subprojects</link> that you want to have in your workspace.
+			Don't forget about the projects under <code>extensions/</code> or <code>docs/</code>.
 		</para>
 	</sect1>
 	<sect1 id="releasing">
@@ -327,21 +333,21 @@
 			<note>
 				<para>
 					Before running Maven commands to build the releases, increase the memory available to Maven with this command:
+					<code>$ export MAVEN_OPTS=-Xmx256m</code>
 				</para>
-				<programlisting>$ export MAVEN_OPTS=-Xmx256m</programlisting>
 			</note>
 			<para>
 				To perform this complete build, issue the following command while in the <code>target/</code> directory:
 			</para>
 			<programlisting>$ mvn -P assembly clean javadoc:javadoc install</programlisting>
 			<para>
-				This command runs "clean", "javadoc:javadoc", and "install" goals using the "assembly" profile, 
-				which adds the production JavaDocs, the Getting Started document, the Reference Guide document, 
+				This command runs the "clean", "javadoc:javadoc", and "install" goals using the "assembly" profile, 
+				which adds the production of JavaDocs, the Getting Started document, the Reference Guide document, 
 				the Getting Started examples, and several ZIP archives.  The order of the goals is important,
 				since the "install" goal attempts to include the JavaDoc in the archives. 
 			</para>
 			<para>
-				After completed, verify that the assemblies under <code>target/</code> have actually been created and that
+				After this build has completed, verify that the assemblies under <code>target/</code> have actually been created and that
 				they contain the correct information.
 				At this point, we know that the actual Maven build process is building
 				everything we want and will complete without errors.  We can now proceed with preparing for the release.
@@ -350,7 +356,7 @@
 		<sect2 id="determine-version">
 			<title>Determine the version to be released</title>
 			<para>
-				The version being released should match the &JIRA; road map. Make sure that all issues related to the release are closed. 
+				The version being released should match the <ulink url="&JIRA;">JIRA</ulink> road map. Make sure that all issues related to the release are closed. 
 				The project lead should be notified and approve that the release is taking place.
 			</para>
 		</sect2>
@@ -362,13 +368,13 @@
 			</para>
 			<programlisting>$ mvn -Passembly release:prepare -DdryRun=true</programlisting>
 			<para>
-				This may download a lot of Maven plugins if they already haven't been downloaded.  It should then it should prompt you for
-				the release version of each of the projects, the tag name for the release, and the next development version.
-				The default values are probably acceptable; if not, then check that the "SNAPSHOT" version in each of the POM files is correct.
+				This may download a lot of Maven plugins if they already haven't been downloaded, but it will eventually prompt you for
+				the release version of each of the Maven projects, the tag name for the release, and the next development versions
+				(again for each of the Maven projects).  The default values are probably acceptable; if not, then check that the 
+				"<code>&lt;version&gt;</code>" tags in each of the POM files is correct and end with "-SNAPSHOT".
 			</para>
 			<para>
-				Once you have successfully completed the dry run of the release, you should clean up the files that the release 
-				plugin created in the dry run:
+				After the dry run completes you should clean up the files that the release plugin created in the dry run:
 			</para>
 			<programlisting>$ mvn -Passembly release:clean</programlisting>
 		</sect2>

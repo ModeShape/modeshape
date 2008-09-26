@@ -25,13 +25,13 @@
 <!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd">
 <chapter id="using_dna_repositories">
 	<title>Using JBoss DNA Repositories</title>
-	<para>As we've mentioned before, one of the capabilities of JBoss DNA is to provide access through 
+	<para>One of the capabilities of JBoss DNA is to provide access through 
 		<ulink url="http://www.jcp.org/en/jsr/detail?id=170">JCR</ulink> to different kinds of repositories and storage systems.
-		Your applications work with the JCR API, but through JBoss DNA are able to accesses the content from where the information
+		Your applications work with the JCR API, but through JBoss DNA you're able to accesses the content from where the information
 		exists - not just a single purpose-built repository.  This is fundamentally what makes JBoss DNA different.</para>
-	<para>How does JBoss DNA do this?  At the heart of JBoss DNA and it's JCR implementation is a simple graph-based connector
-		system.  Essentially, the JBoss DNA JCR implementation makes use of a single repository source, from which all the
-		content is accessed.  
+	<para>How does JBoss DNA do this?  At the heart of JBoss DNA and it's JCR implementation is a simple connector
+		system that is designed around creating and accessing graphs.  The JBoss DNA JCR implementation actually just sits on
+		top of a single repository source, which it uses to access of the repositories content.
 		<figure id="dnajcr-and-connector">
 			<title>JBoss DNA's JCR implementation delegates to a repository source</title>
 			<graphic align="center" scale="100" fileref="dnajcr-and-connector.png"/>
@@ -53,10 +53,11 @@
 		<para>You might be thinking that these connectors are interesting, but what do they really provide?  Is it really useful
 		  to use JCR to access a relational database rather than JDBC?  Or, why access the files on a file system when there 
 		  are already mechanisms to do that?</para>
-	  <para>While putting JCR on top of a single system (like a JDBC database) probably isn't that interesting, what
-		  <emphasis>is</emphasis> interesting is accessing the information in multiple systems <emphasis>as if all that information were
-		  in a single JCR repository</emphasis>.  That's what the federated repository source is all about.</para>
-		<para>Think of it this way: use JCR to get to the schemas of multiple relational databases <emphasis>and</emphasis> the schemas
+	  <para>Maybe putting JCR on top of a single system (like a JDBC database) isn't that interesting. What
+		  <emphasis>is</emphasis> interesting, though, is accessing the information in multiple systems <emphasis>as if all that information were
+		  in a single JCR repository</emphasis>.  That's what the federated repository source is all about.  The JBoss DNA connector
+			system just makes it possible to interact with all these systems in the same way.</para>
+		<para>Think of it this way: with JBoss DNA, you can use JCR to get to the schemas of multiple relational databases <emphasis>and</emphasis> the schemas
 		  defined by DDL files in your SVN repository <emphasis>and</emphasis> the schemas defined by logical models stored on your file system.
 		</para>
 	</note>
@@ -68,11 +69,12 @@
 		  "configuration repository") and automatically sets up the repositories given the <code>RepositorySource</code> instances
 		  found in the configuration repository.</para>
 		<note>
-			<para>Configuring JBoss DNA services is a bit more manual than is ideal. As you'll see, JBoss DNA uses dependency
+			<para>Configuring JBoss DNA services is more manual and complex than we want. As you'll see, JBoss DNA uses dependency
 	      injection to allow a great deal of flexibility in how it can be configured and customized. But this flexibility
 	      makes it more difficult for you to use.  We understand this, and will soon provide a much easier way to set up 
 				and manage JBoss DNA.  Current plans are to use the <ulink url="http://www.jboss.org/jbossmc">JBoss Microcontainer</ulink>
-				along with a configuration repository.</para>
+				along with a configuration repository that makes it very easy to set up and manage JBoss DNA, whether it's used in
+				a simple application or a cluster of processes.</para>
 		</note>
 		<para>To set up the repository service, we need to first set up a few other objects:
 			<itemizedlist>
@@ -155,13 +157,13 @@
 			<para>Now, the above code doesn't do any authentication; it essentially trusts the caller has the appropriate privileges.
 				Normally, your application will need to authenticate the user, so let's look at how that's done.</para>
 			<para>JBoss DNA uses the <ulink url="http://java.sun.com/j2se/1.5.0/docs/guide/security/jaas/tutorials/GeneralAcnOnly.html">Java 
-				Authentication and Authorization Service (JAAS)</ulink>, making it possible to use any existing JAAS security provider.</para>
-			<note>
-				<para>There are numerous JAAS providers, but one of the best open-source implementations is 
-					<ulink url="http://www.jboss.org/jbosssecurity/">JBoss Security</ulink>, which can authenticate using LDAP, certificates,
-					the operating system, and federated SSO (among others).</para>
-			</note>
-			<para>The JCR API defines a <code>Credentials</code> marker interface, an instance of which can be passed to the
+				Authentication and Authorization Service (JAAS)</ulink>, making it possible to use any existing JAAS security provider.
+				There are numerous JAAS providers, but one of the best open-source implementations is 
+				<ulink url="http://www.jboss.org/jbosssecurity/">JBoss Security</ulink>, which can authenticate using LDAP, certificates,
+				the operating system, and federated single-sign-on (among others).
+			</para>
+			<para>
+				The JCR API defines a <code>Credentials</code> marker interface, an instance of which can be passed to the
 			  <code>Session.login(...)</code> method.  Rather than provide a concrete implementation of this interface, JBoss DNA
 			  allows you to pass any implementation of <code>Credentials</code> that also has one of the following methods:
 			  <itemizedlist>
@@ -194,6 +196,7 @@
 			<para>Like many people recommend with JCR, you can create either long-lived or short-lived JCR <code>Session</code>s.  The
 			  JBoss DNA implementation of JCR was designed to efficiently do either.</para>
 		</sect2>	
+		<!--
 		<sect2 id="using_dna_repositories_with_dna_api">
 			<title>Using JBoss DNA's API to read repository</title>
 			<para>Although we recommend using JCR, JBoss DNA has an internal command-based API that completely side-steps JCR and provides
@@ -202,6 +205,7 @@
 				<para>This API is likely to undergo changes in the next few releases, and using it at this time is not suggested.</para>
 			</note>
 		</sect2>
+		-->
 	</sect1>
 	<sect1 id="shutting_down_repository_service">
 		<title>Shutting down the Repository Service</title>
@@ -253,15 +257,18 @@
   org/jboss/example/dna/sequencers/RepositoryClientTest.java
                                   /RepositoryClientUsingJcrTest.java
   ]]></programlisting>
-		<para>The code we presented earlier in this chapter represent the bulk of the JBoss DNA and JCR-specific code used in the
-			<code>RepositoryClient</code>, so we won't cover it in more detail here.  If you want to see that detail, please refer
-			to the sample client code.</para>
+		<para>
+			The code we presented earlier in this chapter represent the bulk of the JBoss DNA and JCR-specific code used in the
+			<code>RepositoryClient</code>, so we won't cover it in any more detail here.  Please refer to the sample client code
+			if you want to see more.
+		</para>
 	</sect1>
 	<sect1 id="using_dna_repositories_review">
 		<title>Summarizing what we just did</title>
 		<para>In this chapter we covered the different JBoss DNA components used for accessing repositories through JCR, including
 			repositories that federate their content from the content of other repositories.  Specifically, we described how the
-			<code>RepositoryService</code> and <code>JcrRepository</code> can be configured and used.</para>
+			<code>RepositoryService</code> and <code>JcrRepository</code> can be configured and used.
+		</para>
 	</sect1>
 </chapter>
 	
