@@ -406,6 +406,7 @@
 				the project's <ulink url="&Downloads;">downloads</ulink> and <ulink url="&Home;/docs">documentation</ulink> pages.
 			</para>
 		</sect2>
+		<!--
 		<sect2 id="tagging">
 			<title>Building Releases</title>
 			<para>
@@ -432,5 +433,6 @@ $ svn copy https://svn.jboss.org/repos/dna/trunk -r<emphasis>&lt;revisionNumber&
 				</para>
 			</note>
 		</sect2>
+	-->
 	</sect1>
 </chapter>
