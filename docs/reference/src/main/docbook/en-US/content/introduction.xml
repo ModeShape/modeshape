@@ -33,12 +33,12 @@
 		and capable of federating information from a variety of back-end systems.  To client applications, JBoss DNA looks and behaves like a 
 		regular JCR repository that they search, navigate, version, and listen for changes.  But under the covers, JBoss DNA
 		gets its content by federating multiple back-end systems (like databases, services, other repositories, etc.),
-		allowing those systems to continue "owning" the information but ensuring the unified repository stays up-to-date
+		allowing those systems to continue "owning" the information while ensuring the unified repository stays up-to-date
 		and in sync.  JBoss DNA also analyzes the content you put into the repository and turns it into information you can use more effectively.
 	</para>
 	<para>
 		This document goes into detail about JBoss DNA and its capabilities, features, architecture, components, extension points,
-		security, configuration, and testing.  So whether your a developer on the project or trying to learn the intricate details of
+		security, configuration, and testing.  So whether your a developer on the project, or you're trying to learn the intricate details of
 		how JBoss DNA works, this document hopefully serves a good reference for developers on the project.
 	</para>
 	<sect1 id="use_cases">
@@ -47,10 +47,10 @@
 			JBoss DNA repositories can be used in a variety of applications.  One of the most obvious ones 
 			is in provisioning and management, where it's critical to understand and keep track of the metadata for models, database, services, 
 			components, applications, clusters, machines, and other systems used in an enterprise.  Governance takes that a step 
-			farther, by tracking with those	entities the policies dictating expectations and against which performance can be verified.
-			But, a JBoss DNA repository doesn't have to be large and complex - it could just manage configuration information
-			for an application. Or, provide a JCR interface on top of a couple of non-JCR systems.  In truth, there
-			are a lot of ways that you could use JBoss DNA.
+			farther, by also tracking the policies and expectations against which performance can be verified.
+			In these cases, a repository is an excellent mechanism for managing this complex and highly-varied information. 
+			But a JBoss DNA repository doesn't have to be large and complex: it could just manage configuration information
+			for an application, or it could just provide a JCR interface on top of a couple of non-JCR systems.  
 		</para>
 	</sect1>
 	<sect1 id="what_is_metadata">
@@ -58,19 +58,21 @@
 		<para>
 		Before we dive into more detail about JBoss DNA and metadata repositories, it's probably useful to explain what we
 		mean by the term "metadata."  Simply put, <emphasis>metadata</emphasis> is the information you need to manage something.  
-		It's the information needed to configure an operating system, or the description of the information in an LDAP tree, 
+		For example, it's the information needed to configure an operating system, or the description of the information in an LDAP tree, 
 		or the topology of your network. It's the configuration of an application server or enterprise service bus.
 		It's the steps involved in validating an application before it can go into production. It's the description of your 
 		database schemas, or of your services, or of the messages going in and coming out of a service. JBoss DNA is 
 		designed to be a repository for all this (and more).
 		</para>
 		<para>
-		There are a couple of important things to understand about this metadata.  First, the majority of this metadata is
+		There are a couple of important things to understand about metadata.  First, the majority of metadata is either found in or
 		managed by other systems: databases, applications, file systems, source code management systems, services, and
 		content management systems, and even other repositories. We can't pull the information out and duplicate it, because
-		we then risk having multiple copies that are out-of-sync.  But we do want to access it through a homogenous API,
-		since that will make our lives significantly easier.  The answer to this apparent dichotomy is 
-		<emphasis><link linkend="dna-connector-federation">federation</link></emphasis>.
+		then we risk having multiple copies that are out-of-sync.  But we do want to access it through a homogenous API,
+		since that will make our lives significantly easier.  
+		</para>
+		<para>
+		The answer to this apparent dichotomy is <emphasis><link linkend="dna-connector-federation">federation</link></emphasis>.
 		We can connect to these back-end systems to dynamically access the content and project it into a single, unified
 		repository.  We can also cache it for faster access, as long as the cache can be invalidated based upon time or event.
 		But we also need to maintain a clear picture of where all the bits come from, so users can be sure they're looking
@@ -82,11 +84,11 @@
 		a lot of different file formats.  These include source code, configuration files, web pages, database schemas,
 		XML schemas, service definitions, policies, documents, spreadsheets, presentations, images, audio files, workflow
 		definitions, business rules, and on and on.  And so even though information is added to the repository through files
-		like these, the repository should be able to automatically extract the most useful content from these files.
+		like these, the repository should be able to automatically extract the most useful content and place it in
+		the repository where it can be much more easily used, searched, related, and analyzed.
 		This process of extracting content and storing it in the repository is what JBoss DNA calls 
 		<emphasis><link linkend="sequencing">sequencing</link></emphasis>,
-		and it's an important part of a metadata repository since more information is now available for searching,
-		navigating, relating, and analyzing.
+		and it's an important part of a metadata repository.
 		</para>
 		<para>
 		The third important characteristic of metadata is that it rarely stays the same.  Different consumers of the
@@ -111,7 +113,7 @@
 	    using files is an easy choice when the information is either not complicated (for example property files), or when users may
 	    need to read or change the information outside of the application (for example log files or configuration files). But using
 	    files to persist information becomes more difficult as the information becomes more complex, as the volume of it increases,
-	    or if it needs to be accessed by multiple processes. For these situations, other techniques often offer better choices.
+	    or if it needs to be accessed by multiple processes. For these situations, other techniques often have more benefits.
 	  </para>
 	  <para>
 	    Another technique built into the Java language is
@@ -119,12 +121,11 @@
 	    , which is capable of persisting the state of an object graph so that it can be read back in at a later time. However, Java
 	    serialization can quickly become tricky if the classes are changed, and so it's beneficial usually when the information is
 	    persisted for a very short period of time. For example, serialization is sometimes used to send an object graph from one
-	    process to another.
+	    process to another.  Using serialization for longer-term storage of information is more risky.
 	  </para>
 	  <para>
-	    One of the more popular persistence technologies is the
-	    <emphasis>relational database</emphasis>
-	    . Relational database management systems have been around for decades and are very capable. The Java Database Connectivity
+	    One of the more popular and widely-used persistence technologies is the <emphasis>relational database</emphasis>. 
+			Relational database management systems have been around for decades and are very capable. The Java Database Connectivity
 	    (JDBC) API provides a standard interface for connecting to and interacting with relational databases. However, it is a
 	    low-level API that requires a lot of code to use correctly, and it still doesn't abstract away the DBMS-specific SQL
 	    grammar. Also, working with relational data in an object-oriented language can feel somewhat unnatural, so many developers
@@ -138,33 +139,28 @@
 	    <ulink url="http://java.sun.com/developer/technicalArticles/J2EE/jpa/">Java Persistence API (JPA)</ulink>
 	    provide a standard mechanism for defining the mappings (through annotations) and working with these entity objects. Several
 	    commercial and open-source libraries implement JPA, and some even offer additional capabilities and features that go beyond
-	    JPA. For example,
-	    <ulink url="http://www.hibernate.org">Hibernate</ulink>
-	    is one of the most feature-rich JPA implementations and offers object caching, statement caching, extra association
-	    mappings, and other features that help to improve performance and usefulness.
+	    JPA. For example, <ulink url="http://www.hibernate.org">Hibernate</ulink> is one of the most feature-rich JPA implementations
+			and offers object caching, statement caching, extra association
+	    mappings, and other features that help to improve performance and usefulness.  Plus, Hibernate is open-source (with support
+			offered by <ulink url="http://www.jboss.com">JBoss</ulink>).
 	  </para>
 	  <para>
-	    While relational databases and JPA are solutions that work for many applications, they become more limited in cases when the
-	    information structure is highly flexible, is not known
-	    <emphasis>a priori</emphasis>
-	    , or is subject to frequent change and customization. In these situations,
-	    <emphasis>content repositories</emphasis>
-	    may offer a better choice for persistence. Content repositories are almost a hybrid between relational databases and file
-	    systems, and typically provide other capabilities as well, including versioning, indexing, search, access control,
+	    While relational databases and JPA are solutions that work well for many applications, they are more limited in cases when the
+	    information structure is highly flexible, the structure is not known <emphasis>a priori</emphasis>, or that structure is
+	 		subject to frequent change and customization. In these situations, <emphasis>content repositories</emphasis>
+	    may offer a better choice for persistence. Content repositories are almost a hybrid with the storage capabilities of
+	 		relational databases and the flexibility offered by other systems, such as using files.  Content repositories also
+	    typically provide other capabilities as well, including versioning, indexing, search, access control,
 	    transactions, and observation. Because of this, content repositories are used by content management systems (CMS), document
 	    management systems (DMS), and other applications that manage electronic files (e.g., documents, images, multi-media, web
 	    content, etc.) and metadata associated with them (e.g., author, date, status, security information, etc.). The
-	    <ulink url="&JSR170;">Content Repository for Java technology API</ulink>
+	    <ulink url="http://www.jcp.org/en/jsr/detail?id=170">Content Repository for Java technology API</ulink>
 	    provides a standard Java API for working with content repositories. Abbreviated "JCR", this API was developed as part of the
-	    Java Community Process under
-	    <ulink url="&JSR170;">JSR-170</ulink>
-	    and is being revised under
-	    <ulink url="&JSR283;">JSR-283</ulink>
-	    .
+	    Java Community Process under <ulink url="http://www.jcp.org/en/jsr/detail?id=170">JSR-170</ulink>
+	    and is being revised under <ulink url="http://www.jcp.org/en/jsr/detail?id=283">JSR-283</ulink>.
 	  </para>
 	  <para>
-	    The
-	    <emphasis>JBoss DNA project</emphasis>
+	    The <emphasis>JBoss DNA project</emphasis>
 	    is building unified metadata repository system that is compliant with JCR.  Nearly all of these capabilities are to be hidden
 	    below the JCR API and involve automated processing of the information in the repository. Thus, JBoss DNA can add value to
 	    existing repository implementations. For example, JCR repositories offer the ability to upload files into the repository and
@@ -203,12 +199,12 @@
   <sect1 id="methodology">
     <title>Development methodology</title>
     <para>
-      The JBoss DNA project doesn't use a formal methodology, but instead incorporates techniques, activities, and processes from
-			several methodologies.  In fact, the committers are given a lot of freedom for how they develop the components and features
-			they work on.
+			Rather than use a single formal development methodology, the JBoss DNA project incorporates those techniques, activities, and 
+			processes that are practical and work for the project. In fact, the committers are given a lot of freedom for how they develop 
+			the components and features they work on.
 		</para>
 		<para>
-			Nevertheless, we encourage familiarity with several major techniques, including:
+			Nevertheless, we do encourage familiarity with several major techniques, including:
 			<itemizedlist>
 				<listitem>
 					<para>

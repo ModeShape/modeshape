@@ -37,10 +37,10 @@
 	<note>
 		<para>
       To use Maven with JBoss DNA, you'll need to have <ulink url="http://java.sun.com/javase/downloads/index_jdk5.jsp">JDK 5 or 6</ulink>
-      and Maven 2.0.7 (or higher).</para>
+      and Maven 2.0.9 (or higher).</para>
 		<para>
       Maven can be downloaded from <ulink url="http://maven.apache.org/">http://maven.apache.org/</ulink>, and is installed by unzipping the
-      <code>maven-2.0.7-bin.zip</code> file to a convenient location on your local disk. Simply add <code>$MAVEN_HOME/bin</code>
+      <code>maven-2.0.9-bin.zip</code> file to a convenient location on your local disk. Simply add <code>$MAVEN_HOME/bin</code>
       to your path and add the following profile to your <code>~/.m2/settings.xml</code> file:</para>
 		<programlisting role="XML"><![CDATA[
 <settings>
@@ -93,7 +93,7 @@
 	</note>
 	<sect1 id="downloading">
 		<title>Downloading and compiling</title>
-		<para>The next step is to <ulink url="http://www.jboss.org/file-access/default/members/dna/downloads/0.1/jboss-dna-0.1-gettingstarted-examples.zip">download</ulink>
+		<para>The next step is to <ulink url="http://www.jboss.org/file-access/default/members/dna/downloads/0.2/jboss-dna-0.2-gettingstarted-examples.zip">download</ulink>
       the example for this Getting Started guide, and extract the contents to a convenient location on your local disk.
       You'll find the example contains the following files, which are organized according to the standard Maven directory structure:</para>
 		<programlisting><![CDATA[
@@ -113,17 +113,27 @@ examples/pom.xml
                        /test/java
                             /resources
 ]]></programlisting>
-		<para>There are essentially three Maven projects: a <code>sequencers</code> project, a <code>repository</code> project, 
+		<para>
+			There are essentially three Maven projects: a <code>sequencers</code> project, a <code>repository</code> project, 
 		  and a parent project.  All of the source for the sequencing example is located in the <code>sequencers</code> subdirectory,
-		  while all of the source for the federation example is located in the <code>repository</code> subdirectory.  And you may have noticed that none
-      of the JBoss DNA libraries are there.  This is where Maven comes in.  The two <code>pom.xml</code> files tell
-      Maven everything it needs to know about what libraries are required and how to build the example.</para>
-		<para>In a terminal, go to the <code>examples</code> directory and run <emphasis role="strong"><code>mvn install</code></emphasis>.  
+		  while all of the source for the repository example is located in the <code>repository</code> subdirectory.
+		</para>
+		<para>
+			And you may have noticed that none of the JBoss DNA libraries are there.  This is where Maven comes in.  
+			The two <code>pom.xml</code> files tell Maven everything it needs to know about what libraries are required and 
+			how to build the example.
+		</para>
+		<para>
+			In a terminal, go to the <code>examples</code> directory and run:
+		</para>
+		<programlisting>$ mvn install</programlisting>
+		<para>  
       This command downloads all of the JARs necessary to compile and build the example, including the JBoss DNA libraries,
       the libraries they depend on, and any missing Maven components.  (These are downloaded from the JBoss repositories
       only once and saved on your machine.  This means that the next time you run Maven, all the libraries will
       already be available locally, and the build will run much faster.)  The command then continues by compiling the example's source
-      code (and unit tests) and running the unit tests.  The build is successful if you see the following:</para>
+      code (and unit tests) and running the unit tests.  The build is successful if you see the following:
+		</para>
 		<programlisting><![CDATA[
 $ mvn install
 ...

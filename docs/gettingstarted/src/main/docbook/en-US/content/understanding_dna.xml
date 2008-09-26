@@ -129,9 +129,16 @@
         </listitem>
         <listitem>
           <para>
-            <emphasis role="strong">DNA Federation</emphasis>
+            <emphasis role="strong">DNA Repositories</emphasis>
             is an implementation of the JCR API that builds the content within the repository by accessing and integrating
-            information from multiple sources. DNA Federation allows the integration of external systems, like other JCR
+            information from one or more sources. 
+          </para>
+        </listitem>
+        <listitem>
+          <para>
+            <emphasis role="strong">DNA Federation</emphasis>
+            is a special repository connector that accesses information from multiple sources and makes it accessible 
+						as if it were a single repository. DNA Federation allows the integration of external systems, like other JCR
             repositories, databases, applications, and services.
           </para>
         </listitem>
@@ -327,7 +334,7 @@
     </para>
   </sect1>
   <sect1 id="federation">
-    <title>Federating content</title>
+    <title>JCR and federated repositories</title>
     <para>There is a lot of information stored in many of different places: databases, repositories, SCM systems,
       registries, file systems, services, etc. The purpose of the federation engine is to allow applications to use the JCR API
       to access that information as if it were all stored in a single JCR repository, but to really leave the information where
@@ -343,7 +350,7 @@
 			even get the benefit of using JCR observation to be notified of the changes.  And if a JBoss DNA repository is
       configured to allow updates, client applications can change the information in the repository and JBoss DNA will propagate
       those changes down to the original source.</para>
-    <sect2 id="federation_connectors">
+    <sect2 id="repository-connectors">
       <title>Connecting to information sources</title>
       <para>
         JBoss DNA uses connectors to interact with different information sources to get at the content

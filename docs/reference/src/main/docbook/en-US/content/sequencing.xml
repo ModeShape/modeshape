@@ -476,14 +476,14 @@ this.sequencingService.addSequencer(sequencerConfig);
 	    have to get the required libraries and manage the compiling and building process yourself.</para>
 	    <note>
 	      <para>JBoss DNA may provide in the future a Maven archetype for creating sequencer projects.  If you'd find this useful
-	        and would like to help create it, please <link linkend="preface">join the community</link>.</para>
-	    </note>
-	  <note>
-	    <para>The <emphasis role="strong">dna-sequencer-images</emphasis> project is a small, self-contained sequencer implementation that
-	    has only the minimal dependencies.  Starting with this project's source and modifying it to suit your needs may be the easiest way to get started.
-	    See the subversion repository: <ulink url="&Subversion;trunk/extensions/dna-sequencer-images/">&Subversion;trunk/sequencers/dna-sequencer-images/</ulink>
-	    </para>
-	  </note>
+	        and would like to help create it, please <link linkend="preface">join the community</link>.
+				</para>
+		    <para>In lieu of a Maven archetype, you may find it easier to start with a small existing sequencer project.
+					The <emphasis role="strong">dna-sequencer-images</emphasis> project is a small, self-contained sequencer implementation that
+		    	has only the minimal dependencies.  
+		    	See the subversion repository: <ulink url="&Subversion;trunk/extensions/dna-sequencer-images/">&Subversion;trunk/sequencers/dna-sequencer-images/</ulink>
+		    </para>
+		  </note>
 	    <para>You can create your Maven project any way you'd like.  For examples, see the <ulink url="http://maven.apache.org/guides/getting-started/index.html#How_do_I_make_my_first_Maven_project">Maven 2 documentation</ulink>.  
 	    Once you've done that, just add the dependencies in your project's <code>pom.xml</code> dependencies section:</para>
 	  	<programlisting role="XML"><![CDATA[
