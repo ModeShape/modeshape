@@ -2,7 +2,7 @@
   <parent>
     <artifactId>dna</artifactId>
     <groupId>org.jboss.dna</groupId>
-    <version>0.2</version>
+    <version>0.3-SNAPSHOT</version>
     <relativePath>../..</relativePath>
   </parent>
   <modelVersion>4.0.0</modelVersion>
