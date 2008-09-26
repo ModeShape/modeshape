@@ -12,9 +12,6 @@
   <name>JBoss DNA Integration Tests</name>
   <url>http://labs.jboss.org/dna</url>
   
-  <properties>
-    <dna-version>0.2-SNAPSHOT</dna-version>
-  </properties>
   <!--
   Define the dependencies.  Note that all version and scopes default to those 
   defined in the dependencyManagement section of the parent pom.
@@ -35,7 +32,7 @@
     <dependency>
       <groupId>org.jboss.dna</groupId>
       <artifactId>dna-common</artifactId>
-      <version>${dna-version}</version>
+      <version>${pom.version}</version>
       <type>test-jar</type>
       <scope>test</scope>
     </dependency>

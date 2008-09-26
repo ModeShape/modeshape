@@ -4,7 +4,7 @@
   <groupId>org.jboss.dna.examples</groupId>
   <artifactId>getting_started</artifactId>
   <packaging>pom</packaging>
-  <version>0.2-SNAPSHOT</version>
+  <version>0.2</version>
   <name>JBoss DNA Getting Started examples</name>
   <description />
 
@@ -13,61 +13,57 @@
     <module>repositories</module>
   </modules>
 
-  <properties>
-    <dna-version>0.2-SNAPSHOT</dna-version>
-  </properties>
-
   <dependencyManagement>
     <dependencies>
       <dependency>
         <groupId>org.jboss.dna</groupId>
         <artifactId>dna-common</artifactId>
-        <version>${dna-version}</version>
+        <version>${pom.version}</version>
       </dependency>
       <dependency>
         <groupId>org.jboss.dna</groupId>
         <artifactId>dna-graph</artifactId>
-        <version>${dna-version}</version>
+        <version>${pom.version}</version>
       </dependency>
       <dependency>
         <groupId>org.jboss.dna</groupId>
         <artifactId>dna-repository</artifactId>
-        <version>${dna-version}</version>
+        <version>${pom.version}</version>
       </dependency>
       <dependency>
         <groupId>org.jboss.dna</groupId>
         <artifactId>dna-jcr</artifactId>
-        <version>${dna-version}</version>
+        <version>${pom.version}</version>
       </dependency>
       <dependency>
         <groupId>org.jboss.dna</groupId>
         <artifactId>dna-maven-classloader</artifactId>
-        <version>${dna-version}</version>
+        <version>${pom.version}</version>
       </dependency>
       <dependency>
         <groupId>org.jboss.dna</groupId>
         <artifactId>dna-sequencer-images</artifactId>
-        <version>${dna-version}</version>
+        <version>${pom.version}</version>
       </dependency>
       <dependency>
         <groupId>org.jboss.dna</groupId>
         <artifactId>dna-sequencer-java</artifactId>
-        <version>${dna-version}</version>
+        <version>${pom.version}</version>
       </dependency>
       <dependency>
         <groupId>org.jboss.dna</groupId>
         <artifactId>dna-connector-inmemory</artifactId>
-        <version>${dna-version}</version>
+        <version>${pom.version}</version>
       </dependency>
       <dependency>
         <groupId>org.jboss.dna</groupId>
         <artifactId>dna-connector-jbosscache</artifactId>
-        <version>${dna-version}</version>
+        <version>${pom.version}</version>
       </dependency>
       <dependency>
         <groupId>org.jboss.dna</groupId>
         <artifactId>dna-connector-federation</artifactId>
-        <version>${dna-version}</version>
+        <version>${pom.version}</version>
         <scope>runtime</scope>
       </dependency>
       <!-- Logging (require SLF4J API for compiling, but use Log4J and its SLF4J binding for testing) -->

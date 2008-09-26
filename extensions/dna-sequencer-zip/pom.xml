@@ -20,7 +20,7 @@
     <dependency>
       <groupId>org.jboss.dna</groupId>
       <artifactId>dna-common</artifactId>
-      <version>${dna-version}</version>
+      <version>${pom.version}</version>
       <type>test-jar</type>
       <scope>test</scope>
     </dependency>

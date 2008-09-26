@@ -131,10 +131,6 @@
 		<module>docs/examples/gettingstarted</module>
 	</modules>
 
-	<properties>
-		<dna-version>0.2-SNAPSHOT</dna-version>
-	</properties>
-	
 	<profiles>
 		<profile>
 			<id>release</id>
@@ -359,47 +355,47 @@
 			<dependency>
 				<groupId>org.jboss.dna</groupId>
 				<artifactId>dna-common</artifactId>
-				<version>${dna-version}</version>
+				<version>${pom.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>org.jboss.dna</groupId>
 				<artifactId>dna-classloader-maven</artifactId>
-				<version>${dna-version}</version>
+				<version>${pom.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>org.jboss.dna</groupId>
 				<artifactId>dna-graph</artifactId>
-				<version>${dna-version}</version>
+				<version>${pom.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>org.jboss.dna</groupId>
 				<artifactId>dna-repository</artifactId>
-				<version>${dna-version}</version>
+				<version>${pom.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>org.jboss.dna</groupId>
 				<artifactId>dna-jcr</artifactId>
-				<version>${dna-version}</version>
+				<version>${pom.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>org.jboss.dna</groupId>
 				<artifactId>dna-connector-federation</artifactId>
-				<version>${dna-version}</version>
+				<version>${pom.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>org.jboss.dna</groupId>
 				<artifactId>dna-connector-jbosscache</artifactId>
-				<version>${dna-version}</version>
+				<version>${pom.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>org.jboss.dna</groupId>
 				<artifactId>dna-connector-inmemory</artifactId>
-				<version>${dna-version}</version>
+				<version>${pom.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>org.jboss.dna</groupId>
 				<artifactId>dna-mimetype-detector-aperture</artifactId>
-				<version>${dna-version}</version>
+				<version>${pom.version}</version>
 			</dependency>
 			<!-- 
 		    Time and Date

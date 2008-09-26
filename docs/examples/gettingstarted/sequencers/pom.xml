@@ -3,51 +3,47 @@
   <parent>
     <groupId>org.jboss.dna.examples</groupId>
     <artifactId>getting_started</artifactId>
-    <version>0.2-SNAPSHOT</version>
+    <version>0.2</version>
     <relativePath>..</relativePath>
   </parent>
 
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.jboss.dna.examples</groupId>
   <artifactId>dna-example-sequencers</artifactId>
-  <version>0.2-SNAPSHOT</version>
+  <version>0.2</version>
   <packaging>jar</packaging>
   <name>JBoss DNA Sequencer Examples</name>
   <description>Examples that showcase how to use sequencers with a JCR repository.</description>
-
-  <properties>
-    <dna-version>0.2-SNAPSHOT</dna-version>
-  </properties>
 
   <dependencies>
     <dependency>
       <groupId>org.jboss.dna</groupId>
       <artifactId>dna-repository</artifactId>
-      <version>${dna-version}</version>
+      <version>${pom.version}</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>org.jboss.dna</groupId>
       <artifactId>dna-common</artifactId>
-      <version>${dna-version}</version>
+      <version>${pom.version}</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>org.jboss.dna</groupId>
       <artifactId>dna-sequencer-images</artifactId>
-      <version>${dna-version}</version>
+      <version>${pom.version}</version>
       <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>org.jboss.dna</groupId>
       <artifactId>dna-sequencer-mp3</artifactId>
-      <version>${dna-version}</version>
+      <version>${pom.version}</version>
       <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>org.jboss.dna</groupId>
       <artifactId>dna-sequencer-java</artifactId>
-      <version>${dna-version}</version>
+      <version>${pom.version}</version>
       <scope>runtime</scope>
     </dependency>
     <!-- 

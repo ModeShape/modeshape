@@ -4,7 +4,7 @@
   <parent>
     <groupId>org.jboss.dna</groupId>
     <artifactId>dna</artifactId>
-    <version>0.2-SNAPSHOT</version>
+    <version>0.2</version>
     <relativePath>../..</relativePath>
   </parent>
   <!-- The groupId and version values are inherited from parent -->
@@ -14,9 +14,6 @@
   <description>JBoss DNA Connector that accesses an in-memory graph.</description>
   <url>http://labs.jboss.org/dna</url>
   
-  <properties>
-    <dna-version>0.2-SNAPSHOT</dna-version>
-  </properties>
   <!--
   Define the dependencies.  Note that all version and scopes default to those 
   defined in the dependencyManagement section of the parent pom.
@@ -36,14 +33,14 @@
     <dependency>
       <groupId>org.jboss.dna</groupId>
       <artifactId>dna-common</artifactId>
-      <version>${dna-version}</version>
+      <version>${pom.version}</version>
       <type>test-jar</type>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.jboss.dna</groupId>
       <artifactId>dna-graph</artifactId>
-      <version>${dna-version}</version>
+      <version>${pom.version}</version>
       <type>test-jar</type>
       <scope>test</scope>
     </dependency>

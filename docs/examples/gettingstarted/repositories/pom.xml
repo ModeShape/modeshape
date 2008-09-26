@@ -3,57 +3,53 @@
   <parent>
     <groupId>org.jboss.dna.examples</groupId>
     <artifactId>getting_started</artifactId>
-    <version>0.2-SNAPSHOT</version>
+    <version>0.2</version>
     <relativePath>..</relativePath>
   </parent>
 
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.jboss.dna.examples</groupId>
   <artifactId>dna-example-repositories</artifactId>
-  <version>0.2-SNAPSHOT</version>
+  <version>0.2</version>
   <packaging>jar</packaging>
   <name>JBoss DNA Repositories Examples</name>
   <description>Examples that showcase how to use DNA repositories.</description>
-
-  <properties>
-    <dna-version>0.2-SNAPSHOT</dna-version>
-  </properties>
 
   <dependencies>
     <dependency>
       <groupId>org.jboss.dna</groupId>
       <artifactId>dna-repository</artifactId>
-      <version>${dna-version}</version>
+      <version>${pom.version}</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>org.jboss.dna</groupId>
       <artifactId>dna-jcr</artifactId>
-      <version>${dna-version}</version>
+      <version>${pom.version}</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>org.jboss.dna</groupId>
       <artifactId>dna-common</artifactId>
-      <version>${dna-version}</version>
+      <version>${pom.version}</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>org.jboss.dna</groupId>
       <artifactId>dna-connector-inmemory</artifactId>
-      <version>${dna-version}</version>
+      <version>${pom.version}</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>org.jboss.dna</groupId>
       <artifactId>dna-connector-jbosscache</artifactId>
-      <version>${dna-version}</version>
+      <version>${pom.version}</version>
       <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>org.jboss.dna</groupId>
       <artifactId>dna-connector-federation</artifactId>
-      <version>${dna-version}</version>
+      <version>${pom.version}</version>
       <scope>runtime</scope>
     </dependency>
     <!-- 
