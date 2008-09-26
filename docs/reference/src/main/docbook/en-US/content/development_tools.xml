@@ -404,6 +404,7 @@
 			<para>
 				At this point, the software has been released and tagged, so now the only thing left is to publish the release onto
 				the project's <ulink url="&Downloads;">downloads</ulink> and <ulink url="&Home;/docs">documentation</ulink> pages.
+			</para>
 		</sect2>
 		<sect2 id="tagging">
 			<title>Building Releases</title>
