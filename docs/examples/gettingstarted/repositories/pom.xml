@@ -3,14 +3,14 @@
   <parent>
     <groupId>org.jboss.dna.examples</groupId>
     <artifactId>getting_started</artifactId>
-    <version>0.2-SNAPSHOT</version>
+    <version>0.2</version>
     <relativePath>..</relativePath>
   </parent>
 
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.jboss.dna.examples</groupId>
   <artifactId>dna-example-repositories</artifactId>
-  <version>0.2-SNAPSHOT</version>
+  <version>0.2</version>
   <packaging>jar</packaging>
   <name>JBoss DNA Repositories Examples</name>
   <description>Examples that showcase how to use DNA repositories.</description>

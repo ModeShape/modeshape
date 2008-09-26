@@ -2,7 +2,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.jboss.dna</groupId>
 	<artifactId>dna</artifactId>
-	<version>0.2-SNAPSHOT</version>
+	<version>0.2</version>
 	<packaging>pom</packaging>
 	<name>JBoss DNA</name>
 	<url>http://www.jboss.org/dna</url>
@@ -11,7 +11,7 @@
 		JBoss DNA provides tools for working with JCR repositories.
 	</description>
 	<scm>
-		<connection>scm:svn:https://svn.jboss.org/repos/dna/trunk</connection>
+		<connection>scm:svn:https://svn.jboss.org/repos/dna/tags/dna-0.2</connection>
 	</scm>
 	<licenses>
 		<license>
@@ -262,7 +262,7 @@
 	            -sourcetab 4
 	            -windowtitle "${project.name} ${project.version} API Reference"
 	            -doctitle "${project.name} ${project.version} API Reference"
-	            -bottom "Copyright &#169; ${project.inceptionYear}-Present JBoss a division of Red Hat. All Rights Reserved."
+	            -bottom "Copyright © ${project.inceptionYear}-Present JBoss a division of Red Hat. All Rights Reserved."
 	            -link http://java.sun.com/javase/6/docs/api/
 	          </additionalparam>
 	          <encoding>UTF-8</encoding>
