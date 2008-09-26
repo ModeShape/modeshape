@@ -10,18 +10,15 @@
   <groupId>org.jboss.dna</groupId>
   <artifactId>dna-sequencer-cnd</artifactId>
   <name>JBoss DNA CND Sequencer</name>
-  <version>0.2-SNAPSHOT</version>
   <description>JBoss DNA Sequencer that processes JCR CND files</description>
   <dependencies>
     <dependency>
       <groupId>org.jboss.dna</groupId>
       <artifactId>dna-common</artifactId>
-      <version>0.2-SNAPSHOT</version>
     </dependency>
     <dependency>
       <groupId>org.jboss.dna</groupId>
       <artifactId>dna-graph</artifactId>
-      <version>0.2-SNAPSHOT</version>
     </dependency>
     <dependency>
       <groupId>org.antlr</groupId>

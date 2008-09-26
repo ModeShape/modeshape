@@ -3,7 +3,7 @@
   <parent>
     <groupId>org.jboss.dna</groupId>
     <artifactId>dna</artifactId>
-    <version>0.2</version>
+    <version>0.2-SNAPSHOT</version>
   </parent>
   <!-- The groupId and version values are inherited from parent -->
   <artifactId>dna-classloader-maven</artifactId>

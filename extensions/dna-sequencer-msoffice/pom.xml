@@ -3,7 +3,7 @@
   <parent>
     <artifactId>dna</artifactId>
     <groupId>org.jboss.dna</groupId>
-    <version>0.2</version>
+    <version>0.2-SNAPSHOT</version>
     <relativePath>../..</relativePath>
   </parent>
   <!-- The groupId and version values are inherited from parent -->
