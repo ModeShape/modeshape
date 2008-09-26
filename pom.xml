@@ -191,23 +191,26 @@
 	              </execution>
 	            </executions>
 	            <configuration>
-					<finalName>
-						jboss-dna-${project.version}
-					</finalName>
-             			<descriptors>
-						<descriptor>
-							build/assembly/examples.xml
-						</descriptor>
-						<descriptor>
-							build/assembly/javadoc.xml
-						</descriptor>
-						<descriptor>
-							build/assembly/dist.xml
-						</descriptor>
-						<descriptor>
-							build/assembly/src.xml
-						</descriptor>
-					</descriptors>
+								<finalName>
+									jboss-dna-${project.version}
+								</finalName>
+			          <descriptors>
+									<descriptor>
+										build/assembly/examples.xml
+									</descriptor>
+									<descriptor>
+										build/assembly/javadoc.xml
+									</descriptor>
+									<descriptor>
+										build/assembly/dist.xml
+									</descriptor>
+									<descriptor>
+										build/assembly/src.xml
+									</descriptor>
+									<descriptor>
+										build/assembly/all.xml
+									</descriptor>
+								</descriptors>
 	            </configuration>
 	          </plugin>
 	        </plugins>
@@ -216,6 +219,19 @@
 	        <module>docs</module>
 	        <module>docs/examples/gettingstarted</module>
 	      </modules>
+			  <reporting>
+			    <plugins>
+			      <plugin>
+			        <groupId>org.apache.maven.plugins</groupId>
+			        <artifactId>maven-javadoc-plugin</artifactId>
+			        <configuration>
+			          <aggregate>true</aggregate>
+							  <show>public</show>
+							  <title>JBoss DNA ${project.version}</title>
+			        </configuration>
+			      </plugin>
+			    </plugins>
+			  </reporting>
 	    </profile>
 	</profiles>
 	<build>
@@ -234,28 +250,26 @@
 					<version>2.2</version>
 					<configuration>
 						<aggregate>true</aggregate>
-                <doclet>net.gleamynode.apiviz.APIviz</doclet>
-          <docletArtifact>
-            <groupId>net.gleamynode.apiviz</groupId>
-            <artifactId>apiviz</artifactId>
-            <version>1.1.1</version>
-          </docletArtifact>
-          <additionalparam>
-            -charset UTF-8
-            -docencoding UTF-8
-            -version
-            -author
-            -breakiterator
-            -linksource
-            -sourcetab 4
-            -windowtitle "${project.name} ${project.version} API Reference"
-            -doctitle "${project.name} ${project.version} API Reference"
-            -bottom "Copyright &#169; ${project.inceptionYear}-Present JBoss a division of Red Hat. All Rights Reserved."
-            -link http://java.sun.com/javase/6/docs/api/
-          </additionalparam>
-          <encoding>UTF-8</encoding>
-                
-						
+            <doclet>net.gleamynode.apiviz.APIviz</doclet>
+	          <docletArtifact>
+	            <groupId>net.gleamynode.apiviz</groupId>
+	            <artifactId>apiviz</artifactId>
+	            <version>1.1.1</version>
+	          </docletArtifact>
+	          <additionalparam>
+	            -charset UTF-8
+	            -docencoding UTF-8
+	            -version
+	            -author
+	            -breakiterator
+	            -linksource
+	            -sourcetab 4
+	            -windowtitle "${project.name} ${project.version} API Reference"
+	            -doctitle "${project.name} ${project.version} API Reference"
+	            -bottom "Copyright &#169; ${project.inceptionYear}-Present JBoss a division of Red Hat. All Rights Reserved."
+	            -link http://java.sun.com/javase/6/docs/api/
+	          </additionalparam>
+	          <encoding>UTF-8</encoding>
 					</configuration>
 				</plugin>
 			</plugins>

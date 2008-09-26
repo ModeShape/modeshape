@@ -209,6 +209,30 @@
 				</tbody>
 			</tgroup>
 		</table>
+		<sect2 id="build-releases">
+			<title>Building releases</title>
+			<para>
+				The process of building JBoss DNA releases involves running a Maven build with some extra parameters.
+				Building these artifacts, including all documentation and JavaDocs, does take extra time, which is why
+				they are not included in the default parameters.
+			</para>
+			<para>
+				To build the release, issue the following command while in the <code>target/</code> directory:
+			</para>
+			<programlisting>mvn -P assembly clean javadoc:javadoc install</programlisting>
+			<para>
+				This command runs "clean", "javadoc:javadoc", and "install" goals using the "assembly" profile, 
+				which adds the production JavaDocs, the Getting Started document, the Reference Guide document, 
+				the Getting Started examples, and several ZIP archives.  The order of the goals is important,
+				since the "install" goal attempts to include the JavaDoc in the archives. 
+			</para>
+			<note>
+				<para>
+					Before running the above command, increase the memory available to Maven with this command:
+				</para>
+				<programlisting>export MAVEN_OPTS=-Xmx256m</programlisting>
+			</note>
+		</sect2>
 	</sect1>
 	<sect1 id="hudson">
 		<title>Continuous integration with Hudson</title>

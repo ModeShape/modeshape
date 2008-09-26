@@ -250,7 +250,7 @@
 						and several other guidelines.  Lean software development can be thought of as an evolution of agile techniques
 						in the same way that behavior-driven development is an evolution of test-driven development.  Lean techniques
 						help the developer to recognize and understand how and why features, bugs, and even their processes impact the development
-						of software - and JBoss DNA.
+						of software.
 					</para>
 				</listitem>
 			</itemizedlist>

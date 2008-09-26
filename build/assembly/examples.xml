@@ -34,6 +34,16 @@
 	  <!--
 		Gather into the distribution the examples
 	  -->
+	  <directory>docs/examples/gettingstarted/repositories</directory>
+	  <outputDirectory>examples/repositories</outputDirectory>
+      <excludes>
+        <exclude>target/**</exclude>
+      </excludes>
+	</fileSet>
+	<fileSet>
+	  <!--
+		Gather into the distribution the examples
+	  -->
 	  <directory>docs/examples/gettingstarted</directory>
 	  <outputDirectory>examples</outputDirectory>
       <includes>

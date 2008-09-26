@@ -54,12 +54,12 @@
               <stylesheetResource>classpath:/xslt/org/jboss/xhtml-single.xsl</stylesheetResource>
               <finalName>index.html</finalName>
             </format>
-            -->
             <format>
               <formatName>pdf</formatName>
               <stylesheetResource>classpath:/xslt/org/jboss/pdf.xsl</stylesheetResource>
               <finalName>userguide_en.pdf</finalName>
             </format>
+          -->
           </formats>
           <options>
             <xincludeSupported>true</xincludeSupported>

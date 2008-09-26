@@ -33,6 +33,13 @@
 	  <directory>docs/gettingstarted/target/docbook/publish/en-US</directory>
 	  <outputDirectory>manuals/gettingstarted</outputDirectory>
 	</fileSet>
+	<fileSet>
+	  <!--
+		Gather into the distribution the Getting Started document
+	  -->
+	  <directory>docs/reference/target/docbook/publish/en-US</directory>
+	  <outputDirectory>manuals/reference</outputDirectory>
+	</fileSet>
   </fileSets>
   <moduleSets>
     <moduleSet>
