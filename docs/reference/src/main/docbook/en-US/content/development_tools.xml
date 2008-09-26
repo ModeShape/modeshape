@@ -364,6 +364,7 @@
 			<para>This may download a lot of Maven plugins if they already haven't been downloaded.  It should then it should prompt you for
 				the release version of each of the projects, the tag name for the release, and the next development version.
 				The default values are probably acceptable; if not, then check that the "SNAPSHOT" version in each of the POM files is correct.
+			</para>
 		</sect2>
 		<sect2 id="release">
 			<title>Release</title>
