@@ -360,17 +360,50 @@
 				The next step is to ensure that all information in the POM is correct and contains all the information required for
 				the release process.  This is called a <emphasis>dry run</emphasis>, and is done with the Maven "release" plugin:
 			</para>
-			<programlisting>$ mvn release:prepare -DdryRun=true</programlisting>
-			<para>This may download a lot of Maven plugins if they already haven't been downloaded.  It should then it should prompt you for
+			<programlisting>$ mvn -Passembly release:prepare -DdryRun=true</programlisting>
+			<para>
+				This may download a lot of Maven plugins if they already haven't been downloaded.  It should then it should prompt you for
 				the release version of each of the projects, the tag name for the release, and the next development version.
 				The default values are probably acceptable; if not, then check that the "SNAPSHOT" version in each of the POM files is correct.
 			</para>
+			<para>
+				Once you have successfully completed the dry run of the release, you should clean up the files that the release 
+				plugin created in the dry run:
+			</para>
+			<programlisting>$ mvn -Passembly release:clean</programlisting>
+		</sect2>
+		<sect2 id="prepare-release">
+			<title>Prepare for the release</title>
+			<para>
+				Run the prepare step (without the <code>dryRun</code> option):
+			</para>
+			<programlisting>$ mvn -Passembly release:prepare</programlisting>
+			<para>
+				You will again be prompted for the release versions and tag name. These should be the same as what was used during the dry run. 
+				This will run the same steps as the dry run, with the additional step of tagging the release in SVN.
+			</para>
+			<para>
+				If there are any problems during this step, you should go back and try the dry run option.
+			</para>
 		</sect2>
 		<sect2 id="release">
-			<title>Release</title>
+			<title>Perform the release</title>
 			<para>
-				
+				Next run the perform step which will checkout the files from the tag, do a build, and deploy the generated artifacts.
 			</para>
+			<programlisting>$ mvn -Passembly release:perform</programlisting>
+			<para>
+				The deployment is done to the local file system (a local checkout of the JBoss Maven2 repository), so you will need to 
+				commit the new files after they are deployed.  For more information, see the 
+				<ulink url="http://wiki.jboss.org/wiki/Maven">JBoss wiki</ulink>.
+			</para>
+			<para>
+				Note that the release process updates your project's <code>pom.xml</code> files to change the "&lt;version&gt;" values
+				to the next version.  These will then need to be committed onto the trunk of SVN.
+			</para>
+			<para>
+				At this point, the software has been released and tagged, so now the only thing left is to publish the release onto
+				the project's <ulink url="&Downloads;">downloads</ulink> and <ulink url="&Home;/docs">documentation</ulink> pages.
 		</sect2>
 		<sect2 id="tagging">
 			<title>Building Releases</title>
