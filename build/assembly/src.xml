@@ -11,7 +11,7 @@
         <fileSets>
           <fileSet>
             <excludes>
-              <exclude>target/**</exclude>
+              <exclude>**/target/**</exclude>
             </excludes>
           </fileSet>
         </fileSets>
