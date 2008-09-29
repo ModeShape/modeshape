@@ -25,7 +25,8 @@
 <!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd">
 <chapter id="future">
 	<title>Looking to the future</title>
-	<para>What's next for JBoss DNA?  Well, the sequencing system is just the beginning.  With this release, the sequencing system
+	<para>
+		What's next for JBoss DNA?  Well, the sequencing system is just the beginning.  With this release, the sequencing system
 	  is stable enough so that more <link linkend="sequencers">sequencers</link> can be developed and used within your own applications.
 		We've also established the foundation for JBoss DNA repositories, including a number of <link linkend="repository-connectors">connectors</link>.
 		We'll continue to expand our library of sequencers and connectors, as well as expand our support of JCR.
@@ -37,5 +38,6 @@
 	  If you're interested in getting involved with the JBoss DNA project, consider picking up one of the sequencers on our
 	  <ulink url="http://jira.jboss.org/jira/browse/DNA?report=com.atlassian.jira.plugin.system.project:roadmap-panel">roadmap</ulink>.
 	  Or, check out <ulink url="http://jira.jboss.org/jira/secure/IssueNavigator.jspa?reset=true&amp;mode=hide&amp;pid=12310520&amp;sorter/order=DESC&amp;sorter/field=priority&amp;resolution=-1&amp;component=12311436">JIRA</ulink>
-	  for the list of sequencers we've thought of.  If you think of one that's not there, please add it to JIRA! </para>
+	  for the list of sequencers we've thought of.  If you think of one that's not there, please add it to JIRA!
+	</para>
 </chapter>

@@ -408,37 +408,11 @@
 				to the next version.  These will then need to be committed onto the trunk of SVN.
 			</para>
 			<para>
-				At this point, the software has been released and tagged, so now the only thing left is to publish the release onto
+				At this point, the software has been released and tagged, and it's been deployed to a local checked-out copy of the 
+				JBoss DNA Maven 2 repository (via the "&lt;distribution&gt;" section of the pom.xml files).  Those need to be committed
+				into the Maven 2 repository using SVN.  And finally, the last thing is to publish the release onto
 				the project's <ulink url="&Downloads;">downloads</ulink> and <ulink url="&Home;/docs">documentation</ulink> pages.
 			</para>
 		</sect2>
-		<!--
-		<sect2 id="tagging">
-			<title>Building Releases</title>
-			<para>
-				Finally, the code can be tagged with the new release, using the following Subversion command.
-				Just remember to use the correct <code>&lt;releaseNumber&lt;</code>:
-			</para>
-			<programlisting>
-$ svn copy https://svn.jboss.org/repos/dna/trunk \
-           https://svn.jboss.org/repos/dna/tags/dna-<emphasis>&lt;releaseNumber&lt;</emphasis> \
-      -m "Releasing JBoss DNA &lt;releaseNumber&lt;"
-	</programlisting>
-			<para>
-				Of course, this will copy of <code>HEAD</code>.  To copy a particular revision in <code>trunk/</code>, use
-				the <code>-r</code> argument with the correct SVN revision number:
-			</para>
-			<programlisting>
-$ svn copy https://svn.jboss.org/repos/dna/trunk -r<emphasis>&lt;revisionNumber&lt;</emphasis> \
-           https://svn.jboss.org/repos/dna/tags/dna-<emphasis>&lt;releaseNumber&lt;</emphasis> \
-      -m "Releasing JBoss DNA &lt;releaseNumber&lt;"
-</programlisting>
-			<note>
-				<para>
-					You can obtain the latest revision number using the <code>$ svn info</code> command.
-				</para>
-			</note>
-		</sect2>
-	-->
 	</sect1>
 </chapter>
