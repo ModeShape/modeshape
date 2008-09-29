@@ -122,7 +122,7 @@
       To use Maven with JBoss DNA, you'll need to have <link linkend="jdk">JDK 5 or 6</link> and Maven 2.0.9 (or higher).</para>
 		<para>
       Maven can be downloaded from <ulink url="http://maven.apache.org/">http://maven.apache.org/</ulink>, and is installed by unzipping the
-      <code>maven-2.0.7-bin.zip</code> file to a convenient location on your local disk. Simply add <code>$MAVEN_HOME/bin</code>
+      <code>maven-2.0.9-bin.zip</code> file to a convenient location on your local disk. Simply add <code>$MAVEN_HOME/bin</code>
       to your path and add the following profile to your <code>~/.m2/settings.xml</code> file:
 		</para>
 		<programlisting role="XML"><![CDATA[
