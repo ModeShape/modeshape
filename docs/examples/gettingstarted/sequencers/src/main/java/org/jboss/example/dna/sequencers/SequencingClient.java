@@ -369,7 +369,8 @@ public class SequencingClient {
                     }
                 }
 
-            } else if (root.hasNode("java")) {
+            }
+            if (root.hasNode("java")) {
                 Map<String, List<Properties>> tree = new TreeMap<String, List<Properties>>();
                 // Find the compilation unit node ...
                 List<Properties> javaElements;
