@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<process-definition xmlns="urn:jbpm.org:jpdl-3.2"
+    name="Pd-Name">
+    
+  <!-- Process roles -->
+    <swimlane name="SL1">
+        <assignment class="com.sample.assigned.Task1Handler" />
+    </swimlane>
+    <swimlane name="SL2">
+        <assignment class="com.sample.assigned.Task2Handler" />
+    </swimlane>
+    
+    <start-state name="S0">
+        <transition name="Tr01_S01" to="Phase01" />
+    </start-state>
+    
+    <task-node name="Phase01">
+        <task name="Task01_Phase01" swimlane="SL1"/>
+        <transition name="Tr01_Phase01" to="Phase02" />
+    </task-node>
+    
+    <task-node name="Phase02">
+        <task name="Task01_Phase02" swimlane="SL2"/>
+        <transition name="Tr01_Phase02" to="Phase03" />
+    </task-node>
+    
+    <task-node name="Phase03">
+        <task name="Task_01_Phase03">
+            <assignment class="com.sample.assigned.Task3Handler" />
+        </task>
+        <transition name="Tr01_Phase03" to="Phase04" />
+    </task-node>
+    
+    <task-node name="Phase04">
+        <task name="Task_01_Phase04">
+            <assignment class="com.sample.assigned.Task4Hanlder" />
+        </task>
+        <transition name="Tr01_Phase04" to="S1" />
+    </task-node>
+    
+    <end-state name="S1" />
+    
+</process-definition>
