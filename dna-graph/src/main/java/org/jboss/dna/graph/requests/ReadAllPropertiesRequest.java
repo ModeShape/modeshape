@@ -26,6 +26,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import org.jboss.dna.common.util.CheckArg;
+import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.connectors.RepositoryConnection;
 import org.jboss.dna.graph.properties.Name;
 import org.jboss.dna.graph.properties.Property;

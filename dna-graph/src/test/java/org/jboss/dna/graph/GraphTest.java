@@ -1,0 +1,868 @@
+/*
+ * JBoss, Home of Professional Open Source.
+ * Copyright 2008, Red Hat Middleware LLC, and individual contributors
+ * as indicated by the @author tags. See the copyright.txt file in the
+ * distribution for a full listing of individual contributors. 
+ *
+ * This is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU Lesser General Public License as
+ * published by the Free Software Foundation; either version 2.1 of
+ * the License, or (at your option) any later version.
+ *
+ * This software is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this software; if not, write to the Free
+ * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+ * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+ */
+package org.jboss.dna.graph;
+
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsInstanceOf.instanceOf;
+import static org.hamcrest.core.IsNull.notNullValue;
+import static org.hamcrest.core.IsNull.nullValue;
+import static org.hamcrest.core.IsSame.sameInstance;
+import static org.junit.Assert.assertThat;
+import static org.junit.matchers.JUnitMatchers.hasItems;
+import static org.mockito.Matchers.argThat;
+import static org.mockito.Mockito.stub;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.TimeUnit;
+import javax.transaction.xa.XAResource;
+import org.jboss.dna.graph.cache.CachePolicy;
+import org.jboss.dna.graph.commands.GraphCommand;
+import org.jboss.dna.graph.connectors.BasicExecutionContext;
+import org.jboss.dna.graph.connectors.RepositoryConnection;
+import org.jboss.dna.graph.connectors.RepositoryConnectionFactory;
+import org.jboss.dna.graph.connectors.RepositorySourceException;
+import org.jboss.dna.graph.connectors.RepositorySourceListener;
+import org.jboss.dna.graph.properties.InvalidPathException;
+import org.jboss.dna.graph.properties.Name;
+import org.jboss.dna.graph.properties.Path;
+import org.jboss.dna.graph.properties.Property;
+import org.jboss.dna.graph.requests.CompositeRequest;
+import org.jboss.dna.graph.requests.CopyBranchRequest;
+import org.jboss.dna.graph.requests.CreateNodeRequest;
+import org.jboss.dna.graph.requests.DeleteBranchRequest;
+import org.jboss.dna.graph.requests.MoveBranchRequest;
+import org.jboss.dna.graph.requests.ReadAllChildrenRequest;
+import org.jboss.dna.graph.requests.ReadAllPropertiesRequest;
+import org.jboss.dna.graph.requests.ReadBlockOfChildrenRequest;
+import org.jboss.dna.graph.requests.ReadNodeRequest;
+import org.jboss.dna.graph.requests.ReadPropertyRequest;
+import org.jboss.dna.graph.requests.Request;
+import org.jboss.dna.graph.requests.RequestProcessor;
+import org.jboss.dna.graph.requests.UpdatePropertiesRequest;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.ArgumentMatcher;
+import org.mockito.MockitoAnnotations;
+import org.mockito.MockitoAnnotations.Mock;
+
+/**
+ * @author Randall Hauch
+ */
+public class GraphTest {
+
+    private Graph graph;
+    private Results results;
+    private ExecutionContext context;
+    private Path validPath;
+    private String validPathString;
+    private UUID validUuid;
+    private Property validIdProperty1;
+    private Property validIdProperty2;
+    private String sourceName;
+    private MockRepositoryConnection connection;
+    private LinkedList<Request> executedRequests;
+    private int numberOfExecutions;
+    /** Populate this with the properties (by location) that are to be read */
+    private Map<Location, Collection<Property>> properties;
+    /** Populate this with the children (by location) that are to be read */
+    private Map<Location, List<Location>> children;
+    @Mock
+    private RepositoryConnectionFactory connectionFactory;
+
+    @Before
+    public void beforeEach() {
+        MockitoAnnotations.initMocks(this);
+        executedRequests = new LinkedList<Request>();
+        sourceName = "Source";
+        context = new BasicExecutionContext();
+        connection = new MockRepositoryConnection();
+        stub(connectionFactory.createConnection(sourceName)).toReturn(connection);
+        graph = new Graph(sourceName, connectionFactory, context);
+        validPathString = "/a/b/c";
+        validUuid = UUID.randomUUID();
+        validPath = createPath(validPathString);
+        Name idProperty1Name = createName("id1");
+        Name idProperty2Name = createName("id2");
+        validIdProperty1 = context.getPropertyFactory().create(idProperty1Name, "1");
+        validIdProperty2 = context.getPropertyFactory().create(idProperty2Name, "2");
+
+        properties = new HashMap<Location, Collection<Property>>();
+        children = new HashMap<Location, List<Location>>();
+    }
+
+    static class IsAnyRequest extends ArgumentMatcher<Request> {
+        @Override
+        public boolean matches( Object request ) {
+            return request instanceof Request;
+        }
+    }
+
+    protected static Request anyRequest() {
+        return argThat(new IsAnyRequest());
+    }
+
+    protected Path createPath( String path ) {
+        return context.getValueFactories().getPathFactory().create(path);
+    }
+
+    protected Path createPath( Path parent,
+                               String path ) {
+        return context.getValueFactories().getPathFactory().create(parent, path);
+    }
+
+    protected Name createName( String name ) {
+        return context.getValueFactories().getNameFactory().create(name);
+    }
+
+    protected void setPropertiesToReadOn( Location location,
+                                          Property... properties ) {
+        this.properties.put(location, Arrays.asList(properties));
+    }
+
+    protected void setChildrenToReadOn( Location location,
+                                        Location... children ) {
+        this.children.put(location, Arrays.asList(children));
+    }
+
+    protected void assertNextRequestIsMove( Location from,
+                                            Location to ) {
+        assertThat(executedRequests.poll(), is((Request)new MoveBranchRequest(from, to)));
+    }
+
+    protected void assertNextRequestIsCopy( Location from,
+                                            Location to ) {
+        assertThat(executedRequests.poll(), is((Request)new CopyBranchRequest(from, to)));
+    }
+
+    protected void assertNextRequestIsDelete( Location at ) {
+        assertThat(executedRequests.poll(), is((Request)new DeleteBranchRequest(at)));
+    }
+
+    protected void assertNextRequestIsCreate( Location at,
+                                              Property... properties ) {
+        assertThat(executedRequests.poll(), is((Request)new CreateNodeRequest(at, properties)));
+    }
+
+    protected void assertNextRequestReadProperties( Location at,
+                                                    Property... properties ) {
+        Request request = executedRequests.poll();
+        assertThat(request, is(instanceOf(ReadAllPropertiesRequest.class)));
+        ReadAllPropertiesRequest readAll = (ReadAllPropertiesRequest)request;
+        assertThat(readAll.at(), is(at));
+        Map<Name, Property> propsByName = new HashMap<Name, Property>(readAll.getPropertiesByName());
+        for (Property prop : properties) {
+            assertThat(propsByName.remove(prop.getName()), is(prop));
+        }
+        assertThat(propsByName.isEmpty(), is(true));
+    }
+
+    protected void assertNextRequestReadProperty( Location at,
+                                                  Property property ) {
+        Request request = executedRequests.poll();
+        assertThat(request, is(instanceOf(ReadPropertyRequest.class)));
+        ReadPropertyRequest read = (ReadPropertyRequest)request;
+        assertThat(read.on(), is(at));
+        assertThat(read.getProperty(), is(property));
+    }
+
+    protected void assertNextRequestReadChildren( Location at,
+                                                  Location... children ) {
+        Request request = executedRequests.poll();
+        assertThat(request, is(instanceOf(ReadAllChildrenRequest.class)));
+        ReadAllChildrenRequest readAll = (ReadAllChildrenRequest)request;
+        assertThat(readAll.of(), is(at));
+        assertThat(readAll.getChildren(), hasItems(children));
+    }
+
+    protected void assertNextRequestReadBlockOfChildren( Location at,
+                                                         int startIndex,
+                                                         int maxCount,
+                                                         Location... children ) {
+        Request request = executedRequests.poll();
+        assertThat(request, is(instanceOf(ReadBlockOfChildrenRequest.class)));
+        ReadBlockOfChildrenRequest read = (ReadBlockOfChildrenRequest)request;
+        assertThat(read.of(), is(at));
+        assertThat(read.startingAt(), is(startIndex));
+        assertThat(read.endingBefore(), is(startIndex + maxCount));
+        assertThat(read.count(), is(maxCount));
+        assertThat(read.getChildren(), hasItems(children));
+    }
+
+    protected void assertNextRequestReadRangeOfChildren( Location at,
+                                                         int startIndex,
+                                                         int endIndex,
+                                                         Location... children ) {
+        assertNextRequestReadBlockOfChildren(at, startIndex, endIndex - startIndex, children);
+    }
+
+    protected void assertNextRequestReadNode( Location at ) {
+        Request request = executedRequests.poll();
+        assertThat(request, is(instanceOf(ReadNodeRequest.class)));
+        ReadNodeRequest read = (ReadNodeRequest)request;
+        assertThat(read.at(), is(at));
+    }
+
+    protected void assertNoMoreRequests() {
+        assertThat(executedRequests.isEmpty(), is(true));
+        numberOfExecutions = 0;
+    }
+
+    protected void extractRequestsFromComposite() {
+        Request request = executedRequests.poll();
+        assertThat(request, is(instanceOf(CompositeRequest.class)));
+        executedRequests.addAll(0, ((CompositeRequest)request).getRequests());
+    }
+
+    // ----------------------------------------------------------------------------------------------------------------
+    // Immediate requests
+    // ----------------------------------------------------------------------------------------------------------------
+
+    @Test
+    public void shouldMoveNode() {
+        graph.move(validPath).into(validIdProperty1, validIdProperty2);
+        assertThat(numberOfExecutions, is(1));
+        assertNextRequestIsMove(new Location(validPath), new Location(validIdProperty1, validIdProperty2));
+        assertNoMoreRequests();
+
+        graph.move(validPathString).into(validIdProperty1, validIdProperty2);
+        assertThat(numberOfExecutions, is(1));
+        assertNextRequestIsMove(new Location(validPath), new Location(validIdProperty1, validIdProperty2));
+        assertNoMoreRequests();
+
+        graph.move(validUuid).into(validPath);
+        assertThat(numberOfExecutions, is(1));
+        assertNextRequestIsMove(new Location(validUuid), new Location(validPath));
+        assertNoMoreRequests();
+    }
+
+    @Test
+    public void shouldCopyNode() {
+        graph.copy(validPath).into(validIdProperty1, validIdProperty2);
+        assertThat(numberOfExecutions, is(1));
+        assertNextRequestIsCopy(new Location(validPath), new Location(validIdProperty1, validIdProperty2));
+        assertNoMoreRequests();
+
+        graph.copy(validPathString).into(validIdProperty1, validIdProperty2);
+        assertThat(numberOfExecutions, is(1));
+        assertNextRequestIsCopy(new Location(validPath), new Location(validIdProperty1, validIdProperty2));
+        assertNoMoreRequests();
+
+        graph.copy(validUuid).into(validPath);
+        assertThat(numberOfExecutions, is(1));
+        assertNextRequestIsCopy(new Location(validUuid), new Location(validPath));
+        assertNoMoreRequests();
+    }
+
+    @Test
+    public void shouldDeleteNode() {
+        graph.delete(validPath);
+        assertThat(numberOfExecutions, is(1));
+        assertNextRequestIsDelete(new Location(validPath));
+        assertNoMoreRequests();
+
+        graph.delete(validPathString);
+        assertThat(numberOfExecutions, is(1));
+        assertNextRequestIsDelete(new Location(validPath));
+        assertNoMoreRequests();
+
+        graph.delete(validUuid);
+        assertThat(numberOfExecutions, is(1));
+        assertNextRequestIsDelete(new Location(validUuid));
+        assertNoMoreRequests();
+
+        graph.delete(validIdProperty1);
+        assertThat(numberOfExecutions, is(1));
+        assertNextRequestIsDelete(new Location(validIdProperty1));
+        assertNoMoreRequests();
+
+        graph.delete(validIdProperty1, validIdProperty2);
+        assertThat(numberOfExecutions, is(1));
+        assertNextRequestIsDelete(new Location(validIdProperty1, validIdProperty2));
+        assertNoMoreRequests();
+    }
+
+    @Test
+    public void shouldCreateNode() {
+        graph.create(validPath);
+        assertThat(numberOfExecutions, is(1));
+        assertNextRequestIsCreate(new Location(validPath));
+        assertNoMoreRequests();
+
+        graph.create(validPath, validIdProperty1);
+        assertThat(numberOfExecutions, is(1));
+        assertNextRequestIsCreate(new Location(validPath), validIdProperty1);
+        assertNoMoreRequests();
+
+        graph.create(validPath, validIdProperty1, validIdProperty2);
+        assertThat(numberOfExecutions, is(1));
+        assertNextRequestIsCreate(new Location(validPath), validIdProperty1, validIdProperty2);
+        assertNoMoreRequests();
+
+        graph.create(validPathString);
+        assertThat(numberOfExecutions, is(1));
+        assertNextRequestIsCreate(new Location(validPath));
+        assertNoMoreRequests();
+
+        graph.create(validPathString, validIdProperty1);
+        assertThat(numberOfExecutions, is(1));
+        assertNextRequestIsCreate(new Location(validPath), validIdProperty1);
+        assertNoMoreRequests();
+
+        graph.create(validPathString, validIdProperty1, validIdProperty2);
+        assertThat(numberOfExecutions, is(1));
+        assertNextRequestIsCreate(new Location(validPath), validIdProperty1, validIdProperty2);
+        assertNoMoreRequests();
+    }
+
+    @Test
+    public void shouldGetPropertiesOnNode() {
+        setPropertiesToReadOn(new Location(validPath), validIdProperty1, validIdProperty2);
+        Collection<Property> props = graph.getProperties().on(validPath);
+        assertThat(numberOfExecutions, is(1));
+        assertNextRequestReadProperties(new Location(validPath), validIdProperty1, validIdProperty2);
+        assertNoMoreRequests();
+        assertThat(props, hasItems(validIdProperty1, validIdProperty2));
+
+        setPropertiesToReadOn(new Location(validPath));
+        props = graph.getProperties().on(validPath);
+        assertThat(numberOfExecutions, is(1));
+        assertNextRequestReadProperties(new Location(validPath));
+        assertNoMoreRequests();
+        assertThat(props.size(), is(0));
+    }
+
+    @Test
+    public void shouldGetPropertiesByNameOnNode() {
+        setPropertiesToReadOn(new Location(validPath), validIdProperty1, validIdProperty2);
+        Map<Name, Property> propsByName = graph.getPropertiesByName().on(validPath);
+        assertThat(numberOfExecutions, is(1));
+        assertNextRequestReadProperties(new Location(validPath), validIdProperty1, validIdProperty2);
+        assertNoMoreRequests();
+        assertThat(propsByName.get(validIdProperty1.getName()), is(validIdProperty1));
+        assertThat(propsByName.get(validIdProperty2.getName()), is(validIdProperty2));
+
+        setPropertiesToReadOn(new Location(validPath));
+        propsByName = graph.getPropertiesByName().on(validPath);
+        assertThat(numberOfExecutions, is(1));
+        assertNextRequestReadProperties(new Location(validPath));
+        assertNoMoreRequests();
+        assertThat(propsByName.isEmpty(), is(true));
+    }
+
+    @Test
+    public void shouldGetPropertyOnNode() {
+        setPropertiesToReadOn(new Location(validPath), validIdProperty1, validIdProperty2);
+        graph.getProperty(validIdProperty2.getName()).on(validPath);
+        assertThat(numberOfExecutions, is(1));
+        assertNextRequestReadProperty(new Location(validPath), validIdProperty2);
+        assertNoMoreRequests();
+
+        setPropertiesToReadOn(new Location(validPath), validIdProperty1, validIdProperty2);
+        graph.getProperty(validIdProperty2.getName().getString(context.getNamespaceRegistry())).on(validPath);
+        assertThat(numberOfExecutions, is(1));
+        assertNextRequestReadProperty(new Location(validPath), validIdProperty2);
+        assertNoMoreRequests();
+    }
+
+    @Test
+    public void shouldGetChildrenOnNode() {
+        Location child1 = new Location(createPath(validPath, "x"));
+        Location child2 = new Location(createPath(validPath, "y"));
+        Location child3 = new Location(createPath(validPath, "z"));
+        setChildrenToReadOn(new Location(validPath), child1, child2, child3);
+        List<Location> children = graph.getChildren().of(validPath);
+        assertThat(numberOfExecutions, is(1));
+        assertNextRequestReadChildren(new Location(validPath), child1, child2, child3);
+        assertNoMoreRequests();
+        assertThat(children, hasItems(child1, child2, child3));
+
+        setChildrenToReadOn(new Location(validPath));
+        children = graph.getChildren().of(validPath);
+        assertThat(numberOfExecutions, is(1));
+        assertNextRequestReadChildren(new Location(validPath));
+        assertNoMoreRequests();
+        assertThat(children.isEmpty(), is(true));
+    }
+
+    @Test
+    public void shouldGetChildrenInBlockOnNode() {
+        Location child1 = new Location(createPath(validPath, "x"));
+        Location child2 = new Location(createPath(validPath, "y"));
+        Location child3 = new Location(createPath(validPath, "z"));
+        setChildrenToReadOn(new Location(validPath), child1, child2, child3);
+        List<Location> children = graph.getChildrenInBlock(0, 2).of(validPath);
+        assertThat(numberOfExecutions, is(1));
+        assertNextRequestReadBlockOfChildren(new Location(validPath), 0, 2, child1, child2);
+        assertNoMoreRequests();
+        assertThat(children, hasItems(child1, child2));
+
+        children = graph.getChildrenInBlock(1, 2).of(validPath);
+        assertThat(numberOfExecutions, is(1));
+        assertNextRequestReadBlockOfChildren(new Location(validPath), 1, 2, child2, child3);
+        assertNoMoreRequests();
+        assertThat(children, hasItems(child2, child3));
+
+        children = graph.getChildrenInBlock(2, 2).of(validPath);
+        assertThat(numberOfExecutions, is(1));
+        assertNextRequestReadBlockOfChildren(new Location(validPath), 2, 2, child3);
+        assertNoMoreRequests();
+        assertThat(children, hasItems(child3));
+
+        children = graph.getChildrenInBlock(20, 2).of(validPath);
+        assertThat(numberOfExecutions, is(1));
+        assertNextRequestReadBlockOfChildren(new Location(validPath), 20, 2);
+        assertNoMoreRequests();
+        assertThat(children.isEmpty(), is(true));
+
+        children = graph.getChildrenInBlock(0, 20).of(validPath);
+        assertThat(numberOfExecutions, is(1));
+        assertNextRequestReadBlockOfChildren(new Location(validPath), 0, 20, child1, child2, child3);
+        assertNoMoreRequests();
+        assertThat(children, hasItems(child1, child2, child3));
+    }
+
+    @Test
+    public void shouldGetChildrenInRangeOnNode() {
+        Location child1 = new Location(createPath(validPath, "x"));
+        Location child2 = new Location(createPath(validPath, "y"));
+        Location child3 = new Location(createPath(validPath, "z"));
+        setChildrenToReadOn(new Location(validPath), child1, child2, child3);
+        List<Location> children = graph.getChildrenInRange(0, 2).of(validPath);
+        assertThat(numberOfExecutions, is(1));
+        assertNextRequestReadRangeOfChildren(new Location(validPath), 0, 2, child1, child2);
+        assertNoMoreRequests();
+        assertThat(children, hasItems(child1, child2));
+
+        children = graph.getChildrenInRange(1, 3).of(validPath);
+        assertThat(numberOfExecutions, is(1));
+        assertNextRequestReadRangeOfChildren(new Location(validPath), 1, 3, child2, child3);
+        assertNoMoreRequests();
+        assertThat(children, hasItems(child2, child3));
+
+        children = graph.getChildrenInRange(2, 4).of(validPath);
+        assertThat(numberOfExecutions, is(1));
+        assertNextRequestReadRangeOfChildren(new Location(validPath), 2, 4, child3);
+        assertNoMoreRequests();
+        assertThat(children, hasItems(child3));
+
+        children = graph.getChildrenInRange(20, 21).of(validPath);
+        assertThat(numberOfExecutions, is(1));
+        assertNextRequestReadRangeOfChildren(new Location(validPath), 20, 21);
+        assertNoMoreRequests();
+        assertThat(children.isEmpty(), is(true));
+
+        children = graph.getChildrenInRange(0, 20).of(validPath);
+        assertThat(numberOfExecutions, is(1));
+        assertNextRequestReadRangeOfChildren(new Location(validPath), 0, 20, child1, child2, child3);
+        assertNoMoreRequests();
+        assertThat(children, hasItems(child1, child2, child3));
+    }
+
+    @Test
+    public void shouldReadNode() {
+        Location child1 = new Location(createPath(validPath, "x"));
+        Location child2 = new Location(createPath(validPath, "y"));
+        Location child3 = new Location(createPath(validPath, "z"));
+        setChildrenToReadOn(new Location(validPath), child1, child2, child3);
+        setPropertiesToReadOn(new Location(validPath), validIdProperty1, validIdProperty2);
+        Node node = graph.getNodeAt(validPath);
+        assertThat(node, is(notNullValue()));
+        assertThat(node.getChildren(), hasItems(child1, child2));
+        assertThat(node.getProperties(), hasItems(validIdProperty1, validIdProperty2));
+        assertThat(node.getLocation(), is(new Location(validPath)));
+        assertThat(node.getGraph(), is(sameInstance(graph)));
+        assertThat(node.getPropertiesByName().get(validIdProperty1.getName()), is(validIdProperty1));
+        assertThat(node.getPropertiesByName().get(validIdProperty2.getName()), is(validIdProperty2));
+        assertThat(numberOfExecutions, is(1));
+        assertNextRequestReadNode(new Location(validPath));
+        assertNoMoreRequests();
+    }
+
+    @Test
+    public void shouldReadSubgraph() {
+        Location child1 = new Location(createPath(validPath, "x"));
+        Location child2 = new Location(createPath(validPath, "y"));
+        Location child3 = new Location(createPath(validPath, "z"));
+        setChildrenToReadOn(new Location(validPath), child1, child2, child3);
+        Location child11 = new Location(createPath(child1.getPath(), "h"));
+        Location child12 = new Location(createPath(child1.getPath(), "i"));
+        Location child13 = new Location(createPath(child1.getPath(), "j"));
+        setChildrenToReadOn(child1, child11, child12, child13);
+        Location child121 = new Location(createPath(child12.getPath(), "m"));
+        Location child122 = new Location(createPath(child12.getPath(), "n"));
+        Location child123 = new Location(createPath(child12.getPath(), "o"));
+        setChildrenToReadOn(child12, child121, child122, child123);
+
+        setPropertiesToReadOn(new Location(validPath), validIdProperty1, validIdProperty2);
+        setPropertiesToReadOn(child1, validIdProperty1);
+        setPropertiesToReadOn(child2, validIdProperty2);
+        setPropertiesToReadOn(child11, validIdProperty1);
+        setPropertiesToReadOn(child12, validIdProperty2);
+        setPropertiesToReadOn(child121, validIdProperty1);
+        setPropertiesToReadOn(child122, validIdProperty2);
+
+        Subgraph subgraph = graph.getSubgraphOfDepth(2).at(validPath);
+        assertThat(subgraph, is(notNullValue()));
+        assertThat(subgraph.getMaximumDepth(), is(2));
+        assertThat(subgraph.getLocation(), is(new Location(validPath)));
+
+        // Get nodes by absolute path
+        Node root = subgraph.getNode(new Location(validPath));
+        assertThat(root.getChildren(), hasItems(child1, child2, child3));
+        assertThat(root.getProperties(), hasItems(validIdProperty1, validIdProperty2));
+
+        Node node1 = subgraph.getNode(child1);
+        assertThat(node1.getChildren(), hasItems(child11, child12, child13));
+        assertThat(node1.getProperties(), hasItems(validIdProperty1));
+
+        Node node2 = subgraph.getNode(child2);
+        assertThat(node2.getChildren().isEmpty(), is(true));
+        assertThat(node2.getProperties(), hasItems(validIdProperty2));
+
+        Node node3 = subgraph.getNode(child3);
+        assertThat(node3.getChildren().isEmpty(), is(true));
+        assertThat(node3.getProperties().isEmpty(), is(true));
+
+        // Get nodes that don't exist in subgraph ...
+        assertThat(subgraph.getNode(child123), is(nullValue()));
+
+        // Get nodes by relative path ...
+        root = subgraph.getNode("./");
+        assertThat(root.getChildren(), hasItems(child1, child2, child3));
+        assertThat(root.getProperties(), hasItems(validIdProperty1, validIdProperty2));
+
+        node1 = subgraph.getNode("x");
+        assertThat(node1.getChildren(), hasItems(child11, child12, child13));
+        assertThat(node1.getProperties(), hasItems(validIdProperty1));
+
+        node2 = subgraph.getNode("y");
+        assertThat(node2.getChildren().isEmpty(), is(true));
+        assertThat(node2.getProperties(), hasItems(validIdProperty2));
+
+        node3 = subgraph.getNode("z");
+        assertThat(node3.getChildren().isEmpty(), is(true));
+        assertThat(node3.getProperties().isEmpty(), is(true));
+    }
+
+    // ----------------------------------------------------------------------------------------------------------------
+    // Batched requests
+    // ----------------------------------------------------------------------------------------------------------------
+
+    @Test
+    public void shouldMoveNodeInBatches() {
+        graph.batch().move(validPath).into(validIdProperty1, validIdProperty2).execute();
+        assertThat(numberOfExecutions, is(1));
+        assertNextRequestIsMove(new Location(validPath), new Location(validIdProperty1, validIdProperty2));
+        assertNoMoreRequests();
+
+        graph.batch().move(validPathString).into(validIdProperty1, validIdProperty2).execute();
+        assertThat(numberOfExecutions, is(1));
+        assertNextRequestIsMove(new Location(validPath), new Location(validIdProperty1, validIdProperty2));
+        assertNoMoreRequests();
+
+        graph.batch().move(validUuid).into(validPath).execute();
+        assertThat(numberOfExecutions, is(1));
+        assertNextRequestIsMove(new Location(validUuid), new Location(validPath));
+        assertNoMoreRequests();
+
+        graph.batch().move(validPath).into(validIdProperty1, validIdProperty2).and().move(validPathString).into(validIdProperty1,
+                                                                                                                validIdProperty2).and().move(validUuid).into(validPath).execute();
+        assertThat(numberOfExecutions, is(1));
+        extractRequestsFromComposite();
+        assertNextRequestIsMove(new Location(validPath), new Location(validIdProperty1, validIdProperty2));
+        assertNextRequestIsMove(new Location(validPath), new Location(validIdProperty1, validIdProperty2));
+        assertNextRequestIsMove(new Location(validUuid), new Location(validPath));
+        assertNoMoreRequests();
+    }
+
+    @Test
+    public void shouldCopyNodeInBatches() {
+        graph.batch().copy(validPath).into(validIdProperty1, validIdProperty2).execute();
+        assertThat(numberOfExecutions, is(1));
+        assertNextRequestIsCopy(new Location(validPath), new Location(validIdProperty1, validIdProperty2));
+        assertNoMoreRequests();
+
+        graph.batch().copy(validPathString).into(validIdProperty1, validIdProperty2).execute();
+        assertThat(numberOfExecutions, is(1));
+        assertNextRequestIsCopy(new Location(validPath), new Location(validIdProperty1, validIdProperty2));
+        assertNoMoreRequests();
+
+        graph.batch().copy(validUuid).into(validPath).execute();
+        assertThat(numberOfExecutions, is(1));
+        assertNextRequestIsCopy(new Location(validUuid), new Location(validPath));
+        assertNoMoreRequests();
+
+        graph.batch().copy(validPath).into(validIdProperty1, validIdProperty2).and().copy(validPathString).into(validIdProperty1,
+                                                                                                                validIdProperty2).and().copy(validUuid).into(validPath).execute();
+        assertThat(numberOfExecutions, is(1));
+        extractRequestsFromComposite();
+        assertNextRequestIsCopy(new Location(validPath), new Location(validIdProperty1, validIdProperty2));
+        assertNextRequestIsCopy(new Location(validPath), new Location(validIdProperty1, validIdProperty2));
+        assertNextRequestIsCopy(new Location(validUuid), new Location(validPath));
+        assertNoMoreRequests();
+    }
+
+    @Test
+    public void shouldReadNodesInBatches() {
+        Location child1 = new Location(createPath(validPath, "x"));
+        Location child2 = new Location(createPath(validPath, "y"));
+        Location child3 = new Location(createPath(validPath, "z"));
+        setChildrenToReadOn(new Location(validPath), child1, child2, child3);
+        Location child11 = new Location(createPath(child1.getPath(), "h"));
+        Location child12 = new Location(createPath(child1.getPath(), "i"));
+        Location child13 = new Location(createPath(child1.getPath(), "j"));
+        setChildrenToReadOn(child1, child11, child12, child13);
+        Location child121 = new Location(createPath(child12.getPath(), "m"));
+        Location child122 = new Location(createPath(child12.getPath(), "n"));
+        Location child123 = new Location(createPath(child12.getPath(), "o"));
+        setChildrenToReadOn(child12, child121, child122, child123);
+
+        setPropertiesToReadOn(new Location(validPath), validIdProperty1, validIdProperty2);
+        setPropertiesToReadOn(child1, validIdProperty1);
+        setPropertiesToReadOn(child2, validIdProperty2);
+        setPropertiesToReadOn(child11, validIdProperty1);
+        setPropertiesToReadOn(child12, validIdProperty2);
+        setPropertiesToReadOn(child121, validIdProperty1);
+        setPropertiesToReadOn(child122, validIdProperty2);
+
+        results = graph.batch().read(validPath).and().read(child11).and().read(child12).execute();
+        assertThat(numberOfExecutions, is(1));
+        extractRequestsFromComposite();
+        assertNextRequestReadNode(new Location(validPath));
+        assertNextRequestReadNode(child11);
+        assertNextRequestReadNode(child12);
+        assertNoMoreRequests();
+
+        assertThat(results, is(notNullValue()));
+        Node node = results.getNode(validPath);
+        assertThat(node, is(notNullValue()));
+        assertThat(node.getChildren(), hasItems(child1, child2, child3));
+        assertThat(node.getProperties(), hasItems(validIdProperty1, validIdProperty2));
+        assertThat(node.getLocation(), is(new Location(validPath)));
+        assertThat(node.getGraph(), is(sameInstance(graph)));
+        assertThat(node.getPropertiesByName().get(validIdProperty1.getName()), is(validIdProperty1));
+        assertThat(node.getPropertiesByName().get(validIdProperty2.getName()), is(validIdProperty2));
+
+        node = results.getNode(child11);
+        assertThat(node, is(notNullValue()));
+        assertThat(node.getChildren().size(), is(0));
+        assertThat(node.getProperties(), hasItems(validIdProperty1));
+        assertThat(node.getLocation(), is(child11));
+        assertThat(node.getGraph(), is(sameInstance(graph)));
+        assertThat(node.getPropertiesByName().get(validIdProperty1.getName()), is(validIdProperty1));
+
+        node = results.getNode(child12);
+        assertThat(node, is(notNullValue()));
+        assertThat(node.getChildren(), hasItems(child121, child122, child123));
+        assertThat(node.getProperties(), hasItems(validIdProperty2));
+        assertThat(node.getLocation(), is(child12));
+        assertThat(node.getGraph(), is(sameInstance(graph)));
+        assertThat(node.getPropertiesByName().get(validIdProperty2.getName()), is(validIdProperty2));
+    }
+
+    // ----------------------------------------------------------------------------------------------------------------
+    // Test that the test harness (helper methods and helper classes) are set up and working ...
+    // ----------------------------------------------------------------------------------------------------------------
+    @Test( expected = AssertionError.class )
+    public void shouldPropertyCheckReadPropertiesUsingTestHarness1() {
+        setPropertiesToReadOn(new Location(validPath), validIdProperty1);
+        graph.getProperties().on(validPath);
+        assertThat(numberOfExecutions, is(1));
+        assertNextRequestReadProperties(new Location(validPath), validIdProperty1, validIdProperty2); // wrong!
+    }
+
+    @Test( expected = AssertionError.class )
+    public void shouldPropertyCheckReadPropertiesUsingTestHarness2() {
+        graph.getProperties().on(validPath);
+        assertThat(numberOfExecutions, is(1));
+        assertNextRequestReadProperties(new Location(validPath), validIdProperty1, validIdProperty2); // wrong!
+    }
+
+    // ----------------------------------------------------------------------------------------------------------------
+    // Requests that result in errors
+    // ----------------------------------------------------------------------------------------------------------------
+
+    @Test( expected = InvalidPathException.class )
+    public void shouldPropogateExceptionFromConnectorWhenMovingLocationIsNotFound() {
+        connection.error = new InvalidPathException();
+        graph.move(validUuid).into(validPath);
+    }
+
+    @Test( expected = InvalidPathException.class )
+    public void shouldPropogateExceptionFromConnectorWhenCopyLocationIsNotFound() {
+        connection.error = new InvalidPathException();
+        graph.copy(validUuid).into(validPath);
+    }
+
+    @Test( expected = InvalidPathException.class )
+    public void shouldPropogateExceptionFromConnectorWhenDeleteLocationIsNotFound() {
+        connection.error = new InvalidPathException();
+        graph.delete(validUuid);
+    }
+
+    // ----------------------------------------------------------------------------------------------------------------
+    // Multiple immediate requests via method chaining
+    // ----------------------------------------------------------------------------------------------------------------
+
+    @Test
+    public void shouldMoveNodesThroughMultipleMoveRequests() {
+        graph.move(validPath).into(validIdProperty1, validIdProperty2).and().move(validUuid).into(validPathString);
+        assertThat(numberOfExecutions, is(2));
+        assertNextRequestIsMove(new Location(validPath), new Location(validIdProperty1, validIdProperty2));
+        assertNextRequestIsMove(new Location(validUuid), new Location(createPath(validPathString)));
+        assertNoMoreRequests();
+    }
+
+    @Test
+    public void shouldIgnoreIncompleteRequests() {
+        graph.move(validPath); // missing 'into(...)'
+        assertNoMoreRequests();
+
+        graph.move(validPath).into(validUuid);
+        assertThat(numberOfExecutions, is(1));
+        assertNextRequestIsMove(new Location(validPath), new Location(validUuid));
+        assertNoMoreRequests();
+    }
+
+    // @Test
+    // public void shouldBatchMultipleRequests() {
+    // // Get the children of one node and the properties of another ...
+    // results = graph.batch().readChildren().of("/a/b").and().readProperties().on(validUuid).execute();
+    // }
+
+    // ----------------------------------------------------------------------------------------------------------------
+    // Implementation of RepositoryConnection and RequestProcessor for tests
+    // ----------------------------------------------------------------------------------------------------------------
+
+    /**
+     * Implementation used by the {@link MockRepositoryConnection} to process the requests. The methods of this implementation do
+     * little, other than populate the incoming read {@link Request}s with the properties and children that are to be read, using
+     * the {@link GraphTest#children} and {@link GraphTest#properties} values.
+     */
+    @SuppressWarnings( "synthetic-access" )
+    class Processor extends RequestProcessor {
+        protected Processor() {
+            super(sourceName, context);
+        }
+
+        @Override
+        public void process( CopyBranchRequest request ) {
+            // Do nothing
+        }
+
+        @Override
+        public void process( CreateNodeRequest request ) {
+            // Do nothing
+        }
+
+        @Override
+        public void process( DeleteBranchRequest request ) {
+            // Do nothing
+        }
+
+        @Override
+        public void process( MoveBranchRequest request ) {
+            // Do nothing
+        }
+
+        @Override
+        public void process( ReadAllChildrenRequest request ) {
+            // Read the children from the map ...
+            if (children.containsKey(request.of())) {
+                for (Location child : children.get(request.of())) {
+                    request.addChild(child);
+                }
+            }
+        }
+
+        @Override
+        public void process( ReadAllPropertiesRequest request ) {
+            // Read the properties from the map ...
+            if (properties.containsKey(request.at())) {
+                for (Property property : properties.get(request.at())) {
+                    request.addProperty(property);
+                }
+            }
+        }
+
+        @Override
+        public void process( UpdatePropertiesRequest request ) {
+            // Do nothing
+        }
+    }
+
+    /**
+     * A connection implementation that simply records the {@link Request} that is submitted, storing the request in the
+     * {@link GraphTest#executedRequests} variable.
+     * 
+     * @author Randall Hauch
+     */
+    class MockRepositoryConnection implements RepositoryConnection {
+        public Throwable error = null;
+        private final RequestProcessor processor = new Processor();
+
+        public void close() {
+        }
+
+        public void execute( ExecutionContext context,
+                             GraphCommand... commands ) throws RepositorySourceException {
+        }
+
+        @SuppressWarnings( "synthetic-access" )
+        public void execute( ExecutionContext context,
+                             Request request ) throws RepositorySourceException {
+            if (error != null) {
+                request.setError(error);
+                return;
+            }
+            executedRequests.add(request);
+            ++numberOfExecutions;
+            processor.process(request);
+        }
+
+        public CachePolicy getDefaultCachePolicy() {
+            return null;
+        }
+
+        public String getSourceName() {
+            return null;
+        }
+
+        public XAResource getXAResource() {
+            return null;
+        }
+
+        public boolean ping( long time,
+                             TimeUnit unit ) {
+            return true;
+        }
+
+        public void setListener( RepositorySourceListener listener ) {
+        }
+
+    }
+}

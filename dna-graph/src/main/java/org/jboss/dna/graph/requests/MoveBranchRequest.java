@@ -22,6 +22,7 @@
 package org.jboss.dna.graph.requests;
 
 import org.jboss.dna.common.util.CheckArg;
+import org.jboss.dna.graph.Location;
 
 /**
  * Instruction that a branch be moved from one location into another.

@@ -35,12 +35,7 @@ import net.jcip.annotations.ThreadSafe;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.cache.CachePolicy;
 import org.jboss.dna.graph.commands.GraphCommand;
-import org.jboss.dna.graph.connectors.RepositoryConnection;
-import org.jboss.dna.graph.connectors.RepositoryContext;
-import org.jboss.dna.graph.connectors.RepositorySource;
-import org.jboss.dna.graph.connectors.RepositorySourceCapabilities;
-import org.jboss.dna.graph.connectors.RepositorySourceException;
-import org.jboss.dna.graph.connectors.RepositorySourceListener;
+import org.jboss.dna.graph.requests.Request;
 
 /**
  * A simple {@link RepositorySource} that simulates an imaginary source with a built-in delay mechanism.
@@ -330,6 +325,18 @@ public class TimeDelayingRepositorySource implements RepositorySource {
                 }
             }
             this.loadCount.incrementAndGet();
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.graph.connectors.RepositoryConnection#execute(org.jboss.dna.graph.ExecutionContext,
+         *      org.jboss.dna.graph.requests.Request)
+         */
+        public void execute( ExecutionContext context,
+                             Request request ) throws RepositorySourceException {
+            // TODO
+            throw new UnsupportedOperationException();
         }
 
         public void setLoadResponse( boolean response ) {

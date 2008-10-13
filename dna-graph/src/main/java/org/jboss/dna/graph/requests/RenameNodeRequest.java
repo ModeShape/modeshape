@@ -22,6 +22,7 @@
 package org.jboss.dna.graph.requests;
 
 import org.jboss.dna.common.util.CheckArg;
+import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.properties.Name;
 
 /**

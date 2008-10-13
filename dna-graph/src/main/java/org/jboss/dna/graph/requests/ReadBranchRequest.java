@@ -29,13 +29,14 @@ import java.util.List;
 import java.util.Map;
 import net.jcip.annotations.NotThreadSafe;
 import org.jboss.dna.common.util.CheckArg;
+import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.connectors.RepositoryConnection;
 import org.jboss.dna.graph.properties.Name;
 import org.jboss.dna.graph.properties.Property;
 
 /**
- * Instruction to read the properties and children of the nodes in the branch at the supplied location. The children of the nodes at
- * the bottom of the branch are not read.
+ * Instruction to read the properties and children of the nodes in the branch at the supplied location. The children of the nodes
+ * at the bottom of the branch are not read.
  * 
  * @author Randall Hauch
  */
@@ -92,6 +93,16 @@ public class ReadBranchRequest extends Request implements Iterable<Location> {
      */
     public int maximumDepth() {
         return maxDepth;
+    }
+
+    /**
+     * Return whether this branch contains the specified location.
+     * 
+     * @param location the location
+     * @return true if this branch includes the location, or false otherwise
+     */
+    public boolean includes( Location location ) {
+        return this.nodeProperties.containsKey(location);
     }
 
     /**

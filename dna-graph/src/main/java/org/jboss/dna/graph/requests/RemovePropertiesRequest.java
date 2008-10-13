@@ -28,6 +28,7 @@ import java.util.Iterator;
 import java.util.Set;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.common.util.StringUtil;
+import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.properties.Name;
 
 /**

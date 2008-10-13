@@ -49,7 +49,7 @@ import org.jboss.dna.graph.connectors.RepositorySourceListener;
 import org.jboss.dna.graph.properties.Name;
 import org.jboss.dna.graph.properties.Path;
 import org.jboss.dna.graph.properties.Property;
-import org.jboss.dna.graph.util.GraphImporter;
+import org.jboss.dna.graph.requests.Request;
 import org.jboss.dna.graph.xml.DnaDtdLexicon;
 import org.jboss.dna.graph.xml.DnaXmlLexicon;
 import org.junit.Before;
@@ -68,6 +68,7 @@ public class GraphImporterTest {
     private URI xmlContent;
     private MockRepositoryConnection connection;
     private GraphCommand lastExecutedCommand;
+    private Request lastExecutedRequest;
     private Path destinationPath;
     @Mock
     private RepositoryConnectionFactory sources;
@@ -157,6 +158,12 @@ public class GraphImporterTest {
         public void execute( ExecutionContext context,
                              GraphCommand... commands ) throws RepositorySourceException {
             lastExecutedCommand = commands[0];
+        }
+
+        @SuppressWarnings( "synthetic-access" )
+        public void execute( ExecutionContext context,
+                             Request request ) throws RepositorySourceException {
+            lastExecutedRequest = request;
         }
 
         public CachePolicy getDefaultCachePolicy() {

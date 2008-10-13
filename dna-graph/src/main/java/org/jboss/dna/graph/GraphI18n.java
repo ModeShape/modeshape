@@ -65,6 +65,7 @@ public final class GraphI18n {
     public static I18n closingCommandExecutor;
     public static I18n closedCommandExecutor;
     public static I18n multipleErrorsWhileExecutingRequests;
+    public static I18n unableToAddMoreRequestsToAlreadyExecutedBatch;
 
     // XML Sequencer
     public static I18n errorSequencingXmlDocument;

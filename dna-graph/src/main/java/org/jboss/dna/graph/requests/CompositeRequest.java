@@ -90,6 +90,21 @@ public class CompositeRequest extends Request implements Iterable<Request> {
     }
 
     /**
+     * Return a request that either wraps multiple requests, or the single request if only one is supplied.
+     * 
+     * @param requests the requests to wrap
+     * @return the requests wrapped in a CompositeRequest, or if only one request is supplied that single request
+     * @throws IllegalArgumentException if there requests are null or empty
+     */
+    public static Request with( List<Request> requests ) {
+        CheckArg.isNotEmpty(requests, "requests");
+        if (requests.size() == 1) {
+            return requests.get(0);
+        }
+        return new CompositeRequest(requests);
+    }
+
+    /**
      * Add requests to the supplied composite request.
      * 
      * @param composite the composite request to which the requests are to be added

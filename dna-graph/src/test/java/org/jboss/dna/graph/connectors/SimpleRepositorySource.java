@@ -42,17 +42,12 @@ import org.jboss.dna.graph.commands.GraphCommand;
 import org.jboss.dna.graph.commands.SetPropertiesCommand;
 import org.jboss.dna.graph.commands.executor.AbstractCommandExecutor;
 import org.jboss.dna.graph.commands.executor.CommandExecutor;
-import org.jboss.dna.graph.connectors.RepositoryConnection;
-import org.jboss.dna.graph.connectors.RepositoryContext;
-import org.jboss.dna.graph.connectors.RepositorySource;
-import org.jboss.dna.graph.connectors.RepositorySourceCapabilities;
-import org.jboss.dna.graph.connectors.RepositorySourceException;
-import org.jboss.dna.graph.connectors.RepositorySourceListener;
 import org.jboss.dna.graph.properties.Name;
 import org.jboss.dna.graph.properties.Path;
 import org.jboss.dna.graph.properties.PathNotFoundException;
 import org.jboss.dna.graph.properties.Property;
 import org.jboss.dna.graph.properties.basic.BasicSingleValueProperty;
+import org.jboss.dna.graph.requests.Request;
 
 /**
  * A {@link RepositorySource} for a {@link SimpleRepository simple repository}.
@@ -265,6 +260,18 @@ public class SimpleRepositorySource implements RepositorySource {
             for (GraphCommand command : commands) {
                 executor.execute(command);
             }
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.graph.connectors.RepositoryConnection#execute(org.jboss.dna.graph.ExecutionContext,
+         *      org.jboss.dna.graph.requests.Request)
+         */
+        public void execute( ExecutionContext context,
+                             Request request ) throws RepositorySourceException {
+            // TODO
+            throw new UnsupportedOperationException();
         }
 
         /**

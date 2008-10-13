@@ -34,6 +34,7 @@ import org.jboss.dna.graph.commands.executor.CommandExecutor;
 import org.jboss.dna.graph.connectors.RepositoryConnection;
 import org.jboss.dna.graph.connectors.RepositorySourceException;
 import org.jboss.dna.graph.connectors.RepositorySourceListener;
+import org.jboss.dna.graph.requests.Request;
 
 /**
  * @author Randall Hauch
@@ -148,6 +149,18 @@ public class InMemoryRepositoryConnection implements RepositoryConnection {
             sw.stop();
             logger.trace("InMemoryRepositoryConnection.execute(...) took " + sw.getTotalDuration());
         }
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.connectors.RepositoryConnection#execute(org.jboss.dna.graph.ExecutionContext,
+     *      org.jboss.dna.graph.requests.Request)
+     */
+    public void execute( ExecutionContext context,
+                         Request request ) throws RepositorySourceException {
+        // TODO
+        throw new UnsupportedOperationException();
     }
 
     protected InMemoryRepository getContent() {

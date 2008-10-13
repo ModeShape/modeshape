@@ -29,6 +29,7 @@ import java.util.LinkedList;
 import java.util.List;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.common.util.StringUtil;
+import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.properties.Property;
 
 /**

@@ -30,6 +30,7 @@ import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.GraphI18n;
+import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.connectors.RepositorySourceException;
 import org.jboss.dna.graph.properties.Name;
 import org.jboss.dna.graph.properties.Path;
@@ -221,10 +222,11 @@ public abstract class RequestProcessor {
         List<Location> allChildren = readAll.getChildren();
 
         // If there aren't enough children for the block's range ...
-        if (allChildren.size() < request.endingBefore()) return;
+        if (allChildren.size() < request.startingAt()) return;
 
         // Now, find the children in the block ...
-        for (int i = request.startingAt(); i != request.endingBefore(); ++i) {
+        int endIndex = Math.min(request.endingBefore(), allChildren.size());
+        for (int i = request.startingAt(); i != endIndex; ++i) {
             request.addChild(allChildren.get(i));
         }
     }
@@ -250,7 +252,7 @@ public abstract class RequestProcessor {
             LocationWithDepth read = locationsToRead.poll();
 
             // Check the depth ...
-            if (read.depth > request.maximumDepth()) continue;
+            if (read.depth > request.maximumDepth()) break;
 
             // Read the properties ...
             ReadNodeRequest readNode = new ReadNodeRequest(read.location);
@@ -408,6 +410,11 @@ public abstract class RequestProcessor {
                                      int depth ) {
             this.location = location;
             this.depth = depth;
+        }
+
+        @Override
+        public String toString() {
+            return location.toString() + " at depth " + depth;
         }
     }
 

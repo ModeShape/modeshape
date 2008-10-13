@@ -42,6 +42,7 @@ import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.GraphI18n;
 import org.jboss.dna.graph.cache.CachePolicy;
 import org.jboss.dna.graph.commands.GraphCommand;
+import org.jboss.dna.graph.requests.Request;
 
 /**
  * A reusable implementation of a managed pool of connections that is optimized for safe concurrent operations.
@@ -984,6 +985,18 @@ public class RepositoryConnectionPool {
                              GraphCommand... commands ) throws RepositorySourceException {
             if (closed) throw new IllegalStateException(GraphI18n.closedConnectionMayNotBeUsed.text());
             this.original.execute(context, commands);
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.graph.connectors.RepositoryConnection#execute(org.jboss.dna.graph.ExecutionContext,
+         *      org.jboss.dna.graph.requests.Request)
+         */
+        public void execute( ExecutionContext context,
+                             Request request ) throws RepositorySourceException {
+            if (closed) throw new IllegalStateException(GraphI18n.closedConnectionMayNotBeUsed.text());
+            this.original.execute(context, request);
         }
 
         /**

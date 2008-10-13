@@ -60,6 +60,7 @@ import org.jboss.dna.graph.properties.Property;
 import org.jboss.dna.graph.properties.PropertyFactory;
 import org.jboss.dna.graph.properties.ValueFactory;
 import org.jboss.dna.graph.properties.Path.Segment;
+import org.jboss.dna.graph.requests.Request;
 
 /**
  * The repository connection to a JBoss Cache instance.
@@ -153,6 +154,18 @@ public class JBossCacheConnection implements RepositoryConnection {
         for (GraphCommand command : commands) {
             executor.execute(command);
         }
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.connectors.RepositoryConnection#execute(org.jboss.dna.graph.ExecutionContext,
+     *      org.jboss.dna.graph.requests.Request)
+     */
+    public void execute( ExecutionContext context,
+                         Request request ) throws RepositorySourceException {
+        // TODO
+        throw new UnsupportedOperationException();
     }
 
     /**

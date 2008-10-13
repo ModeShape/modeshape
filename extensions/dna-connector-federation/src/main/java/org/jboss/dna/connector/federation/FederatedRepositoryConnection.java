@@ -32,6 +32,7 @@ import org.jboss.dna.graph.commands.executor.CommandExecutor;
 import org.jboss.dna.graph.connectors.RepositoryConnection;
 import org.jboss.dna.graph.connectors.RepositorySourceException;
 import org.jboss.dna.graph.connectors.RepositorySourceListener;
+import org.jboss.dna.graph.requests.Request;
 
 /**
  * @author Randall Hauch
@@ -127,6 +128,18 @@ public class FederatedRepositoryConnection implements RepositoryConnection {
         } finally {
             executor.close();
         }
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.connectors.RepositoryConnection#execute(org.jboss.dna.graph.ExecutionContext,
+     *      org.jboss.dna.graph.requests.Request)
+     */
+    public void execute( ExecutionContext context,
+                         Request request ) throws RepositorySourceException {
+        // TODO
+        throw new UnsupportedOperationException();
     }
 
     /**

@@ -27,6 +27,7 @@ import net.jcip.annotations.NotThreadSafe;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.cache.CachePolicy;
 import org.jboss.dna.graph.commands.GraphCommand;
+import org.jboss.dna.graph.requests.Request;
 
 /**
  * A connection to a repository source.
@@ -89,6 +90,16 @@ public interface RepositoryConnection {
      */
     void execute( ExecutionContext context,
                   GraphCommand... commands ) throws RepositorySourceException;
+
+    /**
+     * Execute the supplied commands against this repository source.
+     * 
+     * @param context the environment in which the commands are being executed; never null
+     * @param request the request to be executed; never null
+     * @throws RepositorySourceException if there is a problem loading the node data
+     */
+    void execute( ExecutionContext context,
+                  Request request ) throws RepositorySourceException;
 
     /**
      * Close this connection to signal that it is no longer needed and that any accumulated resources are to be released.
