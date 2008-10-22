@@ -172,8 +172,6 @@ public class SVNRepositoryConnectionTest {
         }
     }
     
-    @Test
-    public void should
 
     /**
      * Create a Repository instance from the file-protocol.
