@@ -26,7 +26,6 @@ import java.util.concurrent.TimeUnit;
 import javax.transaction.xa.XAResource;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.cache.CachePolicy;
-import org.jboss.dna.graph.commands.GraphCommand;
 import org.jboss.dna.graph.connectors.RepositoryConnection;
 import org.jboss.dna.graph.connectors.RepositorySourceException;
 import org.jboss.dna.graph.connectors.RepositorySourceListener;
@@ -126,18 +125,6 @@ public class SVNRepositoryConnection implements RepositoryConnection {
      */
     public void close() {
         // do not care about.
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.jboss.dna.graph.connectors.RepositoryConnection#execute(org.jboss.dna.graph.ExecutionContext,
-     *      org.jboss.dna.graph.commands.GraphCommand[])
-     */
-    public void execute( ExecutionContext context,
-                         GraphCommand... commands ) throws RepositorySourceException {
-        // Now execute the commands ...
-  
     }
 
     /**
