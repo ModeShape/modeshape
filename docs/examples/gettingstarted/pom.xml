@@ -155,6 +155,25 @@
           <optimize>true</optimize>
         </configuration>
       </plugin>  
+			<plugin>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<configuration>
+					<includes>
+						<include>**/*TestCase.java</include>
+						<include>**/*Test.java</include>
+					</includes>
+					<!--excludes>
+						<exclude>**/Abstract*TestCase.java</exclude>
+						<exclude>**/Abstract*Test.java</exclude>
+					</excludes-->
+					<systemProperties>
+						<property>
+							<name>java.io.tmpdir</name>
+							<value>${basedir}/target</value>
+						</property>
+					</systemProperties>
+				</configuration>
+			</plugin>
     </plugins>
   </build>
 
