@@ -8,8 +8,6 @@
 		<version>0.3-SNAPSHOT</version>
 		<relativePath>../..</relativePath>
 	</parent>
-
-	<groupId>org.jboss.dna.connector.svn</groupId>
 	<artifactId>dna-connector-svn</artifactId>
 	<packaging>jar</packaging>
 	<name>JBoss DNA Connector to SVN</name>
