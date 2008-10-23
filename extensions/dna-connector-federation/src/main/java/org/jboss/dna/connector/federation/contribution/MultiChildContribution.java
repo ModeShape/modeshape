@@ -25,9 +25,8 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import net.jcip.annotations.Immutable;
+import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.properties.DateTime;
-import org.jboss.dna.graph.properties.Path;
-import org.jboss.dna.graph.properties.Path.Segment;
 
 /**
  * The contribution of a source to the information for a single federated node.
@@ -42,25 +41,25 @@ public class MultiChildContribution extends NonEmptyContribution {
      */
     private static final long serialVersionUID = 1L;
 
-    private List<Segment> children;
+    private List<Location> children;
 
     /**
      * Create a contribution of children from the source with the supplied name.
      * 
      * @param sourceName the name of the source, which may not be null or blank
-     * @param pathInSource the path in the source for this contributed information; may not be null
+     * @param locationInSource the location in the source for this contributed information; may not be null
      * @param expirationTime the time (in UTC) after which this contribution should be considered expired, or null if there is no
      *        expiration time
      * @param children the children from the source; may not be null or empty
      */
     public MultiChildContribution( String sourceName,
-                                   Path pathInSource,
+                                   Location locationInSource,
                                    DateTime expirationTime,
-                                   Iterable<Segment> children ) {
-        super(sourceName, pathInSource, expirationTime);
+                                   Iterable<Location> children ) {
+        super(sourceName, locationInSource, expirationTime);
         assert children != null;
-        this.children = new LinkedList<Segment>();
-        for (Segment child : children) {
+        this.children = new LinkedList<Location>();
+        for (Location child : children) {
             if (child != null) this.children.add(child);
         }
         assert this.children.isEmpty() == false;
@@ -73,8 +72,8 @@ public class MultiChildContribution extends NonEmptyContribution {
      * @see org.jboss.dna.connector.federation.contribution.Contribution#getChildren()
      */
     @Override
-    public Iterator<Segment> getChildren() {
-        return new ImmutableIterator<Segment>(children.iterator());
+    public Iterator<Location> getChildren() {
+        return new ImmutableIterator<Location>(children.iterator());
     }
 
     /**

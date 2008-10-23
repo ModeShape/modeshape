@@ -286,7 +286,7 @@ public class FederatedRepositorySourceTest {
         assertThat((String)refAttributes.remove(FederatedRepositorySource.RETRY_LIMIT), is(Integer.toString(retryLimit)));
         assertThat((String)refAttributes.remove(FederatedRepositorySource.CONFIGURATION_SOURCE_NAME),
                    is(source.getConfigurationSourceName()));
-        assertThat((String)refAttributes.remove(FederatedRepositorySource.CONFIGURATION_SOURCE_PATH), is("/a/b/c"));
+        assertThat((String)refAttributes.remove(FederatedRepositorySource.CONFIGURATION_SOURCE_PATH), is("/a/b/c/"));
         assertThat((String)refAttributes.remove(FederatedRepositorySource.SECURITY_DOMAIN), is(securityDomain));
         assertThat(refAttributes.isEmpty(), is(true));
 

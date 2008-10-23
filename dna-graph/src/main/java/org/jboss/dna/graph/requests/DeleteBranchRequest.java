@@ -22,6 +22,7 @@
 package org.jboss.dna.graph.requests;
 
 import org.jboss.dna.common.util.CheckArg;
+import org.jboss.dna.graph.GraphI18n;
 import org.jboss.dna.graph.Location;
 
 /**
@@ -31,7 +32,10 @@ import org.jboss.dna.graph.Location;
  */
 public class DeleteBranchRequest extends Request {
 
+    private static final long serialVersionUID = 1L;
+
     private final Location at;
+    private Location actualLocation;
 
     /**
      * Create a request to delete a branch.
@@ -51,6 +55,44 @@ public class DeleteBranchRequest extends Request {
      */
     public Location at() {
         return at;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.requests.Request#isReadOnly()
+     */
+    @Override
+    public boolean isReadOnly() {
+        return false;
+    }
+
+    /**
+     * Sets the actual and complete location of the node being deleted. This method must be called when processing the request,
+     * and the actual location must have a {@link Location#getPath() path}.
+     * 
+     * @param actual the actual location of the node being deleted, or null if the {@link #at() current location} should be used
+     * @throws IllegalArgumentException if the actual location does not represent the {@link Location#isSame(Location) same
+     *         location} as the {@link #at() current location}, or if the actual location does not have a path.
+     */
+    public void setActualLocationOfNode( Location actual ) {
+        if (!at.isSame(actual)) { // not same if actual is null
+            throw new IllegalArgumentException(GraphI18n.actualLocationIsNotSameAsInputLocation.text(actual, at));
+        }
+        assert actual != null;
+        if (!actual.hasPath()) {
+            throw new IllegalArgumentException(GraphI18n.actualLocationMustHavePath.text(actual));
+        }
+        this.actualLocation = actual;
+    }
+
+    /**
+     * Get the actual location of the node that was deleted.
+     * 
+     * @return the actual location, or null if the actual location was not set
+     */
+    public Location getActualLocationOfNode() {
+        return actualLocation;
     }
 
     /**

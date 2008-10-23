@@ -73,7 +73,6 @@ public class SimpleRepository {
 
     private ConcurrentMap<Path, Map<Name, Property>> data = new ConcurrentHashMap<Path, Map<Name, Property>>();
     private final String repositoryName;
-    private Name uuidPropertyName = DEFAULT_UUID_PROPERTY_NAME;
     private boolean shutdown = false;
 
     public SimpleRepository( String repositoryName ) {
@@ -90,21 +89,6 @@ public class SimpleRepository {
      */
     public String getRepositoryName() {
         return repositoryName;
-    }
-
-    /**
-     * @return uuidPropertyName
-     */
-    public Name getUuidPropertyName() {
-        return uuidPropertyName;
-    }
-
-    /**
-     * @param uuidPropertyName Sets uuidPropertyName to the specified value.
-     */
-    public void setUuidPropertyName( Name uuidPropertyName ) {
-        if (uuidPropertyName == null) uuidPropertyName = DEFAULT_UUID_PROPERTY_NAME;
-        this.uuidPropertyName = uuidPropertyName;
     }
 
     /**
@@ -159,9 +143,14 @@ public class SimpleRepository {
             create(context, pathObj.getParent().getString(context.getNamespaceRegistry()));
         }
         Property property = propertyFactory.create(propertyName, values);
-        Map<Name, Property> properties = new HashMap<Name, Property>();
-        Map<Name, Property> existingProperties = data.putIfAbsent(pathObj, properties);
-        if (existingProperties == null) existingProperties = properties;
+        Map<Name, Property> newProperties = new HashMap<Name, Property>();
+        Map<Name, Property> existingProperties = data.putIfAbsent(pathObj, newProperties);
+        if (existingProperties == null) {
+            existingProperties = newProperties;
+            UUID uuid = context.getValueFactories().getUuidFactory().create();
+            Property uuidProperty = context.getPropertyFactory().create(DnaLexicon.UUID, uuid);
+            newProperties.put(DnaLexicon.UUID, uuidProperty);
+        }
         existingProperties.put(property.getName(), property);
         return this;
     }
@@ -180,13 +169,19 @@ public class SimpleRepository {
         Path pathObj = pathFactory.create(path);
         Path ancestorPath = pathObj;
         while (!ancestorPath.isRoot()) {
-            data.putIfAbsent(ancestorPath, new HashMap<Name, Property>());
+            // Add a UUID property ...
+            if (!data.containsKey(ancestorPath)) {
+                Map<Name, Property> props = new HashMap<Name, Property>();
+                UUID uuid = context.getValueFactories().getUuidFactory().create();
+                Property uuidProperty = context.getPropertyFactory().create(DnaLexicon.UUID, uuid);
+                props.put(DnaLexicon.UUID, uuidProperty);
+                data.putIfAbsent(ancestorPath, props);
+            }
             ancestorPath = ancestorPath.getParent();
         }
-        Name uuidName = context.getValueFactories().getNameFactory().create(this.getUuidPropertyName());
         UUID uuid = context.getValueFactories().getUuidFactory().create();
-        Property uuidProperty = context.getPropertyFactory().create(uuidName, uuid);
-        data.get(pathObj).put(uuidProperty.getName(), uuidProperty);
+        Property uuidProperty = context.getPropertyFactory().create(DnaLexicon.UUID, uuid);
+        data.get(pathObj).put(DnaLexicon.UUID, uuidProperty);
         return this;
     }
 

@@ -33,15 +33,13 @@ import org.jboss.dna.connector.federation.merge.FederatedNode;
 import org.jboss.dna.connector.federation.merge.MergePlan;
 import org.jboss.dna.graph.DnaLexicon;
 import org.jboss.dna.graph.ExecutionContext;
-import org.jboss.dna.graph.properties.IoException;
+import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.properties.Name;
 import org.jboss.dna.graph.properties.Path;
 import org.jboss.dna.graph.properties.PathFactory;
 import org.jboss.dna.graph.properties.Property;
 import org.jboss.dna.graph.properties.PropertyFactory;
-import org.jboss.dna.graph.properties.UuidFactory;
 import org.jboss.dna.graph.properties.ValueComparators;
-import org.jboss.dna.graph.properties.Path.Segment;
 
 /**
  * This merge strategy simply merges all of the contributions' properties and combines the children according to the order of the
@@ -82,79 +80,111 @@ public class SimpleMergeStrategy implements MergeStrategy {
         assert context != null;
         assert contributions != null;
         assert contributions.size() > 0;
-        PathFactory pathFactory = context.getValueFactories().getPathFactory();
-        // Prepare the federated node ...
-        List<Segment> children = federatedNode.getChildren();
-        children.clear();
-        Map<Name, Integer> childNames = new HashMap<Name, Integer>();
-        Map<Name, Property> properties = federatedNode.getPropertiesByName();
-        properties.clear();
-        UUID uuid = null;
-        UuidFactory uuidFactory = null;
+
+        final Location location = federatedNode.getActualLocationOfNode();
+        final boolean isRoot = location.hasPath() && location.getPath().isRoot();
         final boolean removeDuplicateProperties = isRemoveDuplicateProperties();
-        // Iterate over the set of contributions (in order) ...
+        final PathFactory pathFactory = context.getValueFactories().getPathFactory();
+        final Map<Name, Integer> childNames = new HashMap<Name, Integer>();
+        final Map<Name, Property> properties = federatedNode.getPropertiesByName();
+        properties.clear();
+
+        // Record the different ID properties from the federated node and (later) from each contribution
+        final Map<Name, Property> idProperties = new HashMap<Name, Property>();
+        for (Property idProperty : location) {
+            idProperties.put(idProperty.getName(), idProperty);
+        }
+
+        // Iterate over each of the contributions (in order) ...
         for (Contribution contribution : contributions) {
+            if (contribution.isEmpty()) continue;
             // If the contribution is a placeholder contribution, then the children should be merged into other children ...
             if (contribution.isPlaceholder()) {
                 // Iterate over the children and add only if there is not already one ...
-                Iterator<Segment> childIterator = contribution.getChildren();
+                Iterator<Location> childIterator = contribution.getChildren();
                 while (childIterator.hasNext()) {
-                    Segment child = childIterator.next();
-                    if (!childNames.containsKey(child.getName())) {
-                        childNames.put(child.getName(), 1);
-                        children.add(pathFactory.createSegment(child.getName()));
+                    Location child = childIterator.next();
+                    Name childName = child.getPath().getLastSegment().getName();
+                    if (!childNames.containsKey(childName)) {
+                        childNames.put(childName, 1);
+                        Path pathToChild = pathFactory.create(location.getPath(), childName);
+                        federatedNode.addChild(new Location(pathToChild));
+                    }
+                }
+            } else {
+                // Get the identification properties for each contribution ...
+                Location contributionLocation = contribution.getLocationInSource();
+                for (Property idProperty : contributionLocation) {
+                    // Record the property ...
+                    Property existing = properties.put(idProperty.getName(), idProperty);
+                    if (existing != null) {
+                        // There's already an existing property, so we need to merge them ...
+                        Property merged = merge(existing, idProperty, context.getPropertyFactory(), removeDuplicateProperties);
+                        properties.put(merged.getName(), merged);
                     }
                 }
 
-            } else {
-                // Copy the children ...
-                Iterator<Segment> childIterator = contribution.getChildren();
+                // Accumulate the children ...
+                Iterator<Location> childIterator = contribution.getChildren();
                 while (childIterator.hasNext()) {
-                    Segment child = childIterator.next();
+                    Location child = childIterator.next();
+                    Name childName = child.getPath().getLastSegment().getName();
                     int index = Path.NO_INDEX;
-                    Integer previous = childNames.put(child.getName(), 1);
+                    Integer previous = childNames.put(childName, 1);
                     if (previous != null) {
                         int previousValue = previous.intValue();
                         // Correct the index in the child name map ...
-                        childNames.put(child.getName(), ++previousValue);
+                        childNames.put(childName, ++previousValue);
                         index = previousValue;
                     }
-                    children.add(pathFactory.createSegment(child.getName(), index));
+                    Path pathToChild = pathFactory.create(location.getPath(), childName, index);
+                    federatedNode.addChild(new Location(pathToChild));
                 }
 
-                // Copy the properties ...
-                Iterator<Property> propertyIterator = contribution.getProperties();
-                while (propertyIterator.hasNext()) {
-                    Property property = propertyIterator.next();
+                // Add in the properties ...
+                Iterator<Property> propertyIter = contribution.getProperties();
+                while (propertyIter.hasNext()) {
+                    Property property = propertyIter.next();
                     // Skip the "uuid" property on all root nodes ...
-                    if (federatedNode.getPath().isRoot() && property.getName().getLocalName().equals("uuid")) continue;
+                    if (isRoot && property.getName().getLocalName().equals("uuid")) continue;
+
+                    // Record the property ...
                     Property existing = properties.put(property.getName(), property);
                     if (existing != null) {
                         // There's already an existing property, so we need to merge them ...
                         Property merged = merge(existing, property, context.getPropertyFactory(), removeDuplicateProperties);
                         properties.put(property.getName(), merged);
                     }
-
-                    if (uuid == null && property.getName().getLocalName().equals("uuid") && property.isSingle()) {
-                        if (uuidFactory == null) uuidFactory = context.getValueFactories().getUuidFactory();
-                        try {
-                            uuid = uuidFactory.create(property.getValues().next());
-                        } catch (IoException e) {
-                            // Ignore conversion exceptions
-                            assert uuid == null;
-                        }
-                    }
                 }
             }
         }
-        // If we found a single "uuid" property whose value is a valid UUID ..
-        if (uuid != null) {
-            // then set the UUID on the federated node ...
-            federatedNode.setUuid(uuid);
+
+        if (idProperties.size() != 0) {
+            // Update the location based upon the merged ID properties ...
+            Location newLocation = new Location(location.getPath(), idProperties.values());
+            federatedNode.setActualLocationOfNode(newLocation);
+
+            // Look for the UUID property on the location, and update the federated node ...
+            Property uuidProperty = idProperties.get(DnaLexicon.UUID);
+            if (uuidProperty != null && !uuidProperty.isEmpty()) {
+                UUID uuid = context.getValueFactories().getUuidFactory().create(uuidProperty.getValues().next());
+                federatedNode.setUuid(uuid);
+
+                // Set the UUID as a property ...
+                properties.put(uuidProperty.getName(), uuidProperty);
+            }
+        } else {
+            // Generate a new UUID property and add to the node ...
+            UUID uuid = federatedNode.getUuid();
+            if (uuid == null) {
+                uuid = context.getValueFactories().getUuidFactory().create();
+                federatedNode.setUuid(uuid);
+            }
+
+            // Set the UUID as a property ...
+            Property uuidProperty = context.getPropertyFactory().create(DnaLexicon.UUID, uuid);
+            properties.put(uuidProperty.getName(), uuidProperty);
         }
-        // Set the UUID as a property ...
-        Property uuidProperty = context.getPropertyFactory().create(DnaLexicon.UUID, federatedNode.getUuid());
-        properties.put(uuidProperty.getName(), uuidProperty);
 
         // Assign the merge plan ...
         MergePlan mergePlan = MergePlan.create(contributions);
@@ -280,6 +310,67 @@ public class SimpleMergeStrategy implements MergeStrategy {
         public void remove() {
             throw new UnsupportedOperationException();
         }
+    }
 
+    protected static class Child {
+        private final Location location;
+        private final boolean placeholder;
+
+        protected Child( Location location,
+                         boolean placeholder ) {
+            assert location != null;
+            this.location = location;
+            this.placeholder = placeholder;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see java.lang.Object#hashCode()
+         */
+        @Override
+        public int hashCode() {
+            return location.hasIdProperties() ? location.getIdProperties().hashCode() : location.getPath().getLastSegment().getName().hashCode();
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see java.lang.Object#equals(java.lang.Object)
+         */
+        @Override
+        public boolean equals( Object obj ) {
+            if (obj == this) return true;
+            if (obj instanceof Child) {
+                Child that = (Child)obj;
+                if (this.placeholder && that.placeholder) {
+                    // If both are placeholders, then compare just the name ...
+                    assert this.location.hasPath();
+                    assert that.location.hasPath();
+                    Name thisName = this.location.getPath().getLastSegment().getName();
+                    Name thatName = that.location.getPath().getLastSegment().getName();
+                    return thisName.equals(thatName);
+                }
+                if (location.hasIdProperties() && that.location.hasIdProperties()) {
+                    List<Property> thisIds = location.getIdProperties();
+                    List<Property> thatIds = that.location.getIdProperties();
+                    if (thisIds.size() != thatIds.size()) return false;
+                    return thisIds.containsAll(thatIds);
+                }
+                // One or both do not have identification properties, so delegate to the locations...
+                return this.location.equals(that.location);
+            }
+            return false;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see java.lang.Object#toString()
+         */
+        @Override
+        public String toString() {
+            return location.toString();
+        }
     }
 }

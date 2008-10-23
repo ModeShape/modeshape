@@ -25,29 +25,29 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import javax.naming.Reference;
 import javax.transaction.xa.XAResource;
 import net.jcip.annotations.ThreadSafe;
+import org.jboss.dna.graph.DnaLexicon;
 import org.jboss.dna.graph.ExecutionContext;
+import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.cache.CachePolicy;
-import org.jboss.dna.graph.commands.ActsOnPath;
-import org.jboss.dna.graph.commands.CreateNodeCommand;
-import org.jboss.dna.graph.commands.DeleteBranchCommand;
-import org.jboss.dna.graph.commands.GetChildrenCommand;
-import org.jboss.dna.graph.commands.GetPropertiesCommand;
-import org.jboss.dna.graph.commands.GraphCommand;
-import org.jboss.dna.graph.commands.SetPropertiesCommand;
-import org.jboss.dna.graph.commands.executor.AbstractCommandExecutor;
-import org.jboss.dna.graph.commands.executor.CommandExecutor;
 import org.jboss.dna.graph.properties.Name;
 import org.jboss.dna.graph.properties.Path;
+import org.jboss.dna.graph.properties.PathFactory;
 import org.jboss.dna.graph.properties.PathNotFoundException;
 import org.jboss.dna.graph.properties.Property;
-import org.jboss.dna.graph.properties.basic.BasicSingleValueProperty;
+import org.jboss.dna.graph.requests.CopyBranchRequest;
+import org.jboss.dna.graph.requests.CreateNodeRequest;
+import org.jboss.dna.graph.requests.DeleteBranchRequest;
+import org.jboss.dna.graph.requests.MoveBranchRequest;
+import org.jboss.dna.graph.requests.ReadAllChildrenRequest;
+import org.jboss.dna.graph.requests.ReadAllPropertiesRequest;
 import org.jboss.dna.graph.requests.Request;
+import org.jboss.dna.graph.requests.UpdatePropertiesRequest;
+import org.jboss.dna.graph.requests.processor.RequestProcessor;
 
 /**
  * A {@link RepositorySource} for a {@link SimpleRepository simple repository}.
@@ -246,32 +246,126 @@ public class SimpleRepositorySource implements RepositorySource {
          * {@inheritDoc}
          * 
          * @see org.jboss.dna.graph.connectors.RepositoryConnection#execute(org.jboss.dna.graph.ExecutionContext,
-         *      org.jboss.dna.graph.commands.GraphCommand[])
-         */
-        public void execute( ExecutionContext context,
-                             GraphCommand... commands ) throws RepositorySourceException {
-            assert context != null;
-            if (repository.isShutdown()) {
-                throw new RepositorySourceException(getName(), "The repository \"" + repository.getRepositoryName()
-                                                               + "\" is no longer available");
-            }
-            // Now execute the commands ...
-            CommandExecutor executor = new Executor(this.repository, context, this.getSourceName());
-            for (GraphCommand command : commands) {
-                executor.execute(command);
-            }
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.jboss.dna.graph.connectors.RepositoryConnection#execute(org.jboss.dna.graph.ExecutionContext,
          *      org.jboss.dna.graph.requests.Request)
          */
         public void execute( ExecutionContext context,
                              Request request ) throws RepositorySourceException {
-            // TODO
-            throw new UnsupportedOperationException();
+            final PathFactory pathFactory = context.getValueFactories().getPathFactory();
+            final SimpleRepository repository = this.repository;
+            RequestProcessor processor = new RequestProcessor(getSourceName(), context) {
+                @Override
+                public void process( ReadAllChildrenRequest request ) {
+                    Map<Name, Property> properties = getProperties(request, request.of());
+                    Path targetPath = request.of().getPath();
+                    if (properties == null) return;
+                    Property uuidProperty = properties.get(DnaLexicon.UUID);
+                    // Iterate through all of the properties, looking for any paths that are children of the path ...
+                    Map<Path, Map<Name, Property>> data = repository.getData();
+                    List<Path.Segment> childSegments = new LinkedList<Path.Segment>();
+                    for (Path path : data.keySet()) {
+                        if (!path.isRoot() && path.getParent().equals(targetPath)) {
+                            childSegments.add(path.getLastSegment());
+                        }
+                    }
+                    // This does not store children order, so sort ...
+                    Collections.sort(childSegments);
+                    // Now get the children ...
+                    for (Path.Segment childSegment : childSegments) {
+                        Path childPath = pathFactory.create(targetPath, childSegment);
+                        Map<Name, Property> childProperties = repository.getData().get(childPath);
+                        Property childUuidProperty = childProperties.get(DnaLexicon.UUID);
+                        request.addChild(childPath, childUuidProperty);
+                    }
+                    request.setActualLocationOfNode(request.of().with(uuidProperty));
+                }
+
+                @Override
+                public void process( ReadAllPropertiesRequest request ) {
+                    Map<Name, Property> properties = getProperties(request, request.at());
+                    if (properties == null) return;
+                    Property uuidProperty = properties.get(DnaLexicon.UUID);
+                    for (Property property : properties.values()) {
+                        if (property != uuidProperty) request.addProperty(property);
+                    }
+                    request.setActualLocationOfNode(request.at().with(uuidProperty));
+                }
+
+                @Override
+                public void process( CopyBranchRequest request ) {
+                    throw new UnsupportedOperationException();
+                }
+
+                @Override
+                public void process( CreateNodeRequest request ) {
+                    Path targetPath = request.at().getPath();
+                    ExecutionContext context = getExecutionContext();
+                    repository.create(context, targetPath.getString(context.getNamespaceRegistry()));
+                    Map<Name, Property> properties = repository.getData().get(targetPath);
+                    assert properties != null;
+                    // Set the UUID if the request has one ...
+                    Property uuidProperty = request.at().getIdProperty(DnaLexicon.UUID);
+                    if (uuidProperty != null) {
+                        properties.put(uuidProperty.getName(), uuidProperty);
+                        request.setActualLocationOfNode(request.at());
+                    } else {
+                        uuidProperty = properties.get(DnaLexicon.UUID);
+                        request.setActualLocationOfNode(request.at().with(uuidProperty));
+                    }
+                    for (Property property : request.properties()) {
+                        if (property != null) properties.put(property.getName(), property);
+                    }
+                }
+
+                @Override
+                public void process( DeleteBranchRequest request ) {
+                    // Iterate through all of the dataq, looking for any paths that are children of the path ...
+                    Path targetPath = request.at().getPath();
+                    Map<Path, Map<Name, Property>> data = repository.getData();
+                    Map<Name, Property> properties = repository.getData().get(targetPath);
+                    Property uuidProperty = properties.get(DnaLexicon.UUID);
+                    for (Path path : data.keySet()) {
+                        if (!path.isRoot() && path.isAtOrBelow(targetPath)) {
+                            data.remove(path);
+                        }
+                    }
+                    request.setActualLocationOfNode(request.at().with(uuidProperty));
+                }
+
+                @Override
+                public void process( MoveBranchRequest request ) {
+                    throw new UnsupportedOperationException();
+                }
+
+                @Override
+                public void process( UpdatePropertiesRequest request ) {
+                    Map<Name, Property> properties = getProperties(request, request.on());
+                    if (properties == null) return;
+                    Property uuidProperty = properties.get(DnaLexicon.UUID);
+                    for (Property property : request.properties()) {
+                        if (property != uuidProperty) properties.put(property.getName(), property);
+                    }
+                    request.setActualLocationOfNode(request.on().with(uuidProperty));
+                }
+
+                protected Map<Name, Property> getProperties( Request request,
+                                                             Location location ) {
+                    Path targetPath = location.getPath();
+                    if (targetPath == null) throw new UnsupportedOperationException();
+                    Map<Name, Property> properties = repository.getData().get(targetPath);
+                    if (properties == null) {
+                        Path ancestor = targetPath.getParent();
+                        while (ancestor != null) {
+                            if (repository.getData().get(targetPath) != null) break;
+                            ancestor = ancestor.getParent();
+                        }
+                        if (ancestor == null) ancestor = getExecutionContext().getValueFactories().getPathFactory().createRootPath();
+                        request.setError(new PathNotFoundException(location, ancestor));
+                        return null;
+                    }
+                    return properties;
+                }
+            };
+            processor.process(request);
         }
 
         /**
@@ -326,132 +420,5 @@ public class SimpleRepositorySource implements RepositorySource {
         public RepositorySourceListener getListener() {
             return listener;
         }
-
     }
-
-    protected class Executor extends AbstractCommandExecutor {
-        private final SimpleRepository repository;
-        private final Name uuidPropertyName;
-
-        protected Executor( SimpleRepository repository,
-                            ExecutionContext context,
-                            String sourceName ) {
-            super(context, sourceName);
-            this.repository = repository;
-            this.uuidPropertyName = context.getValueFactories().getNameFactory().create(this.repository.getUuidPropertyName());
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.jboss.dna.graph.commands.executor.AbstractCommandExecutor#execute(org.jboss.dna.graph.commands.GetChildrenCommand)
-         */
-        @Override
-        public void execute( GetChildrenCommand command ) throws RepositorySourceException {
-            Path targetPath = command.getPath();
-            Map<Name, Property> properties = getProperties(command);
-            if (properties == null) return;
-            // Iterate through all of the properties, looking for any paths that are children of the path ...
-            Map<Path, Map<Name, Property>> data = repository.getData();
-            List<Path.Segment> childSegments = new LinkedList<Path.Segment>();
-            for (Path path : data.keySet()) {
-                if (!path.isRoot() && path.getParent().equals(targetPath)) {
-                    childSegments.add(path.getLastSegment());
-                }
-            }
-            // This does not store children order, so sort ...
-            Collections.sort(childSegments);
-            for (Path.Segment childSegment : childSegments) {
-                Map<Name, Property> childProperties = repository.getData().get(targetPath);
-                Property uuidProperty = childProperties.get(uuidPropertyName);
-                command.addChild(childSegment,
-                                 uuidProperty == null ? new BasicSingleValueProperty(uuidPropertyName, UUID.randomUUID()) : uuidProperty);
-            }
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.jboss.dna.graph.commands.executor.AbstractCommandExecutor#execute(org.jboss.dna.graph.commands.GetPropertiesCommand)
-         */
-        @Override
-        public void execute( GetPropertiesCommand command ) throws RepositorySourceException {
-            Map<Name, Property> properties = getProperties(command);
-            if (properties == null) return;
-            for (Property property : properties.values()) {
-                if (!property.getName().equals(this.uuidPropertyName)) {
-                    command.setProperty(property);
-                }
-            }
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.jboss.dna.graph.commands.executor.AbstractCommandExecutor#execute(org.jboss.dna.graph.commands.CreateNodeCommand)
-         */
-        @Override
-        public void execute( CreateNodeCommand command ) throws RepositorySourceException {
-            Path targetPath = command.getPath();
-            ExecutionContext context = getExecutionContext();
-            repository.create(context, targetPath.getString(context.getNamespaceRegistry()));
-            Map<Name, Property> properties = repository.getData().get(targetPath);
-            assert properties != null;
-            for (Property property : command.getProperties()) {
-                if (!property.getName().equals(this.uuidPropertyName)) {
-                    properties.put(property.getName(), property);
-                }
-            }
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.jboss.dna.graph.commands.executor.AbstractCommandExecutor#execute(org.jboss.dna.graph.commands.SetPropertiesCommand)
-         */
-        @Override
-        public void execute( SetPropertiesCommand command ) throws RepositorySourceException {
-            Map<Name, Property> properties = getProperties(command);
-            if (properties == null) return;
-            for (Property property : command.getProperties()) {
-                if (!property.getName().equals(this.uuidPropertyName)) {
-                    properties.put(property.getName(), property);
-                }
-            }
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.jboss.dna.graph.commands.executor.AbstractCommandExecutor#execute(org.jboss.dna.graph.commands.DeleteBranchCommand)
-         */
-        @Override
-        public void execute( DeleteBranchCommand command ) throws RepositorySourceException {
-            // Iterate through all of the dataq, looking for any paths that are children of the path ...
-            Path targetPath = command.getPath();
-            Map<Path, Map<Name, Property>> data = repository.getData();
-            for (Path path : data.keySet()) {
-                if (!path.isRoot() && path.isAtOrBelow(targetPath)) {
-                    data.remove(path);
-                }
-            }
-        }
-
-        protected <T extends ActsOnPath & GraphCommand> Map<Name, Property> getProperties( T command ) {
-            Path targetPath = command.getPath();
-            Map<Name, Property> properties = repository.getData().get(targetPath);
-            if (properties == null) {
-                Path ancestor = targetPath.getParent();
-                while (ancestor != null) {
-                    if (repository.getData().get(targetPath) != null) break;
-                    ancestor = ancestor.getParent();
-                }
-                if (ancestor == null) ancestor = getExecutionContext().getValueFactories().getPathFactory().createRootPath();
-                command.setError(new PathNotFoundException(targetPath, ancestor));
-                return null;
-            }
-            return properties;
-        }
-    }
-
 }

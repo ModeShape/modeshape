@@ -29,6 +29,7 @@ import static org.junit.matchers.JUnitMatchers.hasItems;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.properties.DateTime;
 import org.jboss.dna.graph.properties.Path;
 import org.jboss.dna.graph.properties.Property;
@@ -64,32 +65,32 @@ public class TwoPropertyContributionTest {
         String nsUri = "http://www.jboss.org/default";
         property1 = new BasicSingleValueProperty(new BasicName(nsUri, "property1"), "value1");
         property2 = new BasicSingleValueProperty(new BasicName(nsUri, "property2"), "value2");
-        contribution = new TwoPropertyContribution(sourceName, pathInSource, expiration, property1, property2);
+        contribution = new TwoPropertyContribution(sourceName, new Location(pathInSource), expiration, property1, property2);
     }
 
     @Test
     public void shouldAllowNullExpiration() {
         expiration = null;
-        contribution = new TwoPropertyContribution(sourceName, pathInSource, expiration, property1, property2);
+        contribution = new TwoPropertyContribution(sourceName, new Location(pathInSource), expiration, property1, property2);
         assertThat(contribution.getExpirationTimeInUtc(), is(nullValue()));
     }
 
     @Test( expected = IllegalArgumentException.class )
     public void shouldNotAllowExpirationTimeIfNotInUtcTime() {
         expiration = new JodaDateTime(System.currentTimeMillis(), "CST");
-        contribution = new TwoPropertyContribution(sourceName, pathInSource, expiration, property1, property2);
+        contribution = new TwoPropertyContribution(sourceName, new Location(pathInSource), expiration, property1, property2);
     }
 
     @Test( expected = AssertionError.class )
     public void shouldNotAllowNullFirstProperty() {
         property1 = null;
-        contribution = new TwoPropertyContribution(sourceName, pathInSource, expiration, property1, property2);
+        contribution = new TwoPropertyContribution(sourceName, new Location(pathInSource), expiration, property1, property2);
     }
 
     @Test( expected = AssertionError.class )
     public void shouldNotAllowNullSecondProperty() {
         property2 = null;
-        contribution = new TwoPropertyContribution(sourceName, pathInSource, expiration, property1, property2);
+        contribution = new TwoPropertyContribution(sourceName, new Location(pathInSource), expiration, property1, property2);
     }
 
     @Test
@@ -104,7 +105,7 @@ public class TwoPropertyContributionTest {
 
     @Test
     public void shouldNotBeExpiredIfExpirationIsInTheFuture() {
-        contribution = new TwoPropertyContribution(sourceName, pathInSource, NOW, property1, property2);
+        contribution = new TwoPropertyContribution(sourceName, new Location(pathInSource), NOW, property1, property2);
         assertThat(contribution.isExpired(YESTERDAY), is(false));
         assertThat(contribution.isExpired(TOMORROW), is(true));
     }

@@ -23,8 +23,8 @@ package org.jboss.dna.connector.federation.contribution;
 
 import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.util.HashCode;
+import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.properties.DateTime;
-import org.jboss.dna.graph.properties.Path;
 
 /**
  * The record of a non-empty source contribution from a single location within the source.
@@ -39,32 +39,32 @@ public abstract class NonEmptyContribution extends Contribution {
      */
     private static final long serialVersionUID = 1L;
 
-    private final Path pathInSource;
+    private final Location locationInSource;
 
     /**
      * Create a contribution of node properties from the source with the supplied name.
      * 
      * @param sourceName the name of the source, which may not be null or blank
-     * @param pathInSource the path in the source for this contributed information; may not be null
+     * @param locationInSource the location in the source for this contributed information; may not be null
      * @param expirationTime the time (in UTC) after which this contribution should be considered expired, or null if there is no
      *        expiration time
      */
     protected NonEmptyContribution( String sourceName,
-                                    Path pathInSource,
+                                    Location locationInSource,
                                     DateTime expirationTime ) {
         super(sourceName, expirationTime);
-        assert pathInSource != null;
-        this.pathInSource = pathInSource;
+        assert locationInSource != null;
+        this.locationInSource = locationInSource;
     }
 
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.connector.federation.contribution.Contribution#getPathInSource()
+     * @see org.jboss.dna.connector.federation.contribution.Contribution#getLocationInSource()
      */
     @Override
-    public Path getPathInSource() {
-        return pathInSource;
+    public Location getLocationInSource() {
+        return locationInSource;
     }
 
     /**
@@ -76,7 +76,7 @@ public abstract class NonEmptyContribution extends Contribution {
      */
     @Override
     public int hashCode() {
-        return HashCode.compute(this.getSourceName(), this.getPathInSource());
+        return HashCode.compute(this.getSourceName(), this.getLocationInSource());
     }
 
     /**
@@ -88,7 +88,7 @@ public abstract class NonEmptyContribution extends Contribution {
         if (obj instanceof NonEmptyContribution) {
             NonEmptyContribution that = (NonEmptyContribution)obj;
             if (!this.getSourceName().equals(that.getSourceName())) return false;
-            if (!this.getPathInSource().equals(that.getPathInSource())) return false;
+            if (!this.getLocationInSource().equals(that.getLocationInSource())) return false;
             return true;
         }
         return false;

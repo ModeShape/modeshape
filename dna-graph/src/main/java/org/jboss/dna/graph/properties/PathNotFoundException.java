@@ -21,6 +21,8 @@
  */
 package org.jboss.dna.graph.properties;
 
+import org.jboss.dna.graph.Location;
+
 /**
  * @author Randall Hauch
  */
@@ -30,53 +32,57 @@ public class PathNotFoundException extends RuntimeException {
      */
     private static final long serialVersionUID = -3703984046286975978L;
 
-    private final Path path;
+    private final Location location;
     private final Path lowestAncestorThatDoesExist;
 
     /**
-     * @param path
-     * @param lowestAncestorThatDoesExist
+     * @param location the location of the node that does not exist
+     * @param lowestAncestorThatDoesExist the path of the lowest (closest) ancestor that does exist
      */
-    public PathNotFoundException( Path path, Path lowestAncestorThatDoesExist ) {
-        this.path = path;
+    public PathNotFoundException( Location location,
+                                  Path lowestAncestorThatDoesExist ) {
+        this.location = location;
         this.lowestAncestorThatDoesExist = lowestAncestorThatDoesExist;
     }
 
     /**
-     * @param path
-     * @param lowestAncestorThatDoesExist
+     * @param location the location of the node that does not exist
+     * @param lowestAncestorThatDoesExist the path of the lowest (closest) ancestor that does exist
      * @param message
      */
-    public PathNotFoundException( Path path, Path lowestAncestorThatDoesExist,
+    public PathNotFoundException( Location location,
+                                  Path lowestAncestorThatDoesExist,
                                   String message ) {
         super(message);
-        this.path = path;
+        this.location = location;
         this.lowestAncestorThatDoesExist = lowestAncestorThatDoesExist;
     }
 
     /**
-     * @param path
-     * @param lowestAncestorThatDoesExist
+     * @param location the location of the node that does not exist
+     * @param lowestAncestorThatDoesExist the path of the lowest (closest) ancestor that does exist
      * @param cause
      */
-    public PathNotFoundException( Path path, Path lowestAncestorThatDoesExist,
+    public PathNotFoundException( Location location,
+                                  Path lowestAncestorThatDoesExist,
                                   Throwable cause ) {
         super(cause);
-        this.path = path;
+        this.location = location;
         this.lowestAncestorThatDoesExist = lowestAncestorThatDoesExist;
     }
 
     /**
-     * @param path
-     * @param lowestAncestorThatDoesExist
+     * @param location the location of the node that does not exist
+     * @param lowestAncestorThatDoesExist the path of the lowest (closest) ancestor that does exist
      * @param message
      * @param cause
      */
-    public PathNotFoundException( Path path, Path lowestAncestorThatDoesExist,
+    public PathNotFoundException( Location location,
+                                  Path lowestAncestorThatDoesExist,
                                   String message,
                                   Throwable cause ) {
         super(message, cause);
-        this.path = path;
+        this.location = location;
         this.lowestAncestorThatDoesExist = lowestAncestorThatDoesExist;
     }
 
@@ -93,12 +99,13 @@ public class PathNotFoundException extends RuntimeException {
      * 
      * @return the path that was not found
      */
-    public Path getPath() {
-        return path;
+    public Location getLocation() {
+        return location;
     }
-    
+
     /**
-     * Get the lowest (closest) existing {@link Path#getParent() ancestor} of the {@link #getPath() non-existant path}.
+     * Get the lowest (closest) existing {@link Path#getParent() ancestor} of the {@link #getLocation() non-existant location}.
+     * 
      * @return the lowest ancestor that does exist
      */
     public Path getLowestAncestorThatDoesExist() {

@@ -19,7 +19,7 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.jboss.dna.graph.requests;
+package org.jboss.dna.graph.requests.processor;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -32,10 +32,26 @@ import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.GraphI18n;
 import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.connectors.RepositorySourceException;
+import org.jboss.dna.graph.properties.DateTime;
 import org.jboss.dna.graph.properties.Name;
 import org.jboss.dna.graph.properties.Path;
 import org.jboss.dna.graph.properties.Property;
 import org.jboss.dna.graph.properties.basic.BasicEmptyProperty;
+import org.jboss.dna.graph.requests.CompositeRequest;
+import org.jboss.dna.graph.requests.CopyBranchRequest;
+import org.jboss.dna.graph.requests.CreateNodeRequest;
+import org.jboss.dna.graph.requests.DeleteBranchRequest;
+import org.jboss.dna.graph.requests.MoveBranchRequest;
+import org.jboss.dna.graph.requests.ReadAllChildrenRequest;
+import org.jboss.dna.graph.requests.ReadAllPropertiesRequest;
+import org.jboss.dna.graph.requests.ReadBlockOfChildrenRequest;
+import org.jboss.dna.graph.requests.ReadBranchRequest;
+import org.jboss.dna.graph.requests.ReadNodeRequest;
+import org.jboss.dna.graph.requests.ReadPropertyRequest;
+import org.jboss.dna.graph.requests.RemovePropertiesRequest;
+import org.jboss.dna.graph.requests.RenameNodeRequest;
+import org.jboss.dna.graph.requests.Request;
+import org.jboss.dna.graph.requests.UpdatePropertiesRequest;
 
 /**
  * A component that is used to process and execute {@link Request}s. This class is intended to be subclassed and methods
@@ -49,13 +65,21 @@ public abstract class RequestProcessor {
 
     private final ExecutionContext context;
     private final String sourceName;
+    private final DateTime nowInUtc;
 
     protected RequestProcessor( String sourceName,
                                 ExecutionContext context ) {
+        this(sourceName, context, null);
+    }
+
+    protected RequestProcessor( String sourceName,
+                                ExecutionContext context,
+                                DateTime now ) {
         CheckArg.isNotEmpty(sourceName, "sourceName");
         CheckArg.isNotNull(context, "context");
         this.context = context;
         this.sourceName = sourceName;
+        this.nowInUtc = now != null ? now : context.getValueFactories().getDateFactory().createUtc();
     }
 
     /**
@@ -74,6 +98,15 @@ public abstract class RequestProcessor {
      */
     public ExecutionContext getExecutionContext() {
         return this.context;
+    }
+
+    /**
+     * Get the 'current time' for this processor, which is usually a constant during its lifetime.
+     * 
+     * @return the current time in UTC; never null
+     */
+    protected DateTime getNowInUtc() {
+        return this.nowInUtc;
     }
 
     /**
@@ -229,6 +262,8 @@ public abstract class RequestProcessor {
         for (int i = request.startingAt(); i != endIndex; ++i) {
             request.addChild(allChildren.get(i));
         }
+        // Set the actual location ...
+        request.setActualLocationOfNode(readAll.getActualLocationOfNode());
     }
 
     /**
@@ -248,6 +283,7 @@ public abstract class RequestProcessor {
         locationsToRead.add(new LocationWithDepth(request.at(), 1));
 
         // Now read the locations ...
+        boolean first = true;
         while (locationsToRead.peek() != null) {
             LocationWithDepth read = locationsToRead.poll();
 
@@ -261,15 +297,19 @@ public abstract class RequestProcessor {
                 request.setError(readNode.getError());
                 return;
             }
-            request.setProperties(read.location, readNode.getProperties());
+            Location actualLocation = readNode.getActualLocationOfNode();
+            if (first) {
+                // Set the actual location on the original request
+                request.setActualLocationOfNode(actualLocation);
+                first = false;
+            }
 
-            // Read the children for this node, and add them to the list of locations to be read ...
-            ReadAllChildrenRequest readChildren = new ReadAllChildrenRequest(read.location);
-            process(readChildren);
-            request.setChildren(read.location, readChildren.getChildren());
+            // Record in the request the children and properties that were read on this node ...
+            request.setChildren(actualLocation, readNode.getChildren());
+            request.setProperties(actualLocation, readNode.getProperties());
 
             // Add each of the children to the list of locations that we need to read ...
-            for (Location child : readChildren) {
+            for (Location child : readNode.getChildren()) {
                 locationsToRead.add(new LocationWithDepth(child, read.depth + 1));
             }
         }
@@ -303,6 +343,9 @@ public abstract class RequestProcessor {
             request.setError(readProperties.getError());
             return;
         }
+        // Set the actual location ...
+        request.setActualLocationOfNode(readProperties.getActualLocationOfNode());
+
         // Read the children ...
         ReadAllChildrenRequest readChildren = new ReadAllChildrenRequest(request.at());
         process(readChildren);
@@ -330,7 +373,7 @@ public abstract class RequestProcessor {
      */
     public void process( ReadPropertyRequest request ) {
         if (request == null) return;
-        ReadNodeRequest readNode = new ReadNodeRequest(request.on());
+        ReadAllPropertiesRequest readNode = new ReadAllPropertiesRequest(request.on());
         process(readNode);
         if (readNode.hasError()) {
             request.setError(readNode.getError());
@@ -338,6 +381,8 @@ public abstract class RequestProcessor {
         }
         Property property = readNode.getPropertiesByName().get(request.named());
         request.setProperty(property);
+        // Set the actual location ...
+        request.setActualLocationOfNode(readNode.getActualLocationOfNode());
     }
 
     /**
@@ -362,6 +407,8 @@ public abstract class RequestProcessor {
         if (update.hasError()) {
             request.setError(update.getError());
         }
+        // Set the actual location ...
+        request.setActualLocationOfNode(update.getActualLocationOfNode());
     }
 
     /**
@@ -395,6 +442,15 @@ public abstract class RequestProcessor {
         Location to = new Location(newPath);
         MoveBranchRequest move = new MoveBranchRequest(from, to);
         process(move);
+        // Set the actual locations ...
+        request.setActualLocations(move.getActualLocationBefore(), move.getActualLocationAfter());
+    }
+
+    /**
+     * Close this processor, allowing it to clean up any open resources.
+     */
+    public void close() {
+        // do nothing
     }
 
     /**
@@ -402,6 +458,7 @@ public abstract class RequestProcessor {
      * 
      * @author Randall Hauch
      */
+    @Immutable
     protected static class LocationWithDepth {
         protected final Location location;
         protected final int depth;
@@ -410,6 +467,11 @@ public abstract class RequestProcessor {
                                      int depth ) {
             this.location = location;
             this.depth = depth;
+        }
+
+        @Override
+        public int hashCode() {
+            return location.hashCode();
         }
 
         @Override

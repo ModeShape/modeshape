@@ -31,6 +31,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.properties.DateTime;
 import org.jboss.dna.graph.properties.Path;
 import org.jboss.dna.graph.properties.Property;
@@ -70,32 +71,32 @@ public class MultiPropertyContributionTest {
         property2 = new BasicSingleValueProperty(new BasicName(nsUri, "property2"), "value2");
         property3 = new BasicSingleValueProperty(new BasicName(nsUri, "property3"), "value3");
         properties = Arrays.asList(property1, property2, property3);
-        contribution = new MultiPropertyContribution(sourceName, pathInSource, expiration, properties);
+        contribution = new MultiPropertyContribution(sourceName, new Location(pathInSource), expiration, properties);
     }
 
     @Test
     public void shouldAllowNullExpiration() {
         expiration = null;
-        contribution = new MultiPropertyContribution(sourceName, pathInSource, expiration, properties);
+        contribution = new MultiPropertyContribution(sourceName, new Location(pathInSource), expiration, properties);
         assertThat(contribution.getExpirationTimeInUtc(), is(nullValue()));
     }
 
     @Test( expected = IllegalArgumentException.class )
     public void shouldNotAllowExpirationTimeIfNotInUtcTime() {
         expiration = new JodaDateTime(System.currentTimeMillis(), "CST");
-        contribution = new MultiPropertyContribution(sourceName, pathInSource, expiration, properties);
+        contribution = new MultiPropertyContribution(sourceName, new Location(pathInSource), expiration, properties);
     }
 
     @Test( expected = AssertionError.class )
     public void shouldNotAllowNullProperties() {
         properties = null;
-        contribution = new MultiPropertyContribution(sourceName, pathInSource, expiration, properties);
+        contribution = new MultiPropertyContribution(sourceName, new Location(pathInSource), expiration, properties);
     }
 
     @Test( expected = AssertionError.class )
     public void shouldNotAllowEmptyProperties() {
         properties = Collections.emptyList();
-        contribution = new MultiPropertyContribution(sourceName, pathInSource, expiration, properties);
+        contribution = new MultiPropertyContribution(sourceName, new Location(pathInSource), expiration, properties);
     }
 
     @Test
@@ -110,7 +111,7 @@ public class MultiPropertyContributionTest {
 
     @Test
     public void shouldNotBeExpiredIfExpirationIsInTheFuture() {
-        contribution = new MultiPropertyContribution(sourceName, pathInSource, NOW, properties);
+        contribution = new MultiPropertyContribution(sourceName, new Location(pathInSource), NOW, properties);
         assertThat(contribution.isExpired(YESTERDAY), is(false));
         assertThat(contribution.isExpired(TOMORROW), is(true));
     }

@@ -34,7 +34,6 @@ import javax.transaction.xa.XAResource;
 import net.jcip.annotations.ThreadSafe;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.cache.CachePolicy;
-import org.jboss.dna.graph.commands.GraphCommand;
 import org.jboss.dna.graph.requests.Request;
 
 /**
@@ -312,9 +311,12 @@ public class TimeDelayingRepositorySource implements RepositorySource {
 
         /**
          * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.graph.connectors.RepositoryConnection#execute(org.jboss.dna.graph.ExecutionContext,
+         *      org.jboss.dna.graph.requests.Request)
          */
         public void execute( ExecutionContext context,
-                             GraphCommand... commands ) {
+                             Request request ) throws RepositorySourceException {
             long delay = this.loadDelay.get();
             if (delay > 0l) {
                 try {
@@ -325,18 +327,6 @@ public class TimeDelayingRepositorySource implements RepositorySource {
                 }
             }
             this.loadCount.incrementAndGet();
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.jboss.dna.graph.connectors.RepositoryConnection#execute(org.jboss.dna.graph.ExecutionContext,
-         *      org.jboss.dna.graph.requests.Request)
-         */
-        public void execute( ExecutionContext context,
-                             Request request ) throws RepositorySourceException {
-            // TODO
-            throw new UnsupportedOperationException();
         }
 
         public void setLoadResponse( boolean response ) {

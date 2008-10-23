@@ -26,18 +26,18 @@ import static org.hamcrest.core.IsNull.nullValue;
 import static org.hamcrest.core.IsSame.sameInstance;
 import static org.junit.Assert.assertThat;
 import static org.junit.matchers.JUnitMatchers.hasItems;
+import static org.mockito.Mockito.mock;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.properties.DateTime;
 import org.jboss.dna.graph.properties.Path;
 import org.jboss.dna.graph.properties.Property;
-import org.jboss.dna.graph.properties.Path.Segment;
 import org.jboss.dna.graph.properties.basic.BasicName;
 import org.jboss.dna.graph.properties.basic.BasicPath;
-import org.jboss.dna.graph.properties.basic.BasicPathSegment;
 import org.jboss.dna.graph.properties.basic.BasicSingleValueProperty;
 import org.jboss.dna.graph.properties.basic.JodaDateTime;
 import org.junit.Before;
@@ -61,10 +61,10 @@ public class NodeContributionTest {
     private Property property1;
     private Property property2;
     private Property property3;
-    private List<Segment> children;
-    private Segment child1;
-    private Segment child2;
-    private Segment child3;
+    private List<Location> children;
+    private Location child1;
+    private Location child2;
+    private Location child3;
 
     @Before
     public void beforeEach() throws Exception {
@@ -76,48 +76,48 @@ public class NodeContributionTest {
         property2 = new BasicSingleValueProperty(new BasicName(nsUri, "property2"), "value2");
         property3 = new BasicSingleValueProperty(new BasicName(nsUri, "property3"), "value3");
         properties = Arrays.asList(property1, property2, property3);
-        child1 = new BasicPathSegment(new BasicName(nsUri, "child1"));
-        child2 = new BasicPathSegment(new BasicName(nsUri, "child2"));
-        child3 = new BasicPathSegment(new BasicName(nsUri, "child3"));
+        child1 = mock(Location.class);
+        child2 = mock(Location.class);
+        child3 = mock(Location.class);
         children = Arrays.asList(child1, child2, child3);
-        contribution = new NodeContribution(sourceName, pathInSource, expiration, properties, children);
+        contribution = new NodeContribution(sourceName, new Location(pathInSource), expiration, properties, children);
     }
 
     @Test
     public void shouldAllowNullExpiration() {
         expiration = null;
-        contribution = new NodeContribution(sourceName, pathInSource, expiration, properties, children);
+        contribution = new NodeContribution(sourceName, new Location(pathInSource), expiration, properties, children);
         assertThat(contribution.getExpirationTimeInUtc(), is(nullValue()));
     }
 
     @Test( expected = IllegalArgumentException.class )
     public void shouldNotAllowExpirationTimeIfNotInUtcTime() {
         expiration = new JodaDateTime(System.currentTimeMillis(), "CST");
-        contribution = new NodeContribution(sourceName, pathInSource, expiration, properties, children);
+        contribution = new NodeContribution(sourceName, new Location(pathInSource), expiration, properties, children);
     }
 
     @Test( expected = AssertionError.class )
     public void shouldNotAllowNullProperties() {
         properties = null;
-        contribution = new NodeContribution(sourceName, pathInSource, expiration, properties, children);
+        contribution = new NodeContribution(sourceName, new Location(pathInSource), expiration, properties, children);
     }
 
     @Test( expected = AssertionError.class )
     public void shouldNotAllowEmptyProperties() {
         properties = Collections.emptyList();
-        contribution = new NodeContribution(sourceName, pathInSource, expiration, properties, children);
+        contribution = new NodeContribution(sourceName, new Location(pathInSource), expiration, properties, children);
     }
 
     @Test( expected = AssertionError.class )
     public void shouldNotAllowNullChildren() {
         children = null;
-        contribution = new NodeContribution(sourceName, pathInSource, expiration, properties, children);
+        contribution = new NodeContribution(sourceName, new Location(pathInSource), expiration, properties, children);
     }
 
     @Test( expected = AssertionError.class )
     public void shouldNotAllowEmptyChildren() {
         children = Collections.emptyList();
-        contribution = new NodeContribution(sourceName, pathInSource, expiration, properties, children);
+        contribution = new NodeContribution(sourceName, new Location(pathInSource), expiration, properties, children);
     }
 
     @Test
@@ -132,7 +132,7 @@ public class NodeContributionTest {
 
     @Test
     public void shouldNotBeExpiredIfExpirationIsInTheFuture() {
-        contribution = new NodeContribution(sourceName, pathInSource, NOW, properties, children);
+        contribution = new NodeContribution(sourceName, new Location(pathInSource), NOW, properties, children);
         assertThat(contribution.isExpired(YESTERDAY), is(false));
         assertThat(contribution.isExpired(TOMORROW), is(true));
     }
@@ -140,7 +140,7 @@ public class NodeContributionTest {
     @Test
     public void shouldHaveChildren() {
         assertThat(contribution.getChildrenCount(), is(3));
-        Iterator<Segment> iter = contribution.getChildren();
+        Iterator<Location> iter = contribution.getChildren();
         assertThat(iter.next(), is(child1));
         assertThat(iter.next(), is(child2));
         assertThat(iter.next(), is(child3));

@@ -29,30 +29,20 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import javax.transaction.xa.XAResource;
 import org.jboss.cache.Cache;
 import org.jboss.cache.Fqn;
 import org.jboss.cache.Node;
 import org.jboss.dna.common.util.StringUtil;
+import org.jboss.dna.graph.DnaLexicon;
 import org.jboss.dna.graph.ExecutionContext;
+import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.cache.CachePolicy;
-import org.jboss.dna.graph.commands.CopyBranchCommand;
-import org.jboss.dna.graph.commands.CopyNodeCommand;
-import org.jboss.dna.graph.commands.CreateNodeCommand;
-import org.jboss.dna.graph.commands.DeleteBranchCommand;
-import org.jboss.dna.graph.commands.GetChildrenCommand;
-import org.jboss.dna.graph.commands.GetPropertiesCommand;
-import org.jboss.dna.graph.commands.GraphCommand;
-import org.jboss.dna.graph.commands.MoveBranchCommand;
-import org.jboss.dna.graph.commands.RecordBranchCommand;
-import org.jboss.dna.graph.commands.SetPropertiesCommand;
-import org.jboss.dna.graph.commands.executor.AbstractCommandExecutor;
-import org.jboss.dna.graph.commands.executor.CommandExecutor;
 import org.jboss.dna.graph.connectors.RepositoryConnection;
 import org.jboss.dna.graph.connectors.RepositorySourceException;
 import org.jboss.dna.graph.connectors.RepositorySourceListener;
 import org.jboss.dna.graph.properties.Name;
-import org.jboss.dna.graph.properties.NameFactory;
 import org.jboss.dna.graph.properties.Path;
 import org.jboss.dna.graph.properties.PathFactory;
 import org.jboss.dna.graph.properties.PathNotFoundException;
@@ -60,7 +50,15 @@ import org.jboss.dna.graph.properties.Property;
 import org.jboss.dna.graph.properties.PropertyFactory;
 import org.jboss.dna.graph.properties.ValueFactory;
 import org.jboss.dna.graph.properties.Path.Segment;
+import org.jboss.dna.graph.requests.CopyBranchRequest;
+import org.jboss.dna.graph.requests.CreateNodeRequest;
+import org.jboss.dna.graph.requests.DeleteBranchRequest;
+import org.jboss.dna.graph.requests.MoveBranchRequest;
+import org.jboss.dna.graph.requests.ReadAllChildrenRequest;
+import org.jboss.dna.graph.requests.ReadAllPropertiesRequest;
 import org.jboss.dna.graph.requests.Request;
+import org.jboss.dna.graph.requests.UpdatePropertiesRequest;
+import org.jboss.dna.graph.requests.processor.RequestProcessor;
 
 /**
  * The repository connection to a JBoss Cache instance.
@@ -80,7 +78,6 @@ public class JBossCacheConnection implements RepositoryConnection {
         }
     };
 
-    private Name uuidPropertyName;
     private final JBossCacheSource source;
     private final Cache<Name, Object> cache;
     private RepositorySourceListener listener = NO_OP_LISTENER;
@@ -146,26 +143,161 @@ public class JBossCacheConnection implements RepositoryConnection {
 
     /**
      * {@inheritDoc}
-     */
-    public void execute( ExecutionContext context,
-                         GraphCommand... commands ) throws RepositorySourceException {
-        // Now execute the commands ...
-        CommandExecutor executor = new Executor(context, this.getSourceName());
-        for (GraphCommand command : commands) {
-            executor.execute(command);
-        }
-    }
-
-    /**
-     * {@inheritDoc}
      * 
      * @see org.jboss.dna.graph.connectors.RepositoryConnection#execute(org.jboss.dna.graph.ExecutionContext,
      *      org.jboss.dna.graph.requests.Request)
      */
-    public void execute( ExecutionContext context,
-                         Request request ) throws RepositorySourceException {
-        // TODO
-        throw new UnsupportedOperationException();
+    public void execute( final ExecutionContext context,
+                         final Request request ) throws RepositorySourceException {
+        final PathFactory pathFactory = context.getValueFactories().getPathFactory();
+        final PropertyFactory propertyFactory = context.getPropertyFactory();
+        final ValueFactory<UUID> uuidFactory = context.getValueFactories().getUuidFactory();
+        RequestProcessor processor = new RequestProcessor(getSourceName(), context) {
+            @Override
+            public void process( ReadAllChildrenRequest request ) {
+                Path nodePath = request.of().getPath();
+                Node<Name, Object> node = getNode(context, nodePath);
+                // Get the names of the children, using the child list ...
+                Path.Segment[] childList = (Path.Segment[])node.get(JBossCacheLexicon.CHILD_PATH_SEGMENT_LIST);
+                for (Path.Segment child : childList) {
+                    // We have the child segment, but we need the UUID property ...
+                    Node<Name, Object> childNode = node.getChild(child);
+                    Object uuid = childNode.get(DnaLexicon.UUID);
+                    if (uuid == null) {
+                        uuid = generateUuid();
+                        childNode.put(DnaLexicon.UUID, uuid);
+                    } else {
+                        uuid = uuidFactory.create(uuid);
+                    }
+                    Property uuidProperty = propertyFactory.create(DnaLexicon.UUID, uuid);
+                    request.addChild(pathFactory.create(nodePath, child), uuidProperty);
+                }
+                UUID uuid = uuidFactory.create(node.get(DnaLexicon.UUID));
+                request.setActualLocationOfNode(new Location(nodePath, uuid));
+            }
+
+            @Override
+            public void process( ReadAllPropertiesRequest request ) {
+                Path nodePath = request.at().getPath();
+                Node<Name, Object> node = getNode(context, nodePath);
+                Map<Name, Object> dataMap = node.getData();
+                for (Map.Entry<Name, Object> data : dataMap.entrySet()) {
+                    Name propertyName = data.getKey();
+                    // Don't allow the child list property to be accessed
+                    if (propertyName.equals(JBossCacheLexicon.CHILD_PATH_SEGMENT_LIST)) continue;
+                    Object values = data.getValue();
+                    Property property = propertyFactory.create(propertyName, values);
+                    request.addProperty(property);
+                }
+                UUID uuid = uuidFactory.create(node.get(DnaLexicon.UUID));
+                request.setActualLocationOfNode(new Location(nodePath, uuid));
+            }
+
+            @Override
+            public void process( CreateNodeRequest request ) {
+                Path path = request.at().getPath();
+                Path parent = path.getParent();
+                // Look up the parent node, which must exist ...
+                Node<Name, Object> parentNode = getNode(context, parent);
+
+                // Update the children to account for same-name siblings.
+                // This not only updates the FQN of the child nodes, but it also sets the property that stores the
+                // the array of Path.Segment for the children (since the cache doesn't maintain order).
+                Path.Segment newSegment = updateChildList(parentNode,
+                                                          path.getLastSegment().getName(),
+                                                          getExecutionContext(),
+                                                          true);
+                Node<Name, Object> node = parentNode.addChild(Fqn.fromElements(newSegment));
+                assert checkChildren(parentNode);
+
+                // Add the UUID property (if required), which may be overwritten by a supplied property ...
+                node.put(DnaLexicon.UUID, generateUuid());
+                // Now add the properties to the supplied node ...
+                for (Property property : request.properties()) {
+                    if (property.size() == 0) continue;
+                    Name propName = property.getName();
+                    Object value = null;
+                    if (property.size() == 1) {
+                        value = property.iterator().next();
+                    } else {
+                        value = property.getValuesAsArray();
+                    }
+                    node.put(propName, value);
+                }
+                UUID uuid = uuidFactory.create(node.get(DnaLexicon.UUID));
+                Path nodePath = pathFactory.create(parent, newSegment);
+                request.setActualLocationOfNode(new Location(nodePath, uuid));
+            }
+
+            @Override
+            public void process( UpdatePropertiesRequest request ) {
+                Path nodePath = request.on().getPath();
+                Node<Name, Object> node = getNode(context, nodePath);
+                // Now set (or remove) the properties to the supplied node ...
+                for (Property property : request.properties()) {
+                    Name propName = property.getName();
+                    // Don't allow the child list property to be removed or changed
+                    if (propName.equals(JBossCacheLexicon.CHILD_PATH_SEGMENT_LIST)) continue;
+                    if (property.size() == 0) {
+                        node.remove(propName);
+                        continue;
+                    }
+                    Object value = null;
+                    if (property.size() == 1) {
+                        value = property.iterator().next();
+                    } else {
+                        value = property.getValuesAsArray();
+                    }
+                    node.put(propName, value);
+                }
+                UUID uuid = uuidFactory.create(node.get(DnaLexicon.UUID));
+                request.setActualLocationOfNode(new Location(nodePath, uuid));
+            }
+
+            @Override
+            public void process( CopyBranchRequest request ) {
+                Path nodePath = request.from().getPath();
+                Node<Name, Object> node = getNode(context, nodePath);
+                // Look up the new parent, which must exist ...
+                Path newParentPath = request.into().getPath();
+                Node<Name, Object> newParent = getNode(context, newParentPath);
+                Path.Segment newSegment = copyNode(node, newParent, true, null, null, getExecutionContext());
+
+                UUID uuid = uuidFactory.create(node.get(DnaLexicon.UUID));
+                Path newPath = pathFactory.create(newParentPath, newSegment);
+                request.setActualLocations(new Location(nodePath, uuid), new Location(newPath, uuid));
+            }
+
+            @Override
+            public void process( DeleteBranchRequest request ) {
+                Path nodePath = request.at().getPath();
+                Node<Name, Object> node = getNode(context, nodePath);
+                node.getParent().removeChild(node.getFqn().getLastElement());
+                UUID uuid = uuidFactory.create(node.get(DnaLexicon.UUID));
+                request.setActualLocationOfNode(new Location(nodePath, uuid));
+            }
+
+            @Override
+            public void process( MoveBranchRequest request ) {
+                Path nodePath = request.from().getPath();
+                Node<Name, Object> node = getNode(context, nodePath);
+                boolean recursive = true;
+                // Look up the new parent, which must exist ...
+                Path newParentPath = request.into().getPath();
+                Node<Name, Object> newParent = getNode(context, newParentPath);
+                Path.Segment newSegment = copyNode(node, newParent, recursive, DnaLexicon.UUID, null, getExecutionContext());
+
+                // Now delete the old node ...
+                Node<Name, Object> oldParent = node.getParent();
+                boolean removed = oldParent.removeChild(node.getFqn().getLastElement());
+                assert removed;
+
+                UUID uuid = uuidFactory.create(node.get(DnaLexicon.UUID));
+                Path newPath = pathFactory.create(newParentPath, newSegment);
+                request.setActualLocations(new Location(nodePath, uuid), new Location(newPath, uuid));
+            }
+        };
+        processor.process(request);
     }
 
     /**
@@ -173,22 +305,6 @@ public class JBossCacheConnection implements RepositoryConnection {
      */
     protected RepositorySourceListener getListener() {
         return this.listener;
-    }
-
-    /**
-     * Utility method to calculate (if required) and obtain the name that should be used to store the UUID values for each node.
-     * This method may be called without regard to synchronization, since it should return the same value if it happens to be
-     * called concurrently while not yet initialized.
-     * 
-     * @param context the execution context
-     * @return the name, or null if the UUID should not be stored
-     */
-    protected Name getUuidPropertyName( ExecutionContext context ) {
-        if (uuidPropertyName == null) {
-            NameFactory nameFactory = context.getValueFactories().getNameFactory();
-            uuidPropertyName = nameFactory.create(this.source.getUuidPropertyName());
-        }
-        return this.uuidPropertyName;
     }
 
     protected Fqn<?> getFullyQualifiedName( Path path ) {
@@ -230,7 +346,8 @@ public class JBossCacheConnection implements RepositoryConnection {
                     fqn = null;
                 }
             }
-            throw new PathNotFoundException(path, lowestExisting, JBossCacheConnectorI18n.nodeDoesNotExist.text(nodePath));
+            throw new PathNotFoundException(new Location(path), lowestExisting,
+                                            JBossCacheConnectorI18n.nodeDoesNotExist.text(nodePath));
         }
         return node;
 
@@ -240,11 +357,12 @@ public class JBossCacheConnection implements RepositoryConnection {
         return UUID.randomUUID();
     }
 
-    protected int copyNode( Node<Name, Object> original,
-                            Node<Name, Object> newParent,
-                            boolean recursive,
-                            Name uuidProperty,
-                            ExecutionContext context ) {
+    protected Path.Segment copyNode( Node<Name, Object> original,
+                                     Node<Name, Object> newParent,
+                                     boolean recursive,
+                                     Name uuidProperty,
+                                     AtomicInteger count,
+                                     ExecutionContext context ) {
         assert original != null;
         assert newParent != null;
         // Get or create the new node ...
@@ -263,14 +381,14 @@ public class JBossCacheConnection implements RepositoryConnection {
             // Generate a new UUID for the new node, overwriting any existing value from the original ...
             copy.put(uuidProperty, generateUuid());
         }
-        int numNodesCopied = 1;
+        if (count != null) count.incrementAndGet();
         if (recursive) {
             // Loop over each child and call this method ...
             for (Node<Name, Object> child : original.getChildren()) {
-                numNodesCopied += copyNode(child, copy, true, uuidProperty, context);
+                copyNode(child, copy, true, uuidProperty, count, context);
             }
         }
-        return numNodesCopied;
+        return newSegment;
     }
 
     /**
@@ -457,177 +575,4 @@ public class JBossCacheConnection implements RepositoryConnection {
         // Remove the existing ...
         parent.removeChild(existing);
     }
-
-    protected class Executor extends AbstractCommandExecutor {
-
-        private final PropertyFactory propertyFactory;
-        private final ValueFactory<UUID> uuidFactory;
-
-        protected Executor( ExecutionContext context,
-                            String sourceName ) {
-            super(context, sourceName);
-            this.propertyFactory = context.getPropertyFactory();
-            this.uuidFactory = context.getValueFactories().getUuidFactory();
-        }
-
-        @Override
-        public void execute( CreateNodeCommand command ) {
-            Path path = command.getPath();
-            Path parent = path.getParent();
-            // Look up the parent node, which must exist ...
-            Node<Name, Object> parentNode = getNode(parent);
-
-            // Update the children to account for same-name siblings.
-            // This not only updates the FQN of the child nodes, but it also sets the property that stores the
-            // the array of Path.Segment for the children (since the cache doesn't maintain order).
-            Path.Segment newSegment = updateChildList(parentNode, path.getLastSegment().getName(), getExecutionContext(), true);
-            Node<Name, Object> node = parentNode.addChild(Fqn.fromElements(newSegment));
-            assert checkChildren(parentNode);
-
-            // Add the UUID property (if required), which may be overwritten by a supplied property ...
-            Name uuidPropertyName = getUuidPropertyName(getExecutionContext());
-            if (uuidPropertyName != null) {
-                node.put(uuidPropertyName, generateUuid());
-            }
-            // Now add the properties to the supplied node ...
-            for (Property property : command.getProperties()) {
-                if (property.size() == 0) continue;
-                Name propName = property.getName();
-                Object value = null;
-                if (property.size() == 1) {
-                    value = property.iterator().next();
-                } else {
-                    value = property.getValuesAsArray();
-                }
-                node.put(propName, value);
-            }
-        }
-
-        @Override
-        public void execute( GetChildrenCommand command ) {
-            Node<Name, Object> node = getNode(command.getPath());
-            Name uuidPropertyName = getUuidPropertyName(getExecutionContext());
-            // Get the names of the children, using the child list ...
-            Path.Segment[] childList = (Path.Segment[])node.get(JBossCacheLexicon.CHILD_PATH_SEGMENT_LIST);
-            for (Path.Segment child : childList) {
-                // We have the child segment, but we need the UUID property ...
-                Node<Name, Object> childNode = node.getChild(child);
-                Object uuid = childNode.get(uuidPropertyName);
-                if (uuid == null) {
-                    uuid = generateUuid();
-                    childNode.put(uuidPropertyName, uuid);
-                } else {
-                    uuid = uuidFactory.create(uuid);
-                }
-                Property uuidProperty = propertyFactory.create(uuidPropertyName, uuid);
-                command.addChild(child, uuidProperty);
-            }
-        }
-
-        @Override
-        public void execute( GetPropertiesCommand command ) {
-            Node<Name, Object> node = getNode(command.getPath());
-            Map<Name, Object> dataMap = node.getData();
-            for (Map.Entry<Name, Object> data : dataMap.entrySet()) {
-                Name propertyName = data.getKey();
-                // Don't allow the child list property to be accessed
-                if (propertyName.equals(JBossCacheLexicon.CHILD_PATH_SEGMENT_LIST)) continue;
-                Object values = data.getValue();
-                Property property = propertyFactory.create(propertyName, values);
-                command.setProperty(property);
-            }
-        }
-
-        @Override
-        public void execute( SetPropertiesCommand command ) {
-            Node<Name, Object> node = getNode(command.getPath());
-            // Now set (or remove) the properties to the supplied node ...
-            for (Property property : command.getProperties()) {
-                Name propName = property.getName();
-                // Don't allow the child list property to be removed or changed
-                if (propName.equals(JBossCacheLexicon.CHILD_PATH_SEGMENT_LIST)) continue;
-                if (property.size() == 0) {
-                    node.remove(propName);
-                    continue;
-                }
-                Object value = null;
-                if (property.size() == 1) {
-                    value = property.iterator().next();
-                } else {
-                    value = property.getValuesAsArray();
-                }
-                node.put(propName, value);
-            }
-        }
-
-        @Override
-        public void execute( DeleteBranchCommand command ) {
-            Node<Name, Object> node = getNode(command.getPath());
-            node.getParent().removeChild(node.getFqn().getLastElement());
-        }
-
-        @Override
-        public void execute( CopyNodeCommand command ) {
-            Node<Name, Object> node = getNode(command.getPath());
-            // Look up the new parent, which must exist ...
-            Path newPath = command.getNewPath();
-            Node<Name, Object> newParent = getNode(newPath.getParent());
-            copyNode(node, newParent, false, null, getExecutionContext());
-        }
-
-        @Override
-        public void execute( CopyBranchCommand command ) {
-            Node<Name, Object> node = getNode(command.getPath());
-            // Look up the new parent, which must exist ...
-            Path newPath = command.getNewPath();
-            Node<Name, Object> newParent = getNode(newPath.getParent());
-            copyNode(node, newParent, true, null, getExecutionContext());
-        }
-
-        @Override
-        public void execute( MoveBranchCommand command ) {
-            Node<Name, Object> node = getNode(command.getPath());
-            boolean recursive = true;
-            Name uuidProperty = getUuidPropertyName(getExecutionContext());
-            // Look up the new parent, which must exist ...
-            Path newPath = command.getNewPath();
-            Node<Name, Object> newParent = getNode(newPath.getParent());
-            copyNode(node, newParent, recursive, uuidProperty, getExecutionContext());
-
-            // Now delete the old node ...
-            Node<Name, Object> oldParent = node.getParent();
-            boolean removed = oldParent.removeChild(node.getFqn().getLastElement());
-            assert removed;
-        }
-
-        @Override
-        public void execute( RecordBranchCommand command ) {
-            Node<Name, Object> node = getNode(command.getPath());
-            recordNode(command, node);
-        }
-
-        protected void recordNode( RecordBranchCommand command,
-                                   Node<Name, Object> node ) {
-            // Record the properties ...
-            Map<Name, Object> dataMap = node.getData();
-            List<Property> properties = new LinkedList<Property>();
-            for (Map.Entry<Name, Object> data : dataMap.entrySet()) {
-                Name propertyName = data.getKey();
-                Object values = data.getValue();
-                Property property = propertyFactory.create(propertyName, values);
-                properties.add(property);
-            }
-            command.record(command.getPath(), properties);
-            // Now record the children ...
-            for (Node<Name, Object> child : node.getChildren()) {
-                recordNode(command, child);
-            }
-        }
-
-        protected Node<Name, Object> getNode( Path path ) {
-            return JBossCacheConnection.this.getNode(getExecutionContext(), path);
-        }
-
-    }
-
 }

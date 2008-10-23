@@ -21,6 +21,9 @@
  */
 package org.jboss.dna.graph;
 
+import java.io.File;
+import java.io.IOException;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -33,6 +36,7 @@ import java.util.UUID;
 import net.jcip.annotations.Immutable;
 import net.jcip.annotations.NotThreadSafe;
 import org.jboss.dna.common.util.CheckArg;
+import org.jboss.dna.graph.cache.CachePolicy;
 import org.jboss.dna.graph.connectors.RepositoryConnection;
 import org.jboss.dna.graph.connectors.RepositoryConnectionFactory;
 import org.jboss.dna.graph.connectors.RepositorySource;
@@ -42,6 +46,7 @@ import org.jboss.dna.graph.properties.NameFactory;
 import org.jboss.dna.graph.properties.Path;
 import org.jboss.dna.graph.properties.Property;
 import org.jboss.dna.graph.properties.PropertyFactory;
+import org.jboss.dna.graph.properties.Path.Segment;
 import org.jboss.dna.graph.requests.CompositeRequest;
 import org.jboss.dna.graph.requests.CopyBranchRequest;
 import org.jboss.dna.graph.requests.CreateNodeRequest;
@@ -53,7 +58,10 @@ import org.jboss.dna.graph.requests.ReadBlockOfChildrenRequest;
 import org.jboss.dna.graph.requests.ReadBranchRequest;
 import org.jboss.dna.graph.requests.ReadNodeRequest;
 import org.jboss.dna.graph.requests.ReadPropertyRequest;
+import org.jboss.dna.graph.requests.RemovePropertiesRequest;
 import org.jboss.dna.graph.requests.Request;
+import org.jboss.dna.graph.requests.UpdatePropertiesRequest;
+import org.jboss.dna.graph.util.GraphImporter;
 
 /**
  * A graph representation of the content within a {@link RepositorySource}, including mechanisms to interact and manipulate that
@@ -135,6 +143,25 @@ public class Graph {
 
     /*package*/RequestQueue queue() {
         return this.requestQueue;
+    }
+
+    /**
+     * Get the default cache policy for this graph. May be null if such a policy has not been defined for thie
+     * {@link #getSourceName() source}.
+     * 
+     * @return the default cache policy, or null if no such policy has been defined for the source
+     * @throws RepositorySourceException if no repository source with the {@link #getSourceName() name} could be found
+     */
+    public CachePolicy getDefaultCachePolicy() {
+        RepositoryConnection connection = this.connectionFactory.createConnection(getSourceName());
+        if (connection == null) {
+            throw new RepositorySourceException(GraphI18n.unableToFindRepositorySourceWithName.text(getSourceName()));
+        }
+        try {
+            return connection.getDefaultCachePolicy();
+        } finally {
+            connection.close();
+        }
     }
 
     /**
@@ -455,8 +482,7 @@ public class Graph {
      * Begin the request to create a node located at the supplied path. This request is submitted to the repository immediately.
      * 
      * @param atPath the path to the node that is to be created.
-     * @return the object that can be used to specify addition properties for the new node to be copied or the location of the
-     *         node where the node is to be created
+     * @return an object that may be used to start another request
      */
     public Conjunction<Graph> create( String atPath ) {
         this.requestQueue.submit(new CreateNodeRequest(new Location(createPath(atPath))));
@@ -468,8 +494,7 @@ public class Graph {
      * 
      * @param atPath the path to the node that is to be created.
      * @param properties the properties for the new node
-     * @return the object that can be used to specify addition properties for the new node to be copied or the location of the
-     *         node where the node is to be created
+     * @return an object that may be used to start another request
      */
     public Conjunction<Graph> create( String atPath,
                                       Property... properties ) {
@@ -481,8 +506,7 @@ public class Graph {
      * Begin the request to create a node located at the supplied path. This request is submitted to the repository immediately.
      * 
      * @param at the path to the node that is to be created.
-     * @return the object that can be used to specify addition properties for the new node to be copied or the location of the
-     *         node where the node is to be created
+     * @return an object that may be used to start another request
      */
     public Conjunction<Graph> create( Path at ) {
         this.requestQueue.submit(new CreateNodeRequest(new Location(at)));
@@ -494,13 +518,131 @@ public class Graph {
      * 
      * @param at the path to the node that is to be created.
      * @param properties the properties for the new node
-     * @return the object that can be used to specify addition properties for the new node to be copied or the location of the
-     *         node where the node is to be created
+     * @return an object that may be used to start another request
      */
     public Conjunction<Graph> create( Path at,
                                       Property... properties ) {
         this.requestQueue.submit(new CreateNodeRequest(new Location(at), properties));
         return nextGraph;
+    }
+
+    /**
+     * Set the properties on a node.
+     * 
+     * @param properties the properties to set
+     * @return the remove request object that should be used to specify the node on which the properties are to be set.
+     */
+    public On<Conjunction<Graph>> set( final Property... properties ) {
+        return new On<Conjunction<Graph>>() {
+            @SuppressWarnings( "synthetic-access" )
+            public Conjunction<Graph> on( Location location ) {
+                UpdatePropertiesRequest request = new UpdatePropertiesRequest(location, properties);
+                queue().submit(request);
+                return nextGraph;
+            }
+
+            public Conjunction<Graph> on( String path ) {
+                return on(new Location(createPath(path)));
+            }
+
+            public Conjunction<Graph> on( Path path ) {
+                return on(new Location(path));
+            }
+
+            public Conjunction<Graph> on( Property idProperty ) {
+                return on(new Location(idProperty));
+            }
+
+            public Conjunction<Graph> on( Property firstIdProperty,
+                                          Property... additionalIdProperties ) {
+                return on(new Location(firstIdProperty, additionalIdProperties));
+            }
+
+            public Conjunction<Graph> on( UUID uuid ) {
+                return on(new Location(uuid));
+            }
+        };
+    }
+
+    /**
+     * Remove properties from the node at the given location.
+     * 
+     * @param propertyNames the names of the properties to be removed
+     * @return the remove request object that should be used to specify the node from which the properties are to be removed.
+     */
+    public On<Conjunction<Graph>> remove( final Name... propertyNames ) {
+        return new On<Conjunction<Graph>>() {
+            @SuppressWarnings( "synthetic-access" )
+            public Conjunction<Graph> on( Location location ) {
+                RemovePropertiesRequest request = new RemovePropertiesRequest(location, propertyNames);
+                queue().submit(request);
+                return nextGraph;
+            }
+
+            public Conjunction<Graph> on( String path ) {
+                return on(new Location(createPath(path)));
+            }
+
+            public Conjunction<Graph> on( Path path ) {
+                return on(new Location(path));
+            }
+
+            public Conjunction<Graph> on( Property idProperty ) {
+                return on(new Location(idProperty));
+            }
+
+            public Conjunction<Graph> on( Property firstIdProperty,
+                                          Property... additionalIdProperties ) {
+                return on(new Location(firstIdProperty, additionalIdProperties));
+            }
+
+            public Conjunction<Graph> on( UUID uuid ) {
+                return on(new Location(uuid));
+            }
+        };
+    }
+
+    /**
+     * Remove properties from the node at the given location.
+     * 
+     * @param propertyNames the names of the properties to be removed
+     * @return the remove request object that should be used to specify the node from which the properties are to be removed.
+     */
+    public On<Conjunction<Graph>> remove( String... propertyNames ) {
+        NameFactory nameFactory = getContext().getValueFactories().getNameFactory();
+        final List<Name> names = new LinkedList<Name>();
+        for (String propertyName : propertyNames) {
+            names.add(nameFactory.create(propertyName));
+        }
+        return new On<Conjunction<Graph>>() {
+            @SuppressWarnings( "synthetic-access" )
+            public Conjunction<Graph> on( Location location ) {
+                RemovePropertiesRequest request = new RemovePropertiesRequest(location, names);
+                queue().submit(request);
+                return nextGraph;
+            }
+
+            public Conjunction<Graph> on( String path ) {
+                return on(new Location(createPath(path)));
+            }
+
+            public Conjunction<Graph> on( Path path ) {
+                return on(new Location(path));
+            }
+
+            public Conjunction<Graph> on( Property idProperty ) {
+                return on(new Location(idProperty));
+            }
+
+            public Conjunction<Graph> on( Property firstIdProperty,
+                                          Property... additionalIdProperties ) {
+                return on(new Location(firstIdProperty, additionalIdProperties));
+            }
+
+            public Conjunction<Graph> on( UUID uuid ) {
+                return on(new Location(uuid));
+            }
+        };
     }
 
     /**
@@ -828,12 +970,81 @@ public class Graph {
         };
     }
 
+    /**
+     * Import the content from the XML file at the supplied URI, specifying via the returned {@link ImportInto object} where the
+     * content is to be imported.
+     * 
+     * @param uri the URI where the importer can read the content that is to be imported
+     * @return the object that should be used to specify into which the content is to be imported
+     * @throws IllegalArgumentException if the <code>uri</code> or destination path are null
+     */
+    public ImportInto<Conjunction<Graph>> importXmlFrom( final URI uri ) {
+        return new ImportInto<Conjunction<Graph>>() {
+            public Conjunction<Graph> into( String path ) throws IOException {
+                return into(new Location(createPath(path)));
+            }
+
+            public Conjunction<Graph> into( Path path ) throws IOException {
+                return into(new Location(path));
+            }
+
+            public Conjunction<Graph> into( Property idProperty ) throws IOException {
+                return into(new Location(idProperty));
+            }
+
+            public Conjunction<Graph> into( Property firstIdProperty,
+                                            Property... additionalIdProperties ) throws IOException {
+                return into(new Location(firstIdProperty, additionalIdProperties));
+            }
+
+            public Conjunction<Graph> into( UUID uuid ) throws IOException {
+                return into(new Location(uuid));
+            }
+
+            @SuppressWarnings( "synthetic-access" )
+            public Conjunction<Graph> into( Location at ) throws IOException {
+                GraphImporter importer = new GraphImporter(Graph.this);
+                importer.importXml(uri, at).execute(); // 'importXml' creates and uses a new batch
+                return Graph.this.nextGraph;
+            }
+        };
+    }
+
+    /**
+     * Import the content from the XML file at the supplied file location, specifying via the returned {@link ImportInto object}
+     * where the content is to be imported.
+     * 
+     * @param pathToFile the path to the XML file that should be imported.
+     * @return the object that should be used to specify into which the content is to be imported
+     * @throws IllegalArgumentException if the <code>uri</code> or destination path are null
+     */
+    public ImportInto<Conjunction<Graph>> importXmlFrom( String pathToFile ) {
+        CheckArg.isNotNull(pathToFile, "pathToFile");
+        return importXmlFrom(new File(pathToFile).toURI());
+    }
+
+    /**
+     * Import the content from the XML file at the supplied file, specifying via the returned {@link ImportInto object} where the
+     * content is to be imported.
+     * 
+     * @param file the XML file that should be imported.
+     * @return the object that should be used to specify into which the content is to be imported
+     * @throws IllegalArgumentException if the <code>uri</code> or destination path are null
+     */
+    public ImportInto<Conjunction<Graph>> importXmlFrom( File file ) {
+        CheckArg.isNotNull(file, "file");
+        return importXmlFrom(file.toURI());
+    }
+
     /*package*/Path createPath( String path ) {
         return getContext().getValueFactories().getPathFactory().create(path);
     }
 
     /*package*/void execute( Request request ) {
-        RepositoryConnection connection = Graph.this.getConnectionFactory().createConnection(Graph.this.getSourceName());
+        RepositoryConnection connection = Graph.this.getConnectionFactory().createConnection(getSourceName());
+        if (connection == null) {
+            throw new RepositorySourceException(GraphI18n.unableToFindRepositorySourceWithName.text(getSourceName()));
+        }
         try {
             connection.execute(Graph.this.getContext(), request);
         } finally {
@@ -844,6 +1055,14 @@ public class Graph {
             if (error instanceof RuntimeException) throw (RuntimeException)error;
             throw new RepositorySourceException(getSourceName(), error);
         }
+    }
+
+    /*package*/List<Segment> getSegments( List<Location> locations ) {
+        List<Segment> segments = new ArrayList<Segment>(locations.size());
+        for (Location location : locations) {
+            segments.add(location.getPath().getLastSegment());
+        }
+        return segments;
     }
 
     /**
@@ -1362,6 +1581,122 @@ public class Graph {
             assertNotExecuted();
             return new CreateAction<BatchConjunction>(nextRequests, requestQueue, new Location(at)).with(firstProperty,
                                                                                                          additionalProperties);
+        }
+
+        /**
+         * Set the properties on a node.
+         * 
+         * @param properties the properties to set
+         * @return the remove request object that should be used to specify the node on which the properties are to be set.
+         */
+        public On<BatchConjunction> set( final Property... properties ) {
+            return new On<BatchConjunction>() {
+                public BatchConjunction on( Location location ) {
+                    UpdatePropertiesRequest request = new UpdatePropertiesRequest(location, properties);
+                    queue().submit(request);
+                    return nextRequests;
+                }
+
+                public BatchConjunction on( String path ) {
+                    return on(new Location(createPath(path)));
+                }
+
+                public BatchConjunction on( Path path ) {
+                    return on(new Location(path));
+                }
+
+                public BatchConjunction on( Property idProperty ) {
+                    return on(new Location(idProperty));
+                }
+
+                public BatchConjunction on( Property firstIdProperty,
+                                            Property... additionalIdProperties ) {
+                    return on(new Location(firstIdProperty, additionalIdProperties));
+                }
+
+                public BatchConjunction on( UUID uuid ) {
+                    return on(new Location(uuid));
+                }
+            };
+        }
+
+        /**
+         * Remove properties from the node at the given location.
+         * 
+         * @param propertyNames the names of the properties to be removed
+         * @return the remove request object that should be used to specify the node from which the properties are to be removed.
+         */
+        public On<BatchConjunction> remove( final Name... propertyNames ) {
+            return new On<BatchConjunction>() {
+                public BatchConjunction on( Location location ) {
+                    RemovePropertiesRequest request = new RemovePropertiesRequest(location, propertyNames);
+                    queue().submit(request);
+                    return nextRequests;
+                }
+
+                public BatchConjunction on( String path ) {
+                    return on(new Location(createPath(path)));
+                }
+
+                public BatchConjunction on( Path path ) {
+                    return on(new Location(path));
+                }
+
+                public BatchConjunction on( Property idProperty ) {
+                    return on(new Location(idProperty));
+                }
+
+                public BatchConjunction on( Property firstIdProperty,
+                                            Property... additionalIdProperties ) {
+                    return on(new Location(firstIdProperty, additionalIdProperties));
+                }
+
+                public BatchConjunction on( UUID uuid ) {
+                    return on(new Location(uuid));
+                }
+            };
+        }
+
+        /**
+         * Remove properties from the node at the given location.
+         * 
+         * @param propertyNames the names of the properties to be removed
+         * @return the remove request object that should be used to specify the node from which the properties are to be removed.
+         */
+        public On<BatchConjunction> remove( String... propertyNames ) {
+            NameFactory nameFactory = getContext().getValueFactories().getNameFactory();
+            final List<Name> names = new LinkedList<Name>();
+            for (String propertyName : propertyNames) {
+                names.add(nameFactory.create(propertyName));
+            }
+            return new On<BatchConjunction>() {
+                public BatchConjunction on( Location location ) {
+                    RemovePropertiesRequest request = new RemovePropertiesRequest(location, names);
+                    queue().submit(request);
+                    return nextRequests;
+                }
+
+                public BatchConjunction on( String path ) {
+                    return on(new Location(createPath(path)));
+                }
+
+                public BatchConjunction on( Path path ) {
+                    return on(new Location(path));
+                }
+
+                public BatchConjunction on( Property idProperty ) {
+                    return on(new Location(idProperty));
+                }
+
+                public BatchConjunction on( Property firstIdProperty,
+                                            Property... additionalIdProperties ) {
+                    return on(new Location(firstIdProperty, additionalIdProperties));
+                }
+
+                public BatchConjunction on( UUID uuid ) {
+                    return on(new Location(uuid));
+                }
+            };
         }
 
         /**
@@ -2094,6 +2429,72 @@ public class Graph {
                  Property... additionalIdProperties );
     }
 
+    /**
+     * A component that defines the location into which a node should be copied or moved.
+     * 
+     * @param <Next> The interface that is to be returned when this request is completed
+     * @author Randall Hauch
+     */
+    public interface ImportInto<Next> {
+        /**
+         * Finish the import by specifying the new location into which the node should be copied/moved.
+         * 
+         * @param to the location of the new parent
+         * @return the interface for additional requests or actions
+         * @throws IOException if there is a problem reading the content being imported
+         */
+        Next into( Location to ) throws IOException;
+
+        /**
+         * Finish the import by specifying the new location into which the node should be copied/moved.
+         * 
+         * @param toPath the path of the new parent
+         * @return the interface for additional requests or actions
+         * @throws IOException if there is a problem reading the content being imported
+         */
+        Next into( String toPath ) throws IOException;
+
+        /**
+         * Finish the import by specifying the new location into which the node should be copied/moved.
+         * 
+         * @param to the path of the new parent
+         * @return the interface for additional requests or actions
+         * @throws IOException if there is a problem reading the content being imported
+         */
+        Next into( Path to ) throws IOException;
+
+        /**
+         * Finish the import by specifying the new location into which the node should be copied/moved.
+         * 
+         * @param to the UUID of the new parent
+         * @return the interface for additional requests or actions
+         * @throws IOException if there is a problem reading the content being imported
+         */
+        Next into( UUID to ) throws IOException;
+
+        /**
+         * Finish the import by specifying the new location into which the node should be copied/moved.
+         * 
+         * @param idProperty the property that uniquely identifies the new parent
+         * @return the interface for additional requests or actions
+         * @throws IOException if there is a problem reading the content being imported
+         */
+        Next into( Property idProperty ) throws IOException;
+
+        /**
+         * Finish the import by specifying the new location into which the node should be copied/moved.
+         * 
+         * @param firstIdProperty the first property that, with the <code>additionalIdProperties</code>, uniquely identifies the
+         *        new parent
+         * @param additionalIdProperties the additional properties that, with the <code>additionalIdProperties</code>, uniquely
+         *        identifies the new parent
+         * @return the interface for additional requests or actions
+         * @throws IOException if there is a problem reading the content being imported
+         */
+        Next into( Property firstIdProperty,
+                   Property... additionalIdProperties ) throws IOException;
+    }
+
     public interface BatchConjunction extends Conjunction<Batch>, Executable {
     }
 
@@ -2189,7 +2590,7 @@ public class Graph {
         }
 
         public Location getLocation() {
-            return request.at();
+            return request.getActualLocationOfNode();
         }
 
         public Graph getGraph() {
@@ -2198,6 +2599,15 @@ public class Graph {
 
         public Collection<Property> getProperties() {
             return request.getProperties();
+        }
+
+        public Property getProperty( Name name ) {
+            return getPropertiesByName().get(name);
+        }
+
+        public Property getProperty( String nameStr ) {
+            Name name = getContext().getValueFactories().getNameFactory().create(nameStr);
+            return getPropertiesByName().get(name);
         }
 
         public Map<Name, Property> getPropertiesByName() {
@@ -2210,6 +2620,10 @@ public class Graph {
 
         public boolean hasChildren() {
             return request.getChildren().size() > 0;
+        }
+
+        public List<Segment> getChildrenSegments() {
+            return getSegments(getChildren());
         }
 
         public Iterator<Location> iterator() {
@@ -2247,20 +2661,20 @@ public class Graph {
             for (Request request : requests) {
                 if (request instanceof ReadAllPropertiesRequest) {
                     ReadAllPropertiesRequest read = (ReadAllPropertiesRequest)request;
-                    getOrCreateNode(read.at()).setProperties(read.getPropertiesByName());
+                    getOrCreateNode(read.getActualLocationOfNode()).setProperties(read.getPropertiesByName());
                 } else if (request instanceof ReadPropertyRequest) {
                     ReadPropertyRequest read = (ReadPropertyRequest)request;
-                    getOrCreateNode(read.on()).addProperty(read.getProperty());
+                    getOrCreateNode(read.getActualLocationOfNode()).addProperty(read.getProperty());
                 } else if (request instanceof ReadNodeRequest) {
                     ReadNodeRequest read = (ReadNodeRequest)request;
-                    BatchResultsNode node = getOrCreateNode(read.at());
+                    BatchResultsNode node = getOrCreateNode(read.getActualLocationOfNode());
                     node.setProperties(read.getPropertiesByName());
                     node.setChildren(read.getChildren());
                 } else if (request instanceof ReadBlockOfChildrenRequest) {
                     throw new IllegalStateException();
                 } else if (request instanceof ReadAllChildrenRequest) {
                     ReadAllChildrenRequest read = (ReadAllChildrenRequest)request;
-                    getOrCreateNode(read.of()).setChildren(read.getChildren());
+                    getOrCreateNode(read.getActualLocationOfNode()).setChildren(read.getChildren());
                 } else if (request instanceof ReadBranchRequest) {
                     ReadBranchRequest read = (ReadBranchRequest)request;
                     for (Location location : read) {
@@ -2376,6 +2790,10 @@ public class Graph {
             else children = Collections.emptyList();
         }
 
+        public List<Segment> getChildrenSegments() {
+            return getSegments(getChildren());
+        }
+
         public Graph getGraph() {
             return Graph.this;
         }
@@ -2390,6 +2808,15 @@ public class Graph {
 
         public Map<Name, Property> getPropertiesByName() {
             return properties;
+        }
+
+        public Property getProperty( Name name ) {
+            return properties.get(name);
+        }
+
+        public Property getProperty( String nameStr ) {
+            Name name = getContext().getValueFactories().getNameFactory().create(nameStr);
+            return properties.get(name);
         }
 
         public List<Location> getChildren() {
@@ -2441,7 +2868,11 @@ public class Graph {
         }
 
         public Location getLocation() {
-            return request.at();
+            return request.getActualLocationOfNode();
+        }
+
+        public Node getRoot() {
+            return getNode(getLocation());
         }
 
         public int getMaximumDepth() {
@@ -2468,7 +2899,7 @@ public class Graph {
         public boolean includes( Path path ) {
             CheckArg.isNotNull(path, "path");
             path = getAbsolutePath(path);
-            return includes(new Location(path));
+            return request.includes(path);
         }
 
         public boolean includes( Location location ) {
@@ -2479,30 +2910,35 @@ public class Graph {
         public boolean includes( String pathStr ) {
             Path path = createPath(pathStr);
             path = getAbsolutePath(path);
-            return includes(new Location(path));
+            return includes(path);
         }
 
         public Node getNode( Location location ) {
-            if (!includes(location)) return null;
-            return new SubgraphNode(location, request);
+            if (!location.hasPath()) return null;
+            Location actualLocation = request.getLocationFor(location.getPath());
+            if (actualLocation == null) return null;
+            return new SubgraphNode(actualLocation, request);
         }
 
         public Node getNode( Path path ) {
             path = getAbsolutePath(path);
-            return getNode(new Location(path));
+            if (!includes(path)) return null;
+            Location location = request.getLocationFor(path);
+            if (location == null) return null;
+            return new SubgraphNode(location, request);
         }
 
         public Node getNode( String pathStr ) {
             CheckArg.isNotEmpty(pathStr, "path");
             Path path = createPath(pathStr);
             path = getAbsolutePath(path);
-            return getNode(new Location(path));
+            return getNode(path);
         }
 
         protected Path getAbsolutePath( Path absoluteOrRelative ) {
             Path result = absoluteOrRelative;
             if (!result.isAbsolute()) {
-                result = getGraph().getContext().getValueFactories().getPathFactory().create(request.at().getPath(), result);
+                result = getGraph().getContext().getValueFactories().getPathFactory().create(getLocation().getPath(), result);
                 result = result.getNormalizedPath();
             }
             return result;
@@ -2550,12 +2986,25 @@ public class Graph {
             return request.getPropertiesFor(location);
         }
 
+        public Property getProperty( Name name ) {
+            return getPropertiesByName().get(name);
+        }
+
+        public Property getProperty( String nameStr ) {
+            Name name = getContext().getValueFactories().getNameFactory().create(nameStr);
+            return getPropertiesByName().get(name);
+        }
+
         public boolean hasChildren() {
             return getChildren().size() != 0;
         }
 
+        public List<Segment> getChildrenSegments() {
+            return getSegments(getChildren());
+        }
+
         public Iterator<Location> iterator() {
-            return request.iterator();
+            return getChildren().iterator();
         }
 
         @Override

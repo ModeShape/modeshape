@@ -23,12 +23,15 @@ package org.jboss.dna.graph;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.UUID;
 import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.common.util.HashCode;
 import org.jboss.dna.common.util.StringUtil;
+import org.jboss.dna.graph.properties.Name;
 import org.jboss.dna.graph.properties.Path;
 import org.jboss.dna.graph.properties.Property;
 import org.jboss.dna.graph.properties.basic.BasicSingleValueProperty;
@@ -39,7 +42,21 @@ import org.jboss.dna.graph.properties.basic.BasicSingleValueProperty;
  * @author Randall Hauch
  */
 @Immutable
-public class Location {
+public class Location implements Iterable<Property> {
+
+    private static final Iterator<Property> NO_ID_PROPERTIES_ITERATOR = new Iterator<Property>() {
+        public boolean hasNext() {
+            return false;
+        }
+
+        public Property next() {
+            throw new NoSuchElementException();
+        }
+
+        public void remove() {
+            throw new UnsupportedOperationException();
+        }
+    };
 
     private final Path path;
     private final List<Property> idProperties;
@@ -73,16 +90,19 @@ public class Location {
      * Create a location defined by a path and an UUID.
      * 
      * @param path the path
-     * @param uuid the UUID
-     * @throws IllegalArgumentException if <code>uuid</code> is null
+     * @param uuid the UUID, or null if there is no UUID
+     * @throws IllegalArgumentException if <code>path</code> is null
      */
     public Location( Path path,
                      UUID uuid ) {
         CheckArg.isNotNull(uuid, "uuid");
-        CheckArg.isNotNull(path, "path");
         this.path = path;
-        Property idProperty = new BasicSingleValueProperty(DnaLexicon.UUID, uuid);
-        this.idProperties = Collections.singletonList(idProperty);
+        if (uuid != null) {
+            Property idProperty = new BasicSingleValueProperty(DnaLexicon.UUID, uuid);
+            this.idProperties = Collections.singletonList(idProperty);
+        } else {
+            this.idProperties = null;
+        }
     }
 
     /**
@@ -97,7 +117,7 @@ public class Location {
         CheckArg.isNotNull(path, "path");
         CheckArg.isNotNull(idProperty, "idProperty");
         this.path = path;
-        this.idProperties = Collections.singletonList(idProperty);
+        this.idProperties = idProperty != null ? Collections.singletonList(idProperty) : null;
     }
 
     /**
@@ -121,6 +141,25 @@ public class Location {
             idProperties.add(property);
         }
         this.idProperties = Collections.unmodifiableList(idProperties);
+    }
+
+    /**
+     * Create a location defined by a path and an iterator over identification properties.
+     * 
+     * @param path the path
+     * @param idProperties the iterator over the identification properties
+     * @throws IllegalArgumentException if any of the arguments are null
+     */
+    public Location( Path path,
+                     Iterable<Property> idProperties ) {
+        CheckArg.isNotNull(path, "path");
+        CheckArg.isNotNull(idProperties, "idProperties");
+        this.path = path;
+        List<Property> idPropertiesList = new ArrayList<Property>();
+        for (Property property : idProperties) {
+            idPropertiesList.add(property);
+        }
+        this.idProperties = Collections.unmodifiableList(idPropertiesList);
     }
 
     /**
@@ -156,6 +195,22 @@ public class Location {
     }
 
     /**
+     * Create a location defined by a path and an iterator over identification properties.
+     * 
+     * @param idProperties the iterator over the identification properties
+     * @throws IllegalArgumentException if any of the arguments are null
+     */
+    public Location( Iterable<Property> idProperties ) {
+        CheckArg.isNotNull(idProperties, "idProperties");
+        this.path = null;
+        List<Property> idPropertiesList = new ArrayList<Property>();
+        for (Property property : idProperties) {
+            idPropertiesList.add(property);
+        }
+        this.idProperties = Collections.unmodifiableList(idPropertiesList);
+    }
+
+    /**
      * Create a location defined by multiple identification properties.
      * 
      * @param idProperties the identification properties
@@ -172,15 +227,58 @@ public class Location {
      * 
      * @param path the path
      * @param idProperties the identification properties
-     * @throws IllegalArgumentException if <code>path</code> or <code>idProperties</code> is null, or if <code>idProperties</code>
-     *         is empty
+     * @throws IllegalArgumentException if <code>path</code> is null, or if <code>idProperties</code> is empty
      */
-    public Location( Path path,
-                     List<Property> idProperties ) {
+    protected Location( Path path,
+                        List<Property> idProperties ) {
         CheckArg.isNotNull(path, "path");
         CheckArg.isNotEmpty(idProperties, "idProperties");
         this.path = path;
         this.idProperties = idProperties;
+    }
+
+    /**
+     * Create a location from another but adding the supplied identification property. The new identification property will
+     * replace any existing identification property with the same name on the original.
+     * 
+     * @param original the original location
+     * @param newIdProperty the new identification property
+     * @throws IllegalArgumentException if <code>original</code> is null
+     */
+    protected Location( Location original,
+                        Property newIdProperty ) {
+        CheckArg.isNotNull(original, "original");
+        this.path = original.getPath();
+        if (original.hasIdProperties()) {
+            List<Property> originalIdProperties = original.getIdProperties();
+            if (newIdProperty == null) {
+                this.idProperties = original.idProperties;
+            } else {
+                List<Property> idProperties = new ArrayList<Property>(originalIdProperties.size() + 1);
+                for (Property property : originalIdProperties) {
+                    if (!newIdProperty.getName().equals(property.getName())) idProperties.add(property);
+                }
+                idProperties.add(newIdProperty);
+                this.idProperties = Collections.unmodifiableList(idProperties);
+            }
+        } else {
+            this.idProperties = Collections.singletonList(newIdProperty);
+        }
+    }
+
+    /**
+     * Create a location from another but adding the supplied identification property. The new identification property will
+     * replace any existing identification property with the same name on the original.
+     * 
+     * @param original the original location
+     * @param newPath the new path for the location
+     * @throws IllegalArgumentException if <code>original</code> is null
+     */
+    protected Location( Location original,
+                        Path newPath ) {
+        CheckArg.isNotNull(original, "original");
+        this.path = newPath != null ? newPath : original.getPath();
+        this.idProperties = original.idProperties;
     }
 
     /**
@@ -217,6 +315,106 @@ public class Location {
      */
     public boolean hasIdProperties() {
         return idProperties != null && idProperties.size() != 0;
+    }
+
+    /**
+     * Get the identification property with the supplied name, if there is such a property.
+     * 
+     * @param name the name of the identification property
+     * @return the identification property with the supplied name, or null if there is no such property (or if there
+     *         {@link #hasIdProperties() are no identification properties}
+     */
+    public Property getIdProperty( Name name ) {
+        CheckArg.isNotNull(name, "name");
+        if (idProperties != null) {
+            for (Property property : idProperties) {
+                if (property.getName().equals(name)) return property;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Compare this location to the supplied location, and determine whether the two locations represent the same logical
+     * location. One location is considered the same as another location when one location is a superset of the other. For
+     * example, consider the following locations:
+     * <ul>
+     * <li>location A is defined with a "<code>/x/y</code>" path</li>
+     * <li>location B is defined with an identification property {id=3}</li>
+     * <li>location C is defined with a "<code>/x/y/z</code>"</li>
+     * <li>location D is defined with a "<code>/x/y/z</code>" path and an identification property {id=3}</li>
+     * </ul>
+     * Locations C and D would be considered the same, and B and D would also be considered the same. None of the other
+     * combinations would be considered the same.
+     * <p>
+     * Note that passing a null location as a parameter will always return false.
+     * </p>
+     * 
+     * @param other the other location to compare
+     * @return true if the two locations represent the same location, or false otherwise
+     */
+    public boolean isSame( Location other ) {
+        return isSame(other, true);
+    }
+
+    /**
+     * Compare this location to the supplied location, and determine whether the two locations represent the same logical
+     * location. One location is considered the same as another location when one location is a superset of the other. For
+     * example, consider the following locations:
+     * <ul>
+     * <li>location A is defined with a "<code>/x/y</code>" path</li>
+     * <li>location B is defined with an identification property {id=3}</li>
+     * <li>location C is defined with a "<code>/x/y/z</code>"</li>
+     * <li>location D is defined with a "<code>/x/y/z</code>" path and an identification property {id=3}</li>
+     * </ul>
+     * Locations C and D would be considered the same, and B and D would also be considered the same. None of the other
+     * combinations would be considered the same.
+     * <p>
+     * Note that passing a null location as a parameter will always return false.
+     * </p>
+     * 
+     * @param other the other location to compare
+     * @param requireSameNameSiblingIndexes true if the paths must have equivalent {@link Path.Segment#getIndex()
+     *        same-name-sibling indexes}, or false if the same-name-siblings may be different
+     * @return true if the two locations represent the same location, or false otherwise
+     */
+    public boolean isSame( Location other,
+                           boolean requireSameNameSiblingIndexes ) {
+        if (other != null) {
+            if (this.hasPath() && other.hasPath()) {
+                // Paths on both, so the paths MUST match
+                if (requireSameNameSiblingIndexes) {
+                    if (!this.getPath().equals(other.getPath())) return false;
+                } else {
+                    Path thisPath = this.getPath();
+                    Path thatPath = other.getPath();
+                    if (thisPath.isRoot() && thatPath.isRoot()) return true;
+                    // The parents must match ...
+                    if (!thisPath.hasSameAncestor(thatPath)) return false;
+                    // And the names of the last segments must match ...
+                    if (!thisPath.getLastSegment().getName().equals(thatPath.getLastSegment().getName())) return false;
+                }
+
+                // And the identification properties must match only if they exist on both
+                if (this.hasIdProperties() && other.hasIdProperties()) {
+                    return this.getIdProperties().containsAll(other.getIdProperties());
+                }
+                return true;
+            }
+            // Path only in one, so the identification properties MUST match
+            if (!other.hasIdProperties()) return false;
+            return this.getIdProperties().containsAll(other.getIdProperties());
+        }
+        return false;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see java.lang.Iterable#iterator()
+     */
+    public Iterator<Property> iterator() {
+        return idProperties != null ? idProperties.iterator() : NO_ID_PROPERTIES_ITERATOR;
     }
 
     /**
@@ -272,4 +470,29 @@ public class Location {
         }
         return sb.toString();
     }
+
+    /**
+     * Create a copy of this location that adds the supplied identification property. The new identification property will replace
+     * any existing identification property with the same name on the original.
+     * 
+     * @param newIdProperty the new identification property, which may be null
+     * @return the new location, or this location if the new identification property is null or empty
+     */
+    public Location with( Property newIdProperty ) {
+        if (newIdProperty == null || newIdProperty.isEmpty()) return this;
+        return new Location(this, newIdProperty);
+    }
+
+    /**
+     * Create a copy of this location that uses the supplied path.
+     * 
+     * @param newPath the new path for the location
+     * @return the new location, or this location if the path is equal to this location's path
+     */
+    public Location with( Path newPath ) {
+        if (newPath == null) return this;
+        if (!this.path.equals(newPath)) return new Location(this, newPath);
+        return this;
+    }
+
 }

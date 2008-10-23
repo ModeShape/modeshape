@@ -30,10 +30,9 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import java.util.concurrent.TimeUnit;
 import org.jboss.dna.graph.ExecutionContext;
-import org.jboss.dna.graph.commands.GraphCommand;
-import org.jboss.dna.graph.commands.executor.CommandExecutor;
 import org.jboss.dna.graph.connectors.RepositorySourceException;
 import org.jboss.dna.graph.connectors.RepositorySourceListener;
+import org.jboss.dna.graph.requests.Request;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.MockitoAnnotations;
@@ -80,27 +79,15 @@ public class FederatedRepositoryConnectionTest {
     public void shouldFailExecutionIfRepositoryAdminsIsNotStarted() throws Exception {
         stub(repository.isRunning()).toReturn(false);
         ExecutionContext context = mock(ExecutionContext.class);
-        GraphCommand command = mock(GraphCommand.class);
-        connection.execute(context, command);
+        Request request = mock(Request.class);
+        connection.execute(context, request);
     }
 
     @Test
-    public void shouldReturnImmediatelyWhenExecutingNullOrEmptyCommandArray() throws Exception {
+    public void shouldReturnImmediatelyWhenExecutingNullRequest() throws Exception {
         stub(repository.isRunning()).toReturn(true);
         ExecutionContext context = mock(ExecutionContext.class);
-        connection.execute(context, (GraphCommand[])null);
-        verify(repository, times(1)).isRunning();
-        connection.execute(context, new GraphCommand[0]);
-        verify(repository, times(2)).isRunning();
-    }
-
-    @Test
-    public void shouldSkipNullCommandReferencesWhenExecuting() throws Exception {
-        stub(repository.isRunning()).toReturn(true);
-        ExecutionContext context = mock(ExecutionContext.class);
-        CommandExecutor executor = mock(CommandExecutor.class);
-        stub(repository.getExecutor(context, sourceName)).toReturn(executor);
-        connection.execute(context, new GraphCommand[] {null, null, null});
+        connection.execute(context, null);
         verify(repository, times(1)).isRunning();
     }
 

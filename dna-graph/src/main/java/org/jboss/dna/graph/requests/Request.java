@@ -21,6 +21,7 @@
  */
 package org.jboss.dna.graph.requests;
 
+import java.io.Serializable;
 import org.jboss.dna.graph.connectors.RepositoryConnection;
 
 /**
@@ -28,7 +29,9 @@ import org.jboss.dna.graph.connectors.RepositoryConnection;
  * 
  * @author Randall Hauch
  */
-public abstract class Request {
+public abstract class Request implements Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     private Throwable error;
 
@@ -58,5 +61,12 @@ public abstract class Request {
     public Throwable getError() {
         return error;
     }
+
+    /**
+     * Return whether this request only reads information.
+     * 
+     * @return true if this request reads information, or false if it requests that the repository content be changed in some way
+     */
+    public abstract boolean isReadOnly();
 
 }

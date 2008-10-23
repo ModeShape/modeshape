@@ -25,7 +25,6 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.IsSame.sameInstance;
 import static org.junit.Assert.assertThat;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.stub;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -37,6 +36,7 @@ import org.jboss.dna.connector.federation.merge.FederatedNode;
 import org.jboss.dna.connector.federation.merge.MergePlan;
 import org.jboss.dna.graph.DnaLexicon;
 import org.jboss.dna.graph.ExecutionContext;
+import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.connectors.BasicExecutionContext;
 import org.jboss.dna.graph.properties.Name;
 import org.jboss.dna.graph.properties.Path;
@@ -56,25 +56,27 @@ public class OneContributionMergeStrategyTest {
     private ExecutionContext context;
     private FederatedNode node;
     private Map<Name, Property> properties;
-    private List<Path.Segment> children;
+    private List<Location> children;
+    private Path parentPath;
     @Mock
     private Contribution contribution;
 
     @Before
     public void beforeEach() throws Exception {
         MockitoAnnotations.initMocks(this);
-        Path path = mock(Path.class);
-        node = new FederatedNode(path, UUID.randomUUID());
         strategy = new OneContributionMergeStrategy();
         contributions = new LinkedList<Contribution>();
         contributions.add(contribution);
         context = new BasicExecutionContext();
         context.getNamespaceRegistry().register("dna", "http://www.jboss.org/dna/something");
         context.getNamespaceRegistry().register("jcr", "http://www.jcr.org");
+        parentPath = context.getValueFactories().getPathFactory().create("/a/b/c");
+        node = new FederatedNode(new Location(parentPath), UUID.randomUUID());
         stub(contribution.getSourceName()).toReturn("source name");
-        children = new LinkedList<Path.Segment>();
+        children = new LinkedList<Location>();
         for (int i = 0; i != 10; ++i) {
-            children.add(context.getValueFactories().getPathFactory().createSegment("a" + i));
+            Path childPath = context.getValueFactories().getPathFactory().create(parentPath, "a" + i);
+            children.add(new Location(childPath));
         }
         properties = new HashMap<Name, Property>();
         for (int i = 0; i != 10; ++i) {

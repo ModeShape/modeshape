@@ -22,8 +22,8 @@
 package org.jboss.dna.connector.federation.contribution;
 
 import net.jcip.annotations.Immutable;
+import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.properties.DateTime;
-import org.jboss.dna.graph.properties.Path;
 
 /**
  * A source contribution that is empty. In other words, the source has no contribution to make.
@@ -59,10 +59,10 @@ public class EmptyContribution extends Contribution {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.connector.federation.contribution.Contribution#getPathInSource()
+     * @see org.jboss.dna.connector.federation.contribution.Contribution#getLocationInSource()
      */
     @Override
-    public Path getPathInSource() {
+    public Location getLocationInSource() {
         return null;
     }
 

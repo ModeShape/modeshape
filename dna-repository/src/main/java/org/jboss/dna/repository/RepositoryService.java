@@ -22,7 +22,6 @@
 package org.jboss.dna.repository;
 
 import java.lang.reflect.InvocationTargetException;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -34,17 +33,14 @@ import org.jboss.dna.common.util.Reflection;
 import org.jboss.dna.connector.federation.FederationException;
 import org.jboss.dna.graph.DnaLexicon;
 import org.jboss.dna.graph.ExecutionContext;
-import org.jboss.dna.graph.commands.GraphCommand;
-import org.jboss.dna.graph.commands.basic.BasicCompositeCommand;
-import org.jboss.dna.graph.commands.basic.BasicGetChildrenCommand;
-import org.jboss.dna.graph.commands.basic.BasicGetNodeCommand;
-import org.jboss.dna.graph.commands.executor.CommandExecutor;
-import org.jboss.dna.graph.commands.executor.SingleSourceCommandExecutor;
+import org.jboss.dna.graph.Graph;
+import org.jboss.dna.graph.Location;
+import org.jboss.dna.graph.Node;
+import org.jboss.dna.graph.Subgraph;
 import org.jboss.dna.graph.connectors.RepositorySource;
 import org.jboss.dna.graph.properties.Name;
-import org.jboss.dna.graph.properties.NameFactory;
 import org.jboss.dna.graph.properties.Path;
-import org.jboss.dna.graph.properties.PathFactory;
+import org.jboss.dna.graph.properties.PathNotFoundException;
 import org.jboss.dna.graph.properties.Property;
 import org.jboss.dna.graph.properties.ValueFactories;
 import org.jboss.dna.graph.properties.ValueFactory;
@@ -184,48 +180,22 @@ public class RepositoryService implements AdministeredService {
             // ------------------------------------------------------------------------------------
             // Read the configuration ...
             // ------------------------------------------------------------------------------------
-            ValueFactories valueFactories = context.getValueFactories();
-            PathFactory pathFactory = valueFactories.getPathFactory();
-            NameFactory nameFactory = valueFactories.getNameFactory();
 
-            // Create a command executor to execute the commands.
-            CommandExecutor executor = new SingleSourceCommandExecutor(context, configurationSourceName, sources);
-
-            // Read the configuration and the repository sources, located as child nodes/branches under "/dna:sources",
-            // and then instantiate and register each in the "sources" manager
-            Path configurationRoot = this.pathToConfigurationRoot;
+            // Read the configuration and repository source nodes (children under "/dna:sources") ...
+            Graph graph = Graph.create(getConfigurationSourceName(), sources, context);
+            Path pathToSourcesNode = context.getValueFactories().getPathFactory().create(pathToConfigurationRoot, "dna:sources");
             try {
-                Path sourcesNode = pathFactory.create(configurationRoot, nameFactory.create("dna:sources"));
-                BasicGetChildrenCommand getSources = new BasicGetChildrenCommand(sourcesNode);
-                executor.execute(getSources);
-                if (getSources.hasNoError()) {
+                Subgraph sourcesGraph = graph.getSubgraphOfDepth(3).at(pathToSourcesNode);
 
-                    // Build the commands to get each of the children ...
-                    List<Path.Segment> children = getSources.getChildren();
-                    if (!children.isEmpty()) {
-                        BasicCompositeCommand commands = new BasicCompositeCommand();
-                        for (Path.Segment child : getSources.getChildren()) {
-                            final Path pathToSource = pathFactory.create(sourcesNode, child);
-                            commands.add(new BasicGetNodeCommand(pathToSource));
-                        }
-                        executor.execute(commands);
-
-                        // Iterate over each source node obtained ...
-                        for (GraphCommand command : commands) {
-                            BasicGetNodeCommand getSourceCommand = (BasicGetNodeCommand)command;
-                            if (getSourceCommand.hasNoError()) {
-                                RepositorySource source = createRepositorySource(getSourceCommand.getPath(),
-                                                                                 getSourceCommand.getPropertiesByName(),
-                                                                                 problems);
-                                if (source != null) sources.addSource(source);
-                            }
-                        }
-                    }
+                // Iterate over each of the children, and create the RepositorySource ...
+                for (Location location : sourcesGraph.getRoot().getChildren()) {
+                    Node sourceNode = sourcesGraph.getNode(location);
+                    sources.addSource(createRepositorySource(location.getPath(), sourceNode.getPropertiesByName(), problems));
                 }
+            } catch (PathNotFoundException e) {
+                // No sources were found, and this is okay!
             } catch (Throwable err) {
-                throw new FederationException(RepositoryI18n.errorStartingRepositoryService.text());
-            } finally {
-                executor.close();
+                throw new FederationException(RepositoryI18n.errorStartingRepositoryService.text(), err);
             }
             this.started.set(true);
         }

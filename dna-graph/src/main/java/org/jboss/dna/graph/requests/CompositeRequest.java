@@ -35,6 +35,8 @@ import org.jboss.dna.common.util.CheckArg;
  */
 public class CompositeRequest extends Request implements Iterable<Request> {
 
+    private static final long serialVersionUID = 1L;
+
     /**
      * Return a request that either wraps multiple requests, or the single request if only one is supplied.
      * 
@@ -48,18 +50,21 @@ public class CompositeRequest extends Request implements Iterable<Request> {
             CheckArg.isNotNull(requests[0], "requests[0]");
             return requests[0];
         }
+        boolean readOnly = true;
         List<Request> list = new ArrayList<Request>(requests.length);
         for (Request request : requests) {
             if (request == null) continue;
             if (request instanceof CompositeRequest) {
                 CompositeRequest composite = (CompositeRequest)request;
                 list.addAll(composite.getRequests());
+                if (!composite.isReadOnly()) readOnly = false;
             } else {
                 list.add(request);
+                if (!request.isReadOnly()) readOnly = false;
             }
         }
         CheckArg.isNotEmpty(list, "requests");
-        return new CompositeRequest(list);
+        return new CompositeRequest(list, readOnly);
     }
 
     /**
@@ -69,8 +74,9 @@ public class CompositeRequest extends Request implements Iterable<Request> {
      * @return the requests wrapped in a CompositeRequest, or if only one request is supplied that single request
      * @throws IllegalArgumentException if there requests are null, empty, or contains only nulls
      */
-    public static Request with( Iterator<Request> requests ) {
+    public static Request with( Iterator<? extends Request> requests ) {
         CheckArg.isNotNull(requests, "requests");
+        boolean readOnly = true;
         List<Request> list = new LinkedList<Request>();
         while (requests.hasNext()) {
             Request request = requests.next();
@@ -78,15 +84,17 @@ public class CompositeRequest extends Request implements Iterable<Request> {
             if (request instanceof CompositeRequest) {
                 CompositeRequest composite = (CompositeRequest)request;
                 list.addAll(composite.getRequests());
+                if (!composite.isReadOnly()) readOnly = false;
             } else {
                 list.add(request);
+                if (!request.isReadOnly()) readOnly = false;
             }
         }
         if (list.size() == 1) {
             return list.get(0);
         }
         CheckArg.isNotEmpty(list, "requests");
-        return new CompositeRequest(list);
+        return new CompositeRequest(list, readOnly);
     }
 
     /**
@@ -96,12 +104,18 @@ public class CompositeRequest extends Request implements Iterable<Request> {
      * @return the requests wrapped in a CompositeRequest, or if only one request is supplied that single request
      * @throws IllegalArgumentException if there requests are null or empty
      */
-    public static Request with( List<Request> requests ) {
+    public static Request with( List<? extends Request> requests ) {
         CheckArg.isNotEmpty(requests, "requests");
         if (requests.size() == 1) {
             return requests.get(0);
         }
-        return new CompositeRequest(requests);
+        boolean readOnly = true;
+        for (Request request : requests) {
+            if (request.isReadOnly()) continue;
+            readOnly = false;
+            break;
+        }
+        return new CompositeRequest(requests, readOnly);
     }
 
     /**
@@ -118,17 +132,20 @@ public class CompositeRequest extends Request implements Iterable<Request> {
         CheckArg.isNotNull(composite, "composite");
         if (requests == null || requests.length == 0) return composite;
         List<Request> list = new ArrayList<Request>(requests.length + composite.size());
+        boolean readOnly = composite.isReadOnly();
         if (composite.size() != 0) list.addAll(composite.getRequests());
         for (Request request : requests) {
             if (request == null) continue;
             if (request instanceof CompositeRequest) {
                 CompositeRequest compositeRequest = (CompositeRequest)request;
                 list.addAll(compositeRequest.getRequests());
+                if (!compositeRequest.isReadOnly()) readOnly = false;
             } else {
                 list.add(request);
+                if (!request.isReadOnly()) readOnly = false;
             }
         }
-        return new CompositeRequest(list);
+        return new CompositeRequest(list, readOnly);
     }
 
     /**
@@ -141,9 +158,10 @@ public class CompositeRequest extends Request implements Iterable<Request> {
      * @throws IllegalArgumentException if the composite request is null
      */
     public static CompositeRequest add( CompositeRequest composite,
-                                        Iterator<Request> requests ) {
+                                        Iterator<? extends Request> requests ) {
         CheckArg.isNotNull(composite, "composite");
         List<Request> list = new LinkedList<Request>();
+        boolean readOnly = composite.isReadOnly();
         if (composite.size() != 0) list.addAll(composite.getRequests());
         while (requests.hasNext()) {
             Request request = requests.next();
@@ -151,22 +169,28 @@ public class CompositeRequest extends Request implements Iterable<Request> {
             if (request instanceof CompositeRequest) {
                 CompositeRequest compositeRequest = (CompositeRequest)request;
                 list.addAll(compositeRequest.getRequests());
+                if (!compositeRequest.isReadOnly()) readOnly = false;
             } else {
                 list.add(request);
+                if (!request.isReadOnly()) readOnly = false;
             }
         }
-        return new CompositeRequest(list);
+        return new CompositeRequest(list, readOnly);
     }
 
     private final List<Request> requests;
+    private final boolean readOnly;
 
     /**
      * Create a composite request from the supplied list of requests.
      * 
      * @param requests the modifiable list of requests; may not be null
+     * @param readOnly true if all of the requests are {@link Request#isReadOnly() read-only}
      */
-    protected CompositeRequest( List<Request> requests ) {
+    protected CompositeRequest( List<? extends Request> requests,
+                                boolean readOnly ) {
         this.requests = Collections.unmodifiableList(requests);
+        this.readOnly = readOnly;
     }
 
     /**
@@ -194,6 +218,16 @@ public class CompositeRequest extends Request implements Iterable<Request> {
      */
     public Iterator<Request> iterator() {
         return requests.iterator();
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.requests.Request#isReadOnly()
+     */
+    @Override
+    public boolean isReadOnly() {
+        return readOnly;
     }
 
     /**

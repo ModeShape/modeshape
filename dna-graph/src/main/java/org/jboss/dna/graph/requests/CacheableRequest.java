@@ -19,50 +19,57 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.jboss.dna.connector.federation.executor;
+package org.jboss.dna.graph.requests;
 
-import java.util.Collection;
-import org.jboss.dna.graph.commands.CreateNodeCommand;
-import org.jboss.dna.graph.commands.NodeConflictBehavior;
-import org.jboss.dna.graph.properties.Path;
-import org.jboss.dna.graph.properties.Property;
+import net.jcip.annotations.ThreadSafe;
+import org.jboss.dna.graph.cache.CachePolicy;
+import org.jboss.dna.graph.cache.Cacheable;
+import org.jboss.dna.graph.properties.DateTime;
 
 /**
+ * A request that contains results that may be cached.
+ * 
  * @author Randall Hauch
  */
-public class ProjectedCreateNodeCommand extends ActsOnProjectedPathCommand<CreateNodeCommand> implements CreateNodeCommand {
+@ThreadSafe
+public abstract class CacheableRequest extends Request implements Cacheable {
 
-    public ProjectedCreateNodeCommand( CreateNodeCommand delegate,
-                                       Path projectedPath ) {
-        super(delegate, projectedPath);
+    private static final long serialVersionUID = 1L;
+
+    private CachePolicy policy;
+    private DateTime timeLoaded;
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.cache.Cacheable#getCachePolicy()
+     */
+    public CachePolicy getCachePolicy() {
+        return policy;
     }
 
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.graph.commands.CreateNodeCommand#getConflictBehavior()
+     * @see org.jboss.dna.graph.cache.Cacheable#getTimeLoaded()
      */
-    public NodeConflictBehavior getConflictBehavior() {
-        return getOriginalCommand().getConflictBehavior();
+    public DateTime getTimeLoaded() {
+        return timeLoaded;
     }
 
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.graph.commands.CreateNodeCommand#getProperties()
+     * @see org.jboss.dna.graph.cache.Cacheable#setCachePolicy(org.jboss.dna.graph.cache.CachePolicy)
      */
-    public Collection<Property> getProperties() {
-        return getOriginalCommand().getProperties();
+    public void setCachePolicy( CachePolicy cachePolicy ) {
+        policy = cachePolicy;
     }
 
     /**
-     * {@inheritDoc}
-     * 
-     * @see java.lang.Comparable#compareTo(java.lang.Object)
+     * @param timeLoaded Sets timeLoaded to the specified value.
      */
-    public int compareTo( CreateNodeCommand that ) {
-        if (this == that) return 0;
-        return this.getPath().compareTo(that.getPath());
+    public void setTimeLoaded( DateTime timeLoaded ) {
+        this.timeLoaded = timeLoaded;
     }
-
 }

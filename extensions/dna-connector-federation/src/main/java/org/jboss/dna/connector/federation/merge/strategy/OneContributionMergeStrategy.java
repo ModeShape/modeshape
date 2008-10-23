@@ -23,7 +23,6 @@ package org.jboss.dna.connector.federation.merge.strategy;
 
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 import net.jcip.annotations.ThreadSafe;
 import org.jboss.dna.connector.federation.contribution.Contribution;
@@ -31,11 +30,11 @@ import org.jboss.dna.connector.federation.merge.FederatedNode;
 import org.jboss.dna.connector.federation.merge.MergePlan;
 import org.jboss.dna.graph.DnaLexicon;
 import org.jboss.dna.graph.ExecutionContext;
-import org.jboss.dna.graph.properties.Name;
+import org.jboss.dna.graph.Location;
+import org.jboss.dna.graph.properties.Path;
+import org.jboss.dna.graph.properties.PathFactory;
 import org.jboss.dna.graph.properties.Property;
-import org.jboss.dna.graph.properties.UuidFactory;
 import org.jboss.dna.graph.properties.ValueFormatException;
-import org.jboss.dna.graph.properties.Path.Segment;
 
 /**
  * A merge strategy that is optimized for merging when there is a single contribution.
@@ -44,24 +43,6 @@ import org.jboss.dna.graph.properties.Path.Segment;
  */
 @ThreadSafe
 public class OneContributionMergeStrategy implements MergeStrategy {
-
-    public static final boolean DEFAULT_REUSE_UUID_FROM_CONTRIBUTION = true;
-
-    private boolean useUuidFromContribution = DEFAULT_REUSE_UUID_FROM_CONTRIBUTION;
-
-    /**
-     * @return reuseUuidFromContribution
-     */
-    public boolean isContributionUuidUsedForFederatedNode() {
-        return useUuidFromContribution;
-    }
-
-    /**
-     * @param useUuidFromContribution Sets useUuidFromContribution to the specified value.
-     */
-    public void setContributionUuidUsedForFederatedNode( boolean useUuidFromContribution ) {
-        this.useUuidFromContribution = useUuidFromContribution;
-    }
 
     /**
      * {@inheritDoc}
@@ -81,48 +62,89 @@ public class OneContributionMergeStrategy implements MergeStrategy {
         assert contributions.size() > 0;
         Contribution contribution = contributions.get(0);
         assert contribution != null;
-        final boolean findUuid = isContributionUuidUsedForFederatedNode();
+        final PathFactory pathFactory = context.getValueFactories().getPathFactory();
+        final Location location = federatedNode.getActualLocationOfNode();
+
         // Copy the children ...
-        List<Segment> children = federatedNode.getChildren();
-        children.clear();
-        Iterator<Segment> childIterator = contribution.getChildren();
+        Iterator<Location> childIterator = contribution.getChildren();
         while (childIterator.hasNext()) {
-            Segment child = childIterator.next();
-            children.add(child);
+            Location child = translateChildFromSourceToRepository(pathFactory, location, childIterator.next());
+            federatedNode.addChild(child);
         }
+
         // Copy the properties ...
-        Map<Name, Property> properties = federatedNode.getPropertiesByName();
-        properties.clear();
-        UUID uuid = null;
-        UuidFactory uuidFactory = null;
+        Property uuidProperty = null;
+        Property dnaUuidProperty = null;
         Iterator<Property> propertyIterator = contribution.getProperties();
         while (propertyIterator.hasNext()) {
             Property property = propertyIterator.next();
-            if (findUuid && uuid == null && property.getName().getLocalName().equals("uuid")) {
-                if (property.isSingle()) {
-                    if (uuidFactory == null) uuidFactory = context.getValueFactories().getUuidFactory();
-                    try {
-                        uuid = uuidFactory.create(property.getValues().next());
-                    } catch (ValueFormatException e) {
-                        // Ignore conversion exceptions
-                    }
+            federatedNode.addProperty(property);
+            if (property.isSingle()) {
+                if (property.getName().equals(DnaLexicon.UUID) && hasUuidValue(context, property)) {
+                    dnaUuidProperty = property;
+                } else if (property.getName().getLocalName().equals("uuid") && hasUuidValue(context, property)) {
+                    uuidProperty = property;
                 }
-            } else {
-                properties.put(property.getName(), property);
             }
         }
-        // If we found a single "uuid" property whose value is a valid UUID ..
-        if (uuid != null) {
-            // then set the UUID on the federated node ...
+        if (dnaUuidProperty != null) uuidProperty = dnaUuidProperty; // use "dna:uuid" if there is one
+
+        // Look for the UUID property on the properties, and update the federated node ...
+        if (uuidProperty != null && !uuidProperty.isEmpty()) {
+            UUID uuid = context.getValueFactories().getUuidFactory().create(uuidProperty.getValues().next());
             federatedNode.setUuid(uuid);
+            if (dnaUuidProperty == null) {
+                uuidProperty = context.getPropertyFactory().create(DnaLexicon.UUID, uuid); // Use the "dna:uuid" name
+            }
+            federatedNode.setActualLocationOfNode(federatedNode.getActualLocationOfNode().with(uuidProperty));
+        } else {
+            // See if there is a UUID property on the location and update the federated node with it...
+            uuidProperty = federatedNode.getActualLocationOfNode().getIdProperty(DnaLexicon.UUID);
+            if (uuidProperty == null || uuidProperty.isEmpty()) {
+                // Generate a new UUID property and add to the node ...
+                UUID uuid = federatedNode.getUuid();
+                if (uuid == null) {
+                    uuid = context.getValueFactories().getUuidFactory().create();
+                    federatedNode.setUuid(uuid);
+                }
+                uuidProperty = context.getPropertyFactory().create(DnaLexicon.UUID, uuid);
+            }
+            // Set the UUID as a property ...
+            federatedNode.addProperty(uuidProperty);
         }
-        // Set the UUID as a property ...
-        Property uuidProperty = context.getPropertyFactory().create(DnaLexicon.UUID, federatedNode.getUuid());
-        properties.put(uuidProperty.getName(), uuidProperty);
 
         // Assign the merge plan ...
         MergePlan mergePlan = MergePlan.create(contributions);
         federatedNode.setMergePlan(mergePlan);
     }
 
+    private boolean hasUuidValue( ExecutionContext context,
+                                  Property property ) {
+        assert property.isSingle();
+        try {
+            context.getValueFactories().getUuidFactory().create(property.getValues().next());
+            return true;
+        } catch (ValueFormatException e) {
+            return false;
+        }
+    }
+
+    /**
+     * Utility method to translate the list of locations of the children so that the locations all are correctly relative to
+     * parent location of the federated node.
+     * 
+     * @param factory the path factory
+     * @param parent the parent of the child
+     * @param childInSource the child to be translated, with a source-specific location
+     * @return the list of locations of each child
+     */
+    protected Location translateChildFromSourceToRepository( PathFactory factory,
+                                                             Location parent,
+                                                             Location childInSource ) {
+        // Convert the locations of the children (relative to the source) to be relative to this node
+        Path parentPath = parent.getPath();
+        if (parentPath == null) return childInSource;
+        Path newPath = factory.create(parentPath, childInSource.getPath().getLastSegment());
+        return childInSource.with(newPath);
+    }
 }

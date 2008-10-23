@@ -31,11 +31,11 @@ import net.jcip.annotations.ThreadSafe;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.connector.federation.executor.FederatingCommandExecutor;
 import org.jboss.dna.graph.ExecutionContext;
-import org.jboss.dna.graph.commands.executor.CommandExecutor;
 import org.jboss.dna.graph.connectors.RepositoryConnection;
 import org.jboss.dna.graph.connectors.RepositoryConnectionFactory;
 import org.jboss.dna.graph.connectors.RepositorySource;
 import org.jboss.dna.graph.connectors.RepositorySourceListener;
+import org.jboss.dna.graph.requests.processor.RequestProcessor;
 
 /**
  * The component that represents a single federated repository. The federated repository uses a set of {@link RepositorySource
@@ -221,14 +221,14 @@ public class FederatedRepository {
     }
 
     /**
-     * Called by {@link FederatedRepositoryConnection#execute(ExecutionContext, org.jboss.dna.graph.commands.GraphCommand...)} .
+     * Called by {@link FederatedRepositoryConnection#execute(ExecutionContext, org.jboss.dna.graph.requests.Request)}.
      * 
      * @param context the execution context in which the executor will be run; may not be null
      * @param sourceName the name of the {@link RepositorySource} that is making use of this executor; may not be null or empty
      * @return the executor
      */
-    protected CommandExecutor getExecutor( ExecutionContext context,
-                                           String sourceName ) {
+    protected RequestProcessor getProcessor( ExecutionContext context,
+                                             String sourceName ) {
         FederatedRepositoryConfig config = this.getConfiguration();
         return new FederatingCommandExecutor(context, sourceName, config.getCacheProjection(), config.getDefaultCachePolicy(),
                                              config.getSourceProjections(), getConnectionFactory());

@@ -33,6 +33,7 @@ public final class FederationI18n {
     public static I18n requiredNodeDoesNotExistRelativeToNode;
     public static I18n propertyIsRequired;
     public static I18n nodeDoesNotExistAtPath;
+    public static I18n nodeDoesNotExistAtLocation;
     public static I18n errorRemovingNodeFromCache;
 
     public static I18n unableToCreateExecutionContext;

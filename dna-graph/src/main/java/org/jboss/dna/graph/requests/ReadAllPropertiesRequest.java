@@ -26,6 +26,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import org.jboss.dna.common.util.CheckArg;
+import org.jboss.dna.graph.GraphI18n;
 import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.connectors.RepositoryConnection;
 import org.jboss.dna.graph.properties.Name;
@@ -36,13 +37,16 @@ import org.jboss.dna.graph.properties.Property;
  * 
  * @author Randall Hauch
  */
-public class ReadAllPropertiesRequest extends Request implements Iterable<Property> {
+public class ReadAllPropertiesRequest extends CacheableRequest implements Iterable<Property> {
+
+    private static final long serialVersionUID = 1L;
 
     public static final int UNKNOWN_NUMBER_OF_CHILDREN = -1;
 
     private final Location at;
     private final Map<Name, Property> properties = new HashMap<Name, Property>();
     private int numberOfChildren = UNKNOWN_NUMBER_OF_CHILDREN;
+    private Location actualLocation;
 
     /**
      * Create a request to read the properties and number of children of a node at the supplied location.
@@ -53,6 +57,16 @@ public class ReadAllPropertiesRequest extends Request implements Iterable<Proper
     public ReadAllPropertiesRequest( Location at ) {
         CheckArg.isNotNull(at, "at");
         this.at = at;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.requests.Request#isReadOnly()
+     */
+    @Override
+    public boolean isReadOnly() {
+        return true;
     }
 
     /**
@@ -133,6 +147,34 @@ public class ReadAllPropertiesRequest extends Request implements Iterable<Proper
     public void setNumberOfChildren( int numberOfChildren ) {
         CheckArg.isNonNegative(numberOfChildren, "numberOfChildren");
         this.numberOfChildren = numberOfChildren;
+    }
+
+    /**
+     * Sets the actual and complete location of the node whose properties have been read. This method must be called when
+     * processing the request, and the actual location must have a {@link Location#getPath() path}.
+     * 
+     * @param actual the actual location of the node being read, or null if the {@link #at() current location} should be used
+     * @throws IllegalArgumentException if the actual location does not represent the {@link Location#isSame(Location) same
+     *         location} as the {@link #at() current location}, or if the actual location does not have a path.
+     */
+    public void setActualLocationOfNode( Location actual ) {
+        if (!at.isSame(actual)) { // not same if actual is null
+            throw new IllegalArgumentException(GraphI18n.actualLocationIsNotSameAsInputLocation.text(actual, at));
+        }
+        assert actual != null;
+        if (!actual.hasPath()) {
+            throw new IllegalArgumentException(GraphI18n.actualLocationMustHavePath.text(actual));
+        }
+        this.actualLocation = actual;
+    }
+
+    /**
+     * Get the actual location of the node whose properties were read.
+     * 
+     * @return the actual location, or null if the actual location was not set
+     */
+    public Location getActualLocationOfNode() {
+        return actualLocation;
     }
 
     /**

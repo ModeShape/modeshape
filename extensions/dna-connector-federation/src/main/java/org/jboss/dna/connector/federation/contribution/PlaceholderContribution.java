@@ -22,9 +22,8 @@
 package org.jboss.dna.connector.federation.contribution;
 
 import net.jcip.annotations.Immutable;
+import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.properties.DateTime;
-import org.jboss.dna.graph.properties.Path;
-import org.jboss.dna.graph.properties.Path.Segment;
 
 /**
  * A placeholder contribution needed because of a source's contribution below the specified children.
@@ -43,16 +42,16 @@ public class PlaceholderContribution extends MultiChildContribution {
      * Create a contribution of children from the source with the supplied name.
      * 
      * @param sourceName the name of the source, which may not be null or blank
-     * @param pathInSource the path in the source for this contributed information; may not be null
+     * @param locationInSource the location in the source for this contributed information; may not be null
      * @param expirationTime the time (in UTC) after which this contribution should be considered expired, or null if there is no
      *        expiration time
      * @param children the children from the source; may not be null or empty
      */
     public PlaceholderContribution( String sourceName,
-                                    Path pathInSource,
+                                    Location locationInSource,
                                     DateTime expirationTime,
-                                    Iterable<Segment> children ) {
-        super(sourceName, pathInSource, expirationTime, children);
+                                    Iterable<Location> children ) {
+        super(sourceName, locationInSource, expirationTime, children);
     }
 
     /**

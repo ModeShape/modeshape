@@ -41,7 +41,6 @@ import org.jboss.dna.common.util.Logger;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.GraphI18n;
 import org.jboss.dna.graph.cache.CachePolicy;
-import org.jboss.dna.graph.commands.GraphCommand;
 import org.jboss.dna.graph.requests.Request;
 
 /**
@@ -976,15 +975,6 @@ public class RepositoryConnectionPool {
         public CachePolicy getDefaultCachePolicy() {
             if (closed) throw new IllegalStateException(GraphI18n.closedConnectionMayNotBeUsed.text());
             return this.original.getDefaultCachePolicy();
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        public void execute( ExecutionContext context,
-                             GraphCommand... commands ) throws RepositorySourceException {
-            if (closed) throw new IllegalStateException(GraphI18n.closedConnectionMayNotBeUsed.text());
-            this.original.execute(context, commands);
         }
 
         /**

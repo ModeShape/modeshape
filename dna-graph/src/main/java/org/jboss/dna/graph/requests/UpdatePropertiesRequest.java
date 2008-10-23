@@ -29,6 +29,7 @@ import java.util.LinkedList;
 import java.util.List;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.common.util.StringUtil;
+import org.jboss.dna.graph.GraphI18n;
 import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.properties.Property;
 
@@ -39,8 +40,11 @@ import org.jboss.dna.graph.properties.Property;
  */
 public class UpdatePropertiesRequest extends Request implements Iterable<Property> {
 
+    private static final long serialVersionUID = 1L;
+
     private final Location on;
     private final List<Property> properties;
+    private Location actualLocation;
 
     /**
      * Create a request to update the properties on the node at the supplied location.
@@ -97,6 +101,16 @@ public class UpdatePropertiesRequest extends Request implements Iterable<Propert
     }
 
     /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.requests.Request#isReadOnly()
+     */
+    @Override
+    public boolean isReadOnly() {
+        return false;
+    }
+
+    /**
      * Get the location defining the node that is to be updated.
      * 
      * @return the location of the node; never null
@@ -121,6 +135,34 @@ public class UpdatePropertiesRequest extends Request implements Iterable<Propert
      */
     public Collection<Property> properties() {
         return properties;
+    }
+
+    /**
+     * Sets the actual and complete location of the node being updated. This method must be called when processing the request,
+     * and the actual location must have a {@link Location#getPath() path}.
+     * 
+     * @param actual the actual location of the node being updated, or null if the {@link #on() current location} should be used
+     * @throws IllegalArgumentException if the actual location does represent the {@link Location#isSame(Location) same location}
+     *         as the {@link #on() current location}, or if the actual location does not have a path.
+     */
+    public void setActualLocationOfNode( Location actual ) {
+        if (!on.isSame(actual)) { // not same if actual is null
+            throw new IllegalArgumentException(GraphI18n.actualLocationIsNotSameAsInputLocation.text(actual, on));
+        }
+        assert actual != null;
+        if (!actual.hasPath()) {
+            throw new IllegalArgumentException(GraphI18n.actualLocationMustHavePath.text(actual));
+        }
+        this.actualLocation = actual;
+    }
+
+    /**
+     * Get the actual location of the node that was updated.
+     * 
+     * @return the actual location, or null if the actual location was not set
+     */
+    public Location getActualLocationOfNode() {
+        return actualLocation;
     }
 
     /**

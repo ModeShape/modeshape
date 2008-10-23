@@ -30,13 +30,11 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.properties.DateTime;
 import org.jboss.dna.graph.properties.Name;
 import org.jboss.dna.graph.properties.Path;
-import org.jboss.dna.graph.properties.Path.Segment;
-import org.jboss.dna.graph.properties.basic.BasicName;
 import org.jboss.dna.graph.properties.basic.BasicPath;
-import org.jboss.dna.graph.properties.basic.BasicPathSegment;
 import org.jboss.dna.graph.properties.basic.JodaDateTime;
 import org.junit.Before;
 import org.junit.Test;
@@ -55,47 +53,46 @@ public class MultiChildContributionTest {
     private Path pathInSource;
     private MultiChildContribution contribution;
     private DateTime expiration;
-    private List<Segment> children;
-    private Segment child1;
-    private Segment child2;
-    private Segment child3;
+    private List<Location> children;
+    private Location child1;
+    private Location child2;
+    private Location child3;
 
     @Before
     public void beforeEach() throws Exception {
         sourceName = "some source";
         pathInSource = BasicPath.ROOT;
         expiration = TOMORROW;
-        String nsUri = "http://www.jboss.org/default";
-        child1 = new BasicPathSegment(new BasicName(nsUri, "child1"));
-        child2 = new BasicPathSegment(new BasicName(nsUri, "child2"));
-        child3 = new BasicPathSegment(new BasicName(nsUri, "child3"));
+        child1 = mock(Location.class);
+        child2 = mock(Location.class);
+        child3 = mock(Location.class);
         children = Arrays.asList(child1, child2, child3);
-        contribution = new MultiChildContribution(sourceName, pathInSource, expiration, children);
+        contribution = new MultiChildContribution(sourceName, new Location(pathInSource), expiration, children);
     }
 
     @Test
     public void shouldAllowNullExpiration() {
         expiration = null;
-        contribution = new MultiChildContribution(sourceName, pathInSource, expiration, children);
+        contribution = new MultiChildContribution(sourceName, new Location(pathInSource), expiration, children);
         assertThat(contribution.getExpirationTimeInUtc(), is(nullValue()));
     }
 
     @Test( expected = IllegalArgumentException.class )
     public void shouldNotAllowExpirationTimeIfNotInUtcTime() {
         expiration = new JodaDateTime(System.currentTimeMillis(), "CST");
-        contribution = new MultiChildContribution(sourceName, pathInSource, expiration, children);
+        contribution = new MultiChildContribution(sourceName, new Location(pathInSource), expiration, children);
     }
 
     @Test( expected = AssertionError.class )
     public void shouldNotAllowNullChildren() {
         children = null;
-        contribution = new MultiChildContribution(sourceName, pathInSource, expiration, children);
+        contribution = new MultiChildContribution(sourceName, new Location(pathInSource), expiration, children);
     }
 
     @Test( expected = AssertionError.class )
     public void shouldNotAllowEmptyChildren() {
         children = Collections.emptyList();
-        contribution = new MultiChildContribution(sourceName, pathInSource, expiration, children);
+        contribution = new MultiChildContribution(sourceName, new Location(pathInSource), expiration, children);
     }
 
     @Test
@@ -110,7 +107,7 @@ public class MultiChildContributionTest {
 
     @Test
     public void shouldNotBeExpiredIfExpirationIsInTheFuture() {
-        contribution = new MultiChildContribution(sourceName, pathInSource, NOW, children);
+        contribution = new MultiChildContribution(sourceName, new Location(pathInSource), NOW, children);
         assertThat(contribution.isExpired(YESTERDAY), is(false));
         assertThat(contribution.isExpired(TOMORROW), is(true));
     }
@@ -118,7 +115,7 @@ public class MultiChildContributionTest {
     @Test
     public void shouldHaveChildren() {
         assertThat(contribution.getChildrenCount(), is(3));
-        Iterator<Segment> iter = contribution.getChildren();
+        Iterator<Location> iter = contribution.getChildren();
         assertThat(iter.next(), is(child1));
         assertThat(iter.next(), is(child2));
         assertThat(iter.next(), is(child3));

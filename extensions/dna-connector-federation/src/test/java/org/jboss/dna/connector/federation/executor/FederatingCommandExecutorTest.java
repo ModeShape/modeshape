@@ -34,6 +34,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -41,6 +42,7 @@ import org.jboss.dna.connector.federation.Projection;
 import org.jboss.dna.connector.federation.ProjectionParser;
 import org.jboss.dna.connector.federation.contribution.Contribution;
 import org.jboss.dna.graph.ExecutionContext;
+import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.cache.BasicCachePolicy;
 import org.jboss.dna.graph.cache.CachePolicy;
 import org.jboss.dna.graph.connectors.BasicExecutionContext;
@@ -127,35 +129,35 @@ public class FederatingCommandExecutorTest {
         SimpleRepository.shutdownAll();
     }
 
-    @Test( expected = AssertionError.class )
+    @Test( expected = IllegalArgumentException.class )
     public void shouldFailWhenExecutionContextIsNull() {
         context = null;
         executor = new FederatingCommandExecutor(context, sourceName, cacheProjection, cachePolicy, sourceProjections,
                                                  connectionFactory);
     }
 
-    @Test( expected = AssertionError.class )
+    @Test( expected = IllegalArgumentException.class )
     public void shouldFailWhenSourceNameIsNull() {
         sourceName = null;
         executor = new FederatingCommandExecutor(context, sourceName, cacheProjection, cachePolicy, sourceProjections,
                                                  connectionFactory);
     }
 
-    @Test( expected = AssertionError.class )
+    @Test( expected = IllegalArgumentException.class )
     public void shouldFailWhenSourceNameIsEmpty() {
         sourceName = "";
         executor = new FederatingCommandExecutor(context, sourceName, cacheProjection, cachePolicy, sourceProjections,
                                                  connectionFactory);
     }
 
-    @Test( expected = AssertionError.class )
+    @Test( expected = IllegalArgumentException.class )
     public void shouldFailWhenSourceNameIsBlank() {
         sourceName = "   ";
         executor = new FederatingCommandExecutor(context, sourceName, cacheProjection, cachePolicy, sourceProjections,
                                                  connectionFactory);
     }
 
-    @Test( expected = AssertionError.class )
+    @Test( expected = IllegalArgumentException.class )
     public void shouldFailWhenConnectionFactoryIsNull() {
         connectionFactory = null;
         executor = new FederatingCommandExecutor(context, sourceName, cacheProjection, cachePolicy, sourceProjections,
@@ -253,18 +255,33 @@ public class FederatingCommandExecutorTest {
     public void shouldLoadContributionsForRootNodeFromSources() throws Exception {
         Path path = pathFactory.createRootPath();
         List<Contribution> contributions = new LinkedList<Contribution>();
-        executor.loadContributionsFromSources(path, null, contributions);
+        executor.loadContributionsFromSources(new Location(path), null, contributions);
 
         assertThat(contributions.size(), is(3)); // order is based upon order of projections
         assertThat(contributions.get(0).getSourceName(), is(source1.getName()));
         assertThat(contributions.get(1).getSourceName(), is(source2.getName()));
         assertThat(contributions.get(2).getSourceName(), is(source3.getName()));
 
-        Path.Segment aSeg = pathFactory.createSegment("a");
-        Path.Segment bSeg = pathFactory.createSegment("b");
-        assertThat(contributions.get(0).getChildren(), hasItems(aSeg, bSeg));
-        assertThat(contributions.get(1).getChildren(), hasItems(aSeg));
+        Location childA = new Location(pathFactory.create(path, "a"));
+        Location childB = new Location(pathFactory.create(path, "b"));
+        assertThat(contributions.get(0).getChildren(), hasItems(childA, childB));
+        assertThat(contributions.get(1).getChildren(), hasItems(childA));
         assertThat(contributions.get(2).getChildrenCount(), is(0));
+    }
+
+    protected void hasChildren( Contribution contribution,
+                                String... childNames ) {
+        Location location = contribution.getLocationInSource();
+        Iterator<Location> iter = contribution.getChildren();
+        for (String childName : childNames) {
+            Path expectedChildPath = context.getValueFactories().getPathFactory().create(location.getPath(), childName);
+            Location expectedChild = new Location(expectedChildPath);
+            Location next = iter.next();
+            if (!next.isSame(expectedChild)) {
+                assertThat(next, is(expectedChild));
+            }
+        }
+        assertThat(iter.hasNext(), is(false));
     }
 
     @Test
@@ -278,33 +295,29 @@ public class FederatingCommandExecutorTest {
 
         Path path = pathFactory.create("/x/y"); // from source 3
         List<Contribution> contributions = new LinkedList<Contribution>();
-        executor.loadContributionsFromSources(path, null, contributions);
+        executor.loadContributionsFromSources(new Location(path), null, contributions);
 
         assertThat(contributions.size(), is(3)); // order is based upon order of projections
         assertThat(contributions.get(0).getSourceName(), is(source1.getName()));
         assertThat(contributions.get(1).getSourceName(), is(source2.getName()));
         assertThat(contributions.get(2).getSourceName(), is(source3.getName()));
 
-        Path.Segment child1 = pathFactory.createSegment("zA");
-        Path.Segment child2 = pathFactory.createSegment("zB");
-        Path.Segment child3 = pathFactory.createSegment("zC");
-        assertThat(contributions.get(0).isEmpty(), is(true));
-        assertThat(contributions.get(1).isEmpty(), is(true));
-        assertThat(contributions.get(2).getChildren(), hasItems(child1, child2, child3));
+        hasChildren(contributions.get(0));
+        hasChildren(contributions.get(1));
+        hasChildren(contributions.get(2), "zA", "zB", "zC");
 
         path = pathFactory.create("/x"); // from source 3
         contributions.clear();
-        executor.loadContributionsFromSources(path, null, contributions);
+        executor.loadContributionsFromSources(new Location(path), null, contributions);
 
         assertThat(contributions.size(), is(3)); // order is based upon order of projections
         assertThat(contributions.get(0).getSourceName(), is(source1.getName()));
         assertThat(contributions.get(1).getSourceName(), is(source2.getName()));
         assertThat(contributions.get(2).getSourceName(), is(source3.getName()));
 
-        child1 = pathFactory.createSegment("y");
-        assertThat(contributions.get(0).isEmpty(), is(true));
-        assertThat(contributions.get(1).isEmpty(), is(true));
-        assertThat(contributions.get(2).getChildren(), hasItems(child1));
+        hasChildren(contributions.get(0));
+        hasChildren(contributions.get(1));
+        hasChildren(contributions.get(2), "y");
     }
 
     @Test
@@ -337,33 +350,27 @@ public class FederatingCommandExecutorTest {
 
         Path path = pathFactory.create("/b"); // from source 2 and source 3
         List<Contribution> contributions = new LinkedList<Contribution>();
-        executor.loadContributionsFromSources(path, null, contributions);
+        executor.loadContributionsFromSources(new Location(path), null, contributions);
 
         assertThat(contributions.size(), is(3)); // order is based upon order of projections
         assertThat(contributions.get(0).getSourceName(), is(source1.getName()));
         assertThat(contributions.get(1).getSourceName(), is(source2.getName()));
         assertThat(contributions.get(2).getSourceName(), is(source3.getName()));
 
-        Path.Segment child1 = pathFactory.createSegment("pA");
-        Path.Segment child2 = pathFactory.createSegment("pB");
-        Path.Segment child3 = pathFactory.createSegment("pC");
-        Path.Segment child4 = pathFactory.createSegment("by");
-        assertThat(contributions.get(0).getChildren(), hasItems(child1, child2, child3));
-        assertThat(contributions.get(1).isEmpty(), is(true));
-        assertThat(contributions.get(2).getChildren(), hasItems(child4));
+        hasChildren(contributions.get(0), "pA", "pB", "pC");
+        hasChildren(contributions.get(1));
+        hasChildren(contributions.get(2), "by");
 
         path = pathFactory.create("/b/by"); // from source 3
         contributions.clear();
-        executor.loadContributionsFromSources(path, null, contributions);
+        executor.loadContributionsFromSources(new Location(path), null, contributions);
 
         assertThat(contributions.size(), is(2)); // order is based upon order of projections
         assertThat(contributions.get(0).getSourceName(), is(source2.getName()));
         assertThat(contributions.get(1).getSourceName(), is(source3.getName()));
 
-        child1 = pathFactory.createSegment("bzA");
-        child2 = pathFactory.createSegment("bzB");
-        assertThat(contributions.get(0).isEmpty(), is(true));
-        assertThat(contributions.get(1).getChildren(), hasItems(child1));
+        hasChildren(contributions.get(0));
+        hasChildren(contributions.get(1), "bzA", "bzB");
     }
 
     @Test
@@ -399,40 +406,31 @@ public class FederatingCommandExecutorTest {
 
         Path path = pathFactory.create("/a"); // from sources 1, 2 and 3
         List<Contribution> contributions = new LinkedList<Contribution>();
-        executor.loadContributionsFromSources(path, null, contributions);
+        executor.loadContributionsFromSources(new Location(path), null, contributions);
 
         assertThat(contributions.size(), is(3)); // order is based upon order of projections
         assertThat(contributions.get(0).getSourceName(), is(source1.getName()));
         assertThat(contributions.get(1).getSourceName(), is(source2.getName()));
         assertThat(contributions.get(2).getSourceName(), is(source3.getName()));
 
-        Path.Segment child1 = pathFactory.createSegment("nA");
-        Path.Segment child2 = pathFactory.createSegment("nB");
-        Path.Segment child3 = pathFactory.createSegment("nC");
-        Path.Segment child4 = pathFactory.createSegment("qA");
-        Path.Segment child5 = pathFactory.createSegment("qB");
-        Path.Segment child6 = pathFactory.createSegment("qC");
-        Path.Segment child7 = pathFactory.createSegment("ay");
-        assertThat(contributions.get(0).getChildren(), hasItems(child1, child2, child3));
-        assertThat(contributions.get(1).getChildren(), hasItems(child4, child5, child6));
-        assertThat(contributions.get(2).getChildren(), hasItems(child7));
+        hasChildren(contributions.get(0), "nA", "nB", "nC");
+        hasChildren(contributions.get(1), "qA", "qB", "qC");
+        hasChildren(contributions.get(2), "ay");
 
         path = pathFactory.create("/a/ay"); // from source 3
         contributions.clear();
-        executor.loadContributionsFromSources(path, null, contributions);
+        executor.loadContributionsFromSources(new Location(path), null, contributions);
 
         assertThat(contributions.size(), is(1)); // order is based upon order of projections
         assertThat(contributions.get(0).getSourceName(), is(source3.getName()));
-        child1 = pathFactory.createSegment("azA");
-        child2 = pathFactory.createSegment("azB");
-        assertThat(contributions.get(0).getChildren(), hasItems(child1, child2));
+        hasChildren(contributions.get(0), "azA", "azB");
     }
 
     @Test
     public void shouldFailToLoadNodeFromSourcesWhenTheNodeDoesNotAppearInAnyOfTheSources() throws Exception {
         Path nonExistant = pathFactory.create("/nonExistant/Node/In/AnySource");
         List<Contribution> contributions = new LinkedList<Contribution>();
-        executor.loadContributionsFromSources(nonExistant, null, contributions);
+        executor.loadContributionsFromSources(new Location(nonExistant), null, contributions);
         // All of the contributions should be empty ...
         for (Contribution contribution : contributions) {
             assertThat(contribution.isEmpty(), is(true));
@@ -472,7 +470,7 @@ public class FederatingCommandExecutorTest {
 
         Path path = pathFactory.create("/a"); // from sources 1, 2 and 3
         List<Contribution> contributions = new LinkedList<Contribution>();
-        executor.loadContributionsFromSources(path, null, contributions);
+        executor.loadContributionsFromSources(new Location(path), null, contributions);
 
         // Check when the contributions expire ...
         DateTime nowInUtc = executor.getCurrentTimeInUtc();

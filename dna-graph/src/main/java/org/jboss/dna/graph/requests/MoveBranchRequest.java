@@ -22,7 +22,9 @@
 package org.jboss.dna.graph.requests;
 
 import org.jboss.dna.common.util.CheckArg;
+import org.jboss.dna.graph.GraphI18n;
 import org.jboss.dna.graph.Location;
+import org.jboss.dna.graph.NodeConflictBehavior;
 
 /**
  * Instruction that a branch be moved from one location into another.
@@ -31,8 +33,15 @@ import org.jboss.dna.graph.Location;
  */
 public class MoveBranchRequest extends Request {
 
+    private static final long serialVersionUID = 1L;
+
+    public static final NodeConflictBehavior DEFAULT_CONFLICT_BEHAVIOR = NodeConflictBehavior.APPEND;
+
     private final Location from;
     private final Location into;
+    private final NodeConflictBehavior conflictBehavior;
+    private Location actualOldLocation;
+    private Location actualNewLocation;
 
     /**
      * Create a request to move a branch from one location into another.
@@ -43,10 +52,27 @@ public class MoveBranchRequest extends Request {
      */
     public MoveBranchRequest( Location from,
                               Location into ) {
+        this(from, into, DEFAULT_CONFLICT_BEHAVIOR);
+    }
+
+    /**
+     * Create a request to move a branch from one location into another.
+     * 
+     * @param from the location of the top node in the existing branch that is to be moved
+     * @param into the location of the existing node into which the branch should be moved
+     * @param conflictBehavior the expected behavior if an equivalently-named child already exists at the <code>into</code>
+     *        location
+     * @throws IllegalArgumentException if any of the parameters are null
+     */
+    public MoveBranchRequest( Location from,
+                              Location into,
+                              NodeConflictBehavior conflictBehavior ) {
         CheckArg.isNotNull(from, "from");
         CheckArg.isNotNull(into, "into");
+        CheckArg.isNotNull(conflictBehavior, "conflictBehavior");
         this.from = from;
         this.into = into;
+        this.conflictBehavior = conflictBehavior;
     }
 
     /**
@@ -68,6 +94,74 @@ public class MoveBranchRequest extends Request {
     }
 
     /**
+     * Get the expected behavior when copying the branch and the {@link #into() destination} already has a node with the same
+     * name.
+     * 
+     * @return the behavior specification
+     */
+    public NodeConflictBehavior conflictBehavior() {
+        return conflictBehavior;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.requests.Request#isReadOnly()
+     */
+    @Override
+    public boolean isReadOnly() {
+        return false;
+    }
+
+    /**
+     * Sets the actual and complete location of the node being renamed and its new location. This method must be called when
+     * processing the request, and the actual location must have a {@link Location#getPath() path}.
+     * 
+     * @param oldLocation the actual location of the node before being renamed
+     * @param newLocation the actual location of the node after being renamed
+     * @throws IllegalArgumentException if the either location is null, if the old location does not represent the
+     *         {@link Location#isSame(Location) same location} as the {@link #from() from location}, if the new location does not
+     *         represent the {@link Location#isSame(Location) same location} as the {@link #into() into location}, or if the
+     *         either location does not have a path
+     */
+    public void setActualLocations( Location oldLocation,
+                                    Location newLocation ) {
+        if (!from.isSame(oldLocation)) { // not same if actual is null
+            throw new IllegalArgumentException(GraphI18n.actualLocationIsNotSameAsInputLocation.text(oldLocation, from));
+        }
+        if (!into.isSame(newLocation, false)) { // not same if actual is null
+            throw new IllegalArgumentException(GraphI18n.actualLocationIsNotSameAsInputLocation.text(newLocation, into));
+        }
+        assert oldLocation != null;
+        assert newLocation != null;
+        if (!oldLocation.hasPath()) {
+            throw new IllegalArgumentException(GraphI18n.actualOldLocationMustHavePath.text(oldLocation));
+        }
+        if (!newLocation.hasPath()) {
+            throw new IllegalArgumentException(GraphI18n.actualNewLocationMustHavePath.text(newLocation));
+        }
+        this.actualNewLocation = newLocation;
+    }
+
+    /**
+     * Get the actual location of the node before being moved.
+     * 
+     * @return the actual location of the node before being moved, or null if the actual location was not set
+     */
+    public Location getActualLocationBefore() {
+        return actualOldLocation;
+    }
+
+    /**
+     * Get the actual location of the node after being moved.
+     * 
+     * @return the actual location of the node after being moved, or null if the actual location was not set
+     */
+    public Location getActualLocationAfter() {
+        return actualNewLocation;
+    }
+
+    /**
      * {@inheritDoc}
      * 
      * @see java.lang.Object#equals(java.lang.Object)
@@ -78,6 +172,7 @@ public class MoveBranchRequest extends Request {
             MoveBranchRequest that = (MoveBranchRequest)obj;
             if (!this.from().equals(that.from())) return false;
             if (!this.into().equals(that.into())) return false;
+            if (!this.conflictBehavior().equals(that.conflictBehavior())) return false;
             return true;
         }
         return false;

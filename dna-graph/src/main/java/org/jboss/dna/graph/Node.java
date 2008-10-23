@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Map;
 import net.jcip.annotations.Immutable;
 import org.jboss.dna.graph.properties.Name;
+import org.jboss.dna.graph.properties.Path;
 import org.jboss.dna.graph.properties.Property;
 
 /**
@@ -58,6 +59,22 @@ public interface Node extends Iterable<Location> {
     Collection<Property> getProperties();
 
     /**
+     * Get the property with the supplied name.
+     * 
+     * @param name the property name
+     * @return the property, or null if there is no property by that name
+     */
+    Property getProperty( String name );
+
+    /**
+     * Get the property with the supplied name.
+     * 
+     * @param name the property name
+     * @return the property, or null if there is no property by that name
+     */
+    Property getProperty( Name name );
+
+    /**
      * Get the map of properties keyed by the property names.
      * 
      * @return the map of properties keyed by property name
@@ -70,6 +87,13 @@ public interface Node extends Iterable<Location> {
      * @return the list of locations for each child
      */
     List<Location> getChildren();
+
+    /**
+     * Get the list of child {@link Path.Segment segments}.
+     * 
+     * @return the list containing a segment for each child
+     */
+    List<Path.Segment> getChildrenSegments();
 
     /**
      * Return whether this node has children.

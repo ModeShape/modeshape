@@ -32,13 +32,14 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.stub;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import java.util.ArrayList;
+import java.util.List;
 import javax.naming.Context;
 import javax.security.auth.callback.CallbackHandler;
 import org.jboss.dna.graph.DnaLexicon;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.ExecutionContextFactory;
-import org.jboss.dna.graph.commands.basic.BasicGetChildrenCommand;
-import org.jboss.dna.graph.commands.basic.BasicGetPropertiesCommand;
+import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.connectors.BasicExecutionContext;
 import org.jboss.dna.graph.connectors.RepositoryConnection;
 import org.jboss.dna.graph.connectors.RepositoryConnectionFactory;
@@ -50,6 +51,7 @@ import org.jboss.dna.graph.properties.Name;
 import org.jboss.dna.graph.properties.Path;
 import org.jboss.dna.graph.properties.PathNotFoundException;
 import org.jboss.dna.graph.properties.Property;
+import org.jboss.dna.graph.requests.ReadNodeRequest;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentMatcher;
@@ -181,10 +183,10 @@ public class FederatedRepositorySourceIntegrationTest {
         Path pathObj = context.getValueFactories().getPathFactory().create(path);
         try {
             connection = source.getConnection();
-            BasicGetChildrenCommand command = new BasicGetChildrenCommand(pathObj);
-            connection.execute(context, command);
-            assertThat(command.hasError(), is(true));
-            assertThat(command.getError(), instanceOf(PathNotFoundException.class));
+            ReadNodeRequest request = new ReadNodeRequest(new Location(pathObj));
+            connection.execute(context, request);
+            assertThat(request.hasError(), is(true));
+            assertThat(request.getError(), instanceOf(PathNotFoundException.class));
         } finally {
             if (connection != null) connection.close();
         }
@@ -197,18 +199,28 @@ public class FederatedRepositorySourceIntegrationTest {
         Path pathObj = context.getValueFactories().getPathFactory().create(path);
         try {
             connection = source.getConnection();
-            BasicGetChildrenCommand command = new BasicGetChildrenCommand(pathObj);
-            connection.execute(context, command);
-            assertThat(command.hasError(), is(false));
+            ReadNodeRequest request = new ReadNodeRequest(new Location(pathObj));
+            connection.execute(context, request);
+            assertThat(request.hasError(), is(false));
             if (children == null || children.length == 0) {
-                assertThat(command.getChildren().isEmpty(), is(true));
+                assertThat(request.getChildren().isEmpty(), is(true));
             } else {
-                Path.Segment[] segments = new Path.Segment[children.length];
+                // We can't use Location.equals(...), since we're only given the expected paths and the actual
+                // locations may have more than just paths. So, create a list of actual locations that just have paths ...
+                List<Location> actualChildren = request.getChildren();
+                List<Location> actualPathOnlyChildren = new ArrayList<Location>(actualChildren.size());
+                for (Location actualChild : actualChildren) {
+                    actualPathOnlyChildren.add(new Location(actualChild.getPath()));
+                }
+                // Now create the array of expected locations (that each contain only a path) ...
+                Location[] expectedChildren = new Location[children.length];
                 int i = 0;
                 for (String child : children) {
-                    segments[i++] = context.getValueFactories().getPathFactory().createSegment(child);
+                    Path.Segment segment = context.getValueFactories().getPathFactory().createSegment(child);
+                    Path childPath = context.getValueFactories().getPathFactory().create(pathObj, segment);
+                    expectedChildren[i++] = new Location(childPath);
                 }
-                assertThat(command.getChildren(), hasItems(segments));
+                assertThat(actualPathOnlyChildren, hasItems(expectedChildren));
             }
         } finally {
             if (connection != null) connection.close();
@@ -223,11 +235,11 @@ public class FederatedRepositorySourceIntegrationTest {
         Path pathObj = context.getValueFactories().getPathFactory().create(path);
         try {
             connection = source.getConnection();
-            BasicGetPropertiesCommand command = new BasicGetPropertiesCommand(pathObj);
-            connection.execute(context, command);
-            assertThat(command.hasError(), is(false));
+            ReadNodeRequest request = new ReadNodeRequest(new Location(pathObj));
+            connection.execute(context, request);
+            assertThat(request.hasError(), is(false));
             Name name = context.getValueFactories().getNameFactory().create(propertyName);
-            Property property = command.getPropertiesByName().get(name);
+            Property property = request.getPropertiesByName().get(name);
             assertThat(property.getValuesAsArray(), is(values));
         } finally {
             if (connection != null) connection.close();

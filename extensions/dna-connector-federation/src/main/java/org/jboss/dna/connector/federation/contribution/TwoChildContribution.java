@@ -23,9 +23,8 @@ package org.jboss.dna.connector.federation.contribution;
 
 import java.util.Iterator;
 import net.jcip.annotations.Immutable;
+import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.properties.DateTime;
-import org.jboss.dna.graph.properties.Path;
-import org.jboss.dna.graph.properties.Path.Segment;
 
 /**
  * The record of a source contributing only two children to a node.
@@ -40,25 +39,25 @@ public class TwoChildContribution extends NonEmptyContribution {
      */
     private static final long serialVersionUID = 1L;
 
-    private final Segment child1;
-    private final Segment child2;
+    private final Location child1;
+    private final Location child2;
 
     /**
      * Create a contribution of two children from the source with the supplied name.
      * 
      * @param sourceName the name of the source, which may not be null or blank
-     * @param pathInSource the path in the source for this contributed information; may not be null
+     * @param locationInSource the path in the source for this contributed information; may not be null
      * @param expirationTime the time (in UTC) after which this contribution should be considered expired, or null if there is no
      *        expiration time
      * @param child1 the first child contributed from the source; may not be null
      * @param child2 the second child contributed from the source; may not be null
      */
     public TwoChildContribution( String sourceName,
-                                 Path pathInSource,
+                                 Location locationInSource,
                                  DateTime expirationTime,
-                                 Segment child1,
-                                 Segment child2 ) {
-        super(sourceName, pathInSource, expirationTime);
+                                 Location child1,
+                                 Location child2 ) {
+        super(sourceName, locationInSource, expirationTime);
         assert child1 != null;
         assert child2 != null;
         this.child1 = child1;
@@ -72,8 +71,8 @@ public class TwoChildContribution extends NonEmptyContribution {
      * @see org.jboss.dna.connector.federation.contribution.Contribution#getChildren()
      */
     @Override
-    public Iterator<Segment> getChildren() {
-        return new TwoValueIterator<Segment>(child1, child2);
+    public Iterator<Location> getChildren() {
+        return new TwoValueIterator<Location>(child1, child2);
     }
 
     /**

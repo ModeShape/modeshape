@@ -51,4 +51,11 @@ public interface Subgraph extends Results {
      * @return the maximum depth requested; always positive
      */
     int getMaximumDepth();
+
+    /**
+     * Get the node that is at the {@link #getLocation() root} of the subgraph.
+     * 
+     * @return the root node in the subgraph
+     */
+    Node getRoot();
 }

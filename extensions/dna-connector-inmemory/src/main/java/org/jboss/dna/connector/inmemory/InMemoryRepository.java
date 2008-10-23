@@ -29,28 +29,28 @@ import java.util.UUID;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import net.jcip.annotations.NotThreadSafe;
+import org.jboss.dna.common.CommonI18n;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.graph.DnaLexicon;
 import org.jboss.dna.graph.ExecutionContext;
-import org.jboss.dna.graph.commands.ActsOnPath;
-import org.jboss.dna.graph.commands.CopyBranchCommand;
-import org.jboss.dna.graph.commands.CopyNodeCommand;
-import org.jboss.dna.graph.commands.CreateNodeCommand;
-import org.jboss.dna.graph.commands.DeleteBranchCommand;
-import org.jboss.dna.graph.commands.GetChildrenCommand;
-import org.jboss.dna.graph.commands.GetPropertiesCommand;
-import org.jboss.dna.graph.commands.GraphCommand;
-import org.jboss.dna.graph.commands.MoveBranchCommand;
-import org.jboss.dna.graph.commands.RecordBranchCommand;
-import org.jboss.dna.graph.commands.SetPropertiesCommand;
-import org.jboss.dna.graph.commands.executor.AbstractCommandExecutor;
-import org.jboss.dna.graph.commands.executor.CommandExecutor;
+import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.properties.Name;
 import org.jboss.dna.graph.properties.Path;
+import org.jboss.dna.graph.properties.PathFactory;
 import org.jboss.dna.graph.properties.PathNotFoundException;
 import org.jboss.dna.graph.properties.Property;
+import org.jboss.dna.graph.properties.PropertyFactory;
 import org.jboss.dna.graph.properties.Path.Segment;
 import org.jboss.dna.graph.properties.basic.BasicPath;
+import org.jboss.dna.graph.requests.CopyBranchRequest;
+import org.jboss.dna.graph.requests.CreateNodeRequest;
+import org.jboss.dna.graph.requests.DeleteBranchRequest;
+import org.jboss.dna.graph.requests.MoveBranchRequest;
+import org.jboss.dna.graph.requests.ReadAllChildrenRequest;
+import org.jboss.dna.graph.requests.ReadAllPropertiesRequest;
+import org.jboss.dna.graph.requests.Request;
+import org.jboss.dna.graph.requests.UpdatePropertiesRequest;
+import org.jboss.dna.graph.requests.processor.RequestProcessor;
 
 /**
  * @author Randall Hauch
@@ -293,10 +293,10 @@ public class InMemoryRepository {
         correctSameNameSiblingIndexes(context, newParent, node.getName().getName());
     }
 
-    public int copyNode( ExecutionContext context,
-                         Node original,
-                         Node newParent,
-                         boolean recursive ) {
+    public Node copyNode( ExecutionContext context,
+                          Node original,
+                          Node newParent,
+                          boolean recursive ) {
         assert context != null;
         assert original != null;
         assert newParent != null;
@@ -306,45 +306,84 @@ public class InMemoryRepository {
         // Copy the properties ...
         copy.getProperties().clear();
         copy.getProperties().putAll(original.getProperties());
-        int numNodesCopied = 1;
         if (recursive) {
             // Loop over each child and call this method ...
             for (Node child : original.getChildren()) {
-                numNodesCopied += copyNode(context, child, copy, true);
+                copyNode(context, child, copy, true);
             }
         }
-        return numNodesCopied;
+        return copy;
     }
 
     /**
-     * Get a command executor given the supplied environment and source name.
+     * Get a request processor given the supplied environment and source name.
      * 
      * @param context the environment in which the commands are to be executed
      * @param sourceName the name of the repository source
-     * @return the executor; never null
+     * @return the request processor; never null
      */
-    public CommandExecutor getCommandExecutor( ExecutionContext context,
-                                               String sourceName ) {
-        return new Executor(context, sourceName);
+    /*package*/RequestProcessor getRequestProcessor( ExecutionContext context,
+                                                      String sourceName ) {
+        return new Processor(context, sourceName);
     }
 
-    protected class Executor extends AbstractCommandExecutor {
+    protected class Processor extends RequestProcessor {
+        private final PathFactory pathFactory;
+        private final PropertyFactory propertyFactory;
 
-        private final Name uuidPropertyName;
-
-        protected Executor( ExecutionContext context,
-                            String sourceName ) {
-            super(context, sourceName);
-            this.uuidPropertyName = context.getValueFactories().getNameFactory().create(DnaLexicon.UUID);
-        }
-
-        protected Property getUuidProperty( Node node ) {
-            return getExecutionContext().getPropertyFactory().create(uuidPropertyName, node.getUuid());
+        protected Processor( ExecutionContext context,
+                             String sourceName ) {
+            super(sourceName, context);
+            pathFactory = context.getValueFactories().getPathFactory();
+            propertyFactory = context.getPropertyFactory();
         }
 
         @Override
-        public void execute( CreateNodeCommand command ) {
-            Path path = command.getPath();
+        public void process( ReadAllChildrenRequest request ) {
+            Node node = getTargetNode(request, request.of());
+            if (node == null) return;
+            Path path = request.of().getPath();
+            // Get the names of the children ...
+            List<Node> children = node.getChildren();
+            for (Node child : children) {
+                Segment childName = child.getName();
+                Path childPath = pathFactory.create(path, childName);
+                request.addChild(childPath, propertyFactory.create(DnaLexicon.UUID, child.getUuid()));
+            }
+            request.setActualLocationOfNode(new Location(path, node.getUuid()));
+        }
+
+        @Override
+        public void process( ReadAllPropertiesRequest request ) {
+            Node node = getTargetNode(request, request.at());
+            if (node == null) return;
+            // Get the properties of the node ...
+            request.addProperty(propertyFactory.create(DnaLexicon.UUID, node.getUuid()));
+            for (Property property : node.getProperties().values()) {
+                request.addProperty(property);
+            }
+            request.setActualLocationOfNode(new Location(request.at().getPath(), node.getUuid()));
+        }
+
+        @Override
+        public void process( CopyBranchRequest request ) {
+            Node node = getTargetNode(request, request.from());
+            if (node == null) return;
+            // Look up the new parent, which must exist ...
+            Path newPath = request.into().getPath();
+            Path newParentPath = newPath.getParent();
+            Node newParent = getNode(newParentPath);
+            Node newNode = copyNode(getExecutionContext(), node, newParent, true);
+            newPath = getExecutionContext().getValueFactories().getPathFactory().create(newParentPath, newNode.getName());
+            Location oldLocation = new Location(request.from().getPath(), node.getUuid());
+            Location newLocation = new Location(newPath, newNode.getUuid());
+            request.setActualLocations(oldLocation, newLocation);
+        }
+
+        @Override
+        public void process( CreateNodeRequest request ) {
+            Path path = request.at().getPath();
+            CheckArg.isNotNull(path, "request.at().getPath()");
             Node node = null;
             if (!path.isRoot()) {
                 Path parent = path.getParent();
@@ -352,137 +391,93 @@ public class InMemoryRepository {
                 Node parentNode = getNode(parent);
                 if (parentNode == null) {
                     Path lowestExisting = getLowestExistingPath(parent);
-                    throw new PathNotFoundException(path, lowestExisting, InMemoryConnectorI18n.nodeDoesNotExist.text(parent));
+                    throw new PathNotFoundException(request.at(), lowestExisting,
+                                                    InMemoryConnectorI18n.nodeDoesNotExist.text(parent));
                 }
                 UUID uuid = null;
-                for (Property property : command.getProperties()) {
-                    if (property.getName().equals(uuidPropertyName)) {
+                for (Property property : request.properties()) {
+                    if (property.getName().equals(DnaLexicon.UUID)) {
                         uuid = getExecutionContext().getValueFactories().getUuidFactory().create(property.getValues().next());
                         break;
                     }
                 }
                 node = createNode(getExecutionContext(), parentNode, path.getLastSegment().getName(), uuid);
+                path = getExecutionContext().getValueFactories().getPathFactory().create(parent, node.getName());
             } else {
                 node = getRoot();
             }
             // Now add the properties to the supplied node ...
-            for (Property property : command.getProperties()) {
+            for (Property property : request.properties()) {
                 Name propName = property.getName();
                 if (property.size() == 0) {
                     node.getProperties().remove(propName);
                     continue;
                 }
-                if (!propName.equals(uuidPropertyName)) {
+                if (!propName.equals(DnaLexicon.UUID)) {
                     node.getProperties().put(propName, property);
                 }
             }
             assert node != null;
+            request.setActualLocationOfNode(new Location(path, node.getUuid()));
         }
 
         @Override
-        public void execute( GetChildrenCommand command ) {
-            Node node = getTargetNode(command);
+        public void process( DeleteBranchRequest request ) {
+            Node node = getTargetNode(request, request.at());
             if (node == null) return;
-            // Get the names of the children ...
-            List<Node> children = node.getChildren();
-            for (Node child : children) {
-                Segment childName = child.getName();
-                command.addChild(childName, getUuidProperty(child));
-            }
+            removeNode(getExecutionContext(), node);
+            request.setActualLocationOfNode(new Location(request.at().getPath(), node.getUuid()));
         }
 
         @Override
-        public void execute( GetPropertiesCommand command ) {
-            Node node = getTargetNode(command);
+        public void process( MoveBranchRequest request ) {
+            Node node = getTargetNode(request, request.from());
             if (node == null) return;
-            for (Property property : node.getProperties().values()) {
-                command.setProperty(property);
-            }
-            command.setProperty(getUuidProperty(node));
+            // Look up the new parent, which must exist ...
+            Path newPath = request.into().getPath();
+            Path newParentPath = newPath.getParent();
+            Node newParent = getNode(newParentPath);
+            node.setParent(newParent);
+            newPath = getExecutionContext().getValueFactories().getPathFactory().create(newParentPath, node.getName());
+            Location oldLocation = new Location(request.from().getPath(), node.getUuid());
+            Location newLocation = new Location(newPath, node.getUuid());
+            request.setActualLocations(oldLocation, newLocation);
         }
 
         @Override
-        public void execute( SetPropertiesCommand command ) {
-            Node node = getTargetNode(command);
+        public void process( UpdatePropertiesRequest request ) {
+            Node node = getTargetNode(request, request.on());
             if (node == null) return;
             // Now set (or remove) the properties to the supplied node ...
-            for (Property property : command.getProperties()) {
+            for (Property property : request.properties()) {
                 Name propName = property.getName();
                 if (property.size() == 0) {
                     node.getProperties().remove(propName);
                     continue;
                 }
-                if (!propName.equals(uuidPropertyName)) {
+                if (!propName.equals(DnaLexicon.UUID)) {
                     node.getProperties().put(propName, property);
                 }
             }
+            request.setActualLocationOfNode(new Location(request.on().getPath(), node.getUuid()));
         }
 
-        @Override
-        public void execute( DeleteBranchCommand command ) {
-            Node node = getTargetNode(command);
-            if (node == null) return;
-            removeNode(getExecutionContext(), node);
-        }
-
-        @Override
-        public void execute( CopyNodeCommand command ) {
-            Node node = getTargetNode(command);
-            if (node == null) return;
-            // Look up the new parent, which must exist ...
-            Path newPath = command.getNewPath();
-            Node newParent = getNode(newPath.getParent());
-            copyNode(getExecutionContext(), node, newParent, false);
-        }
-
-        @Override
-        public void execute( CopyBranchCommand command ) {
-            Node node = getTargetNode(command);
-            if (node == null) return;
-            // Look up the new parent, which must exist ...
-            Path newPath = command.getNewPath();
-            Node newParent = getNode(newPath.getParent());
-            copyNode(getExecutionContext(), node, newParent, true);
-        }
-
-        @Override
-        public void execute( MoveBranchCommand command ) {
-            Node node = getTargetNode(command);
-            if (node == null) return;
-            // Look up the new parent, which must exist ...
-            Path newPath = command.getNewPath();
-            Node newParent = getNode(newPath.getParent());
-            node.setParent(newParent);
-        }
-
-        @Override
-        public void execute( RecordBranchCommand command ) {
-            Node node = getTargetNode(command);
-            if (node == null) return;
-            recordNode(command, node);
-        }
-
-        protected void recordNode( RecordBranchCommand command,
-                                   Node node ) {
-            command.record(command.getPath(), node.getProperties().values());
-            for (Node child : node.getChildren()) {
-                recordNode(command, child);
+        protected Node getTargetNode( Request request,
+                                      Location location ) {
+            Path path = location.getPath();
+            if (path == null) {
+                request.setError(new IllegalArgumentException(CommonI18n.argumentMayNotBeNull.text("location.getPath()")));
+                return null;
             }
-        }
-
-        protected <T extends ActsOnPath & GraphCommand> Node getTargetNode( T command ) {
-            Path path = command.getPath();
             // Look up the node with the supplied path ...
             Node node = InMemoryRepository.this.getNode(path);
             if (node == null) {
                 Path lowestExisting = getLowestExistingPath(path);
-                command.setError(new PathNotFoundException(path, lowestExisting,
+                request.setError(new PathNotFoundException(location, lowestExisting,
                                                            InMemoryConnectorI18n.nodeDoesNotExist.text(path)));
                 return null;
             }
             return node;
         }
-
     }
-
 }

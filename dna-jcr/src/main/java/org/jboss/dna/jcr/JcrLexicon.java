@@ -19,33 +19,20 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.jboss.dna.connector.federation.executor;
+package org.jboss.dna.jcr;
 
-import org.jboss.dna.graph.commands.CopyNodeCommand;
-import org.jboss.dna.graph.properties.Path;
+import org.jboss.dna.graph.properties.Name;
+import org.jboss.dna.graph.properties.basic.BasicName;
 
 /**
  * @author Randall Hauch
  */
-public class ProjectedCopyNodeCommand extends ActsOnProjectedPathCommand<CopyNodeCommand> implements CopyNodeCommand {
+class JcrLexicon {
 
-    private final Path newProjectedPath;
-
-    public ProjectedCopyNodeCommand( CopyNodeCommand delegate,
-                                     Path projectedPath,
-                                     Path newProjectedPath ) {
-        super(delegate, projectedPath);
-        assert newProjectedPath != null;
-        this.newProjectedPath = newProjectedPath;
+    public static class Namespace {
+        public static final String URI = "http://www.jcp.org/jcr/1.0";
+        public static final String PREFIX = "jcr";
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.jboss.dna.graph.commands.CopyNodeCommand#getNewPath()
-     */
-    public Path getNewPath() {
-        return newProjectedPath;
-    }
-
+    public static final Name UUID = new BasicName(Namespace.URI, "uuid");
 }

@@ -44,14 +44,13 @@ import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.connector.inmemory.InMemoryRepositorySource;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.ExecutionContextFactory;
-import org.jboss.dna.graph.commands.basic.BasicGetNodeCommand;
+import org.jboss.dna.graph.Graph;
+import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.connectors.BasicExecutionContextFactory;
-import org.jboss.dna.graph.connectors.RepositoryConnection;
 import org.jboss.dna.graph.properties.Path;
 import org.jboss.dna.graph.properties.PathFactory;
 import org.jboss.dna.graph.properties.PathNotFoundException;
 import org.jboss.dna.graph.properties.Property;
-import org.jboss.dna.graph.util.GraphImporter;
 import org.jboss.dna.jcr.JcrRepository;
 import org.jboss.dna.repository.RepositoryLibrary;
 import org.jboss.dna.repository.RepositoryService;
@@ -147,16 +146,15 @@ public class RepositoryClient {
         // Normally, these would exist already and would simply be accessed. But in this example, we're going to
         // populate these repositories here by importing from files. First do the configuration repository ...
         String location = this.userInterface.getLocationOfRepositoryFiles();
-        GraphImporter importer = new GraphImporter(sources, context);
-        importer.importXml(location + "/configRepository.xml").into(configSource.getName());
+        Graph.create("Configuration", sources, context).importXmlFrom(location + "/configRepository.xml").into("/");
 
         // Now instantiate the Repository Service ...
         repositoryService = new RepositoryService(sources, configSource.getName(), context);
         repositoryService.getAdministrator().start();
 
         // Now import the conten for two of the other in-memory repositories ...
-        importer.importXml(location + "/cars.xml").into("Cars");
-        importer.importXml(location + "/aircraft.xml").into("Aircraft");
+        Graph.create("Cars", sources, context).importXmlFrom(location + "/cars.xml").into("/");
+        Graph.create("Aircraft", sources, context).importXmlFrom(location + "/aircraft.xml").into("/");
     }
 
     /**
@@ -295,45 +293,36 @@ public class RepositoryClient {
                     }
                 } catch (javax.jcr.PathNotFoundException e) {
                     return false;
+                } catch (Throwable t) {
+                    t.printStackTrace();
                 } finally {
                     if (session != null) session.logout();
                 }
                 break;
             }
             case DNA: {
-                ExecutionContext context = loginContext != null ? contextFactory.create(loginContext) : contextFactory.create();
-                PathFactory pathFactory = context.getValueFactories().getPathFactory();
-
-                // Get the node submitting a graph command to a repository connection.
-                // (Using commands is a little verbose, but we'll be introducing in the next release
-                // an API that is much easier and concise.)
-                Path path = pathToNode != null ? pathFactory.create(pathToNode) : pathFactory.createRootPath();
-                BasicGetNodeCommand command = new BasicGetNodeCommand(path);
-                RepositoryConnection connection = sources.createConnection(sourceName);
                 try {
-                    connection.execute(context, command);
-                } finally {
-                    if (connection != null) connection.close();
-                }
+                    // Use the DNA Graph API to read the properties and children of the node ...
+                    ExecutionContext context = loginContext != null ? contextFactory.create(loginContext) : contextFactory.create();
+                    Graph graph = Graph.create(sourceName, sources, context);
+                    org.jboss.dna.graph.Node node = graph.getNodeAt(pathToNode);
 
-                // Check whether there's been an error ...
-                if (command.hasError()) {
-                    if (command.getError() instanceof PathNotFoundException) return false;
-                    throw command.getError();
-                }
-
-                // Now populate the properties and children ...
-                if (properties != null) {
-                    for (Property property : command.getProperties()) {
-                        String name = property.getName().getString(context.getNamespaceRegistry());
-                        properties.put(name, property.getValuesAsArray());
+                    if (properties != null) {
+                        // Now copy the properties into the map provided as a method parameter ...
+                        for (Property property : node.getProperties()) {
+                            String name = property.getName().getString(context.getNamespaceRegistry());
+                            properties.put(name, property.getValuesAsArray());
+                        }
                     }
-                }
-                if (children != null) {
-                    for (Path.Segment child : command.getChildren()) {
-                        String name = child.getString(context.getNamespaceRegistry());
-                        children.add(name);
+                    if (children != null) {
+                        // And copy the names of the children into the list provided as a method parameter ...
+                        for (Location child : node.getChildren()) {
+                            String name = child.getPath().getLastSegment().getString(context.getNamespaceRegistry());
+                            children.add(name);
+                        }
                     }
+                } catch (PathNotFoundException e) {
+                    return false;
                 }
                 break;
             }

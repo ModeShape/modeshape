@@ -21,11 +21,11 @@
  */
 package org.jboss.dna.graph.properties.basic;
 
-import static org.jboss.dna.graph.properties.basic.IsPathContaining.hasSegments;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.hamcrest.core.IsSame.sameInstance;
+import static org.jboss.dna.graph.properties.basic.IsPathContaining.hasSegments;
 import static org.junit.Assert.assertThat;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -37,13 +37,6 @@ import org.jboss.dna.graph.properties.InvalidPathException;
 import org.jboss.dna.graph.properties.Name;
 import org.jboss.dna.graph.properties.Path;
 import org.jboss.dna.graph.properties.ValueFormatException;
-import org.jboss.dna.graph.properties.basic.BasicName;
-import org.jboss.dna.graph.properties.basic.BasicNamespaceRegistry;
-import org.jboss.dna.graph.properties.basic.BasicPath;
-import org.jboss.dna.graph.properties.basic.BasicPathSegment;
-import org.jboss.dna.graph.properties.basic.NameValueFactory;
-import org.jboss.dna.graph.properties.basic.PathValueFactory;
-import org.jboss.dna.graph.properties.basic.StringValueFactory;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -408,6 +401,41 @@ public class BasicPathTest {
     @Test
     public void shouldNotConsiderRootToBeDecendantOfItself() {
         assertThat(ROOT.isDecendantOf(ROOT), is(false));
+    }
+
+    @Test
+    public void shouldConsiderTwoRootNodesToHaveSameAncestor() {
+        assertThat(ROOT.hasSameAncestor(ROOT), is(true));
+    }
+
+    @Test
+    public void shouldConsiderTwoNotRootSiblingNodesToHaveSameAncestor() {
+        Path path1 = pathFactory.create("/a/y/z");
+        Path path2 = pathFactory.create("/a/y/c");
+        assertThat(path1.hasSameAncestor(path2), is(true));
+
+        path1 = pathFactory.create("/a/z");
+        path2 = pathFactory.create("/a/c");
+        assertThat(path1.hasSameAncestor(path2), is(true));
+
+        path1 = pathFactory.create("/z");
+        path2 = pathFactory.create("/c");
+        assertThat(path1.hasSameAncestor(path2), is(true));
+    }
+
+    @Test
+    public void shouldNotConsiderTwoNonSiblingNodesToHaveSameAncestor() {
+        Path path1 = pathFactory.create("/a/y/z");
+        Path path2 = pathFactory.create("/a/x/c");
+        assertThat(path1.hasSameAncestor(path2), is(false));
+
+        path1 = pathFactory.create("/a/z");
+        path2 = pathFactory.create("/b/c");
+        assertThat(path1.hasSameAncestor(path2), is(false));
+
+        path1 = pathFactory.create("/z");
+        path2 = pathFactory.create("/a/c");
+        assertThat(path1.hasSameAncestor(path2), is(false));
     }
 
     @Test

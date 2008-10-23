@@ -19,32 +19,19 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.jboss.dna.connector.federation.executor;
-
-import org.jboss.dna.graph.commands.CopyBranchCommand;
-import org.jboss.dna.graph.properties.Path;
+package org.jboss.dna.graph;
 
 /**
+ * An enumeration used by several commands for the choice of handling duplicate nodes, such as when a node is to be copied to
+ * another location where a node already exists.
+ * 
  * @author Randall Hauch
  */
-public class ProjectedCopyBranchCommand extends ActsOnProjectedPathCommand<CopyBranchCommand> implements CopyBranchCommand {
+public enum NodeConflictBehavior {
 
-    private final Path newProjectedPath;
+    DO_NOT_REPLACE,
+    APPEND,
+    REPLACE,
+    UPDATE;
 
-    public ProjectedCopyBranchCommand( CopyBranchCommand delegate,
-                                       Path projectedPath,
-                                       Path newProjectedPath ) {
-        super(delegate, projectedPath);
-        assert newProjectedPath != null;
-        this.newProjectedPath = newProjectedPath;
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.jboss.dna.graph.commands.CopyBranchCommand#getNewPath()
-     */
-    public Path getNewPath() {
-        return newProjectedPath;
-    }
 }

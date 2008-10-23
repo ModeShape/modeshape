@@ -23,9 +23,8 @@ package org.jboss.dna.connector.federation.contribution;
 
 import java.util.Iterator;
 import net.jcip.annotations.Immutable;
+import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.properties.DateTime;
-import org.jboss.dna.graph.properties.Path;
-import org.jboss.dna.graph.properties.Path.Segment;
 
 /**
  * The record of a source contributing only a single child to a node.
@@ -40,22 +39,22 @@ public class OneChildContribution extends NonEmptyContribution {
      */
     private static final long serialVersionUID = 1L;
 
-    private final Segment child;
+    private final Location child;
 
     /**
      * Create a contribution of a single child from the source with the supplied name.
      * 
      * @param sourceName the name of the source, which may not be null or blank
-     * @param pathInSource the path in the source for this contributed information; may not be null
+     * @param locationInSource the location in the source for this contributed information; may not be null
      * @param expirationTime the time (in UTC) after which this contribution should be considered expired, or null if there is no
      *        expiration time
      * @param child the child contributed from the source; may not be null
      */
     public OneChildContribution( String sourceName,
-                                 Path pathInSource,
+                                 Location locationInSource,
                                  DateTime expirationTime,
-                                 Segment child ) {
-        super(sourceName, pathInSource, expirationTime);
+                                 Location child ) {
+        super(sourceName, locationInSource, expirationTime);
         assert child != null;
         this.child = child;
         if (ContributionStatistics.RECORD) ContributionStatistics.record(0, 1);
@@ -67,8 +66,8 @@ public class OneChildContribution extends NonEmptyContribution {
      * @see org.jboss.dna.connector.federation.contribution.Contribution#getChildren()
      */
     @Override
-    public Iterator<Segment> getChildren() {
-        return new OneValueIterator<Segment>(child);
+    public Iterator<Location> getChildren() {
+        return new OneValueIterator<Location>(child);
     }
 
     /**

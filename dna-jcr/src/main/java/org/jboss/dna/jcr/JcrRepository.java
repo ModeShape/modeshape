@@ -39,6 +39,7 @@ import net.jcip.annotations.ThreadSafe;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.ExecutionContextFactory;
+import org.jboss.dna.graph.Graph;
 import org.jboss.dna.graph.connectors.RepositoryConnectionFactory;
 import com.google.common.base.ReferenceType;
 import com.google.common.collect.ReferenceMap;
@@ -258,7 +259,7 @@ public class JcrRepository implements Repository {
         // Ensure valid workspace name
         if (workspaceName == null) workspaceName = JcrI18n.defaultWorkspaceName.text();
         // Create session
-        return new JcrSession(this, execContext, workspaceName, connectionFactory.createConnection(workspaceName),
-                              new ReferenceMap<UUID, Node>(ReferenceType.STRONG, ReferenceType.SOFT));
+        Graph graph = Graph.create(workspaceName, connectionFactory, execContext);
+        return new JcrSession(this, workspaceName, graph, new ReferenceMap<UUID, Node>(ReferenceType.STRONG, ReferenceType.SOFT));
     }
 }

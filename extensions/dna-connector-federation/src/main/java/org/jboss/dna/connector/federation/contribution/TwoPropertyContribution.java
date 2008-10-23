@@ -23,9 +23,9 @@ package org.jboss.dna.connector.federation.contribution;
 
 import java.util.Iterator;
 import net.jcip.annotations.Immutable;
+import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.properties.DateTime;
 import org.jboss.dna.graph.properties.Name;
-import org.jboss.dna.graph.properties.Path;
 import org.jboss.dna.graph.properties.Property;
 
 /**
@@ -48,18 +48,18 @@ public class TwoPropertyContribution extends NonEmptyContribution {
      * Create a contribution of node properties from the source with the supplied name.
      * 
      * @param sourceName the name of the source, which may not be null or blank
-     * @param pathInSource the path in the source for this contributed information; may not be null
+     * @param locationInSource the path in the source for this contributed information; may not be null
      * @param expirationTime the time (in UTC) after which this contribution should be considered expired, or null if there is no
      *        expiration time
      * @param property1 the first property from the source; may not be null
      * @param property2 the first property from the source; may not be null
      */
     public TwoPropertyContribution( String sourceName,
-                                    Path pathInSource,
+                                    Location locationInSource,
                                     DateTime expirationTime,
                                     Property property1,
                                     Property property2 ) {
-        super(sourceName, pathInSource, expirationTime);
+        super(sourceName, locationInSource, expirationTime);
         assert property1 != null;
         assert property1.isEmpty() == false;
         assert property2 != null;

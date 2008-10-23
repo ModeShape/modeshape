@@ -27,12 +27,11 @@ import javax.transaction.xa.XAResource;
 import net.jcip.annotations.ThreadSafe;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.cache.CachePolicy;
-import org.jboss.dna.graph.commands.GraphCommand;
-import org.jboss.dna.graph.commands.executor.CommandExecutor;
 import org.jboss.dna.graph.connectors.RepositoryConnection;
 import org.jboss.dna.graph.connectors.RepositorySourceException;
 import org.jboss.dna.graph.connectors.RepositorySourceListener;
 import org.jboss.dna.graph.requests.Request;
+import org.jboss.dna.graph.requests.processor.RequestProcessor;
 
 /**
  * @author Randall Hauch
@@ -111,35 +110,24 @@ public class FederatedRepositoryConnection implements RepositoryConnection {
 
     /**
      * {@inheritDoc}
-     */
-    public void execute( ExecutionContext context,
-                         GraphCommand... commands ) throws RepositorySourceException {
-        if (!this.repository.isRunning()) {
-            throw new RepositorySourceException(FederationI18n.repositoryHasBeenShutDown.text(this.repository.getName()));
-        }
-        if (commands == null || commands.length == 0) return;
-
-        CommandExecutor executor = this.repository.getExecutor(context, sourceName);
-        try {
-            assert executor != null;
-            for (GraphCommand command : commands) {
-                executor.execute(command);
-            }
-        } finally {
-            executor.close();
-        }
-    }
-
-    /**
-     * {@inheritDoc}
      * 
      * @see org.jboss.dna.graph.connectors.RepositoryConnection#execute(org.jboss.dna.graph.ExecutionContext,
      *      org.jboss.dna.graph.requests.Request)
      */
     public void execute( ExecutionContext context,
                          Request request ) throws RepositorySourceException {
-        // TODO
-        throw new UnsupportedOperationException();
+        if (!this.repository.isRunning()) {
+            throw new RepositorySourceException(FederationI18n.repositoryHasBeenShutDown.text(this.repository.getName()));
+        }
+        if (request == null) return;
+
+        RequestProcessor processor = this.repository.getProcessor(context, sourceName);
+        assert processor != null;
+        try {
+            processor.process(request);
+        } finally {
+            processor.close();
+        }
     }
 
     /**

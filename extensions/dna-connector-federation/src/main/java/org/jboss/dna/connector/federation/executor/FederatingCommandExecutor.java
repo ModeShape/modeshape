@@ -34,6 +34,7 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import net.jcip.annotations.NotThreadSafe;
 import org.jboss.dna.common.i18n.I18n;
+import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.common.util.Logger;
 import org.jboss.dna.connector.federation.FederationI18n;
 import org.jboss.dna.connector.federation.Projection;
@@ -45,36 +46,35 @@ import org.jboss.dna.connector.federation.merge.strategy.OneContributionMergeStr
 import org.jboss.dna.connector.federation.merge.strategy.SimpleMergeStrategy;
 import org.jboss.dna.graph.DnaLexicon;
 import org.jboss.dna.graph.ExecutionContext;
+import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.cache.CachePolicy;
-import org.jboss.dna.graph.commands.GetChildrenCommand;
-import org.jboss.dna.graph.commands.GetNodeCommand;
-import org.jboss.dna.graph.commands.GetPropertiesCommand;
-import org.jboss.dna.graph.commands.GraphCommand;
-import org.jboss.dna.graph.commands.NodeConflictBehavior;
-import org.jboss.dna.graph.commands.basic.BasicCreateNodeCommand;
-import org.jboss.dna.graph.commands.basic.BasicGetNodeCommand;
-import org.jboss.dna.graph.commands.executor.AbstractCommandExecutor;
 import org.jboss.dna.graph.connectors.RepositoryConnection;
 import org.jboss.dna.graph.connectors.RepositoryConnectionFactory;
 import org.jboss.dna.graph.connectors.RepositorySource;
 import org.jboss.dna.graph.connectors.RepositorySourceException;
 import org.jboss.dna.graph.properties.DateTime;
-import org.jboss.dna.graph.properties.Name;
 import org.jboss.dna.graph.properties.Path;
 import org.jboss.dna.graph.properties.PathFactory;
 import org.jboss.dna.graph.properties.PathNotFoundException;
 import org.jboss.dna.graph.properties.Property;
-import org.jboss.dna.graph.properties.Path.Segment;
-import org.jboss.dna.graph.properties.basic.BasicSingleValueProperty;
+import org.jboss.dna.graph.requests.CompositeRequest;
+import org.jboss.dna.graph.requests.CopyBranchRequest;
+import org.jboss.dna.graph.requests.CreateNodeRequest;
+import org.jboss.dna.graph.requests.DeleteBranchRequest;
+import org.jboss.dna.graph.requests.MoveBranchRequest;
+import org.jboss.dna.graph.requests.ReadAllChildrenRequest;
+import org.jboss.dna.graph.requests.ReadAllPropertiesRequest;
+import org.jboss.dna.graph.requests.ReadNodeRequest;
+import org.jboss.dna.graph.requests.Request;
+import org.jboss.dna.graph.requests.UpdatePropertiesRequest;
+import org.jboss.dna.graph.requests.processor.RequestProcessor;
 
 /**
  * @author Randall Hauch
  */
 @NotThreadSafe
-public class FederatingCommandExecutor extends AbstractCommandExecutor {
+public class FederatingCommandExecutor extends RequestProcessor {
 
-    private final Name uuidPropertyName;
-    private final Name mergePlanPropertyName;
     private final CachePolicy defaultCachePolicy;
     private final Projection cacheProjection;
     private final List<Projection> sourceProjections;
@@ -127,9 +127,9 @@ public class FederatingCommandExecutor extends AbstractCommandExecutor {
                                       CachePolicy defaultCachePolicy,
                                       List<Projection> sourceProjections,
                                       RepositoryConnectionFactory connectionFactory ) {
-        super(context, sourceName);
-        assert sourceProjections != null;
-        assert connectionFactory != null;
+        super(sourceName, context);
+        CheckArg.isNotNull(sourceProjections, "sourceProjections");
+        CheckArg.isNotNull(connectionFactory, "connectionFactory");
         assert cacheProjection != null ? defaultCachePolicy != null : defaultCachePolicy == null;
         this.cacheProjection = cacheProjection;
         this.defaultCachePolicy = defaultCachePolicy;
@@ -137,8 +137,6 @@ public class FederatingCommandExecutor extends AbstractCommandExecutor {
         this.connectionFactory = connectionFactory;
         this.logger = context.getLogger(getClass());
         this.connectionsBySourceName = new HashMap<String, RepositoryConnection>();
-        this.uuidPropertyName = context.getValueFactories().getNameFactory().create(DnaLexicon.UUID);
-        this.mergePlanPropertyName = context.getValueFactories().getNameFactory().create(DnaLexicon.MERGE_PLAN);
         this.sourceNames = new HashSet<String>();
         for (Projection projection : this.sourceProjections) {
             this.sourceNames.add(projection.getSourceName());
@@ -180,10 +178,14 @@ public class FederatingCommandExecutor extends AbstractCommandExecutor {
         return cacheProjection;
     }
 
+    protected DateTime getCurrentTimeInUtc() {
+        return getExecutionContext().getValueFactories().getDateFactory().createUtc();
+    }
+
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.graph.commands.executor.AbstractCommandExecutor#close()
+     * @see RequestProcessor#close()
      */
     @Override
     public void close() {
@@ -232,65 +234,114 @@ public class FederatingCommandExecutor extends AbstractCommandExecutor {
 
     /**
      * {@inheritDoc}
-     * <p>
-     * This class overrides the {@link AbstractCommandExecutor#execute(GetNodeCommand) default behavior} and instead processes the
-     * command in a more efficient manner.
-     * </p>
      * 
-     * @see org.jboss.dna.graph.commands.executor.AbstractCommandExecutor#execute(org.jboss.dna.graph.commands.GetNodeCommand)
+     * @see org.jboss.dna.graph.requests.processor.RequestProcessor#process(org.jboss.dna.graph.requests.ReadAllChildrenRequest)
      */
     @Override
-    public void execute( GetNodeCommand command ) throws RepositorySourceException {
-        BasicGetNodeCommand nodeInfo = getNode(command.getPath());
+    public void process( ReadAllChildrenRequest request ) {
+        ReadNodeRequest nodeInfo = getNode(request.of());
         if (nodeInfo.hasError()) return;
-        for (Property property : nodeInfo.getProperties()) {
-            command.setProperty(property);
+        for (Location child : nodeInfo.getChildren()) {
+            request.addChild(child);
         }
-        for (Segment child : nodeInfo.getChildren()) {
-            command.addChild(child, nodeInfo.getChildIdentityProperties(child));
-        }
+        request.setActualLocationOfNode(nodeInfo.getActualLocationOfNode());
     }
 
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.graph.commands.executor.AbstractCommandExecutor#execute(org.jboss.dna.graph.commands.GetPropertiesCommand)
+     * @see org.jboss.dna.graph.requests.processor.RequestProcessor#process(org.jboss.dna.graph.requests.ReadAllPropertiesRequest)
      */
     @Override
-    public void execute( GetPropertiesCommand command ) throws RepositorySourceException {
-        BasicGetNodeCommand nodeInfo = getNode(command.getPath());
+    public void process( ReadAllPropertiesRequest request ) {
+        ReadNodeRequest nodeInfo = getNode(request.at());
         if (nodeInfo.hasError()) return;
         for (Property property : nodeInfo.getProperties()) {
-            command.setProperty(property);
+            request.addProperty(property);
         }
+        request.setActualLocationOfNode(nodeInfo.getActualLocationOfNode());
     }
 
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.graph.commands.executor.AbstractCommandExecutor#execute(org.jboss.dna.graph.commands.GetChildrenCommand)
+     * @see org.jboss.dna.graph.requests.processor.RequestProcessor#process(org.jboss.dna.graph.requests.ReadNodeRequest)
      */
     @Override
-    public void execute( GetChildrenCommand command ) throws RepositorySourceException {
-        BasicGetNodeCommand nodeInfo = getNode(command.getPath());
+    public void process( ReadNodeRequest request ) {
+        ReadNodeRequest nodeInfo = getNode(request.at());
         if (nodeInfo.hasError()) return;
-        for (Segment child : nodeInfo.getChildren()) {
-            command.addChild(child, nodeInfo.getChildIdentityProperties(child));
+        for (Property property : nodeInfo.getProperties()) {
+            request.addProperty(property);
         }
+        for (Location child : nodeInfo.getChildren()) {
+            request.addChild(child);
+        }
+        request.setActualLocationOfNode(nodeInfo.getActualLocationOfNode());
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.requests.processor.RequestProcessor#process(org.jboss.dna.graph.requests.CopyBranchRequest)
+     */
+    @Override
+    public void process( CopyBranchRequest request ) {
+        throw new UnsupportedOperationException();
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.requests.processor.RequestProcessor#process(org.jboss.dna.graph.requests.CreateNodeRequest)
+     */
+    @Override
+    public void process( CreateNodeRequest request ) {
+        throw new UnsupportedOperationException();
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.requests.processor.RequestProcessor#process(org.jboss.dna.graph.requests.DeleteBranchRequest)
+     */
+    @Override
+    public void process( DeleteBranchRequest request ) {
+        throw new UnsupportedOperationException();
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.requests.processor.RequestProcessor#process(org.jboss.dna.graph.requests.MoveBranchRequest)
+     */
+    @Override
+    public void process( MoveBranchRequest request ) {
+        throw new UnsupportedOperationException();
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.requests.processor.RequestProcessor#process(org.jboss.dna.graph.requests.UpdatePropertiesRequest)
+     */
+    @Override
+    public void process( UpdatePropertiesRequest request ) {
+        throw new UnsupportedOperationException();
     }
 
     /**
      * Get the node information from the underlying sources or, if possible, from the cache.
      * 
-     * @param path the path of the node to be returned
+     * @param location the location of the node to be returned
      * @return the node information
      * @throws RepositorySourceException
      */
-    protected BasicGetNodeCommand getNode( Path path ) throws RepositorySourceException {
+    protected ReadNodeRequest getNode( Location location ) throws RepositorySourceException {
         // Check the cache first ...
         final ExecutionContext context = getExecutionContext();
         RepositoryConnection cacheConnection = getConnectionToCache();
-        BasicGetNodeCommand fromCache = new BasicGetNodeCommand(path);
+        ReadNodeRequest fromCache = new ReadNodeRequest(location);
         cacheConnection.execute(context, fromCache);
 
         // Look at the cache results from the cache for problems, or if found a plan in the cache look
@@ -308,25 +359,30 @@ public class FederatingCommandExecutor extends AbstractCommandExecutor {
             // that already exists in the cache.
             PathNotFoundException notFound = (PathNotFoundException)fromCache.getError();
             Path lowestExistingAncestor = notFound.getLowestAncestorThatDoesExist();
-            Path ancestor = path.getParent();
-
-            if (!ancestor.equals(lowestExistingAncestor)) {
-                // Load the nodes along the path below the existing ancestor, down to (but excluding) the desired path
-                Path pathToLoad = path.getParent();
-                while (!pathToLoad.equals(lowestExistingAncestor)) {
-                    loadContributionsFromSources(pathToLoad, null, contributions); // sourceNames may be null or empty
-                    FederatedNode mergedNode = createFederatedNode(null, pathToLoad, contributions, true);
-                    if (mergedNode == null) {
-                        // No source had a contribution ...
-                        I18n msg = FederationI18n.nodeDoesNotExistAtPath;
-                        fromCache.setError(new PathNotFoundException(path, ancestor, msg.text(path, ancestor)));
-                        return fromCache;
+            if (location.hasPath()) {
+                Path path = location.getPath();
+                Path ancestor = path.getParent();
+                if (!ancestor.equals(lowestExistingAncestor)) {
+                    // Load the nodes along the path below the existing ancestor, down to (but excluding) the desired path
+                    Path pathToLoad = ancestor;
+                    while (!pathToLoad.equals(lowestExistingAncestor)) {
+                        Location locationToLoad = new Location(pathToLoad);
+                        loadContributionsFromSources(locationToLoad, null, contributions); // sourceNames may be null or empty
+                        FederatedNode mergedNode = createFederatedNode(locationToLoad, contributions, true);
+                        if (mergedNode == null) {
+                            // No source had a contribution ...
+                            I18n msg = FederationI18n.nodeDoesNotExistAtPath;
+                            fromCache.setError(new PathNotFoundException(location, ancestor, msg.text(path, ancestor)));
+                            return fromCache;
+                        }
+                        contributions.clear();
+                        // Move to the next child along the path ...
+                        pathToLoad = pathToLoad.getParent();
                     }
-                    contributions.clear();
-                    // Move to the next child along the path ...
-                    pathToLoad = pathToLoad.getParent();
                 }
+
             }
+
             // At this point, all ancestors exist ...
         } else {
             // There is no error, so look for the merge plan ...
@@ -360,22 +416,29 @@ public class FederatingCommandExecutor extends AbstractCommandExecutor {
         }
 
         // Get the contributions from the sources given their names ...
-        loadContributionsFromSources(path, sourceNames, contributions); // sourceNames may be null or empty
-        FederatedNode mergedNode = createFederatedNode(fromCache, path, contributions, true);
+        location = fromCache.getActualLocationOfNode();
+        if (location == null) location = fromCache.at(); // not yet in the cache
+        loadContributionsFromSources(location, sourceNames, contributions); // sourceNames may be null or empty
+        FederatedNode mergedNode = createFederatedNode(location, contributions, true);
         if (mergedNode == null) {
             // No source had a contribution ...
-            Path ancestor = path.getParent();
-            I18n msg = FederationI18n.nodeDoesNotExistAtPath;
-            fromCache.setError(new PathNotFoundException(path, ancestor, msg.text(path, ancestor)));
+            if (location.hasPath()) {
+                Path ancestor = location.getPath().getParent();
+                I18n msg = FederationI18n.nodeDoesNotExistAtPath;
+                fromCache.setError(new PathNotFoundException(location, ancestor, msg.text(location, ancestor)));
+                return fromCache;
+            }
+            I18n msg = FederationI18n.nodeDoesNotExistAtLocation;
+            fromCache.setError(new PathNotFoundException(location, null, msg.text(location)));
             return fromCache;
         }
         return mergedNode;
     }
 
-    protected FederatedNode createFederatedNode( BasicGetNodeCommand fromCache,
-                                                 Path path,
+    protected FederatedNode createFederatedNode( Location location,
                                                  List<Contribution> contributions,
                                                  boolean updateCache ) throws RepositorySourceException {
+        assert location != null;
 
         // If there are no contributions from any source ...
         boolean foundNonEmptyContribution = false;
@@ -388,7 +451,7 @@ public class FederatingCommandExecutor extends AbstractCommandExecutor {
         }
         if (!foundNonEmptyContribution) return null;
         if (logger.isTraceEnabled()) {
-            logger.trace("Loaded {0} from sources, resulting in these contributions:", path);
+            logger.trace("Loaded {0} from sources, resulting in these contributions:", location);
             int i = 0;
             for (Contribution contribution : contributions) {
                 logger.trace("  {0} {1}", ++i, contribution);
@@ -399,14 +462,19 @@ public class FederatingCommandExecutor extends AbstractCommandExecutor {
         ExecutionContext context = getExecutionContext();
         assert context != null;
         UUID uuid = null;
-        if (fromCache != null) {
-            Property uuidProperty = fromCache.getPropertiesByName().get(DnaLexicon.UUID);
-            if (uuidProperty != null && !uuidProperty.isEmpty()) {
-                uuid = context.getValueFactories().getUuidFactory().create(uuidProperty.getValues().next());
-            }
+        Property uuidProperty = location.getIdProperty(DnaLexicon.UUID);
+        // If the actual location has no UUID identification property ...
+        if (uuidProperty == null || uuidProperty.isEmpty()) {
+            uuid = context.getValueFactories().getUuidFactory().create();
+            uuidProperty = context.getPropertyFactory().create(DnaLexicon.UUID, uuid);
+            // Replace the actual location with one that includes the new UUID property ...
+            location = location.with(uuidProperty);
+        } else {
+            assert uuidProperty.isEmpty() == false;
+            uuid = context.getValueFactories().getUuidFactory().create(uuidProperty.getValues().next());
         }
-        if (uuid == null) uuid = UUID.randomUUID();
-        FederatedNode mergedNode = new FederatedNode(path, uuid);
+        assert uuid != null;
+        FederatedNode mergedNode = new FederatedNode(location, uuid);
 
         // Merge the results into a single set of results ...
         assert contributions.size() > 0;
@@ -423,21 +491,54 @@ public class FederatingCommandExecutor extends AbstractCommandExecutor {
     }
 
     /**
-     * Load the node at the supplied path from the sources with the supplied name, returning the information. This method always
-     * obtains the information from the sources and does not use or update the cache.
+     * Load the node at the supplied location from the sources with the supplied name, returning the information. This method
+     * always obtains the information from the sources and does not use or update the cache.
      * 
-     * @param path the path of the node that is to be loaded
+     * @param location the location of the node that is to be loaded
      * @param sourceNames the names of the sources from which contributions are to be loaded; may be empty or null if all
      *        contributions from all sources are to be loaded
      * @param contributions the list into which the contributions are to be placed
      * @throws RepositorySourceException
      */
-    protected void loadContributionsFromSources( Path path,
+    protected void loadContributionsFromSources( Location location,
                                                  Set<String> sourceNames,
                                                  List<Contribution> contributions ) throws RepositorySourceException {
         // At this point, there is no merge plan, so read information from the sources ...
-        ExecutionContext context = getExecutionContext();
-        PathFactory pathFactory = context.getValueFactories().getPathFactory();
+        final ExecutionContext context = getExecutionContext();
+        final PathFactory pathFactory = context.getValueFactories().getPathFactory();
+
+        // If the location has no path, then we have to submit a request to ALL sources ...
+        if (!location.hasPath()) {
+            for (Projection projection : this.sourceProjections) {
+                final String source = projection.getSourceName();
+                if (sourceNames != null && !sourceNames.contains(source)) continue;
+                final RepositoryConnection sourceConnection = getConnection(projection);
+                if (sourceConnection == null) continue; // No source exists by this name
+                // Get the cached information ...
+                CachePolicy cachePolicy = sourceConnection.getDefaultCachePolicy();
+                if (cachePolicy == null) cachePolicy = this.defaultCachePolicy;
+                DateTime expirationTime = null;
+                if (cachePolicy != null) {
+                    expirationTime = getCurrentTimeInUtc().plus(cachePolicy.getTimeToLive(), TimeUnit.MILLISECONDS);
+                }
+                // Submit the request ...
+                ReadNodeRequest request = new ReadNodeRequest(location);
+                sourceConnection.execute(context, request);
+                if (request.hasError()) continue;
+                DateTime expTime = request.getCachePolicy() == null ? expirationTime : getCurrentTimeInUtc().plus(request.getCachePolicy().getTimeToLive(),
+                                                                                                                  TimeUnit.MILLISECONDS);
+                // Convert the locations of the children (relative to the source) to be relative to this node
+                Contribution contribution = Contribution.create(source,
+                                                                request.getActualLocationOfNode(),
+                                                                expTime,
+                                                                request.getProperties(),
+                                                                request.getChildren());
+                contributions.add(contribution);
+            }
+        }
+
+        // Otherwise, we can do it by path and projections ...
+        Path path = location.getPath();
         for (Projection projection : this.sourceProjections) {
             final String source = projection.getSourceName();
             if (sourceNames != null && !sourceNames.contains(source)) continue;
@@ -458,30 +559,28 @@ public class FederatingCommandExecutor extends AbstractCommandExecutor {
                 // use those to figure out the children of the nodes.
                 Contribution contribution = null;
                 List<Path> topLevelPaths = projection.getTopLevelPathsInRepository(pathFactory);
+                Location input = new Location(path);
                 switch (topLevelPaths.size()) {
                     case 0:
                         break;
                     case 1: {
                         Path topLevelPath = topLevelPaths.iterator().next();
                         if (path.isAncestorOf(topLevelPath)) {
-                            assert topLevelPath.size() > path.size();
-                            Path.Segment child = topLevelPath.getSegment(path.size());
-                            contribution = Contribution.createPlaceholder(source, path, expirationTime, child);
+                            Location child = new Location(topLevelPath);
+                            contribution = Contribution.createPlaceholder(source, input, expirationTime, child);
                         }
                         break;
                     }
                     default: {
                         // We assume that the top-level paths do not overlap ...
-                        List<Path.Segment> children = new ArrayList<Path.Segment>(topLevelPaths.size());
+                        List<Location> children = new ArrayList<Location>(topLevelPaths.size());
                         for (Path topLevelPath : topLevelPaths) {
                             if (path.isAncestorOf(topLevelPath)) {
-                                assert topLevelPath.size() > path.size();
-                                Path.Segment child = topLevelPath.getSegment(path.size());
-                                children.add(child);
+                                children.add(new Location(topLevelPath));
                             }
                         }
                         if (children.size() > 0) {
-                            contribution = Contribution.createPlaceholder(source, path, expirationTime, children);
+                            contribution = Contribution.createPlaceholder(source, input, expirationTime, children);
                         }
                     }
                 }
@@ -494,33 +593,33 @@ public class FederatingCommandExecutor extends AbstractCommandExecutor {
                 final int numPaths = pathsInSource.size();
                 if (numPaths == 1) {
                     Path pathInSource = pathsInSource.iterator().next();
-                    BasicGetNodeCommand fromSource = new BasicGetNodeCommand(pathInSource);
+                    ReadNodeRequest fromSource = new ReadNodeRequest(new Location(pathInSource));
                     sourceConnection.execute(getExecutionContext(), fromSource);
                     if (!fromSource.hasError()) {
                         Collection<Property> properties = fromSource.getProperties();
-                        List<Segment> children = fromSource.getChildren();
+                        List<Location> children = fromSource.getChildren();
                         DateTime expTime = fromSource.getCachePolicy() == null ? expirationTime : getCurrentTimeInUtc().plus(fromSource.getCachePolicy().getTimeToLive(),
                                                                                                                              TimeUnit.MILLISECONDS);
-                        Contribution contribution = Contribution.create(source, pathInSource, expTime, properties, children);
+                        Location actualLocation = fromSource.getActualLocationOfNode();
+                        Contribution contribution = Contribution.create(source, actualLocation, expTime, properties, children);
                         contributions.add(contribution);
                     }
                 } else {
-                    BasicGetNodeCommand[] fromSourceCommands = new BasicGetNodeCommand[numPaths];
-                    int i = 0;
+                    List<ReadNodeRequest> fromSourceCommands = new ArrayList<ReadNodeRequest>(numPaths);
                     for (Path pathInSource : pathsInSource) {
-                        fromSourceCommands[i++] = new BasicGetNodeCommand(pathInSource);
+                        fromSourceCommands.add(new ReadNodeRequest(new Location(pathInSource)));
                     }
-                    sourceConnection.execute(context, fromSourceCommands);
-                    for (BasicGetNodeCommand fromSource : fromSourceCommands) {
+                    Request request = CompositeRequest.with(fromSourceCommands);
+                    sourceConnection.execute(context, request);
+                    for (ReadNodeRequest fromSource : fromSourceCommands) {
                         if (fromSource.hasError()) continue;
-                        Collection<Property> properties = fromSource.getProperties();
-                        List<Segment> children = fromSource.getChildren();
                         DateTime expTime = fromSource.getCachePolicy() == null ? expirationTime : getCurrentTimeInUtc().plus(fromSource.getCachePolicy().getTimeToLive(),
                                                                                                                              TimeUnit.MILLISECONDS);
+                        List<Location> children = fromSource.getChildren();
                         Contribution contribution = Contribution.create(source,
-                                                                        fromSource.getPath(),
+                                                                        fromSource.getActualLocationOfNode(),
                                                                         expTime,
-                                                                        properties,
+                                                                        fromSource.getProperties(),
                                                                         children);
                         contributions.add(contribution);
                     }
@@ -529,8 +628,8 @@ public class FederatingCommandExecutor extends AbstractCommandExecutor {
         }
     }
 
-    protected MergePlan getMergePlan( BasicGetNodeCommand command ) {
-        Property mergePlanProperty = command.getPropertiesByName().get(mergePlanPropertyName);
+    protected MergePlan getMergePlan( ReadNodeRequest request ) {
+        Property mergePlanProperty = request.getPropertiesByName().get(DnaLexicon.MERGE_PLAN);
         if (mergePlanProperty == null || mergePlanProperty.isEmpty()) {
             return null;
         }
@@ -541,23 +640,13 @@ public class FederatingCommandExecutor extends AbstractCommandExecutor {
     protected void updateCache( FederatedNode mergedNode ) throws RepositorySourceException {
         final ExecutionContext context = getExecutionContext();
         final RepositoryConnection cacheConnection = getConnectionToCache();
-        final Path path = mergedNode.getPath();
+        final Location path = mergedNode.at();
 
-        NodeConflictBehavior conflictBehavior = NodeConflictBehavior.UPDATE;
-        Collection<Property> properties = new ArrayList<Property>(mergedNode.getPropertiesByName().size() + 1);
-        properties.add(new BasicSingleValueProperty(this.uuidPropertyName, mergedNode.getUuid()));
-        BasicCreateNodeCommand newNode = new BasicCreateNodeCommand(path, properties, conflictBehavior);
-        List<Segment> children = mergedNode.getChildren();
-        GraphCommand[] intoCache = new GraphCommand[1 + children.size()];
-        int i = 0;
-        intoCache[i++] = newNode;
-        List<Property> noProperties = Collections.emptyList();
-        PathFactory pathFactory = context.getValueFactories().getPathFactory();
-        for (Segment child : mergedNode.getChildren()) {
-            newNode = new BasicCreateNodeCommand(pathFactory.create(path, child), noProperties, conflictBehavior);
-            // newNode.setProperty(new BasicSingleValueProperty(this.uuidPropertyName, mergedNode.getUuid()));
-            intoCache[i++] = newNode;
+        List<Request> requests = new ArrayList<Request>();
+        requests.add(new CreateNodeRequest(path, mergedNode.getProperties()));
+        for (Location child : mergedNode.getChildren()) {
+            requests.add(new CreateNodeRequest(child));
         }
-        cacheConnection.execute(context, intoCache);
+        cacheConnection.execute(context, CompositeRequest.with(requests));
     }
 }

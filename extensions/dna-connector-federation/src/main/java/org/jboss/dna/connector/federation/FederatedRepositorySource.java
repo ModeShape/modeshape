@@ -21,7 +21,6 @@
  */
 package org.jboss.dna.connector.federation;
 
-import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Hashtable;
@@ -45,31 +44,22 @@ import org.jboss.dna.common.collection.Problems;
 import org.jboss.dna.common.collection.SimpleProblems;
 import org.jboss.dna.common.i18n.I18n;
 import org.jboss.dna.common.util.CheckArg;
-import org.jboss.dna.common.util.Logger;
-import org.jboss.dna.connector.federation.executor.FederatingCommandExecutor;
-import org.jboss.dna.connector.federation.executor.SingleProjectionCommandExecutor;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.ExecutionContextFactory;
+import org.jboss.dna.graph.Graph;
+import org.jboss.dna.graph.Location;
+import org.jboss.dna.graph.Node;
+import org.jboss.dna.graph.Subgraph;
 import org.jboss.dna.graph.cache.BasicCachePolicy;
 import org.jboss.dna.graph.cache.CachePolicy;
-import org.jboss.dna.graph.commands.GraphCommand;
-import org.jboss.dna.graph.commands.basic.BasicCompositeCommand;
-import org.jboss.dna.graph.commands.basic.BasicGetChildrenCommand;
-import org.jboss.dna.graph.commands.basic.BasicGetNodeCommand;
-import org.jboss.dna.graph.commands.executor.CommandExecutor;
-import org.jboss.dna.graph.commands.executor.LoggingCommandExecutor;
-import org.jboss.dna.graph.commands.executor.NoOpCommandExecutor;
 import org.jboss.dna.graph.connectors.RepositoryConnection;
 import org.jboss.dna.graph.connectors.RepositoryConnectionFactory;
 import org.jboss.dna.graph.connectors.RepositoryContext;
 import org.jboss.dna.graph.connectors.RepositorySource;
 import org.jboss.dna.graph.connectors.RepositorySourceCapabilities;
 import org.jboss.dna.graph.connectors.RepositorySourceException;
-import org.jboss.dna.graph.properties.InvalidPathException;
-import org.jboss.dna.graph.properties.Name;
 import org.jboss.dna.graph.properties.NameFactory;
 import org.jboss.dna.graph.properties.Path;
-import org.jboss.dna.graph.properties.PathFactory;
 import org.jboss.dna.graph.properties.Property;
 import org.jboss.dna.graph.properties.ValueFactories;
 import org.jboss.dna.graph.properties.ValueFactory;
@@ -100,7 +90,7 @@ public class FederatedRepositorySource implements RepositorySource, ObjectFactor
     protected static final String SECURITY_DOMAIN = "securityDomain";
     protected static final String RETRY_LIMIT = "retryLimit";
 
-    public static final String PATH_TO_CONFIGURATION_INFORMATION = "/dna:system/dna:federation";
+    public static final String DNA_FEDERATION_SEGMENT = "dna:federation";
     public static final String DNA_CACHE_SEGMENT = "dna:cache";
     public static final String DNA_PROJECTIONS_SEGMENT = "dna:projections";
     public static final String PROJECTION_RULES_CONFIG_PROPERTY_NAME = "dna:projectionRules";
@@ -273,7 +263,9 @@ public class FederatedRepositorySource implements RepositorySource, ObjectFactor
     public void setConfigurationSourcePath( String pathInSourceToConfigurationRoot ) {
         if (this.configurationSourcePath == pathInSourceToConfigurationRoot || this.configurationSourcePath != null
             && this.configurationSourcePath.equals(pathInSourceToConfigurationRoot)) return;
-        this.configurationSourcePath = pathInSourceToConfigurationRoot != null ? pathInSourceToConfigurationRoot : DEFAULT_CONFIGURATION_SOURCE_PATH;
+        String path = pathInSourceToConfigurationRoot != null ? pathInSourceToConfigurationRoot : DEFAULT_CONFIGURATION_SOURCE_PATH;
+        // Ensure one leading slash and one trailing slashes ...
+        this.configurationSourcePath = path = ("/" + path).replaceAll("^/+", "/").replaceAll("/+$", "") + "/";
         changeRepositoryConfig();
     }
 
@@ -521,131 +513,57 @@ public class FederatedRepositorySource implements RepositorySource, ObjectFactor
                                                                                  RepositoryConnectionFactory connectionFactory ) {
         Problems problems = new SimpleProblems();
         ValueFactories valueFactories = context.getValueFactories();
-        PathFactory pathFactory = valueFactories.getPathFactory();
         NameFactory nameFactory = valueFactories.getNameFactory();
         ValueFactory<Long> longFactory = valueFactories.getLongFactory();
-
-        // Create the configuration projection ...
         ProjectionParser projectionParser = ProjectionParser.getInstance();
-        String ruleStr = "/dna:system => " + this.getConfigurationSourcePath();
-        Projection.Rule[] rules = projectionParser.rulesFromStrings(context, ruleStr);
-        Projection configurationProjection = new Projection(this.getConfigurationSourceName(), rules);
 
-        // Create a federating command executor to execute the commands and merge the results into a single set of
-        // commands.
-        final String configurationSourceName = configurationProjection.getSourceName();
-        List<Projection> projections = Collections.singletonList(configurationProjection);
-        CommandExecutor executor = null;
-        if (configurationProjection.getRules().size() == 0) {
-            // There is no projection for the configuration repository, so just use a no-op executor
-            executor = new NoOpCommandExecutor(context, configurationSourceName);
-        } else if (configurationProjection.isSimple()) {
-            // There is just a single projection for the configuration repository, so just use an executor that
-            // translates the paths using the projection
-            executor = new SingleProjectionCommandExecutor(context, configurationSourceName, configurationProjection,
-                                                           connectionFactory);
-        } else {
-            // The configuration repository has more than one projection, so we need to merge the results
-            executor = new FederatingCommandExecutor(context, configurationSourceName, projections, connectionFactory);
+        // Create a graph to access the configuration ...
+        Graph config = Graph.create(configurationSourceName, connectionFactory, context);
+
+        // Read the federated repositories subgraph (of max depth 4)...
+        Subgraph repositories = config.getSubgraphOfDepth(4).at(getConfigurationSourcePath());
+
+        // Set up the default cache policy by reading the "dna:federation" node ...
+        CachePolicy defaultCachePolicy = null;
+        Node federation = repositories.getNode(DNA_FEDERATION_SEGMENT);
+        if (federation == null) {
+            I18n msg = FederationI18n.requiredNodeDoesNotExistRelativeToNode;
+            throw new FederationException(msg.text(DNA_FEDERATION_SEGMENT, repositories.getLocation().getPath()));
         }
-        // Wrap the executor with a logging executor ...
-        executor = new LoggingCommandExecutor(executor, context.getLogger(getClass()), Logger.Level.DEBUG);
-
-        // The configuration projection (via "executor") will convert this path into a path that exists in the configuration
-        // repository
-        Path configNode = pathFactory.create(PATH_TO_CONFIGURATION_INFORMATION);
-
-        try {
-            // Get the repository node ...
-            BasicGetNodeCommand getRepository = new BasicGetNodeCommand(configNode);
-            executor.execute(getRepository);
-            if (getRepository.hasError()) {
-                throw new FederationException(FederationI18n.federatedRepositoryCannotBeFound.text(repositoryName));
-            }
-
-            // Get the first child node of the "dna:cache" node, since this represents the source used as the cache ...
-            Path cacheNode = pathFactory.create(configNode, nameFactory.create(DNA_CACHE_SEGMENT));
-            BasicGetChildrenCommand getCacheSource = new BasicGetChildrenCommand(cacheNode);
-
-            executor.execute(getCacheSource);
-            if (getCacheSource.hasError() || getCacheSource.getChildren().size() < 1) {
-                I18n msg = FederationI18n.requiredNodeDoesNotExistRelativeToNode;
-                throw new FederationException(msg.text(DNA_CACHE_SEGMENT, configNode));
-            }
-
-            // Add a command to get the projection defining the cache ...
-            Path pathToCacheRegion = pathFactory.create(cacheNode, getCacheSource.getChildren().get(0));
-            BasicGetNodeCommand getCacheRegion = new BasicGetNodeCommand(pathToCacheRegion);
-            executor.execute(getCacheRegion);
-            Projection cacheProjection = createProjection(context,
-                                                          projectionParser,
-                                                          getCacheRegion.getPath(),
-                                                          getCacheRegion.getPropertiesByName(),
-                                                          problems);
-
-            if (getCacheRegion.hasError()) {
-                I18n msg = FederationI18n.requiredNodeDoesNotExistRelativeToNode;
-                throw new FederationException(msg.text(DNA_CACHE_SEGMENT, configNode));
-            }
-
-            // Get the source projections for the repository ...
-            Path projectionsNode = pathFactory.create(configNode, nameFactory.create(DNA_PROJECTIONS_SEGMENT));
-            BasicGetChildrenCommand getProjections = new BasicGetChildrenCommand(projectionsNode);
-
-            executor.execute(getProjections);
-            if (getProjections.hasError()) {
-                I18n msg = FederationI18n.requiredNodeDoesNotExistRelativeToNode;
-                throw new FederationException(msg.text(DNA_PROJECTIONS_SEGMENT, configNode));
-            }
-
-            // Build the commands to get each of the projections (children of the "dna:projections" node) ...
-            List<Projection> sourceProjections = new LinkedList<Projection>();
-            if (getProjections.hasNoError() && !getProjections.getChildren().isEmpty()) {
-                BasicCompositeCommand commands = new BasicCompositeCommand();
-                for (Path.Segment child : getProjections.getChildren()) {
-                    final Path pathToSource = pathFactory.create(projectionsNode, child);
-                    commands.add(new BasicGetNodeCommand(pathToSource));
-                }
-                // Now execute these commands ...
-                executor.execute(commands);
-
-                // Iterate over each region node obtained ...
-                for (GraphCommand command : commands) {
-                    BasicGetNodeCommand getProjectionCommand = (BasicGetNodeCommand)command;
-                    if (getProjectionCommand.hasNoError()) {
-                        Projection projection = createProjection(context,
-                                                                 projectionParser,
-                                                                 getProjectionCommand.getPath(),
-                                                                 getProjectionCommand.getPropertiesByName(),
-                                                                 problems);
-                        if (projection != null) {
-                            Logger logger = context.getLogger(getClass());
-                            if (logger.isTraceEnabled()) {
-                                logger.trace("Adding projection to federated repository {0}: {1}",
-                                             getRepositoryName(),
-                                             projection);
-                            }
-                            sourceProjections.add(projection);
-                        }
-                    }
-                }
-            }
-
-            // Look for the default cache policy ...
-            BasicCachePolicy cachePolicy = new BasicCachePolicy();
-            Property timeToLiveProperty = getRepository.getPropertiesByName().get(nameFactory.create(CACHE_POLICY_TIME_TO_LIVE_CONFIG_PROPERTY_NAME));
-            if (timeToLiveProperty != null && !timeToLiveProperty.isEmpty()) {
-                cachePolicy.setTimeToLive(longFactory.create(timeToLiveProperty.getValues().next()), TimeUnit.MILLISECONDS);
-            }
-            CachePolicy defaultCachePolicy = cachePolicy.isEmpty() ? null : cachePolicy.getUnmodifiable();
-            return new FederatedRepositoryConfig(repositoryName, cacheProjection, sourceProjections, defaultCachePolicy);
-        } catch (InvalidPathException err) {
-            I18n msg = FederationI18n.federatedRepositoryCannotBeFound;
-            throw new FederationException(msg.text(repositoryName));
-        } finally {
-            executor.close();
+        Property timeToLiveProperty = federation.getProperty(nameFactory.create(CACHE_POLICY_TIME_TO_LIVE_CONFIG_PROPERTY_NAME));
+        if (timeToLiveProperty != null && !timeToLiveProperty.isEmpty()) {
+            long timeToCacheInMillis = longFactory.create(timeToLiveProperty.getValues().next());
+            BasicCachePolicy policy = new BasicCachePolicy(timeToCacheInMillis, TimeUnit.MILLISECONDS);
+            defaultCachePolicy = policy.getUnmodifiable();
         }
 
+        // Read the "dna:cache" and its projection ...
+        String cacheNodePath = DNA_FEDERATION_SEGMENT + "/" + DNA_CACHE_SEGMENT;
+        Node cacheNode = repositories.getNode(cacheNodePath);
+        if (cacheNode == null) {
+            I18n msg = FederationI18n.requiredNodeDoesNotExistRelativeToNode;
+            throw new FederationException(msg.text(cacheNodePath, repositories.getLocation().getPath()));
+        }
+        Projection cacheProjection = null;
+        for (Location cacheProjectionLocation : cacheNode) {
+            Node projection = repositories.getNode(cacheProjectionLocation);
+            cacheProjection = createProjection(context, projectionParser, projection, problems);
+        }
+
+        // Read the "dna:projections" and create a projection for each ...
+        String projectionsPath = DNA_FEDERATION_SEGMENT + "/" + DNA_PROJECTIONS_SEGMENT;
+        Node projectionsNode = repositories.getNode(projectionsPath);
+        if (projectionsNode == null) {
+            I18n msg = FederationI18n.requiredNodeDoesNotExistRelativeToNode;
+            throw new FederationException(msg.text(projectionsNode, repositories.getLocation().getPath()));
+        }
+        List<Projection> sourceProjections = new LinkedList<Projection>();
+        for (Location location : projectionsNode) {
+            Node projection = repositories.getNode(location);
+            sourceProjections.add(createProjection(context, projectionParser, projection, problems));
+        }
+
+        return new FederatedRepositoryConfig(repositoryName, cacheProjection, sourceProjections, defaultCachePolicy);
     }
 
     /**
@@ -653,25 +571,24 @@ public class FederatedRepositorySource implements RepositorySource, ObjectFactor
      * 
      * @param context the execution context that should be used to read the configuration; may not be null
      * @param projectionParser the projection rule parser that should be used; may not be null
-     * @param path the path to the node where these properties were found; never null
-     * @param properties the properties; never null
+     * @param node the node where these properties were found; never null
      * @param problems the problems container in which any problems should be reported; never null
      * @return the region instance, or null if it could not be created
      */
     protected Projection createProjection( ExecutionContext context,
                                            ProjectionParser projectionParser,
-                                           Path path,
-                                           Map<Name, Property> properties,
+                                           Node node,
                                            Problems problems ) {
         ValueFactories valueFactories = context.getValueFactories();
         NameFactory nameFactory = valueFactories.getNameFactory();
         ValueFactory<String> stringFactory = valueFactories.getStringFactory();
 
+        Path path = node.getLocation().getPath();
         String sourceName = path.getLastSegment().getName().getLocalName();
 
         // Get the rules ...
         Projection.Rule[] projectionRules = null;
-        Property projectionRulesProperty = properties.get(nameFactory.create(PROJECTION_RULES_CONFIG_PROPERTY_NAME));
+        Property projectionRulesProperty = node.getProperty(nameFactory.create(PROJECTION_RULES_CONFIG_PROPERTY_NAME));
         if (projectionRulesProperty != null && !projectionRulesProperty.isEmpty()) {
             String[] projectionRuleStrs = stringFactory.create(projectionRulesProperty.getValuesAsArray());
             if (projectionRuleStrs != null && projectionRuleStrs.length != 0) {

@@ -29,11 +29,10 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.util.StringUtil;
+import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.properties.DateTime;
 import org.jboss.dna.graph.properties.Name;
-import org.jboss.dna.graph.properties.Path;
 import org.jboss.dna.graph.properties.Property;
-import org.jboss.dna.graph.properties.Path.Segment;
 import org.jboss.dna.graph.properties.basic.JodaDateTime;
 
 /**
@@ -64,47 +63,47 @@ public abstract class Contribution implements Serializable {
      * Create a contribution of a single property from the named source.
      * 
      * @param sourceName the name of the source, which may not be null or blank
-     * @param pathInSource the path in the source for this contributed information; may not be null
+     * @param locationInSource the location in the source for this contributed information; may not be null
      * @param expirationTime the time (in UTC) after which this contribution should be considered expired, or null if there is no
      *        expiration time
      * @param property the property from the source; may not be null
      * @return the contribution
      */
     public static Contribution create( String sourceName,
-                                       Path pathInSource,
+                                       Location locationInSource,
                                        DateTime expirationTime,
                                        Property property ) {
         if (property == null) {
             return new EmptyContribution(sourceName, expirationTime);
         }
-        return new OnePropertyContribution(sourceName, pathInSource, expirationTime, property);
+        return new OnePropertyContribution(sourceName, locationInSource, expirationTime, property);
     }
 
     /**
      * Create a contribution of a single child from the named source.
      * 
      * @param sourceName the name of the source, which may not be null or blank
-     * @param pathInSource the path in the source for this contributed information; may not be null
+     * @param locationInSource the path in the source for this contributed information; may not be null
      * @param expirationTime the time (in UTC) after which this contribution should be considered expired, or null if there is no
      *        expiration time
      * @param child the child from the source; may not be null or empty
      * @return the contribution
      */
     public static Contribution create( String sourceName,
-                                       Path pathInSource,
+                                       Location locationInSource,
                                        DateTime expirationTime,
-                                       Segment child ) {
+                                       Location child ) {
         if (child == null) {
             return new EmptyContribution(sourceName, expirationTime);
         }
-        return new OneChildContribution(sourceName, pathInSource, expirationTime, child);
+        return new OneChildContribution(sourceName, locationInSource, expirationTime, child);
     }
 
     /**
      * Create a contribution of a single child from the named source.
      * 
      * @param sourceName the name of the source, which may not be null or blank
-     * @param pathInSource the path in the source for this contributed information; may not be null
+     * @param locationInSource the path in the source for this contributed information; may not be null
      * @param expirationTime the time (in UTC) after which this contribution should be considered expired, or null if there is no
      *        expiration time
      * @param child1 the first child from the source; may not be null or empty
@@ -112,18 +111,18 @@ public abstract class Contribution implements Serializable {
      * @return the contribution
      */
     public static Contribution create( String sourceName,
-                                       Path pathInSource,
+                                       Location locationInSource,
                                        DateTime expirationTime,
-                                       Segment child1,
-                                       Segment child2 ) {
+                                       Location child1,
+                                       Location child2 ) {
         if (child1 != null) {
             if (child2 != null) {
-                return new TwoChildContribution(sourceName, pathInSource, expirationTime, child1, child2);
+                return new TwoChildContribution(sourceName, locationInSource, expirationTime, child1, child2);
             }
-            return new OneChildContribution(sourceName, pathInSource, expirationTime, child1);
+            return new OneChildContribution(sourceName, locationInSource, expirationTime, child1);
         }
         if (child2 != null) {
-            return new OneChildContribution(sourceName, pathInSource, expirationTime, child2);
+            return new OneChildContribution(sourceName, locationInSource, expirationTime, child2);
         }
         return new EmptyContribution(sourceName, expirationTime);
     }
@@ -132,7 +131,7 @@ public abstract class Contribution implements Serializable {
      * Create a contribution of the supplied properties and children from the named source.
      * 
      * @param sourceName the name of the source, which may not be null or blank
-     * @param pathInSource the path in the source for this contributed information; may not be null
+     * @param locationInSource the path in the source for this contributed information; may not be null
      * @param expirationTime the time (in UTC) after which this contribution should be considered expired, or null if there is no
      *        expiration time
      * @param properties the properties from the source; may not be null
@@ -140,83 +139,83 @@ public abstract class Contribution implements Serializable {
      * @return the contribution
      */
     public static Contribution create( String sourceName,
-                                       Path pathInSource,
+                                       Location locationInSource,
                                        DateTime expirationTime,
                                        Collection<Property> properties,
-                                       List<Segment> children ) {
+                                       List<Location> children ) {
         if (properties == null || properties.isEmpty()) {
             // There are no properties ...
             if (children == null || children.isEmpty()) {
                 return new EmptyContribution(sourceName, expirationTime);
             }
             if (children.size() == 1) {
-                return new OneChildContribution(sourceName, pathInSource, expirationTime, children.iterator().next());
+                return new OneChildContribution(sourceName, locationInSource, expirationTime, children.iterator().next());
             }
             if (children.size() == 2) {
-                Iterator<Segment> iter = children.iterator();
-                return new TwoChildContribution(sourceName, pathInSource, expirationTime, iter.next(), iter.next());
+                Iterator<Location> iter = children.iterator();
+                return new TwoChildContribution(sourceName, locationInSource, expirationTime, iter.next(), iter.next());
             }
-            return new MultiChildContribution(sourceName, pathInSource, expirationTime, children);
+            return new MultiChildContribution(sourceName, locationInSource, expirationTime, children);
         }
         // There are some properties ...
         if (children == null || children.isEmpty()) {
             // There are no children ...
             if (properties.size() == 1) {
-                return new OnePropertyContribution(sourceName, pathInSource, expirationTime, properties.iterator().next());
+                return new OnePropertyContribution(sourceName, locationInSource, expirationTime, properties.iterator().next());
             }
             if (properties.size() == 2) {
                 Iterator<Property> iter = properties.iterator();
-                return new TwoPropertyContribution(sourceName, pathInSource, expirationTime, iter.next(), iter.next());
+                return new TwoPropertyContribution(sourceName, locationInSource, expirationTime, iter.next(), iter.next());
             }
             if (properties.size() == 3) {
                 Iterator<Property> iter = properties.iterator();
-                return new ThreePropertyContribution(sourceName, pathInSource, expirationTime, iter.next(), iter.next(),
+                return new ThreePropertyContribution(sourceName, locationInSource, expirationTime, iter.next(), iter.next(),
                                                      iter.next());
             }
-            return new MultiPropertyContribution(sourceName, pathInSource, expirationTime, properties);
+            return new MultiPropertyContribution(sourceName, locationInSource, expirationTime, properties);
         }
         // There are some properties AND some children ...
-        return new NodeContribution(sourceName, pathInSource, expirationTime, properties, children);
+        return new NodeContribution(sourceName, locationInSource, expirationTime, properties, children);
     }
 
     /**
      * Create a placeholder contribution of a single child from the named source.
      * 
      * @param sourceName the name of the source, which may not be null or blank
-     * @param pathInSource the path in the source for this contributed information; may not be null
+     * @param locationInSource the path in the source for this contributed information; may not be null
      * @param expirationTime the time (in UTC) after which this contribution should be considered expired, or null if there is no
      *        expiration time
      * @param child the child from the source; may not be null or empty
      * @return the contribution
      */
     public static Contribution createPlaceholder( String sourceName,
-                                                  Path pathInSource,
+                                                  Location locationInSource,
                                                   DateTime expirationTime,
-                                                  Segment child ) {
+                                                  Location child ) {
         if (child == null) {
             return new EmptyContribution(sourceName, expirationTime);
         }
-        return new PlaceholderContribution(sourceName, pathInSource, expirationTime, Collections.singletonList(child));
+        return new PlaceholderContribution(sourceName, locationInSource, expirationTime, Collections.singletonList(child));
     }
 
     /**
      * Create a placeholder contribution of the supplied properties and children from the named source.
      * 
      * @param sourceName the name of the source, which may not be null or blank
-     * @param pathInSource the path in the source for this contributed information; may not be null
+     * @param locationInSource the path in the source for this contributed information; may not be null
      * @param expirationTime the time (in UTC) after which this contribution should be considered expired, or null if there is no
      *        expiration time
      * @param children the children from the source; may not be null or empty
      * @return the contribution
      */
     public static Contribution createPlaceholder( String sourceName,
-                                                  Path pathInSource,
+                                                  Location locationInSource,
                                                   DateTime expirationTime,
-                                                  List<Segment> children ) {
+                                                  List<Location> children ) {
         if (children == null || children.isEmpty()) {
             return new EmptyContribution(sourceName, expirationTime);
         }
-        return new PlaceholderContribution(sourceName, pathInSource, expirationTime, children);
+        return new PlaceholderContribution(sourceName, locationInSource, expirationTime, children);
     }
 
     /**
@@ -225,7 +224,7 @@ public abstract class Contribution implements Serializable {
     private static final long serialVersionUID = 1L;
 
     protected static final Iterator<Property> EMPTY_PROPERTY_ITERATOR = new EmptyIterator<Property>();
-    protected static final Iterator<Segment> EMPTY_CHILDREN_ITERATOR = new EmptyIterator<Segment>();
+    protected static final Iterator<Location> EMPTY_CHILDREN_ITERATOR = new EmptyIterator<Location>();
 
     private final String sourceName;
     private DateTime expirationTimeInUtc;
@@ -255,11 +254,11 @@ public abstract class Contribution implements Serializable {
     }
 
     /**
-     * Get the source-specific path of this information.
+     * Get the source-specific location of this information.
      * 
-     * @return the path as known to the source, or null for {@link EmptyContribution}
+     * @return the location as known to the source, or null for {@link EmptyContribution}
      */
-    public abstract Path getPathInSource();
+    public abstract Location getLocationInSource();
 
     /**
      * Determine whether this contribution has expired given the supplied current time.
@@ -317,7 +316,7 @@ public abstract class Contribution implements Serializable {
      * 
      * @return the children; never null
      */
-    public Iterator<Segment> getChildren() {
+    public Iterator<Location> getChildren() {
         return EMPTY_CHILDREN_ITERATOR;
     }
 
@@ -394,12 +393,11 @@ public abstract class Contribution implements Serializable {
         if (getChildrenCount() != 0) {
             sb.append("< ");
             boolean first = true;
-            Iterator<Segment> childIter = getChildren();
+            Iterator<Location> childIter = getChildren();
             while (childIter.hasNext()) {
                 if (!first) sb.append(", ");
                 else first = false;
-                Segment child = childIter.next();
-                sb.append(child);
+                sb.append(childIter.next());
             }
             sb.append(" >");
         }

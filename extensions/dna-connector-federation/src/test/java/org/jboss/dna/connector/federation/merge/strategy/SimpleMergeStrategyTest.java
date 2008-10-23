@@ -26,7 +26,6 @@ import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsSame.sameInstance;
 import static org.junit.Assert.assertThat;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.stub;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -41,6 +40,7 @@ import org.jboss.dna.connector.federation.contribution.Contribution;
 import org.jboss.dna.connector.federation.merge.FederatedNode;
 import org.jboss.dna.graph.DnaLexicon;
 import org.jboss.dna.graph.ExecutionContext;
+import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.connectors.BasicExecutionContext;
 import org.jboss.dna.graph.properties.Name;
 import org.jboss.dna.graph.properties.Path;
@@ -61,24 +61,25 @@ public class SimpleMergeStrategyTest {
     private List<Contribution> contributions;
     private ExecutionContext context;
     private FederatedNode node;
+    protected Path parentPath;
 
     @Before
     public void beforeEach() throws Exception {
         MockitoAnnotations.initMocks(this);
-        Path path = mock(Path.class);
-        node = new FederatedNode(path, UUID.randomUUID());
         strategy = new SimpleMergeStrategy();
         contributions = new LinkedList<Contribution>();
         context = new BasicExecutionContext();
         context.getNamespaceRegistry().register("dna", "http://www.jboss.org/dna/something");
         context.getNamespaceRegistry().register("jcr", "http://www.jcr.org");
+        parentPath = context.getValueFactories().getPathFactory().create("/a/b/c");
+        node = new FederatedNode(new Location(parentPath), UUID.randomUUID());
     }
 
     @Test
     public void shouldAddChildrenFromOneContribution() {
         addContribution("source1").addChildren("childA", "childB[1]", "childB[2]");
         strategy.merge(node, contributions, context);
-        assertThat(node.getChildren(), hasSegments("childA", "childB[1]", "childB[2]"));
+        assertThat(node.getChildren(), hasChildLocations("childA", "childB[1]", "childB[2]"));
     }
 
     @Test
@@ -95,7 +96,7 @@ public class SimpleMergeStrategyTest {
         addContribution("source1").addChildren("childA", "childB[1]", "childB[2]");
         addContribution("source2").addChildren("childX", "childY[1]", "childY[2]");
         strategy.merge(node, contributions, context);
-        assertThat(node.getChildren(), hasSegments("childA", "childB[1]", "childB[2]", "childX", "childY[1]", "childY[2]"));
+        assertThat(node.getChildren(), hasChildLocations("childA", "childB[1]", "childB[2]", "childX", "childY[1]", "childY[2]"));
     }
 
     @Test
@@ -104,14 +105,14 @@ public class SimpleMergeStrategyTest {
         addContribution("source2").addChildren("childX", "childB", "childY");
         addContribution("source3").addChildren("childX", "childB");
         strategy.merge(node, contributions, context);
-        assertThat(node.getChildren(), hasSegments("childA",
-                                                   "childB[1]",
-                                                   "childB[2]",
-                                                   "childX[1]",
-                                                   "childB[3]",
-                                                   "childY",
-                                                   "childX[2]",
-                                                   "childB[4]"));
+        assertThat(node.getChildren(), hasChildLocations("childA",
+                                                         "childB[1]",
+                                                         "childB[2]",
+                                                         "childX[1]",
+                                                         "childB[3]",
+                                                         "childY",
+                                                         "childX[2]",
+                                                         "childB[4]"));
     }
 
     @Test
@@ -193,24 +194,24 @@ public class SimpleMergeStrategyTest {
         assertThat(contributions.size(), is(0));
         addContribution("source1").addChildren("childA", "childB[1]", "childB[2]").setProperty("p1", "p1 value");
         assertThat(contributions.size(), is(1));
-        assertThat(contributions.get(0).getChildren(), hasSegmentIterator("childA", "childB[1]", "childB[2]"));
+        assertThat(contributions.get(0).getChildren(), hasLocationIterator("childA", "childB[1]", "childB[2]"));
     }
 
-    protected Matcher<List<Path.Segment>> hasSegments( String... segment ) {
-        List<Path.Segment> segments = new ArrayList<Path.Segment>();
-        for (String seg : segment) {
-            segments.add(context.getValueFactories().getPathFactory().createSegment(seg));
+    protected Matcher<List<Location>> hasChildLocations( String... childNames ) {
+        List<Location> locations = new ArrayList<Location>();
+        for (String childName : childNames) {
+            locations.add(new Location(context.getValueFactories().getPathFactory().create(parentPath, childName)));
         }
-        return equalTo(segments);
+        return equalTo(locations);
     }
 
-    protected Matcher<Iterator<Path.Segment>> hasSegmentIterator( String... segment ) {
-        Path.Segment[] segments = new Path.Segment[segment.length];
+    protected Matcher<Iterator<Location>> hasLocationIterator( String... childNames ) {
+        Location[] locations = new Location[childNames.length];
         int index = 0;
-        for (String seg : segment) {
-            segments[index++] = context.getValueFactories().getPathFactory().createSegment(seg);
+        for (String childName : childNames) {
+            locations[index++] = new Location(context.getValueFactories().getPathFactory().create(parentPath, childName));
         }
-        return IsIteratorContaining.hasItems(segments);
+        return IsIteratorContaining.hasItems(locations);
     }
 
     protected Name name( String name ) {
@@ -232,16 +233,17 @@ public class SimpleMergeStrategyTest {
         protected final Contribution mockContribution;
         protected final ExecutionContext context;
         protected final Map<Name, Property> properties = new HashMap<Name, Property>();
-        protected final List<Path.Segment> children = new ArrayList<Path.Segment>();
+        protected final List<Location> children = new ArrayList<Location>();
 
         protected ContributionBuilder( ExecutionContext context,
                                        String name,
                                        List<Contribution> contributions ) {
             this.context = context;
             this.mockContribution = Mockito.mock(Contribution.class);
+            stub(mockContribution.getLocationInSource()).toReturn(new Location(parentPath));
             stub(mockContribution.getSourceName()).toReturn(name);
-            stub(mockContribution.getChildren()).toAnswer(new Answer<Iterator<Path.Segment>>() {
-                public Iterator<Path.Segment> answer( InvocationOnMock invocation ) throws Throwable {
+            stub(mockContribution.getChildren()).toAnswer(new Answer<Iterator<Location>>() {
+                public Iterator<Location> answer( InvocationOnMock invocation ) throws Throwable {
                     return ContributionBuilder.this.children.iterator();
                 }
             });
@@ -266,23 +268,10 @@ public class SimpleMergeStrategyTest {
             return this.mockContribution;
         }
 
-        public ContributionBuilder addChildren( String... segmentNamesForChildren ) {
-            for (String childSegmentName : segmentNamesForChildren) {
-                children.add(context.getValueFactories().getPathFactory().createSegment(childSegmentName));
-            }
-            return this;
-        }
-
-        public ContributionBuilder addChildren( Name... segmentNamesForChildren ) {
-            for (Name childSegmentName : segmentNamesForChildren) {
-                children.add(context.getValueFactories().getPathFactory().createSegment(childSegmentName));
-            }
-            return this;
-        }
-
-        public ContributionBuilder addChildren( Path.Segment... segmentNamesForChildren ) {
-            for (Path.Segment childSegmentName : segmentNamesForChildren) {
-                children.add(childSegmentName);
+        public ContributionBuilder addChildren( String... pathsForChildren ) {
+            for (String childPath : pathsForChildren) {
+                Path path = context.getValueFactories().getPathFactory().create(parentPath, childPath);
+                children.add(new Location(path));
             }
             return this;
         }

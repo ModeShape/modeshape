@@ -25,6 +25,7 @@ import java.util.LinkedList;
 import java.util.List;
 import org.jboss.dna.common.text.Inflector;
 import org.jboss.dna.common.util.CheckArg;
+import org.jboss.dna.graph.GraphI18n;
 import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.connectors.RepositoryConnection;
 import org.jboss.dna.graph.properties.Path;
@@ -37,12 +38,15 @@ import org.jboss.dna.graph.properties.Property;
  * 
  * @author Randall Hauch
  */
-public class ReadBlockOfChildrenRequest extends Request {
+public class ReadBlockOfChildrenRequest extends CacheableRequest {
+
+    private static final long serialVersionUID = 1L;
 
     private final Location of;
     private final List<Location> children = new LinkedList<Location>();
     private final int startingAt;
     private final int count;
+    private Location actualLocation;
 
     /**
      * Create a request to read a block of the children of a node at the supplied location. The block is defined by the starting
@@ -65,6 +69,16 @@ public class ReadBlockOfChildrenRequest extends Request {
         this.of = of;
         this.startingAt = startingIndex;
         this.count = count;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.requests.Request#isReadOnly()
+     */
+    @Override
+    public boolean isReadOnly() {
+        return true;
     }
 
     /**
@@ -168,6 +182,34 @@ public class ReadBlockOfChildrenRequest extends Request {
                           Property idProperty ) {
         Location child = new Location(pathToChild, idProperty);
         this.children.add(child);
+    }
+
+    /**
+     * Sets the actual and complete location of the node whose children have been read. This method must be called when processing
+     * the request, and the actual location must have a {@link Location#getPath() path}.
+     * 
+     * @param actual the actual location of the node being read, or null if the {@link #of() current location} should be used
+     * @throws IllegalArgumentException if the actual location does not represent the {@link Location#isSame(Location) same
+     *         location} as the {@link #of() current location}, or if the actual location does not have a path.
+     */
+    public void setActualLocationOfNode( Location actual ) {
+        if (!of.isSame(actual)) { // not same if actual is null
+            throw new IllegalArgumentException(GraphI18n.actualLocationIsNotSameAsInputLocation.text(actual, of));
+        }
+        assert actual != null;
+        if (!actual.hasPath()) {
+            throw new IllegalArgumentException(GraphI18n.actualLocationMustHavePath.text(actual));
+        }
+        this.actualLocation = actual;
+    }
+
+    /**
+     * Get the actual location of the node whose children were read.
+     * 
+     * @return the actual location, or null if the actual location was not set
+     */
+    public Location getActualLocationOfNode() {
+        return actualLocation;
     }
 
     /**

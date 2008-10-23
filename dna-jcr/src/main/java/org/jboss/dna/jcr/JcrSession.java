@@ -49,14 +49,11 @@ import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.common.util.StringUtil;
 import org.jboss.dna.graph.DnaLexicon;
 import org.jboss.dna.graph.ExecutionContext;
-import org.jboss.dna.graph.commands.GraphCommand;
-import org.jboss.dna.graph.commands.basic.BasicGetNodeCommand;
-import org.jboss.dna.graph.connectors.RepositoryConnection;
+import org.jboss.dna.graph.Graph;
 import org.jboss.dna.graph.properties.Name;
 import org.jboss.dna.graph.properties.Path;
 import org.jboss.dna.graph.properties.UuidFactory;
 import org.jboss.dna.graph.properties.ValueFactories;
-import org.jboss.dna.graph.properties.Path.Segment;
 import org.xml.sax.ContentHandler;
 import com.google.common.base.ReferenceType;
 import com.google.common.collect.ReferenceMap;
@@ -69,8 +66,8 @@ import com.google.common.collect.ReferenceMap;
 class JcrSession implements Session {
 
     private final Repository repository;
+    private final Graph graph;
     private final ExecutionContext executionContext;
-    private RepositoryConnection connection;
     private final ReferenceMap<UUID, Node> nodesByUuid;
     private final ReferenceMap<String, Node> nodesByJcrUuid;
     private boolean isLive;
@@ -78,23 +75,26 @@ class JcrSession implements Session {
     private JcrRootNode rootNode;
 
     JcrSession( Repository repository,
-                ExecutionContext executionContext,
                 String workspaceName,
-                RepositoryConnection connection,
+                Graph graph,
                 ReferenceMap<UUID, Node> nodesByUuid ) throws RepositoryException {
         assert repository != null;
-        assert executionContext != null;
+        assert graph != null;
         assert workspaceName != null;
-        assert connection != null;
         assert nodesByUuid != null;
         this.repository = repository;
-        this.executionContext = executionContext;
-        this.connection = connection;
+        this.graph = graph;
+        this.executionContext = graph.getContext();
+        assert this.executionContext != null;
         this.nodesByUuid = nodesByUuid;
         this.nodesByJcrUuid = new ReferenceMap<String, Node>(ReferenceType.STRONG, ReferenceType.SOFT);
         this.isLive = true;
         // Following must be initialized after session's state is initialized
         this.workspace = new JcrWorkspace(this, workspaceName);
+    }
+
+    ExecutionContext getExecutionContext() {
+        return this.executionContext;
     }
 
     /**
@@ -119,16 +119,6 @@ class JcrSession implements Session {
         CheckArg.isNotEmpty(actions, "actions");
         if (!"read".equals(actions)) {
             throw new AccessControlException(JcrI18n.permissionDenied.text(path, actions));
-        }
-    }
-
-    private void execute( GraphCommand... commands ) throws RepositoryException {
-        try {
-            connection.execute(executionContext, commands);
-        } catch (RuntimeException error) {
-            throw error;
-        } catch (Exception error) {
-            throw new RepositoryException(error);
         }
     }
 
@@ -204,10 +194,6 @@ class JcrSession implements Session {
         return StringUtil.EMPTY_STRING_ARRAY;
     }
 
-    ExecutionContext getExecutionContext() {
-        return executionContext;
-    }
-
     /**
      * {@inheritDoc}
      * 
@@ -232,25 +218,29 @@ class JcrSession implements Session {
         if (path.isRoot()) {
             return getRootNode();
         }
-        // Since we don't know whether path refers to a node or property, get the parent contents, which must refer to a node
-        Path parentPath = path.getParent();
-        BasicGetNodeCommand getNodeCommand = new BasicGetNodeCommand(parentPath);
-        execute(getNodeCommand);
-        // First search for a child with the last name in the path
-        Segment lastSeg = path.getLastSegment();
-        Name name = lastSeg.getName();
-        for (Segment seg : getNodeCommand.getChildren()) {
-            if (seg.getName().equals(name)) {
+        // Since we don't know whether path refers to a node or a property, look to see if we can tell it's a node ...
+        if (path.getLastSegment().hasIndex()) {
+            try {
                 return getNode(path);
+            } catch (org.jboss.dna.graph.properties.PathNotFoundException e) {
+                // If the node isn't found, throw a PathNotFoundException
+                throw new PathNotFoundException(JcrI18n.pathNotFound.text(path));
             }
         }
-        // If a node isn't found & last segment contains no index, get parent node & search for a property with the last name in
-        // the path
-        if (!lastSeg.hasIndex()) {
-            return getNode(parentPath).getProperty(lastSeg.getString(executionContext.getNamespaceRegistry()));
+        // We can't tell from the name, so try a node first ...
+        try {
+            return getNode(path);
+        } catch (org.jboss.dna.graph.properties.PathNotFoundException e) {
+            // A node was not found, so treat look for a node using the parent as the node's path ...
+            Path parentPath = path.getParent();
+            Name propertyName = path.getLastSegment().getName();
+            try {
+                return getNode(parentPath).getProperty(propertyName.getString(executionContext.getNamespaceRegistry()));
+            } catch (org.jboss.dna.graph.properties.PathNotFoundException e2) {
+                // If the node isn't found, throw a PathNotFoundException
+                throw new PathNotFoundException(JcrI18n.pathNotFound.text(path));
+            }
         }
-        // If a property isn't found, throw a PathNotFoundException
-        throw new PathNotFoundException(JcrI18n.pathNotFound.text(path));
     }
 
     /**
@@ -292,11 +282,10 @@ class JcrSession implements Session {
 
     private Node getNode( Path path ) throws RepositoryException {
         // Get node from source
-        BasicGetNodeCommand command = new BasicGetNodeCommand(path);
-        execute(command);
+        org.jboss.dna.graph.Node graphNode = graph.getNodeAt(path);
         // First check if node already exists. We don't need to check for changes since that will be handled by an observer
-        org.jboss.dna.graph.properties.Property dnaUuidProp = command.getPropertiesByName().get(executionContext.getValueFactories().getNameFactory().create("jcr:uuid"));
-        if (dnaUuidProp == null) dnaUuidProp = command.getPropertiesByName().get(DnaLexicon.UUID);
+        org.jboss.dna.graph.properties.Property dnaUuidProp = graphNode.getPropertiesByName().get(JcrLexicon.UUID);
+        if (dnaUuidProp == null) dnaUuidProp = graphNode.getPropertiesByName().get(DnaLexicon.UUID);
         if (dnaUuidProp != null) {
             UUID uuid = executionContext.getValueFactories().getUuidFactory().create(dnaUuidProp.getValues()).next();
             Node node = getNode(uuid);
@@ -309,7 +298,7 @@ class JcrSession implements Session {
         Path parentPath = path.getParent();
         if (parentPath.isRoot()) node = new JcrNode(this, ((JcrRootNode)getRootNode()).getInternalUuid(), path.getLastSegment());
         else node = new JcrNode(this, ((JcrNode)getNode(parentPath)).getInternalUuid(), path.getLastSegment());
-        populateNode(node, command);
+        populateNode(node, graphNode);
         return node;
     }
 
@@ -342,7 +331,7 @@ class JcrSession implements Session {
      * 
      * @see javax.jcr.Session#getRootNode()
      */
-    public Node getRootNode() throws RepositoryException {
+    public Node getRootNode() {
         // Return cached root node if available
         if (rootNode != null) {
             return rootNode;
@@ -352,10 +341,7 @@ class JcrSession implements Session {
         assert executionContext.getValueFactories().getPathFactory() != null;
         rootNode = new JcrRootNode(this);
         // Get root node from source
-        BasicGetNodeCommand getNodeCommand = new BasicGetNodeCommand(
-                                                                     executionContext.getValueFactories().getPathFactory().createRootPath());
-        execute(getNodeCommand);
-        populateNode(rootNode, getNodeCommand);
+        populateNode(rootNode, graph.getNodeAt(executionContext.getValueFactories().getPathFactory().createRootPath()));
         return rootNode;
     }
 
@@ -488,10 +474,6 @@ class JcrSession implements Session {
         if (!isLive()) {
             return;
         }
-        if (connection != null) {
-            connection.close();
-            connection = null;
-        }
         LoginContext loginContext = executionContext.getLoginContext();
         if (loginContext != null) {
             try {
@@ -516,12 +498,12 @@ class JcrSession implements Session {
     }
 
     private void populateNode( AbstractJcrNode node,
-                               BasicGetNodeCommand getNodeCommand ) {
+                               org.jboss.dna.graph.Node graphNode ) {
         // TODO: What do we do to validate node against its primary type?
         assert node != null;
-        assert getNodeCommand != null;
+        assert graphNode != null;
         // Create JCR children for corresponding DNA children
-        node.setChildren(getNodeCommand.getChildren());
+        node.setChildren(graphNode.getChildrenSegments());
         // Create JCR properties for corresponding DNA properties
         Set<Property> properties = new HashSet<Property>();
         UUID uuid = null;
@@ -530,7 +512,7 @@ class JcrSession implements Session {
         UuidFactory uuidFactory = executionContext.getValueFactories().getUuidFactory();
         org.jboss.dna.graph.properties.Property dnaUuidProp = null;
         boolean referenceable = false;
-        for (org.jboss.dna.graph.properties.Property dnaProp : getNodeCommand.getProperties()) {
+        for (org.jboss.dna.graph.properties.Property dnaProp : graphNode.getProperties()) {
             Name name = dnaProp.getName();
             if (dnaProp.isMultiple()) properties.add(new JcrMultiValueProperty(node, executionContext, name, dnaProp));
             else {

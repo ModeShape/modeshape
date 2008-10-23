@@ -60,12 +60,20 @@ public final class GraphI18n {
     public static I18n pathExpressionHasInvalidMatch;
     public static I18n messageDigestNotFound;
 
-    public static I18n executingGraphCommand;
-    public static I18n executedGraphCommand;
-    public static I18n closingCommandExecutor;
-    public static I18n closedCommandExecutor;
+    public static I18n executingRequest;
+    public static I18n executedRequest;
+    public static I18n closingRequestProcessor;
+    public static I18n closedRequestProcessor;
     public static I18n multipleErrorsWhileExecutingRequests;
     public static I18n unableToAddMoreRequestsToAlreadyExecutedBatch;
+    public static I18n actualLocationIsNotSameAsInputLocation;
+    public static I18n actualLocationMustHavePath;
+    public static I18n actualNewLocationIsNotSameAsInputLocation;
+    public static I18n actualNewLocationMustHavePath;
+    public static I18n actualOldLocationIsNotSameAsInputLocation;
+    public static I18n actualOldLocationMustHavePath;
+    public static I18n actualNewLocationMustHaveSameParentAsOldLocation;
+    public static I18n actualNewLocationMustHaveSameNameAsRequest;
 
     // XML Sequencer
     public static I18n errorSequencingXmlDocument;

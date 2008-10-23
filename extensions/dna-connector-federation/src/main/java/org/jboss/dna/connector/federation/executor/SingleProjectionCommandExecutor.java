@@ -23,19 +23,10 @@ package org.jboss.dna.connector.federation.executor;
 
 import java.util.Set;
 import net.jcip.annotations.NotThreadSafe;
+import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.connector.federation.Projection;
 import org.jboss.dna.graph.ExecutionContext;
-import org.jboss.dna.graph.commands.CopyBranchCommand;
-import org.jboss.dna.graph.commands.CopyNodeCommand;
-import org.jboss.dna.graph.commands.CreateNodeCommand;
-import org.jboss.dna.graph.commands.DeleteBranchCommand;
-import org.jboss.dna.graph.commands.GetChildrenCommand;
-import org.jboss.dna.graph.commands.GetNodeCommand;
-import org.jboss.dna.graph.commands.GetPropertiesCommand;
-import org.jboss.dna.graph.commands.MoveBranchCommand;
-import org.jboss.dna.graph.commands.RecordBranchCommand;
-import org.jboss.dna.graph.commands.SetPropertiesCommand;
-import org.jboss.dna.graph.commands.executor.AbstractCommandExecutor;
+import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.connectors.RepositoryConnection;
 import org.jboss.dna.graph.connectors.RepositoryConnectionFactory;
 import org.jboss.dna.graph.connectors.RepositorySource;
@@ -43,12 +34,24 @@ import org.jboss.dna.graph.connectors.RepositorySourceException;
 import org.jboss.dna.graph.properties.DateTime;
 import org.jboss.dna.graph.properties.Path;
 import org.jboss.dna.graph.properties.PathFactory;
+import org.jboss.dna.graph.properties.PathNotFoundException;
+import org.jboss.dna.graph.properties.Property;
+import org.jboss.dna.graph.requests.CopyBranchRequest;
+import org.jboss.dna.graph.requests.CreateNodeRequest;
+import org.jboss.dna.graph.requests.DeleteBranchRequest;
+import org.jboss.dna.graph.requests.MoveBranchRequest;
+import org.jboss.dna.graph.requests.ReadAllChildrenRequest;
+import org.jboss.dna.graph.requests.ReadAllPropertiesRequest;
+import org.jboss.dna.graph.requests.ReadNodeRequest;
+import org.jboss.dna.graph.requests.Request;
+import org.jboss.dna.graph.requests.UpdatePropertiesRequest;
+import org.jboss.dna.graph.requests.processor.RequestProcessor;
 
 /**
  * @author Randall Hauch
  */
 @NotThreadSafe
-public class SingleProjectionCommandExecutor extends AbstractCommandExecutor {
+public class SingleProjectionCommandExecutor extends RequestProcessor {
 
     private final Projection projection;
     private final PathFactory pathFactory;
@@ -82,7 +85,7 @@ public class SingleProjectionCommandExecutor extends AbstractCommandExecutor {
                                             DateTime now,
                                             Projection projection,
                                             RepositoryConnectionFactory connectionFactory ) {
-        super(context, sourceName, now);
+        super(sourceName, context, now);
         assert connectionFactory != null;
         assert projection != null;
         assert projection.getRules().size() == 1;
@@ -103,7 +106,7 @@ public class SingleProjectionCommandExecutor extends AbstractCommandExecutor {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.graph.commands.executor.AbstractCommandExecutor#close()
+     * @see RequestProcessor#close()
      */
     @Override
     public void close() {
@@ -120,128 +123,184 @@ public class SingleProjectionCommandExecutor extends AbstractCommandExecutor {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.graph.commands.executor.AbstractCommandExecutor#execute(org.jboss.dna.graph.commands.GetChildrenCommand)
+     * @see org.jboss.dna.graph.requests.processor.RequestProcessor#process(org.jboss.dna.graph.requests.ReadAllChildrenRequest)
      */
     @Override
-    public void execute( GetChildrenCommand command ) throws RepositorySourceException {
-        Path pathInSource = getPathInSource(command.getPath());
-        getConnection().execute(this.getExecutionContext(), new ProjectedGetChildrenCommand(command, pathInSource));
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.jboss.dna.graph.commands.executor.AbstractCommandExecutor#execute(org.jboss.dna.graph.commands.GetPropertiesCommand)
-     */
-    @Override
-    public void execute( GetPropertiesCommand command ) throws RepositorySourceException {
-        Path pathInSource = getPathInSource(command.getPath());
-        getConnection().execute(this.getExecutionContext(), new ProjectedGetPropertiesCommand(command, pathInSource));
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.jboss.dna.graph.commands.executor.AbstractCommandExecutor#execute(org.jboss.dna.graph.commands.GetNodeCommand)
-     */
-    @Override
-    public void execute( GetNodeCommand command ) throws RepositorySourceException {
-        Path pathInSource = getPathInSource(command.getPath());
-        getConnection().execute(this.getExecutionContext(), new ProjectedGetNodeCommand(command, pathInSource));
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.jboss.dna.graph.commands.executor.AbstractCommandExecutor#execute(org.jboss.dna.graph.commands.CreateNodeCommand)
-     */
-    @Override
-    public void execute( CreateNodeCommand command ) throws RepositorySourceException {
-        Path pathInSource = getPathInSource(command.getPath());
-        getConnection().execute(this.getExecutionContext(), new ProjectedCreateNodeCommand(command, pathInSource));
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.jboss.dna.graph.commands.executor.AbstractCommandExecutor#execute(org.jboss.dna.graph.commands.SetPropertiesCommand)
-     */
-    @Override
-    public void execute( SetPropertiesCommand command ) throws RepositorySourceException {
-        Path pathInSource = getPathInSource(command.getPath());
-        getConnection().execute(this.getExecutionContext(), new ProjectedSetPropertiesCommand(command, pathInSource));
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.jboss.dna.graph.commands.executor.AbstractCommandExecutor#execute(org.jboss.dna.graph.commands.DeleteBranchCommand)
-     */
-    @Override
-    public void execute( DeleteBranchCommand command ) throws RepositorySourceException {
-        Path pathInSource = getPathInSource(command.getPath());
-        getConnection().execute(this.getExecutionContext(), new ProjectedDeleteBranchCommand(command, pathInSource));
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.jboss.dna.graph.commands.executor.AbstractCommandExecutor#execute(org.jboss.dna.graph.commands.MoveBranchCommand)
-     */
-    @Override
-    public void execute( MoveBranchCommand command ) throws RepositorySourceException {
-        Path pathInSource = getPathInSource(command.getPath());
-        Path newPathInSource = getPathInSource(command.getNewPath());
-        getConnection().execute(this.getExecutionContext(),
-                                new ProjectedMoveBranchCommand(command, pathInSource, newPathInSource));
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.jboss.dna.graph.commands.executor.AbstractCommandExecutor#execute(org.jboss.dna.graph.commands.RecordBranchCommand)
-     */
-    @Override
-    public void execute( RecordBranchCommand command ) throws RepositorySourceException {
-        Path pathInSource = getPathInSource(command.getPath());
-        getConnection().execute(this.getExecutionContext(), new ProjectedRecordBranchCommand(command, pathInSource));
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.jboss.dna.graph.commands.executor.AbstractCommandExecutor#execute(org.jboss.dna.graph.commands.CopyBranchCommand)
-     */
-    @Override
-    public void execute( CopyBranchCommand command ) throws RepositorySourceException {
-        Path pathInSource = getPathInSource(command.getPath());
-        Path newPathInSource = getPathInSource(command.getNewPath());
-        getConnection().execute(this.getExecutionContext(),
-                                new ProjectedCopyBranchCommand(command, pathInSource, newPathInSource));
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.jboss.dna.graph.commands.executor.AbstractCommandExecutor#execute(org.jboss.dna.graph.commands.CopyNodeCommand)
-     */
-    @Override
-    public void execute( CopyNodeCommand command ) throws RepositorySourceException {
-        Path pathInSource = getPathInSource(command.getPath());
-        Path newPathInSource = getPathInSource(command.getNewPath());
-        getConnection().execute(this.getExecutionContext(), new ProjectedCopyNodeCommand(command, pathInSource, newPathInSource));
-    }
-
-    protected Path getPathInSource( Path pathInRepository ) {
-        Set<Path> paths = this.projection.getPathsInSource(pathInRepository, pathFactory);
-        if (!paths.isEmpty()) {
-            return paths.iterator().next();
+    public void process( ReadAllChildrenRequest request ) {
+        Location locationInSource = projectIntoSource(request.of());
+        ReadAllChildrenRequest projected = new ReadAllChildrenRequest(locationInSource);
+        getConnection().execute(this.getExecutionContext(), projected);
+        if (projected.hasError()) {
+            return;
         }
-        return this.projection.getPathsInSource(pathInRepository, pathFactory).iterator().next();
+        for (Location child : projected.getChildren()) {
+            request.addChild(child);
+        }
     }
 
-    protected Path getPathInRepository( Path pathInSource ) {
-        return this.projection.getPathsInRepository(pathInSource, pathFactory).iterator().next();
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.requests.processor.RequestProcessor#process(org.jboss.dna.graph.requests.ReadAllPropertiesRequest)
+     */
+    @Override
+    public void process( ReadAllPropertiesRequest request ) {
+        Location locationInSource = projectIntoSource(request.at());
+        ReadAllPropertiesRequest projected = new ReadAllPropertiesRequest(locationInSource);
+        getConnection().execute(this.getExecutionContext(), projected);
+        if (projected.hasError()) {
+            projectError(projected, request.at(), request);
+            return;
+        }
+        for (Property property : projected.getProperties()) {
+            request.addProperty(property);
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.requests.processor.RequestProcessor#process(org.jboss.dna.graph.requests.ReadNodeRequest)
+     */
+    @Override
+    public void process( ReadNodeRequest request ) {
+        Location locationInSource = projectIntoSource(request.at());
+        ReadNodeRequest projected = new ReadNodeRequest(locationInSource);
+        getConnection().execute(this.getExecutionContext(), projected);
+        if (projected.hasError()) {
+            projectError(projected, request.at(), request);
+            return;
+        }
+        for (Property property : projected.getProperties()) {
+            request.addProperty(property);
+        }
+        for (Location child : projected.getChildren()) {
+            request.addChild(child);
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.requests.processor.RequestProcessor#process(org.jboss.dna.graph.requests.CreateNodeRequest)
+     */
+    @Override
+    public void process( CreateNodeRequest request ) {
+        Location locationInSource = projectIntoSource(request.at());
+        CreateNodeRequest projected = new CreateNodeRequest(locationInSource, request.properties());
+        getConnection().execute(this.getExecutionContext(), projected);
+        if (projected.hasError()) {
+            projectError(projected, request.at(), request);
+            return;
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.requests.processor.RequestProcessor#process(org.jboss.dna.graph.requests.UpdatePropertiesRequest)
+     */
+    @Override
+    public void process( UpdatePropertiesRequest request ) {
+        Location locationInSource = projectIntoSource(request.on());
+        UpdatePropertiesRequest projected = new UpdatePropertiesRequest(locationInSource, request.properties());
+        getConnection().execute(this.getExecutionContext(), projected);
+        if (projected.hasError()) {
+            projectError(projected, request.on(), request);
+            return;
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.requests.processor.RequestProcessor#process(org.jboss.dna.graph.requests.DeleteBranchRequest)
+     */
+    @Override
+    public void process( DeleteBranchRequest request ) {
+        Location locationInSource = projectIntoSource(request.at());
+        DeleteBranchRequest projected = new DeleteBranchRequest(locationInSource);
+        getConnection().execute(this.getExecutionContext(), projected);
+        if (projected.hasError()) {
+            projectError(projected, request.at(), request);
+            return;
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.requests.processor.RequestProcessor#process(org.jboss.dna.graph.requests.MoveBranchRequest)
+     */
+    @Override
+    public void process( MoveBranchRequest request ) {
+        Location fromLocationInSource = projectIntoSource(request.from());
+        Location intoLocationInSource = projectIntoSource(request.into());
+        MoveBranchRequest projected = new MoveBranchRequest(fromLocationInSource, intoLocationInSource);
+        getConnection().execute(this.getExecutionContext(), projected);
+        if (projected.hasError()) {
+            projectError(projected, null, request);
+            return;
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.requests.processor.RequestProcessor#process(org.jboss.dna.graph.requests.CopyBranchRequest)
+     */
+    @Override
+    public void process( CopyBranchRequest request ) {
+        Location fromLocationInSource = projectIntoSource(request.from());
+        Location intoLocationInSource = projectIntoSource(request.into());
+        CopyBranchRequest projected = new CopyBranchRequest(fromLocationInSource, intoLocationInSource);
+        getConnection().execute(this.getExecutionContext(), projected);
+        if (projected.hasError()) {
+            projectError(projected, null, request);
+            return;
+        }
+    }
+
+    protected Location projectIntoSource( Location pathInRepository ) {
+        Path path = pathInRepository.getPath();
+        CheckArg.isNotNull(path, "pathInRepository.getPath()");
+        Set<Path> paths = this.projection.getPathsInSource(path, pathFactory);
+        if (paths.isEmpty()) return null;
+        Path projectedPath = paths.iterator().next();
+        Location location = null;
+        if (pathInRepository.hasIdProperties()) {
+            location = new Location(projectedPath, pathInRepository.getIdProperties());
+        } else {
+            new Location(projectedPath);
+        }
+        return location;
+    }
+
+    protected Location projectIntoRepository( Location pathInSource ) {
+        Path path = pathInSource.getPath();
+        CheckArg.isNotNull(path, "pathInSource.getPath()");
+        Path projectedPath = this.projection.getPathsInRepository(path, pathFactory).iterator().next();
+        Location location = null;
+        if (pathInSource.hasIdProperties()) {
+            location = new Location(projectedPath, pathInSource.getIdProperties());
+        } else {
+            new Location(projectedPath);
+        }
+        return location;
+    }
+
+    protected void projectError( Request original,
+                                 Location originalLocation,
+                                 Request projected ) {
+        Throwable error = original.getError();
+        if (error instanceof PathNotFoundException) {
+            PathNotFoundException pnf = (PathNotFoundException)error;
+            Path lowestExisting = pnf.getLowestAncestorThatDoesExist();
+            if (lowestExisting != null) lowestExisting = projectIntoRepository(new Location(lowestExisting)).getPath();
+            if (originalLocation == null) originalLocation = projectIntoRepository(pnf.getLocation());
+            error = new PathNotFoundException(originalLocation, lowestExisting, pnf.getMessage());
+        }
+        projected.setError(error);
     }
 
 }

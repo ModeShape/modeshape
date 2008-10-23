@@ -28,6 +28,7 @@ import java.util.Iterator;
 import java.util.Set;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.common.util.StringUtil;
+import org.jboss.dna.graph.GraphI18n;
 import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.properties.Name;
 
@@ -38,8 +39,11 @@ import org.jboss.dna.graph.properties.Name;
  */
 public class RemovePropertiesRequest extends Request implements Iterable<Name> {
 
+    private static final long serialVersionUID = 1L;
+
     private final Location from;
     private final Set<Name> propertyNames;
+    private Location actualLocation;
 
     /**
      * Create a request to remove the properties with the given names from the node at the supplied location.
@@ -100,6 +104,16 @@ public class RemovePropertiesRequest extends Request implements Iterable<Name> {
     }
 
     /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.requests.Request#isReadOnly()
+     */
+    @Override
+    public boolean isReadOnly() {
+        return false;
+    }
+
+    /**
      * Get the location defining the node from which the properties are to be removed.
      * 
      * @return the location of the node; never null
@@ -124,6 +138,34 @@ public class RemovePropertiesRequest extends Request implements Iterable<Name> {
      */
     public Collection<Name> propertyNames() {
         return propertyNames;
+    }
+
+    /**
+     * Sets the actual and complete location of the node whose properties were removed. This method must be called when processing
+     * the request, and the actual location must have a {@link Location#getPath() path}.
+     * 
+     * @param actual the actual location of the node being changed, or null if the {@link #from() current location} should be used
+     * @throws IllegalArgumentException if the actual location does not represent the {@link Location#isSame(Location) same
+     *         location} as the {@link #from() current location}, or if the actual location does not have a path.
+     */
+    public void setActualLocationOfNode( Location actual ) {
+        if (!from.isSame(actual)) { // not same if actual is null
+            throw new IllegalArgumentException(GraphI18n.actualLocationIsNotSameAsInputLocation.text(actual, from));
+        }
+        assert actual != null;
+        if (!actual.hasPath()) {
+            throw new IllegalArgumentException(GraphI18n.actualLocationMustHavePath.text(actual));
+        }
+        this.actualLocation = actual;
+    }
+
+    /**
+     * Get the actual location of the node whose properties were removed.
+     * 
+     * @return the actual location, or null if the actual location was not set
+     */
+    public Location getActualLocationOfNode() {
+        return actualLocation;
     }
 
     /**

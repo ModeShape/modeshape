@@ -27,13 +27,11 @@ import static org.hamcrest.core.IsSame.sameInstance;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.mock;
 import java.util.Iterator;
+import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.properties.DateTime;
 import org.jboss.dna.graph.properties.Name;
 import org.jboss.dna.graph.properties.Path;
-import org.jboss.dna.graph.properties.Path.Segment;
-import org.jboss.dna.graph.properties.basic.BasicName;
 import org.jboss.dna.graph.properties.basic.BasicPath;
-import org.jboss.dna.graph.properties.basic.BasicPathSegment;
 import org.jboss.dna.graph.properties.basic.JodaDateTime;
 import org.junit.Before;
 import org.junit.Test;
@@ -52,35 +50,34 @@ public class OneChildContributionTest {
     private Path pathInSource;
     private OneChildContribution contribution;
     private DateTime expiration;
-    private Segment child1;
+    private Location child1;
 
     @Before
     public void beforeEach() throws Exception {
         sourceName = "some source";
         pathInSource = BasicPath.ROOT;
         expiration = TOMORROW;
-        String nsUri = "http://www.jboss.org/default";
-        child1 = new BasicPathSegment(new BasicName(nsUri, "child1"));
-        contribution = new OneChildContribution(sourceName, pathInSource, expiration, child1);
+        child1 = mock(Location.class);
+        contribution = new OneChildContribution(sourceName, new Location(pathInSource), expiration, child1);
     }
 
     @Test
     public void shouldAllowNullExpiration() {
         expiration = null;
-        contribution = new OneChildContribution(sourceName, pathInSource, expiration, child1);
+        contribution = new OneChildContribution(sourceName, new Location(pathInSource), expiration, child1);
         assertThat(contribution.getExpirationTimeInUtc(), is(nullValue()));
     }
 
     @Test( expected = IllegalArgumentException.class )
     public void shouldNotAllowExpirationTimeIfNotInUtcTime() {
         expiration = new JodaDateTime(System.currentTimeMillis(), "CST");
-        contribution = new OneChildContribution(sourceName, pathInSource, expiration, child1);
+        contribution = new OneChildContribution(sourceName, new Location(pathInSource), expiration, child1);
     }
 
     @Test( expected = AssertionError.class )
     public void shouldNotAllowNullChildren() {
         child1 = null;
-        contribution = new OneChildContribution(sourceName, pathInSource, expiration, child1);
+        contribution = new OneChildContribution(sourceName, new Location(pathInSource), expiration, child1);
     }
 
     @Test
@@ -95,7 +92,7 @@ public class OneChildContributionTest {
 
     @Test
     public void shouldNotBeExpiredIfExpirationIsInTheFuture() {
-        contribution = new OneChildContribution(sourceName, pathInSource, NOW, child1);
+        contribution = new OneChildContribution(sourceName, new Location(pathInSource), NOW, child1);
         assertThat(contribution.isExpired(YESTERDAY), is(false));
         assertThat(contribution.isExpired(TOMORROW), is(true));
     }
@@ -103,7 +100,7 @@ public class OneChildContributionTest {
     @Test
     public void shouldHaveChildren() {
         assertThat(contribution.getChildrenCount(), is(1));
-        Iterator<Segment> iter = contribution.getChildren();
+        Iterator<Location> iter = contribution.getChildren();
         assertThat(iter.next(), is(child1));
         assertThat(iter.hasNext(), is(false));
     }

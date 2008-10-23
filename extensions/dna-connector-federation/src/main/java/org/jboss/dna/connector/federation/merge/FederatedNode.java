@@ -22,37 +22,33 @@
 package org.jboss.dna.connector.federation.merge;
 
 import java.util.UUID;
-import org.jboss.dna.graph.commands.CreateNodeCommand;
-import org.jboss.dna.graph.commands.NodeConflictBehavior;
-import org.jboss.dna.graph.commands.basic.BasicGetNodeCommand;
-import org.jboss.dna.graph.properties.Path;
+import org.jboss.dna.graph.Location;
+import org.jboss.dna.graph.requests.ReadNodeRequest;
 
 /**
  * An in-memory (and temporary) representation of a federated node and it's merged properties and children.
  * 
  * @author Randall Hauch
  */
-public class FederatedNode extends BasicGetNodeCommand implements CreateNodeCommand {
-
-    protected static final NodeConflictBehavior DEFAULT_CONFLICT_BEHAVIOR = NodeConflictBehavior.UPDATE;
+public class FederatedNode extends ReadNodeRequest {
 
     private static final long serialVersionUID = 1L;
 
     private UUID uuid;
     private MergePlan mergePlan;
-    private NodeConflictBehavior nodeConflictBehavior = DEFAULT_CONFLICT_BEHAVIOR;
 
     /**
      * Create a federated node given the path and UUID.
      * 
-     * @param path the path of the federated node; may not be null
+     * @param location the location of the federated node; may not be null
      * @param uuid the UUID of the federated node; may not be null
      */
-    public FederatedNode( Path path,
+    public FederatedNode( Location location,
                           UUID uuid ) {
-        super(path);
+        super(location);
         assert uuid != null;
         this.uuid = uuid;
+        super.setActualLocationOfNode(location);
     }
 
     /**
@@ -92,21 +88,11 @@ public class FederatedNode extends BasicGetNodeCommand implements CreateNodeComm
     /**
      * {@inheritDoc}
      * 
-     * @see java.lang.Comparable#compareTo(java.lang.Object)
-     */
-    public int compareTo( CreateNodeCommand that ) {
-        if (this == that) return 0;
-        return this.getPath().compareTo(that.getPath());
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
      * @see java.lang.Object#hashCode()
      */
     @Override
     public int hashCode() {
-        return this.uuid.hashCode();
+        return this.at().hashCode();
     }
 
     /**
@@ -119,7 +105,7 @@ public class FederatedNode extends BasicGetNodeCommand implements CreateNodeComm
         if (obj == this) return true;
         if (obj instanceof FederatedNode) {
             FederatedNode that = (FederatedNode)obj;
-            if (this.getPath().equals(that.getPath())) return true;
+            if (this.at().equals(that.at())) return true;
             if (this.getUuid().equals(that.getUuid())) return true;
         }
         return false;
@@ -132,25 +118,6 @@ public class FederatedNode extends BasicGetNodeCommand implements CreateNodeComm
      */
     @Override
     public String toString() {
-        return getPath().toString() + " (" + this.getUuid() + ")";
+        return at().toString();
     }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.jboss.dna.graph.commands.CreateNodeCommand#getConflictBehavior()
-     */
-    public NodeConflictBehavior getConflictBehavior() {
-        return this.nodeConflictBehavior;
-    }
-
-    /**
-     * Set the behavior when node conflicts arise.
-     * 
-     * @param nodeConflictBehavior the conflict behavior, or null if the default should be used
-     */
-    public void setConflictBehavior( NodeConflictBehavior nodeConflictBehavior ) {
-        this.nodeConflictBehavior = nodeConflictBehavior != null ? nodeConflictBehavior : DEFAULT_CONFLICT_BEHAVIOR;
-    }
-
 }

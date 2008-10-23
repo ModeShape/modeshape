@@ -26,7 +26,6 @@ import javax.transaction.xa.XAResource;
 import net.jcip.annotations.NotThreadSafe;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.cache.CachePolicy;
-import org.jboss.dna.graph.commands.GraphCommand;
 import org.jboss.dna.graph.requests.Request;
 
 /**
@@ -80,16 +79,6 @@ public interface RepositoryConnection {
      * @return the default cache policy
      */
     CachePolicy getDefaultCachePolicy();
-
-    /**
-     * Execute the supplied commands against this repository source.
-     * 
-     * @param context the environment in which the commands are being executed; never null
-     * @param commands the commands to be executed; never null
-     * @throws RepositorySourceException if there is a problem loading the node data
-     */
-    void execute( ExecutionContext context,
-                  GraphCommand... commands ) throws RepositorySourceException;
 
     /**
      * Execute the supplied commands against this repository source.

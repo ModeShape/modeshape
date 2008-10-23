@@ -34,9 +34,9 @@ import java.util.concurrent.TimeUnit;
 import org.jboss.dna.common.i18n.MockI18n;
 import org.jboss.dna.common.util.Logger;
 import org.jboss.dna.graph.ExecutionContext;
-import org.jboss.dna.graph.connectors.RepositoryConnection;
-import org.jboss.dna.graph.connectors.RepositoryConnectionPool;
-import org.jboss.dna.graph.connectors.RepositorySourceException;
+import org.jboss.dna.graph.Location;
+import org.jboss.dna.graph.properties.basic.BasicPath;
+import org.jboss.dna.graph.requests.ReadNodeRequest;
 
 /**
  * A test harness for using repository connections under load.
@@ -168,8 +168,8 @@ public class RepositorySourceLoadHarness {
 
     /**
      * Return an operation factory that produces {@link RepositoryOperation} instances that each call
-     * {@link RepositoryConnection#execute(ExecutionContext, org.jboss.dna.graph.commands.GraphCommand...)} the supplied number of
-     * times, intermixed with random math operations and {@link Thread#yield() yielding}.
+     * {@link RepositoryConnection#execute(ExecutionContext, org.jboss.dna.graph.requests.Request)} the supplied number of times,
+     * intermixed with random math operations and {@link Thread#yield() yielding}.
      * 
      * @param callsPerOperation the number of <code>load</code> calls per RepositoryOperation
      * @return the factory
@@ -215,7 +215,7 @@ public class RepositorySourceLoadHarness {
                 if (i % 2 == 0) {
                     Thread.yield();
                 }
-                connection.execute(context);
+                connection.execute(context, new ReadNodeRequest(new Location(BasicPath.ROOT)));
                 int int2 = random(this.hashCode() ^ (int)System.nanoTime() + i);
                 total += Math.min(Math.abs(Math.max(int1, int2) + int1 * int2 / 3), count);
             }

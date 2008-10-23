@@ -40,7 +40,6 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import javax.transaction.xa.XAResource;
 import org.jboss.dna.graph.cache.CachePolicy;
-import org.jboss.dna.graph.commands.GraphCommand;
 import org.jboss.dna.graph.connectors.BasicExecutionContext;
 import org.jboss.dna.graph.connectors.RepositoryConnection;
 import org.jboss.dna.graph.connectors.RepositoryConnectionFactory;
@@ -61,8 +60,8 @@ import org.jboss.dna.graph.requests.ReadBlockOfChildrenRequest;
 import org.jboss.dna.graph.requests.ReadNodeRequest;
 import org.jboss.dna.graph.requests.ReadPropertyRequest;
 import org.jboss.dna.graph.requests.Request;
-import org.jboss.dna.graph.requests.RequestProcessor;
 import org.jboss.dna.graph.requests.UpdatePropertiesRequest;
+import org.jboss.dna.graph.requests.processor.RequestProcessor;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentMatcher;
@@ -771,22 +770,26 @@ public class GraphTest {
 
         @Override
         public void process( CopyBranchRequest request ) {
-            // Do nothing
+            // Just update the actual location
+            request.setActualLocations(actualLocationOf(request.from()), actualLocationOf(request.into()));
         }
 
         @Override
         public void process( CreateNodeRequest request ) {
-            // Do nothing
+            // Just update the actual location
+            request.setActualLocationOfNode(actualLocationOf(request.at()));
         }
 
         @Override
         public void process( DeleteBranchRequest request ) {
-            // Do nothing
+            // Just update the actual location
+            request.setActualLocationOfNode(actualLocationOf(request.at()));
         }
 
         @Override
         public void process( MoveBranchRequest request ) {
-            // Do nothing
+            // Just update the actual location
+            request.setActualLocations(actualLocationOf(request.from()), actualLocationOf(request.into()));
         }
 
         @Override
@@ -797,6 +800,8 @@ public class GraphTest {
                     request.addChild(child);
                 }
             }
+            // Set the actual location
+            request.setActualLocationOfNode(actualLocationOf(request.of()));
         }
 
         @Override
@@ -807,11 +812,22 @@ public class GraphTest {
                     request.addProperty(property);
                 }
             }
+            // Set the actual location
+            request.setActualLocationOfNode(actualLocationOf(request.at()));
         }
 
         @Override
         public void process( UpdatePropertiesRequest request ) {
-            // Do nothing
+            // Just update the actual location
+            request.setActualLocationOfNode(actualLocationOf(request.on()));
+        }
+
+        private Location actualLocationOf( Location location ) {
+            // If the location has a path, then use the location
+            if (location.hasPath()) return location;
+            // Otherwise, create a new location with an artificial path ...
+            Path path = context.getValueFactories().getPathFactory().create("/a/b/c/d");
+            return new Location(path, location.getIdProperties());
         }
     }
 
@@ -826,10 +842,6 @@ public class GraphTest {
         private final RequestProcessor processor = new Processor();
 
         public void close() {
-        }
-
-        public void execute( ExecutionContext context,
-                             GraphCommand... commands ) throws RepositorySourceException {
         }
 
         @SuppressWarnings( "synthetic-access" )

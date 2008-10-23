@@ -28,13 +28,11 @@ import org.jboss.dna.common.stats.Stopwatch;
 import org.jboss.dna.common.util.Logger;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.cache.CachePolicy;
-import org.jboss.dna.graph.commands.ActsAsUpdate;
-import org.jboss.dna.graph.commands.GraphCommand;
-import org.jboss.dna.graph.commands.executor.CommandExecutor;
 import org.jboss.dna.graph.connectors.RepositoryConnection;
 import org.jboss.dna.graph.connectors.RepositorySourceException;
 import org.jboss.dna.graph.connectors.RepositorySourceListener;
 import org.jboss.dna.graph.requests.Request;
+import org.jboss.dna.graph.requests.processor.RequestProcessor;
 
 /**
  * @author Randall Hauch
@@ -111,10 +109,11 @@ public class InMemoryRepositoryConnection implements RepositoryConnection {
     /**
      * {@inheritDoc}
      * 
-     * @throws RepositorySourceException
+     * @see org.jboss.dna.graph.connectors.RepositoryConnection#execute(org.jboss.dna.graph.ExecutionContext,
+     *      org.jboss.dna.graph.requests.Request)
      */
     public void execute( ExecutionContext context,
-                         GraphCommand... commands ) throws RepositorySourceException {
+                         Request request ) throws RepositorySourceException {
         Logger logger = context.getLogger(getClass());
         Stopwatch sw = null;
         if (logger.isTraceEnabled()) {
@@ -122,24 +121,16 @@ public class InMemoryRepositoryConnection implements RepositoryConnection {
             sw.start();
         }
         // Do any commands update/write?
-        Lock lock = this.content.getLock().readLock();
-        for (GraphCommand command : commands) {
-            if (command instanceof ActsAsUpdate) {
-                lock = this.content.getLock().writeLock();
-                break;
-            }
-        }
+        RequestProcessor processor = this.content.getRequestProcessor(context, this.getSourceName());
 
-        CommandExecutor executor = this.content.getCommandExecutor(context, this.getSourceName());
+        Lock lock = request.isReadOnly() ? content.getLock().readLock() : content.getLock().writeLock();
+        lock.lock();
         try {
             // Obtain the lock and execute the commands ...
-            lock.lock();
-            for (GraphCommand command : commands) {
-                executor.execute(command);
-            }
+            processor.process(request);
         } finally {
             try {
-                executor.close();
+                processor.close();
             } finally {
                 lock.unlock();
             }
@@ -149,18 +140,6 @@ public class InMemoryRepositoryConnection implements RepositoryConnection {
             sw.stop();
             logger.trace("InMemoryRepositoryConnection.execute(...) took " + sw.getTotalDuration());
         }
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.jboss.dna.graph.connectors.RepositoryConnection#execute(org.jboss.dna.graph.ExecutionContext,
-     *      org.jboss.dna.graph.requests.Request)
-     */
-    public void execute( ExecutionContext context,
-                         Request request ) throws RepositorySourceException {
-        // TODO
-        throw new UnsupportedOperationException();
     }
 
     protected InMemoryRepository getContent() {

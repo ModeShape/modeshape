@@ -37,10 +37,9 @@ import javax.transaction.xa.XAResource;
 import org.jboss.dna.common.util.StringUtil;
 import org.jboss.dna.graph.DnaLexicon;
 import org.jboss.dna.graph.ExecutionContext;
+import org.jboss.dna.graph.Graph;
+import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.cache.CachePolicy;
-import org.jboss.dna.graph.commands.CompositeCommand;
-import org.jboss.dna.graph.commands.CreateNodeCommand;
-import org.jboss.dna.graph.commands.GraphCommand;
 import org.jboss.dna.graph.connectors.BasicExecutionContext;
 import org.jboss.dna.graph.connectors.RepositoryConnection;
 import org.jboss.dna.graph.connectors.RepositoryConnectionFactory;
@@ -49,6 +48,8 @@ import org.jboss.dna.graph.connectors.RepositorySourceListener;
 import org.jboss.dna.graph.properties.Name;
 import org.jboss.dna.graph.properties.Path;
 import org.jboss.dna.graph.properties.Property;
+import org.jboss.dna.graph.requests.CompositeRequest;
+import org.jboss.dna.graph.requests.CreateNodeRequest;
 import org.jboss.dna.graph.requests.Request;
 import org.jboss.dna.graph.xml.DnaDtdLexicon;
 import org.jboss.dna.graph.xml.DnaXmlLexicon;
@@ -62,12 +63,12 @@ import org.mockito.MockitoAnnotations.Mock;
  */
 public class GraphImporterTest {
 
+    private Graph graph;
     private GraphImporter importer;
     private String sourceName;
     private ExecutionContext context;
     private URI xmlContent;
     private MockRepositoryConnection connection;
-    private GraphCommand lastExecutedCommand;
     private Request lastExecutedRequest;
     private Path destinationPath;
     @Mock
@@ -85,7 +86,8 @@ public class GraphImporterTest {
         context.getNamespaceRegistry().register("nt", "http://www.jcp.org/jcr/nt/1.0");
         sourceName = "sourceA";
         destinationPath = context.getValueFactories().getPathFactory().create("/a/b");
-        importer = new GraphImporter(sources, context);
+        graph = Graph.create(sourceName, sources, context);
+        importer = new GraphImporter(graph);
         connection = new MockRepositoryConnection();
         stub(sources.createConnection(sourceName)).toReturn(connection);
     }
@@ -93,10 +95,11 @@ public class GraphImporterTest {
     @Test
     public void shouldImportXmlContentAndGenerateTheCorrectCommands() throws Exception {
         System.out.println(xmlContent);
-        importer.importXml(xmlContent).into(sourceName, destinationPath); // writes commands as CompositeCommand to
+        Graph.Batch batch = importer.importXml(xmlContent, new Location(destinationPath));
+        batch.execute();
         // 'lastExecutedCommand'
-        assertThat(lastExecutedCommand, is(instanceOf(CompositeCommand.class)));
-        Iterator<GraphCommand> iter = ((CompositeCommand)lastExecutedCommand).iterator();
+        assertThat(lastExecutedRequest, is(instanceOf(CompositeRequest.class)));
+        Iterator<Request> iter = ((CompositeRequest)lastExecutedRequest).iterator();
         // assertCreateNode(iter, "/a/b/", "jcr:primaryType={http://www.jboss.org/dna/xml/1.0}document");
         assertCreateNode(iter, "/a/b/dnaxml:comment[1]", "any properties"); // jcr:primaryType and dnaxml:commentContent
         assertCreateNode(iter, "/a/b/dna:system[1]", "jcr:primaryType={http://www.jcp.org/jcr/nt/1.0}unstructured");
@@ -116,16 +119,16 @@ public class GraphImporterTest {
         assertThat(iter.hasNext(), is(false));
     }
 
-    public void assertCreateNode( Iterator<GraphCommand> iterator,
+    public void assertCreateNode( Iterator<Request> iterator,
                                   String path,
                                   String... properties ) {
-        GraphCommand nextCommand = iterator.next();
-        assertThat(nextCommand, is(instanceOf(CreateNodeCommand.class)));
-        CreateNodeCommand createNode = (CreateNodeCommand)nextCommand;
+        Request nextCommand = iterator.next();
+        assertThat(nextCommand, is(instanceOf(CreateNodeRequest.class)));
+        CreateNodeRequest createNode = (CreateNodeRequest)nextCommand;
         Path expectedPath = context.getValueFactories().getPathFactory().create(path);
-        assertThat(createNode.getPath(), is(expectedPath));
+        assertThat(createNode.at().getPath(), is(expectedPath));
         Map<Name, Property> propertiesByName = new HashMap<Name, Property>();
-        for (Property prop : createNode.getProperties()) {
+        for (Property prop : createNode.properties()) {
             propertiesByName.put(prop.getName(), prop);
         }
         for (String propertyStr : properties) {
@@ -152,12 +155,6 @@ public class GraphImporterTest {
 
     protected class MockRepositoryConnection implements RepositoryConnection {
         public void close() {
-        }
-
-        @SuppressWarnings( "synthetic-access" )
-        public void execute( ExecutionContext context,
-                             GraphCommand... commands ) throws RepositorySourceException {
-            lastExecutedCommand = commands[0];
         }
 
         @SuppressWarnings( "synthetic-access" )

@@ -46,6 +46,7 @@ import javax.security.auth.Subject;
 import javax.security.auth.login.LoginContext;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.ExecutionContextFactory;
+import org.jboss.dna.graph.Graph;
 import org.jboss.dna.graph.connectors.RepositoryConnection;
 import org.jboss.dna.graph.connectors.RepositoryConnectionFactory;
 import org.jboss.dna.graph.connectors.SimpleRepository;
@@ -107,27 +108,25 @@ public class JcrSessionTest {
 
     @Test( expected = AssertionError.class )
     public void shouldNotAllowNoRepository() throws Exception {
-        new JcrSession(null, executionContext, WORKSPACE_NAME, connection, nodesByUuid);
-    }
-
-    @Test( expected = AssertionError.class )
-    public void shouldNotAllowNoExecutionContext() throws Exception {
-        new JcrSession(repository, null, WORKSPACE_NAME, connection, nodesByUuid);
+        Graph graph = Graph.create(WORKSPACE_NAME, connectionFactory, executionContext);
+        new JcrSession(null, WORKSPACE_NAME, graph, nodesByUuid);
     }
 
     @Test( expected = AssertionError.class )
     public void shouldNotAllowNoWorkspaceName() throws Exception {
-        new JcrSession(repository, executionContext, null, connection, nodesByUuid);
+        Graph graph = Graph.create(WORKSPACE_NAME, connectionFactory, executionContext);
+        new JcrSession(repository, null, graph, nodesByUuid);
     }
 
     @Test( expected = AssertionError.class )
-    public void shouldNotAllowNoConnection() throws Exception {
-        new JcrSession(repository, executionContext, WORKSPACE_NAME, null, nodesByUuid);
+    public void shouldNotAllowNoGraph() throws Exception {
+        new JcrSession(repository, WORKSPACE_NAME, null, nodesByUuid);
     }
 
     @Test( expected = AssertionError.class )
     public void shouldNotAllowNoUuid2NodeMap() throws Exception {
-        new JcrSession(repository, executionContext, WORKSPACE_NAME, connection, null);
+        Graph graph = Graph.create(WORKSPACE_NAME, connectionFactory, executionContext);
+        new JcrSession(repository, WORKSPACE_NAME, graph, null);
     }
 
     @Test( expected = UnsupportedOperationException.class )
@@ -212,8 +211,9 @@ public class JcrSessionTest {
         ExecutionContext executionContext = Mockito.mock(ExecutionContext.class);
         stub(executionContext.getSubject()).toReturn(subject);
         stub(executionContext.getLoginContext()).toReturn(Mockito.mock(LoginContext.class));
-        Session session = new JcrSession(repository, executionContext, WORKSPACE_NAME, Mockito.mock(RepositoryConnection.class),
-                                         nodesByUuid);
+        Graph graph = Mockito.mock(Graph.class);
+        stub(graph.getContext()).toReturn(executionContext);
+        Session session = new JcrSession(repository, WORKSPACE_NAME, graph, nodesByUuid);
         try {
             assertThat(session.getUserID(), is("name"));
         } finally {
@@ -224,8 +224,8 @@ public class JcrSessionTest {
     @Test
     public void shouldProvideRootNode() throws Exception {
         ReferenceMap<UUID, Node> nodesByUuid = new ReferenceMap<UUID, Node>(ReferenceType.STRONG, ReferenceType.SOFT);
-        Session session = new JcrSession(repository, executionContext, WORKSPACE_NAME,
-                                         connectionFactory.createConnection(WORKSPACE_NAME), nodesByUuid);
+        Graph graph = Graph.create(WORKSPACE_NAME, connectionFactory, executionContext);
+        Session session = new JcrSession(repository, WORKSPACE_NAME, graph, nodesByUuid);
         assertThat(nodesByUuid.isEmpty(), is(true));
         Node root = session.getRootNode();
         assertThat(root, notNullValue());

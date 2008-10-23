@@ -269,9 +269,10 @@ public class BasicPath implements Path {
      */
     public boolean hasSameAncestor( Path that ) {
         if (that == null) return false;
+        if (this.isRoot() && that.isRoot()) return true;
         if (that.size() != this.size()) return false;
-        if (this.size() == 1) return false;
-        for (int i = this.size() - 2; i < 0; --i) {
+        if (this.size() == 1) return true; // both nodes are just under the root
+        for (int i = this.size() - 2; i >= 0; --i) {
             Path.Segment thisSegment = this.getSegment(i);
             Path.Segment thatSegment = that.getSegment(i);
             if (!thisSegment.equals(thatSegment)) return false;
@@ -465,8 +466,9 @@ public class BasicPath implements Path {
         if (beginIndex == 0) return this;
         int size = size();
         if (beginIndex >= size) {
-            throw new IndexOutOfBoundsException(GraphI18n.unableToCreateSubpathBeginIndexGreaterThanOrEqualToSize.text(beginIndex,
-                                                                                                                     size));
+            throw new IndexOutOfBoundsException(
+                                                GraphI18n.unableToCreateSubpathBeginIndexGreaterThanOrEqualToSize.text(beginIndex,
+                                                                                                                       size));
         }
         if (size == 0) return ROOT;
         return new BasicPath(this.segments.subList(beginIndex, size), this.isAbsolute());
@@ -483,13 +485,14 @@ public class BasicPath implements Path {
             if (endIndex == size) return this;
         }
         if (beginIndex >= size) {
-            throw new IndexOutOfBoundsException(GraphI18n.unableToCreateSubpathBeginIndexGreaterThanOrEqualToSize.text(beginIndex,
-                                                                                                                     size));
+            throw new IndexOutOfBoundsException(
+                                                GraphI18n.unableToCreateSubpathBeginIndexGreaterThanOrEqualToSize.text(beginIndex,
+                                                                                                                       size));
         }
         if (beginIndex > endIndex) {
             throw new IndexOutOfBoundsException(
                                                 GraphI18n.unableToCreateSubpathBeginIndexGreaterThanOrEqualToEndingIndex.text(beginIndex,
-                                                                                                                            endIndex));
+                                                                                                                              endIndex));
         }
         // This reuses the same list, so it's pretty efficient ...
         return new BasicPath(this.segments.subList(beginIndex, endIndex), this.isAbsolute());
