@@ -209,6 +209,25 @@ public class BasicNamespaceRegistry implements NamespaceRegistry {
         return Collections.unmodifiableSet(result);
     }
 
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.properties.NamespaceRegistry#getNamespaces()
+     */
+    public Set<Namespace> getNamespaces() {
+        Set<Namespace> result = new HashSet<Namespace>();
+        Lock lock = this.registryLock.readLock();
+        try {
+            lock.lock();
+            for (Map.Entry<String, String> entry : this.namespacesByPrefix.entrySet()) {
+                result.add(new BasicNamespace(entry.getKey(), entry.getValue()));
+            }
+        } finally {
+            lock.unlock();
+        }
+        return Collections.unmodifiableSet(result);
+    }
+
     @GuardedBy( "registryLock" )
     protected String generatePrefix() {
         DecimalFormat formatter = new DecimalFormat(this.generatedPrefixTemplate);

@@ -158,9 +158,8 @@ public class BasicExecutionContextFactory implements ExecutionContextFactory {
     }
 
     protected synchronized void initialize( ExecutionContext context ) {
-        for (String uri : this.defaultNamespaces.getRegisteredNamespaceUris()) {
-            String prefix = this.defaultNamespaces.getPrefixForNamespaceUri(uri, false);
-            context.getNamespaceRegistry().register(prefix, uri);
+        for (NamespaceRegistry.Namespace namespace : this.defaultNamespaces.getNamespaces()) {
+            context.getNamespaceRegistry().register(namespace.getPrefix(), namespace.getNamespaceUri());
         }
     }
 }

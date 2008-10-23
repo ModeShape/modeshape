@@ -29,6 +29,7 @@ import javax.jcr.Session;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.graph.properties.NamespaceException;
 import org.jboss.dna.graph.properties.NamespaceRegistry;
+import org.jboss.dna.graph.properties.basic.BasicNamespace;
 
 /**
  * @author Randall Hauch
@@ -38,7 +39,8 @@ public class JcrNamespaceRegistry implements NamespaceRegistry {
     private final String repositoryWorkspaceName;
     private final SessionFactory sessionFactory;
 
-    public JcrNamespaceRegistry( SessionFactory sessionFactory, String repositoryWorkspaceName ) {
+    public JcrNamespaceRegistry( SessionFactory sessionFactory,
+                                 String repositoryWorkspaceName ) {
         CheckArg.isNotNull(sessionFactory, "sessionFactory");
         CheckArg.isNotNull(repositoryWorkspaceName, "repositoryWorkspaceName");
         this.repositoryWorkspaceName = repositoryWorkspaceName;
@@ -82,7 +84,8 @@ public class JcrNamespaceRegistry implements NamespaceRegistry {
     /**
      * {@inheritDoc}
      */
-    public String getPrefixForNamespaceUri( String namespaceUri, boolean generateIfMissing ) {
+    public String getPrefixForNamespaceUri( String namespaceUri,
+                                            boolean generateIfMissing ) {
         Session session = null;
         try {
             session = this.sessionFactory.createSession(this.repositoryWorkspaceName);
@@ -119,7 +122,8 @@ public class JcrNamespaceRegistry implements NamespaceRegistry {
     /**
      * {@inheritDoc}
      */
-    public String register( String prefix, String namespaceUri ) {
+    public String register( String prefix,
+                            String namespaceUri ) {
         String previousNamespaceUriForPrefix = null;
         Session session = null;
         try {
@@ -148,6 +152,31 @@ public class JcrNamespaceRegistry implements NamespaceRegistry {
             Set<String> result = new HashSet<String>();
             for (String uri : registry.getURIs()) {
                 result.add(uri);
+            }
+            return Collections.unmodifiableSet(result);
+        } catch (RepositoryException e) {
+            throw new NamespaceException(e);
+        } finally {
+            if (session != null) {
+                session.logout();
+            }
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.properties.NamespaceRegistry#getNamespaces()
+     */
+    public Set<Namespace> getNamespaces() {
+        Session session = null;
+        try {
+            session = this.sessionFactory.createSession(this.repositoryWorkspaceName);
+            javax.jcr.NamespaceRegistry registry = session.getWorkspace().getNamespaceRegistry();
+            Set<Namespace> result = new HashSet<Namespace>();
+            for (String uri : registry.getURIs()) {
+                String prefix = registry.getPrefix(uri);
+                result.add(new BasicNamespace(prefix, uri));
             }
             return Collections.unmodifiableSet(result);
         } catch (RepositoryException e) {
