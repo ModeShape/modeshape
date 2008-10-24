@@ -293,8 +293,6 @@ public class RepositoryClient {
                     }
                 } catch (javax.jcr.PathNotFoundException e) {
                     return false;
-                } catch (Throwable t) {
-                    t.printStackTrace();
                 } finally {
                     if (session != null) session.logout();
                 }
