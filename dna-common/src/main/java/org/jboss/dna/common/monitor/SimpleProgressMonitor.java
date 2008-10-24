@@ -27,21 +27,18 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import net.jcip.annotations.GuardedBy;
+import net.jcip.annotations.ThreadSafe;
 import org.jboss.dna.common.collection.Problems;
-import org.jboss.dna.common.collection.SimpleProblems;
+import org.jboss.dna.common.collection.ThreadSafeProblems;
 import org.jboss.dna.common.i18n.I18n;
 
 /**
  * A basic progress monitor.
- * <p>
- * This class is thread-safe except when accessing or adding {@link #getProblems() problems}. Problems must only be added by the
- * {@link ProgressMonitor <strong>Updater</strong>}, and accessed by {@link ProgressMonitor Observers} only after the activity
- * has been {@link #done() completed}.
- * </p>
  * 
  * @author Randall Hauch
  * @author John Verhaeg
  */
+@ThreadSafe
 public class SimpleProgressMonitor implements ProgressMonitor {
 
     @GuardedBy( "lock" )
@@ -56,7 +53,7 @@ public class SimpleProgressMonitor implements ProgressMonitor {
     private final String activityName;
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
     private final AtomicBoolean cancelled = new AtomicBoolean(false);
-    private final Problems problems = new SimpleProblems();
+    private final Problems problems = new ThreadSafeProblems();
 
     public SimpleProgressMonitor( String activityName ) {
         this.activityName = activityName != null ? activityName.trim() : "";
