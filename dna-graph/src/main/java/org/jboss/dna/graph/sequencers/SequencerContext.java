@@ -22,24 +22,15 @@
 package org.jboss.dna.graph.sequencers;
 
 import java.util.Set;
-import org.jboss.dna.common.util.Logger;
+import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.properties.Name;
-import org.jboss.dna.graph.properties.NamespaceRegistry;
 import org.jboss.dna.graph.properties.Path;
 import org.jboss.dna.graph.properties.Property;
-import org.jboss.dna.graph.properties.ValueFactories;
 
 /**
  * @author John Verhaeg
  */
-public interface SequencerContext {
-
-    /**
-     * Get the factories that can be used to create {@link Path paths} and other property values.
-     * 
-     * @return the collection of factories; never <code>null</code>.
-     */
-    ValueFactories getFactories();
+public interface SequencerContext extends ExecutionContext {
 
     /**
      * Return the path of the input node containing the content being sequenced.
@@ -69,34 +60,4 @@ public interface SequencerContext {
      * @return the MIME-type
      */
     String getMimeType();
-
-    /**
-     * Convenience method to get the namespace registry used by the {@link ValueFactories#getNameFactory() name value factory}.
-     * 
-     * @return the namespace registry; never <code>null</code>.
-     */
-    NamespaceRegistry getNamespaceRegistry();
-
-    /**
-     * Return a logger associated with this context. This logger records only those activities within the context and provide a
-     * way to capture the context-specific activities. All log messages are also sent to the system logger, so classes that log
-     * via this mechanism should <i>not</i> also {@link Logger#getLogger(Class) obtain a system logger}.
-     * 
-     * @param clazz the class that is doing the logging
-     * @return the logger, named after <code>clazz</code>; never null
-     * @see #getLogger(String)
-     */
-    Logger getLogger( Class<?> clazz );
-
-    /**
-     * Return a logger associated with this context. This logger records only those activities within the context and provide a
-     * way to capture the context-specific activities. All log messages are also sent to the system logger, so classes that log
-     * via this mechanism should <i>not</i> also {@link Logger#getLogger(Class) obtain a system logger}.
-     * 
-     * @param name the name for the logger
-     * @return the logger, named after <code>clazz</code>; never null
-     * @see #getLogger(Class)
-     */
-    Logger getLogger( String name );
-
 }

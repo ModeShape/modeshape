@@ -132,7 +132,7 @@ public class SequencerNodeContextTest extends AbstractJcrRepositoryTest {
     public void shouldProvideValueFactories() throws Exception {
         Node input = tools.findOrCreateNode(session, "/a/b/c");
         SequencerNodeContext sequencerContext = new SequencerNodeContext(input, sequencedProperty, execContext);
-        assertThat(sequencerContext.getFactories(), notNullValue());
+        assertThat(sequencerContext.getValueFactories(), notNullValue());
     }
 
     @Test

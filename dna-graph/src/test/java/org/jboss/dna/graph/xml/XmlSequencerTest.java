@@ -25,7 +25,6 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsInstanceOf.instanceOf;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
-import static org.mockito.Mockito.stub;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
@@ -33,13 +32,12 @@ import org.jboss.dna.common.monitor.ProgressMonitor;
 import org.jboss.dna.common.monitor.SimpleProgressMonitor;
 import org.jboss.dna.graph.properties.Name;
 import org.jboss.dna.graph.properties.NameFactory;
+import org.jboss.dna.graph.sequencers.MockSequencerContext;
 import org.jboss.dna.graph.sequencers.MockSequencerOutput;
 import org.jboss.dna.graph.sequencers.SequencerContext;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.MockitoAnnotations;
-import org.mockito.MockitoAnnotations.Mock;
 
 /**
  * @author John Verhaeg
@@ -70,14 +68,13 @@ public class XmlSequencerTest {
     private URL xml3;
     private URL xml4;
     private URL xsd;
-    @Mock
     private SequencerContext context;
 
     @Before
     public void beforeEach() {
-        MockitoAnnotations.initMocks(this);
         sequencer = new XmlSequencer();
-        output = new MockSequencerOutput();
+        context = new MockSequencerContext();
+        output = new MockSequencerOutput(context);
         monitor = new SimpleProgressMonitor("Test activity");
         xml1 = this.getClass().getClassLoader().getResource("jackrabbitInMemoryTestRepositoryConfig.xml");
         assertThat(xml1, is(notNullValue()));
@@ -89,8 +86,6 @@ public class XmlSequencerTest {
         assertThat(xml4, is(notNullValue()));
         xsd = this.getClass().getClassLoader().getResource("Descriptor.1.0.xsd");
         assertThat(xsd, is(notNullValue()));
-        stub(context.getFactories()).toReturn(output.getFactories());
-        stub(context.getNamespaceRegistry()).toReturn(output.getNamespaceRegistry());
     }
 
     @After
@@ -215,7 +210,7 @@ public class XmlSequencerTest {
                              String property,
                              String expectedName ) {
         Name name = verify(nodePath, property, Name.class);
-        assertThat(name, is(output.getFactories().getNameFactory().create(expectedName)));
+        assertThat(name, is(context.getValueFactories().getNameFactory().create(expectedName)));
     }
 
     private void verifyString( String nodePath,

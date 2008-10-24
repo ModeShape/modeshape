@@ -24,7 +24,6 @@ package org.jboss.dna.sequencer.java;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
-import static org.mockito.Mockito.stub;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -32,16 +31,16 @@ import java.io.IOException;
 import java.io.InputStream;
 import org.jboss.dna.common.monitor.ProgressMonitor;
 import org.jboss.dna.common.monitor.SimpleProgressMonitor;
+import org.jboss.dna.graph.sequencers.MockSequencerContext;
 import org.jboss.dna.graph.sequencers.MockSequencerOutput;
 import org.jboss.dna.graph.sequencers.SequencerContext;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.MockitoAnnotations;
-import org.mockito.MockitoAnnotations.Mock;
 
 /**
  * @author Serge Pagop
+ * @author John Verhaeg
  */
 public class JavaMetadataSequencerTest {
     private JavaMetadataSequencer sequencer;
@@ -49,18 +48,16 @@ public class JavaMetadataSequencerTest {
     private MockSequencerOutput output;
     private ProgressMonitor progress;
     private File source;
-    @Mock
     private SequencerContext context;
 
     @Before
     public void beforeEach() {
-        MockitoAnnotations.initMocks(this);
+        context = new MockSequencerContext();
+        context.getNamespaceRegistry().register("java", "http://jboss.org/dna/java/1.0");
         sequencer = new JavaMetadataSequencer();
-        output = new MockSequencerOutput();
-        output.getNamespaceRegistry().register("java", "http://jboss.org/dna/java/1.0");
+        output = new MockSequencerOutput(context);
         this.progress = new SimpleProgressMonitor("Test java monitor activity");
         source = new File("src/test/workspace/projectX/src/org/acme/MySource.java");
-        stub(context.getFactories()).toReturn(output.getFactories());
     }
 
     @After
@@ -93,7 +90,9 @@ public class JavaMetadataSequencerTest {
 
         // TODO (find a solution to get the annotation of a package). Java Sequencer does not yet support sequencing of
         // package-info.java with package annotations
-        // assertThat(output.getPropertyValues("java:compilationUnit/java:package/java:packageDeclaration/java:annotation/java:annotationDeclaration/java:annotationType/java:markerAnnotation[1]",
+        // assertThat(output.getPropertyValues(
+        // "java:compilationUnit/java:package/java:packageDeclaration/java:annotation/java:annotationDeclaration/java:annotationType/java:markerAnnotation[1]"
+        // ,
         // "java:typeName"),
         // is(new Object[] {"org.acme.annotation.MyPackageAnnotation"}));
 
@@ -299,8 +298,8 @@ public class JavaMetadataSequencerTest {
         assertThat(output.getPropertyValues("java:compilationUnit/java:unitType/java:classDeclaration/java:normalClass/java:normalClassDeclaration/java:method/java:methodDeclaration[5]/java:parameter/java:formalParameter[2]/java:type/java:arrayType/java:arrayTypeVariable/java:variable",
                                             "java:variableName"),
                    is(new Object[] {"ia"}));
-        
-     // public Object doSomething3() method
+
+        // public Object doSomething3() method
         assertThat(output.getPropertyValues("java:compilationUnit/java:unitType/java:classDeclaration/java:normalClass/java:normalClassDeclaration/java:method/java:methodDeclaration[6]/java:modifier/java:modifierDeclaration[1]",
                                             "java:modifierName"),
                    is(new Object[] {"public"}));

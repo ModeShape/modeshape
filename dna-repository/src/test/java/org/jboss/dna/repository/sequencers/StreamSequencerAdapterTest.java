@@ -45,18 +45,19 @@ import org.jboss.dna.graph.sequencers.SequencerContext;
 import org.jboss.dna.graph.sequencers.SequencerOutput;
 import org.jboss.dna.graph.sequencers.StreamSequencer;
 import org.jboss.dna.repository.observation.NodeChange;
+import org.jboss.dna.repository.util.BasicJcrExecutionContext;
 import org.jboss.dna.repository.util.JcrExecutionContext;
 import org.jboss.dna.repository.util.JcrNamespaceRegistry;
 import org.jboss.dna.repository.util.JcrTools;
 import org.jboss.dna.repository.util.RepositoryNodePath;
 import org.jboss.dna.repository.util.SessionFactory;
-import org.jboss.dna.repository.util.BasicJcrExecutionContext;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
 /**
  * @author Randall Hauch
+ * @author John Verhaeg
  */
 public class StreamSequencerAdapterTest extends AbstractJcrRepositoryTest {
 
@@ -90,8 +91,8 @@ public class StreamSequencerAdapterTest extends AbstractJcrRepositoryTest {
         this.streamSequencer = new StreamSequencer() {
 
             /**
-             * This method always copies the {@link StreamSequencerAdapterTest#sequencerOutput} data into the output {@inheritDoc},
-             * and does nothing else with any of the other parameters.
+             * This method always copies the {@link StreamSequencerAdapterTest#sequencerOutput} data into the output {@inheritDoc}
+             * , and does nothing else with any of the other parameters.
              */
             public void sequence( InputStream stream,
                                   SequencerOutput output,
@@ -370,7 +371,7 @@ public class StreamSequencerAdapterTest extends AbstractJcrRepositoryTest {
 
     @Test
     public void shouldSequencerOutputProvideAccessToNamespaceRegistry() {
-        assertThat(sequencerOutput.getNamespaceRegistry(), notNullValue());
+        assertThat(context.getNamespaceRegistry(), notNullValue());
     }
 
     @Test

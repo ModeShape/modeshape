@@ -24,15 +24,9 @@ package org.jboss.dna.graph.sequencers;
 import java.util.HashMap;
 import java.util.Map;
 import net.jcip.annotations.NotThreadSafe;
-import org.jboss.dna.graph.DnaLexicon;
 import org.jboss.dna.graph.properties.Name;
-import org.jboss.dna.graph.properties.NamespaceRegistry;
 import org.jboss.dna.graph.properties.Path;
 import org.jboss.dna.graph.properties.PathFactory;
-import org.jboss.dna.graph.properties.ValueFactories;
-import org.jboss.dna.graph.properties.basic.BasicNamespaceRegistry;
-import org.jboss.dna.graph.properties.basic.StandardValueFactories;
-import org.jboss.dna.graph.sequencers.SequencerOutput;
 
 /**
  * @author Randall Hauch
@@ -42,38 +36,11 @@ import org.jboss.dna.graph.sequencers.SequencerOutput;
 public class MockSequencerOutput implements SequencerOutput {
 
     private final Map<Path, Object[]> properties;
-    private final ValueFactories factories;
+    private final SequencerContext context;
 
-    /**
-	 */
-    public MockSequencerOutput() {
+    public MockSequencerOutput( SequencerContext context ) {
+        this.context = context;
         this.properties = new HashMap<Path, Object[]>();
-        NamespaceRegistry registry = new BasicNamespaceRegistry();
-        registry.register("jcr", "http://www.jcp.org/jcr/1.0");
-        registry.register("mix", "http://www.jcp.org/jcr/mix/1.0");
-        registry.register("nt", "http://www.jcp.org/jcr/nt/1.0");
-        registry.register(DnaLexicon.Namespace.PREFIX, DnaLexicon.Namespace.URI);
-        registry.register("dnadtd", "http://www.jboss.org/dna/dtd/1.0");
-        registry.register("dnaxml", "http://www.jboss.org/dna/xml/1.0");
-        factories = new StandardValueFactories(registry);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public ValueFactories getFactories() {
-        return this.factories;
-    }
-
-    /**
-     * <p>
-     * {@inheritDoc}
-     * </p>
-     * 
-     * @see org.jboss.dna.graph.sequencers.SequencerOutput#getNamespaceRegistry()
-     */
-    public NamespaceRegistry getNamespaceRegistry() {
-        return factories.getNameFactory().getNamespaceRegistry();
     }
 
     /**
@@ -96,8 +63,8 @@ public class MockSequencerOutput implements SequencerOutput {
     public void setProperty( String nodePath,
                              String propertyName,
                              Object... values ) {
-        Path path = this.factories.getPathFactory().create(nodePath);
-        Name name = this.factories.getNameFactory().create(propertyName);
+        Path path = context.getValueFactories().getPathFactory().create(nodePath);
+        Name name = context.getValueFactories().getNameFactory().create(propertyName);
         setProperty(path, name, values);
     }
 
@@ -107,9 +74,9 @@ public class MockSequencerOutput implements SequencerOutput {
     public void setReference( String nodePath,
                               String propertyName,
                               String... paths ) {
-        PathFactory pathFactory = this.factories.getPathFactory();
+        PathFactory pathFactory = context.getValueFactories().getPathFactory();
         Path path = pathFactory.create(nodePath);
-        Name name = this.factories.getNameFactory().create(propertyName);
+        Name name = context.getValueFactories().getNameFactory().create(propertyName);
         Object[] values = null;
         if (paths != null && paths.length != 0) {
             values = new Path[paths.length];
@@ -139,14 +106,14 @@ public class MockSequencerOutput implements SequencerOutput {
 
     protected Path createKey( String nodePath,
                               String propertyName ) {
-        Path path = this.factories.getPathFactory().create(nodePath);
-        Name name = this.factories.getNameFactory().create(propertyName);
+        Path path = context.getValueFactories().getPathFactory().create(nodePath);
+        Name name = context.getValueFactories().getNameFactory().create(propertyName);
         return createKey(path, name);
     }
 
     protected Path createKey( Path nodePath,
                               Name propertyName ) {
-        return this.factories.getPathFactory().create(nodePath, propertyName);
+        return context.getValueFactories().getPathFactory().create(nodePath, propertyName);
     }
 
 }

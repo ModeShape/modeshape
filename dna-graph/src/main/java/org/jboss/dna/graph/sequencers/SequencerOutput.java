@@ -22,9 +22,7 @@
 package org.jboss.dna.graph.sequencers;
 
 import org.jboss.dna.graph.properties.Name;
-import org.jboss.dna.graph.properties.NamespaceRegistry;
 import org.jboss.dna.graph.properties.Path;
-import org.jboss.dna.graph.properties.ValueFactories;
 
 /**
  * Interface for sequencers to use to generate their output.
@@ -35,33 +33,15 @@ import org.jboss.dna.graph.properties.ValueFactories;
 public interface SequencerOutput {
 
     /**
-     * Get the factories that can be used to create {@link Path paths} and other property values.
-     * 
-     * @return the collection of factories; never null
-     * @deprecated Replaced by {@link SequencerContext#getFactories()}.
-     */
-    @Deprecated
-    ValueFactories getFactories();
-
-    /**
-     * Convenience method to get the namespace registry used by the {@link ValueFactories#getNameFactory() name value factory}.
-     * 
-     * @return the namespace registry; never <code>null</code>
-     * @deprecated Replaced by {@link SequencerContext#getNamespaceRegistry()}.
-     */
-    @Deprecated
-    NamespaceRegistry getNamespaceRegistry();
-
-    /**
      * Set the supplied property on the supplied node.
      * <p>
-     * The {@link #getFactories() value factories} should be used to create paths, names, and values. These factories can be used
-     * to create new values or convert values from one property type to another. (Note that each of the factories have methods
-     * that create values from all of the property types.)
+     * The {@link SequencerContext#getValueFactories() value factories} should be used to create paths, names, and values. These
+     * factories can be used to create new values or convert values from one property type to another. (Note that each of the
+     * factories have methods that create values from all of the property types.)
      * </p>
      * <p>
      * This method is provided as a convenience, but it identical to creating a {@link Path} and {@link Name} using the
-     * {@link #getFactories() factories} and calling {@link #setProperty(Path, Name, Object...)}.
+     * {@link SequencerContext#getValueFactories() factories} and calling {@link #setProperty(Path, Name, Object...)}.
      * </p>
      * 
      * @param nodePath the path to the node containing the property; may not be null
@@ -76,7 +56,7 @@ public interface SequencerOutput {
      * Set the supplied reference on the supplied node.
      * <p>
      * This method is provided as a convenience, but it identical to creating a {@link Path} and {@link Name} using the
-     * {@link #getFactories() factories} and calling {@link #setProperty(Path, Name, Object...)}.
+     * {@link SequencerContext#getValueFactories() factories} and calling {@link #setProperty(Path, Name, Object...)}.
      * </p>
      * 
      * @param nodePath the path to the node containing the property; may not be null
@@ -91,9 +71,9 @@ public interface SequencerOutput {
     /**
      * Set the supplied property on the supplied node.
      * <p>
-     * The {@link #getFactories() value factories} should be used to create paths, names, and values. These factories can be used
-     * to create new values or convert values from one property type to another. (Note that each of the factories have methods
-     * that create values from all of the property types.)
+     * The {@link SequencerContext#getValueFactories() value factories} should be used to create paths, names, and values. These
+     * factories can be used to create new values or convert values from one property type to another. (Note that each of the
+     * factories have methods that create values from all of the property types.)
      * </p>
      * 
      * @param nodePath the path to the node containing the property; may not be null

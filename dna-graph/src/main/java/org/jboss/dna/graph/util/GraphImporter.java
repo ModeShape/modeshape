@@ -25,9 +25,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URI;
+import java.security.AccessControlContext;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Set;
+import javax.security.auth.Subject;
+import javax.security.auth.login.LoginContext;
 import org.jboss.dna.common.i18n.I18n;
 import org.jboss.dna.common.monitor.ProgressMonitor;
 import org.jboss.dna.common.monitor.SimpleProgressMonitor;
@@ -59,6 +62,7 @@ import org.jboss.dna.graph.xml.XmlSequencer;
 
 /**
  * @author Randall Hauch
+ * @author John Verhaeg
  */
 public class GraphImporter {
 
@@ -208,22 +212,8 @@ public class GraphImporter {
             this.primaryTypeName = this.nameFactory.create("jcr:primaryType");
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.jboss.dna.graph.sequencers.SequencerOutput#getFactories()
-         */
-        public ValueFactories getFactories() {
+        private ValueFactories getFactories() {
             return getContext().getValueFactories();
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.jboss.dna.graph.sequencers.SequencerOutput#getNamespaceRegistry()
-         */
-        public NamespaceRegistry getNamespaceRegistry() {
-            return getContext().getNamespaceRegistry();
         }
 
         /**
@@ -321,10 +311,19 @@ public class GraphImporter {
         /**
          * {@inheritDoc}
          * 
-         * @see org.jboss.dna.graph.sequencers.SequencerContext#getFactories()
+         * @see org.jboss.dna.graph.ExecutionContext#getAccessControlContext()
          */
-        public ValueFactories getFactories() {
-            return getContext().getValueFactories();
+        public AccessControlContext getAccessControlContext() {
+            return getContext().getAccessControlContext();
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.common.component.ClassLoaderFactory#getClassLoader(java.lang.String[])
+         */
+        public ClassLoader getClassLoader( String... classpath ) {
+            return getContext().getClassLoader(classpath);
         }
 
         /**
@@ -378,6 +377,15 @@ public class GraphImporter {
         /**
          * {@inheritDoc}
          * 
+         * @see org.jboss.dna.graph.ExecutionContext#getLoginContext()
+         */
+        public LoginContext getLoginContext() {
+            return getContext().getLoginContext();
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
          * @see org.jboss.dna.graph.sequencers.SequencerContext#getMimeType()
          */
         public String getMimeType() {
@@ -393,6 +401,32 @@ public class GraphImporter {
             return getContext().getNamespaceRegistry();
         }
 
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.graph.ExecutionContext#getPropertyFactory()
+         */
+        public PropertyFactory getPropertyFactory() {
+            return getContext().getPropertyFactory();
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.graph.ExecutionContext#getSubject()
+         */
+        public Subject getSubject() {
+            return getContext().getSubject();
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.graph.sequencers.SequencerContext#getValueFactories()
+         */
+        public ValueFactories getValueFactories() {
+            return getContext().getValueFactories();
+        }
     }
 
 }

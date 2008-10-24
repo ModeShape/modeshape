@@ -167,6 +167,7 @@ import org.jboss.dna.sequencer.java.metadata.Variable;
  * </p>
  * 
  * @author Serge Pagop
+ * @author John Verhaeg
  */
 public class JavaMetadataSequencer implements JavaSourceCndDefinition, StreamSequencer {
 
@@ -184,8 +185,8 @@ public class JavaMetadataSequencer implements JavaSourceCndDefinition, StreamSeq
         progressMonitor.beginTask(10, JavaMetadataI18n.sequencerTaskName);
 
         JavaMetadata javaMetadata = null;
-        NameFactory nameFactory = context.getFactories().getNameFactory();
-        PathFactory pathFactory = context.getFactories().getPathFactory();
+        NameFactory nameFactory = context.getValueFactories().getNameFactory();
+        PathFactory pathFactory = context.getValueFactories().getPathFactory();
 
         try {
             javaMetadata = JavaMetadata.instance(stream, JavaMetadataUtil.length(stream), null, progressMonitor.createSubtask(10));
@@ -699,9 +700,13 @@ public class JavaMetadataSequencer implements JavaSourceCndDefinition, StreamSeq
                                                    methodReturnPrimitiveType.getType());
 
                             }
-                            if(methodReturnType instanceof SimpleTypeFieldMetadata) {
-                                SimpleTypeFieldMetadata simpleTypeFieldMetadata = (SimpleTypeFieldMetadata) methodReturnType;
-                                SimpleTypeMetadataSequencer.sequenceMethodReturnType(output,nameFactory,pathFactory,simpleTypeFieldMetadata,methodRootPath);
+                            if (methodReturnType instanceof SimpleTypeFieldMetadata) {
+                                SimpleTypeFieldMetadata simpleTypeFieldMetadata = (SimpleTypeFieldMetadata)methodReturnType;
+                                SimpleTypeMetadataSequencer.sequenceMethodReturnType(output,
+                                                                                     nameFactory,
+                                                                                     pathFactory,
+                                                                                     simpleTypeFieldMetadata,
+                                                                                     methodRootPath);
                             }
 
                             // TODO method return reference type

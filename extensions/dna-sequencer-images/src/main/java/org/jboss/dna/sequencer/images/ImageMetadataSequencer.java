@@ -46,11 +46,10 @@ import org.jboss.dna.graph.sequencers.StreamSequencer;
  * <li><strong>image:bitsPerPixel</strong> - optional integer property for the number of bits per pixel</li>
  * <li><strong>image:progressive</strong> - optional boolean property specifying whether the image is stored in a progressive
  * (i.e., interlaced) form</li>
- * <li><strong>image:numberOfImages</strong> - optional integer property for the number of images stored in the file; defaults
- * to 1</li>
+ * <li><strong>image:numberOfImages</strong> - optional integer property for the number of images stored in the file; defaults to
+ * 1</li>
  * <li><strong>image:physicalWidthDpi</strong> - optional integer property for the physical width of the image in dots per inch</li>
- * <li><strong>image:physicalHeightDpi</strong> - optional integer property for the physical height of the image in dots per
- * inch</li>
+ * <li><strong>image:physicalHeightDpi</strong> - optional integer property for the physical height of the image in dots per inch</li>
  * <li><strong>image:physicalWidthInches</strong> - optional double property for the physical width of the image in inches</li>
  * <li><strong>image:physicalHeightInches</strong> - optional double property for the physical height of the image in inches</li>
  * </ul>
@@ -65,6 +64,7 @@ import org.jboss.dna.graph.sequencers.StreamSequencer;
  * </p>
  * 
  * @author Randall Hauch
+ * @author John Verhaeg
  */
 public class ImageMetadataSequencer implements StreamSequencer {
 
@@ -109,8 +109,8 @@ public class ImageMetadataSequencer implements StreamSequencer {
 
         // Generate the output graph if we found useful metadata ...
         if (metadata != null) {
-            NameFactory nameFactory = context.getFactories().getNameFactory();
-            PathFactory pathFactory = context.getFactories().getPathFactory();
+            NameFactory nameFactory = context.getValueFactories().getNameFactory();
+            PathFactory pathFactory = context.getValueFactories().getPathFactory();
             Path metadataNode = pathFactory.create(METADATA_NODE);
 
             // Place the image metadata into the output map ...

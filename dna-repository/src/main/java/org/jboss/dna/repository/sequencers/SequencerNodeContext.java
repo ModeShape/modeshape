@@ -23,6 +23,7 @@ package org.jboss.dna.repository.sequencers;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.security.AccessControlContext;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
@@ -31,6 +32,8 @@ import javax.jcr.PropertyIterator;
 import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
 import javax.jcr.Value;
+import javax.security.auth.Subject;
+import javax.security.auth.login.LoginContext;
 import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.common.util.Logger;
@@ -38,6 +41,7 @@ import org.jboss.dna.graph.properties.Name;
 import org.jboss.dna.graph.properties.NamespaceRegistry;
 import org.jboss.dna.graph.properties.Path;
 import org.jboss.dna.graph.properties.Property;
+import org.jboss.dna.graph.properties.PropertyFactory;
 import org.jboss.dna.graph.properties.ValueFactories;
 import org.jboss.dna.graph.sequencers.SequencerContext;
 import org.jboss.dna.graph.sequencers.StreamSequencer;
@@ -135,8 +139,26 @@ public class SequencerNodeContext implements SequencerContext {
 
     /**
      * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.ExecutionContext#getAccessControlContext()
      */
-    public ValueFactories getFactories() {
+    public AccessControlContext getAccessControlContext() {
+        return context.getAccessControlContext();
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.common.component.ClassLoaderFactory#getClassLoader(java.lang.String[])
+     */
+    public ClassLoader getClassLoader( String... classpath ) {
+        return context.getClassLoader(classpath);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public ValueFactories getValueFactories() {
         return factories;
     }
 
@@ -206,13 +228,6 @@ public class SequencerNodeContext implements SequencerContext {
 
     /**
      * {@inheritDoc}
-     */
-    public NamespaceRegistry getNamespaceRegistry() {
-        return factories.getNameFactory().getNamespaceRegistry();
-    }
-
-    /**
-     * {@inheritDoc}
      * 
      * @see org.jboss.dna.graph.sequencers.SequencerContext#getLogger(java.lang.Class)
      */
@@ -227,5 +242,39 @@ public class SequencerNodeContext implements SequencerContext {
      */
     public Logger getLogger( String name ) {
         return context.getLogger(name);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.ExecutionContext#getLoginContext()
+     */
+    public LoginContext getLoginContext() {
+        return context.getLoginContext();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public NamespaceRegistry getNamespaceRegistry() {
+        return factories.getNameFactory().getNamespaceRegistry();
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.ExecutionContext#getPropertyFactory()
+     */
+    public PropertyFactory getPropertyFactory() {
+        return context.getPropertyFactory();
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.ExecutionContext#getSubject()
+     */
+    public Subject getSubject() {
+        return context.getSubject();
     }
 }

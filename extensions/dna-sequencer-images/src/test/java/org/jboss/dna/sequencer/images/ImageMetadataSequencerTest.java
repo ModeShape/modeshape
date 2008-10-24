@@ -25,22 +25,21 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.number.IsCloseTo.closeTo;
 import static org.junit.Assert.assertThat;
-import static org.mockito.Mockito.stub;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import org.jboss.dna.common.monitor.ProgressMonitor;
 import org.jboss.dna.common.monitor.SimpleProgressMonitor;
+import org.jboss.dna.graph.sequencers.MockSequencerContext;
 import org.jboss.dna.graph.sequencers.MockSequencerOutput;
 import org.jboss.dna.graph.sequencers.SequencerContext;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.MockitoAnnotations;
-import org.mockito.MockitoAnnotations.Mock;
 
 /**
  * @author Randall Hauch
+ * @author John Verhaeg
  */
 public class ImageMetadataSequencerTest {
 
@@ -52,21 +51,19 @@ public class ImageMetadataSequencerTest {
     private URL cautionJpg;
     private URL cautionPict;
     private URL cautionPng;
-    @Mock
     private SequencerContext context;
 
     @Before
     public void beforeEach() {
-        MockitoAnnotations.initMocks(this);
         sequencer = new ImageMetadataSequencer();
-        output = new MockSequencerOutput();
-        output.getNamespaceRegistry().register("image", "http://jboss.org/dna/images/1.0");
+        context = new MockSequencerContext();
+        context.getNamespaceRegistry().register("image", "http://jboss.org/dna/images/1.0");
+        output = new MockSequencerOutput(context);
         progress = new SimpleProgressMonitor("Test activity");
         cautionGif = this.getClass().getClassLoader().getResource("caution.gif");
         cautionJpg = this.getClass().getClassLoader().getResource("caution.jpg");
         cautionPict = this.getClass().getClassLoader().getResource("caution.pict");
         cautionPng = this.getClass().getClassLoader().getResource("caution.png");
-        stub(context.getFactories()).toReturn(output.getFactories());
     }
 
     @After

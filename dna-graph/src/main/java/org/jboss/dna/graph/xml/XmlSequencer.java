@@ -160,9 +160,9 @@ public class XmlSequencer implements StreamSequencer {
             this.context = context;
             this.monitor = monitor;
             // Initialize path to a an empty path relative to the SequencerOutput's target path.
-            path = context.getFactories().getPathFactory().createRelativePath();
+            path = context.getValueFactories().getPathFactory().createRelativePath();
             // Cache name factory since it is frequently used
-            nameFactory = context.getFactories().getNameFactory();
+            nameFactory = context.getValueFactories().getNameFactory();
         }
 
         /**
@@ -560,7 +560,7 @@ public class XmlSequencer implements StreamSequencer {
             indexedNames.add(indexedName);
             // Add element name and the appropriate index to the path.
             // Per the JCR spec, the index must be relative to same-name sibling nodes
-            path = context.getFactories().getPathFactory().create(path, name, indexedNames.size());
+            path = context.getValueFactories().getPathFactory().create(path, name, indexedNames.size());
             path = path.getNormalizedPath();
             // Add the indexed name map to the stack and set the current map to the new element's map
             nameToIndexedNamesMapStack.addFirst(nameToIndexedNamesMap);
