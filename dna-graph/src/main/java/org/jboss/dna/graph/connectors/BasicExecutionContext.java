@@ -27,7 +27,8 @@ import javax.security.auth.Subject;
 import javax.security.auth.login.LoginContext;
 import org.jboss.dna.common.component.ClassLoaderFactory;
 import org.jboss.dna.common.component.StandardClassLoaderFactory;
-import org.jboss.dna.common.util.CheckArg;
+import org.jboss.dna.common.monitor.ProgressMonitor;
+import org.jboss.dna.common.monitor.SimpleProgressMonitor;
 import org.jboss.dna.common.util.Logger;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.properties.NamespaceRegistry;
@@ -50,59 +51,52 @@ public class BasicExecutionContext implements ExecutionContext {
     private final PropertyFactory propertyFactory;
     private final ValueFactories valueFactories;
     private final NamespaceRegistry namespaceRegistry;
+    private final ProgressMonitor progressMonitor;
 
     public BasicExecutionContext() {
-        this(new BasicNamespaceRegistry());
-    }
-
-    public BasicExecutionContext( NamespaceRegistry namespaceRegistry ) {
-        this(namespaceRegistry, null, null);
+        this(null, null, null, null, null, null);
     }
 
     public BasicExecutionContext( LoginContext loginContext ) {
-        this(loginContext, new BasicNamespaceRegistry());
+        this(loginContext, null, null, null, null, null);
     }
 
     public BasicExecutionContext( AccessControlContext accessControlContext ) {
-        this(accessControlContext, new BasicNamespaceRegistry());
-    }
-
-    public BasicExecutionContext( LoginContext loginContext,
-                                  NamespaceRegistry namespaceRegistry ) {
-        this(loginContext, namespaceRegistry, null, null);
-    }
-
-    public BasicExecutionContext( AccessControlContext accessControlContext,
-                                  NamespaceRegistry namespaceRegistry ) {
-        this(accessControlContext, namespaceRegistry, null, null);
+        this(null, accessControlContext, null, null, null, null);
     }
 
     public BasicExecutionContext( NamespaceRegistry namespaceRegistry,
                                   ValueFactories valueFactories,
-                                  PropertyFactory propertyFactory ) {
-        this(null, null, namespaceRegistry, valueFactories, propertyFactory);
+                                  PropertyFactory propertyFactory,
+                                  ProgressMonitor progressMonitor ) {
+        this(null, null, namespaceRegistry, valueFactories, propertyFactory, progressMonitor);
     }
 
     public BasicExecutionContext( LoginContext loginContext,
                                   NamespaceRegistry namespaceRegistry,
                                   ValueFactories valueFactories,
-                                  PropertyFactory propertyFactory ) {
-        this(loginContext, null, namespaceRegistry, valueFactories, propertyFactory);
+                                  PropertyFactory propertyFactory,
+                                  ProgressMonitor progressMonitor ) {
+        this(loginContext, null, namespaceRegistry, valueFactories, propertyFactory, progressMonitor);
     }
 
     public BasicExecutionContext( AccessControlContext accessControlContext,
                                   NamespaceRegistry namespaceRegistry,
                                   ValueFactories valueFactories,
-                                  PropertyFactory propertyFactory ) {
-        this(null, accessControlContext, namespaceRegistry, valueFactories, propertyFactory);
+                                  PropertyFactory propertyFactory,
+                                  ProgressMonitor progressMonitor ) {
+        this(null, accessControlContext, namespaceRegistry, valueFactories, propertyFactory, progressMonitor);
     }
 
+    /*
+     * This constructor exists to deal with mutually-exclusive parameters, such as LoginContext and AccessControlContext.
+     */
     private BasicExecutionContext( LoginContext loginContext,
                                    AccessControlContext accessControlContext,
                                    NamespaceRegistry namespaceRegistry,
                                    ValueFactories valueFactories,
-                                   PropertyFactory propertyFactory ) {
-        CheckArg.isNotNull(namespaceRegistry, "namespaceRegistry");
+                                   PropertyFactory propertyFactory,
+                                   ProgressMonitor progressMonitor ) {
         this.loginContext = loginContext;
         this.accessControlContext = accessControlContext;
         if (loginContext == null) {
@@ -110,9 +104,10 @@ public class BasicExecutionContext implements ExecutionContext {
         } else {
             this.subject = loginContext.getSubject();
         }
-        this.namespaceRegistry = namespaceRegistry;
-        this.valueFactories = valueFactories != null ? valueFactories : new StandardValueFactories(this.namespaceRegistry);
-        this.propertyFactory = propertyFactory != null ? propertyFactory : new BasicPropertyFactory(this.valueFactories);
+        this.namespaceRegistry = namespaceRegistry == null ? new BasicNamespaceRegistry() : namespaceRegistry;
+        this.valueFactories = valueFactories == null ? new StandardValueFactories(this.namespaceRegistry) : valueFactories;
+        this.propertyFactory = propertyFactory == null ? new BasicPropertyFactory(this.valueFactories) : propertyFactory;
+        this.progressMonitor = progressMonitor == null ? new SimpleProgressMonitor(null) : progressMonitor;
         this.classLoaderFactory = new StandardClassLoaderFactory();
     }
 
@@ -148,6 +143,15 @@ public class BasicExecutionContext implements ExecutionContext {
      */
     public NamespaceRegistry getNamespaceRegistry() {
         return namespaceRegistry;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.ExecutionContext#getProgressMonitor()
+     */
+    public ProgressMonitor getProgressMonitor() {
+        return progressMonitor;
     }
 
     /**

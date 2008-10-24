@@ -72,6 +72,7 @@ import org.jboss.dna.repository.util.SessionFactory;
  * content to extract or to generate structured information.
  * 
  * @author Randall Hauch
+ * @author John Verhaeg
  */
 public class SequencingService implements AdministeredService, NodeChangeListener {
 
@@ -636,6 +637,15 @@ public class SequencingService implements AdministeredService, NodeChangeListene
          */
         public NamespaceRegistry getNamespaceRegistry() {
             return this.delegate.getNamespaceRegistry();
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.graph.ExecutionContext#getProgressMonitor()
+         */
+        public ProgressMonitor getProgressMonitor() {
+            return delegate.getProgressMonitor();
         }
 
         /**

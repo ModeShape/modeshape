@@ -25,6 +25,7 @@ import java.security.AccessControlContext;
 import javax.security.auth.Subject;
 import javax.security.auth.login.LoginContext;
 import org.jboss.dna.common.component.ClassLoaderFactory;
+import org.jboss.dna.common.monitor.ProgressMonitor;
 import org.jboss.dna.common.util.Logger;
 import org.jboss.dna.graph.properties.NamespaceRegistry;
 import org.jboss.dna.graph.properties.Property;
@@ -49,39 +50,6 @@ public interface ExecutionContext extends ClassLoaderFactory {
     AccessControlContext getAccessControlContext();
 
     /**
-     * @return the login context; may be <code>null</code>
-     */
-    LoginContext getLoginContext();
-
-    /**
-     * Get the factories that should be used to create values for {@link Property properties}.
-     * 
-     * @return the property value factory; never null
-     */
-    ValueFactories getValueFactories();
-
-    /**
-     * Get the namespace registry for this context.
-     * 
-     * @return the namespace registry; never null
-     */
-    NamespaceRegistry getNamespaceRegistry();
-
-    /**
-     * Get the factory for creating {@link Property} objects.
-     * 
-     * @return the property factory; never null
-     */
-    PropertyFactory getPropertyFactory();
-
-    /**
-     * Get the JAAS subject for which this context was created.
-     * 
-     * @return the subject; never null
-     */
-    Subject getSubject();
-
-    /**
      * Return a logger associated with this context. This logger records only those activities within the context and provide a
      * way to capture the context-specific activities. All log messages are also sent to the system logger, so classes that log
      * via this mechanism should <i>not</i> also {@link Logger#getLogger(Class) obtain a system logger}.
@@ -102,4 +70,44 @@ public interface ExecutionContext extends ClassLoaderFactory {
      * @see #getLogger(Class)
      */
     Logger getLogger( String name );
+
+    /**
+     * @return the login context; may be <code>null</code>
+     */
+    LoginContext getLoginContext();
+
+    /**
+     * Get the namespace registry for this context.
+     * 
+     * @return the namespace registry; never <code>null</code>
+     */
+    NamespaceRegistry getNamespaceRegistry();
+
+    /**
+     * Returns the thread-safe progress monitor associated with this execution context.
+     * 
+     * @return the progress monitor; never <code>null</code>;
+     */
+    ProgressMonitor getProgressMonitor();
+
+    /**
+     * Get the factory for creating {@link Property} objects.
+     * 
+     * @return the property factory; never <code>null</code>
+     */
+    PropertyFactory getPropertyFactory();
+
+    /**
+     * Get the JAAS subject for which this context was created.
+     * 
+     * @return the subject; never <code>null</code>
+     */
+    Subject getSubject();
+
+    /**
+     * Get the factories that should be used to create values for {@link Property properties}.
+     * 
+     * @return the property value factory; never null
+     */
+    ValueFactories getValueFactories();
 }

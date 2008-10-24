@@ -29,6 +29,7 @@ import org.jboss.dna.graph.properties.ValueFactories;
 
 /**
  * @author Randall Hauch
+ * @author John Verhaeg
  */
 public class BasicJcrExecutionContext extends BasicExecutionContext implements JcrExecutionContext {
 
@@ -36,20 +37,20 @@ public class BasicJcrExecutionContext extends BasicExecutionContext implements J
     private final SessionFactory sessionFactory;
 
     public BasicJcrExecutionContext( SessionFactory sessionFactory,
-                                   String repositoryWorkspaceForNamespaceRegistry ) {
+                                     String repositoryWorkspaceForNamespaceRegistry ) {
         this(sessionFactory, new JcrNamespaceRegistry(sessionFactory, repositoryWorkspaceForNamespaceRegistry), null, null);
     }
 
     public BasicJcrExecutionContext( SessionFactory sessionFactory,
-                                   NamespaceRegistry namespaceRegistry ) {
+                                     NamespaceRegistry namespaceRegistry ) {
         this(sessionFactory, namespaceRegistry, null, null);
     }
 
     public BasicJcrExecutionContext( SessionFactory sessionFactory,
-                                   NamespaceRegistry namespaceRegistry,
-                                   ValueFactories valueFactories,
-                                   PropertyFactory propertyFactory ) {
-        super(namespaceRegistry, valueFactories, propertyFactory);
+                                     NamespaceRegistry namespaceRegistry,
+                                     ValueFactories valueFactories,
+                                     PropertyFactory propertyFactory ) {
+        super(namespaceRegistry, valueFactories, propertyFactory, null);
         CheckArg.isNotNull(sessionFactory, "session factory");
         this.sessionFactory = sessionFactory;
     }

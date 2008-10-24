@@ -404,6 +404,15 @@ public class GraphImporter {
         /**
          * {@inheritDoc}
          * 
+         * @see org.jboss.dna.graph.ExecutionContext#getProgressMonitor()
+         */
+        public ProgressMonitor getProgressMonitor() {
+            return getContext().getProgressMonitor();
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
          * @see org.jboss.dna.graph.ExecutionContext#getPropertyFactory()
          */
         public PropertyFactory getPropertyFactory() {

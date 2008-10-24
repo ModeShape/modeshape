@@ -35,6 +35,7 @@ import javax.jcr.Value;
 import javax.security.auth.Subject;
 import javax.security.auth.login.LoginContext;
 import net.jcip.annotations.Immutable;
+import org.jboss.dna.common.monitor.ProgressMonitor;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.common.util.Logger;
 import org.jboss.dna.graph.properties.Name;
@@ -258,6 +259,15 @@ public class SequencerNodeContext implements SequencerContext {
      */
     public NamespaceRegistry getNamespaceRegistry() {
         return factories.getNameFactory().getNamespaceRegistry();
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.ExecutionContext#getProgressMonitor()
+     */
+    public ProgressMonitor getProgressMonitor() {
+        return context.getProgressMonitor();
     }
 
     /**
