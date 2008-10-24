@@ -94,13 +94,13 @@
 			<timezone>-3</timezone>
 		</developer>
 		<developer>
-			<name>Ben Abernathy</name>
-			<id>babernat</id>
-			<email>ben.abernathy@gmail.com</email>
+			<name>Sergiy Litsenko</name>
+			<id>lisbor</id>
+			<email>litsenko_sergey@yahoo.com</email>
 			<roles>
 				<role>Developer</role>
 			</roles>
-			<timezone>+2</timezone>
+			<timezone>0</timezone>
 		</developer>
 	</developers>
 	<contributors>
