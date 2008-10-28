@@ -527,6 +527,19 @@ public class Graph {
     }
 
     /**
+     * Begin the request to create a node located at the supplied path. This request is submitted to the repository immediately.
+     * 
+     * @param at the path to the node that is to be created.
+     * @param properties the properties for the new node
+     * @return an object that may be used to start another request
+     */
+    public Conjunction<Graph> create( Path at,
+                                      Iterable<Property> properties ) {
+        this.requestQueue.submit(new CreateNodeRequest(new Location(at), properties));
+        return nextGraph;
+    }
+
+    /**
      * Set the properties on a node.
      * 
      * @param properties the properties to set
@@ -1104,6 +1117,15 @@ public class Graph {
             };
         }
 
+        /**
+         * Obtain the graph that this batch uses.
+         * 
+         * @return the graph; never null
+         */
+        public Graph getGraph() {
+            return Graph.this;
+        }
+
         protected final void assertNotExecuted() {
             if (executed) {
                 throw new IllegalStateException(GraphI18n.unableToAddMoreRequestsToAlreadyExecutedBatch.text());
@@ -1542,6 +1564,29 @@ public class Graph {
         public Create<BatchConjunction> create( Path at ) {
             assertNotExecuted();
             return new CreateAction<BatchConjunction>(nextRequests, requestQueue, new Location(at));
+        }
+
+        /**
+         * Begin the request to create a node located at the supplied path.
+         * <p>
+         * Like all other methods on the {@link Batch}, the request will be performed when the {@link #execute()} method is
+         * called.
+         * </p>
+         * 
+         * @param at the path to the node that is to be created.
+         * @param properties the iterator over the properties for the new node
+         * @return the object that can be used to specify addition properties for the new node to be copied or the location of the
+         *         node where the node is to be created
+         */
+        public Create<BatchConjunction> create( Path at,
+                                                Iterable<Property> properties ) {
+            assertNotExecuted();
+            CreateAction<BatchConjunction> action = new CreateAction<BatchConjunction>(nextRequests, requestQueue,
+                                                                                       new Location(at));
+            for (Property property : properties) {
+                action.and(property);
+            }
+            return action;
         }
 
         /**
