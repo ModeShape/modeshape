@@ -38,14 +38,21 @@ public class RecordingProgressMonitor extends ProgressMonitorWrapper {
     }
 
     public RecordingProgressMonitor( String name ) {
-        this(new SimpleProgressMonitor(name));
+        this(name, null);
+    }
+
+    public RecordingProgressMonitor( String name,
+                                     ProgressMonitor parentProgressMonitor ) {
+        this(new SimpleProgressMonitor(name, parentProgressMonitor));
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public void beginTask( double totalWork, I18n name, Object... params ) {
+    public void beginTask( double totalWork,
+                           I18n name,
+                           Object... params ) {
         ++beginTaskCount;
         super.beginTask(totalWork, name, params);
     }

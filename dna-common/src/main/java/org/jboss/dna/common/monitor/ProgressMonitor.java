@@ -32,28 +32,21 @@ import org.jboss.dna.common.i18n.I18n;
  * code that monitors progress as an <strong>Observer</strong>.
  * <p>
  * The progress of each {@link #getActivityName() activity} is started when the <strong>Updater</strong> calls
- * {@link #beginTask(double, I18n, Object...)}, continues with a mixture of work ({@link #worked(double)}) and subtasks ({@link #createSubtask(double)}),
- * and finishes when the activity is completed ({@link #done()}) or cancelled ({@link #setCancelled(boolean)}).
+ * {@link #beginTask(double, I18n, Object...)}, continues with a mixture of work ({@link #worked(double)}) and subtasks (
+ * {@link #createSubtask(double)}), and finishes when the activity is completed ({@link #done()}) or cancelled (
+ * {@link #setCancelled(boolean)}).
  * </p>
  * <p>
- * If an activity is interrupted before its normal completion due to a cancellation request by an <strong>Observer</strong>, it
- * is still the responsibility of the <strong>Updater</strong> to mark the activity as completed. Similarly, if an activity
- * cannot be cancelled before its normal completion, the <strong>Updater</strong> must deny any previous cancellation request by
- * calling {@link #setCancelled(boolean) setCancelled(false)}.
+ * If an activity is interrupted before its normal completion due to a cancellation request by an <strong>Observer</strong>, it is
+ * still the responsibility of the <strong>Updater</strong> to mark the activity as completed. Similarly, if an activity cannot be
+ * cancelled before its normal completion, the <strong>Updater</strong> must deny any previous cancellation request by calling
+ * {@link #setCancelled(boolean) setCancelled(false)}.
  * </p>
  * 
  * @author Randall Hauch
  * @author John Verhaeg
  */
 public interface ProgressMonitor {
-
-    /**
-     * Get the name of the activity. This should never change for a progress monitor, and all
-     * {@link #createSubtask(double) subtasks} should have the same name.
-     * 
-     * @return the activity's name
-     */
-    String getActivityName();
 
     /**
      * Called by the <strong>Updater</strong> to indicate work has started on the task, specifying the total amount of work that
@@ -66,13 +59,6 @@ public interface ProgressMonitor {
     void beginTask( double totalWork,
                     I18n name,
                     Object... params );
-
-    /**
-     * Called by the <strong>Updater</strong> to report work completed for this task.
-     * 
-     * @param work the number of work units that have been worked
-     */
-    void worked( double work );
 
     /**
      * Called by the <strong>Updater</strong> to create a subtask with the given about of work. The resulting progress monitor
@@ -90,20 +76,38 @@ public interface ProgressMonitor {
     void done();
 
     /**
-     * Return whether this activity has completed.
+     * Get the name of the activity. This should never change for a progress monitor, and all {@link #createSubtask(double)
+     * subtasks} should have the same name.
      * 
-     * @return <code>true</code> if this activity has completed.
+     * @return the activity's name; never <code>null</code>
      */
-    boolean isDone();
+    String getActivityName();
 
     /**
-     * Called by an <strong>Observer</strong> to request the cancellation of this activity, or by the <strong>Updater</strong>
-     * to deny a prior cancellation request (i.e., when the activity {@link #done() completes} before the <strong>Updater</strong>
-     * recognizes a cancellation request by an <strong>Observer</strong>).
+     * Get the name of the activity that spawned this activity. This should never change for a progress monitor.
      * 
-     * @param value <code>true</code> if requesting the activity be cancelled.
+     * @return the parent activity's name; never <code>null</code>
      */
-    void setCancelled( boolean value );
+    String getParentActivityName();
+
+    /**
+     * Return the problems encountered during the {@link #getStatus(Locale) progress} made towards completing the associated
+     * {@link #getActivityName() activity}.
+     * 
+     * @return the list of problems
+     */
+    Problems getProblems();
+
+    /**
+     * Return the current status of this activity, localized to the specified locale. This method returns an immutable but
+     * consistent snapshot of the status for this activity. Note that if this instance is a {@link #createSubtask(double) subtask}
+     * , this method returns the status of the subtask.
+     * 
+     * @param locale the locale in which the status is to be represented; if null, the {@link Locale#getDefault() default locale}
+     *        will be used
+     * @return the status of this activity
+     */
+    ProgressStatus getStatus( Locale locale );
 
     /**
      * Return whether a request was made by an <strong>Observer</strong> to {@link #setCancelled(boolean) cancel} this activity.
@@ -113,21 +117,25 @@ public interface ProgressMonitor {
     boolean isCancelled();
 
     /**
-     * Return the current status of this activity, localized to the specified locale. This method returns an immutable but
-     * consistent snapshot of the status for this activity. Note that if this instance is a {@link #createSubtask(double) subtask},
-     * this method returns the status of the subtask.
+     * Return whether this activity has completed.
      * 
-     * @param locale the locale in which the status is to be represented; if null, the {@link Locale#getDefault() default locale}
-     *        will be used
-     * @return the status of this activity
+     * @return <code>true</code> if this activity has completed.
      */
-    ProgressStatus getStatus( Locale locale );
+    boolean isDone();
 
     /**
-     * Return the problems encountered during the {@link #getStatus(Locale) progress} made towards completing the associated
-     * {@link #getActivityName() activity}.
+     * Called by an <strong>Observer</strong> to request the cancellation of this activity, or by the <strong>Updater</strong> to
+     * deny a prior cancellation request (i.e., when the activity {@link #done() completes} before the <strong>Updater</strong>
+     * recognizes a cancellation request by an <strong>Observer</strong>).
      * 
-     * @return the list of problems
+     * @param value <code>true</code> if requesting the activity be cancelled.
      */
-    Problems getProblems();
+    void setCancelled( boolean value );
+
+    /**
+     * Called by the <strong>Updater</strong> to report work completed for this task.
+     * 
+     * @param work the number of work units that have been worked
+     */
+    void worked( double work );
 }

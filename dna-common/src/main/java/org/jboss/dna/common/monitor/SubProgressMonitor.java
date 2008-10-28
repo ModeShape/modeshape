@@ -31,8 +31,8 @@ import org.jboss.dna.common.i18n.I18n;
 
 /**
  * This class is thread-safe except when accessing or adding {@link #getProblems() problems}. Problems must only be added by the
- * {@link ProgressMonitor <strong>Updater</strong>}, and accessed by {@link ProgressMonitor Observers} only after the activity
- * has been {@link #done() completed}.
+ * {@link ProgressMonitor <strong>Updater</strong>}, and accessed by {@link ProgressMonitor Observers} only after the activity has
+ * been {@link #done() completed}.
  * 
  * @author Randall Hauch
  */
@@ -63,20 +63,8 @@ public class SubProgressMonitor implements ProgressMonitor {
 
     /**
      * {@inheritDoc}
-     */
-    public String getActivityName() {
-        return this.parent.getActivityName();
-    }
-
-    /**
-     * @return parent
-     */
-    public ProgressMonitor getParent() {
-        return this.parent;
-    }
-
-    /**
-     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.common.monitor.ProgressMonitor#beginTask(double, org.jboss.dna.common.i18n.I18n, java.lang.Object[])
      */
     public void beginTask( double totalWork,
                            I18n name,
@@ -95,6 +83,8 @@ public class SubProgressMonitor implements ProgressMonitor {
 
     /**
      * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.common.monitor.ProgressMonitor#createSubtask(double)
      */
     public ProgressMonitor createSubtask( double subtaskWork ) {
         return new SubProgressMonitor(this, subtaskWork);
@@ -102,6 +92,8 @@ public class SubProgressMonitor implements ProgressMonitor {
 
     /**
      * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.common.monitor.ProgressMonitor#done()
      */
     public void done() {
         // Compute the total work for this task in terms of the parent ...
@@ -119,6 +111,57 @@ public class SubProgressMonitor implements ProgressMonitor {
 
     /**
      * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.common.monitor.ProgressMonitor#getActivityName()
+     */
+    public String getActivityName() {
+        return this.parent.getActivityName();
+    }
+
+    /**
+     * @return parent
+     */
+    public ProgressMonitor getParent() {
+        return this.parent;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.common.monitor.ProgressMonitor#getParentActivityName()
+     */
+    public String getParentActivityName() {
+        return parent.getParentActivityName();
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.common.monitor.ProgressMonitor#getProblems()
+     */
+    public Problems getProblems() {
+        return parent.getProblems();
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.common.monitor.ProgressMonitor#getStatus(java.util.Locale)
+     */
+    public ProgressStatus getStatus( Locale locale ) {
+        try {
+            this.lock.readLock().lock();
+            return new ProgressStatus(this.getActivityName(), this.taskName.text(locale, this.params), this.submittedToParent,
+                                      this.subtaskTotalInParent, this.isCancelled());
+        } finally {
+            this.lock.readLock().unlock();
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.common.monitor.ProgressMonitor#isCancelled()
      */
     public boolean isCancelled() {
         return this.parent.isCancelled();
@@ -135,6 +178,8 @@ public class SubProgressMonitor implements ProgressMonitor {
 
     /**
      * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.common.monitor.ProgressMonitor#setCancelled(boolean)
      */
     public void setCancelled( boolean value ) {
         this.parent.setCancelled(value);
@@ -142,6 +187,8 @@ public class SubProgressMonitor implements ProgressMonitor {
 
     /**
      * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.common.monitor.ProgressMonitor#worked(double)
      */
     public void worked( double work ) {
         if (this.isCancelled()) return;
@@ -157,27 +204,5 @@ public class SubProgressMonitor implements ProgressMonitor {
             // Don't do this in the lock: it's incremental, but doing so might cause deadlock with future changes
             this.parent.worked(workInParent);
         }
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public ProgressStatus getStatus( Locale locale ) {
-        try {
-            this.lock.readLock().lock();
-            return new ProgressStatus(this.getActivityName(), this.taskName.text(locale, this.params), this.submittedToParent,
-                                      this.subtaskTotalInParent, this.isCancelled());
-        } finally {
-            this.lock.readLock().unlock();
-        }
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.jboss.dna.common.monitor.ProgressMonitor#getProblems()
-     */
-    public Problems getProblems() {
-        return parent.getProblems();
     }
 }

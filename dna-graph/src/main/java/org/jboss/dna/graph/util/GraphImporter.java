@@ -154,7 +154,7 @@ public class GraphImporter {
 
         // Now run the sequencer ...
         String activity = GraphI18n.errorImportingContent.text(location.getPath(), contentUri);
-        ProgressMonitor progressMonitor = new SimpleProgressMonitor(activity);
+        ProgressMonitor progressMonitor = new SimpleProgressMonitor(activity, getContext().getProgressMonitor());
         Graph.Batch batch = getGraph().batch();
         ImporterOutput importedContent = new ImporterOutput(batch, location.getPath());
         InputStream stream = null;

@@ -31,6 +31,8 @@ import net.jcip.annotations.ThreadSafe;
 import org.jboss.dna.common.collection.Problems;
 import org.jboss.dna.common.collection.ThreadSafeProblems;
 import org.jboss.dna.common.i18n.I18n;
+import org.jboss.dna.common.util.CheckArg;
+import org.jboss.dna.common.util.StringUtil;
 
 /**
  * A basic progress monitor.
@@ -51,30 +53,32 @@ public class SimpleProgressMonitor implements ProgressMonitor {
     private double worked;
 
     private final String activityName;
+    private final String parentActivityName;
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
     private final AtomicBoolean cancelled = new AtomicBoolean(false);
     private final Problems problems = new ThreadSafeProblems();
 
     public SimpleProgressMonitor( String activityName ) {
-        this.activityName = activityName != null ? activityName.trim() : "";
+        this(activityName, null);
+    }
+
+    public SimpleProgressMonitor( String activityName,
+                                  ProgressMonitor parentProgressMonitor ) {
+        this.activityName = activityName == null ? StringUtil.EMPTY_STRING : activityName.trim();
+        this.parentActivityName = parentProgressMonitor == null ? StringUtil.EMPTY_STRING : parentProgressMonitor.getActivityName();
         this.taskName = null;
         this.taskNameParams = null;
     }
 
     /**
      * {@inheritDoc}
-     */
-    public String getActivityName() {
-        return this.activityName;
-    }
-
-    /**
-     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.common.monitor.ProgressMonitor#beginTask(double, org.jboss.dna.common.i18n.I18n, java.lang.Object[])
      */
     public void beginTask( double totalWork,
                            I18n name,
                            Object... params ) {
-        assert totalWork > 0;
+        CheckArg.isGreaterThan(totalWork, 0.0, "totalWork");
         try {
             this.lock.writeLock().lock();
             this.taskName = name;
@@ -88,15 +92,15 @@ public class SimpleProgressMonitor implements ProgressMonitor {
 
     /**
      * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.common.monitor.ProgressMonitor#createSubtask(double)
      */
     public ProgressMonitor createSubtask( double subtaskWork ) {
         return new SubProgressMonitor(this, subtaskWork);
     }
 
     /**
-     * <p>
      * {@inheritDoc}
-     * </p>
      * 
      * @see org.jboss.dna.common.monitor.ProgressMonitor#done()
      */
@@ -117,6 +121,54 @@ public class SimpleProgressMonitor implements ProgressMonitor {
 
     /**
      * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.common.monitor.ProgressMonitor#getActivityName()
+     */
+    public String getActivityName() {
+        return this.activityName;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.common.monitor.ProgressMonitor#getParentActivityName()
+     */
+    public String getParentActivityName() {
+        return this.parentActivityName;
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Problems must only be added by the {@link ProgressMonitor <strong>Updater</strong>}, and accessed by
+     * {@link ProgressMonitor Observers} only after the activity has been {@link #done() completed}.
+     * </p>
+     * 
+     * @see org.jboss.dna.common.monitor.ProgressMonitor#getProblems()
+     */
+    public Problems getProblems() {
+        return problems;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.common.monitor.ProgressMonitor#getStatus(java.util.Locale)
+     */
+    public ProgressStatus getStatus( Locale locale ) {
+        try {
+            this.lock.readLock().lock();
+            String localizedTaskName = this.taskName == null ? "" : this.taskName.text(locale, this.taskNameParams);
+            return new ProgressStatus(this.getActivityName(), localizedTaskName, this.worked, this.totalWork, this.isCancelled());
+        } finally {
+            this.lock.readLock().unlock();
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.common.monitor.ProgressMonitor#isCancelled()
      */
     public boolean isCancelled() {
         return this.cancelled.get();
@@ -137,7 +189,21 @@ public class SimpleProgressMonitor implements ProgressMonitor {
     }
 
     /**
+     * Method that is called in {@link #worked(double)} (which is called by {@link #createSubtask(double) subtasks}) when there
+     * has been some positive work, or when the monitor is first marked as {@link #done()}.
+     * <p>
+     * This method implementation does nothing, but subclasses can easily override this method if they want to be updated with the
+     * latest progress.
+     * </p>
+     */
+    protected void notifyProgress() {
+        // do nothing
+    }
+
+    /**
      * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.common.monitor.ProgressMonitor#setCancelled(boolean)
      */
     public void setCancelled( boolean value ) {
         this.cancelled.set(value);
@@ -145,6 +211,8 @@ public class SimpleProgressMonitor implements ProgressMonitor {
 
     /**
      * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.common.monitor.ProgressMonitor#worked(double)
      */
     public void worked( double work ) {
         if (work > 0) {
@@ -159,43 +227,5 @@ public class SimpleProgressMonitor implements ProgressMonitor {
             }
             notifyProgress();
         }
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public ProgressStatus getStatus( Locale locale ) {
-        try {
-            this.lock.readLock().lock();
-            String localizedTaskName = this.taskName == null ? "" : this.taskName.text(locale, this.taskNameParams);
-            return new ProgressStatus(this.getActivityName(), localizedTaskName, this.worked, this.totalWork, this.isCancelled());
-        } finally {
-            this.lock.readLock().unlock();
-        }
-    }
-
-    /**
-     * Method that is called in {@link #worked(double)} (which is called by {@link #createSubtask(double) subtasks}) when there
-     * has been some positive work, or when the monitor is first marked as {@link #done()}.
-     * <p>
-     * This method implementation does nothing, but subclasses can easily override this method if they want to be updated with the
-     * latest progress.
-     * </p>
-     */
-    protected void notifyProgress() {
-        // do nothing
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Problems must only be added by the {@link ProgressMonitor <strong>Updater</strong>}, and accessed by
-     * {@link ProgressMonitor Observers} only after the activity has been {@link #done() completed}.
-     * </p>
-     * 
-     * @see org.jboss.dna.common.monitor.ProgressMonitor#getProblems()
-     */
-    public Problems getProblems() {
-        return problems;
     }
 }

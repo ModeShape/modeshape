@@ -40,10 +40,6 @@ public class ProgressMonitorWrapper implements ProgressMonitor {
         this.delegate = delegate;
     }
 
-    public ProgressMonitor getWrappedMonitor() {
-        return this.delegate;
-    }
-
     public void beginTask( double totalWork,
                            I18n name,
                            Object... params ) {
@@ -62,19 +58,30 @@ public class ProgressMonitorWrapper implements ProgressMonitor {
         return this.delegate.getActivityName();
     }
 
-    public ProgressStatus getStatus( Locale locale ) {
-        return this.delegate.getStatus(locale);
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.common.monitor.ProgressMonitor#getParentActivityName()
+     */
+    public String getParentActivityName() {
+        return this.delegate.getParentActivityName();
     }
 
     /**
-     * <p>
      * {@inheritDoc}
-     * </p>
      * 
      * @see org.jboss.dna.common.monitor.ProgressMonitor#getProblems()
      */
     public Problems getProblems() {
         return delegate.getProblems();
+    }
+
+    public ProgressStatus getStatus( Locale locale ) {
+        return this.delegate.getStatus(locale);
+    }
+
+    public ProgressMonitor getWrappedMonitor() {
+        return this.delegate;
     }
 
     public boolean isCancelled() {
