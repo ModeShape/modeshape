@@ -83,6 +83,22 @@ public final class CheckArg {
     }
 
     /**
+     * Check that the argument is greater than the supplied value
+     * 
+     * @param argument The argument
+     * @param greaterThanValue the value that is to be used to check the value
+     * @param name The name of the argument
+     * @throws IllegalArgumentException If argument is not greater than the supplied value
+     */
+    public static void isGreaterThan( double argument,
+                                      double greaterThanValue,
+                                      String name ) {
+        if (argument <= greaterThanValue) {
+            throw new IllegalArgumentException(CommonI18n.argumentMustBeGreaterThan.text(name, argument, greaterThanValue));
+        }
+    }
+
+    /**
      * Check that the argument is less than the supplied value
      * 
      * @param argument The argument
