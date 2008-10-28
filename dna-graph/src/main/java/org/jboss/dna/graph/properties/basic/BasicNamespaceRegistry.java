@@ -180,6 +180,8 @@ public class BasicNamespaceRegistry implements NamespaceRegistry {
             lock.lock();
             if (prefix == null) prefix = generatePrefix();
             prefix = prefix.trim();
+            prefix = prefix.replaceFirst("^:+", "");
+            prefix = prefix.replaceFirst(":+$", "");
             previousNamespaceForPrefix = this.namespacesByPrefix.put(prefix, namespaceUri);
             String previousPrefix = this.prefixesByNamespace.put(namespaceUri, prefix);
             if (previousPrefix != null && !previousPrefix.equals(prefix)) {
@@ -192,6 +194,26 @@ public class BasicNamespaceRegistry implements NamespaceRegistry {
             lock.unlock();
         }
         return previousNamespaceForPrefix;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.properties.NamespaceRegistry#unregister(java.lang.String)
+     */
+    public boolean unregister( String namespaceUri ) {
+        CheckArg.isNotNull(namespaceUri, "namespaceUri");
+        namespaceUri = namespaceUri.trim();
+        Lock lock = this.registryLock.writeLock();
+        try {
+            lock.lock();
+            String prefix = this.prefixesByNamespace.remove(namespaceUri);
+            if (prefix == null) return false;
+            this.namespacesByPrefix.remove(prefix);
+        } finally {
+            lock.unlock();
+        }
+        return true;
     }
 
     /**

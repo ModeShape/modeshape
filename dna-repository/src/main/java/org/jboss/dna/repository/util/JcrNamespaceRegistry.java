@@ -143,6 +143,30 @@ public class JcrNamespaceRegistry implements NamespaceRegistry {
 
     /**
      * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.properties.NamespaceRegistry#unregister(java.lang.String)
+     */
+    public boolean unregister( String namespaceUri ) {
+        Session session = null;
+        try {
+            session = this.sessionFactory.createSession(this.repositoryWorkspaceName);
+            String prefix = session.getNamespacePrefix(namespaceUri);
+            javax.jcr.NamespaceRegistry registry = session.getWorkspace().getNamespaceRegistry();
+            registry.unregisterNamespace(prefix);
+        } catch (javax.jcr.NamespaceException e) {
+            return false;
+        } catch (RepositoryException e) {
+            throw new NamespaceException(e);
+        } finally {
+            if (session != null) {
+                session.logout();
+            }
+        }
+        return true;
+    }
+
+    /**
+     * {@inheritDoc}
      */
     public Set<String> getRegisteredNamespaceUris() {
         Session session = null;

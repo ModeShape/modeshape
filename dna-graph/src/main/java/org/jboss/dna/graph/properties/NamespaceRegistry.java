@@ -85,6 +85,16 @@ public interface NamespaceRegistry {
                      String namespaceUri );
 
     /**
+     * Unregister the namespace with the supplied URI.
+     * 
+     * @param namespaceUri the namespace URI
+     * @return true if the namespace was removed, or false if the namespace was not registered
+     * @throws IllegalArgumentException if the namespace URI is null
+     * @throws NamespaceException if there is a problem unregistering the namespace
+     */
+    boolean unregister( String namespaceUri );
+
+    /**
      * Obtain the set of namespaces that are registered.
      * 
      * @return the set of
