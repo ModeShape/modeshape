@@ -32,7 +32,6 @@ import org.jboss.dna.common.collection.Problems;
 import org.jboss.dna.common.collection.ThreadSafeProblems;
 import org.jboss.dna.common.i18n.I18n;
 import org.jboss.dna.common.util.CheckArg;
-import org.jboss.dna.common.util.StringUtil;
 
 /**
  * A basic progress monitor.
@@ -64,8 +63,8 @@ public class SimpleProgressMonitor implements ProgressMonitor {
 
     public SimpleProgressMonitor( String activityName,
                                   ProgressMonitor parentProgressMonitor ) {
-        this.activityName = activityName == null ? StringUtil.EMPTY_STRING : activityName.trim();
-        this.parentActivityName = parentProgressMonitor == null ? StringUtil.EMPTY_STRING : parentProgressMonitor.getActivityName();
+        this.activityName = activityName == null ? "" : activityName.trim();
+        this.parentActivityName = parentProgressMonitor == null ? "" : parentProgressMonitor.getActivityName();
         this.taskName = null;
         this.taskNameParams = null;
     }

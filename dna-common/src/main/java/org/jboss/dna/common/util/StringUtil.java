@@ -45,7 +45,6 @@ import org.jboss.dna.common.SystemFailureException;
  */
 public class StringUtil {
 
-    public static final String EMPTY_STRING = "";
     public static final String[] EMPTY_STRING_ARRAY = new String[0];
     private static final Pattern NORMALIZE_PATTERN = Pattern.compile("\\s+");
     private static final Pattern PARAMETER_COUNT_PATTERN = Pattern.compile("\\{(\\d+)\\}");
