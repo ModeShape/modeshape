@@ -179,13 +179,23 @@ public class BasicPathSegment implements Path.Segment {
      */
     public String getString( NamespaceRegistry namespaceRegistry,
                              TextEncoder encoder ) {
-        CheckArg.isNotNull(namespaceRegistry, "namespaceRegistry");
+        return getString(namespaceRegistry, encoder, null);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.properties.Path.Segment#getString(org.jboss.dna.graph.properties.NamespaceRegistry,
+     *      org.jboss.dna.common.text.TextEncoder, org.jboss.dna.common.text.TextEncoder)
+     */
+    public String getString( NamespaceRegistry namespaceRegistry,
+                             TextEncoder encoder,
+                             TextEncoder delimiterEncoder ) {
         if (encoder == null) encoder = Path.DEFAULT_ENCODER;
-        String encodedName = this.getName().getString(namespaceRegistry, encoder);
+        String encodedName = this.getName().getString(namespaceRegistry, encoder, delimiterEncoder);
         if (this.hasIndex()) {
             return encodedName + "[" + this.getIndex() + "]";
         }
         return encodedName;
     }
-
 }

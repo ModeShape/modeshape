@@ -24,16 +24,12 @@ package org.jboss.dna.graph.properties.basic;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNot.not;
 import static org.junit.Assert.assertThat;
+import org.jboss.dna.common.text.Jsr283Encoder;
 import org.jboss.dna.common.text.TextEncoder;
 import org.jboss.dna.graph.DnaLexicon;
 import org.jboss.dna.graph.properties.Name;
 import org.jboss.dna.graph.properties.Path;
 import org.jboss.dna.graph.properties.ValueFactory;
-import org.jboss.dna.graph.properties.basic.BasicNamespaceRegistry;
-import org.jboss.dna.graph.properties.basic.BasicPathSegment;
-import org.jboss.dna.graph.properties.basic.NameValueFactory;
-import org.jboss.dna.graph.properties.basic.PathValueFactory;
-import org.jboss.dna.graph.properties.basic.StringValueFactory;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -163,4 +159,21 @@ public class BasicPathSegmentTest {
         assertThat(segment, is(not(segment2)));
     }
 
+    @Test
+    public void shouldUseDelimiterEncoderToEncodeDelimiterBetweenPrefixAndLocalPart() {
+        TextEncoder encoder = new Jsr283Encoder();
+        validName = new BasicName(DnaLexicon.Namespace.URI, "some:name:with:colons");
+        segment = new BasicPathSegment(validName, Path.NO_INDEX);
+        TextEncoder delimiterEncoder = new TextEncoder() {
+            public String encode( String text ) {
+                if (":".equals(text)) return "\\:";
+                if ("{".equals(text)) return "\\{";
+                if ("}".equals(text)) return "\\}";
+                return text;
+            }
+        };
+        assertThat(segment.getString(registry, encoder, delimiterEncoder), is("dna\\:some\uf03aname\uf03awith\uf03acolons"));
+        assertThat(segment.getString(null, encoder, delimiterEncoder), is("\\{" + encoder.encode(DnaLexicon.Namespace.URI)
+                                                                          + "\\}some\uf03aname\uf03awith\uf03acolons"));
+    }
 }

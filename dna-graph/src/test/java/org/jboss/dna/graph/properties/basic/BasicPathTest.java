@@ -31,6 +31,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import org.jboss.dna.common.text.Jsr283Encoder;
 import org.jboss.dna.common.text.TextEncoder;
 import org.jboss.dna.graph.DnaLexicon;
 import org.jboss.dna.graph.properties.InvalidPathException;
@@ -897,5 +898,36 @@ public class BasicPathTest {
     public void shouldResolveNonAbsolutePaths() {
         path = pathFactory.create("a/b/c");
         assertThat(path, hasSegments(pathFactory, "a", "b", "c"));
+    }
+
+    @Test
+    public void shouldConvertPathToString() {
+        TextEncoder encoder = new Jsr283Encoder();
+        TextEncoder delimEncoder = new TextEncoder() {
+            public String encode( String text ) {
+                if ("/".equals(text)) return "\\/";
+                if (":".equals(text)) return "\\:";
+                if ("{".equals(text)) return "\\{";
+                if ("}".equals(text)) return "\\}";
+                return text;
+            }
+        };
+        Path path = pathFactory.create("a/b/c");
+        assertThat(path.getString(namespaceRegistry), is("a/b/c"));
+        assertThat(path.getString(namespaceRegistry, encoder), is("a/b/c"));
+        assertThat(path.getString(namespaceRegistry, encoder, delimEncoder), is("a\\/b\\/c"));
+
+        path = pathFactory.create("/a/b/c");
+        assertThat(path.getString(namespaceRegistry), is("/a/b/c"));
+        assertThat(path.getString(namespaceRegistry, encoder), is("/a/b/c"));
+        assertThat(path.getString(namespaceRegistry, encoder, delimEncoder), is("\\/a\\/b\\/c"));
+
+        path = pathFactory.create("/dna:a/b/c");
+        assertThat(path.getString(encoder), is("/{" + encoder.encode(DnaLexicon.Namespace.URI) + "}a/{}b/{}c"));
+        assertThat(path.getString(null, encoder, delimEncoder), is("\\/\\{" + encoder.encode(DnaLexicon.Namespace.URI)
+                                                                   + "\\}a\\/\\{\\}b\\/\\{\\}c"));
+        assertThat(path.getString(namespaceRegistry), is("/dna:a/b/c"));
+        assertThat(path.getString(namespaceRegistry, encoder), is("/dna:a/b/c"));
+        assertThat(path.getString(namespaceRegistry, encoder, delimEncoder), is("\\/dna\\:a\\/b\\/c"));
     }
 }

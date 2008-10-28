@@ -24,9 +24,11 @@ package org.jboss.dna.graph.properties;
 import java.io.Serializable;
 import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.text.TextEncoder;
+import org.jboss.dna.graph.properties.Path.Segment;
 
 /**
  * A qualified name consisting of a namespace and a local name.
+ * 
  * @author Randall Hauch
  */
 @Immutable
@@ -34,12 +36,14 @@ public interface Name extends Comparable<Name>, Serializable {
 
     /**
      * Get the local name part of this qualified name.
+     * 
      * @return the local name; never null
      */
     String getLocalName();
 
     /**
      * Get the URI for the namespace used in this qualified name.
+     * 
      * @return the URI; never null but possibly empty
      */
     String getNamespaceUri();
@@ -47,6 +51,7 @@ public interface Name extends Comparable<Name>, Serializable {
     /**
      * Get the string form of the name. The {@link Path#DEFAULT_ENCODER default encoder} is used to encode characters in the local
      * name and namespace.
+     * 
      * @return the encoded string
      * @see #getString(TextEncoder)
      */
@@ -54,6 +59,7 @@ public interface Name extends Comparable<Name>, Serializable {
 
     /**
      * Get the encoded string form of the name, using the supplied encoder to encode characters in the local name and namespace.
+     * 
      * @param encoder the encoder to use, or null if the {@link Path#DEFAULT_ENCODER default encoder} should be used
      * @return the encoded string
      * @see #getString()
@@ -61,11 +67,12 @@ public interface Name extends Comparable<Name>, Serializable {
     public String getString( TextEncoder encoder );
 
     /**
-     * Get the string form of the name, using the supplied namespace registry to convert the
-     * {@link #getNamespaceUri() namespace URI} to a prefix. The {@link Path#DEFAULT_ENCODER default encoder} is used to encode
-     * characters in each of the path segments.
+     * Get the string form of the name, using the supplied namespace registry to convert the {@link #getNamespaceUri() namespace
+     * URI} to a prefix. The {@link Path#DEFAULT_ENCODER default encoder} is used to encode characters in each of the path
+     * segments.
+     * 
      * @param namespaceRegistry the namespace registry that should be used to obtain the prefix for the
-     * {@link Name#getNamespaceUri() namespace URI}
+     *        {@link Name#getNamespaceUri() namespace URI}
      * @return the encoded string
      * @throws IllegalArgumentException if the namespace registry is null
      * @see #getString(NamespaceRegistry,TextEncoder)
@@ -73,14 +80,36 @@ public interface Name extends Comparable<Name>, Serializable {
     public String getString( NamespaceRegistry namespaceRegistry );
 
     /**
-     * Get the encoded string form of the name, using the supplied namespace registry to convert the
-     * {@link #getNamespaceUri() namespace URI} to a prefix.
+     * Get the encoded string form of the name, using the supplied namespace registry to convert the {@link #getNamespaceUri()
+     * namespace URI} to a prefix.
+     * 
      * @param namespaceRegistry the namespace registry that should be used to obtain the prefix for the
-     * {@link Name#getNamespaceUri() namespace URI}
+     *        {@link Name#getNamespaceUri() namespace URI}
      * @param encoder the encoder to use, or null if the {@link Path#DEFAULT_ENCODER default encoder} should be used
      * @return the encoded string
      * @throws IllegalArgumentException if the namespace registry is null
      * @see #getString(NamespaceRegistry)
      */
-    public String getString( NamespaceRegistry namespaceRegistry, TextEncoder encoder );
+    public String getString( NamespaceRegistry namespaceRegistry,
+                             TextEncoder encoder );
+
+    /**
+     * Get the encoded string form of the name, using the supplied namespace registry to convert the names' namespace URIs to
+     * prefixes and the supplied encoder to encode characters in each of the path segments, and using the second delimiter to
+     * encode (or convert) the delimiter used between the namespace prefix and the local part.
+     * 
+     * @param namespaceRegistry the namespace registry that should be used to obtain the prefix for the
+     *        {@link Name#getNamespaceUri() namespace URIs} in the segment {@link Segment#getName() names}
+     * @param encoder the encoder to use for encoding the {@link Name#getLocalName() local part} and
+     *        {@link Name#getNamespaceUri() namespace prefix}, or null if the {@link Path#DEFAULT_ENCODER default encoder} should
+     *        be used
+     * @param delimiterEncoder the encoder to use for encoding the delimiter between the {@link Name#getLocalName() local part}
+     *        and {@link Name#getNamespaceUri() namespace prefix}, or null if the standard delimiter should be used
+     * @return the encoded string
+     * @see #getString(NamespaceRegistry)
+     * @see #getString(NamespaceRegistry, TextEncoder)
+     */
+    public String getString( NamespaceRegistry namespaceRegistry,
+                             TextEncoder encoder,
+                             TextEncoder delimiterEncoder );
 }

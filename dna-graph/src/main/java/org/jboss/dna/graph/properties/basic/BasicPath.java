@@ -199,14 +199,14 @@ public class BasicPath implements Path {
      * {@inheritDoc}
      */
     public String getString() {
-        return doGetString(null, DEFAULT_ENCODER);
+        return doGetString(null, DEFAULT_ENCODER, null);
     }
 
     /**
      * {@inheritDoc}
      */
     public String getString( TextEncoder encoder ) {
-        return doGetString(null, encoder);
+        return doGetString(null, encoder, null);
     }
 
     /**
@@ -214,7 +214,7 @@ public class BasicPath implements Path {
      */
     public String getString( NamespaceRegistry namespaceRegistry ) {
         CheckArg.isNotNull(namespaceRegistry, "namespaceRegistry");
-        return doGetString(namespaceRegistry, null);
+        return doGetString(namespaceRegistry, null, null);
     }
 
     /**
@@ -223,7 +223,19 @@ public class BasicPath implements Path {
     public String getString( NamespaceRegistry namespaceRegistry,
                              TextEncoder encoder ) {
         CheckArg.isNotNull(namespaceRegistry, "namespaceRegistry");
-        return doGetString(namespaceRegistry, encoder);
+        return doGetString(namespaceRegistry, encoder, null);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.properties.Path#getString(org.jboss.dna.graph.properties.NamespaceRegistry,
+     *      org.jboss.dna.common.text.TextEncoder, org.jboss.dna.common.text.TextEncoder)
+     */
+    public String getString( NamespaceRegistry namespaceRegistry,
+                             TextEncoder encoder,
+                             TextEncoder delimiterEncoder ) {
+        return doGetString(namespaceRegistry, encoder, delimiterEncoder);
     }
 
     /**
@@ -232,35 +244,34 @@ public class BasicPath implements Path {
      * 
      * @param namespaceRegistry
      * @param encoder
+     * @param delimiterEncoder
      * @return this path as a string
      */
     protected String doGetString( NamespaceRegistry namespaceRegistry,
-                                  TextEncoder encoder ) {
+                                  TextEncoder encoder,
+                                  TextEncoder delimiterEncoder ) {
         if (encoder == null) encoder = DEFAULT_ENCODER;
-        if (encoder == DEFAULT_ENCODER && this.path != null) return this.path;
+        if (encoder == DEFAULT_ENCODER && this.path != null && delimiterEncoder == null) return this.path;
+        final String delimiter = delimiterEncoder != null ? delimiterEncoder.encode(DELIMITER_STR) : DELIMITER_STR;
 
         // Since the segments are immutable, this code need not be synchronized because concurrent threads
         // may just compute the same value (with no harm done)
         StringBuilder sb = new StringBuilder();
-        if (this.isAbsolute()) sb.append(DELIMITER);
+        if (this.isAbsolute()) sb.append(delimiter);
         boolean first = true;
         for (Segment segment : this.segments) {
             if (first) {
                 first = false;
             } else {
-                sb.append(DELIMITER);
+                sb.append(delimiter);
             }
             assert segment != null;
-            if (namespaceRegistry != null) {
-                sb.append(segment.getString(namespaceRegistry, encoder));
-            } else {
-                sb.append(segment.getString(encoder));
-            }
+            sb.append(segment.getString(namespaceRegistry, encoder, delimiterEncoder));
         }
         String result = sb.toString();
         // Save the result to the internal string if this the default encoder is used.
         // This is not synchronized, but it's okay
-        if (encoder == DEFAULT_ENCODER && this.path == null) this.path = result;
+        if (encoder == DEFAULT_ENCODER && this.path == null && delimiterEncoder == null) this.path = result;
         return result;
     }
 

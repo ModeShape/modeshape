@@ -237,6 +237,28 @@ public interface Path extends Comparable<Path>, Iterable<Path.Segment>, Serializ
          */
         public String getString( NamespaceRegistry namespaceRegistry,
                                  TextEncoder encoder );
+
+        /**
+         * Get the encoded string form of the segment, using the supplied namespace registry to convert the names' namespace URIs
+         * to prefixes and the supplied encoder to encode characters in each of the path segments. The second encoder is used to
+         * encode (or convert) the delimiter between the {@link Name#getNamespaceUri() namespace prefix} and the
+         * {@link Name#getLocalName() local part}.
+         * 
+         * @param namespaceRegistry the namespace registry that should be used to obtain the prefix for the
+         *        {@link Name#getNamespaceUri() namespace URIs} in the segment {@link Segment#getName() names}
+         * @param encoder the encoder to use for encoding the {@link Name#getLocalName() local part} and
+         *        {@link Name#getNamespaceUri() namespace prefix} in the segment's {@link #getName() name}, or null if the
+         *        {@link #DEFAULT_ENCODER default encoder} should be used
+         * @param delimiterEncoder the encoder to use for encoding the delimiter between the {@link Name#getLocalName() local
+         *        part} and {@link Name#getNamespaceUri() namespace prefix} of each {@link Path#getSegmentsList() segment}, or
+         *        null if the standard delimiters should be used
+         * @return the encoded string
+         * @see #getString(NamespaceRegistry)
+         * @see #getString(NamespaceRegistry, TextEncoder)
+         */
+        public String getString( NamespaceRegistry namespaceRegistry,
+                                 TextEncoder encoder,
+                                 TextEncoder delimiterEncoder );
     }
 
     /**
@@ -503,13 +525,16 @@ public interface Path extends Comparable<Path>, Iterable<Path.Segment>, Serializ
 
     /**
      * Get the string form of the path, using the supplied namespace registry to convert the names' namespace URIs to prefixes.
-     * The {@link #DEFAULT_ENCODER default encoder} is used to encode characters in each of the path segments.
+     * The {@link #DEFAULT_ENCODER default encoder} is used to encode characters in each of the path segments. The second encoder
+     * is used to encode (or convert) the delimiter between the {@link Name#getNamespaceUri() namespace prefix} and the
+     * {@link Name#getLocalName() local part}.
      * 
      * @param namespaceRegistry the namespace registry that should be used to obtain the prefix for the
      *        {@link Name#getNamespaceUri() namespace URIs} in the segment {@link Segment#getName() names}
      * @return the encoded string
      * @throws IllegalArgumentException if the namespace registry is null
      * @see #getString(NamespaceRegistry,TextEncoder)
+     * @see #getString(NamespaceRegistry, TextEncoder, TextEncoder)
      */
     public String getString( NamespaceRegistry namespaceRegistry );
 
@@ -519,12 +544,35 @@ public interface Path extends Comparable<Path>, Iterable<Path.Segment>, Serializ
      * 
      * @param namespaceRegistry the namespace registry that should be used to obtain the prefix for the
      *        {@link Name#getNamespaceUri() namespace URIs} in the segment {@link Segment#getName() names}
-     * @param encoder the encoder to use, or null if the {@link #DEFAULT_ENCODER default encoder} should be used
+     * @param encoder the encoder to use for encoding the {@link Name#getLocalName() local part} and
+     *        {@link Name#getNamespaceUri() namespace prefix} of each {@link Path#getSegmentsList() segment}, or null if the
+     *        {@link #DEFAULT_ENCODER default encoder} should be used
      * @return the encoded string
      * @throws IllegalArgumentException if the namespace registry is null
      * @see #getString(NamespaceRegistry)
+     * @see #getString(NamespaceRegistry, TextEncoder, TextEncoder)
      */
     public String getString( NamespaceRegistry namespaceRegistry,
                              TextEncoder encoder );
+
+    /**
+     * Get the encoded string form of the path, using the supplied namespace registry to convert the names' namespace URIs to
+     * prefixes and the supplied encoder to encode characters in each of the path segments.
+     * 
+     * @param namespaceRegistry the namespace registry that should be used to obtain the prefix for the
+     *        {@link Name#getNamespaceUri() namespace URIs} in the segment {@link Segment#getName() names}
+     * @param encoder the encoder to use for encoding the {@link Name#getLocalName() local part} and
+     *        {@link Name#getNamespaceUri() namespace prefix} of each {@link Path#getSegmentsList() segment}, or null if the
+     *        {@link #DEFAULT_ENCODER default encoder} should be used
+     * @param delimiterEncoder the encoder to use for encoding the delimiter between the {@link Name#getLocalName() local part}
+     *        and {@link Name#getNamespaceUri() namespace prefix} of each {@link Path#getSegmentsList() segment}, and for encoding
+     *        the path delimiter, or null if the standard delimiters should be used
+     * @return the encoded string
+     * @see #getString(NamespaceRegistry)
+     * @see #getString(NamespaceRegistry, TextEncoder)
+     */
+    public String getString( NamespaceRegistry namespaceRegistry,
+                             TextEncoder encoder,
+                             TextEncoder delimiterEncoder );
 
 }

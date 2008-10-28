@@ -24,12 +24,11 @@ package org.jboss.dna.graph.properties.basic;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
 import static org.junit.matchers.JUnitMatchers.containsString;
+import org.jboss.dna.common.text.Jsr283Encoder;
 import org.jboss.dna.common.text.TextEncoder;
 import org.jboss.dna.graph.DnaLexicon;
 import org.jboss.dna.graph.properties.Name;
 import org.jboss.dna.graph.properties.Path;
-import org.jboss.dna.graph.properties.basic.BasicName;
-import org.jboss.dna.graph.properties.basic.BasicNamespaceRegistry;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -44,6 +43,7 @@ public class BasicNameTest {
     private String validNamespaceUri;
     private String validLocalName;
     private TextEncoder encoder;
+    private TextEncoder delimiterEncoder;
     private String validNamespacePrefix;
 
     @Before
@@ -55,6 +55,14 @@ public class BasicNameTest {
         this.encoder = Path.URL_ENCODER;
         this.namespaceRegistry = new BasicNamespaceRegistry();
         this.namespaceRegistry.register(validNamespacePrefix, validNamespaceUri);
+        this.delimiterEncoder = new TextEncoder() {
+            public String encode( String text ) {
+                if (":".equals(text)) return "\\:";
+                if ("{".equals(text)) return "\\{";
+                if ("}".equals(text)) return "\\}";
+                return text;
+            }
+        };
     }
 
     @Test
@@ -170,5 +178,14 @@ public class BasicNameTest {
         name = new BasicName(validNamespaceUri, validLocalName);
         result = name.getString(namespaceRegistry, encoder);
         assertThat(result, is("some:name:with:colons"));
+    }
+
+    @Test
+    public void shouldUseDelimiterEncoderToEncodeDelimiterBetweenPrefixAndLocalPart() {
+        encoder = new Jsr283Encoder();
+        name = new BasicName(DnaLexicon.Namespace.URI, "some:name:with:colons");
+        assertThat(name.getString(namespaceRegistry, encoder, delimiterEncoder), is("dna\\:some\uf03aname\uf03awith\uf03acolons"));
+        assertThat(name.getString(null, encoder, delimiterEncoder), is("\\{" + encoder.encode(DnaLexicon.Namespace.URI)
+                                                                       + "\\}some\uf03aname\uf03awith\uf03acolons"));
     }
 }

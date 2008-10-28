@@ -103,10 +103,41 @@ public class BasicName implements Name {
      */
     public String getString( NamespaceRegistry namespaceRegistry,
                              TextEncoder encoder ) {
+        // This is the most-often used method, so implement it directly
         CheckArg.isNotNull(namespaceRegistry, "namespaceRegistry");
         String prefix = namespaceRegistry.getPrefixForNamespaceUri(this.namespaceUri, true);
         if (prefix != null && prefix.length() != 0) {
             return encoder.encode(prefix) + ":" + encoder.encode(this.localName);
+        }
+        return this.localName;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.properties.Name#getString(org.jboss.dna.graph.properties.NamespaceRegistry,
+     *      org.jboss.dna.common.text.TextEncoder, org.jboss.dna.common.text.TextEncoder)
+     */
+    public String getString( NamespaceRegistry namespaceRegistry,
+                             TextEncoder encoder,
+                             TextEncoder delimiterEncoder ) {
+        if (namespaceRegistry == null) {
+            if (this.getNamespaceUri().length() == 0) {
+                if (this.getLocalName().equals(Path.SELF)) return Path.SELF;
+                if (this.getLocalName().equals(Path.PARENT)) return Path.PARENT;
+            }
+            if (encoder == null) encoder = Path.DEFAULT_ENCODER;
+            if (delimiterEncoder != null) {
+                return delimiterEncoder.encode("{") + encoder.encode(this.namespaceUri) + delimiterEncoder.encode("}")
+                       + encoder.encode(this.localName);
+            }
+            return "{" + encoder.encode(this.namespaceUri) + "}" + encoder.encode(this.localName);
+
+        }
+        String prefix = namespaceRegistry.getPrefixForNamespaceUri(this.namespaceUri, true);
+        if (prefix != null && prefix.length() != 0) {
+            String delim = delimiterEncoder != null ? delimiterEncoder.encode(":") : ":";
+            return encoder.encode(prefix) + delim + encoder.encode(this.localName);
         }
         return this.localName;
     }
