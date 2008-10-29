@@ -19,7 +19,7 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.jboss.dna.graph.xml;
+package org.jboss.dna.sequencer.xml;
 
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsInstanceOf.instanceOf;
@@ -34,6 +34,7 @@ import org.jboss.dna.graph.properties.Name;
 import org.jboss.dna.graph.sequencers.MockSequencerContext;
 import org.jboss.dna.graph.sequencers.MockSequencerOutput;
 import org.jboss.dna.graph.sequencers.SequencerContext;
+import org.jboss.dna.sequencer.xml.XmlSequencer;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;

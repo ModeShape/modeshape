@@ -47,8 +47,6 @@ import org.jboss.dna.graph.properties.Property;
 import org.jboss.dna.graph.requests.CompositeRequest;
 import org.jboss.dna.graph.requests.CreateNodeRequest;
 import org.jboss.dna.graph.requests.Request;
-import org.jboss.dna.graph.xml.DnaDtdLexicon;
-import org.jboss.dna.graph.xml.DnaXmlLexicon;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.MockitoAnnotations;
@@ -76,8 +74,6 @@ public class GraphImporterTest {
         xmlContent = new File("src/test/resources/repositoryImporterTestData1.xml").toURI();
         context = new BasicExecutionContext();
         context.getNamespaceRegistry().register(DnaLexicon.Namespace.PREFIX, DnaLexicon.Namespace.URI);
-        context.getNamespaceRegistry().register(DnaXmlLexicon.Namespace.PREFIX, DnaXmlLexicon.Namespace.URI);
-        context.getNamespaceRegistry().register(DnaDtdLexicon.Namespace.PREFIX, DnaDtdLexicon.Namespace.URI);
         context.getNamespaceRegistry().register("jcr", "http://www.jcp.org/jcr/1.0");
         context.getNamespaceRegistry().register("nt", "http://www.jcp.org/jcr/nt/1.0");
         sourceName = "sourceA";

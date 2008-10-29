@@ -19,7 +19,7 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.jboss.dna.graph.xml;
+package org.jboss.dna.sequencer.xml;
 
 import org.jboss.dna.graph.properties.Name;
 import org.jboss.dna.graph.properties.basic.BasicName;
@@ -27,20 +27,16 @@ import org.jboss.dna.graph.properties.basic.BasicName;
 /**
  * @author Randall Hauch
  */
-public class DnaXmlLexicon {
+public class DnaDtdLexicon {
 
     public static class Namespace {
-        public static final String URI = "http://www.jboss.org/dna/xml/1.0";
-        public static final String PREFIX = "dnaxml";
+        public static final String URI = "http://www.jboss.org/dna/dtd/1.0";
+        public static final String PREFIX = "dnadtd";
     }
 
-    public static final Name CDATA = new BasicName(Namespace.URI, "cData");
-    public static final Name CDATA_CONTENT = new BasicName(Namespace.URI, "cDataContent");
-    public static final Name COMMENT = new BasicName(Namespace.URI, "comment");
-    public static final Name COMMENT_CONTENT = new BasicName(Namespace.URI, "commentContent");
-    public static final Name DOCUMENT = new BasicName(Namespace.URI, "document");
-    public static final Name ELEMENT_CONTENT = new BasicName(Namespace.URI, "elementContent");
-    public static final Name PROCESSING_INSTRUCTION = new BasicName(Namespace.URI, "processingInstruction");
-    public static final Name PROCESSING_INSTRUCTION_CONTENT = new BasicName(Namespace.URI, "processingInstructionContent");
-    public static final Name TARGET = new BasicName(Namespace.URI, "target");
+    public static final Name NAME = new BasicName(Namespace.URI, "name");
+    public static final Name PUBLIC_ID = new BasicName(Namespace.URI, "publicId");
+    public static final Name SYSTEM_ID = new BasicName(Namespace.URI, "systemId");
+    public static final Name VALUE = new BasicName(Namespace.URI, "value");
+    public static final Name ENTITY = new BasicName(Namespace.URI, "entity");
 }

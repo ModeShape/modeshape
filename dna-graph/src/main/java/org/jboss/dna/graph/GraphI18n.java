@@ -75,13 +75,6 @@ public final class GraphI18n {
     public static I18n actualNewLocationMustHaveSameParentAsOldLocation;
     public static I18n actualNewLocationMustHaveSameNameAsRequest;
 
-    // XML Sequencer
-    public static I18n errorSequencingXmlDocument;
-    public static I18n fatalErrorSequencingXmlDocument;
-    public static I18n sequencingXmlDocument;
-    public static I18n canceledSequencingXmlDocument;
-    public static I18n warningSequencingXmlDocument;
-
     public static I18n errorImportingContent;
     public static I18n unableToFindRepositorySourceWithName;
 

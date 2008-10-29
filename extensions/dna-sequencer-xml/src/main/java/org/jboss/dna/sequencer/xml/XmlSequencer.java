@@ -19,7 +19,7 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.jboss.dna.graph.xml;
+package org.jboss.dna.sequencer.xml;
 
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -29,7 +29,6 @@ import java.util.List;
 import java.util.Map;
 import org.jboss.dna.common.monitor.ProgressMonitor;
 import org.jboss.dna.common.util.StringUtil;
-import org.jboss.dna.graph.GraphI18n;
 import org.jboss.dna.graph.JcrLexicon;
 import org.jboss.dna.graph.properties.Name;
 import org.jboss.dna.graph.properties.NameFactory;
@@ -70,7 +69,7 @@ public class XmlSequencer implements StreamSequencer {
                           SequencerOutput output,
                           SequencerContext context,
                           ProgressMonitor monitor ) {
-        monitor.beginTask(100.0, GraphI18n.sequencingXmlDocument);
+        monitor.beginTask(100.0, XmlSequencerI18n.sequencingXmlDocument);
         XMLReader reader;
         try {
             reader = XMLReaderFactory.createXMLReader();
@@ -90,8 +89,8 @@ public class XmlSequencer implements StreamSequencer {
             // Parse XML document
             reader.parse(new InputSource(stream));
         } catch (Exception error) {
-            context.getLogger(getClass()).error(error, GraphI18n.fatalErrorSequencingXmlDocument, error);
-            monitor.getProblems().addError(error, GraphI18n.fatalErrorSequencingXmlDocument, error);
+            context.getLogger(getClass()).error(error, XmlSequencerI18n.fatalErrorSequencingXmlDocument, error);
+            monitor.getProblems().addError(error, XmlSequencerI18n.fatalErrorSequencingXmlDocument, error);
         } finally {
             monitor.done();
         }
@@ -361,8 +360,8 @@ public class XmlSequencer implements StreamSequencer {
          */
         @Override
         public void error( SAXParseException error ) {
-            context.getLogger(XmlSequencer.class).error(error, GraphI18n.errorSequencingXmlDocument, error);
-            monitor.getProblems().addError(error, GraphI18n.errorSequencingXmlDocument, error);
+            context.getLogger(XmlSequencer.class).error(error, XmlSequencerI18n.errorSequencingXmlDocument, error);
+            monitor.getProblems().addError(error, XmlSequencerI18n.errorSequencingXmlDocument, error);
         }
 
         /**
@@ -397,8 +396,8 @@ public class XmlSequencer implements StreamSequencer {
          */
         @Override
         public void fatalError( SAXParseException error ) {
-            context.getLogger(XmlSequencer.class).error(error, GraphI18n.fatalErrorSequencingXmlDocument, error);
-            monitor.getProblems().addError(error, GraphI18n.fatalErrorSequencingXmlDocument, error);
+            context.getLogger(XmlSequencer.class).error(error, XmlSequencerI18n.fatalErrorSequencingXmlDocument, error);
+            monitor.getProblems().addError(error, XmlSequencerI18n.fatalErrorSequencingXmlDocument, error);
         }
 
         private Name getDefaultPrimaryType() {
@@ -650,7 +649,7 @@ public class XmlSequencer implements StreamSequencer {
 
         private void stopIfCancelled() throws SAXException {
             if (monitor.isCancelled()) {
-                throw new SAXException(GraphI18n.canceledSequencingXmlDocument.text());
+                throw new SAXException(XmlSequencerI18n.canceledSequencingXmlDocument.text());
             }
         }
 
@@ -688,8 +687,8 @@ public class XmlSequencer implements StreamSequencer {
          */
         @Override
         public void warning( SAXParseException warning ) {
-            context.getLogger(XmlSequencer.class).warn(warning, GraphI18n.warningSequencingXmlDocument);
-            monitor.getProblems().addWarning(warning, GraphI18n.warningSequencingXmlDocument, warning);
+            context.getLogger(XmlSequencer.class).warn(warning, XmlSequencerI18n.warningSequencingXmlDocument);
+            monitor.getProblems().addWarning(warning, XmlSequencerI18n.warningSequencingXmlDocument, warning);
         }
     }
 
