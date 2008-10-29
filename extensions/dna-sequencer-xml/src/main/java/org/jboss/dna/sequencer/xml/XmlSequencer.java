@@ -27,7 +27,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import org.jboss.dna.common.monitor.ProgressMonitor;
+import org.jboss.dna.common.monitor.ActivityMonitor;
 import org.jboss.dna.common.util.StringUtil;
 import org.jboss.dna.graph.JcrLexicon;
 import org.jboss.dna.graph.properties.Name;
@@ -63,12 +63,12 @@ public class XmlSequencer implements StreamSequencer {
      * {@inheritDoc}
      * 
      * @see org.jboss.dna.graph.sequencers.StreamSequencer#sequence(InputStream, SequencerOutput, SequencerContext,
-     *      ProgressMonitor)
+     *      ActivityMonitor)
      */
     public void sequence( InputStream stream,
                           SequencerOutput output,
                           SequencerContext context,
-                          ProgressMonitor monitor ) {
+                          ActivityMonitor monitor ) {
         monitor.beginTask(100.0, XmlSequencerI18n.sequencingXmlDocument);
         XMLReader reader;
         try {
@@ -120,7 +120,7 @@ public class XmlSequencer implements StreamSequencer {
 
         private final SequencerOutput output;
         private final SequencerContext context;
-        private final ProgressMonitor monitor;
+        private final ActivityMonitor monitor;
 
         private double progress;
 
@@ -151,7 +151,7 @@ public class XmlSequencer implements StreamSequencer {
 
         Handler( SequencerOutput output,
                  SequencerContext context,
-                 ProgressMonitor monitor ) {
+                 ActivityMonitor monitor ) {
             assert output != null;
             assert monitor != null;
             assert context != null;
