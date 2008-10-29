@@ -26,13 +26,14 @@ import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
-import org.jboss.dna.common.monitor.ProgressMonitor;
+import org.jboss.dna.common.monitor.ActivityMonitor;
 import org.jboss.dna.graph.sequencers.SequencerContext;
 import org.jboss.dna.graph.sequencers.SequencerOutput;
 import org.jboss.dna.graph.sequencers.StreamSequencer;
 
 /**
  * @author Michael Trezzi
+ * @author John Verhaeg
  */
 public class ZipSequencer implements StreamSequencer {
 
@@ -41,12 +42,12 @@ public class ZipSequencer implements StreamSequencer {
      * 
      * @see org.jboss.dna.graph.sequencers.StreamSequencer#sequence(java.io.InputStream,
      *      org.jboss.dna.graph.sequencers.SequencerOutput, org.jboss.dna.graph.sequencers.SequencerContext,
-     *      org.jboss.dna.common.monitor.ProgressMonitor)
+     *      org.jboss.dna.common.monitor.ActivityMonitor)
      */
     public void sequence( InputStream stream,
                           SequencerOutput output,
                           SequencerContext context,
-                          ProgressMonitor progressMonitor ) {
+                          ActivityMonitor activityMonitor ) {
         try {
             ZipInputStream in = new ZipInputStream(stream);
             ZipEntry entry = in.getNextEntry();

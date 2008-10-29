@@ -29,8 +29,9 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import org.jboss.dna.common.monitor.ProgressMonitor;
-import org.jboss.dna.common.monitor.SimpleProgressMonitor;
+import org.jboss.dna.common.i18n.MockI18n;
+import org.jboss.dna.common.monitor.ActivityMonitor;
+import org.jboss.dna.common.monitor.SimpleActivityMonitor;
 import org.jboss.dna.graph.sequencers.MockSequencerContext;
 import org.jboss.dna.graph.sequencers.MockSequencerOutput;
 import org.jboss.dna.graph.sequencers.SequencerContext;
@@ -46,7 +47,7 @@ public class JavaMetadataSequencerTest {
     private JavaMetadataSequencer sequencer;
     private InputStream content;
     private MockSequencerOutput output;
-    private ProgressMonitor progress;
+    private ActivityMonitor activityMonitor;
     private File source;
     private SequencerContext context;
 
@@ -56,7 +57,7 @@ public class JavaMetadataSequencerTest {
         context.getNamespaceRegistry().register("java", "http://jboss.org/dna/java/1.0");
         sequencer = new JavaMetadataSequencer();
         output = new MockSequencerOutput(context);
-        this.progress = new SimpleProgressMonitor("Test java monitor activity");
+        this.activityMonitor = new SimpleActivityMonitor(MockI18n.passthrough, "Test java monitor activity");
         source = new File("src/test/workspace/projectX/src/org/acme/MySource.java");
     }
 
@@ -79,7 +80,7 @@ public class JavaMetadataSequencerTest {
     public void shouldGenerateMetadataForJavaSourceFile() throws IOException {
         content = getJavaSrc(source);
         assertThat(content, is(notNullValue()));
-        sequencer.sequence(content, output, context, progress);
+        sequencer.sequence(content, output, context, activityMonitor);
         assertThat(output.getPropertyValues("java:compilationUnit", "jcr:primaryType"), is(new Object[] {"java:compilationUnit"}));
 
         // support sequencing package declaration( FQL name of the package). Not supported is to get information for package

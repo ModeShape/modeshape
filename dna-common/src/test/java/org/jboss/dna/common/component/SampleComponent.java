@@ -21,12 +21,13 @@
  */
 package org.jboss.dna.common.component;
 
-import org.jboss.dna.common.monitor.ProgressMonitor;
+import org.jboss.dna.common.monitor.ActivityMonitor;
 
 /**
  * @author Randall Hauch
+ * @author John Verhaeg
  */
 public interface SampleComponent extends Component<SampleComponentConfig> {
 
-    public void doSomething( ProgressMonitor progressMonitor );
+    public void doSomething( ActivityMonitor activityMonitor );
 }

@@ -22,28 +22,25 @@
 package org.jboss.dna.common.monitor;
 
 import org.jboss.dna.common.i18n.I18n;
+import org.jboss.dna.common.i18n.MockI18n;
 
 /**
  * @author Randall Hauch
+ * @author John Verhaeg
  */
-public class RecordingProgressMonitor extends ProgressMonitorWrapper {
+public class RecordingActivityMonitor extends ActivityMonitorWrapper {
 
     private int beginTaskCount;
     private int doneCount;
     private int createSubtaskCount;
     private int setCancelledCount;
 
-    public RecordingProgressMonitor( ProgressMonitor delegate ) {
+    public RecordingActivityMonitor( ActivityMonitor delegate ) {
         super(delegate);
     }
 
-    public RecordingProgressMonitor( String name ) {
-        this(name, null);
-    }
-
-    public RecordingProgressMonitor( String name,
-                                     ProgressMonitor parentProgressMonitor ) {
-        this(new SimpleProgressMonitor(name, parentProgressMonitor));
+    public RecordingActivityMonitor( String name ) {
+        this(new SimpleActivityMonitor(MockI18n.passthrough, name));
     }
 
     /**
@@ -70,7 +67,7 @@ public class RecordingProgressMonitor extends ProgressMonitorWrapper {
      * {@inheritDoc}
      */
     @Override
-    public ProgressMonitor createSubtask( double subtaskWork ) {
+    public ActivityMonitor createSubtask( double subtaskWork ) {
         ++createSubtaskCount;
         return super.createSubtask(subtaskWork);
     }

@@ -24,7 +24,7 @@ package org.jboss.dna.graph;
 import java.security.AccessControlContext;
 import javax.security.auth.Subject;
 import javax.security.auth.login.LoginContext;
-import org.jboss.dna.common.monitor.ProgressMonitor;
+import org.jboss.dna.common.monitor.ActivityMonitor;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.common.util.Logger;
 import org.jboss.dna.graph.properties.NameFactory;
@@ -188,10 +188,10 @@ public class ExecutionContexts {
         /**
          * {@inheritDoc}
          * 
-         * @see org.jboss.dna.graph.ExecutionContext#getProgressMonitor()
+         * @see org.jboss.dna.graph.ExecutionContext#getActivityMonitor()
          */
-        public ProgressMonitor getProgressMonitor() {
-            return delegate.getProgressMonitor();
+        public ActivityMonitor getActivityMonitor() {
+            return delegate.getActivityMonitor();
         }
 
         /**

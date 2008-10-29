@@ -29,18 +29,24 @@ import org.jboss.dna.common.util.Logger;
 
 /**
  * @author Randall Hauch
+ * @author John Verhaeg
  */
-public class LoggingProgressMonitor extends ProgressMonitorWrapper {
+public class LoggingActivityMonitor extends ActivityMonitorWrapper {
 
     private final Logger logger;
     private final Logger.Level level;
     private final Locale locale;
 
-    public LoggingProgressMonitor( ProgressMonitor delegate, Logger logger, Logger.Level level ) {
+    public LoggingActivityMonitor( ActivityMonitor delegate,
+                                   Logger logger,
+                                   Logger.Level level ) {
         this(delegate, logger, level, null);
     }
 
-    public LoggingProgressMonitor( ProgressMonitor delegate, Logger logger, Logger.Level level, Locale locale ) {
+    public LoggingActivityMonitor( ActivityMonitor delegate,
+                                   Logger logger,
+                                   Logger.Level level,
+                                   Locale locale ) {
         super(delegate);
         assert level != null;
         assert logger != null;
@@ -53,9 +59,11 @@ public class LoggingProgressMonitor extends ProgressMonitorWrapper {
      * {@inheritDoc}
      */
     @Override
-    public void beginTask( double totalWork, I18n name, Object... params ) {
+    public void beginTask( double totalWork,
+                           I18n name,
+                           Object... params ) {
         super.beginTask(totalWork, name, params);
-        this.logger.log(level, CommonI18n.progressMonitorBeginTask, getActivityName(), name.text(params));
+        this.logger.log(level, CommonI18n.activityMonitorBeginTask, getActivityName(), name.text(params));
     }
 
     /**
@@ -64,7 +72,7 @@ public class LoggingProgressMonitor extends ProgressMonitorWrapper {
     @Override
     public void done() {
         super.done();
-        this.logger.log(level, CommonI18n.progressMonitorStatus, super.getStatus(this.locale));
+        this.logger.log(level, CommonI18n.activityMonitorStatus, super.getStatus(this.locale));
     }
 
     /**
@@ -73,7 +81,7 @@ public class LoggingProgressMonitor extends ProgressMonitorWrapper {
     @Override
     public void setCancelled( boolean value ) {
         super.setCancelled(value);
-        this.logger.log(level, CommonI18n.progressMonitorStatus, super.getStatus(this.locale));
+        this.logger.log(level, CommonI18n.activityMonitorStatus, super.getStatus(this.locale));
     }
 
     /**
@@ -82,7 +90,7 @@ public class LoggingProgressMonitor extends ProgressMonitorWrapper {
     @Override
     public void worked( double work ) {
         super.worked(work);
-        this.logger.log(level, CommonI18n.progressMonitorStatus, super.getStatus(this.locale));
+        this.logger.log(level, CommonI18n.activityMonitorStatus, super.getStatus(this.locale));
     }
 
 }

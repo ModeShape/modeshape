@@ -46,9 +46,9 @@ import net.jcip.annotations.ThreadSafe;
 import org.jboss.dna.common.component.ClassLoaderFactory;
 import org.jboss.dna.common.component.ComponentLibrary;
 import org.jboss.dna.common.component.StandardClassLoaderFactory;
-import org.jboss.dna.common.monitor.LoggingProgressMonitor;
-import org.jboss.dna.common.monitor.ProgressMonitor;
-import org.jboss.dna.common.monitor.SimpleProgressMonitor;
+import org.jboss.dna.common.monitor.ActivityMonitor;
+import org.jboss.dna.common.monitor.LoggingActivityMonitor;
+import org.jboss.dna.common.monitor.SimpleActivityMonitor;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.common.util.HashCode;
 import org.jboss.dna.common.util.Logger;
@@ -514,12 +514,12 @@ public class SequencingService implements AdministeredService, NodeChangeListene
                     }
                 } else {
                     // Run each of those sequencers ...
-                    ProgressMonitor progressMonitor = new SimpleProgressMonitor(RepositoryI18n.sequencerTask.text(changedNode));
+                    ActivityMonitor activityMonitor = new SimpleActivityMonitor(RepositoryI18n.sequencerTask, changedNode);
                     if (logger.isTraceEnabled()) {
-                        progressMonitor = new LoggingProgressMonitor(progressMonitor, logger, Logger.Level.TRACE);
+                        activityMonitor = new LoggingActivityMonitor(activityMonitor, logger, Logger.Level.TRACE);
                     }
                     try {
-                        progressMonitor.beginTask(sequencerCalls.size(), RepositoryI18n.sequencerTask, changedNode);
+                        activityMonitor.beginTask(sequencerCalls.size(), RepositoryI18n.sequencerTask, changedNode);
                         for (Map.Entry<SequencerCall, Set<RepositoryNodePath>> entry : sequencerCalls.entrySet()) {
                             final SequencerCall sequencerCall = entry.getKey();
                             final Set<RepositoryNodePath> outputPaths = entry.getValue();
@@ -532,7 +532,7 @@ public class SequencingService implements AdministeredService, NodeChangeListene
 
                             // Create a new execution context for each sequencer
                             final Context executionContext = new Context(context);
-                            final ProgressMonitor sequenceMonitor = progressMonitor.createSubtask(1);
+                            final ActivityMonitor sequenceMonitor = activityMonitor.createSubtask(1);
                             try {
                                 sequenceMonitor.beginTask(100, RepositoryI18n.sequencerSubtask, sequencerName);
                                 sequencer.execute(node,
@@ -563,7 +563,7 @@ public class SequencingService implements AdministeredService, NodeChangeListene
                         }
                         this.statistics.recordNodeSequenced();
                     } finally {
-                        progressMonitor.done();
+                        activityMonitor.done();
                     }
                 }
             } finally {
@@ -642,10 +642,10 @@ public class SequencingService implements AdministeredService, NodeChangeListene
         /**
          * {@inheritDoc}
          * 
-         * @see org.jboss.dna.graph.ExecutionContext#getProgressMonitor()
+         * @see org.jboss.dna.graph.ExecutionContext#getActivityMonitor()
          */
-        public ProgressMonitor getProgressMonitor() {
-            return delegate.getProgressMonitor();
+        public ActivityMonitor getActivityMonitor() {
+            return delegate.getActivityMonitor();
         }
 
         /**

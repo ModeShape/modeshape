@@ -27,14 +27,13 @@ import org.jboss.dna.common.collection.Problems;
 import org.jboss.dna.common.i18n.I18n;
 
 /**
- * A basic progress monitor that facilitates the updating and monitoring of progress towards the completion of an activity.
+ * A basic activity monitor that facilitates the updating and monitoring of progress towards the completion of an activity.
  * Documentation hereafter will refer to the code in an application that updates progress as the <strong>Updater</strong>, and
  * code that monitors progress as an <strong>Observer</strong>.
  * <p>
- * The progress of each {@link #getActivityName() activity} is started when the <strong>Updater</strong> calls
- * {@link #beginTask(double, I18n, Object...)}, continues with a mixture of work ({@link #worked(double)}) and subtasks (
- * {@link #createSubtask(double)}), and finishes when the activity is completed ({@link #done()}) or cancelled (
- * {@link #setCancelled(boolean)}).
+ * The progress of each activity is started when the <strong>Updater</strong> calls {@link #beginTask(double, I18n, Object...)},
+ * continues with a mixture of work ({@link #worked(double)}) and subtasks ( {@link #createSubtask(double)}), and finishes when
+ * the activity is completed ({@link #done()}) or cancelled ( {@link #setCancelled(boolean)}).
  * </p>
  * <p>
  * If an activity is interrupted before its normal completion due to a cancellation request by an <strong>Observer</strong>, it is
@@ -46,7 +45,7 @@ import org.jboss.dna.common.i18n.I18n;
  * @author Randall Hauch
  * @author John Verhaeg
  */
-public interface ProgressMonitor {
+public interface ActivityMonitor {
 
     /**
      * Called by the <strong>Updater</strong> to indicate work has started on the task, specifying the total amount of work that
@@ -61,13 +60,13 @@ public interface ProgressMonitor {
                     Object... params );
 
     /**
-     * Called by the <strong>Updater</strong> to create a subtask with the given about of work. The resulting progress monitor
+     * Called by the <strong>Updater</strong> to create a subtask with the given about of work. The resulting activity monitor
      * must be started ({@link #beginTask(double, I18n, Object...)}) and finished ({@link #done()}).
      * 
      * @param subtaskWork the number of work units for this subtask
-     * @return the progress monitor for the subtask
+     * @return the activity monitor for the subtask
      */
-    ProgressMonitor createSubtask( double subtaskWork );
+    ActivityMonitor createSubtask( double subtaskWork );
 
     /**
      * Called by the <strong>Updater</strong> to mark this activity as complete. This method must be called, even if the activity
@@ -76,19 +75,24 @@ public interface ProgressMonitor {
     void done();
 
     /**
-     * Get the name of the activity. This should never change for a progress monitor, and all {@link #createSubtask(double)
-     * subtasks} should have the same name.
+     * Get the name of the activity using the default locale. This should never change for a activity monitor, and all
+     * {@link #createSubtask(double) subtasks} should have the same name.
      * 
      * @return the activity's name; never <code>null</code>
+     * @see #getActivityName(Locale)
      */
     String getActivityName();
 
     /**
-     * Get the name of the activity that spawned this activity. This should never change for a progress monitor.
+     * Returns the name of the activity using the supplied locale. This should never change for a activity monitor, and all
+     * {@link #createSubtask(double) subtasks} should have the same name.
      * 
-     * @return the parent activity's name; never <code>null</code>
+     * @param locale the locale in which the name is to be represented; if null, the {@link Locale#getDefault() default locale}
+     *        will be used
+     * @return the activity's name; never <code>null</code>
+     * @see #getActivityName()
      */
-    String getParentActivityName();
+    String getActivityName( Locale locale );
 
     /**
      * Return the problems encountered during the {@link #getStatus(Locale) progress} made towards completing the associated
@@ -107,7 +111,7 @@ public interface ProgressMonitor {
      *        will be used
      * @return the status of this activity
      */
-    ProgressStatus getStatus( Locale locale );
+    ActivityStatus getStatus( Locale locale );
 
     /**
      * Return whether a request was made by an <strong>Observer</strong> to {@link #setCancelled(boolean) cancel} this activity.

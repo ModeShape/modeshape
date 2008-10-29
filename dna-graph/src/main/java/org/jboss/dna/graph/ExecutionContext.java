@@ -25,7 +25,7 @@ import java.security.AccessControlContext;
 import javax.security.auth.Subject;
 import javax.security.auth.login.LoginContext;
 import org.jboss.dna.common.component.ClassLoaderFactory;
-import org.jboss.dna.common.monitor.ProgressMonitor;
+import org.jboss.dna.common.monitor.ActivityMonitor;
 import org.jboss.dna.common.util.Logger;
 import org.jboss.dna.graph.properties.NamespaceRegistry;
 import org.jboss.dna.graph.properties.Property;
@@ -48,6 +48,13 @@ public interface ExecutionContext extends ClassLoaderFactory {
      * @return the access control context; may be <code>null</code>
      */
     AccessControlContext getAccessControlContext();
+
+    /**
+     * Returns the thread-safe activity monitor associated with this execution context.
+     * 
+     * @return the activity monitor; never <code>null</code>;
+     */
+    ActivityMonitor getActivityMonitor();
 
     /**
      * Return a logger associated with this context. This logger records only those activities within the context and provide a
@@ -82,13 +89,6 @@ public interface ExecutionContext extends ClassLoaderFactory {
      * @return the namespace registry; never <code>null</code>
      */
     NamespaceRegistry getNamespaceRegistry();
-
-    /**
-     * Returns the thread-safe progress monitor associated with this execution context.
-     * 
-     * @return the progress monitor; never <code>null</code>;
-     */
-    ProgressMonitor getProgressMonitor();
 
     /**
      * Get the factory for creating {@link Property} objects.

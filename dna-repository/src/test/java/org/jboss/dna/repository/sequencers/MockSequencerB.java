@@ -29,14 +29,16 @@ import java.util.concurrent.atomic.AtomicInteger;
 import javax.jcr.Node;
 import net.jcip.annotations.ThreadSafe;
 import org.jboss.dna.common.i18n.MockI18n;
-import org.jboss.dna.common.monitor.ProgressMonitor;
+import org.jboss.dna.common.monitor.ActivityMonitor;
 import org.jboss.dna.repository.observation.NodeChange;
 import org.jboss.dna.repository.util.JcrExecutionContext;
 import org.jboss.dna.repository.util.RepositoryNodePath;
 
 /**
  * A sequencer that can be used for basic unit testing.
+ * 
  * @author Randall Hauch
+ * @author John Verhaeg
  */
 @ThreadSafe
 public class MockSequencerB implements Sequencer {
@@ -49,7 +51,8 @@ public class MockSequencerB implements Sequencer {
         this.latch = new CountDownLatch(numExpected);
     }
 
-    public boolean awaitExecution( long timeout, TimeUnit unit ) throws InterruptedException {
+    public boolean awaitExecution( long timeout,
+                                   TimeUnit unit ) throws InterruptedException {
         return this.latch.await(timeout, unit);
     }
 
@@ -63,15 +66,20 @@ public class MockSequencerB implements Sequencer {
     /**
      * {@inheritDoc}
      */
-    public void execute( Node input, String sequencedPropertyName, NodeChange changes, Set<RepositoryNodePath> outputPaths, JcrExecutionContext context, ProgressMonitor progress ) {
+    public void execute( Node input,
+                         String sequencedPropertyName,
+                         NodeChange changes,
+                         Set<RepositoryNodePath> outputPaths,
+                         JcrExecutionContext context,
+                         ActivityMonitor activityMonitor ) {
         try {
-            progress.beginTask(1, MockI18n.passthrough, "Incrementing counter");
+            activityMonitor.beginTask(1, MockI18n.passthrough, "Incrementing counter");
             // increment the counter and record the progress ...
             this.counter.incrementAndGet();
             this.latch.countDown();
-            progress.worked(1);
+            activityMonitor.worked(1);
         } finally {
-            progress.done();
+            activityMonitor.done();
         }
     }
 

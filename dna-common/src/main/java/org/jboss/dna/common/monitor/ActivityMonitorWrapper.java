@@ -32,58 +32,88 @@ import org.jboss.dna.common.i18n.I18n;
  * @author Randall Hauch
  * @author John Verhaeg
  */
-public class ProgressMonitorWrapper implements ProgressMonitor {
+public class ActivityMonitorWrapper implements ActivityMonitor {
 
-    private final ProgressMonitor delegate;
+    private final ActivityMonitor delegate;
 
-    public ProgressMonitorWrapper( ProgressMonitor delegate ) {
+    public ActivityMonitorWrapper( ActivityMonitor delegate ) {
         this.delegate = delegate;
     }
 
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.common.monitor.ActivityMonitor#beginTask(double, org.jboss.dna.common.i18n.I18n, java.lang.Object[])
+     */
     public void beginTask( double totalWork,
                            I18n name,
                            Object... params ) {
         this.delegate.beginTask(totalWork, name, params);
     }
 
-    public ProgressMonitor createSubtask( double subtaskWork ) {
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.common.monitor.ActivityMonitor#createSubtask(double)
+     */
+    public ActivityMonitor createSubtask( double subtaskWork ) {
         return this.delegate.createSubtask(subtaskWork);
     }
 
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.common.monitor.ActivityMonitor#done()
+     */
     public void done() {
         this.delegate.done();
     }
 
-    public String getActivityName() {
-        return this.delegate.getActivityName();
-    }
-
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.common.monitor.ProgressMonitor#getParentActivityName()
+     * @see org.jboss.dna.common.monitor.ActivityMonitor#getActivityName()
      */
-    public String getParentActivityName() {
-        return this.delegate.getParentActivityName();
+    public String getActivityName() {
+        return delegate.getActivityName();
     }
 
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.common.monitor.ProgressMonitor#getProblems()
+     * @see org.jboss.dna.common.monitor.ActivityMonitor#getActivityName(java.util.Locale)
+     */
+    public String getActivityName( Locale locale ) {
+        return delegate.getActivityName(locale);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.common.monitor.ActivityMonitor#getProblems()
      */
     public Problems getProblems() {
         return delegate.getProblems();
     }
 
-    public ProgressStatus getStatus( Locale locale ) {
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.common.monitor.ActivityMonitor#getStatus(java.util.Locale)
+     */
+    public ActivityStatus getStatus( Locale locale ) {
         return this.delegate.getStatus(locale);
     }
 
-    public ProgressMonitor getWrappedMonitor() {
+    public ActivityMonitor getWrappedMonitor() {
         return this.delegate;
     }
 
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.common.monitor.ActivityMonitor#isCancelled()
+     */
     public boolean isCancelled() {
         return this.delegate.isCancelled();
     }
@@ -91,16 +121,26 @@ public class ProgressMonitorWrapper implements ProgressMonitor {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.common.monitor.ProgressMonitor#isDone()
+     * @see org.jboss.dna.common.monitor.ActivityMonitor#isDone()
      */
     public boolean isDone() {
         return delegate.isDone();
     }
 
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.common.monitor.ActivityMonitor#setCancelled(boolean)
+     */
     public void setCancelled( boolean value ) {
         this.delegate.setCancelled(value);
     }
 
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.common.monitor.ActivityMonitor#worked(double)
+     */
     public void worked( double work ) {
         this.delegate.worked(work);
     }

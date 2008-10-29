@@ -25,10 +25,11 @@ import java.security.AccessControlContext;
 import java.security.AccessController;
 import javax.security.auth.Subject;
 import javax.security.auth.login.LoginContext;
+import org.jboss.dna.common.CommonI18n;
 import org.jboss.dna.common.component.ClassLoaderFactory;
 import org.jboss.dna.common.component.StandardClassLoaderFactory;
-import org.jboss.dna.common.monitor.ProgressMonitor;
-import org.jboss.dna.common.monitor.SimpleProgressMonitor;
+import org.jboss.dna.common.monitor.ActivityMonitor;
+import org.jboss.dna.common.monitor.SimpleActivityMonitor;
 import org.jboss.dna.common.util.Logger;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.properties.NamespaceRegistry;
@@ -51,7 +52,7 @@ public class BasicExecutionContext implements ExecutionContext {
     private final PropertyFactory propertyFactory;
     private final ValueFactories valueFactories;
     private final NamespaceRegistry namespaceRegistry;
-    private final ProgressMonitor progressMonitor;
+    private final ActivityMonitor activityMonitor;
 
     public BasicExecutionContext() {
         this(null, null, null, null, null, null);
@@ -68,24 +69,24 @@ public class BasicExecutionContext implements ExecutionContext {
     public BasicExecutionContext( NamespaceRegistry namespaceRegistry,
                                   ValueFactories valueFactories,
                                   PropertyFactory propertyFactory,
-                                  ProgressMonitor progressMonitor ) {
-        this(null, null, namespaceRegistry, valueFactories, propertyFactory, progressMonitor);
+                                  ActivityMonitor activityMonitor ) {
+        this(null, null, namespaceRegistry, valueFactories, propertyFactory, activityMonitor);
     }
 
     public BasicExecutionContext( LoginContext loginContext,
                                   NamespaceRegistry namespaceRegistry,
                                   ValueFactories valueFactories,
                                   PropertyFactory propertyFactory,
-                                  ProgressMonitor progressMonitor ) {
-        this(loginContext, null, namespaceRegistry, valueFactories, propertyFactory, progressMonitor);
+                                  ActivityMonitor activityMonitor ) {
+        this(loginContext, null, namespaceRegistry, valueFactories, propertyFactory, activityMonitor);
     }
 
     public BasicExecutionContext( AccessControlContext accessControlContext,
                                   NamespaceRegistry namespaceRegistry,
                                   ValueFactories valueFactories,
                                   PropertyFactory propertyFactory,
-                                  ProgressMonitor progressMonitor ) {
-        this(null, accessControlContext, namespaceRegistry, valueFactories, propertyFactory, progressMonitor);
+                                  ActivityMonitor activityMonitor ) {
+        this(null, accessControlContext, namespaceRegistry, valueFactories, propertyFactory, activityMonitor);
     }
 
     /*
@@ -96,7 +97,7 @@ public class BasicExecutionContext implements ExecutionContext {
                                    NamespaceRegistry namespaceRegistry,
                                    ValueFactories valueFactories,
                                    PropertyFactory propertyFactory,
-                                   ProgressMonitor progressMonitor ) {
+                                   ActivityMonitor activityMonitor ) {
         this.loginContext = loginContext;
         this.accessControlContext = accessControlContext;
         if (loginContext == null) {
@@ -107,7 +108,7 @@ public class BasicExecutionContext implements ExecutionContext {
         this.namespaceRegistry = namespaceRegistry == null ? new BasicNamespaceRegistry() : namespaceRegistry;
         this.valueFactories = valueFactories == null ? new StandardValueFactories(this.namespaceRegistry) : valueFactories;
         this.propertyFactory = propertyFactory == null ? new BasicPropertyFactory(this.valueFactories) : propertyFactory;
-        this.progressMonitor = progressMonitor == null ? new SimpleProgressMonitor(null) : progressMonitor;
+        this.activityMonitor = activityMonitor == null ? new SimpleActivityMonitor(CommonI18n.nullActivityMonitorTaskName) : activityMonitor;
         this.classLoaderFactory = new StandardClassLoaderFactory();
     }
 
@@ -148,10 +149,10 @@ public class BasicExecutionContext implements ExecutionContext {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.graph.ExecutionContext#getProgressMonitor()
+     * @see org.jboss.dna.graph.ExecutionContext#getActivityMonitor()
      */
-    public ProgressMonitor getProgressMonitor() {
-        return progressMonitor;
+    public ActivityMonitor getActivityMonitor() {
+        return activityMonitor;
     }
 
     /**

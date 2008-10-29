@@ -26,7 +26,7 @@ import java.util.Set;
 import javax.security.auth.Subject;
 import javax.security.auth.login.LoginContext;
 import net.jcip.annotations.Immutable;
-import org.jboss.dna.common.monitor.ProgressMonitor;
+import org.jboss.dna.common.monitor.ActivityMonitor;
 import org.jboss.dna.common.util.Logger;
 import org.jboss.dna.graph.DnaLexicon;
 import org.jboss.dna.graph.properties.Name;
@@ -39,7 +39,7 @@ import org.jboss.dna.graph.properties.basic.BasicNamespaceRegistry;
 import org.jboss.dna.graph.properties.basic.StandardValueFactories;
 
 /**
- * @author jverhaeg
+ * @author John Verhaeg
  */
 @Immutable
 public class MockSequencerContext implements SequencerContext {
@@ -150,9 +150,9 @@ public class MockSequencerContext implements SequencerContext {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.graph.ExecutionContext#getProgressMonitor()
+     * @see org.jboss.dna.graph.ExecutionContext#getActivityMonitor()
      */
-    public ProgressMonitor getProgressMonitor() {
+    public ActivityMonitor getActivityMonitor() {
         return null;
     }
 

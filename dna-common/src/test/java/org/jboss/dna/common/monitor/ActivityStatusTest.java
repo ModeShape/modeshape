@@ -30,10 +30,11 @@ import org.junit.Test;
 
 /**
  * @author Randall Hauch
+ * @author John Verhaeg
  */
-public class ProgressStatusTest {
+public class ActivityStatusTest {
 
-    private ProgressStatus status;
+    private ActivityStatus status;
     private String validActivityName;
     private String validTaskName;
 
@@ -41,20 +42,20 @@ public class ProgressStatusTest {
     public void beforeEach() {
         this.validActivityName = "Reading from file X";
         this.validTaskName = "Checking for file";
-        this.status = new ProgressStatus(this.validActivityName, this.validTaskName, 10.0d, false);
+        this.status = new ActivityStatus(this.validActivityName, this.validTaskName, 10.0d, false);
     }
 
     @Test
     public void shouldComputePercentageAs100PercentIfWithinPrecision() {
-        assertThat(ProgressStatus.computePercentage(100.0d - (ProgressStatus.PERCENT_PRECISION / 2.0d), 100.0d),
-                   is(closeTo(100.0d, ProgressStatus.PERCENT_PRECISION)));
+        assertThat(ActivityStatus.computePercentage(100.0d - (ActivityStatus.PERCENT_PRECISION / 2.0d), 100.0d),
+                   is(closeTo(100.0d, ActivityStatus.PERCENT_PRECISION)));
     }
 
     @Test
     public void shouldComputePercentageOfZeroWorkAsZero() {
         // Note that we should not get a divide by zero !!!
-        assertThat(ProgressStatus.computePercentage(0.0d, 0.0d), is(closeTo(0.0d, ProgressStatus.PERCENT_PRECISION)));
-        assertThat(ProgressStatus.computePercentage(0.0d, 100.0d), is(closeTo(0.0d, ProgressStatus.PERCENT_PRECISION)));
+        assertThat(ActivityStatus.computePercentage(0.0d, 0.0d), is(closeTo(0.0d, ActivityStatus.PERCENT_PRECISION)));
+        assertThat(ActivityStatus.computePercentage(0.0d, 100.0d), is(closeTo(0.0d, ActivityStatus.PERCENT_PRECISION)));
     }
 
     @Test

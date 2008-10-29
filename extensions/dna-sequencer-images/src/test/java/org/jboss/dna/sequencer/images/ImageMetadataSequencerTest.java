@@ -28,8 +28,9 @@ import static org.junit.Assert.assertThat;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
-import org.jboss.dna.common.monitor.ProgressMonitor;
-import org.jboss.dna.common.monitor.SimpleProgressMonitor;
+import org.jboss.dna.common.i18n.MockI18n;
+import org.jboss.dna.common.monitor.ActivityMonitor;
+import org.jboss.dna.common.monitor.SimpleActivityMonitor;
 import org.jboss.dna.graph.sequencers.MockSequencerContext;
 import org.jboss.dna.graph.sequencers.MockSequencerOutput;
 import org.jboss.dna.graph.sequencers.SequencerContext;
@@ -46,7 +47,7 @@ public class ImageMetadataSequencerTest {
     private ImageMetadataSequencer sequencer;
     private InputStream content;
     private MockSequencerOutput output;
-    private ProgressMonitor progress;
+    private ActivityMonitor activityMonitor;
     private URL cautionGif;
     private URL cautionJpg;
     private URL cautionPict;
@@ -59,7 +60,7 @@ public class ImageMetadataSequencerTest {
         context = new MockSequencerContext();
         context.getNamespaceRegistry().register("image", "http://jboss.org/dna/images/1.0");
         output = new MockSequencerOutput(context);
-        progress = new SimpleProgressMonitor("Test activity");
+        activityMonitor = new SimpleActivityMonitor(MockI18n.passthrough, "Test Activity");
         cautionGif = this.getClass().getClassLoader().getResource("caution.gif");
         cautionJpg = this.getClass().getClassLoader().getResource("caution.jpg");
         cautionPict = this.getClass().getClassLoader().getResource("caution.pict");
@@ -83,7 +84,7 @@ public class ImageMetadataSequencerTest {
         assertThat(url, is(notNullValue()));
         content = url.openStream();
         assertThat(content, is(notNullValue()));
-        sequencer.sequence(content, output, context, progress);
+        sequencer.sequence(content, output, context, activityMonitor);
         assertThat(output.getPropertyValues("image:metadata", "jcr:primaryType"), is(new Object[] {"image:metadata"}));
         assertThat(output.getPropertyValues("image:metadata", "jcr:mimeType"), is(new Object[] {"image/jpeg"}));
         assertThat(output.getPropertyValues("image:metadata", "image:formatName"), is(new Object[] {"JPEG"}));
@@ -106,7 +107,7 @@ public class ImageMetadataSequencerTest {
         assertThat(url, is(notNullValue()));
         content = url.openStream();
         assertThat(content, is(notNullValue()));
-        sequencer.sequence(content, output, context, progress);
+        sequencer.sequence(content, output, context, activityMonitor);
         assertThat(output.getPropertyValues("image:metadata", "jcr:primaryType"), is(new Object[] {"image:metadata"}));
         assertThat(output.getPropertyValues("image:metadata", "jcr:mimeType"), is(new Object[] {"image/png"}));
         assertThat(output.getPropertyValues("image:metadata", "image:formatName"), is(new Object[] {"PNG"}));
@@ -127,7 +128,7 @@ public class ImageMetadataSequencerTest {
         assertThat(url, is(notNullValue()));
         content = url.openStream();
         assertThat(content, is(notNullValue()));
-        sequencer.sequence(content, output, context, progress);
+        sequencer.sequence(content, output, context, activityMonitor);
         assertThat(output.getPropertyValues("image:metadata", "jcr:mimeType"), is(new Object[] {"image/gif"}));
         assertThat(output.getPropertyValues("image:metadata", "image:formatName"), is(new Object[] {"GIF"}));
         assertThat(output.getPropertyValues("image:metadata", "image:width"), is(new Object[] {48}));
@@ -147,7 +148,7 @@ public class ImageMetadataSequencerTest {
         assertThat(url, is(notNullValue()));
         content = url.openStream();
         assertThat(content, is(notNullValue()));
-        sequencer.sequence(content, output, context, progress);
+        sequencer.sequence(content, output, context, activityMonitor);
         assertThat(output.hasProperties(), is(false));
 
     }

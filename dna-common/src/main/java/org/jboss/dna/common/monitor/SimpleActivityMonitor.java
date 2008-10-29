@@ -34,13 +34,13 @@ import org.jboss.dna.common.i18n.I18n;
 import org.jboss.dna.common.util.CheckArg;
 
 /**
- * A basic progress monitor.
+ * A basic activity monitor.
  * 
  * @author Randall Hauch
  * @author John Verhaeg
  */
 @ThreadSafe
-public class SimpleProgressMonitor implements ProgressMonitor {
+public class SimpleActivityMonitor implements ActivityMonitor {
 
     @GuardedBy( "lock" )
     private I18n taskName;
@@ -51,20 +51,17 @@ public class SimpleProgressMonitor implements ProgressMonitor {
     @GuardedBy( "lock" )
     private double worked;
 
-    private final String activityName;
-    private final String parentActivityName;
+    private final I18n activityName;
+    private final Object[] activityNameParams;
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
     private final AtomicBoolean cancelled = new AtomicBoolean(false);
     private final Problems problems = new ThreadSafeProblems();
 
-    public SimpleProgressMonitor( String activityName ) {
-        this(activityName, null);
-    }
-
-    public SimpleProgressMonitor( String activityName,
-                                  ProgressMonitor parentProgressMonitor ) {
-        this.activityName = activityName == null ? "" : activityName.trim();
-        this.parentActivityName = parentProgressMonitor == null ? "" : parentProgressMonitor.getActivityName();
+    public SimpleActivityMonitor( I18n activityName,
+                                  Object... params ) {
+        CheckArg.isNotNull(activityName, "activityName");
+        this.activityName = activityName;
+        this.activityNameParams = params;
         this.taskName = null;
         this.taskNameParams = null;
     }
@@ -72,7 +69,7 @@ public class SimpleProgressMonitor implements ProgressMonitor {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.common.monitor.ProgressMonitor#beginTask(double, org.jboss.dna.common.i18n.I18n, java.lang.Object[])
+     * @see org.jboss.dna.common.monitor.ActivityMonitor#beginTask(double, org.jboss.dna.common.i18n.I18n, java.lang.Object[])
      */
     public void beginTask( double totalWork,
                            I18n name,
@@ -92,16 +89,16 @@ public class SimpleProgressMonitor implements ProgressMonitor {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.common.monitor.ProgressMonitor#createSubtask(double)
+     * @see org.jboss.dna.common.monitor.ActivityMonitor#createSubtask(double)
      */
-    public ProgressMonitor createSubtask( double subtaskWork ) {
-        return new SubProgressMonitor(this, subtaskWork);
+    public ActivityMonitor createSubtask( double subtaskWork ) {
+        return new SubActivityMonitor(this, subtaskWork);
     }
 
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.common.monitor.ProgressMonitor#done()
+     * @see org.jboss.dna.common.monitor.ActivityMonitor#done()
      */
     public void done() {
         boolean alreadyDone = false;
@@ -121,29 +118,29 @@ public class SimpleProgressMonitor implements ProgressMonitor {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.common.monitor.ProgressMonitor#getActivityName()
+     * @see org.jboss.dna.common.monitor.ActivityMonitor#getActivityName()
      */
     public String getActivityName() {
-        return this.activityName;
+        return getActivityName(null);
     }
 
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.common.monitor.ProgressMonitor#getParentActivityName()
+     * @see org.jboss.dna.common.monitor.ActivityMonitor#getActivityName(java.util.Locale)
      */
-    public String getParentActivityName() {
-        return this.parentActivityName;
+    public String getActivityName( Locale locale ) {
+        return activityName.text(locale == null ? Locale.getDefault() : locale, activityNameParams);
     }
 
     /**
      * {@inheritDoc}
      * <p>
-     * Problems must only be added by the {@link ProgressMonitor <strong>Updater</strong>}, and accessed by
-     * {@link ProgressMonitor Observers} only after the activity has been {@link #done() completed}.
+     * Problems must only be added by the {@link ActivityMonitor <strong>Updater</strong>}, and accessed by
+     * {@link ActivityMonitor Observers} only after the activity has been {@link #done() completed}.
      * </p>
      * 
-     * @see org.jboss.dna.common.monitor.ProgressMonitor#getProblems()
+     * @see org.jboss.dna.common.monitor.ActivityMonitor#getProblems()
      */
     public Problems getProblems() {
         return problems;
@@ -152,13 +149,14 @@ public class SimpleProgressMonitor implements ProgressMonitor {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.common.monitor.ProgressMonitor#getStatus(java.util.Locale)
+     * @see org.jboss.dna.common.monitor.ActivityMonitor#getStatus(java.util.Locale)
      */
-    public ProgressStatus getStatus( Locale locale ) {
+    public ActivityStatus getStatus( Locale locale ) {
         try {
             this.lock.readLock().lock();
             String localizedTaskName = this.taskName == null ? "" : this.taskName.text(locale, this.taskNameParams);
-            return new ProgressStatus(this.getActivityName(), localizedTaskName, this.worked, this.totalWork, this.isCancelled());
+            return new ActivityStatus(this.getActivityName(locale), localizedTaskName, this.worked, this.totalWork,
+                                      this.isCancelled());
         } finally {
             this.lock.readLock().unlock();
         }
@@ -167,7 +165,7 @@ public class SimpleProgressMonitor implements ProgressMonitor {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.common.monitor.ProgressMonitor#isCancelled()
+     * @see org.jboss.dna.common.monitor.ActivityMonitor#isCancelled()
      */
     public boolean isCancelled() {
         return this.cancelled.get();
@@ -176,7 +174,7 @@ public class SimpleProgressMonitor implements ProgressMonitor {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.common.monitor.ProgressMonitor#isDone()
+     * @see org.jboss.dna.common.monitor.ActivityMonitor#isDone()
      */
     public boolean isDone() {
         lock.readLock().lock();
@@ -202,7 +200,7 @@ public class SimpleProgressMonitor implements ProgressMonitor {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.common.monitor.ProgressMonitor#setCancelled(boolean)
+     * @see org.jboss.dna.common.monitor.ActivityMonitor#setCancelled(boolean)
      */
     public void setCancelled( boolean value ) {
         this.cancelled.set(value);
@@ -211,7 +209,7 @@ public class SimpleProgressMonitor implements ProgressMonitor {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.common.monitor.ProgressMonitor#worked(double)
+     * @see org.jboss.dna.common.monitor.ActivityMonitor#worked(double)
      */
     public void worked( double work ) {
         if (work > 0) {

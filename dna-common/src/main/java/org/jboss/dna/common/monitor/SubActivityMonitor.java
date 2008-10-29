@@ -31,12 +31,13 @@ import org.jboss.dna.common.i18n.I18n;
 
 /**
  * This class is thread-safe except when accessing or adding {@link #getProblems() problems}. Problems must only be added by the
- * {@link ProgressMonitor <strong>Updater</strong>}, and accessed by {@link ProgressMonitor Observers} only after the activity has
+ * {@link ActivityMonitor <strong>Updater</strong>}, and accessed by {@link ActivityMonitor Observers} only after the activity has
  * been {@link #done() completed}.
  * 
  * @author Randall Hauch
+ * @author John Verhaeg
  */
-public class SubProgressMonitor implements ProgressMonitor {
+public class SubActivityMonitor implements ActivityMonitor {
 
     @GuardedBy( "lock" )
     private I18n taskName;
@@ -50,10 +51,10 @@ public class SubProgressMonitor implements ProgressMonitor {
     private double submittedToParent;
 
     private final double subtaskTotalInParent;
-    private final ProgressMonitor parent;
+    private final ActivityMonitor parent;
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
 
-    public SubProgressMonitor( final ProgressMonitor parent,
+    public SubActivityMonitor( final ActivityMonitor parent,
                                final double subtaskTotalInParent ) {
         assert subtaskTotalInParent > 0;
         assert parent != null;
@@ -64,7 +65,7 @@ public class SubProgressMonitor implements ProgressMonitor {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.common.monitor.ProgressMonitor#beginTask(double, org.jboss.dna.common.i18n.I18n, java.lang.Object[])
+     * @see org.jboss.dna.common.monitor.ActivityMonitor#beginTask(double, org.jboss.dna.common.i18n.I18n, java.lang.Object[])
      */
     public void beginTask( double totalWork,
                            I18n name,
@@ -84,16 +85,16 @@ public class SubProgressMonitor implements ProgressMonitor {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.common.monitor.ProgressMonitor#createSubtask(double)
+     * @see org.jboss.dna.common.monitor.ActivityMonitor#createSubtask(double)
      */
-    public ProgressMonitor createSubtask( double subtaskWork ) {
-        return new SubProgressMonitor(this, subtaskWork);
+    public ActivityMonitor createSubtask( double subtaskWork ) {
+        return new SubActivityMonitor(this, subtaskWork);
     }
 
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.common.monitor.ProgressMonitor#done()
+     * @see org.jboss.dna.common.monitor.ActivityMonitor#done()
      */
     public void done() {
         // Compute the total work for this task in terms of the parent ...
@@ -112,32 +113,32 @@ public class SubProgressMonitor implements ProgressMonitor {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.common.monitor.ProgressMonitor#getActivityName()
+     * @see org.jboss.dna.common.monitor.ActivityMonitor#getActivityName()
      */
     public String getActivityName() {
-        return this.parent.getActivityName();
+        return parent.getActivityName();
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.common.monitor.ActivityMonitor#getActivityName(java.util.Locale)
+     */
+    public String getActivityName( Locale locale ) {
+        return parent.getActivityName(locale);
     }
 
     /**
      * @return parent
      */
-    public ProgressMonitor getParent() {
+    public ActivityMonitor getParent() {
         return this.parent;
     }
 
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.common.monitor.ProgressMonitor#getParentActivityName()
-     */
-    public String getParentActivityName() {
-        return parent.getParentActivityName();
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.jboss.dna.common.monitor.ProgressMonitor#getProblems()
+     * @see org.jboss.dna.common.monitor.ActivityMonitor#getProblems()
      */
     public Problems getProblems() {
         return parent.getProblems();
@@ -146,12 +147,12 @@ public class SubProgressMonitor implements ProgressMonitor {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.common.monitor.ProgressMonitor#getStatus(java.util.Locale)
+     * @see org.jboss.dna.common.monitor.ActivityMonitor#getStatus(java.util.Locale)
      */
-    public ProgressStatus getStatus( Locale locale ) {
+    public ActivityStatus getStatus( Locale locale ) {
         try {
             this.lock.readLock().lock();
-            return new ProgressStatus(this.getActivityName(), this.taskName.text(locale, this.params), this.submittedToParent,
+            return new ActivityStatus(getActivityName(), this.taskName.text(locale, this.params), this.submittedToParent,
                                       this.subtaskTotalInParent, this.isCancelled());
         } finally {
             this.lock.readLock().unlock();
@@ -161,7 +162,7 @@ public class SubProgressMonitor implements ProgressMonitor {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.common.monitor.ProgressMonitor#isCancelled()
+     * @see org.jboss.dna.common.monitor.ActivityMonitor#isCancelled()
      */
     public boolean isCancelled() {
         return this.parent.isCancelled();
@@ -170,7 +171,7 @@ public class SubProgressMonitor implements ProgressMonitor {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.common.monitor.ProgressMonitor#isDone()
+     * @see org.jboss.dna.common.monitor.ActivityMonitor#isDone()
      */
     public boolean isDone() {
         return parent.isDone();
@@ -179,7 +180,7 @@ public class SubProgressMonitor implements ProgressMonitor {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.common.monitor.ProgressMonitor#setCancelled(boolean)
+     * @see org.jboss.dna.common.monitor.ActivityMonitor#setCancelled(boolean)
      */
     public void setCancelled( boolean value ) {
         this.parent.setCancelled(value);
@@ -188,7 +189,7 @@ public class SubProgressMonitor implements ProgressMonitor {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.common.monitor.ProgressMonitor#worked(double)
+     * @see org.jboss.dna.common.monitor.ActivityMonitor#worked(double)
      */
     public void worked( double work ) {
         if (this.isCancelled()) return;

@@ -85,15 +85,15 @@ public final class CommonI18n {
     public static I18n componentClassnameNotValid;
     public static I18n componentNotConfigured;
     public static I18n dateParsingFailure;
-    public static I18n initialProgressMonitorTaskName;
-    public static I18n nullProgressMonitorTaskName;
+    public static I18n initialActivityMonitorTaskName;
+    public static I18n nullActivityMonitorTaskName;
     public static I18n pathAncestorDegreeIsInvalid;
     public static I18n pathIsAlreadyAbsolute;
     public static I18n pathIsNotAbsolute;
     public static I18n pathIsNotRelative;
     public static I18n pathCannotBeNormalized;
-    public static I18n progressMonitorBeginTask;
-    public static I18n progressMonitorStatus;
+    public static I18n activityMonitorBeginTask;
+    public static I18n activityMonitorStatus;
     public static I18n requiredToSuppliedParameterMismatch;
 
     static {

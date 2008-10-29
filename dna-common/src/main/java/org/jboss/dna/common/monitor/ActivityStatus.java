@@ -31,9 +31,10 @@ import org.jboss.dna.common.util.StringUtil;
  * A snapshot of the progress on an activity.
  * 
  * @author Randall Hauch
+ * @author John Verhaeg
  */
 @Immutable
-public class ProgressStatus implements Serializable, Comparable<ProgressStatus> {
+public class ActivityStatus implements Serializable, Comparable<ActivityStatus> {
 
     /**
      */
@@ -69,15 +70,15 @@ public class ProgressStatus implements Serializable, Comparable<ProgressStatus> 
     private final String message;
 
     /**
-     * Create the progress status.
+     * Create the activity status.
      * 
-     * @param activityName the name of the activity, which may not be null
-     * @param message the message for the progress, which may not be null
+     * @param activityName the name of the activity, which may not be <code>null</code>
+     * @param message the message for the status, which may not be <code>null</code>
      * @param percentWorked the percentage worked, ranging from 0.0 for not started to 100.0 for complete; a negative value are
      *        treated as 0.0, while a value greater than 100.0 is treated as 100.0
-     * @param cancelled true if the activity has been requested to be cancelled, or false otherwise
+     * @param cancelled <code>true</code> if the activity has been requested to be cancelled, or <code>false</code> otherwise
      */
-    public ProgressStatus( String activityName,
+    public ActivityStatus( String activityName,
                            String message,
                            double percentWorked,
                            boolean cancelled ) {
@@ -91,15 +92,15 @@ public class ProgressStatus implements Serializable, Comparable<ProgressStatus> 
     }
 
     /**
-     * Create the progress status and compute the percentage worked.
+     * Create the activity status and compute the percentage worked.
      * 
      * @param activityName the name of the activity, which may not be null
-     * @param message the message for the progress, which may not be null
+     * @param message the message for the status, which may not be null
      * @param workedSoFar the amount of work so far percentage worked
      * @param totalWork the total amount of work for this activity
      * @param cancelled true if the activity has been requested to be cancelled, or false otherwise
      */
-    public ProgressStatus( String activityName,
+    public ActivityStatus( String activityName,
                            String message,
                            double workedSoFar,
                            double totalWork,
@@ -126,7 +127,7 @@ public class ProgressStatus implements Serializable, Comparable<ProgressStatus> 
     }
 
     /**
-     * Get the progress monitor's text message.
+     * Get the activity monitor's text message.
      * 
      * @return the text message
      */
@@ -179,8 +180,8 @@ public class ProgressStatus implements Serializable, Comparable<ProgressStatus> 
     @Override
     public boolean equals( Object obj ) {
         if (this == obj) return true;
-        if (obj instanceof ProgressStatus) {
-            final ProgressStatus that = (ProgressStatus)obj;
+        if (obj instanceof ActivityStatus) {
+            final ActivityStatus that = (ActivityStatus)obj;
             // First check that the name is the same ...
             if (!this.getActivityName().equals(that.getActivityName())) return false;
             // Then check doneness and percent complete ...
@@ -194,7 +195,7 @@ public class ProgressStatus implements Serializable, Comparable<ProgressStatus> 
     /**
      * {@inheritDoc}
      */
-    public int compareTo( ProgressStatus that ) {
+    public int compareTo( ActivityStatus that ) {
         if (this == that) return 0;
 
         // First check the name ...

@@ -22,7 +22,7 @@
 package org.jboss.dna.graph.sequencers;
 
 import java.io.InputStream;
-import org.jboss.dna.common.monitor.ProgressMonitor;
+import org.jboss.dna.common.monitor.ActivityMonitor;
 
 /**
  * The interface for a DNA sequencer that processes a property as a stream to extract information from the content and store in
@@ -32,6 +32,7 @@ import org.jboss.dna.common.monitor.ProgressMonitor;
  * </p>
  * 
  * @author Randall Hauch
+ * @author John Verhaeg
  */
 public interface StreamSequencer {
 
@@ -44,30 +45,30 @@ public interface StreamSequencer {
      * along with the interface used to register the output. The framework takes care of all the rest.
      * </p>
      * <p>
-     * This operation should report progress to the supplied {@link ProgressMonitor}. At the beginning of the operation, call
-     * {@link ProgressMonitor#beginTask(double, org.jboss.dna.common.i18n.I18n, Object...)} with a meaningful message describing
+     * This operation should report progress to the supplied {@link ActivityMonitor}. At the beginning of the operation, call
+     * {@link ActivityMonitor#beginTask(double, org.jboss.dna.common.i18n.I18n, Object...)} with a meaningful message describing
      * the operation and a total for the amount of work that will be done by this sequencer. Then perform the sequencing work,
-     * periodically reporting work by specifying the {@link ProgressMonitor#worked(double) amount of work} that has was just
-     * completed or by {@link ProgressMonitor#createSubtask(double) creating a subtask} and reporting work against that subtask
+     * periodically reporting work by specifying the {@link ActivityMonitor#worked(double) amount of work} that has was just
+     * completed or by {@link ActivityMonitor#createSubtask(double) creating a subtask} and reporting work against that subtask
      * monitor.
      * </p>
      * <p>
-     * The implementation should also periodically check whether the operation has been
-     * {@link ProgressMonitor#isCancelled() cancelled}. If this method returns true, the implementation should abort all work as
-     * soon as possible and close any resources that were acquired or opened.
+     * The implementation should also periodically check whether the operation has been {@link ActivityMonitor#isCancelled()
+     * cancelled}. If this method returns true, the implementation should abort all work as soon as possible and close any
+     * resources that were acquired or opened.
      * </p>
      * <p>
-     * Finally, the implementation should call {@link ProgressMonitor#done()} when the operation has finished.
+     * Finally, the implementation should call {@link ActivityMonitor#done()} when the operation has finished.
      * </p>
      * 
      * @param stream the stream with the data to be sequenced; never <code>null</code>
      * @param output the output from the sequencing operation; never <code>null</code>
      * @param context the context for the sequencing operation; never <code>null</code>
-     * @param progressMonitor the progress monitor that should be kept updated with the sequencer's progress and that should be
-     *        frequently consulted as to whether this operation has been {@link ProgressMonitor#isCancelled() cancelled}.
+     * @param activityMonitor the activity monitor that should be kept updated with the sequencer's progress and that should be
+     *        frequently consulted as to whether this operation has been {@link ActivityMonitor#isCancelled() cancelled}.
      */
     void sequence( InputStream stream,
                    SequencerOutput output,
                    SequencerContext context,
-                   ProgressMonitor progressMonitor );
+                   ActivityMonitor activityMonitor );
 }

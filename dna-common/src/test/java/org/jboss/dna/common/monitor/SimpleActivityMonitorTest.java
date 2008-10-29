@@ -40,17 +40,15 @@ import org.junit.Test;
  * @author Randall Hauch
  * @author John Verhaeg
  */
-public class SimpleProgressMonitorTest {
+public class SimpleActivityMonitorTest {
 
-    private ProgressMonitor monitor;
-    private String validActivityName;
-    private String validTaskName;
+    private static final String VALID_TASK_NAME = "Checking for file";
+
+    private ActivityMonitor monitor;
 
     @Before
     public void beforeEach() {
-        this.validActivityName = "Reading from file X";
-        this.validTaskName = "Checking for file";
-        this.monitor = new SimpleProgressMonitor(this.validActivityName);
+        this.monitor = new SimpleActivityMonitor(MockI18n.passthrough, "Reading from file X");
     }
 
     @Test
@@ -59,8 +57,8 @@ public class SimpleProgressMonitorTest {
     }
 
     @Test
-    public void shouldReturnProgressStatusWithEmptyMessageBeforeTaskIsBegun() {
-        ProgressStatus status = monitor.getStatus(Locale.FRANCE);
+    public void shouldReturnActivityStatusWithEmptyMessageBeforeTaskIsBegun() {
+        ActivityStatus status = monitor.getStatus(Locale.FRANCE);
         assertThat(status, is(notNullValue()));
         assertThat(status.getMessage(), is(""));
         assertThat(status.getPercentWorked(), is(closeTo(0.0d, 0.001d)));
@@ -72,10 +70,10 @@ public class SimpleProgressMonitorTest {
     }
 
     @Test
-    public void shouldReturnProgressStatusWithCorrectMessageAfterTaskIsBegun() {
+    public void shouldReturnActivityStatusWithCorrectMessageAfterTaskIsBegun() {
         monitor.beginTask(100, I18nMessages.testTaskName);
         monitor.worked(10.0d);
-        ProgressStatus status = monitor.getStatus(Locale.FRANCE);
+        ActivityStatus status = monitor.getStatus(Locale.FRANCE);
         assertThat(status, is(notNullValue()));
         assertThat(status.getMessage(), is("examinez le message"));
         assertThat(status.getPercentWorked(), is(closeTo(10.0d, 0.001d)));
@@ -97,10 +95,10 @@ public class SimpleProgressMonitorTest {
     }
 
     @Test
-    public void shouldReturnProgressStatusWithCorrectMessageAndSubstitutedParametersAfterTaskIsBegun() {
+    public void shouldReturnActivityStatusWithCorrectMessageAndSubstitutedParametersAfterTaskIsBegun() {
         monitor.beginTask(100, I18nMessages.testTaskName2, 2);
         monitor.worked(10.0d);
-        ProgressStatus status = monitor.getStatus(Locale.FRANCE);
+        ActivityStatus status = monitor.getStatus(Locale.FRANCE);
         assertThat(status, is(notNullValue()));
         assertThat(status.getMessage(), is("examinez le message 2"));
         assertThat(status.getPercentWorked(), is(closeTo(10.0d, 0.001d)));
@@ -123,38 +121,38 @@ public class SimpleProgressMonitorTest {
 
     @Test
     public void shouldHaveProgressOfZeroPercentUponCreation() {
-        ProgressStatus status = monitor.getStatus(null);
+        ActivityStatus status = monitor.getStatus(null);
         assertThat(status, is(notNullValue()));
-        assertThat(status.getActivityName(), is(sameInstance(monitor.getActivityName())));
+        assertThat(status.getActivityName(), is(monitor.getActivityName()));
         assertThat(status.getMessage(), is(""));
         assertThat(status.getPercentWorked(), is(closeTo(0.0d, 0.001d)));
     }
 
     @Test
     public void shouldHaveProgressOfZeroPercentUponBeginningTask() {
-        this.monitor.beginTask(100, MockI18n.passthrough, validTaskName);
-        ProgressStatus status = monitor.getStatus(null);
+        this.monitor.beginTask(100, MockI18n.passthrough, VALID_TASK_NAME);
+        ActivityStatus status = monitor.getStatus(null);
         assertThat(status, is(notNullValue()));
-        assertThat(status.getActivityName(), is(sameInstance(monitor.getActivityName())));
-        assertThat(status.getMessage(), is(validTaskName));
+        assertThat(status.getActivityName(), is(monitor.getActivityName()));
+        assertThat(status.getMessage(), is(VALID_TASK_NAME));
         assertThat(status.getPercentWorked(), is(closeTo(0.0d, 0.001d)));
     }
 
     @Test
-    public void shouldShowProperProgress() {
-        this.monitor.beginTask(1000, MockI18n.passthrough, validTaskName);
-        ProgressStatus status = monitor.getStatus(null);
+    public void shouldShowProperStatus() {
+        this.monitor.beginTask(1000, MockI18n.passthrough, VALID_TASK_NAME);
+        ActivityStatus status = monitor.getStatus(null);
         assertThat(status, is(notNullValue()));
-        assertThat(status.getActivityName(), is(sameInstance(monitor.getActivityName())));
-        assertThat(status.getMessage(), is(validTaskName));
+        assertThat(status.getActivityName(), is(monitor.getActivityName()));
+        assertThat(status.getMessage(), is(VALID_TASK_NAME));
         assertThat(status.getPercentWorked(), is(closeTo(0.0d, 0.001d)));
         for (int i = 1; i <= 9; ++i) {
             this.monitor.worked(100);
             // Check the monitor's status ...
             status = monitor.getStatus(null);
             assertThat(status, is(notNullValue()));
-            assertThat(status.getActivityName(), is(sameInstance(monitor.getActivityName())));
-            assertThat(status.getMessage(), is(validTaskName));
+            assertThat(status.getActivityName(), is(monitor.getActivityName()));
+            assertThat(status.getMessage(), is(VALID_TASK_NAME));
             assertThat(status.getPercentWorked(), is(closeTo(10 * i, 0.001d)));
             assertThat(status.isDone(), is(false));
         }
@@ -162,27 +160,27 @@ public class SimpleProgressMonitorTest {
         // Check the monitor's status shows 100%
         status = monitor.getStatus(null);
         assertThat(status, is(notNullValue()));
-        assertThat(status.getActivityName(), is(sameInstance(monitor.getActivityName())));
-        assertThat(status.getMessage(), is(validTaskName));
+        assertThat(status.getActivityName(), is(monitor.getActivityName()));
+        assertThat(status.getMessage(), is(VALID_TASK_NAME));
         assertThat(status.getPercentWorked(), is(closeTo(100, 0.001d)));
         assertThat(status.isDone(), is(true));
     }
 
     @Test
-    public void shouldShowProperProgressUsingSubtasks() {
-        monitor.beginTask(1000, MockI18n.passthrough, validTaskName);
-        ProgressStatus status = monitor.getStatus(null);
+    public void shouldShowProperStatusUsingSubtasks() {
+        monitor.beginTask(1000, MockI18n.passthrough, VALID_TASK_NAME);
+        ActivityStatus status = monitor.getStatus(null);
         assertThat(status, is(notNullValue()));
-        assertThat(status.getActivityName(), is(sameInstance(monitor.getActivityName())));
-        assertThat(status.getMessage(), is(validTaskName));
+        assertThat(status.getActivityName(), is(monitor.getActivityName()));
+        assertThat(status.getMessage(), is(VALID_TASK_NAME));
         assertThat(status.getPercentWorked(), is(closeTo(0.0d, 0.001d)));
 
         // Create subtasks ...
         for (int i = 1; i <= 9; ++i) {
-            ProgressMonitor subtask = monitor.createSubtask(100);
+            ActivityMonitor subtask = monitor.createSubtask(100);
             assertThat(subtask, is(notNullValue()));
-            assertThat(subtask, is(instanceOf(SubProgressMonitor.class)));
-            assertThat(((SubProgressMonitor)subtask).getParent(), is(sameInstance(monitor)));
+            assertThat(subtask, is(instanceOf(SubActivityMonitor.class)));
+            assertThat(((SubActivityMonitor)subtask).getParent(), is(sameInstance(monitor)));
 
             String subtaskName = "Subtask " + i;
             subtask.beginTask(10, MockI18n.passthrough, subtaskName); // note the different total work for the subtask
@@ -193,7 +191,7 @@ public class SimpleProgressMonitorTest {
                 // Check the submonitor's status
                 status = subtask.getStatus(null);
                 assertThat(status, is(notNullValue()));
-                assertThat(status.getActivityName(), is(sameInstance(monitor.getActivityName())));
+                assertThat(status.getActivityName(), is(monitor.getActivityName()));
                 assertThat(status.getMessage(), is(subtaskName));
                 assertThat(status.getPercentWorked(), is(closeTo(10 * j, 0.001d)));
                 assertThat(status.isDone(), is(j == 10));
@@ -205,8 +203,8 @@ public class SimpleProgressMonitorTest {
             // Check the main monitor's status
             status = monitor.getStatus(null);
             assertThat(status, is(notNullValue()));
-            assertThat(status.getActivityName(), is(sameInstance(monitor.getActivityName())));
-            assertThat(status.getMessage(), is(validTaskName));
+            assertThat(status.getActivityName(), is(monitor.getActivityName()));
+            assertThat(status.getMessage(), is(VALID_TASK_NAME));
             assertThat(status.getPercentWorked(), is(closeTo(10 * i, 0.001d)));
             assertThat(status.isDone(), is(false));
         }
@@ -215,19 +213,19 @@ public class SimpleProgressMonitorTest {
         // Check the monitor's status shows 100%
         status = monitor.getStatus(null);
         assertThat(status, is(notNullValue()));
-        assertThat(status.getActivityName(), is(sameInstance(monitor.getActivityName())));
-        assertThat(status.getMessage(), is(validTaskName));
+        assertThat(status.getActivityName(), is(monitor.getActivityName()));
+        assertThat(status.getMessage(), is(VALID_TASK_NAME));
         assertThat(status.getPercentWorked(), is(closeTo(100, 0.001d)));
         assertThat(status.isDone(), is(true));
     }
 
     @Test
     public void shouldAllowDoneToBeCalledEvenAfterFinished() {
-        monitor.beginTask(1000, MockI18n.passthrough, validTaskName);
-        ProgressStatus status = monitor.getStatus(null);
+        monitor.beginTask(1000, MockI18n.passthrough, VALID_TASK_NAME);
+        ActivityStatus status = monitor.getStatus(null);
         assertThat(status, is(notNullValue()));
-        assertThat(status.getActivityName(), is(sameInstance(monitor.getActivityName())));
-        assertThat(status.getMessage(), is(validTaskName));
+        assertThat(status.getActivityName(), is(monitor.getActivityName()));
+        assertThat(status.getMessage(), is(VALID_TASK_NAME));
         assertThat(status.getPercentWorked(), is(closeTo(0.0d, 0.001d)));
         assertThat(status.isDone(), is(false));
 
@@ -238,8 +236,8 @@ public class SimpleProgressMonitorTest {
             // Check the status ...
             status = monitor.getStatus(null);
             assertThat(status, is(notNullValue()));
-            assertThat(status.getActivityName(), is(sameInstance(monitor.getActivityName())));
-            assertThat(status.getMessage(), is(validTaskName));
+            assertThat(status.getActivityName(), is(monitor.getActivityName()));
+            assertThat(status.getMessage(), is(VALID_TASK_NAME));
             assertThat(status.getPercentWorked(), is(closeTo(100, 0.001d)));
             assertThat(status.isDone(), is(true));
         }
@@ -247,7 +245,7 @@ public class SimpleProgressMonitorTest {
 
     @Test
     public void shouldNotBeMarkedAsDoneAfterCancel() {
-        monitor.beginTask(100, MockI18n.passthrough, validTaskName);
+        monitor.beginTask(100, MockI18n.passthrough, VALID_TASK_NAME);
         monitor.setCancelled(true);
         assertThat(monitor.isCancelled(), is(true));
         assertThat(monitor.isDone(), is(false));
@@ -255,11 +253,11 @@ public class SimpleProgressMonitorTest {
 
     @Test
     public void shouldAllowCancelToBeRejected() {
-        monitor.beginTask(1000, MockI18n.passthrough, validTaskName);
-        ProgressStatus status = monitor.getStatus(null);
+        monitor.beginTask(1000, MockI18n.passthrough, VALID_TASK_NAME);
+        ActivityStatus status = monitor.getStatus(null);
         assertThat(status, is(notNullValue()));
-        assertThat(status.getActivityName(), is(sameInstance(monitor.getActivityName())));
-        assertThat(status.getMessage(), is(validTaskName));
+        assertThat(status.getActivityName(), is(monitor.getActivityName()));
+        assertThat(status.getMessage(), is(VALID_TASK_NAME));
         assertThat(status.getPercentWorked(), is(closeTo(0.0d, 0.001d)));
         for (int i = 1; i <= 9; ++i) {
             monitor.worked(100);
@@ -267,8 +265,8 @@ public class SimpleProgressMonitorTest {
             // Check the monitor's status ...
             status = monitor.getStatus(null);
             assertThat(status, is(notNullValue()));
-            assertThat(status.getActivityName(), is(sameInstance(monitor.getActivityName())));
-            assertThat(status.getMessage(), is(validTaskName));
+            assertThat(status.getActivityName(), is(monitor.getActivityName()));
+            assertThat(status.getMessage(), is(VALID_TASK_NAME));
             assertThat(status.getPercentWorked(), is(closeTo(10 * i, 0.001d)));
             assertThat(status.isDone(), is(false));
 
@@ -280,8 +278,8 @@ public class SimpleProgressMonitorTest {
         // Check the monitor's status shows 100%
         status = monitor.getStatus(null);
         assertThat(status, is(notNullValue()));
-        assertThat(status.getActivityName(), is(sameInstance(monitor.getActivityName())));
-        assertThat(status.getMessage(), is(validTaskName));
+        assertThat(status.getActivityName(), is(monitor.getActivityName()));
+        assertThat(status.getMessage(), is(VALID_TASK_NAME));
         assertThat(status.getPercentWorked(), is(closeTo(100, 0.001d)));
         assertThat(status.isDone(), is(true));
 
@@ -289,11 +287,11 @@ public class SimpleProgressMonitorTest {
 
     @Test
     public void shouldContinueToRecordWorkEvenWhenCancelled() {
-        monitor.beginTask(1000, MockI18n.passthrough, validTaskName);
-        ProgressStatus status = monitor.getStatus(null);
+        monitor.beginTask(1000, MockI18n.passthrough, VALID_TASK_NAME);
+        ActivityStatus status = monitor.getStatus(null);
         assertThat(status, is(notNullValue()));
-        assertThat(status.getActivityName(), is(sameInstance(monitor.getActivityName())));
-        assertThat(status.getMessage(), is(validTaskName));
+        assertThat(status.getActivityName(), is(monitor.getActivityName()));
+        assertThat(status.getMessage(), is(VALID_TASK_NAME));
         assertThat(status.getPercentWorked(), is(closeTo(0.0d, 0.001d)));
         for (int i = 1; i <= 9; ++i) {
             monitor.worked(100);
@@ -301,8 +299,8 @@ public class SimpleProgressMonitorTest {
             // Check the monitor's status ...
             status = monitor.getStatus(null);
             assertThat(status, is(notNullValue()));
-            assertThat(status.getActivityName(), is(sameInstance(monitor.getActivityName())));
-            assertThat(status.getMessage(), is(validTaskName));
+            assertThat(status.getActivityName(), is(monitor.getActivityName()));
+            assertThat(status.getMessage(), is(VALID_TASK_NAME));
             assertThat(status.getPercentWorked(), is(closeTo(10 * i, 0.001d)));
             assertThat(status.isDone(), is(false));
 
@@ -314,8 +312,8 @@ public class SimpleProgressMonitorTest {
         // Check the monitor's status shows 100%
         status = monitor.getStatus(null);
         assertThat(status, is(notNullValue()));
-        assertThat(status.getActivityName(), is(sameInstance(monitor.getActivityName())));
-        assertThat(status.getMessage(), is(validTaskName));
+        assertThat(status.getActivityName(), is(monitor.getActivityName()));
+        assertThat(status.getMessage(), is(VALID_TASK_NAME));
         assertThat(status.getPercentWorked(), is(closeTo(100, 0.001d)));
         assertThat(status.isDone(), is(true));
         assertThat(monitor.isCancelled(), is(true));
@@ -323,7 +321,7 @@ public class SimpleProgressMonitorTest {
 
     @Test
     public void shouldRecordProblems() {
-        monitor.beginTask(1000, MockI18n.passthrough, validTaskName);
+        monitor.beginTask(1000, MockI18n.passthrough, VALID_TASK_NAME);
         monitor.getProblems().addWarning(MockI18n.passthrough);
         monitor.done();
         assertThat(monitor.getProblems().hasWarnings(), is(true));
@@ -336,7 +334,7 @@ public class SimpleProgressMonitorTest {
 
         static {
             try {
-                I18n.initialize(SimpleProgressMonitorTest.I18nMessages.class);
+                I18n.initialize(SimpleActivityMonitorTest.I18nMessages.class);
             } catch (final Exception err) {
                 System.err.println(err);
             }

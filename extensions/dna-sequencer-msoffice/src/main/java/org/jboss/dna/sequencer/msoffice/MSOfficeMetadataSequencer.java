@@ -24,7 +24,7 @@ package org.jboss.dna.sequencer.msoffice;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
-import org.jboss.dna.common.monitor.ProgressMonitor;
+import org.jboss.dna.common.monitor.ActivityMonitor;
 import org.jboss.dna.graph.sequencers.SequencerContext;
 import org.jboss.dna.graph.sequencers.SequencerOutput;
 import org.jboss.dna.graph.sequencers.StreamSequencer;
@@ -75,6 +75,7 @@ import org.jboss.dna.sequencer.msoffice.word.WordMetadataReader;
  * </p>
  * 
  * @author Michael Trezzi
+ * @author John Verhaeg
  */
 public class MSOfficeMetadataSequencer implements StreamSequencer {
 
@@ -115,11 +116,11 @@ public class MSOfficeMetadataSequencer implements StreamSequencer {
     public void sequence( InputStream stream,
                           SequencerOutput output,
                           SequencerContext context,
-                          ProgressMonitor progressMonitor ) {
-        progressMonitor.beginTask(10, MSOfficeMetadataI18n.sequencerTaskName);
+                          ActivityMonitor activityMonitor ) {
+        activityMonitor.beginTask(10, MSOfficeMetadataI18n.sequencerTaskName);
 
         MSOfficeMetadata metadata = MSOfficeMetadataReader.instance(stream);
-        progressMonitor.worked(3);
+        activityMonitor.worked(3);
 
         String mimeType = context.getMimeType();
 
@@ -146,7 +147,7 @@ public class MSOfficeMetadataSequencer implements StreamSequencer {
         } else {
             return;
         }
-        progressMonitor.worked(1);
+        activityMonitor.worked(1);
         // process PowerPoint specific metadata
         if (mimeType.equals("application/vnd.ms-powerpoint")) { // replace true with check if it's ppt file being sequenced
             try {
@@ -164,7 +165,7 @@ public class MSOfficeMetadataSequencer implements StreamSequencer {
                 context.getLogger(this.getClass()).debug(e, "Error while extracting the PowerPoint metadata");
             }
         }
-        progressMonitor.worked(2);
+        activityMonitor.worked(2);
 
         if (mimeType.equals("application/vnd.ms-word")) {
             // Sometime in the future this will sequence WORD Table of contents.
@@ -176,7 +177,7 @@ public class MSOfficeMetadataSequencer implements StreamSequencer {
             }
 
         }
-        progressMonitor.worked(2);
+        activityMonitor.worked(2);
 
         if (mimeType.equals("application/vnd.ms-excel")) {
             try {
@@ -192,7 +193,7 @@ public class MSOfficeMetadataSequencer implements StreamSequencer {
                 context.getLogger(this.getClass()).debug(e, "Error while extracting the Excel metadata");
             }
         }
-        progressMonitor.worked(2);
-        progressMonitor.done();
+        activityMonitor.worked(2);
+        activityMonitor.done();
     }
 }

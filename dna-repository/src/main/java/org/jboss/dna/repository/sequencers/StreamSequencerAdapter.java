@@ -31,7 +31,7 @@ import javax.jcr.PathNotFoundException;
 import javax.jcr.Property;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
-import org.jboss.dna.common.monitor.ProgressMonitor;
+import org.jboss.dna.common.monitor.ActivityMonitor;
 import org.jboss.dna.common.util.Logger;
 import org.jboss.dna.graph.properties.Binary;
 import org.jboss.dna.graph.properties.DateTime;
@@ -49,6 +49,7 @@ import org.jboss.dna.repository.util.RepositoryNodePath;
  * An adapter class that wraps a {@link StreamSequencer} instance to be a {@link Sequencer}.
  * 
  * @author Randall Hauch
+ * @author John Verhaeg
  */
 public class StreamSequencerAdapter implements Sequencer {
 
@@ -81,14 +82,14 @@ public class StreamSequencerAdapter implements Sequencer {
                          NodeChange changes,
                          Set<RepositoryNodePath> outputPaths,
                          JcrExecutionContext execContext,
-                         ProgressMonitor progressMonitor ) throws RepositoryException, SequencerException {
+                         ActivityMonitor activityMonitor ) throws RepositoryException, SequencerException {
         // 'sequencedPropertyName' contains the name of the modified property on 'input' that resulted in the call to this
         // sequencer.
         // 'changes' contains all of the changes to this node that occurred in the transaction.
         // 'outputPaths' contains the paths of the node(s) where this sequencer is to save it's data.
 
         try {
-            progressMonitor.beginTask(100, RepositoryI18n.sequencingPropertyOnNode, sequencedPropertyName, input.getPath());
+            activityMonitor.beginTask(100, RepositoryI18n.sequencingPropertyOnNode, sequencedPropertyName, input.getPath());
 
             // Get the property that contains the data, given by 'propertyName' ...
             Property sequencedProperty = null;
@@ -98,13 +99,13 @@ public class StreamSequencerAdapter implements Sequencer {
                 String msg = RepositoryI18n.unableToFindPropertyForSequencing.text(sequencedPropertyName, input.getPath());
                 throw new SequencerException(msg, e);
             }
-            progressMonitor.worked(10);
+            activityMonitor.worked(10);
 
             // Get the binary property with the image content, and build the image metadata from the image ...
             SequencerOutputMap output = new SequencerOutputMap(execContext.getValueFactories());
             InputStream stream = null;
             Throwable firstError = null;
-            ProgressMonitor sequencingMonitor = progressMonitor.createSubtask(50);
+            ActivityMonitor sequencingMonitor = activityMonitor.createSubtask(50);
             try {
                 stream = sequencedProperty.getStream();
                 SequencerNodeContext sequencerContext = new SequencerNodeContext(input, sequencedProperty, execContext);
@@ -131,8 +132,8 @@ public class StreamSequencerAdapter implements Sequencer {
             }
 
             // Find each output node and save the image metadata there ...
-            ProgressMonitor writingProgress = progressMonitor.createSubtask(40);
-            writingProgress.beginTask(outputPaths.size(),
+            ActivityMonitor writingActivity = activityMonitor.createSubtask(40);
+            writingActivity.beginTask(outputPaths.size(),
                                       RepositoryI18n.writingOutputSequencedFromPropertyOnNodes,
                                       sequencedPropertyName,
                                       input.getPath(),
@@ -155,14 +156,14 @@ public class StreamSequencerAdapter implements Sequencer {
                         session.save();
                     }
                 } finally {
-                    writingProgress.worked(1);
+                    writingActivity.worked(1);
                     // Always close the session ...
                     if (session != null) session.logout();
                 }
             }
-            writingProgress.done();
+            writingActivity.done();
         } finally {
-            progressMonitor.done();
+            activityMonitor.done();
         }
     }
 

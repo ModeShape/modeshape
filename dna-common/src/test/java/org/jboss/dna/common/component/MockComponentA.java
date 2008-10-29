@@ -25,11 +25,13 @@ package org.jboss.dna.common.component;
 import java.util.concurrent.atomic.AtomicInteger;
 import net.jcip.annotations.ThreadSafe;
 import org.jboss.dna.common.i18n.MockI18n;
-import org.jboss.dna.common.monitor.ProgressMonitor;
+import org.jboss.dna.common.monitor.ActivityMonitor;
 
 /**
  * A sequencer that can be used for basic unit testing.
+ * 
  * @author Randall Hauch
+ * @author John Verhaeg
  */
 @ThreadSafe
 public class MockComponentA implements SampleComponent {
@@ -47,14 +49,14 @@ public class MockComponentA implements SampleComponent {
     /**
      * {@inheritDoc}
      */
-    public void doSomething( ProgressMonitor progressMonitor ) {
+    public void doSomething( ActivityMonitor activityMonitor ) {
         try {
-            progressMonitor.beginTask(1, MockI18n.passthrough, "Incrementing counter");
+            activityMonitor.beginTask(1, MockI18n.passthrough, "Incrementing counter");
             // increment the counter and record the progress ...
             this.counter.incrementAndGet();
-            progressMonitor.worked(1);
+            activityMonitor.worked(1);
         } finally {
-            progressMonitor.done();
+            activityMonitor.done();
         }
     }
 

@@ -28,7 +28,7 @@ import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.IsSame.sameInstance;
 import static org.junit.Assert.assertThat;
 import java.util.List;
-import org.jboss.dna.common.monitor.ProgressMonitor;
+import org.jboss.dna.common.monitor.ActivityMonitor;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.MockitoAnnotations;
@@ -47,7 +47,7 @@ public class ComponentLibraryTest {
     private String validDescription;
     private String[] validClasspath;
     @Mock
-    private ProgressMonitor nullMonitor;
+    private ActivityMonitor nullMonitor;
 
     @Before
     public void beforeEach() {
