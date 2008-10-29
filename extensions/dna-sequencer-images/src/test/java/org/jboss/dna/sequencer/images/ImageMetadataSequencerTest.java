@@ -30,7 +30,6 @@ import java.io.InputStream;
 import java.net.URL;
 import org.jboss.dna.common.i18n.MockI18n;
 import org.jboss.dna.common.monitor.ActivityMonitor;
-import org.jboss.dna.common.monitor.SimpleActivityMonitor;
 import org.jboss.dna.graph.sequencers.MockSequencerContext;
 import org.jboss.dna.graph.sequencers.MockSequencerOutput;
 import org.jboss.dna.graph.sequencers.SequencerContext;
@@ -60,7 +59,7 @@ public class ImageMetadataSequencerTest {
         context = new MockSequencerContext();
         context.getNamespaceRegistry().register("image", "http://jboss.org/dna/images/1.0");
         output = new MockSequencerOutput(context);
-        activityMonitor = new SimpleActivityMonitor(MockI18n.passthrough, "Test Activity");
+        activityMonitor = context.createActivityMonitor(MockI18n.passthrough, "Test Activity");
         cautionGif = this.getClass().getClassLoader().getResource("caution.gif");
         cautionJpg = this.getClass().getClassLoader().getResource("caution.jpg");
         cautionPict = this.getClass().getClassLoader().getResource("caution.pict");

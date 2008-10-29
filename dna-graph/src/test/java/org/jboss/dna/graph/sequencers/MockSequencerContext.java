@@ -26,7 +26,9 @@ import java.util.Set;
 import javax.security.auth.Subject;
 import javax.security.auth.login.LoginContext;
 import net.jcip.annotations.Immutable;
+import org.jboss.dna.common.i18n.I18n;
 import org.jboss.dna.common.monitor.ActivityMonitor;
+import org.jboss.dna.common.monitor.SimpleActivityMonitor;
 import org.jboss.dna.common.util.Logger;
 import org.jboss.dna.graph.DnaLexicon;
 import org.jboss.dna.graph.properties.Name;
@@ -55,6 +57,16 @@ public class MockSequencerContext implements SequencerContext {
         registry.register("dnadtd", "http://www.jboss.org/dna/dtd/1.0");
         registry.register("dnaxml", "http://www.jboss.org/dna/xml/1.0");
         factories = new StandardValueFactories(registry);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.ExecutionContext#createActivityMonitor(org.jboss.dna.common.i18n.I18n, java.lang.Object[])
+     */
+    public ActivityMonitor createActivityMonitor( I18n activityName,
+                                                  Object... activityNameParameters ) {
+        return new SimpleActivityMonitor(activityName, activityNameParameters);
     }
 
     /**
@@ -145,15 +157,6 @@ public class MockSequencerContext implements SequencerContext {
      */
     public NamespaceRegistry getNamespaceRegistry() {
         return registry;
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.jboss.dna.graph.ExecutionContext#getActivityMonitor()
-     */
-    public ActivityMonitor getActivityMonitor() {
-        return null;
     }
 
     /**

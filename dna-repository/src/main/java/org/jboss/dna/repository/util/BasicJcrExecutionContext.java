@@ -50,7 +50,7 @@ public class BasicJcrExecutionContext extends BasicExecutionContext implements J
                                      NamespaceRegistry namespaceRegistry,
                                      ValueFactories valueFactories,
                                      PropertyFactory propertyFactory ) {
-        super(namespaceRegistry, valueFactories, propertyFactory, null);
+        super(namespaceRegistry, valueFactories, propertyFactory);
         CheckArg.isNotNull(sessionFactory, "session factory");
         this.sessionFactory = sessionFactory;
     }

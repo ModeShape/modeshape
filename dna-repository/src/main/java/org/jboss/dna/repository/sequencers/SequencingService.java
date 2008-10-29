@@ -46,9 +46,9 @@ import net.jcip.annotations.ThreadSafe;
 import org.jboss.dna.common.component.ClassLoaderFactory;
 import org.jboss.dna.common.component.ComponentLibrary;
 import org.jboss.dna.common.component.StandardClassLoaderFactory;
+import org.jboss.dna.common.i18n.I18n;
 import org.jboss.dna.common.monitor.ActivityMonitor;
 import org.jboss.dna.common.monitor.LoggingActivityMonitor;
-import org.jboss.dna.common.monitor.SimpleActivityMonitor;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.common.util.HashCode;
 import org.jboss.dna.common.util.Logger;
@@ -514,7 +514,7 @@ public class SequencingService implements AdministeredService, NodeChangeListene
                     }
                 } else {
                     // Run each of those sequencers ...
-                    ActivityMonitor activityMonitor = new SimpleActivityMonitor(RepositoryI18n.sequencerTask, changedNode);
+                    ActivityMonitor activityMonitor = context.createActivityMonitor(RepositoryI18n.sequencerTask, changedNode);
                     if (logger.isTraceEnabled()) {
                         activityMonitor = new LoggingActivityMonitor(activityMonitor, logger, Logger.Level.TRACE);
                     }
@@ -608,6 +608,16 @@ public class SequencingService implements AdministeredService, NodeChangeListene
         /**
          * {@inheritDoc}
          * 
+         * @see org.jboss.dna.graph.ExecutionContext#createActivityMonitor(org.jboss.dna.common.i18n.I18n, java.lang.Object[])
+         */
+        public ActivityMonitor createActivityMonitor( I18n activityName,
+                                                      Object... activityNameParameters ) {
+            return delegate.createActivityMonitor(activityName, activityNameParameters);
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
          * @see org.jboss.dna.common.component.ClassLoaderFactory#getClassLoader(java.lang.String[])
          */
         public ClassLoader getClassLoader( String... classpath ) {
@@ -637,15 +647,6 @@ public class SequencingService implements AdministeredService, NodeChangeListene
          */
         public NamespaceRegistry getNamespaceRegistry() {
             return this.delegate.getNamespaceRegistry();
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.jboss.dna.graph.ExecutionContext#getActivityMonitor()
-         */
-        public ActivityMonitor getActivityMonitor() {
-            return delegate.getActivityMonitor();
         }
 
         /**

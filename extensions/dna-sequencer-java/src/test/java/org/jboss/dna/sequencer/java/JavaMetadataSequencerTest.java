@@ -31,7 +31,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import org.jboss.dna.common.i18n.MockI18n;
 import org.jboss.dna.common.monitor.ActivityMonitor;
-import org.jboss.dna.common.monitor.SimpleActivityMonitor;
 import org.jboss.dna.graph.sequencers.MockSequencerContext;
 import org.jboss.dna.graph.sequencers.MockSequencerOutput;
 import org.jboss.dna.graph.sequencers.SequencerContext;
@@ -57,7 +56,7 @@ public class JavaMetadataSequencerTest {
         context.getNamespaceRegistry().register("java", "http://jboss.org/dna/java/1.0");
         sequencer = new JavaMetadataSequencer();
         output = new MockSequencerOutput(context);
-        this.activityMonitor = new SimpleActivityMonitor(MockI18n.passthrough, "Test java monitor activity");
+        this.activityMonitor = context.createActivityMonitor(MockI18n.passthrough, "Test java monitor activity");
         source = new File("src/test/workspace/projectX/src/org/acme/MySource.java");
     }
 

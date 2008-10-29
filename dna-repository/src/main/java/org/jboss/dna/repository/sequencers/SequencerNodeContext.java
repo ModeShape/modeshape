@@ -35,6 +35,7 @@ import javax.jcr.Value;
 import javax.security.auth.Subject;
 import javax.security.auth.login.LoginContext;
 import net.jcip.annotations.Immutable;
+import org.jboss.dna.common.i18n.I18n;
 import org.jboss.dna.common.monitor.ActivityMonitor;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.common.util.Logger;
@@ -136,6 +137,16 @@ public class SequencerNodeContext implements SequencerContext {
                 throw new RepositoryException(RepositoryI18n.unknownPropertyValueType.text(name, jcrValue.getType()));
             }
         }
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.ExecutionContext#createActivityMonitor(org.jboss.dna.common.i18n.I18n, java.lang.Object[])
+     */
+    public ActivityMonitor createActivityMonitor( I18n activityName,
+                                                  Object... activityNameParameters ) {
+        return context.createActivityMonitor(activityName, activityNameParameters);
     }
 
     /**
@@ -259,15 +270,6 @@ public class SequencerNodeContext implements SequencerContext {
      */
     public NamespaceRegistry getNamespaceRegistry() {
         return factories.getNameFactory().getNamespaceRegistry();
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.jboss.dna.graph.ExecutionContext#getActivityMonitor()
-     */
-    public ActivityMonitor getActivityMonitor() {
-        return context.getActivityMonitor();
     }
 
     /**
