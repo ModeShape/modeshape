@@ -369,7 +369,7 @@ public final class Logger {
      * 
      * @return true if INFORMATION log messages are currently being logged, or false otherwise.
      */
-    public boolean isInfoEnabled() {
+    protected boolean isInfoEnabled() {
         return this.delegate.isInfoEnabled();
     }
 
@@ -378,7 +378,7 @@ public final class Logger {
      * 
      * @return true if WARNING log messages are currently being logged, or false otherwise.
      */
-    public boolean isWarnEnabled() {
+    protected boolean isWarnEnabled() {
         return this.delegate.isWarnEnabled();
     }
 
@@ -387,7 +387,7 @@ public final class Logger {
      * 
      * @return true if ERROR log messages are currently being logged, or false otherwise.
      */
-    public boolean isErrorEnabled() {
+    protected boolean isErrorEnabled() {
         return this.delegate.isErrorEnabled();
     }
 
