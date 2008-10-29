@@ -30,8 +30,6 @@ import org.jboss.dna.common.text.TextDecoder;
  */
 public interface NameFactory extends ValueFactory<Name> {
 
-    String JCR_PRIMARY_TYPE = "jcr:primaryType";
-
     /**
      * Create a name from the given namespace URI and local name.
      * <p>
@@ -43,7 +41,8 @@ public interface NameFactory extends ValueFactory<Name> {
      * @return the new name
      * @throws IllegalArgumentException if the local name is <code>null</code> or empty
      */
-    Name create( String namespaceUri, String localName );
+    Name create( String namespaceUri,
+                 String localName );
 
     /**
      * Create a name from the given namespace URI and local name.
@@ -54,7 +53,9 @@ public interface NameFactory extends ValueFactory<Name> {
      * @return the new name
      * @throws IllegalArgumentException if the local name is <code>null</code> or empty
      */
-    Name create( String namespaceUri, String localName, TextDecoder decoder );
+    Name create( String namespaceUri,
+                 String localName,
+                 TextDecoder decoder );
 
     /**
      * Get the namespace registry.

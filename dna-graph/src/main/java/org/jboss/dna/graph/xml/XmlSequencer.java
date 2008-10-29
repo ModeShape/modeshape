@@ -30,6 +30,7 @@ import java.util.Map;
 import org.jboss.dna.common.monitor.ProgressMonitor;
 import org.jboss.dna.common.util.StringUtil;
 import org.jboss.dna.graph.GraphI18n;
+import org.jboss.dna.graph.JcrLexicon;
 import org.jboss.dna.graph.properties.Name;
 import org.jboss.dna.graph.properties.NameFactory;
 import org.jboss.dna.graph.properties.NamespaceRegistry;
@@ -128,7 +129,6 @@ public class XmlSequencer implements StreamSequencer {
 
         // Cached instances of the name factory and commonly referenced names
         private final NameFactory nameFactory;
-        private Name primaryTypeName;
         private Name defaultPrimaryType;
 
         // Recursive map used to track the number of occurrences of names for elements under a particular path
@@ -233,7 +233,7 @@ public class XmlSequencer implements StreamSequencer {
             stopIfCancelled();
             // Output separate nodes for each comment since multiple are allowed
             startElement(DnaXmlLexicon.COMMENT);
-            output.setProperty(path, getPrimaryTypeName(), DnaXmlLexicon.COMMENT);
+            output.setProperty(path, JcrLexicon.PRIMARY_TYPE, DnaXmlLexicon.COMMENT);
             output.setProperty(path, DnaXmlLexicon.COMMENT_CONTENT, String.valueOf(ch, start, length));
             endElement();
             updateProgress();
@@ -281,7 +281,7 @@ public class XmlSequencer implements StreamSequencer {
                 if (content.length() > 0) {
                     // Create separate node for each content entry since entries can be interspersed amongst child elements
                     startElement(DnaXmlLexicon.ELEMENT_CONTENT);
-                    output.setProperty(path, getPrimaryTypeName(), DnaXmlLexicon.ELEMENT_CONTENT);
+                    output.setProperty(path, JcrLexicon.PRIMARY_TYPE, DnaXmlLexicon.ELEMENT_CONTENT);
                     output.setProperty(path, DnaXmlLexicon.ELEMENT_CONTENT, content);
                     endElement();
                 }
@@ -380,7 +380,7 @@ public class XmlSequencer implements StreamSequencer {
             // Add "synthetic" entity container to path to help prevent name collisions with XML elements
             Name entityName = DnaDtdLexicon.ENTITY;
             startElement(entityName);
-            output.setProperty(path, getPrimaryTypeName(), entityName);
+            output.setProperty(path, JcrLexicon.PRIMARY_TYPE, entityName);
             output.setProperty(path, nameFactory.create(DnaDtdLexicon.NAME), name);
             output.setProperty(path, nameFactory.create(DnaDtdLexicon.PUBLIC_ID), publicId);
             output.setProperty(path, nameFactory.create(DnaDtdLexicon.SYSTEM_ID), systemId);
@@ -399,13 +399,6 @@ public class XmlSequencer implements StreamSequencer {
         public void fatalError( SAXParseException error ) {
             context.getLogger(XmlSequencer.class).error(error, GraphI18n.fatalErrorSequencingXmlDocument, error);
             monitor.getProblems().addError(error, GraphI18n.fatalErrorSequencingXmlDocument, error);
-        }
-
-        private Name getPrimaryTypeName() {
-            if (primaryTypeName == null) {
-                primaryTypeName = nameFactory.create(NameFactory.JCR_PRIMARY_TYPE);
-            }
-            return primaryTypeName;
         }
 
         private Name getDefaultPrimaryType() {
@@ -443,7 +436,7 @@ public class XmlSequencer implements StreamSequencer {
             // Add "synthetic" entity container to path to help prevent name collisions with XML elements
             Name entityName = DnaDtdLexicon.ENTITY;
             startElement(entityName);
-            output.setProperty(path, getPrimaryTypeName(), entityName);
+            output.setProperty(path, JcrLexicon.PRIMARY_TYPE, entityName);
             output.setProperty(path, DnaDtdLexicon.NAME, name);
             output.setProperty(path, DnaDtdLexicon.VALUE, value);
             endElement();
@@ -478,7 +471,7 @@ public class XmlSequencer implements StreamSequencer {
             // Output separate nodes for each instruction since multiple are allowed
             Name name = DnaXmlLexicon.PROCESSING_INSTRUCTION;
             startElement(name);
-            output.setProperty(path, getPrimaryTypeName(), name);
+            output.setProperty(path, JcrLexicon.PRIMARY_TYPE, name);
             output.setProperty(path, DnaXmlLexicon.TARGET, target);
             output.setProperty(path, DnaXmlLexicon.PROCESSING_INSTRUCTION_CONTENT, data);
             endElement();
@@ -524,7 +517,7 @@ public class XmlSequencer implements StreamSequencer {
         @Override
         public void startDocument() throws SAXException {
             stopIfCancelled();
-            output.setProperty(path, getPrimaryTypeName(), DnaXmlLexicon.DOCUMENT);
+            output.setProperty(path, JcrLexicon.PRIMARY_TYPE, DnaXmlLexicon.DOCUMENT);
             updateProgress();
         }
 
@@ -603,7 +596,7 @@ public class XmlSequencer implements StreamSequencer {
                 }
             }
             startElement(nameObj);
-            output.setProperty(path, getPrimaryTypeName(), type);
+            output.setProperty(path, JcrLexicon.PRIMARY_TYPE, type);
             // Output this element's attributes using the attribute's namespace, if supplied, or the current namespace in scope.
             String inheritedNs = nsStack.getFirst();
             for (int ndx = 0, len = attributes.getLength(); ndx < len; ++ndx) {

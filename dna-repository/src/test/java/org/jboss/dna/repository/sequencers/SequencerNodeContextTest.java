@@ -30,7 +30,6 @@ import javax.jcr.Node;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import org.jboss.dna.common.jcr.AbstractJcrRepositoryTest;
-import org.jboss.dna.graph.properties.NameFactory;
 import org.jboss.dna.graph.properties.NamespaceRegistry;
 import org.jboss.dna.graph.properties.Property;
 import org.jboss.dna.graph.sequencers.SequencerContext;
@@ -160,7 +159,7 @@ public class SequencerNodeContextTest extends AbstractJcrRepositoryTest {
         assertThat(sequencerContext.getInputProperties().isEmpty(), is(false));
         assertThat(sequencerContext.getInputProperties().size(), is(3));
         verifyProperty(sequencerContext,
-                       NameFactory.JCR_PRIMARY_TYPE,
+                       "jcr:primaryType",
                        execContext.getValueFactories().getNameFactory().create("{http://www.jcp.org/jcr/nt/1.0}unstructured"));
         verifyProperty(sequencerContext, "x", true);
         verifyProperty(sequencerContext, "y", "asdf", "xyzzy");

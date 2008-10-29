@@ -19,7 +19,7 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.jboss.dna.graph.util;
+package org.jboss.dna.graph;
 
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsInstanceOf.instanceOf;
@@ -35,10 +35,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.transaction.xa.XAResource;
 import org.jboss.dna.common.util.StringUtil;
-import org.jboss.dna.graph.DnaLexicon;
-import org.jboss.dna.graph.ExecutionContext;
-import org.jboss.dna.graph.Graph;
-import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.cache.CachePolicy;
 import org.jboss.dna.graph.connectors.BasicExecutionContext;
 import org.jboss.dna.graph.connectors.RepositoryConnection;
@@ -101,19 +97,17 @@ public class GraphImporterTest {
         assertThat(lastExecutedRequest, is(instanceOf(CompositeRequest.class)));
         Iterator<Request> iter = ((CompositeRequest)lastExecutedRequest).iterator();
         // assertCreateNode(iter, "/a/b/", "jcr:primaryType={http://www.jboss.org/dna/xml/1.0}document");
-        assertCreateNode(iter, "/a/b/dnaxml:comment[1]", "any properties"); // jcr:primaryType and dnaxml:commentContent
         assertCreateNode(iter, "/a/b/dna:system[1]", "jcr:primaryType={http://www.jcp.org/jcr/nt/1.0}unstructured");
-        assertCreateNode(iter, "/a/b/dna:system[1]/dnaxml:comment[1]", "any properties");
         assertCreateNode(iter, "/a/b/dna:system[1]/dna:sources[1]", "jcr:primaryType={http://www.jcp.org/jcr/nt/1.0}unstructured");
         assertCreateNode(iter,
                          "/a/b/dna:system[1]/dna:sources[1]/sourceA[1]",
-                         "dna:repositoryName=repositoryA",
-                         "dna:retryLimit=3",
+                         "repositoryName=repositoryA",
+                         "retryLimit=3",
                          "jcr:primaryType={http://www.jboss.org/dna}xyz",
                          "dna:classname=org.jboss.dna.connector.inmemory.InMemoryRepositorySource");
         assertCreateNode(iter,
                          "/a/b/dna:system[1]/dna:sources[1]/sourceB[1]",
-                         "dna:repositoryName=repositoryB",
+                         "repositoryName=repositoryB",
                          "jcr:primaryType={http://www.jcp.org/jcr/nt/1.0}unstructured",
                          "dna:classname=org.jboss.dna.connector.inmemory.InMemoryRepositorySource");
         assertThat(iter.hasNext(), is(false));
@@ -145,7 +139,7 @@ public class GraphImporterTest {
             if (value.trim().length() == 0) value = null;
             Property actual = propertiesByName.remove(propertyName);
             Property expectedProperty = context.getPropertyFactory().create(propertyName, value);
-            assertThat(actual, is(expectedProperty));
+            assertThat("missing property " + propertyName, actual, is(expectedProperty));
         }
         if (!propertiesByName.isEmpty()) {
             System.out.println("Properties for " + path + "\n" + StringUtil.readableString(propertiesByName));

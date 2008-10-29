@@ -31,7 +31,6 @@ import org.jboss.dna.common.text.TextDecoder;
 import org.jboss.dna.common.text.XmlNameEncoder;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.graph.ExecutionContext;
-import org.jboss.dna.graph.Graph;
 import org.jboss.dna.graph.properties.Name;
 import org.jboss.dna.graph.properties.NameFactory;
 import org.jboss.dna.graph.properties.NamespaceRegistry;
@@ -89,6 +88,16 @@ public class XmlHandler extends DefaultHandler2 {
      * The name of the XML attribute whose value should be used for the name of the node. For example, "jcr:name".
      */
     protected final Name nameAttribute;
+
+    /**
+     * The name of the property that is to be set with the type of the XML element. For example, "jcr:name".
+     */
+    protected final Name typeAttribute;
+
+    /**
+     * The value of the node type property, if the node's name is set with the {@link #nameAttribute}.
+     */
+    protected final Name typeAttributeValue;
 
     /**
      * The cached reference to the graph's path factory.
@@ -154,8 +163,12 @@ public class XmlHandler extends DefaultHandler2 {
      * @param parent the path to the node in the graph under which the content should be placed; if null, the root node is assumed
      * @param textDecoder the text decoder that should be used to decode the XML element names and XML attribute names, prior to
      *        using those values to create names; or null if the default encoder should be used
-     * @param nameAttribute the name of the XML attribute whose value should be used for the names of the nodes (typically, this
-     *        is "jcr:name" or something equivalent); or null if the XML element name should always be used as the node name
+     * @param nameAttribute the name of the property whose value should be used for the names of the nodes (typically, this is
+     *        "jcr:name" or something equivalent); or null if the XML element name should always be used as the node name
+     * @param typeAttribute the name of the property that should be set with the type of the XML element, or null if there is no
+     *        such property
+     * @param typeAttributeValue the value of the type property that should be used if the node has no <code>nameAttribute</code>,
+     *        or null if the value should be set to the type of the XML element
      * @param scoping defines how to choose the namespace of attributes that do not have a namespace prefix; if null, the
      *        {@link #DEFAULT_ATTRIBUTE_SCOPING} value is used
      * @throws IllegalArgumentException if the destination reference is null
@@ -165,11 +178,15 @@ public class XmlHandler extends DefaultHandler2 {
                        Path parent,
                        TextDecoder textDecoder,
                        Name nameAttribute,
+                       Name typeAttribute,
+                       Name typeAttributeValue,
                        AttributeScoping scoping ) {
         CheckArg.isNotNull(destination, "destination");
         assert destination != null;
         this.destination = destination;
         this.nameAttribute = nameAttribute;
+        this.typeAttribute = typeAttribute;
+        this.typeAttributeValue = typeAttributeValue;
         this.decoder = textDecoder != null ? textDecoder : DEFAULT_DECODER;
         this.skipFirstElement = skipRootElement;
         this.attributeScoping = scoping != null ? scoping : DEFAULT_ATTRIBUTE_SCOPING;
@@ -189,39 +206,6 @@ public class XmlHandler extends DefaultHandler2 {
         // Set up the initial path ...
         this.currentPath = parent != null ? parent : this.pathFactory.createRootPath();
         assert this.currentPath != null;
-    }
-
-    /**
-     * Create a handler that creates content in the supplied graph
-     * 
-     * @param graph the graph in which the content should be placed
-     * @param useBatch true if all of the actions to create the content in the graph should be submitted to the graph in a single
-     *        batch, or false if they should be submitted immediately after each is identified
-     * @param skipRootElement true if the root element of the document should be skipped, or false if the root element should be
-     *        converted to the top-level node of the content
-     * @param parent the path to the node in the graph under which the content should be placed; if null, the root node is assumed
-     * @param textDecoder the text decoder that should be used to decode the XML element names and XML attribute names, prior to
-     *        using those values to create names; or null if the default encoder should be used
-     * @param nameAttribute the name of the XML attribute whose value should be used for the names of the nodes (typically, this
-     *        is "jcr:name" or something equivalent); or null if the XML element name should always be used as the node name
-     * @param scoping defines how to choose the namespace of attributes that do not have a namespace prefix; if null, the
-     *        {@link #DEFAULT_ATTRIBUTE_SCOPING} value is used
-     * @throws IllegalArgumentException if the graph reference is null
-     */
-    public XmlHandler( Graph graph,
-                       boolean useBatch,
-                       boolean skipRootElement,
-                       Path parent,
-                       TextDecoder textDecoder,
-                       Name nameAttribute,
-                       AttributeScoping scoping ) {
-        this(createDestination(graph, useBatch), skipRootElement, parent, textDecoder, nameAttribute, scoping);
-    }
-
-    protected static Destination createDestination( Graph graph,
-                                                    boolean useBatch ) {
-        CheckArg.isNotNull(graph, "graph");
-        return useBatch ? new CreateOnGraphInBatches(graph.batch()) : new CreateOnGraph(graph);
     }
 
     /**
@@ -267,6 +251,7 @@ public class XmlHandler extends DefaultHandler2 {
         Name nodeName = null;
 
         properties.clear();
+        Object typePropertyValue = null;
         // Convert each of the attributes to a property ...
         for (int i = 0; i != attributes.getLength(); ++i) {
             String attributeLocalName = attributes.getLocalName(i);
@@ -290,16 +275,34 @@ public class XmlHandler extends DefaultHandler2 {
                 nodeName = nameFactory.create(attributes.getValue(i)); // don't use a decoder
                 continue;
             }
+            if (attributeName.equals(typeAttribute)) {
+                typePropertyValue = nameFactory.create(attributes.getValue(i)); // don't use a decoder
+                continue;
+            }
             // Create a property for this attribute ...
             Property property = createProperty(attributeName, attributes.getValue(i));
             properties.add(property);
         }
         // Create the node name if required ...
-        if (nodeName == null) nodeName = nameFactory.create(uri, localName, decoder);
+        Name elementName = nameFactory.create(uri, localName, decoder);
+        if (nodeName == null) {
+            // No attribute defines the node name ...
+            nodeName = elementName;
+        } else {
+            // A attribute defines the node name ...
+            typePropertyValue = elementName;
+        }
+        // Set the type property, if required
+        if (typeAttribute != null) {
+            if (typePropertyValue == null) typePropertyValue = typeAttributeValue;
+            propertyValues[0] = typePropertyValue;
+            Property property = propertyFactory.create(typeAttribute, propertyValues);
+            properties.add(property);
+        }
         // Update the current path ...
         currentPath = pathFactory.create(currentPath, nodeName);
         // Create the node, and note that we don't care about same-name siblings (as the graph will correct them) ...
-        destination.create(currentPath, properties);
+        destination.create(currentPath, properties, elementName);
     }
 
     /**
@@ -363,9 +366,12 @@ public class XmlHandler extends DefaultHandler2 {
          * 
          * @param path the absolute path of the node
          * @param properties the properties for the node; never null, but may be empty if there are no properties
+         * @param elementName the name of the XML element from which the node should be created; never null, and may or may not be
+         *        the same name as the last segment of the path
          */
         public void create( Path path,
-                            List<Property> properties );
+                            List<Property> properties,
+                            Name elementName );
 
         /**
          * Signal to this destination that any enqueued create requests should be submitted. Usually this happens at the end of
@@ -373,61 +379,4 @@ public class XmlHandler extends DefaultHandler2 {
          */
         public void submit();
     }
-
-    @NotThreadSafe
-    protected final static class CreateOnGraph implements Destination {
-        private final Graph graph;
-
-        protected CreateOnGraph( final Graph graph ) {
-            assert graph != null;
-            this.graph = graph;
-        }
-
-        public ExecutionContext getExecutionContext() {
-            return graph.getContext();
-        }
-
-        public final void create( Path path,
-                                  List<Property> properties ) {
-            assert properties != null;
-            if (properties.isEmpty()) {
-                graph.create(path);
-            } else {
-                graph.create(path, properties);
-            }
-        }
-
-        public void submit() {
-            // Nothing to do, since each call to 'create' immediate executes on the graph
-        }
-    }
-
-    @NotThreadSafe
-    protected final static class CreateOnGraphInBatches implements Destination {
-        private final Graph.Batch batch;
-
-        protected CreateOnGraphInBatches( Graph.Batch batch ) {
-            assert batch != null;
-            this.batch = batch;
-        }
-
-        public ExecutionContext getExecutionContext() {
-            return batch.getGraph().getContext();
-        }
-
-        public void create( Path path,
-                            List<Property> properties ) {
-            assert properties != null;
-            if (properties.isEmpty()) {
-                batch.create(path);
-            } else {
-                batch.create(path, properties);
-            }
-        }
-
-        public void submit() {
-            batch.execute();
-        }
-    }
-
 }

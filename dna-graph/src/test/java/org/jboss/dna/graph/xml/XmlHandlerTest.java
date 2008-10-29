@@ -35,7 +35,7 @@ import java.util.Map;
 import org.jboss.dna.common.text.Jsr283Encoder;
 import org.jboss.dna.common.text.TextDecoder;
 import org.jboss.dna.graph.ExecutionContext;
-import org.jboss.dna.graph.Graph;
+import org.jboss.dna.graph.JcrLexicon;
 import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.connectors.BasicExecutionContext;
 import org.jboss.dna.graph.properties.Name;
@@ -56,7 +56,7 @@ import org.xml.sax.helpers.XMLReaderFactory;
  */
 public class XmlHandlerTest {
 
-    private static final String JCR_NAMESPACE_URI = "http://www.jcp.org/jcr/1.0";
+    private static final String NT_NAMESPACE_URI = "http://www.jcp.org/jcr/nt/1.0";
 
     private XmlHandler handler;
     private ExecutionContext context;
@@ -65,37 +65,39 @@ public class XmlHandlerTest {
     private Path parentPath;
     private TextDecoder decoder;
     private Name nameAttribute;
+    private Name typeAttribute;
+    private Name typeAttributeValue;
     private XmlHandler.AttributeScoping scoping;
     private LinkedList<CreateNodeRequest> requests;
 
     @Before
     public void beforeEach() {
         context = new BasicExecutionContext();
-        context.getNamespaceRegistry().register("jcr", JCR_NAMESPACE_URI);
+        context.getNamespaceRegistry().register(JcrLexicon.Namespace.PREFIX, JcrLexicon.Namespace.URI);
+        context.getNamespaceRegistry().register("nt", NT_NAMESPACE_URI);
         destination = new RecordingDestination();
         parentPath = context.getValueFactories().getPathFactory().create("/a/b");
         decoder = null;
-        nameAttribute = context.getValueFactories().getNameFactory().create("jcr:name");
+        nameAttribute = JcrLexicon.NAME;
+        typeAttribute = null;
+        typeAttributeValue = null;
         scoping = XmlHandler.AttributeScoping.USE_DEFAULT_NAMESPACE;
-        handler = new XmlHandler(destination, skipRootElement, parentPath, decoder, nameAttribute, scoping);
+        handler = new XmlHandler(destination, skipRootElement, parentPath, decoder, nameAttribute, typeAttribute,
+                                 typeAttributeValue, scoping);
     }
 
     @Test( expected = IllegalArgumentException.class )
     public void shouldNotConstructInstanceWhenGivenNullDestination() {
         destination = null;
-        new XmlHandler(destination, skipRootElement, parentPath, decoder, nameAttribute, scoping);
-    }
-
-    @Test( expected = IllegalArgumentException.class )
-    public void shouldNotConstructInstanceWhenGivenNullGraph() {
-        Graph graph = null;
-        new XmlHandler(graph, true, skipRootElement, parentPath, decoder, nameAttribute, scoping);
+        new XmlHandler(destination, skipRootElement, parentPath, decoder, nameAttribute, typeAttribute, typeAttributeValue,
+                       scoping);
     }
 
     @Test
     public void shouldUseDefaultDecoderIfNoneIsProvidedInConstructor() {
         decoder = null;
-        handler = new XmlHandler(destination, skipRootElement, parentPath, decoder, nameAttribute, scoping);
+        handler = new XmlHandler(destination, skipRootElement, parentPath, decoder, nameAttribute, typeAttribute,
+                                 typeAttributeValue, scoping);
         assertThat(handler.destination, is(sameInstance(destination)));
         assertThat(handler.currentPath, is(sameInstance(parentPath)));
         assertThat(handler.skipFirstElement, is(skipRootElement));
@@ -106,7 +108,8 @@ public class XmlHandlerTest {
     @Test
     public void shouldUseDecoderProvidedInConstructor() {
         decoder = new Jsr283Encoder();
-        handler = new XmlHandler(destination, skipRootElement, parentPath, decoder, nameAttribute, scoping);
+        handler = new XmlHandler(destination, skipRootElement, parentPath, decoder, nameAttribute, typeAttribute,
+                                 typeAttributeValue, scoping);
         assertThat(handler.destination, is(sameInstance(destination)));
         assertThat(handler.currentPath, is(sameInstance(parentPath)));
         assertThat(handler.skipFirstElement, is(skipRootElement));
@@ -117,7 +120,8 @@ public class XmlHandlerTest {
     @Test
     public void shouldPlaceContentUnderRootIfNoPathIsProvidedInConstructor() {
         parentPath = null;
-        handler = new XmlHandler(destination, skipRootElement, parentPath, decoder, nameAttribute, scoping);
+        handler = new XmlHandler(destination, skipRootElement, parentPath, decoder, nameAttribute, typeAttribute,
+                                 typeAttributeValue, scoping);
         assertThat(handler.destination, is(sameInstance(destination)));
         assertThat(handler.currentPath.isRoot(), is(true));
         assertThat(handler.skipFirstElement, is(skipRootElement));
@@ -128,7 +132,8 @@ public class XmlHandlerTest {
     @Test
     public void shouldNotLookForNameAttributeIfNoneIsProvidedInConstructor() {
         nameAttribute = null;
-        handler = new XmlHandler(destination, skipRootElement, parentPath, decoder, nameAttribute, scoping);
+        handler = new XmlHandler(destination, skipRootElement, parentPath, decoder, nameAttribute, typeAttribute,
+                                 typeAttributeValue, scoping);
         assertThat(handler.destination, is(sameInstance(destination)));
         assertThat(handler.currentPath, is(sameInstance(parentPath)));
         assertThat(handler.skipFirstElement, is(skipRootElement));
@@ -199,9 +204,11 @@ public class XmlHandlerTest {
     @Test
     public void shouldParseXmlDocumentWithNamespacesThatAreNotYetInRegistry() throws IOException, SAXException {
         NamespaceRegistry reg = context.getNamespaceRegistry();
-        reg.unregister(JCR_NAMESPACE_URI);
+        reg.unregister(JcrLexicon.Namespace.URI);
+        reg.unregister(NT_NAMESPACE_URI);
         // Verify the prefixes don't exist ...
-        assertThat(reg.getPrefixForNamespaceUri(JCR_NAMESPACE_URI, false), is(nullValue()));
+        assertThat(reg.getPrefixForNamespaceUri(JcrLexicon.Namespace.URI, false), is(nullValue()));
+        assertThat(reg.getPrefixForNamespaceUri(NT_NAMESPACE_URI, false), is(nullValue()));
         assertThat(reg.getPrefixForNamespaceUri("http://default.namespace.com", false), is(nullValue()));
         // Parse the XML file ...
         parse("xmlHandler/docWithNestedNamespaces.xml");
@@ -249,7 +256,8 @@ public class XmlHandlerTest {
         context.getNamespaceRegistry().register("c", "http://default.namespace.com");
         parentPath = null;
         skipRootElement = true;
-        handler = new XmlHandler(destination, skipRootElement, parentPath, decoder, nameAttribute, scoping);
+        handler = new XmlHandler(destination, skipRootElement, parentPath, decoder, nameAttribute, typeAttribute,
+                                 typeAttributeValue, scoping);
         parse("xmlHandler/docWithNamespaces.xml");
         // Check the generated content; note that the attribute name DOES match, so the nodes names come from "jcr:name" attribute
         assertNode("c:Hybrid");
@@ -264,7 +272,8 @@ public class XmlHandlerTest {
     @Test
     public void shouldParseXmlDocumentAndShouldPlaceContentUnderNonRootNode() throws IOException, SAXException {
         parentPath = context.getValueFactories().getPathFactory().create("/a/b");
-        handler = new XmlHandler(destination, skipRootElement, parentPath, decoder, nameAttribute, scoping);
+        handler = new XmlHandler(destination, skipRootElement, parentPath, decoder, nameAttribute, typeAttribute,
+                                 typeAttributeValue, scoping);
         context.getNamespaceRegistry().register("c", "http://default.namespace.com");
         parse("xmlHandler/docWithNamespaces.xml");
         // Check the generated content; note that the attribute name DOES match, so the nodes names come from "jcr:name" attribute
@@ -281,7 +290,8 @@ public class XmlHandlerTest {
     @Test
     public void shouldParseXmlDocumentAndShouldPlaceContentUnderRootNode() throws IOException, SAXException {
         parentPath = null;
-        handler = new XmlHandler(destination, skipRootElement, parentPath, decoder, nameAttribute, scoping);
+        handler = new XmlHandler(destination, skipRootElement, parentPath, decoder, nameAttribute, typeAttribute,
+                                 typeAttributeValue, scoping);
         context.getNamespaceRegistry().register("c", "http://default.namespace.com");
         parse("xmlHandler/docWithNamespaces.xml");
         // Check the generated content; note that the attribute name DOES match, so the nodes names come from "jcr:name" attribute
@@ -307,6 +317,46 @@ public class XmlHandlerTest {
         assertNode("c:Cars/c:Sports");
         assertNode("c:Cars/c:Sports/Aston Martin DB9", "maker=Aston Martin", "model=DB9");
         assertNode("c:Cars/c:Sports/Infiniti G37", "maker=Infiniti", "model=G37");
+    }
+
+    @Test
+    public void shouldParseXmlDocumentWithoutNamespacesUsingTypeAttributeValue() throws IOException, SAXException {
+        typeAttribute = JcrLexicon.PRIMARY_TYPE;
+        typeAttributeValue = context.getValueFactories().getNameFactory().create("nt:unstructured");
+        handler = new XmlHandler(destination, skipRootElement, parentPath, decoder, nameAttribute, typeAttribute,
+                                 typeAttributeValue, scoping);
+        parse("xmlHandler/docWithoutNamespaces.xml");
+        // Check the generated content; note that the attribute name doesn't match, so the nodes don't get special names
+        String unstructPrimaryType = "jcr:primaryType={http://www.jcp.org/jcr/nt/1.0}unstructured";
+        assertNode("Cars", unstructPrimaryType);
+        assertNode("Cars/Hybrid", unstructPrimaryType);
+        assertNode("Cars/Hybrid/car", unstructPrimaryType, "name=Toyota Prius", "maker=Toyota", "model=Prius");
+        assertNode("Cars/Hybrid/car", unstructPrimaryType, "name=Toyota Highlander", "maker=Toyota", "model=Highlander");
+        assertNode("Cars/Hybrid/car", unstructPrimaryType, "name=Nissan Altima", "maker=Nissan", "model=Altima");
+        assertNode("Cars/Sports", unstructPrimaryType);
+        assertNode("Cars/Sports/car", unstructPrimaryType, "name=Aston Martin DB9", "maker=Aston Martin", "model=DB9");
+        assertNode("Cars/Sports/car", unstructPrimaryType, "name=Infiniti G37", "maker=Infiniti", "model=G37");
+    }
+
+    @Test
+    public void shouldParseXmlDocumentWithNamespacesUsingTypeAttributeValue() throws IOException, SAXException {
+        context.getNamespaceRegistry().register("c", "http://default.namespace.com");
+        typeAttribute = JcrLexicon.PRIMARY_TYPE;
+        typeAttributeValue = context.getValueFactories().getNameFactory().create("nt:unstructured");
+        handler = new XmlHandler(destination, skipRootElement, parentPath, decoder, nameAttribute, typeAttribute,
+                                 typeAttributeValue, scoping);
+        parse("xmlHandler/docWithNamespaces.xml");
+        // Check the generated content; note that the attribute name doesn't match, so the nodes don't get special names
+        String unstructPrimaryType = "jcr:primaryType={http://www.jcp.org/jcr/nt/1.0}unstructured";
+        String carPrimaryType = "jcr:primaryType={http://default.namespace.com}car";
+        assertNode("c:Cars", unstructPrimaryType);
+        assertNode("c:Cars/c:Hybrid", unstructPrimaryType);
+        assertNode("c:Cars/c:Hybrid/Toyota Prius", carPrimaryType, "maker=Toyota", "model=Prius");
+        assertNode("c:Cars/c:Hybrid/Toyota Highlander", carPrimaryType, "maker=Toyota", "model=Highlander");
+        assertNode("c:Cars/c:Hybrid/Nissan Altima", carPrimaryType, "maker=Nissan", "model=Altima");
+        assertNode("c:Cars/c:Sports", unstructPrimaryType);
+        assertNode("c:Cars/c:Sports/Aston Martin DB9", carPrimaryType, "maker=Aston Martin", "model=DB9");
+        assertNode("c:Cars/c:Sports/Infiniti G37", carPrimaryType, "maker=Infiniti", "model=G37");
     }
 
     protected void assertNode( String path,
@@ -335,7 +385,16 @@ public class XmlHandlerTest {
             assertThat(expected, is(notNullValue()));
             assertThat(actual, is(expected));
         }
-        assertThat(expectedProperties.isEmpty(), is(true));
+        if (!expectedProperties.isEmpty()) {
+            StringBuilder msg = new StringBuilder("missing actual properties: ");
+            boolean isFirst = true;
+            for (Property expected : expectedProperties.values()) {
+                if (!isFirst) msg.append(", ");
+                else isFirst = false;
+                msg.append(expected.getName());
+            }
+            assertThat(msg.toString(), expectedProperties.isEmpty(), is(true));
+        }
     }
 
     protected void parse( String relativePathToXmlFile ) throws IOException, SAXException {
@@ -354,7 +413,8 @@ public class XmlHandlerTest {
         private final LinkedList<CreateNodeRequest> requests = new LinkedList<CreateNodeRequest>();
 
         public void create( Path path,
-                            List<Property> properties ) {
+                            List<Property> properties,
+                            Name elementName ) {
             requests.add(new CreateNodeRequest(new Location(path), properties));
         }
 

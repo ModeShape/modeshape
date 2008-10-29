@@ -32,8 +32,8 @@ import net.jcip.annotations.Immutable;
 import net.jcip.annotations.NotThreadSafe;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.common.util.StringUtil;
+import org.jboss.dna.graph.JcrLexicon;
 import org.jboss.dna.graph.properties.Name;
-import org.jboss.dna.graph.properties.NameFactory;
 import org.jboss.dna.graph.properties.Path;
 import org.jboss.dna.graph.properties.PathFactory;
 import org.jboss.dna.graph.properties.ValueFactories;
@@ -230,8 +230,8 @@ public class SequencerOutputMap implements SequencerOutput, Iterable<SequencerOu
          */
         public int compareTo( PropertyValue that ) {
             if (this == that) return 0;
-            if (this.name.equals(NameFactory.JCR_PRIMARY_TYPE)) return -1;
-            if (that.name.equals(NameFactory.JCR_PRIMARY_TYPE)) return 1;
+            if (this.name.equals(JcrLexicon.PRIMARY_TYPE)) return -1;
+            if (that.name.equals(JcrLexicon.PRIMARY_TYPE)) return 1;
             return this.name.compareTo(that.name);
         }
 

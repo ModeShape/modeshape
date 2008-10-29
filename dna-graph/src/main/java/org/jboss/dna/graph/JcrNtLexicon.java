@@ -19,12 +19,20 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.jboss.dna.jcr;
+package org.jboss.dna.graph;
 
+import org.jboss.dna.graph.properties.Name;
+import org.jboss.dna.graph.properties.basic.BasicName;
 
 /**
  * @author Randall Hauch
  */
-class JcrLexicon extends org.jboss.dna.graph.JcrLexicon {
+public class JcrNtLexicon {
 
+    public static class Namespace {
+        public static final String URI = "http://www.jcp.org/jcr/nt/1.0";
+        public static final String PREFIX = "nt";
+    }
+
+    public static final Name UNSTRUCTURED = new BasicName(Namespace.URI, "unstructured");
 }

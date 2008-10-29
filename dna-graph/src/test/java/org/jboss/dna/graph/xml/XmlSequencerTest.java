@@ -31,7 +31,6 @@ import java.net.URL;
 import org.jboss.dna.common.monitor.ProgressMonitor;
 import org.jboss.dna.common.monitor.SimpleProgressMonitor;
 import org.jboss.dna.graph.properties.Name;
-import org.jboss.dna.graph.properties.NameFactory;
 import org.jboss.dna.graph.sequencers.MockSequencerContext;
 import org.jboss.dna.graph.sequencers.MockSequencerOutput;
 import org.jboss.dna.graph.sequencers.SequencerContext;
@@ -102,38 +101,38 @@ public class XmlSequencerTest {
     @Test
     public void shouldSequenceXml() throws IOException {
         verifyDocument(xml1);
-        verifyName(COMMENT + "[1]", NameFactory.JCR_PRIMARY_TYPE, COMMENT);
+        verifyName(COMMENT + "[1]", "jcr:primaryType", COMMENT);
         String text = verify(COMMENT + "[1]", COMMENT_CONTENT, String.class);
         assertThat(text.startsWith("\n   Licensed to the Apache Software Foundation (ASF)"), is(true));
         assertThat(text.endsWith("   limitations under the License.\n"), is(true));
         verifyString("/", DTD_NAME, "Repository");
         verifyString("/", DTD_PUBLIC_ID, "-//The Apache Software Foundation//DTD Jackrabbit 1.2//EN");
         verifyString("/", DTD_SYSTEM_ID, "http://jackrabbit.apache.org/dtd/repository-1.2.dtd");
-        verifyName(COMMENT + "[2]", NameFactory.JCR_PRIMARY_TYPE, COMMENT);
+        verifyName(COMMENT + "[2]", "jcr:primaryType", COMMENT);
         verifyString(COMMENT + "[2]", COMMENT_CONTENT, " Example Repository Configuration File ");
-        verifyName("Repository[1]", NameFactory.JCR_PRIMARY_TYPE, "nt:unstructured");
-        verifyName("Repository[1]/" + COMMENT + "[1]", NameFactory.JCR_PRIMARY_TYPE, COMMENT);
+        verifyName("Repository[1]", "jcr:primaryType", "nt:unstructured");
+        verifyName("Repository[1]/" + COMMENT + "[1]", "jcr:primaryType", COMMENT);
     }
 
     @Test
     public void shouldHandleNamespaces() throws IOException {
         verifyDocument(xml2);
-        verifyName("book[1]/bookinfo[1]/xi:include[1]", NameFactory.JCR_PRIMARY_TYPE, "nt:unstructured");
+        verifyName("book[1]/bookinfo[1]/xi:include[1]", "jcr:primaryType", "nt:unstructured");
         verifyString("book[1]/bookinfo[1]/xi:include[1]", "xi:href", "Author_Group.xml");
-        verifyName("book[1]/bookinfo[1]/xi:include[2]", NameFactory.JCR_PRIMARY_TYPE, "nt:unstructured");
+        verifyName("book[1]/bookinfo[1]/xi:include[2]", "jcr:primaryType", "nt:unstructured");
         verifyString("book[1]/bookinfo[1]/xi:include[2]", "xi:href", "Legal_Notice.xml");
     }
 
     @Test
     public void shouldSequenceEntityDeclarations() throws IOException {
         verifyDocument(xml2);
-        verifyName(ENTITY + "[1]", NameFactory.JCR_PRIMARY_TYPE, ENTITY);
+        verifyName(ENTITY + "[1]", "jcr:primaryType", ENTITY);
         verifyString(ENTITY + "[1]", DTD_NAME, "%RH-ENTITIES");
         verifyString(ENTITY + "[1]", DTD_SYSTEM_ID, "Common_Config/rh-entities.ent");
-        verifyName(ENTITY + "[2]", NameFactory.JCR_PRIMARY_TYPE, ENTITY);
+        verifyName(ENTITY + "[2]", "jcr:primaryType", ENTITY);
         verifyString(ENTITY + "[2]", DTD_NAME, "versionNumber");
         verifyString(ENTITY + "[2]", DTD_VALUE, "0.1");
-        verifyName(ENTITY + "[3]", NameFactory.JCR_PRIMARY_TYPE, ENTITY);
+        verifyName(ENTITY + "[3]", "jcr:primaryType", ENTITY);
         verifyString(ENTITY + "[3]", DTD_NAME, "copyrightYear");
         verifyString(ENTITY + "[3]", DTD_VALUE, "2008");
     }
@@ -173,7 +172,7 @@ public class XmlSequencerTest {
     @Test
     public void shouldSequenceProcessingInstructions() throws IOException {
         verifyDocument(xml4);
-        verifyName(PI + "[1]", NameFactory.JCR_PRIMARY_TYPE, PI);
+        verifyName(PI + "[1]", "jcr:primaryType", PI);
         verifyString(PI + "[1]", TARGET, "eclipse");
         verifyString(PI + "[1]", PI_CONTENT, "version=\"3.0\"");
     }
@@ -181,10 +180,10 @@ public class XmlSequencerTest {
     @Test
     public void shouldSequenceXsds() throws IOException {
         verifyDocument(xsd);
-        verifyName("xs:schema[1]", NameFactory.JCR_PRIMARY_TYPE, "nt:unstructured");
+        verifyName("xs:schema[1]", "jcr:primaryType", "nt:unstructured");
         verifyString("xs:schema[1]", "xs:targetNamespace", "http://ns.adobe.com/air/application/1.0");
         verifyString("xs:schema[1]", "xs:elementFormDefault", "qualified");
-        verifyName("xs:schema[1]/xs:element[1]", NameFactory.JCR_PRIMARY_TYPE, "nt:unstructured");
+        verifyName("xs:schema[1]/xs:element[1]", "jcr:primaryType", "nt:unstructured");
         verifyString("xs:schema[1]/xs:element[1]", "xs:name", "application");
     }
 
@@ -203,7 +202,7 @@ public class XmlSequencerTest {
         stream = url.openStream();
         assertThat(stream, is(notNullValue()));
         sequencer.sequence(stream, output, context, monitor);
-        verifyName("", NameFactory.JCR_PRIMARY_TYPE, DOCUMENT);
+        verifyName("", "jcr:primaryType", DOCUMENT);
     }
 
     private void verifyName( String nodePath,

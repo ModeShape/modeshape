@@ -61,7 +61,7 @@ import org.jboss.dna.graph.requests.ReadPropertyRequest;
 import org.jboss.dna.graph.requests.RemovePropertiesRequest;
 import org.jboss.dna.graph.requests.Request;
 import org.jboss.dna.graph.requests.UpdatePropertiesRequest;
-import org.jboss.dna.graph.util.GraphImporter;
+import org.xml.sax.SAXException;
 
 /**
  * A graph representation of the content within a {@link RepositorySource}, including mechanisms to interact and manipulate that
@@ -993,31 +993,38 @@ public class Graph {
      */
     public ImportInto<Conjunction<Graph>> importXmlFrom( final URI uri ) {
         return new ImportInto<Conjunction<Graph>>() {
-            public Conjunction<Graph> into( String path ) throws IOException {
+            private boolean skipRootElement = false;
+
+            public ImportInto<Conjunction<Graph>> skippingRootElement( boolean skipRootElement ) {
+                this.skipRootElement = skipRootElement;
+                return this;
+            }
+
+            public Conjunction<Graph> into( String path ) throws IOException, SAXException {
                 return into(new Location(createPath(path)));
             }
 
-            public Conjunction<Graph> into( Path path ) throws IOException {
+            public Conjunction<Graph> into( Path path ) throws IOException, SAXException {
                 return into(new Location(path));
             }
 
-            public Conjunction<Graph> into( Property idProperty ) throws IOException {
+            public Conjunction<Graph> into( Property idProperty ) throws IOException, SAXException {
                 return into(new Location(idProperty));
             }
 
             public Conjunction<Graph> into( Property firstIdProperty,
-                                            Property... additionalIdProperties ) throws IOException {
+                                            Property... additionalIdProperties ) throws IOException, SAXException {
                 return into(new Location(firstIdProperty, additionalIdProperties));
             }
 
-            public Conjunction<Graph> into( UUID uuid ) throws IOException {
+            public Conjunction<Graph> into( UUID uuid ) throws IOException, SAXException {
                 return into(new Location(uuid));
             }
 
             @SuppressWarnings( "synthetic-access" )
-            public Conjunction<Graph> into( Location at ) throws IOException {
+            public Conjunction<Graph> into( Location at ) throws IOException, SAXException {
                 GraphImporter importer = new GraphImporter(Graph.this);
-                importer.importXml(uri, at).execute(); // 'importXml' creates and uses a new batch
+                importer.importXml(uri, at, skipRootElement).execute(); // 'importXml' creates and uses a new batch
                 return Graph.this.nextGraph;
             }
         };
@@ -2482,13 +2489,23 @@ public class Graph {
      */
     public interface ImportInto<Next> {
         /**
+         * Specify whether the root element in the XML document should be skipped (that is, not be represented by a node). By
+         * default, the root element is not skipped.
+         * 
+         * @param skip true if the root element should be skipped, or false if a node should be created for the root XML element
+         * @return the interface used to specify the location where the content should be placed
+         */
+        ImportInto<Next> skippingRootElement( boolean skip );
+
+        /**
          * Finish the import by specifying the new location into which the node should be copied/moved.
          * 
          * @param to the location of the new parent
          * @return the interface for additional requests or actions
          * @throws IOException if there is a problem reading the content being imported
+         * @throws SAXException if there is a problem with the SAX Parser
          */
-        Next into( Location to ) throws IOException;
+        Next into( Location to ) throws IOException, SAXException;
 
         /**
          * Finish the import by specifying the new location into which the node should be copied/moved.
@@ -2496,8 +2513,9 @@ public class Graph {
          * @param toPath the path of the new parent
          * @return the interface for additional requests or actions
          * @throws IOException if there is a problem reading the content being imported
+         * @throws SAXException if there is a problem with the SAX Parser
          */
-        Next into( String toPath ) throws IOException;
+        Next into( String toPath ) throws IOException, SAXException;
 
         /**
          * Finish the import by specifying the new location into which the node should be copied/moved.
@@ -2505,8 +2523,9 @@ public class Graph {
          * @param to the path of the new parent
          * @return the interface for additional requests or actions
          * @throws IOException if there is a problem reading the content being imported
+         * @throws SAXException if there is a problem with the SAX Parser
          */
-        Next into( Path to ) throws IOException;
+        Next into( Path to ) throws IOException, SAXException;
 
         /**
          * Finish the import by specifying the new location into which the node should be copied/moved.
@@ -2514,8 +2533,9 @@ public class Graph {
          * @param to the UUID of the new parent
          * @return the interface for additional requests or actions
          * @throws IOException if there is a problem reading the content being imported
+         * @throws SAXException if there is a problem with the SAX Parser
          */
-        Next into( UUID to ) throws IOException;
+        Next into( UUID to ) throws IOException, SAXException;
 
         /**
          * Finish the import by specifying the new location into which the node should be copied/moved.
@@ -2523,8 +2543,9 @@ public class Graph {
          * @param idProperty the property that uniquely identifies the new parent
          * @return the interface for additional requests or actions
          * @throws IOException if there is a problem reading the content being imported
+         * @throws SAXException if there is a problem with the SAX Parser
          */
-        Next into( Property idProperty ) throws IOException;
+        Next into( Property idProperty ) throws IOException, SAXException;
 
         /**
          * Finish the import by specifying the new location into which the node should be copied/moved.
@@ -2535,9 +2556,10 @@ public class Graph {
          *        identifies the new parent
          * @return the interface for additional requests or actions
          * @throws IOException if there is a problem reading the content being imported
+         * @throws SAXException if there is a problem with the SAX Parser
          */
         Next into( Property firstIdProperty,
-                   Property... additionalIdProperties ) throws IOException;
+                   Property... additionalIdProperties ) throws IOException, SAXException;
     }
 
     public interface BatchConjunction extends Conjunction<Batch>, Executable {
@@ -2616,9 +2638,11 @@ public class Graph {
         }
 
         public Results execute() {
-            // Execute the requests ...
-            Request request = CompositeRequest.with(requests);
-            Graph.this.execute(request);
+            if (!requests.isEmpty()) {
+                // Execute the requests ...
+                Request request = CompositeRequest.with(requests);
+                Graph.this.execute(request);
+            }
             return new BatchResults(requests);
         }
     }

@@ -54,6 +54,7 @@ import org.jboss.dna.graph.properties.Property;
 import org.jboss.dna.jcr.JcrRepository;
 import org.jboss.dna.repository.RepositoryLibrary;
 import org.jboss.dna.repository.RepositoryService;
+import org.xml.sax.SAXException;
 
 /**
  * @author Randall Hauch
@@ -122,9 +123,10 @@ public class RepositoryClient {
      * repositories.
      * 
      * @throws IOException if there is a problem initializing the repositories from the files.
+     * @throws SAXException if there is a problem with the SAX Parser
      * @throws NamingException if there is a problem registering or looking up objects in JNDI
      */
-    public void startRepositories() throws IOException, NamingException {
+    public void startRepositories() throws IOException, SAXException, NamingException {
         if (repositoryService != null) return; // already started
 
         // Create the factory for execution contexts.
