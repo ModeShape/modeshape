@@ -71,6 +71,10 @@ public class BasicExecutionContext implements ExecutionContext {
         this(null, null, namespaceRegistry, valueFactories, propertyFactory);
     }
 
+    public BasicExecutionContext( NamespaceRegistry namespaceRegistry ) {
+        this(null, null, namespaceRegistry, null, null);
+    }
+
     public BasicExecutionContext( LoginContext loginContext,
                                   NamespaceRegistry namespaceRegistry,
                                   ValueFactories valueFactories,
@@ -83,6 +87,11 @@ public class BasicExecutionContext implements ExecutionContext {
                                   ValueFactories valueFactories,
                                   PropertyFactory propertyFactory ) {
         this(null, accessControlContext, namespaceRegistry, valueFactories, propertyFactory);
+    }
+
+    public BasicExecutionContext( ExecutionContext inheritedContext,
+                                  NamespaceRegistry namespaceRegistry ) {
+        this(inheritedContext.getLoginContext(), inheritedContext.getAccessControlContext(), namespaceRegistry, null, null);
     }
 
     /*

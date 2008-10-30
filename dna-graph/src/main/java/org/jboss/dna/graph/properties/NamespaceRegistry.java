@@ -109,10 +109,27 @@ public interface NamespaceRegistry {
      */
     Set<Namespace> getNamespaces();
 
+    /**
+     * Representation of a single namespace at a single point in time. This object does not change to reflect changes made to the
+     * {@link NamespaceRegistry registry}.
+     * 
+     * @see NamespaceRegistry#getNamespaces()
+     * @author Randall Hauch
+     */
     @Immutable
     interface Namespace {
+        /**
+         * Get the prefix for the namespace
+         * 
+         * @return the prefix; never null but possibly the empty string
+         */
         String getPrefix();
 
+        /**
+         * Get the URI for the namespace
+         * 
+         * @return the namespace URI; never null but possibly the empty string
+         */
         String getNamespaceUri();
     }
 

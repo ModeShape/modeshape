@@ -159,15 +159,17 @@ public class XmlHandlerTest {
     public void shouldParseXmlDocumentWithNamespaces() throws IOException, SAXException {
         context.getNamespaceRegistry().register("c", "http://default.namespace.com");
         parse("xmlHandler/docWithNamespaces.xml");
-        // Check the generated content; note that the attribute name DOES match, so the nodes names come from "jcr:name" attribute
+        // Check the generated content.
+        // Note that the attribute name DOES match, so the nodes names come from "jcr:name" attribute
+        // Also, the "jcr:name" attribute values use the default namespace, which is "c" in the registry
         assertNode("c:Cars");
         assertNode("c:Cars/c:Hybrid");
-        assertNode("c:Cars/c:Hybrid/Toyota Prius", "maker=Toyota", "model=Prius");
-        assertNode("c:Cars/c:Hybrid/Toyota Highlander", "maker=Toyota", "model=Highlander");
-        assertNode("c:Cars/c:Hybrid/Nissan Altima", "maker=Nissan", "model=Altima");
+        assertNode("c:Cars/c:Hybrid/c:Toyota Prius", "c:maker=Toyota", "c:model=Prius");
+        assertNode("c:Cars/c:Hybrid/c:Toyota Highlander", "c:maker=Toyota", "c:model=Highlander");
+        assertNode("c:Cars/c:Hybrid/c:Nissan Altima", "c:maker=Nissan", "c:model=Altima");
         assertNode("c:Cars/c:Sports");
-        assertNode("c:Cars/c:Sports/Aston Martin DB9", "maker=Aston Martin", "model=DB9");
-        assertNode("c:Cars/c:Sports/Infiniti G37", "maker=Infiniti", "model=G37");
+        assertNode("c:Cars/c:Sports/c:Aston Martin DB9", "c:maker=Aston Martin", "c:model=DB9");
+        assertNode("c:Cars/c:Sports/c:Infiniti G37", "c:maker=Infiniti", "c:model=G37");
     }
 
     @Test
@@ -178,9 +180,9 @@ public class XmlHandlerTest {
         // Check the generated content; note that the attribute name DOES match, so the nodes names come from "jcr:name" attribute
         assertNode("Cars");
         assertNode("Cars/c:Hybrid");
-        assertNode("Cars/c:Hybrid/Toyota Prius", "maker=Toyota", "model=Prius");
-        assertNode("Cars/c:Hybrid/Toyota Highlander", "maker=Toyota", "model=Highlander");
-        assertNode("Cars/c:Hybrid/Nissan Altima", "maker=Nissan", "model=Altima");
+        assertNode("Cars/c:Hybrid/c:Toyota Prius", "c:maker=Toyota", "c:model=Prius");
+        assertNode("Cars/c:Hybrid/c:Toyota Highlander", "c:maker=Toyota", "c:model=Highlander");
+        assertNode("Cars/c:Hybrid/c:Nissan Altima", "c:maker=Nissan", "c:model=Altima");
         assertNode("Cars/Sports");
         assertNode("Cars/Sports/Aston Martin DB9", "i:maker=Aston Martin", "model=DB9");
         assertNode("Cars/Sports/Infiniti G37", "i:maker=Infiniti", "model=G37");
@@ -193,12 +195,12 @@ public class XmlHandlerTest {
         // Check the generated content; note that the attribute name DOES match, so the nodes names come from "jcr:name" attribute
         assertNode("c:Cars");
         assertNode("c:Cars/c:Hybrid");
-        assertNode("c:Cars/c:Hybrid/Toyota Prius", "maker=Toyota", "model=Prius");
-        assertNode("c:Cars/c:Hybrid/Toyota Highlander", "maker=Toyota", "model=Highlander");
-        assertNode("c:Cars/c:Hybrid/Nissan Altima", "maker=Nissan", "model=Altima");
+        assertNode("c:Cars/c:Hybrid/c:Toyota Prius", "c:maker=Toyota", "c:model=Prius");
+        assertNode("c:Cars/c:Hybrid/c:Toyota Highlander", "c:maker=Toyota", "c:model=Highlander");
+        assertNode("c:Cars/c:Hybrid/c:Nissan Altima", "c:maker=Nissan", "c:model=Altima");
         assertNode("c:Cars/c:Sports");
-        assertNode("c:Cars/c:Sports/Aston Martin DB9", "maker=Aston Martin", "model=DB9");
-        assertNode("c:Cars/c:Sports/Infiniti G37", "maker=Infiniti", "model=G37");
+        assertNode("c:Cars/c:Sports/c:Aston Martin DB9", "c:maker=Aston Martin", "c:model=DB9");
+        assertNode("c:Cars/c:Sports/c:Infiniti G37", "c:maker=Infiniti", "c:model=G37");
     }
 
     @Test
@@ -216,15 +218,18 @@ public class XmlHandlerTest {
         String c = reg.getPrefixForNamespaceUri("http://default.namespace.com", false);
         String i = reg.getPrefixForNamespaceUri("http://attributes.com", false);
         String d = reg.getPrefixForNamespaceUri(reg.getDefaultNamespaceUri(), false);
+        assertThat("Namespace not properly registered in primary registry", c, is(notNullValue()));
+        assertThat("Namespace not properly registered in primary registry", d, is(notNullValue()));
+        assertThat("Namespace not properly registered in primary registry", i, is(notNullValue()));
         if (c.length() != 0) c = c + ":";
         if (d.length() != 0) d = d + ":";
         if (i.length() != 0) i = i + ":";
         // Check the generated content; note that the attribute name DOES match, so the nodes names come from "jcr:name" attribute
         assertNode(d + "Cars");
         assertNode(d + "Cars/" + c + "Hybrid");
-        assertNode(d + "Cars/" + c + "Hybrid/Toyota Prius", "maker=Toyota", "model=Prius");
-        assertNode(d + "Cars/" + c + "Hybrid/Toyota Highlander", "maker=Toyota", "model=Highlander");
-        assertNode(d + "Cars/" + c + "Hybrid/Nissan Altima", "maker=Nissan", "model=Altima");
+        assertNode(d + "Cars/" + c + "Hybrid/" + c + "Toyota Prius", c + "maker=Toyota", c + "model=Prius");
+        assertNode(d + "Cars/" + c + "Hybrid/" + c + "Toyota Highlander", c + "maker=Toyota", c + "model=Highlander");
+        assertNode(d + "Cars/" + c + "Hybrid/" + c + "Nissan Altima", c + "maker=Nissan", c + "model=Altima");
         assertNode(d + "Cars/" + d + "Sports");
         assertNode(d + "Cars/" + d + "Sports/Aston Martin DB9", i + "maker=Aston Martin", "model=DB9");
         assertNode(d + "Cars/" + d + "Sports/Infiniti G37", i + "maker=Infiniti", "model=G37");
@@ -237,12 +242,26 @@ public class XmlHandlerTest {
         // Check the generated content; note that the attribute name DOES match, so the nodes names come from "jcr:name" attribute
         assertNode("c:Cars");
         assertNode("c:Cars/c:Hybrid");
-        assertNode("c:Cars/c:Hybrid/Toyota Prius", "maker=Toyota", "model=Prius");
-        assertNode("c:Cars/c:Hybrid/Toyota Highlander", "maker=Toyota", "model=Highlander");
-        assertNode("c:Cars/c:Hybrid/Nissan Altima", "maker=Nissan", "model=Altima");
+        assertNode("c:Cars/c:Hybrid/c:Toyota Prius", "c:maker=Toyota", "c:model=Prius");
+        assertNode("c:Cars/c:Hybrid/c:Toyota Highlander", "c:maker=Toyota", "c:model=Highlander");
+        assertNode("c:Cars/c:Hybrid/c:Nissan Altima", "c:maker=Nissan", "c:model=Altima");
         assertNode("c:Cars/c:Sports");
-        assertNode("c:Cars/c:Sports/Aston Martin DB9", "maker=Aston Martin", "model=DB9");
-        assertNode("c:Cars/c:Sports/Infiniti G37", "maker=Infiniti", "model=G37");
+        assertNode("c:Cars/c:Sports/c:Aston Martin DB9", "c:maker=Aston Martin", "c:model=DB9");
+        assertNode("c:Cars/c:Sports/c:Infiniti G37", "c:maker=Infiniti", "c:model=G37");
+    }
+
+    @Test
+    public void shouldParseXmlDocumentWithoutDefaultNamespaceThatUsesNameAttribute() throws IOException, SAXException {
+        parse("xmlHandler/docWithNamespacesWithoutDefault.xml");
+        // Check the generated content; note that the attribute name DOES match, so the nodes names come from "jcr:name" attribute
+        assertNode("Cars");
+        assertNode("Cars/Hybrid");
+        assertNode("Cars/Hybrid/Toyota Prius", "maker=Toyota", "model=Prius");
+        assertNode("Cars/Hybrid/Toyota Highlander", "maker=Toyota", "model=Highlander");
+        assertNode("Cars/Hybrid/Nissan Altima", "maker=Nissan", "model=Altima");
+        assertNode("Cars/Sports");
+        assertNode("Cars/Sports/Aston Martin DB9", "maker=Aston Martin", "model=DB9");
+        assertNode("Cars/Sports/Infiniti G37", "maker=Infiniti", "model=G37");
     }
 
     @Test
@@ -261,12 +280,12 @@ public class XmlHandlerTest {
         parse("xmlHandler/docWithNamespaces.xml");
         // Check the generated content; note that the attribute name DOES match, so the nodes names come from "jcr:name" attribute
         assertNode("c:Hybrid");
-        assertNode("c:Hybrid/Toyota Prius", "maker=Toyota", "model=Prius");
-        assertNode("c:Hybrid/Toyota Highlander", "maker=Toyota", "model=Highlander");
-        assertNode("c:Hybrid/Nissan Altima", "maker=Nissan", "model=Altima");
+        assertNode("c:Hybrid/c:Toyota Prius", "c:maker=Toyota", "c:model=Prius");
+        assertNode("c:Hybrid/c:Toyota Highlander", "c:maker=Toyota", "c:model=Highlander");
+        assertNode("c:Hybrid/c:Nissan Altima", "c:maker=Nissan", "c:model=Altima");
         assertNode("c:Sports");
-        assertNode("c:Sports/Aston Martin DB9", "maker=Aston Martin", "model=DB9");
-        assertNode("c:Sports/Infiniti G37", "maker=Infiniti", "model=G37");
+        assertNode("c:Sports/c:Aston Martin DB9", "c:maker=Aston Martin", "c:model=DB9");
+        assertNode("c:Sports/c:Infiniti G37", "c:maker=Infiniti", "c:model=G37");
     }
 
     @Test
@@ -279,12 +298,12 @@ public class XmlHandlerTest {
         // Check the generated content; note that the attribute name DOES match, so the nodes names come from "jcr:name" attribute
         assertNode("c:Cars");
         assertNode("c:Cars/c:Hybrid");
-        assertNode("c:Cars/c:Hybrid/Toyota Prius", "maker=Toyota", "model=Prius");
-        assertNode("c:Cars/c:Hybrid/Toyota Highlander", "maker=Toyota", "model=Highlander");
-        assertNode("c:Cars/c:Hybrid/Nissan Altima", "maker=Nissan", "model=Altima");
+        assertNode("c:Cars/c:Hybrid/c:Toyota Prius", "c:maker=Toyota", "c:model=Prius");
+        assertNode("c:Cars/c:Hybrid/c:Toyota Highlander", "c:maker=Toyota", "c:model=Highlander");
+        assertNode("c:Cars/c:Hybrid/c:Nissan Altima", "c:maker=Nissan", "c:model=Altima");
         assertNode("c:Cars/c:Sports");
-        assertNode("c:Cars/c:Sports/Aston Martin DB9", "maker=Aston Martin", "model=DB9");
-        assertNode("c:Cars/c:Sports/Infiniti G37", "maker=Infiniti", "model=G37");
+        assertNode("c:Cars/c:Sports/c:Aston Martin DB9", "c:maker=Aston Martin", "c:model=DB9");
+        assertNode("c:Cars/c:Sports/c:Infiniti G37", "c:maker=Infiniti", "c:model=G37");
     }
 
     @Test
@@ -297,12 +316,12 @@ public class XmlHandlerTest {
         // Check the generated content; note that the attribute name DOES match, so the nodes names come from "jcr:name" attribute
         assertNode("c:Cars");
         assertNode("c:Cars/c:Hybrid");
-        assertNode("c:Cars/c:Hybrid/Toyota Prius", "maker=Toyota", "model=Prius");
-        assertNode("c:Cars/c:Hybrid/Toyota Highlander", "maker=Toyota", "model=Highlander");
-        assertNode("c:Cars/c:Hybrid/Nissan Altima", "maker=Nissan", "model=Altima");
+        assertNode("c:Cars/c:Hybrid/c:Toyota Prius", "c:maker=Toyota", "c:model=Prius");
+        assertNode("c:Cars/c:Hybrid/c:Toyota Highlander", "c:maker=Toyota", "c:model=Highlander");
+        assertNode("c:Cars/c:Hybrid/c:Nissan Altima", "c:maker=Nissan", "c:model=Altima");
         assertNode("c:Cars/c:Sports");
-        assertNode("c:Cars/c:Sports/Aston Martin DB9", "maker=Aston Martin", "model=DB9");
-        assertNode("c:Cars/c:Sports/Infiniti G37", "maker=Infiniti", "model=G37");
+        assertNode("c:Cars/c:Sports/c:Aston Martin DB9", "c:maker=Aston Martin", "c:model=DB9");
+        assertNode("c:Cars/c:Sports/c:Infiniti G37", "c:maker=Infiniti", "c:model=G37");
     }
 
     @Test
@@ -311,12 +330,12 @@ public class XmlHandlerTest {
         parse("xmlHandler/docWithComments.xml");
         assertNode("c:Cars");
         assertNode("c:Cars/c:Hybrid");
-        assertNode("c:Cars/c:Hybrid/Toyota Prius", "maker=Toyota", "model=Prius");
-        assertNode("c:Cars/c:Hybrid/Toyota Highlander", "maker=Toyota", "model=Highlander");
-        assertNode("c:Cars/c:Hybrid/Nissan Altima", "maker=Nissan", "model=Altima");
+        assertNode("c:Cars/c:Hybrid/c:Toyota Prius", "c:maker=Toyota", "c:model=Prius");
+        assertNode("c:Cars/c:Hybrid/c:Toyota Highlander", "c:maker=Toyota", "c:model=Highlander");
+        assertNode("c:Cars/c:Hybrid/c:Nissan Altima", "c:maker=Nissan", "c:model=Altima");
         assertNode("c:Cars/c:Sports");
-        assertNode("c:Cars/c:Sports/Aston Martin DB9", "maker=Aston Martin", "model=DB9");
-        assertNode("c:Cars/c:Sports/Infiniti G37", "maker=Infiniti", "model=G37");
+        assertNode("c:Cars/c:Sports/c:Aston Martin DB9", "c:maker=Aston Martin", "c:model=DB9");
+        assertNode("c:Cars/c:Sports/c:Infiniti G37", "c:maker=Infiniti", "c:model=G37");
     }
 
     @Test
@@ -351,12 +370,12 @@ public class XmlHandlerTest {
         String carPrimaryType = "jcr:primaryType={http://default.namespace.com}car";
         assertNode("c:Cars", unstructPrimaryType);
         assertNode("c:Cars/c:Hybrid", unstructPrimaryType);
-        assertNode("c:Cars/c:Hybrid/Toyota Prius", carPrimaryType, "maker=Toyota", "model=Prius");
-        assertNode("c:Cars/c:Hybrid/Toyota Highlander", carPrimaryType, "maker=Toyota", "model=Highlander");
-        assertNode("c:Cars/c:Hybrid/Nissan Altima", carPrimaryType, "maker=Nissan", "model=Altima");
+        assertNode("c:Cars/c:Hybrid/c:Toyota Prius", carPrimaryType, "c:maker=Toyota", "c:model=Prius");
+        assertNode("c:Cars/c:Hybrid/c:Toyota Highlander", carPrimaryType, "c:maker=Toyota", "c:model=Highlander");
+        assertNode("c:Cars/c:Hybrid/c:Nissan Altima", carPrimaryType, "c:maker=Nissan", "c:model=Altima");
         assertNode("c:Cars/c:Sports", unstructPrimaryType);
-        assertNode("c:Cars/c:Sports/Aston Martin DB9", carPrimaryType, "maker=Aston Martin", "model=DB9");
-        assertNode("c:Cars/c:Sports/Infiniti G37", carPrimaryType, "maker=Infiniti", "model=G37");
+        assertNode("c:Cars/c:Sports/c:Aston Martin DB9", carPrimaryType, "c:maker=Aston Martin", "c:model=DB9");
+        assertNode("c:Cars/c:Sports/c:Infiniti G37", carPrimaryType, "c:maker=Infiniti", "c:model=G37");
     }
 
     protected void assertNode( String path,
@@ -382,7 +401,7 @@ public class XmlHandlerTest {
         assertThat(request.at().getPath(), is(expectedPath));
         for (Property actual : request.properties()) {
             Property expected = expectedProperties.remove(actual.getName());
-            assertThat(expected, is(notNullValue()));
+            assertThat("unexpected property: " + actual, expected, is(notNullValue()));
             assertThat(actual, is(expected));
         }
         if (!expectedProperties.isEmpty()) {

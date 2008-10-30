@@ -22,15 +22,17 @@
 package org.jboss.dna.graph.xml;
 
 import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
-import java.util.Set;
+import java.util.Map;
 import javax.xml.parsers.SAXParser;
 import net.jcip.annotations.NotThreadSafe;
 import org.jboss.dna.common.text.TextDecoder;
 import org.jboss.dna.common.text.XmlNameEncoder;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.graph.ExecutionContext;
+import org.jboss.dna.graph.connectors.BasicExecutionContext;
 import org.jboss.dna.graph.properties.Name;
 import org.jboss.dna.graph.properties.NameFactory;
 import org.jboss.dna.graph.properties.NamespaceRegistry;
@@ -38,6 +40,7 @@ import org.jboss.dna.graph.properties.Path;
 import org.jboss.dna.graph.properties.PathFactory;
 import org.jboss.dna.graph.properties.Property;
 import org.jboss.dna.graph.properties.PropertyFactory;
+import org.jboss.dna.graph.properties.basic.LocalNamespaceRegistry;
 import org.xml.sax.Attributes;
 import org.xml.sax.ext.DefaultHandler2;
 
@@ -67,6 +70,8 @@ public class XmlHandler extends DefaultHandler2 {
         /** The attribute's namespace is the same namespace as the containing element */
         INHERIT_ELEMENT_NAMESPACE;
     }
+
+    private final ExecutionContext context;
 
     /**
      * Decoder for XML names, to turn '_xHHHH_' sequences in the XML element and attribute names into the corresponding UTF-16
@@ -125,10 +130,10 @@ public class XmlHandler extends DefaultHandler2 {
     protected final TextDecoder decoder;
 
     /**
-     * Local set of the namespace URIs that are registered. This is an optimization, rather than relying upon the (thread-safe)
-     * {@link #namespaceRegistry}.
+     * The stack of prefixes for each namespace, which is used to keep the {@link #namespaceRegistry local namespace registry} in
+     * sync with the namespaces in the XML document.
      */
-    private final Set<String> namespaceUris = new HashSet<String>();
+    private final Map<String, LinkedList<String>> prefixStackByUri = new HashMap<String, LinkedList<String>>();
 
     private final AttributeScoping attributeScoping;
 
@@ -191,13 +196,19 @@ public class XmlHandler extends DefaultHandler2 {
         this.skipFirstElement = skipRootElement;
         this.attributeScoping = scoping != null ? scoping : DEFAULT_ATTRIBUTE_SCOPING;
 
+        // Use the execution context ...
+        this.context = destination.getExecutionContext();
+        assert this.context != null;
+
+        // Set up a local namespace registry that is kept in sync with the namespaces found in this XML document ...
+        NamespaceRegistry namespaceRegistry = new LocalNamespaceRegistry(this.context.getNamespaceRegistry());
+        final ExecutionContext localContext = new BasicExecutionContext(this.context, namespaceRegistry);
+
         // Set up references to frequently-used objects in the context ...
-        final ExecutionContext context = destination.getExecutionContext();
-        assert context != null;
-        this.nameFactory = context.getValueFactories().getNameFactory();
-        this.pathFactory = context.getValueFactories().getPathFactory();
-        this.propertyFactory = context.getPropertyFactory();
-        this.namespaceRegistry = context.getNamespaceRegistry();
+        this.nameFactory = localContext.getValueFactories().getNameFactory();
+        this.pathFactory = localContext.getValueFactories().getPathFactory();
+        this.propertyFactory = localContext.getPropertyFactory();
+        this.namespaceRegistry = localContext.getNamespaceRegistry();
         assert this.nameFactory != null;
         assert this.pathFactory != null;
         assert this.propertyFactory != null;
@@ -222,12 +233,59 @@ public class XmlHandler extends DefaultHandler2 {
     public void startPrefixMapping( String prefix,
                                     String uri ) {
         assert uri != null;
-        if (namespaceUris.add(uri)) {
-            // This is a new namespace for this document ...
-            if (!namespaceRegistry.isRegisteredNamespaceUri(uri)) {
-                if (prefix != null && prefix.length() == 0) prefix = null;
+        // Add the prefix to the stack ...
+        LinkedList<String> prefixStack = this.prefixStackByUri.get(uri);
+        if (prefixStack == null) {
+            prefixStack = new LinkedList<String>();
+            this.prefixStackByUri.put(uri, prefixStack);
+        }
+        prefixStack.addFirst(prefix);
+
+        // If the namespace is already registered, then we'll have to register it in the context's registry, too.
+        if (!namespaceRegistry.isRegisteredNamespaceUri(uri)) {
+            // The namespace is not already registered (locally or in the context's registry), so we have to
+            // register it with the context's registry (which the local register then inherits).
+            NamespaceRegistry contextRegistry = context.getNamespaceRegistry();
+            if (contextRegistry.getNamespaceForPrefix(prefix) != null) {
+                // The prefix is already bound, so register and generate a unique prefix
+                context.getNamespaceRegistry().getPrefixForNamespaceUri(uri, true);
+                // Now register locally with the supplied prefix ...
                 namespaceRegistry.register(prefix, uri);
+            } else {
+                context.getNamespaceRegistry().register(prefix, uri);
             }
+        } else {
+            // It is already registered, but re-register it locally using the supplied prefix ...
+            namespaceRegistry.register(prefix, uri);
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.xml.sax.helpers.DefaultHandler#endPrefixMapping(java.lang.String)
+     */
+    @Override
+    public void endPrefixMapping( String prefix ) {
+        assert prefix != null;
+        // Get the current URI for this prefix ...
+        String uri = namespaceRegistry.getNamespaceForPrefix(prefix);
+        assert uri != null;
+
+        // Get the previous prefix from the stack ...
+        LinkedList<String> prefixStack = this.prefixStackByUri.get(uri);
+        assert prefixStack != null;
+        assert !prefixStack.isEmpty();
+        String existingPrefix = prefixStack.removeFirst();
+        assert prefix.equals(existingPrefix);
+
+        // If there are no previous prefixes, then remove the mapping ...
+        if (prefixStack.isEmpty()) {
+            namespaceRegistry.unregister(uri);
+            prefixStackByUri.remove(uri);
+        } else {
+            String previous = prefixStack.getFirst();
+            namespaceRegistry.register(previous, uri);
         }
     }
 
