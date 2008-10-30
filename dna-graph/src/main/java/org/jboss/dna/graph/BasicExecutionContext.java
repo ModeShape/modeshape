@@ -19,7 +19,7 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.jboss.dna.graph.connectors;
+package org.jboss.dna.graph;
 
 import java.security.AccessControlContext;
 import java.security.AccessController;
@@ -31,7 +31,6 @@ import org.jboss.dna.common.i18n.I18n;
 import org.jboss.dna.common.monitor.ActivityMonitor;
 import org.jboss.dna.common.monitor.SimpleActivityMonitor;
 import org.jboss.dna.common.util.Logger;
-import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.properties.NamespaceRegistry;
 import org.jboss.dna.graph.properties.PropertyFactory;
 import org.jboss.dna.graph.properties.ValueFactories;

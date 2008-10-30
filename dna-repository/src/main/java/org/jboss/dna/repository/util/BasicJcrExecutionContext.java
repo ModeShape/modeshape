@@ -22,7 +22,7 @@
 package org.jboss.dna.repository.util;
 
 import org.jboss.dna.common.util.CheckArg;
-import org.jboss.dna.graph.connectors.BasicExecutionContext;
+import org.jboss.dna.graph.BasicExecutionContext;
 import org.jboss.dna.graph.properties.NamespaceRegistry;
 import org.jboss.dna.graph.properties.PropertyFactory;
 import org.jboss.dna.graph.properties.ValueFactories;

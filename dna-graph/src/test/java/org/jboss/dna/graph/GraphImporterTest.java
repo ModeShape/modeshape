@@ -36,7 +36,6 @@ import java.util.regex.Pattern;
 import javax.transaction.xa.XAResource;
 import org.jboss.dna.common.util.StringUtil;
 import org.jboss.dna.graph.cache.CachePolicy;
-import org.jboss.dna.graph.connectors.BasicExecutionContext;
 import org.jboss.dna.graph.connectors.RepositoryConnection;
 import org.jboss.dna.graph.connectors.RepositoryConnectionFactory;
 import org.jboss.dna.graph.connectors.RepositorySourceException;
