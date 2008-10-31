@@ -23,8 +23,9 @@
 package org.jboss.dna.common.monitor;
 
 import java.util.Locale;
-import org.jboss.dna.common.collection.Problems;
 import org.jboss.dna.common.i18n.I18n;
+import org.jboss.dna.common.util.Logger;
+import org.slf4j.Marker;
 
 /**
  * A basic activity monitor that facilitates the updating and monitoring of progress towards the completion of an activity.
@@ -41,6 +42,15 @@ import org.jboss.dna.common.i18n.I18n;
  * cancelled before its normal completion, the <strong>Updater</strong> must deny any previous cancellation request by calling
  * {@link #setCancelled(boolean) setCancelled(false)}.
  * </p>
+ * <h2>Events</h2>
+ * <p>
+ * The <strong>Updater</strong> may {@link #capture(Marker, I18n, Object...) capture} information related to an activity,
+ * including errors encountered, similar to using a {@link Logger}. However, instead of being written to a log, this information
+ * are merely collected so that it can be later {@link ActivityStatus#getCapturedInformation() retrieved}. This is especially
+ * useful when the activity involves using an API that doesn't provide the ability to collect or return one or more errors or
+ * warnings that may have occurred during the activity. Implementations of the API can get around this deficiency using this
+ * activity monitor to store these issues so that they can be dealt with after the API call has completed.
+ * </p>
  * 
  * @author Randall Hauch
  * @author John Verhaeg
@@ -53,11 +63,133 @@ public interface ActivityMonitor {
      * 
      * @param totalWork the total number of work units for the task
      * @param name the name of the task
-     * @param params the parameters for localization
+     * @param messageParameters the parameters for localization
      */
     void beginTask( double totalWork,
                     I18n name,
-                    Object... params );
+                    Object... messageParameters );
+
+    /**
+     * Captures an event that occurred during this activity.
+     * 
+     * @param message a message representing the event.
+     * @param messageParameters parameter values that are to replace the placeholders in the message
+     */
+    public void capture( I18n message,
+                         Object... messageParameters );
+
+    /**
+     * Captures an event that occurred during this activity.
+     * 
+     * @param marker an identifying marker
+     * @param message a message representing the event
+     * @param messageParameters parameter values that are to replace the placeholders in the message
+     */
+    public void capture( Marker marker,
+                         I18n message,
+                         Object... messageParameters );
+
+    /**
+     * Captures an error that occurred during this activity.
+     * 
+     * @param throwable the error.
+     */
+    public void captureError( Throwable throwable );
+
+    /**
+     * Captures an error that occurred during this activity.
+     * 
+     * @param message a message describing the error.
+     * @param messageParameters parameter values that are to replace the placeholders in the message
+     */
+    public void captureError( I18n message,
+                              Object... messageParameters );
+
+    /**
+     * Captures an error that occurred during this activity.
+     * 
+     * @param marker an identifying marker
+     * @param message a message describing the error.
+     * @param messageParameters parameter values that are to replace the placeholders in the message
+     */
+    public void captureError( Marker marker,
+                              I18n message,
+                              Object... messageParameters );
+
+    /**
+     * Captures an error that occurred during this activity.
+     * 
+     * @param throwable the error.
+     * @param message a message describing the error.
+     * @param messageParameters parameter values that are to replace the placeholders in the message
+     */
+    public void captureError( Throwable throwable,
+                              I18n message,
+                              Object... messageParameters );
+
+    /**
+     * Captures an error that occurred during this activity.
+     * 
+     * @param marker an identifying marker
+     * @param throwable the error.
+     * @param message a message describing the error.
+     * @param messageParameters parameter values that are to replace the placeholders in the message
+     */
+    public void captureError( Marker marker,
+                              Throwable throwable,
+                              I18n message,
+                              Object... messageParameters );
+
+    /**
+     * Captures a warning that occurred during this activity.
+     * 
+     * @param throwable the warning.
+     */
+    public void captureWarning( Throwable throwable );
+
+    /**
+     * Captures a warning that occurred during this activity.
+     * 
+     * @param message a message describing the warning.
+     * @param messageParameters parameter values that are to replace the placeholders in the message
+     */
+    public void captureWarning( I18n message,
+                                Object... messageParameters );
+
+    /**
+     * Captures a warning that occurred during this activity.
+     * 
+     * @param marker an identifying marker
+     * @param message a message describing the warning.
+     * @param messageParameters parameter values that are to replace the placeholders in the message
+     */
+    public void captureWarning( Marker marker,
+                                I18n message,
+                                Object... messageParameters );
+
+    /**
+     * Captures a warning that occurred during this activity.
+     * 
+     * @param throwable the warning.
+     * @param message a message describing the warning.
+     * @param messageParameters parameter values that are to replace the placeholders in the message
+     */
+    public void captureWarning( Throwable throwable,
+                                I18n message,
+                                Object... messageParameters );
+
+    /**
+     * Captures a warning that occurred during this activity.
+     * 
+     * @param marker an identifying marker
+     * @param throwable the warning.
+     * @param message a message describing the warning.
+     * @param messageParameters parameter values that are to replace the placeholders in the message
+     */
+    public void captureWarning( Marker marker,
+                                Throwable throwable,
+                                I18n message,
+                                Object... messageParameters );
 
     /**
      * Called by the <strong>Updater</strong> to create a subtask with the given about of work. The resulting activity monitor
@@ -75,8 +207,8 @@ public interface ActivityMonitor {
     void done();
 
     /**
-     * Get the name of the activity using the default locale. This should never change for a activity monitor, and all
-     * {@link #createSubtask(double) subtasks} should have the same name.
+     * Get the name of the activity using the {@link Locale#getDefault() default locale}. This should never change for a activity
+     * monitor, and all {@link #createSubtask(double) subtasks} should have the same name.
      * 
      * @return the activity's name; never <code>null</code>
      * @see #getActivityName(Locale)
@@ -87,28 +219,29 @@ public interface ActivityMonitor {
      * Returns the name of the activity using the supplied locale. This should never change for a activity monitor, and all
      * {@link #createSubtask(double) subtasks} should have the same name.
      * 
-     * @param locale the locale in which the name is to be represented; if null, the {@link Locale#getDefault() default locale}
-     *        will be used
+     * @param locale the locale in which the name is to be represented; if <code>null</code>, the {@link Locale#getDefault()
+     *        default locale} will be used
      * @return the activity's name; never <code>null</code>
-     * @see #getActivityName()
      */
     String getActivityName( Locale locale );
 
     /**
-     * Return the problems encountered during the {@link #getStatus(Locale) progress} made towards completing the associated
-     * {@link #getActivityName() activity}.
+     * Return the current status of this activity, localized to the {@link Locale#getDefault() default locale}. This method
+     * returns an immutable but consistent snapshot of the status for this activity. Note that if this instance is a
+     * {@link #createSubtask(double) subtask} , this method returns the status of the subtask.
      * 
-     * @return the list of problems
+     * @return the status of this activity
+     * @see #getStatus(Locale)
      */
-    Problems getProblems();
+    ActivityStatus getStatus();
 
     /**
-     * Return the current status of this activity, localized to the specified locale. This method returns an immutable but
+     * Return the current status of this activity, localized to the supplied locale. This method returns an immutable but
      * consistent snapshot of the status for this activity. Note that if this instance is a {@link #createSubtask(double) subtask}
      * , this method returns the status of the subtask.
      * 
-     * @param locale the locale in which the status is to be represented; if null, the {@link Locale#getDefault() default locale}
-     *        will be used
+     * @param locale the locale in which the status is to be represented; if <code>null</code>, the {@link Locale#getDefault()
+     *        default locale} will be used
      * @return the status of this activity
      */
     ActivityStatus getStatus( Locale locale );

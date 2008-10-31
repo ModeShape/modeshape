@@ -24,7 +24,11 @@ package org.jboss.dna.common.monitor;
 
 import java.io.Serializable;
 import java.text.DecimalFormat;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Locale;
 import net.jcip.annotations.Immutable;
+import org.jboss.dna.common.i18n.I18n;
 import org.jboss.dna.common.util.StringUtil;
 
 /**
@@ -67,45 +71,76 @@ public class ActivityStatus implements Serializable, Comparable<ActivityStatus> 
     private final double percentWorked;
     private final boolean done;
     private final boolean cancelled;
-    private final String message;
+    private final String taskName;
+    private final CapturedActivityInfo[] capturedInformation;
 
     /**
      * Create the activity status.
      * 
-     * @param activityName the name of the activity, which may not be <code>null</code>
-     * @param message the message for the status, which may not be <code>null</code>
+     * @param activityName the name of the activity; must not be <code>null</code>
+     * @param activityNameParameters the parameters for <code>activityName</code>
+     * @param taskName the i18n template for the name of the task being performed within the activity; must not be
+     *        <code>null</code>
+     * @param taskNameParameters the parameters for <code>taskName</code>
      * @param percentWorked the percentage worked, ranging from 0.0 for not started to 100.0 for complete; a negative value are
      *        treated as 0.0, while a value greater than 100.0 is treated as 100.0
      * @param cancelled <code>true</code> if the activity has been requested to be cancelled, or <code>false</code> otherwise
+     * @param capturedInformation the captured activity information; must not be <code>null</code>
+     * @param locale the locale in which the status is to be represented; if <code>null</code>, the {@link Locale#getDefault()
+     *        default locale} will be used
      */
-    public ActivityStatus( String activityName,
-                           String message,
-                           double percentWorked,
-                           boolean cancelled ) {
+    ActivityStatus( I18n activityName,
+                    Object[] activityNameParameters,
+                    I18n taskName,
+                    Object[] taskNameParameters,
+                    double percentWorked,
+                    boolean cancelled,
+                    List<UnlocalizedActivityInfo> capturedInformation,
+                    Locale locale ) {
         assert activityName != null;
-        assert message != null;
-        this.activityName = activityName;
+        assert capturedInformation != null;
+        assert taskName != null || taskNameParameters == null || taskNameParameters.length == 0;
+        this.activityName = activityName.text(locale, activityNameParameters);
         this.done = percentWorked >= 100.0d;
         this.percentWorked = this.done ? 100.0d : (percentWorked <= 0.0d ? 0.0d : percentWorked);
-        this.message = message;
+        this.taskName = taskName == null ? "" : taskName.text(locale, taskNameParameters);
         this.cancelled = cancelled;
+        this.capturedInformation = new CapturedActivityInfo[capturedInformation.size()];
+        Iterator<UnlocalizedActivityInfo> iter = capturedInformation.iterator();
+        for (int ndx = 0; iter.hasNext(); ndx++) {
+            UnlocalizedActivityInfo info = iter.next();
+            this.capturedInformation[ndx] = new CapturedActivityInfo(info.type, info.taskName, info.taskNameParameters,
+                                                                     info.marker, info.throwable, info.message,
+                                                                     info.messageParameters, locale);
+        }
     }
 
     /**
      * Create the activity status and compute the percentage worked.
      * 
-     * @param activityName the name of the activity, which may not be null
-     * @param message the message for the status, which may not be null
+     * @param activityName the name of the activity; must not be <code>null</code>
+     * @param activityNameParameters the parameters for <code>activityName</code>
+     * @param taskName the i18n template for the name of the task being performed within the activity; must not be
+     *        <code>null</code>
+     * @param taskNameParameters the parameters for <code>taskName</code>
      * @param workedSoFar the amount of work so far percentage worked
      * @param totalWork the total amount of work for this activity
      * @param cancelled true if the activity has been requested to be cancelled, or false otherwise
+     * @param capturedInformation the captured activity information; must not be <code>null</code>
+     * @param locale the locale in which the status is to be represented; if <code>null</code>, the {@link Locale#getDefault()
+     *        default locale} will be used
      */
-    public ActivityStatus( String activityName,
-                           String message,
-                           double workedSoFar,
-                           double totalWork,
-                           boolean cancelled ) {
-        this(activityName, message, computePercentage(workedSoFar, totalWork), cancelled);
+    ActivityStatus( I18n activityName,
+                    Object[] activityNameParameters,
+                    I18n taskName,
+                    Object[] taskNameParameters,
+                    double workedSoFar,
+                    double totalWork,
+                    boolean cancelled,
+                    List<UnlocalizedActivityInfo> capturedInformation,
+                    Locale locale ) {
+        this(activityName, activityNameParameters, taskName, taskNameParameters, computePercentage(workedSoFar, totalWork),
+             cancelled, capturedInformation, locale);
     }
 
     /**
@@ -115,6 +150,10 @@ public class ActivityStatus implements Serializable, Comparable<ActivityStatus> 
      */
     public String getActivityName() {
         return this.activityName;
+    }
+
+    public CapturedActivityInfo[] getCapturedInformation() {
+        return capturedInformation;
     }
 
     /**
@@ -127,12 +166,12 @@ public class ActivityStatus implements Serializable, Comparable<ActivityStatus> 
     }
 
     /**
-     * Get the activity monitor's text message.
+     * Get the activity monitor's task name.
      * 
-     * @return the text message
+     * @return the task name
      */
-    public String getMessage() {
-        return this.message;
+    public String getTaskName() {
+        return taskName;
     }
 
     /**
@@ -163,7 +202,7 @@ public class ActivityStatus implements Serializable, Comparable<ActivityStatus> 
         String percentage = new DecimalFormat(PERCENTAGE_PATTERN).format(getPercentWorked());
         percentage = StringUtil.justifyRight(percentage, PERCENTAGE_PATTERN.length(), ' ');
         String cancelled = this.isCancelled() ? " (cancelled)" : "";
-        return this.activityName + " (" + this.message + ") " + percentage + " %" + cancelled;
+        return activityName + " (" + taskName + ") " + percentage + " %" + cancelled;
     }
 
     /**

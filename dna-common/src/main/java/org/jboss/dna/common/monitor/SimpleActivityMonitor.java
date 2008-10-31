@@ -22,16 +22,19 @@
 
 package org.jboss.dna.common.monitor;
 
+import java.util.List;
 import java.util.Locale;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import net.jcip.annotations.GuardedBy;
 import net.jcip.annotations.ThreadSafe;
-import org.jboss.dna.common.collection.Problems;
-import org.jboss.dna.common.collection.ThreadSafeProblems;
 import org.jboss.dna.common.i18n.I18n;
 import org.jboss.dna.common.util.CheckArg;
+import org.jboss.dna.common.util.Logger;
+import org.jboss.dna.common.util.Logger.Level;
+import org.slf4j.Marker;
 
 /**
  * A basic activity monitor.
@@ -40,30 +43,30 @@ import org.jboss.dna.common.util.CheckArg;
  * @author John Verhaeg
  */
 @ThreadSafe
-public class SimpleActivityMonitor implements ActivityMonitor {
+public final class SimpleActivityMonitor implements ActivityMonitor {
 
     @GuardedBy( "lock" )
     private I18n taskName;
     @GuardedBy( "lock" )
-    private Object[] taskNameParams;
+    private Object[] taskNameParameters;
     @GuardedBy( "lock" )
     private double totalWork;
     @GuardedBy( "lock" )
     private double worked;
 
     private final I18n activityName;
-    private final Object[] activityNameParams;
+    private final Object[] activityNameParameters;
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
     private final AtomicBoolean cancelled = new AtomicBoolean(false);
-    private final Problems problems = new ThreadSafeProblems();
+    private final List<UnlocalizedActivityInfo> capturedInformation = new CopyOnWriteArrayList<UnlocalizedActivityInfo>();
 
     public SimpleActivityMonitor( I18n activityName,
                                   Object... params ) {
         CheckArg.isNotNull(activityName, "activityName");
         this.activityName = activityName;
-        this.activityNameParams = params;
+        this.activityNameParameters = params;
         this.taskName = null;
-        this.taskNameParams = null;
+        this.taskNameParameters = null;
     }
 
     /**
@@ -72,13 +75,16 @@ public class SimpleActivityMonitor implements ActivityMonitor {
      * @see org.jboss.dna.common.monitor.ActivityMonitor#beginTask(double, org.jboss.dna.common.i18n.I18n, java.lang.Object[])
      */
     public void beginTask( double totalWork,
-                           I18n name,
-                           Object... params ) {
+                           I18n taskName,
+                           Object... taskNameParameters ) {
         CheckArg.isGreaterThan(totalWork, 0.0, "totalWork");
+        if (taskName == null && taskNameParameters != null) {
+            CheckArg.isEmpty(taskNameParameters, "taskNameParameters");
+        }
         try {
             this.lock.writeLock().lock();
-            this.taskName = name;
-            this.taskNameParams = params;
+            this.taskName = taskName;
+            this.taskNameParameters = taskNameParameters;
             this.totalWork = totalWork;
             this.worked = 0.0d;
         } finally {
@@ -89,10 +95,157 @@ public class SimpleActivityMonitor implements ActivityMonitor {
     /**
      * {@inheritDoc}
      * 
+     * @see org.jboss.dna.common.monitor.ActivityMonitor#capture(org.jboss.dna.common.i18n.I18n, java.lang.Object[])
+     */
+    public void capture( I18n message,
+                         Object... messageParameters ) {
+        capture(null, message, messageParameters);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.common.monitor.ActivityMonitor#capture(org.slf4j.Marker, org.jboss.dna.common.i18n.I18n,
+     *      java.lang.Object[])
+     */
+    public void capture( Marker marker,
+                         I18n message,
+                         Object... messageParameters ) {
+        capture(Level.INFO, marker, null, message, messageParameters);
+    }
+
+    private void capture( Logger.Level type,
+                          Marker marker,
+                          Throwable throwable,
+                          I18n message,
+                          Object... messageParameters ) {
+        assert type != null;
+        if (message == null && messageParameters != null) {
+            CheckArg.isEmpty(messageParameters, "messageParameters");
+        }
+        capturedInformation.add(new UnlocalizedActivityInfo(type, taskName, taskNameParameters, marker, null, message,
+                                                            messageParameters));
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.common.monitor.ActivityMonitor#captureError(java.lang.Throwable)
+     */
+    public void captureError( Throwable throwable ) {
+        captureError(throwable, null);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.common.monitor.ActivityMonitor#captureError(org.jboss.dna.common.i18n.I18n, java.lang.Object[])
+     */
+    public void captureError( I18n message,
+                              Object... messageParameters ) {
+        captureError(null, null, message, messageParameters);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.common.monitor.ActivityMonitor#captureError(org.slf4j.Marker, org.jboss.dna.common.i18n.I18n,
+     *      java.lang.Object[])
+     */
+    public void captureError( Marker marker,
+                              I18n message,
+                              Object... messageParameters ) {
+        captureError(marker, null, message, messageParameters);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.common.monitor.ActivityMonitor#captureError(java.lang.Throwable, org.jboss.dna.common.i18n.I18n,
+     *      java.lang.Object[])
+     */
+    public void captureError( Throwable throwable,
+                              I18n message,
+                              Object... messageParameters ) {
+        captureError(null, throwable, message, messageParameters);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.common.monitor.ActivityMonitor#captureError(org.slf4j.Marker, java.lang.Throwable,
+     *      org.jboss.dna.common.i18n.I18n, java.lang.Object[])
+     */
+    public void captureError( Marker marker,
+                              Throwable throwable,
+                              I18n message,
+                              Object... messageParameters ) {
+        capture(Level.ERROR, marker, throwable, message, messageParameters);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.common.monitor.ActivityMonitor#captureWarning(java.lang.Throwable)
+     */
+    public void captureWarning( Throwable throwable ) {
+        captureWarning(throwable, null);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.common.monitor.ActivityMonitor#captureWarning(org.jboss.dna.common.i18n.I18n, java.lang.Object[])
+     */
+    public void captureWarning( I18n message,
+                                Object... messageParameters ) {
+        captureWarning(null, null, message, messageParameters);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.common.monitor.ActivityMonitor#captureWarning(org.slf4j.Marker, org.jboss.dna.common.i18n.I18n,
+     *      java.lang.Object[])
+     */
+    public void captureWarning( Marker marker,
+                                I18n message,
+                                Object... messageParameters ) {
+        captureWarning(marker, null, message, messageParameters);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.common.monitor.ActivityMonitor#captureWarning(java.lang.Throwable, org.jboss.dna.common.i18n.I18n,
+     *      java.lang.Object[])
+     */
+    public void captureWarning( Throwable throwable,
+                                I18n message,
+                                Object... messageParameters ) {
+        captureWarning(null, throwable, message, messageParameters);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.common.monitor.ActivityMonitor#captureWarning(org.slf4j.Marker, java.lang.Throwable,
+     *      org.jboss.dna.common.i18n.I18n, java.lang.Object[])
+     */
+    public void captureWarning( Marker marker,
+                                Throwable throwable,
+                                I18n message,
+                                Object... messageParameters ) {
+        capture(Level.WARNING, marker, throwable, message, messageParameters);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
      * @see org.jboss.dna.common.monitor.ActivityMonitor#createSubtask(double)
      */
     public ActivityMonitor createSubtask( double subtaskWork ) {
-        return new SubActivityMonitor(this, subtaskWork);
+        return new SubActivityMonitor(this, activityName, activityNameParameters, subtaskWork, capturedInformation);
     }
 
     /**
@@ -130,20 +283,16 @@ public class SimpleActivityMonitor implements ActivityMonitor {
      * @see org.jboss.dna.common.monitor.ActivityMonitor#getActivityName(java.util.Locale)
      */
     public String getActivityName( Locale locale ) {
-        return activityName.text(locale == null ? Locale.getDefault() : locale, activityNameParams);
+        return activityName.text(locale, activityNameParameters);
     }
 
     /**
      * {@inheritDoc}
-     * <p>
-     * Problems must only be added by the {@link ActivityMonitor <strong>Updater</strong>}, and accessed by
-     * {@link ActivityMonitor Observers} only after the activity has been {@link #done() completed}.
-     * </p>
      * 
-     * @see org.jboss.dna.common.monitor.ActivityMonitor#getProblems()
+     * @see org.jboss.dna.common.monitor.ActivityMonitor#getStatus()
      */
-    public Problems getProblems() {
-        return problems;
+    public ActivityStatus getStatus() {
+        return getStatus(null);
     }
 
     /**
@@ -153,12 +302,11 @@ public class SimpleActivityMonitor implements ActivityMonitor {
      */
     public ActivityStatus getStatus( Locale locale ) {
         try {
-            this.lock.readLock().lock();
-            String localizedTaskName = this.taskName == null ? "" : this.taskName.text(locale, this.taskNameParams);
-            return new ActivityStatus(this.getActivityName(locale), localizedTaskName, this.worked, this.totalWork,
-                                      this.isCancelled());
+            lock.readLock().lock();
+            return new ActivityStatus(activityName, activityNameParameters, taskName, taskNameParameters, worked, totalWork,
+                                      isCancelled(), capturedInformation, locale);
         } finally {
-            this.lock.readLock().unlock();
+            lock.readLock().unlock();
         }
     }
 

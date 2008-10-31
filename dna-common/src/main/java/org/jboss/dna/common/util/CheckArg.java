@@ -588,6 +588,21 @@ public final class CheckArg {
     }
 
     /**
+     * Check that the array is empty
+     * 
+     * @param argument Array
+     * @param name The name of the argument
+     * @throws IllegalArgumentException If array is not empty
+     */
+    public static void isEmpty( Object[] argument,
+                                String name ) {
+        isNotNull(argument, name);
+        if (argument.length > 0) {
+            throw new IllegalArgumentException(CommonI18n.argumentMustBeEmpty.text(name));
+        }
+    }
+
+    /**
      * Check that the array is not empty
      * 
      * @param argument Array

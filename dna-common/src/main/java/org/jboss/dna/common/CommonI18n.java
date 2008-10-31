@@ -42,58 +42,51 @@ public final class CommonI18n {
     public static I18n i18nFieldNotStatic;
     public static I18n i18nLocalizationFileNotFound;
     public static I18n i18nLocalizationProblems;
-    public static I18n i18nRequiredToSuppliedParameterMismatch;
-
-    /**
-     * Parameters:
-     * <ol>
-     * <li>{@link I18n#id() Property}</li>
-     * <li>Localization file URL</li>
-     * </ol>
-     */
     public static I18n i18nPropertyDuplicate;
     public static I18n i18nPropertyMissing;
     public static I18n i18nPropertyUnused;
+    public static I18n i18nRequiredToSuppliedParameterMismatch;
 
     // Core-related fields
-    public static I18n argumentMayNotBeLessThan;
+    public static I18n activityMonitorBeginTask;
+    public static I18n activityMonitorStatus;
+    public static I18n argumentDidNotContainKey;
+    public static I18n argumentDidNotContainObject;
+    public static I18n argumentMayNotBeEmpty;
     public static I18n argumentMayNotBeGreaterThan;
-    public static I18n argumentMustBeGreaterThan;
-    public static I18n argumentMustBeLessThan;
-    public static I18n argumentMustBeGreaterThanOrEqualTo;
-    public static I18n argumentMustBeLessThanOrEqualTo;
+    public static I18n argumentMayNotBeLessThan;
     public static I18n argumentMayNotBeNegative;
-    public static I18n argumentMayNotBePositive;
-    public static I18n argumentMustBeNegative;
-    public static I18n argumentMustBePositive;
-    public static I18n argumentMustBeNumber;
+    public static I18n argumentMayNotBeNull;
     public static I18n argumentMayNotBeNullOrZeroLength;
     public static I18n argumentMayNotBeNullOrZeroLengthOrEmpty;
-    public static I18n argumentMayNotBeNull;
-    public static I18n argumentMustBeNull;
-    public static I18n argumentMustBeInstanceOf;
-    public static I18n argumentMustBeSameAs;
-    public static I18n argumentMustNotBeSameAs;
-    public static I18n argumentMustBeEquals;
-    public static I18n argumentMustNotBeEquals;
-    public static I18n argumentMayNotBeEmpty;
-    public static I18n argumentDidNotContainObject;
-    public static I18n argumentDidNotContainKey;
+    public static I18n argumentMayNotBePositive;
     public static I18n argumentMayNotContainNullValue;
-    public static I18n argumentMustBeOfMinimumSize;
+    public static I18n argumentMustBeEmpty;
+    public static I18n argumentMustBeEquals;
+    public static I18n argumentMustBeGreaterThan;
+    public static I18n argumentMustBeGreaterThanOrEqualTo;
+    public static I18n argumentMustBeInstanceOf;
+    public static I18n argumentMustBeLessThan;
+    public static I18n argumentMustBeLessThanOrEqualTo;
+    public static I18n argumentMustBeNegative;
+    public static I18n argumentMustBeNull;
+    public static I18n argumentMustBeNumber;
     public static I18n argumentMustBeOfMaximumSize;
+    public static I18n argumentMustBeOfMinimumSize;
+    public static I18n argumentMustBePositive;
+    public static I18n argumentMustBeSameAs;
+    public static I18n argumentMustNotBeEquals;
+    public static I18n argumentMustNotBeSameAs;
     public static I18n componentClassnameNotValid;
     public static I18n componentNotConfigured;
     public static I18n dateParsingFailure;
     public static I18n initialActivityMonitorTaskName;
     public static I18n nullActivityMonitorTaskName;
     public static I18n pathAncestorDegreeIsInvalid;
+    public static I18n pathCannotBeNormalized;
     public static I18n pathIsAlreadyAbsolute;
     public static I18n pathIsNotAbsolute;
     public static I18n pathIsNotRelative;
-    public static I18n pathCannotBeNormalized;
-    public static I18n activityMonitorBeginTask;
-    public static I18n activityMonitorStatus;
     public static I18n requiredToSuppliedParameterMismatch;
 
     static {

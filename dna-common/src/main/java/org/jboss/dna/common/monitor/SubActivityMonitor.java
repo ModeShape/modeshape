@@ -22,27 +22,26 @@
 
 package org.jboss.dna.common.monitor;
 
+import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import net.jcip.annotations.GuardedBy;
-import org.jboss.dna.common.collection.Problems;
+import net.jcip.annotations.ThreadSafe;
 import org.jboss.dna.common.i18n.I18n;
+import org.slf4j.Marker;
 
 /**
- * This class is thread-safe except when accessing or adding {@link #getProblems() problems}. Problems must only be added by the
- * {@link ActivityMonitor <strong>Updater</strong>}, and accessed by {@link ActivityMonitor Observers} only after the activity has
- * been {@link #done() completed}.
- * 
  * @author Randall Hauch
  * @author John Verhaeg
  */
-public class SubActivityMonitor implements ActivityMonitor {
+@ThreadSafe
+class SubActivityMonitor implements ActivityMonitor {
 
     @GuardedBy( "lock" )
     private I18n taskName;
     @GuardedBy( "lock" )
-    private Object[] params;
+    private Object[] taskNameParameters;
     @GuardedBy( "lock" )
     private double totalWork;
     @GuardedBy( "lock" )
@@ -52,14 +51,25 @@ public class SubActivityMonitor implements ActivityMonitor {
 
     private final double subtaskTotalInParent;
     private final ActivityMonitor parent;
+    private final I18n activityName;
+    private final Object[] activityNameParameters;
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
+    private final List<UnlocalizedActivityInfo> capturedInformation;
 
-    public SubActivityMonitor( final ActivityMonitor parent,
-                               final double subtaskTotalInParent ) {
+    SubActivityMonitor( final ActivityMonitor parent,
+                        final I18n activityName,
+                        final Object[] activityNameParameters,
+                        final double subtaskTotalInParent,
+                        List<UnlocalizedActivityInfo> capturedInformation ) {
         assert subtaskTotalInParent > 0;
         assert parent != null;
+        assert activityName != null;
+        this.activityName = activityName;
+        this.activityNameParameters = activityNameParameters;
+        assert capturedInformation != null;
         this.parent = parent;
         this.subtaskTotalInParent = subtaskTotalInParent;
+        this.capturedInformation = capturedInformation;
     }
 
     /**
@@ -74,7 +84,7 @@ public class SubActivityMonitor implements ActivityMonitor {
         try {
             this.lock.writeLock().lock();
             this.taskName = name;
-            this.params = params;
+            this.taskNameParameters = params;
             this.totalWork = totalWork;
             this.parentWorkScaleFactor = ((float)subtaskTotalInParent) / ((float)totalWork);
         } finally {
@@ -85,10 +95,144 @@ public class SubActivityMonitor implements ActivityMonitor {
     /**
      * {@inheritDoc}
      * 
+     * @see org.jboss.dna.common.monitor.ActivityMonitor#capture(org.jboss.dna.common.i18n.I18n, java.lang.Object[])
+     */
+    public void capture( I18n message,
+                         Object... parameters ) {
+        parent.capture(message, parameters);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.common.monitor.ActivityMonitor#capture(org.slf4j.Marker, org.jboss.dna.common.i18n.I18n,
+     *      java.lang.Object[])
+     */
+    public void capture( Marker marker,
+                         I18n message,
+                         Object... parameters ) {
+        parent.capture(marker, message, parameters);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.common.monitor.ActivityMonitor#captureError(java.lang.Throwable)
+     */
+    public void captureError( Throwable throwable ) {
+        parent.captureError(throwable);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.common.monitor.ActivityMonitor#captureError(org.jboss.dna.common.i18n.I18n, java.lang.Object[])
+     */
+    public void captureError( I18n message,
+                              Object... parameters ) {
+        parent.captureError(message, parameters);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.common.monitor.ActivityMonitor#captureError(org.slf4j.Marker, org.jboss.dna.common.i18n.I18n,
+     *      java.lang.Object[])
+     */
+    public void captureError( Marker marker,
+                              I18n message,
+                              Object... parameters ) {
+        parent.captureError(marker, message, parameters);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.common.monitor.ActivityMonitor#captureError(java.lang.Throwable, org.jboss.dna.common.i18n.I18n,
+     *      java.lang.Object[])
+     */
+    public void captureError( Throwable throwable,
+                              I18n message,
+                              Object... parameters ) {
+        parent.captureError(throwable, message, parameters);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.common.monitor.ActivityMonitor#captureError(org.slf4j.Marker, java.lang.Throwable,
+     *      org.jboss.dna.common.i18n.I18n, java.lang.Object[])
+     */
+    public void captureError( Marker marker,
+                              Throwable throwable,
+                              I18n message,
+                              Object... parameters ) {
+        parent.captureError(marker, throwable, message, parameters);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.common.monitor.ActivityMonitor#captureWarning(java.lang.Throwable)
+     */
+    public void captureWarning( Throwable throwable ) {
+        parent.captureWarning(throwable);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.common.monitor.ActivityMonitor#captureWarning(org.jboss.dna.common.i18n.I18n, java.lang.Object[])
+     */
+    public void captureWarning( I18n message,
+                                Object... parameters ) {
+        parent.captureWarning(message, parameters);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.common.monitor.ActivityMonitor#captureWarning(org.slf4j.Marker, org.jboss.dna.common.i18n.I18n,
+     *      java.lang.Object[])
+     */
+    public void captureWarning( Marker marker,
+                                I18n message,
+                                Object... parameters ) {
+        parent.captureWarning(marker, message, parameters);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.common.monitor.ActivityMonitor#captureWarning(java.lang.Throwable, org.jboss.dna.common.i18n.I18n,
+     *      java.lang.Object[])
+     */
+    public void captureWarning( Throwable throwable,
+                                I18n message,
+                                Object... parameters ) {
+        parent.captureWarning(throwable, message, parameters);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.common.monitor.ActivityMonitor#captureWarning(org.slf4j.Marker, java.lang.Throwable,
+     *      org.jboss.dna.common.i18n.I18n, java.lang.Object[])
+     */
+    public void captureWarning( Marker marker,
+                                Throwable throwable,
+                                I18n message,
+                                Object... parameters ) {
+        parent.captureWarning(marker, throwable, message, parameters);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
      * @see org.jboss.dna.common.monitor.ActivityMonitor#createSubtask(double)
      */
     public ActivityMonitor createSubtask( double subtaskWork ) {
-        return new SubActivityMonitor(this, subtaskWork);
+        return new SubActivityMonitor(this, activityName, activityNameParameters, subtaskWork, capturedInformation);
     }
 
     /**
@@ -138,10 +282,10 @@ public class SubActivityMonitor implements ActivityMonitor {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.common.monitor.ActivityMonitor#getProblems()
+     * @see org.jboss.dna.common.monitor.ActivityMonitor#getStatus()
      */
-    public Problems getProblems() {
-        return parent.getProblems();
+    public ActivityStatus getStatus() {
+        return getStatus(null);
     }
 
     /**
@@ -151,11 +295,11 @@ public class SubActivityMonitor implements ActivityMonitor {
      */
     public ActivityStatus getStatus( Locale locale ) {
         try {
-            this.lock.readLock().lock();
-            return new ActivityStatus(getActivityName(), this.taskName.text(locale, this.params), this.submittedToParent,
-                                      this.subtaskTotalInParent, this.isCancelled());
+            lock.readLock().lock();
+            return new ActivityStatus(activityName, activityNameParameters, taskName, taskNameParameters, submittedToParent,
+                                      subtaskTotalInParent, isCancelled(), capturedInformation, locale);
         } finally {
-            this.lock.readLock().unlock();
+            lock.readLock().unlock();
         }
     }
 

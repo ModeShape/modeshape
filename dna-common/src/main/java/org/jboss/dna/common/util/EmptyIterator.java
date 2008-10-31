@@ -19,21 +19,41 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.jboss.dna.common.i18n;
+package org.jboss.dna.common.util;
+
+import java.util.Iterator;
+import java.util.NoSuchElementException;
 
 /**
- * @author Randall Hauch
+ * @author jverhaeg
+ * @param <T> some type
  */
-public class MockI18n {
+public final class EmptyIterator<T> implements Iterator<T> {
 
-    static {
-        try {
-            I18n.initialize(MockI18n.class);
-        } catch (final Exception err) {
-            System.err.println(err);
-        }
+    /**
+     * {@inheritDoc}
+     * 
+     * @see java.util.Iterator#hasNext()
+     */
+    public boolean hasNext() {
+        return false;
     }
 
-    public static I18n noPlaceholders;
-    public static I18n passthrough;
+    /**
+     * {@inheritDoc}
+     * 
+     * @see java.util.Iterator#next()
+     */
+    public T next() {
+        throw new NoSuchElementException();
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see java.util.Iterator#remove()
+     */
+    public void remove() {
+        throw new UnsupportedOperationException();
+    }
 }

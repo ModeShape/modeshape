@@ -90,7 +90,7 @@ public class XmlSequencer implements StreamSequencer {
             reader.parse(new InputSource(stream));
         } catch (Exception error) {
             context.getLogger(getClass()).error(error, XmlSequencerI18n.fatalErrorSequencingXmlDocument, error);
-            monitor.getProblems().addError(error, XmlSequencerI18n.fatalErrorSequencingXmlDocument, error);
+            monitor.captureError(error, XmlSequencerI18n.fatalErrorSequencingXmlDocument, error);
         } finally {
             monitor.done();
         }
@@ -361,7 +361,7 @@ public class XmlSequencer implements StreamSequencer {
         @Override
         public void error( SAXParseException error ) {
             context.getLogger(XmlSequencer.class).error(error, XmlSequencerI18n.errorSequencingXmlDocument, error);
-            monitor.getProblems().addError(error, XmlSequencerI18n.errorSequencingXmlDocument, error);
+            monitor.captureError(error, XmlSequencerI18n.errorSequencingXmlDocument, error);
         }
 
         /**
@@ -397,7 +397,7 @@ public class XmlSequencer implements StreamSequencer {
         @Override
         public void fatalError( SAXParseException error ) {
             context.getLogger(XmlSequencer.class).error(error, XmlSequencerI18n.fatalErrorSequencingXmlDocument, error);
-            monitor.getProblems().addError(error, XmlSequencerI18n.fatalErrorSequencingXmlDocument, error);
+            monitor.captureError(error, XmlSequencerI18n.fatalErrorSequencingXmlDocument, error);
         }
 
         private Name getDefaultPrimaryType() {
@@ -688,7 +688,7 @@ public class XmlSequencer implements StreamSequencer {
         @Override
         public void warning( SAXParseException warning ) {
             context.getLogger(XmlSequencer.class).warn(warning, XmlSequencerI18n.warningSequencingXmlDocument);
-            monitor.getProblems().addWarning(warning, XmlSequencerI18n.warningSequencingXmlDocument, warning);
+            monitor.captureWarning(warning, XmlSequencerI18n.warningSequencingXmlDocument, warning);
         }
     }
 

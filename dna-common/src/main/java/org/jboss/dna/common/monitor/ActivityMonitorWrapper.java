@@ -23,8 +23,8 @@
 package org.jboss.dna.common.monitor;
 
 import java.util.Locale;
-import org.jboss.dna.common.collection.Problems;
 import org.jboss.dna.common.i18n.I18n;
+import org.slf4j.Marker;
 
 /**
  * The thread safety of this class is determined by the delegate.
@@ -49,6 +49,140 @@ public class ActivityMonitorWrapper implements ActivityMonitor {
                            I18n name,
                            Object... params ) {
         this.delegate.beginTask(totalWork, name, params);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.common.monitor.ActivityMonitor#capture(org.jboss.dna.common.i18n.I18n, java.lang.Object[])
+     */
+    public void capture( I18n message,
+                         Object... parameters ) {
+        delegate.capture(message, parameters);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.common.monitor.ActivityMonitor#capture(org.slf4j.Marker, org.jboss.dna.common.i18n.I18n,
+     *      java.lang.Object[])
+     */
+    public void capture( Marker marker,
+                         I18n message,
+                         Object... parameters ) {
+        delegate.capture(marker, message, parameters);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.common.monitor.ActivityMonitor#captureError(java.lang.Throwable)
+     */
+    public void captureError( Throwable throwable ) {
+        delegate.captureError(throwable);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.common.monitor.ActivityMonitor#captureError(org.jboss.dna.common.i18n.I18n, java.lang.Object[])
+     */
+    public void captureError( I18n message,
+                              Object... parameters ) {
+        delegate.captureError(message, parameters);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.common.monitor.ActivityMonitor#captureError(org.slf4j.Marker, org.jboss.dna.common.i18n.I18n,
+     *      java.lang.Object[])
+     */
+    public void captureError( Marker marker,
+                              I18n message,
+                              Object... parameters ) {
+        delegate.captureError(marker, message, parameters);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.common.monitor.ActivityMonitor#captureError(java.lang.Throwable, org.jboss.dna.common.i18n.I18n,
+     *      java.lang.Object[])
+     */
+    public void captureError( Throwable throwable,
+                              I18n message,
+                              Object... parameters ) {
+        delegate.captureError(throwable, message, parameters);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.common.monitor.ActivityMonitor#captureError(org.slf4j.Marker, java.lang.Throwable,
+     *      org.jboss.dna.common.i18n.I18n, java.lang.Object[])
+     */
+    public void captureError( Marker marker,
+                              Throwable throwable,
+                              I18n message,
+                              Object... parameters ) {
+        delegate.captureError(marker, throwable, message, parameters);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.common.monitor.ActivityMonitor#captureWarning(java.lang.Throwable)
+     */
+    public void captureWarning( Throwable throwable ) {
+        delegate.captureWarning(throwable);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.common.monitor.ActivityMonitor#captureWarning(org.jboss.dna.common.i18n.I18n, java.lang.Object[])
+     */
+    public void captureWarning( I18n message,
+                                Object... parameters ) {
+        delegate.captureWarning(message, parameters);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.common.monitor.ActivityMonitor#captureWarning(org.slf4j.Marker, org.jboss.dna.common.i18n.I18n,
+     *      java.lang.Object[])
+     */
+    public void captureWarning( Marker marker,
+                                I18n message,
+                                Object... parameters ) {
+        delegate.captureWarning(marker, message, parameters);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.common.monitor.ActivityMonitor#captureWarning(java.lang.Throwable, org.jboss.dna.common.i18n.I18n,
+     *      java.lang.Object[])
+     */
+    public void captureWarning( Throwable throwable,
+                                I18n message,
+                                Object... parameters ) {
+        delegate.captureWarning(throwable, message, parameters);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.common.monitor.ActivityMonitor#captureWarning(org.slf4j.Marker, java.lang.Throwable,
+     *      org.jboss.dna.common.i18n.I18n, java.lang.Object[])
+     */
+    public void captureWarning( Marker marker,
+                                Throwable throwable,
+                                I18n message,
+                                Object... parameters ) {
+        delegate.captureWarning(marker, throwable, message, parameters);
     }
 
     /**
@@ -90,10 +224,10 @@ public class ActivityMonitorWrapper implements ActivityMonitor {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.common.monitor.ActivityMonitor#getProblems()
+     * @see org.jboss.dna.common.monitor.ActivityMonitor#getStatus()
      */
-    public Problems getProblems() {
-        return delegate.getProblems();
+    public ActivityStatus getStatus() {
+        return delegate.getStatus();
     }
 
     /**

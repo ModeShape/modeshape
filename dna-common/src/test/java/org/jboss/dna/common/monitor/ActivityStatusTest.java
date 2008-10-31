@@ -25,6 +25,11 @@ package org.jboss.dna.common.monitor;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.number.IsCloseTo.closeTo;
 import static org.junit.Assert.assertThat;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+import org.jboss.dna.common.i18n.MockI18n;
+import org.jboss.dna.common.util.Logger;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -34,15 +39,53 @@ import org.junit.Test;
  */
 public class ActivityStatusTest {
 
+    private static final String VALID_ACTIVITY_NAME = "Reading from file X";
+    private static final String VALID_TASK_NAME = "Checking for file";
+
     private ActivityStatus status;
-    private String validActivityName;
-    private String validTaskName;
+    private List<UnlocalizedActivityInfo> infos;
 
     @Before
     public void beforeEach() {
-        this.validActivityName = "Reading from file X";
-        this.validTaskName = "Checking for file";
-        this.status = new ActivityStatus(this.validActivityName, this.validTaskName, 10.0d, false);
+        infos = new ArrayList<UnlocalizedActivityInfo>();
+        infos.add(new UnlocalizedActivityInfo(Logger.Level.INFO, null, null, null, null, null, null));
+        this.status = new ActivityStatus(MockI18n.passthrough, new Object[] {VALID_ACTIVITY_NAME}, MockI18n.passthrough,
+                                         new Object[] {VALID_TASK_NAME}, 10.0d, false, infos, Locale.US);
+    }
+
+    @Test( expected = AssertionError.class )
+    public void shouldNotAllowNoActivityName() {
+        new ActivityStatus(null, new Object[] {VALID_ACTIVITY_NAME}, MockI18n.passthrough, new Object[] {VALID_TASK_NAME}, 10.0d,
+                           false, infos, Locale.US);
+    }
+
+    @Test
+    public void shouldAllowNoActivityNameParameters() {
+        new ActivityStatus(MockI18n.noPlaceholders, null, MockI18n.passthrough, new Object[] {VALID_TASK_NAME}, 10.0d, false,
+                           infos, Locale.US);
+    }
+
+    @Test
+    public void shouldAllowNoTaskName() {
+        new ActivityStatus(MockI18n.passthrough, new Object[] {VALID_ACTIVITY_NAME}, null, null, 10.0d, false, infos, Locale.US);
+    }
+
+    @Test( expected = AssertionError.class )
+    public void shouldNotAllowTaskNameParametersWithNoTaskName() {
+        new ActivityStatus(MockI18n.passthrough, new Object[] {VALID_ACTIVITY_NAME}, null, new Object[] {VALID_TASK_NAME}, 10.0d,
+                           false, infos, Locale.US);
+    }
+
+    @Test( expected = AssertionError.class )
+    public void shouldNotAllowNoCapturedActivityInformation() {
+        new ActivityStatus(MockI18n.passthrough, new Object[] {VALID_ACTIVITY_NAME}, MockI18n.passthrough,
+                           new Object[] {VALID_TASK_NAME}, 10.0d, false, null, Locale.US);
+    }
+
+    @Test
+    public void shouldAllowNoLocale() {
+        new ActivityStatus(MockI18n.passthrough, new Object[] {VALID_ACTIVITY_NAME}, MockI18n.passthrough,
+                           new Object[] {VALID_TASK_NAME}, 10.0d, false, infos, null);
     }
 
     @Test
@@ -60,7 +103,21 @@ public class ActivityStatusTest {
 
     @Test
     public void shouldHaveToStringThatIncludesPercentage() {
-        // System.out.println(this.status);
         assertThat(this.status.toString().indexOf("10.0 %") > 0, is(true));
+    }
+
+    @Test
+    public void shouldProvideCapturedActivityInforation() {
+        assertThat(status.getCapturedInformation().length > 0, is(true));
+    }
+
+    @Test
+    public void shouldProvideActivityName() {
+        assertThat(status.getActivityName(), is(VALID_ACTIVITY_NAME));
+    }
+
+    @Test
+    public void shouldProvideTaskName() {
+        assertThat(status.getTaskName(), is(VALID_TASK_NAME));
     }
 }

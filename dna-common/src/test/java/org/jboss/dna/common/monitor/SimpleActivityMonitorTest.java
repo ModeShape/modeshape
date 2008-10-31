@@ -28,13 +28,18 @@ import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsSame.sameInstance;
 import static org.hamcrest.number.IsCloseTo.closeTo;
 import static org.junit.Assert.assertThat;
+import static org.mockito.Mockito.stub;
 import java.util.Locale;
 import java.util.Set;
 import org.jboss.dna.common.CommonI18n;
 import org.jboss.dna.common.i18n.I18n;
 import org.jboss.dna.common.i18n.MockI18n;
+import org.jboss.dna.common.util.EmptyIterator;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.MockitoAnnotations;
+import org.mockito.MockitoAnnotations.Mock;
+import org.slf4j.Marker;
 
 /**
  * @author Randall Hauch
@@ -45,9 +50,13 @@ public class SimpleActivityMonitorTest {
     private static final String VALID_TASK_NAME = "Checking for file";
 
     private ActivityMonitor monitor;
+    @Mock
+    Marker marker;
 
     @Before
     public void beforeEach() {
+        MockitoAnnotations.initMocks(this);
+        stub(marker.iterator()).toReturn(new EmptyIterator<Marker>());
         this.monitor = new SimpleActivityMonitor(MockI18n.passthrough, "Reading from file X");
     }
 
@@ -60,12 +69,12 @@ public class SimpleActivityMonitorTest {
     public void shouldReturnActivityStatusWithEmptyMessageBeforeTaskIsBegun() {
         ActivityStatus status = monitor.getStatus(Locale.FRANCE);
         assertThat(status, is(notNullValue()));
-        assertThat(status.getMessage(), is(""));
+        assertThat(status.getTaskName(), is(""));
         assertThat(status.getPercentWorked(), is(closeTo(0.0d, 0.001d)));
 
         status = monitor.getStatus(null);
         assertThat(status, is(notNullValue()));
-        assertThat(status.getMessage(), is(""));
+        assertThat(status.getTaskName(), is(""));
         assertThat(status.getPercentWorked(), is(closeTo(0.0d, 0.001d)));
     }
 
@@ -75,22 +84,22 @@ public class SimpleActivityMonitorTest {
         monitor.worked(10.0d);
         ActivityStatus status = monitor.getStatus(Locale.FRANCE);
         assertThat(status, is(notNullValue()));
-        assertThat(status.getMessage(), is("examinez le message"));
+        assertThat(status.getTaskName(), is("examinez le message"));
         assertThat(status.getPercentWorked(), is(closeTo(10.0d, 0.001d)));
 
         status = monitor.getStatus(Locale.ENGLISH);
         assertThat(status, is(notNullValue()));
-        assertThat(status.getMessage(), is("test task"));
+        assertThat(status.getTaskName(), is("test task"));
         assertThat(status.getPercentWorked(), is(closeTo(10.0d, 0.001d)));
 
         status = monitor.getStatus(Locale.getDefault());
         assertThat(status, is(notNullValue()));
-        assertThat(status.getMessage(), is("test task"));
+        assertThat(status.getTaskName(), is("test task"));
         assertThat(status.getPercentWorked(), is(closeTo(10.0d, 0.001d)));
 
         status = monitor.getStatus(null);
         assertThat(status, is(notNullValue()));
-        assertThat(status.getMessage(), is("test task"));
+        assertThat(status.getTaskName(), is("test task"));
         assertThat(status.getPercentWorked(), is(closeTo(10.0d, 0.001d)));
     }
 
@@ -100,22 +109,22 @@ public class SimpleActivityMonitorTest {
         monitor.worked(10.0d);
         ActivityStatus status = monitor.getStatus(Locale.FRANCE);
         assertThat(status, is(notNullValue()));
-        assertThat(status.getMessage(), is("examinez le message 2"));
+        assertThat(status.getTaskName(), is("examinez le message 2"));
         assertThat(status.getPercentWorked(), is(closeTo(10.0d, 0.001d)));
 
         status = monitor.getStatus(Locale.ENGLISH);
         assertThat(status, is(notNullValue()));
-        assertThat(status.getMessage(), is("second test task 2"));
+        assertThat(status.getTaskName(), is("second test task 2"));
         assertThat(status.getPercentWorked(), is(closeTo(10.0d, 0.001d)));
 
         status = monitor.getStatus(Locale.getDefault());
         assertThat(status, is(notNullValue()));
-        assertThat(status.getMessage(), is("second test task 2"));
+        assertThat(status.getTaskName(), is("second test task 2"));
         assertThat(status.getPercentWorked(), is(closeTo(10.0d, 0.001d)));
 
         status = monitor.getStatus(null);
         assertThat(status, is(notNullValue()));
-        assertThat(status.getMessage(), is("second test task 2"));
+        assertThat(status.getTaskName(), is("second test task 2"));
         assertThat(status.getPercentWorked(), is(closeTo(10.0d, 0.001d)));
     }
 
@@ -124,7 +133,7 @@ public class SimpleActivityMonitorTest {
         ActivityStatus status = monitor.getStatus(null);
         assertThat(status, is(notNullValue()));
         assertThat(status.getActivityName(), is(monitor.getActivityName()));
-        assertThat(status.getMessage(), is(""));
+        assertThat(status.getTaskName(), is(""));
         assertThat(status.getPercentWorked(), is(closeTo(0.0d, 0.001d)));
     }
 
@@ -134,7 +143,7 @@ public class SimpleActivityMonitorTest {
         ActivityStatus status = monitor.getStatus(null);
         assertThat(status, is(notNullValue()));
         assertThat(status.getActivityName(), is(monitor.getActivityName()));
-        assertThat(status.getMessage(), is(VALID_TASK_NAME));
+        assertThat(status.getTaskName(), is(VALID_TASK_NAME));
         assertThat(status.getPercentWorked(), is(closeTo(0.0d, 0.001d)));
     }
 
@@ -144,7 +153,7 @@ public class SimpleActivityMonitorTest {
         ActivityStatus status = monitor.getStatus(null);
         assertThat(status, is(notNullValue()));
         assertThat(status.getActivityName(), is(monitor.getActivityName()));
-        assertThat(status.getMessage(), is(VALID_TASK_NAME));
+        assertThat(status.getTaskName(), is(VALID_TASK_NAME));
         assertThat(status.getPercentWorked(), is(closeTo(0.0d, 0.001d)));
         for (int i = 1; i <= 9; ++i) {
             this.monitor.worked(100);
@@ -152,7 +161,7 @@ public class SimpleActivityMonitorTest {
             status = monitor.getStatus(null);
             assertThat(status, is(notNullValue()));
             assertThat(status.getActivityName(), is(monitor.getActivityName()));
-            assertThat(status.getMessage(), is(VALID_TASK_NAME));
+            assertThat(status.getTaskName(), is(VALID_TASK_NAME));
             assertThat(status.getPercentWorked(), is(closeTo(10 * i, 0.001d)));
             assertThat(status.isDone(), is(false));
         }
@@ -161,7 +170,7 @@ public class SimpleActivityMonitorTest {
         status = monitor.getStatus(null);
         assertThat(status, is(notNullValue()));
         assertThat(status.getActivityName(), is(monitor.getActivityName()));
-        assertThat(status.getMessage(), is(VALID_TASK_NAME));
+        assertThat(status.getTaskName(), is(VALID_TASK_NAME));
         assertThat(status.getPercentWorked(), is(closeTo(100, 0.001d)));
         assertThat(status.isDone(), is(true));
     }
@@ -172,7 +181,7 @@ public class SimpleActivityMonitorTest {
         ActivityStatus status = monitor.getStatus(null);
         assertThat(status, is(notNullValue()));
         assertThat(status.getActivityName(), is(monitor.getActivityName()));
-        assertThat(status.getMessage(), is(VALID_TASK_NAME));
+        assertThat(status.getTaskName(), is(VALID_TASK_NAME));
         assertThat(status.getPercentWorked(), is(closeTo(0.0d, 0.001d)));
 
         // Create subtasks ...
@@ -192,7 +201,7 @@ public class SimpleActivityMonitorTest {
                 status = subtask.getStatus(null);
                 assertThat(status, is(notNullValue()));
                 assertThat(status.getActivityName(), is(monitor.getActivityName()));
-                assertThat(status.getMessage(), is(subtaskName));
+                assertThat(status.getTaskName(), is(subtaskName));
                 assertThat(status.getPercentWorked(), is(closeTo(10 * j, 0.001d)));
                 assertThat(status.isDone(), is(j == 10));
 
@@ -204,7 +213,7 @@ public class SimpleActivityMonitorTest {
             status = monitor.getStatus(null);
             assertThat(status, is(notNullValue()));
             assertThat(status.getActivityName(), is(monitor.getActivityName()));
-            assertThat(status.getMessage(), is(VALID_TASK_NAME));
+            assertThat(status.getTaskName(), is(VALID_TASK_NAME));
             assertThat(status.getPercentWorked(), is(closeTo(10 * i, 0.001d)));
             assertThat(status.isDone(), is(false));
         }
@@ -214,7 +223,7 @@ public class SimpleActivityMonitorTest {
         status = monitor.getStatus(null);
         assertThat(status, is(notNullValue()));
         assertThat(status.getActivityName(), is(monitor.getActivityName()));
-        assertThat(status.getMessage(), is(VALID_TASK_NAME));
+        assertThat(status.getTaskName(), is(VALID_TASK_NAME));
         assertThat(status.getPercentWorked(), is(closeTo(100, 0.001d)));
         assertThat(status.isDone(), is(true));
     }
@@ -225,7 +234,7 @@ public class SimpleActivityMonitorTest {
         ActivityStatus status = monitor.getStatus(null);
         assertThat(status, is(notNullValue()));
         assertThat(status.getActivityName(), is(monitor.getActivityName()));
-        assertThat(status.getMessage(), is(VALID_TASK_NAME));
+        assertThat(status.getTaskName(), is(VALID_TASK_NAME));
         assertThat(status.getPercentWorked(), is(closeTo(0.0d, 0.001d)));
         assertThat(status.isDone(), is(false));
 
@@ -237,7 +246,7 @@ public class SimpleActivityMonitorTest {
             status = monitor.getStatus(null);
             assertThat(status, is(notNullValue()));
             assertThat(status.getActivityName(), is(monitor.getActivityName()));
-            assertThat(status.getMessage(), is(VALID_TASK_NAME));
+            assertThat(status.getTaskName(), is(VALID_TASK_NAME));
             assertThat(status.getPercentWorked(), is(closeTo(100, 0.001d)));
             assertThat(status.isDone(), is(true));
         }
@@ -257,7 +266,7 @@ public class SimpleActivityMonitorTest {
         ActivityStatus status = monitor.getStatus(null);
         assertThat(status, is(notNullValue()));
         assertThat(status.getActivityName(), is(monitor.getActivityName()));
-        assertThat(status.getMessage(), is(VALID_TASK_NAME));
+        assertThat(status.getTaskName(), is(VALID_TASK_NAME));
         assertThat(status.getPercentWorked(), is(closeTo(0.0d, 0.001d)));
         for (int i = 1; i <= 9; ++i) {
             monitor.worked(100);
@@ -266,7 +275,7 @@ public class SimpleActivityMonitorTest {
             status = monitor.getStatus(null);
             assertThat(status, is(notNullValue()));
             assertThat(status.getActivityName(), is(monitor.getActivityName()));
-            assertThat(status.getMessage(), is(VALID_TASK_NAME));
+            assertThat(status.getTaskName(), is(VALID_TASK_NAME));
             assertThat(status.getPercentWorked(), is(closeTo(10 * i, 0.001d)));
             assertThat(status.isDone(), is(false));
 
@@ -279,7 +288,7 @@ public class SimpleActivityMonitorTest {
         status = monitor.getStatus(null);
         assertThat(status, is(notNullValue()));
         assertThat(status.getActivityName(), is(monitor.getActivityName()));
-        assertThat(status.getMessage(), is(VALID_TASK_NAME));
+        assertThat(status.getTaskName(), is(VALID_TASK_NAME));
         assertThat(status.getPercentWorked(), is(closeTo(100, 0.001d)));
         assertThat(status.isDone(), is(true));
 
@@ -291,7 +300,7 @@ public class SimpleActivityMonitorTest {
         ActivityStatus status = monitor.getStatus(null);
         assertThat(status, is(notNullValue()));
         assertThat(status.getActivityName(), is(monitor.getActivityName()));
-        assertThat(status.getMessage(), is(VALID_TASK_NAME));
+        assertThat(status.getTaskName(), is(VALID_TASK_NAME));
         assertThat(status.getPercentWorked(), is(closeTo(0.0d, 0.001d)));
         for (int i = 1; i <= 9; ++i) {
             monitor.worked(100);
@@ -300,7 +309,7 @@ public class SimpleActivityMonitorTest {
             status = monitor.getStatus(null);
             assertThat(status, is(notNullValue()));
             assertThat(status.getActivityName(), is(monitor.getActivityName()));
-            assertThat(status.getMessage(), is(VALID_TASK_NAME));
+            assertThat(status.getTaskName(), is(VALID_TASK_NAME));
             assertThat(status.getPercentWorked(), is(closeTo(10 * i, 0.001d)));
             assertThat(status.isDone(), is(false));
 
@@ -313,18 +322,94 @@ public class SimpleActivityMonitorTest {
         status = monitor.getStatus(null);
         assertThat(status, is(notNullValue()));
         assertThat(status.getActivityName(), is(monitor.getActivityName()));
-        assertThat(status.getMessage(), is(VALID_TASK_NAME));
+        assertThat(status.getTaskName(), is(VALID_TASK_NAME));
         assertThat(status.getPercentWorked(), is(closeTo(100, 0.001d)));
         assertThat(status.isDone(), is(true));
         assertThat(monitor.isCancelled(), is(true));
     }
 
     @Test
-    public void shouldRecordProblems() {
-        monitor.beginTask(1000, MockI18n.passthrough, VALID_TASK_NAME);
-        monitor.getProblems().addWarning(MockI18n.passthrough);
-        monitor.done();
-        assertThat(monitor.getProblems().hasWarnings(), is(true));
+    public void shouldAllowCaptureInformation() {
+        monitor.capture(MockI18n.passthrough, "Message");
+        assertThat(monitor.getStatus(Locale.getDefault()).getCapturedInformation().length > 0, is(true));
+    }
+
+    @Test
+    public void shouldAllowCaptureInformationWithNoMessage() {
+        monitor.capture(null);
+        assertThat(monitor.getStatus(Locale.getDefault()).getCapturedInformation().length > 0, is(true));
+    }
+
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldNotAllowCaptureInformationWithNoMessageAndMessageParameters() {
+        monitor.capture(null, "message");
+        assertThat(monitor.getStatus(Locale.getDefault()).getCapturedInformation().length > 0, is(true));
+    }
+
+    @Test
+    public void shouldAllowCaptureInformationWithMarker() {
+        monitor.capture(marker, null);
+        assertThat(monitor.getStatus(Locale.getDefault()).getCapturedInformation().length > 0, is(true));
+    }
+
+    @Test
+    public void shouldAllowCaptureError() {
+        monitor.captureError(MockI18n.passthrough, "Error");
+        assertThat(monitor.getStatus(Locale.getDefault()).getCapturedInformation().length > 0, is(true));
+    }
+
+    @Test
+    public void shouldAllowCaptureErrorWithNoMessage() {
+        monitor.captureError(null);
+        assertThat(monitor.getStatus(Locale.getDefault()).getCapturedInformation().length > 0, is(true));
+    }
+
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldNotAllowCaptureErrorWithNoMessageAndMessageParameters() {
+        monitor.captureError(null, "Error");
+        assertThat(monitor.getStatus(Locale.getDefault()).getCapturedInformation().length > 0, is(true));
+    }
+
+    @Test
+    public void shouldAllowCaptureErrorWithMarker() {
+        monitor.captureError(marker, null);
+        assertThat(monitor.getStatus(Locale.getDefault()).getCapturedInformation().length > 0, is(true));
+    }
+
+    @Test
+    public void shouldAllowCaptureErrorWithThrowable() {
+        monitor.captureError(new Throwable());
+        assertThat(monitor.getStatus(Locale.getDefault()).getCapturedInformation().length > 0, is(true));
+    }
+
+    @Test
+    public void shouldAllowCaptureWarning() {
+        monitor.captureWarning(MockI18n.passthrough, "Warning");
+        assertThat(monitor.getStatus(Locale.getDefault()).getCapturedInformation().length > 0, is(true));
+    }
+
+    @Test
+    public void shouldAllowCaptureWarningWithNoMessage() {
+        monitor.captureWarning(null);
+        assertThat(monitor.getStatus(Locale.getDefault()).getCapturedInformation().length > 0, is(true));
+    }
+
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldNotAllowCaptureWarningWithNoMessageAndMessageParameters() {
+        monitor.captureWarning(null, "Warning");
+        assertThat(monitor.getStatus(Locale.getDefault()).getCapturedInformation().length > 0, is(true));
+    }
+
+    @Test
+    public void shouldAllowCaptureWarningWithMarker() {
+        monitor.captureWarning(marker, null);
+        assertThat(monitor.getStatus(Locale.getDefault()).getCapturedInformation().length > 0, is(true));
+    }
+
+    @Test
+    public void shouldAllowCaptureWarningWithThrowable() {
+        monitor.captureWarning(new Throwable());
+        assertThat(monitor.getStatus(Locale.getDefault()).getCapturedInformation().length > 0, is(true));
     }
 
     public static class I18nMessages {

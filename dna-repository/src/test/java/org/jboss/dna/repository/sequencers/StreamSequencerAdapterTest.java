@@ -35,9 +35,9 @@ import java.util.Set;
 import javax.jcr.Node;
 import javax.jcr.Session;
 import javax.jcr.observation.Event;
-import org.jboss.dna.common.collection.Problem;
 import org.jboss.dna.common.jcr.AbstractJcrRepositoryTest;
 import org.jboss.dna.common.monitor.ActivityMonitor;
+import org.jboss.dna.common.monitor.CapturedActivityInfo;
 import org.jboss.dna.common.monitor.RecordingActivityMonitor;
 import org.jboss.dna.graph.properties.NamespaceRegistry;
 import org.jboss.dna.graph.properties.Path;
@@ -129,7 +129,7 @@ public class StreamSequencerAdapterTest extends AbstractJcrRepositoryTest {
         }
     }
 
-    protected void testSequencer( final StreamSequencer sequencer ) throws Exception {
+    protected void testSequencer( final StreamSequencer sequencer ) throws Throwable {
         StreamSequencer streamSequencer = new StreamSequencer() {
 
             public void sequence( InputStream stream,
@@ -139,7 +139,7 @@ public class StreamSequencerAdapterTest extends AbstractJcrRepositoryTest {
                 try {
                     sequencer.sequence(stream, output, context, activityMonitor);
                 } catch (AssertionError err) {
-                    activityMonitor.getProblems().addError(err, null);
+                    activityMonitor.captureError(err);
                 }
             }
         };
@@ -155,8 +155,8 @@ public class StreamSequencerAdapterTest extends AbstractJcrRepositoryTest {
         outputPaths.add(new RepositoryNodePath(repositoryWorkspaceName, outputNode.getPath()));
         sequencerOutput.setProperty("alpha/beta", "isSomething", true);
         adapter.execute(inputNode, "sequencedProperty", nodeChange, outputPaths, context, activityMonitor);
-        for (Problem problem : activityMonitor.getProblems()) {
-            throw (AssertionError)problem.getThrowable();
+        for (CapturedActivityInfo info : activityMonitor.getStatus().getCapturedInformation()) {
+            if (info.isError()) throw info.getThrowable();
         }
     }
 
@@ -375,7 +375,7 @@ public class StreamSequencerAdapterTest extends AbstractJcrRepositoryTest {
     }
 
     @Test
-    public void shouldPassNonNullInputStreamToSequencer() throws Exception {
+    public void shouldPassNonNullInputStreamToSequencer() throws Throwable {
         testSequencer(new StreamSequencer() {
 
             public void sequence( InputStream stream,
@@ -388,7 +388,7 @@ public class StreamSequencerAdapterTest extends AbstractJcrRepositoryTest {
     }
 
     @Test
-    public void shouldPassNonNullSequencerOutputToSequencer() throws Exception {
+    public void shouldPassNonNullSequencerOutputToSequencer() throws Throwable {
         testSequencer(new StreamSequencer() {
 
             public void sequence( InputStream stream,
@@ -401,7 +401,7 @@ public class StreamSequencerAdapterTest extends AbstractJcrRepositoryTest {
     }
 
     @Test
-    public void shouldPassNonNullSequencerContextToSequencer() throws Exception {
+    public void shouldPassNonNullSequencerContextToSequencer() throws Throwable {
         testSequencer(new StreamSequencer() {
 
             public void sequence( InputStream stream,
@@ -414,7 +414,7 @@ public class StreamSequencerAdapterTest extends AbstractJcrRepositoryTest {
     }
 
     @Test
-    public void shouldPassNonNullActivityMonitorToSequencer() throws Exception {
+    public void shouldPassNonNullActivityMonitorToSequencer() throws Throwable {
         testSequencer(new StreamSequencer() {
 
             public void sequence( InputStream stream,
