@@ -54,7 +54,6 @@ import org.jboss.dna.common.component.ClassLoaderFactory;
 import org.jboss.dna.common.component.StandardClassLoaderFactory;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.common.util.Logger;
-import org.jboss.dna.common.util.StringUtil;
 import org.jboss.dna.repository.RepositoryI18n;
 import org.jboss.dna.repository.services.AbstractServiceAdministrator;
 import org.jboss.dna.repository.services.AdministeredService;
@@ -76,7 +75,8 @@ import org.jboss.dna.repository.services.ServiceAdministrator;
 @ThreadSafe
 public class RuleService implements AdministeredService {
 
-    protected static final ClassLoaderFactory DEFAULT_CLASSLOADER_FACTORY = new StandardClassLoaderFactory(RuleService.class.getClassLoader());
+    protected static final ClassLoaderFactory DEFAULT_CLASSLOADER_FACTORY = new StandardClassLoaderFactory(
+                                                                                                           RuleService.class.getClassLoader());
 
     /**
      * The administrative component for this service.
@@ -110,7 +110,8 @@ public class RuleService implements AdministeredService {
         /**
          * {@inheritDoc}
          */
-        public boolean awaitTermination( long timeout, TimeUnit unit ) throws InterruptedException {
+        public boolean awaitTermination( long timeout,
+                                         TimeUnit unit ) throws InterruptedException {
             return doAwaitTermination(timeout, unit);
         }
 
@@ -126,7 +127,8 @@ public class RuleService implements AdministeredService {
 
     /**
      * Create a new rule service, configured with no rule sets. Upon construction, the system is
-     * {@link ServiceAdministrator#isPaused() paused} and must be configured and then {@link ServiceAdministrator#start() started}.
+     * {@link ServiceAdministrator#isPaused() paused} and must be configured and then {@link ServiceAdministrator#start() started}
+     * .
      */
     public RuleService() {
         this.logger = Logger.getLogger(this.getClass());
@@ -189,7 +191,7 @@ public class RuleService implements AdministeredService {
      * @return true if the rule set was added, or false if the rule set was not added (because it wasn't necessary)
      * @throws IllegalArgumentException if <code>ruleSet</code> is null
      * @throws InvalidRuleSetException if the supplied rule set is invalid, incomplete, incorrectly defined, or uses a JSR-94
-     * service provider that cannot be found
+     *         service provider that cannot be found
      * @see #updateRuleSet(RuleSet)
      * @see #removeRuleSet(String)
      */
@@ -211,7 +213,10 @@ public class RuleService implements AdministeredService {
             // Now register a new execution set ...
             RuleAdministrator ruleAdmin = ruleServiceProvider.getRuleAdministrator();
             if (ruleAdmin == null) {
-                throw new InvalidRuleSetException(RepositoryI18n.unableToObtainJsr94RuleAdministrator.text(providerUri, ruleSet.getComponentClassname(), ruleSetName));
+                throw new InvalidRuleSetException(
+                                                  RepositoryI18n.unableToObtainJsr94RuleAdministrator.text(providerUri,
+                                                                                                           ruleSet.getComponentClassname(),
+                                                                                                           ruleSetName));
             }
 
             // Is there is an existing rule set and, if so, whether it has changed ...
@@ -264,9 +269,15 @@ public class RuleService implements AdministeredService {
         } catch (InvalidRuleSetException e) {
             throw e;
         } catch (ConfigurationException t) {
-            throw new InvalidRuleSetException(RepositoryI18n.unableToObtainJsr94RuleAdministrator.text(providerUri, ruleSet.getComponentClassname(), ruleSetName));
+            throw new InvalidRuleSetException(
+                                              RepositoryI18n.unableToObtainJsr94RuleAdministrator.text(providerUri,
+                                                                                                       ruleSet.getComponentClassname(),
+                                                                                                       ruleSetName));
         } catch (RemoteException t) {
-            throw new InvalidRuleSetException(RepositoryI18n.errorUsingJsr94RuleAdministrator.text(providerUri, ruleSet.getComponentClassname(), ruleSetName));
+            throw new InvalidRuleSetException(
+                                              RepositoryI18n.errorUsingJsr94RuleAdministrator.text(providerUri,
+                                                                                                   ruleSet.getComponentClassname(),
+                                                                                                   ruleSetName));
         } catch (IOException t) {
             throw new InvalidRuleSetException(RepositoryI18n.errorReadingRulesAndProperties.text(ruleSetName));
         } catch (RuleExecutionSetDeregistrationException t) {
@@ -285,7 +296,7 @@ public class RuleService implements AdministeredService {
      * @param ruleSet the rule set to be updated
      * @return true if the rule set was updated, or false if the rule set was not updated (because it wasn't necessary)
      * @throws InvalidRuleSetException if the supplied rule set is invalid, incomplete, incorrectly defined, or uses a JSR-94
-     * service provider that cannot be found
+     *         service provider that cannot be found
      * @see #addRuleSet(RuleSet)
      * @see #removeRuleSet(String)
      */
@@ -345,19 +356,21 @@ public class RuleService implements AdministeredService {
 
     /**
      * Execute the set of rules defined by the supplied rule set name. This method is safe to be concurrently called by multiple
-     * threads, and is properly synchronized with the methods to {@link #addRuleSet(RuleSet) add},
-     * {@link #updateRuleSet(RuleSet) update}, and {@link #removeRuleSet(String) remove} rule sets.
+     * threads, and is properly synchronized with the methods to {@link #addRuleSet(RuleSet) add}, {@link #updateRuleSet(RuleSet)
+     * update}, and {@link #removeRuleSet(String) remove} rule sets.
      * 
      * @param ruleSetName the {@link RuleSet#getName() name} of the {@link RuleSet} that should be used
      * @param globals the global variables
      * @param facts the facts
      * @return the results of executing the rule set
      * @throws IllegalArgumentException if the rule set name is null, empty or blank, or if there is no rule set with the given
-     * name
-     * @throws SystemFailureException if there is no JSR-94 rule service provider with the
-     * {@link RuleSet#getProviderUri() RuleSet's provider URI}.
+     *         name
+     * @throws SystemFailureException if there is no JSR-94 rule service provider with the {@link RuleSet#getProviderUri() 
+     *         RuleSet's provider URI}.
      */
-    public List<?> executeRules( String ruleSetName, Map<String, Object> globals, Object... facts ) {
+    public List<?> executeRules( String ruleSetName,
+                                 Map<String, Object> globals,
+                                 Object... facts ) {
         CheckArg.isNotEmpty(ruleSetName, "rule set name");
         List<?> result = null;
         List<?> factList = Arrays.asList(facts);
@@ -386,10 +399,11 @@ public class RuleService implements AdministeredService {
             }
             if (this.logger.isTraceEnabled()) {
                 String msg = "Executed rule set '{1}' with globals {2} and facts {3} resulting in {4}";
-                this.logger.trace(msg, ruleSetName, StringUtil.readableString(globals), StringUtil.readableString(facts), StringUtil.readableString(result));
+                this.logger.trace(msg, ruleSetName, globals, Arrays.asList(facts), result);
             }
         } catch (Throwable t) {
-            throw new SystemFailureException(RepositoryI18n.errorExecutingRuleSetWithGlobalsAndFacts.text(ruleSetName, StringUtil.readableString(globals), StringUtil.readableString(facts)), t);
+            String msg = RepositoryI18n.errorExecutingRuleSetWithGlobalsAndFacts.text(ruleSetName, globals, Arrays.asList(facts));
+            throw new SystemFailureException(msg, t);
         } finally {
             this.lock.readLock().unlock();
         }
@@ -412,7 +426,8 @@ public class RuleService implements AdministeredService {
         this.shutdownLatch.countDown();
     }
 
-    protected boolean doAwaitTermination( long timeout, TimeUnit unit ) throws InterruptedException {
+    protected boolean doAwaitTermination( long timeout,
+                                          TimeUnit unit ) throws InterruptedException {
         return this.shutdownLatch.await(timeout, unit);
     }
 
@@ -446,11 +461,16 @@ public class RuleService implements AdministeredService {
             } catch (ConfigurationException ce) {
                 throw ce;
             } catch (Throwable t) {
-                throw new InvalidRuleSetException(RepositoryI18n.unableToObtainJsr94ServiceProvider.text(providerUri, ruleSet.getComponentClassname()), t);
+                throw new InvalidRuleSetException(
+                                                  RepositoryI18n.unableToObtainJsr94ServiceProvider.text(providerUri,
+                                                                                                         ruleSet.getComponentClassname()),
+                                                  t);
             }
         }
         if (ruleServiceProvider == null) {
-            throw new InvalidRuleSetException(RepositoryI18n.unableToObtainJsr94ServiceProvider.text(providerUri, ruleSet.getComponentClassname()));
+            throw new InvalidRuleSetException(
+                                              RepositoryI18n.unableToObtainJsr94ServiceProvider.text(providerUri,
+                                                                                                     ruleSet.getComponentClassname()));
         }
         return ruleServiceProvider;
     }
@@ -465,7 +485,8 @@ public class RuleService implements AdministeredService {
      * @throws RuleExecutionSetDeregistrationException
      * @throws RemoteException
      */
-    private RuleServiceProvider deregister( RuleSet ruleSet ) throws ConfigurationException, RuleExecutionSetDeregistrationException, RemoteException {
+    private RuleServiceProvider deregister( RuleSet ruleSet )
+        throws ConfigurationException, RuleExecutionSetDeregistrationException, RemoteException {
         assert ruleSet != null;
         // Look up the provider ...
         String providerUri = ruleSet.getProviderUri();

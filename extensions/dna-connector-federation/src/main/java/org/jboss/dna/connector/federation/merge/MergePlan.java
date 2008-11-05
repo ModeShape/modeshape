@@ -36,7 +36,6 @@ import net.jcip.annotations.GuardedBy;
 import net.jcip.annotations.ThreadSafe;
 import org.jboss.dna.common.CommonI18n;
 import org.jboss.dna.common.util.CheckArg;
-import org.jboss.dna.common.util.StringUtil;
 import org.jboss.dna.connector.federation.contribution.Contribution;
 import org.jboss.dna.connector.federation.contribution.EmptyContribution;
 import org.jboss.dna.graph.properties.DateTime;
@@ -361,7 +360,7 @@ public abstract class MergePlan implements Serializable, Iterable<Contribution> 
             }
             sb.append(contribution);
         }
-        sb.append(StringUtil.readableString(getAnnotations()));
+        sb.append(getAnnotations());
         return sb.toString();
     }
 

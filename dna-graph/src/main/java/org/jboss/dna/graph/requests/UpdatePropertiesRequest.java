@@ -28,7 +28,6 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import org.jboss.dna.common.util.CheckArg;
-import org.jboss.dna.common.util.StringUtil;
 import org.jboss.dna.graph.GraphI18n;
 import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.properties.Property;
@@ -188,7 +187,7 @@ public class UpdatePropertiesRequest extends Request implements Iterable<Propert
      */
     @Override
     public String toString() {
-        return "update properties on " + on() + " to " + StringUtil.readableString(properties());
+        return "update properties on " + on() + " to " + properties();
     }
 
 }

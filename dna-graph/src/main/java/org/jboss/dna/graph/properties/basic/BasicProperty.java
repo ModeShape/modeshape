@@ -21,9 +21,9 @@
  */
 package org.jboss.dna.graph.properties.basic;
 
+import java.util.Arrays;
 import java.util.Iterator;
 import net.jcip.annotations.Immutable;
-import org.jboss.dna.common.util.StringUtil;
 import org.jboss.dna.graph.properties.Name;
 import org.jboss.dna.graph.properties.Property;
 import org.jboss.dna.graph.properties.ValueComparators;
@@ -120,9 +120,9 @@ public abstract class BasicProperty implements Property {
         sb.append(getName());
         sb.append(" = ");
         if (isSingle()) {
-            sb.append(StringUtil.readableString(getValues().next()));
+            sb.append(getValues().next());
         } else {
-            sb.append(StringUtil.readableString(getValuesAsArray()));
+            sb.append(Arrays.asList(getValuesAsArray()));
         }
         return sb.toString();
     }

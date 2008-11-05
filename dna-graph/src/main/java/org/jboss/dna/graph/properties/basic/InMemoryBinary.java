@@ -28,6 +28,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 import net.jcip.annotations.Immutable;
+import org.jboss.dna.common.util.Base64;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.common.util.Logger;
 import org.jboss.dna.graph.GraphI18n;
@@ -156,11 +157,7 @@ public class InMemoryBinary implements Binary {
     public String toString() {
         StringBuilder sb = new StringBuilder(super.toString());
         sb.append(" len=").append(getSize()).append("; [");
-        int len = (int)Math.min(getSize(), 20l);
-        for (int i = 0; i != len; ++i) {
-            if (i != 0) sb.append(',');
-            sb.append(this.bytes[i]);
-        }
+        sb.append(Base64.encodeBytes(this.bytes));
         return sb.toString();
     }
 

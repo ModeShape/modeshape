@@ -21,6 +21,7 @@
  */
 package org.jboss.dna.graph.connectors;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -30,7 +31,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import net.jcip.annotations.ThreadSafe;
 import org.jboss.dna.common.util.Logger;
-import org.jboss.dna.common.util.StringUtil;
 import org.jboss.dna.graph.DnaLexicon;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.properties.Name;
@@ -134,7 +134,7 @@ public class SimpleRepository {
                                          Object... values ) {
         Logger logger = context.getLogger(getClass());
         if (logger.isTraceEnabled()) {
-            logger.trace("Setting property {0} on {1} to {2}", propertyName, path, StringUtil.readableString(values));
+            logger.trace("Setting property {0} on {1} to {2}", propertyName, path, Arrays.asList(values));
         }
         PathFactory pathFactory = context.getValueFactories().getPathFactory();
         PropertyFactory propertyFactory = context.getPropertyFactory();

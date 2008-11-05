@@ -22,6 +22,7 @@
 package org.jboss.dna.connector.jbosscache;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
@@ -34,7 +35,6 @@ import javax.transaction.xa.XAResource;
 import org.jboss.cache.Cache;
 import org.jboss.cache.Fqn;
 import org.jboss.cache.Node;
-import org.jboss.dna.common.util.StringUtil;
 import org.jboss.dna.graph.DnaLexicon;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.Location;
@@ -482,9 +482,7 @@ public class JBossCacheConnection implements RepositoryConnection {
 
         // Record the list of children as a property on the parent ...
         // (Do this last, as it doesn't need to be done if there's an exception in the above logic)
-        context.getLogger(getClass()).trace("Updating child list of {0} to: {1}",
-                                            parent.getFqn(),
-                                            StringUtil.readableString(childNames));
+        context.getLogger(getClass()).trace("Updating child list of {0} to: {1}", parent.getFqn(), Arrays.asList(childNames));
         parent.put(JBossCacheLexicon.CHILD_PATH_SEGMENT_LIST, childNames); // replaces any existing value
 
         if (addChildWithName) {

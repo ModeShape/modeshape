@@ -30,7 +30,6 @@ import java.util.UUID;
 import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.common.util.HashCode;
-import org.jboss.dna.common.util.StringUtil;
 import org.jboss.dna.graph.properties.Name;
 import org.jboss.dna.graph.properties.Path;
 import org.jboss.dna.graph.properties.Property;
@@ -465,7 +464,7 @@ public class Location implements Iterable<Property> {
             if (this.hasIdProperties()) sb.append(" && ");
         }
         if (this.hasIdProperties()) {
-            sb.append(StringUtil.readableString(this.getIdProperties()));
+            sb.append(this.getIdProperties().toString());
             if (this.hasPath()) sb.append(" ]");
         }
         return sb.toString();

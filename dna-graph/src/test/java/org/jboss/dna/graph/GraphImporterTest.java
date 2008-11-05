@@ -34,7 +34,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.transaction.xa.XAResource;
-import org.jboss.dna.common.util.StringUtil;
 import org.jboss.dna.graph.cache.CachePolicy;
 import org.jboss.dna.graph.connectors.RepositoryConnection;
 import org.jboss.dna.graph.connectors.RepositoryConnectionFactory;
@@ -137,7 +136,7 @@ public class GraphImporterTest {
             assertThat("missing property " + propertyName, actual, is(expectedProperty));
         }
         if (!propertiesByName.isEmpty()) {
-            System.out.println("Properties for " + path + "\n" + StringUtil.readableString(propertiesByName));
+            System.out.println("Properties for " + path + "\n" + propertiesByName);
         }
         assertThat(propertiesByName.isEmpty(), is(true));
     }

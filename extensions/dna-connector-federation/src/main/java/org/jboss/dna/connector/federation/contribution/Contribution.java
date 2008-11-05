@@ -28,7 +28,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
 import net.jcip.annotations.Immutable;
-import org.jboss.dna.common.util.StringUtil;
 import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.properties.DateTime;
 import org.jboss.dna.graph.properties.Name;
@@ -383,10 +382,7 @@ public abstract class Contribution implements Serializable {
             while (propIter.hasNext()) {
                 if (!first) sb.append(", ");
                 else first = false;
-                Property property = propIter.next();
-                sb.append(property.getName());
-                sb.append('=');
-                sb.append(StringUtil.readableString(property.getValuesAsArray()));
+                sb.append(propIter.next());
             }
             sb.append(" }");
         }

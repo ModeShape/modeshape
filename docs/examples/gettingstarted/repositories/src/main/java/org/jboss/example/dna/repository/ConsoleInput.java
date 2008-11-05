@@ -26,6 +26,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -260,8 +261,7 @@ public class ConsoleInput implements UserInterface {
         for (Map.Entry<String, Object[]> property : properties.entrySet()) {
             String name = StringUtil.justifyLeft(property.getKey(), maxLength, ' ');
             Object[] values = property.getValue();
-            String valueStr = StringUtil.readableString(values);
-            if (values.length == 1) valueStr = StringUtil.readableString(values[0]);
+            String valueStr = values.length == 1 ? values[0].toString() : Arrays.asList(values).toString();
             System.out.println(" " + name + " = " + valueStr);
         }
     }

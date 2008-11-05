@@ -28,7 +28,6 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import org.jboss.dna.common.util.CheckArg;
-import org.jboss.dna.common.util.StringUtil;
 import org.jboss.dna.graph.GraphI18n;
 import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.NodeConflictBehavior;
@@ -280,7 +279,7 @@ public class CreateNodeRequest extends Request implements Iterable<Property> {
      */
     @Override
     public String toString() {
-        return "create node at " + at() + " with properties " + StringUtil.readableString(properties());
+        return "create node at " + at() + " with properties " + properties();
     }
 
 }

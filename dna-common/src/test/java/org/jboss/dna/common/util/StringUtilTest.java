@@ -34,7 +34,6 @@ import java.io.InputStream;
 import java.io.PrintStream;
 import java.io.Reader;
 import java.io.StringReader;
-import java.util.ArrayList;
 import java.util.List;
 import org.junit.Test;
 
@@ -349,65 +348,6 @@ public class StringUtilTest {
         String trace = StringUtil.getStackTrace(t);
         assertThat(trace, containsString(msg));
         assertThat(trace, containsString(this.getClass().getName()));
-    }
-
-    @Test
-    public void readableStringShouldReturnStringForNull() {
-        assertThat(StringUtil.readableString((Object)null), is("null"));
-    }
-
-    @Test
-    public void readableStringShouldReturnStringFormOfBoolean() {
-        assertThat(StringUtil.readableString(true), is(Boolean.TRUE.toString()));
-        assertThat(StringUtil.readableString(false), is(Boolean.FALSE.toString()));
-        assertThat(StringUtil.readableString(Boolean.TRUE), is(Boolean.TRUE.toString()));
-        assertThat(StringUtil.readableString(Boolean.FALSE), is(Boolean.FALSE.toString()));
-    }
-
-    @Test
-    public void readableStringShouldReturnStringFormOfNumber() {
-        assertThat(StringUtil.readableString(1), is("1"));
-        assertThat(StringUtil.readableString(-513), is("-513"));
-        assertThat(StringUtil.readableString(-513.3f), is("-513.3"));
-        assertThat(StringUtil.readableString(-513.3d), is("-513.3"));
-        assertThat(StringUtil.readableString(new Short((short)1)), is("1"));
-        assertThat(StringUtil.readableString(new Integer(-513)), is("-513"));
-        assertThat(StringUtil.readableString(new Float(-513.3f)), is("-513.3"));
-        assertThat(StringUtil.readableString(new Double(-513.3d)), is("-513.3"));
-    }
-
-    @Test
-    public void readableStringShouldWrapObjectArrayWithSquareBraces() {
-        assertThat(StringUtil.readableString(new int[] {}), is("[]"));
-        assertThat(StringUtil.readableString(new int[] {1}), is("[ 1 ]"));
-        assertThat(StringUtil.readableString(new int[] {1, 2, 3, 4}), is("[ 1, 2, 3, 4 ]"));
-        assertThat(StringUtil.readableString(new short[] {1, 2, 3, 4}), is("[ 1, 2, 3, 4 ]"));
-        assertThat(StringUtil.readableString(new boolean[] {true, false}), is("[ true, false ]"));
-        assertThat(StringUtil.readableString(new long[] {1, 2, 3, 4}), is("[ 1, 2, 3, 4 ]"));
-        assertThat(StringUtil.readableString(new float[] {51.0f, 52.0f, 53.0f, 54.0f}), is("[ 51.0, 52.0, 53.0, 54.0 ]"));
-        assertThat(StringUtil.readableString(new double[] {51.0d, 52.0d, 53.0d, 54.0d}), is("[ 51.0, 52.0, 53.0, 54.0 ]"));
-    }
-
-    @Test
-    public void readableStringShouldHandleEmptyArraysOfArrays() {
-        assertThat(StringUtil.readableString(new int[][] {}), is("[[]]"));
-        assertThat(StringUtil.readableString(new boolean[][][][][][] {}), is("[[[[[[]]]]]]"));
-        assertThat(StringUtil.readableString(new ArrayList<List<List<?>>>()), is("[]"));
-    }
-
-    @Test
-    public void readableStringShouldHandleNestedObjects() {
-        assertThat(StringUtil.readableString(new int[][] {new int[] {1, 2}, new int[] {3, 4}}), is("[ [ 1, 2 ], [ 3, 4 ] ]"));
-        List<String> list1 = new ArrayList<String>();
-        list1.add("a1");
-        list1.add("a2");
-        List<String> list2 = new ArrayList<String>();
-        list2.add("b1");
-        list2.add("b2");
-        List<List<String>> list3 = new ArrayList<List<String>>();
-        list3.add(list1);
-        list3.add(list2);
-        assertThat(StringUtil.readableString(list3), is("[ [ \"a1\", \"a2\" ], [ \"b1\", \"b2\" ] ]"));
     }
 
     @Test( expected = IllegalArgumentException.class )

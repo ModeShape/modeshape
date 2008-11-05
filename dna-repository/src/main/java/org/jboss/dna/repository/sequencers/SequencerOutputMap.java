@@ -31,7 +31,6 @@ import java.util.Map;
 import net.jcip.annotations.Immutable;
 import net.jcip.annotations.NotThreadSafe;
 import org.jboss.dna.common.util.CheckArg;
-import org.jboss.dna.common.util.StringUtil;
 import org.jboss.dna.graph.JcrLexicon;
 import org.jboss.dna.graph.properties.Name;
 import org.jboss.dna.graph.properties.Path;
@@ -186,7 +185,7 @@ public class SequencerOutputMap implements SequencerOutput, Iterable<SequencerOu
      */
     @Override
     public String toString() {
-        return StringUtil.readableString(this.data);
+        return this.data.toString();
     }
 
     /**
@@ -262,7 +261,7 @@ public class SequencerOutputMap implements SequencerOutput, Iterable<SequencerOu
          */
         @Override
         public String toString() {
-            return "[" + this.name + "=" + StringUtil.readableString(value) + "]";
+            return "[" + this.name + "=" + value + "]";
         }
     }
 

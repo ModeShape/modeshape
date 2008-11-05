@@ -47,7 +47,6 @@ public class JodaDateTime implements org.jboss.dna.graph.properties.DateTime {
     private static final int MILLIS_IN_HOUR = 1000 * 60 * 60;
 
     private final DateTime instance;
-    private transient String formattedString;
 
     public JodaDateTime() {
         this.instance = new DateTime();
@@ -231,12 +230,7 @@ public class JodaDateTime implements org.jboss.dna.graph.properties.DateTime {
      * {@inheritDoc}
      */
     public String getString() {
-        if (this.formattedString == null) {
-            // This is transient and can be done multiple times by concurrent threads (without locking),
-            // since the object is immutable
-            this.formattedString = this.instance.toString(org.joda.time.format.ISODateTimeFormat.dateTime());
-        }
-        return this.formattedString;
+        return this.instance.toString(org.joda.time.format.ISODateTimeFormat.dateTime());
     }
 
     /**
@@ -410,7 +404,7 @@ public class JodaDateTime implements org.jboss.dna.graph.properties.DateTime {
      * @see org.jboss.dna.graph.properties.DateTime#minus(long, java.util.concurrent.TimeUnit)
      */
     public org.jboss.dna.graph.properties.DateTime minus( long timeAmount,
-                                                   TimeUnit unit ) {
+                                                          TimeUnit unit ) {
         CheckArg.isNotNull(unit, "unit");
         return new JodaDateTime(this.instance.minus(TimeUnit.MILLISECONDS.convert(timeAmount, unit)));
     }
@@ -493,7 +487,7 @@ public class JodaDateTime implements org.jboss.dna.graph.properties.DateTime {
      * @see org.jboss.dna.graph.properties.DateTime#plus(long, java.util.concurrent.TimeUnit)
      */
     public org.jboss.dna.graph.properties.DateTime plus( long timeAmount,
-                                                  TimeUnit unit ) {
+                                                         TimeUnit unit ) {
         CheckArg.isNotNull(unit, "unit");
         return new JodaDateTime(this.instance.plus(TimeUnit.MILLISECONDS.convert(timeAmount, unit)));
     }

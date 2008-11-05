@@ -27,7 +27,6 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 import org.jboss.dna.common.util.CheckArg;
-import org.jboss.dna.common.util.StringUtil;
 import org.jboss.dna.graph.GraphI18n;
 import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.properties.Name;
@@ -191,7 +190,7 @@ public class RemovePropertiesRequest extends Request implements Iterable<Name> {
      */
     @Override
     public String toString() {
-        return "remove from " + from() + " properties named " + StringUtil.readableString(propertyNames());
+        return "remove from " + from() + " properties named " + propertyNames();
     }
 
 }
