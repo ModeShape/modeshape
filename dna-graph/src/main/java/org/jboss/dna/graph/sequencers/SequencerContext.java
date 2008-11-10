@@ -22,6 +22,7 @@
 package org.jboss.dna.graph.sequencers;
 
 import java.util.Set;
+import org.jboss.dna.common.collection.Problems;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.properties.Name;
 import org.jboss.dna.graph.properties.Path;
@@ -60,4 +61,12 @@ public interface SequencerContext extends ExecutionContext {
      * @return the MIME-type
      */
     String getMimeType();
+
+    /**
+     * Get an interface that can be used to record various problems, warnings, and errors that are not extreme enough to warrant
+     * throwing exceptions.
+     * 
+     * @return the interface for recording problems; never null
+     */
+    Problems getProblems();
 }

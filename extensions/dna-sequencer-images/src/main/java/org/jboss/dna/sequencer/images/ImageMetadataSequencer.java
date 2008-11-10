@@ -22,7 +22,6 @@
 package org.jboss.dna.sequencer.images;
 
 import java.io.InputStream;
-import org.jboss.dna.common.monitor.ActivityMonitor;
 import org.jboss.dna.graph.properties.NameFactory;
 import org.jboss.dna.graph.properties.Path;
 import org.jboss.dna.graph.properties.PathFactory;
@@ -87,13 +86,11 @@ public class ImageMetadataSequencer implements StreamSequencer {
     /**
      * {@inheritDoc}
      * 
-     * @see StreamSequencer#sequence(InputStream, SequencerOutput, SequencerContext, ActivityMonitor)
+     * @see StreamSequencer#sequence(InputStream, SequencerOutput, SequencerContext)
      */
     public void sequence( InputStream stream,
                           SequencerOutput output,
-                          SequencerContext context,
-                          ActivityMonitor activityMonitor ) {
-        activityMonitor.beginTask(10, ImageSequencerI18n.sequencerTaskName);
+                          SequencerContext context ) {
 
         ImageMetadata metadata = new ImageMetadata();
         metadata.setInput(stream);
@@ -104,8 +101,6 @@ public class ImageMetadataSequencer implements StreamSequencer {
         if (!metadata.check()) {
             metadata = null;
         }
-        activityMonitor.worked(5);
-        if (activityMonitor.isCancelled()) return;
 
         // Generate the output graph if we found useful metadata ...
         if (metadata != null) {
@@ -129,7 +124,5 @@ public class ImageMetadataSequencer implements StreamSequencer {
             output.setProperty(metadataNode, nameFactory.create(IMAGE_PHYSICAL_WIDTH_INCHES), metadata.getPhysicalWidthInch());
             output.setProperty(metadataNode, nameFactory.create(IMAGE_PHYSICAL_HEIGHT_INCHES), metadata.getPhysicalHeightInch());
         }
-
-        activityMonitor.done();
     }
 }

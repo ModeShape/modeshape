@@ -34,7 +34,7 @@ public final class XmlSequencerI18n {
 
     public static I18n errorSequencingXmlDocument;
     public static I18n fatalErrorSequencingXmlDocument;
-    public static I18n sequencingXmlDocument;
+    // public static I18n sequencingXmlDocument;
     public static I18n canceledSequencingXmlDocument;
     public static I18n warningSequencingXmlDocument;
 

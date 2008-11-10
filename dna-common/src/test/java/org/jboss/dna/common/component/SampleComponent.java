@@ -21,7 +21,6 @@
  */
 package org.jboss.dna.common.component;
 
-import org.jboss.dna.common.monitor.ActivityMonitor;
 
 /**
  * @author Randall Hauch
@@ -29,5 +28,5 @@ import org.jboss.dna.common.monitor.ActivityMonitor;
  */
 public interface SampleComponent extends Component<SampleComponentConfig> {
 
-    public void doSomething( ActivityMonitor activityMonitor );
+    public void doSomething();
 }

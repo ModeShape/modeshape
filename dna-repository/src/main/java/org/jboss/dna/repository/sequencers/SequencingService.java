@@ -43,12 +43,10 @@ import javax.security.auth.Subject;
 import javax.security.auth.login.LoginContext;
 import net.jcip.annotations.Immutable;
 import net.jcip.annotations.ThreadSafe;
+import org.jboss.dna.common.collection.SimpleProblems;
 import org.jboss.dna.common.component.ClassLoaderFactory;
 import org.jboss.dna.common.component.ComponentLibrary;
 import org.jboss.dna.common.component.StandardClassLoaderFactory;
-import org.jboss.dna.common.i18n.I18n;
-import org.jboss.dna.common.monitor.ActivityMonitor;
-import org.jboss.dna.common.monitor.LoggingActivityMonitor;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.common.util.HashCode;
 import org.jboss.dna.common.util.Logger;
@@ -514,57 +512,37 @@ public class SequencingService implements AdministeredService, NodeChangeListene
                     }
                 } else {
                     // Run each of those sequencers ...
-                    ActivityMonitor activityMonitor = context.createActivityMonitor(RepositoryI18n.sequencerTask, changedNode);
-                    if (logger.isTraceEnabled()) {
-                        activityMonitor = new LoggingActivityMonitor(activityMonitor, logger, Logger.Level.TRACE);
-                    }
-                    try {
-                        activityMonitor.beginTask(sequencerCalls.size(), RepositoryI18n.sequencerTask, changedNode);
-                        for (Map.Entry<SequencerCall, Set<RepositoryNodePath>> entry : sequencerCalls.entrySet()) {
-                            final SequencerCall sequencerCall = entry.getKey();
-                            final Set<RepositoryNodePath> outputPaths = entry.getValue();
-                            final Sequencer sequencer = sequencerCall.getSequencer();
-                            final String sequencerName = sequencer.getConfiguration().getName();
-                            final String propertyName = sequencerCall.getSequencedPropertyName();
+                    for (Map.Entry<SequencerCall, Set<RepositoryNodePath>> entry : sequencerCalls.entrySet()) {
+                        final SequencerCall sequencerCall = entry.getKey();
+                        final Set<RepositoryNodePath> outputPaths = entry.getValue();
+                        final Sequencer sequencer = sequencerCall.getSequencer();
+                        final String sequencerName = sequencer.getConfiguration().getName();
+                        final String propertyName = sequencerCall.getSequencedPropertyName();
 
-                            // Get the paths to the nodes where the sequencer should write it's output ...
-                            assert outputPaths != null && outputPaths.size() != 0;
+                        // Get the paths to the nodes where the sequencer should write it's output ...
+                        assert outputPaths != null && outputPaths.size() != 0;
 
-                            // Create a new execution context for each sequencer
-                            final Context executionContext = new Context(context);
-                            final ActivityMonitor sequenceMonitor = activityMonitor.createSubtask(1);
+                        // Create a new execution context for each sequencer
+                        final Context executionContext = new Context(context);
+                        final SimpleProblems problems = new SimpleProblems();
+                        try {
+                            sequencer.execute(node, propertyName, changedNode, outputPaths, executionContext, problems);
+                        } catch (RepositoryException e) {
+                            logger.error(e, RepositoryI18n.errorInRepositoryWhileSequencingNode, sequencerName, changedNode);
+                        } catch (SequencerException e) {
+                            logger.error(e, RepositoryI18n.errorWhileSequencingNode, sequencerName, changedNode);
+                        } finally {
                             try {
-                                sequenceMonitor.beginTask(100, RepositoryI18n.sequencerSubtask, sequencerName);
-                                sequencer.execute(node,
-                                                  propertyName,
-                                                  changedNode,
-                                                  outputPaths,
-                                                  executionContext,
-                                                  sequenceMonitor.createSubtask(80)); // 80%
-                            } catch (RepositoryException e) {
-                                logger.error(e, RepositoryI18n.errorInRepositoryWhileSequencingNode, sequencerName, changedNode);
-                            } catch (SequencerException e) {
-                                logger.error(e, RepositoryI18n.errorWhileSequencingNode, sequencerName, changedNode);
+                                // Save the changes made by each sequencer ...
+                                if (session != null) session.save();
                             } finally {
-                                try {
-                                    // Save the changes made by each sequencer ...
-                                    if (session != null) session.save();
-                                    sequenceMonitor.worked(10); // 90% of sequenceMonitor
-                                } finally {
-                                    try {
-                                        // And always close the context.
-                                        // This closes all sessions that may have been created by the sequencer.
-                                        executionContext.close();
-                                    } finally {
-                                        sequenceMonitor.done(); // 100% of sequenceMonitor
-                                    }
-                                }
+                                // And always close the context.
+                                // This closes all sessions that may have been created by the sequencer.
+                                executionContext.close();
                             }
                         }
-                        this.statistics.recordNodeSequenced();
-                    } finally {
-                        activityMonitor.done();
                     }
+                    this.statistics.recordNodeSequenced();
                 }
             } finally {
                 if (session != null) session.logout();
@@ -603,16 +581,6 @@ public class SequencingService implements AdministeredService, NodeChangeListene
             for (Session session : sessions) {
                 if (session != null) session.logout();
             }
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.jboss.dna.graph.ExecutionContext#createActivityMonitor(org.jboss.dna.common.i18n.I18n, java.lang.Object[])
-         */
-        public ActivityMonitor createActivityMonitor( I18n activityName,
-                                                      Object... activityNameParameters ) {
-            return delegate.createActivityMonitor(activityName, activityNameParameters);
         }
 
         /**

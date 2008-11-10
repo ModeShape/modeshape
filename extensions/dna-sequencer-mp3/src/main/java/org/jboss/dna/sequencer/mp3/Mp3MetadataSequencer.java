@@ -22,7 +22,6 @@
 package org.jboss.dna.sequencer.mp3;
 
 import java.io.InputStream;
-import org.jboss.dna.common.monitor.ActivityMonitor;
 import org.jboss.dna.graph.sequencers.SequencerContext;
 import org.jboss.dna.graph.sequencers.SequencerOutput;
 import org.jboss.dna.graph.sequencers.StreamSequencer;
@@ -62,12 +61,11 @@ public class Mp3MetadataSequencer implements StreamSequencer {
     /**
      * {@inheritDoc}
      * 
-     * @see StreamSequencer#sequence(InputStream, SequencerOutput, SequencerContext, ActivityMonitor)
+     * @see StreamSequencer#sequence(InputStream, SequencerOutput, SequencerContext)
      */
     public void sequence( InputStream stream,
                           SequencerOutput output,
-                          SequencerContext context,
-                          ActivityMonitor activityMonitor ) {
+                          SequencerContext context ) {
         Mp3Metadata metadata = Mp3Metadata.instance(stream);
 
         if (metadata != null) {

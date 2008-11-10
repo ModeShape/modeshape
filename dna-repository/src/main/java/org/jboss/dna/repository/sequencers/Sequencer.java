@@ -26,8 +26,8 @@ import javax.jcr.Node;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import net.jcip.annotations.ThreadSafe;
+import org.jboss.dna.common.collection.Problems;
 import org.jboss.dna.common.component.Component;
-import org.jboss.dna.common.monitor.ActivityMonitor;
 import org.jboss.dna.repository.observation.NodeChange;
 import org.jboss.dna.repository.observation.NodeChangeListener;
 import org.jboss.dna.repository.observation.NodeChanges;
@@ -52,7 +52,7 @@ public interface Sequencer extends Component<SequencerConfig> {
      * Execute the sequencing operation on the supplied node, which has recently been created or changed. The implementation of
      * this method is responsible for {@link JcrExecutionContext#getSessionFactory() getting sessions}, modifying the appropriate
      * nodes, {@link Session#save() saving} any changes made by this sequencer, and {@link Session#logout() closing} all sessions
-     * (and any other acquired resources), even in the case of {@link ActivityMonitor#isCancelled() cancellation} or exceptions.
+     * (and any other acquired resources), even in the case of exceptions.
      * <p>
      * The {@link SequencingService} determines the sequencers that should be executed by monitoring the changes to one or more
      * workspaces (it is a {@link NodeChangeListener} registered with the {@link ObservationService}). Changes in those workspaces
@@ -68,22 +68,6 @@ public interface Sequencer extends Component<SequencerConfig> {
      * Also, in such cases the sequencer's configuration may imply multiple output nodes, so it is left to the sequencer to define
      * the behavior in such cases.
      * </p>
-     * <p>
-     * This operation should report progress to the supplied {@link ActivityMonitor}. At the beginning of the operation, call
-     * {@link ActivityMonitor#beginTask(double, org.jboss.dna.common.i18n.I18n, Object...)} with a meaningful message describing
-     * the operation and a total for the amount of work that will be done by this sequencer. Then perform the sequencing work,
-     * periodically reporting work by specifying the {@link ActivityMonitor#worked(double) amount of work} that has was just
-     * completed or by {@link ActivityMonitor#createSubtask(double) creating a subtask} and reporting work against that subtask
-     * monitor.
-     * </p>
-     * <p>
-     * The implementation should also periodically check whether the operation has been {@link ActivityMonitor#isCancelled()
-     * cancelled}. If this method returns true, the implementation should abort all work as soon as possible and close any
-     * resources that were acquired or opened.
-     * </p>
-     * <p>
-     * Finally, the implementation should call {@link ActivityMonitor#done()} when the operation has finished.
-     * </p>
      * 
      * @param input the node that has recently been created or changed; never null
      * @param sequencedPropertyName the name of the property that caused this sequencer to be executed; never null and never empty
@@ -92,8 +76,7 @@ public interface Sequencer extends Component<SequencerConfig> {
      * @param outputPaths the paths to the nodes where the sequencing content should be placed; never null and never empty, but
      *        the set may contain paths for non-existant nodes or may reference the <code>input</code> node
      * @param context the context in which this sequencer is executing; never null
-     * @param activityMonitor the activity monitor that should be kept updated with the sequencer's progress and that should be
-     *        frequently consulted as to whether this operation has been {@link ActivityMonitor#isCancelled() cancelled}.
+     * @param problems the interface used for recording problems; never null
      * @throws RepositoryException if there is a problem while working with the repository
      * @throws SequencerException if there is an error in this sequencer
      */
@@ -102,6 +85,6 @@ public interface Sequencer extends Component<SequencerConfig> {
                   NodeChange changes,
                   Set<RepositoryNodePath> outputPaths,
                   JcrExecutionContext context,
-                  ActivityMonitor activityMonitor ) throws RepositoryException, SequencerException;
+                  Problems problems ) throws RepositoryException, SequencerException;
 
 }

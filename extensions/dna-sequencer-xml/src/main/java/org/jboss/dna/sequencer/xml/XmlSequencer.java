@@ -27,7 +27,6 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import org.jboss.dna.common.monitor.ActivityMonitor;
 import org.jboss.dna.common.util.StringUtil;
 import org.jboss.dna.graph.JcrLexicon;
 import org.jboss.dna.graph.properties.Name;
@@ -39,7 +38,6 @@ import org.jboss.dna.graph.sequencers.SequencerOutput;
 import org.jboss.dna.graph.sequencers.StreamSequencer;
 import org.xml.sax.Attributes;
 import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
 import org.xml.sax.SAXNotRecognizedException;
 import org.xml.sax.SAXNotSupportedException;
 import org.xml.sax.SAXParseException;
@@ -62,18 +60,15 @@ public class XmlSequencer implements StreamSequencer {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.graph.sequencers.StreamSequencer#sequence(InputStream, SequencerOutput, SequencerContext,
-     *      ActivityMonitor)
+     * @see org.jboss.dna.graph.sequencers.StreamSequencer#sequence(InputStream, SequencerOutput, SequencerContext)
      */
     public void sequence( InputStream stream,
                           SequencerOutput output,
-                          SequencerContext context,
-                          ActivityMonitor monitor ) {
-        monitor.beginTask(100.0, XmlSequencerI18n.sequencingXmlDocument);
+                          SequencerContext context ) {
         XMLReader reader;
         try {
             reader = XMLReaderFactory.createXMLReader();
-            Handler handler = new Handler(output, context, monitor);
+            Handler handler = new Handler(output, context);
             reader.setContentHandler(handler);
             reader.setErrorHandler(handler);
             // Ensure handler acting as entity resolver 2
@@ -90,9 +85,7 @@ public class XmlSequencer implements StreamSequencer {
             reader.parse(new InputSource(stream));
         } catch (Exception error) {
             context.getLogger(getClass()).error(error, XmlSequencerI18n.fatalErrorSequencingXmlDocument, error);
-            monitor.captureError(error, XmlSequencerI18n.fatalErrorSequencingXmlDocument, error);
-        } finally {
-            monitor.done();
+            context.getProblems().addError(error, XmlSequencerI18n.fatalErrorSequencingXmlDocument, error);
         }
     }
 
@@ -120,9 +113,6 @@ public class XmlSequencer implements StreamSequencer {
 
         private final SequencerOutput output;
         private final SequencerContext context;
-        private final ActivityMonitor monitor;
-
-        private double progress;
 
         private Path path; // The DNA path of the node representing the current XML element
 
@@ -150,35 +140,15 @@ public class XmlSequencer implements StreamSequencer {
         private String entity;
 
         Handler( SequencerOutput output,
-                 SequencerContext context,
-                 ActivityMonitor monitor ) {
+                 SequencerContext context ) {
             assert output != null;
-            assert monitor != null;
             assert context != null;
             this.output = output;
             this.context = context;
-            this.monitor = monitor;
             // Initialize path to a an empty path relative to the SequencerOutput's target path.
             path = context.getValueFactories().getPathFactory().createRelativePath();
             // Cache name factory since it is frequently used
             nameFactory = context.getValueFactories().getNameFactory();
-        }
-
-        /**
-         * <p>
-         * {@inheritDoc}
-         * </p>
-         * 
-         * @see org.xml.sax.ext.DefaultHandler2#attributeDecl(java.lang.String, java.lang.String, java.lang.String,
-         *      java.lang.String, java.lang.String)
-         */
-        @Override
-        public void attributeDecl( String name,
-                                   String name2,
-                                   String type,
-                                   String mode,
-                                   String value ) throws SAXException {
-            stopIfCancelled();
         }
 
         /**
@@ -191,8 +161,7 @@ public class XmlSequencer implements StreamSequencer {
         @Override
         public void characters( char[] ch,
                                 int start,
-                                int length ) throws SAXException {
-            stopIfCancelled();
+                                int length ) {
             String content = String.valueOf(ch, start, length);
             // Check if data should be appended to previously parsed CDATA
             if (cDataBuilder == null) {
@@ -215,7 +184,6 @@ public class XmlSequencer implements StreamSequencer {
                 cDataBuilder.append(ch, start, length);
                 // Text within builder will be output at the end of CDATA
             }
-            updateProgress();
         }
 
         /**
@@ -228,27 +196,12 @@ public class XmlSequencer implements StreamSequencer {
         @Override
         public void comment( char[] ch,
                              int start,
-                             int length ) throws SAXException {
-            stopIfCancelled();
+                             int length ) {
             // Output separate nodes for each comment since multiple are allowed
             startElement(DnaXmlLexicon.COMMENT);
             output.setProperty(path, JcrLexicon.PRIMARY_TYPE, DnaXmlLexicon.COMMENT);
             output.setProperty(path, DnaXmlLexicon.COMMENT_CONTENT, String.valueOf(ch, start, length));
             endElement();
-            updateProgress();
-        }
-
-        /**
-         * <p>
-         * {@inheritDoc}
-         * </p>
-         * 
-         * @see org.xml.sax.ext.DefaultHandler2#elementDecl(java.lang.String, java.lang.String)
-         */
-        @Override
-        public void elementDecl( String name,
-                                 String model ) throws SAXException {
-            stopIfCancelled();
         }
 
         /**
@@ -259,14 +212,12 @@ public class XmlSequencer implements StreamSequencer {
          * @see org.xml.sax.ext.DefaultHandler2#endCDATA()
          */
         @Override
-        public void endCDATA() throws SAXException {
-            stopIfCancelled();
+        public void endCDATA() {
             // Output CDATA built in characters() method
             output.setProperty(path, DnaXmlLexicon.CDATA_CONTENT, cDataBuilder.toString());
             endElement();
             // Null-out builder to free memory
             cDataBuilder = null;
-            updateProgress();
         }
 
         private void endContent() {
@@ -287,30 +238,6 @@ public class XmlSequencer implements StreamSequencer {
             }
         }
 
-        /**
-         * <p>
-         * {@inheritDoc}
-         * </p>
-         * 
-         * @see org.xml.sax.helpers.DefaultHandler#endDocument()
-         */
-        @Override
-        public void endDocument() throws SAXException {
-            stopIfCancelled();
-        }
-
-        /**
-         * <p>
-         * {@inheritDoc}
-         * </p>
-         * 
-         * @see org.xml.sax.ext.DefaultHandler2#endDTD()
-         */
-        @Override
-        public void endDTD() throws SAXException {
-            stopIfCancelled();
-        }
-
         private void endElement() {
             // Recover parent's path, namespace, and indexedName map, clearing the ended element's map to free memory
             path = path.getParent();
@@ -329,12 +256,10 @@ public class XmlSequencer implements StreamSequencer {
         @Override
         public void endElement( String uri,
                                 String localName,
-                                String name ) throws SAXException {
-            stopIfCancelled();
+                                String name ) {
             // Check if content still needs to be output
             endContent();
             endElement();
-            updateProgress();
         }
 
         /**
@@ -345,10 +270,8 @@ public class XmlSequencer implements StreamSequencer {
          * @see org.xml.sax.ext.DefaultHandler2#endEntity(java.lang.String)
          */
         @Override
-        public void endEntity( String name ) throws SAXException {
-            stopIfCancelled();
+        public void endEntity( String name ) {
             entity = null;
-            updateProgress();
         }
 
         /**
@@ -361,7 +284,7 @@ public class XmlSequencer implements StreamSequencer {
         @Override
         public void error( SAXParseException error ) {
             context.getLogger(XmlSequencer.class).error(error, XmlSequencerI18n.errorSequencingXmlDocument, error);
-            monitor.captureError(error, XmlSequencerI18n.errorSequencingXmlDocument, error);
+            context.getProblems().addError(error, XmlSequencerI18n.errorSequencingXmlDocument, error);
         }
 
         /**
@@ -374,8 +297,7 @@ public class XmlSequencer implements StreamSequencer {
         @Override
         public void externalEntityDecl( String name,
                                         String publicId,
-                                        String systemId ) throws SAXException {
-            stopIfCancelled();
+                                        String systemId ) {
             // Add "synthetic" entity container to path to help prevent name collisions with XML elements
             Name entityName = DnaDtdLexicon.ENTITY;
             startElement(entityName);
@@ -384,7 +306,6 @@ public class XmlSequencer implements StreamSequencer {
             output.setProperty(path, nameFactory.create(DnaDtdLexicon.PUBLIC_ID), publicId);
             output.setProperty(path, nameFactory.create(DnaDtdLexicon.SYSTEM_ID), systemId);
             endElement();
-            updateProgress();
         }
 
         /**
@@ -397,7 +318,7 @@ public class XmlSequencer implements StreamSequencer {
         @Override
         public void fatalError( SAXParseException error ) {
             context.getLogger(XmlSequencer.class).error(error, XmlSequencerI18n.fatalErrorSequencingXmlDocument, error);
-            monitor.captureError(error, XmlSequencerI18n.fatalErrorSequencingXmlDocument, error);
+            context.getProblems().addError(error, XmlSequencerI18n.fatalErrorSequencingXmlDocument, error);
         }
 
         private Name getDefaultPrimaryType() {
@@ -412,26 +333,11 @@ public class XmlSequencer implements StreamSequencer {
          * {@inheritDoc}
          * </p>
          * 
-         * @see org.xml.sax.helpers.DefaultHandler#ignorableWhitespace(char[], int, int)
-         */
-        @Override
-        public void ignorableWhitespace( char[] ch,
-                                         int start,
-                                         int length ) throws SAXException {
-            stopIfCancelled();
-        }
-
-        /**
-         * <p>
-         * {@inheritDoc}
-         * </p>
-         * 
          * @see org.xml.sax.ext.DefaultHandler2#internalEntityDecl(java.lang.String, java.lang.String)
          */
         @Override
         public void internalEntityDecl( String name,
-                                        String value ) throws SAXException {
-            stopIfCancelled();
+                                        String value ) {
             // Add "synthetic" entity container to path to help prevent name collisions with XML elements
             Name entityName = DnaDtdLexicon.ENTITY;
             startElement(entityName);
@@ -439,21 +345,6 @@ public class XmlSequencer implements StreamSequencer {
             output.setProperty(path, DnaDtdLexicon.NAME, name);
             output.setProperty(path, DnaDtdLexicon.VALUE, value);
             endElement();
-            updateProgress();
-        }
-
-        /**
-         * <p>
-         * {@inheritDoc}
-         * </p>
-         * 
-         * @see org.xml.sax.helpers.DefaultHandler#notationDecl(java.lang.String, java.lang.String, java.lang.String)
-         */
-        @Override
-        public void notationDecl( String name,
-                                  String publicId,
-                                  String systemId ) throws SAXException {
-            stopIfCancelled();
         }
 
         /**
@@ -465,8 +356,7 @@ public class XmlSequencer implements StreamSequencer {
          */
         @Override
         public void processingInstruction( String target,
-                                           String data ) throws SAXException {
-            stopIfCancelled();
+                                           String data ) {
             // Output separate nodes for each instruction since multiple are allowed
             Name name = DnaXmlLexicon.PROCESSING_INSTRUCTION;
             startElement(name);
@@ -474,19 +364,6 @@ public class XmlSequencer implements StreamSequencer {
             output.setProperty(path, DnaXmlLexicon.TARGET, target);
             output.setProperty(path, DnaXmlLexicon.PROCESSING_INSTRUCTION_CONTENT, data);
             endElement();
-            updateProgress();
-        }
-
-        /**
-         * <p>
-         * {@inheritDoc}
-         * </p>
-         * 
-         * @see org.xml.sax.helpers.DefaultHandler#skippedEntity(java.lang.String)
-         */
-        @Override
-        public void skippedEntity( String name ) throws SAXException {
-            stopIfCancelled();
         }
 
         /**
@@ -497,13 +374,11 @@ public class XmlSequencer implements StreamSequencer {
          * @see org.xml.sax.ext.DefaultHandler2#startCDATA()
          */
         @Override
-        public void startCDATA() throws SAXException {
-            stopIfCancelled();
+        public void startCDATA() {
             // Output separate nodes for each CDATA since multiple are allowed
             startElement(DnaXmlLexicon.CDATA);
             // Prepare builder for concatenating consecutive lines of CDATA
             cDataBuilder = new StringBuilder();
-            updateProgress();
         }
 
         /**
@@ -514,10 +389,8 @@ public class XmlSequencer implements StreamSequencer {
          * @see org.xml.sax.helpers.DefaultHandler#startDocument()
          */
         @Override
-        public void startDocument() throws SAXException {
-            stopIfCancelled();
+        public void startDocument() {
             output.setProperty(path, JcrLexicon.PRIMARY_TYPE, DnaXmlLexicon.DOCUMENT);
-            updateProgress();
         }
 
         /**
@@ -530,12 +403,10 @@ public class XmlSequencer implements StreamSequencer {
         @Override
         public void startDTD( String name,
                               String publicId,
-                              String systemId ) throws SAXException {
-            stopIfCancelled();
+                              String systemId ) {
             output.setProperty(path, DnaDtdLexicon.NAME, name);
             output.setProperty(path, DnaDtdLexicon.PUBLIC_ID, publicId);
             output.setProperty(path, DnaDtdLexicon.SYSTEM_ID, systemId);
-            updateProgress();
         }
 
         private void startElement( Name name ) {
@@ -579,8 +450,7 @@ public class XmlSequencer implements StreamSequencer {
         public void startElement( String uri,
                                   String localName,
                                   String name,
-                                  Attributes attributes ) throws SAXException {
-            stopIfCancelled();
+                                  Attributes attributes ) {
             // Look for the "jcr:name" attribute, and use that if it's there
             Name type = getDefaultPrimaryType();
             Name nameObj = nameFactory.create(name);
@@ -611,7 +481,6 @@ public class XmlSequencer implements StreamSequencer {
                 }
                 output.setProperty(path, nameFactory.create(ns.length() == 0 ? inheritedNs : ns, attrLocalName), value);
             }
-            updateProgress();
         }
 
         /**
@@ -622,10 +491,8 @@ public class XmlSequencer implements StreamSequencer {
          * @see org.xml.sax.ext.DefaultHandler2#startEntity(java.lang.String)
          */
         @Override
-        public void startEntity( String name ) throws SAXException {
-            stopIfCancelled();
+        public void startEntity( String name ) {
             entity = name;
-            updateProgress();
         }
 
         /**
@@ -637,45 +504,12 @@ public class XmlSequencer implements StreamSequencer {
          */
         @Override
         public void startPrefixMapping( String prefix,
-                                        String uri ) throws SAXException {
-            stopIfCancelled();
+                                        String uri ) {
             // Register any unregistered namespaces
             NamespaceRegistry registry = context.getNamespaceRegistry();
             if (!registry.isRegisteredNamespaceUri(uri)) {
                 registry.register(prefix, uri);
             }
-            updateProgress();
-        }
-
-        private void stopIfCancelled() throws SAXException {
-            if (monitor.isCancelled()) {
-                throw new SAXException(XmlSequencerI18n.canceledSequencingXmlDocument.text());
-            }
-        }
-
-        /**
-         * <p>
-         * {@inheritDoc}
-         * </p>
-         * 
-         * @see org.xml.sax.helpers.DefaultHandler#unparsedEntityDecl(java.lang.String, java.lang.String, java.lang.String,
-         *      java.lang.String)
-         */
-        @Override
-        public void unparsedEntityDecl( String name,
-                                        String publicId,
-                                        String systemId,
-                                        String notationName ) throws SAXException {
-            stopIfCancelled();
-        }
-
-        private void updateProgress() {
-            if (progress == 100.0) {
-                progress = 1;
-            } else {
-                progress++;
-            }
-            monitor.worked(progress);
         }
 
         /**
@@ -688,7 +522,7 @@ public class XmlSequencer implements StreamSequencer {
         @Override
         public void warning( SAXParseException warning ) {
             context.getLogger(XmlSequencer.class).warn(warning, XmlSequencerI18n.warningSequencingXmlDocument);
-            monitor.captureWarning(warning, XmlSequencerI18n.warningSequencingXmlDocument, warning);
+            context.getProblems().addWarning(warning, XmlSequencerI18n.warningSequencingXmlDocument, warning);
         }
     }
 

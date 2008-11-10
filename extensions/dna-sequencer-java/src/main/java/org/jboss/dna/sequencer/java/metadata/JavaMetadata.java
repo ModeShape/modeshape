@@ -24,7 +24,6 @@ package org.jboss.dna.sequencer.java.metadata;
 import java.io.InputStream;
 import java.util.List;
 import org.eclipse.jdt.core.dom.CompilationUnit;
-import org.jboss.dna.common.monitor.ActivityMonitor;
 import org.jboss.dna.sequencer.java.AbstractJavaMetadata;
 import org.jboss.dna.sequencer.java.CompilationUnitParser;
 import org.jboss.dna.sequencer.java.JavaMetadataUtil;
@@ -53,15 +52,12 @@ public class JavaMetadata extends AbstractJavaMetadata {
      * @param inputStream - the <code>InputStream</code> in our case a <code>FileInputStream</code> of the java file.
      * @param length - the length of the java file.
      * @param encoding - the encoding that can be used.
-     * @param activityMonitor - The basic <code>ActivityMonitor</code> that facilitates the updating and monitoring of progress
-     *        towards the completion of an activity.
      * @return the new instace of <code>JavaMetadata</code>
      * @see java.io.File#length()
      */
     public static JavaMetadata instance( InputStream inputStream,
                                          long length,
-                                         String encoding,
-                                         ActivityMonitor activityMonitor ) {
+                                         String encoding ) {
 
         JavaMetadata javaMetadata = new JavaMetadata();
         char[] source = null;

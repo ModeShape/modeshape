@@ -31,7 +31,7 @@ import javax.jcr.PathNotFoundException;
 import javax.jcr.Property;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
-import org.jboss.dna.common.monitor.ActivityMonitor;
+import org.jboss.dna.common.collection.Problems;
 import org.jboss.dna.common.util.Logger;
 import org.jboss.dna.graph.properties.Binary;
 import org.jboss.dna.graph.properties.DateTime;
@@ -82,88 +82,71 @@ public class StreamSequencerAdapter implements Sequencer {
                          NodeChange changes,
                          Set<RepositoryNodePath> outputPaths,
                          JcrExecutionContext execContext,
-                         ActivityMonitor activityMonitor ) throws RepositoryException, SequencerException {
+                         Problems problems ) throws RepositoryException, SequencerException {
         // 'sequencedPropertyName' contains the name of the modified property on 'input' that resulted in the call to this
         // sequencer.
         // 'changes' contains all of the changes to this node that occurred in the transaction.
         // 'outputPaths' contains the paths of the node(s) where this sequencer is to save it's data.
 
+        // Get the property that contains the data, given by 'propertyName' ...
+        Property sequencedProperty = null;
         try {
-            activityMonitor.beginTask(100, RepositoryI18n.sequencingPropertyOnNode, sequencedPropertyName, input.getPath());
+            sequencedProperty = input.getProperty(sequencedPropertyName);
+        } catch (PathNotFoundException e) {
+            String msg = RepositoryI18n.unableToFindPropertyForSequencing.text(sequencedPropertyName, input.getPath());
+            throw new SequencerException(msg, e);
+        }
 
-            // Get the property that contains the data, given by 'propertyName' ...
-            Property sequencedProperty = null;
-            try {
-                sequencedProperty = input.getProperty(sequencedPropertyName);
-            } catch (PathNotFoundException e) {
-                String msg = RepositoryI18n.unableToFindPropertyForSequencing.text(sequencedPropertyName, input.getPath());
-                throw new SequencerException(msg, e);
-            }
-            activityMonitor.worked(10);
-
-            // Get the binary property with the image content, and build the image metadata from the image ...
-            SequencerOutputMap output = new SequencerOutputMap(execContext.getValueFactories());
-            InputStream stream = null;
-            Throwable firstError = null;
-            ActivityMonitor sequencingMonitor = activityMonitor.createSubtask(50);
-            try {
-                stream = sequencedProperty.getStream();
-                SequencerNodeContext sequencerContext = new SequencerNodeContext(input, sequencedProperty, execContext);
-                this.streamSequencer.sequence(stream, output, sequencerContext, sequencingMonitor);
-            } catch (Throwable t) {
-                // Record the error ...
-                firstError = t;
-            } finally {
-                sequencingMonitor.done();
-                if (stream != null) {
-                    // Always close the stream, recording the error if we've not yet seen an error
-                    try {
-                        stream.close();
-                    } catch (Throwable t) {
-                        if (firstError == null) firstError = t;
-                    } finally {
-                        stream = null;
-                    }
-                }
-                if (firstError != null) {
-                    // Wrap and throw the first error that we saw ...
-                    throw new SequencerException(firstError);
-                }
-            }
-
-            // Find each output node and save the image metadata there ...
-            ActivityMonitor writingActivity = activityMonitor.createSubtask(40);
-            writingActivity.beginTask(outputPaths.size(),
-                                      RepositoryI18n.writingOutputSequencedFromPropertyOnNodes,
-                                      sequencedPropertyName,
-                                      input.getPath(),
-                                      outputPaths.size());
-            for (RepositoryNodePath outputPath : outputPaths) {
-                Session session = null;
-                try {
-                    // Get the name of the repository workspace and the path to the output node
-                    final String repositoryWorkspaceName = outputPath.getRepositoryWorkspaceName();
-                    final String nodePath = outputPath.getNodePath();
-
-                    // Create a session to the repository where the data should be written ...
-                    session = execContext.getSessionFactory().createSession(repositoryWorkspaceName);
-
-                    // Find or create the output node in this session ...
-                    Node outputNode = execContext.getTools().findOrCreateNode(session, nodePath);
-
-                    // Now save the image metadata to the output node ...
-                    if (saveOutput(outputNode, output, execContext)) {
-                        session.save();
-                    }
-                } finally {
-                    writingActivity.worked(1);
-                    // Always close the session ...
-                    if (session != null) session.logout();
-                }
-            }
-            writingActivity.done();
+        // Get the binary property with the image content, and build the image metadata from the image ...
+        SequencerOutputMap output = new SequencerOutputMap(execContext.getValueFactories());
+        InputStream stream = null;
+        Throwable firstError = null;
+        try {
+            stream = sequencedProperty.getStream();
+            SequencerNodeContext sequencerContext = new SequencerNodeContext(input, sequencedProperty, execContext, problems);
+            this.streamSequencer.sequence(stream, output, sequencerContext);
+        } catch (Throwable t) {
+            // Record the error ...
+            firstError = t;
         } finally {
-            activityMonitor.done();
+            if (stream != null) {
+                // Always close the stream, recording the error if we've not yet seen an error
+                try {
+                    stream.close();
+                } catch (Throwable t) {
+                    if (firstError == null) firstError = t;
+                } finally {
+                    stream = null;
+                }
+            }
+            if (firstError != null) {
+                // Wrap and throw the first error that we saw ...
+                throw new SequencerException(firstError);
+            }
+        }
+
+        // Find each output node and save the image metadata there ...
+        for (RepositoryNodePath outputPath : outputPaths) {
+            Session session = null;
+            try {
+                // Get the name of the repository workspace and the path to the output node
+                final String repositoryWorkspaceName = outputPath.getRepositoryWorkspaceName();
+                final String nodePath = outputPath.getNodePath();
+
+                // Create a session to the repository where the data should be written ...
+                session = execContext.getSessionFactory().createSession(repositoryWorkspaceName);
+
+                // Find or create the output node in this session ...
+                Node outputNode = execContext.getTools().findOrCreateNode(session, nodePath);
+
+                // Now save the image metadata to the output node ...
+                if (saveOutput(outputNode, output, execContext)) {
+                    session.save();
+                }
+            } finally {
+                // Always close the session ...
+                if (session != null) session.logout();
+            }
         }
     }
 

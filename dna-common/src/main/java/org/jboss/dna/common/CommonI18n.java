@@ -48,8 +48,6 @@ public final class CommonI18n {
     public static I18n i18nRequiredToSuppliedParameterMismatch;
 
     // Core-related fields
-    public static I18n activityMonitorBeginTask;
-    public static I18n activityMonitorStatus;
     public static I18n argumentDidNotContainKey;
     public static I18n argumentDidNotContainObject;
     public static I18n argumentMayNotBeEmpty;

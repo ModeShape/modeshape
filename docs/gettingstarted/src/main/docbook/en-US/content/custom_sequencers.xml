@@ -183,16 +183,18 @@ public interface StreamSequencer {
      *
      * @param stream the stream with the data to be sequenced; never null
      * @param output the output from the sequencing operation; never null
-     * @param progressMonitor the progress monitor that should be kept 
-     *   updated with the sequencer's progress and that should be
-     *   frequently consulted as to whether this operation has been cancelled.
+     * @param context the context for the sequencing operation; never null
      */
-    void sequence( InputStream stream, SequencerOutput output, ProgressMonitor progressMonitor );
+    void sequence( InputStream stream, SequencerOutput output, SequencerContext context );
  ]]></programlisting>
     <para>The job of a stream sequencer is to process the data in the supplied stream, and place into the <code>SequencerOutput</code> 
     any information that is to go into the JCR repository.  JBoss DNA figures out when your sequencer should be called
     (of course, using the sequencing configuration you'll add in a bit), and then makes sure the generated information
     is saved in the correct place in the repository.  
+    </para>
+    <para>The <code>SequencerContext</code> provides information about
+    the current sequencing operation, including the location and properties of the node being sequenced, the MIME type
+    of the node being sequenced, and a location to record problems that aren't severe enough to warrant throwing an exception.
     </para>
     <para>The <code>SequencerOutput</code> class is fairly easy to use.  There are basically two methods you need to call.
     One method sets the property values, while the other sets references to other nodes in the repository.  Use these
@@ -261,9 +263,7 @@ public class ImageMetadataSequencer implements StreamSequencer {
      * {@inheritDoc}
      */
     public void sequence( InputStream stream, SequencerOutput output, 
-                          ProgressMonitor progressMonitor ) {
-        progressMonitor.beginTask(10, ImageSequencerI18n.sequencerTaskName);
-
+                          SequencerContext context ) {
         ImageMetadata metadata = new ImageMetadata();
         metadata.setInput(stream);
         metadata.setDetermineImageNumber(true);
@@ -273,8 +273,6 @@ public class ImageMetadataSequencer implements StreamSequencer {
         if (!metadata.check()) {
             metadata = null;
         }
-        progressMonitor.worked(5);
-        if (progressMonitor.isCancelled()) return;
 
         // Generate the output graph if we found useful metadata ...
         if (metadata != null) {
@@ -294,8 +292,6 @@ public class ImageMetadataSequencer implements StreamSequencer {
             output.setProperty(METADATA_NODE, IMAGE_PHYSICAL_WIDTH_INCHES, metadata.getPhysicalWidthInch());
             output.setProperty(METADATA_NODE, IMAGE_PHYSICAL_HEIGHT_INCHES, metadata.getPhysicalHeightInch());
         }
-
-        progressMonitor.done();
     }
 }
  ]]></programlisting>
@@ -304,22 +300,7 @@ public class ImageMetadataSequencer implements StreamSequencer {
     and with the <code>image:metadata</code> node type.  No mixins are defined for the node, but several properties are set on the node
     using the values obtained from the image metadata.  After this method returns, the constructed graph will be saved to the repository
     in all of the places defined by its configuration.  (This is why only relative paths are used in the sequencer.)
-    </para>
-    <para>Also note how the progress monitor is used.  Reporting progress through the supplied <code>ProgressMonitor</code> is very easy, and it ensures that JBoss DNA
-     can accurately monitor and report the status of sequencing activities to the users.  At the beginning of the operation, call
-     <code>beginTask(...)</code> with a meaningful message describing
-     the operation and a total for the amount of work that will be done by this sequencer. Then perform the sequencing work,
-     periodically reporting work by specifying the incremental amount of work with the <code>worked(double)</code> method, or
-     by creating a subtask with the <code>createSubtask(double)</code> method and reporting work against that subtask
-     monitor.
-     </para>
-     <para>Your method should periodically use the ProgressMonitor's <code>isCancelled()</code> method to check whether the operation has been
-     cancelled.. If this method returns true, the implementation should abort all work as
-     soon as possible and close any resources that were acquired or opened.
-     </para>
-     <para>
-     Finally, when your sequencing operation is completed, it should call <code>done()</code> on the progress monitor.
-     </para>
+	</para>
   </sect1>
   <sect1 id="testing_custom_sequencers">
     <title>Testing custom sequencers</title>
@@ -338,11 +319,11 @@ public class ImageMetadataSequencer implements StreamSequencer {
     <programlisting role="JAVA"><![CDATA[
 Sequencer sequencer = new ImageMetadataSequencer();
 MockSequencerOutput output = new MockSequencerOutput();
-ProgressMonitor progress = new SimpleProgressMonitor("Test activity");
+MockSequencerContext context = new MockSequencerContext();
 InputStream stream = null;
 try {
     stream = this.getClass().getClassLoader().getResource("caution.gif").openStream();
-    sequencer.sequence(stream,output,progress);   // writes to 'output'
+    sequencer.sequence(stream,output,context);   // writes to 'output'
     assertThat(output.getPropertyValues("image:metadata", "jcr:primaryType"), 
                is(new Object[] {"image:metadata"}));
     assertThat(output.getPropertyValues("image:metadata", "jcr:mimeType"), 
@@ -357,11 +338,11 @@ try {
     <programlisting role="JAVA"><![CDATA[
 Sequencer sequencer = new ImageMetadataSequencer();
 MockSequencerOutput output = new MockSequencerOutput();
-ProgressMonitor progress = new SimpleProgressMonitor("Test activity");
+MockSequencerContext context = new MockSequencerContext();
 InputStream stream = null;
 try {
     stream = this.getClass().getClassLoader().getResource("caution.pict").openStream();
-    sequencer.sequence(stream,output,progress);   // writes to 'output'
+    sequencer.sequence(stream,output,context);   // writes to 'output'
     assertThat(output.hasProperties(), is(false));
     assertThat(output.hasReferences(), is(false));
 } finally {

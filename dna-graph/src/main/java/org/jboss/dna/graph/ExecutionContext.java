@@ -25,8 +25,6 @@ import java.security.AccessControlContext;
 import javax.security.auth.Subject;
 import javax.security.auth.login.LoginContext;
 import org.jboss.dna.common.component.ClassLoaderFactory;
-import org.jboss.dna.common.i18n.I18n;
-import org.jboss.dna.common.monitor.ActivityMonitor;
 import org.jboss.dna.common.util.Logger;
 import org.jboss.dna.graph.properties.NamespaceRegistry;
 import org.jboss.dna.graph.properties.Property;
@@ -44,18 +42,6 @@ import org.jboss.dna.graph.properties.ValueFactories;
  * @see ExecutionContextFactory
  */
 public interface ExecutionContext extends ClassLoaderFactory {
-
-    /**
-     * Creates a thread-safe activity monitor with the specified activity name. This method should be used when the caller is
-     * either not participating in an activity itself, or when a new activity needs to be performed that is not considered a
-     * subtask of the caller's activity.
-     * 
-     * @param activityName The internationalization object representing the activity's name.
-     * @param activityNameParameters Any parameters needed to localize the activity's name.
-     * @return A new activity monitor
-     */
-    ActivityMonitor createActivityMonitor( I18n activityName,
-                                           Object... activityNameParameters );
 
     /**
      * @return the access control context; may be <code>null</code>

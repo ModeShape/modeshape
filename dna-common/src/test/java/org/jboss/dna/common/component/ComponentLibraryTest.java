@@ -28,11 +28,9 @@ import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.IsSame.sameInstance;
 import static org.junit.Assert.assertThat;
 import java.util.List;
-import org.jboss.dna.common.monitor.ActivityMonitor;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.MockitoAnnotations;
-import org.mockito.MockitoAnnotations.Mock;
 
 /**
  * @author Randall Hauch
@@ -46,8 +44,6 @@ public class ComponentLibraryTest {
     private SampleComponentConfig configA2;
     private String validDescription;
     private String[] validClasspath;
-    @Mock
-    private ActivityMonitor nullMonitor;
 
     @Before
     public void beforeEach() {
@@ -152,19 +148,19 @@ public class ComponentLibraryTest {
 
         // The very first component instance should still be runnable ...
         for (int i = 0; i != 10; ++i) {
-            firstComponent.doSomething(nullMonitor);
+            firstComponent.doSomething();
         }
         assertThat(firstComponent.getCounter(), is(10));
 
         // The second component instance should still be runnable ...
         for (int i = 0; i != 10; ++i) {
-            secondComponentA.doSomething(nullMonitor);
+            secondComponentA.doSomething();
         }
         assertThat(secondComponentA.getCounter(), is(10));
 
         // The third component instance should still be runnable ...
         for (int i = 0; i != 10; ++i) {
-            firstComponentB.doSomething(nullMonitor);
+            firstComponentB.doSomething();
         }
         assertThat(firstComponentB.getCounter(), is(10));
     }

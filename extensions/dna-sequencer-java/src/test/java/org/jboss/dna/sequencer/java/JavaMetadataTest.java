@@ -69,7 +69,7 @@ public class JavaMetadataTest {
     public void beforeEach() throws Exception {
         source = new File("src/test/workspace/projectX/src/org/acme/MySource.java");
         stream = getJavaSrc(source);
-        javaMetadata = JavaMetadata.instance(stream, JavaMetadataUtil.length(stream), null, null);
+        javaMetadata = JavaMetadata.instance(stream, JavaMetadataUtil.length(stream), null);
         rootNode = CompilationUnitParser.runJLS3Conversion(JavaMetadataUtil.getJavaSourceFromTheInputStream(getJavaSrc(source),
                                                                                                             source.length(),
                                                                                                             null), true);
@@ -185,19 +185,18 @@ public class JavaMetadataTest {
                 assertThat(parameterizedFieldMetadata2.getType(), is("A"));
                 assertThat(parameterizedFieldMetadata2.getVariables().get(0).getName(), is("o"));
 
-                
                 SimpleTypeFieldMetadata simpleFieldMetadata = (SimpleTypeFieldMetadata)fields.get(4);
                 assertNotNull(simpleFieldMetadata);
                 assertTrue(simpleFieldMetadata.getModifiers().size() > 0);
                 assertThat(simpleFieldMetadata.getType(), is("X"));
                 assertThat(simpleFieldMetadata.getVariables().get(0).getName(), is("x"));
-                
+
                 ArrayTypeFieldMetadata arrayTypeFieldMetadata1 = (ArrayTypeFieldMetadata)fields.get(5);
                 assertNotNull(arrayTypeFieldMetadata1);
                 assertTrue(arrayTypeFieldMetadata1.getModifiers().size() > 0);
                 assertThat(arrayTypeFieldMetadata1.getType(), is("int"));
                 assertThat(arrayTypeFieldMetadata1.getVariables().get(0).getName(), is("ia"));
-                
+
                 ArrayTypeFieldMetadata arrayTypeFieldMetadata2 = (ArrayTypeFieldMetadata)fields.get(6);
                 assertNotNull(arrayTypeFieldMetadata2);
                 assertTrue(arrayTypeFieldMetadata2.getModifiers().size() > 0);
@@ -250,7 +249,7 @@ public class JavaMetadataTest {
                 assertNotNull(methodTypeMemberMetadata5);
                 assertThat(methodTypeMemberMetadata5.getName(), is("doSomething"));
                 assertTrue(methodTypeMemberMetadata5.getParameters().size() > 0);
-                
+
                 MethodTypeMemberMetadata methodTypeMemberMetadata6 = (MethodTypeMemberMetadata)methods.get(6);
                 assertTrue(methodTypeMemberMetadata6.getModifiers().size() == 1);
                 assertEquals(methodTypeMemberMetadata6.getReturnType().getType(), "double");

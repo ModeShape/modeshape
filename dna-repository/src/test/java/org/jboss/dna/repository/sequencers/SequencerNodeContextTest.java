@@ -29,6 +29,8 @@ import java.util.Iterator;
 import javax.jcr.Node;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
+import org.jboss.dna.common.collection.Problems;
+import org.jboss.dna.common.collection.SimpleProblems;
 import org.jboss.dna.common.jcr.AbstractJcrRepositoryTest;
 import org.jboss.dna.graph.properties.NamespaceRegistry;
 import org.jboss.dna.graph.properties.Property;
@@ -52,6 +54,7 @@ public class SequencerNodeContextTest extends AbstractJcrRepositoryTest {
     private JcrExecutionContext execContext;
     private Session session;
     private JcrTools tools;
+    private Problems problems;
     @Mock
     private javax.jcr.Property sequencedProperty;
 
@@ -73,6 +76,7 @@ public class SequencerNodeContextTest extends AbstractJcrRepositoryTest {
         startRepository();
         session = getRepository().login(getTestCredentials());
         tools = new JcrTools();
+        problems = new SimpleProblems();
     }
 
     @After
@@ -105,46 +109,46 @@ public class SequencerNodeContextTest extends AbstractJcrRepositoryTest {
 
     @Test( expected = java.lang.AssertionError.class )
     public void shouldNotAllowNullInputNode() throws Exception {
-        new SequencerNodeContext(null, sequencedProperty, execContext);
+        new SequencerNodeContext(null, sequencedProperty, execContext, problems);
     }
 
     @Test( expected = java.lang.AssertionError.class )
     public void shouldNotAllowNullSequencedProperty() throws Exception {
         Node input = tools.findOrCreateNode(session, "/a");
-        new SequencerNodeContext(input, null, execContext);
+        new SequencerNodeContext(input, null, execContext, problems);
     }
 
     @Test( expected = java.lang.AssertionError.class )
     public void shouldNotAllowNullExecutionContext() throws Exception {
         Node input = tools.findOrCreateNode(session, "/a");
-        new SequencerNodeContext(input, sequencedProperty, null);
+        new SequencerNodeContext(input, sequencedProperty, null, problems);
     }
 
     @Test
     public void shouldProvideNamespaceRegistry() throws Exception {
         Node input = tools.findOrCreateNode(session, "/a/b/c");
-        SequencerNodeContext sequencerContext = new SequencerNodeContext(input, sequencedProperty, execContext);
+        SequencerNodeContext sequencerContext = new SequencerNodeContext(input, sequencedProperty, execContext, problems);
         assertThat(sequencerContext.getNamespaceRegistry(), notNullValue());
     }
 
     @Test
     public void shouldProvideValueFactories() throws Exception {
         Node input = tools.findOrCreateNode(session, "/a/b/c");
-        SequencerNodeContext sequencerContext = new SequencerNodeContext(input, sequencedProperty, execContext);
+        SequencerNodeContext sequencerContext = new SequencerNodeContext(input, sequencedProperty, execContext, problems);
         assertThat(sequencerContext.getValueFactories(), notNullValue());
     }
 
     @Test
     public void shouldProvidePathToInput() throws Exception {
         Node input = tools.findOrCreateNode(session, "/a/b/c");
-        SequencerNodeContext sequencerContext = new SequencerNodeContext(input, sequencedProperty, execContext);
+        SequencerNodeContext sequencerContext = new SequencerNodeContext(input, sequencedProperty, execContext, problems);
         assertThat(sequencerContext.getInputPath(), is(execContext.getValueFactories().getPathFactory().create("/a/b/c")));
     }
 
     @Test
     public void shouldNeverReturnNullInputProperties() throws Exception {
         Node input = tools.findOrCreateNode(session, "/a/b/c");
-        SequencerNodeContext sequencerContext = new SequencerNodeContext(input, sequencedProperty, execContext);
+        SequencerNodeContext sequencerContext = new SequencerNodeContext(input, sequencedProperty, execContext, problems);
         assertThat(sequencerContext.getInputProperties(), notNullValue());
         assertThat(sequencerContext.getInputProperties().isEmpty(), is(false));
     }
@@ -154,7 +158,7 @@ public class SequencerNodeContextTest extends AbstractJcrRepositoryTest {
         Node input = tools.findOrCreateNode(session, "/a/b/c");
         input.setProperty("x", true);
         input.setProperty("y", new String[] {"asdf", "xyzzy"});
-        SequencerNodeContext sequencerContext = new SequencerNodeContext(input, sequencedProperty, execContext);
+        SequencerNodeContext sequencerContext = new SequencerNodeContext(input, sequencedProperty, execContext, problems);
         assertThat(sequencerContext.getInputProperties(), notNullValue());
         assertThat(sequencerContext.getInputProperties().isEmpty(), is(false));
         assertThat(sequencerContext.getInputProperties().size(), is(3));
@@ -168,7 +172,7 @@ public class SequencerNodeContextTest extends AbstractJcrRepositoryTest {
     @Test
     public void shouldProvideMimeType() throws Exception {
         Node input = tools.findOrCreateNode(session, "/a/b/c");
-        SequencerNodeContext sequencerContext = new SequencerNodeContext(input, sequencedProperty, execContext);
+        SequencerNodeContext sequencerContext = new SequencerNodeContext(input, sequencedProperty, execContext, problems);
         assertThat(sequencerContext.getMimeType(), is("text/plain"));
     }
 }

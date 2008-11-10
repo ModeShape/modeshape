@@ -27,9 +27,6 @@ import javax.security.auth.Subject;
 import javax.security.auth.login.LoginContext;
 import org.jboss.dna.common.component.ClassLoaderFactory;
 import org.jboss.dna.common.component.StandardClassLoaderFactory;
-import org.jboss.dna.common.i18n.I18n;
-import org.jboss.dna.common.monitor.ActivityMonitor;
-import org.jboss.dna.common.monitor.SimpleActivityMonitor;
 import org.jboss.dna.common.util.Logger;
 import org.jboss.dna.graph.properties.NamespaceRegistry;
 import org.jboss.dna.graph.properties.PropertyFactory;
@@ -112,16 +109,6 @@ public class BasicExecutionContext implements ExecutionContext {
         this.valueFactories = valueFactories == null ? new StandardValueFactories(this.namespaceRegistry) : valueFactories;
         this.propertyFactory = propertyFactory == null ? new BasicPropertyFactory(this.valueFactories) : propertyFactory;
         this.classLoaderFactory = new StandardClassLoaderFactory();
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.jboss.dna.graph.ExecutionContext#createActivityMonitor(org.jboss.dna.common.i18n.I18n, java.lang.Object[])
-     */
-    public ActivityMonitor createActivityMonitor( I18n activityName,
-                                                  Object... activityNameParameters ) {
-        return new SimpleActivityMonitor(activityName, activityNameParameters);
     }
 
     /**

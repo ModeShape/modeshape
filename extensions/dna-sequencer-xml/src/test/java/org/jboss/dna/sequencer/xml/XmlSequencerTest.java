@@ -28,8 +28,6 @@ import static org.junit.Assert.assertThat;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
-import org.jboss.dna.common.i18n.MockI18n;
-import org.jboss.dna.common.monitor.ActivityMonitor;
 import org.jboss.dna.graph.properties.Name;
 import org.jboss.dna.graph.sequencers.MockSequencerContext;
 import org.jboss.dna.graph.sequencers.MockSequencerOutput;
@@ -61,7 +59,6 @@ public class XmlSequencerTest {
     private XmlSequencer sequencer;
     private InputStream stream;
     private MockSequencerOutput output;
-    private ActivityMonitor monitor;
     private URL xml1;
     private URL xml2;
     private URL xml3;
@@ -74,7 +71,6 @@ public class XmlSequencerTest {
         sequencer = new XmlSequencer();
         context = new MockSequencerContext();
         output = new MockSequencerOutput(context);
-        monitor = context.createActivityMonitor(MockI18n.passthrough, "Test activity");
         xml1 = this.getClass().getClassLoader().getResource("jackrabbitInMemoryTestRepositoryConfig.xml");
         assertThat(xml1, is(notNullValue()));
         xml2 = this.getClass().getClassLoader().getResource("master.xml");
@@ -201,7 +197,7 @@ public class XmlSequencerTest {
     private void verifyDocument( URL url ) throws IOException {
         stream = url.openStream();
         assertThat(stream, is(notNullValue()));
-        sequencer.sequence(stream, output, context, monitor);
+        sequencer.sequence(stream, output, context);
         verifyName("", "jcr:primaryType", DOCUMENT);
     }
 

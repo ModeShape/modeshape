@@ -77,11 +77,7 @@ public final class RepositoryI18n {
     public static I18n errorFindingSequencersToRunAgainstNode;
     public static I18n errorInRepositoryWhileFindingSequencersToRunAgainstNode;
     public static I18n executionContextHasBeenClosed;
-    public static I18n sequencerTask;
-    public static I18n sequencerSubtask;
     public static I18n unableToFindPropertyForSequencing;
-    public static I18n sequencingPropertyOnNode;
-    public static I18n writingOutputSequencedFromPropertyOnNodes;
 
     // Properties
     public static I18n errorReadingPropertiesFromContainerNode;

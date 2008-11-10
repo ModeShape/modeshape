@@ -24,8 +24,6 @@ package org.jboss.dna.graph;
 import java.security.AccessControlContext;
 import javax.security.auth.Subject;
 import javax.security.auth.login.LoginContext;
-import org.jboss.dna.common.i18n.I18n;
-import org.jboss.dna.common.monitor.ActivityMonitor;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.common.util.Logger;
 import org.jboss.dna.graph.properties.NameFactory;
@@ -147,16 +145,6 @@ public class ExecutionContexts {
                     return nameFactory;
                 }
             };
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.jboss.dna.graph.ExecutionContext#createActivityMonitor(org.jboss.dna.common.i18n.I18n, java.lang.Object[])
-         */
-        public ActivityMonitor createActivityMonitor( I18n activityName,
-                                                      Object... activityNameParameters ) {
-            return delegate.createActivityMonitor(activityName, activityNameParameters);
         }
 
         /**

@@ -25,7 +25,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 import org.apache.commons.lang.StringUtils;
-import org.jboss.dna.common.monitor.ActivityMonitor;
 import org.jboss.dna.graph.properties.NameFactory;
 import org.jboss.dna.graph.properties.Path;
 import org.jboss.dna.graph.properties.PathFactory;
@@ -175,22 +174,17 @@ public class JavaMetadataSequencer implements JavaSourceCndDefinition, StreamSeq
      * {@inheritDoc}
      * 
      * @see org.jboss.dna.graph.sequencers.StreamSequencer#sequence(java.io.InputStream,
-     *      org.jboss.dna.graph.sequencers.SequencerOutput, org.jboss.dna.graph.sequencers.SequencerContext,
-     *      org.jboss.dna.common.monitor.ActivityMonitor)
+     *      org.jboss.dna.graph.sequencers.SequencerOutput, org.jboss.dna.graph.sequencers.SequencerContext)
      */
     public void sequence( InputStream stream,
                           SequencerOutput output,
-                          SequencerContext context,
-                          ActivityMonitor activityMonitor ) {
-        activityMonitor.beginTask(10, JavaMetadataI18n.sequencerTaskName);
-
+                          SequencerContext context ) {
         JavaMetadata javaMetadata = null;
         NameFactory nameFactory = context.getValueFactories().getNameFactory();
         PathFactory pathFactory = context.getValueFactories().getPathFactory();
 
         try {
-            javaMetadata = JavaMetadata.instance(stream, JavaMetadataUtil.length(stream), null, activityMonitor.createSubtask(10));
-            if (activityMonitor.isCancelled()) return;
+            javaMetadata = JavaMetadata.instance(stream, JavaMetadataUtil.length(stream), null);
         } catch (IOException e) {
             e.printStackTrace();
             return;
@@ -720,7 +714,5 @@ public class JavaMetadataSequencer implements JavaSourceCndDefinition, StreamSeq
                 // enumeration declaration
             }
         }
-
-        activityMonitor.done();
     }
 }

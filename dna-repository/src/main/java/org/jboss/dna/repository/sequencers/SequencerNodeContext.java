@@ -35,8 +35,7 @@ import javax.jcr.Value;
 import javax.security.auth.Subject;
 import javax.security.auth.login.LoginContext;
 import net.jcip.annotations.Immutable;
-import org.jboss.dna.common.i18n.I18n;
-import org.jboss.dna.common.monitor.ActivityMonitor;
+import org.jboss.dna.common.collection.Problems;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.common.util.Logger;
 import org.jboss.dna.graph.properties.Name;
@@ -65,15 +64,19 @@ public class SequencerNodeContext implements SequencerContext {
     private final Path path;
     private final Set<Property> props;
     private final JcrExecutionContext context;
+    private final Problems problems;
 
     SequencerNodeContext( Node input,
                           javax.jcr.Property sequencedProperty,
-                          JcrExecutionContext context ) throws RepositoryException {
+                          JcrExecutionContext context,
+                          Problems problems ) throws RepositoryException {
         assert input != null;
         assert sequencedProperty != null;
         assert context != null;
+        assert problems != null;
         this.context = context;
         this.sequencedProperty = sequencedProperty;
+        this.problems = problems;
         this.factories = context.getValueFactories();
         // Translate JCR path and property values to DNA constructs and cache them to improve performance and prevent
         // RepositoryException from being thrown by getters
@@ -142,16 +145,6 @@ public class SequencerNodeContext implements SequencerContext {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.graph.ExecutionContext#createActivityMonitor(org.jboss.dna.common.i18n.I18n, java.lang.Object[])
-     */
-    public ActivityMonitor createActivityMonitor( I18n activityName,
-                                                  Object... activityNameParameters ) {
-        return context.createActivityMonitor(activityName, activityNameParameters);
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
      * @see org.jboss.dna.graph.ExecutionContext#getAccessControlContext()
      */
     public AccessControlContext getAccessControlContext() {
@@ -205,6 +198,15 @@ public class SequencerNodeContext implements SequencerContext {
             }
         }
         return null;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.sequencers.SequencerContext#getProblems()
+     */
+    public Problems getProblems() {
+        return problems;
     }
 
     /**
