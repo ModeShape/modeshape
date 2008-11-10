@@ -26,10 +26,17 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.jboss.dna.common.util.CheckArg;
 
 /**
- * A request that wraps multiple other requests.
+ * A request that wraps multiple other requests, allowing multiple requests to be treated as a single request.
+ * <p>
+ * Note that {@link #isCancelled()} and {@link #cancel()} apply to all requests contained by the composite request. In other
+ * words, cancelling this request immediately marks all contained requests as cancelled. However, cancelling any request in the
+ * request has the effect of cancelling all other requests in the composite, including the composite. (This is implemented by
+ * having all {@link Request} objects in the composite share the same cancelled flag object.)
+ * </p>
  * 
  * @author Randall Hauch
  */
@@ -187,8 +194,13 @@ public class CompositeRequest extends Request implements Iterable<Request> {
      * @param requests the modifiable list of requests; may not be null
      * @param readOnly true if all of the requests are {@link Request#isReadOnly() read-only}
      */
-    protected CompositeRequest( List<? extends Request> requests,
-                                boolean readOnly ) {
+    /*package*/CompositeRequest( List<? extends Request> requests,
+                                  boolean readOnly ) {
+        // Iterate through the requests and set the cancelled flag of each request to this object's flag ...
+        final AtomicBoolean flag = super.getCancelledFlag();
+        for (Request request : requests) {
+            request.setCancelledFlag(flag);
+        }
         this.requests = Collections.unmodifiableList(requests);
         this.readOnly = readOnly;
     }

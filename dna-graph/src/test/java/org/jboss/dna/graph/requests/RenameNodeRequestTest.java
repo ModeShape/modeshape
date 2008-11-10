@@ -44,14 +44,19 @@ public class RenameNodeRequestTest extends AbstractRequestTest {
         newName = createName("SomethingElse");
     }
 
-    @Test( expected = IllegalArgumentException.class )
-    public void shouldNotAllowCreatingRequestWithNullFromLocation() {
-        new CopyBranchRequest(null, validPathLocation);
+    @Override
+    protected Request createRequest() {
+        return new RenameNodeRequest(validPathLocation1, newName);
     }
 
     @Test( expected = IllegalArgumentException.class )
-    public void shouldNotAllowCreatingRequestWithNullToLocation() {
-        new CopyBranchRequest(validPathLocation, null);
+    public void shouldNotAllowCreatingRequestWithNullFromLocation() {
+        new RenameNodeRequest(null, newName);
+    }
+
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldNotAllowCreatingRequestWithNullNewName() {
+        new RenameNodeRequest(validPathLocation1, null);
     }
 
     @Test

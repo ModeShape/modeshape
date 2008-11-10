@@ -73,6 +73,7 @@ public class RemovePropertiesRequest extends Request implements Iterable<Name> {
     public RemovePropertiesRequest( Location from,
                                     Iterable<Name> propertyNames ) {
         CheckArg.isNotNull(from, "from");
+        CheckArg.isNotNull(propertyNames, "propertyNames");
         this.from = from;
         Set<Name> names = new HashSet<Name>();
         for (Name name : propertyNames) {
@@ -92,6 +93,7 @@ public class RemovePropertiesRequest extends Request implements Iterable<Name> {
     public RemovePropertiesRequest( Location from,
                                     Iterator<Name> propertyNames ) {
         CheckArg.isNotNull(from, "from");
+        CheckArg.isNotNull(propertyNames, "propertyNames");
         this.from = from;
         Set<Name> names = new HashSet<Name>();
         while (propertyNames.hasNext()) {

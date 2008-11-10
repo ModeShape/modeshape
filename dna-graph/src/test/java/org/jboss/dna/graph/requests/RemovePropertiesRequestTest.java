@@ -27,6 +27,7 @@ import static org.hamcrest.core.IsSame.sameInstance;
 import static org.junit.Assert.assertThat;
 import static org.junit.matchers.JUnitMatchers.hasItems;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import org.jboss.dna.graph.properties.Name;
 import org.junit.Before;
@@ -51,14 +52,44 @@ public class RemovePropertiesRequestTest extends AbstractRequestTest {
         validPropertyName3 = createName("foo3");
     }
 
-    @Test( expected = IllegalArgumentException.class )
-    public void shouldNotAllowCreatingRequestWithNullFromLocation() {
-        new CopyBranchRequest(null, validPathLocation);
+    @Override
+    protected Request createRequest() {
+        return new RemovePropertiesRequest(validPathLocation1, validPropertyName1);
     }
 
     @Test( expected = IllegalArgumentException.class )
-    public void shouldNotAllowCreatingRequestWithNullToLocation() {
-        new CopyBranchRequest(validPathLocation, null);
+    public void shouldNotAllowCreatingRequestWithNullFromLocation() {
+        new RemovePropertiesRequest(null, validPropertyName1);
+    }
+
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldNotAllowCreatingRequestWithNullPropertyName() {
+        new RemovePropertiesRequest(validPathLocation, (Name[])null);
+    }
+
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldNotAllowCreatingRequestWithEmptyPropertyNameArray() {
+        new RemovePropertiesRequest(validPathLocation, new Name[] {});
+    }
+
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldNotAllowCreatingRequestWithNullPropertyNameIterator() {
+        new RemovePropertiesRequest(validPathLocation, (Iterator<Name>)null);
+    }
+
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldNotAllowCreatingRequestWithEmptyPropertyNameIterator() {
+        new RemovePropertiesRequest(validPathLocation, new ArrayList<Name>().iterator());
+    }
+
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldNotAllowCreatingRequestWithNullPropertyNameIterable() {
+        new RemovePropertiesRequest(validPathLocation, (Iterable<Name>)null);
+    }
+
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldNotAllowCreatingRequestWithEmptyPropertyNameIterable() {
+        new RemovePropertiesRequest(validPathLocation, new ArrayList<Name>());
     }
 
     @Test

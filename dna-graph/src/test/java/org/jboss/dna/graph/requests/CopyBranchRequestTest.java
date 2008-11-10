@@ -41,6 +41,11 @@ public class CopyBranchRequestTest extends AbstractRequestTest {
         super.beforeEach();
     }
 
+    @Override
+    protected Request createRequest() {
+        return new CopyBranchRequest(validPathLocation1, validPathLocation2);
+    }
+
     @Test( expected = IllegalArgumentException.class )
     public void shouldNotAllowCreatingRequestWithNullFromLocation() {
         new CopyBranchRequest(null, validPathLocation);

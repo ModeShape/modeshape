@@ -47,13 +47,18 @@ public class ReadPropertyRequestTest extends AbstractRequestTest {
         validPropertyName = validProperty.getName();
     }
 
-    @Test( expected = IllegalArgumentException.class )
-    public void shouldNotAllowCreatingRequestWithNullFromLocation() {
-        new CopyBranchRequest(null, validPathLocation);
+    @Override
+    protected Request createRequest() {
+        return new ReadPropertyRequest(validPathLocation1, validPropertyName);
     }
 
     @Test( expected = IllegalArgumentException.class )
-    public void shouldNotAllowCreatingRequestWithNullToLocation() {
+    public void shouldNotAllowCreatingRequestWithNullLocation() {
+        new ReadPropertyRequest(null, validPropertyName);
+    }
+
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldNotAllowCreatingRequestWithNullPropertyName() {
         new CopyBranchRequest(validPathLocation, null);
     }
 

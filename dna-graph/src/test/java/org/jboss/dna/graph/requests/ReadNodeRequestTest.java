@@ -42,6 +42,11 @@ public class ReadNodeRequestTest extends AbstractRequestTest {
         super.beforeEach();
     }
 
+    @Override
+    protected Request createRequest() {
+        return new ReadNodeRequest(validPathLocation1);
+    }
+
     @Test( expected = IllegalArgumentException.class )
     public void shouldNotAllowCreatingRequestWithNullFromLocation() {
         new CopyBranchRequest(null, validPathLocation);

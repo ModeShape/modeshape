@@ -22,6 +22,7 @@
 package org.jboss.dna.graph.requests;
 
 import java.io.Serializable;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.jboss.dna.graph.connectors.RepositoryConnection;
 
 /**
@@ -34,6 +35,11 @@ public abstract class Request implements Serializable {
     private static final long serialVersionUID = 1L;
 
     private Throwable error;
+    private AtomicBoolean cancelled;
+
+    protected Request() {
+        this.cancelled = new AtomicBoolean(false);
+    }
 
     /**
      * Set the error for this request.
@@ -63,10 +69,61 @@ public abstract class Request implements Serializable {
     }
 
     /**
+     * Check whether this request has been cancelled. Although it is a recommendation that the result of this method be followed
+     * wherever possible, it is not required to immediately stop processing the request if this method returns <code>true</code>.
+     * For example, if processing is almost complete, it may be appropriate to simply finish processing the request.
+     * <p>
+     * This method is safe to be called by different threads.
+     * </p>
+     * 
+     * @return true if this request has been cancelled, or false otherwise.
+     */
+    public boolean isCancelled() {
+        return cancelled.get();
+    }
+
+    /**
+     * Set the cancelled state of this request. All requests are initially marked as not cancelled. Note that this is designed so
+     * that the same {@link AtomicBoolean} instance can be passed to multiple requests, allowing a single flag to dictate the
+     * cancelled state of all of those requests.
+     * <p>
+     * So, by default, each request should already be set up to not be cancelled, so for most cases this method does not need to
+     * be called at all. This method should be called when this flag is to be shared among multiple requests, usually when the
+     * requests are being initialized or assembled.
+     * </p>
+     * 
+     * @param cancelled the new (potentially shared) cancelled state for the request; may not be null
+     */
+    /*package*/void setCancelledFlag( AtomicBoolean cancelled ) {
+        assert cancelled != null;
+        this.cancelled = cancelled;
+    }
+
+    /**
+     * Get this request's cancelled flag.
+     * 
+     * @return the cancelled flag
+     */
+    /*package*/AtomicBoolean getCancelledFlag() {
+        return cancelled;
+    }
+
+    /**
+     * Cancel this request. After this method is called, the {@link #isCancelled() cancellation flag} is set, and any current or
+     * future processing of the request may be affected by the cancellation. (Note however, that processors may choose to not
+     * respect this request.)
+     * <p>
+     * This method is safe to be called by different threads.
+     * </p>
+     */
+    public void cancel() {
+        this.cancelled.set(true);
+    }
+
+    /**
      * Return whether this request only reads information.
      * 
      * @return true if this request reads information, or false if it requests that the repository content be changed in some way
      */
     public abstract boolean isReadOnly();
-
 }

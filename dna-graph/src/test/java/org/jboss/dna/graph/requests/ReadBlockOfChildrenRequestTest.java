@@ -41,14 +41,24 @@ public class ReadBlockOfChildrenRequestTest extends AbstractRequestTest {
         super.beforeEach();
     }
 
-    @Test( expected = IllegalArgumentException.class )
-    public void shouldNotAllowCreatingRequestWithNullFromLocation() {
-        new CopyBranchRequest(null, validPathLocation);
+    @Override
+    protected Request createRequest() {
+        return new ReadBlockOfChildrenRequest(validPathLocation1, 2, 10);
     }
 
     @Test( expected = IllegalArgumentException.class )
-    public void shouldNotAllowCreatingRequestWithNullToLocation() {
-        new CopyBranchRequest(validPathLocation, null);
+    public void shouldNotAllowCreatingRequestWithNullFromLocation() {
+        new ReadBlockOfChildrenRequest(null, 0, 1);
+    }
+
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldNotAllowCreatingRequestWithNegativeStartingIndex() {
+        new ReadBlockOfChildrenRequest(validPathLocation1, -1, 1);
+    }
+
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldNotAllowCreatingRequestWithNegativeCount() {
+        new ReadBlockOfChildrenRequest(validPathLocation1, 1, -1);
     }
 
     @Test

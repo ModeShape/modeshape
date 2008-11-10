@@ -53,6 +53,39 @@ public class CompositeRequestTest extends AbstractRequestTest {
         requestList = Arrays.asList(requests);
     }
 
+    @Override
+    protected Request createRequest() {
+        return CompositeRequest.with(requests);
+    }
+
+    @Test
+    public void shouldCancelAllNestedRequestsAndCompositeAfterCallingCancel() {
+        Request composite = CompositeRequest.with(requests);
+        assertThat(composite.isCancelled(), is(false));
+        for (Request request : requests) {
+            assertThat(request.isCancelled(), is(false));
+        }
+        composite.cancel();
+        assertThat(composite.isCancelled(), is(true));
+        for (Request request : requests) {
+            assertThat(request.isCancelled(), is(true));
+        }
+    }
+
+    @Test
+    public void shouldCancelAllNestedRequestsAndCompositeAfterCallingCancelOnNestedRequest() {
+        Request composite = CompositeRequest.with(requests);
+        assertThat(composite.isCancelled(), is(false));
+        for (Request request : requests) {
+            assertThat(request.isCancelled(), is(false));
+        }
+        requests[0].cancel();
+        assertThat(composite.isCancelled(), is(true));
+        for (Request request : requests) {
+            assertThat(request.isCancelled(), is(true));
+        }
+    }
+
     @Test( expected = IllegalArgumentException.class )
     public void shouldNotAllowCreatingCompositeRequestWithNullRequest() {
         CompositeRequest.with((Request)null);

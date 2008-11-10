@@ -41,14 +41,14 @@ public class DeleteBranchRequestTest extends AbstractRequestTest {
         super.beforeEach();
     }
 
-    @Test( expected = IllegalArgumentException.class )
-    public void shouldNotAllowCreatingRequestWithNullFromLocation() {
-        new CopyBranchRequest(null, validPathLocation);
+    @Override
+    protected Request createRequest() {
+        return new DeleteBranchRequest(validPathLocation1);
     }
 
     @Test( expected = IllegalArgumentException.class )
-    public void shouldNotAllowCreatingRequestWithNullToLocation() {
-        new CopyBranchRequest(validPathLocation, null);
+    public void shouldNotAllowCreatingRequestWithNullFromLocation() {
+        new DeleteBranchRequest(null);
     }
 
     @Test

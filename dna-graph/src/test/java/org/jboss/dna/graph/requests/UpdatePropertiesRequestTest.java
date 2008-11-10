@@ -27,6 +27,7 @@ import static org.hamcrest.core.IsSame.sameInstance;
 import static org.junit.Assert.assertThat;
 import static org.junit.matchers.JUnitMatchers.hasItems;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import org.jboss.dna.graph.properties.Property;
 import org.junit.Before;
@@ -45,14 +46,44 @@ public class UpdatePropertiesRequestTest extends AbstractRequestTest {
         super.beforeEach();
     }
 
-    @Test( expected = IllegalArgumentException.class )
-    public void shouldNotAllowCreatingRequestWithNullFromLocation() {
-        new CopyBranchRequest(null, validPathLocation);
+    @Override
+    protected Request createRequest() {
+        return new UpdatePropertiesRequest(validPathLocation1, validProperty1);
     }
 
     @Test( expected = IllegalArgumentException.class )
-    public void shouldNotAllowCreatingRequestWithNullToLocation() {
-        new CopyBranchRequest(validPathLocation, null);
+    public void shouldNotAllowCreatingRequestWithNullFromLocation() {
+        new UpdatePropertiesRequest(null, validProperty1);
+    }
+
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldNotAllowCreatingRequestWithNullPropertyName() {
+        new UpdatePropertiesRequest(validPathLocation, (Property[])null);
+    }
+
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldNotAllowCreatingRequestWithEmptyPropertyNameArray() {
+        new UpdatePropertiesRequest(validPathLocation, new Property[] {});
+    }
+
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldNotAllowCreatingRequestWithNullPropertyNameIterator() {
+        new UpdatePropertiesRequest(validPathLocation, (Iterator<Property>)null);
+    }
+
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldNotAllowCreatingRequestWithEmptyPropertyNameIterator() {
+        new UpdatePropertiesRequest(validPathLocation, new ArrayList<Property>().iterator());
+    }
+
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldNotAllowCreatingRequestWithNullPropertyNameIterable() {
+        new UpdatePropertiesRequest(validPathLocation, (Iterable<Property>)null);
+    }
+
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldNotAllowCreatingRequestWithEmptyPropertyNameIterable() {
+        new UpdatePropertiesRequest(validPathLocation, new ArrayList<Property>());
     }
 
     @Test

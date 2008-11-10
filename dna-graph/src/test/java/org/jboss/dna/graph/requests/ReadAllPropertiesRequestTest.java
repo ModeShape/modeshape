@@ -42,14 +42,14 @@ public class ReadAllPropertiesRequestTest extends AbstractRequestTest {
         super.beforeEach();
     }
 
-    @Test( expected = IllegalArgumentException.class )
-    public void shouldNotAllowCreatingRequestWithNullFromLocation() {
-        new CopyBranchRequest(null, validPathLocation);
+    @Override
+    protected Request createRequest() {
+        return new ReadAllPropertiesRequest(validPathLocation1);
     }
 
     @Test( expected = IllegalArgumentException.class )
-    public void shouldNotAllowCreatingRequestWithNullToLocation() {
-        new CopyBranchRequest(validPathLocation, null);
+    public void shouldNotAllowCreatingRequestWithNullFromLocation() {
+        new ReadAllPropertiesRequest(null);
     }
 
     @Test

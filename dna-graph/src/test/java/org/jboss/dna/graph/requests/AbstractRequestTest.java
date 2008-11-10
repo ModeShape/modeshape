@@ -21,6 +21,8 @@
  */
 package org.jboss.dna.graph.requests;
 
+import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.assertThat;
 import java.util.UUID;
 import org.jboss.dna.graph.BasicExecutionContext;
 import org.jboss.dna.graph.ExecutionContext;
@@ -29,6 +31,7 @@ import org.jboss.dna.graph.properties.Name;
 import org.jboss.dna.graph.properties.Path;
 import org.jboss.dna.graph.properties.Property;
 import org.junit.Before;
+import org.junit.Test;
 
 /**
  * @author Randall Hauch
@@ -83,5 +86,21 @@ public abstract class AbstractRequestTest {
 
     protected Name createName( String name ) {
         return context.getValueFactories().getNameFactory().create(name);
+    }
+
+    protected abstract Request createRequest();
+
+    @Test
+    public void shouldNotBeCancelledByDefault() {
+        Request request = createRequest();
+        assertThat(request.isCancelled(), is(false));
+    }
+
+    @Test
+    public void shouldBeCancelledAfterCallingCancel() {
+        Request request = createRequest();
+        assertThat(request.isCancelled(), is(false));
+        request.cancel();
+        assertThat(request.isCancelled(), is(true));
     }
 }

@@ -42,14 +42,14 @@ public class ReadAllChildrenRequestTest extends AbstractRequestTest {
         super.beforeEach();
     }
 
-    @Test( expected = IllegalArgumentException.class )
-    public void shouldNotAllowCreatingRequestWithNullFromLocation() {
-        new CopyBranchRequest(null, validPathLocation);
+    @Override
+    protected Request createRequest() {
+        return new ReadAllChildrenRequest(validPathLocation1);
     }
 
     @Test( expected = IllegalArgumentException.class )
-    public void shouldNotAllowCreatingRequestWithNullToLocation() {
-        new CopyBranchRequest(validPathLocation, null);
+    public void shouldNotAllowCreatingRequestWithNullFromLocation() {
+        new ReadAllChildrenRequest(null);
     }
 
     @Test

@@ -70,6 +70,7 @@ public class UpdatePropertiesRequest extends Request implements Iterable<Propert
     public UpdatePropertiesRequest( Location on,
                                     Iterable<Property> properties ) {
         CheckArg.isNotNull(on, "on");
+        CheckArg.isNotNull(properties, "properties");
         this.on = on;
         List<Property> props = new LinkedList<Property>();
         for (Property property : properties) {
@@ -89,6 +90,7 @@ public class UpdatePropertiesRequest extends Request implements Iterable<Propert
     public UpdatePropertiesRequest( Location on,
                                     Iterator<Property> properties ) {
         CheckArg.isNotNull(on, "on");
+        CheckArg.isNotNull(properties, "properties");
         this.on = on;
         List<Property> props = new LinkedList<Property>();
         while (properties.hasNext()) {

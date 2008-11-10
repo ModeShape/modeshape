@@ -120,6 +120,7 @@ public abstract class RequestProcessor {
      */
     public void process( Request request ) {
         if (request == null) return;
+        if (request.isCancelled()) return;
         if (request instanceof CompositeRequest) {
             process((CompositeRequest)request);
         } else if (request instanceof CopyBranchRequest) {
@@ -166,6 +167,7 @@ public abstract class RequestProcessor {
         Throwable firstError = null;
         for (Request embedded : request) {
             assert embedded != null;
+            if (embedded.isCancelled()) return;
             process(embedded);
             if (embedded.hasError()) {
                 if (numberOfErrors == 0) firstError = embedded.getError();
@@ -285,6 +287,7 @@ public abstract class RequestProcessor {
         // Now read the locations ...
         boolean first = true;
         while (locationsToRead.peek() != null) {
+            if (request.isCancelled()) return;
             LocationWithDepth read = locationsToRead.poll();
 
             // Check the depth ...
@@ -353,6 +356,7 @@ public abstract class RequestProcessor {
             request.setError(readChildren.getError());
             return;
         }
+        if (request.isCancelled()) return;
         // Now, copy all of the results into the submitted request ...
         for (Property property : readProperties) {
             request.addProperty(property);
