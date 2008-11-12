@@ -126,6 +126,7 @@ public class XmlSequencerHandler extends DefaultHandler2 {
     private StringBuilder cDataContent;
     private StringBuilder contentBuilder;
     private final Problems problems;
+    private final Map<String, String> entityValues = new HashMap<String, String>();
 
     /**
      * @param output
@@ -136,11 +137,11 @@ public class XmlSequencerHandler extends DefaultHandler2 {
      * @param scoping
      */
     XmlSequencerHandler( SequencerOutput output,
-                         SequencerContext context,
-                         Name nameAttribute,
-                         Name defaultPrimaryType,
-                         TextDecoder textDecoder,
-                         XmlSequencer.AttributeScoping scoping ) {
+                                      SequencerContext context,
+                                      Name nameAttribute,
+                                      Name defaultPrimaryType,
+                                      TextDecoder textDecoder,
+                                      XmlSequencer.AttributeScoping scoping ) {
         CheckArg.isNotNull(output, "output");
         CheckArg.isNotNull(context, "context");
 
@@ -283,6 +284,8 @@ public class XmlSequencerHandler extends DefaultHandler2 {
         output.setProperty(currentPath, JcrLexicon.PRIMARY_TYPE, DnaDtdLexicon.ENTITY);
         output.setProperty(currentPath, DnaDtdLexicon.NAME, name);
         output.setProperty(currentPath, DnaDtdLexicon.VALUE, value);
+        // Record the name/value pair ...
+        entityValues.put(name, value);
         endNode();
     }
 
@@ -459,6 +462,18 @@ public class XmlSequencerHandler extends DefaultHandler2 {
                 // into this method), we want to keep the entity reference ...
                 contentBuilder.append('&').append(currentEntityName).append(';');
 
+                // Normally, 'characters' is called with just the entity replacement characters,
+                // and is called between 'startEntity' and 'endEntity'. However, per DNA-231, some JVMs
+                // use an incorrect ordering: 'startEntity', 'endEntity' and then 'characters', and the
+                // content passed to the 'characters' call not only includes the entity replacement characters
+                // followed by other content. Look for this condition ...
+                String entityValue = entityValues.get(currentEntityName);
+                if (!content.equals(entityValue) && entityValue != null && entityValue.length() < content.length()) {
+                    // Per DNA-231, there's extra content after the entity value. So replace the entity value in the
+                    // content with the entity reference (not the replacement characters), and add the extra content ...
+                    String extraContent = content.substring(entityValue.length());
+                    contentBuilder.append(extraContent);
+                }
                 // We're done reading the entity characters, so null it out
                 currentEntityName = null;
             } else {
