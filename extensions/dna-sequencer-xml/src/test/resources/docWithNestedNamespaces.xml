@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Cars xmlns:jcr="http://www.jcp.org/jcr/1.0">
+    <Hybrid xmlns="http://default.namespace.com">
+        <car jcr:name="Toyota Prius" maker="Toyota" model="Prius"/>
+        <car jcr:name="Toyota Highlander" maker="Toyota" model="Highlander"/>
+        <car jcr:name="Nissan Altima" maker="Nissan" model="Altima"/>
+    </Hybrid>
+    <Sports xmlns:jcr2="http://www.jcp.org/jcr/1.0" xmlns:info="http://attributes.com">
+        <car jcr2:name="Aston Martin DB9" info:maker="Aston Martin" model="DB9"/>
+        <car jcr:name="Infiniti G37" info:maker="Infiniti" model="G37" />
+    </Sports>
+</Cars>

@@ -169,9 +169,10 @@ public class PathValueFactory extends AbstractValueFactory<Path> implements Path
      * {@inheritDoc}
      */
     public Path create( int value ) {
-        throw new ValueFormatException(value, getPropertyType(), GraphI18n.unableToCreateValue.text(getPropertyType().getName(),
-                                                                                                  Integer.class.getSimpleName(),
-                                                                                                  value));
+        throw new ValueFormatException(value, getPropertyType(),
+                                       GraphI18n.unableToCreateValue.text(getPropertyType().getName(),
+                                                                          Integer.class.getSimpleName(),
+                                                                          value));
     }
 
     /**
@@ -179,17 +180,18 @@ public class PathValueFactory extends AbstractValueFactory<Path> implements Path
      */
     public Path create( long value ) {
         throw new ValueFormatException(value, getPropertyType(), GraphI18n.unableToCreateValue.text(getPropertyType().getName(),
-                                                                                                  Long.class.getSimpleName(),
-                                                                                                  value));
+                                                                                                    Long.class.getSimpleName(),
+                                                                                                    value));
     }
 
     /**
      * {@inheritDoc}
      */
     public Path create( boolean value ) {
-        throw new ValueFormatException(value, getPropertyType(), GraphI18n.unableToCreateValue.text(getPropertyType().getName(),
-                                                                                                  Boolean.class.getSimpleName(),
-                                                                                                  value));
+        throw new ValueFormatException(value, getPropertyType(),
+                                       GraphI18n.unableToCreateValue.text(getPropertyType().getName(),
+                                                                          Boolean.class.getSimpleName(),
+                                                                          value));
     }
 
     /**
@@ -197,8 +199,8 @@ public class PathValueFactory extends AbstractValueFactory<Path> implements Path
      */
     public Path create( float value ) {
         throw new ValueFormatException(value, getPropertyType(), GraphI18n.unableToCreateValue.text(getPropertyType().getName(),
-                                                                                                  Float.class.getSimpleName(),
-                                                                                                  value));
+                                                                                                    Float.class.getSimpleName(),
+                                                                                                    value));
     }
 
     /**
@@ -206,8 +208,8 @@ public class PathValueFactory extends AbstractValueFactory<Path> implements Path
      */
     public Path create( double value ) {
         throw new ValueFormatException(value, getPropertyType(), GraphI18n.unableToCreateValue.text(getPropertyType().getName(),
-                                                                                                  Double.class.getSimpleName(),
-                                                                                                  value));
+                                                                                                    Double.class.getSimpleName(),
+                                                                                                    value));
     }
 
     /**
@@ -216,17 +218,18 @@ public class PathValueFactory extends AbstractValueFactory<Path> implements Path
     public Path create( BigDecimal value ) {
         throw new ValueFormatException(value, getPropertyType(),
                                        GraphI18n.unableToCreateValue.text(getPropertyType().getName(),
-                                                                        BigDecimal.class.getSimpleName(),
-                                                                        value));
+                                                                          BigDecimal.class.getSimpleName(),
+                                                                          value));
     }
 
     /**
      * {@inheritDoc}
      */
     public Path create( Calendar value ) {
-        throw new ValueFormatException(value, getPropertyType(), GraphI18n.unableToCreateValue.text(getPropertyType().getName(),
-                                                                                                  Calendar.class.getSimpleName(),
-                                                                                                  value));
+        throw new ValueFormatException(value, getPropertyType(),
+                                       GraphI18n.unableToCreateValue.text(getPropertyType().getName(),
+                                                                          Calendar.class.getSimpleName(),
+                                                                          value));
     }
 
     /**
@@ -234,8 +237,8 @@ public class PathValueFactory extends AbstractValueFactory<Path> implements Path
      */
     public Path create( Date value ) {
         throw new ValueFormatException(value, getPropertyType(), GraphI18n.unableToCreateValue.text(getPropertyType().getName(),
-                                                                                                  Date.class.getSimpleName(),
-                                                                                                  value));
+                                                                                                    Date.class.getSimpleName(),
+                                                                                                    value));
     }
 
     /**
@@ -244,9 +247,10 @@ public class PathValueFactory extends AbstractValueFactory<Path> implements Path
      * @see org.jboss.dna.graph.properties.ValueFactory#create(org.jboss.dna.graph.properties.DateTime)
      */
     public Path create( DateTime value ) throws ValueFormatException {
-        throw new ValueFormatException(value, getPropertyType(), GraphI18n.unableToCreateValue.text(getPropertyType().getName(),
-                                                                                                  DateTime.class.getSimpleName(),
-                                                                                                  value));
+        throw new ValueFormatException(value, getPropertyType(),
+                                       GraphI18n.unableToCreateValue.text(getPropertyType().getName(),
+                                                                          DateTime.class.getSimpleName(),
+                                                                          value));
     }
 
     /**
@@ -325,14 +329,14 @@ public class PathValueFactory extends AbstractValueFactory<Path> implements Path
      * @see org.jboss.dna.graph.properties.PathFactory#createRelativePath()
      */
     public Path createRelativePath() {
-        return BasicPath.SELF_PATH;
+        return BasicPath.EMPTY_RELATIVE;
     }
 
     /**
      * {@inheritDoc}
      */
     public Path createRelativePath( Name... segmentNames ) {
-        if (segmentNames == null || segmentNames.length == 0) return BasicPath.SELF_PATH;
+        if (segmentNames == null || segmentNames.length == 0) return BasicPath.EMPTY_RELATIVE;
         List<Segment> segments = new ArrayList<Segment>(segmentNames.length);
         for (Name segmentName : segmentNames) {
             if (segmentName == null) {
@@ -347,7 +351,7 @@ public class PathValueFactory extends AbstractValueFactory<Path> implements Path
      * {@inheritDoc}
      */
     public Path createRelativePath( Segment... segments ) {
-        if (segments == null || segments.length == 0) return BasicPath.SELF_PATH;
+        if (segments == null || segments.length == 0) return BasicPath.EMPTY_RELATIVE;
         List<Segment> segmentsList = new ArrayList<Segment>(segments.length);
         for (Segment segment : segments) {
             if (segment == null) {
@@ -371,14 +375,15 @@ public class PathValueFactory extends AbstractValueFactory<Path> implements Path
             }
             segmentsList.add(segment);
         }
-        if (segmentsList.isEmpty()) return BasicPath.SELF_PATH;
+        if (segmentsList.isEmpty()) return BasicPath.EMPTY_RELATIVE;
         return new BasicPath(segmentsList, false);
     }
 
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.graph.properties.PathFactory#create(org.jboss.dna.graph.properties.Path, org.jboss.dna.graph.properties.Path)
+     * @see org.jboss.dna.graph.properties.PathFactory#create(org.jboss.dna.graph.properties.Path,
+     *      org.jboss.dna.graph.properties.Path)
      */
     public Path create( Path parentPath,
                         Path childPath ) {
@@ -538,7 +543,7 @@ public class PathValueFactory extends AbstractValueFactory<Path> implements Path
                                         Integer.parseInt(ndx));
         } catch (NumberFormatException err) {
             throw new ValueFormatException(segmentName, getPropertyType(), GraphI18n.invalidIndexInSegmentName.text(ndx,
-                                                                                                                  segmentName));
+                                                                                                                    segmentName));
         }
     }
 
@@ -559,8 +564,8 @@ public class PathValueFactory extends AbstractValueFactory<Path> implements Path
     public Path create( Reference value ) {
         throw new ValueFormatException(value, getPropertyType(),
                                        GraphI18n.unableToCreateValue.text(getPropertyType().getName(),
-                                                                        Reference.class.getSimpleName(),
-                                                                        value));
+                                                                          Reference.class.getSimpleName(),
+                                                                          value));
     }
 
     /**
@@ -577,8 +582,8 @@ public class PathValueFactory extends AbstractValueFactory<Path> implements Path
             return create(asciiString);
         }
         throw new ValueFormatException(value, getPropertyType(), GraphI18n.errorConvertingType.text(URI.class.getSimpleName(),
-                                                                                                  Path.class.getSimpleName(),
-                                                                                                  value));
+                                                                                                    Path.class.getSimpleName(),
+                                                                                                    value));
     }
 
     /**
@@ -588,8 +593,8 @@ public class PathValueFactory extends AbstractValueFactory<Path> implements Path
      */
     public Path create( UUID value ) {
         throw new ValueFormatException(value, getPropertyType(), GraphI18n.unableToCreateValue.text(getPropertyType().getName(),
-                                                                                                  UUID.class.getSimpleName(),
-                                                                                                  value));
+                                                                                                    UUID.class.getSimpleName(),
+                                                                                                    value));
     }
 
     /**

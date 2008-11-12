@@ -22,40 +22,62 @@
 package org.jboss.dna.sequencer.xml;
 
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import org.jboss.dna.common.util.StringUtil;
-import org.jboss.dna.graph.JcrLexicon;
+import org.jboss.dna.common.text.TextDecoder;
+import org.jboss.dna.graph.JcrNtLexicon;
 import org.jboss.dna.graph.properties.Name;
-import org.jboss.dna.graph.properties.NameFactory;
-import org.jboss.dna.graph.properties.NamespaceRegistry;
-import org.jboss.dna.graph.properties.Path;
 import org.jboss.dna.graph.sequencers.SequencerContext;
 import org.jboss.dna.graph.sequencers.SequencerOutput;
 import org.jboss.dna.graph.sequencers.StreamSequencer;
-import org.xml.sax.Attributes;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXNotRecognizedException;
 import org.xml.sax.SAXNotSupportedException;
-import org.xml.sax.SAXParseException;
 import org.xml.sax.XMLReader;
-import org.xml.sax.ext.DefaultHandler2;
 import org.xml.sax.helpers.XMLReaderFactory;
 
 /**
+ * A sequencer for XML files, which maintains DTD, entity, comments, and other content. Note that by default the sequencer uses
+ * the {@link XmlSequencer.AttributeScoping#USE_DEFAULT_NAMESPACE default namespace} for unqualified attribute rather than
+ * {@link XmlSequencer.AttributeScoping#INHERIT_ELEMENT_NAMESPACE inheriting the namespace from the element}. (See also
+ * {@link InheritingXmlSequencer}.
+ * 
  * @author John Verhaeg
  */
 public class XmlSequencer implements StreamSequencer {
 
-    private static final String DEFAULT_PRIMARY_TYPE = "nt:unstructured";
-    private static final String DECL_HANDLER_FEATURE = "http://xml.org/sax/properties/declaration-handler";
-    private static final String ENTITY_RESOLVER_2_FEATURE = "http://xml.org/sax/features/use-entity-resolver2";
-    private static final String LEXICAL_HANDLER_FEATURE = "http://xml.org/sax/properties/lexical-handler";
-    private static final String RESOLVE_DTD_URIS_FEATURE = "http://xml.org/sax/features/resolve-dtd-uris";
-    private static final String LOAD_EXTERNAL_DTDS_FEATURE = "http://apache.org/xml/features/nonvalidating/load-external-dtd";
+    /**
+     * The choices for how attributes that have no namespace prefix should be assigned a namespace.
+     * 
+     * @author Randall Hauch
+     */
+    public enum AttributeScoping {
+        /** The attribute's namespace is the default namespace */
+        USE_DEFAULT_NAMESPACE,
+        /** The attribute's namespace is the same namespace as the containing element */
+        INHERIT_ELEMENT_NAMESPACE;
+    }
+
+    /*package*/static final String DEFAULT_PRIMARY_TYPE = "nt:unstructured";
+    /*package*/static final String DECL_HANDLER_FEATURE = "http://xml.org/sax/properties/declaration-handler";
+    /*package*/static final String ENTITY_RESOLVER_2_FEATURE = "http://xml.org/sax/features/use-entity-resolver2";
+    /*package*/static final String LEXICAL_HANDLER_FEATURE = "http://xml.org/sax/properties/lexical-handler";
+    /*package*/static final String RESOLVE_DTD_URIS_FEATURE = "http://xml.org/sax/features/resolve-dtd-uris";
+    /*package*/static final String LOAD_EXTERNAL_DTDS_FEATURE = "http://apache.org/xml/features/nonvalidating/load-external-dtd";
+
+    private AttributeScoping scoping = AttributeScoping.USE_DEFAULT_NAMESPACE;
+
+    /**
+     * @param scoping Sets scoping to the specified value.
+     */
+    public void setAttributeScoping( AttributeScoping scoping ) {
+        this.scoping = scoping;
+    }
+
+    /**
+     * @return scoping
+     */
+    public AttributeScoping getAttributeScoping() {
+        return scoping;
+    }
 
     /**
      * {@inheritDoc}
@@ -67,8 +89,13 @@ public class XmlSequencer implements StreamSequencer {
                           SequencerContext context ) {
         XMLReader reader;
         try {
+            // Set up the XML handler ...
+            Name primaryType = JcrNtLexicon.UNSTRUCTURED;
+            Name nameAttribute = null;
+            TextDecoder decoder = null;
+            XmlSequencerHandler handler = new XmlSequencerHandler(output, context, nameAttribute, primaryType, decoder, scoping);
+            // Create the reader ...
             reader = XMLReaderFactory.createXMLReader();
-            Handler handler = new Handler(output, context);
             reader.setContentHandler(handler);
             reader.setErrorHandler(handler);
             // Ensure handler acting as entity resolver 2
@@ -97,9 +124,9 @@ public class XmlSequencer implements StreamSequencer {
      * @param featureName the name of the feature; may not be null
      * @param value the value for the feature
      */
-    private void setFeature( XMLReader reader,
-                             String featureName,
-                             boolean value ) {
+    /*package*/static void setFeature( XMLReader reader,
+                                        String featureName,
+                                        boolean value ) {
         try {
             if (reader.getFeature(featureName) != value) {
                 reader.setFeature(featureName, value);
@@ -109,428 +136,4 @@ public class XmlSequencer implements StreamSequencer {
         }
     }
 
-    private final class Handler extends DefaultHandler2 {
-
-        private final SequencerOutput output;
-        private final SequencerContext context;
-
-        private Path path; // The DNA path of the node representing the current XML element
-
-        // Cached instances of the name factory and commonly referenced names
-        private final NameFactory nameFactory;
-        private Name defaultPrimaryType;
-
-        // Recursive map used to track the number of occurrences of names for elements under a particular path
-        private Map<Name, List<IndexedName>> nameToIndexedNamesMap = new HashMap<Name, List<IndexedName>>();
-
-        // The stack of recursive maps being processed, with the head entry being the map for the current path
-        private final LinkedList<Map<Name, List<IndexedName>>> nameToIndexedNamesMapStack = new LinkedList<Map<Name, List<IndexedName>>>();
-
-        // The stack of XML namespace in scope, with the head entry being namespace of the closest ancestor element declaring a
-        // namespace.
-        private final LinkedList<String> nsStack = new LinkedList<String>();
-
-        // Builder used to concatenate concurrent lines of CDATA into a single value.
-        private StringBuilder cDataBuilder;
-
-        // Builder used to concatenate concurrent lines of element content and entity evaluations into a single value.
-        private StringBuilder contentBuilder;
-
-        // The entity being processed
-        private String entity;
-
-        Handler( SequencerOutput output,
-                 SequencerContext context ) {
-            assert output != null;
-            assert context != null;
-            this.output = output;
-            this.context = context;
-            // Initialize path to a an empty path relative to the SequencerOutput's target path.
-            path = context.getValueFactories().getPathFactory().createRelativePath();
-            // Cache name factory since it is frequently used
-            nameFactory = context.getValueFactories().getNameFactory();
-        }
-
-        /**
-         * <p>
-         * {@inheritDoc}
-         * </p>
-         * 
-         * @see org.xml.sax.helpers.DefaultHandler#characters(char[], int, int)
-         */
-        @Override
-        public void characters( char[] ch,
-                                int start,
-                                int length ) {
-            String content = String.valueOf(ch, start, length);
-            // Check if data should be appended to previously parsed CDATA
-            if (cDataBuilder == null) {
-                // If content is for an entity, replace with entity reference
-                if (entity != null) {
-                    content = '&' + entity + ';';
-                }
-                // Check if first line of content
-                if (contentBuilder == null) {
-                    contentBuilder = new StringBuilder(content);
-                } else {
-                    // Append additional lines or entity evaluations to previous content, separated by a space
-                    if (entity == null) {
-                        contentBuilder.append(' ');
-                    }
-                    contentBuilder.append(content);
-                    // Text within builder will be output when another element or CDATA is encountered
-                }
-            } else {
-                cDataBuilder.append(ch, start, length);
-                // Text within builder will be output at the end of CDATA
-            }
-        }
-
-        /**
-         * <p>
-         * {@inheritDoc}
-         * </p>
-         * 
-         * @see org.xml.sax.ext.DefaultHandler2#comment(char[], int, int)
-         */
-        @Override
-        public void comment( char[] ch,
-                             int start,
-                             int length ) {
-            // Output separate nodes for each comment since multiple are allowed
-            startElement(DnaXmlLexicon.COMMENT);
-            output.setProperty(path, JcrLexicon.PRIMARY_TYPE, DnaXmlLexicon.COMMENT);
-            output.setProperty(path, DnaXmlLexicon.COMMENT_CONTENT, String.valueOf(ch, start, length));
-            endElement();
-        }
-
-        /**
-         * <p>
-         * {@inheritDoc}
-         * </p>
-         * 
-         * @see org.xml.sax.ext.DefaultHandler2#endCDATA()
-         */
-        @Override
-        public void endCDATA() {
-            // Output CDATA built in characters() method
-            output.setProperty(path, DnaXmlLexicon.CDATA_CONTENT, cDataBuilder.toString());
-            endElement();
-            // Null-out builder to free memory
-            cDataBuilder = null;
-        }
-
-        private void endContent() {
-            if (contentBuilder != null) {
-                // Normalize content
-                String content = StringUtil.normalize(contentBuilder.toString());
-                // Null-out builder to setup for subsequent content.
-                // Must be done before call to startElement below to prevent infinite loop.
-                contentBuilder = null;
-                // Skip if nothing in content but whitespace
-                if (content.length() > 0) {
-                    // Create separate node for each content entry since entries can be interspersed amongst child elements
-                    startElement(DnaXmlLexicon.ELEMENT_CONTENT);
-                    output.setProperty(path, JcrLexicon.PRIMARY_TYPE, DnaXmlLexicon.ELEMENT_CONTENT);
-                    output.setProperty(path, DnaXmlLexicon.ELEMENT_CONTENT, content);
-                    endElement();
-                }
-            }
-        }
-
-        private void endElement() {
-            // Recover parent's path, namespace, and indexedName map, clearing the ended element's map to free memory
-            path = path.getParent();
-            nameToIndexedNamesMap.clear();
-            nameToIndexedNamesMap = nameToIndexedNamesMapStack.removeFirst();
-            nsStack.removeFirst();
-        }
-
-        /**
-         * <p>
-         * {@inheritDoc}
-         * </p>
-         * 
-         * @see org.xml.sax.helpers.DefaultHandler#endElement(java.lang.String, java.lang.String, java.lang.String)
-         */
-        @Override
-        public void endElement( String uri,
-                                String localName,
-                                String name ) {
-            // Check if content still needs to be output
-            endContent();
-            endElement();
-        }
-
-        /**
-         * <p>
-         * {@inheritDoc}
-         * </p>
-         * 
-         * @see org.xml.sax.ext.DefaultHandler2#endEntity(java.lang.String)
-         */
-        @Override
-        public void endEntity( String name ) {
-            entity = null;
-        }
-
-        /**
-         * <p>
-         * {@inheritDoc}
-         * </p>
-         * 
-         * @see org.xml.sax.helpers.DefaultHandler#error(org.xml.sax.SAXParseException)
-         */
-        @Override
-        public void error( SAXParseException error ) {
-            context.getLogger(XmlSequencer.class).error(error, XmlSequencerI18n.errorSequencingXmlDocument, error);
-            context.getProblems().addError(error, XmlSequencerI18n.errorSequencingXmlDocument, error);
-        }
-
-        /**
-         * <p>
-         * {@inheritDoc}
-         * </p>
-         * 
-         * @see org.xml.sax.ext.DefaultHandler2#externalEntityDecl(java.lang.String, java.lang.String, java.lang.String)
-         */
-        @Override
-        public void externalEntityDecl( String name,
-                                        String publicId,
-                                        String systemId ) {
-            // Add "synthetic" entity container to path to help prevent name collisions with XML elements
-            Name entityName = DnaDtdLexicon.ENTITY;
-            startElement(entityName);
-            output.setProperty(path, JcrLexicon.PRIMARY_TYPE, entityName);
-            output.setProperty(path, nameFactory.create(DnaDtdLexicon.NAME), name);
-            output.setProperty(path, nameFactory.create(DnaDtdLexicon.PUBLIC_ID), publicId);
-            output.setProperty(path, nameFactory.create(DnaDtdLexicon.SYSTEM_ID), systemId);
-            endElement();
-        }
-
-        /**
-         * <p>
-         * {@inheritDoc}
-         * </p>
-         * 
-         * @see org.xml.sax.helpers.DefaultHandler#fatalError(org.xml.sax.SAXParseException)
-         */
-        @Override
-        public void fatalError( SAXParseException error ) {
-            context.getLogger(XmlSequencer.class).error(error, XmlSequencerI18n.fatalErrorSequencingXmlDocument, error);
-            context.getProblems().addError(error, XmlSequencerI18n.fatalErrorSequencingXmlDocument, error);
-        }
-
-        private Name getDefaultPrimaryType() {
-            if (defaultPrimaryType == null) {
-                defaultPrimaryType = nameFactory.create(DEFAULT_PRIMARY_TYPE);
-            }
-            return defaultPrimaryType;
-        }
-
-        /**
-         * <p>
-         * {@inheritDoc}
-         * </p>
-         * 
-         * @see org.xml.sax.ext.DefaultHandler2#internalEntityDecl(java.lang.String, java.lang.String)
-         */
-        @Override
-        public void internalEntityDecl( String name,
-                                        String value ) {
-            // Add "synthetic" entity container to path to help prevent name collisions with XML elements
-            Name entityName = DnaDtdLexicon.ENTITY;
-            startElement(entityName);
-            output.setProperty(path, JcrLexicon.PRIMARY_TYPE, entityName);
-            output.setProperty(path, DnaDtdLexicon.NAME, name);
-            output.setProperty(path, DnaDtdLexicon.VALUE, value);
-            endElement();
-        }
-
-        /**
-         * <p>
-         * {@inheritDoc}
-         * </p>
-         * 
-         * @see org.xml.sax.helpers.DefaultHandler#processingInstruction(java.lang.String, java.lang.String)
-         */
-        @Override
-        public void processingInstruction( String target,
-                                           String data ) {
-            // Output separate nodes for each instruction since multiple are allowed
-            Name name = DnaXmlLexicon.PROCESSING_INSTRUCTION;
-            startElement(name);
-            output.setProperty(path, JcrLexicon.PRIMARY_TYPE, name);
-            output.setProperty(path, DnaXmlLexicon.TARGET, target);
-            output.setProperty(path, DnaXmlLexicon.PROCESSING_INSTRUCTION_CONTENT, data);
-            endElement();
-        }
-
-        /**
-         * <p>
-         * {@inheritDoc}
-         * </p>
-         * 
-         * @see org.xml.sax.ext.DefaultHandler2#startCDATA()
-         */
-        @Override
-        public void startCDATA() {
-            // Output separate nodes for each CDATA since multiple are allowed
-            startElement(DnaXmlLexicon.CDATA);
-            // Prepare builder for concatenating consecutive lines of CDATA
-            cDataBuilder = new StringBuilder();
-        }
-
-        /**
-         * <p>
-         * {@inheritDoc}
-         * </p>
-         * 
-         * @see org.xml.sax.helpers.DefaultHandler#startDocument()
-         */
-        @Override
-        public void startDocument() {
-            output.setProperty(path, JcrLexicon.PRIMARY_TYPE, DnaXmlLexicon.DOCUMENT);
-        }
-
-        /**
-         * <p>
-         * {@inheritDoc}
-         * </p>
-         * 
-         * @see org.xml.sax.ext.DefaultHandler2#startDTD(java.lang.String, java.lang.String, java.lang.String)
-         */
-        @Override
-        public void startDTD( String name,
-                              String publicId,
-                              String systemId ) {
-            output.setProperty(path, DnaDtdLexicon.NAME, name);
-            output.setProperty(path, DnaDtdLexicon.PUBLIC_ID, publicId);
-            output.setProperty(path, DnaDtdLexicon.SYSTEM_ID, systemId);
-        }
-
-        private void startElement( Name name ) {
-            // Check if content still needs to be output
-            endContent();
-            // Add name to list of indexed names for this element to ensure we use the correct index (which is the size of the
-            // list)
-            List<IndexedName> indexedNames = nameToIndexedNamesMap.get(name);
-            if (indexedNames == null) {
-                indexedNames = new ArrayList<IndexedName>();
-                nameToIndexedNamesMap.put(name, indexedNames);
-            }
-            IndexedName indexedName = new IndexedName();
-            indexedNames.add(indexedName);
-            // Add element name and the appropriate index to the path.
-            // Per the JCR spec, the index must be relative to same-name sibling nodes
-            path = context.getValueFactories().getPathFactory().create(path, name, indexedNames.size());
-            path = path.getNormalizedPath();
-            // Add the indexed name map to the stack and set the current map to the new element's map
-            nameToIndexedNamesMapStack.addFirst(nameToIndexedNamesMap);
-            nameToIndexedNamesMap = indexedName.nameToIndexedNamesMap;
-            // Set the current namespace to whatever is declared by this element, or if not declared, to its nearest ancestor that
-            // does declare a namespace.
-            String ns = name.getNamespaceUri();
-            if (ns.length() == 0) {
-                nsStack.addFirst(nsStack.isEmpty() ? "" : nsStack.getFirst());
-            } else {
-                nsStack.addFirst(ns);
-            }
-        }
-
-        /**
-         * <p>
-         * {@inheritDoc}
-         * </p>
-         * 
-         * @see org.xml.sax.helpers.DefaultHandler#startElement(java.lang.String, java.lang.String, java.lang.String,
-         *      org.xml.sax.Attributes)
-         */
-        @Override
-        public void startElement( String uri,
-                                  String localName,
-                                  String name,
-                                  Attributes attributes ) {
-            // Look for the "jcr:name" attribute, and use that if it's there
-            Name type = getDefaultPrimaryType();
-            Name nameObj = nameFactory.create(name);
-            for (int ndx = 0, len = attributes.getLength(); ndx < len; ++ndx) {
-                String ns = attributes.getURI(ndx);
-                String attrLocalName = attributes.getLocalName(ndx);
-                Object value = attributes.getValue(ndx);
-                String jcrNsUri = context.getNamespaceRegistry().getNamespaceForPrefix("jcr");
-                if (jcrNsUri != null && jcrNsUri.equals(ns) && attrLocalName.equals("name")) {
-                    nameObj = nameFactory.create(value);
-                    break;
-                }
-            }
-            startElement(nameObj);
-            output.setProperty(path, JcrLexicon.PRIMARY_TYPE, type);
-            // Output this element's attributes using the attribute's namespace, if supplied, or the current namespace in scope.
-            String inheritedNs = nsStack.getFirst();
-            for (int ndx = 0, len = attributes.getLength(); ndx < len; ++ndx) {
-                String ns = attributes.getURI(ndx);
-                String attrLocalName = attributes.getLocalName(ndx);
-                Object value = attributes.getValue(ndx);
-                String jcrNsUri = context.getNamespaceRegistry().getNamespaceForPrefix("jcr");
-                if (jcrNsUri != null && jcrNsUri.equals(ns) && attrLocalName.equals("primaryType")) {
-                    value = nameFactory.create(value);
-                }
-                if (jcrNsUri != null && jcrNsUri.equals(ns) && attrLocalName.equals("name")) {
-                    continue;
-                }
-                output.setProperty(path, nameFactory.create(ns.length() == 0 ? inheritedNs : ns, attrLocalName), value);
-            }
-        }
-
-        /**
-         * <p>
-         * {@inheritDoc}
-         * </p>
-         * 
-         * @see org.xml.sax.ext.DefaultHandler2#startEntity(java.lang.String)
-         */
-        @Override
-        public void startEntity( String name ) {
-            entity = name;
-        }
-
-        /**
-         * <p>
-         * {@inheritDoc}
-         * </p>
-         * 
-         * @see org.xml.sax.helpers.DefaultHandler#startPrefixMapping(java.lang.String, java.lang.String)
-         */
-        @Override
-        public void startPrefixMapping( String prefix,
-                                        String uri ) {
-            // Register any unregistered namespaces
-            NamespaceRegistry registry = context.getNamespaceRegistry();
-            if (!registry.isRegisteredNamespaceUri(uri)) {
-                registry.register(prefix, uri);
-            }
-        }
-
-        /**
-         * <p>
-         * {@inheritDoc}
-         * </p>
-         * 
-         * @see org.xml.sax.helpers.DefaultHandler#warning(org.xml.sax.SAXParseException)
-         */
-        @Override
-        public void warning( SAXParseException warning ) {
-            context.getLogger(XmlSequencer.class).warn(warning, XmlSequencerI18n.warningSequencingXmlDocument);
-            context.getProblems().addWarning(warning, XmlSequencerI18n.warningSequencingXmlDocument, warning);
-        }
-    }
-
-    private class IndexedName {
-
-        Map<Name, List<IndexedName>> nameToIndexedNamesMap = new HashMap<Name, List<IndexedName>>();
-
-        IndexedName() {
-        }
-    }
 }

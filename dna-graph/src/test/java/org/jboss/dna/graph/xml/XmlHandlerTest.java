@@ -29,6 +29,7 @@ import static org.junit.Assert.assertThat;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -432,9 +433,42 @@ public class XmlHandlerTest {
         private final LinkedList<CreateNodeRequest> requests = new LinkedList<CreateNodeRequest>();
 
         public void create( Path path,
-                            List<Property> properties,
-                            Name elementName ) {
+                            List<Property> properties ) {
             requests.add(new CreateNodeRequest(new Location(path), properties));
+        }
+
+        public void create( final Path path,
+                            final Property firstProperty,
+                            final Property... additionalProperties ) {
+            Location location = new Location(path);
+            if (firstProperty == null) {
+                requests.add(new CreateNodeRequest(location));
+            } else {
+                if (additionalProperties == null || additionalProperties.length == 0) {
+                    requests.add(new CreateNodeRequest(location, firstProperty));
+                } else {
+                    Iterator<Property> iter = new Iterator<Property>() {
+                        private int index = -1;
+
+                        public boolean hasNext() {
+                            return index < additionalProperties.length;
+                        }
+
+                        public Property next() {
+                            if (index == -1) {
+                                ++index;
+                                return firstProperty;
+                            }
+                            return additionalProperties[index++];
+                        }
+
+                        public void remove() {
+                            throw new UnsupportedOperationException();
+                        }
+                    };
+                    requests.add(new CreateNodeRequest(location, iter));
+                }
+            }
         }
 
         @SuppressWarnings( "synthetic-access" )

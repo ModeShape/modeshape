@@ -311,7 +311,7 @@ public class XmlHandler extends DefaultHandler2 {
         properties.clear();
         Object typePropertyValue = null;
         // Convert each of the attributes to a property ...
-        for (int i = 0; i != attributes.getLength(); ++i) {
+        for (int i = 0, len = attributes.getLength(); i != len; ++i) {
             String attributeLocalName = attributes.getLocalName(i);
             String attributeUri = attributes.getURI(i);
             Name attributeName = null;
@@ -333,7 +333,7 @@ public class XmlHandler extends DefaultHandler2 {
                 nodeName = nameFactory.create(attributes.getValue(i)); // don't use a decoder
                 continue;
             }
-            if (attributeName.equals(typeAttribute)) {
+            if (typePropertyValue == null && attributeName.equals(typeAttribute)) {
                 typePropertyValue = nameFactory.create(attributes.getValue(i)); // don't use a decoder
                 continue;
             }
@@ -342,25 +342,25 @@ public class XmlHandler extends DefaultHandler2 {
             properties.add(property);
         }
         // Create the node name if required ...
-        Name elementName = nameFactory.create(uri, localName, decoder);
         if (nodeName == null) {
             // No attribute defines the node name ...
-            nodeName = elementName;
+            nodeName = nameFactory.create(uri, localName, decoder);
         } else {
-            // A attribute defines the node name ...
-            typePropertyValue = elementName;
+            typePropertyValue = nameFactory.create(uri, localName, decoder);
         }
-        // Set the type property, if required
         if (typeAttribute != null) {
+            // A attribute defines the node name. Set the type property, if required
             if (typePropertyValue == null) typePropertyValue = typeAttributeValue;
-            propertyValues[0] = typePropertyValue;
-            Property property = propertyFactory.create(typeAttribute, propertyValues);
-            properties.add(property);
+            if (typePropertyValue != null) {
+                propertyValues[0] = typePropertyValue;
+                Property property = propertyFactory.create(typeAttribute, propertyValues);
+                properties.add(property);
+            }
         }
         // Update the current path ...
         currentPath = pathFactory.create(currentPath, nodeName);
         // Create the node, and note that we don't care about same-name siblings (as the graph will correct them) ...
-        destination.create(currentPath, properties, elementName);
+        destination.create(currentPath, properties);
     }
 
     /**
@@ -390,7 +390,7 @@ public class XmlHandler extends DefaultHandler2 {
     /**
      * Create a property with the given name and value, obtained from an attribute name and value in the XML content.
      * <p>
-     * By default, this method creates a property by directly using the value as the sole String value of the property.
+     * By default, this method creates a property by directly using the value as the sole value of the property.
      * </p>
      * 
      * @param propertyName the name of the property; never null
@@ -398,9 +398,10 @@ public class XmlHandler extends DefaultHandler2 {
      * @return the property; may not be null
      */
     protected Property createProperty( Name propertyName,
-                                       String value ) {
+                                       Object value ) {
         propertyValues[0] = value;
-        return propertyFactory.create(propertyName, propertyValues);
+        Property result = propertyFactory.create(propertyName, propertyValues);
+        return result;
     }
 
     /**
@@ -424,12 +425,20 @@ public class XmlHandler extends DefaultHandler2 {
          * 
          * @param path the absolute path of the node
          * @param properties the properties for the node; never null, but may be empty if there are no properties
-         * @param elementName the name of the XML element from which the node should be created; never null, and may or may not be
-         *        the same name as the last segment of the path
          */
         public void create( Path path,
-                            List<Property> properties,
-                            Name elementName );
+                            List<Property> properties );
+
+        /**
+         * Create a node at the supplied path and with the supplied attributes. The path will be absolute.
+         * 
+         * @param path the absolute path of the node
+         * @param firstProperty the first property
+         * @param additionalProperties the remaining properties for the node
+         */
+        public void create( Path path,
+                            Property firstProperty,
+                            Property... additionalProperties );
 
         /**
          * Signal to this destination that any enqueued create requests should be submitted. Usually this happens at the end of

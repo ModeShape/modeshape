@@ -53,6 +53,8 @@ public class BasicPath implements Path {
 
     public static final Path ROOT = new BasicPath(EMPTY_SEGMENTS, true);
 
+    public static final Path EMPTY_RELATIVE = new BasicPath(EMPTY_SEGMENTS, false);
+
     public static final Path SELF_PATH = new BasicPath(Collections.singletonList(Path.SELF_SEGMENT), false);
 
     private final List<Segment> segments;
@@ -84,7 +86,7 @@ public class BasicPath implements Path {
      */
     public Path getParent() {
         if (this.isRoot()) return null;
-        if (this.segments.size() == 1) return ROOT;
+        if (this.segments.size() == 1) return this.isAbsolute() ? ROOT : EMPTY_RELATIVE;
         return subpath(0, this.segments.size() - 1);
     }
 
@@ -96,6 +98,7 @@ public class BasicPath implements Path {
         if (degree == 0) return this;
         if (this.isRoot()) return null;
         int endIndex = this.segments.size() - degree;
+        if (endIndex == 0) return this.isAbsolute() ? ROOT : EMPTY_RELATIVE;
         if (endIndex < 0) {
             String msg = GraphI18n.pathAncestorDegreeIsInvalid.text(this.getString(), Inflector.getInstance().ordinalize(degree));
             throw new InvalidPathException(msg);

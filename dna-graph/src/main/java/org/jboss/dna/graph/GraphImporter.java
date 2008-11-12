@@ -156,13 +156,22 @@ public class GraphImporter {
         }
 
         public void create( Path path,
-                            List<Property> properties,
-                            Name elementName ) {
+                            List<Property> properties ) {
             assert properties != null;
             if (properties.isEmpty()) {
                 batch.create(path).and();
             } else {
                 batch.create(path, properties).and();
+            }
+        }
+
+        public void create( Path path,
+                            Property firstProperty,
+                            Property... additionalProperties ) {
+            if (firstProperty == null) {
+                batch.create(path).and();
+            } else {
+                batch.create(path, firstProperty, additionalProperties);
             }
         }
 

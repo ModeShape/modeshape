@@ -21,12 +21,15 @@
  */
 package org.jboss.dna.graph.sequencers;
 
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.Map;
 import net.jcip.annotations.NotThreadSafe;
 import org.jboss.dna.graph.properties.Name;
 import org.jboss.dna.graph.properties.Path;
 import org.jboss.dna.graph.properties.PathFactory;
+import org.jboss.dna.graph.properties.Property;
 
 /**
  * @author Randall Hauch
@@ -35,12 +38,19 @@ import org.jboss.dna.graph.properties.PathFactory;
 @NotThreadSafe
 public class MockSequencerOutput implements SequencerOutput {
 
-    private final Map<Path, Object[]> properties;
+    private final Map<Path, Map<Name, Property>> propertiesByPath;
     private final SequencerContext context;
+    private final LinkedList<Path> nodePathsInCreationOrder;
 
     public MockSequencerOutput( SequencerContext context ) {
+        this(context, false);
+    }
+
+    public MockSequencerOutput( SequencerContext context,
+                                boolean recordOrderOfNodeCreation ) {
         this.context = context;
-        this.properties = new HashMap<Path, Object[]>();
+        this.propertiesByPath = new HashMap<Path, Map<Name, Property>>();
+        this.nodePathsInCreationOrder = recordOrderOfNodeCreation ? new LinkedList<Path>() : null;
     }
 
     /**
@@ -49,11 +59,24 @@ public class MockSequencerOutput implements SequencerOutput {
     public void setProperty( Path nodePath,
                              Name propertyName,
                              Object... values ) {
-        Path key = createKey(nodePath, propertyName);
+        Map<Name, Property> properties = propertiesByPath.get(nodePath);
         if (values == null || values.length == 0) {
-            this.properties.remove(key);
+            // remove the property ...
+            if (properties != null) {
+                properties.remove(propertyName);
+                if (properties.isEmpty()) {
+                    propertiesByPath.remove(nodePath);
+                    if (nodePathsInCreationOrder != null) nodePathsInCreationOrder.remove(nodePath);
+                }
+            }
         } else {
-            this.properties.put(key, values);
+            if (properties == null) {
+                properties = new HashMap<Name, Property>();
+                propertiesByPath.put(nodePath, properties);
+                if (nodePathsInCreationOrder != null) nodePathsInCreationOrder.add(nodePath);
+            }
+            Property property = context.getPropertyFactory().create(propertyName, values);
+            properties.put(propertyName, property);
         }
     }
 
@@ -88,32 +111,57 @@ public class MockSequencerOutput implements SequencerOutput {
         setProperty(path, name, values);
     }
 
+    public LinkedList<Path> getOrderOfCreation() {
+        return nodePathsInCreationOrder;
+    }
+
+    public boolean exists( Path nodePath ) {
+        return this.propertiesByPath.containsKey(nodePath);
+    }
+
+    public Map<Name, Property> getProperties( Path nodePath ) {
+        Map<Name, Property> properties = this.propertiesByPath.get(nodePath);
+        if (properties == null) return null;
+        return Collections.unmodifiableMap(properties);
+    }
+
+    public Property getProperty( String nodePath,
+                                 String propertyName ) {
+        Path path = context.getValueFactories().getPathFactory().create(nodePath);
+        Name name = context.getValueFactories().getNameFactory().create(propertyName);
+        return getProperty(path, name);
+    }
+
+    public Property getProperty( Path nodePath,
+                                 Name propertyName ) {
+        Map<Name, Property> properties = this.propertiesByPath.get(nodePath);
+        if (properties == null) return null;
+        return properties.get(propertyName);
+    }
+
     public Object[] getPropertyValues( String nodePath,
-                                       String property ) {
-        Path key = createKey(nodePath, property);
-        return this.properties.get(key);
+                                       String propertyName ) {
+        Path path = context.getValueFactories().getPathFactory().create(nodePath);
+        return getPropertyValues(path, propertyName);
+    }
+
+    public Object[] getPropertyValues( Path path,
+                                       String propertyName ) {
+        Name name = context.getValueFactories().getNameFactory().create(propertyName);
+        Property prop = getProperty(path, name);
+        if (prop != null) {
+            return prop.getValuesAsArray();
+        }
+        return null;
     }
 
     public boolean hasProperty( String nodePath,
                                 String property ) {
-        Path key = createKey(nodePath, property);
-        return this.properties.containsKey(key);
+        return getProperty(nodePath, property) != null;
     }
 
     public boolean hasProperties() {
-        return this.properties.size() > 0;
-    }
-
-    protected Path createKey( String nodePath,
-                              String propertyName ) {
-        Path path = context.getValueFactories().getPathFactory().create(nodePath);
-        Name name = context.getValueFactories().getNameFactory().create(propertyName);
-        return createKey(path, name);
-    }
-
-    protected Path createKey( Path nodePath,
-                              Name propertyName ) {
-        return context.getValueFactories().getPathFactory().create(nodePath, propertyName);
+        return this.propertiesByPath.size() > 0;
     }
 
 }

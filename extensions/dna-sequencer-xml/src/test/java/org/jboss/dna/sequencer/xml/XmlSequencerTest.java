@@ -99,13 +99,14 @@ public class XmlSequencerTest {
         verifyDocument(xml1);
         verifyName(COMMENT + "[1]", "jcr:primaryType", COMMENT);
         String text = verify(COMMENT + "[1]", COMMENT_CONTENT, String.class);
-        assertThat(text.startsWith("\n   Licensed to the Apache Software Foundation (ASF)"), is(true));
-        assertThat(text.endsWith("   limitations under the License.\n"), is(true));
+        assertThat(text.startsWith("Licensed to the Apache Software Foundation (ASF)"), is(true));
+        assertThat(text.indexOf('\n') > 0, is(true));
+        assertThat(text.endsWith("   limitations under the License."), is(true));
         verifyString("/", DTD_NAME, "Repository");
         verifyString("/", DTD_PUBLIC_ID, "-//The Apache Software Foundation//DTD Jackrabbit 1.2//EN");
         verifyString("/", DTD_SYSTEM_ID, "http://jackrabbit.apache.org/dtd/repository-1.2.dtd");
         verifyName(COMMENT + "[2]", "jcr:primaryType", COMMENT);
-        verifyString(COMMENT + "[2]", COMMENT_CONTENT, " Example Repository Configuration File ");
+        verifyString(COMMENT + "[2]", COMMENT_CONTENT, "Example Repository Configuration File");
         verifyName("Repository[1]", "jcr:primaryType", "nt:unstructured");
         verifyName("Repository[1]/" + COMMENT + "[1]", "jcr:primaryType", COMMENT);
     }
@@ -114,9 +115,9 @@ public class XmlSequencerTest {
     public void shouldHandleNamespaces() throws IOException {
         verifyDocument(xml2);
         verifyName("book[1]/bookinfo[1]/xi:include[1]", "jcr:primaryType", "nt:unstructured");
-        verifyString("book[1]/bookinfo[1]/xi:include[1]", "xi:href", "Author_Group.xml");
+        verifyString("book[1]/bookinfo[1]/xi:include[1]", "href", "Author_Group.xml");
         verifyName("book[1]/bookinfo[1]/xi:include[2]", "jcr:primaryType", "nt:unstructured");
-        verifyString("book[1]/bookinfo[1]/xi:include[2]", "xi:href", "Legal_Notice.xml");
+        verifyString("book[1]/bookinfo[1]/xi:include[2]", "href", "Legal_Notice.xml");
     }
 
     @Test
@@ -175,18 +176,19 @@ public class XmlSequencerTest {
 
     @Test
     public void shouldSequenceXsds() throws IOException {
+        sequencer.setAttributeScoping(XmlSequencer.AttributeScoping.INHERIT_ELEMENT_NAMESPACE);
         verifyDocument(xsd);
-        verifyName("xs:schema[1]", "jcr:primaryType", "nt:unstructured");
-        verifyString("xs:schema[1]", "xs:targetNamespace", "http://ns.adobe.com/air/application/1.0");
-        verifyString("xs:schema[1]", "xs:elementFormDefault", "qualified");
-        verifyName("xs:schema[1]/xs:element[1]", "jcr:primaryType", "nt:unstructured");
-        verifyString("xs:schema[1]/xs:element[1]", "xs:name", "application");
+        verifyName("xs:schema", "jcr:primaryType", "nt:unstructured");
+        verifyString("xs:schema", "xs:targetNamespace", "http://ns.adobe.com/air/application/1.0");
+        verifyString("xs:schema", "xs:elementFormDefault", "qualified");
+        verifyName("xs:schema/xs:element", "jcr:primaryType", "nt:unstructured");
+        verifyString("xs:schema/xs:element", "xs:name", "application");
     }
 
     private <T> T verify( String nodePath,
                           String property,
                           Class<T> expectedClass ) {
-        Object[] values = output.getPropertyValues(nodePath.length() == 0 ? "." : nodePath, property);
+        Object[] values = output.getPropertyValues(nodePath.length() == 0 ? "" : nodePath, property);
         assertThat(values, notNullValue());
         assertThat(values.length, is(1));
         Object value = values[0];

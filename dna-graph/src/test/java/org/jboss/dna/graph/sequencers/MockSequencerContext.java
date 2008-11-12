@@ -29,15 +29,15 @@ import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.collection.Problems;
 import org.jboss.dna.common.collection.SimpleProblems;
 import org.jboss.dna.common.util.Logger;
+import org.jboss.dna.graph.BasicExecutionContext;
 import org.jboss.dna.graph.DnaLexicon;
+import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.properties.Name;
 import org.jboss.dna.graph.properties.NamespaceRegistry;
 import org.jboss.dna.graph.properties.Path;
 import org.jboss.dna.graph.properties.Property;
 import org.jboss.dna.graph.properties.PropertyFactory;
 import org.jboss.dna.graph.properties.ValueFactories;
-import org.jboss.dna.graph.properties.basic.BasicNamespaceRegistry;
-import org.jboss.dna.graph.properties.basic.StandardValueFactories;
 
 /**
  * @author John Verhaeg
@@ -45,18 +45,17 @@ import org.jboss.dna.graph.properties.basic.StandardValueFactories;
 @Immutable
 public class MockSequencerContext implements SequencerContext {
 
-    private final ValueFactories factories;
-    private final NamespaceRegistry registry = new BasicNamespaceRegistry();
+    private final ExecutionContext context = new BasicExecutionContext();
     private final Problems problems = new SimpleProblems();
 
     public MockSequencerContext() {
+        NamespaceRegistry registry = context.getNamespaceRegistry();
         registry.register("jcr", "http://www.jcp.org/jcr/1.0");
         registry.register("mix", "http://www.jcp.org/jcr/mix/1.0");
         registry.register("nt", "http://www.jcp.org/jcr/nt/1.0");
         registry.register(DnaLexicon.Namespace.PREFIX, DnaLexicon.Namespace.URI);
         registry.register("dnadtd", "http://www.jboss.org/dna/dtd/1.0");
         registry.register("dnaxml", "http://www.jboss.org/dna/xml/1.0");
-        factories = new StandardValueFactories(registry);
     }
 
     /**
@@ -65,7 +64,7 @@ public class MockSequencerContext implements SequencerContext {
      * @see org.jboss.dna.common.component.ClassLoaderFactory#getClassLoader(java.lang.String[])
      */
     public ClassLoader getClassLoader( String... classpath ) {
-        return null;
+        return context.getClassLoader(classpath);
     }
 
     /**
@@ -119,7 +118,7 @@ public class MockSequencerContext implements SequencerContext {
      * @see org.jboss.dna.graph.ExecutionContext#getAccessControlContext()
      */
     public AccessControlContext getAccessControlContext() {
-        return null;
+        return context.getAccessControlContext();
     }
 
     /**
@@ -128,7 +127,7 @@ public class MockSequencerContext implements SequencerContext {
      * @see org.jboss.dna.graph.ExecutionContext#getLogger(java.lang.Class)
      */
     public Logger getLogger( Class<?> clazz ) {
-        return null;
+        return context.getLogger(clazz);
     }
 
     /**
@@ -137,7 +136,7 @@ public class MockSequencerContext implements SequencerContext {
      * @see org.jboss.dna.graph.ExecutionContext#getLogger(java.lang.String)
      */
     public Logger getLogger( String name ) {
-        return null;
+        return context.getLogger(name);
     }
 
     /**
@@ -146,7 +145,7 @@ public class MockSequencerContext implements SequencerContext {
      * @see org.jboss.dna.graph.ExecutionContext#getLoginContext()
      */
     public LoginContext getLoginContext() {
-        return null;
+        return context.getLoginContext();
     }
 
     /**
@@ -155,7 +154,7 @@ public class MockSequencerContext implements SequencerContext {
      * @see org.jboss.dna.graph.ExecutionContext#getNamespaceRegistry()
      */
     public NamespaceRegistry getNamespaceRegistry() {
-        return registry;
+        return context.getNamespaceRegistry();
     }
 
     /**
@@ -164,7 +163,7 @@ public class MockSequencerContext implements SequencerContext {
      * @see org.jboss.dna.graph.ExecutionContext#getPropertyFactory()
      */
     public PropertyFactory getPropertyFactory() {
-        return null;
+        return context.getPropertyFactory();
     }
 
     /**
@@ -173,7 +172,7 @@ public class MockSequencerContext implements SequencerContext {
      * @see org.jboss.dna.graph.ExecutionContext#getSubject()
      */
     public Subject getSubject() {
-        return null;
+        return context.getSubject();
     }
 
     /**
@@ -182,6 +181,6 @@ public class MockSequencerContext implements SequencerContext {
      * @see org.jboss.dna.graph.ExecutionContext#getValueFactories()
      */
     public ValueFactories getValueFactories() {
-        return factories;
+        return context.getValueFactories();
     }
 }

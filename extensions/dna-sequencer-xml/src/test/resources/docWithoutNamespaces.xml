@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Cars>
+    <Hybrid>
+        <car name="Toyota Prius" maker="Toyota" model="Prius"/>
+        <car name="Toyota Highlander" maker="Toyota" model="Highlander"/>
+        <car name="Nissan Altima" maker="Nissan" model="Altima"/>
+    </Hybrid>
+    <Sports>
+        <car name="Aston Martin DB9" maker="Aston Martin" model="DB9"/>
+        <car name="Infiniti G37" maker="Infiniti" model="G37" />
+    </Sports>
+</Cars>
