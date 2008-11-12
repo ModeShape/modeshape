@@ -23,7 +23,6 @@ package org.jboss.dna.graph.requests;
 
 import java.util.LinkedList;
 import java.util.List;
-import org.jboss.dna.common.text.Inflector;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.graph.GraphI18n;
 import org.jboss.dna.graph.Location;
@@ -32,14 +31,14 @@ import org.jboss.dna.graph.properties.Path;
 import org.jboss.dna.graph.properties.Property;
 
 /**
- * Instruction to read a block of the children of a node, where the block is dictated by the {@link #startingAtIndex() starting
- * index} and the {@link #count() maximum number of children} to include in the block. This command is useful when paging through
- * a large number of children.
+ * Instruction to read a block of the children of a node, where the block is dictated by the {@link #startingAfter location of the
+ * child preceding the block} and the {@link #count() maximum number of children} to include in the block. This command is useful
+ * when paging through a large number of children.
  * 
- * @see ReadNextBlockOfChildrenRequest
+ * @see ReadBlockOfChildrenRequest
  * @author Randall Hauch
  */
-public class ReadBlockOfChildrenRequest extends CacheableRequest {
+public class ReadNextBlockOfChildrenRequest extends CacheableRequest {
 
     public static final int INDEX_NOT_USED = -1;
 
@@ -47,7 +46,7 @@ public class ReadBlockOfChildrenRequest extends CacheableRequest {
 
     private final Location of;
     private final List<Location> children = new LinkedList<Location>();
-    private final int startingAtIndex;
+    private final Location startingAfter;
     private final int count;
     private Location actualLocation;
 
@@ -58,19 +57,19 @@ public class ReadBlockOfChildrenRequest extends CacheableRequest {
      * an array.
      * 
      * @param of the location of the node whose children are to be read
-     * @param startingIndex the index of the first child to be included in the block
+     * @param startingAfter the child that was the last child of the previous block of children read
      * @param count the maximum number of children that should be included in the block
-     * @throws IllegalArgumentException if the location is null, if <code>startingIndex</code> is negative, or if
+     * @throws IllegalArgumentException if the location is null, if <code>startingAfter</code> is null, or if
      *         <code>count</count> is less than 1.
      */
-    public ReadBlockOfChildrenRequest( Location of,
-                                       int startingIndex,
-                                       int count ) {
+    public ReadNextBlockOfChildrenRequest( Location of,
+                                           Location startingAfter,
+                                           int count ) {
         CheckArg.isNotNull(of, "of");
-        CheckArg.isNonNegative(startingIndex, "startingIndex");
+        CheckArg.isNotNull(startingAfter, "startingAfter");
         CheckArg.isPositive(count, "count");
         this.of = of;
-        this.startingAtIndex = startingIndex;
+        this.startingAfter = startingAfter;
         this.count = count;
     }
 
@@ -97,36 +96,22 @@ public class ReadBlockOfChildrenRequest extends CacheableRequest {
      * Get the maximum number of children that may be returned in the block.
      * 
      * @return the block's maximum count
-     * @see #startingAtIndex()
-     * @see #endingBefore()
+     * @see #startingAfter()
      */
     public int count() {
         return this.count;
     }
 
     /**
-     * Get the starting index of the block, which is the index of the first child to include. This index corresponds to the index
-     * of all children in the list, not the {@link Path.Segment#getIndex() same-name-sibiling index}.
+     * Get the location of the child after which the block begins. This form may be easier to use when paging through blocks, as
+     * the last children retrieved with the previous block can be supplied with the next read request.
      * 
-     * @return the child index at which this block starts; never negative and always less than {@link #endingBefore()}
-     * @see #endingBefore()
+     * @return the location of the child that is immediately before the start of the block; index at which this block starts;
+     *         never negative
      * @see #count()
      */
-    public int startingAtIndex() {
-        return this.startingAtIndex;
-    }
-
-    /**
-     * Get the index past the last child that is to be included in the block. This index corresponds to the index of all children
-     * in the list, not the {@link Path.Segment#getIndex() same-name-sibiling index}.
-     * 
-     * @return the index just past the last child included in the block; always positive and always greater than
-     *         {@link #startingAtIndex()}.
-     * @see #startingAtIndex()
-     * @see #count()
-     */
-    public int endingBefore() {
-        return this.startingAtIndex + this.count;
+    public Location startingAfter() {
+        return this.startingAfter;
     }
 
     /**
@@ -223,9 +208,9 @@ public class ReadBlockOfChildrenRequest extends CacheableRequest {
     @Override
     public boolean equals( Object obj ) {
         if (this.getClass().isInstance(obj)) {
-            ReadBlockOfChildrenRequest that = (ReadBlockOfChildrenRequest)obj;
+            ReadNextBlockOfChildrenRequest that = (ReadNextBlockOfChildrenRequest)obj;
             if (!this.of().equals(that.of())) return false;
-            if (this.startingAtIndex() != that.startingAtIndex()) return false;
+            if (!this.startingAfter().equals(that.startingAfter())) return false;
             if (this.count() != that.count()) return false;
             return true;
         }
@@ -239,12 +224,10 @@ public class ReadBlockOfChildrenRequest extends CacheableRequest {
      */
     @Override
     public String toString() {
-        Inflector inflector = Inflector.getInstance();
         if (count() == 1) {
-            return "read " + inflector.ordinalize(startingAtIndex()) + " thru " + inflector.ordinalize(endingBefore() - 1)
-                   + " children of " + of();
+            return "read one child of " + of() + " starting after " + startingAfter();
         }
-        return "read " + inflector.ordinalize(startingAtIndex()) + " child of " + of();
+        return "read " + count() + " children of " + of();
     }
 
 }

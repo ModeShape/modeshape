@@ -33,6 +33,7 @@ import org.jboss.dna.graph.requests.ReadAllChildrenRequest;
 import org.jboss.dna.graph.requests.ReadAllPropertiesRequest;
 import org.jboss.dna.graph.requests.ReadBlockOfChildrenRequest;
 import org.jboss.dna.graph.requests.ReadBranchRequest;
+import org.jboss.dna.graph.requests.ReadNextBlockOfChildrenRequest;
 import org.jboss.dna.graph.requests.ReadNodeRequest;
 import org.jboss.dna.graph.requests.ReadPropertyRequest;
 import org.jboss.dna.graph.requests.RemovePropertiesRequest;
@@ -169,6 +170,18 @@ public class LoggingRequestProcessor extends RequestProcessor {
      */
     @Override
     public void process( ReadBlockOfChildrenRequest request ) {
+        logger.log(level, GraphI18n.executingRequest, request);
+        delegate.process(request);
+        logger.log(level, GraphI18n.executedRequest, request);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.requests.processor.RequestProcessor#process(org.jboss.dna.graph.requests.ReadNextBlockOfChildrenRequest)
+     */
+    @Override
+    public void process( ReadNextBlockOfChildrenRequest request ) {
         logger.log(level, GraphI18n.executingRequest, request);
         delegate.process(request);
         logger.log(level, GraphI18n.executedRequest, request);

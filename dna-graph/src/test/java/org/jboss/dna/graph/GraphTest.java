@@ -204,7 +204,7 @@ public class GraphTest {
         assertThat(request, is(instanceOf(ReadBlockOfChildrenRequest.class)));
         ReadBlockOfChildrenRequest read = (ReadBlockOfChildrenRequest)request;
         assertThat(read.of(), is(at));
-        assertThat(read.startingAt(), is(startIndex));
+        assertThat(read.startingAtIndex(), is(startIndex));
         assertThat(read.endingBefore(), is(startIndex + maxCount));
         assertThat(read.count(), is(maxCount));
         assertThat(read.getChildren(), hasItems(children));

@@ -46,6 +46,7 @@ import org.jboss.dna.graph.requests.ReadAllChildrenRequest;
 import org.jboss.dna.graph.requests.ReadAllPropertiesRequest;
 import org.jboss.dna.graph.requests.ReadBlockOfChildrenRequest;
 import org.jboss.dna.graph.requests.ReadBranchRequest;
+import org.jboss.dna.graph.requests.ReadNextBlockOfChildrenRequest;
 import org.jboss.dna.graph.requests.ReadNodeRequest;
 import org.jboss.dna.graph.requests.ReadPropertyRequest;
 import org.jboss.dna.graph.requests.RemovePropertiesRequest;
@@ -133,6 +134,8 @@ public abstract class RequestProcessor {
             process((MoveBranchRequest)request);
         } else if (request instanceof ReadAllChildrenRequest) {
             process((ReadAllChildrenRequest)request);
+        } else if (request instanceof ReadNextBlockOfChildrenRequest) {
+            process((ReadNextBlockOfChildrenRequest)request);
         } else if (request instanceof ReadBlockOfChildrenRequest) {
             process((ReadBlockOfChildrenRequest)request);
         } else if (request instanceof ReadBranchRequest) {
@@ -235,7 +238,7 @@ public abstract class RequestProcessor {
 
     /**
      * Process a request to read a block of the children of a node. The block is defined by a
-     * {@link ReadBlockOfChildrenRequest#startingAt() starting index} and a {@link ReadBlockOfChildrenRequest#count() maximum
+     * {@link ReadBlockOfChildrenRequest#startingAtIndex() starting index} and a {@link ReadBlockOfChildrenRequest#count() maximum
      * number of children to include in the block}.
      * <p>
      * This method does nothing if the request is null. The default implementation converts the command to a
@@ -257,13 +260,53 @@ public abstract class RequestProcessor {
         List<Location> allChildren = readAll.getChildren();
 
         // If there aren't enough children for the block's range ...
-        if (allChildren.size() < request.startingAt()) return;
+        if (allChildren.size() < request.startingAtIndex()) return;
 
         // Now, find the children in the block ...
         int endIndex = Math.min(request.endingBefore(), allChildren.size());
-        for (int i = request.startingAt(); i != endIndex; ++i) {
+        for (int i = request.startingAtIndex(); i != endIndex; ++i) {
             request.addChild(allChildren.get(i));
         }
+        // Set the actual location ...
+        request.setActualLocationOfNode(readAll.getActualLocationOfNode());
+    }
+
+    /**
+     * Process a request to read the next block of the children of a node, starting after a previously-retrieved child.
+     * <p>
+     * This method does nothing if the request is null. The default implementation converts the command to a
+     * {@link ReadAllChildrenRequest}, and then finds the children within the block. Obviously for large numbers of children, this
+     * implementation may not be efficient and may need to be overridden.
+     * </p>
+     * 
+     * @param request the read request
+     */
+    public void process( ReadNextBlockOfChildrenRequest request ) {
+        if (request == null) return;
+        // Convert the request to a ReadAllChildrenRequest and execute it ...
+        ReadAllChildrenRequest readAll = new ReadAllChildrenRequest(request.of());
+        process(readAll);
+        if (readAll.hasError()) {
+            request.setError(readAll.getError());
+            return;
+        }
+        List<Location> allChildren = readAll.getChildren();
+
+        // Iterate through the children, looking for the 'startingAfter' child ...
+        boolean found = false;
+        int count = 0;
+        for (Location child : allChildren) {
+            if (count > request.count()) break;
+            if (!found) {
+                // Set to true if we find the child we're looking for ...
+                found = child.equals(request.startingAfter());
+            } else {
+                // Add the child to the block ...
+                ++count;
+                request.addChild(child);
+            }
+        }
+
         // Set the actual location ...
         request.setActualLocationOfNode(readAll.getActualLocationOfNode());
     }
