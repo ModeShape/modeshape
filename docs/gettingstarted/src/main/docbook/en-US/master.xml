@@ -23,7 +23,7 @@
   ~ Boston, MA  02110-1301  USA
   -->
 <!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
-<!ENTITY versionNumber "0.2">
+<!ENTITY versionNumber "0.3">
 <!ENTITY copyrightYear "2008">
 <!ENTITY copyrightHolder "Red Hat Middleware, LLC.">
 ]>

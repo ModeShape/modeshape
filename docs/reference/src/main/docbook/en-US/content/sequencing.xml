@@ -449,7 +449,7 @@ this.sequencingService.addSequencer(sequencerConfig);
 	  </para>
 	  <para>
 	  Creating a custom sequencer involves the following steps:
-	  <itemizedlist>
+	  <orderedlist>
 	    <listitem>
 	      <para>Create a Maven 2 project for your sequencer;</para>
 	    </listitem>
@@ -465,7 +465,7 @@ this.sequencingService.addSequencer(sequencerConfig);
 	      <para>Deploy the JAR file with your implementation (as well as any dependencies), and make them available to JBoss DNA
 	      in your application.</para>
 	    </listitem>
-	  </itemizedlist>
+	  </orderedlist>
 	  It's that simple.
 	  </para>
 	  <sect2 id="custom_sequencer_project">
@@ -481,7 +481,7 @@ this.sequencingService.addSequencer(sequencerConfig);
 		    <para>In lieu of a Maven archetype, you may find it easier to start with a small existing sequencer project.
 					The <emphasis role="strong">dna-sequencer-images</emphasis> project is a small, self-contained sequencer implementation that
 		    	has only the minimal dependencies.  
-		    	See the subversion repository: <ulink url="&Subversion;trunk/extensions/dna-sequencer-images/">&Subversion;trunk/sequencers/dna-sequencer-images/</ulink>
+		    	See the subversion repository: <ulink url="&Subversion;trunk/extensions/dna-sequencer-images/">&Subversion;trunk/extensions/dna-sequencer-images/</ulink>
 		    </para>
 		  </note>
 	    <para>You can create your Maven project any way you'd like.  For examples, see the <ulink url="http://maven.apache.org/guides/getting-started/index.html#How_do_I_make_my_first_Maven_project">Maven 2 documentation</ulink>.  
@@ -604,6 +604,7 @@ public interface &StreamSequencer; {
      * @param context the context for the sequencing operation; never null
      */
     void sequence( &InputStream; stream, &SequencerOutput; output, &SequencerContext; context );
+}
 </programlisting>
 	    <para>The job of a stream sequencer is to process the data in the supplied stream, and place into the &SequencerOutput;
 	    any information that is to go into the JCR repository.  JBoss DNA figures out when your sequencer should be called
