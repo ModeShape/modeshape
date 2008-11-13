@@ -1,23 +1,21 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<parent>
 		<groupId>org.jboss.dna</groupId>
 		<artifactId>dna</artifactId>
-		<version>0.3-SNAPSHOT</version>
+		<version>0.3</version>
 		<relativePath>../..</relativePath>
 	</parent>
 	<artifactId>dna-sequencer-jbpm-jpdl</artifactId>
 	<packaging>jar</packaging>
-	<version>0.3-SNAPSHOT</version>
+	<version>0.3</version>
 	<name>JBoss DNA jBPM jPDL Sequencer</name>
 	<description>
 		JBoss DNA Sequencer that processes jPDL XML document
 	</description>
 	<url>http://labs.jboss.org/dna</url>
 	<properties>
-		<dna-version>0.3-SNAPSHOT</dna-version>
+		<dna-version>0.3</dna-version>
 	</properties>
 	<!--
 		Define the dependencies.  Note that all version and scopes default to those 
@@ -52,7 +50,7 @@
 		<dependency>
 			<groupId>org.jboss.dna</groupId>
 			<artifactId>dna-integration-tests</artifactId>
-			<version>0.3-SNAPSHOT</version>
+			<version>0.3</version>
 			<scope>test</scope>
 		</dependency>
 		<!-- 
