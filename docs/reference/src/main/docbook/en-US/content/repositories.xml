@@ -50,24 +50,42 @@
 			<ulink url="&JSR170;">JCR</ulink> to different kinds of repositories and storage systems.
 			Your applications work with the JCR API, but through JBoss DNA are able to accesses the content from where the information
 			exists - not just a single purpose-built repository.  This is fundamentally what makes JBoss DNA different.</para>
-		<para>How does JBoss DNA do this?  At the heart of JBoss DNA and it's JCR implementation is a simple graph-based connector
-			system.  Essentially, the JBoss DNA JCR implementation makes use of a single repository source, from which all the
-			content is accessed.  
+		<para>How does JBoss DNA do this?  At the heart of JBoss DNA and it's JCR implementation is a simple graph-based 
+			<emphasis>repository connector</emphasis> system.  Essentially, the JBoss DNA JCR implementation makes use of a single 
+			repository connector to access all content. 
 			<figure id="dnajcr-and-connector">
-				<title>JBoss DNA's JCR implementation delegates to a repository source</title>
+				<title>JBoss DNA's JCR implementation delegates to a repository connector</title>
 				<graphic align="center" scale="100" fileref="dnajcr-and-connector.png"/>
 			</figure>
-			That single repository source could be an in-memory repository, a JBoss Cache instance, or a federated repository.
+			That single repository connector could use an in-memory repository, a JBoss Cache instance (including those that are clustered and replicated), 
+			or a federated repository where content from multiple sources is unified.
 			<figure id="dna-connectors-0.2">
 				<title>JBoss DNA can put JCR on top of multiple kinds of systems</title>
 				<graphic align="center" scale="100" fileref="dna-connectors-0.2.png"/>
 			</figure>
-	  	And the JBoss DNA project has plans to create other connectors, too.  For instance, we're going to build a connector 
-	    to other JCR repositories.  And another to a file system, so that the files and directories on an area of the file system
-	    can be accessed through JCR.  Of course, if we don't have a connector to suit your needs, you can write your own.
+	  	There are a lot of other possibilities, too.  The JBoss DNA project has plans to create other connectors.  
+			For instance, we want to build a connector to <ulink url="&JIRA-39;">other JCR repositories</ulink>, and another that accesses
+			the <ulink url="&JIRA-34;">local file system</ulink>.  Another connector we've already started working on is a 
+			<ulink url="&JIRA-36;">Subversion connector</ulink>, which will allow JCR to access the files in a SVN repository (and perhaps 
+			push changes into SVN through a commit).  And of course we want to create a connector that accesses <ulink url="&JIRA-199;">data</ulink>
+			and <ulink url="&JIRA-37;">metadata</ulink> from relational databases.
+		</para>
+		<para>
+			Of course, if we don't have a connector to suit your needs, you can write your own.
 			<figure id="dna-connectors-future">
 				<title>Future JBoss DNA connectors</title>
 				<graphic align="center" scale="100" fileref="dna-connectors-future.png"/>
+			</figure>
+		</para>
+		<para>
+	  	It's even possible to put a different API layer on top of the connectors.  For example, the new <ulink url="&JSR203;">New I/O (JSR-203)</ulink>
+			API offers the opportunity to build new file system providers.  This would be very straightforward to put on top of a JCR implementation,
+			but it could be made even simpler by putting it on top of a DNA connector.  In both cases, it'd be a trivial mapping from nodes that represent
+			files and folders into JSR-203 files and directories, and events on those nodes could easily be translated into JSR-203 watch events.
+			Then, simply choose a DNA connector and configure it to use the source you want to use.
+			<figure id="dna-connectors-vfs">
+				<title>Virtual File System with JBoss DNA</title>
+				<graphic align="center" scale="100" fileref="vfs-and-connector.png"/>
 			</figure>
 		</para>
     <para>Before we go further, let's define some terminology regarding connectors.</para>
@@ -83,10 +101,14 @@
 			</listitem>
 			<listitem>
 				<para>
-					The description of a particular source system is called a <emphasis role="strong">repository source</emphasis>.
-					A connector contains a JavaBean class that implements the &RepositorySource; interface, with JavaBean properties for
-					all of the connector-specific properties required to fully describe a system.  Applications that use JBoss DNA
-					create an instance that describes each external source that a repository is to access.
+					The description of a particular source system (e.g., the "Customer" database, or the company LDAP system) 
+					is called a <emphasis role="strong">repository source</emphasis>.  JBoss DNA defines a &RepositorySource; interface
+					that defines methods describing the behavior and supported features and a method for establishing connections.
+					A connector will have a class that implements this interface and that has JavaBean properties for
+					all of the connector-specific properties required to fully describe an instance of the system.  Use of JavaBean
+					properties is not required, but it is highly recommended, as it enables reflective configuration and administration.
+					Applications that use JBoss DNA create an instance of the connector's &RepositorySource; implementation and set 
+					the properties for the external source that the application wants to access with that connector.
 				</para>
 			</listitem>
 			<listitem>
@@ -94,10 +116,11 @@
 					A repository source instance is then used to establish <emphasis role="strong">connections</emphasis> to
 					that source.  A connector provides an implementation of the &RepositoryConnection; interface, which
 					defines methods for interacting with the external system.  In particular, the <code>execute(...)</code> method
-					takes an <code>ExecutionContext</code> instance and one or more <code>GraphCommand</code> objects describing the
-					operations that are to be executed against the graph of information the connector is exposing.
-					Examples of commands include getting a node, moving a node, creating a node, changing a node, and deleting a node.
-					And, if the repository source is able to participate in JTA/JTS distributed transactions, then the
+					takes an &ExecutionContext; instance and a &Request; object.  The &ExectuionContext; object defines the
+					environment in which the processing is occurring, including information about the JAAS &Subject; and &LoginContext;.
+					The &Request; object describes the requested operations on the content, with different concrete subclasses
+					representing each type of activity.  Examples of commands include (but not limited to) getting a node, moving a node, creating a node, 
+					changing a node, and deleting a node.  And, if the repository source is able to participate in JTA/JTS distributed transactions, then the
 					&RepositoryConnection; must implement the <code>getXaResource()</code> method by returning 
 					a valid <code>javax.transaction.xa.XAResource</code> object that can be used by the transaction monitor.
 				</para>
@@ -111,23 +134,25 @@
 			<code>DataSource</code> instance pointing to our JDBC database.)
 		</para>
 		<para>
-			That connector would also have a <code>JdbcRepositoryConnection</code> Java class that implements the 
+			Our new connector would also have a <code>JdbcRepositoryConnection</code> Java class that implements the 
 			&RepositoryConnection; interface.  This class would probably wrap a JDBC database connection,
 			and would implement the <code>execute(...)</code> method such that the nodes exposed by the connector
 			describe the database schema of the database.  For example, the connector might represent each database table
-			as a node wit the table's name, with properties that describe the table (e.g., the description, whether it's a
+			as a node with the table's name, with properties that describe the table (e.g., the description, whether it's a
 			temporary table), and with child nodes that represent each of the columns, keys and constraints.
 		</para>
 		<para>
-			To use the connector, we need to create an instance of the <classname>JdbcRepositorySource</classname> for each database instance
-			that we want to access.  If we have 3 MySQL databases, 9 Oracle databases, and 4 PostgreSQL databases, then we'd need
-			to create a total of 16 <classname>JdbcRepositorySource</classname> instances, each with the properties describing a single database instance.
-			Those sources are then available for use by the JBoss DNA components, including <link linkend="jcr">JCR</link>.
+			To use our connector in an application that uses JBoss DNA, we need to create an instance of the 
+			<classname>JdbcRepositorySource</classname> for each database instance that we want to access.  If we have 3 MySQL databases, 
+			9 Oracle databases, and 4 PostgreSQL databases, then we'd need to create a total of 16 <classname>JdbcRepositorySource</classname> 
+			instances, each with the properties describing a single database instance.  Those sources are then available for use by 
+			JBoss DNA components, including the <link linkend="jcr">JCR</link> implementation.
 		</para>
 		<para>
-			So, we've so far learned what a repository connector is and how they're used to create &RepositorySource; instances.
-			In the <link linkend="repository-service">next section</link>, we'll show how these source instances can be configured,
-			managed, and their connections pooled.
+			So, we've so far learned what a repository connector is and how they're used to establish connections to the underlying sources 
+			and access the content in those sources.  In the <link linkend="repository-service">next section</link>, we'll show how these 
+			source instances can be configured, managed, and their connections pooled.  After that, we'll look review JBoss DNA's 
+			<link linkend="connector-library">existing connectors</link> and show how to <link linkend="custom-connectors">create your own connectors</link>.
 		</para>
   </sect1>
   <sect1 id="repository-service">
@@ -216,7 +241,7 @@
 		</para>
   </sect1>
   <sect1 id="connector-library">
-    <title>Repository connectors and sources</title>
+    <title>Out-of-the-box repository connectors</title>
     <para>
     	A number of repository connectors are already available in JBoss DNA, and are outlined in the following sections.
 			Note that we do want to build <ulink url="https://jira.jboss.org/jira/secure/IssueNavigator.jspa?reset=true&amp;mode=hide&amp;pid=12310520&amp;sorter/order=DESC&amp;sorter/field=priority&amp;resolution=-1&amp;component=12311441">more connectors</ulink>
@@ -366,25 +391,24 @@
         information is no longer valid). In effect, the source has complete control over how the information it contributes is
         cached and used.</para>
       <para>
-        The federated repository also needs to incorporate
-        <emphasis>negative caching</emphasis>
-        , which is storage of the knowledge that something does not exist. Sources can be configured to contribute information
-        only below certain paths (e.g.,
-        <code>/A/B/C</code>
-        ), and the federation engine can take advantage of this by never consulting that source for contributions to information
-        on other paths. However, below that path, any negative responses must also be cached (with appropriate TTL and expiry
-        parameters) to prevent the exclusion of that source (in case the source has information to contribute at a later time)
-        or the frequent checking with the source.
+        The federated repository also needs to incorporate <emphasis>negative caching</emphasis>, which is storage of the knowledge 
+				that something does <emphasis>not</emphasis> exist. Sources can be configured to contribute information
+        only below certain paths (e.g., <code>/A/B/C</code>), and the federation engine can take advantage of this by never 
+				consulting that source for contributions to information on other paths. However, below that path, any negative responses 
+				must also be cached (with appropriate TTL and expiry parameters) to prevent the exclusion of that source (in case the source 
+				has information to contribute at a later time) or the frequent checking with the source.
       </para>
 			<para>
 				The federated repository uses other &RepositorySource;s that are to be federated and a &RepositorySource; that is to be used as the
 				cache of the unified contents.  These are configured in another &RepositorySource; that is treated as a configuration repository.
-				The name of the configuration repository is provided by JavaBean properties, and is the path to the "dna:federation" node
-				in that configuration repository containing the information about the cache and federated sources.  This graph
-				structure is as follows (using XML elements to represent nodes and XML attributes to represent properties):
+				The &FederatedRepositorySource; class uses JavaBean properties to define the name of the configuration repository and 
+				the path to the "<code>dna:federation</code>" node in that configuration repository containing the information about the 
+				cache and federated sources.  This graph structure that is expected at this location is as follows:
 			</para>
 			<programlisting><![CDATA[<!-- Define the federation configuration. -->
-<dna:federation dna:timeToCache="100000">
+<dna:federation xmlns:dna="http://www.jboss.org/dna" 
+	                   xmlns:jcr="http://www.jcp.org/jcr/1.0"
+                     dna:timeToCache="100000" >
     <!-- Define how the content in the 'Cache' source is to map to the federated cache -->
     <dna:cache>
         <dna:projection jcr:name="Cache" dna:projectionRules="/ => /" />
@@ -399,9 +423,16 @@
     </dna:projections>
 </dna:federation>
 ]]></programlisting>
+			<note>
+				<para>
+					We're using XML to represent a graph structure, since the two map pretty well.  Each XML element represents
+					a node and XML attributes represent properties on a node.  The name of the node is defined by either the 
+					<code>jcr:name</code> attribute (if it exists) or the name of the XML element.  And we use XML namespaces
+					to define the namespaces used in the node and property names.  BTW, this is exactly how the XML graph importer
+					works.
+				</para>
+			</note>
 			<para>
-				Here, the "<code>dna</code>" prefix denotes the "<code>http://www.jboss.org/dna</code>" namespace, while the 
-				"<code>jcr</code>" prefix denotes the standard JCR namespace "<code>http://www.jcp.org/jcr/1.0</code>".
 				Notice that there is a cache projection and three source projections, and each projection defines
 				one or more <emphasis>projection rules</emphasis> that are of the form:
 			</para>
@@ -414,7 +445,7 @@
 				The &FederatedRepositorySource; class provides a number of JavaBean properties that control its behavior:
 			</para>
 			<table frame='all'>
-				<title>&InMemoryRepositorySource; properties</title>
+				<title>&FederatedRepositorySource; properties</title>
 				<tgroup cols='2' align='left' colsep='1' rowsep='1'>
 		      <colspec colname='c1' colwidth="1*"/>
 		      <colspec colname='c2' colwidth="1*"/>
@@ -484,15 +515,704 @@
   <sect1 id="custom-connectors">
     <title>Writing custom connectors</title>
     <para>
-		  The current release of JBoss DNA comes with six sequencers.  However, JBoss DNA was designed so that you can create your own
-		  connectors and to then configure JBoss DNA to use them in your own application.
+		  There may come a time when you want to tackle creating your own repository connector.  Maybe the connectors we provide out-of-the-box
+			don't cut it.  Or maybe you have a system that you want to make available through a JBoss DNA repository.  Or, maybe you're
+			a contributor and want to help us round out our library with a new connector.  No matter what the reason, creating a new connector
+			is pretty straightforward, as we'll see in this section.
     </para>
-		<caution>
-			<para>
-				At this time, we recommend consulting with the JBoss DNA project team before writing a connector.  The 0.3 release
-				will have a few changes in the connector SPI that may have a large impact on your connectors.  Please contact us
-				using any of the ways listed in the <link linkend="preface">Preface</link>.
+	  <para>
+		  Creating a custom connector involves the following steps:
+		  <orderedlist>
+		    <listitem>
+		      <para>Create a Maven 2 project for your connector;</para>
+		    </listitem>
+		    <listitem>
+		      <para>
+						Implement the &RepositorySource; interface, using JavaBean properties for each bit of information the implementation will
+						need to establish a connection to the source system.
+					</para>
+		      <para>
+						Then, implement the &RepositoryConnection; interface with a class that represents a connection to the source.  The 
+						<code>execute(&ExecutionContext;, &Request;)</code> method should process any and all requests that may come down the pike,
+						and the results of each request can be put directly on that request.
+					</para>
+					<para>
+						Don't forget unit tests that verify that the connector is doing what it's expected to do.  (If you'll be committing the connector
+						code to the JBoss DNA project, please ensure that the unit tests can be run by others that may not have access to the
+						source system.  In this case, consider writing integration tests that can be easily configured to use different sources
+						in different environments, and try to make the failure messages clear when the tests can't connect to the underlying source.)
+					</para>
+		    </listitem>
+		    <listitem>
+		      <para>
+						Configure JBoss DNA to use your connector.  This may involve just registering the source with the &RepositoryService;,
+			   		or it may involve adding a source to a configuration repository used by the <link linkend="dna-connector-federation">federated repository</link>.
+					</para>
+		    </listitem>
+		    <listitem>
+		      <para>
+						Deploy the JAR file with your connector (as well as any dependencies), and make them available to JBoss DNA
+		      	in your application.
+					</para>
+		    </listitem>
+		  </orderedlist>
+		  It's that simple.
+	  </para>
+	  <sect2 id="custom_connector_project">
+	    <title>Creating the Maven 2 project</title>
+	    <para>
+				The first step is to create the Maven 2 project that you can use to compile your code and build the JARs.
+	    	Maven 2 automates a lot of the work, and since you're already <link linkend="maven">set up to use Maven</link>,
+	    	using Maven for your project will save you a lot of time and effort.  Of course, you don't have to use Maven 2, but then you'll
+	    	have to get the required libraries and manage the compiling and building process yourself.</para>
+	    <note>
+	      <para>JBoss DNA may provide in the future a Maven archetype for creating connector projects.  If you'd find this useful
+	        and would like to help create it, please <link linkend="preface">join the community</link>.
+				</para>
+		    <para>In lieu of a Maven archetype, you may find it easier to start with a small existing connector project.
+					The <emphasis role="strong">dna-connector-inmemory</emphasis> project is small, but it may be tough to separate
+					the stuff that every connector needs from the extra code and data structures that manage the content.
+		    	See the subversion repository: <ulink url="&Subversion;trunk/extensions/dna-connector-inmemory/">&Subversion;trunk/extensions/dna-connector-inmemory/</ulink>
+		    </para>
+		  </note>
+	    <para>
+				You can create your Maven project any way you'd like.  For examples, see the 
+				<ulink url="http://maven.apache.org/guides/getting-started/index.html#How_do_I_make_my_first_Maven_project">Maven 2 documentation</ulink>.  
+	    	Once you've done that, just add the dependencies in your project's <code>pom.xml</code> dependencies section:
 			</para>
-		</caution>
+	  	<programlisting role="XML"><![CDATA[
+<dependency>
+  <groupId>org.jboss.dna</groupId>
+  <artifactId>dna-common</artifactId>
+  <version>0.1</version>
+</dependency>
+<dependency>
+  <groupId>org.jboss.dna</groupId>
+  <artifactId>dna-graph</artifactId>
+  <version>0.1</version>
+</dependency>
+<dependency>
+  <groupId>org.slf4j</groupId>
+  <artifactId>slf4j-api</artifactId>
+</dependency>
+	 ]]></programlisting>
+			<para>
+				These are minimum dependencies required for compiling a connector.  Of course, you'll have to add
+	  		other dependencies that your connector needs.
+			</para>
+	  	<para>
+				As for testing, you probably will want to add more dependencies, such as those listed here:
+			</para>
+			<programlisting role="XML"><![CDATA[
+<dependency>
+  <groupId>junit</groupId>
+  <artifactId>junit</artifactId>
+  <version>4.4</version>
+  <scope>test</scope>
+</dependency>
+<dependency>
+  <groupId>org.hamcrest</groupId>
+  <artifactId>hamcrest-library</artifactId>
+  <version>1.1</version>
+  <scope>test</scope>
+</dependency>
+<!-- Logging with Log4J -->
+<dependency>
+  <groupId>org.slf4j</groupId>
+  <artifactId>slf4j-log4j12</artifactId>
+  <version>1.4.3</version>
+  <scope>test</scope>
+</dependency>
+<dependency>
+  <groupId>log4j</groupId>
+  <artifactId>log4j</artifactId>
+  <version>1.2.14</version>
+  <scope>test</scope>
+</dependency>
+	 ]]></programlisting>
+	  	<para>
+				Testing JBoss DNA connectors does not require a JCR repository or the JBoss DNA services.  (For more detail,
+	  		see the <link linkend="testing_custom_connectors">testing section</link>.) However, if you want to do
+	  		integration testing with a JCR repository and the JBoss DNA services, you'll need additional dependencies.
+			</para>
+	    <para>
+				At this point, your project should be set up correctly, and you're ready to move on to 
+	  		<link linkend="implementing_repository_source">writing the Java implementation</link> for your connector.
+			</para>
+	  </sect2>
+	  <sect2 id="implementing_repository_source">
+	    <title>Implementing a <code>RepositorySource</code></title>
+	    <para>
+				As mentioned earlier, a <emphasis>connector</emphasis> consists of the Java code that is used to access content
+				from a system.  Perhaps the most important class that makes up a connector is the implementation of the
+				&RepositorySource;.  This class is analogous to JDBC's DataSource in that it is instantiated to represent
+				a single source for repository content, and it contains enough information (in the form of JavaBean properties)
+				so that it can create connections to the source.
+			</para>
+			<para>
+				Why is the &RepositorySource; implementation a JavaBean?  Well, this is the class that is instantiated, usually
+				reflectively, and so a no-arg constructor is required.  And, using JavaBean properties makes it possible
+				to reflect upon the object's class to determine the properties that can be set (using setters) and read
+				(using getters).  This means that an administrative application can instantiate, configure, and manage
+				the objects that represent the actual sources.
+			</para>
+			<para>
+				So, your connector will need a public class that implements &RepositorySource; and provides JavaBean properties
+				for any kind of inputs or options required to establish a connection to and interact with the underlying source.
+				Most of the semantics of the class are defined by the &RepositorySource; and inherited interface.
+				However, there are a few characteristics that are worth mentioning here.
+			</para>
+			<sect3 id="connector_cache_policy">
+				<title>Cache policy</title>
+				<para>
+					The first is that each connector is responsible for determining whether and how long DNA is to cache the
+					content made available by the connector.  This is referred to as the <emphasis>caching policy</emphasis>,
+					and consists of a <emphasis>time to live</emphasis> value representing the number of milliseconds that
+					a piece of data may be cached before it is no longer used.  
+				</para>
+				<para>
+					DNA allows a connector to use a flexible and powerful caching policy.  First, each connection returns the
+					<emphasis>default</emphasis> caching policy for all information returned by that connection.
+					Often this policy can be configured via properties on the &RepositorySource; implementation.
+					This is optional, meaning the connector can return <code>null</code> if it does not wish to
+					have a default caching policy.
+				</para>
+				<para>
+					Second, the connector is able to override its default caching policy on individual requests
+					(which we'll cover in the <link linkend="implementing_repository_connection">next section</link>).
+					Again, this is optional, meaning that a null caching policy on a request implies that the
+					request has no overridden caching policy.
+				</para>
+				<para>
+					Third, if the connector has no default caching policy and none is set on the individual requests,
+					DNA uses whatever caching policy is set up for that component using the connector.  For example, the federating
+					connector allows a default caching policy to be specified, and this policy is used should the sources
+					being federated not define their own caching policy.
+				</para>
+				<para>
+					The result is that a connector has great flexibility and control over whether and for how long the information it provides
+					is cached.
+				</para>
+			</sect3>
+			<sect3 id="repository_source_jndi">
+				<title>Leveraging JNDI</title>
+				<para>
+					Sometimes its far easier for a &RepositorySource; implementation to look up an object in JNDI that represents the
+					system that the source is to use.  One example of this is the JBoss Cache connector.  While this connector can
+					instantiate a new JBoss Cache instance, more interesting use cases involve JBoss Cache instances that are
+					set up for clustering and replication, something that is generally difficult to configure in a single JavaBean.
+					Therefore the &JBossCacheSource; has optional JavaBean properties that define how it is to look up a
+					JBoss Cache instance in JNDI.  
+				</para>
+				<para>
+					This is a simple pattern that you may find useful in your connector.  Basically, if your source implementation
+					can look up an object in JNDI, simply use a single JavaBean String property that defines the 
+					full name that should be used to locate that object in JNDI.  Usually it's best to include "Jndi" in the
+					JavaBean property name so that administrative applications understand the purpose of the property.
+					(And some may suggest that any optional property also use the word "optional" in the property name.)
+				</para>
+			</sect3>
+			<sect3 id="repository_source_capabilities">
+				<title>Capabilities</title>
+				<para>
+					Another characteristic of a &RepositorySource; implementation is that it provides some hint as to whether
+					it supports several features.  This is defined on the interface as a method that returns a
+					&RepositorySourceCapabilities; object.  This class currently provides methods that say whether the connector supports
+					updates, whether it supports same-name-siblings (SNS), and whether the connector supports listeners and events.
+				</para>
+				<para>
+					Note that these may be hard-coded values, or the connector's response may be determined at runtime by various factors.
+					For example, a connector may interrogate the underlying system to decide whether it can support updates.
+				</para>
+				<para>
+					The &RepositorySourceCapabilities; can be used as is (the class is immutable), or it can be subclassed
+					to provide more complex behavior.  It is important, however, that the capabilities remain constant
+					throughout the lifetime of the &RepositorySource; instance.
+				</para>
+				<note>
+					<para>
+						Why a concrete class and not an interface?  Well, by using a concrete class, connectors inherit the default
+						behavior.  And if additional capabilities need to be added to the class in the future, connectors may
+						not have to override the defaults.  This provides some insulation against future enhancements to the connector framework.
+					</para>
+				</note>
+			</sect3>
+			<sect3 id="repository_source_security">
+				<title>Security and authentication</title>
+				<para>
+					As we'll see in the next section, the main method connectors have to process requests takes an &ExecutionContext;,
+					which contains the JAAS security information of the subject performing the request.  This means that the connector
+					can use this to determine authentication and authorization information for each request.
+				</para>
+				<para>
+					Sometimes that is not sufficient.  For example, it may be that the connector needs its own authorization information
+					so that it can establish a connection (even if user-level privileges still use the &ExecutionContext; provided with
+					each request).  In this case, the &RepositorySource; implementation will probably need JavaBean properties
+					that represent the connector's authentication information.  This may take the form of a username and password,
+					or it may be properties that are used to delegate authentication to JAAS.  
+					Either way, just realize that it's perfectly acceptable for the connector to require its own security properties.
+				</para>
+			</sect3>
+		</sect2>
+	  <sect2 id="implementing_repository_connection">
+	    <title>Implementing a <code>RepositoryConnection</code></title>
+	    <para>
+				One of the main purposes of the &RepositorySource; implementation is to create connections to the underlying sources.
+				Connections are represented by classes that implement the &RepositoryConnection; interface, and creating this
+				class is the next step in writing a repository connector.  This is what we'll cover in this section.
+			</para>
+	    <para>
+				The &RepositoryConnection; interface is pretty straightforward:
+			</para>
+	    <programlisting>
+/**
+ * A connection to a repository source.
+ * <p>
+ * These connections need not support concurrent operations by multiple threads.
+ * </p>
+ */
+@NotThreadSafe
+public interface &RepositoryConnection; {
+
+    /**
+     * Get the name for this repository source. This value should be the same as that returned
+     * by the same &RepositorySource; that created this connection.
+     * 
+     * @return the identifier; never null or empty
+     */
+    String getSourceName();
+
+    /**
+     * Return the transactional resource associated with this connection. The transaction manager 
+     * will use this resource to manage the participation of this connection in a distributed transaction.
+     * 
+     * @return the XA resource, or null if this connection is not aware of distributed transactions
+     */
+    XAResource getXAResource();
+
+    /**
+     * Ping the underlying system to determine if the connection is still valid and alive.
+     * 
+     * @param time the length of time to wait before timing out
+     * @param unit the time unit to use; may not be null
+     * @return true if this connection is still valid and can still be used, or false otherwise
+     * @throws InterruptedException if the thread has been interrupted during the operation
+     */
+    boolean ping( long time, &TimeUnit; unit ) throws InterruptedException;
+
+    /**
+     * Set the listener that is to receive notifications to changes to content within this source.
+     * 
+     * @param listener the new listener, or null if no component is interested in the change notifications
+     */
+    void setListener( &RepositorySourceListener; listener );
+
+    /**
+     * Get the default cache policy for this repository. If none is provided, a global cache policy
+     * will be used.
+     * 
+     * @return the default cache policy
+     */
+    &CachePolicy; getDefaultCachePolicy();
+
+    /**
+     * Execute the supplied commands against this repository source.
+     * 
+     * @param context the environment in which the commands are being executed; never null
+     * @param request the request to be executed; never null
+     * @throws RepositorySourceException if there is a problem loading the node data
+     */
+    void execute( &ExecutionContext; context,
+                  &Request; request ) throws &RepositorySourceException;;
+
+    /**
+     * Close this connection to signal that it is no longer needed and that any accumulated 
+     * resources are to be released.
+     */
+    void close();
+}</programlisting>
+			<para>
+				While most of these methods are straightforward, a few warrant some extra information.
+				The <code>ping(...)</code> allows DNA to check the connection to see if it is
+				alive.  This method can be used in a variety of situations, ranging from verifying that a &RepositorySource;'s
+				JavaBean properties are correct to ensuring that a connection is still alive before returning the connection from
+				a connection pool.
+			</para>
+	    <para>
+				DNA hasn't yet defined the event mechanism, so the method to add listeners isn't currently used.
+				(However, this will be a focus of the next release.)  Note that by default the &RepositorySourceCapabilities; returns
+				<code>false</code> for <code>supportsEvents()</code>.
+			</para>
+	    <para>
+				Perhaps the most important method on this interface is the <code>execute(...)</code> method, which serves as the
+				mechanism by which the component using the connector access and manipulates the content exposed by the connector.
+				The first parameter to this method is the &ExecutionContext;, which contains the information about environment
+				as well as the subject performing the request.  This was discussed <link linkend="execution-context">earlier</link>.
+			</para>
+	    <para>
+				The second parameter, however, represents a request for content or for changes to content.  Request objects can
+				take many different forms, as there are different classes for each kind of request (see the table below).
+				Each request contains the information a connector needs to do the processing, and it also is the place
+				where the connector places the results (or the error, if one occurs).
+			</para>
+			<para>
+				How do the requests reference a node (or nodes)? Since requests are coming from a client, the client 
+				may identify a particular node using a &Location; object that is created with:
+			  <itemizedlist>
+			    <listitem>
+			      <para>the &Path; to the node; or</para>
+			    </listitem>
+			    <listitem>
+			      <para>one or more <emphasis>identification properties</emphasis> that are likely source=specific
+							and that are represented with &Property; objects; or</para>
+			    </listitem>
+			    <listitem>
+			      <para>a combination of both.</para>
+			    </listitem>
+			  </itemizedlist>
+				So, when a client knows the path or the identification properties, they can create a &Location;.  However,
+				all of the requests return &Location; objects, so often times the client simply uses the location
+				from a previous request.  Since &Location; is an immutable class, it is perfectly safe to reuse them.
+			</para>
+			<para>
+				One more thing about locations: while the request may have an incomplete location (e.g., a path but no
+				identification properties), the connector is expected to set on the request the <emphasis>actual</emphasis>
+				location that contains the path and all identification properties.  So as long as the client
+				reuses the actual locations in subsequent requests, the connectors will have the benefit of having
+				both the path and identification properties.  Connectors can then be written to leverage this
+				information, although the connector should still perform as expected when requests have incomplete locations.
+			</para>
+			<table frame='all'>
+				<title>Types of Requests</title>
+				<tgroup cols='2' align='left' colsep='1' rowsep='1'>
+		      <colspec colname='c1' colwidth="1*"/>
+		      <colspec colname='c2' colwidth="1*"/>
+					<thead>
+						<row>
+				  		<entry>Name</entry>
+				  		<entry>Description</entry>
+						</row>
+					</thead>
+					<tbody>
+						<row>
+							<entry>ReadNodeRequest</entry>
+							<entry>
+								A request to read from the source a node's properties and children.
+								The node may be specified by path and/or by identification properties.
+								The connector returns all properties and the locations for all children,
+								or sets a &PathNotFoundException; error on the request if the node did not exist.
+								If the node is found, the connector sets on the request the actual location of the node (including the path and identification properties).
+							</entry>
+						</row>
+						<row>
+							<entry>ReadAllPropertiesRequest</entry>
+							<entry>
+								A request to read from the source all of the properties of a node.
+								The node may be specified by path and/or by identification properties.
+								The connector returns all properties that were found on the node,
+								or sets a &PathNotFoundException; error on the request if the node did not exist.
+								If the node is found, the connector sets on the request the actual location of the node (including the path and identification properties).
+							</entry>
+						</row>
+						<row>
+							<entry>ReadPropertyRequest</entry>
+							<entry>
+								A request to read from the source a single property of a node.
+								The node may be specified by path and/or by identification properties,
+								and the property is specified by name.
+								The connector returns the property if found on the node,
+								or sets a &PathNotFoundException; error on the request if the node or property did not exist.
+								If the node is found, the connector sets on the request the actual location of the node (including the path and identification properties).
+							</entry>
+						</row>
+						<row>
+							<entry>ReadAllChildrenRequest</entry>
+							<entry>
+								A request to read from the source all of the children of a node.
+								The node may be specified by path and/or by identification properties.
+								The connector returns an ordered list of locations for each child found on the node,
+								an empty list if the node had no children,
+								or sets a &PathNotFoundException; error on the request if the node did not exist.
+								If the node is found, the connector sets on the request the actual location of the parent node (including the path and identification properties).
+							</entry>
+						</row>
+						<row>
+							<entry>ReadBlockOfChildrenRequest</entry>
+							<entry>
+								A request to read from the source a block of children of a node, starting with the n<superscript>th</superscript> children.
+								This is designed to allow paging through the children, which is much more efficient for large numbers of children.
+								The node may be specified by path and/or by identification properties, and the block
+								is defined by a starting index and a count (i.e., the block size).
+								The connector returns an ordered list of locations for each of the node's children found in the block,
+								or an empty list if there are no children in that range.
+								The connector also sets on the request the actual location of the parent node (including the path and identification properties)
+								or sets a &PathNotFoundException; error on the request if the parent node did not exist.
+							</entry>
+						</row>
+						<row>
+							<entry>ReadNextBlockOfChildrenRequest</entry>
+							<entry>
+								A request to read from the source a block of children of a node, starting with the children that immediately follow
+								a previously-returned child.
+								This is designed to allow paging through the children, which is much more efficient for large numbers of children.
+								The node may be specified by path and/or by identification properties, and the block
+								is defined by the location of the node immediately preceding the block and a count (i.e., the block size).
+								The connector returns an ordered list of locations for each of the node's children found in the block,
+								or an empty list if there are no children in that range.
+								The connector also sets on the request the actual location of the parent node (including the path and identification properties)
+								or sets a &PathNotFoundException; error on the request if the parent node did not exist.
+							</entry>
+						</row>
+						<row>
+							<entry>ReadBranchRequest</entry>
+							<entry>
+								A request to read a portion of a subgraph that has as its root a particular node, up to a maximum depth.
+								This request is an efficient mechanism when a branch (or part of a branch) is to be navigated and processed,
+								and replaces some non-trivial code to read the branch iteratively using multiple <code>ReadNodeRequest</code>s.
+								The connector reads the branch to the specified maximum depth, returning the properties and children for all
+								nodes found in the branch.  
+								The connector also sets on the request the actual location of the branch's root node (including the path and identification properties).
+								The connector sets a &PathNotFoundException; error on the request if the node at 
+								the top of the branch does not exist.
+							</entry>
+						</row>
+						<row>
+							<entry>CreateNodeRequest</entry>
+							<entry>
+								A request to create a node at the specified location and setting on the new node the properties included in the request.
+								The connector creates the node at the desired location, adjusting any same-name-sibling indexes as required.
+								(If an SNS index is provided in the new node's location, existing children with the same name after that SNS index
+								will have their SNS indexes adjusted.  However, if the requested location does not include a SNS index, the new
+								node is added after all existing children, and it's SNS index is set accordingly.)
+								The connector also sets on the request the actual location of the new node (including the path and identification properties)..
+								The connector sets a &PathNotFoundException; error on the request if the parent node does not exist.
+							</entry>
+						</row>
+						<row>
+							<entry>RemovePropertiesRequest</entry>
+							<entry>
+								A request to remove a set of properties on an existing node.  The request contains the location of the node as well as the
+								names of the properties to be removed.  The connector performs these changes and sets on the request the
+								actual location (including the path and identification properties) of the node.
+								The connector sets a &PathNotFoundException; error on the request if the node does not exist.
+							</entry>
+						</row>
+						<row>
+							<entry>UpdatePropertiesRequest</entry>
+							<entry>
+								A request to set or update properties on an existing node.  The request contains the location of the node as well as the
+								properties to be set and those to be deleted.  The connector performs these changes and sets on the request the
+								actual location (including the path and identification properties) of the node.
+								The connector sets a &PathNotFoundException; error on the request if the node does not exist.
+							</entry>
+						</row>
+						<row>
+							<entry>RenameNodeRequest</entry>
+							<entry>
+								A request to change the name of a node.  The connector changes the node's name, adjusts all SNS indexes
+								accordingly, and returns the actual locations (including the path and identification properties) of both the original
+								location and the new location.
+								The connector sets a &PathNotFoundException; error on the request if the node does not exist.
+							</entry>
+						</row>
+						<row>
+							<entry>CopyBranchRequest</entry>
+							<entry>
+								A request to copy a portion of a subgraph that has as its root a particular node, up to a maximum depth.
+								The connector copies the branch from the original location, up to the specified maximum depth, and places a copy
+								of the node as a child of the new location.
+								The connector also sets on the request the actual location (including the path and identification properties)
+								of the original location as well as the location of the new copy.
+								The connector sets a &PathNotFoundException; error on the request if the node at 
+								the top of the branch does not exist.
+							</entry>
+						</row>
+						<row>
+							<entry>MoveBranchRequest</entry>
+							<entry>
+								A request to move a subgraph that has a particular node as its root.
+								The connector moves the branch from the original location and places it as child of the specified new location.
+								The connector also sets on the request the actual location (including the path and identification properties)
+								of the original and new locations.  The connector will adjust SNS indexes accordingly.
+								The connector sets a &PathNotFoundException; error on the request if the node that is to be moved or the
+								new location do not exist.
+							</entry>
+						</row>
+						<row>
+							<entry>DeleteBranchRequest</entry>
+							<entry>
+								A request to delete an entire branch specified by a single node's location.
+								The connector deletes the specified node and all nodes below it, and sets the actual location,
+								including the path and identification properties, of the node that was deleted.
+								The connector sets a &PathNotFoundException; error on the request if the node being deleted does not exist.
+							</entry>
+						</row>
+						<row>
+							<entry>CompositeRequest</entry>
+							<entry>
+								A request that actually comprises multiple requests (none of which will be a composite).
+								The connector simply processes all of the requests in the composite request, but should set on the composite
+								request any error (usually the first error) that occurs during processing of the contained requests.
+							</entry>
+						</row>
+					</tbody>
+				</tgroup>
+			</table>
+	    <para>
+				Although there are over a dozen different kinds of requests, we do anticipate that we'll need additional kinds of requests
+				in the future.  For example, DNA will likely support searching repository content in sources through an additional
+				subclass of &Request;.
+			</para>
+	    <para>
+				A connector is technically free to implement the <code>execute(...)</code> method in any way, as long as the semantics
+				are maintained.  But DNA provides a &RequestProcessor; class that can simplify writing your own connector and at the
+				same time help insulate your connector from requests that may be added in the future.  The &RequestProcessor;
+				is an abstract class that defines a <code>process(...)</code> method for each concrete &Request; subclass.
+				In other words, there is a <code>process(CompositeRequest)</code> method, a <code>process(ReadNodeRequest)</code> method,
+				and so on.  
+			</para>
+			<para>
+				To use this in your connector, simply create a subclass of &RequestProcessor;, overriding all of the abstract methods and optionally
+				overriding any of the other methods that have a default implementation.
+			</para>
+			<note>
+				<para>
+					In many cases, the default implementations of the <code>process(...)</code> methods are <emphasis>sufficient</emphasis>
+					but probably not efficient or optimum.  If that is the case, simply provide your own methods that perform the request
+					in a manner that is efficient for your source.  However, if performance is not a big issue, all of the concrete methods
+					will provide the correct behavior.  And remember, you can always provide better implementations later.
+				</para>
+			</note>
+			<para>
+				Then, in your connector's <code>execute(&ExecutionContext;, &Request;)</code> method, instantiate your &RequestProcessor; subclass
+				and call its <code>process(&Request;) method, passing in the <code>execute(...)</code> method's &Request; parameter.</code>
+				The &RequestProcessor; will determine the appropriate method given the actual &Request; object and will then invoke that method:
+			</para>
+	    <programlisting>
+public void execute( final &ExecutionContext; context,
+                     final &Request; request ) throws RepositorySourceException {
+    RequestProcessor processor = new RequestProcessor(context);
+    processor.process(request);
+}</programlisting>
+			<para>
+				If you do this, the bulk of your connector implementation may be in the &RequestProcessor; implementation methods.
+				This not only is pretty maintainable, it also lends itself to easier testing.  And should any new request types be added
+				in the future, your connector may work just fine without any changes.  In fact, if the &RequestProcessor; class
+				can implement meaningful methods for those new request types, your connector "may just work".  Or, at least
+				your connector will still be compatible, even if newer features aren't supported.
+			</para>
+			<para>
+				Finally, how should the connector handle exceptions?  As mentioned above, each &Request; object has a slot where the connector
+				can set any exception encountered during processing.  This not only handles the exception, but in the case of &CompositeRequest;s
+				it also correctly associates the problem with the request.  However, it is perfectly acceptable to throw an exception
+				if the connection becomes invalid (e.g., there is a communication failure) or if a fatal error would prevent subsequent
+				requests from being processed.
+			</para>
+		</sect2>
+	  <sect2 id="testing_custom_connectors">
+	    <title>Testing custom connectors</title>
+	    <para>
+				Testing connectors is not really that much different than testing other classes.  Using mocks may help to isolate your
+				instances so you can create more unit tests that don't require the underlying source system.
+			</para>
+	    <para>
+				However, there may be times when you have to use the underlying source system in your tests.  If this is the case,
+				we recommend using Maven integration tests, which run at a different point in the Maven lifecycle.  The benefit of
+				using integration tests is that by convention they're able to rely upon external systems.  Plus, your unit tests
+				don't become polluted with slow-running tests that break if the external system is not available.
+			</para>
+		</sect2>
+	  <sect2 id="deploying_custom_connectors">
+	    <title>Configuring and deploying custom connectors</title>
+	    <para>
+				After building your connector project, you need to configure the JBoss DNA components your application is using so
+				that they use your connector.  In a lot of cases, this will entail instantiating your connector's &RepositorySource; class,
+				setting the various properties, and registering it with a &RepositoryLibrary;.  Or, it will entail using a configuration
+				repository to use your source and letting &RepositoryService; instantiate and set up your &RepositorySource; instance.
+				Or, you can just instantiate and set it up manually, passing the instance to whatever component needs it.
+			</para>
+			<para>
+				And of course you have to make the JAR file containing your connector (as well as any dependency JARs) available to
+				your application's classpath.
+			</para>
+		</sect2>
   </sect1>
+	<sect1 id="dna_graph_api">
+		<title>Graph API for using connectors</title>
+		<para>
+			So far we've talked about repositories, repository connectors, and how connectors respond to the different kinds of requests.
+			Normally you'd code to the JCR API and use our JCR implementation.  However, what does your code look like if you want 
+			to use the connectors directly, without using our JCR implementation?  After all, you may be a contributor to JBoss DNA,
+			or you may want to take advantage of our connectors without all the overhead of JCR.
+		</para>
+		<para>
+			One option, of course, is to explicitly create the different requests and pass them to the connector's <code>execute(...)</code> method.
+			While this is the most efficient approach (and one taken in some key DNA components), you probably want something that
+			is much less verbose and much easier to use.  This is where the DNA graph API comes in.
+		</para>
+		<para>
+			JBoss DNA's <emphasis>Graph API</emphasis> was designed as a public API that insulates components from the more verbose
+			(and more or less internal) request representations.  The &Graph; class is the main class in this API and represents a single
+			view of the graph of content from a single connector.  To obtain a &Graph; instance, use the static <code>create(...)</code>
+			method, supplying the name of the source, a &RepositoryConnectionFactory; from which a &RepositoryConnection; can be obtained,
+			and the &ExecutionContext;.
+		</para>
+		<para>
+			The &Graph; class basically represents an <ulink url="http://www.martinfowler.com/bliki/DomainSpecificLanguage.html">internal domain specific language (DSL)</ulink>
+			that acts as a &Request; builder, although the &Graph; interface is intensionally designed to completely hide the underlying &Request; objects.
+			For example, the following example returns a map of properties (keyed by property name) for a node at a specific &Path;:
+		</para>
+		<programlisting>
+&Path; path = ...
+Map&lt;&Name;,&Property;> propertiesByName = graph.getPropertiesByName().on(path);
+</programlisting>
+		<para>
+			Similarly, the following example shows how the graph can be used to obtain and loop over the properties of a node:
+		</para>
+		<programlisting>
+&Path; path = ...
+for ( &Property; property : graph.getProperties().on(path) ) {
+	  ...
+}
+</programlisting>
+		<para>
+			Likewise, the following example shows how the graph can be used to obtain and loop over the children of a node:
+		</para>
+		<programlisting>
+&Path; path = ...
+for ( &Location; child : graph.getChildren().of(path) ) {
+    &Path; childPath = child.getPath();
+	  ...
+}
+</programlisting>
+		<para>
+			Most of the methods take a variety of argument types.  For example, the <code>on(...)</code> and <code>of(...)</code> methods shown above
+			accept String, &Path;s, &Location;s, &UUID;, or &Property; parameters, making it easy to use in many different situations.
+		</para>
+		<para>
+			Of course, changing content is more interesting and offers more interesting possibilities.  Here are a few examples:
+		</para>
+		<programlisting>
+&Path; path = ...
+&Location; location = ...
+&Property; idProp1 = ...
+&Property; idProp2 = ...
+graph.move(path).into(idProp1, idProp2);
+graph.copy(path).into(location);
+graph.delete(path);
+graph.delete(idProp1,idProp2);
+</programlisting>
+		<para>
+			The methods shown above work immediately, as soon as each request is built.  However, there is another way to use
+			the &Graph; object, and that is in a <emphasis>batch</emphasis> mode.  Simply create a &GraphBatch; object using the
+			<code>batch()</code> method, create the requests on that batch object, and then execute all of the commands on the
+			batch by calling its <code>execute()</code> method.  That <code>execute()</code> method returns a &Results; interface
+			that can be used to read the node information retrieved by the batched requests. 
+		</para>
+		<para>
+			Of course, this section provided just a hint of the Graph API.  
+			The &Graph; interface is actually quite complete and offers a full-featured approach for reading and updating a graph.
+			For more information, see the &Graph; JavaDocs.
+		</para>
+	</sect1>
 </chapter>

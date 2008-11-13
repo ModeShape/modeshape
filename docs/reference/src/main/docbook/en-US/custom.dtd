@@ -1,4 +1,4 @@
-<!ENTITY versionNumber "0.2">
+<!ENTITY versionNumber "0.3">
 <!ENTITY copyrightYear "2008">
 <!ENTITY copyrightHolder "Red Hat Middleware, LLC.">
 
@@ -8,7 +8,7 @@
 <!ENTITY Downloads  					"&Home;downloads.html">
 <!ENTITY Community  					"&Home;community.html">
 <!ENTITY DocHome    					"http://www.jboss.org/file-access/default/members/dna/freezone/">
-<!ENTITY API        					"&DocHome;api/&versionNumber;/org/jboss/dna/">
+<!ENTITY API        					"&DocHome;docs/&versionNumber;/apidocs/org/jboss/dna/">
 <!ENTITY JIRA       					"http://jira.jboss.org/jira/browse/DNA">
 <!ENTITY Subversion  					"http://anonsvn.jboss.org/repos/dna/">
 <!ENTITY Fisheye							"http://fisheye.jboss.org/browse/DNA/">
@@ -16,6 +16,7 @@
 <!ENTITY Forums     					"http://www.jboss.com/index.html?module=bb&amp;op=viewforum&amp;f=272">
 <!ENTITY JSR170  							"http://www.jcp.org/en/jsr/detail?id=170">
 <!ENTITY JSR283  							"http://www.jcp.org/en/jsr/detail?id=283">
+<!ENTITY JSR203  							"http://www.jcp.org/en/jsr/detail?id=203">
 <!ENTITY MailTo     					"mailto:dna-users@jboss.org">
 <!ENTITY Wikipedia						"http://en.wikipedia.org/wiki/">
 <!ENTITY JBossMaven						"http://repository.jboss.com/maven2/">
@@ -35,6 +36,9 @@
 <!ENTITY Subject						      		"<ulink url='&Java;javax/security/auth/Subject.html'><classname>Subject</classname></ulink>">
 <!ENTITY CallbackHandler		      		"<ulink url='&Java;javax/security/auth/callback/CallbackHandler.html'><interface>CallbackHandler</interface></ulink>">
 <!ENTITY ExecutorService		      		"<ulink url='&Java;java/util/concurrent/ExecutorService.html'><interface>ExecutorService</interface></ulink>">
+<!ENTITY TimeUnit						      		"<ulink url='&Java;java/util/concurrent/TimeUnit.html'><interface>TimeUnit</interface></ulink>">
+<!ENTITY UUID						      				"<ulink url='&Java;java/util/UUID.html'><classname>UUID</classname></ulink>">
+
 
 <!-- Types in JCR API -->
 
@@ -50,15 +54,33 @@
 
 <!-- Types in dna-graph -->
 
+<!ENTITY Graph							       		"<ulink url='&API;graph/Graph.html'><classname>Graph</classname></ulink>">
+<!ENTITY GraphBatch				       			"<ulink url='&API;graph/Graph.Batch.html'><classname>Graph.Batch</classname></ulink>">
+<!ENTITY Subgraph							       	"<ulink url='&API;graph/Subgraph.html'><interface>Subgraph</interface></ulink>">
+<!ENTITY Node								       		"<ulink url='&API;graph/Node.html'><interface>Node</interface></ulink>">
+<!ENTITY Results							       	"<ulink url='&API;graph/Results.html'><interface>Results</interface></ulink>">
+<!ENTITY Location							       	"<ulink url='&API;graph/Location.html'><classname>Location</classname></ulink>">
 <!ENTITY ExecutionContext		       		"<ulink url='&API;graph/ExecutionContext.html'><interface>ExecutionContext</interface></ulink>">
 <!ENTITY ExecutionContextFactory   		"<ulink url='&API;graph/ExecutionContextFactory.html'><interface>ExecutionContextFactory</interface></ulink>">
 <!ENTITY BasicExecutionContext		    "<ulink url='&API;graph/BasicExecutionContext.html'><classname>BasicExecutionContext</classname></ulink>">
 <!ENTITY BasicExecutionContextFactory "<ulink url='&API;graph/BasicExecutionContextFactory.html'><classname>BasicExecutionContextFactory</classname></ulink>">
+<!ENTITY Name								       		"<ulink url='&API;graph/properties/Name.html'><interface>Name</interface></ulink>">
+<!ENTITY Path								       		"<ulink url='&API;graph/properties/Path.html'><interface>Path</interface></ulink>">
+<!ENTITY PathSegment				       		"<ulink url='&API;graph/properties/Path.Segment.html'><interface>Path.Segment</interface></ulink>">
+<!ENTITY Property						       		"<ulink url='&API;graph/properties/Property.html'><interface>Property</interface></ulink>">
 <!ENTITY ValueFactories       				"<ulink url='&API;graph/properties/ValueFactories.html'><interface>ValueFactories</interface></ulink>">
 <!ENTITY NamespaceRegistry       			"<ulink url='&API;graph/properties/NamespaceRegistry.html'><interface>NamespaceRegistry</interface></ulink>">
 <!ENTITY PropertyFactory       				"<ulink url='&API;graph/properties/PropertyFactory.html'><interface>PropertyFactory</interface></ulink>">
 <!ENTITY RepositorySource       			"<ulink url='&API;graph/connectors/RepositorySource.html'><interface>RepositorySource</interface></ulink>">
 <!ENTITY RepositoryConnection    			"<ulink url='&API;graph/connectors/RepositoryConnection.html'><interface>RepositoryConnection</interface></ulink>">
+<!ENTITY RepositoryConnectionFactory	"<ulink url='&API;graph/connectors/RepositoryConnectionFactory.html'><interface>RepositoryConnectionFactory</interface></ulink>">
+<!ENTITY RepositorySourceCapabilities	"<ulink url='&API;graph/connectors/RepositorySourceCapabilities.html'><classname>RepositorySourceCapabilities</classname></ulink>">
+<!ENTITY PathNotFoundException				"<ulink url='&API;graph/properties/PathNotFoundException.html'><classname>PathNotFoundException</classname></ulink>">
+<!ENTITY Request					       			"<ulink url='&API;graph/requests/Requests.html'><classname>Request</classname></ulink>">
+<!ENTITY CompositeRequest					    "<ulink url='&API;graph/requests/CompositeRequest.html'><classname>CompositeRequest</classname></ulink>">
+<!ENTITY ReadNodeRequest					    "<ulink url='&API;graph/requests/ReadNodeRequest.html'><classname>ReadNodeRequest</classname></ulink>">
+<!ENTITY CopyBranchRequest					  "<ulink url='&API;graph/requests/CopyBranchRequest.html'><classname>CopyBranchRequest</classname></ulink>">
+<!ENTITY RequestProcessor	       			"<ulink url='&API;graph/requests/processor/RequestProcessor.html'><classname>RequestProcessor</classname></ulink>">
 <!ENTITY StreamSequencer		    			"<ulink url='&API;graph/sequencers/StreamSequencer.html'><interface>StreamSequencer</interface></ulink>">
 <!ENTITY SequencerOutput		    			"<ulink url='&API;graph/sequencers/SequencerOutput.html'><interface>SequencerOutput</interface></ulink>">
 <!ENTITY SequencerContext		    			"<ulink url='&API;graph/sequencers/SequencerContext.html'><interface>SequencerContext</interface></ulink>">

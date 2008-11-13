@@ -44,7 +44,7 @@
 	<key>Creator</key>
 	<string>Randall Hauch</string>
 	<key>DisplayScale</key>
-	<string>1 0/72 in = 1 0/72 in</string>
+	<string>1 0/72 in = 1.0000 in</string>
 	<key>GraphDocumentVersion</key>
 	<integer>6</integer>
 	<key>GraphicsList</key>
@@ -257,7 +257,7 @@ System}</string>
 {\colortbl;\red255\green255\blue255;}
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\qc\pardirnatural
 
-\f0\fs24 \cf0 Repository Source}</string>
+\f0\fs24 \cf0 Repository Connector}</string>
 			</dict>
 		</dict>
 		<dict>
@@ -717,7 +717,7 @@ System}</string>
 {\colortbl;\red255\green255\blue255;}
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\qc\pardirnatural
 
-\f0\fs24 \cf0 Repository Source}</string>
+\f0\fs24 \cf0 Repository Connector}</string>
 			</dict>
 		</dict>
 		<dict>
@@ -985,7 +985,7 @@ System}</string>
 {\colortbl;\red255\green255\blue255;}
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\qc\pardirnatural
 
-\f0\fs24 \cf0 Repository Source}</string>
+\f0\fs24 \cf0 Repository Connector}</string>
 			</dict>
 		</dict>
 		<dict>
@@ -1200,7 +1200,7 @@ System}</string>
 {\colortbl;\red255\green255\blue255;}
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\qc\pardirnatural
 
-\f0\fs24 \cf0 Repository Source}</string>
+\f0\fs24 \cf0 Repository Connector}</string>
 			</dict>
 		</dict>
 		<dict>
@@ -1415,7 +1415,7 @@ System}</string>
 {\colortbl;\red255\green255\blue255;}
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\qc\pardirnatural
 
-\f0\fs24 \cf0 Repository Source}</string>
+\f0\fs24 \cf0 Repository Connector}</string>
 			</dict>
 		</dict>
 		<dict>
@@ -1527,7 +1527,7 @@ System}</string>
 	<key>MasterSheets</key>
 	<array/>
 	<key>ModificationDate</key>
-	<string>2008-09-19 10:39:39 -0500</string>
+	<string>2008-11-12 12:43:41 -0600</string>
 	<key>Modifier</key>
 	<string>Randall Hauch</string>
 	<key>NotesVisible</key>
