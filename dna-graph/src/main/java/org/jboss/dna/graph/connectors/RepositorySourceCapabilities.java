@@ -21,24 +21,82 @@
  */
 package org.jboss.dna.graph.connectors;
 
+import net.jcip.annotations.Immutable;
+
 /**
- * The capabilities of a {@link RepositorySource}.
+ * The capabilities of a {@link RepositorySource}. This class can be used as is, or subclassed to define more complex behavior.
  * 
+ * @see RepositorySource#getCapabilities()
  * @author Randall Hauch
  */
-public interface RepositorySourceCapabilities {
+@Immutable
+public class RepositorySourceCapabilities {
+
+    /**
+     * The default support for same-name-siblings is {@value} .
+     */
+    public static final boolean DEFAULT_SUPPORT_SAME_NAME_SIBLINGS = true;
+
+    /**
+     * The default support for updates is {@value} .
+     */
+    public static final boolean DEFAULT_SUPPORT_UPDATES = false;
+
+    /**
+     * The default support for updates is {@value} .
+     */
+    public static final boolean DEFAULT_SUPPORT_EVENTS = false;
+
+    private boolean sameNameSiblings;
+    private boolean updates;
+    private boolean events;
+
+    /**
+     * Create a capabilities object using the defaults, .
+     */
+    public RepositorySourceCapabilities() {
+        this(DEFAULT_SUPPORT_SAME_NAME_SIBLINGS, DEFAULT_SUPPORT_UPDATES, DEFAULT_SUPPORT_EVENTS);
+    }
+
+    public RepositorySourceCapabilities( boolean supportsSameNameSiblings,
+                                         boolean supportsUpdates ) {
+        this(supportsSameNameSiblings, supportsUpdates, DEFAULT_SUPPORT_EVENTS);
+    }
+
+    public RepositorySourceCapabilities( boolean supportsSameNameSiblings,
+                                         boolean supportsUpdates,
+                                         boolean supportsEvents ) {
+        this.sameNameSiblings = supportsSameNameSiblings;
+        this.updates = supportsUpdates;
+        this.events = supportsEvents;
+    }
 
     /**
      * Return whether the source supports same name siblings. If not, then no two siblings may share the same name.
      * 
      * @return true if same name siblings are supported, or false otherwise
      */
-    boolean supportsSameNameSiblings();
+    public boolean supportsSameNameSiblings() {
+        return sameNameSiblings;
+    }
 
     /**
-     * Return whether the source supports updates.
+     * Return whether the source supports updates. This may be true, even though a particular connection made on behalf of a user
+     * may not have any update privileges. In other words, returning <code>false</code> implies that no connections would allow
+     * updates to the content.
      * 
      * @return true if updates are supported, or false if the source only supports reads.
      */
-    boolean supportsUpdates();
+    public boolean supportsUpdates() {
+        return updates;
+    }
+
+    /**
+     * Return whether the source supports events through {@link RepositorySourceListener}s.
+     * 
+     * @return true if events are supported, or false if the source is not capable of generating events
+     */
+    public boolean supportsEvents() {
+        return events;
+    }
 }

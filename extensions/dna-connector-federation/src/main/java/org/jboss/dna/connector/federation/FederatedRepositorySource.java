@@ -81,6 +81,8 @@ public class FederatedRepositorySource implements RepositorySource, ObjectFactor
 
     public static final String DEFAULT_CONFIGURATION_SOURCE_PATH = "/";
 
+    protected static final RepositorySourceCapabilities CAPABILITIES = new RepositorySourceCapabilities(true, true);
+
     protected static final String REPOSITORY_NAME = "repositoryName";
     protected static final String SOURCE_NAME = "sourceName";
     protected static final String USERNAME = "username";
@@ -711,17 +713,6 @@ public class FederatedRepositorySource implements RepositorySource, ObjectFactor
      * @see org.jboss.dna.graph.connectors.RepositorySource#getCapabilities()
      */
     public RepositorySourceCapabilities getCapabilities() {
-        return new Capabilities();
+        return CAPABILITIES;
     }
-
-    protected class Capabilities implements RepositorySourceCapabilities {
-        public boolean supportsSameNameSiblings() {
-            return true;
-        }
-
-        public boolean supportsUpdates() {
-            return true;
-        }
-    }
-
 }

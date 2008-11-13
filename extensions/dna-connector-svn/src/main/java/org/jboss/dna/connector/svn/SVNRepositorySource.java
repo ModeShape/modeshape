@@ -76,6 +76,9 @@ public class SVNRepositorySource implements RepositorySource, ObjectFactory {
      * The default limit is {@value} for retrying {@link RepositoryConnection connection} calls to the underlying source.
      */
     public static final int DEFAULT_RETRY_LIMIT = 0;
+
+    protected static final RepositorySourceCapabilities CAPABILITIES = new RepositorySourceCapabilities(false, true);
+
     public static final String DEFAULT_UUID_PROPERTY_NAME = DnaLexicon.UUID.getString();
 
     protected static final String SOURCE_NAME = "sourceName";
@@ -275,7 +278,7 @@ public class SVNRepositorySource implements RepositorySource, ObjectFactory {
      * @see org.jboss.dna.graph.connectors.RepositorySource#getCapabilities()
      */
     public RepositorySourceCapabilities getCapabilities() {
-        return new Capabilities();
+        return CAPABILITIES;
     }
 
     /**
@@ -456,13 +459,4 @@ public class SVNRepositorySource implements RepositorySource, ObjectFactory {
         return null;
     }
 
-    protected class Capabilities implements RepositorySourceCapabilities {
-        public boolean supportsSameNameSiblings() {
-            return false;
-        }
-
-        public boolean supportsUpdates() {
-            return true;
-        }
-    }
 }

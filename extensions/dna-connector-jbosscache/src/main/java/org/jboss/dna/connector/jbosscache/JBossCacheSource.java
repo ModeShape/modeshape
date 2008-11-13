@@ -82,6 +82,8 @@ public class JBossCacheSource implements RepositorySource, ObjectFactory {
     public static final int DEFAULT_RETRY_LIMIT = 0;
     public static final String DEFAULT_UUID_PROPERTY_NAME = DnaLexicon.UUID.getString();
 
+    protected static final RepositorySourceCapabilities CAPABILITIES = new RepositorySourceCapabilities(true, true);
+
     protected static final String ROOT_NODE_UUID = "rootNodeUuid";
     protected static final String SOURCE_NAME = "sourceName";
     protected static final String DEFAULT_CACHE_POLICY = "defaultCachePolicy";
@@ -551,16 +553,6 @@ public class JBossCacheSource implements RepositorySource, ObjectFactory {
      * @see org.jboss.dna.graph.connectors.RepositorySource#getCapabilities()
      */
     public RepositorySourceCapabilities getCapabilities() {
-        return new Capabilities();
-    }
-
-    protected class Capabilities implements RepositorySourceCapabilities {
-        public boolean supportsSameNameSiblings() {
-            return true;
-        }
-
-        public boolean supportsUpdates() {
-            return true;
-        }
+        return CAPABILITIES;
     }
 }

@@ -63,6 +63,9 @@ public class SimpleRepositorySource implements RepositorySource {
      * The default limit is {@value} for retrying {@link RepositoryConnection connection} calls to the underlying source.
      */
     public static final int DEFAULT_RETRY_LIMIT = 0;
+
+    protected static final RepositorySourceCapabilities CAPABILITIES = new RepositorySourceCapabilities(true, true);
+
     private String repositoryName;
     private String name;
     private final AtomicInteger retryLimit = new AtomicInteger(DEFAULT_RETRY_LIMIT);
@@ -193,17 +196,7 @@ public class SimpleRepositorySource implements RepositorySource {
      * @see org.jboss.dna.graph.connectors.RepositorySource#getCapabilities()
      */
     public RepositorySourceCapabilities getCapabilities() {
-        return new Capabilities();
-    }
-
-    protected class Capabilities implements RepositorySourceCapabilities {
-        public boolean supportsSameNameSiblings() {
-            return true;
-        }
-
-        public boolean supportsUpdates() {
-            return true;
-        }
+        return CAPABILITIES;
     }
 
     /**

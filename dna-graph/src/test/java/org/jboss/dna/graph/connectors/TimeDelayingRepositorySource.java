@@ -52,6 +52,8 @@ public class TimeDelayingRepositorySource implements RepositorySource {
      */
     public static final int DEFAULT_RETRY_LIMIT = 0;
 
+    protected static final RepositorySourceCapabilities CAPABILITIES = new RepositorySourceCapabilities(true, true);
+
     private String name;
     private final AtomicInteger connectionsOpenedCount = new AtomicInteger(0);
     private final AtomicInteger connectionsClosedCount = new AtomicInteger(0);
@@ -236,17 +238,7 @@ public class TimeDelayingRepositorySource implements RepositorySource {
      * @see org.jboss.dna.graph.connectors.RepositorySource#getCapabilities()
      */
     public RepositorySourceCapabilities getCapabilities() {
-        return new Capabilities();
-    }
-
-    protected class Capabilities implements RepositorySourceCapabilities {
-        public boolean supportsSameNameSiblings() {
-            return true;
-        }
-
-        public boolean supportsUpdates() {
-            return true;
-        }
+        return CAPABILITIES;
     }
 
     public class Connection implements RepositoryConnection {
