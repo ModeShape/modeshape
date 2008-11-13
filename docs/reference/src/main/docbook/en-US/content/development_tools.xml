@@ -50,14 +50,14 @@
 				You should be able to use the <ulink url="http://java.sun.com/javase/downloads/index.jsp">latest JDK</ulink>,
 				which is currently JDK 6.  We periodically try to build JBoss DNA using JDK 6, but it's not our official JDK (yet).
 			</para>
+			<para>
+				Why do we build using JDK 5 and not 6? The main reason is that if we were to use JDK 6, then JBoss DNA couldn't really be used in any
+				applications or projects that still used JDK 5.  Plus, anybody using JDK 6 can still use JBoss DNA.
+				However, considering that the end-of-life for Java 5 is 
+				<ulink url="http://java.sun.com/products/archive/eol.policy.html">October 2009</ulink>, we may be switching to 
+				Java 6 sometime in 2009.
+			</para>
 		</note>
-		<para>
-			Why do we build using JDK 5 and not 6? The main reason is that if we were to use JDK 6, then JBoss DNA couldn't really be used in any
-			applications or projects that still used JDK 5.  Plus, anybody using JDK 6 can still use JBoss DNA.
-			However, considering that the end-of-life for Java 5 is 
-			<ulink url="http://java.sun.com/products/archive/eol.policy.html">October 2009</ulink>, we may be switching to 
-			Java 6 in the coming months.
-		</para>
 		<para>
 			When installing a JDK, simply follow the procedure for your particular platform.  On most platforms, this should set the
 			<code>JAVA_HOME</code> environment variable.  But if you run into any problems, first check that this environment
@@ -257,10 +257,11 @@
 			available from <ulink url="http://www.eclipse.org/">Eclipse.org</ulink>.  Simply follow the instructions for your platform.
 		</para>
 		<para>
-			After Eclipse is installed, create a new workspace.  Before importing the JBoss DNA projects, import (via "File->Import->Preferences")
-			the subset of the	Eclipse preferences by importing the <code>eclipse-preferences.epf</code> file (located under <code>trunk</code>).
-			Then, open the Eclipse preferences and open the "Java->Code Style-> Formatter" preference page, and press the "Import" button and
-			choose the <code>eclipse-code-formatter-profile.xml</code> file (located under <code>trunk</code>).  This will load the code
+			After Eclipse is installed, create a new workspace.  Before importing the JBoss DNA projects, import (via 
+			<emphasis role="strong">File->Import->Preferences</emphasis>) the subset of the Eclipse preferences by importing the 
+			<code>eclipse-preferences.epf</code> file (located under <code>trunk</code>). Then, open the Eclipse preferences and 
+			open the <emphasis role="strong">Java->Code Style-> Formatter</emphasis> preference page, and press the "Import" button and
+			choose the <code>eclipse-code-formatter-profile.xml</code> file (also located under <code>trunk</code>).  This will load the code
 			formatting preferences for the JBoss DNA project.
 		</para>
 		<para>
@@ -414,5 +415,14 @@
 				the project's <ulink url="&Downloads;">downloads</ulink> and <ulink url="&Home;/docs">documentation</ulink> pages.
 			</para>
 		</sect2>
+	</sect1>
+	<sect1>
+		<title>Summary</title>
+		<para>
+			In this chapter, we described the various aspects of developing code for the JBoss DNA project.  Before we start talking
+			about some of the details of JBoss DNA repositories, connectors, and sequencers, we'll first talk about
+			some very ubiquitous information: how does JBoss DNA load all of the extension classes?
+		  This is the topic of the <link linkend="classloaders">next chapter</link>.
+		</para>
 	</sect1>
 </chapter>

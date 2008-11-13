@@ -43,4 +43,8 @@
 	  Or, check out <ulink url="http://jira.jboss.org/jira/secure/IssueNavigator.jspa?reset=true&amp;mode=hide&amp;pid=12310520&amp;sorter/order=DESC&amp;sorter/field=priority&amp;resolution=-1&amp;component=12311436">JIRA</ulink>
 	  for the list of sequencers we've thought of.  If you think of one that's not there, please add it to JIRA!
 	</para>
+	<para>
+		And, if you haven't already, check out our &GettingStarted; guide, which has examples that you can build and run to see
+		JBoss DNA in action.
+	</para>
 </chapter>

@@ -229,5 +229,14 @@ public interface &ExecutionContext; extends &ClassLoaderFactory; {
 			These contexts (or the context factory) can then be passed to the various components as needed.
 		</para>
 	</sect1>
+	<sect1>
+		<title>Summary</title>
+		<para>
+			In this chapter, we covered security and environment topics as used throughout JBoss DNA. 
+			The <link linkend="repositories">next chapter</link> will cover JBoss DNA repositories, including the connector framework,
+			how DNA's JCR implementation works with connectors, what connectors are available (and how to use them),
+			and how to write your own connector.
+		</para>
+	</sect1>
 </chapter>
 

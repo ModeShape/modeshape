@@ -98,4 +98,12 @@ public &LoginContext; getLoginContext() { return loginContext; }
 &Session; session = jcrRepository.login(credentials, sourceName);
 </programlisting>
   </sect1>
+	<sect1>
+		<title>Summary</title>
+		<para>
+			In this chapter, we covered how to use JCR with JBoss DNA.  Now that you know how JBoss DNA repositories work,
+			and how to use JCR to work with DNA repositories, we'll move on in 
+			the <link linkend="sequencing">next chapter</link> to describing in detail how the sequencing of file content works.
+		</para>
+	</sect1>
 </chapter>

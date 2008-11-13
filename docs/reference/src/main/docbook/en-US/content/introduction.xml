@@ -34,23 +34,30 @@
 		regular JCR repository that they search, navigate, version, and listen for changes.  But under the covers, JBoss DNA
 		gets its content by federating multiple back-end systems (like databases, services, other repositories, etc.),
 		allowing those systems to continue "owning" the information while ensuring the unified repository stays up-to-date
-		and in sync.  JBoss DNA also analyzes the content you put into the repository and turns it into information you can use more effectively.
+		and in sync.  JBoss DNA also analyzes the files you upload into the repository and turns it into information you can use more effectively.
 	</para>
 	<para>
 		This document goes into detail about JBoss DNA and its capabilities, features, architecture, components, extension points,
-		security, configuration, and testing.  So whether your a developer on the project, or you're trying to learn the intricate details of
+		security, configuration, and the development environment and procedures.  
+		So whether your a developer on the project, or you're trying to learn the intricate details of
 		how JBoss DNA works, this document hopefully serves a good reference for developers on the project.
 	</para>
 	<sect1 id="use_cases">
 		<title>Use cases for JBoss DNA</title>
 		<para>
-			JBoss DNA repositories can be used in a variety of applications.  One of the most obvious ones 
+			JBoss DNA repositories can be used in a variety of applications.  One of the more obvious use cases for a metadata repository
 			is in provisioning and management, where it's critical to understand and keep track of the metadata for models, database, services, 
 			components, applications, clusters, machines, and other systems used in an enterprise.  Governance takes that a step 
-			farther, by also tracking the policies and expectations against which performance can be verified.
-			In these cases, a repository is an excellent mechanism for managing this complex and highly-varied information. 
-			But a JBoss DNA repository doesn't have to be large and complex: it could just manage configuration information
-			for an application, or it could just provide a JCR interface on top of a couple of non-JCR systems.  
+			farther, by also tracking the policies and expectations against which performance of the systems described by the repository can be verified.
+			In these cases, a repository is an excellent mechanism for managing this complex and highly-varied information.
+		</para>
+		<para>
+			But these large and complex use cases aren't the only way to use a JBoss DNA repository.  You could use an embedded JBoss DNA repository
+			to manage configuration information for an application, or you could use JBoss DNA just provide a JCR interface on top of a few non-JCR systems.
+		</para>
+		<para>
+			The point is that JBoss DNA can be used in many different ways, ranging from the very tiny embedded repository to a large and distributed
+			enterprise-grade repository.  The choice is yours.
 		</para>
 	</sect1>
 	<sect1 id="what_is_metadata">
@@ -65,14 +72,14 @@
 		designed to be a repository for all this (and more).
 		</para>
 		<para>
-		There are a couple of important things to understand about metadata.  First, the majority of metadata is either found in or
-		managed by other systems: databases, applications, file systems, source code management systems, services, and
-		content management systems, and even other repositories. We can't pull the information out and duplicate it, because
-		then we risk having multiple copies that are out-of-sync.  But we do want to access it through a homogenous API,
-		since that will make our lives significantly easier.  
+		There are a couple of important things to understand about metadata.  First, many systems manage (and frequently change) their own metadata and information.
+		Databases, applications, file systems, source code management systems, services, content management systems, and even other repositories 
+		are just a few types of systems that do this. We can't pull the information out and duplicate it, because
+		then we risk having multiple copies that are out-of-sync.  Ideally, we could access all of this information through a homogenous API
+		that also provides navigation, caching, versioning, search, and notification of changes.  That would make our lives significantly easier.
 		</para>
 		<para>
-		The answer to this apparent dichotomy is <emphasis><link linkend="dna-connector-federation">federation</link></emphasis>.
+		What we want is <emphasis><link linkend="dna-connector-federation">federation</link></emphasis>.
 		We can connect to these back-end systems to dynamically access the content and project it into a single, unified
 		repository.  We can also cache it for faster access, as long as the cache can be invalidated based upon time or event.
 		But we also need to maintain a clear picture of where all the bits come from, so users can be sure they're looking
@@ -83,11 +90,11 @@
 		The second important characteristic of the metadata is that a lot of it is represented as files, and there are
 		a lot of different file formats.  These include source code, configuration files, web pages, database schemas,
 		XML schemas, service definitions, policies, documents, spreadsheets, presentations, images, audio files, workflow
-		definitions, business rules, and on and on.  And so even though information is added to the repository through files
-		like these, the repository should be able to automatically extract the most useful content and place it in
-		the repository where it can be much more easily used, searched, related, and analyzed.
-		This process of extracting content and storing it in the repository is what JBoss DNA calls 
-		<emphasis><link linkend="sequencing">sequencing</link></emphasis>,
+		definitions, business rules, and on and on.  And logically if files contain metadata, we want to add those files
+		to our metadata repository.  The problem is, all that metadata is tied up as blobs in the repository.
+		Ideally, our repository would automatically extract from those files the content that's most useful to us,
+		and place that content inside the repository where it can be much more easily used, searched, related, and analyzed.
+		JBoss DNA does exactly this via a process we call <emphasis><link linkend="sequencing">sequencing</link></emphasis>,
 		and it's an important part of a metadata repository.
 		</para>
 		<para>
@@ -95,7 +102,7 @@
 		information need to see different views of it.  Metadata about two similar systems is not always the same.
 		The metadata often needs to be tagged or annotated with additional information.  And the things being
 		described often change over time, meaning the metadata has to change, too.  As a result, the way in which
-		we store and manage the metadata has to be flexible and able to adapt, and the object model
+		we store and manage the metadata has to be flexible and able to adapt to our ever-changing needs, and the object model
 		we use to interact with the repository must accommodate these needs.  The graph-based nature of the JCR API provides this 
 		flexibility while also giving us the ability to constrain information when it needs to be constrained.
 		</para>
@@ -185,9 +192,9 @@
       always shows the next three releases.)
     </para>
     <para>
-      By convention, JIRA issues not immediately targeted to a release will be reviewed periodically to determine the
-      appropriate release where they can be targeted. Any issue that is reviewed and that does not fit in a known release will
-      be targeted to the
+      By convention, the JBoss DNA project team periodically review JIRA issues that aren't targeted to a release, and then schedule
+ 			them based upon current workload, severity, and the roadmap.  And if we review an issue and don't know how to target it,
+			we target it to the
       <ulink url="&JIRA;?report=com.atlassian.jira.plugin.system.project:roadmap-panel">Future Releases</ulink>
       bucket.
 		</para>
@@ -338,8 +345,22 @@
         </listitem>
         <listitem>
           <para>
+            <emphasis role="strong">dna-connector-svn</emphasis>
+            is a prototype DNA sequencer that obtains content from a Subversion repository, providing that content in
+						the form of <code>nt:file</code> and <code>nt:folder</code> nodes.
+						<emphasis>This is still under development.</emphasis>
+          </para>
+        </listitem>
+        <listitem>
+          <para>
             <emphasis role="strong">dna-sequencer-zip</emphasis>
             is a DNA sequencer that extracts from ZIP archives the files (with content) and folders.
+          </para>
+        </listitem>
+        <listitem>
+          <para>
+            <emphasis role="strong">dna-sequencer-xml</emphasis>
+            is a DNA sequencer that extracts the structure and content from XML files.
           </para>
         </listitem>
         <listitem>
@@ -374,7 +395,15 @@
         <listitem>
           <para>
             <emphasis role="strong">dna-sequencer-cnd</emphasis>
-            is a DNA sequencer that extracts JCR node definitions from JCR Compact Node Definition (CND) files.
+            is a prototype DNA sequencer that extracts JCR node definitions from JCR Compact Node Definition (CND) files.
+						<emphasis>This is still under development.</emphasis>
+          </para>
+        </listitem>
+        <listitem>
+          <para>
+            <emphasis role="strong">dna-sequencer-jbpm-jpdl</emphasis>
+            is a prototype DNA sequencer that extracts process definition metadata from jBPM process definition language (jPDL) files.
+						<emphasis>This is still under development.</emphasis>
           </para>
         </listitem>
         <listitem>

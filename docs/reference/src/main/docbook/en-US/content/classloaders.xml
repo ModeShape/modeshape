@@ -107,4 +107,13 @@ public interface &ClassLoaderFactory; {
 			of limited use right now.
 		</para>
   </sect1>
+	<sect1>
+		<title>Summary</title>
+		<para>
+			In this chapter, we described the framework used by JBoss DNA to load extension classes, like implementations
+			of repositories, sequencers, MIME type detectors, and other components.
+		  <link linkend="environment">Next</link>, we cover how JBoss security works and how the various components
+		  of JBoss DNA can access this security information as well as information about the environment in which the component is running.
+		</para>
+	</sect1>
 </chapter>

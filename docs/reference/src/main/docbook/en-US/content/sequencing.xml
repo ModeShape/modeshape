@@ -490,22 +490,32 @@ this.sequencingService.addSequencer(sequencerConfig);
 <dependency>
   <groupId>org.jboss.dna</groupId>
   <artifactId>dna-common</artifactId>
-  <version>0.1</version>
+  <version>0.3</version>
 </dependency>
 <dependency>
   <groupId>org.jboss.dna</groupId>
   <artifactId>dna-graph</artifactId>
-  <version>0.1</version>
-</dependency>
-<dependency>
-  <groupId>org.slf4j</groupId>
-  <artifactId>slf4j-api</artifactId>
+  <version>0.3</version>
 </dependency>
 	 ]]></programlisting>
 			<para>These are minimum dependencies required for compiling a sequencer.  Of course, you'll have to add
 	  		other dependencies that your sequencer needs.</para>
 	  	<para>As for testing, you probably will want to add more dependencies, such as those listed here:</para>
 			<programlisting role="XML"><![CDATA[
+<dependency>
+  <groupId>org.jboss.dna</groupId>
+  <artifactId>dna-graph</artifactId>
+  <version>0.3</version>
+  <type>test-jar</type>
+  <scope>test</scope>
+</dependency>
+<dependency>
+  <groupId>org.jboss.dna</groupId>
+  <artifactId>dna-common</artifactId>
+  <version>0.3</version>
+  <type>test-jar</type>
+  <scope>test</scope>
+</dependency>
 <dependency>
   <groupId>junit</groupId>
   <artifactId>junit</artifactId>
@@ -799,4 +809,13 @@ try {
 	    </note>
 	  </sect2>
   </sect1>
+	<sect1>
+		<title>Summary</title>
+		<para>
+			In this chapter, we described how JBoss DNA sequences files as they're uploaded into a repository.
+			And one of the things we mentioned was that each sequencer is handed (with other inputs) the MIME type of the file it is to process.
+			How does DNA know what the MIME type is?
+			JBoss DNA uses <emphasis>MIME type detectors</emphasis>, and this is the topic of the <link linkend="mimetypes">next chapter</link>.
+		</para>
+	</sect1>
 </chapter>
