@@ -387,32 +387,48 @@
 			<programlisting>$ mvn -Passembly release:prepare</programlisting>
 			<para>
 				You will again be prompted for the release versions and tag name. These should be the same as what was used during the dry run. 
-				This will run the same steps as the dry run, with the additional step of tagging the release in SVN.
+				This will run the same steps as the dry run, with the additional step of tagging the release in SVN.  
 			</para>
 			<para>
-				If there are any problems during this step, you should go back and try the dry run option.
+				If there are any problems during this step, you should go back and try the dry run option.  But after this runs successfully,
+				the release will be tagged in SVN, and the <code>pom.xml</code> files in SVN under <code>/trunk</code> will have the 
+				next version in the "&lt;version&gt;" values.
+				However, the artifacts for the release are not yet published.  That's the next step.
 			</para>
 		</sect2>
 		<sect2 id="release">
 			<title>Perform the release</title>
 			<para>
-				Next run the perform step which will checkout the files from the tag, do a build, and deploy the generated artifacts.
+				At this point, the release's artifacts need to be published to the JBoss Maven repository.  This next command check outs the
+				files from the release tag created earlier (into a <code>trunk/target/checkout</code> directory), runs a build, and then
+				deploys the generated artifacts.  Note that this ensures that the artifacts are built from the tagged code.
 			</para>
-			<programlisting>$ mvn -Passembly release:perform</programlisting>
+			<programlisting>$ mvn release:perform -DuseReleaseProfile=false</programlisting>
+			<note>
+				<para>
+					If during this process you get an error finding the released artifacts in your local Maven repository, you may 
+					need to go into the <code>trunk/target/checkout</code> folder and run <code>$ mvn install</code>.  This is a simple
+					workaround to make the artifacts available locally.  Another option to try is adding <code>-Dgoals=install,assembly</code> 
+					to the <code>$ mvn release:perform... </code> command above.
+				</para>
+			</note>
 			<para>
-				The deployment is done to the local file system (a local checkout of the JBoss Maven2 repository), so you will need to 
+				The artifacts are deployed to the local file system, which is comprised of a local checkout of the JBoss Maven2 repository 
+				in a location specified by a combination of the <code>&lt;distributionManagement&gt;</code> section of several <code>pom.xml</code> 
+				files and your personal <code>settings.xml</code> file.  Once this Maven command completes, you will need to 
 				commit the new files after they are deployed.  For more information, see the 
 				<ulink url="http://wiki.jboss.org/wiki/Maven">JBoss wiki</ulink>.
-			</para>
-			<para>
-				Note that the release process updates your project's <code>pom.xml</code> files to change the "&lt;version&gt;" values
-				to the next version.  These will then need to be committed onto the trunk of SVN.
 			</para>
 			<para>
 				At this point, the software has been released and tagged, and it's been deployed to a local checked-out copy of the 
 				JBoss DNA Maven 2 repository (via the "&lt;distribution&gt;" section of the pom.xml files).  Those need to be committed
 				into the Maven 2 repository using SVN.  And finally, the last thing is to publish the release onto
 				the project's <ulink url="&Downloads;">downloads</ulink> and <ulink url="&Home;/docs">documentation</ulink> pages.
+			</para>
+			<para>
+				The assemblies of the source, binaries, etc. also need to be published onto the &Downloads; area of the
+				<ulink url="http://www.jboss.org/dna">the project page</ulink>.  This process is expected to change, as <ulink url="http://www.jboss.org">JBoss.org</ulink>
+				improves its infrastructure.
 			</para>
 		</sect2>
 	</sect1>
