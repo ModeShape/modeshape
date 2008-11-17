@@ -98,8 +98,8 @@
           <para>
             <emphasis role="strong">DNA WebDAV Server</emphasis>
             allows clients such as Microsoft Windows and Apple OS X to connect to, read, and edit the content in the repository
-            using the WebDAV standard. Since WebDAV is an extension of HTTP, web browsers are able to read (but not modify) the
-            content served by a WebDAV compliant server. The DNA WebDAV Server operates upon any JCR-compliant repository.
+            using the WebDAV standard. WebDAV is an extension of HTTP, so web browsers are able to access the content 
+            served by a WebDAV compliant server. The DNA WebDAV Server operates upon any JCR-compliant repository.
           </para>
         </listitem>
         <listitem>
