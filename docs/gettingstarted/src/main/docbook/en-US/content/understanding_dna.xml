@@ -48,10 +48,10 @@
       of other DNA components or third-party systems that support these standard APIs.</para>
     <mediaobject>
       <imageobject role="fo">
-        <imagedata align="center" fileref="images/dna-architecture.png" />
+        <imagedata align="center" fileref="dna-architecture.png" />
       </imageobject>
       <imageobject role="html">
-        <imagedata align="center" fileref="images/dna-architecture.png" />
+        <imagedata align="center" fileref="dna-architecture.png" />
       </imageobject>
     </mediaobject>
     <para>
