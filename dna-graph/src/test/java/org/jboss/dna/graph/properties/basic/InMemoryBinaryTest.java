@@ -21,16 +21,15 @@
  */
 package org.jboss.dna.graph.properties.basic;
 
+import static org.hamcrest.core.Is.is;
 import static org.jboss.dna.graph.properties.basic.BinaryContains.hasContent;
 import static org.jboss.dna.graph.properties.basic.BinaryContains.hasNoContent;
-import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
 import java.io.IOException;
 import java.io.InputStream;
 import org.jboss.dna.common.util.IoUtil;
 import org.jboss.dna.common.util.StringUtil;
 import org.jboss.dna.graph.properties.Binary;
-import org.jboss.dna.graph.properties.basic.InMemoryBinary;
 import org.junit.Before;
 import org.junit.Test;
 

@@ -55,7 +55,7 @@ public class CreateNodeRequest extends Request implements Iterable<Property> {
      * @param at the location of the node to be read
      * @param properties the properties of the new node, which should not include the location's
      *        {@link Location#getIdProperties() identification properties}
-     * @throws IllegalArgumentException if the location is null
+     * @throws IllegalArgumentException if the location is null or has no {@link Location#getPath() path}
      */
     public CreateNodeRequest( Location at,
                               Property... properties ) {
@@ -68,7 +68,7 @@ public class CreateNodeRequest extends Request implements Iterable<Property> {
      * @param at the location of the node to be read
      * @param properties the properties of the new node, which should not include the location's
      *        {@link Location#getIdProperties() identification properties}
-     * @throws IllegalArgumentException if the location is null
+     * @throws IllegalArgumentException if the location is null or has no {@link Location#getPath() path}
      */
     public CreateNodeRequest( Location at,
                               Iterable<Property> properties ) {
@@ -81,7 +81,7 @@ public class CreateNodeRequest extends Request implements Iterable<Property> {
      * @param at the location of the node to be read
      * @param properties the properties of the new node, which should not include the location's
      *        {@link Location#getIdProperties() identification properties}
-     * @throws IllegalArgumentException if the location is null
+     * @throws IllegalArgumentException if the location is null or has no {@link Location#getPath() path}
      */
     public CreateNodeRequest( Location at,
                               Iterator<Property> properties ) {
@@ -96,13 +96,15 @@ public class CreateNodeRequest extends Request implements Iterable<Property> {
      *        {@link Location#getIdProperties() identification properties}
      * @param conflictBehavior the expected behavior if an equivalently-named child already exists at the <code>into</code>
      *        location
-     * @throws IllegalArgumentException if the location or the conflict behavior is null
+     * @throws IllegalArgumentException if the location or the conflict behavior is null, or if the location does not have a
+     *         {@link Location#getPath() path}
      */
     public CreateNodeRequest( Location at,
                               NodeConflictBehavior conflictBehavior,
                               Property... properties ) {
         CheckArg.isNotNull(at, "at");
         CheckArg.isNotNull(conflictBehavior, "conflictBehavior");
+        CheckArg.isNotNull(at.getPath(), "at.getPath()");
         this.at = at;
         this.conflictBehavior = conflictBehavior;
         int number = properties.length + (at.hasIdProperties() ? at.getIdProperties().size() : 0);

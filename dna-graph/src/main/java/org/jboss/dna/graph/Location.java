@@ -494,4 +494,21 @@ public class Location implements Iterable<Property> {
         return this;
     }
 
+    /**
+     * Create a copy of this location that adds the supplied UUID as an identification property. The new identification property
+     * will replace any existing identification property with the same name on the original.
+     * 
+     * @param uuid the new UUID, which may be null
+     * @return the new location, or this location if the new identification property is null or empty
+     */
+    public Location with( UUID uuid ) {
+        if (uuid == null) return this;
+        Property newProperty = new BasicSingleValueProperty(DnaLexicon.UUID, uuid);
+        if (this.hasIdProperties()) {
+            Property existing = this.getIdProperty(DnaLexicon.UUID);
+            if (existing != null && existing.equals(newProperty)) return this;
+        }
+        return new Location(this, newProperty);
+    }
+
 }
