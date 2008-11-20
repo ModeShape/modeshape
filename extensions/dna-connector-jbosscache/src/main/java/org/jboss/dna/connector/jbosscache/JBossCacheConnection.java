@@ -195,18 +195,14 @@ public class JBossCacheConnection implements RepositoryConnection {
 
             @Override
             public void process( CreateNodeRequest request ) {
-                Path path = request.at().getPath();
-                Path parent = path.getParent();
+                Path parent = request.under().getPath();
                 // Look up the parent node, which must exist ...
                 Node<Name, Object> parentNode = getNode(context, parent);
 
                 // Update the children to account for same-name siblings.
                 // This not only updates the FQN of the child nodes, but it also sets the property that stores the
                 // the array of Path.Segment for the children (since the cache doesn't maintain order).
-                Path.Segment newSegment = updateChildList(parentNode,
-                                                          path.getLastSegment().getName(),
-                                                          getExecutionContext(),
-                                                          true);
+                Path.Segment newSegment = updateChildList(parentNode, request.named(), getExecutionContext(), true);
                 Node<Name, Object> node = parentNode.addChild(Fqn.fromElements(newSegment));
                 assert checkChildren(parentNode);
 

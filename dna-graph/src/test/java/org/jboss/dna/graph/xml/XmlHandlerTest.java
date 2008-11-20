@@ -399,7 +399,9 @@ public class XmlHandlerTest {
         }
         // Now get the next request and compare the expected and actual ...
         CreateNodeRequest request = requests.remove();
-        assertThat(request.at().getPath(), is(expectedPath));
+        Path parentPath = request.under().getPath();
+        assertThat(parentPath, is(expectedPath.getParent()));
+        assertThat(request.named(), is(expectedPath.getLastSegment().getName()));
         for (Property actual : request.properties()) {
             Property expected = expectedProperties.remove(actual.getName());
             assertThat("unexpected property: " + actual, expected, is(notNullValue()));
@@ -434,18 +436,23 @@ public class XmlHandlerTest {
 
         public void create( Path path,
                             List<Property> properties ) {
-            requests.add(new CreateNodeRequest(new Location(path), properties));
+            assert path != null;
+            Path parent = path.getParent();
+            Name child = path.getLastSegment().getName();
+            requests.add(new CreateNodeRequest(new Location(parent), child, 0, properties));
         }
 
         public void create( final Path path,
                             final Property firstProperty,
                             final Property... additionalProperties ) {
-            Location location = new Location(path);
+            Path parent = path.getParent();
+            Name child = path.getLastSegment().getName();
+            Location location = new Location(parent);
             if (firstProperty == null) {
-                requests.add(new CreateNodeRequest(location));
+                requests.add(new CreateNodeRequest(location, child, 0));
             } else {
                 if (additionalProperties == null || additionalProperties.length == 0) {
-                    requests.add(new CreateNodeRequest(location, firstProperty));
+                    requests.add(new CreateNodeRequest(location, child, 0, firstProperty));
                 } else {
                     Iterator<Property> iter = new Iterator<Property>() {
                         private int index = -1;
@@ -466,7 +473,7 @@ public class XmlHandlerTest {
                             throw new UnsupportedOperationException();
                         }
                     };
-                    requests.add(new CreateNodeRequest(location, iter));
+                    requests.add(new CreateNodeRequest(location, child, 0, iter));
                 }
             }
         }

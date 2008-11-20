@@ -160,9 +160,12 @@ public class GraphTest {
         assertThat(executedRequests.poll(), is((Request)new DeleteBranchRequest(at)));
     }
 
-    protected void assertNextRequestIsCreate( Location at,
+    protected void assertNextRequestIsCreate( Location parent,
+                                              String child,
+                                              int desiredIndex,
                                               Property... properties ) {
-        assertThat(executedRequests.poll(), is((Request)new CreateNodeRequest(at, properties)));
+        Name name = context.getValueFactories().getNameFactory().create(child);
+        assertThat(executedRequests.poll(), is((Request)new CreateNodeRequest(parent, name, desiredIndex, properties)));
     }
 
     protected void assertNextRequestReadProperties( Location at,
@@ -307,32 +310,32 @@ public class GraphTest {
     public void shouldCreateNode() {
         graph.create(validPath);
         assertThat(numberOfExecutions, is(1));
-        assertNextRequestIsCreate(new Location(validPath));
+        assertNextRequestIsCreate(new Location(validPath.getParent()), "c", 0);
         assertNoMoreRequests();
 
         graph.create(validPath, validIdProperty1);
         assertThat(numberOfExecutions, is(1));
-        assertNextRequestIsCreate(new Location(validPath), validIdProperty1);
+        assertNextRequestIsCreate(new Location(validPath.getParent()), "c", 0, validIdProperty1);
         assertNoMoreRequests();
 
         graph.create(validPath, validIdProperty1, validIdProperty2);
         assertThat(numberOfExecutions, is(1));
-        assertNextRequestIsCreate(new Location(validPath), validIdProperty1, validIdProperty2);
+        assertNextRequestIsCreate(new Location(validPath.getParent()), "c", 0, validIdProperty1, validIdProperty2);
         assertNoMoreRequests();
 
         graph.create(validPathString);
         assertThat(numberOfExecutions, is(1));
-        assertNextRequestIsCreate(new Location(validPath));
+        assertNextRequestIsCreate(new Location(validPath.getParent()), "c", 0);
         assertNoMoreRequests();
 
         graph.create(validPathString, validIdProperty1);
         assertThat(numberOfExecutions, is(1));
-        assertNextRequestIsCreate(new Location(validPath), validIdProperty1);
+        assertNextRequestIsCreate(new Location(validPath.getParent()), "c", 0, validIdProperty1);
         assertNoMoreRequests();
 
         graph.create(validPathString, validIdProperty1, validIdProperty2);
         assertThat(numberOfExecutions, is(1));
-        assertNextRequestIsCreate(new Location(validPath), validIdProperty1, validIdProperty2);
+        assertNextRequestIsCreate(new Location(validPath.getParent()), "c", 0, validIdProperty1, validIdProperty2);
         assertNoMoreRequests();
     }
 
@@ -775,8 +778,11 @@ public class GraphTest {
 
         @Override
         public void process( CreateNodeRequest request ) {
-            // Just update the actual location
-            request.setActualLocationOfNode(actualLocationOf(request.at()));
+            // Just update the actual location ...
+            Location parent = actualLocationOf(request.under()); // just make sure it has a path ...
+            Name name = request.named();
+            Path childPath = context.getValueFactories().getPathFactory().create(parent.getPath(), name);
+            request.setActualLocationOfNode(new Location(childPath));
         }
 
         @Override

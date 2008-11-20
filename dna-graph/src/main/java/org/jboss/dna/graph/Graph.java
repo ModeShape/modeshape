@@ -480,17 +480,30 @@ public class Graph {
 
     /**
      * Begin the request to create a node located at the supplied path. This request is submitted to the repository immediately.
+     * <p>
+     * If you have the {@link Location} of the parent (for the new node) from a previous request, it is better and more efficient
+     * to use {@link #createUnder(Location)}. However, this method work just as well if all you have is the {@link Path} to the
+     * parent or new node.
+     * </p>
      * 
      * @param atPath the path to the node that is to be created.
      * @return an object that may be used to start another request
      */
     public Conjunction<Graph> create( String atPath ) {
-        this.requestQueue.submit(new CreateNodeRequest(new Location(createPath(atPath))));
+        Path at = createPath(atPath);
+        Path parent = at.getParent();
+        Name child = at.getLastSegment().getName();
+        this.requestQueue.submit(new CreateNodeRequest(new Location(parent), child, 0));
         return nextGraph;
     }
 
     /**
      * Begin the request to create a node located at the supplied path. This request is submitted to the repository immediately.
+     * <p>
+     * If you have the {@link Location} of the parent (for the new node) from a previous request, it is better and more efficient
+     * to use {@link #createUnder(Location)}. However, this method work just as well if all you have is the {@link Path} to the
+     * parent or new node.
+     * </p>
      * 
      * @param atPath the path to the node that is to be created.
      * @param properties the properties for the new node
@@ -498,23 +511,39 @@ public class Graph {
      */
     public Conjunction<Graph> create( String atPath,
                                       Property... properties ) {
-        this.requestQueue.submit(new CreateNodeRequest(new Location(createPath(atPath)), properties));
+        Path at = createPath(atPath);
+        Path parent = at.getParent();
+        Name child = at.getLastSegment().getName();
+        this.requestQueue.submit(new CreateNodeRequest(new Location(parent), child, 0, properties));
         return nextGraph;
     }
 
     /**
      * Begin the request to create a node located at the supplied path. This request is submitted to the repository immediately.
+     * <p>
+     * If you have the {@link Location} of the parent (for the new node) from a previous request, it is better and more efficient
+     * to use {@link #createUnder(Location)}. However, this method work just as well if all you have is the {@link Path} to the
+     * parent or new node.
+     * </p>
      * 
      * @param at the path to the node that is to be created.
      * @return an object that may be used to start another request
      */
     public Conjunction<Graph> create( Path at ) {
-        this.requestQueue.submit(new CreateNodeRequest(new Location(at)));
+        CheckArg.isNotNull(at, "at");
+        Path parent = at.getParent();
+        Name child = at.getLastSegment().getName();
+        this.requestQueue.submit(new CreateNodeRequest(new Location(parent), child, 0));
         return nextGraph;
     }
 
     /**
      * Begin the request to create a node located at the supplied path. This request is submitted to the repository immediately.
+     * <p>
+     * If you have the {@link Location} of the parent (for the new node) from a previous request, it is better and more efficient
+     * to use {@link #createUnder(Location)}. However, this method work just as well if all you have is the {@link Path} to the
+     * parent or new node.
+     * </p>
      * 
      * @param at the path to the node that is to be created.
      * @param properties the properties for the new node
@@ -522,12 +551,20 @@ public class Graph {
      */
     public Conjunction<Graph> create( Path at,
                                       Property... properties ) {
-        this.requestQueue.submit(new CreateNodeRequest(new Location(at), properties));
+        CheckArg.isNotNull(at, "at");
+        Path parent = at.getParent();
+        Name child = at.getLastSegment().getName();
+        this.requestQueue.submit(new CreateNodeRequest(new Location(parent), child, 0, properties));
         return nextGraph;
     }
 
     /**
      * Begin the request to create a node located at the supplied path. This request is submitted to the repository immediately.
+     * <p>
+     * If you have the {@link Location} of the parent (for the new node) from a previous request, it is better and more efficient
+     * to use {@link #createUnder(Location)}. However, this method work just as well if all you have is the {@link Path} to the
+     * parent or new node.
+     * </p>
      * 
      * @param at the path to the node that is to be created.
      * @param properties the properties for the new node
@@ -535,8 +572,70 @@ public class Graph {
      */
     public Conjunction<Graph> create( Path at,
                                       Iterable<Property> properties ) {
-        this.requestQueue.submit(new CreateNodeRequest(new Location(at), properties));
+        CheckArg.isNotNull(at, "at");
+        Path parent = at.getParent();
+        Name child = at.getLastSegment().getName();
+        this.requestQueue.submit(new CreateNodeRequest(new Location(parent), child, 0, properties));
         return nextGraph;
+    }
+
+    /**
+     * Begin the request to create a node under the existing parent node at the supplied location. Use this method if you are
+     * creating a node when you have the {@link Location} of a parent from a previous request.
+     * <p>
+     * Like all other methods on the {@link Graph}, the copy request will be performed immediately when the <code>node(...)</code>
+     * method is called on the returned object
+     * </p>
+     * 
+     * @param parent the location of the parent
+     * @return the object used to start creating a node
+     */
+    public CreateNode<Conjunction<Graph>> createUnder( final Location parent ) {
+        final NameFactory nameFactory = getContext().getValueFactories().getNameFactory();
+        CheckArg.isNotNull(parent, "parent");
+        return new CreateNode<Conjunction<Graph>>() {
+            public Conjunction<Graph> node( String name,
+                                            Property... properties ) {
+                return node(name, -1, properties);
+            }
+
+            public Conjunction<Graph> node( String name,
+                                            Iterator<Property> properties ) {
+                return node(name, -1, properties);
+            }
+
+            public Conjunction<Graph> node( String name,
+                                            Iterable<Property> properties ) {
+                return node(name, -1, properties);
+            }
+
+            @SuppressWarnings( "synthetic-access" )
+            public Conjunction<Graph> node( String name,
+                                            int desiredIndexInParent,
+                                            Property... properties ) {
+                Name child = nameFactory.create(name);
+                requestQueue.submit(new CreateNodeRequest(parent, child, desiredIndexInParent, properties));
+                return nextGraph;
+            }
+
+            @SuppressWarnings( "synthetic-access" )
+            public Conjunction<Graph> node( String name,
+                                            int desiredIndexInParent,
+                                            Iterator<Property> properties ) {
+                Name child = nameFactory.create(name);
+                requestQueue.submit(new CreateNodeRequest(parent, child, desiredIndexInParent, properties));
+                return nextGraph;
+            }
+
+            @SuppressWarnings( "synthetic-access" )
+            public Conjunction<Graph> node( String name,
+                                            int desiredIndexInParent,
+                                            Iterable<Property> properties ) {
+                Name child = nameFactory.create(name);
+                requestQueue.submit(new CreateNodeRequest(parent, child, desiredIndexInParent, properties));
+                return nextGraph;
+            }
+        };
     }
 
     /**
@@ -1515,7 +1614,10 @@ public class Graph {
          */
         public Create<BatchConjunction> create( String atPath ) {
             assertNotExecuted();
-            return new CreateAction<BatchConjunction>(nextRequests, requestQueue, new Location(createPath(atPath)));
+            Path at = createPath(atPath);
+            Path parent = at.getParent();
+            Name name = at.getLastSegment().getName();
+            return new CreateAction<BatchConjunction>(nextRequests, requestQueue, new Location(parent), name, 0);
         }
 
         /**
@@ -1533,7 +1635,10 @@ public class Graph {
         public Create<BatchConjunction> create( String atPath,
                                                 Property property ) {
             assertNotExecuted();
-            return new CreateAction<BatchConjunction>(nextRequests, requestQueue, new Location(createPath(atPath))).with(property);
+            Path at = createPath(atPath);
+            Path parent = at.getParent();
+            Name name = at.getLastSegment().getName();
+            return new CreateAction<BatchConjunction>(nextRequests, requestQueue, new Location(parent), name, 0).with(property);
         }
 
         /**
@@ -1553,8 +1658,11 @@ public class Graph {
                                                 Property firstProperty,
                                                 Property... additionalProperties ) {
             assertNotExecuted();
-            return new CreateAction<BatchConjunction>(nextRequests, requestQueue, new Location(createPath(atPath))).with(firstProperty,
-                                                                                                                         additionalProperties);
+            Path at = createPath(atPath);
+            Path parent = at.getParent();
+            Name name = at.getLastSegment().getName();
+            return new CreateAction<BatchConjunction>(nextRequests, requestQueue, new Location(parent), name, 0).with(firstProperty,
+                                                                                                                      additionalProperties);
         }
 
         /**
@@ -1570,7 +1678,10 @@ public class Graph {
          */
         public Create<BatchConjunction> create( Path at ) {
             assertNotExecuted();
-            return new CreateAction<BatchConjunction>(nextRequests, requestQueue, new Location(at));
+            CheckArg.isNotNull(at, "at");
+            Path parent = at.getParent();
+            Name name = at.getLastSegment().getName();
+            return new CreateAction<BatchConjunction>(nextRequests, requestQueue, new Location(parent), name, 0);
         }
 
         /**
@@ -1588,8 +1699,11 @@ public class Graph {
         public Create<BatchConjunction> create( Path at,
                                                 Iterable<Property> properties ) {
             assertNotExecuted();
+            CheckArg.isNotNull(at, "at");
+            Path parent = at.getParent();
+            Name name = at.getLastSegment().getName();
             CreateAction<BatchConjunction> action = new CreateAction<BatchConjunction>(nextRequests, requestQueue,
-                                                                                       new Location(at));
+                                                                                       new Location(parent), name, 0);
             for (Property property : properties) {
                 action.and(property);
             }
@@ -1611,7 +1725,10 @@ public class Graph {
         public Create<BatchConjunction> create( Path at,
                                                 Property property ) {
             assertNotExecuted();
-            return new CreateAction<BatchConjunction>(nextRequests, requestQueue, new Location(at)).with(property);
+            CheckArg.isNotNull(at, "at");
+            Path parent = at.getParent();
+            Name name = at.getLastSegment().getName();
+            return new CreateAction<BatchConjunction>(nextRequests, requestQueue, new Location(parent), name, 0).with(property);
         }
 
         /**
@@ -1631,8 +1748,23 @@ public class Graph {
                                                 Property firstProperty,
                                                 Property... additionalProperties ) {
             assertNotExecuted();
-            return new CreateAction<BatchConjunction>(nextRequests, requestQueue, new Location(at)).with(firstProperty,
-                                                                                                         additionalProperties);
+            CheckArg.isNotNull(at, "at");
+            Path parent = at.getParent();
+            Name name = at.getLastSegment().getName();
+            return new CreateAction<BatchConjunction>(nextRequests, requestQueue, new Location(parent), name, 0).with(firstProperty,
+                                                                                                                      additionalProperties);
+        }
+
+        /**
+         * Begin the request to create a node under the existing parent node at the supplied location. This request is submitted
+         * to the repository after the returned components are completed.
+         * 
+         * @param parent the location of the parent
+         * @return the object used to start creating a node
+         */
+        public CreateNodeNamed<BatchConjunction> createUnder( Location parent ) {
+            CheckArg.isNotNull(parent, "parent");
+            return new CreateNodeNamedAction<BatchConjunction>(nextRequests, requestQueue, parent);
         }
 
         /**
@@ -2482,6 +2614,106 @@ public class Graph {
     }
 
     /**
+     * A component that defines a node that is to be created.
+     * 
+     * @param <Next> The interface that is to be returned to complete the create request
+     * @author Randall Hauch
+     */
+    public interface CreateNode<Next> {
+        /**
+         * Specify the name of the node that is to be created.
+         * 
+         * @param nodeName the name of the new node
+         * @param properties the properties for the new node
+         * @return the next component for making additional requests.
+         */
+        Next node( String nodeName,
+                   Property... properties );
+
+        /**
+         * Specify the name of the node that is to be created.
+         * 
+         * @param nodeName the name of the new node
+         * @param properties the properties for the new node
+         * @return the next component for making additional requests.
+         */
+        Next node( String nodeName,
+                   Iterator<Property> properties );
+
+        /**
+         * Specify the name of the node that is to be created.
+         * 
+         * @param nodeName the name of the new node
+         * @param properties the properties for the new node
+         * @return the next component for making additional requests.
+         */
+        Next node( String nodeName,
+                   Iterable<Property> properties );
+
+        /**
+         * Specify the name of the node that is to be created.
+         * 
+         * @param nodeName the name of the new node
+         * @param sameNameSiblingIndex the desired same-name-sibling index
+         * @param properties the properties for the new node
+         * @return the next component for making additional requests.
+         */
+        Next node( String nodeName,
+                   int sameNameSiblingIndex,
+                   Property... properties );
+
+        /**
+         * Specify the name of the node that is to be created.
+         * 
+         * @param nodeName the name of the new node
+         * @param sameNameSiblingIndex the desired same-name-sibling index
+         * @param properties the properties for the new node
+         * @return the next component for making additional requests.
+         */
+        Next node( String nodeName,
+                   int sameNameSiblingIndex,
+                   Iterator<Property> properties );
+
+        /**
+         * Specify the name of the node that is to be created.
+         * 
+         * @param nodeName the name of the new node
+         * @param sameNameSiblingIndex the desired same-name-sibling index
+         * @param properties the properties for the new node
+         * @return the next component for making additional requests.
+         */
+        Next node( String nodeName,
+                   int sameNameSiblingIndex,
+                   Iterable<Property> properties );
+    }
+
+    /**
+     * A component that defines a node that is to be created.
+     * 
+     * @param <Next> The interface that is to be returned to complete the create request
+     * @author Randall Hauch
+     */
+    public interface CreateNodeNamed<Next> {
+        /**
+         * Specify the name of the node that is to be created.
+         * 
+         * @param nodeName the name of the new node
+         * @return the interface used to complete the request
+         */
+        CreateAction<Next> nodeNamed( String nodeName );
+
+        /**
+         * Specify the name of the node that is to be created.
+         * 
+         * @param nodeName the name of the new node
+         * @param sameNameSiblingIndex the desired same-name-sibling index
+         * @return the interface used to complete the request
+         */
+        CreateAction<Next> nodeNamed( String nodeName,
+                                      int sameNameSiblingIndex );
+    }
+
+    /**
      * A component that defines the location into which a node should be copied or moved.
      * 
      * @param <Next> The interface that is to be returned when this request is completed
@@ -3114,6 +3346,10 @@ public class Graph {
             return this.queue;
         }
 
+        /*package*/T afterConjunction() {
+            return this.afterConjunction;
+        }
+
         public T and() {
             return this.afterConjunction;
         }
@@ -3319,14 +3555,20 @@ public class Graph {
 
     @NotThreadSafe
     static class CreateAction<T> extends AbstractAction<T> implements Create<T> {
-        private final Location at;
+        private final Location parent;
+        private final Name childName;
+        private final int desiredIndex;
         private final List<Property> properties = new LinkedList<Property>();
 
         /*package*/CreateAction( T afterConjunction,
                                   RequestQueue queue,
-                                  Location at ) {
+                                  Location parent,
+                                  Name childName,
+                                  int desiredIndex ) {
             super(afterConjunction, queue);
-            this.at = at;
+            this.parent = parent;
+            this.childName = childName;
+            this.desiredIndex = desiredIndex;
         }
 
         public Create<T> and( UUID uuid ) {
@@ -3391,7 +3633,7 @@ public class Graph {
 
         @Override
         public T and() {
-            this.queue().submit(new CreateNodeRequest(this.at, this.properties));
+            this.queue().submit(new CreateNodeRequest(parent, childName, desiredIndex, this.properties));
             return super.and();
         }
 
@@ -3401,4 +3643,31 @@ public class Graph {
         }
     }
 
+    @NotThreadSafe
+    static class CreateNodeNamedAction<T> extends AbstractAction<T> implements CreateNodeNamed<T> {
+        private final Location parent;
+
+        /*package*/CreateNodeNamedAction( T afterConjunction,
+                                           RequestQueue queue,
+                                           Location parent ) {
+            super(afterConjunction, queue);
+            this.parent = parent;
+        }
+
+        public CreateAction<T> nodeNamed( String name ) {
+            ExecutionContext context = queue().getGraph().getContext();
+            NameFactory factory = context.getValueFactories().getNameFactory();
+            Name nameObj = factory.create(name);
+            return new CreateAction<T>(afterConjunction(), queue(), parent, nameObj, 0);
+        }
+
+        public CreateAction<T> nodeNamed( String name,
+                                          int desiredIndex ) {
+            ExecutionContext context = queue().getGraph().getContext();
+            NameFactory factory = context.getValueFactories().getNameFactory();
+            Name nameObj = factory.create(name);
+            if (desiredIndex < 0) desiredIndex = 0;
+            return new CreateAction<T>(afterConjunction(), queue(), parent, nameObj, desiredIndex);
+        }
+    }
 }

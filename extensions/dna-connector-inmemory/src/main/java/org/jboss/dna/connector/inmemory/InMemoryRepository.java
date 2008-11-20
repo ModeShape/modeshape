@@ -382,30 +382,26 @@ public class InMemoryRepository {
 
         @Override
         public void process( CreateNodeRequest request ) {
-            Path path = request.at().getPath();
-            CheckArg.isNotNull(path, "request.at().getPath()");
+            Path parent = request.under().getPath();
+            CheckArg.isNotNull(parent, "request.under().getPath()");
             Node node = null;
-            if (!path.isRoot()) {
-                Path parent = path.getParent();
-                // Look up the parent node, which must exist ...
-                Node parentNode = getNode(parent);
-                if (parentNode == null) {
-                    Path lowestExisting = getLowestExistingPath(parent);
-                    throw new PathNotFoundException(request.at(), lowestExisting,
-                                                    InMemoryConnectorI18n.nodeDoesNotExist.text(parent));
-                }
-                UUID uuid = null;
-                for (Property property : request.properties()) {
-                    if (property.getName().equals(DnaLexicon.UUID)) {
-                        uuid = getExecutionContext().getValueFactories().getUuidFactory().create(property.getValues().next());
-                        break;
-                    }
-                }
-                node = createNode(getExecutionContext(), parentNode, path.getLastSegment().getName(), uuid);
-                path = getExecutionContext().getValueFactories().getPathFactory().create(parent, node.getName());
-            } else {
-                node = getRoot();
+            // Look up the parent node, which must exist ...
+            Node parentNode = getNode(parent);
+            if (parentNode == null) {
+                Path lowestExisting = getLowestExistingPath(parent);
+                throw new PathNotFoundException(request.under(), lowestExisting,
+                                                InMemoryConnectorI18n.nodeDoesNotExist.text(parent));
             }
+            UUID uuid = null;
+            for (Property property : request.properties()) {
+                if (property.getName().equals(DnaLexicon.UUID)) {
+                    uuid = getExecutionContext().getValueFactories().getUuidFactory().create(property.getValues().next());
+                    break;
+                }
+            }
+            node = createNode(getExecutionContext(), parentNode, request.named(), uuid);
+            assert node != null;
+            Path path = getExecutionContext().getValueFactories().getPathFactory().create(parent, node.getName());
             // Now add the properties to the supplied node ...
             for (Property property : request.properties()) {
                 Name propName = property.getName();
@@ -417,7 +413,6 @@ public class InMemoryRepository {
                     node.getProperties().put(propName, property);
                 }
             }
-            assert node != null;
             request.setActualLocationOfNode(new Location(path, node.getUuid()));
         }
 

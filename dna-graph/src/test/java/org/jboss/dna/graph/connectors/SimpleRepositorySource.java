@@ -290,20 +290,54 @@ public class SimpleRepositorySource implements RepositorySource {
 
                 @Override
                 public void process( CreateNodeRequest request ) {
-                    Path targetPath = request.at().getPath();
+                    Path parentPath = request.under().getPath();
                     ExecutionContext context = getExecutionContext();
-                    repository.create(context, targetPath.getString(context.getNamespaceRegistry()));
-                    Map<Name, Property> properties = repository.getData().get(targetPath);
+                    Path targetPath = context.getValueFactories().getPathFactory().create(parentPath, request.named());
+                    final Name childName = request.named();
+                    Map<Name, Property> properties = null;
+                    // Create the path for the new node, but we need to look for existing SNS ...
+                    switch (request.conflictBehavior()) {
+                        case DO_NOT_REPLACE:
+                        case APPEND:
+                            // Need to look for existing SNS ...
+                            int lastSns = 0;
+                            for (Path child : repository.getChildren(context, parentPath)) {
+                                Path.Segment segment = child.getLastSegment();
+                                if (segment.getName().equals(childName)) {
+                                    if (segment.hasIndex()) lastSns = segment.getIndex();
+                                    else ++lastSns;
+                                }
+                                targetPath = context.getValueFactories().getPathFactory().create(parentPath,
+                                                                                                 request.named(),
+                                                                                                 ++lastSns);
+                            }
+                            repository.create(context, targetPath.getString(context.getNamespaceRegistry()));
+                            break;
+                        case REPLACE:
+                            // Remove any existing node with the desired target path ...
+                            repository.delete(context, targetPath.getString(context.getNamespaceRegistry()));
+                            repository.create(context, targetPath.getString(context.getNamespaceRegistry()));
+                            break;
+                        case UPDATE:
+                            // Get the existing properties (if there are any) and merge new properties,
+                            // using the desired target path ...
+                            properties = repository.getData().get(targetPath);
+                            if (properties == null) {
+                                repository.create(context, targetPath.getString(context.getNamespaceRegistry()));
+                            }
+                            break;
+                    }
+                    if (properties == null) properties = repository.getData().get(targetPath);
                     assert properties != null;
                     // Set the UUID if the request has one ...
-                    Property uuidProperty = request.at().getIdProperty(DnaLexicon.UUID);
+                    Property uuidProperty = request.under().getIdProperty(DnaLexicon.UUID);
                     if (uuidProperty != null) {
                         properties.put(uuidProperty.getName(), uuidProperty);
-                        request.setActualLocationOfNode(request.at());
                     } else {
                         uuidProperty = properties.get(DnaLexicon.UUID);
-                        request.setActualLocationOfNode(request.at().with(uuidProperty));
                     }
+                    Location actual = new Location(targetPath, uuidProperty);
+                    request.setActualLocationOfNode(actual);
                     for (Property property : request.properties()) {
                         if (property != null) properties.put(property.getName(), property);
                     }

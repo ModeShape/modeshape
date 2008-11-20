@@ -209,6 +209,18 @@ public class SimpleRepository {
         return this;
     }
 
+    public List<Path> getChildren( ExecutionContext context,
+                                   Path path ) {
+        List<Path> children = new LinkedList<Path>();
+        for (Path nodePath : data.keySet()) {
+            if (nodePath.isRoot()) continue;
+            if (nodePath.getParent().equals(path)) {
+                children.add(nodePath);
+            }
+        }
+        return children;
+    }
+
     /**
      * @param data new new map of property data
      */

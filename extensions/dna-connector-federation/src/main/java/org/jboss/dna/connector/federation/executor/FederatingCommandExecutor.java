@@ -47,12 +47,14 @@ import org.jboss.dna.connector.federation.merge.strategy.SimpleMergeStrategy;
 import org.jboss.dna.graph.DnaLexicon;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.Location;
+import org.jboss.dna.graph.NodeConflictBehavior;
 import org.jboss.dna.graph.cache.CachePolicy;
 import org.jboss.dna.graph.connectors.RepositoryConnection;
 import org.jboss.dna.graph.connectors.RepositoryConnectionFactory;
 import org.jboss.dna.graph.connectors.RepositorySource;
 import org.jboss.dna.graph.connectors.RepositorySourceException;
 import org.jboss.dna.graph.properties.DateTime;
+import org.jboss.dna.graph.properties.Name;
 import org.jboss.dna.graph.properties.Path;
 import org.jboss.dna.graph.properties.PathFactory;
 import org.jboss.dna.graph.properties.PathNotFoundException;
@@ -640,12 +642,23 @@ public class FederatingCommandExecutor extends RequestProcessor {
     protected void updateCache( FederatedNode mergedNode ) throws RepositorySourceException {
         final ExecutionContext context = getExecutionContext();
         final RepositoryConnection cacheConnection = getConnectionToCache();
-        final Location path = mergedNode.at();
-
+        final Location location = mergedNode.at();
+        final Path path = location.getPath();
+        assert path != null;
         List<Request> requests = new ArrayList<Request>();
-        requests.add(new CreateNodeRequest(path, mergedNode.getProperties()));
+        Name childName = null;
+        if (!path.isRoot()) {
+            // This is not the root node, so we need to create the node ...
+            final Location parentLocation = new Location(path.getParent());
+            childName = path.getLastSegment().getName();
+            requests.add(new CreateNodeRequest(parentLocation, childName, 0, NodeConflictBehavior.REPLACE,
+                                               mergedNode.getProperties()));
+        }
+
+        // Now create all of the children that this federated node knows of ...
         for (Location child : mergedNode.getChildren()) {
-            requests.add(new CreateNodeRequest(child));
+            childName = child.getPath().getLastSegment().getName();
+            requests.add(new CreateNodeRequest(location, childName, 0, NodeConflictBehavior.APPEND));
         }
         cacheConnection.execute(context, CompositeRequest.with(requests));
     }

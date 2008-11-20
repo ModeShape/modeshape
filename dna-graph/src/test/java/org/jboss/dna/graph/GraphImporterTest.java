@@ -114,7 +114,9 @@ public class GraphImporterTest {
         assertThat(nextCommand, is(instanceOf(CreateNodeRequest.class)));
         CreateNodeRequest createNode = (CreateNodeRequest)nextCommand;
         Path expectedPath = context.getValueFactories().getPathFactory().create(path);
-        assertThat(createNode.at().getPath(), is(expectedPath));
+        Path parentPath = createNode.under().getPath();
+        assertThat(parentPath, is(expectedPath.getParent()));
+        assertThat(createNode.named(), is(expectedPath.getLastSegment().getName()));
         Map<Name, Property> propertiesByName = new HashMap<Name, Property>();
         for (Property prop : createNode.properties()) {
             propertiesByName.put(prop.getName(), prop);

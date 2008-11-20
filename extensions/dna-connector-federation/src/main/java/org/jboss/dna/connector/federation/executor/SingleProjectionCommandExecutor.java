@@ -32,6 +32,7 @@ import org.jboss.dna.graph.connectors.RepositoryConnectionFactory;
 import org.jboss.dna.graph.connectors.RepositorySource;
 import org.jboss.dna.graph.connectors.RepositorySourceException;
 import org.jboss.dna.graph.properties.DateTime;
+import org.jboss.dna.graph.properties.Name;
 import org.jboss.dna.graph.properties.Path;
 import org.jboss.dna.graph.properties.PathFactory;
 import org.jboss.dna.graph.properties.PathNotFoundException;
@@ -186,11 +187,14 @@ public class SingleProjectionCommandExecutor extends RequestProcessor {
      */
     @Override
     public void process( CreateNodeRequest request ) {
-        Location locationInSource = projectIntoSource(request.at());
-        CreateNodeRequest projected = new CreateNodeRequest(locationInSource, request.properties());
+        Location locationInSource = projectIntoSource(request.under());
+        Name child = request.named();
+        Integer desiredIndex = request.desiredIndex();
+        int index = desiredIndex != null ? desiredIndex.intValue() : 0;
+        CreateNodeRequest projected = new CreateNodeRequest(locationInSource, child, index, request.properties());
         getConnection().execute(this.getExecutionContext(), projected);
         if (projected.hasError()) {
-            projectError(projected, request.at(), request);
+            projectError(projected, request.under(), request);
             return;
         }
     }

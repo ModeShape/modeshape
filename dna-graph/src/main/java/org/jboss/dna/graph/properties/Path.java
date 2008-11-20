@@ -157,7 +157,7 @@ public interface Path extends Comparable<Path>, Iterable<Path.Segment>, Serializ
         public Name getName();
 
         /**
-         * Get the index for this segment, which will be {@link Path#NO_INDEX 0} if this segment has no specific index.
+         * Get the index for this segment, which will be {@link Path#NO_INDEX -1} if this segment has no specific index.
          * 
          * @return the index
          */
