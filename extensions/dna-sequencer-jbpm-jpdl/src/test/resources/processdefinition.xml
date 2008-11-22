@@ -1,43 +1,91 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<process-definition xmlns="urn:jbpm.org:jpdl-3.2"
-    name="Pd-Name">
-    
-  <!-- Process roles -->
-    <swimlane name="SL1">
-        <assignment class="com.sample.assigned.Task1Handler" />
+<!--
+  ~ JBoss, Home of Professional Open Source.
+  ~
+  ~ Copyright (c) 2008, Red Hat Middleware LLC or third-party contributors as
+  ~ indicated by the @author tags or express copyright attribution
+  ~ statements applied by the authors.  All third-party contributions are
+  ~ distributed under license by Red Hat Middleware LLC.
+  ~
+  ~ This copyrighted material is made available to anyone wishing to use, modify,
+  ~ copy, or redistribute it subject to the terms and conditions of the GNU
+  ~ Lesser General Public License, as published by the Free Software Foundation.
+  ~
+  ~ This program is distributed in the hope that it will be useful,
+  ~ but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+  ~ or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License
+  ~ for more details.
+  ~
+  ~ You should have received a copy of the GNU Lesser General Public License
+  ~ along with this distribution; if not, write to:
+  ~ Free Software Foundation, Inc.
+  ~ 51 Franklin Street, Fifth Floor
+  ~ Boston, MA  02110-1301  USA
+-->
+<process-definition xmlns="urn:jbpm.org:jpdl-3.2" name="Pd-Name">
+
+	<!-- roles in this process definition-->
+	<swimlane name="SL1">
+		<assignment class="com.sample.assigned.Task1Handler" config-type="constructor"/>
+	</swimlane>
+
+	<swimlane name="SL2">
+		<assignment class="com.sample.assigned.Task2Handler" />
+	</swimlane>
+
+	<swimlane name="SL3">
+		<assignment expression="group(group1)" />
+	</swimlane>
+
+	<swimlane name="SL4">
+		<assignment actor-id="bobthebuilder" />
+	</swimlane>
+	
+	<swimlane name="SL5">
+        <assignment pooled-actors='hippies,hells angles' />
     </swimlane>
-    <swimlane name="SL2">
-        <assignment class="com.sample.assigned.Task2Handler" />
-    </swimlane>
     
-    <start-state name="S0">
-        <transition name="Tr01_S01" to="Phase01" />
-    </start-state>
-    
-    <task-node name="Phase01">
-        <task name="Task01_Phase01" swimlane="SL1"/>
-        <transition name="Tr01_Phase01" to="Phase02" />
+    <!-- Start of the process -->
+	<start-state name="S0">
+		<transition to="Phase01" name="Tr01_S01"></transition>
+	</start-state>
+
+	<task-node name="Phase01">
+		<task name="Task01_Phase01" swimlane="SL1" />
+		<task name="Task01_Phase011" swimlane="SL1" />
+		<transition to="Phase02" name="Tr01_Phase01"></transition>
+	</task-node>
+
+	<task-node name="Phase02">
+		<task name="Task01_Phase02" swimlane="SL2" />
+		<transition to="Phase03" name="Tr01_Phase02"></transition>
+	</task-node>
+
+	<task-node name="Phase03">
+		<task name="Task_01_Phase03">
+			<assignment class="com.sample.assigned.Task3Handler" />
+		</task>
+		<transition to="Phase04" name="Tr01_Phase03"></transition>
+	</task-node>
+
+	<task-node name="Phase04">
+		<task name="Task_01_Phase04" swimlane="SL4"/>
+		<transition to="Phase05" name="Tr01_Phase04"></transition>
+	</task-node>
+
+    <task-node name="Phase05">
+        <task name="Task_01_Phase05" swimlane="SL5"/>
+        <transition name="Tr01_Phase05" to="Phase06" />
     </task-node>
     
-    <task-node name="Phase02">
-        <task name="Task01_Phase02" swimlane="SL2"/>
-        <transition name="Tr01_Phase02" to="Phase03" />
-    </task-node>
-    
-    <task-node name="Phase03">
-        <task name="Task_01_Phase03">
-            <assignment class="com.sample.assigned.Task3Handler" />
-        </task>
-        <transition name="Tr01_Phase03" to="Phase04" />
-    </task-node>
-    
-    <task-node name="Phase04">
-        <task name="Task_01_Phase04">
-            <assignment class="com.sample.assigned.Task4Hanlder" />
-        </task>
-        <transition name="Tr01_Phase04" to="S1" />
-    </task-node>
-    
-    <end-state name="S1" />
-    
+	<task-node name="Phase06">
+		<task name="Task_01_Phase06">
+			<assignment class="com.sample.assigned.Task6Hanlder" />
+		</task>
+		<transition name="Tr01_Phase06" to="S1" />
+	</task-node>
+
+    <!-- End node in the process definition -->
+	<end-state name="S1" />
+
 </process-definition>

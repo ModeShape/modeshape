@@ -24,11 +24,19 @@ package org.jboss.dna.sequencer.jpdl3;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import org.jbpm.graph.def.Node;
 import org.jbpm.graph.def.ProcessDefinition;
 import org.jbpm.graph.def.Transition;
 import org.jbpm.graph.node.EndState;
 import org.jbpm.graph.node.StartState;
+import org.jbpm.graph.node.TaskNode;
+import org.jbpm.instantiation.Delegation;
+import org.jbpm.taskmgmt.def.Swimlane;
+import org.jbpm.taskmgmt.def.Task;
+import org.jbpm.taskmgmt.def.TaskMgmtDefinition;
+import static org.jboss.dna.sequencer.jpdl3.JPDL3MetadataConstants.*;
 
 /**
  * The jBPM Process definition language meta data.
@@ -36,11 +44,32 @@ import org.jbpm.graph.node.StartState;
  * @author Serge Pagop
  */
 public class JPDL3Metadata {
+
+    /**
+     * The process definition name.
+     */
     private String pdName;
+
+    /**
+     * The start node of the process definition.
+     */
     private JPDL3StartStateMetadata jPDL3StartStateMetadata;
+
+    /**
+     * The end node of the process definition.
+     */
     private JPDL3EndStateMetadata jPDL3EndStateMetadata;
 
-    
+    /**
+     * The swimlanes of the process definitions
+     */
+    List<JPDL3SwimlaneMetadata> swimlanes = new ArrayList<JPDL3SwimlaneMetadata>();
+
+    /**
+     * The task nodes of the process definitions.
+     */
+    private List<JPDL3TaskNodeMetadata> taskNodes = new ArrayList<JPDL3TaskNodeMetadata>();
+
     private JPDL3Metadata() {
         // prevent construction
     }
@@ -54,12 +83,45 @@ public class JPDL3Metadata {
     @SuppressWarnings( {"unchecked", "cast"} )
     public static JPDL3Metadata instance( InputStream stream ) {
         ProcessDefinition processDefinition = ProcessDefinition.parseXmlInputStream(stream);
+        List<JPDL3SwimlaneMetadata> swimlaneContainer = new ArrayList<JPDL3SwimlaneMetadata>();
+        List<JPDL3TaskNodeMetadata> taskNodeContainer = new ArrayList<JPDL3TaskNodeMetadata>();
+
         if (processDefinition != null) {
             JPDL3Metadata jplMetadata = new JPDL3Metadata();
             if (processDefinition.getName() != null) {
                 jplMetadata.setPdName(processDefinition.getName());
             }
+
+            TaskMgmtDefinition taskMgmtDefinition = processDefinition.getTaskMgmtDefinition();
+            if (taskMgmtDefinition != null) {
+                // Get the swimlanes of the process definition, if there is one.
+                Map<String, Swimlane> mapOfSwimlanes = taskMgmtDefinition.getSwimlanes();
+                Set<String> swimlaneKeys = mapOfSwimlanes.keySet();
+                for (String swimlaneKey : swimlaneKeys) {
+                    Swimlane swimlane = mapOfSwimlanes.get(swimlaneKey);
+                    JPDL3SwimlaneMetadata jPDL3SwimlaneMetadata = new JPDL3SwimlaneMetadata();
+                    jPDL3SwimlaneMetadata.setName(swimlane.getName());
+                    if (swimlane.getActorIdExpression() != null) jPDL3SwimlaneMetadata.setActorIdExpression(swimlane.getActorIdExpression());
+                    if (swimlane.getPooledActorsExpression() != null) jPDL3SwimlaneMetadata.setPooledActorsExpression(swimlane.getPooledActorsExpression());
+                    Delegation delegation = swimlane.getAssignmentDelegation();
+                    if (delegation != null) {
+                        JPDL3AssignmentMetadata jPDL3AssignmentMetadata = new JPDL3AssignmentMetadata();
+                        // full qualified class name.
+                        jPDL3AssignmentMetadata.setFqClassName(delegation.getClassName());
+                        // config type
+                        if (delegation.getConfigType() != null) jPDL3AssignmentMetadata.setConfigType(delegation.getConfigType());
+                        // expression assignment
+                        if (EXPRESSION_ASSIGNMENT_HANLDER_DELEGATION_CN.equals(delegation.getClassName())) jPDL3AssignmentMetadata.setExpression(delegation.getConfiguration());
+                        jPDL3SwimlaneMetadata.setAssignment(jPDL3AssignmentMetadata);
+                    }
+                    swimlaneContainer.add(jPDL3SwimlaneMetadata);
+                    // with expression
+                }
+            }
+            jplMetadata.setSwimlanes(swimlaneContainer);
+
             List<Node> nodes = (List<Node>)processDefinition.getNodes();
+
             for (Node node : nodes) {
                 if (node instanceof StartState) {
                     StartState startState = (StartState)node;
@@ -91,6 +153,56 @@ public class JPDL3Metadata {
                     }
                     jplMetadata.setEndStateMetadata(jPDL3EndStateMetadata);
                 }
+                
+                // TaskNode
+                if (node instanceof TaskNode) {
+                    TaskNode taskNode = (TaskNode)node;
+                    JPDL3TaskNodeMetadata jPDL3TaskNodeMetadata = new JPDL3TaskNodeMetadata();
+                    
+                    if(taskNode.getName() != null) {
+                        jPDL3TaskNodeMetadata.setName(taskNode.getName()); 
+                    }
+                    
+                    Map<String, Task> tasks = taskNode.getTasksMap();
+                    List<JPDL3TaskMetadata> taskList = new ArrayList<JPDL3TaskMetadata>();
+                    
+                    if(!tasks.isEmpty()) {
+                        Set<String> keys = tasks.keySet();
+                        for (String key : keys) {
+                            Task task = tasks.get(key);
+                            JPDL3TaskMetadata jPDL3TaskMetadata = new JPDL3TaskMetadata();
+                            if(task.getName() != null)
+                                jPDL3TaskMetadata.setName(task.getName());
+                            if(task.getDueDate() != null)
+                                jPDL3TaskMetadata.setDueDate(task.getDueDate());
+                            taskList.add(jPDL3TaskMetadata);
+                            
+                            if(task.getSwimlane() != null) {
+                                Swimlane swimlane = task.getSwimlane();
+                                jPDL3TaskMetadata.setSwimlane(swimlane.getName());
+                            }
+                        }
+                    }
+                    jPDL3TaskNodeMetadata.setTasks(taskList);
+                    
+                    // transitions
+                    List<JPDL3TransitionMetadata> transitions = new ArrayList<JPDL3TransitionMetadata>();
+                    for (Transition transition : (List<Transition>)taskNode.getLeavingTransitions()) {
+                        JPDL3TransitionMetadata jPDL3TransitionMetadata = new JPDL3TransitionMetadata();
+                        if (transition.getName() != null) {
+                            jPDL3TransitionMetadata.setName(transition.getName());
+                        }
+                        Node toNode = transition.getTo();
+                        if (toNode != null) {
+                            jPDL3TransitionMetadata.setTo(toNode.getName());
+                        }
+                        transitions.add(jPDL3TransitionMetadata);
+                    }
+                    jPDL3TaskNodeMetadata.setTransitions(transitions);
+                    
+                    taskNodeContainer.add(jPDL3TaskNodeMetadata);
+                    jplMetadata.setTaskNodes(taskNodeContainer);
+                }
             }
             return jplMetadata;
         }
@@ -119,18 +231,16 @@ public class JPDL3Metadata {
      * @return the jPDL3StartStateMetadata.
      */
     public JPDL3StartStateMetadata getStartStateMetadata() {
-        return jPDL3StartStateMetadata;
+        return this.jPDL3StartStateMetadata;
     }
-    
+
     /**
-     * 
      * @return the jPDL3EndStateMetadata.
      */
     public JPDL3EndStateMetadata getEndStateMetadata() {
-        return jPDL3EndStateMetadata;
+        return this.jPDL3EndStateMetadata;
     }
-    
-    
+
     /**
      * @param jPDL3StartStateMetadata the jPDL3StartStateMetadata to set
      */
@@ -143,5 +253,37 @@ public class JPDL3Metadata {
      */
     public void setEndStateMetadata( JPDL3EndStateMetadata jPDL3EndStateMetadata ) {
         this.jPDL3EndStateMetadata = jPDL3EndStateMetadata;
+    }
+
+    /**
+     * Get a list of all swimlane of the process definition
+     * 
+     * @return a list of all swimlane of the process definition. this can also be a empty list.
+     */
+    public List<JPDL3SwimlaneMetadata> getSwimlanes() {
+        return this.swimlanes;
+    }
+
+    /**
+     * Set a list with some swimlanes for the process definition.
+     * 
+     * @param swimlanes - the swimlanes.
+     */
+    public void setSwimlanes( List<JPDL3SwimlaneMetadata> swimlanes ) {
+        this.swimlanes = swimlanes;
+    }
+
+    /**
+     * @return the task nodes
+     */
+    public List<JPDL3TaskNodeMetadata> getTaskNodes() {
+        return this.taskNodes;
+    }
+
+    /**
+     * @param taskNodes Sets taskNodes to the specified value.
+     */
+    public void setTaskNodes( List<JPDL3TaskNodeMetadata> taskNodes ) {
+        this.taskNodes = taskNodes;
     }
 }
