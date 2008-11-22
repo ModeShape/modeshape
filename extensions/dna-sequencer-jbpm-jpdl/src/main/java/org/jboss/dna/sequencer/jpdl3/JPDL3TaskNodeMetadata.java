@@ -33,7 +33,7 @@ public class JPDL3TaskNodeMetadata {
     /**
      * The name.
      */
-    private String name;
+    private String name="";
     
     /**
      * The tasks.

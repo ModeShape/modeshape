@@ -26,8 +26,8 @@ package org.jboss.dna.sequencer.jpdl3;
  */
 public class JPDL3TransitionMetadata {
 
-    private String name;
-    private String to;
+    private String name="";
+    private String to="";
 
     /**
      * @return the name

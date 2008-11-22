@@ -22,10 +22,11 @@
 package org.jboss.dna.sequencer.jpdl3;
 
 /**
- * @author Serge Pagop (serge.pagop@googlemail.com)
+ * @author Serge Pagop
  */
 public class JPDL3EndStateMetadata {
-    private String name;
+    
+    private String name = "";
 
     /**
      * @return the endName

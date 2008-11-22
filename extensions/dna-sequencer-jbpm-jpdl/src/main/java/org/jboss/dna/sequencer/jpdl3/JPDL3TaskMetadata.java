@@ -30,17 +30,17 @@ public class JPDL3TaskMetadata {
     /**
      * The name.
      */
-    private String name;
+    private String name="";
     
     /**
      * The dueDate.
      */
-    private String dueDate;
+    private String dueDate="";
 
     /**
      * The swimlane.
      */
-    private String swimlane;
+    private String swimlane="";
 
     /**
      * @param name
