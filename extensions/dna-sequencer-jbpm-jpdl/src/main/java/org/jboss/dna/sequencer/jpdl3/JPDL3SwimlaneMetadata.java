@@ -31,7 +31,7 @@ public class JPDL3SwimlaneMetadata {
     /**
      * The name.
      */
-    private String name="";
+    private String name = "";
 
     /**
      * The JPDL3AssignmentMetadata
@@ -41,12 +41,12 @@ public class JPDL3SwimlaneMetadata {
     /**
      * The actor id expression.
      */
-    private String actorIdExpression ="";
+    private String actorIdExpression = "";
 
     /**
      * The pooledActorsExpression.
      */
-    private String pooledActorsExpression="";
+    private String pooledActorsExpression = "";
 
     /**
      * Get the name of the specific swimlane.
@@ -74,13 +74,13 @@ public class JPDL3SwimlaneMetadata {
     public JPDL3AssignmentMetadata getAssignment() {
         return this.assignment;
     }
-    
+
     /**
      * Set the delegated instance, the assignment.
      * 
      * @param assignment - the delegated instance.
      */
-    public void setAssignment(JPDL3AssignmentMetadata assignment) {
+    public void setAssignment( JPDL3AssignmentMetadata assignment ) {
         this.assignment = assignment;
     }
 

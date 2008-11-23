@@ -22,12 +22,14 @@
 package org.jboss.dna.sequencer.jpdl3;
 
 /**
- * @author Serge Pagop (serge.pagop@googlemail.com)
+ * The transition.
+ * 
+ * @author Serge Pagop
  */
 public class JPDL3TransitionMetadata {
 
-    private String name="";
-    private String to="";
+    private String name = "";
+    private String to = "";
 
     /**
      * @return the name

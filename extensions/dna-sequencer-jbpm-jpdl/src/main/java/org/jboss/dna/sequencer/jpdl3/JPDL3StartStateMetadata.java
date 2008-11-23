@@ -28,7 +28,7 @@ import java.util.List;
  * @author Serge Pagop
  */
 public class JPDL3StartStateMetadata {
-    private String name ="";
+    private String name = "";
     private List<JPDL3TransitionMetadata> transitions = new ArrayList<JPDL3TransitionMetadata>();
 
     public String getName() {
