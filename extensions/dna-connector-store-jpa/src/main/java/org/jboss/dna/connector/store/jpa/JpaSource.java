@@ -112,6 +112,7 @@ public class JpaSource implements RepositorySource, ObjectFactory {
     protected static final String RETRY_LIMIT = "retryLimit";
     protected static final String MODEL_NAME = "modelName";
     protected static final String LARGE_VALUE_SIZE_IN_BYTES = "largeValueSizeInBytes";
+    protected static final String COMPRESS_DATA = "compressData";
 
     /**
      * This source supports events.
@@ -142,6 +143,7 @@ public class JpaSource implements RepositorySource, ObjectFactory {
     private static final int DEFAULT_NUMBER_OF_CONNECTIONS_TO_ACQUIRE_AS_NEEDED = 1;
     private static final int DEFAULT_IDLE_TIME_IN_SECONDS_BEFORE_TESTING_CONNECTIONS = 60 * 3; // 3 minutes
     private static final int DEFAULT_LARGE_VALUE_SIZE_IN_BYTES = 2 ^ 10; // 1 kilobyte
+    private static final boolean DEFAULT_COMPRESS_DATA = true;
 
     /**
      * The first serialized version of this source.
@@ -166,6 +168,7 @@ public class JpaSource implements RepositorySource, ObjectFactory {
     private int retryLimit = DEFAULT_RETRY_LIMIT;
     private int cacheTimeToLiveInMilliseconds = DEFAULT_CACHE_TIME_TO_LIVE_IN_SECONDS * 1000;
     private long largeValueSizeInBytes = DEFAULT_LARGE_VALUE_SIZE_IN_BYTES;
+    private boolean compressData = DEFAULT_COMPRESS_DATA;
     private final Capabilities capabilities = new Capabilities();
     private transient Model model;
     private String modelName;
@@ -554,6 +557,20 @@ public class JpaSource implements RepositorySource, ObjectFactory {
     }
 
     /**
+     * @return compressData
+     */
+    public boolean isCompressData() {
+        return compressData;
+    }
+
+    /**
+     * @param compressData Sets compressData to the specified value.
+     */
+    public void setCompressData( boolean compressData ) {
+        this.compressData = compressData;
+    }
+
+    /**
      * {@inheritDoc}
      * 
      * @see org.jboss.dna.graph.connectors.RepositorySource#initialize(org.jboss.dna.graph.connectors.RepositoryContext)
@@ -610,6 +627,7 @@ public class JpaSource implements RepositorySource, ObjectFactory {
                                   Integer.toString(getIdleTimeInSecondsBeforeTestingConnections())));
         ref.add(new StringRefAddr(CACHE_TIME_TO_LIVE_IN_MILLISECONDS, Integer.toString(getCacheTimeToLiveInMilliseconds())));
         ref.add(new StringRefAddr(LARGE_VALUE_SIZE_IN_BYTES, Long.toString(getLargeValueSizeInBytes())));
+        ref.add(new StringRefAddr(COMPRESS_DATA, Boolean.toString(isCompressData())));
         if (getModel() != null) {
             ref.add(new StringRefAddr(MODEL_NAME, getModel()));
         }
@@ -655,6 +673,7 @@ public class JpaSource implements RepositorySource, ObjectFactory {
             String modelName = values.get(MODEL_NAME);
             String retryLimit = values.get(RETRY_LIMIT);
             String largeModelSize = values.get(LARGE_VALUE_SIZE_IN_BYTES);
+            String compressData = values.get(COMPRESS_DATA);
 
             // Create the source instance ...
             JpaSource source = new JpaSource();
@@ -677,6 +696,7 @@ public class JpaSource implements RepositorySource, ObjectFactory {
             if (retryLimit != null) source.setRetryLimit(Integer.parseInt(retryLimit));
             if (modelName != null) source.setModel(modelName);
             if (largeModelSize != null) source.setLargeValueSizeInBytes(Long.parseLong(largeModelSize));
+            if (compressData != null) source.setCompressData(Boolean.parseBoolean(compressData));
             return source;
         }
         return null;
@@ -781,7 +801,7 @@ public class JpaSource implements RepositorySource, ObjectFactory {
         if (entityManager == null) {
             entityManager = entityManagerFactory.createEntityManager();
         }
-        return new JpaConnection(getName(), cachePolicy, entityManager, model, rootUuid, largeValueSizeInBytes);
+        return new JpaConnection(getName(), cachePolicy, entityManager, model, rootUuid, largeValueSizeInBytes, compressData);
     }
 
     /**

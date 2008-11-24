@@ -107,7 +107,8 @@ public class ModelTest {
                                                         ExecutionContext context,
                                                         EntityManager entityManager,
                                                         UUID rootNodeUuid,
-                                                        long largeValueMinimumSizeInBytes ) {
+                                                        long largeValueMinimumSizeInBytes,
+                                                        boolean compressData ) {
             return requestProcessor;
         }
     }

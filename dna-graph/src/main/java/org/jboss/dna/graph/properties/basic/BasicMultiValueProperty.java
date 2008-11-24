@@ -100,6 +100,15 @@ public class BasicMultiValueProperty extends BasicProperty {
 
     /**
      * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.properties.Property#getFirstValue()
+     */
+    public Object getFirstValue() {
+        return values.get(0);
+    }
+
+    /**
+     * {@inheritDoc}
      */
     public Iterator<Object> iterator() {
         return new ReadOnlyIterator(values.iterator());

@@ -47,6 +47,7 @@ public class JpaConnectionTest {
     private CachePolicy cachePolicy;
     private UUID rootNodeUuid;
     private long largeValueSize;
+    private boolean compressData;
 
     @Before
     public void beforeEach() throws Exception {
@@ -54,6 +55,7 @@ public class JpaConnectionTest {
         model = new BasicModel();
         rootNodeUuid = UUID.randomUUID();
         largeValueSize = 2 ^ 10; // 1 kilobyte
+        compressData = false;
 
         // Connect to the database ...
         Ejb3Configuration configurator = new Ejb3Configuration();
@@ -72,7 +74,7 @@ public class JpaConnectionTest {
 
         // Create the connection ...
         cachePolicy = mock(CachePolicy.class);
-        connection = new JpaConnection("source", cachePolicy, manager, model, rootNodeUuid, largeValueSize);
+        connection = new JpaConnection("source", cachePolicy, manager, model, rootNodeUuid, largeValueSize, compressData);
     }
 
     @After

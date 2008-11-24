@@ -34,8 +34,10 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.common.util.SecureHash;
@@ -60,6 +62,7 @@ public class SerializerTest {
     private LargeValuesHolder largeValues;
     private PropertyFactory propertyFactory;
     private ValueFactories valueFactories;
+    private Set<String> largeValueHexHashes;
 
     @Before
     public void beforeEach() {
@@ -67,7 +70,8 @@ public class SerializerTest {
         propertyFactory = context.getPropertyFactory();
         valueFactories = context.getValueFactories();
         largeValues = new LargeValuesHolder();
-        serializer = new Serializer(context, largeValues);
+        largeValueHexHashes = new HashSet<String>();
+        serializer = new Serializer(context, largeValues, false);
     }
 
     @Test
@@ -75,6 +79,7 @@ public class SerializerTest {
         Property prop = createProperty("p1", new Long(1));
         assertSerializableAndDeserializable(serializer, prop);
         assertThat(largeValues.getCount(), is(0));
+        assertThat(largeValueHexHashes.size(), is(largeValues.getCount()));
     }
 
     @Test
@@ -82,6 +87,7 @@ public class SerializerTest {
         Property prop = createProperty("p1", new Integer(1));
         assertSerializableAndDeserializable(serializer, prop);
         assertThat(largeValues.getCount(), is(0));
+        assertThat(largeValueHexHashes.size(), is(largeValues.getCount()));
     }
 
     @Test
@@ -89,6 +95,7 @@ public class SerializerTest {
         Property prop = createProperty("p1", new Short((short)1));
         assertSerializableAndDeserializable(serializer, prop);
         assertThat(largeValues.getCount(), is(0));
+        assertThat(largeValueHexHashes.size(), is(largeValues.getCount()));
     }
 
     @Test
@@ -96,6 +103,7 @@ public class SerializerTest {
         Property prop = createProperty("p1", new Float(1.0f));
         assertSerializableAndDeserializable(serializer, prop);
         assertThat(largeValues.getCount(), is(0));
+        assertThat(largeValueHexHashes.size(), is(largeValues.getCount()));
     }
 
     @Test
@@ -103,6 +111,7 @@ public class SerializerTest {
         Property prop = createProperty("p1", new Double(1.0d));
         assertSerializableAndDeserializable(serializer, prop);
         assertThat(largeValues.getCount(), is(0));
+        assertThat(largeValueHexHashes.size(), is(largeValues.getCount()));
     }
 
     @Test
@@ -110,6 +119,7 @@ public class SerializerTest {
         Property prop = createProperty("p1", new Boolean(true));
         assertSerializableAndDeserializable(serializer, prop);
         assertThat(largeValues.getCount(), is(0));
+        assertThat(largeValueHexHashes.size(), is(largeValues.getCount()));
     }
 
     @Test
@@ -117,6 +127,7 @@ public class SerializerTest {
         Property prop = createProperty("p1", valueFactories.getNameFactory().create("something"));
         assertSerializableAndDeserializable(serializer, prop);
         assertThat(largeValues.getCount(), is(0));
+        assertThat(largeValueHexHashes.size(), is(largeValues.getCount()));
     }
 
     @Test
@@ -124,6 +135,7 @@ public class SerializerTest {
         Property prop = createProperty("p1", valueFactories.getPathFactory().create("/a/b/c/something"));
         assertSerializableAndDeserializable(serializer, prop);
         assertThat(largeValues.getCount(), is(0));
+        assertThat(largeValueHexHashes.size(), is(largeValues.getCount()));
     }
 
     @Test
@@ -131,10 +143,12 @@ public class SerializerTest {
         Property prop = createProperty("p1", valueFactories.getDateFactory().createUtc());
         assertSerializableAndDeserializable(serializer, prop);
         assertThat(largeValues.getCount(), is(0));
+        assertThat(largeValueHexHashes.size(), is(largeValues.getCount()));
 
         prop = createProperty("p1", valueFactories.getDateFactory().create());
         assertSerializableAndDeserializable(serializer, prop);
         assertThat(largeValues.getCount(), is(0));
+        assertThat(largeValueHexHashes.size(), is(largeValues.getCount()));
     }
 
     @Test
@@ -142,6 +156,7 @@ public class SerializerTest {
         Property prop = createProperty("p1", UUID.randomUUID());
         assertSerializableAndDeserializable(serializer, prop);
         assertThat(largeValues.getCount(), is(0));
+        assertThat(largeValueHexHashes.size(), is(largeValues.getCount()));
     }
 
     @Test
@@ -149,6 +164,7 @@ public class SerializerTest {
         Property prop = createProperty("p1", new URI("http://example.com"));
         assertSerializableAndDeserializable(serializer, prop);
         assertThat(largeValues.getCount(), is(0));
+        assertThat(largeValueHexHashes.size(), is(largeValues.getCount()));
     }
 
     @Test
@@ -157,6 +173,7 @@ public class SerializerTest {
         Property prop = createProperty("p1", valueFactories.getReferenceFactory().create(uuid.toString()));
         assertSerializableAndDeserializable(serializer, prop);
         assertThat(largeValues.getCount(), is(0));
+        assertThat(largeValueHexHashes.size(), is(largeValues.getCount()));
     }
 
     @Test
@@ -164,6 +181,7 @@ public class SerializerTest {
         Property prop = createProperty("p1", valueFactories.getDecimalFactory().create("1.0123455243284347375478525485466895512"));
         assertSerializableAndDeserializable(serializer, prop);
         assertThat(largeValues.getCount(), is(0));
+        assertThat(largeValueHexHashes.size(), is(largeValues.getCount()));
     }
 
     @Test
@@ -172,6 +190,7 @@ public class SerializerTest {
         Property prop = createProperty("p1", valueFactories.getBinaryFactory().create(value));
         assertSerializableAndDeserializable(serializer, prop);
         assertThat(largeValues.getCount(), is(0));
+        assertThat(largeValueHexHashes.size(), is(largeValues.getCount()));
     }
 
     @Test
@@ -180,6 +199,7 @@ public class SerializerTest {
         Property prop = createProperty("p1", valueFactories.getBinaryFactory().create(value));
         assertSerializableAndDeserializable(serializer, prop);
         assertThat(largeValues.getCount(), is(1));
+        assertThat(largeValueHexHashes.size(), is(largeValues.getCount()));
     }
 
     @Test
@@ -187,6 +207,7 @@ public class SerializerTest {
         Property prop = createProperty("p1", "v1");
         assertSerializableAndDeserializable(serializer, prop);
         assertThat(largeValues.getCount(), is(0));
+        assertThat(largeValueHexHashes.size(), is(largeValues.getCount()));
     }
 
     @Test
@@ -196,6 +217,7 @@ public class SerializerTest {
         assertSerializableAndDeserializable(serializer, prop);
         assertThat(largeValues.getCount(), is(1));
         assertThat(largeValues.get(value).value, is((Object)value));
+        assertThat(largeValueHexHashes.size(), is(largeValues.getCount()));
     }
 
     @Test
@@ -208,6 +230,7 @@ public class SerializerTest {
 
         assertSerializableAndDeserializable(serializer, prop1, prop2, prop3, prop4);
         assertThat(largeValues.getCount(), is(1));
+        assertThat(largeValueHexHashes.size(), is(largeValues.getCount()));
     }
 
     @Test
@@ -223,6 +246,7 @@ public class SerializerTest {
 
         assertSerializableAndDeserializable(serializer, prop1, prop2, prop3, prop4, prop5, prop6);
         assertThat(largeValues.getCount(), is(2));
+        assertThat(largeValueHexHashes.size(), is(largeValues.getCount()));
     }
 
     protected Property createProperty( String name,
@@ -237,7 +261,7 @@ public class SerializerTest {
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             ObjectOutputStream oos = new ObjectOutputStream(baos);
             try {
-                serializer.serializeProperty(oos, property);
+                serializer.serializeProperty(oos, property, largeValueHexHashes);
             } finally {
                 oos.close();
             }
@@ -264,7 +288,7 @@ public class SerializerTest {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         ObjectOutputStream oos = new ObjectOutputStream(baos);
         try {
-            serializer.serializeProperties(oos, propertyList.size(), propertyList);
+            serializer.serializeProperties(oos, propertyList.size(), propertyList, largeValueHexHashes);
         } finally {
             oos.close();
         }
@@ -274,7 +298,7 @@ public class SerializerTest {
         ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
         ObjectInputStream ois = new ObjectInputStream(bais);
         try {
-            serializer.deserializeProperties(ois, outputProperties);
+            serializer.deserializeAllProperties(ois, outputProperties);
         } finally {
             ois.close();
         }

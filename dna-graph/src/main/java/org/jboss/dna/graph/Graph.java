@@ -493,7 +493,7 @@ public class Graph {
         Path at = createPath(atPath);
         Path parent = at.getParent();
         Name child = at.getLastSegment().getName();
-        this.requestQueue.submit(new CreateNodeRequest(new Location(parent), child, 0));
+        this.requestQueue.submit(new CreateNodeRequest(new Location(parent), child));
         return nextGraph;
     }
 
@@ -514,7 +514,7 @@ public class Graph {
         Path at = createPath(atPath);
         Path parent = at.getParent();
         Name child = at.getLastSegment().getName();
-        this.requestQueue.submit(new CreateNodeRequest(new Location(parent), child, 0, properties));
+        this.requestQueue.submit(new CreateNodeRequest(new Location(parent), child, properties));
         return nextGraph;
     }
 
@@ -533,7 +533,7 @@ public class Graph {
         CheckArg.isNotNull(at, "at");
         Path parent = at.getParent();
         Name child = at.getLastSegment().getName();
-        this.requestQueue.submit(new CreateNodeRequest(new Location(parent), child, 0));
+        this.requestQueue.submit(new CreateNodeRequest(new Location(parent), child));
         return nextGraph;
     }
 
@@ -554,7 +554,7 @@ public class Graph {
         CheckArg.isNotNull(at, "at");
         Path parent = at.getParent();
         Name child = at.getLastSegment().getName();
-        this.requestQueue.submit(new CreateNodeRequest(new Location(parent), child, 0, properties));
+        this.requestQueue.submit(new CreateNodeRequest(new Location(parent), child, properties));
         return nextGraph;
     }
 
@@ -575,7 +575,7 @@ public class Graph {
         CheckArg.isNotNull(at, "at");
         Path parent = at.getParent();
         Name child = at.getLastSegment().getName();
-        this.requestQueue.submit(new CreateNodeRequest(new Location(parent), child, 0, properties));
+        this.requestQueue.submit(new CreateNodeRequest(new Location(parent), child, properties));
         return nextGraph;
     }
 
@@ -594,45 +594,27 @@ public class Graph {
         final NameFactory nameFactory = getContext().getValueFactories().getNameFactory();
         CheckArg.isNotNull(parent, "parent");
         return new CreateNode<Conjunction<Graph>>() {
-            public Conjunction<Graph> node( String name,
-                                            Property... properties ) {
-                return node(name, -1, properties);
-            }
-
-            public Conjunction<Graph> node( String name,
-                                            Iterator<Property> properties ) {
-                return node(name, -1, properties);
-            }
-
-            public Conjunction<Graph> node( String name,
-                                            Iterable<Property> properties ) {
-                return node(name, -1, properties);
-            }
-
             @SuppressWarnings( "synthetic-access" )
             public Conjunction<Graph> node( String name,
-                                            int desiredIndexInParent,
                                             Property... properties ) {
                 Name child = nameFactory.create(name);
-                requestQueue.submit(new CreateNodeRequest(parent, child, desiredIndexInParent, properties));
+                requestQueue.submit(new CreateNodeRequest(parent, child, properties));
                 return nextGraph;
             }
 
             @SuppressWarnings( "synthetic-access" )
             public Conjunction<Graph> node( String name,
-                                            int desiredIndexInParent,
                                             Iterator<Property> properties ) {
                 Name child = nameFactory.create(name);
-                requestQueue.submit(new CreateNodeRequest(parent, child, desiredIndexInParent, properties));
+                requestQueue.submit(new CreateNodeRequest(parent, child, properties));
                 return nextGraph;
             }
 
             @SuppressWarnings( "synthetic-access" )
             public Conjunction<Graph> node( String name,
-                                            int desiredIndexInParent,
                                             Iterable<Property> properties ) {
                 Name child = nameFactory.create(name);
-                requestQueue.submit(new CreateNodeRequest(parent, child, desiredIndexInParent, properties));
+                requestQueue.submit(new CreateNodeRequest(parent, child, properties));
                 return nextGraph;
             }
         };
@@ -1617,7 +1599,7 @@ public class Graph {
             Path at = createPath(atPath);
             Path parent = at.getParent();
             Name name = at.getLastSegment().getName();
-            return new CreateAction<BatchConjunction>(nextRequests, requestQueue, new Location(parent), name, 0);
+            return new CreateAction<BatchConjunction>(nextRequests, requestQueue, new Location(parent), name);
         }
 
         /**
@@ -1638,7 +1620,7 @@ public class Graph {
             Path at = createPath(atPath);
             Path parent = at.getParent();
             Name name = at.getLastSegment().getName();
-            return new CreateAction<BatchConjunction>(nextRequests, requestQueue, new Location(parent), name, 0).with(property);
+            return new CreateAction<BatchConjunction>(nextRequests, requestQueue, new Location(parent), name).with(property);
         }
 
         /**
@@ -1661,7 +1643,7 @@ public class Graph {
             Path at = createPath(atPath);
             Path parent = at.getParent();
             Name name = at.getLastSegment().getName();
-            return new CreateAction<BatchConjunction>(nextRequests, requestQueue, new Location(parent), name, 0).with(firstProperty,
+            return new CreateAction<BatchConjunction>(nextRequests, requestQueue, new Location(parent), name).with(firstProperty,
                                                                                                                       additionalProperties);
         }
 
@@ -1681,7 +1663,7 @@ public class Graph {
             CheckArg.isNotNull(at, "at");
             Path parent = at.getParent();
             Name name = at.getLastSegment().getName();
-            return new CreateAction<BatchConjunction>(nextRequests, requestQueue, new Location(parent), name, 0);
+            return new CreateAction<BatchConjunction>(nextRequests, requestQueue, new Location(parent), name);
         }
 
         /**
@@ -1703,7 +1685,7 @@ public class Graph {
             Path parent = at.getParent();
             Name name = at.getLastSegment().getName();
             CreateAction<BatchConjunction> action = new CreateAction<BatchConjunction>(nextRequests, requestQueue,
-                                                                                       new Location(parent), name, 0);
+                                                                                       new Location(parent), name);
             for (Property property : properties) {
                 action.and(property);
             }
@@ -1728,7 +1710,7 @@ public class Graph {
             CheckArg.isNotNull(at, "at");
             Path parent = at.getParent();
             Name name = at.getLastSegment().getName();
-            return new CreateAction<BatchConjunction>(nextRequests, requestQueue, new Location(parent), name, 0).with(property);
+            return new CreateAction<BatchConjunction>(nextRequests, requestQueue, new Location(parent), name).with(property);
         }
 
         /**
@@ -1751,7 +1733,7 @@ public class Graph {
             CheckArg.isNotNull(at, "at");
             Path parent = at.getParent();
             Name name = at.getLastSegment().getName();
-            return new CreateAction<BatchConjunction>(nextRequests, requestQueue, new Location(parent), name, 0).with(firstProperty,
+            return new CreateAction<BatchConjunction>(nextRequests, requestQueue, new Location(parent), name).with(firstProperty,
                                                                                                                       additionalProperties);
         }
 
@@ -2649,42 +2631,6 @@ public class Graph {
          */
         Next node( String nodeName,
                    Iterable<Property> properties );
-
-        /**
-         * Specify the name of the node that is to be created.
-         * 
-         * @param nodeName the name of the new node
-         * @param sameNameSiblingIndex the desired same-name-sibling index
-         * @param properties the properties for the new node
-         * @return the next component for making additional requests.
-         */
-        Next node( String nodeName,
-                   int sameNameSiblingIndex,
-                   Property... properties );
-
-        /**
-         * Specify the name of the node that is to be created.
-         * 
-         * @param nodeName the name of the new node
-         * @param sameNameSiblingIndex the desired same-name-sibling index
-         * @param properties the properties for the new node
-         * @return the next component for making additional requests.
-         */
-        Next node( String nodeName,
-                   int sameNameSiblingIndex,
-                   Iterator<Property> properties );
-
-        /**
-         * Specify the name of the node that is to be created.
-         * 
-         * @param nodeName the name of the new node
-         * @param sameNameSiblingIndex the desired same-name-sibling index
-         * @param properties the properties for the new node
-         * @return the next component for making additional requests.
-         */
-        Next node( String nodeName,
-                   int sameNameSiblingIndex,
-                   Iterable<Property> properties );
     }
 
     /**
@@ -2701,16 +2647,6 @@ public class Graph {
          * @return the interface used to complete the request
          */
         CreateAction<Next> nodeNamed( String nodeName );
-
-        /**
-         * Specify the name of the node that is to be created.
-         * 
-         * @param nodeName the name of the new node
-         * @param sameNameSiblingIndex the desired same-name-sibling index
-         * @return the interface used to complete the request
-         */
-        CreateAction<Next> nodeNamed( String nodeName,
-                                      int sameNameSiblingIndex );
     }
 
     /**
@@ -3557,18 +3493,15 @@ public class Graph {
     static class CreateAction<T> extends AbstractAction<T> implements Create<T> {
         private final Location parent;
         private final Name childName;
-        private final int desiredIndex;
         private final List<Property> properties = new LinkedList<Property>();
 
         /*package*/CreateAction( T afterConjunction,
                                   RequestQueue queue,
                                   Location parent,
-                                  Name childName,
-                                  int desiredIndex ) {
+                                  Name childName ) {
             super(afterConjunction, queue);
             this.parent = parent;
             this.childName = childName;
-            this.desiredIndex = desiredIndex;
         }
 
         public Create<T> and( UUID uuid ) {
@@ -3633,7 +3566,7 @@ public class Graph {
 
         @Override
         public T and() {
-            this.queue().submit(new CreateNodeRequest(parent, childName, desiredIndex, this.properties));
+            this.queue().submit(new CreateNodeRequest(parent, childName, this.properties));
             return super.and();
         }
 
@@ -3658,16 +3591,7 @@ public class Graph {
             ExecutionContext context = queue().getGraph().getContext();
             NameFactory factory = context.getValueFactories().getNameFactory();
             Name nameObj = factory.create(name);
-            return new CreateAction<T>(afterConjunction(), queue(), parent, nameObj, 0);
-        }
-
-        public CreateAction<T> nodeNamed( String name,
-                                          int desiredIndex ) {
-            ExecutionContext context = queue().getGraph().getContext();
-            NameFactory factory = context.getValueFactories().getNameFactory();
-            Name nameObj = factory.create(name);
-            if (desiredIndex < 0) desiredIndex = 0;
-            return new CreateAction<T>(afterConjunction(), queue(), parent, nameObj, desiredIndex);
+            return new CreateAction<T>(afterConjunction(), queue(), parent, nameObj);
         }
     }
 }

@@ -47,15 +47,17 @@ public class BasicModel extends Model {
      * {@inheritDoc}
      * 
      * @see org.jboss.dna.connector.store.jpa.Model#createRequestProcessor(java.lang.String, org.jboss.dna.graph.ExecutionContext,
-     *      javax.persistence.EntityManager, java.util.UUID, long)
+     *      javax.persistence.EntityManager, java.util.UUID, long, boolean)
      */
     @Override
     public RequestProcessor createRequestProcessor( String sourceName,
                                                     ExecutionContext context,
                                                     EntityManager entityManager,
                                                     UUID rootNodeUuid,
-                                                    long largeValueMinimumSizeInBytes ) {
-        return new BasicRequestProcessor(sourceName, context, entityManager, rootNodeUuid, largeValueMinimumSizeInBytes);
+                                                    long largeValueMinimumSizeInBytes,
+                                                    boolean compressData ) {
+        return new BasicRequestProcessor(sourceName, context, entityManager, rootNodeUuid, largeValueMinimumSizeInBytes,
+                                         compressData);
     }
 
     /**

@@ -59,6 +59,9 @@ public class PropertiesEntity {
     @Column( name = "COMPRESSED", nullable = true )
     private Boolean compressed;
 
+    @Column( name = "LRG_VL_KEYS", nullable = true )
+    private String largeValueKeys;
+
     public PropertiesEntity() {
     }
 
@@ -128,6 +131,20 @@ public class PropertiesEntity {
      */
     public void setCompressed( boolean compressed ) {
         this.compressed = Boolean.valueOf(compressed);
+    }
+
+    /**
+     * @return largeValueKeys
+     */
+    public String getLargeValueKeys() {
+        return largeValueKeys;
+    }
+
+    /**
+     * @param largeValueKeys Sets largeValueKeys to the specified value.
+     */
+    public void setLargeValueKeys( String largeValueKeys ) {
+        this.largeValueKeys = largeValueKeys;
     }
 
     /**

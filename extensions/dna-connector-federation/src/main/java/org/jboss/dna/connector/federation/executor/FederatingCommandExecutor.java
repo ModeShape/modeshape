@@ -651,14 +651,14 @@ public class FederatingCommandExecutor extends RequestProcessor {
             // This is not the root node, so we need to create the node ...
             final Location parentLocation = new Location(path.getParent());
             childName = path.getLastSegment().getName();
-            requests.add(new CreateNodeRequest(parentLocation, childName, 0, NodeConflictBehavior.REPLACE,
+            requests.add(new CreateNodeRequest(parentLocation, childName, NodeConflictBehavior.REPLACE,
                                                mergedNode.getProperties()));
         }
 
         // Now create all of the children that this federated node knows of ...
         for (Location child : mergedNode.getChildren()) {
             childName = child.getPath().getLastSegment().getName();
-            requests.add(new CreateNodeRequest(location, childName, 0, NodeConflictBehavior.APPEND));
+            requests.add(new CreateNodeRequest(location, childName, NodeConflictBehavior.APPEND));
         }
         cacheConnection.execute(context, CompositeRequest.with(requests));
     }

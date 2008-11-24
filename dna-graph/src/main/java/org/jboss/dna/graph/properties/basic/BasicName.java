@@ -147,9 +147,9 @@ public class BasicName implements Name {
      */
     public int compareTo( Name that ) {
         if (that == this) return 0;
-        int diff = this.getNamespaceUri().compareTo(that.getNamespaceUri());
+        int diff = this.getLocalName().compareTo(that.getLocalName());
         if (diff != 0) return diff;
-        diff = this.getLocalName().compareTo(that.getLocalName());
+        diff = this.getNamespaceUri().compareTo(that.getNamespaceUri());
         return diff;
     }
 
@@ -169,8 +169,9 @@ public class BasicName implements Name {
         if (obj == this) return true;
         if (obj instanceof Name) {
             Name that = (Name)obj;
+            if (!this.getLocalName().equals(that.getLocalName())) return false;
             if (!this.getNamespaceUri().equals(that.getNamespaceUri())) return false;
-            return this.getLocalName().equals(that.getLocalName());
+            return true;
         }
         return false;
     }

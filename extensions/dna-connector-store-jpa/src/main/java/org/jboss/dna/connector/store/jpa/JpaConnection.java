@@ -46,13 +46,15 @@ public class JpaConnection implements RepositoryConnection {
     private final Model model;
     private final UUID rootNodeUuid;
     private final long largeValueMinimumSizeInBytes;
+    private final boolean compressData;
 
     /*package*/JpaConnection( String sourceName,
                                CachePolicy cachePolicy,
                                EntityManager entityManager,
                                Model model,
                                UUID rootNodeUuid,
-                               long largeValueMinimumSizeInBytes ) {
+                               long largeValueMinimumSizeInBytes,
+                               boolean compressData ) {
         assert sourceName != null;
         assert entityManager != null;
         assert model != null;
@@ -63,6 +65,7 @@ public class JpaConnection implements RepositoryConnection {
         this.model = model;
         this.rootNodeUuid = rootNodeUuid;
         this.largeValueMinimumSizeInBytes = largeValueMinimumSizeInBytes;
+        this.compressData = compressData;
     }
 
     /**
@@ -122,7 +125,7 @@ public class JpaConnection implements RepositoryConnection {
     public void execute( ExecutionContext context,
                          Request request ) throws RepositorySourceException {
         long size = largeValueMinimumSizeInBytes;
-        RequestProcessor proc = model.createRequestProcessor(name, context, entityManager, rootNodeUuid, size);
+        RequestProcessor proc = model.createRequestProcessor(name, context, entityManager, rootNodeUuid, size, compressData);
         try {
             proc.process(request);
         } finally {

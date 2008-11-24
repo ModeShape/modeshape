@@ -153,6 +153,11 @@ public class LargeValueEntity {
         this.usageCount++;
     }
 
+    public int decrementUsageCount() {
+        if (this.usageCount == 0) return 0;
+        return --this.usageCount;
+    }
+
     /**
      * @return compressed
      */

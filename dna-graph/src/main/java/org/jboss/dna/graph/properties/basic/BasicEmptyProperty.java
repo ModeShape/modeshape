@@ -76,6 +76,15 @@ public class BasicEmptyProperty extends BasicProperty {
 
     /**
      * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.properties.Property#getFirstValue()
+     */
+    public Object getFirstValue() {
+        return null;
+    }
+
+    /**
+     * {@inheritDoc}
      */
     public Iterator<Object> iterator() {
         return SHARED_ITERATOR;

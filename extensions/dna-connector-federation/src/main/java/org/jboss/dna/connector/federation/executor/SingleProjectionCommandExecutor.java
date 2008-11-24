@@ -189,9 +189,7 @@ public class SingleProjectionCommandExecutor extends RequestProcessor {
     public void process( CreateNodeRequest request ) {
         Location locationInSource = projectIntoSource(request.under());
         Name child = request.named();
-        Integer desiredIndex = request.desiredIndex();
-        int index = desiredIndex != null ? desiredIndex.intValue() : 0;
-        CreateNodeRequest projected = new CreateNodeRequest(locationInSource, child, index, request.properties());
+        CreateNodeRequest projected = new CreateNodeRequest(locationInSource, child, request.properties());
         getConnection().execute(this.getExecutionContext(), projected);
         if (projected.hasError()) {
             projectError(projected, request.under(), request);

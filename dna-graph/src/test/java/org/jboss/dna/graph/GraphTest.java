@@ -162,10 +162,9 @@ public class GraphTest {
 
     protected void assertNextRequestIsCreate( Location parent,
                                               String child,
-                                              int desiredIndex,
                                               Property... properties ) {
         Name name = context.getValueFactories().getNameFactory().create(child);
-        assertThat(executedRequests.poll(), is((Request)new CreateNodeRequest(parent, name, desiredIndex, properties)));
+        assertThat(executedRequests.poll(), is((Request)new CreateNodeRequest(parent, name, properties)));
     }
 
     protected void assertNextRequestReadProperties( Location at,
@@ -310,32 +309,32 @@ public class GraphTest {
     public void shouldCreateNode() {
         graph.create(validPath);
         assertThat(numberOfExecutions, is(1));
-        assertNextRequestIsCreate(new Location(validPath.getParent()), "c", 0);
+        assertNextRequestIsCreate(new Location(validPath.getParent()), "c");
         assertNoMoreRequests();
 
         graph.create(validPath, validIdProperty1);
         assertThat(numberOfExecutions, is(1));
-        assertNextRequestIsCreate(new Location(validPath.getParent()), "c", 0, validIdProperty1);
+        assertNextRequestIsCreate(new Location(validPath.getParent()), "c", validIdProperty1);
         assertNoMoreRequests();
 
         graph.create(validPath, validIdProperty1, validIdProperty2);
         assertThat(numberOfExecutions, is(1));
-        assertNextRequestIsCreate(new Location(validPath.getParent()), "c", 0, validIdProperty1, validIdProperty2);
+        assertNextRequestIsCreate(new Location(validPath.getParent()), "c", validIdProperty1, validIdProperty2);
         assertNoMoreRequests();
 
         graph.create(validPathString);
         assertThat(numberOfExecutions, is(1));
-        assertNextRequestIsCreate(new Location(validPath.getParent()), "c", 0);
+        assertNextRequestIsCreate(new Location(validPath.getParent()), "c");
         assertNoMoreRequests();
 
         graph.create(validPathString, validIdProperty1);
         assertThat(numberOfExecutions, is(1));
-        assertNextRequestIsCreate(new Location(validPath.getParent()), "c", 0, validIdProperty1);
+        assertNextRequestIsCreate(new Location(validPath.getParent()), "c", validIdProperty1);
         assertNoMoreRequests();
 
         graph.create(validPathString, validIdProperty1, validIdProperty2);
         assertThat(numberOfExecutions, is(1));
-        assertNextRequestIsCreate(new Location(validPath.getParent()), "c", 0, validIdProperty1, validIdProperty2);
+        assertNextRequestIsCreate(new Location(validPath.getParent()), "c", validIdProperty1, validIdProperty2);
         assertNoMoreRequests();
     }
 

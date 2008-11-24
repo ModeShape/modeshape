@@ -79,6 +79,15 @@ public class BasicSingleValueProperty extends BasicProperty {
 
     /**
      * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.properties.Property#getFirstValue()
+     */
+    public Object getFirstValue() {
+        return value;
+    }
+
+    /**
+     * {@inheritDoc}
      */
     public Iterator<Object> iterator() {
         return new ValueIterator();

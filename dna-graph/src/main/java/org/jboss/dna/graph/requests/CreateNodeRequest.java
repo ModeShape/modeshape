@@ -47,7 +47,6 @@ public class CreateNodeRequest extends Request implements Iterable<Property> {
 
     private final Location under;
     private final Name childName;
-    private final Integer desiredIndex;
     private final List<Property> properties;
     private final NodeConflictBehavior conflictBehavior;
     private Location actualLocation;
@@ -57,17 +56,14 @@ public class CreateNodeRequest extends Request implements Iterable<Property> {
      * 
      * @param parentLocation the location of the existing parent node, under which the new child should be created
      * @param childName the name of the new child to create under the existing parent
-     * @param desiredIndexInParent the desired index in the parent under which the new child should be created, or 0 if the child
-     *        is to be appended under the end of the existing children
      * @param properties the properties of the new node, which should include any {@link Location#getIdProperties() identification
      *        properties} for the new node
      * @throws IllegalArgumentException if the location or the child name is null
      */
     public CreateNodeRequest( Location parentLocation,
                               Name childName,
-                              int desiredIndexInParent,
                               Property... properties ) {
-        this(parentLocation, childName, desiredIndexInParent, DEFAULT_CONFLICT_BEHAVIOR, properties);
+        this(parentLocation, childName, DEFAULT_CONFLICT_BEHAVIOR, properties);
     }
 
     /**
@@ -75,17 +71,14 @@ public class CreateNodeRequest extends Request implements Iterable<Property> {
      * 
      * @param parentLocation the location of the existing parent node, under which the new child should be created
      * @param childName the name of the new child to create under the existing parent
-     * @param desiredIndexInParent the desired index in the parent under which the new child should be created, or 0 if the child
-     *        is to be appended under the end of the existing children
      * @param properties the properties of the new node, which should include any {@link Location#getIdProperties() identification
      *        properties} for the new node
      * @throws IllegalArgumentException if the location or the child name is null
      */
     public CreateNodeRequest( Location parentLocation,
                               Name childName,
-                              int desiredIndexInParent,
                               Iterable<Property> properties ) {
-        this(parentLocation, childName, desiredIndexInParent, DEFAULT_CONFLICT_BEHAVIOR, properties);
+        this(parentLocation, childName, DEFAULT_CONFLICT_BEHAVIOR, properties);
     }
 
     /**
@@ -93,17 +86,14 @@ public class CreateNodeRequest extends Request implements Iterable<Property> {
      * 
      * @param parentLocation the location of the existing parent node, under which the new child should be created
      * @param childName the name of the new child to create under the existing parent
-     * @param desiredIndexInParent the desired index in the parent under which the new child should be created, or 0 if the child
-     *        is to be appended under the end of the existing children
      * @param properties the properties of the new node, which should include any {@link Location#getIdProperties() identification
      *        properties} for the new node
      * @throws IllegalArgumentException if the location or the child name is null
      */
     public CreateNodeRequest( Location parentLocation,
                               Name childName,
-                              int desiredIndexInParent,
                               Iterator<Property> properties ) {
-        this(parentLocation, childName, desiredIndexInParent, DEFAULT_CONFLICT_BEHAVIOR, properties);
+        this(parentLocation, childName, DEFAULT_CONFLICT_BEHAVIOR, properties);
     }
 
     /**
@@ -111,8 +101,6 @@ public class CreateNodeRequest extends Request implements Iterable<Property> {
      * 
      * @param parentLocation the location of the existing parent node, under which the new child should be created
      * @param childName the name of the new child to create under the existing parent
-     * @param desiredIndexInParent the desired index in the parent under which the new child should be created, or 0 if the child
-     *        is to be appended under the end of the existing children
      * @param properties the properties of the new node, which should include any {@link Location#getIdProperties() identification
      *        properties} for the new node
      * @param conflictBehavior the expected behavior if an equivalently-named child already exists under the <code>into</code>
@@ -121,7 +109,6 @@ public class CreateNodeRequest extends Request implements Iterable<Property> {
      */
     public CreateNodeRequest( Location parentLocation,
                               Name childName,
-                              int desiredIndexInParent,
                               NodeConflictBehavior conflictBehavior,
                               Property... properties ) {
         CheckArg.isNotNull(parentLocation, "parentLocation");
@@ -129,7 +116,6 @@ public class CreateNodeRequest extends Request implements Iterable<Property> {
         CheckArg.isNotNull(childName, "childName");
         this.under = parentLocation;
         this.childName = childName;
-        this.desiredIndex = desiredIndexInParent < 1 ? null : new Integer(desiredIndexInParent);
         this.conflictBehavior = conflictBehavior;
         int number = properties.length + (under.hasIdProperties() ? under.getIdProperties().size() : 0);
         List<Property> props = new ArrayList<Property>(number);
@@ -144,8 +130,6 @@ public class CreateNodeRequest extends Request implements Iterable<Property> {
      * 
      * @param parentLocation the location of the existing parent node, under which the new child should be created
      * @param childName the name of the new child to create under the existing parent
-     * @param desiredIndexInParent the desired index in the parent under which the new child should be created, or 0 if the child
-     *        is to be appended under the end of the existing children
      * @param properties the properties of the new node, which should include any {@link Location#getIdProperties() identification
      *        properties} for the new node
      * @param conflictBehavior the expected behavior if an equivalently-named child already exists under the <code>into</code>
@@ -154,7 +138,6 @@ public class CreateNodeRequest extends Request implements Iterable<Property> {
      */
     public CreateNodeRequest( Location parentLocation,
                               Name childName,
-                              int desiredIndexInParent,
                               NodeConflictBehavior conflictBehavior,
                               Iterable<Property> properties ) {
         CheckArg.isNotNull(parentLocation, "parentLocation");
@@ -162,7 +145,6 @@ public class CreateNodeRequest extends Request implements Iterable<Property> {
         CheckArg.isNotNull(childName, "childName");
         this.under = parentLocation;
         this.childName = childName;
-        this.desiredIndex = desiredIndexInParent < 1 ? null : new Integer(desiredIndexInParent);
         this.conflictBehavior = conflictBehavior;
         List<Property> props = new LinkedList<Property>();
         for (Property property : properties) {
@@ -182,8 +164,6 @@ public class CreateNodeRequest extends Request implements Iterable<Property> {
      * 
      * @param parentLocation the location of the existing parent node, under which the new child should be created
      * @param childName the name of the new child to create under the existing parent
-     * @param desiredIndexInParent the desired index in the parent under which the new child should be created, or 0 if the child
-     *        is to be appended under the end of the existing children
      * @param properties the properties of the new node, which should include any {@link Location#getIdProperties() identification
      *        properties} for the new node
      * @param conflictBehavior the expected behavior if an equivalently-named child already exists under the <code>into</code>
@@ -192,7 +172,6 @@ public class CreateNodeRequest extends Request implements Iterable<Property> {
      */
     public CreateNodeRequest( Location parentLocation,
                               Name childName,
-                              int desiredIndexInParent,
                               NodeConflictBehavior conflictBehavior,
                               Iterator<Property> properties ) {
         CheckArg.isNotNull(parentLocation, "parentLocation");
@@ -200,7 +179,6 @@ public class CreateNodeRequest extends Request implements Iterable<Property> {
         CheckArg.isNotNull(childName, "childName");
         this.under = parentLocation;
         this.childName = childName;
-        this.desiredIndex = desiredIndexInParent < 1 ? null : new Integer(desiredIndexInParent);
         this.conflictBehavior = conflictBehavior;
         List<Property> props = new LinkedList<Property>();
         while (properties.hasNext()) {
@@ -232,16 +210,6 @@ public class CreateNodeRequest extends Request implements Iterable<Property> {
      */
     public Name named() {
         return childName;
-    }
-
-    /**
-     * Get the desired index (always positive) in the parent for the new child, or null if the new child should be appended under
-     * the end of the existing children.
-     * 
-     * @return the desired index, or null if there is no desired index
-     */
-    public Integer desiredIndex() {
-        return desiredIndex;
     }
 
     /**

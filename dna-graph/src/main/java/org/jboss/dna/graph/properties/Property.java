@@ -107,6 +107,18 @@ public interface Property extends Iterable<Object>, Comparable<Property> {
     boolean isEmpty();
 
     /**
+     * Obtain the property's first value in its natural form. This is equivalent to calling
+     * <code>isEmpty() ? null : iterator().next()</code>
+     * 
+     * @return the first value, or null if the property is {@link #isEmpty() empty}
+     * @see Iterable#iterator()
+     * @see #getValues()
+     * @see #getValuesAsArray()
+     * @see #isEmpty()
+     */
+    Object getFirstValue();
+
+    /**
      * Obtain the property's values in their natural form. This is equivalent to calling {@link Iterable#iterator() iterator()}.
      * <p>
      * A valid iterator is returned if the property has {@link #isSingle() single valued} or {@link #isMultiple() multi-valued}.
@@ -116,6 +128,7 @@ public interface Property extends Iterable<Object>, Comparable<Property> {
      * </p>
      * 
      * @return an iterator over the values; never null
+     * @see #getFirstValue()
      * @see Iterable#iterator()
      * @see #getValuesAsArray()
      * @see ValueFactory#create(Iterator)
@@ -133,6 +146,7 @@ public interface Property extends Iterable<Object>, Comparable<Property> {
      * </p>
      * 
      * @return the array of values
+     * @see #getFirstValue()
      * @see Iterable#iterator()
      * @see #getValues()
      * @see ValueFactory#create(Object[])

@@ -127,7 +127,7 @@ public class BasicModelTest {
         EntityManager manager = mock(EntityManager.class);
         EntityTransaction txn = mock(EntityTransaction.class);
         stub(manager.getTransaction()).toReturn(txn);
-        RequestProcessor proc = model.createRequestProcessor("test source", context, manager, UUID.randomUUID(), 100);
+        RequestProcessor proc = model.createRequestProcessor("test source", context, manager, UUID.randomUUID(), 100, false);
         assertThat(proc, is(notNullValue()));
     }
 

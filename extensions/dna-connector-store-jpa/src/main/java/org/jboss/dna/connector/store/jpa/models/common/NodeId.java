@@ -49,6 +49,10 @@ public class NodeId implements Serializable {
     public NodeId() {
     }
 
+    public NodeId( String uuidString ) {
+        this.uuidString = uuidString;
+    }
+
     public NodeId( UUID uuid ) {
         setUuid(uuid);
     }

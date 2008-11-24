@@ -39,6 +39,8 @@ public final class JpaConnectorI18n {
     public static I18n errorSettingContextClassLoader;
     public static I18n existingStoreSpecifiesUnknownModel;
     public static I18n unableToReadLargeValue;
+    public static I18n unableToMoveRootNode;
+    public static I18n locationShouldHavePathAndOrProperty;
 
     public static I18n basicModelDescription;
 

@@ -439,7 +439,7 @@ public class XmlHandlerTest {
             assert path != null;
             Path parent = path.getParent();
             Name child = path.getLastSegment().getName();
-            requests.add(new CreateNodeRequest(new Location(parent), child, 0, properties));
+            requests.add(new CreateNodeRequest(new Location(parent), child, properties));
         }
 
         public void create( final Path path,
@@ -449,10 +449,10 @@ public class XmlHandlerTest {
             Name child = path.getLastSegment().getName();
             Location location = new Location(parent);
             if (firstProperty == null) {
-                requests.add(new CreateNodeRequest(location, child, 0));
+                requests.add(new CreateNodeRequest(location, child));
             } else {
                 if (additionalProperties == null || additionalProperties.length == 0) {
-                    requests.add(new CreateNodeRequest(location, child, 0, firstProperty));
+                    requests.add(new CreateNodeRequest(location, child, firstProperty));
                 } else {
                     Iterator<Property> iter = new Iterator<Property>() {
                         private int index = -1;
@@ -473,7 +473,7 @@ public class XmlHandlerTest {
                             throw new UnsupportedOperationException();
                         }
                     };
-                    requests.add(new CreateNodeRequest(location, child, 0, iter));
+                    requests.add(new CreateNodeRequest(location, child, iter));
                 }
             }
         }

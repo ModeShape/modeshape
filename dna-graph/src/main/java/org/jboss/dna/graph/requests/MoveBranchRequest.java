@@ -25,6 +25,7 @@ import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.graph.GraphI18n;
 import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.NodeConflictBehavior;
+import org.jboss.dna.graph.properties.Path;
 
 /**
  * Instruction that a branch be moved from one location into another.
@@ -110,6 +111,30 @@ public class MoveBranchRequest extends Request {
      */
     @Override
     public boolean isReadOnly() {
+        return false;
+    }
+
+    /**
+     * Determine whether this move request can be determined to have no effect.
+     * <p>
+     * A move is known to have no effect when all of the following conditions are true:
+     * <ul>
+     * <li>the {@link #into() into} location has a {@link Location#hasPath() path} but no {@link Location#hasIdProperties()
+     * identification properties};</li>
+     * <li>the {@link #from() from} location has a {@link Location#getPath() path}; and</li>
+     * <li>the {@link #from() from} location's {@link Path#getParent() parent} is the same as the {@link #into() into} location's
+     * path.</li>
+     * </ul>
+     * If all of these conditions are not true, this method returns false.
+     * </p>
+     * 
+     * @return true if this move request really doesn't change the parent of the node, or false if it cannot be determined
+     */
+    public boolean hasNoEffect() {
+        if (into.hasPath() && into.hasIdProperties() == false && from.hasPath()) {
+            return from.getPath().getParent().equals(into.getPath());
+        }
+        // Can't be determined for certain
         return false;
     }
 

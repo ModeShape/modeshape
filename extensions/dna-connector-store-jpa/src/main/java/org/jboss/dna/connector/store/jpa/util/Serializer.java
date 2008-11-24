@@ -29,10 +29,14 @@ import java.math.BigDecimal;
 import java.net.URI;
 import java.security.NoSuchAlgorithmException;
 import java.util.Collection;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.UUID;
 import org.jboss.dna.common.SystemFailureException;
 import org.jboss.dna.common.util.SecureHash;
+import org.jboss.dna.common.util.StringUtil;
 import org.jboss.dna.connector.store.jpa.models.basic.LargeValueEntity;
+import org.jboss.dna.graph.DnaLexicon;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.properties.Binary;
 import org.jboss.dna.graph.properties.DateTime;
@@ -52,12 +56,15 @@ public class Serializer {
     private final PropertyFactory propertyFactory;
     private final ValueFactories valueFactories;
     private final LargeValues largeValues;
+    private final boolean excludeUuidProperty;
 
     public Serializer( ExecutionContext context,
-                       LargeValues largeValues ) {
+                       LargeValues largeValues,
+                       boolean excludeUuidProperty ) {
         this.propertyFactory = context.getPropertyFactory();
         this.valueFactories = context.getValueFactories();
         this.largeValues = largeValues;
+        this.excludeUuidProperty = excludeUuidProperty;
     }
 
     /**
@@ -102,19 +109,21 @@ public class Serializer {
      * @param stream the stream where the properties' values are to be serialized; may not be null
      * @param number the number of properties exposed by the supplied <code>properties</code> iterator; must be 0 or positive
      * @param properties the iterator over the properties that are to be serialized; may not be null
+     * @param largeValueHexHashes the collection into which any large value hashes should be recordeed
      * @throws IOException if there is an error writing to the <code>stream</code> or <code>largeValues</code>
-     * @see #deserializeProperties(ObjectInputStream, Collection)
-     * @see #serializeProperty(ObjectOutputStream, Property)
+     * @see #deserializeAllProperties(ObjectInputStream, Collection)
+     * @see #serializeProperty(ObjectOutputStream, Property, Collection)
      */
     public void serializeProperties( ObjectOutputStream stream,
                                      int number,
-                                     Iterable<Property> properties ) throws IOException {
+                                     Iterable<Property> properties,
+                                     Collection<String> largeValueHexHashes ) throws IOException {
         assert number >= 0;
         assert properties != null;
         stream.writeInt(number);
         for (Property property : properties) {
             if (property == null) continue;
-            serializeProperty(stream, property);
+            serializeProperty(stream, property, largeValueHexHashes);
         }
     }
 
@@ -135,16 +144,21 @@ public class Serializer {
      * 
      * @param stream the stream where the property's values are to be serialized; may not be null
      * @param property the property to be serialized; may not be null
+     * @param largeValueHexHashes the collection into which any large value hashes should be recordeed
+     * @return true if the property was serialized, or false if it was not
      * @throws IOException if there is an error writing to the <code>stream</code> or <code>largeValues</code>
-     * @see #serializeProperties(ObjectOutputStream, int, Iterable)
-     * @see #deserializeProperty(ObjectInputStream)
+     * @see #serializeProperties(ObjectOutputStream, int, Iterable, Collection)
+     * @see #deserializePropertyValues(ObjectInputStream, Name, boolean)
      */
-    public void serializeProperty( ObjectOutputStream stream,
-                                   Property property ) throws IOException {
+    public boolean serializeProperty( ObjectOutputStream stream,
+                                      Property property,
+                                      Collection<String> largeValueHexHashes ) throws IOException {
         assert stream != null;
         assert property != null;
+        final Name name = property.getName();
+        if (this.excludeUuidProperty && DnaLexicon.UUID.equals(name)) return false;
         // Write the name ...
-        stream.writeObject(property.getName().getString());
+        stream.writeObject(name.getString());
         // Write the number of values ...
         stream.writeInt(property.size());
         for (Object value : property) {
@@ -158,6 +172,7 @@ public class Serializer {
                     stream.write(hash);
                     stream.writeLong(stringValue.length());
                     // Now write to the large objects ...
+                    largeValueHexHashes.add(StringUtil.getHexString(hash));
                     largeValues.write(computeHash(stringValue), stringValue.length(), PropertyType.STRING, stringValue);
                 } else {
                     stream.writeChar('S');
@@ -243,6 +258,7 @@ public class Serializer {
                 }
                 // If this is a large value and the binary has been released, write it to the large objects ...
                 if (largeValues != null && hash != null) {
+                    largeValueHexHashes.add(StringUtil.getHexString(hash));
                     largeValues.write(hash, length, PropertyType.BINARY, value);
                 }
             } else {
@@ -252,6 +268,7 @@ public class Serializer {
             }
         }
         stream.flush();
+        return true;
     }
 
     /**
@@ -261,11 +278,11 @@ public class Serializer {
      * @param properties the collection into which each deserialized property is to be placed; may not be null
      * @throws IOException if there is an error writing to the <code>stream</code> or <code>largeValues</code>
      * @throws ClassNotFoundException if the class for the value's object could not be found
-     * @see #deserializeProperty(ObjectInputStream)
-     * @see #serializeProperties(ObjectOutputStream, int, Iterable)
+     * @see #deserializePropertyValues(ObjectInputStream, Name, boolean)
+     * @see #serializeProperties(ObjectOutputStream, int, Iterable, Collection)
      */
-    public void deserializeProperties( ObjectInputStream stream,
-                                       Collection<Property> properties ) throws IOException, ClassNotFoundException {
+    public void deserializeAllProperties( ObjectInputStream stream,
+                                          Collection<Property> properties ) throws IOException, ClassNotFoundException {
         assert propertyFactory != null;
         assert valueFactories != null;
         assert stream != null;
@@ -281,105 +298,177 @@ public class Serializer {
     }
 
     /**
+     * Deserialize the serialized properties on the supplied object stream.
+     * 
+     * @param stream the stream that contains the serialized properties; may not be null
+     * @param properties the collection into which each deserialized property is to be placed; may not be null
+     * @param names the names of the properties that should be deserialized; should not be null or empty
+     * @throws IOException if there is an error writing to the <code>stream</code> or <code>largeValues</code>
+     * @throws ClassNotFoundException if the class for the value's object could not be found
+     * @see #deserializePropertyValues(ObjectInputStream, Name, boolean)
+     * @see #serializeProperties(ObjectOutputStream, int, Iterable, Collection)
+     */
+    public void deserializeSomeProperties( ObjectInputStream stream,
+                                           Collection<Property> properties,
+                                           Name... names ) throws IOException, ClassNotFoundException {
+        assert stream != null;
+        assert properties != null;
+        assert names != null;
+        assert names.length > 0;
+        Name nameToRead = null;
+        Set<Name> namesToRead = null;
+        if (names.length == 1) {
+            nameToRead = names[0];
+        } else {
+            namesToRead = new HashSet<Name>();
+            for (Name name : names) {
+                if (name != null) namesToRead.add(name);
+            }
+        }
+
+        // Read the number of properties ...
+        boolean read = false;
+        int count = stream.readInt();
+
+        // Now, read the properties (or skip the ones that we're not supposed to read) ...
+        for (int i = 0; i != count; ++i) {
+            // Read the name ...
+            String nameStr = (String)stream.readObject();
+            Name name = valueFactories.getNameFactory().create(nameStr);
+            assert name != null;
+            read = name.equals(nameToRead) || (namesToRead != null && namesToRead.contains(namesToRead));
+            // Now read the property values ...
+            Object[] values = deserializePropertyValues(stream, name, !read);
+            // Add the property to the collection ...
+            Property property = propertyFactory.create(name, values);
+            assert property != null;
+            properties.add(property);
+        }
+    }
+
+    /**
      * Deserialize the serialized property on the supplied object stream.
      * 
      * @param stream the stream that contains the serialized properties; may not be null
-     * @return the deserialized property; never null
+     * @return the deserialized property values, or an empty list if there are no values
      * @throws IOException if there is an error writing to the <code>stream</code> or <code>largeValues</code>
      * @throws ClassNotFoundException if the class for the value's object could not be found
-     * @see #deserializeProperties(ObjectInputStream, Collection)
-     * @see #serializeProperty(ObjectOutputStream, Property)
+     * @see #deserializeAllProperties(ObjectInputStream, Collection)
+     * @see #serializeProperty(ObjectOutputStream, Property, Collection)
      */
     public Property deserializeProperty( ObjectInputStream stream ) throws IOException, ClassNotFoundException {
-        assert propertyFactory != null;
-        assert valueFactories != null;
-        assert stream != null;
-        assert largeValues != null;
         // Read the name ...
         String nameStr = (String)stream.readObject();
         Name name = valueFactories.getNameFactory().create(nameStr);
         assert name != null;
+        // Now read the property values ...
+        Object[] values = deserializePropertyValues(stream, name, false);
+        // Add the property to the collection ...
+        return propertyFactory.create(name, values);
+    }
+
+    /**
+     * Deserialize the serialized property on the supplied object stream.
+     * 
+     * @param stream the stream that contains the serialized properties; may not be null
+     * @param propertyName the name of the property being deserialized
+     * @param skip true if the values don't need to be read, or false if they are to be read
+     * @return the deserialized property values, or an empty list if there are no values
+     * @throws IOException if there is an error writing to the <code>stream</code> or <code>largeValues</code>
+     * @throws ClassNotFoundException if the class for the value's object could not be found
+     * @see #deserializeAllProperties(ObjectInputStream, Collection)
+     * @see #serializeProperty(ObjectOutputStream, Property, Collection)
+     */
+    public Object[] deserializePropertyValues( ObjectInputStream stream,
+                                               Name propertyName,
+                                               boolean skip ) throws IOException, ClassNotFoundException {
+        assert stream != null;
+        assert propertyName != null;
         // Read the number of values ...
         int size = stream.readInt();
-        Object[] values = new Object[size];
+        Object[] values = skip ? null : new Object[size];
         for (int i = 0; i != size; ++i) {
             Object value = null;
             // Read the type of value ...
             char type = stream.readChar();
             switch (type) {
                 case 'S':
-                    // String
-                    value = valueFactories.getStringFactory().create((String)stream.readObject());
+                    String stringValue = (String)stream.readObject();
+                    if (!skip) value = valueFactories.getStringFactory().create(stringValue);
                     break;
                 case 'b':
-                    // boolean
-                    value = valueFactories.getBooleanFactory().create(stream.readBoolean());
+                    boolean booleanValue = stream.readBoolean();
+                    if (!skip) value = valueFactories.getBooleanFactory().create(booleanValue);
                     break;
                 case 'i':
-                    // integer
-                    value = valueFactories.getLongFactory().create(stream.readInt());
+                    int intValue = stream.readInt();
+                    if (!skip) value = valueFactories.getLongFactory().create(intValue);
                     break;
                 case 'l':
-                    // long
-                    value = valueFactories.getLongFactory().create(stream.readLong());
+                    long longValue = stream.readLong();
+                    if (!skip) value = valueFactories.getLongFactory().create(longValue);
                     break;
                 case 's':
-                    // short
-                    value = valueFactories.getLongFactory().create(stream.readShort());
+                    short shortValue = stream.readShort();
+                    if (!skip) value = valueFactories.getLongFactory().create(shortValue);
                     break;
                 case 'f':
-                    // float
-                    value = valueFactories.getDoubleFactory().create(stream.readFloat());
+                    float floatValue = stream.readFloat();
+                    if (!skip) value = valueFactories.getDoubleFactory().create(floatValue);
                     break;
                 case 'd':
-                    // double
-                    value = valueFactories.getDoubleFactory().create(stream.readDouble());
+                    double doubleValue = stream.readDouble();
+                    if (!skip) value = valueFactories.getDoubleFactory().create(doubleValue);
                     break;
                 case 'c':
-                    // double
-                    value = valueFactories.getStringFactory().create("" + stream.readChar());
+                    // char
+                    String charValue = "" + stream.readChar();
+                    if (!skip) value = valueFactories.getStringFactory().create(charValue);
                     break;
                 case 'U':
                     // UUID
                     long msb = stream.readLong();
                     long lsb = stream.readLong();
-                    UUID uuid = new UUID(msb, lsb);
-                    value = valueFactories.getUuidFactory().create(uuid);
+                    if (!skip) {
+                        UUID uuid = new UUID(msb, lsb);
+                        value = valueFactories.getUuidFactory().create(uuid);
+                    }
                     break;
                 case 'I':
                     // URI
                     String uriStr = (String)stream.readObject();
-                    value = valueFactories.getUriFactory().create(uriStr);
+                    if (!skip) value = valueFactories.getUriFactory().create(uriStr);
                     break;
                 case 'N':
                     // Name
                     String nameValueStr = (String)stream.readObject();
-                    value = valueFactories.getNameFactory().create(nameValueStr);
+                    if (!skip) value = valueFactories.getNameFactory().create(nameValueStr);
                     break;
                 case 'P':
                     // Path
                     String pathStr = (String)stream.readObject();
-                    value = valueFactories.getPathFactory().create(pathStr);
+                    if (!skip) value = valueFactories.getPathFactory().create(pathStr);
                     break;
                 case 'T':
                     // DateTime
                     String dateTimeStr = (String)stream.readObject();
-                    value = valueFactories.getDateFactory().create(dateTimeStr);
+                    if (!skip) value = valueFactories.getDateFactory().create(dateTimeStr);
                     break;
                 case 'D':
                     // BigDecimal
                     Object bigDecimal = stream.readObject();
-                    value = valueFactories.getDecimalFactory().create(bigDecimal);
+                    if (!skip) value = valueFactories.getDecimalFactory().create(bigDecimal);
                     break;
                 case 'R':
                     // Reference
-                    value = valueFactories.getReferenceFactory().create((String)stream.readObject());
+                    String refValue = (String)stream.readObject();
+                    if (!skip) value = valueFactories.getReferenceFactory().create(refValue);
                     break;
                 case 'B':
                     // Binary
                     // Read the length of the content ...
                     long binaryLength = stream.readLong();
-                    value = valueFactories.getBinaryFactory().create(stream, binaryLength);
+                    if (!skip) value = valueFactories.getBinaryFactory().create(stream, binaryLength);
                     break;
                 case 'L':
                     // Large object ...
@@ -389,19 +478,17 @@ public class Serializer {
                     stream.read(hash);
                     // Read the length of the content ...
                     long length = stream.readLong();
-                    value = largeValues.read(valueFactories, hash, length);
+                    if (!skip) value = largeValues.read(valueFactories, hash, length);
                     break;
                 default:
                     // All other objects ...
                     Object object = stream.readObject();
-                    value = valueFactories.getObjectFactory().create(object);
+                    if (!skip) value = valueFactories.getObjectFactory().create(object);
                     break;
             }
-            assert value != null;
-            values[i] = value;
+            if (value != null) values[i] = value;
         }
-        // Add the property to the collection ...
-        return propertyFactory.create(name, values);
+        return values;
     }
 
     public byte[] computeHash( String value ) {
