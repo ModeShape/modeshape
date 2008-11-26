@@ -31,6 +31,8 @@ import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.NoResultException;
 import javax.persistence.Query;
+import javax.persistence.Table;
+import org.hibernate.annotations.Index;
 import org.jboss.dna.common.util.CheckArg;
 
 /**
@@ -39,9 +41,11 @@ import org.jboss.dna.common.util.CheckArg;
  * 
  * @author Randall Hauch
  */
-@Entity( name = "DNA_NAMESPACES" )
-@NamedQueries( {@NamedQuery( name = "NamespaceEntity.findAll", query = "SELECT ns FROM DNA_NAMESPACES AS ns" ),
-    @NamedQuery( name = "NamespaceEntity.findByUri", query = "SELECT ns FROM DNA_NAMESPACES AS ns WHERE ns.uri = ?1" )} )
+@Entity
+@Table( name = "DNA_NAMESPACES" )
+@org.hibernate.annotations.Table( appliesTo = "DNA_NAMESPACES", indexes = @Index( name = "NS_URI_INX", columnNames = {"URI"} ) )
+@NamedQueries( {@NamedQuery( name = "NamespaceEntity.findAll", query = "select ns from NamespaceEntity as ns" ),
+    @NamedQuery( name = "NamespaceEntity.findByUri", query = "select ns from NamespaceEntity as ns where ns.uri = ?1" )} )
 public class NamespaceEntity {
 
     @Id

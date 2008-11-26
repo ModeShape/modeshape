@@ -28,8 +28,8 @@ import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
+import javax.persistence.Table;
 import org.hibernate.annotations.Index;
-import org.hibernate.annotations.Table;
 import org.jboss.dna.common.util.HashCode;
 import org.jboss.dna.connector.store.jpa.models.common.NamespaceEntity;
 
@@ -42,31 +42,37 @@ import org.jboss.dna.connector.store.jpa.models.common.NamespaceEntity;
  * @author Randall Hauch
  */
 @Entity
-@javax.persistence.Table( name = "DNA_BASIC_CHILDREN" )
-@Table( appliesTo = "DNA_BASIC_CHILDREN", indexes = @Index( name = "CHILDINDEX_INX", columnNames = {"PARENT_UUID", "CHILD_INDEX"} ) )
+@Table( name = "DNA_BASIC_CHILDREN" )
+@org.hibernate.annotations.Table( appliesTo = "DNA_BASIC_CHILDREN", indexes = {
+    @Index( name = "CHILDINDEX_INX", columnNames = {"PARENT_UUID", "CHILD_INDEX"} ),
+    @Index( name = "CHILDUUID_INX", columnNames = {"CHILD_UUID"} ),
+    @Index( name = "CHILDNAME_INX", columnNames = {"PARENT_UUID", "CHILD_NAME_NS_ID", "CHILD_NAME_LOCAL", "SNS_INDEX"} )} )
 @NamedQueries( {
-    @NamedQuery( name = "ChildEntity.findByPathSegment", query = "select child from ChildEntity as child where child.id.parentUuidString = :parentUuid AND child.childNamespace.id = :ns AND child.childName = :childName AND child.sameNameSiblingIndex = :sns" ),
-    @NamedQuery( name = "ChildEntity.findAllUnderParent", query = "select child from ChildEntity as child where child.id.parentUuidString = :parentUuid" ),
-    @NamedQuery( name = "ChildEntity.findByChildUuid", query = "select child from ChildEntity as child where child.id.childUuidString = :childUuidString" ),
-    @NamedQuery( name = "ChildEntity.findMaximumSnsIndex", query = "select max(child.sameNameSiblingIndex) from ChildEntity as child where child.id.parentUuidString = :parentUuid AND child.childNamespace.id = :ns AND child.childName = :childName" ),
-    @NamedQuery( name = "ChildEntity.findMaximumChildIndex", query = "select max(child.indexInParent) from ChildEntity as child where child.id.parentUuidString = :parentUuid" )} )
+    @NamedQuery( name = "ChildEntity.findByPathSegment", query = "select child from ChildEntity as child where child.id.parentUuidString = :parentUuidString AND child.childNamespace.id = :ns AND child.childName = :childName AND child.sameNameSiblingIndex = :sns and child.deleted is null" ),
+    @NamedQuery( name = "ChildEntity.findAllUnderParent", query = "select child from ChildEntity as child where child.id.parentUuidString = :parentUuidString and child.deleted is null" ),
+    @NamedQuery( name = "ChildEntity.findByChildUuid", query = "select child from ChildEntity as child where child.id.childUuidString = :childUuidString and child.deleted is null" ),
+    @NamedQuery( name = "ChildEntity.findMaximumSnsIndex", query = "select max(child.sameNameSiblingIndex) from ChildEntity as child where child.id.parentUuidString = :parentUuid AND child.childNamespace.id = :ns AND child.childName = :childName and child.deleted is null" ),
+    @NamedQuery( name = "ChildEntity.findMaximumChildIndex", query = "select max(child.indexInParent) from ChildEntity as child where child.id.parentUuidString = :parentUuid and child.deleted is null" )} )
 public class ChildEntity {
 
     @Id
     private ChildId id;
 
     @Column( name = "CHILD_INDEX", nullable = false, unique = false )
-    private Integer indexInParent;
+    private int indexInParent;
 
     @ManyToOne
     @JoinColumn( name = "CHILD_NAME_NS_ID", nullable = false )
     private NamespaceEntity childNamespace;
 
-    @Column( name = "CHILD_NAME_LOCAL", nullable = true, unique = false, length = 512 )
+    @Column( name = "CHILD_NAME_LOCAL", nullable = false, unique = false, length = 512 )
     private String childName;
 
-    @Column( name = "SNS_INDEX", nullable = true, unique = false )
-    private Integer sameNameSiblingIndex;
+    @Column( name = "SNS_INDEX", nullable = false, unique = false )
+    private int sameNameSiblingIndex;
+
+    @Column( name = "DELETED", nullable = true, unique = false )
+    private Boolean deleted;
 
     public ChildEntity() {
     }
@@ -110,14 +116,14 @@ public class ChildEntity {
     /**
      * @return indexInParent
      */
-    public Integer getIndexInParent() {
+    public int getIndexInParent() {
         return indexInParent;
     }
 
     /**
      * @param index Sets indexInParent to the specified value.
      */
-    public void setIndexInParent( Integer index ) {
+    public void setIndexInParent( int index ) {
         this.indexInParent = index;
     }
 
@@ -152,15 +158,29 @@ public class ChildEntity {
     /**
      * @return sameNameSiblingIndex
      */
-    public Integer getSameNameSiblingIndex() {
+    public int getSameNameSiblingIndex() {
         return sameNameSiblingIndex;
     }
 
     /**
      * @param sameNameSiblingIndex Sets sameNameSiblingIndex to the specified value.
      */
-    public void setSameNameSiblingIndex( Integer sameNameSiblingIndex ) {
+    public void setSameNameSiblingIndex( int sameNameSiblingIndex ) {
         this.sameNameSiblingIndex = sameNameSiblingIndex;
+    }
+
+    /**
+     * @return deleted
+     */
+    public boolean isDeleted() {
+        return Boolean.TRUE.equals(deleted);
+    }
+
+    /**
+     * @param deleted Sets deleted to the specified value.
+     */
+    public void setDeleted( boolean deleted ) {
+        this.deleted = deleted ? Boolean.TRUE : null;
     }
 
     /**
@@ -205,7 +225,7 @@ public class ChildEntity {
             sb.append('{').append(childNamespace).append("}:");
         }
         sb.append(childName);
-        if (sameNameSiblingIndex != null && sameNameSiblingIndex.intValue() > 1) {
+        if (sameNameSiblingIndex > 1) {
             sb.append('[').append(sameNameSiblingIndex).append(']');
         }
         if (id != null) {

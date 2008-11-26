@@ -24,7 +24,6 @@ package org.jboss.dna.connector.store.jpa.models.basic;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.IsNull.notNullValue;
-import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.stub;
@@ -334,13 +333,13 @@ public class BasicModelTest {
             assertThat(child1a.getIndexInParent(), is(1));
             assertThat(child1a.getChildName(), is("child1"));
             assertThat(child1a.getChildNamespace(), is(ns));
-            assertThat(child1a.getSameNameSiblingIndex(), is(nullValue()));
+            assertThat(child1a.getSameNameSiblingIndex(), is(0));
 
             assertThat(child2a.getId(), is(childId2));
             assertThat(child2a.getIndexInParent(), is(2));
             assertThat(child2a.getChildName(), is("child2"));
             assertThat(child2a.getChildNamespace(), is(ns));
-            assertThat(child2a.getSameNameSiblingIndex(), is(nullValue()));
+            assertThat(child2a.getSameNameSiblingIndex(), is(0));
 
             assertThat(child3a.getId(), is(childId3));
             assertThat(child3a.getIndexInParent(), is(3));
