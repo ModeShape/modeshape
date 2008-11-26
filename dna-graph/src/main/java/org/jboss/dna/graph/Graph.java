@@ -89,6 +89,27 @@ public class Graph {
         return new Graph(sourceName, connectionFactory, context);
     }
 
+    /**
+     * Create a graph instance that uses the supplied {@link RepositoryConnection} and {@link ExecutionContext context}.
+     * 
+     * @param connection the connection that should be used
+     * @param context the context in which all executions should be performed
+     * @return the new graph
+     * @throws IllegalArgumentException if the connection or context parameters are null
+     */
+    public static Graph create( final RepositoryConnection connection,
+                                ExecutionContext context ) {
+        CheckArg.isNotNull(connection, "connection");
+        final String connectorSourceName = connection.getSourceName();
+        RepositoryConnectionFactory connectionFactory = new RepositoryConnectionFactory() {
+            public RepositoryConnection createConnection( String sourceName ) throws RepositorySourceException {
+                if (connectorSourceName.equals(sourceName)) return connection;
+                return null;
+            }
+        };
+        return new Graph(connectorSourceName, connectionFactory, context);
+    }
+
     private final String sourceName;
     private final RepositoryConnectionFactory connectionFactory;
     private final ExecutionContext context;
@@ -654,6 +675,46 @@ public class Graph {
 
             public Conjunction<Graph> on( UUID uuid ) {
                 return on(new Location(uuid));
+            }
+        };
+    }
+
+    /**
+     * Set a property on a node, starting with the name. The interface returned from this method should be used to specify the
+     * value(s) and the location of the node onto which the property should be set.
+     * 
+     * @param propertyName the property name
+     * @return the interface used to specify the values
+     */
+    public SetValuesTo<On<Conjunction<Graph>>> set( String propertyName ) {
+        Name name = getContext().getValueFactories().getNameFactory().create(propertyName);
+        return set(name);
+    }
+
+    /**
+     * Set a property on a node, starting with the name. The interface returned from this method should be used to specify the
+     * value(s) and the location of the node onto which the property should be set.
+     * 
+     * @param propertyName the property name
+     * @return the interface used to specify the values
+     */
+    public SetValuesTo<On<Conjunction<Graph>>> set( final Name propertyName ) {
+        return new SetValuesTo<On<Conjunction<Graph>>>() {
+            public On<Conjunction<Graph>> to( Object value ) {
+                return set(getContext().getPropertyFactory().create(propertyName, value));
+            }
+
+            public On<Conjunction<Graph>> to( Object firstValue,
+                                              Object... otherValues ) {
+                return set(getContext().getPropertyFactory().create(propertyName, firstValue, otherValues));
+            }
+
+            public On<Conjunction<Graph>> to( Iterable<?> values ) {
+                return set(getContext().getPropertyFactory().create(propertyName, values));
+            }
+
+            public On<Conjunction<Graph>> to( Iterator<?> values ) {
+                return set(getContext().getPropertyFactory().create(propertyName, values));
             }
         };
     }
@@ -1594,12 +1655,12 @@ public class Graph {
          * @return the object that can be used to specify addition properties for the new node to be copied or the location of the
          *         node where the node is to be created
          */
-        public Create<BatchConjunction> create( String atPath ) {
+        public Create<Batch> create( String atPath ) {
             assertNotExecuted();
             Path at = createPath(atPath);
             Path parent = at.getParent();
             Name name = at.getLastSegment().getName();
-            return new CreateAction<BatchConjunction>(nextRequests, requestQueue, new Location(parent), name);
+            return new CreateAction<Batch>(this, requestQueue, new Location(parent), name);
         }
 
         /**
@@ -1614,13 +1675,13 @@ public class Graph {
          * @return the object that can be used to specify addition properties for the new node to be copied or the location of the
          *         node where the node is to be created
          */
-        public Create<BatchConjunction> create( String atPath,
-                                                Property property ) {
+        public Create<Batch> create( String atPath,
+                                     Property property ) {
             assertNotExecuted();
             Path at = createPath(atPath);
             Path parent = at.getParent();
             Name name = at.getLastSegment().getName();
-            return new CreateAction<BatchConjunction>(nextRequests, requestQueue, new Location(parent), name).with(property);
+            return new CreateAction<Batch>(this, requestQueue, new Location(parent), name).with(property);
         }
 
         /**
@@ -1636,15 +1697,15 @@ public class Graph {
          * @return the object that can be used to specify addition properties for the new node to be copied or the location of the
          *         node where the node is to be created
          */
-        public Create<BatchConjunction> create( String atPath,
-                                                Property firstProperty,
-                                                Property... additionalProperties ) {
+        public Create<Batch> create( String atPath,
+                                     Property firstProperty,
+                                     Property... additionalProperties ) {
             assertNotExecuted();
             Path at = createPath(atPath);
             Path parent = at.getParent();
             Name name = at.getLastSegment().getName();
-            return new CreateAction<BatchConjunction>(nextRequests, requestQueue, new Location(parent), name).with(firstProperty,
-                                                                                                                      additionalProperties);
+            return new CreateAction<Batch>(this, requestQueue, new Location(parent), name).with(firstProperty,
+                                                                                                additionalProperties);
         }
 
         /**
@@ -1658,12 +1719,12 @@ public class Graph {
          * @return the object that can be used to specify addition properties for the new node to be copied or the location of the
          *         node where the node is to be created
          */
-        public Create<BatchConjunction> create( Path at ) {
+        public Create<Batch> create( Path at ) {
             assertNotExecuted();
             CheckArg.isNotNull(at, "at");
             Path parent = at.getParent();
             Name name = at.getLastSegment().getName();
-            return new CreateAction<BatchConjunction>(nextRequests, requestQueue, new Location(parent), name);
+            return new CreateAction<Batch>(this, requestQueue, new Location(parent), name);
         }
 
         /**
@@ -1678,14 +1739,13 @@ public class Graph {
          * @return the object that can be used to specify addition properties for the new node to be copied or the location of the
          *         node where the node is to be created
          */
-        public Create<BatchConjunction> create( Path at,
-                                                Iterable<Property> properties ) {
+        public Create<Batch> create( Path at,
+                                     Iterable<Property> properties ) {
             assertNotExecuted();
             CheckArg.isNotNull(at, "at");
             Path parent = at.getParent();
             Name name = at.getLastSegment().getName();
-            CreateAction<BatchConjunction> action = new CreateAction<BatchConjunction>(nextRequests, requestQueue,
-                                                                                       new Location(parent), name);
+            CreateAction<Batch> action = new CreateAction<Batch>(this, requestQueue, new Location(parent), name);
             for (Property property : properties) {
                 action.and(property);
             }
@@ -1704,13 +1764,13 @@ public class Graph {
          * @return the object that can be used to specify addition properties for the new node to be copied or the location of the
          *         node where the node is to be created
          */
-        public Create<BatchConjunction> create( Path at,
-                                                Property property ) {
+        public Create<Batch> create( Path at,
+                                     Property property ) {
             assertNotExecuted();
             CheckArg.isNotNull(at, "at");
             Path parent = at.getParent();
             Name name = at.getLastSegment().getName();
-            return new CreateAction<BatchConjunction>(nextRequests, requestQueue, new Location(parent), name).with(property);
+            return new CreateAction<Batch>(this, requestQueue, new Location(parent), name).with(property);
         }
 
         /**
@@ -1726,15 +1786,15 @@ public class Graph {
          * @return the object that can be used to specify addition properties for the new node to be copied or the location of the
          *         node where the node is to be created
          */
-        public Create<BatchConjunction> create( Path at,
-                                                Property firstProperty,
-                                                Property... additionalProperties ) {
+        public Create<Batch> create( Path at,
+                                     Property firstProperty,
+                                     Property... additionalProperties ) {
             assertNotExecuted();
             CheckArg.isNotNull(at, "at");
             Path parent = at.getParent();
             Name name = at.getLastSegment().getName();
-            return new CreateAction<BatchConjunction>(nextRequests, requestQueue, new Location(parent), name).with(firstProperty,
-                                                                                                                      additionalProperties);
+            return new CreateAction<Batch>(this, requestQueue, new Location(parent), name).with(firstProperty,
+                                                                                                additionalProperties);
         }
 
         /**
@@ -1744,16 +1804,16 @@ public class Graph {
          * @param parent the location of the parent
          * @return the object used to start creating a node
          */
-        public CreateNodeNamed<BatchConjunction> createUnder( Location parent ) {
+        public CreateNodeNamed<Batch> createUnder( Location parent ) {
             CheckArg.isNotNull(parent, "parent");
-            return new CreateNodeNamedAction<BatchConjunction>(nextRequests, requestQueue, parent);
+            return new CreateNodeNamedAction<Batch>(this, requestQueue, parent);
         }
 
         /**
          * Set the properties on a node.
          * 
          * @param properties the properties to set
-         * @return the remove request object that should be used to specify the node on which the properties are to be set.
+         * @return the interface that should be used to specify the node on which the properties are to be set.
          */
         public On<BatchConjunction> set( final Property... properties ) {
             return new On<BatchConjunction>() {
@@ -1782,6 +1842,46 @@ public class Graph {
 
                 public BatchConjunction on( UUID uuid ) {
                     return on(new Location(uuid));
+                }
+            };
+        }
+
+        /**
+         * Set a property on a node, starting with the name. The interface returned from this method should be used to specify the
+         * value(s) and the location of the node onto which the property should be set.
+         * 
+         * @param propertyName the property name
+         * @return the interface used to specify the values
+         */
+        public SetValuesTo<On<BatchConjunction>> set( String propertyName ) {
+            Name name = getContext().getValueFactories().getNameFactory().create(propertyName);
+            return set(name);
+        }
+
+        /**
+         * Set a property on a node, starting with the name. The interface returned from this method should be used to specify the
+         * value(s) and the location of the node onto which the property should be set.
+         * 
+         * @param propertyName the property name
+         * @return the interface used to specify the values
+         */
+        public SetValuesTo<On<BatchConjunction>> set( final Name propertyName ) {
+            return new SetValuesTo<On<BatchConjunction>>() {
+                public On<BatchConjunction> to( Object value ) {
+                    return set(getContext().getPropertyFactory().create(propertyName, value));
+                }
+
+                public On<BatchConjunction> to( Object firstValue,
+                                                Object... otherValues ) {
+                    return set(getContext().getPropertyFactory().create(propertyName, firstValue, otherValues));
+                }
+
+                public On<BatchConjunction> to( Iterable<?> values ) {
+                    return set(getContext().getPropertyFactory().create(propertyName, values));
+                }
+
+                public On<BatchConjunction> to( Iterator<?> values ) {
+                    return set(getContext().getPropertyFactory().create(propertyName, values));
                 }
             };
         }
@@ -2593,6 +2693,48 @@ public class Graph {
          */
         Next at( Property firstIdProperty,
                  Property... additionalIdProperties );
+    }
+
+    /**
+     * A component used to set the values on a property.
+     * 
+     * @param <Next>
+     * @author Randall Hauch
+     */
+    public interface SetValuesTo<Next> {
+        /**
+         * Set the property value to the given object.
+         * 
+         * @param value the property value
+         * @return the interface for additional requests or actions
+         */
+        Next to( Object value );
+
+        /**
+         * Set the property value to the given objects.
+         * 
+         * @param firstValue the first property value
+         * @param otherValues the remaining property values
+         * @return the interface for additional requests or actions
+         */
+        Next to( Object firstValue,
+                 Object... otherValues );
+
+        /**
+         * Set the property value to the given object.
+         * 
+         * @param values the container for the property values
+         * @return the interface for additional requests or actions
+         */
+        Next to( Iterable<?> values );
+
+        /**
+         * Set the property value to the given object.
+         * 
+         * @param values the iterator over the property values
+         * @return the interface for additional requests or actions
+         */
+        Next to( Iterator<?> values );
     }
 
     /**
@@ -3572,6 +3714,7 @@ public class Graph {
 
         @Override
         public Results execute() {
+            this.queue().submit(new CreateNodeRequest(parent, childName, this.properties));
             return queue().execute();
         }
     }

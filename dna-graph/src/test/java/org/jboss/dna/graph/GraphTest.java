@@ -80,6 +80,7 @@ public class GraphTest {
     private UUID validUuid;
     private Property validIdProperty1;
     private Property validIdProperty2;
+    private Location validLocation;
     private String sourceName;
     private MockRepositoryConnection connection;
     private LinkedList<Request> executedRequests;
@@ -107,6 +108,7 @@ public class GraphTest {
         Name idProperty2Name = createName("id2");
         validIdProperty1 = context.getPropertyFactory().create(idProperty1Name, "1");
         validIdProperty2 = context.getPropertyFactory().create(idProperty2Name, "2");
+        validLocation = new Location(validPath);
 
         properties = new HashMap<Location, Collection<Property>>();
         children = new HashMap<Location, List<Location>>();
@@ -336,6 +338,13 @@ public class GraphTest {
         assertThat(numberOfExecutions, is(1));
         assertNextRequestIsCreate(new Location(validPath.getParent()), "c", validIdProperty1, validIdProperty2);
         assertNoMoreRequests();
+    }
+
+    @Test
+    public void shouldCreateNodesWithBatch() {
+        graph.batch().create(validPath, validIdProperty1).and().remove("prop").on(validPathString).execute();
+        graph.batch().move(validPath).and(validPath).into(validPathString).and().create(validPath).execute();
+        graph.batch().createUnder(validLocation).nodeNamed("someName").and().delete(validLocation).execute();
     }
 
     @Test

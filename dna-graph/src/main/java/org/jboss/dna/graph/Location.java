@@ -333,6 +333,15 @@ public class Location implements Iterable<Property> {
         return null;
     }
 
+    public UUID getUuid() {
+        Property property = getIdProperty(DnaLexicon.UUID);
+        if (property != null && !property.isEmpty()) {
+            Object value = property.getFirstValue();
+            if (value instanceof UUID) return (UUID)value;
+        }
+        return null;
+    }
+
     /**
      * Compare this location to the supplied location, and determine whether the two locations represent the same logical
      * location. One location is considered the same as another location when one location is a superset of the other. For

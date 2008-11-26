@@ -308,7 +308,9 @@ public class CreateNodeRequest extends Request implements Iterable<Property> {
      */
     @Override
     public String toString() {
-        return "create node \"" + childName + "\" under " + under() + " with properties " + properties();
+        String parent = under() + "/";
+        if (under.hasPath() && under.getPath().isRoot()) parent = "/";
+        return "create node \"" + parent + childName + "\" with properties " + properties();
     }
 
 }
