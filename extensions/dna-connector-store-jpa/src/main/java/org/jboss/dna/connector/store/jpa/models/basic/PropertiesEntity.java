@@ -21,14 +21,18 @@
  */
 package org.jboss.dna.connector.store.jpa.models.basic;
 
+import java.util.Collection;
+import java.util.HashSet;
 import javax.persistence.Column;
-import javax.persistence.EmbeddedId;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.JoinTable;
 import javax.persistence.Lob;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.Table;
-import org.jboss.dna.connector.store.jpa.models.common.NodeId;
 import org.jboss.dna.connector.store.jpa.util.Serializer;
 
 /**
@@ -41,9 +45,11 @@ import org.jboss.dna.connector.store.jpa.util.Serializer;
  */
 @Entity
 @Table( name = "DNA_BASIC_NODEPROPS" )
-@NamedQueries( {@NamedQuery( name = "PropertiesEntity.findByUuid", query = "select prop from PropertiesEntity as prop where prop.id.uuidString = :uuid" )} )
+@NamedQueries( {
+    @NamedQuery( name = "PropertiesEntity.findByUuid", query = "select prop from PropertiesEntity as prop where prop.id.uuidString = :uuid" ),
+    @NamedQuery( name = "PropertiesEntity.deleteByUuid", query = "delete PropertiesEntity prop where prop.id.uuidString = :uuid" )} )
 public class PropertiesEntity {
-    @EmbeddedId
+    @Id
     private NodeId id;
 
     @Lob
@@ -59,8 +65,9 @@ public class PropertiesEntity {
     @Column( name = "COMPRESSED", nullable = true )
     private Boolean compressed;
 
-    @Column( name = "LRG_VL_KEYS", nullable = true )
-    private String largeValueKeys;
+    @org.hibernate.annotations.CollectionOfElements( fetch = FetchType.LAZY )
+    @JoinTable( name = "DNA_LARGEVALUE_USAGES", joinColumns = @JoinColumn( name = "NODE_UUID" ) )
+    private Collection<LargeValueId> largeValues = new HashSet<LargeValueId>();
 
     public PropertiesEntity() {
     }
@@ -134,17 +141,10 @@ public class PropertiesEntity {
     }
 
     /**
-     * @return largeValueKeys
+     * @return largeValues
      */
-    public String getLargeValueKeys() {
-        return largeValueKeys;
-    }
-
-    /**
-     * @param largeValueKeys Sets largeValueKeys to the specified value.
-     */
-    public void setLargeValueKeys( String largeValueKeys ) {
-        this.largeValueKeys = largeValueKeys;
+    public Collection<LargeValueId> getLargeValues() {
+        return largeValues;
     }
 
     /**

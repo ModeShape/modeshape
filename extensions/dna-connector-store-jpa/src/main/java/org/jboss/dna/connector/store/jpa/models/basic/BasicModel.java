@@ -27,7 +27,6 @@ import org.hibernate.ejb.Ejb3Configuration;
 import org.jboss.dna.connector.store.jpa.JpaConnectorI18n;
 import org.jboss.dna.connector.store.jpa.Model;
 import org.jboss.dna.connector.store.jpa.models.common.NamespaceEntity;
-import org.jboss.dna.connector.store.jpa.models.common.NodeId;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.requests.processor.RequestProcessor;
 
@@ -72,8 +71,11 @@ public class BasicModel extends Model {
         configurator.addAnnotatedClass(NodeId.class);
         configurator.addAnnotatedClass(PropertiesEntity.class);
         configurator.addAnnotatedClass(LargeValueEntity.class);
+        configurator.addAnnotatedClass(LargeValueId.class);
         configurator.addAnnotatedClass(ChildEntity.class);
         configurator.addAnnotatedClass(ChildId.class);
+        configurator.addAnnotatedClass(SubgraphQueryEntity.class);
+        configurator.addAnnotatedClass(SubgraphNodeEntity.class);
 
         // Set the cache information for each persistent class ...
         // configurator.setProperty("hibernate.ejb.classcache." + KidpackNode.class.getName(), "read-write");

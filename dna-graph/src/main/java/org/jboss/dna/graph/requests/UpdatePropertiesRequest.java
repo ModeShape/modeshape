@@ -24,12 +24,15 @@ package org.jboss.dna.graph.requests;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.graph.GraphI18n;
 import org.jboss.dna.graph.Location;
+import org.jboss.dna.graph.properties.Name;
 import org.jboss.dna.graph.properties.Property;
 
 /**
@@ -98,6 +101,22 @@ public class UpdatePropertiesRequest extends Request implements Iterable<Propert
             if (property != null) props.add(property);
         }
         this.properties = Collections.unmodifiableList(props);
+        CheckArg.isNotEmpty(this.properties, "properties");
+    }
+
+    /**
+     * Create a request to update the properties on the node at the supplied location.
+     * 
+     * @param on the location of the node to be read
+     * @param properties the new properties on the node
+     * @throws IllegalArgumentException if the location is null or if there are no properties to update
+     */
+    private UpdatePropertiesRequest( Location on,
+                                     List<Property> properties ) {
+        CheckArg.isNotNull(on, "on");
+        CheckArg.isNotNull(properties, "properties");
+        this.on = on;
+        this.properties = properties;
         CheckArg.isNotEmpty(this.properties, "properties");
     }
 
@@ -190,6 +209,41 @@ public class UpdatePropertiesRequest extends Request implements Iterable<Propert
     @Override
     public String toString() {
         return "update properties on " + on() + " to " + properties();
+    }
+
+    /**
+     * Merge these updates with those in the supplied request, with the supplied changes overwriting any similar changes on this
+     * node.
+     * 
+     * @param other the other updates that are to be merged with these
+     * @return the merged request
+     */
+    public UpdatePropertiesRequest mergeWith( UpdatePropertiesRequest other ) {
+        if (other == null) return this;
+        if (other.properties().size() == 1) {
+            Property newProp = other.properties.get(0);
+            List<Property> newProps = new LinkedList<Property>();
+            for (Property prop : this.properties) {
+                if (!prop.getName().equals(newProp.getName())) {
+                    newProps.add(prop);
+                }
+            }
+            newProps.add(newProp);
+            return new UpdatePropertiesRequest(on, Collections.unmodifiableList(newProps));
+        }
+        Set<Name> otherNames = new HashSet<Name>();
+        for (Property prop : other.properties()) {
+            otherNames.add(prop.getName());
+        }
+        List<Property> newProps = new LinkedList<Property>();
+        for (Property prop : this.properties) {
+            if (!otherNames.contains(prop.getName())) {
+                newProps.add(prop);
+            }
+        }
+        newProps.addAll(other.properties);
+        return new UpdatePropertiesRequest(on, Collections.unmodifiableList(newProps));
+
     }
 
 }

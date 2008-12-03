@@ -19,34 +19,45 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.jboss.dna.connector.store.jpa.util;
+package org.jboss.dna.connector.store.jpa.models.basic;
 
-import java.util.HashMap;
-import java.util.Map;
-import javax.persistence.EntityManager;
-import org.jboss.dna.connector.store.jpa.models.common.NamespaceEntity;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
 
 /**
+ * Represents a temporary working area for a query that retrieves the nodes in a subgraph.
+ * 
  * @author Randall Hauch
  */
-public class Namespaces {
+@Entity( name = "DNA_SUBGRAPH_QUERIES" )
+public class SubgraphQueryEntity {
 
-    private final EntityManager entityManager;
-    private final Map<String, NamespaceEntity> cache = new HashMap<String, NamespaceEntity>();
+    @Id
+    @GeneratedValue( strategy = GenerationType.AUTO )
+    @Column( name = "ID", updatable = false )
+    private Long id;
 
-    public Namespaces( EntityManager manager ) {
-        this.entityManager = manager;
+    @Column( name = "ROOT_UUID", updatable = false, nullable = false, length = 36 )
+    private String rootUuid;
+
+    public SubgraphQueryEntity( String rootUuid ) {
+        this.rootUuid = rootUuid;
     }
 
-    public NamespaceEntity get( String namespaceUri,
-                                boolean createIfRequired ) {
-        NamespaceEntity entity = cache.get(namespaceUri);
-        if (entity == null) {
-            entity = NamespaceEntity.findByUri(entityManager, namespaceUri, createIfRequired);
-            if (entity != null) {
-                cache.put(namespaceUri, entity);
-            }
-        }
-        return entity;
+    /**
+     * @return id
+     */
+    public Long getId() {
+        return id;
+    }
+
+    /**
+     * @return rootUuid
+     */
+    public String getRootUuid() {
+        return rootUuid;
     }
 }

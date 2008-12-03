@@ -39,7 +39,6 @@ import org.jboss.dna.common.util.SecureHash;
 import org.jboss.dna.common.util.StringUtil;
 import org.jboss.dna.connector.store.jpa.JpaConnectorI18n;
 import org.jboss.dna.connector.store.jpa.models.common.NamespaceEntity;
-import org.jboss.dna.connector.store.jpa.models.common.NodeId;
 import org.jboss.dna.graph.BasicExecutionContext;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.properties.PropertyType;
@@ -100,7 +99,7 @@ public class BasicModelTest {
             configurator.setProperty("hibernate.connection.username", "sa");
             configurator.setProperty("hibernate.connection.password", "");
             configurator.setProperty("hibernate.connection.url", "jdbc:hsqldb:.");
-            configurator.setProperty("hibernate.show_sql", "true");
+            configurator.setProperty("hibernate.show_sql", "false");
             configurator.setProperty("hibernate.format_sql", "true");
             configurator.setProperty("hibernate.use_sql_comments", "true");
             configurator.setProperty("hibernate.hbm2ddl.auto", "create");
@@ -133,7 +132,7 @@ public class BasicModelTest {
     @Test
     public void shouldPersistPropertyEntityWithCompressedFlagAndNoChildren() {
         startEntityManager();
-        NodeId nodeId = new NodeId(UUID.randomUUID());
+        NodeId nodeId = new NodeId(UUID.randomUUID().toString());
         PropertiesEntity prop = new PropertiesEntity();
         prop.setCompressed(true);
         prop.setData("Hello, World".getBytes());
@@ -162,7 +161,7 @@ public class BasicModelTest {
     @Test
     public void shouldPersistPropertyEntityWithUncompressedFlagAndNoChildren() {
         startEntityManager();
-        NodeId nodeId = new NodeId(UUID.randomUUID());
+        NodeId nodeId = new NodeId(UUID.randomUUID().toString());
         PropertiesEntity prop = new PropertiesEntity();
         prop.setData("Hello, World".getBytes());
         prop.setId(nodeId);
@@ -192,9 +191,10 @@ public class BasicModelTest {
         startEntityManager();
         byte[] content = "Jack and Jill went up the hill to grab a pail of water.".getBytes();
         String hash = StringUtil.getHexString(SecureHash.getHash(SecureHash.Algorithm.SHA_1, content));
+        LargeValueId id = new LargeValueId(hash);
         LargeValueEntity entity = new LargeValueEntity();
         entity.setCompressed(true);
-        entity.setHash(hash);
+        entity.setId(id);
         entity.setLength(content.length);
         entity.setData(content);
         entity.setType(PropertyType.STRING);
@@ -210,9 +210,9 @@ public class BasicModelTest {
         // Look up the object ...
         manager.getTransaction().begin();
         try {
-            LargeValueEntity entity2 = manager.find(LargeValueEntity.class, hash);
+            LargeValueEntity entity2 = manager.find(LargeValueEntity.class, id);
             assertThat(entity2.isCompressed(), is(entity.isCompressed()));
-            assertThat(entity2.getHash(), is(entity.getHash()));
+            assertThat(entity2.getId(), is(id));
             assertThat(entity2.getData(), is(entity.getData()));
             assertThat(entity2.getLength(), is(entity.getLength()));
             assertThat(entity2.getType(), is(entity.getType()));
@@ -226,9 +226,10 @@ public class BasicModelTest {
         startEntityManager();
         byte[] content = "Jack and Jill went up the hill to grab a pail of water.".getBytes();
         String hash = StringUtil.getHexString(SecureHash.getHash(SecureHash.Algorithm.SHA_1, content));
+        LargeValueId id = new LargeValueId(hash);
         LargeValueEntity entity = new LargeValueEntity();
         // entity.setCompressed(false);
-        entity.setHash(hash);
+        entity.setId(id);
         entity.setLength(content.length);
         entity.setData(content);
         entity.setType(PropertyType.STRING);
@@ -244,9 +245,9 @@ public class BasicModelTest {
         // Look up the object ...
         manager.getTransaction().begin();
         try {
-            LargeValueEntity entity2 = manager.find(LargeValueEntity.class, hash);
+            LargeValueEntity entity2 = manager.find(LargeValueEntity.class, id);
             assertThat(entity2.isCompressed(), is(entity.isCompressed()));
-            assertThat(entity2.getHash(), is(entity.getHash()));
+            assertThat(entity2.getId(), is(entity.getId()));
             assertThat(entity2.getData(), is(entity.getData()));
             assertThat(entity2.getLength(), is(entity.getLength()));
             assertThat(entity2.getType(), is(entity.getType()));
@@ -295,9 +296,9 @@ public class BasicModelTest {
         UUID parentId = UUID.randomUUID();
 
         // Create UUIDs for several children ...
-        ChildId childId1 = new ChildId(parentId, UUID.randomUUID());
-        ChildId childId2 = new ChildId(parentId, UUID.randomUUID());
-        ChildId childId3 = new ChildId(parentId, UUID.randomUUID());
+        ChildId childId1 = new ChildId(parentId.toString(), UUID.randomUUID().toString());
+        ChildId childId2 = new ChildId(parentId.toString(), UUID.randomUUID().toString());
+        ChildId childId3 = new ChildId(parentId.toString(), UUID.randomUUID().toString());
         assertThat(childId1, is(not(childId2)));
         assertThat(childId1, is(not(childId3)));
         assertThat(childId2, is(not(childId3)));

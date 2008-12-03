@@ -121,6 +121,8 @@ public abstract class BasicProperty implements Property {
         sb.append(" = ");
         if (isSingle()) {
             sb.append(getValues().next());
+        } else if (isEmpty()) {
+            sb.append("null");
         } else {
             sb.append(Arrays.asList(getValuesAsArray()));
         }

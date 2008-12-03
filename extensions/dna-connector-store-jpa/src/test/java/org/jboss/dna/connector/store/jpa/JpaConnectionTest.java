@@ -35,6 +35,7 @@ import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import org.hibernate.ejb.Ejb3Configuration;
 import org.jboss.dna.common.stats.Stopwatch;
+import org.jboss.dna.common.util.IoUtil;
 import org.jboss.dna.connector.store.jpa.models.basic.BasicModel;
 import org.jboss.dna.graph.BasicExecutionContext;
 import org.jboss.dna.graph.DnaLexicon;
@@ -69,6 +70,7 @@ public class JpaConnectionTest {
     private long largeValueSize;
     private boolean compressData;
     private Graph graph;
+    private String[] validLargeValues;
 
     @Before
     public void beforeEach() throws Exception {
@@ -77,6 +79,11 @@ public class JpaConnectionTest {
         rootNodeUuid = UUID.randomUUID();
         largeValueSize = 2 ^ 10; // 1 kilobyte
         compressData = false;
+
+        // Load in the large value ...
+        validLargeValues = new String[] {IoUtil.read(getClass().getClassLoader().getResourceAsStream("LoremIpsum1.txt")),
+            IoUtil.read(getClass().getClassLoader().getResourceAsStream("LoremIpsum2.txt")),
+            IoUtil.read(getClass().getClassLoader().getResourceAsStream("LoremIpsum3.txt"))};
 
         // Connect to the database ...
         Ejb3Configuration configurator = new Ejb3Configuration();
@@ -118,6 +125,13 @@ public class JpaConnectionTest {
                     }
                 }
             }
+        }
+    }
+
+    @Test
+    public void shouldFindLargeValueContentFromFile() {
+        for (int i = 0; i != validLargeValues.length; ++i) {
+            assertThat(validLargeValues[i].startsWith((i + 1) + ". Lorem ipsum dolor sit amet"), is(true));
         }
     }
 
@@ -190,8 +204,10 @@ public class JpaConnectionTest {
 
     @Test
     public void shouldAddChildrenOnRootNode() {
-        graph.batch().set("propA").to("valueA").on("/").and().create("/a").with("propB", "valueB").and("propC", "valueC").and()
-            .create("/b").with("propD", "valueD").and("propE", "valueE").execute();
+        graph.batch().set("propA").to("valueA").on("/").and()
+                     .create("/a").with("propB", "valueB").and("propC", "valueC").and()
+                     .create("/b").with("propD", "valueD").and("propE", "valueE")
+                     .execute();
         // Now look up the root node ...
         Node root = graph.getNodeAt("/");
         assertThat(root, is(notNullValue()));
@@ -243,6 +259,91 @@ public class JpaConnectionTest {
             assertThat(nodeA, hasProperty("property" + i, "value" + i));
         }
         assertThat(nodeA, hasNoChildren());
+    }
+
+    @Test
+    public void shouldUpdateSmallPropertiesOnANode() {
+        // Create the property and add some properties (including 2 large values) ...
+        Graph.Create<Graph.Batch> create = graph.batch().create("/a");
+        for (int i = 0; i != 10; ++i) {
+            create = create.with("property" + i, "value" + i);
+        }
+        create.execute();
+
+        // Now look up all the properties ...
+        Node nodeA = graph.getNodeAt("/a");
+        assertThat(nodeA, is(notNullValue()));
+        for (int i = 0; i != 10; ++i) {
+            assertThat(nodeA, hasProperty("property" + i, "value" + i));
+        }
+        assertThat(nodeA, hasNoChildren());
+
+        // Now, remove some of the properties and add some others ...
+        Graph.Batch batch = graph.batch();
+        batch.remove("property0", "property1").on("/a");
+        batch.set("property6").to("new valid 6").on("/a");
+        batch.execute();
+
+        // Re-read the properties ...
+        nodeA = graph.getNodeAt("/a");
+        assertThat(nodeA, is(notNullValue()));
+        for (int i = 0; i != 10; ++i) {
+            if (i == 0 || i == 1) {
+                continue;
+            } else if (i == 6) {
+                assertThat(nodeA, hasProperty("property" + i, "new valid 6"));
+            } else {
+                assertThat(nodeA, hasProperty("property" + i, "value" + i));
+            }
+        }
+        assertThat(nodeA, hasNoChildren());
+
+    }
+
+    @Test
+    public void shouldUpdateLargePropertiesOnANode() {
+        // Create the property and add some properties (including 2 large values) ...
+        Graph.Create<Graph.Batch> create = graph.batch().create("/a");
+        for (int i = 0; i != 100; ++i) {
+            create = create.with("property" + i, "value" + i);
+        }
+        create = create.with("largeProperty1", validLargeValues[0]);
+        create = create.with("largeProperty2", validLargeValues[1]);
+        create.execute();
+
+        // Now look up all the properties ...
+        Node nodeA = graph.getNodeAt("/a");
+        assertThat(nodeA, is(notNullValue()));
+        for (int i = 0; i != 100; ++i) {
+            assertThat(nodeA, hasProperty("property" + i, "value" + i));
+        }
+        assertThat(nodeA, hasProperty("largeProperty1", validLargeValues[0]));
+        assertThat(nodeA, hasProperty("largeProperty2", validLargeValues[1]));
+        assertThat(nodeA, hasNoChildren());
+
+        // Now, remove some of the properties and add some others ...
+        Graph.Batch batch = graph.batch();
+        batch.remove("largeProperty1", "property0", "property1").on("/a");
+        batch.set("property50").to("new valid 50").on("/a");
+        batch.set("largeProperty3").to(validLargeValues[2]).on("/a");
+        batch.execute();
+
+        // Re-read the properties ...
+        nodeA = graph.getNodeAt("/a");
+        assertThat(nodeA, is(notNullValue()));
+        for (int i = 0; i != 100; ++i) {
+            if (i == 0 || i == 1) {
+                continue;
+            } else if (i == 50) {
+                assertThat(nodeA, hasProperty("property" + i, "new valid 50"));
+            } else {
+                assertThat(nodeA, hasProperty("property" + i, "value" + i));
+            }
+        }
+        assertThat(nodeA, hasProperty("largeProperty2", validLargeValues[1]));
+        assertThat(nodeA, hasProperty("largeProperty3", validLargeValues[2]));
+        assertThat(nodeA, hasNoChildren());
+
     }
 
     @Test

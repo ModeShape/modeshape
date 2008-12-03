@@ -36,6 +36,7 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
@@ -50,7 +51,7 @@ import org.jboss.dna.common.util.Logger;
 import org.jboss.dna.common.util.StringUtil;
 import org.jboss.dna.connector.store.jpa.JpaConnectorI18n;
 import org.jboss.dna.connector.store.jpa.models.common.NamespaceEntity;
-import org.jboss.dna.connector.store.jpa.models.common.NodeId;
+import org.jboss.dna.connector.store.jpa.util.Namespaces;
 import org.jboss.dna.connector.store.jpa.util.Serializer;
 import org.jboss.dna.connector.store.jpa.util.Serializer.LargeValues;
 import org.jboss.dna.graph.DnaLexicon;
@@ -73,6 +74,7 @@ import org.jboss.dna.graph.requests.InvalidRequestException;
 import org.jboss.dna.graph.requests.MoveBranchRequest;
 import org.jboss.dna.graph.requests.ReadAllChildrenRequest;
 import org.jboss.dna.graph.requests.ReadAllPropertiesRequest;
+import org.jboss.dna.graph.requests.ReadBranchRequest;
 import org.jboss.dna.graph.requests.ReadNodeRequest;
 import org.jboss.dna.graph.requests.ReadPropertyRequest;
 import org.jboss.dna.graph.requests.UpdatePropertiesRequest;
@@ -82,18 +84,18 @@ import org.jboss.dna.graph.requests.processor.RequestProcessor;
  * @author Randall Hauch
  */
 @NotThreadSafe
-public class BasicRequestProcessor extends RequestProcessor implements LargeValues {
+public class BasicRequestProcessor extends RequestProcessor {
 
-    private final EntityManager entities;
-    private final ValueFactory<String> stringFactory;
-    private final PathFactory pathFactory;
-    private final NameFactory nameFactory;
-    private final Namespaces namespaces;
-    private final UUID rootNodeUuid;
-    private final String rootNodeUuidString;
-    private final Serializer serializer;
-    private final long largeValueMinimumSizeInBytes;
-    private final boolean compressData;
+    protected final EntityManager entities;
+    protected final ValueFactory<String> stringFactory;
+    protected final PathFactory pathFactory;
+    protected final NameFactory nameFactory;
+    protected final Namespaces namespaces;
+    protected final UUID rootNodeUuid;
+    protected final String rootNodeUuidString;
+    protected final Serializer serializer;
+    protected final long largeValueMinimumSizeInBytes;
+    protected final boolean compressData;
     protected final Logger logger;
 
     /**
@@ -120,9 +122,9 @@ public class BasicRequestProcessor extends RequestProcessor implements LargeValu
         this.namespaces = new Namespaces(entityManager);
         this.rootNodeUuid = rootNodeUuid;
         this.rootNodeUuidString = this.rootNodeUuid.toString();
-        this.serializer = new Serializer(context, true);
         this.largeValueMinimumSizeInBytes = largeValueMinimumSizeInBytes;
         this.compressData = compressData;
+        this.serializer = new Serializer(context, true);
         this.logger = getExecutionContext().getLogger(getClass());
 
         // Start the transaction ...
@@ -148,19 +150,27 @@ public class BasicRequestProcessor extends RequestProcessor implements LargeValu
 
             // We need to look for an existing UUID property in the request,
             // so since we have to iterate through the properties, go ahead an serialize them right away ...
-            childUuidString = createProperties(null, request.properties());
+            String uuidString = null;
+            for (Property property : request.properties()) {
+                if (property.getName().equals(DnaLexicon.UUID)) {
+                    uuidString = stringFactory.create(property.getFirstValue());
+                    break;
+                }
+            }
+            if (uuidString == null) uuidString = UUID.randomUUID().toString();
+            childUuidString = createProperties(uuidString, request.properties());
 
             // Find or create the namespace for the child ...
             Name childName = request.named();
             String childNsUri = childName.getNamespaceUri();
-            Integer nsId = namespaces.getId(childNsUri, true);
-            assert nsId != null;
+            NamespaceEntity ns = namespaces.get(childNsUri, true);
+            assert ns != null;
 
             // Find the largest SNS index in the existing ChildEntity objects with the same name ...
             String childLocalName = childName.getLocalName();
             Query query = entities.createNamedQuery("ChildEntity.findMaximumSnsIndex");
             query.setParameter("parentUuid", parentUuidString);
-            query.setParameter("ns", nsId);
+            query.setParameter("ns", ns.getId());
             query.setParameter("childName", childLocalName);
             int nextSnsIndex = 1;
             try {
@@ -180,8 +190,6 @@ public class BasicRequestProcessor extends RequestProcessor implements LargeValu
             }
 
             // Create the new ChildEntity ...
-            NamespaceEntity ns = entities.find(NamespaceEntity.class, nsId);
-            assert ns != null;
             ChildId id = new ChildId(parentUuidString, childUuidString);
             ChildEntity entity = new ChildEntity(id, nextIndexInParent, ns, childLocalName, nextSnsIndex);
             entities.persist(entity);
@@ -230,11 +238,12 @@ public class BasicRequestProcessor extends RequestProcessor implements LargeValu
                 boolean compressed = entity.isCompressed();
                 Collection<Property> properties = new LinkedList<Property>();
                 byte[] data = entity.getData();
+                LargeValueSerializer largeValues = new LargeValueSerializer(entity);
                 ByteArrayInputStream bais = new ByteArrayInputStream(data);
                 InputStream is = compressed ? new ZipInputStream(bais) : bais;
                 ObjectInputStream ois = new ObjectInputStream(is);
                 try {
-                    serializer.deserializeAllProperties(ois, properties, this);
+                    serializer.deserializeAllProperties(ois, properties, largeValues);
                     for (Property property : properties) {
                         request.addProperty(property);
                     }
@@ -336,11 +345,12 @@ public class BasicRequestProcessor extends RequestProcessor implements LargeValu
             int propertyCount = entity.getPropertyCount();
             Collection<Property> properties = new ArrayList<Property>(propertyCount);
             byte[] data = entity.getData();
+            LargeValueSerializer largeValues = new LargeValueSerializer(entity);
             ByteArrayInputStream bais = new ByteArrayInputStream(data);
             InputStream is = compressed ? new ZipInputStream(bais) : bais;
             ObjectInputStream ois = new ObjectInputStream(is);
             try {
-                serializer.deserializeAllProperties(ois, properties, this);
+                serializer.deserializeAllProperties(ois, properties, largeValues);
                 for (Property property : properties) {
                     request.addProperty(property);
                 }
@@ -395,12 +405,13 @@ public class BasicRequestProcessor extends RequestProcessor implements LargeValu
             int propertyCount = entity.getPropertyCount();
             Collection<Property> properties = new ArrayList<Property>(propertyCount);
             byte[] data = entity.getData();
+            LargeValueSerializer largeValues = new LargeValueSerializer(entity);
             ByteArrayInputStream bais = new ByteArrayInputStream(data);
             InputStream is = compressed ? new ZipInputStream(bais) : bais;
             ObjectInputStream ois = new ObjectInputStream(is);
             try {
                 Serializer.LargeValues skippedLargeValues = Serializer.NO_LARGE_VALUES;
-                serializer.deserializeSomeProperties(ois, properties, this, skippedLargeValues, propertyName);
+                serializer.deserializeSomeProperties(ois, properties, largeValues, skippedLargeValues, propertyName);
                 for (Property property : properties) {
                     request.setProperty(property); // should be only one property
                 }
@@ -436,13 +447,7 @@ public class BasicRequestProcessor extends RequestProcessor implements LargeValu
             PropertiesEntity entity = null;
             try {
                 entity = (PropertiesEntity)query.getSingleResult();
-
-                // Determine which large values are referenced ...
-                Collection<String> hexKeys = null;
-                String largeValueHexKeys = entity.getLargeValueKeys();
-                if (largeValueHexKeys != null) {
-                    hexKeys = createHexValues(largeValueHexKeys);
-                }
+                final boolean hadLargeValues = !entity.getLargeValues().isEmpty();
 
                 // Prepare the streams so we can deserialize all existing properties and reserialize the old and updated
                 // properties ...
@@ -454,10 +459,11 @@ public class BasicRequestProcessor extends RequestProcessor implements LargeValu
                 OutputStream os = compressed ? new ZipOutputStream(baos) : baos;
                 ObjectOutputStream oos = new ObjectOutputStream(os);
                 int numProperties = 0;
-                SkippedLargeValues skipped = new SkippedLargeValues();
-                RecordingLargeValues largeValues = new RecordingLargeValues();
+                Set<String> largeValueHashesWritten = hadLargeValues ? new HashSet<String>() : null;
+                LargeValueSerializer largeValues = new LargeValueSerializer(entity, largeValueHashesWritten);
+                SkippedLargeValues removedValues = new SkippedLargeValues(largeValues);
                 try {
-                    numProperties = serializer.reserializeProperties(ois, oos, request.properties(), largeValues, skipped);
+                    numProperties = serializer.reserializeProperties(ois, oos, request.properties(), largeValues, removedValues);
                 } finally {
                     try {
                         ois.close();
@@ -465,21 +471,18 @@ public class BasicRequestProcessor extends RequestProcessor implements LargeValu
                         oos.close();
                     }
                 }
-                largeValueHexKeys = createHexValuesString(largeValues.writtenKeys);
                 entity.setPropertyCount(numProperties);
                 entity.setData(baos.toByteArray());
                 entity.setCompressed(compressData);
-                entity.setLargeValueKeys(largeValueHexKeys);
 
-                // Update the large values that used to be reference but no longer are ...
-                if (hexKeys != null) {
-                    for (String oldHexKey : skipped.skippedKeys) {
-                        LargeValueEntity largeValue = entities.find(LargeValueEntity.class, oldHexKey);
-                        if (largeValue != null) {
-                            if (largeValue.decrementUsageCount() == 0) {
-                                entities.remove(largeValue);
-                            }
-                        }
+                // The new large values were recorded and associated with the properties entity during reserialization.
+                // However, any values no longer used now need to be removed ...
+                if (hadLargeValues) {
+                    // Remove any large value from the 'skipped' list that was also written ...
+                    removedValues.skippedKeys.removeAll(largeValueHashesWritten);
+                    for (String oldHexKey : removedValues.skippedKeys) {
+                        LargeValueId id = new LargeValueId(oldHexKey);
+                        entity.getLargeValues().remove(id);
                     }
                 }
             } catch (NoResultException e) {
@@ -492,6 +495,90 @@ public class BasicRequestProcessor extends RequestProcessor implements LargeValu
             return;
         }
         if (actualLocation != null) request.setActualLocationOfNode(actualLocation);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.requests.processor.RequestProcessor#process(org.jboss.dna.graph.requests.ReadBranchRequest)
+     */
+    @Override
+    public void process( ReadBranchRequest request ) {
+        logger.trace(request.toString());
+        Location actualLocation = null;
+        try {
+            Location location = request.at();
+            ActualLocation actual = getActualLocation(location);
+            actualLocation = actual.location;
+            Path path = actualLocation.getPath();
+
+            // Record the location of each node by its UUID; we'll use this when processing the properties ...
+            Map<String, Location> locationsByUuid = new HashMap<String, Location>();
+            locationsByUuid.put(actual.uuid, location);
+
+            // Compute the subgraph, including the root ...
+            SubgraphQuery query = SubgraphQuery.create(getExecutionContext(), entities, actualLocation.getUuid(), path, 0);
+
+            // Record all of the children ...
+            Path parent = path;
+            Location parentLocation = actualLocation;
+            List<Location> children = new LinkedList<Location>();
+            for (ChildEntity child : query.getNodes(false)) {
+                String namespaceUri = child.getChildNamespace().getUri();
+                String localName = child.getChildName();
+                Name childName = nameFactory.create(namespaceUri, localName);
+                int sns = child.getSameNameSiblingIndex();
+                Path childPath = pathFactory.create(path, childName, sns);
+                String childUuidString = child.getId().getChildUuidString();
+                Location childLocation = new Location(childPath, UUID.fromString(childUuidString));
+                locationsByUuid.put(childUuidString, childLocation);
+                // Determine if this child goes into the current list of children ...
+                Path childParent = childPath.getParent();
+                if (childParent.equals(parent)) {
+                    children.add(childLocation);
+                } else {
+                    // Record the children found so far ...
+                    request.setChildren(parentLocation, children);
+                    parentLocation = locationsByUuid.get(child.getId().getParentUuidString());
+                    parent = parentLocation.getPath();
+                    children = new LinkedList<Location>();
+                    children.add(childLocation);
+                }
+            }
+            if (!children.isEmpty()) {
+                request.setChildren(parentLocation, children);
+            }
+
+            // Now record all of the properties ...
+            for (PropertiesEntity props : query.getProperties(true)) {
+                boolean compressed = props.isCompressed();
+                int propertyCount = props.getPropertyCount();
+                Collection<Property> properties = new ArrayList<Property>(propertyCount);
+                Location nodeLocation = locationsByUuid.get(props.getId().getUuidString());
+                assert nodeLocation != null;
+                // Record the UUID as a property, since it's not stored in the serialized properties...
+                properties.add(actualLocation.getIdProperty(DnaLexicon.UUID));
+                // Deserialize all the properties (except the UUID)...
+                byte[] data = props.getData();
+                LargeValueSerializer largeValues = new LargeValueSerializer(props);
+                ByteArrayInputStream bais = new ByteArrayInputStream(data);
+                InputStream is = compressed ? new ZipInputStream(bais) : bais;
+                ObjectInputStream ois = new ObjectInputStream(is);
+                try {
+                    serializer.deserializeAllProperties(ois, properties, largeValues);
+                    request.setProperties(nodeLocation, properties);
+                } finally {
+                    ois.close();
+                }
+            }
+
+            // TODO: Now update the 'index in parent' and SNS indexes of the siblings of the deleted node.
+
+        } catch (Throwable e) { // Includes PathNotFoundException
+            request.setError(e);
+            return;
+        }
+        request.setActualLocationOfNode(actualLocation);
     }
 
     /**
@@ -512,6 +599,27 @@ public class BasicRequestProcessor extends RequestProcessor implements LargeValu
     @Override
     public void process( DeleteBranchRequest request ) {
         logger.trace(request.toString());
+        Location actualLocation = null;
+        try {
+            Location location = request.at();
+            ActualLocation actual = getActualLocation(location);
+            actualLocation = actual.location;
+            Path path = actualLocation.getPath();
+
+            // Compute the subgraph, including the root ...
+            SubgraphQuery query = SubgraphQuery.create(getExecutionContext(), entities, actualLocation.getUuid(), path, 0);
+
+            // Get the locations of all deleted nodes, which will be required by events ...
+            // List<Location> deletedLocations = query.getNodeLocations(true);
+
+            // Now delete the subgraph ...
+            query.deleteSubgraph(true);
+
+        } catch (Throwable e) { // Includes PathNotFoundException
+            request.setError(e);
+            return;
+        }
+        request.setActualLocationOfNode(actualLocation);
     }
 
     /**
@@ -603,32 +711,27 @@ public class BasicRequestProcessor extends RequestProcessor implements LargeValu
 
     protected String createProperties( String uuidString,
                                        Collection<Property> properties ) throws IOException {
-        RecordingLargeValues largeValues = new RecordingLargeValues();
+        assert uuidString != null;
+
+        // Create the PropertiesEntity ...
+        NodeId nodeId = new NodeId(uuidString);
+        PropertiesEntity props = new PropertiesEntity(nodeId);
+
+        LargeValueSerializer largeValues = new LargeValueSerializer(props);
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         OutputStream os = compressData ? new ZipOutputStream(baos) : baos;
         ObjectOutputStream oos = new ObjectOutputStream(os);
         int numProperties = properties.size();
         try {
-            oos.writeInt(numProperties);
-            for (Property property : properties) {
-                if (uuidString == null && property.getName().equals(DnaLexicon.UUID)) {
-                    uuidString = stringFactory.create(property.getFirstValue());
-                }
-                if (serializer.serializeProperty(oos, property, largeValues)) ++numProperties;
-            }
+            serializer.serializeProperties(oos, numProperties, properties, largeValues);
         } finally {
             oos.close();
         }
-        String largeValueHexHashesString = createHexValuesString(largeValues.writtenKeys);
-        if (uuidString == null) uuidString = stringFactory.create(UUID.randomUUID());
 
-        // Create the PropertiesEntity ...
-        NodeId nodeId = new NodeId(uuidString);
-        PropertiesEntity props = new PropertiesEntity(nodeId);
         props.setData(baos.toByteArray());
         props.setCompressed(compressData);
         props.setPropertyCount(numProperties);
-        props.setLargeValueKeys(largeValueHexHashesString);
+
         entities.persist(props);
         return uuidString;
     }
@@ -684,26 +787,6 @@ public class BasicRequestProcessor extends RequestProcessor implements LargeValu
             // Then walk up the ancestors and build the path.
             String nodeUuidString = uuidString;
             LinkedList<Path.Segment> segments = new LinkedList<Path.Segment>();
-            // while (uuidString != null && !uuidString.equals(this.rootNodeUuidString)) {
-            // // Find the parent of the child, along with the child's name and SNS index ...
-            // Query query = entities.createNamedQuery("ChildEntity.findValuesByChildUuid");
-            // query.setParameter("childUuidString", uuidString);
-            // try {
-            // Object[] record = (Object[])query.getSingleResult();
-            // String parentUuidString = (String)record[0];
-            // String uri = (String)record[1];
-            // String localName = (String)record[2];
-            // int sns = (Integer)record[3];
-            // // Now create the path segment and set the next child UUID as the parent of this child ...
-            // Name name = nameFactory.create(uri, localName);
-            // segments.addFirst(pathFactory.createSegment(name, sns));
-            // uuidString = parentUuidString;
-            // } catch (NoResultException e) {
-            // uuidString = null;
-            // }
-            // }
-            // Path fullPath = pathFactory.createAbsolutePath(segments);
-            // return new ActualLocation(new Location(fullPath, uuidProperty), nodeUuidString, null);
             ChildEntity entity = null;
             while (uuidString != null && !uuidString.equals(this.rootNodeUuidString)) {
                 Query query = entities.createNamedQuery("ChildEntity.findByChildUuid");
@@ -800,15 +883,15 @@ public class BasicRequestProcessor extends RequestProcessor implements LargeValu
         Name name = pathSegment.getName();
         String localName = name.getLocalName();
         String nsUri = name.getNamespaceUri();
-        Integer nsId = namespaces.getId(nsUri, false);
-        int snsIndex = pathSegment.hasIndex() ? pathSegment.getIndex() : 1;
-        if (nsId == null) {
+        NamespaceEntity ns = namespaces.get(nsUri, false);
+        if (ns == null) {
             // The namespace can't be found, then certainly the node won't be found ...
             return null;
         }
+        int snsIndex = pathSegment.hasIndex() ? pathSegment.getIndex() : 1;
         Query query = entities.createNamedQuery("ChildEntity.findByPathSegment");
         query.setParameter("parentUuidString", parentUuid);
-        query.setParameter("ns", nsId);
+        query.setParameter("ns", ns.getId());
         query.setParameter("childName", localName);
         query.setParameter("sns", snsIndex);
         try {
@@ -837,97 +920,19 @@ public class BasicRequestProcessor extends RequestProcessor implements LargeValu
         return Arrays.asList(hexValuesString.split(","));
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.jboss.dna.connector.store.jpa.util.Serializer.LargeValues#getMinimumSize()
-     */
-    public long getMinimumSize() {
-        return largeValueMinimumSizeInBytes;
-    }
+    protected class LargeValueSerializer implements LargeValues {
+        private final PropertiesEntity properties;
+        private Set<String> written;
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.jboss.dna.connector.store.jpa.util.Serializer.LargeValues#read(org.jboss.dna.graph.properties.ValueFactories,
-     *      byte[], long)
-     */
-    public Object read( ValueFactories valueFactories,
-                        byte[] hash,
-                        long length ) throws IOException {
-        String hashStr = StringUtil.getHexString(hash);
-        LargeValueEntity entity = entities.find(LargeValueEntity.class, hashStr);
-        if (entity == null) {
-            throw new IOException(JpaConnectorI18n.unableToReadLargeValue.text(getSourceName(), hashStr));
+        public LargeValueSerializer( PropertiesEntity entity ) {
+            this.properties = entity;
+            this.written = null;
         }
-        byte[] data = entity.getData();
-        return valueFactories.getValueFactory(entity.getType()).create(data);
-    }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.jboss.dna.connector.store.jpa.util.Serializer.LargeValues#write(byte[], long,
-     *      org.jboss.dna.graph.properties.PropertyType, java.lang.Object)
-     */
-    public void write( byte[] hash,
-                       long length,
-                       PropertyType type,
-                       Object value ) throws IOException {
-        if (value == null) return;
-        String hashStr = StringUtil.getHexString(hash);
-        LargeValueEntity entity = entities.find(LargeValueEntity.class, hashStr);
-        if (entity == null) {
-            entity = new LargeValueEntity();
-            entity.setCompressed(true);
-            entity.setHash(hashStr);
-            entity.setLength(length);
-            entity.setType(type);
-            ValueFactories factories = getExecutionContext().getValueFactories();
-            byte[] bytes = null;
-            switch (type) {
-                case BINARY:
-                    Binary binary = factories.getBinaryFactory().create(value);
-                    InputStream stream = null;
-                    try {
-                        binary.acquire();
-                        stream = binary.getStream();
-                        if (compressData) stream = new ZipInputStream(stream);
-                        bytes = IoUtil.readBytes(stream);
-                    } finally {
-                        try {
-                            if (stream != null) stream.close();
-                        } finally {
-                            binary.release();
-                        }
-                    }
-                    break;
-                default:
-                    String str = factories.getStringFactory().create(value);
-                    bytes = str.getBytes();
-                    if (compressData) {
-                        InputStream strStream = new ZipInputStream(new ByteArrayInputStream(bytes));
-                        try {
-                            bytes = IoUtil.readBytes(strStream);
-                        } finally {
-                            strStream.close();
-                        }
-                    }
-                    break;
-            }
-            entity.setData(bytes);
-            entities.persist(entity);
-        } else {
-            // There is already an existing value, so we'll reuse it and increment the usage count ...
-            entity.incrementUsageCount();
-        }
-    }
-
-    protected class RecordingLargeValues implements LargeValues {
-        protected Collection<String> readKeys = new HashSet<String>();
-        protected Collection<String> writtenKeys = new HashSet<String>();
-
-        RecordingLargeValues() {
+        public LargeValueSerializer( PropertiesEntity entity,
+                                     Set<String> written ) {
+            this.properties = entity;
+            this.written = written;
         }
 
         /**
@@ -936,7 +941,119 @@ public class BasicRequestProcessor extends RequestProcessor implements LargeValu
          * @see org.jboss.dna.connector.store.jpa.util.Serializer.LargeValues#getMinimumSize()
          */
         public long getMinimumSize() {
-            return BasicRequestProcessor.this.getMinimumSize();
+            return largeValueMinimumSizeInBytes;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.connector.store.jpa.util.Serializer.LargeValues#read(org.jboss.dna.graph.properties.ValueFactories,
+         *      byte[], long)
+         */
+        public Object read( ValueFactories valueFactories,
+                            byte[] hash,
+                            long length ) throws IOException {
+            String hashStr = StringUtil.getHexString(hash);
+            // Find the large value ...
+            LargeValueId largeValueId = new LargeValueId(hashStr);
+            LargeValueEntity entity = entities.find(LargeValueEntity.class, largeValueId);
+            if (entity != null) {
+                // Find the large value from the existing property entity ...
+                byte[] data = entity.getData();
+                return valueFactories.getValueFactory(entity.getType()).create(data);
+            }
+            throw new IOException(JpaConnectorI18n.unableToReadLargeValue.text(getSourceName(), hashStr));
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.connector.store.jpa.util.Serializer.LargeValues#write(byte[], long,
+         *      org.jboss.dna.graph.properties.PropertyType, java.lang.Object)
+         */
+        public void write( byte[] hash,
+                           long length,
+                           PropertyType type,
+                           Object value ) throws IOException {
+            if (value == null) return;
+            String hashStr = StringUtil.getHexString(hash);
+            if (written != null) written.add(hashStr);
+
+            // Look for an existing value in the collection ...
+            final LargeValueId id = new LargeValueId(hashStr);
+            for (LargeValueId existing : properties.getLargeValues()) {
+                if (existing.equals(id)) {
+                    // Already associated with this properties entity
+                    return;
+                }
+            }
+            LargeValueEntity entity = entities.find(LargeValueEntity.class, id);
+            if (entity == null) {
+                // We have to create the large value entity ...
+                entity = new LargeValueEntity();
+                entity.setCompressed(true);
+                entity.setId(id);
+                entity.setLength(length);
+                entity.setType(type);
+                ValueFactories factories = getExecutionContext().getValueFactories();
+                byte[] bytes = null;
+                switch (type) {
+                    case BINARY:
+                        Binary binary = factories.getBinaryFactory().create(value);
+                        InputStream stream = null;
+                        try {
+                            binary.acquire();
+                            stream = binary.getStream();
+                            if (compressData) stream = new ZipInputStream(stream);
+                            bytes = IoUtil.readBytes(stream);
+                        } finally {
+                            try {
+                                if (stream != null) stream.close();
+                            } finally {
+                                binary.release();
+                            }
+                        }
+                        break;
+                    default:
+                        String str = factories.getStringFactory().create(value);
+                        bytes = str.getBytes();
+                        if (compressData) {
+                            InputStream strStream = new ZipInputStream(new ByteArrayInputStream(bytes));
+                            try {
+                                bytes = IoUtil.readBytes(strStream);
+                            } finally {
+                                strStream.close();
+                            }
+                        }
+                        break;
+                }
+                entity.setData(bytes);
+                entities.persist(entity);
+            }
+            // Now associate the large value with the properties entity ...
+            assert id.getHash() != null;
+            properties.getLargeValues().add(id);
+        }
+
+    }
+
+    protected class RecordingLargeValues implements LargeValues {
+        protected final Collection<String> readKeys = new HashSet<String>();
+        protected final Collection<String> writtenKeys = new HashSet<String>();
+        protected final LargeValues delegate;
+
+        RecordingLargeValues( LargeValues delegate ) {
+            assert delegate != null;
+            this.delegate = delegate;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.connector.store.jpa.util.Serializer.LargeValues#getMinimumSize()
+         */
+        public long getMinimumSize() {
+            return delegate.getMinimumSize();
         }
 
         /**
@@ -950,7 +1067,7 @@ public class BasicRequestProcessor extends RequestProcessor implements LargeValu
                             long length ) throws IOException {
             String key = StringUtil.getHexString(hash);
             readKeys.add(key);
-            return BasicRequestProcessor.this.read(valueFactories, hash, length);
+            return delegate.read(valueFactories, hash, length);
         }
 
         public void write( byte[] hash,
@@ -959,14 +1076,17 @@ public class BasicRequestProcessor extends RequestProcessor implements LargeValu
                            Object value ) throws IOException {
             String key = StringUtil.getHexString(hash);
             writtenKeys.add(key);
-            BasicRequestProcessor.this.write(hash, length, type, value);
+            delegate.write(hash, length, type, value);
         }
     }
 
     protected class SkippedLargeValues implements LargeValues {
         protected Collection<String> skippedKeys = new HashSet<String>();
+        protected final LargeValues delegate;
 
-        SkippedLargeValues() {
+        SkippedLargeValues( LargeValues delegate ) {
+            assert delegate != null;
+            this.delegate = delegate;
         }
 
         /**
@@ -975,7 +1095,7 @@ public class BasicRequestProcessor extends RequestProcessor implements LargeValu
          * @see org.jboss.dna.connector.store.jpa.util.Serializer.LargeValues#getMinimumSize()
          */
         public long getMinimumSize() {
-            return BasicRequestProcessor.this.getMinimumSize();
+            return delegate.getMinimumSize();
         }
 
         /**
@@ -1027,29 +1147,6 @@ public class BasicRequestProcessor extends RequestProcessor implements LargeValu
         @Override
         public String toString() {
             return this.location.toString() + " (uuid=" + uuid + ") " + childEntity;
-        }
-    }
-
-    protected static class Namespaces {
-
-        private final EntityManager entityManager;
-        private final Map<String, Integer> cache = new HashMap<String, Integer>();
-
-        public Namespaces( EntityManager manager ) {
-            this.entityManager = manager;
-        }
-
-        public Integer getId( String namespaceUri,
-                              boolean createIfRequired ) {
-            Integer id = cache.get(namespaceUri);
-            if (id == null) {
-                NamespaceEntity entity = NamespaceEntity.findByUri(entityManager, namespaceUri, createIfRequired);
-                if (entity == null) return null;
-                id = entity.getId();
-                cache.put(namespaceUri, id);
-            }
-            assert id != null;
-            return id;
         }
     }
 }

@@ -2929,7 +2929,7 @@ public class Graph {
      */
     @NotThreadSafe
     /*package*/class CompositingRequestQueue implements RequestQueue {
-        private final List<Request> requests = new LinkedList<Request>();
+        private final LinkedList<Request> requests = new LinkedList<Request>();
 
         public Graph getGraph() {
             return Graph.this;
@@ -2940,6 +2940,19 @@ public class Graph {
         }
 
         public void submit( Request request ) {
+            if (request instanceof UpdatePropertiesRequest) {
+                // If the previous request was also an update, then maybe they can be merged ...
+                Request previous = requests.getLast();
+                if (previous instanceof UpdatePropertiesRequest) {
+                    // They can be merged if the have the same location ...
+                    UpdatePropertiesRequest next = (UpdatePropertiesRequest)request;
+                    UpdatePropertiesRequest prev = (UpdatePropertiesRequest)previous;
+                    if (next.on().equals(prev.on())) {
+                        requests.removeLast();
+                        requests.add(prev.mergeWith(next));
+                    }
+                }
+            }
             this.requests.add(request);
         }
 
@@ -3334,6 +3347,8 @@ public class Graph {
         }
     }
 
+    protected static final List<Location> NO_CHILDREN = Collections.emptyList();
+
     @Immutable
     class SubgraphNode implements Node {
         private final Location location;
@@ -3346,7 +3361,9 @@ public class Graph {
         }
 
         public List<Location> getChildren() {
-            return request.getChildren(location);
+            List<Location> children = request.getChildren(location);
+            if (children == null) children = NO_CHILDREN;
+            return children;
         }
 
         public Graph getGraph() {

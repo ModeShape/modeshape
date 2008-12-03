@@ -19,70 +19,45 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.jboss.dna.connector.store.jpa.models.common;
+package org.jboss.dna.connector.store.jpa.models.basic;
 
 import java.io.Serializable;
-import java.util.UUID;
 import javax.persistence.Column;
 import javax.persistence.Embeddable;
+import net.jcip.annotations.Immutable;
 
 /**
- * An identifier for a node, comprised of a single {@link UUID}, and {@link Embeddable embeddable} in a persistent entity. The
- * identifier takes the form of two <code>long</code> columns: one for the UUID's {@link UUID#getMostSignificantBits() most
- * significant bits} and one for its {@link UUID#getLeastSignificantBits() least significant bits}.
+ * A unique identifer for a large value, which is the 160-bit SHA-1 hash of this value, in hex form (40-bytes). The SHA-1
+ * algorithm is fast and has not yet proven to have any duplicates. Even if SHA-2 and SHA-3 are better for cryptographically
+ * secure purposes, it is doubtful whether a repository needs more than SHA-1 for identity purposes.
  * 
  * @author Randall Hauch
  */
 @Embeddable
-public class NodeId implements Serializable {
+@Immutable
+@org.hibernate.annotations.Immutable
+public class LargeValueId implements Serializable {
 
     /**
      * Version {@value}
      */
     private static final long serialVersionUID = 1L;
 
-    @Column( name = "UUID", nullable = true )
-    private String uuidString;
+    @Column( name = "SHA1", nullable = false, length = 40 )
+    private String hash;
 
-    private transient UUID uuid;
-
-    public NodeId() {
+    public LargeValueId() {
     }
 
-    public NodeId( String uuidString ) {
-        this.uuidString = uuidString;
-    }
-
-    public NodeId( UUID uuid ) {
-        setUuid(uuid);
-    }
-
-    public UUID getUuid() {
-        if (uuid == null) {
-            // No need to synchronize, since it is idempotent ...
-            uuid = UUID.fromString(uuidString);
-        }
-        return uuid;
-    }
-
-    public void setUuid( UUID uuid ) {
-        assert uuid != null;
-        this.uuid = uuid;
-        this.uuidString = uuid.toString();
+    public LargeValueId( String hash ) {
+        this.hash = hash;
     }
 
     /**
-     * @return uuidString
+     * @return hash
      */
-    public String getUuidString() {
-        return uuidString;
-    }
-
-    /**
-     * @param uuidString Sets uuidString to the specified value.
-     */
-    public void setUuidString( String uuidString ) {
-        this.uuidString = uuidString;
+    public String getHash() {
+        return hash;
     }
 
     /**
@@ -92,7 +67,7 @@ public class NodeId implements Serializable {
      */
     @Override
     public int hashCode() {
-        return getUuid().hashCode();
+        return hash.hashCode();
     }
 
     /**
@@ -103,14 +78,9 @@ public class NodeId implements Serializable {
     @Override
     public boolean equals( Object obj ) {
         if (obj == this) return true;
-        if (obj instanceof NodeId) {
-            NodeId that = (NodeId)obj;
-            if (this.uuidString == null) {
-                if (that.uuidString != null) return false;
-            } else {
-                if (!this.uuidString.equals(that.uuidString)) return false;
-            }
-            return true;
+        if (obj instanceof LargeValueId) {
+            LargeValueId that = (LargeValueId)obj;
+            return this.hash.equals(that.hash);
         }
         return false;
     }
@@ -122,6 +92,7 @@ public class NodeId implements Serializable {
      */
     @Override
     public String toString() {
-        return getUuid().toString();
+        return "Large value " + hash;
     }
+
 }
