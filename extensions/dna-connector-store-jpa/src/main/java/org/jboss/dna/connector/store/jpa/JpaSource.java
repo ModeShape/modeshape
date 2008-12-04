@@ -59,6 +59,10 @@ import org.jboss.dna.graph.connectors.RepositorySourceCapabilities;
 import org.jboss.dna.graph.connectors.RepositorySourceException;
 
 /**
+ * The {@link RepositorySource} for the connector that stores content in a (custom) relational database. This connector uses Java
+ * Persistence API as the interface to the database, with Hibernate as the JPA implementation. (Note that some Hibernate-specific
+ * features are used.)
+ * 
  * @author Randall Hauch
  */
 public class JpaSource implements RepositorySource, ObjectFactory {
@@ -188,7 +192,9 @@ public class JpaSource implements RepositorySource, ObjectFactory {
     }
 
     /**
-     * @param name Sets name to the specified value.
+     * Set the name for the source
+     * 
+     * @param name the new name for the source
      */
     public void setName( String name ) {
         if (name != null) {
