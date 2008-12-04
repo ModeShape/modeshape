@@ -46,6 +46,36 @@ public class StringUtil {
     private static final Pattern PARAMETER_COUNT_PATTERN = Pattern.compile("\\{(\\d+)\\}");
 
     /**
+     * Combine the lines into a single string, using the new line character as the delimiter. This is compatible with
+     * {@link #splitLines(String)}.
+     * 
+     * @param lines the lines to be combined
+     * @return the combined lines, or an empty string if there are no lines
+     */
+    public static String combineLines( String[] lines ) {
+        return combineLines(lines, '\n');
+    }
+
+    /**
+     * Combine the lines into a single string, using the supplied separator as the delimiter.
+     * 
+     * @param lines the lines to be combined
+     * @param separator the separator character
+     * @return the combined lines, or an empty string if there are no lines
+     */
+    public static String combineLines( String[] lines,
+                                       char separator ) {
+        if (lines == null || lines.length == 0) return "";
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i != lines.length; ++i) {
+            String line = lines[i];
+            if (i != 0) sb.append(separator);
+            sb.append(line);
+        }
+        return sb.toString();
+    }
+
+    /**
      * Split the supplied content into lines, returning each line as an element in the returned list.
      * 
      * @param content the string content that is to be split
