@@ -35,4 +35,7 @@ public class JcrNtLexicon {
     }
 
     public static final Name UNSTRUCTURED = new BasicName(Namespace.URI, "unstructured");
+    public static final Name FILE = new BasicName(Namespace.URI, "file");
+    public static final Name FOLDER = new BasicName(Namespace.URI, "folder");
+    public static final Name RESOURCE = new BasicName(Namespace.URI, "resource");
 }

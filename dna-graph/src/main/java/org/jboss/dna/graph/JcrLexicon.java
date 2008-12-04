@@ -37,4 +37,5 @@ public class JcrLexicon {
     public static final Name UUID = new BasicName(Namespace.URI, "uuid");
     public static final Name NAME = new BasicName(Namespace.URI, "name");
     public static final Name PRIMARY_TYPE = new BasicName(Namespace.URI, "primaryType");
+    public static final Name CONTENT = new BasicName(Namespace.URI, "content");
 }

@@ -56,8 +56,6 @@ import org.xml.sax.helpers.XMLReaderFactory;
  */
 public class XmlSequencerHandlerTest {
 
-    private static final String NT_NAMESPACE_URI = "http://www.jcp.org/jcr/nt/1.0";
-
     private XmlSequencerHandler handler;
     private SequencerContext context;
     private MockSequencerOutput output;
@@ -72,7 +70,7 @@ public class XmlSequencerHandlerTest {
         context = new MockSequencerContext();
         output = new MockSequencerOutput(context, true);
         context.getNamespaceRegistry().register(JcrLexicon.Namespace.PREFIX, JcrLexicon.Namespace.URI);
-        context.getNamespaceRegistry().register("nt", NT_NAMESPACE_URI);
+        context.getNamespaceRegistry().register(JcrNtLexicon.Namespace.PREFIX, JcrNtLexicon.Namespace.URI);
         context.getNamespaceRegistry().register(DnaXmlLexicon.Namespace.PREFIX, DnaXmlLexicon.Namespace.URI);
         context.getNamespaceRegistry().register(DnaDtdLexicon.Namespace.PREFIX, DnaDtdLexicon.Namespace.URI);
         decoder = null;
@@ -180,10 +178,10 @@ public class XmlSequencerHandlerTest {
     public void shouldParseXmlDocumentWithNamespacesThatAreNotYetInRegistry() throws IOException, SAXException {
         NamespaceRegistry reg = context.getNamespaceRegistry();
         reg.unregister(JcrLexicon.Namespace.URI);
-        reg.unregister(NT_NAMESPACE_URI);
+        reg.unregister(JcrNtLexicon.Namespace.URI);
         // Verify the prefixes don't exist ...
         assertThat(reg.getPrefixForNamespaceUri(JcrLexicon.Namespace.URI, false), is(nullValue()));
-        assertThat(reg.getPrefixForNamespaceUri(NT_NAMESPACE_URI, false), is(nullValue()));
+        assertThat(reg.getPrefixForNamespaceUri(JcrNtLexicon.Namespace.URI, false), is(nullValue()));
         assertThat(reg.getPrefixForNamespaceUri("http://default.namespace.com", false), is(nullValue()));
         // Parse the XML file ...
         parse("docWithNestedNamespaces.xml");
