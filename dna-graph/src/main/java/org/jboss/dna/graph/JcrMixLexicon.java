@@ -27,21 +27,14 @@ import org.jboss.dna.graph.properties.basic.BasicName;
 /**
  * @author Randall Hauch
  */
-public class JcrLexicon {
+public class JcrMixLexicon {
 
     public static class Namespace {
-        public static final String URI = "http://www.jcp.org/jcr/1.0";
-        public static final String PREFIX = "jcr";
+        public static final String URI = "http://www.jcp.org/jcr/mix/1.0";
+        public static final String PREFIX = "mix";
     }
 
-    public static final Name UUID = new BasicName(Namespace.URI, "uuid");
-    public static final Name NAME = new BasicName(Namespace.URI, "name");
-    public static final Name PRIMARY_TYPE = new BasicName(Namespace.URI, "primaryType");
-    public static final Name MIXIN_TYPES = new BasicName(Namespace.URI, "mixinTypes");
-    public static final Name CONTENT = new BasicName(Namespace.URI, "content");
-    public static final Name CREATED = new BasicName(Namespace.URI, "created");
-    public static final Name ENCODED = new BasicName(Namespace.URI, "encoded");
-    public static final Name MIMETYPE = new BasicName(Namespace.URI, "mimeType");
-    public static final Name DATA = new BasicName(Namespace.URI, "data");
-    public static final Name LAST_MODIFIED = new BasicName(Namespace.URI, "lastModified");
+    public static final Name REFERENCEABLE = new BasicName(Namespace.URI, "referenceable");
+    public static final Name VERSIONABLE = new BasicName(Namespace.URI, "versionable");
+    public static final Name LOCKABLE = new BasicName(Namespace.URI, "lockable");
 }

@@ -38,4 +38,5 @@ public class JcrNtLexicon {
     public static final Name FILE = new BasicName(Namespace.URI, "file");
     public static final Name FOLDER = new BasicName(Namespace.URI, "folder");
     public static final Name RESOURCE = new BasicName(Namespace.URI, "resource");
+    public static final Name BASE = new BasicName(Namespace.URI, "base");
 }

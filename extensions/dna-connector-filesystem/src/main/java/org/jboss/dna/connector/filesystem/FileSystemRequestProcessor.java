@@ -27,13 +27,16 @@ import java.util.Map;
 import org.jboss.dna.common.i18n.I18n;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.JcrLexicon;
+import org.jboss.dna.graph.JcrNtLexicon;
 import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.connectors.RepositorySourceException;
+import org.jboss.dna.graph.properties.DateTimeFactory;
 import org.jboss.dna.graph.properties.Name;
 import org.jboss.dna.graph.properties.NameFactory;
 import org.jboss.dna.graph.properties.Path;
 import org.jboss.dna.graph.properties.PathFactory;
 import org.jboss.dna.graph.properties.PathNotFoundException;
+import org.jboss.dna.graph.properties.PropertyFactory;
 import org.jboss.dna.graph.requests.CopyBranchRequest;
 import org.jboss.dna.graph.requests.CreateNodeRequest;
 import org.jboss.dna.graph.requests.DeleteBranchRequest;
@@ -139,17 +142,36 @@ public class FileSystemRequestProcessor extends RequestProcessor {
         }
 
         // Get the java.io.File object that represents the location ...
-        File parent = getExistingFileFor(path, location, request);
-        if (parent.isDirectory()) {
+        File file = getExistingFileFor(path, location, request);
+        PropertyFactory factory = getExecutionContext().getPropertyFactory();
+        DateTimeFactory dateFactory = getExecutionContext().getValueFactories().getDateFactory();
+        // Note that we don't have 'created' timestamps, just last modified, so we'll have to use them
+        if (file.isDirectory()) {
             // Add properties for the directory ...
+            request.addProperty(factory.create(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FOLDER));
+            request.addProperty(factory.create(JcrLexicon.CREATED, dateFactory.create(file.lastModified())));
 
         } else {
             // It is a file, but ...
             if (path.getLastSegment().getName().equals(JcrLexicon.CONTENT)) {
                 // The request is to get properties of the "jcr:content" child node ...
+                request.addProperty(factory.create(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.RESOURCE));
+                request.addProperty(factory.create(JcrLexicon.LAST_MODIFIED, dateFactory.create(file.lastModified())));
+                // Don't really know the encoding, either ...
+                // request.addProperty(factory.create(JcrLexicon.ENCODED, stringFactory.create("UTF-8")));
+
+                // Discover the mime type ...
+                // String mimeType = ...
+                // request.addProperty(factory.create(JcrLexicon.MIMETYPE, mimeType));
+
+                // Now put the file's content into the "jcr:data" property ...
+                // BinaryFactory binaryFactory = getExecutionContext().getValueFactories().getBinaryFactory();
+                // request.addProperty(factory.create(JcrLexicon.DATA, binaryFactory.create(file)));
 
             } else {
                 // The request is to get properties for the node representing the file
+                request.addProperty(factory.create(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FILE));
+                request.addProperty(factory.create(JcrLexicon.CREATED, dateFactory.create(file.lastModified())));
             }
 
         }
