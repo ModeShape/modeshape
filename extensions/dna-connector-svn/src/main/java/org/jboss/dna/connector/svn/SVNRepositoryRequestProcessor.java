@@ -227,7 +227,7 @@ public class SVNRepositoryRequestProcessor extends RequestProcessor {
                 SVNDirEntry entry = getEntryInfo(parent.getString(getExecutionContext().getNamespaceRegistry()));
                 Date lastModified = entry.getDate();
                 if (lastModified != null) {
-                    Property jcrLastModifiedProperty = propertyFactory().create(JcrLexicon.LAST_MODIFIED, lastModified.toString());
+                    Property jcrLastModifiedProperty = propertyFactory().create(JcrLexicon.LAST_MODIFIED, dateFactory().create(lastModified));
                     properties.add(jcrLastModifiedProperty);
                 }
                 if (os.toByteArray().length > 0) {
