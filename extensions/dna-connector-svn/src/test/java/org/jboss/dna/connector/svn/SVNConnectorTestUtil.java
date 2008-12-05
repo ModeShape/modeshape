@@ -43,10 +43,13 @@ public class SVNConnectorTestUtil {
      * @return {@link DAVRepository}.
      * @throws SVNException - when error situation.
      */
-    public static DAVRepository createDAVRepositoryURL( String url,
-                                                        String username,
-                                                        String password ) throws SVNException {
+    public static DAVRepository createRepository( String url,
+                                                  String username,
+                                                  String password ) throws SVNException {
+        // for DAV (over http and https)
         DAVRepositoryFactory.setup();
+
+        
         // The factory knows how to create a DAVRepository
         DAVRepository repository = (DAVRepository)DAVRepositoryFactory.create(SVNURL.parseURIDecoded(url));
         ISVNAuthenticationManager authManager = SVNWCUtil.createDefaultAuthenticationManager(username, password);

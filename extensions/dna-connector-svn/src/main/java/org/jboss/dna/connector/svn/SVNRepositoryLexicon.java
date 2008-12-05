@@ -25,7 +25,11 @@ import org.jboss.dna.graph.properties.Name;
 import org.jboss.dna.graph.properties.basic.BasicName;
 
 
-
+/**
+ * The namespace and property names used within a {@link SVNRepositorySource} to store internal information.
+ * 
+ * @author Serge Pagop
+ */
 public class SVNRepositoryLexicon {
 
     public static class Namespace {
@@ -34,5 +38,6 @@ public class SVNRepositoryLexicon {
     }
 
     public static final Name CHILD_PATH_SEGMENT_LIST = new BasicName(Namespace.URI, "orderedChildNames");
+    public static final Name UUID = new BasicName(Namespace.URI, "uuid");
 
 }

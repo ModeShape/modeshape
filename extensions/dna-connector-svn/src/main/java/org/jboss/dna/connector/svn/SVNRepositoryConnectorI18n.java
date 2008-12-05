@@ -32,10 +32,14 @@ public final class SVNRepositoryConnectorI18n {
 
     public static I18n connectorName;
     public static I18n nodeDoesNotExist;
+    public static I18n nodeIsActuallyUnknow;
+    public static I18n nodeTypeIsNotSupported;
     public static I18n propertyIsRequired;
     public static I18n errorSerializingCachePolicyInSource;
     public static I18n objectFoundInJndiWasNotCache;
     public static I18n objectFoundInJndiWasNotCacheFactory;
+    public static I18n locationInRequestMustHavePath;
+    public static I18n sourceIsReadOnly;
 
     static {
         try {

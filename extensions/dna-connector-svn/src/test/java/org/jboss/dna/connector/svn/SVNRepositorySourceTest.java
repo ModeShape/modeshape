@@ -203,8 +203,6 @@ public class SVNRepositorySourceTest {
         source.setSVNUsername(username);
         source.setSVNPassword(password);
         source.setDefaultCachePolicy(cachePolicy);
-        source.setRootNodeUuid(rootNodeUuid != null ? rootNodeUuid.toString() : null);
-        source.setUuidPropertyName(uuidPropertyName);
 
         Reference ref = source.getReference();
 
@@ -219,8 +217,6 @@ public class SVNRepositorySourceTest {
         }
 
         assertThat((String)refAttributes.remove(SVNRepositorySource.SOURCE_NAME), is(source.getName()));
-        assertThat((String)refAttributes.remove(SVNRepositorySource.ROOT_NODE_UUID), is(source.getRootNodeUuid()));
-        assertThat((String)refAttributes.remove(SVNRepositorySource.UUID_PROPERTY_NAME), is(source.getUuidPropertyName()));
         assertThat((String)refAttributes.remove(SVNRepositorySource.SVN_URL), is(source.getSVNURL()));
         assertThat((String)refAttributes.remove(SVNRepositorySource.SVN_USERNAME), is(source.getSVNUsername()));
         assertThat((String)refAttributes.remove(SVNRepositorySource.SVN_PASSWORD), is(source.getSVNPassword()));
@@ -237,8 +233,6 @@ public class SVNRepositorySourceTest {
         assertThat(recoveredSource, is(notNullValue()));
 
         assertThat(recoveredSource.getName(), is(source.getName()));
-        assertThat(recoveredSource.getRootNodeUuid(), is(source.getRootNodeUuid()));
-        assertThat(recoveredSource.getUuidPropertyName(), is(source.getUuidPropertyName()));
         assertThat(recoveredSource.getSVNURL(), is(source.getSVNURL()));
         assertThat(recoveredSource.getSVNUsername(), is(source.getSVNUsername()));
         assertThat(recoveredSource.getSVNPassword(), is(source.getSVNPassword()));

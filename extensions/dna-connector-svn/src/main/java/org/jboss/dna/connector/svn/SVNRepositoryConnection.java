@@ -29,10 +29,15 @@ import org.jboss.dna.graph.cache.CachePolicy;
 import org.jboss.dna.graph.connectors.RepositoryConnection;
 import org.jboss.dna.graph.connectors.RepositorySourceException;
 import org.jboss.dna.graph.connectors.RepositorySourceListener;
-import org.jboss.dna.graph.properties.Name;
-import org.jboss.dna.graph.properties.NameFactory;
+import org.jboss.dna.graph.properties.PathFactory;
+import org.jboss.dna.graph.properties.PropertyFactory;
+import org.jboss.dna.graph.properties.ValueFactory;
 import org.jboss.dna.graph.requests.Request;
+import org.jboss.dna.graph.requests.processor.RequestProcessor;
+import org.tmatesoft.svn.core.SVNErrorCode;
+import org.tmatesoft.svn.core.SVNErrorMessage;
 import org.tmatesoft.svn.core.SVNException;
+import org.tmatesoft.svn.core.SVNNodeKind;
 import org.tmatesoft.svn.core.io.SVNRepository;
 
 /**
@@ -53,24 +58,47 @@ public class SVNRepositoryConnection implements RepositoryConnection {
         }
     };
 
-    private Name uuidPropertyName;
     private final String sourceName;
-    private final String uuidPropertyNameString;
     private final CachePolicy cachePolicy;
     private final SVNRepository repository;
+    private final boolean updatesAllowed;
     private RepositorySourceListener listener = NO_OP_LISTENER;
 
     public SVNRepositoryConnection( String sourceName,
                                     CachePolicy cachePolicy,
-                                    String uuidPropertyName,
+                                    boolean updatesAllowed,
                                     SVNRepository repository ) {
         assert (sourceName != null);
         assert (repository != null);
-        assert (uuidPropertyName != null);
+
+        SVNNodeKind nodeKind = null;
+        try {
+            nodeKind = repository.checkPath("", -1);
+            if (nodeKind == SVNNodeKind.NONE) {
+                SVNErrorMessage error = SVNErrorMessage.create(SVNErrorCode.UNKNOWN,
+                                                               "No entry at URL ''{0}''",
+                                                               repository.getLocation().getPath());
+                throw new SVNException(error);
+            } else if (nodeKind == SVNNodeKind.UNKNOWN) {
+                SVNErrorMessage error = SVNErrorMessage.create(SVNErrorCode.UNKNOWN,
+                                                               "Entry at URL ''{0}'' is a file while directory was expected",
+                                                               repository.getLocation().getPath());
+                throw new SVNException(error);
+            } else if (nodeKind == SVNNodeKind.FILE) {
+                SVNErrorMessage error = SVNErrorMessage.create(SVNErrorCode.UNKNOWN,
+                                                               "Entry at URL ''{0}'' is a file while directory was expected",
+                                                               repository.getLocation().getPath());
+                throw new SVNException(error);
+            }
+        } catch (SVNException e) {
+            // deal with the exception
+            throw new RuntimeException(e);
+        }
+
         this.sourceName = sourceName;
         this.cachePolicy = cachePolicy;
-        this.uuidPropertyNameString = uuidPropertyName;
         this.repository = repository;
+        this.updatesAllowed = updatesAllowed;
     }
 
     SVNRepository getRepository() {
@@ -133,9 +161,20 @@ public class SVNRepositoryConnection implements RepositoryConnection {
      * @see org.jboss.dna.graph.connectors.RepositoryConnection#execute(org.jboss.dna.graph.ExecutionContext,
      *      org.jboss.dna.graph.requests.Request)
      */
-    public void execute( ExecutionContext context,
-                         Request request ) throws RepositorySourceException {
-        // TODO
+    @SuppressWarnings( "unused" )
+    public void execute( final ExecutionContext context,
+                         final Request request ) throws RepositorySourceException {
+
+        final PathFactory pathFactory = context.getValueFactories().getPathFactory();
+        final PropertyFactory propertyFactory = context.getPropertyFactory();
+        final ValueFactory<UUID> uuidFactory = context.getValueFactories().getUuidFactory();
+
+        RequestProcessor processor = new SVNRepositoryRequestProcessor(getSourceName(), context, repository, updatesAllowed);
+        try {
+            processor.process(request);
+        } finally {
+            processor.close();
+        }
     }
 
     /**
@@ -143,26 +182,6 @@ public class SVNRepositoryConnection implements RepositoryConnection {
      */
     protected RepositorySourceListener getListener() {
         return this.listener;
-    }
-
-    /**
-     * Utility method to calculate (if required) and obtain the name that should be used to store the UUID values for each node.
-     * This method may be called without regard to synchronization, since it should return the same value if it happens to be
-     * called concurrently while not yet initialized.
-     * 
-     * @param context the execution context
-     * @return the name, or null if the UUID should not be stored
-     */
-    protected Name getUuidPropertyName( ExecutionContext context ) {
-        if (uuidPropertyName == null) {
-            NameFactory nameFactory = context.getValueFactories().getNameFactory();
-            uuidPropertyName = nameFactory.create(this.uuidPropertyNameString);
-        }
-        return this.uuidPropertyName;
-    }
-
-    protected UUID generateUuid() {
-        return UUID.randomUUID();
     }
 
 }

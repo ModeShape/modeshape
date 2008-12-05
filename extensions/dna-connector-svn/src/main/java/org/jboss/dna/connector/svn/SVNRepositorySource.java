@@ -30,7 +30,7 @@ import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.Map;
-import java.util.UUID;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import javax.naming.BinaryRefAddr;
 import javax.naming.Context;
@@ -40,16 +40,15 @@ import javax.naming.Reference;
 import javax.naming.Referenceable;
 import javax.naming.StringRefAddr;
 import javax.naming.spi.ObjectFactory;
+import net.jcip.annotations.ThreadSafe;
 import org.jboss.dna.common.i18n.I18n;
 import org.jboss.dna.common.util.CheckArg;
-import org.jboss.dna.graph.DnaLexicon;
 import org.jboss.dna.graph.cache.CachePolicy;
 import org.jboss.dna.graph.connectors.RepositoryConnection;
 import org.jboss.dna.graph.connectors.RepositoryContext;
 import org.jboss.dna.graph.connectors.RepositorySource;
 import org.jboss.dna.graph.connectors.RepositorySourceCapabilities;
 import org.jboss.dna.graph.connectors.RepositorySourceException;
-import org.jboss.dna.graph.properties.Property;
 import org.tmatesoft.svn.core.SVNException;
 import org.tmatesoft.svn.core.SVNURL;
 import org.tmatesoft.svn.core.auth.ISVNAuthenticationManager;
@@ -65,7 +64,8 @@ import org.tmatesoft.svn.core.wc.SVNWCUtil;
  * {@link SVNRepository} instance or creating a new instance. This process is controlled entirely by the JavaBean properties of
  * the SVNRepositorySource instance. Like other {@link RepositorySource} classes, instances of SVNRepositorySource can be placed
  * into JNDI and do support the creation of {@link Referenceable JNDI referenceable} objects and resolution of references into
- * SVNRepositorySource. </p>
+ * SVNRepositorySource.
+ * </p>
  * 
  * @author Serge Pagop
  */
@@ -77,14 +77,25 @@ public class SVNRepositorySource implements RepositorySource, ObjectFactory {
      */
     public static final int DEFAULT_RETRY_LIMIT = 0;
 
-    protected static final RepositorySourceCapabilities CAPABILITIES = new RepositorySourceCapabilities(false, true);
+    /**
+     * This source supports events.
+     */
+    protected static final boolean SUPPORTS_EVENTS = true;
+    /**
+     * This source supports same-name-siblings.
+     */
+    protected static final boolean SUPPORTS_SAME_NAME_SIBLINGS = false;
+    /**
+     * This source supports udpates by default, but each instance may be configured to {@link #setSupportsUpdates(boolean) be
+     * read-only or updateable}.
+     */
+    public static final boolean DEFAULT_SUPPORTS_UPDATES = true;
 
-    public static final String DEFAULT_UUID_PROPERTY_NAME = DnaLexicon.UUID.getString();
+    public static final int DEFAULT_CACHE_TIME_TO_LIVE_IN_SECONDS = 60 * 5; // 5 minutes
+
 
     protected static final String SOURCE_NAME = "sourceName";
-    protected static final String ROOT_NODE_UUID = "rootNodeUuid";
     protected static final String DEFAULT_CACHE_POLICY = "defaultCachePolicy";
-    protected static final String UUID_PROPERTY_NAME = "uuidPropertyName";
     protected static final String SVN_REPOS_JNDI_NAME = "svnReposJndiName";
     protected static final String SVN_REPOS_FACTORY_JNDI_NAME = "svnReposFactoryJndiName";
     protected static final String SVN_URL = "svnURL";
@@ -94,12 +105,12 @@ public class SVNRepositorySource implements RepositorySource, ObjectFactory {
 
     private final AtomicInteger retryLimit = new AtomicInteger(DEFAULT_RETRY_LIMIT);
     private String name;
-    private UUID rootNodeUuid = UUID.randomUUID();
-    private String uuidPropertyName = DEFAULT_UUID_PROPERTY_NAME;
     private String svnURL;
     private String svnUsername;
     private String svnPassword;
     private CachePolicy defaultCachePolicy;
+
+    private final Capabilities capabilities = new Capabilities();
 
     private transient Context jndiContext;
     private transient RepositoryContext repositoryContext;
@@ -109,6 +120,15 @@ public class SVNRepositorySource implements RepositorySource, ObjectFactory {
      * Create a repository source instance.
      */
     public SVNRepositorySource() {
+    }
+    
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.connectors.RepositorySource#getCapabilities()
+     */
+    public RepositorySourceCapabilities getCapabilities() {
+        return capabilities;
     }
 
     /**
@@ -180,61 +200,6 @@ public class SVNRepositorySource implements RepositorySource, ObjectFactory {
         this.defaultCachePolicy = defaultCachePolicy;
     }
 
-    /**
-     * Get the UUID of the root node for the cache. If the cache exists, this UUID is not used but is instead set to the UUID of
-     * the existing root node.
-     * 
-     * @return the UUID of the root node for the cache.
-     */
-    public String getRootNodeUuid() {
-        return this.rootNodeUuid.toString();
-    }
-
-    /**
-     * Get the UUID of the root node for the cache. If the cache exists, this UUID is not used but is instead set to the UUID of
-     * the existing root node.
-     * 
-     * @return the UUID of the root node for the cache.
-     */
-    public UUID getRootNodeUuidObject() {
-        return this.rootNodeUuid;
-    }
-
-    /**
-     * Set the UUID of the root node in this repository. If the cache exists, this UUID is not used but is instead set to the UUID
-     * of the existing root node.
-     * 
-     * @param rootNodeUuid the UUID of the root node for the cache, or null if the UUID should be randomly generated
-     */
-    public synchronized void setRootNodeUuid( String rootNodeUuid ) {
-        UUID uuid = null;
-        if (rootNodeUuid == null) uuid = UUID.randomUUID();
-        else uuid = UUID.fromString(rootNodeUuid);
-        if (this.rootNodeUuid.equals(uuid)) return; // unchanged
-        this.rootNodeUuid = uuid;
-    }
-
-    /**
-     * Get the {@link Property#getName() property name} where the UUID is stored for each node.
-     * 
-     * @return the name of the UUID property; never null
-     */
-    public String getUuidPropertyName() {
-        return this.uuidPropertyName;
-    }
-
-    /**
-     * Set the {@link Property#getName() property name} where the UUID is stored for each node.
-     * 
-     * @param uuidPropertyName the name of the UUID property, or null if the {@link #DEFAULT_UUID_PROPERTY_NAME default name}
-     *        should be used
-     */
-    public synchronized void setUuidPropertyName( String uuidPropertyName ) {
-        if (uuidPropertyName == null || uuidPropertyName.trim().length() == 0) uuidPropertyName = DEFAULT_UUID_PROPERTY_NAME;
-        if (this.uuidPropertyName.equals(uuidPropertyName)) return; // unchanged
-        this.uuidPropertyName = uuidPropertyName;
-    }
-
     public String getSVNURL() {
         return this.svnURL;
     }
@@ -273,12 +238,22 @@ public class SVNRepositorySource implements RepositorySource, ObjectFactory {
     }
 
     /**
-     * {@inheritDoc}
+     * Get whether this source supports updates.
      * 
-     * @see org.jboss.dna.graph.connectors.RepositorySource#getCapabilities()
+     * @return true if this source supports updates, or false if this source only supports reading content.
      */
-    public RepositorySourceCapabilities getCapabilities() {
-        return CAPABILITIES;
+    public boolean getSupportsUpdates() {
+        return capabilities.supportsUpdates();
+    }
+
+    /**
+     * Set whether this source supports updates.
+     * 
+     * @param supportsUpdates true if this source supports updating content, or false if this source only supports reading
+     *        content.
+     */
+    public synchronized void setSupportsUpdates( boolean supportsUpdates ) {
+        capabilities.setSupportsUpdates(supportsUpdates);
     }
 
     /**
@@ -291,10 +266,6 @@ public class SVNRepositorySource implements RepositorySource, ObjectFactory {
             I18n msg = SVNRepositoryConnectorI18n.propertyIsRequired;
             throw new RepositorySourceException(getName(), msg.text("name"));
         }
-        if (getUuidPropertyName() == null) {
-            I18n msg = SVNRepositoryConnectorI18n.propertyIsRequired;
-            throw new RepositorySourceException(getUuidPropertyName(), msg.text("uuidPropertyName"));
-        }
         SVNURL svnURL = null;
         if (this.svnRepository == null) {
             try {
@@ -306,20 +277,22 @@ public class SVNRepositorySource implements RepositorySource, ObjectFactory {
                     ISVNAuthenticationManager authManager = SVNWCUtil.createDefaultAuthenticationManager(this.getSVNUsername(),
                                                                                                          this.getSVNPassword());
                     this.svnRepository.setAuthenticationManager(authManager);
-                }
-                if (usedProtocol.equals(SVNProtocol.HTTP.value()) || usedProtocol.equals(SVNProtocol.HTTPS.value())) {
+                } else if (usedProtocol.equals(SVNProtocol.HTTP.value()) || usedProtocol.equals(SVNProtocol.HTTPS.value())) {
                     DAVRepositoryFactory.setup();
                     this.svnRepository = DAVRepositoryFactory.create(svnURL);
                     ISVNAuthenticationManager authManager = SVNWCUtil.createDefaultAuthenticationManager(this.getSVNUsername(),
                                                                                                          this.getSVNPassword());
                     this.svnRepository.setAuthenticationManager(authManager);
-                }
-                if (usedProtocol.equals(SVNProtocol.FILE.value())) {
+                } else if (usedProtocol.equals(SVNProtocol.FILE.value())) {
                     FSRepositoryFactory.setup();
                     this.svnRepository = FSRepositoryFactory.create(svnURL);
                     ISVNAuthenticationManager authManager = SVNWCUtil.createDefaultAuthenticationManager(this.getSVNUsername(),
                                                                                                          this.getSVNPassword());
                     this.svnRepository.setAuthenticationManager(authManager);
+                } else {
+                    // protocol not supported by this connector
+                    throw new RepositorySourceException(getSVNURL(),
+                                                        "Protocol is not supported by this connector or there is problem in the svn url");
                 }
 
             } catch (SVNException ex) {
@@ -327,8 +300,9 @@ public class SVNRepositorySource implements RepositorySource, ObjectFactory {
                 throw new RepositorySourceException(getSVNURL(), msg.text(this.getSVNURL()), ex);
             }
         }
-        return new SVNRepositoryConnection(this.getName(), this.getDefaultCachePolicy(), this.getUuidPropertyName(),
-                                           this.svnRepository);
+        boolean supportsUpdates = getSupportsUpdates();
+        return new SVNRepositoryConnection(this.getName(), this.getDefaultCachePolicy(),
+                                           supportsUpdates, this.svnRepository);
     }
 
     protected Context getContext() {
@@ -369,12 +343,6 @@ public class SVNRepositorySource implements RepositorySource, ObjectFactory {
 
         if (getName() != null) {
             ref.add(new StringRefAddr(SOURCE_NAME, getName()));
-        }
-        if (getRootNodeUuid() != null) {
-            ref.add(new StringRefAddr(ROOT_NODE_UUID, getRootNodeUuid().toString()));
-        }
-        if (getUuidPropertyName() != null) {
-            ref.add(new StringRefAddr(UUID_PROPERTY_NAME, getUuidPropertyName()));
         }
         if (getSVNURL() != null) {
             ref.add(new StringRefAddr(SVN_URL, getSVNURL()));
@@ -434,8 +402,6 @@ public class SVNRepositorySource implements RepositorySource, ObjectFactory {
                 }
             }
             String sourceName = (String)values.get(SOURCE_NAME);
-            String rootNodeUuidString = (String)values.get(ROOT_NODE_UUID);
-            String uuidPropertyName = (String)values.get(UUID_PROPERTY_NAME);
             String svnURL = (String)values.get(SVN_URL);
             String svnUsername = (String)values.get(SVN_USERNAME);
             String svnPassword = (String)values.get(SVN_PASSWORD);
@@ -445,8 +411,6 @@ public class SVNRepositorySource implements RepositorySource, ObjectFactory {
             // Create the source instance ...
             SVNRepositorySource source = new SVNRepositorySource();
             if (sourceName != null) source.setName(sourceName);
-            if (rootNodeUuidString != null) source.setRootNodeUuid(rootNodeUuidString);
-            if (uuidPropertyName != null) source.setUuidPropertyName(uuidPropertyName);
             if (svnURL != null) source.setSVNURL(svnURL);
             if (svnUsername != null) source.setSVNUsername(svnUsername);
             if (svnPassword != null) source.setSVNPassword(svnPassword);
@@ -457,6 +421,24 @@ public class SVNRepositorySource implements RepositorySource, ObjectFactory {
             return source;
         }
         return null;
+    }
+
+    @ThreadSafe
+    protected class Capabilities extends RepositorySourceCapabilities {
+        private final AtomicBoolean supportsUpdates = new AtomicBoolean(DEFAULT_SUPPORTS_UPDATES);
+
+        /*package*/Capabilities() {
+            super(SUPPORTS_SAME_NAME_SIBLINGS, DEFAULT_SUPPORTS_UPDATES, SUPPORTS_EVENTS);
+        }
+
+        /*package*/void setSupportsUpdates( boolean supportsUpdates ) {
+            this.supportsUpdates.set(supportsUpdates);
+        }
+
+        @Override
+        public boolean supportsUpdates() {
+            return this.supportsUpdates.get();
+        }
     }
 
 }
