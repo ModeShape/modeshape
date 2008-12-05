@@ -33,6 +33,7 @@ import org.jboss.dna.graph.JcrLexicon;
 import org.jboss.dna.graph.JcrNtLexicon;
 import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.connectors.RepositorySourceException;
+import org.jboss.dna.graph.properties.Binary;
 import org.jboss.dna.graph.properties.DateTimeFactory;
 import org.jboss.dna.graph.properties.Name;
 import org.jboss.dna.graph.properties.NameFactory;
@@ -41,7 +42,9 @@ import org.jboss.dna.graph.properties.PathFactory;
 import org.jboss.dna.graph.properties.PathNotFoundException;
 import org.jboss.dna.graph.properties.Property;
 import org.jboss.dna.graph.properties.PropertyFactory;
+import org.jboss.dna.graph.properties.ValueFactory;
 import org.jboss.dna.graph.properties.basic.BasicMultiValueProperty;
+import org.jboss.dna.graph.properties.basic.InMemoryBinary;
 import org.jboss.dna.graph.requests.CopyBranchRequest;
 import org.jboss.dna.graph.requests.CreateNodeRequest;
 import org.jboss.dna.graph.requests.DeleteBranchRequest;
@@ -227,11 +230,14 @@ public class SVNRepositoryRequestProcessor extends RequestProcessor {
                 SVNDirEntry entry = getEntryInfo(parent.getString(getExecutionContext().getNamespaceRegistry()));
                 Date lastModified = entry.getDate();
                 if (lastModified != null) {
-                    Property jcrLastModifiedProperty = propertyFactory().create(JcrLexicon.LAST_MODIFIED, dateFactory().create(lastModified));
+                    Property jcrLastModifiedProperty = propertyFactory().create(JcrLexicon.LAST_MODIFIED,
+                                                                                dateFactory().create(lastModified));
                     properties.add(jcrLastModifiedProperty);
                 }
                 if (os.toByteArray().length > 0) {
-                    Property jcrDataProperty = propertyFactory().create(JcrLexicon.DATA, os.toByteArray());
+                    Property jcrDataProperty = propertyFactory().create(JcrLexicon.DATA,
+                                                                        binaryFactory().create(new InMemoryBinary(
+                                                                                                                  os.toByteArray())));
                     properties.add(jcrDataProperty);
                 }
                 request.addProperties(properties.toArray(new BasicMultiValueProperty[0]));
@@ -305,6 +311,11 @@ public class SVNRepositoryRequestProcessor extends RequestProcessor {
         }
     }
 
+    /**
+     * Factory for sample name.
+     * 
+     * @return the name factory
+     */
     protected NameFactory nameFactory() {
         return getExecutionContext().getValueFactories().getNameFactory();
     }
@@ -319,6 +330,10 @@ public class SVNRepositoryRequestProcessor extends RequestProcessor {
 
     protected DateTimeFactory dateFactory() {
         return getExecutionContext().getValueFactories().getDateFactory();
+    }
+
+    protected ValueFactory<Binary> binaryFactory() {
+        return getExecutionContext().getValueFactories().getBinaryFactory();
     }
 
     protected Path getPathFor( Location location,
