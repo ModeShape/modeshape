@@ -30,8 +30,10 @@ import java.util.List;
 import org.jboss.dna.common.i18n.I18n;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.JcrLexicon;
+import org.jboss.dna.graph.JcrNtLexicon;
 import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.connectors.RepositorySourceException;
+import org.jboss.dna.graph.properties.DateTimeFactory;
 import org.jboss.dna.graph.properties.Name;
 import org.jboss.dna.graph.properties.NameFactory;
 import org.jboss.dna.graph.properties.Path;
@@ -215,18 +217,12 @@ public class SVNRepositoryRequestProcessor extends RequestProcessor {
                 SVNProperties fileProperties = new SVNProperties();
                 List<Property> properties = new ArrayList<Property>();
                 getData(parent.getString(getExecutionContext().getNamespaceRegistry()), fileProperties, os);
-
-                Property ntResourceproperty = propertyFactory().create(JcrLexicon.PRIMARY_TYPE, "nt:resource");
+                Property ntResourceproperty = propertyFactory().create(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.RESOURCE);
                 properties.add(ntResourceproperty);
                 String mimeType = fileProperties.getStringValue(SVNProperty.MIME_TYPE);
                 if (mimeType != null) {
                     Property jcrMimeTypeProperty = propertyFactory().create(JcrLexicon.MIMETYPE, mimeType);
                     properties.add(jcrMimeTypeProperty);
-                }
-                String created = fileProperties.getStringValue(SVNProperty.COMMITTED_DATE);
-                if (created != null) {
-                    Property jcrCreatedProperty = propertyFactory().create(JcrLexicon.CREATED, created);
-                    properties.add(jcrCreatedProperty);
                 }
                 SVNDirEntry entry = getEntryInfo(parent.getString(getExecutionContext().getNamespaceRegistry()));
                 Date lastModified = entry.getDate();
@@ -243,14 +239,24 @@ public class SVNRepositoryRequestProcessor extends RequestProcessor {
                 SVNNodeKind kind = validateNodeKind(nodePath);
                 if (kind == SVNNodeKind.FILE) {
                     // "jcr:primaryType" property whose value is "nt:file".
-                    Property ntFileProperty = propertyFactory().create(JcrLexicon.PRIMARY_TYPE, "nt:file");
+                    Property ntFileProperty = propertyFactory().create(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FILE);
                     request.addProperty(ntFileProperty);
+                    ByteArrayOutputStream os = new ByteArrayOutputStream();
+                    SVNProperties fileProperties = new SVNProperties();
+                    getData(nodePath.getString(getExecutionContext().getNamespaceRegistry()), fileProperties, os);
+                    String created = fileProperties.getStringValue(SVNProperty.COMMITTED_DATE);
+                    if (created != null) {
+                        Property jcrCreatedProperty = propertyFactory().create(JcrLexicon.CREATED, created);
+                        request.addProperty(jcrCreatedProperty);
+                    }
 
                 } else if (kind == SVNNodeKind.DIR) {
                     // A directory maps to a single node with a name that represents the name of the directory and a
                     // "jcr:primaryType" property whose value is "nt:folder"
-                    Property property = propertyFactory().create(JcrLexicon.PRIMARY_TYPE, "nt:folder");
+                    Property property = propertyFactory().create(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FOLDER);
                     request.addProperty(property);
+                    SVNDirEntry dirEntry = getEntryInfo(nodePath.getString(getExecutionContext().getNamespaceRegistry()));
+                    request.addProperty(propertyFactory().create(JcrLexicon.CREATED, dateFactory().create(dirEntry.getDate())));
                 }
             }
             request.setActualLocationOfNode(myLocation);
@@ -309,6 +315,10 @@ public class SVNRepositoryRequestProcessor extends RequestProcessor {
 
     protected PropertyFactory propertyFactory() {
         return getExecutionContext().getPropertyFactory();
+    }
+
+    protected DateTimeFactory dateFactory() {
+        return getExecutionContext().getValueFactories().getDateFactory();
     }
 
     protected Path getPathFor( Location location,
