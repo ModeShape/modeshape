@@ -220,7 +220,7 @@ public class SVNRepositoryRequestProcessor extends RequestProcessor {
                 properties.add(ntResourceproperty);
                 String mimeType = fileProperties.getStringValue(SVNProperty.MIME_TYPE);
                 if (mimeType != null) {
-                    Property jcrMimeTypeProperty = propertyFactory().create(JcrLexicon.MIME, mimeType);
+                    Property jcrMimeTypeProperty = propertyFactory().create(JcrLexicon.MIMETYPE, mimeType);
                     properties.add(jcrMimeTypeProperty);
                 }
                 String created = fileProperties.getStringValue(SVNProperty.COMMITTED_DATE);
@@ -260,10 +260,10 @@ public class SVNRepositoryRequestProcessor extends RequestProcessor {
             request.setError(e);
         }
     }
-    
+
     /**
      * {@inheritDoc}
-     *
+     * 
      * @see org.jboss.dna.graph.requests.processor.RequestProcessor#process(org.jboss.dna.graph.requests.RemovePropertiesRequest)
      */
     @Override
@@ -274,7 +274,7 @@ public class SVNRepositoryRequestProcessor extends RequestProcessor {
 
     /**
      * {@inheritDoc}
-     *
+     * 
      * @see org.jboss.dna.graph.requests.processor.RequestProcessor#process(org.jboss.dna.graph.requests.RenameNodeRequest)
      */
     @Override
