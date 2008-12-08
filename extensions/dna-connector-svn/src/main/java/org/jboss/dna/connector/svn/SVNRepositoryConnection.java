@@ -24,6 +24,7 @@ package org.jboss.dna.connector.svn;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import javax.transaction.xa.XAResource;
+import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.cache.CachePolicy;
 import org.jboss.dna.graph.connectors.RepositoryConnection;
@@ -68,8 +69,8 @@ public class SVNRepositoryConnection implements RepositoryConnection {
                                     CachePolicy cachePolicy,
                                     boolean updatesAllowed,
                                     SVNRepository repository ) {
-        assert (sourceName != null);
-        assert (repository != null);
+        CheckArg.isNotNull(repository, "repository");
+        CheckArg.isNotNull(sourceName, "sourceName");
 
         SVNNodeKind nodeKind = null;
         try {

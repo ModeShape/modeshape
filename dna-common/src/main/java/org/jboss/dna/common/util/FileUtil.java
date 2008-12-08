@@ -23,6 +23,9 @@
 package org.jboss.dna.common.util;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 
@@ -60,6 +63,49 @@ public class FileUtil {
         }
         // Whether this is a file or empty directory, just delete it ...
         return fileOrDirectory.delete();
+    }
+
+    /**
+     * Copy the source file system structure into the supplied target location. If the source is a file, the destiniation will be
+     * created as a file; if the source is a directory, the destination will be created as a directory.
+     * 
+     * @param sourceFileOrDirectory the file or directory whose contents are to be copied into the target location
+     * @param destinationFileOrDirectory the location where the copy is to be placed; does not need to exist, but if it does its
+     *        type must match that of <code>src</code>
+     * @return the number of files (not directories) that were copied
+     * @throws IllegalArgumentException if the <code>src</code> or <code>dest</code> references are null
+     * @throws IOException
+     */
+    public static int copy( File sourceFileOrDirectory,
+                            File destinationFileOrDirectory ) throws IOException {
+        int numberOfFilesCopied = 0;
+        if (sourceFileOrDirectory.isDirectory()) {
+            destinationFileOrDirectory.mkdirs();
+            String list[] = sourceFileOrDirectory.list();
+
+            for (int i = 0; i < list.length; i++) {
+                String dest1 = destinationFileOrDirectory.getPath() + File.separator + list[i];
+                String src1 = sourceFileOrDirectory.getPath() + File.separator + list[i];
+                numberOfFilesCopied += copy(new File(src1), new File(dest1));
+            }
+        } else {
+            FileInputStream fin = new FileInputStream(sourceFileOrDirectory);
+            try {
+                FileOutputStream fout = new FileOutputStream(destinationFileOrDirectory);
+                try {
+                    int c;
+                    while ((c = fin.read()) >= 0) {
+                        fout.write(c);
+                    }
+                } finally {
+                    fout.close();
+                }
+            } finally {
+                fin.close();
+            }
+            numberOfFilesCopied++;
+        }
+        return numberOfFilesCopied;
     }
 
     /**
