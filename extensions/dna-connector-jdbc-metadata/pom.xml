@@ -7,10 +7,10 @@
     <relativePath>../..</relativePath>
   </parent>
   <!-- The groupId and version values are inherited from parent -->
-  <artifactId>dna-sequencer-jdbc-metadata</artifactId>
+  <artifactId>dna-connector-jdbc-metadata</artifactId>
   <packaging>jar</packaging>
-  <name>JBoss DNA JDBC Metadata Sequencer</name>
-  <description>JBoss DNA Sequencer that processes JDBC metadata</description>
+  <name>JBoss DNA Connector to JDBC</name>
+  <description>JBoss DNA Connector that processes JDBC metadata</description>
   <url>http://labs.jboss.org/dna</url>
   <dependencies>
     <dependency>

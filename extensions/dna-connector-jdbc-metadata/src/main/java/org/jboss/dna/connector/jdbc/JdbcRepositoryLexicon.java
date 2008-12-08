@@ -19,37 +19,24 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.jboss.dna.sequencer.jdbc;
+package org.jboss.dna.connector.jdbc;
 
-import java.util.Locale;
-import java.util.Set;
-import org.jboss.dna.common.i18n.I18n;
+import org.jboss.dna.graph.properties.Name;
+import org.jboss.dna.graph.properties.basic.BasicName;
+
 
 /**
- * I18N
+ * The namespace and property names used within a {@link JdbcRepositorySource} to store internal information.
+ * 
  * @author <a href="mailto:litsenko_sergey@yahoo.com">Sergiy Litsenko</a>
  */
-public class JdbcMetadataI18n {
-    public static I18n sequencerTaskName;
+public class JdbcRepositoryLexicon {
 
-    static {
-        try {
-            I18n.initialize(JdbcMetadataI18n.class);
-        } catch (final Exception err) {
-            System.err.println(err);
-        }
+    public static class Namespace {
+        public static final String URI = "http://www.jboss.org/dna/connector/jdbc";
+        public static final String PREFIX = "dnajdbc";
     }
 
-    public static Set<Locale> getLocalizationProblemLocales() {
-        return I18n.getLocalizationProblemLocales(JdbcMetadataI18n.class);
-    }
-
-    public static Set<String> getLocalizationProblems() {
-        return I18n.getLocalizationProblems(JdbcMetadataI18n.class);
-    }
-
-    public static Set<String> getLocalizationProblems( Locale locale ) {
-        return I18n.getLocalizationProblems(JdbcMetadataI18n.class, locale);
-    }
-
+    public static final Name CHILD_PATH_SEGMENT_LIST = new BasicName(Namespace.URI, "orderedChildNames");
+    public static final Name UUID = new BasicName(Namespace.URI, "uuid");
 }
