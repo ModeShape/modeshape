@@ -21,7 +21,6 @@
  */
 package org.jboss.dna.connector.svn;
 
-import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import javax.transaction.xa.XAResource;
 import org.jboss.dna.common.util.CheckArg;
@@ -32,7 +31,6 @@ import org.jboss.dna.graph.connectors.RepositorySourceException;
 import org.jboss.dna.graph.connectors.RepositorySourceListener;
 import org.jboss.dna.graph.properties.PathFactory;
 import org.jboss.dna.graph.properties.PropertyFactory;
-import org.jboss.dna.graph.properties.ValueFactory;
 import org.jboss.dna.graph.requests.Request;
 import org.jboss.dna.graph.requests.processor.RequestProcessor;
 import org.tmatesoft.svn.core.SVNErrorCode;
@@ -168,7 +166,6 @@ public class SVNRepositoryConnection implements RepositoryConnection {
 
         final PathFactory pathFactory = context.getValueFactories().getPathFactory();
         final PropertyFactory propertyFactory = context.getPropertyFactory();
-        final ValueFactory<UUID> uuidFactory = context.getValueFactories().getUuidFactory();
 
         RequestProcessor processor = new SVNRepositoryRequestProcessor(getSourceName(), context, repository, updatesAllowed);
         try {
