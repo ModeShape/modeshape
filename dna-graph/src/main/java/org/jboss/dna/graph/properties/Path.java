@@ -360,7 +360,8 @@ public interface Path extends Comparable<Path>, Iterable<Path.Segment>, Serializ
     public boolean isNormalized();
 
     /**
-     * Get a normalized path with as many ".." segments and all "." resolved.
+     * Get a normalized path with as many ".." segments and all "." resolved. The relative path ".", however, will return itself
+     * as the normalized path, since it cannot be resolved any further.
      * 
      * @return the normalized path, or this object if this path is already normalized
      * @throws InvalidPathException if the normalized form would result in a path with negative length (e.g., "/a/../../..")
@@ -409,7 +410,7 @@ public interface Path extends Comparable<Path>, Iterable<Path.Segment>, Serializ
      * Return the path to the parent, or this path if it is the {@link #isRoot() root}. This is an efficient operation that does
      * not require copying any data.
      * 
-     * @return the parent path, or this path if it is already the root
+     * @return the parent path, or this null if it is already the root
      */
     public Path getParent();
 
@@ -543,12 +544,12 @@ public interface Path extends Comparable<Path>, Iterable<Path.Segment>, Serializ
      * prefixes and the supplied encoder to encode characters in each of the path segments.
      * 
      * @param namespaceRegistry the namespace registry that should be used to obtain the prefix for the
-     *        {@link Name#getNamespaceUri() namespace URIs} in the segment {@link Segment#getName() names}
+     *        {@link Name#getNamespaceUri() namespace URIs} in the segment {@link Segment#getName() names}, or null if the
+     *        namespace registry should not be used
      * @param encoder the encoder to use for encoding the {@link Name#getLocalName() local part} and
      *        {@link Name#getNamespaceUri() namespace prefix} of each {@link Path#getSegmentsList() segment}, or null if the
      *        {@link #DEFAULT_ENCODER default encoder} should be used
      * @return the encoded string
-     * @throws IllegalArgumentException if the namespace registry is null
      * @see #getString(NamespaceRegistry)
      * @see #getString(NamespaceRegistry, TextEncoder, TextEncoder)
      */

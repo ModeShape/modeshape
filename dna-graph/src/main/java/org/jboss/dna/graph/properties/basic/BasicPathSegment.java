@@ -23,7 +23,6 @@ package org.jboss.dna.graph.properties.basic;
 
 import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.text.TextEncoder;
-import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.graph.properties.Name;
 import org.jboss.dna.graph.properties.NamespaceRegistry;
 import org.jboss.dna.graph.properties.Path;
@@ -57,8 +56,8 @@ public class BasicPathSegment implements Path.Segment {
      */
     public BasicPathSegment( Name name,
                              int index ) {
-        CheckArg.isNotNull(name, "name");
-        CheckArg.isNotLessThan(index, Path.NO_INDEX, "index");
+        assert name != null;
+        assert index >= Path.NO_INDEX;
         this.name = name;
         this.index = (this.isSelfReference() || this.isParentReference()) ? Path.NO_INDEX : index;
     }

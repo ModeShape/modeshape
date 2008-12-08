@@ -41,7 +41,7 @@ import org.jboss.dna.graph.properties.PathNotFoundException;
 import org.jboss.dna.graph.properties.Property;
 import org.jboss.dna.graph.properties.PropertyFactory;
 import org.jboss.dna.graph.properties.Path.Segment;
-import org.jboss.dna.graph.properties.basic.BasicPath;
+import org.jboss.dna.graph.properties.basic.RootPath;
 import org.jboss.dna.graph.requests.CopyBranchRequest;
 import org.jboss.dna.graph.requests.CreateNodeRequest;
 import org.jboss.dna.graph.requests.DeleteBranchRequest;
@@ -165,7 +165,7 @@ public class InMemoryRepository {
             }
             ++segmentNumber;
         }
-        return BasicPath.ROOT;
+        return RootPath.INSTANCE;
     }
 
     protected UUID generateUuid() {

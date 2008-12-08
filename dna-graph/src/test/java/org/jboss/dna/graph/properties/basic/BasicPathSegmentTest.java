@@ -58,11 +58,6 @@ public class BasicPathSegmentTest {
         this.factory = new PathValueFactory(Path.DEFAULT_DECODER, stringValueFactory, nameFactory);
     }
 
-    @Test( expected = IllegalArgumentException.class )
-    public void shouldNotAllowNegativeIndex() {
-        new BasicPathSegment(validName, -2);
-    }
-
     @Test
     public void shouldConsiderEqualTwoSegmentsWithSameNameAndIndex() {
         segment = new BasicPathSegment(validName);

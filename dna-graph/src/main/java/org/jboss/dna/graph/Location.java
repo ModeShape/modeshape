@@ -396,7 +396,8 @@ public class Location implements Iterable<Property> {
                 } else {
                     Path thisPath = this.getPath();
                     Path thatPath = other.getPath();
-                    if (thisPath.isRoot() && thatPath.isRoot()) return true;
+                    if (thisPath.isRoot()) return thatPath.isRoot();
+                    if (thatPath.isRoot()) return thisPath.isRoot();
                     // The parents must match ...
                     if (!thisPath.hasSameAncestor(thatPath)) return false;
                     // And the names of the last segments must match ...

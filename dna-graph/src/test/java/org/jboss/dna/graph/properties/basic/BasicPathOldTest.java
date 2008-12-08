@@ -23,6 +23,7 @@ package org.jboss.dna.graph.properties.basic;
 
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNot.not;
+import static org.hamcrest.core.IsNull.nullValue;
 import static org.hamcrest.core.IsSame.sameInstance;
 import static org.jboss.dna.graph.properties.basic.IsPathContaining.hasSegments;
 import static org.junit.Assert.assertThat;
@@ -37,14 +38,6 @@ import org.jboss.dna.graph.properties.InvalidPathException;
 import org.jboss.dna.graph.properties.Name;
 import org.jboss.dna.graph.properties.Path;
 import org.jboss.dna.graph.properties.ValueFormatException;
-import org.jboss.dna.graph.properties.basic.BasicName;
-import org.jboss.dna.graph.properties.basic.BasicNamespaceRegistry;
-import org.jboss.dna.graph.properties.basic.BasicPath;
-import org.jboss.dna.graph.properties.basic.BasicPathSegment;
-import org.jboss.dna.graph.properties.basic.NameValueFactory;
-import org.jboss.dna.graph.properties.basic.PathValueFactory;
-import org.jboss.dna.graph.properties.basic.RootPath;
-import org.jboss.dna.graph.properties.basic.StringValueFactory;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -52,13 +45,14 @@ import org.junit.Test;
  * @author Randall Hauch
  * @author John Verhaeg
  */
-public class BasicPathTest extends AbstractPathTest {
+public class BasicPathOldTest {
 
     public static final TextEncoder NO_OP_ENCODER = Path.NO_OP_ENCODER;
     public static final Path ROOT = RootPath.INSTANCE;
 
     private BasicNamespaceRegistry namespaceRegistry;
     private String validNamespaceUri;
+    private Path path;
     private Path path2;
     private Path.Segment[] validSegments;
     private List<Path.Segment> validSegmentsList;
@@ -67,7 +61,6 @@ public class BasicPathTest extends AbstractPathTest {
     private PathValueFactory pathFactory;
 
     @Before
-    @Override
     public void beforeEach() {
         validNamespacePrefix = DnaLexicon.Namespace.PREFIX;
         validNamespaceUri = DnaLexicon.Namespace.URI;
@@ -79,7 +72,7 @@ public class BasicPathTest extends AbstractPathTest {
         for (Path.Segment segment : validSegments) {
             validSegmentsList.add(segment);
         }
-        super.path = new BasicPath(validSegmentsList, true);
+        path = new BasicPath(validSegmentsList, true);
         namespaceRegistry = new BasicNamespaceRegistry();
         namespaceRegistry.register(validNamespacePrefix, validNamespaceUri);
         StringValueFactory stringValueFactory = new StringValueFactory(Path.DEFAULT_DECODER, Path.DEFAULT_ENCODER);
@@ -227,6 +220,11 @@ public class BasicPathTest extends AbstractPathTest {
     }
 
     @Test
+    public void shouldReturnNoAncestorForRoot() {
+        assertThat(RootPath.INSTANCE.getParent(), nullValue());
+    }
+
+    @Test
     public void shouldReturnAncestorForNodeOtherThanRoot() {
         assertThat(path.getParent(), is(pathFactory.create("/dna:a/dna:b")));
         assertThat(path.getParent().getParent(), is(pathFactory.create("/dna:a")));
@@ -238,6 +236,22 @@ public class BasicPathTest extends AbstractPathTest {
         assertThat(path.getAncestor(1), is(pathFactory.create("/dna:a/dna:b")));
         assertThat(path.getAncestor(2), is(pathFactory.create("/dna:a")));
         assertThat(path.getAncestor(3), is(ROOT));
+    }
+
+    @Test( expected = InvalidPathException.class )
+    public void shouldNotAllowAncestorDegreeLargerThanSize() {
+        path.getAncestor(path.size() + 1);
+    }
+
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldNotAllowNegativeAncestorDegree() {
+        path.getAncestor(-1);
+    }
+
+    @Test
+    public void shouldReturnRootForAnyAncestorExactDegreeFromRoot() {
+        assertThat(path.getAncestor(path.size()), is(ROOT));
+        assertThat(ROOT.getAncestor(0), is(ROOT));
     }
 
     @Test
@@ -329,10 +343,8 @@ public class BasicPathTest extends AbstractPathTest {
         }
     }
 
-    @Override
     @Test
     public void shouldNotConsiderNodeToBeAncestorOfItself() {
-        super.shouldNotConsiderNodeToBeAncestorOfItself();
         Path path1 = pathFactory.create("/a/y/z");
         Path path2 = pathFactory.create("/a/b/c");
         Path path3 = pathFactory.create("/x/b/c");
@@ -342,10 +354,8 @@ public class BasicPathTest extends AbstractPathTest {
         assertThat(ROOT.isAncestorOf(ROOT), is(false));
     }
 
-    @Override
     @Test
     public void shouldNotConsiderNodeToBeDecendantOfItself() {
-        super.shouldNotConsiderNodeToBeDecendantOfItself();
         Path path1 = pathFactory.create("/a/y/z");
         Path path2 = pathFactory.create("/a/b/c");
         Path path3 = pathFactory.create("/x/b/c");
@@ -380,6 +390,21 @@ public class BasicPathTest extends AbstractPathTest {
     }
 
     @Test
+    public void shouldNotConsiderRootToBeAncestorOfItself() {
+        assertThat(ROOT.isAncestorOf(ROOT), is(false));
+    }
+
+    @Test
+    public void shouldNotConsiderRootToBeDecendantOfItself() {
+        assertThat(ROOT.isDecendantOf(ROOT), is(false));
+    }
+
+    @Test
+    public void shouldConsiderTwoRootNodesToHaveSameAncestor() {
+        assertThat(ROOT.hasSameAncestor(ROOT), is(true));
+    }
+
+    @Test
     public void shouldConsiderTwoNotRootSiblingNodesToHaveSameAncestor() {
         Path path1 = pathFactory.create("/a/y/z");
         Path path2 = pathFactory.create("/a/y/c");
@@ -407,6 +432,46 @@ public class BasicPathTest extends AbstractPathTest {
         path1 = pathFactory.create("/z");
         path2 = pathFactory.create("/a/c");
         assertThat(path1.hasSameAncestor(path2), is(false));
+    }
+
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldFailForSameAncestorOfNullPath() {
+        path.hasSameAncestor(null);
+    }
+
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldFailForDecendantOfNullPath() {
+        path.isDecendantOf(null);
+    }
+
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldFailForAtOrAboveNullPath() {
+        path.isAtOrAbove(null);
+    }
+
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldFailForAtOrBelowNullPath() {
+        path.isAtOrBelow(null);
+    }
+
+    @Test( expected = IndexOutOfBoundsException.class )
+    public void shouldFailToReturnSegmentAtIndexGreatherThanSize() {
+        path.getSegment(path.size() + 1);
+    }
+
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldFailToReturnSegmentAtNegativeIndex() {
+        path.getSegment(-1);
+    }
+
+    @Test
+    public void shouldConsiderNodeToBeAtOrAboveItself() {
+        assertThat(path.isAtOrAbove(path), is(true));
+    }
+
+    @Test
+    public void shouldConsiderNodeToBeAtOrBelowItself() {
+        assertThat(path.isAtOrBelow(path), is(true));
     }
 
     @Test
@@ -487,6 +552,11 @@ public class BasicPathTest extends AbstractPathTest {
         for (int i = 1; i < path4.size(); ++i) {
             assertThat(path4.isAtOrAbove(path4.getAncestor(i)), is(false));
         }
+    }
+
+    @Test
+    public void shouldReturnNullForLastSegmentOfRoot() {
+        assertThat(ROOT.getLastSegment(), is(nullValue()));
     }
 
     @Test
@@ -836,7 +906,7 @@ public class BasicPathTest extends AbstractPathTest {
     @Test
     public void shouldResolveRelativePaths() {
         path = pathFactory.create("/a/b/c/d/e/f");
-        assertThat(path.resolve(pathFactory.create("../../../../../..")), is(ROOT));
+        assertThat(path.resolve(pathFactory.create("../../../../../..")), is(sameInstance(ROOT)));
         assertThat(path.resolve(pathFactory.create("../..")), is(path.getParent().getParent()));
         assertThat(path.resolve(pathFactory.create("../..")), hasSegments(pathFactory, "a", "b", "c", "d"));
         assertThat(path.resolve(pathFactory.create("../x/../y/../z/..")), is(path.getParent()));

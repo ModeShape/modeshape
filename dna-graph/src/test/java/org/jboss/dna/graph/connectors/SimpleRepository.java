@@ -39,7 +39,7 @@ import org.jboss.dna.graph.properties.Path;
 import org.jboss.dna.graph.properties.PathFactory;
 import org.jboss.dna.graph.properties.Property;
 import org.jboss.dna.graph.properties.PropertyFactory;
-import org.jboss.dna.graph.properties.basic.BasicPath;
+import org.jboss.dna.graph.properties.basic.RootPath;
 
 /**
  * A very simple repository that maintains properties for nodes identified by a path, and computes the children based upon the set
@@ -81,7 +81,7 @@ public class SimpleRepository {
         // throw new IllegalArgumentException("Repository \"" + repositoryName + "\" already exists and may not be recreated");
         // }
         // Create a root node ...
-        data.putIfAbsent(BasicPath.ROOT, new HashMap<Name, Property>());
+        data.putIfAbsent(RootPath.INSTANCE, new HashMap<Name, Property>());
     }
 
     /**

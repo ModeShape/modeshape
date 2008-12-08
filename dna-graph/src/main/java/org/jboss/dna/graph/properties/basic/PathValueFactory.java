@@ -104,7 +104,7 @@ public class PathValueFactory extends AbstractValueFactory<Path> implements Path
      * @see org.jboss.dna.graph.properties.PathFactory#createRootPath()
      */
     public Path createRootPath() {
-        return BasicPath.ROOT;
+        return RootPath.INSTANCE;
     }
 
     /**
@@ -124,8 +124,11 @@ public class PathValueFactory extends AbstractValueFactory<Path> implements Path
         int length = trimmedValue.length();
         boolean absolute = false;
         if (length == 0) {
-            return BasicPath.ROOT;
+            return BasicPath.EMPTY_RELATIVE;
         }
+        if (Path.DELIMITER_STR.equals(trimmedValue)) return RootPath.INSTANCE;
+        if (Path.SELF.equals(trimmedValue)) return BasicPath.SELF_PATH;
+        if (Path.PARENT.equals(trimmedValue)) return BasicPath.PARENT_PATH;
 
         // Remove the leading delimiter ...
         if (trimmedValue.charAt(0) == Path.DELIMITER) {
@@ -139,7 +142,7 @@ public class PathValueFactory extends AbstractValueFactory<Path> implements Path
             length = trimmedValue.length();
         }
         if (length == 0) {
-            return BasicPath.ROOT;
+            return RootPath.INSTANCE;
         }
 
         // Parse the path into its segments ...
@@ -161,6 +164,10 @@ public class PathValueFactory extends AbstractValueFactory<Path> implements Path
             segments.add(createSegment(segment, decoder));
         }
 
+        if (absolute && segments.size() == 1) {
+            // Special case of a single-segment name ...
+            return new ChildPath(RootPath.INSTANCE, segments.get(0));
+        }
         // Create a path constructed from the supplied segments ...
         return new BasicPath(segments, absolute);
     }
@@ -259,9 +266,7 @@ public class PathValueFactory extends AbstractValueFactory<Path> implements Path
     public Path create( Name value ) {
         if (value == null) return null;
         try {
-            List<Path.Segment> segments = new ArrayList<Path.Segment>(1);
-            segments.add(new BasicPathSegment(value));
-            return new BasicPath(segments, true);
+            return new ChildPath(RootPath.INSTANCE, new BasicPathSegment(value));
         } catch (IllegalArgumentException e) {
             throw new ValueFormatException(value, getPropertyType(), e);
         }
@@ -278,13 +283,17 @@ public class PathValueFactory extends AbstractValueFactory<Path> implements Path
      * {@inheritDoc}
      */
     public Path createAbsolutePath( Name... segmentNames ) {
-        if (segmentNames == null || segmentNames.length == 0) return BasicPath.ROOT;
+        if (segmentNames == null || segmentNames.length == 0) return RootPath.INSTANCE;
         List<Segment> segments = new ArrayList<Segment>(segmentNames.length);
         for (Name segmentName : segmentNames) {
             if (segmentName == null) {
                 CheckArg.containsNoNulls(segmentNames, "segment names");
             }
             segments.add(new BasicPathSegment(segmentName));
+        }
+        if (segments.size() == 1) {
+            // Special case of a single-segment name ...
+            return new ChildPath(RootPath.INSTANCE, segments.get(0));
         }
         return new BasicPath(segments, true);
     }
@@ -293,13 +302,17 @@ public class PathValueFactory extends AbstractValueFactory<Path> implements Path
      * {@inheritDoc}
      */
     public Path createAbsolutePath( Segment... segments ) {
-        if (segments == null || segments.length == 0) return BasicPath.ROOT;
+        if (segments == null || segments.length == 0) return RootPath.INSTANCE;
         List<Segment> segmentsList = new ArrayList<Segment>(segments.length);
         for (Segment segment : segments) {
             if (segment == null) {
                 CheckArg.containsNoNulls(segments, "segments");
             }
             segmentsList.add(segment);
+        }
+        if (segmentsList.size() == 1) {
+            // Special case of a single-segment name ...
+            return new ChildPath(RootPath.INSTANCE, segmentsList.get(0));
         }
         return new BasicPath(segmentsList, true);
     }
@@ -317,7 +330,11 @@ public class PathValueFactory extends AbstractValueFactory<Path> implements Path
             }
             segmentsList.add(segment);
         }
-        if (segmentsList.isEmpty()) return BasicPath.ROOT;
+        if (segmentsList.isEmpty()) return RootPath.INSTANCE;
+        if (segmentsList.size() == 1) {
+            // Special case of a single-segment name ...
+            return new ChildPath(RootPath.INSTANCE, segmentsList.get(0));
+        }
         return new BasicPath(segmentsList, true);
     }
 
@@ -397,8 +414,12 @@ public class PathValueFactory extends AbstractValueFactory<Path> implements Path
             return new BasicPath(childPath.getSegmentsList(), parentPath.isAbsolute());
         }
         List<Segment> segments = new ArrayList<Segment>(parentPath.size() + childPath.size());
-        segments.addAll(parentPath.getSegmentsList());
-        segments.addAll(childPath.getSegmentsList());
+        for (Segment seg : parentPath) {
+            segments.add(seg);
+        }
+        for (Segment seg : childPath) {
+            segments.add(seg);
+        }
         return new BasicPath(segments, parentPath.isAbsolute());
     }
 
@@ -410,10 +431,7 @@ public class PathValueFactory extends AbstractValueFactory<Path> implements Path
                         int index ) {
         CheckArg.isNotNull(parentPath, "parent path");
         CheckArg.isNotNull(segmentName, "segment name");
-        List<Segment> segments = new ArrayList<Segment>(parentPath.size() + 1);
-        segments.addAll(parentPath.getSegmentsList());
-        segments.add(new BasicPathSegment(segmentName, index));
-        return new BasicPath(segments, parentPath.isAbsolute());
+        return new ChildPath(parentPath, new BasicPathSegment(segmentName, index));
     }
 
     /**
@@ -423,6 +441,9 @@ public class PathValueFactory extends AbstractValueFactory<Path> implements Path
                         Name... segmentNames ) {
         CheckArg.isNotNull(parentPath, "parent path");
         if (segmentNames == null || segmentNames.length == 0) return parentPath;
+        if (segmentNames.length == 1 && segmentNames[0] != null) {
+            return new ChildPath(parentPath, new BasicPathSegment(segmentNames[0]));
+        }
 
         List<Segment> segments = new ArrayList<Segment>(parentPath.size() + 1);
         segments.addAll(parentPath.getSegmentsList());
@@ -441,7 +462,10 @@ public class PathValueFactory extends AbstractValueFactory<Path> implements Path
     public Path create( Path parentPath,
                         Segment... segments ) {
         CheckArg.isNotNull(parentPath, "parent path");
-        if (segments == null || segments.length == 0) return BasicPath.ROOT;
+        if (segments == null || segments.length == 0) return RootPath.INSTANCE;
+        if (segments.length == 1 && segments[0] != null) {
+            return new ChildPath(parentPath, segments[0]);
+        }
 
         List<Segment> segmentsList = new ArrayList<Segment>(parentPath.size() + 1);
         segmentsList.addAll(parentPath.getSegmentsList());
@@ -471,7 +495,8 @@ public class PathValueFactory extends AbstractValueFactory<Path> implements Path
             }
             segmentsList.add(segment);
         }
-        if (segmentsList.isEmpty()) return BasicPath.ROOT;
+        if (segmentsList.isEmpty()) return RootPath.INSTANCE;
+        if (segmentsList.size() == 0) return new ChildPath(parentPath, segmentsList.get(0));
         return new BasicPath(segmentsList, parentPath.isAbsolute());
     }
 
@@ -482,9 +507,27 @@ public class PathValueFactory extends AbstractValueFactory<Path> implements Path
      */
     public Path create( Path parentPath,
                         String subpath ) {
-        // Create a relative path for the subpath ...
+        CheckArg.isNotNull(subpath, "subpath");
+        subpath = subpath.trim();
+        boolean singleChild = subpath.indexOf(Path.DELIMITER) == -1;
+        if (!singleChild && subpath.startsWith("./")) {
+            if (subpath.length() == 2) return parentPath; // self reference
+            // Remove the leading parent reference and try again to see if single child ...
+            subpath = subpath.substring(2);
+            singleChild = subpath.indexOf(Path.DELIMITER) == -1;
+        }
+        if (singleChild) {
+            try {
+                Path.Segment childSegment = createSegment(subpath);
+                return new ChildPath(parentPath, childSegment);
+            } catch (IllegalArgumentException t) {
+                // Catch and eat, letting the slower implementation catch anything ...
+            }
+        }
+        // It is a subpath with more than one segment, so create a relative path for the subpath ...
         Path relativeSubpath = create(subpath);
         return create(parentPath, relativeSubpath);
+
     }
 
     /**

@@ -102,9 +102,9 @@ public class XmlSequencerTest {
         assertThat(text.startsWith("Licensed to the Apache Software Foundation (ASF)"), is(true));
         assertThat(text.indexOf('\n') > 0, is(true));
         assertThat(text.endsWith("   limitations under the License."), is(true));
-        verifyString("/", DTD_NAME, "Repository");
-        verifyString("/", DTD_PUBLIC_ID, "-//The Apache Software Foundation//DTD Jackrabbit 1.2//EN");
-        verifyString("/", DTD_SYSTEM_ID, "http://jackrabbit.apache.org/dtd/repository-1.2.dtd");
+        verifyString("", DTD_NAME, "Repository");
+        verifyString("", DTD_PUBLIC_ID, "-//The Apache Software Foundation//DTD Jackrabbit 1.2//EN");
+        verifyString("", DTD_SYSTEM_ID, "http://jackrabbit.apache.org/dtd/repository-1.2.dtd");
         verifyName(COMMENT + "[2]", "jcr:primaryType", COMMENT);
         verifyString(COMMENT + "[2]", COMMENT_CONTENT, "Example Repository Configuration File");
         verifyName("Repository[1]", "jcr:primaryType", "nt:unstructured");

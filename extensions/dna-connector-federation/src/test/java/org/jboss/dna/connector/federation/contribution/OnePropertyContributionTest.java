@@ -34,9 +34,9 @@ import org.jboss.dna.graph.properties.DateTime;
 import org.jboss.dna.graph.properties.Path;
 import org.jboss.dna.graph.properties.Property;
 import org.jboss.dna.graph.properties.basic.BasicName;
-import org.jboss.dna.graph.properties.basic.BasicPath;
 import org.jboss.dna.graph.properties.basic.BasicSingleValueProperty;
 import org.jboss.dna.graph.properties.basic.JodaDateTime;
+import org.jboss.dna.graph.properties.basic.RootPath;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -59,7 +59,7 @@ public class OnePropertyContributionTest {
     @Before
     public void beforeEach() throws Exception {
         sourceName = "some source";
-        pathInSource = BasicPath.ROOT;
+        pathInSource = RootPath.INSTANCE;
         expiration = TOMORROW;
         String nsUri = "http://www.jboss.org/default";
         property1 = new BasicSingleValueProperty(new BasicName(nsUri, "property1"), "value1");

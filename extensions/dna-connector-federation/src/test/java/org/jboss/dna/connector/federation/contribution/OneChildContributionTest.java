@@ -31,8 +31,8 @@ import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.properties.DateTime;
 import org.jboss.dna.graph.properties.Name;
 import org.jboss.dna.graph.properties.Path;
-import org.jboss.dna.graph.properties.basic.BasicPath;
 import org.jboss.dna.graph.properties.basic.JodaDateTime;
+import org.jboss.dna.graph.properties.basic.RootPath;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -55,7 +55,7 @@ public class OneChildContributionTest {
     @Before
     public void beforeEach() throws Exception {
         sourceName = "some source";
-        pathInSource = BasicPath.ROOT;
+        pathInSource = RootPath.INSTANCE;
         expiration = TOMORROW;
         child1 = mock(Location.class);
         contribution = new OneChildContribution(sourceName, new Location(pathInSource), expiration, child1);

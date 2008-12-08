@@ -604,7 +604,7 @@ public class Projection implements Comparable<Projection>, Serializable {
          */
         protected boolean includes( Path pathInSource ) {
             // Check whether the path is outside the source-specific path ...
-            if (this.sourcePath.isAtOrAbove(pathInSource)) {
+            if (pathInSource != null && this.sourcePath.isAtOrAbove(pathInSource)) {
 
                 // The path is inside the source-specific region, so check the exceptions ...
                 List<Path> exceptions = getExceptionsToRule();
