@@ -24,9 +24,11 @@ package org.jboss.dna.connector.svn;
 import org.tmatesoft.svn.core.SVNException;
 import org.tmatesoft.svn.core.SVNURL;
 import org.tmatesoft.svn.core.auth.ISVNAuthenticationManager;
-import org.tmatesoft.svn.core.internal.io.dav.DAVRepository;
 import org.tmatesoft.svn.core.internal.io.dav.DAVRepositoryFactory;
+import org.tmatesoft.svn.core.internal.io.fs.FSRepositoryFactory;
+import org.tmatesoft.svn.core.internal.io.svn.SVNRepositoryFactoryImpl;
 import org.tmatesoft.svn.core.io.SVNRepository;
+import org.tmatesoft.svn.core.io.SVNRepositoryFactory;
 import org.tmatesoft.svn.core.wc.SVNWCUtil;
 
 /**
@@ -34,24 +36,38 @@ import org.tmatesoft.svn.core.wc.SVNWCUtil;
  */
 public class SVNConnectorTestUtil {
 
+//    public static void main( String[] args ) {
+//        try {
+//            System.out.println("hello ......");
+//            SVNRepository repos = createRepository("file:////Users/sp/innoq-dev/innoq-jboss/jboss-dna/extensions/dna-connector-svn/src/test/resources/dummy_svn_repos", "sp", "p530020");
+//            System.out.println("Repository Root: " + repos.getRepositoryRoot(true));
+//            System.out.println("Repository UUID: " + repos.getRepositoryUUID(true));
+//            System.out.println("hello ......");
+//        } catch (SVNException e) {
+//        }
+//    }
+
     /**
      * Create a {@link SVNRepository} from a http protocol.
      * 
      * @param url - the url of the repository.
      * @param username - username credential.
      * @param password - password credential
-     * @return {@link DAVRepository}.
+     * @return {@link SVNRepository}.
      * @throws SVNException - when error situation.
      */
-    public static DAVRepository createRepository( String url,
+    public static SVNRepository createRepository( String url,
                                                   String username,
                                                   String password ) throws SVNException {
         // for DAV (over http and https)
         DAVRepositoryFactory.setup();
+        // For File
+        FSRepositoryFactory.setup();
+        // for SVN (over svn and svn+ssh)
+        SVNRepositoryFactoryImpl.setup();
 
-        
         // The factory knows how to create a DAVRepository
-        DAVRepository repository = (DAVRepository)DAVRepositoryFactory.create(SVNURL.parseURIDecoded(url));
+        SVNRepository repository = SVNRepositoryFactory.create(SVNURL.parseURIDecoded(url));
         ISVNAuthenticationManager authManager = SVNWCUtil.createDefaultAuthenticationManager(username, password);
         repository.setAuthenticationManager(authManager);
         return repository;

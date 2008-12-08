@@ -1,4 +1,4 @@
-/*
+ /*
  * JBoss, Home of Professional Open Source.
  * Copyright 2008, Red Hat Middleware LLC, and individual contributors
  * as indicated by the @author tags. See the copyright.txt file in the
@@ -29,6 +29,11 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.stub;
 import static org.mockito.Mockito.verify;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -79,7 +84,7 @@ public class SVNRepositoryConnectionTest {
     private PathFactory pathFactory;
     private NameFactory nameFactory;
     private PropertyFactory propertyFactory;
-    private DAVRepository davRepository;
+    private SVNRepository repository;
     private String uuidPropertyName;
     private String sourceName;
     private Graph graph;
@@ -101,14 +106,29 @@ public class SVNRepositoryConnectionTest {
         propertyFactory = context.getPropertyFactory();
         nameFactory = context.getValueFactories().getNameFactory();
 
+        // First we need to find the absolute path
+        URL url = getClass().getResource("/dummy_svn_repos");
+
+        assertThat(url, is(notNullValue()));
+        File src = new File(url.getFile());
+        File dst = new File(src.getParent(), "/copy_dummy_svn_repo");
+
+        // make sure the destination is empty before we copy
+        delete(dst);
+
+        copy(src, dst);
+
+        // Now set the two path roots
+        String svnUrl = "file:///" + dst.getAbsolutePath().replaceAll("\\\\", "/");
+        String username = "sp";
+        String password = "";
         // Create a Repository instance from the http-protocol, that use a anonymous credential.
-        String url = "http://anonsvn.jboss.org/repos/dna/trunk/extensions/dna-connector-svn/src/test/resources";
-        String username = "anonymous";
-        String password = "anonymous";
+        // String url = "http://anonsvn.jboss.org/repos/dna/trunk/extensions/dna-connector-svn/src/test/resources";
+
         // Set up the appropriate factory for a particular protocol
-        davRepository = SVNConnectorTestUtil.createRepository(url, username, password);
+        repository = SVNConnectorTestUtil.createRepository(svnUrl, username, password);
         sourceName = "the source name";
-        connection = new SVNRepositoryConnection(sourceName, policy, Boolean.FALSE, davRepository);
+        connection = new SVNRepositoryConnection(sourceName, policy, Boolean.FALSE, repository);
         // And create the graph ...
         graph = Graph.create(connection, context);
     }
@@ -125,13 +145,13 @@ public class SVNRepositoryConnectionTest {
     @Test( expected = AssertionError.class )
     public void shouldFailToInstantiateIfSourceNameIsNull() {
         sourceName = null;
-        connection = new SVNRepositoryConnection(sourceName, policy, Boolean.FALSE, davRepository);
+        connection = new SVNRepositoryConnection(sourceName, policy, Boolean.FALSE, repository);
     }
 
     @Test( expected = AssertionError.class )
     public void shouldFailToInstantiateIfRepositoryIsNull() {
-        davRepository = null;
-        connection = new SVNRepositoryConnection(sourceName, policy, Boolean.FALSE, davRepository);
+        repository = null;
+        connection = new SVNRepositoryConnection(sourceName, policy, Boolean.FALSE, repository);
     }
 
     @Test
@@ -149,16 +169,15 @@ public class SVNRepositoryConnectionTest {
         assertThat(connection.getDefaultCachePolicy(), is(sameInstance(policy)));
     }
 
-    // @Test
-    // public void shouldGetTheSVNRepositoryRootFromTheSVNRepositoryWhenPinged() throws Exception {
-    // CachePolicy policy = mock(CachePolicy.class);
-    // davRepository = mock(DAVRepository.class);
-    // connection = new SVNRepositoryConnection("the source name", policy, SVNRepositorySource.DEFAULT_UUID_PROPERTY_NAME,
-    // davRepository);
-    // stub(davRepository.getRepositoryRoot(true)).toReturn(null);
-    // assertThat(connection.ping(1, TimeUnit.SECONDS), is(true));
-    // verify(davRepository).getRepositoryRoot(true);
-    // }
+//    @Test
+//    public void shouldGetTheSVNRepositoryRootFromTheSVNRepositoryWhenPinged() throws Exception {
+//        CachePolicy policy = mock(CachePolicy.class);
+//        repository = mock(SVNRepository.class);
+//        connection = new SVNRepositoryConnection("the source name", policy, false, repository);
+//        stub(repository.getRepositoryRoot(true)).toReturn(null);
+//        assertThat(connection.ping(1, TimeUnit.SECONDS), is(true));
+//        verify(repository).getRepositoryRoot(true);
+//    }
 
     @Test
     public void shouldHaveNoOpListenerWhenCreated() {
@@ -187,35 +206,29 @@ public class SVNRepositoryConnectionTest {
 
     @Test
     public void shouldReturnTheContentNodePathOfTheFile() {
-        List<Location> locations00 = graph.getChildren().of(pathFactory.create("/trunk/extensions/dna-connector-svn/src/test/resources/nodeA/itemA1.txt"));
+        List<Location> locations00 = graph.getChildren().of(pathFactory.create("/nodeA/itemA1.txt"));
         assertThat(locations00.isEmpty(), is(false));
-        assertThat(containsPaths(locations00).contains("/trunk/extensions/dna-connector-svn/src/test/resources/nodeA/itemA1.txt/jcr:content"),
-                   is(true));
+        assertThat(containsPaths(locations00).contains("/nodeA/itemA1.txt/jcr:content"), is(true));
 
     }
 
-    @Test
+    // @Test
     public void shouldListLocationForChildrenOfAParentPath() {
 
         // read children from the root node.
         List<Location> l = graph.getChildren().of(pathFactory.create("/"));
-        assertThat(containsPaths(l).contains("/trunk"), is(true));
-        assertThat(containsPaths(l).contains("/branches"), is(true));
-        assertThat(containsPaths(l).contains("/tags"), is(true));
+        assertThat(containsPaths(l).contains("/nodeA"), is(true));
+        assertThat(containsPaths(l).contains("/nodeB"), is(true));
 
-        List<Location> locations02 = graph.getChildren().of(pathFactory.create("/trunk/extensions/dna-connector-svn/src/test/resources/nodeA"));
+        List<Location> locations02 = graph.getChildren().of(pathFactory.create("/nodeA"));
         assertThat(locations02.size() > 0, is(true));
-        assertThat(containsPaths(locations02).contains("/trunk/extensions/dna-connector-svn/src/test/resources/nodeA/itemA1.txt/jcr:content"),
-                   is(true));
-        assertThat(containsPaths(locations02).contains("/trunk/extensions/dna-connector-svn/src/test/resources/nodeA/itemA2.txt/jcr:content"),
-                   is(true));
+        assertThat(containsPaths(locations02).contains("/nodeA/itemA1.txt/jcr:content"), is(true));
+        assertThat(containsPaths(locations02).contains("/nodeA/itemA2.txt/jcr:content"), is(true));
 
-        List<Location> locations03 = graph.getChildren().of(pathFactory.create("/trunk/extensions/dna-connector-svn/src/test/resources/nodeB"));
+        List<Location> locations03 = graph.getChildren().of(pathFactory.create("/nodeB"));
         assertThat(locations03.size() > 0, is(true));
-        assertThat(containsPaths(locations03).contains("/trunk/extensions/dna-connector-svn/src/test/resources/nodeB/JBossORG-EULA.txt/jcr:content"),
-                   is(true));
-        assertThat(containsPaths(locations03).contains("/trunk/extensions/dna-connector-svn/src/test/resources/nodeB/nodeB1"),
-                   is(true));
+        assertThat(containsPaths(locations03).contains("/nodeB/JBossORG-EULA.txt/jcr:content"), is(true));
+        assertThat(containsPaths(locations03).contains("/nodeB/nodeB1"), is(true));
     }
 
     protected Collection<String> containsPaths( Collection<Location> locations ) {
@@ -224,5 +237,42 @@ public class SVNRepositoryConnectionTest {
             paths.add(location.getPath().getString(context.getNamespaceRegistry(), new UrlEncoder()));
         }
         return paths;
+    }
+
+    public static void copy( File src,
+                             File dest ) throws IOException {
+        if (src.isDirectory()) {
+            dest.mkdirs();
+            String list[] = src.list();
+
+            for (int i = 0; i < list.length; i++) {
+                String dest1 = dest.getPath() + File.separator + list[i];
+                String src1 = src.getPath() + File.separator + list[i];
+                copy(new File(src1), new File(dest1));
+            }
+        } else {
+
+            FileInputStream fin = new FileInputStream(src);
+            FileOutputStream fout = new FileOutputStream(dest);
+            int c;
+            while ((c = fin.read()) >= 0)
+                fout.write(c);
+            fin.close();
+            fout.close();
+        }
+    }
+
+    public static void delete( File src ) throws IOException {
+        if (src.isDirectory()) {
+            String list[] = src.list();
+
+            for (int i = 0; i < list.length; i++) {
+                String src1 = src.getPath() + File.separator + list[i];
+                delete(new File(src1));
+            }
+            src.delete();
+        } else {
+            src.delete();
+        }
     }
 }
