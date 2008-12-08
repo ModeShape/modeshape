@@ -212,7 +212,7 @@ public class SVNRepositoryConnectionTest {
 
     }
 
-    // @Test
+     @Test
     public void shouldListLocationForChildrenOfAParentPath() {
 
         // read children from the root node.
