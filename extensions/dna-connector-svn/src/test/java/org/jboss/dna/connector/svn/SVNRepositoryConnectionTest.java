@@ -88,15 +88,15 @@ public class SVNRepositoryConnectionTest {
         // First we need to find the absolute path. Note that Maven always runs the tests from the project's directory,
         // so use new File to create an instance at the current location ...
         File src = new File("src/test/resources/dummy_svn_repos");
-        File dst = new File("target/copy_dummy_svn_repos");
+        File dst = new File("target/copy_of dummy_svn_repos");
 
         // make sure the destination is empty before we copy
         FileUtil.delete(dst);
         FileUtil.copy(src, dst);
 
         // Now set the two path roots
-        String svnUrl = dst.getCanonicalFile().toURI().toURL().toString();
-        svnUrl = svnUrl.replaceFirst("file:/", "file://localhost/"); // add the 'localhost'
+        String svnUrl = dst.getCanonicalFile().toURL().toString();
+        svnUrl = svnUrl.replaceFirst("file:/", "file:///"); // add the 'localhost'
         String username = "sp";
         String password = "";
         // Create a Repository instance from the http-protocol, that use a anonymous credential.
