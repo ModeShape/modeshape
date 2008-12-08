@@ -95,7 +95,7 @@ public class SVNRepositoryConnectionTest {
         FileUtil.copy(src, dst);
 
         // Now set the two path roots
-        String svnUrl = dst.getCanonicalFile().toURL().toString();
+        String svnUrl = dst.getCanonicalFile().toURI().toURL().toString();
         svnUrl = svnUrl.replaceFirst("file:/", "file://localhost/"); // add the 'localhost'
         String username = "sp";
         String password = "";
