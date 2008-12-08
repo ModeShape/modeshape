@@ -100,7 +100,7 @@
 			<roles>
 				<role>Developer</role>
 			</roles>
-			<timezone>0</timezone>
+			<timezone>+10</timezone>
 		</developer>
 	</developers>
 	<contributors>
@@ -131,6 +131,8 @@
 		<module>extensions/dna-connector-svn</module>
 		<module>extensions/dna-connector-store-jpa</module>
 		<module>extensions/dna-mimetype-detector-aperture</module>
+                <module>extensions/dna-common-jdbc</module> 
+                <module>extensions/dna-connector-jdbc-metadata</module> 
 		<module>dna-integration-tests</module>
 		<module>docs/examples/gettingstarted</module>
 	</modules>
