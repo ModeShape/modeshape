@@ -172,7 +172,7 @@ public interface Column extends DatabaseNamedObject {
     /**
      * For char types sets the maximum number of bytes in the column. Otherwise -1.
      * 
-     * @param CharOctetLength For char types sets the maximum number of bytes in the column. Otherwise -1.
+     * @param charOctetLength For char types sets the maximum number of bytes in the column. Otherwise -1.
      */
     void setCharOctetLength( Integer charOctetLength );
 

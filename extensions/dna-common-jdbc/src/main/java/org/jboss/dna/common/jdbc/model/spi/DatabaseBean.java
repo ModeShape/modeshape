@@ -100,7 +100,7 @@ public class DatabaseBean extends CoreMetaDataBean implements Database {
     private String procedureTerm;
     private String catalogTerm;
     private Boolean catalogAtStart;
-    private String ñatalogSeparator;
+    private String catalogSeparator;
     private Boolean supportsSchemasInDataManipulation;
     private Boolean supportsSchemasInProcedureCalls;
     private Boolean supportsSchemasInTableDefinitions;
@@ -1655,7 +1655,7 @@ public class DatabaseBean extends CoreMetaDataBean implements Database {
      * @return the separator string
      */
     public String getCatalogSeparator() {
-        return ñatalogSeparator;
+        return catalogSeparator;
     }
 
     /**
@@ -1664,7 +1664,7 @@ public class DatabaseBean extends CoreMetaDataBean implements Database {
      * @param catalogSeparator the separator string
      */
     public void setCatalogSeparator( String catalogSeparator ) {
-        this.ñatalogSeparator = catalogSeparator;
+        this.catalogSeparator = catalogSeparator;
     }
 
     /**

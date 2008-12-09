@@ -48,8 +48,3 @@ public enum ResultSetConcurrencyType {
         return name();
     }
 }
-
-/*
- * $Log$
- *  
- */

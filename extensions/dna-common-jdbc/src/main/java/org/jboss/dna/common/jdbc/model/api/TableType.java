@@ -142,7 +142,6 @@ public interface TableType extends DatabaseNamedObject {
     /**
      * Is current table type represents SYNONYM
      * 
-     * @param tableTypeName the table type string
      * @return true if current table type represents SYNONYM
      */
     Boolean isSynonym();

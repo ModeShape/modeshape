@@ -86,7 +86,6 @@ public interface DatabaseNamedObject extends CoreMetaData {
      * deletes extra property
      * 
      * @param key the key
-     * @param value the value
      */
     void deleteExtraProperty( String key );
 }

@@ -712,8 +712,8 @@ public interface Database extends CoreMetaData {
     /**
      * Sets whether this database supports concatenations between <code>NULL</code> and non-<code>NULL</code> values being
      * <code>NULL</code>.
+     * @param nullPlusNonNullIsNull <code>true</code> if so; <code>false</code> otherwise
      * 
-     * @return <code>true</code> if so; <code>false</code> otherwise
      */
     void setNullPlusNonNullIsNull( Boolean nullPlusNonNullIsNull );
 
@@ -736,7 +736,7 @@ public interface Database extends CoreMetaData {
      * <code>DatabaseMetaData.supportsConvert</code> to check common (NOT ALL POSSIBLE) conversions.
      * 
      * @return list of common (NOT ALL POSSIBLE) conversions.
-     * @see Types
+     * @see java.sql.Types
      */
     Set<SqlTypeConversionPair> getSupportedConversions();
 
@@ -756,6 +756,7 @@ public interface Database extends CoreMetaData {
 
     /**
      * Searches set of SqlTypeConversionPair by SrcType
+     * @param srcType the source type
      * 
      * @return set of SqlTypeConversionPair
      */
@@ -817,7 +818,7 @@ public interface Database extends CoreMetaData {
      * Sets whether this database supports using a column that is not in the <code>SELECT</code> statement in an
      * <code>ORDER BY</code> clause.
      * 
-     * @param <code>true</code> if so; <code>false</code> otherwise
+     * @param supportsOrderByUnrelated <code>true</code> if so; <code>false</code> otherwise
      */
     void setSupportsOrderByUnrelated( Boolean supportsOrderByUnrelated );
 
@@ -1257,7 +1258,6 @@ public interface Database extends CoreMetaData {
      * Retrieves whether a catalog name can be used in an index definition statement.
      * 
      * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
      */
     Boolean isSupportsCatalogsInIndexDefinitions();
 
@@ -1265,7 +1265,6 @@ public interface Database extends CoreMetaData {
      * Sets whether a catalog name can be used in an index definition statement.
      * 
      * @param supportsCatalogsInIndexDefinitions <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
      */
     void setSupportsCatalogsInIndexDefinitions( Boolean supportsCatalogsInIndexDefinitions );
 
@@ -1839,7 +1838,7 @@ public interface Database extends CoreMetaData {
      * <code>java.sql.Connection</code>.
      * 
      * @return the default isolation level
-     * @see Connection
+     * @see java.sql.Connection
      */
     Integer getDefaultTransactionIsolation();
 
@@ -1848,7 +1847,7 @@ public interface Database extends CoreMetaData {
      * <code>java.sql.Connection</code>.
      * 
      * @param defaultTransactionIsolation the default isolation level
-     * @see Connection
+     * @see java.sql.Connection
      */
     void setDefaultTransactionIsolation( Integer defaultTransactionIsolation );
 
@@ -1872,7 +1871,7 @@ public interface Database extends CoreMetaData {
      * Retrieves list of database supported transaction isolation levels.
      * 
      * @return list of database supported transaction isolation levels.
-     * @see Connection
+     * @see java.sql.Connection
      */
     Set<TransactionIsolationLevelType> getSupportedTransactionIsolationLevels();
 
@@ -1894,6 +1893,7 @@ public interface Database extends CoreMetaData {
      * Is supported TransactionIsolationLevelType
      * 
      * @param transactionIsolationLevelType the Transaction Isolation Level Type
+     * @return true if supported 
      */
     Boolean isSupportedTransactionIsolationLevelType( TransactionIsolationLevelType transactionIsolationLevelType );
 
@@ -2156,7 +2156,7 @@ public interface Database extends CoreMetaData {
      * Retrieves database supported result set types.
      * 
      * @return database supported result set types.
-     * @see Connection
+     * @see java.sql.Connection
      * @since 1.2 (JDBC 2.0)
      */
     Set<ResultSetType> getSupportedResultSetTypes();
@@ -2179,7 +2179,7 @@ public interface Database extends CoreMetaData {
      * Retrieves database supported concurrencies for the given result set type.
      * 
      * @return database supported concurrencies for the given result set type.
-     * @see Connection
+     * @see java.sql.Connection
      * @since 1.2 (JDBC 2.0)
      */
     Set<ResultSetConcurrencyType> getSupportedForwardOnlyResultSetConcurrencies();
@@ -2202,7 +2202,7 @@ public interface Database extends CoreMetaData {
      * Retrieves database supported concurrencies for the given result set type.
      * 
      * @return database supported concurrencies for the given result set type.
-     * @see Connection
+     * @see java.sql.Connection
      * @since 1.2 (JDBC 2.0)
      */
     Set<ResultSetConcurrencyType> getSupportedScrollInsensitiveResultSetConcurrencies();
@@ -2225,7 +2225,7 @@ public interface Database extends CoreMetaData {
      * Retrieves database supported concurrencies for the given result set type.
      * 
      * @return database supported concurrencies for the given result set type.
-     * @see Connection
+     * @see java.sql.Connection
      * @since 1.2 (JDBC 2.0)
      */
     Set<ResultSetConcurrencyType> getSupportedScrollSensitiveResultSetConcurrencies();
@@ -2844,7 +2844,7 @@ public interface Database extends CoreMetaData {
      * Retrieves whether this database supports the given result set holdability.
      * 
      * @return <code>true</code> if so; <code>false</code> otherwise
-     * @see Connection
+     * @see java.sql.Connection
      * @since 1.4 (JDBC 3.0)
      */
     Boolean isSupportsResultSetHoldCurrorsOverCommitHoldability();
@@ -2853,7 +2853,7 @@ public interface Database extends CoreMetaData {
      * Sets whether this database supports the given result set holdability.
      * 
      * @param supportsResultSetHoldCurrorsOverCommitHoldability <code>true</code> if so; <code>false</code> otherwise
-     * @see Connection
+     * @see java.sql.Connection
      * @since 1.4 (JDBC 3.0)
      */
     void setSupportsResultSetHoldCurrorsOverCommitHoldability( Boolean supportsResultSetHoldCurrorsOverCommitHoldability );
@@ -2862,7 +2862,7 @@ public interface Database extends CoreMetaData {
      * Retrieves whether this database supports the given result set holdability.
      * 
      * @return <code>true</code> if so; <code>false</code> otherwise
-     * @see Connection
+     * @see java.sql.Connection
      * @since 1.4 (JDBC 3.0)
      */
     Boolean isSupportsResultSetCloseCurrorsAtCommitHoldability();
@@ -2871,7 +2871,7 @@ public interface Database extends CoreMetaData {
      * Sets whether this database supports the given result set holdability.
      * 
      * @param supportsResultSetCloseCurrorsAtCommitHoldability <code>true</code> if so; <code>false</code> otherwise
-     * @see Connection
+     * @see java.sql.Connection
      * @since 1.4 (JDBC 3.0)
      */
     void setSupportsResultSetCloseCurrorsAtCommitHoldability( Boolean supportsResultSetCloseCurrorsAtCommitHoldability );
@@ -2881,7 +2881,6 @@ public interface Database extends CoreMetaData {
      * 
      * @return the default holdability; either <code>ResultSet.HOLD_CURSORS_OVER_COMMIT</code> or
      *         <code>ResultSet.CLOSE_CURSORS_AT_COMMIT</code>
-     * @exception SQLException if a database access error occurs
      * @since 1.4
      */
     ResultSetHoldabilityType getResultSetHoldabilityType();
@@ -2890,9 +2889,8 @@ public interface Database extends CoreMetaData {
      * Sets the default holdability of this <code>ResultSet</code> object.
      * 
      * @param resultSetHoldabilityType the ResultSetHoldabilityType
-     * @return the default holdability; either <code>ResultSet.HOLD_CURSORS_OVER_COMMIT</code> or
+     *   the default holdability; either <code>ResultSet.HOLD_CURSORS_OVER_COMMIT</code> or
      *         <code>ResultSet.CLOSE_CURSORS_AT_COMMIT</code>
-     * @exception SQLException if a database access error occurs
      * @since 1.4
      */
     void setResultSetHoldabilityType( ResultSetHoldabilityType resultSetHoldabilityType );

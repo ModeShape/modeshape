@@ -97,7 +97,7 @@ public interface ForeignKey extends SchemaObject {
     /**
      * What happens to a foreign key when the primary key is updated
      * 
-     * @param keyModifyRuleType what happens to a foreign key when the primary key is updated
+     * @param updateRule what happens to a foreign key when the primary key is updated
      */
     void setUpdateRule( KeyModifyRuleType updateRule );
 
@@ -125,12 +125,7 @@ public interface ForeignKey extends SchemaObject {
     /**
      * Can the evaluation of foreign key constraints be deferred until commit
      * 
-     * @param keyDeferrabilityType the evaluation of foreign key constraints be deferred until commit
+     * @param deferrability the evaluation of foreign key constraints be deferred until commit
      */
     void setDeferrability( KeyDeferrabilityType deferrability );
 }
-
-/*
- * $Log$
- *  
- */

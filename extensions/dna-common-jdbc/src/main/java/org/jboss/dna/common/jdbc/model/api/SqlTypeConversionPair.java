@@ -52,7 +52,7 @@ public interface SqlTypeConversionPair extends CoreMetaData {
     /**
      * Sets valid destination SQL Type
      * 
-     * @param toType the destination SQL Type
+     * @param destType the destination SQL Type
      */
     void setDestType( SqlType destType );
 }

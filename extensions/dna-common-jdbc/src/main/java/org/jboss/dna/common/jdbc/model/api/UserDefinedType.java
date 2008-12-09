@@ -74,7 +74,7 @@ public interface UserDefinedType extends SchemaObject {
      * user-generated reference type of the SELF_REFERENCING_COLUMN of a structured type as defined in java.sql.Types (null if
      * DATA_TYPE is not DISTINCT or not STRUCT with REFERENCE_GENERATION = USER_DEFINED)
      * 
-     * @param baseSqlType the SQL base type from java.sql.Types.
+     * @param baseType the SQL base type from java.sql.Types.
      */
     void setBaseType( SqlType baseType );
 
