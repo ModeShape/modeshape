@@ -31,7 +31,7 @@ import java.sql.DatabaseMetaData;
 public enum BestRowIdentifierScopeType {
 
     TEMPORARY(DatabaseMetaData.bestRowTemporary), // Indicates that the scope is very temporary, lasting only while the row is
-                                                  // being used.
+    // being used.
     TRANSACTION(DatabaseMetaData.bestRowTransaction), // Indicates that the scope is the remainder of the current transaction.
     SESSION(DatabaseMetaData.bestRowSession); // Indicates that the scope is the remainder of the current session.
 
@@ -43,7 +43,7 @@ public enum BestRowIdentifierScopeType {
 
     public int getScope() {
         return scope;
-    };
+    }
 
     public String getName() {
         return name();

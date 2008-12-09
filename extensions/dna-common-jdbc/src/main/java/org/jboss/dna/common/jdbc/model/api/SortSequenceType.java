@@ -21,7 +21,6 @@
  */
 package org.jboss.dna.common.jdbc.model.api;
 
-import java.sql.DatabaseMetaData;
 
 /**
  * Provides RDBMS supported sort sequence types as enumeration set.
@@ -41,7 +40,7 @@ public enum SortSequenceType {
 
     public String getType() {
         return type;
-    };
+    }
 
     public String getName() {
         return name();

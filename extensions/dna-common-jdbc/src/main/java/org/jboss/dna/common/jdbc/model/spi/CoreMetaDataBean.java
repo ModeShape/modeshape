@@ -21,7 +21,6 @@
  */
 package org.jboss.dna.common.jdbc.model.spi;
 
-import java.io.Serializable;
 import org.jboss.dna.common.jdbc.model.api.CoreMetaData;
 
 /**
@@ -30,6 +29,12 @@ import org.jboss.dna.common.jdbc.model.api.CoreMetaData;
  * @author <a href="mailto:litsenko_sergey@yahoo.com">Sergiy Litsenko</a>
  */
 public class CoreMetaDataBean implements CoreMetaData {
+
+    /**
+     * Serializable version {@value}
+     */
+    private static final long serialVersionUID = 1L;
+
     /**
      * Default constructor
      */

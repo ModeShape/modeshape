@@ -34,6 +34,7 @@ public class KeyColumnBeanTest extends TestCase {
     /*
      * @see TestCase#setUp()
      */
+    @Override
     protected void setUp() throws Exception {
         super.setUp();
         // create
@@ -43,6 +44,7 @@ public class KeyColumnBeanTest extends TestCase {
     /*
      * @see TestCase#tearDown()
      */
+    @Override
     protected void tearDown() throws Exception {
         // release
         bean = null;

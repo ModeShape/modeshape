@@ -45,7 +45,7 @@ public enum ParameterIoType {
 
     public int getType() {
         return type;
-    };
+    }
 
     public String getName() {
         return name();

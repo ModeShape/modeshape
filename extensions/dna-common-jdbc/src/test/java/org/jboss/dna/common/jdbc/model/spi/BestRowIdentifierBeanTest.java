@@ -22,11 +22,11 @@
 package org.jboss.dna.common.jdbc.model.spi;
 
 import java.util.Set;
-import org.jboss.dna.common.jdbc.model.DefaultModelFactory;
-import org.jboss.dna.common.jdbc.model.api.BestRowIdentifierScopeType;
-import org.jboss.dna.common.jdbc.model.api.BestRowIdentifier;
-import org.jboss.dna.common.jdbc.model.api.Column;
 import junit.framework.TestCase;
+import org.jboss.dna.common.jdbc.model.DefaultModelFactory;
+import org.jboss.dna.common.jdbc.model.api.BestRowIdentifier;
+import org.jboss.dna.common.jdbc.model.api.BestRowIdentifierScopeType;
+import org.jboss.dna.common.jdbc.model.api.Column;
 
 /**
  * BestRowIdentifierBean test
@@ -40,6 +40,7 @@ public class BestRowIdentifierBeanTest extends TestCase {
     /*
      * @see TestCase#setUp()
      */
+    @Override
     protected void setUp() throws Exception {
         super.setUp();
 
@@ -50,6 +51,7 @@ public class BestRowIdentifierBeanTest extends TestCase {
     /*
      * @see TestCase#tearDown()
      */
+    @Override
     protected void tearDown() throws Exception {
         // release
         bean = null;

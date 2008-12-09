@@ -42,7 +42,7 @@ public enum StoredProcedureResultType {
 
     public int getType() {
         return type;
-    };
+    }
 
     public String getName() {
         return name();

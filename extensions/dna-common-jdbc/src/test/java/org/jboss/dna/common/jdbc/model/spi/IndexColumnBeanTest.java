@@ -22,7 +22,6 @@
 package org.jboss.dna.common.jdbc.model.spi;
 
 import junit.framework.TestCase;
-import org.jboss.dna.common.jdbc.model.DefaultModelFactory;
 import org.jboss.dna.common.jdbc.model.api.IndexColumn;
 import org.jboss.dna.common.jdbc.model.api.SortSequenceType;
 
@@ -37,6 +36,7 @@ public class IndexColumnBeanTest extends TestCase {
     /*
      * @see TestCase#setUp()
      */
+    @Override
     protected void setUp() throws Exception {
         super.setUp();
         // create
@@ -46,6 +46,7 @@ public class IndexColumnBeanTest extends TestCase {
     /*
      * @see TestCase#tearDown()
      */
+    @Override
     protected void tearDown() throws Exception {
         // release
         bean = null;

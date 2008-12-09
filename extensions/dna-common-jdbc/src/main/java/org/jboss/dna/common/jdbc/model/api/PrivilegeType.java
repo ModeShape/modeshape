@@ -21,7 +21,6 @@
  */
 package org.jboss.dna.common.jdbc.model.api;
 
-import java.sql.DatabaseMetaData;
 
 /**
  * Provides RDBMS supported privilege types as enumeration set.
@@ -44,7 +43,7 @@ public enum PrivilegeType {
 
     public String getType() {
         return type;
-    };
+    }
 
     public String getName() {
         return name();

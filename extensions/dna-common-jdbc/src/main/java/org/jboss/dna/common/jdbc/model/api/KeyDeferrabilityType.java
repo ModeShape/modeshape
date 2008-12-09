@@ -42,7 +42,7 @@ public enum KeyDeferrabilityType {
 
     public int getDeferrability() {
         return deferrability;
-    };
+    }
 
     public String getName() {
         return name();

@@ -27,12 +27,48 @@ import java.sql.Types;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
-
 import org.apache.commons.beanutils.PropertyUtils;
-import org.jboss.dna.common.util.Logger;
 import org.jboss.dna.common.jdbc.JdbcMetadataI18n;
-import org.jboss.dna.common.jdbc.model.api.*;
 import org.jboss.dna.common.jdbc.model.ModelFactory;
+import org.jboss.dna.common.jdbc.model.api.Attribute;
+import org.jboss.dna.common.jdbc.model.api.BestRowIdentifier;
+import org.jboss.dna.common.jdbc.model.api.BestRowIdentifierScopeType;
+import org.jboss.dna.common.jdbc.model.api.Catalog;
+import org.jboss.dna.common.jdbc.model.api.ColumnPseudoType;
+import org.jboss.dna.common.jdbc.model.api.Database;
+import org.jboss.dna.common.jdbc.model.api.DatabaseMetaDataMethodException;
+import org.jboss.dna.common.jdbc.model.api.ForeignKey;
+import org.jboss.dna.common.jdbc.model.api.ForeignKeyColumn;
+import org.jboss.dna.common.jdbc.model.api.Index;
+import org.jboss.dna.common.jdbc.model.api.IndexColumn;
+import org.jboss.dna.common.jdbc.model.api.IndexType;
+import org.jboss.dna.common.jdbc.model.api.KeyDeferrabilityType;
+import org.jboss.dna.common.jdbc.model.api.KeyModifyRuleType;
+import org.jboss.dna.common.jdbc.model.api.NullabilityType;
+import org.jboss.dna.common.jdbc.model.api.Parameter;
+import org.jboss.dna.common.jdbc.model.api.ParameterIoType;
+import org.jboss.dna.common.jdbc.model.api.PrimaryKey;
+import org.jboss.dna.common.jdbc.model.api.PrimaryKeyColumn;
+import org.jboss.dna.common.jdbc.model.api.Privilege;
+import org.jboss.dna.common.jdbc.model.api.PrivilegeType;
+import org.jboss.dna.common.jdbc.model.api.Reference;
+import org.jboss.dna.common.jdbc.model.api.ResultSetConcurrencyType;
+import org.jboss.dna.common.jdbc.model.api.ResultSetHoldabilityType;
+import org.jboss.dna.common.jdbc.model.api.ResultSetType;
+import org.jboss.dna.common.jdbc.model.api.SQLStateType;
+import org.jboss.dna.common.jdbc.model.api.Schema;
+import org.jboss.dna.common.jdbc.model.api.SearchabilityType;
+import org.jboss.dna.common.jdbc.model.api.SortSequenceType;
+import org.jboss.dna.common.jdbc.model.api.SqlType;
+import org.jboss.dna.common.jdbc.model.api.SqlTypeInfo;
+import org.jboss.dna.common.jdbc.model.api.StoredProcedure;
+import org.jboss.dna.common.jdbc.model.api.StoredProcedureResultType;
+import org.jboss.dna.common.jdbc.model.api.Table;
+import org.jboss.dna.common.jdbc.model.api.TableColumn;
+import org.jboss.dna.common.jdbc.model.api.TableType;
+import org.jboss.dna.common.jdbc.model.api.TransactionIsolationLevelType;
+import org.jboss.dna.common.jdbc.model.api.UserDefinedType;
+import org.jboss.dna.common.util.Logger;
 
 /**
  * Database related utilities
@@ -50,7 +86,7 @@ public class DatabaseUtil {
      */
     private static String standardUserDefinedTypes = "JAVA_OBJECT,STRUCT,DISTINCT";
 
-    private static Map standardUserDefinedTypesMapping = new HashMap();
+    private static Map<String, Integer> standardUserDefinedTypesMapping = new HashMap<String, Integer>();
 
     static {
         standardUserDefinedTypesMapping.put("JAVA_OBJECT", new Integer(SqlType.JAVA_OBJECT.getType()));
@@ -91,7 +127,7 @@ public class DatabaseUtil {
         // fill array
         for (int i = 0; i < userDefinedTypesStringArray.length; i++) {
             // get value from map
-            Integer udtType = (Integer)standardUserDefinedTypesMapping.get(userDefinedTypesStringArray[i]);
+            Integer udtType = standardUserDefinedTypesMapping.get(userDefinedTypesStringArray[i]);
             // set int value
             userDefinedTypesArray[i] = (udtType == null) ? Types.NULL : udtType.intValue();
         }
@@ -104,7 +140,7 @@ public class DatabaseUtil {
      * @param resultSet the result set to fetch from
      * @param columnName the name of column
      * @return boolean with respect to NULL values (could be null)
-     * @throws SQLException 
+     * @throws SQLException
      */
     public static Boolean getBoolean( ResultSet resultSet,
                                       String columnName ) throws SQLException {
@@ -125,7 +161,7 @@ public class DatabaseUtil {
      * @param columnName the name of column
      * @param failOnError if true raises exception
      * @return boolean with respect to NULL values (could be null)
-     * @throws SQLException 
+     * @throws SQLException
      */
     public static Boolean getBoolean( ResultSet resultSet,
                                       String columnName,
@@ -143,10 +179,9 @@ public class DatabaseUtil {
         } catch (SQLException e) {
             if (failOnError) {
                 throw e;
-            } else {
-                log.error(JdbcMetadataI18n.unableToGetValueFromColumn, columnName, e.getMessage());
-                return null;
             }
+            log.error(JdbcMetadataI18n.unableToGetValueFromColumn, columnName, e.getMessage());
+            return null;
         }
     }
 
@@ -156,7 +191,7 @@ public class DatabaseUtil {
      * @param resultSet the result set to fetch from
      * @param columnIndex the index of column
      * @return boolean with respect to NULL values (could be null)
-     * @throws SQLException 
+     * @throws SQLException
      */
     public static Boolean getBoolean( ResultSet resultSet,
                                       int columnIndex ) throws SQLException {
@@ -177,7 +212,7 @@ public class DatabaseUtil {
      * @param columnIndex the index of column
      * @param failOnError if true raises exception
      * @return boolean with respect to NULL values (could be null)
-     * @throws SQLException 
+     * @throws SQLException
      */
     public static Boolean getBoolean( ResultSet resultSet,
                                       int columnIndex,
@@ -195,10 +230,9 @@ public class DatabaseUtil {
         } catch (SQLException e) {
             if (failOnError) {
                 throw e;
-            } else {
-                log.error(JdbcMetadataI18n.unableToGetValueFromColumn, columnIndex, e.getMessage());
-                return null;
             }
+            log.error(JdbcMetadataI18n.unableToGetValueFromColumn, columnIndex, e.getMessage());
+            return null;
         }
     }
 
@@ -208,7 +242,7 @@ public class DatabaseUtil {
      * @param resultSet the result set to fetch from
      * @param columnName the name of column
      * @return integer with respect to NULL values (could be null)
-     * @throws SQLException 
+     * @throws SQLException
      */
     public static Integer getInteger( ResultSet resultSet,
                                       String columnName ) throws SQLException {
@@ -229,7 +263,7 @@ public class DatabaseUtil {
      * @param columnName the name of column
      * @param failOnError if true raises exception
      * @return integer with respect to NULL values (could be null)
-     * @throws SQLException 
+     * @throws SQLException
      */
     public static Integer getInteger( ResultSet resultSet,
                                       String columnName,
@@ -248,10 +282,9 @@ public class DatabaseUtil {
         } catch (SQLException e) {
             if (failOnError) {
                 throw e;
-            } else {
-                log.error(JdbcMetadataI18n.unableToGetValueFromColumn, columnName, e.getMessage());
-                return null;
             }
+            log.error(JdbcMetadataI18n.unableToGetValueFromColumn, columnName, e.getMessage());
+            return null;
         }
     }
 
@@ -261,7 +294,7 @@ public class DatabaseUtil {
      * @param resultSet the result set to fetch from
      * @param columnIndex the index of column
      * @return integer with respect to NULL values (could be null)
-     * @throws SQLException 
+     * @throws SQLException
      */
     public static Integer getInteger( ResultSet resultSet,
                                       int columnIndex ) throws SQLException {
@@ -282,7 +315,7 @@ public class DatabaseUtil {
      * @param columnIndex the index of column
      * @param failOnError if true raises exception
      * @return integer with respect to NULL values (could be null)
-     * @throws SQLException 
+     * @throws SQLException
      */
     public static Integer getInteger( ResultSet resultSet,
                                       int columnIndex,
@@ -301,10 +334,9 @@ public class DatabaseUtil {
         } catch (SQLException e) {
             if (failOnError) {
                 throw e;
-            } else {
-                log.error(JdbcMetadataI18n.unableToGetValueFromColumn, columnIndex, e.getMessage());
-                return null;
             }
+            log.error(JdbcMetadataI18n.unableToGetValueFromColumn, columnIndex, e.getMessage());
+            return null;
         }
     }
 
@@ -314,7 +346,7 @@ public class DatabaseUtil {
      * @param resultSet the result set to fetch from
      * @param columnName the name of column
      * @return long with respect to NULL values (could be null)
-     * @throws SQLException 
+     * @throws SQLException
      */
     public static Long getLong( ResultSet resultSet,
                                 String columnName ) throws SQLException {
@@ -335,7 +367,7 @@ public class DatabaseUtil {
      * @param columnName the name of column
      * @param failOnError if true raises exception
      * @return long with respect to NULL values (could be null)
-     * @throws SQLException 
+     * @throws SQLException
      */
     public static Long getLong( ResultSet resultSet,
                                 String columnName,
@@ -354,10 +386,9 @@ public class DatabaseUtil {
         } catch (SQLException e) {
             if (failOnError) {
                 throw e;
-            } else {
-                log.error(JdbcMetadataI18n.unableToGetValueFromColumn, columnName, e.getMessage());
-                return null;
             }
+            log.error(JdbcMetadataI18n.unableToGetValueFromColumn, columnName, e.getMessage());
+            return null;
         }
     }
 
@@ -367,7 +398,7 @@ public class DatabaseUtil {
      * @param resultSet the result set to fetch from
      * @param columnIndex the index of column
      * @return long with respect to NULL values (could be null)
-     * @throws SQLException 
+     * @throws SQLException
      */
     public static Long getLong( ResultSet resultSet,
                                 int columnIndex ) throws SQLException {
@@ -388,7 +419,7 @@ public class DatabaseUtil {
      * @param columnIndex the index of column
      * @param failOnError if true raises exception
      * @return long with respect to NULL values (could be null)
-     * @throws SQLException 
+     * @throws SQLException
      */
     public static Long getLong( ResultSet resultSet,
                                 int columnIndex,
@@ -407,10 +438,9 @@ public class DatabaseUtil {
         } catch (SQLException e) {
             if (failOnError) {
                 throw e;
-            } else {
-                log.error(JdbcMetadataI18n.unableToGetValueFromColumn, columnIndex, e.getMessage());
-                return null;
             }
+            log.error(JdbcMetadataI18n.unableToGetValueFromColumn, columnIndex, e.getMessage());
+            return null;
         }
     }
 
@@ -420,7 +450,7 @@ public class DatabaseUtil {
      * @param resultSet the result set to fetch from
      * @param columnName the name of column
      * @return double with respect to NULL values (could be null)
-     * @throws SQLException 
+     * @throws SQLException
      */
     public static Double getDouble( ResultSet resultSet,
                                     String columnName ) throws SQLException {
@@ -441,7 +471,7 @@ public class DatabaseUtil {
      * @param columnName the name of column
      * @param failOnError if true raises exception
      * @return double with respect to NULL values (could be null)
-     * @throws SQLException 
+     * @throws SQLException
      */
     public static Double getDouble( ResultSet resultSet,
                                     String columnName,
@@ -460,10 +490,9 @@ public class DatabaseUtil {
         } catch (SQLException e) {
             if (failOnError) {
                 throw e;
-            } else {
-                log.error(JdbcMetadataI18n.unableToGetValueFromColumn, columnName, e.getMessage());
-                return null;
             }
+            log.error(JdbcMetadataI18n.unableToGetValueFromColumn, columnName, e.getMessage());
+            return null;
         }
     }
 
@@ -473,7 +502,7 @@ public class DatabaseUtil {
      * @param resultSet the result set to fetch from
      * @param columnIndex the index of column
      * @return double with respect to NULL values (could be null)
-     * @throws SQLException 
+     * @throws SQLException
      */
     public static Double getDouble( ResultSet resultSet,
                                     int columnIndex ) throws SQLException {
@@ -494,7 +523,7 @@ public class DatabaseUtil {
      * @param columnIndex the index of column
      * @param failOnError if true raises exception
      * @return double with respect to NULL values (could be null)
-     * @throws SQLException 
+     * @throws SQLException
      */
     public static Double getDouble( ResultSet resultSet,
                                     int columnIndex,
@@ -513,10 +542,9 @@ public class DatabaseUtil {
         } catch (SQLException e) {
             if (failOnError) {
                 throw e;
-            } else {
-                log.error(JdbcMetadataI18n.unableToGetValueFromColumn, columnIndex, e.getMessage());
-                return null;
             }
+            log.error(JdbcMetadataI18n.unableToGetValueFromColumn, columnIndex, e.getMessage());
+            return null;
         }
     }
 
@@ -526,7 +554,7 @@ public class DatabaseUtil {
      * @param resultSet the result set to fetch from
      * @param columnName the name of column
      * @return double with respect to NULL values (could be null)
-     * @throws SQLException 
+     * @throws SQLException
      */
     public static String getString( ResultSet resultSet,
                                     String columnName ) throws SQLException {
@@ -547,7 +575,7 @@ public class DatabaseUtil {
      * @param columnName the name of column
      * @param failOnError if true raises exception
      * @return double with respect to NULL values (could be null)
-     * @throws SQLException 
+     * @throws SQLException
      */
     public static String getString( ResultSet resultSet,
                                     String columnName,
@@ -566,10 +594,9 @@ public class DatabaseUtil {
         } catch (SQLException e) {
             if (failOnError) {
                 throw e;
-            } else {
-                log.error(JdbcMetadataI18n.unableToGetValueFromColumn, columnName, e.getMessage());
-                return null;
             }
+            log.error(JdbcMetadataI18n.unableToGetValueFromColumn, columnName, e.getMessage());
+            return null;
         }
     }
 
@@ -579,7 +606,7 @@ public class DatabaseUtil {
      * @param resultSet the result set to fetch from
      * @param columnIndex the index of column
      * @return double with respect to NULL values (could be null)
-     * @throws SQLException 
+     * @throws SQLException
      */
     public static String getString( ResultSet resultSet,
                                     int columnIndex ) throws SQLException {
@@ -600,7 +627,7 @@ public class DatabaseUtil {
      * @param columnIndex the index of column
      * @param failOnError if true raises exception
      * @return double with respect to NULL values (could be null)
-     * @throws SQLException 
+     * @throws SQLException
      */
     public static String getString( ResultSet resultSet,
                                     int columnIndex,
@@ -618,10 +645,9 @@ public class DatabaseUtil {
         } catch (SQLException e) {
             if (failOnError) {
                 throw e;
-            } else {
-                log.error(JdbcMetadataI18n.unableToGetValueFromColumn, columnIndex, e.getMessage());
-                return null;
             }
+            log.error(JdbcMetadataI18n.unableToGetValueFromColumn, columnIndex, e.getMessage());
+            return null;
         }
     }
 
@@ -644,7 +670,7 @@ public class DatabaseUtil {
         }
         // log only if not found
         log.debug(String.format("[%s] Unknown best row identifier scope type %d", "getBestRowIdentifierScopeType", type));
-        
+
         return null;
     }
 
@@ -949,6 +975,7 @@ public class DatabaseUtil {
 
     /**
      * Returns SqlType based on data type, or null
+     * 
      * @param type the SQL type
      * @return SqlType based on data type, or null
      */
@@ -1021,7 +1048,7 @@ public class DatabaseUtil {
      * @param factory the model factory to create table
      * @param resultSet the table result set from DatabaseMetadata
      * @param traceLog the log to write if any
-     * @param failOnError 
+     * @param failOnError
      * @param database the owner database
      * @return created catalog
      * @throws Exception if any error occurs and failOnError is true then generates exception
@@ -1089,7 +1116,7 @@ public class DatabaseUtil {
      * @param factory the model factory to create table
      * @param resultSet the table result set from DatabaseMetadata
      * @param traceLog the log to write if any
-     * @param failOnError 
+     * @param failOnError
      * @param database the owner database
      * @return created schema
      * @throws Exception if any error occurs and failOnError is true then generates exception
@@ -1166,7 +1193,7 @@ public class DatabaseUtil {
      * @param factory the model factory to create table
      * @param resultSet the table result set from DatabaseMetadata
      * @param traceLog the log to write if any
-     * @param failOnError 
+     * @param failOnError
      * @param database the owner database
      * @return created schema
      * @throws Exception if any error occurs and failOnError is true then generates exception
@@ -1235,7 +1262,7 @@ public class DatabaseUtil {
      * @param factory the model factory to create SP
      * @param resultSet the stored procedure result set from DatabaseMetadata
      * @param traceLog the log to write if any
-     * @param failOnError 
+     * @param failOnError
      * @param database the owner database
      * @return created SP
      * @throws Exception if any error occurs and failOnError is true then generates exception
@@ -1303,10 +1330,10 @@ public class DatabaseUtil {
             // warn if null
             if (catalog == null) {
                 traceLog.debug(String.format("[Database %s] Unable to find catalog '%4$s' for the procedure %s (schema %s, catalog %s)",
-                                            database.getName(),
-                                            procedureName,
-                                            procedureSchema,
-                                            procedureCatalog));
+                                             database.getName(),
+                                             procedureName,
+                                             procedureSchema,
+                                             procedureCatalog));
             }
             // if fail is enabled
             if (failOnError && (catalog == null)) {
@@ -1323,14 +1350,14 @@ public class DatabaseUtil {
             // warn if null
             if (schema == null) {
                 traceLog.debug(String.format("[Database %s] Unable to find schema '%3$s' for the procedure %s (schema %s, catalog %s)",
-                                            database.getName(),
-                                            procedureName,
-                                            procedureSchema,
-                                            procedureCatalog));
+                                             database.getName(),
+                                             procedureName,
+                                             procedureSchema,
+                                             procedureCatalog));
             }
             // if fail is enabled
             if (failOnError && (schema == null)) {
-              throw new DatabaseMetaDataMethodException("Schema name shall be provided", "populateStoredProcedure");
+                throw new DatabaseMetaDataMethodException("Schema name shall be provided", "populateStoredProcedure");
             }
         }
 
@@ -1362,7 +1389,7 @@ public class DatabaseUtil {
      * @param factory the model factory to create SP parameter
      * @param resultSet the stored procedure parameter result set from DatabaseMetadata
      * @param traceLog the log to write if any
-     * @param failOnError 
+     * @param failOnError
      * @param database the owner database
      * @param storedProcedure the owner stored procedure
      * @param ordinalPosition the parameter ordinal position
@@ -1500,7 +1527,7 @@ public class DatabaseUtil {
      * @param factory the model factory to create table
      * @param resultSet the table result set from DatabaseMetadata
      * @param traceLog the log to write if any
-     * @param failOnError 
+     * @param failOnError
      * @param database the owner database
      * @return created table
      * @throws Exception if any error occurs and failOnError is true then generates exception
@@ -1581,10 +1608,10 @@ public class DatabaseUtil {
             // warn if null
             if (catalog == null) {
                 traceLog.debug(String.format("[Database %s] Unable to find catalog '%4$s' for the table %s (schema %s, catalog %s)",
-                                            database.getName(),
-                                            tableName,
-                                            tableSchema,
-                                            tableCatalog));
+                                             database.getName(),
+                                             tableName,
+                                             tableSchema,
+                                             tableCatalog));
             }
             // if fail is enabled
             if (failOnError) {
@@ -1602,10 +1629,10 @@ public class DatabaseUtil {
             // warn if null
             if (schema == null) {
                 traceLog.debug(String.format("[Database %s] Unable to find schema '%3$s' for the table %s (schema %s, catalog %s)",
-                                            database.getName(),
-                                            tableName,
-                                            tableSchema,
-                                            tableCatalog));
+                                             database.getName(),
+                                             tableName,
+                                             tableSchema,
+                                             tableCatalog));
             }
             // if fail is enabled
             if (failOnError) {
@@ -1636,10 +1663,10 @@ public class DatabaseUtil {
             // warn if null
             if (typeCatalog == null) {
                 traceLog.debug(String.format("[Database %s] Unable to find catalog '%4$s' for the table %s (schema %s, catalog %s)",
-                                            database.getName(),
-                                            tableName,
-                                            tableSchema,
-                                            typeCatalogName));
+                                             database.getName(),
+                                             tableName,
+                                             tableSchema,
+                                             typeCatalogName));
             }
         }
 
@@ -1652,10 +1679,10 @@ public class DatabaseUtil {
             // warn if null
             if (typeSchema == null) {
                 traceLog.debug(String.format("[Database %s] Unable to find schema '%3$s' for the table %s (schema %s, catalog %s)",
-                                            database.getName(),
-                                            tableName,
-                                            typeSchemaName,
-                                            typeCatalogName));
+                                             database.getName(),
+                                             tableName,
+                                             typeSchemaName,
+                                             typeCatalogName));
             }
             // if fail is enabled
             if (failOnError && (typeSchema == null)) {
@@ -1691,7 +1718,7 @@ public class DatabaseUtil {
      * @param factory the model factory to create SP parameter
      * @param resultSet the stored procedure parameter result set from DatabaseMetadata
      * @param traceLog the log to write if any
-     * @param failOnError 
+     * @param failOnError
      * @param database the owner database
      * @param table the owner table
      * @return created table column
@@ -1757,7 +1784,7 @@ public class DatabaseUtil {
         // ordinal position
         Integer ordinalPosition = getInteger(resultSet, "ORDINAL_POSITION", false);
         // is nullable string
-        String isNullableString = getString(resultSet, "IS_NULLABLE", false);
+        // String isNullableString = getString(resultSet, "IS_NULLABLE", false);
         // scope catalog
         String scopeCatalog = getString(resultSet, "SCOPE_CATLOG", false);
         // scope schema
@@ -1850,7 +1877,7 @@ public class DatabaseUtil {
      * @param factory the model factory to create SP parameter
      * @param resultSet the stored procedure parameter result set from DatabaseMetadata
      * @param traceLog the log to write if any
-     * @param failOnError 
+     * @param failOnError
      * @param database the owner database
      * @param table the owner table
      * @return created table best row identifier
@@ -1920,9 +1947,8 @@ public class DatabaseUtil {
             // if exception generation is enabled then raise exception - invalid scope
             if (failOnError == true) {
                 throw new IllegalArgumentException("scopeType");
-            } else {
-                return null;
             }
+            return null;
         }
 
         // find table best row identifier object
@@ -2018,7 +2044,7 @@ public class DatabaseUtil {
      * @param factory the model factory to create SP parameter
      * @param resultSet the stored procedure parameter result set from DatabaseMetadata
      * @param traceLog the log to write if any
-     * @param failOnError 
+     * @param failOnError
      * @param database the owner database
      * @param table the owner table
      * @return created primary key
@@ -2161,7 +2187,7 @@ public class DatabaseUtil {
      * @param factory the model factory to create SP parameter
      * @param resultSet the stored procedure parameter result set from DatabaseMetadata
      * @param traceLog the log to write if any
-     * @param failOnError 
+     * @param failOnError
      * @param database the owner database
      * @param table the owner table
      * @return created list of foreign keys
@@ -2284,7 +2310,7 @@ public class DatabaseUtil {
 
                 // trying to find table column with specified name
                 TableColumn tableColumn = table.findColumnByName(fkColumnName);
-                
+
                 String errMessage = null;
                 // warn if null
                 if (tableColumn == null) {
@@ -2365,7 +2391,7 @@ public class DatabaseUtil {
      * @param factory the model factory to create SP parameter
      * @param resultSet the stored procedure parameter result set from DatabaseMetadata
      * @param traceLog the log to write if any
-     * @param failOnError 
+     * @param failOnError
      * @param database the owner database
      * @param table the owner table
      * @return created list of index
@@ -2499,7 +2525,7 @@ public class DatabaseUtil {
 
                 // trying to find table column with specified name
                 TableColumn tableColumn = table.findColumnByName(indexColumnName);
-                
+
                 String errMessage = null;
                 // warn if null
                 if (tableColumn == null) {
@@ -2563,7 +2589,7 @@ public class DatabaseUtil {
      * @param factory the model factory to create SP parameter
      * @param resultSet the stored procedure parameter result set from DatabaseMetadata
      * @param traceLog the log to write if any
-     * @param failOnError 
+     * @param failOnError
      * @param database the owner database
      * @param table the owner table
      * @return created/updated version table column
@@ -2616,7 +2642,7 @@ public class DatabaseUtil {
         // size
         Integer size = getInteger(resultSet, "COLUMN_SIZE", false);
         // column length in bytes
-        Integer bufferLength = getInteger(resultSet, "BUFFER_LENGTH", false);
+        // Integer bufferLength = getInteger(resultSet, "BUFFER_LENGTH", false);
         // precision
         Integer precision = getInteger(resultSet, "DECIMAL_DIGITS", false);
 
@@ -2685,7 +2711,7 @@ public class DatabaseUtil {
      * @param factory the model factory to create SP parameter
      * @param resultSet the stored procedure parameter result set from DatabaseMetadata
      * @param traceLog the log to write if any
-     * @param failOnError 
+     * @param failOnError
      * @param database the owner database
      * @param table the owner table
      * @return created list of privileges
@@ -2775,7 +2801,7 @@ public class DatabaseUtil {
      * @param factory the model factory to create SP parameter
      * @param resultSet the stored procedure parameter result set from DatabaseMetadata
      * @param traceLog the log to write if any
-     * @param failOnError 
+     * @param failOnError
      * @param database the owner database
      * @param table the owner table
      * @param column the table column
@@ -2874,7 +2900,7 @@ public class DatabaseUtil {
      * @param factory the model factory to create table
      * @param resultSet the table result set from DatabaseMetadata
      * @param traceLog the log to write if any
-     * @param failOnError 
+     * @param failOnError
      * @param database the owner database
      * @return created SQL type info
      * @throws Exception if any error occurs and failOnError is true then generates exception
@@ -3003,7 +3029,7 @@ public class DatabaseUtil {
      * @param factory the model factory to create table
      * @param resultSet the table result set from DatabaseMetadata
      * @param traceLog the log to write if any
-     * @param failOnError 
+     * @param failOnError
      * @param database the owner database
      * @return created UDT
      * @throws Exception if any error occurs and failOnError is true then generates exception
@@ -3072,7 +3098,7 @@ public class DatabaseUtil {
             Catalog catalog = database.findCatalogByName(udtCatalog);
             // set catalog
             udt.setCatalog(catalog);
-            
+
             String errMessage = null;
             // warn if null
             if (catalog == null) {
@@ -3085,7 +3111,7 @@ public class DatabaseUtil {
             }
             // if fail is enabled
             if (failOnError) {
-                throw new DatabaseMetaDataMethodException(errMessage,"populateUDT");
+                throw new DatabaseMetaDataMethodException(errMessage, "populateUDT");
             }
         }
 
@@ -3095,7 +3121,7 @@ public class DatabaseUtil {
             Schema schema = database.findSchemaByName(udtCatalog, udtSchema);
             // set schema
             udt.setSchema(schema);
-            
+
             String errMessage = null;
             // warn if null
             if (schema == null) {
@@ -3145,7 +3171,7 @@ public class DatabaseUtil {
      * @param factory the model factory to create SP parameter
      * @param resultSet the stored procedure parameter result set from DatabaseMetadata
      * @param traceLog the log to write if any
-     * @param failOnError 
+     * @param failOnError
      * @param database the owner database
      * @param udt the owner UDT
      * @return created UDT attribute
@@ -3211,7 +3237,7 @@ public class DatabaseUtil {
         // ordinal position
         Integer ordinalPosition = getInteger(resultSet, "ORDINAL_POSITION", false);
         // is nullable string
-        String isNullableString = getString(resultSet, "IS_NULLABLE", false);
+        // String isNullableString = getString(resultSet, "IS_NULLABLE", false);
         // scope catalog
         String scopeCatalog = getString(resultSet, "SCOPE_CATLOG", false);
         // scope schema
@@ -3301,7 +3327,7 @@ public class DatabaseUtil {
      * @param factory the model factory to create SP parameter
      * @param resultSet the stored procedure parameter result set from DatabaseMetadata
      * @param traceLog the log to write if any
-     * @param failOnError 
+     * @param failOnError
      * @param database the owner database
      * @param udt the UDT to update
      * @throws Exception if any error occurs and failOnError is true then generates exception
@@ -3376,7 +3402,7 @@ public class DatabaseUtil {
      * @param factory the model factory to create SP parameter
      * @param resultSet the stored procedure parameter result set from DatabaseMetadata
      * @param traceLog the log to write if any
-     * @param failOnError 
+     * @param failOnError
      * @param database the owner database
      * @param table the table to update
      * @throws Exception if any error occurs and failOnError is true then generates exception

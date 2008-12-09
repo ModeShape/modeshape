@@ -31,14 +31,14 @@ import java.sql.DatabaseMetaData;
 public enum KeyModifyRuleType {
 
     CASCADE(DatabaseMetaData.importedKeyCascade), // when the primary key is updated/deleted, the foreign key (imported key) is
-                                                  // changed/deleted to agree with it;
+    // changed/deleted to agree with it;
     RESTRICT(DatabaseMetaData.importedKeyRestrict), // a primary key may not be updated/deleted if it has been imported by another
-                                                    // table as a foreign key.
+    // table as a foreign key.
     SET_NULL(DatabaseMetaData.importedKeySetNull), // when the primary key is updated or deleted, the foreign key (imported key)
-                                                   // is changed to <code>NULL</code>.
+    // is changed to <code>NULL</code>.
     NO_ACTION(DatabaseMetaData.importedKeyNoAction), // if the primary key has been imported, it cannot be updated or deleted.
     SET_DEFAULT(DatabaseMetaData.importedKeySetDefault); // if the primary key is updated or deleted, the foreign key (imported
-                                                         // key) is set to the default value.
+    // key) is set to the default value.
 
     private final int rule;
 
@@ -48,7 +48,7 @@ public enum KeyModifyRuleType {
 
     public int getRule() {
         return rule;
-    };
+    }
 
     public String getName() {
         return name();

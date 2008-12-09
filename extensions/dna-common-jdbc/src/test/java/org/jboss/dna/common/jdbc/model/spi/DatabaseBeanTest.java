@@ -21,13 +21,27 @@
  */
 package org.jboss.dna.common.jdbc.model.spi;
 
-import junit.framework.TestCase;
-import java.util.Set;
 import java.util.List;
-import org.jboss.dna.common.jdbc.model.api.*;
+import java.util.Set;
+import junit.framework.TestCase;
 import org.jboss.dna.common.jdbc.model.DefaultModelFactory;
 import org.jboss.dna.common.jdbc.model.ModelFactory;
+import org.jboss.dna.common.jdbc.model.api.Catalog;
+import org.jboss.dna.common.jdbc.model.api.Database;
 import org.jboss.dna.common.jdbc.model.api.DatabaseMetaDataMethodException;
+import org.jboss.dna.common.jdbc.model.api.ResultSetConcurrencyType;
+import org.jboss.dna.common.jdbc.model.api.ResultSetHoldabilityType;
+import org.jboss.dna.common.jdbc.model.api.ResultSetType;
+import org.jboss.dna.common.jdbc.model.api.SQLStateType;
+import org.jboss.dna.common.jdbc.model.api.Schema;
+import org.jboss.dna.common.jdbc.model.api.SqlType;
+import org.jboss.dna.common.jdbc.model.api.SqlTypeConversionPair;
+import org.jboss.dna.common.jdbc.model.api.SqlTypeInfo;
+import org.jboss.dna.common.jdbc.model.api.StoredProcedure;
+import org.jboss.dna.common.jdbc.model.api.Table;
+import org.jboss.dna.common.jdbc.model.api.TableType;
+import org.jboss.dna.common.jdbc.model.api.TransactionIsolationLevelType;
+import org.jboss.dna.common.jdbc.model.api.UserDefinedType;
 
 /**
  * DatabaseBean test
@@ -42,6 +56,7 @@ public class DatabaseBeanTest extends TestCase {
     /*
      * @see TestCase#setUp()
      */
+    @Override
     protected void setUp() throws Exception {
         super.setUp();
         // create
@@ -52,6 +67,7 @@ public class DatabaseBeanTest extends TestCase {
     /*
      * @see TestCase#tearDown()
      */
+    @Override
     protected void tearDown() throws Exception {
         // release
         bean = null;

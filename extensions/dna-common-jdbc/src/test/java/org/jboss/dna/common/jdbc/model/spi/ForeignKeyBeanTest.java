@@ -21,11 +21,9 @@
  */
 package org.jboss.dna.common.jdbc.model.spi;
 
-import junit.framework.TestCase;
 import java.util.Set;
+import junit.framework.TestCase;
 import org.jboss.dna.common.jdbc.model.DefaultModelFactory;
-import org.jboss.dna.common.jdbc.model.spi.ForeignKeyBean;
-import org.jboss.dna.common.jdbc.model.api.Column;
 import org.jboss.dna.common.jdbc.model.api.ForeignKey;
 import org.jboss.dna.common.jdbc.model.api.ForeignKeyColumn;
 import org.jboss.dna.common.jdbc.model.api.KeyDeferrabilityType;
@@ -45,6 +43,7 @@ public class ForeignKeyBeanTest extends TestCase {
     /*
      * @see TestCase#setUp()
      */
+    @Override
     protected void setUp() throws Exception {
         super.setUp();
         // create
@@ -54,6 +53,7 @@ public class ForeignKeyBeanTest extends TestCase {
     /*
      * @see TestCase#tearDown()
      */
+    @Override
     protected void tearDown() throws Exception {
         // release
         bean = null;

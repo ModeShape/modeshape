@@ -21,9 +21,8 @@
  */
 package org.jboss.dna.common.jdbc.model.spi;
 
-import junit.framework.TestCase;
 import java.util.Set;
-import java.util.HashSet;
+import junit.framework.TestCase;
 import org.jboss.dna.common.jdbc.model.DefaultModelFactory;
 import org.jboss.dna.common.jdbc.model.ModelFactory;
 import org.jboss.dna.common.jdbc.model.api.BestRowIdentifier;
@@ -31,14 +30,12 @@ import org.jboss.dna.common.jdbc.model.api.BestRowIdentifierScopeType;
 import org.jboss.dna.common.jdbc.model.api.Catalog;
 import org.jboss.dna.common.jdbc.model.api.ForeignKey;
 import org.jboss.dna.common.jdbc.model.api.Index;
-import org.jboss.dna.common.jdbc.model.api.Parameter;
 import org.jboss.dna.common.jdbc.model.api.PrimaryKey;
 import org.jboss.dna.common.jdbc.model.api.Privilege;
 import org.jboss.dna.common.jdbc.model.api.Schema;
 import org.jboss.dna.common.jdbc.model.api.Table;
 import org.jboss.dna.common.jdbc.model.api.TableColumn;
 import org.jboss.dna.common.jdbc.model.api.TableType;
-import org.jboss.dna.common.jdbc.model.spi.TableBean;
 
 /**
  * TableBean test
@@ -53,6 +50,7 @@ public class TableBeanTest extends TestCase {
     /*
      * @see TestCase#setUp()
      */
+    @Override
     protected void setUp() throws Exception {
         super.setUp();
         // create
@@ -63,6 +61,7 @@ public class TableBeanTest extends TestCase {
     /*
      * @see TestCase#tearDown()
      */
+    @Override
     protected void tearDown() throws Exception {
         // release
         bean = null;

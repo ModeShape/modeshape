@@ -21,10 +21,10 @@
  */
 package org.jboss.dna.common.jdbc.model.spi;
 
+import junit.framework.TestCase;
 import org.jboss.dna.common.jdbc.model.DefaultModelFactory;
 import org.jboss.dna.common.jdbc.model.api.Attribute;
 import org.jboss.dna.common.jdbc.model.api.Reference;
-import junit.framework.TestCase;
 
 /**
  * AttributeBean test
@@ -38,6 +38,7 @@ public class AttributeBeanTest extends TestCase {
     /*
      * @see TestCase#setUp()
      */
+    @Override
     protected void setUp() throws Exception {
         super.setUp();
         // create
@@ -47,6 +48,7 @@ public class AttributeBeanTest extends TestCase {
     /*
      * @see TestCase#tearDown()
      */
+    @Override
     protected void tearDown() throws Exception {
         // release
         bean = null;

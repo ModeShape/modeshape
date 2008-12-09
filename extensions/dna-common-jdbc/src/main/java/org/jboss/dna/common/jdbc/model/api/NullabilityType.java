@@ -40,7 +40,7 @@ public enum NullabilityType {
 
     public int getNullability() {
         return nullability;
-    };
+    }
 
     public String getName() {
         return name();

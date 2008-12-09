@@ -21,10 +21,9 @@
  */
 package org.jboss.dna.common.jdbc.model.spi;
 
-import junit.framework.TestCase;
 import java.util.Map;
+import junit.framework.TestCase;
 import org.jboss.dna.common.jdbc.model.api.DatabaseNamedObject;
-import org.jboss.dna.common.jdbc.model.spi.DatabaseNamedObjectBean;
 
 /**
  * DatabaseNamedObjectBean test
@@ -38,6 +37,7 @@ public class DatabaseNamedObjectBeanTest extends TestCase {
     /*
      * @see TestCase#setUp()
      */
+    @Override
     protected void setUp() throws Exception {
         super.setUp();
         // create
@@ -47,6 +47,7 @@ public class DatabaseNamedObjectBeanTest extends TestCase {
     /*
      * @see TestCase#tearDown()
      */
+    @Override
     protected void tearDown() throws Exception {
         // release
         bean = null;

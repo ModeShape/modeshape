@@ -21,12 +21,8 @@
  */
 package org.jboss.dna.common.jdbc.provider;
 
-import junit.framework.TestCase;
-
-import java.sql.Connection;
-import java.sql.DatabaseMetaData;
 import java.util.Properties;
-import javax.sql.DataSource;
+import junit.framework.TestCase;
 
 /**
  * Data Source Database Metadata Provider Test
@@ -72,8 +68,8 @@ public class DataSourceDatabaseMetadataProviderTest extends TestCase {
 
     /**
      * Test get data source
-     * @throws Exception 
      * 
+     * @throws Exception
      */
     public void testGetDataSource() throws Exception {
         // set provider name
@@ -97,7 +93,7 @@ public class DataSourceDatabaseMetadataProviderTest extends TestCase {
         // TODO: validate the testGetDataSource
         try {
             // trying to get data source
-            DataSource dataSource = dataSourceProvider.getDataSource();
+            dataSourceProvider.getDataSource();
             fail("DataSource provider should raise an exception when app server is not running");
         } catch (Exception e) {
             // we're should be here because app server is not running so far
@@ -147,7 +143,7 @@ public class DataSourceDatabaseMetadataProviderTest extends TestCase {
         // TODO: validate the testGetDatabaseMetaData
         try {
             // trying to get connection
-            DatabaseMetaData databaseMetaData = dataSourceProvider.getDatabaseMetaData();
+            dataSourceProvider.getDatabaseMetaData();
             fail("DataSource provider should raise an exception when app server is not running");
         } catch (Exception e) {
             // we're should be here because app server is not running so far
@@ -157,7 +153,7 @@ public class DataSourceDatabaseMetadataProviderTest extends TestCase {
     /**
      * Test get connection
      * 
-     * @throws Exception 
+     * @throws Exception
      */
     public void testGetConnection() throws Exception {
         // set provider name
@@ -181,7 +177,7 @@ public class DataSourceDatabaseMetadataProviderTest extends TestCase {
         // TODO: validate the testGetConnection
         try {
             // trying to get connection
-            Connection connection = dataSourceProvider.getConnection();
+            dataSourceProvider.getConnection();
             fail("DataSource provider should raise an exception when app server is not running");
         } catch (Exception e) {
             // we're should be here because app server is not running so far

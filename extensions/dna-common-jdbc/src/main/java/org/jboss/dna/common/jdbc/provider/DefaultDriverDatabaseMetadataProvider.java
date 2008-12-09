@@ -62,8 +62,9 @@ public class DefaultDriverDatabaseMetadataProvider extends DefaultDatabaseMetada
      * Opens new database connection based on suppied parameters
      * 
      * @return new database connection based on suppied parameters
-     * @throws Exception 
+     * @throws Exception
      */
+    @Override
     protected Connection openConnection() throws Exception {
         // log debug info
         if (log.isDebugEnabled()) {

@@ -22,9 +22,9 @@
 package org.jboss.dna.common.jdbc.model.spi;
 
 import junit.framework.TestCase;
+import org.jboss.dna.common.jdbc.model.DefaultModelFactory;
 import org.jboss.dna.common.jdbc.model.api.ForeignKeyColumn;
 import org.jboss.dna.common.jdbc.model.api.TableColumn;
-import org.jboss.dna.common.jdbc.model.DefaultModelFactory;
 
 /**
  * ForeignKeyColumnBean test
@@ -38,6 +38,7 @@ public class ForeignKeyColumnBeanTest extends TestCase {
     /*
      * @see TestCase#setUp()
      */
+    @Override
     protected void setUp() throws Exception {
         super.setUp();
         // create
@@ -47,6 +48,7 @@ public class ForeignKeyColumnBeanTest extends TestCase {
     /*
      * @see TestCase#tearDown()
      */
+    @Override
     protected void tearDown() throws Exception {
         // release
         bean = null;

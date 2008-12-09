@@ -35,12 +35,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 import javax.naming.BinaryRefAddr;
 import javax.naming.Context;
 import javax.naming.Name;
-import javax.naming.NamingException;
 import javax.naming.RefAddr;
 import javax.naming.Reference;
 import javax.naming.StringRefAddr;
 import javax.naming.spi.ObjectFactory;
-
 import net.jcip.annotations.ThreadSafe;
 import org.jboss.dna.common.i18n.I18n;
 import org.jboss.dna.graph.cache.CachePolicy;
@@ -51,10 +49,9 @@ import org.jboss.dna.graph.connectors.RepositorySourceCapabilities;
 import org.jboss.dna.graph.connectors.RepositorySourceException;
 
 /**
- * A description of a JDBC resource that can be used to access database information. 
+ * A description of a JDBC resource that can be used to access database information.
  * 
  * @author <a href="mailto:litsenko_sergey@yahoo.com">Sergiy Litsenko</a>
- *
  */
 public class JdbcRepositorySource implements RepositorySource, ObjectFactory {
     private static final long serialVersionUID = 1L;
@@ -77,7 +74,7 @@ public class JdbcRepositorySource implements RepositorySource, ObjectFactory {
      * This source does not support same-name-siblings.
      */
     protected static final boolean SUPPORTS_SAME_NAME_SIBLINGS = false;
-    
+
     private final AtomicInteger retryLimit = new AtomicInteger(DEFAULT_RETRY_LIMIT);
     protected String name;
     protected final Capabilities capabilities = new Capabilities();
@@ -89,7 +86,7 @@ public class JdbcRepositorySource implements RepositorySource, ObjectFactory {
     protected static final String REPO_JNDI_NAME = "jndiName";
     protected static final String REPO_FACTORY_JNDI_NAME = "factoryJndiName";
     protected static final String RETRY_LIMIT = "retryLimit";
-    
+
     /**
      * default constructor
      */
@@ -98,7 +95,7 @@ public class JdbcRepositorySource implements RepositorySource, ObjectFactory {
 
     /**
      * {@inheritDoc}
-     *
+     * 
      * @see org.jboss.dna.graph.connectors.RepositorySource#getCapabilities()
      */
     public RepositorySourceCapabilities getCapabilities() {
@@ -107,7 +104,7 @@ public class JdbcRepositorySource implements RepositorySource, ObjectFactory {
 
     /**
      * {@inheritDoc}
-     *
+     * 
      * @see org.jboss.dna.graph.connectors.RepositorySource#getConnection()
      */
     public RepositoryConnection getConnection() throws RepositorySourceException {
@@ -117,7 +114,7 @@ public class JdbcRepositorySource implements RepositorySource, ObjectFactory {
 
     /**
      * {@inheritDoc}
-     *
+     * 
      * @see org.jboss.dna.graph.connectors.RepositorySource#getName()
      */
     public String getName() {
@@ -132,10 +129,10 @@ public class JdbcRepositorySource implements RepositorySource, ObjectFactory {
     public void setName( String name ) {
         this.name = name;
     }
-    
+
     /**
      * {@inheritDoc}
-     *
+     * 
      * @see org.jboss.dna.graph.connectors.RepositorySource#getRetryLimit()
      */
     public int getRetryLimit() {
@@ -144,7 +141,7 @@ public class JdbcRepositorySource implements RepositorySource, ObjectFactory {
 
     /**
      * {@inheritDoc}
-     *
+     * 
      * @see org.jboss.dna.graph.connectors.RepositorySource#initialize(org.jboss.dna.graph.connectors.RepositoryContext)
      */
     public void initialize( RepositoryContext context ) throws RepositorySourceException {
@@ -153,7 +150,7 @@ public class JdbcRepositorySource implements RepositorySource, ObjectFactory {
 
     /**
      * {@inheritDoc}
-     *
+     * 
      * @see org.jboss.dna.graph.connectors.RepositorySource#setRetryLimit(int)
      */
     public void setRetryLimit( int limit ) {
@@ -176,7 +173,7 @@ public class JdbcRepositorySource implements RepositorySource, ObjectFactory {
      *        content.
      */
     public synchronized void setSupportsUpdates( boolean supportsUpdates ) {
-        capabilities.setSupportsUpdates (supportsUpdates);
+        capabilities.setSupportsUpdates(supportsUpdates);
     }
 
     /**
@@ -194,7 +191,7 @@ public class JdbcRepositorySource implements RepositorySource, ObjectFactory {
     public synchronized void setDefaultCachePolicy( CachePolicy defaultCachePolicy ) {
         this.defaultCachePolicy = defaultCachePolicy;
     }
-    
+
     /**
      * {@inheritDoc}
      */
@@ -212,13 +209,13 @@ public class JdbcRepositorySource implements RepositorySource, ObjectFactory {
         }
         return false;
     }
-    
+
     /**
      * {@inheritDoc}
-     *
+     * 
      * @see javax.naming.Referenceable#getReference()
      */
-    public Reference getReference() throws NamingException {
+    public Reference getReference() {
         String className = getClass().getName();
         String factoryClassName = this.getClass().getName();
         Reference ref = new Reference(className, factoryClassName, null);
@@ -245,8 +242,9 @@ public class JdbcRepositorySource implements RepositorySource, ObjectFactory {
 
     /**
      * {@inheritDoc}
-     *
-     * @see javax.naming.spi.ObjectFactory#getObjectInstance(java.lang.Object, javax.naming.Name, javax.naming.Context, java.util.Hashtable)
+     * 
+     * @see javax.naming.spi.ObjectFactory#getObjectInstance(java.lang.Object, javax.naming.Name, javax.naming.Context,
+     *      java.util.Hashtable)
      */
     public Object getObjectInstance( Object obj,
                                      Name name,

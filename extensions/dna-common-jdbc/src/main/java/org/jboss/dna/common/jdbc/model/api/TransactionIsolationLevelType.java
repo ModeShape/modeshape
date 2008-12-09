@@ -44,7 +44,7 @@ public enum TransactionIsolationLevelType {
 
     public int getLevel() {
         return level;
-    };
+    }
 
     public String getName() {
         return name();
