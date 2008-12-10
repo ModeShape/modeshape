@@ -51,7 +51,6 @@ public abstract class AbstractPath implements Path {
 
     public static final Path SELF_PATH = new BasicPath(Collections.singletonList(Path.SELF_SEGMENT), false);
 
-    private transient String cachedStringPath;
     private transient int hc = 0;
 
     protected boolean isNormalized( List<Segment> segments ) {
@@ -221,7 +220,6 @@ public abstract class AbstractPath implements Path {
                                   TextEncoder encoder,
                                   TextEncoder delimiterEncoder ) {
         if (encoder == null) encoder = DEFAULT_ENCODER;
-        if (encoder == DEFAULT_ENCODER && cachedStringPath != null && delimiterEncoder == null) return cachedStringPath;
         final String delimiter = delimiterEncoder != null ? delimiterEncoder.encode(DELIMITER_STR) : DELIMITER_STR;
 
         // Since the segments are immutable, this code need not be synchronized because concurrent threads
@@ -241,7 +239,6 @@ public abstract class AbstractPath implements Path {
         String result = sb.toString();
         // Save the result to the internal string if this the default encoder is used.
         // This is not synchronized, but it's okay
-        if (encoder == DEFAULT_ENCODER && cachedStringPath == null && delimiterEncoder == null) cachedStringPath = result;
         return result;
     }
 
@@ -287,6 +284,7 @@ public abstract class AbstractPath implements Path {
         CheckArg.isNotNull(other, "other");
         if (this == other) return true;
         if (other.isRoot()) return true;
+        if (other.size() > this.size()) return false;
         Iterator<Segment> thisIter = iterator();
         Iterator<Segment> thatIter = other.iterator();
         while (thisIter.hasNext() && thatIter.hasNext()) {
@@ -304,6 +302,7 @@ public abstract class AbstractPath implements Path {
     public boolean isAtOrAbove( Path other ) {
         CheckArg.isNotNull(other, "other");
         if (this == other) return true;
+        if (this.size() > other.size()) return false;
         Iterator<Segment> thisIter = iterator();
         Iterator<Segment> thatIter = other.iterator();
         while (thisIter.hasNext() && thatIter.hasNext()) {
