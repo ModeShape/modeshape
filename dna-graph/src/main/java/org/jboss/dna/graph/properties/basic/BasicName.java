@@ -38,6 +38,12 @@ import org.jboss.dna.graph.properties.Path;
 @Immutable
 public class BasicName implements Name {
 
+    private String trimNonEmptyStrings( String value ) {
+        if (value == null) return null;
+        String trimmed = value.trim();
+        return trimmed.length() == 0 ? value : trimmed;
+    }
+
     /**
      */
     private static final long serialVersionUID = -1737537720336990144L;
@@ -48,8 +54,8 @@ public class BasicName implements Name {
     public BasicName( String namespaceUri,
                       String localName ) {
         CheckArg.isNotEmpty(localName, "localName");
-        this.namespaceUri = namespaceUri != null ? namespaceUri.trim() : "";
-        this.localName = localName != null ? localName.trim() : "";
+        this.namespaceUri = namespaceUri != null ? namespaceUri.trim().intern() : "";
+        this.localName = trimNonEmptyStrings(localName);
         this.hc = HashCode.compute(this.namespaceUri, this.localName);
     }
 

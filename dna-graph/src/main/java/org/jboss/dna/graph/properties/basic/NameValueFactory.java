@@ -89,7 +89,28 @@ public class NameValueFactory extends AbstractValueFactory<Name> implements Name
         if (value == null) return null;
         if (decoder == null) decoder = getDecoder();
         try {
-            // First see whether the value fits the internal pattern ...
+            if (value.length() == 0) {
+                return new BasicName("", "");
+            }
+            if (value.charAt(0) != '{') {
+                // First, see whether the value fits the prefixed name pattern ...
+                Matcher matcher = PREFIXED_NAME_PATTERN.matcher(value);
+                if (matcher.matches()) {
+                    String prefix = matcher.group(2);
+                    String localName = matcher.group(3);
+                    // Decode the parts ...
+                    prefix = prefix == null ? "" : decoder.decode(prefix);
+                    localName = decoder.decode(localName);
+                    // Look for a namespace match ...
+                    String namespaceUri = this.namespaceRegistry.getNamespaceForPrefix(prefix);
+                    // Fail if no namespace is found ...
+                    if (namespaceUri == null) {
+                        throw new NamespaceException(GraphI18n.noNamespaceRegisteredForPrefix.text(prefix));
+                    }
+                    return new BasicName(namespaceUri, localName);
+                }
+            }
+            // If it doesn't fit the prefixed pattern, then try the internal pattern
             Matcher matcher = FULLY_QUALIFIED_NAME_PATTERN.matcher(value);
             if (matcher.matches()) {
                 String namespaceUri = matcher.group(1);
@@ -99,31 +120,15 @@ public class NameValueFactory extends AbstractValueFactory<Name> implements Name
                 localName = decoder.decode(localName);
                 return new BasicName(namespaceUri, localName);
             }
-            // Second, see whether the value fits the prefixed name pattern ...
-            matcher = PREFIXED_NAME_PATTERN.matcher(value);
-            if (matcher.matches()) {
-                String prefix = matcher.group(2);
-                String localName = matcher.group(3);
-                // Decode the parts ...
-                prefix = prefix == null ? "" : decoder.decode(prefix);
-                localName = decoder.decode(localName);
-                // Look for a namespace match ...
-                String namespaceUri = this.namespaceRegistry.getNamespaceForPrefix(prefix);
-                // Fail if no namespace is found ...
-                if (namespaceUri == null) {
-                    throw new NamespaceException(GraphI18n.noNamespaceRegisteredForPrefix.text(prefix));
-                }
-                return new BasicName(namespaceUri, localName);
-            }
         } catch (NamespaceException err) {
             throw new ValueFormatException(value, getPropertyType(),
                                            GraphI18n.errorConvertingType.text(String.class.getSimpleName(),
-                                                                            Name.class.getSimpleName(),
-                                                                            value), err);
+                                                                              Name.class.getSimpleName(),
+                                                                              value), err);
         }
         throw new ValueFormatException(value, getPropertyType(), GraphI18n.errorConvertingType.text(String.class.getSimpleName(),
-                                                                                                  Name.class.getSimpleName(),
-                                                                                                  value));
+                                                                                                    Name.class.getSimpleName(),
+                                                                                                    value));
     }
 
     /**
@@ -151,9 +156,10 @@ public class NameValueFactory extends AbstractValueFactory<Name> implements Name
      * {@inheritDoc}
      */
     public Name create( int value ) {
-        throw new ValueFormatException(value, getPropertyType(), GraphI18n.unableToCreateValue.text(getPropertyType().getName(),
-                                                                                                  Integer.class.getSimpleName(),
-                                                                                                  value));
+        throw new ValueFormatException(value, getPropertyType(),
+                                       GraphI18n.unableToCreateValue.text(getPropertyType().getName(),
+                                                                          Integer.class.getSimpleName(),
+                                                                          value));
     }
 
     /**
@@ -161,17 +167,18 @@ public class NameValueFactory extends AbstractValueFactory<Name> implements Name
      */
     public Name create( long value ) {
         throw new ValueFormatException(value, getPropertyType(), GraphI18n.unableToCreateValue.text(getPropertyType().getName(),
-                                                                                                  Long.class.getSimpleName(),
-                                                                                                  value));
+                                                                                                    Long.class.getSimpleName(),
+                                                                                                    value));
     }
 
     /**
      * {@inheritDoc}
      */
     public Name create( boolean value ) {
-        throw new ValueFormatException(value, getPropertyType(), GraphI18n.unableToCreateValue.text(getPropertyType().getName(),
-                                                                                                  Boolean.class.getSimpleName(),
-                                                                                                  value));
+        throw new ValueFormatException(value, getPropertyType(),
+                                       GraphI18n.unableToCreateValue.text(getPropertyType().getName(),
+                                                                          Boolean.class.getSimpleName(),
+                                                                          value));
     }
 
     /**
@@ -179,8 +186,8 @@ public class NameValueFactory extends AbstractValueFactory<Name> implements Name
      */
     public Name create( float value ) {
         throw new ValueFormatException(value, getPropertyType(), GraphI18n.unableToCreateValue.text(getPropertyType().getName(),
-                                                                                                  Float.class.getSimpleName(),
-                                                                                                  value));
+                                                                                                    Float.class.getSimpleName(),
+                                                                                                    value));
     }
 
     /**
@@ -188,8 +195,8 @@ public class NameValueFactory extends AbstractValueFactory<Name> implements Name
      */
     public Name create( double value ) {
         throw new ValueFormatException(value, getPropertyType(), GraphI18n.unableToCreateValue.text(getPropertyType().getName(),
-                                                                                                  Double.class.getSimpleName(),
-                                                                                                  value));
+                                                                                                    Double.class.getSimpleName(),
+                                                                                                    value));
     }
 
     /**
@@ -198,17 +205,18 @@ public class NameValueFactory extends AbstractValueFactory<Name> implements Name
     public Name create( BigDecimal value ) {
         throw new ValueFormatException(value, getPropertyType(),
                                        GraphI18n.unableToCreateValue.text(getPropertyType().getName(),
-                                                                        BigDecimal.class.getSimpleName(),
-                                                                        value));
+                                                                          BigDecimal.class.getSimpleName(),
+                                                                          value));
     }
 
     /**
      * {@inheritDoc}
      */
     public Name create( Calendar value ) {
-        throw new ValueFormatException(value, getPropertyType(), GraphI18n.unableToCreateValue.text(getPropertyType().getName(),
-                                                                                                  Calendar.class.getSimpleName(),
-                                                                                                  value));
+        throw new ValueFormatException(value, getPropertyType(),
+                                       GraphI18n.unableToCreateValue.text(getPropertyType().getName(),
+                                                                          Calendar.class.getSimpleName(),
+                                                                          value));
     }
 
     /**
@@ -216,8 +224,8 @@ public class NameValueFactory extends AbstractValueFactory<Name> implements Name
      */
     public Name create( Date value ) {
         throw new ValueFormatException(value, getPropertyType(), GraphI18n.unableToCreateValue.text(getPropertyType().getName(),
-                                                                                                  Date.class.getSimpleName(),
-                                                                                                  value));
+                                                                                                    Date.class.getSimpleName(),
+                                                                                                    value));
     }
 
     /**
@@ -226,9 +234,10 @@ public class NameValueFactory extends AbstractValueFactory<Name> implements Name
      * @see org.jboss.dna.graph.properties.ValueFactory#create(org.jboss.dna.graph.properties.DateTime)
      */
     public Name create( DateTime value ) throws ValueFormatException {
-        throw new ValueFormatException(value, getPropertyType(), GraphI18n.unableToCreateValue.text(getPropertyType().getName(),
-                                                                                                  DateTime.class.getSimpleName(),
-                                                                                                  value));
+        throw new ValueFormatException(value, getPropertyType(),
+                                       GraphI18n.unableToCreateValue.text(getPropertyType().getName(),
+                                                                          DateTime.class.getSimpleName(),
+                                                                          value));
     }
 
     /**
@@ -248,8 +257,8 @@ public class NameValueFactory extends AbstractValueFactory<Name> implements Name
             return value.getSegment(0).getName();
         }
         throw new ValueFormatException(value, getPropertyType(), GraphI18n.errorConvertingType.text(Path.class.getSimpleName(),
-                                                                                                  Name.class.getSimpleName(),
-                                                                                                  value));
+                                                                                                    Name.class.getSimpleName(),
+                                                                                                    value));
     }
 
     /**
@@ -258,8 +267,8 @@ public class NameValueFactory extends AbstractValueFactory<Name> implements Name
     public Name create( Reference value ) {
         throw new ValueFormatException(value, getPropertyType(),
                                        GraphI18n.unableToCreateValue.text(getPropertyType().getName(),
-                                                                        Reference.class.getSimpleName(),
-                                                                        value));
+                                                                          Reference.class.getSimpleName(),
+                                                                          value));
     }
 
     /**
@@ -276,8 +285,8 @@ public class NameValueFactory extends AbstractValueFactory<Name> implements Name
             return create(asciiString);
         }
         throw new ValueFormatException(value, getPropertyType(), GraphI18n.errorConvertingType.text(URI.class.getSimpleName(),
-                                                                                                  Path.class.getSimpleName(),
-                                                                                                  value));
+                                                                                                    Path.class.getSimpleName(),
+                                                                                                    value));
     }
 
     /**
@@ -287,8 +296,8 @@ public class NameValueFactory extends AbstractValueFactory<Name> implements Name
      */
     public Name create( UUID value ) throws IoException {
         throw new ValueFormatException(value, getPropertyType(), GraphI18n.unableToCreateValue.text(getPropertyType().getName(),
-                                                                                                  UUID.class.getSimpleName(),
-                                                                                                  value));
+                                                                                                    UUID.class.getSimpleName(),
+                                                                                                    value));
     }
 
     /**
