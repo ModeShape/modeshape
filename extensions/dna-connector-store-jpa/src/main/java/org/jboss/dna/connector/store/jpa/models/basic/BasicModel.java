@@ -26,13 +26,65 @@ import javax.persistence.EntityManager;
 import org.hibernate.ejb.Ejb3Configuration;
 import org.jboss.dna.connector.store.jpa.JpaConnectorI18n;
 import org.jboss.dna.connector.store.jpa.Model;
+import org.jboss.dna.connector.store.jpa.models.common.ChangeLogEntity;
 import org.jboss.dna.connector.store.jpa.models.common.NamespaceEntity;
 import org.jboss.dna.graph.ExecutionContext;
+import org.jboss.dna.graph.requests.CopyBranchRequest;
+import org.jboss.dna.graph.requests.DeleteBranchRequest;
+import org.jboss.dna.graph.requests.MoveBranchRequest;
+import org.jboss.dna.graph.requests.ReadBranchRequest;
 import org.jboss.dna.graph.requests.processor.RequestProcessor;
 
 /**
  * Database model that stores node properties as opaque records and children as transparent records. Large property values are
  * stored separately.
+ * <p>
+ * The set of tables used in this model includes:
+ * <ul>
+ * <li>Namespaces - the set of namespace URIs used in paths, property names, and property values.</li>
+ * <li>Properties - the properties for each node, stored in a serialized (and optionally compressed) form.</li>
+ * <li>Large values - property values larger than a certain size will be broken out into this table, where they are tracked by
+ * their SHA-1 has and shared by all properties that have that same value. The values are stored in a binary (and optionally
+ * compressed) form.</li>
+ * <li>Children - the children for each node, where each child is represented by a separate record. This approach makes it
+ * possible to efficiently work with nodes containing large numbers of children, where adding and removing child nodes is largely
+ * independent of the number of children. Also, working with properties is also completely independent of the number of child
+ * nodes.</li>
+ * <li>Subgraph - a working area for efficiently computing the space of a subgraph; see below</li>
+ * <li>Change log - a record of the changes that have been made to the repository. This is used to distribute change events across
+ * multiple distributed processes, and to allow a recently-connected client to identify the set of changes that have been made
+ * since a particular time or date. Changes are serialized into a binary, compressed format.</i></li>
+ * <li>Options - the parameters for this store's configuration (common to all models)</li>
+ * </ul>
+ * </p>
+ * <h3>Subgraph queries</h3>
+ * <p>
+ * This database model contains two tables that are used in an efficient mechanism to find all of the nodes in the subgraph below
+ * a certain node. This process starts by creating a record for the subgraph query, and then proceeds by executing a join to find
+ * all the children of the top-level node, and inserting them into the database (in a working area associated with the subgraph
+ * query). Then, another join finds all the children of those children and inserts them into the same working area. This continues
+ * until the maximum depth has been reached, or until there are no more children (whichever comes first). All of the nodes in the
+ * subgraph are then represented by records in the working area, and can be used to quickly and efficient work with the subgraph
+ * nodes. When finished, the mechanism deletes the records in the working area associated with the subgraph query.
+ * </p>
+ * <p>
+ * This subgraph query mechanism is extremely efficient, performing one join/insert statement <i>per level of the subgraph</i>,
+ * and is completely independent of the number of nodes in the subgraph. For example, consider a subgraph of node A, where A has
+ * 10 children, and each child contains 10 children, and each grandchild contains 10 children. This subgraph has a total of 1111
+ * nodes (1 root + 10 children + 10*10 grandchildren + 10*10*10 great-grandchildren). Finding the nodes in this subgraph would
+ * normally require 1 query per node (in other words, 1111 queries). But with this subgraph query mechanism, all of the nodes in
+ * the subgraph can be found with 1 insert plus 4 additional join/inserts.
+ * </p>
+ * <p>
+ * This mechanism has the added benefit that the set of nodes in the subgraph are kept in a working area in the database, meaning
+ * they don't have to be pulled into memory.
+ * </p>
+ * <p>
+ * Subgraph queries are used to efficiently process a number of different requests, including {@link ReadBranchRequest},
+ * {@link DeleteBranchRequest}, {@link MoveBranchRequest}, and {@link CopyBranchRequest}. Processing each of these kinds of
+ * requests requires knowledge of the subgraph, and in fact all but the <code>ReadBranchRequest</code> need to know the complete
+ * subgraph.
+ * </p>
  * 
  * @author Randall Hauch
  */
@@ -76,6 +128,7 @@ public class BasicModel extends Model {
         configurator.addAnnotatedClass(ChildId.class);
         configurator.addAnnotatedClass(SubgraphQueryEntity.class);
         configurator.addAnnotatedClass(SubgraphNodeEntity.class);
+        configurator.addAnnotatedClass(ChangeLogEntity.class);
 
         // Set the cache information for each persistent class ...
         // configurator.setProperty("hibernate.ejb.classcache." + KidpackNode.class.getName(), "read-write");
