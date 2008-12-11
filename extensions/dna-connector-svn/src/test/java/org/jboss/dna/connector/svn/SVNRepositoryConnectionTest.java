@@ -26,10 +26,13 @@ import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsSame.sameInstance;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.stub;
+import static org.mockito.Mockito.verify;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import org.jboss.dna.common.text.UrlEncoder;
 import org.jboss.dna.common.util.FileUtil;
 import org.jboss.dna.graph.BasicExecutionContext;
@@ -44,6 +47,7 @@ import org.jboss.dna.graph.connectors.RepositorySourceListener;
 import org.jboss.dna.graph.properties.NameFactory;
 import org.jboss.dna.graph.properties.PathFactory;
 import org.jboss.dna.graph.properties.PathNotFoundException;
+import org.jboss.dna.graph.properties.Property;
 import org.jboss.dna.graph.properties.PropertyFactory;
 import org.jboss.dna.graph.requests.ReadAllChildrenRequest;
 import org.junit.After;
@@ -74,6 +78,7 @@ public class SVNRepositoryConnectionTest {
     @Mock
     private ReadAllChildrenRequest request;
 
+    @SuppressWarnings( "deprecation" )
     @Before
     public void beforeEach() throws Exception {
         MockitoAnnotations.initMocks(this);
@@ -96,7 +101,7 @@ public class SVNRepositoryConnectionTest {
 
         // Now set the two path roots
         String svnUrl = dst.getCanonicalFile().toURL().toString();
-        svnUrl = svnUrl.replaceFirst("file:/", "file:///"); // add the 'localhost'
+        svnUrl = svnUrl.replaceFirst("file:/", "file://localhost/");
         String username = "sp";
         String password = "";
         // Create a Repository instance from the http-protocol, that use a anonymous credential.
@@ -151,7 +156,7 @@ public class SVNRepositoryConnectionTest {
     // CachePolicy policy = mock(CachePolicy.class);
     // repository = mock(SVNRepository.class);
     // connection = new SVNRepositoryConnection("the source name", policy, false, repository);
-    // stub(repository.getRepositoryRoot(true)).toReturn(null);
+    // // stub(repository.getRepositoryRoot(true)).toReturn(null);
     // assertThat(connection.ping(1, TimeUnit.SECONDS), is(true));
     // verify(repository).getRepositoryRoot(true);
     // }
@@ -190,7 +195,7 @@ public class SVNRepositoryConnectionTest {
     }
 
     @Test
-    public void shouldListLocationForChildrenOfAParentPath() {
+    public void shouldListChildrenLocationPathsOfASpecificPath() {
 
         // read children from the root node.
         List<Location> l = graph.getChildren().of(pathFactory.create("/"));
@@ -206,6 +211,45 @@ public class SVNRepositoryConnectionTest {
         assertThat(locations03.size() > 0, is(true));
         assertThat(containsPaths(locations03).contains("/nodeB/JBossORG-EULA.txt/jcr:content"), is(true));
         assertThat(containsPaths(locations03).contains("/nodeB/nodeB1"), is(true));
+    }
+
+    @Test
+    public void shouldNotHaveProperties() {
+        // Root location does not need properties.
+        Location root = new Location(pathFactory.create("/"));
+        Collection<Property> nilProperties = graph.getProperties().on(root);
+        assertThat(nilProperties, is(notNullValue()));
+        assertThat(nilProperties.isEmpty(), is(true));
+    }
+
+    @Test
+    public void shouldJustCatchThePropertiesOnLocation() {
+        // directory nodeA has "jcr:primaryType" with value "nt:folder" and also "jcr:created" with value folder created date
+        Location nodeA = new Location(pathFactory.create("/nodeA"));
+        Collection<Property> nodeAProperties = graph.getProperties().on(nodeA);
+        assertThat(nodeAProperties, is(notNullValue()));
+        assertThat(nodeAProperties.isEmpty(), is(false));
+        assertThat(nodeAProperties.size(), is(2));
+
+        // file itemA.txt has "jcr:primaryType" property whose value is "nt:file" and also "jcr:created" with value folder created
+        // date
+        Location itemA1 = new Location(pathFactory.create("/nodeA/itemA1.txt"));
+        Collection<Property> itemA1Properties = graph.getProperties().on(itemA1);
+        assertThat(itemA1Properties, is(notNullValue()));
+        assertThat(itemA1Properties.isEmpty(), is(false));
+        assertThat(itemA1Properties.size(), is(2));
+
+        // content itemA1.txt/jcr:content
+        // //"jcr:primaryType" property value of "nt:resource",
+        // "jcr:data" property whose value are the contents of the file
+        // and a few other properties, like "jcr:encoding", "jcr:mimeType" and "jcr:lastModified" and
+        // also "jcr:created" property
+        Location content = new Location(pathFactory.create("/nodeA/itemA2.txt/jcr:content"));
+        Collection<Property> itemA2ContentProperties = graph.getProperties().on(content);
+        assertThat(itemA2ContentProperties, is(notNullValue()));
+        assertThat(itemA2ContentProperties.isEmpty(), is(false));
+        // then for any causes, that I do not know now mimeType of this content is null.
+        assertThat(itemA2ContentProperties.size(), is(3));
     }
 
     protected Collection<String> containsPaths( Collection<Location> locations ) {

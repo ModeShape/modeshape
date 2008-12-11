@@ -28,6 +28,7 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import org.jboss.dna.common.i18n.I18n;
+import org.jboss.dna.common.util.Logger;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.JcrLexicon;
 import org.jboss.dna.graph.JcrNtLexicon;
@@ -76,6 +77,7 @@ public class SVNRepositoryRequestProcessor extends RequestProcessor {
     private final String defaultNamespaceUri;
     private final boolean updatesAllowed;
     private SVNRepository repository;
+    protected final Logger logger;
 
     /**
      * @param sourceName
@@ -92,6 +94,7 @@ public class SVNRepositoryRequestProcessor extends RequestProcessor {
         this.defaultNamespaceUri = getExecutionContext().getNamespaceRegistry().getDefaultNamespaceUri();
         this.updatesAllowed = updatesAllowed;
         this.repository = repository;
+        this.logger = getExecutionContext().getLogger(getClass());
     }
 
     /**
@@ -142,6 +145,7 @@ public class SVNRepositoryRequestProcessor extends RequestProcessor {
     @SuppressWarnings( "unchecked" )
     @Override
     public void process( ReadAllChildrenRequest request ) {
+        logger.trace(request.toString());
         Location myLocation = request.of();
         Path nodePath = getPathFor(myLocation, request);
         try {
@@ -201,6 +205,7 @@ public class SVNRepositoryRequestProcessor extends RequestProcessor {
      */
     @Override
     public void process( ReadAllPropertiesRequest request ) {
+        logger.trace(request.toString());
         Location myLocation = request.at();
         Path nodePath = getPathFor(myLocation, request);
         if (nodePath.isRoot()) {
@@ -218,29 +223,26 @@ public class SVNRepositoryRequestProcessor extends RequestProcessor {
                 Path parent = nodePath.getParent();
                 ByteArrayOutputStream os = new ByteArrayOutputStream();
                 SVNProperties fileProperties = new SVNProperties();
-                List<Property> properties = new ArrayList<Property>();
                 getData(parent.getString(getExecutionContext().getNamespaceRegistry()), fileProperties, os);
                 Property ntResourceproperty = propertyFactory().create(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.RESOURCE);
-                properties.add(ntResourceproperty);
+                request.addProperty(ntResourceproperty);
                 String mimeType = fileProperties.getStringValue(SVNProperty.MIME_TYPE);
                 if (mimeType != null) {
                     Property jcrMimeTypeProperty = propertyFactory().create(JcrLexicon.MIMETYPE, mimeType);
-                    properties.add(jcrMimeTypeProperty);
+                    request.addProperty(jcrMimeTypeProperty);
                 }
                 SVNDirEntry entry = getEntryInfo(parent.getString(getExecutionContext().getNamespaceRegistry()));
                 Date lastModified = entry.getDate();
                 if (lastModified != null) {
                     Property jcrLastModifiedProperty = propertyFactory().create(JcrLexicon.LAST_MODIFIED,
                                                                                 dateFactory().create(lastModified));
-                    properties.add(jcrLastModifiedProperty);
+                    request.addProperty(jcrLastModifiedProperty);
                 }
                 if (os.toByteArray().length > 0) {
                     Property jcrDataProperty = propertyFactory().create(JcrLexicon.DATA,
-                                                                        binaryFactory().create(new InMemoryBinary(
-                                                                                                                  os.toByteArray())));
-                    properties.add(jcrDataProperty);
+                                                                        binaryFactory().create(os.toByteArray()));
+                    request.addProperty(jcrDataProperty);
                 }
-                request.addProperties(properties.toArray(new BasicMultiValueProperty[0]));
             } else {
                 SVNNodeKind kind = validateNodeKind(nodePath);
                 if (kind == SVNNodeKind.FILE) {
@@ -259,10 +261,12 @@ public class SVNRepositoryRequestProcessor extends RequestProcessor {
                 } else if (kind == SVNNodeKind.DIR) {
                     // A directory maps to a single node with a name that represents the name of the directory and a
                     // "jcr:primaryType" property whose value is "nt:folder"
-                    Property property = propertyFactory().create(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FOLDER);
-                    request.addProperty(property);
+                    Property jcrPrimaryTypeProp = propertyFactory().create(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FOLDER);
+                    request.addProperty(jcrPrimaryTypeProp);
                     SVNDirEntry dirEntry = getEntryInfo(nodePath.getString(getExecutionContext().getNamespaceRegistry()));
-                    request.addProperty(propertyFactory().create(JcrLexicon.CREATED, dateFactory().create(dirEntry.getDate())));
+                    Property jcrCreatedProp = propertyFactory().create(JcrLexicon.CREATED,
+                                                                       dateFactory().create(dirEntry.getDate()));
+                    request.addProperty(jcrCreatedProp);
                 }
             }
             request.setActualLocationOfNode(myLocation);
