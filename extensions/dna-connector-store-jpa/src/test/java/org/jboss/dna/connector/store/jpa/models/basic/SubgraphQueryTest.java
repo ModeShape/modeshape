@@ -275,7 +275,7 @@ public class SubgraphQueryTest {
         Path path = path("/a/a1");
         UUID uuid = uuidByPath.get(path);
         query = SubgraphQuery.create(context, manager, uuid, path, Integer.MAX_VALUE);
-        locations = query.getNodeLocations(true);
+        locations = query.getNodeLocations(true, true);
         verifyNextLocationIs("/a/a1");
         verifyNextLocationIs("/a/a1/a1");
         verifyNextLocationIs("/a/a1/a2");
@@ -289,7 +289,7 @@ public class SubgraphQueryTest {
         Path path = path("/a/a2");
         UUID uuid = uuidByPath.get(path);
         query = SubgraphQuery.create(context, manager, uuid, path, Integer.MAX_VALUE);
-        locations = query.getNodeLocations(true);
+        locations = query.getNodeLocations(true, true);
         verifyNextLocationIs("/a/a2");
         verifyNextLocationIs("/a/a2/a1");
         verifyNextLocationIs("/a/a2/a2");
@@ -308,7 +308,7 @@ public class SubgraphQueryTest {
         Path path = path("/a");
         UUID uuid = uuidByPath.get(path);
         query = SubgraphQuery.create(context, manager, uuid, path, Integer.MAX_VALUE);
-        locations = query.getNodeLocations(true);
+        locations = query.getNodeLocations(true, true);
         verifyNextLocationIs("/a");
         verifyNextLocationIs("/a/a1");
         verifyNextLocationIs("/a/a2");
@@ -332,7 +332,24 @@ public class SubgraphQueryTest {
         Path path = path("/a");
         UUID uuid = uuidByPath.get(path);
         query = SubgraphQuery.create(context, manager, uuid, path, 4);
-        locations = query.getNodeLocations(true);
+        locations = query.getNodeLocations(true, true);
+        verifyNextLocationIs("/a");
+        verifyNextLocationIs("/a/a1");
+        verifyNextLocationIs("/a/a2");
+        verifyNextLocationIs("/a/a1/a1");
+        verifyNextLocationIs("/a/a1/a2");
+        verifyNextLocationIs("/a/a1/a3");
+        verifyNextLocationIs("/a/a2/a1");
+        verifyNextLocationIs("/a/a2/a2");
+        verifyNextLocationIs("/a/a2/a3");
+        verifyNextLocationIs("/a/a2/a4");
+        verifyNextLocationIs("/a/a2/a1/a1");
+        verifyNextLocationIs("/a/a2/a1/a2");
+        verifyNextLocationIs("/a/a2/a1/a1/a1");
+        verifyNextLocationIs("/a/a2/a1/a1/a2");
+        verifyNoMoreLocations();
+
+        locations = query.getNodeLocations(true, false);
         verifyNextLocationIs("/a");
         verifyNextLocationIs("/a/a1");
         verifyNextLocationIs("/a/a2");
@@ -349,15 +366,7 @@ public class SubgraphQueryTest {
         query.close();
 
         query = SubgraphQuery.create(context, manager, uuid, path, 2);
-        locations = query.getNodeLocations(true);
-        verifyNextLocationIs("/a");
-        verifyNextLocationIs("/a/a1");
-        verifyNextLocationIs("/a/a2");
-        verifyNoMoreLocations();
-        query.close();
-
-        query = SubgraphQuery.create(context, manager, uuid, path, 3);
-        locations = query.getNodeLocations(true);
+        locations = query.getNodeLocations(true, true);
         verifyNextLocationIs("/a");
         verifyNextLocationIs("/a/a1");
         verifyNextLocationIs("/a/a2");
@@ -368,6 +377,43 @@ public class SubgraphQueryTest {
         verifyNextLocationIs("/a/a2/a2");
         verifyNextLocationIs("/a/a2/a3");
         verifyNextLocationIs("/a/a2/a4");
+        verifyNoMoreLocations();
+
+        locations = query.getNodeLocations(true, false);
+        verifyNextLocationIs("/a");
+        verifyNextLocationIs("/a/a1");
+        verifyNextLocationIs("/a/a2");
+        verifyNoMoreLocations();
+
+        query.close();
+
+        query = SubgraphQuery.create(context, manager, uuid, path, 3);
+        locations = query.getNodeLocations(true, false);
+        verifyNextLocationIs("/a");
+        verifyNextLocationIs("/a/a1");
+        verifyNextLocationIs("/a/a2");
+        verifyNextLocationIs("/a/a1/a1");
+        verifyNextLocationIs("/a/a1/a2");
+        verifyNextLocationIs("/a/a1/a3");
+        verifyNextLocationIs("/a/a2/a1");
+        verifyNextLocationIs("/a/a2/a2");
+        verifyNextLocationIs("/a/a2/a3");
+        verifyNextLocationIs("/a/a2/a4");
+        verifyNoMoreLocations();
+
+        locations = query.getNodeLocations(true, true);
+        verifyNextLocationIs("/a");
+        verifyNextLocationIs("/a/a1");
+        verifyNextLocationIs("/a/a2");
+        verifyNextLocationIs("/a/a1/a1");
+        verifyNextLocationIs("/a/a1/a2");
+        verifyNextLocationIs("/a/a1/a3");
+        verifyNextLocationIs("/a/a2/a1");
+        verifyNextLocationIs("/a/a2/a2");
+        verifyNextLocationIs("/a/a2/a3");
+        verifyNextLocationIs("/a/a2/a4");
+        verifyNextLocationIs("/a/a2/a1/a1");
+        verifyNextLocationIs("/a/a2/a1/a2");
         verifyNoMoreLocations();
         query.close();
     }
@@ -388,7 +434,7 @@ public class SubgraphQueryTest {
         UUID uuid = uuidByPath.get(path);
 
         query = SubgraphQuery.create(context, manager, uuid, path, Integer.MAX_VALUE);
-        locations = query.getNodeLocations(true);
+        locations = query.getNodeLocations(true, true);
         verifyNextLocationIs("/a/a1");
         verifyNextLocationIs("/a/a1/a1");
         verifyNextLocationIs("/a/a1/a2");
@@ -411,7 +457,20 @@ public class SubgraphQueryTest {
         path = path("/a");
         uuid = uuidByPath.get(path);
         query = SubgraphQuery.create(context, manager, uuid, path, 4);
-        locations = query.getNodeLocations(true);
+        locations = query.getNodeLocations(true, true);
+        verifyNextLocationIs("/a");
+        verifyNextLocationIs("/a/a2");
+        verifyNextLocationIs("/a/a2/a1");
+        verifyNextLocationIs("/a/a2/a2");
+        verifyNextLocationIs("/a/a2/a3");
+        verifyNextLocationIs("/a/a2/a4");
+        verifyNextLocationIs("/a/a2/a1/a1");
+        verifyNextLocationIs("/a/a2/a1/a2");
+        verifyNextLocationIs("/a/a2/a1/a1/a1");
+        verifyNextLocationIs("/a/a2/a1/a1/a2");
+        verifyNoMoreLocations();
+
+        locations = query.getNodeLocations(true, false);
         verifyNextLocationIs("/a");
         verifyNextLocationIs("/a/a2");
         verifyNextLocationIs("/a/a2/a1");

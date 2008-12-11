@@ -80,11 +80,14 @@ public class SubgraphQuery {
             SubgraphNodeEntity root = new SubgraphNodeEntity(queryId, subgraphRootUuidString, 0);
             entities.persist(root);
 
-            // Now add the children by inserting the children, one level at a time ...
+            // Now add the children by inserting the children, one level at a time.
+            // Note that we do this for the root, and for each level until 1 BEYOND
+            // the max depth (so that we can get the children for the nodes that are
+            // at the maximum depth)...
             Query statement = entities.createNamedQuery("SubgraphNodeEntity.insertChildren");
             int numChildrenInserted = 0;
             int parentLevel = 0;
-            while (parentLevel < maxDepth - 1) {
+            while (parentLevel <= maxDepth) {
                 // Insert the children of the next level by inserting via a select (join) of the children
                 statement.setParameter("queryId", queryId);
                 statement.setParameter("parentDepth", parentLevel);
@@ -175,15 +178,19 @@ public class SubgraphQuery {
      * Get the {@link ChildEntity nodes} in the subgraph. This must be called before the query is {@link #close() closed}.
      * 
      * @param includeRoot true if the subgraph's root node is to be included, or false otherwise
+     * @param includeChildrenOfMaxDepthNodes true if the method is to include nodes that are children of nodes that are at the
+     *        maximum depth, or false if only nodes up to the maximum depth are to be included
      * @return the list of nodes, in breadth-first order
      */
     @SuppressWarnings( "unchecked" )
-    public List<ChildEntity> getNodes( boolean includeRoot ) {
+    public List<ChildEntity> getNodes( boolean includeRoot,
+                                       boolean includeChildrenOfMaxDepthNodes ) {
         if (query == null) throw new IllegalStateException();
         // Now query for all the nodes and put into a list ...
         Query search = manager.createNamedQuery("SubgraphNodeEntity.getChildEntities");
         search.setParameter("queryId", query.getId());
         search.setParameter("depth", includeRoot ? 0 : 1);
+        search.setParameter("maxDepth", includeChildrenOfMaxDepthNodes ? maxDepth : maxDepth - 1);
 
         // Now process the nodes below the subgraph's root ...
         return search.getResultList();
@@ -194,15 +201,19 @@ public class SubgraphQuery {
      * {@link #close() closed}.
      * 
      * @param includeRoot true if the properties for the subgraph's root node are to be included, or false otherwise
+     * @param includeChildrenOfMaxDepthNodes true if the method is to include nodes that are children of nodes that are at the
+     *        maximum depth, or false if only nodes up to the maximum depth are to be included
      * @return the list of properties for each of the nodes, in breadth-first order
      */
     @SuppressWarnings( "unchecked" )
-    public List<PropertiesEntity> getProperties( boolean includeRoot ) {
+    public List<PropertiesEntity> getProperties( boolean includeRoot,
+                                                 boolean includeChildrenOfMaxDepthNodes ) {
         if (query == null) throw new IllegalStateException();
         // Now query for all the nodes and put into a list ...
         Query search = manager.createNamedQuery("SubgraphNodeEntity.getPropertiesEntities");
         search.setParameter("queryId", query.getId());
         search.setParameter("depth", includeRoot ? 0 : 1);
+        search.setParameter("maxDepth", includeChildrenOfMaxDepthNodes ? maxDepth : maxDepth - 1);
 
         // Now process the nodes below the subgraph's root ...
         return search.getResultList();
@@ -212,14 +223,17 @@ public class SubgraphQuery {
      * Get the {@link Location} for each of the nodes in the subgraph. This must be called before the query is {@link #close()
      * closed}.
      * <p>
-     * This method calls {@link #getNodes(boolean)}. Therefore, calling {@link #getNodes(boolean)} and this method for the same
-     * subgraph is not efficient; consider just calling {@link #getNodes(boolean)} alone.
+     * This method calls {@link #getNodes(boolean,boolean)}. Therefore, calling {@link #getNodes(boolean,boolean)} and this method
+     * for the same subgraph is not efficient; consider just calling {@link #getNodes(boolean,boolean)} alone.
      * </p>
      * 
      * @param includeRoot true if the properties for the subgraph's root node are to be included, or false otherwise
+     * @param includeChildrenOfMaxDepthNodes true if the method is to include nodes that are children of nodes that are at the
+     *        maximum depth, or false if only nodes up to the maximum depth are to be included
      * @return the list of {@link Location locations}, one for each of the nodes in the subgraph, in breadth-first order
      */
-    public List<Location> getNodeLocations( boolean includeRoot ) {
+    public List<Location> getNodeLocations( boolean includeRoot,
+                                            boolean includeChildrenOfMaxDepthNodes ) {
         if (query == null) throw new IllegalStateException();
         // Set up a map of the paths to the nodes, keyed by UUIDs. This saves us from having to build
         // the paths every time ...
@@ -235,7 +249,7 @@ public class SubgraphQuery {
         // Now iterate over the child nodes in the subgraph (we've already included the root) ...
         final PathFactory pathFactory = context.getValueFactories().getPathFactory();
         final NameFactory nameFactory = context.getValueFactories().getNameFactory();
-        for (ChildEntity entity : getNodes(false)) {
+        for (ChildEntity entity : getNodes(false, includeChildrenOfMaxDepthNodes)) {
             String parentUuid = entity.getId().getParentUuidString();
             Path parentPath = pathByUuid.get(parentUuid);
             assert parentPath != null;

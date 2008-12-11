@@ -28,9 +28,11 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.UUID;
 import net.jcip.annotations.Immutable;
+import org.jboss.dna.common.text.TextEncoder;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.common.util.HashCode;
 import org.jboss.dna.graph.properties.Name;
+import org.jboss.dna.graph.properties.NamespaceRegistry;
 import org.jboss.dna.graph.properties.Path;
 import org.jboss.dna.graph.properties.Property;
 import org.jboss.dna.graph.properties.basic.BasicSingleValueProperty;
@@ -461,6 +463,108 @@ public class Location implements Iterable<Property> {
     }
 
     /**
+     * Get the string form of the location.
+     * 
+     * @return the string
+     * @see #getString(TextEncoder)
+     * @see #getString(NamespaceRegistry)
+     * @see #getString(NamespaceRegistry, TextEncoder)
+     * @see #getString(NamespaceRegistry, TextEncoder, TextEncoder)
+     */
+    public String getString() {
+        return getString(null, null, null);
+    }
+
+    /**
+     * Get the encoded string form of the location, using the supplied encoder to encode characters in each of the location's path
+     * and properties.
+     * 
+     * @param encoder the encoder to use, or null if the default encoder should be used
+     * @return the encoded string
+     * @see #getString()
+     * @see #getString(NamespaceRegistry)
+     * @see #getString(NamespaceRegistry, TextEncoder)
+     * @see #getString(NamespaceRegistry, TextEncoder, TextEncoder)
+     */
+    public String getString( TextEncoder encoder ) {
+        return getString(null, encoder, null);
+    }
+
+    /**
+     * Get the encoded string form of the location, using the supplied encoder to encode characters in each of the location's path
+     * and properties.
+     * 
+     * @param namespaceRegistry the namespace registry to use for getting the string form of the path and properties, or null if
+     *        no namespace registry should be used
+     * @return the encoded string
+     * @see #getString()
+     * @see #getString(TextEncoder)
+     * @see #getString(NamespaceRegistry, TextEncoder)
+     * @see #getString(NamespaceRegistry, TextEncoder, TextEncoder)
+     */
+    public String getString( NamespaceRegistry namespaceRegistry ) {
+        CheckArg.isNotNull(namespaceRegistry, "namespaceRegistry");
+        return getString(namespaceRegistry, null, null);
+    }
+
+    /**
+     * Get the encoded string form of the location, using the supplied encoder to encode characters in each of the location's path
+     * and properties.
+     * 
+     * @param namespaceRegistry the namespace registry to use for getting the string form of the path and properties, or null if
+     *        no namespace registry should be used
+     * @param encoder the encoder to use, or null if the default encoder should be used
+     * @return the encoded string
+     * @see #getString()
+     * @see #getString(TextEncoder)
+     * @see #getString(NamespaceRegistry)
+     * @see #getString(NamespaceRegistry, TextEncoder, TextEncoder)
+     */
+    public String getString( NamespaceRegistry namespaceRegistry,
+                             TextEncoder encoder ) {
+        CheckArg.isNotNull(namespaceRegistry, "namespaceRegistry");
+        return getString(namespaceRegistry, encoder, null);
+    }
+
+    /**
+     * Get the encoded string form of the location, using the supplied encoder to encode characters in each of the location's path
+     * and properties.
+     * 
+     * @param namespaceRegistry the namespace registry to use for getting the string form of the path and properties, or null if
+     *        no namespace registry should be used
+     * @param encoder the encoder to use, or null if the default encoder should be used
+     * @param delimiterEncoder the encoder to use for encoding the delimiters in paths, names, and properties, or null if the
+     *        standard delimiters should be used
+     * @return the encoded string
+     * @see #getString()
+     * @see #getString(TextEncoder)
+     * @see #getString(NamespaceRegistry)
+     * @see #getString(NamespaceRegistry, TextEncoder)
+     */
+    public String getString( NamespaceRegistry namespaceRegistry,
+                             TextEncoder encoder,
+                             TextEncoder delimiterEncoder ) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("{ ");
+        if (this.hasPath()) {
+            sb.append(this.getPath().getString(namespaceRegistry, encoder, delimiterEncoder));
+            if (this.hasIdProperties()) sb.append(" && ");
+        }
+        if (this.hasIdProperties()) {
+            sb.append("[");
+            boolean first = true;
+            for (Property idProperty : this.getIdProperties()) {
+                if (first) first = false;
+                else sb.append(", ");
+                sb.append(idProperty.getString(namespaceRegistry, encoder, delimiterEncoder));
+            }
+            sb.append("]");
+        }
+        sb.append(" }");
+        return sb.toString();
+    }
+
+    /**
      * {@inheritDoc}
      * 
      * @see java.lang.Object#toString()
@@ -468,15 +572,22 @@ public class Location implements Iterable<Property> {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
+        sb.append("{ ");
         if (this.hasPath()) {
-            if (this.hasIdProperties()) sb.append("[ ");
             sb.append(this.getPath());
             if (this.hasIdProperties()) sb.append(" && ");
         }
         if (this.hasIdProperties()) {
-            sb.append(this.getIdProperties().toString());
-            if (this.hasPath()) sb.append(" ]");
+            sb.append("[");
+            boolean first = true;
+            for (Property idProperty : this.getIdProperties()) {
+                if (first) first = false;
+                else sb.append(", ");
+                sb.append(idProperty);
+            }
+            sb.append("]");
         }
+        sb.append(" }");
         return sb.toString();
     }
 

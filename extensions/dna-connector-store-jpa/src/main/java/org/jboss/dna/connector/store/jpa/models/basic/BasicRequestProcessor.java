@@ -35,11 +35,12 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-import java.util.zip.ZipInputStream;
-import java.util.zip.ZipOutputStream;
+import java.util.zip.GZIPInputStream;
+import java.util.zip.GZIPOutputStream;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityTransaction;
 import javax.persistence.NoResultException;
@@ -52,10 +53,12 @@ import org.jboss.dna.common.util.StringUtil;
 import org.jboss.dna.connector.store.jpa.JpaConnectorI18n;
 import org.jboss.dna.connector.store.jpa.models.common.NamespaceEntity;
 import org.jboss.dna.connector.store.jpa.util.Namespaces;
+import org.jboss.dna.connector.store.jpa.util.RequestProcessorCache;
 import org.jboss.dna.connector.store.jpa.util.Serializer;
 import org.jboss.dna.connector.store.jpa.util.Serializer.LargeValues;
 import org.jboss.dna.graph.DnaLexicon;
 import org.jboss.dna.graph.ExecutionContext;
+import org.jboss.dna.graph.JcrLexicon;
 import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.properties.Binary;
 import org.jboss.dna.graph.properties.Name;
@@ -97,6 +100,7 @@ public class BasicRequestProcessor extends RequestProcessor {
     protected final long largeValueMinimumSizeInBytes;
     protected final boolean compressData;
     protected final Logger logger;
+    protected final RequestProcessorCache cache;
 
     /**
      * @param sourceName
@@ -126,6 +130,7 @@ public class BasicRequestProcessor extends RequestProcessor {
         this.compressData = compressData;
         this.serializer = new Serializer(context, true);
         this.logger = getExecutionContext().getLogger(getClass());
+        this.cache = new RequestProcessorCache(this.pathFactory);
 
         // Start the transaction ...
         this.entities.getTransaction().begin();
@@ -166,39 +171,71 @@ public class BasicRequestProcessor extends RequestProcessor {
             NamespaceEntity ns = namespaces.get(childNsUri, true);
             assert ns != null;
 
-            // Find the largest SNS index in the existing ChildEntity objects with the same name ...
-            String childLocalName = childName.getLocalName();
-            Query query = entities.createNamedQuery("ChildEntity.findMaximumSnsIndex");
-            query.setParameter("parentUuid", parentUuidString);
-            query.setParameter("ns", ns.getId());
-            query.setParameter("childName", childLocalName);
+            // Figure out the next SNS index and index-in-parent for this new child ...
             int nextSnsIndex = 1;
-            try {
-                Integer result = (Integer)query.getSingleResult();
-                nextSnsIndex = result != null ? result + 1 : 1;
-            } catch (NoResultException e) {
-            }
-
-            // Find the largest child index in the existing ChildEntity objects ...
-            query = entities.createNamedQuery("ChildEntity.findMaximumChildIndex");
-            query.setParameter("parentUuid", parentUuidString);
             int nextIndexInParent = 1;
-            try {
-                Integer result = (Integer)query.getSingleResult();
-                nextIndexInParent = result != null ? result + 1 : 1;
-            } catch (NoResultException e) {
+            final Path parentPath = actual.location.getPath();
+            assert parentPath != null;
+            // Look in the cache for the children of the parent node.
+            LinkedList<Location> childrenOfParent = cache.getAllChildren(parentPath);
+            if (childrenOfParent != null) {
+                // The cache had the complete list of children for the parent node, which means
+                // we know about all of the children and can walk the children to figure out the next indexes.
+                nextIndexInParent = childrenOfParent.size() + 1;
+                if (nextIndexInParent > 1) {
+                    // Since we want the last indexes, process the list backwards ...
+                    ListIterator<Location> iter = childrenOfParent.listIterator(childrenOfParent.size());
+                    while (iter.hasPrevious()) {
+                        Location existing = iter.previous();
+                        Path.Segment segment = existing.getPath().getLastSegment();
+                        if (!segment.getName().equals(childName)) continue;
+                        // Otherwise the name matched, so get the indexes ...
+                        nextSnsIndex = segment.getIndex() + 1;
+                    }
+                }
+            } else {
+                // The cache did not have the complete list of children for the parent node,
+                // so we need to look the values up by querying the database ...
+
+                // Find the largest SNS index in the existing ChildEntity objects with the same name ...
+                String childLocalName = childName.getLocalName();
+                Query query = entities.createNamedQuery("ChildEntity.findMaximumSnsIndex");
+                query.setParameter("parentUuid", parentUuidString);
+                query.setParameter("ns", ns.getId());
+                query.setParameter("childName", childLocalName);
+                try {
+                    Integer result = (Integer)query.getSingleResult();
+                    nextSnsIndex = result != null ? result + 1 : 1;
+                } catch (NoResultException e) {
+                }
+
+                // Find the largest child index in the existing ChildEntity objects ...
+                query = entities.createNamedQuery("ChildEntity.findMaximumChildIndex");
+                query.setParameter("parentUuid", parentUuidString);
+                try {
+                    Integer result = (Integer)query.getSingleResult();
+                    nextIndexInParent = result != null ? result + 1 : 1;
+                } catch (NoResultException e) {
+                }
             }
 
             // Create the new ChildEntity ...
             ChildId id = new ChildId(parentUuidString, childUuidString);
-            ChildEntity entity = new ChildEntity(id, nextIndexInParent, ns, childLocalName, nextSnsIndex);
+            ChildEntity entity = new ChildEntity(id, nextIndexInParent, ns, childName.getLocalName(), nextSnsIndex);
             entities.persist(entity);
 
-            // Look up the actual path, regardless of the supplied path...
+            // Set the actual path, regardless of the supplied path...
             assert childUuidString != null;
-            assert actual.location.getPath() != null;
-            Path path = pathFactory.create(actual.location.getPath(), childName, nextSnsIndex);
+            Path path = pathFactory.create(parentPath, childName, nextSnsIndex);
             actualLocation = new Location(path, UUID.fromString(childUuidString));
+
+            // Finally, update the cache with the information we know ...
+            if (childrenOfParent != null) {
+                // Add to the cached list of children ...
+                childrenOfParent.add(actualLocation);
+            }
+            // Since we've just created this node, we know about all the children (actually, there are none).
+            cache.setAllChildren(path, new LinkedList<Location>());
 
         } catch (Throwable e) { // Includes PathNotFoundException
             request.setError(e);
@@ -213,7 +250,6 @@ public class BasicRequestProcessor extends RequestProcessor {
      * 
      * @see org.jboss.dna.graph.requests.processor.RequestProcessor#process(org.jboss.dna.graph.requests.ReadNodeRequest)
      */
-    @SuppressWarnings( "unchecked" )
     @Override
     public void process( ReadNodeRequest request ) {
         logger.trace(request.toString());
@@ -223,7 +259,6 @@ public class BasicRequestProcessor extends RequestProcessor {
             ActualLocation actual = getActualLocation(location);
             String parentUuidString = actual.uuid;
             actualLocation = actual.location;
-            Path path = actualLocation.getPath();
 
             // Record the UUID as a property, since it's not stored in the serialized properties...
             request.addProperty(actualLocation.getIdProperty(DnaLexicon.UUID));
@@ -240,7 +275,7 @@ public class BasicRequestProcessor extends RequestProcessor {
                 byte[] data = entity.getData();
                 LargeValueSerializer largeValues = new LargeValueSerializer(entity);
                 ByteArrayInputStream bais = new ByteArrayInputStream(data);
-                InputStream is = compressed ? new ZipInputStream(bais) : bais;
+                InputStream is = compressed ? new GZIPInputStream(bais) : bais;
                 ObjectInputStream ois = new ObjectInputStream(is);
                 try {
                     serializer.deserializeAllProperties(ois, properties, largeValues);
@@ -254,18 +289,9 @@ public class BasicRequestProcessor extends RequestProcessor {
             } catch (NoResultException e) {
                 // No properties, but that's okay...
             }
-            // Find the children of the supplied node ...
-            query = entities.createNamedQuery("ChildEntity.findAllUnderParent");
-            query.setParameter("parentUuidString", parentUuidString);
-            List<ChildEntity> children = query.getResultList();
-            for (ChildEntity child : children) {
-                String namespaceUri = child.getChildNamespace().getUri();
-                String localName = child.getChildName();
-                Name childName = nameFactory.create(namespaceUri, localName);
-                int sns = child.getSameNameSiblingIndex();
-                Path childPath = pathFactory.create(path, childName, sns);
-                String childUuidString = child.getId().getChildUuidString();
-                Location childLocation = new Location(childPath, UUID.fromString(childUuidString));
+
+            // Get the children for this node ...
+            for (Location childLocation : getAllChildren(actual)) {
                 request.addChild(childLocation);
             }
         } catch (NoResultException e) {
@@ -282,7 +308,6 @@ public class BasicRequestProcessor extends RequestProcessor {
      * 
      * @see org.jboss.dna.graph.requests.processor.RequestProcessor#process(org.jboss.dna.graph.requests.ReadAllChildrenRequest)
      */
-    @SuppressWarnings( "unchecked" )
     @Override
     public void process( ReadAllChildrenRequest request ) {
         logger.trace(request.toString());
@@ -290,22 +315,10 @@ public class BasicRequestProcessor extends RequestProcessor {
         try {
             Location location = request.of();
             ActualLocation actual = getActualLocation(location);
-            String parentUuidString = actual.uuid;
             actualLocation = actual.location;
-            Path path = actualLocation.getPath();
 
-            // Find the children of the supplied node ...
-            Query query = entities.createNamedQuery("ChildEntity.findAllUnderParent");
-            query.setParameter("parentUuidString", parentUuidString);
-            List<ChildEntity> children = query.getResultList();
-            for (ChildEntity child : children) {
-                String namespaceUri = child.getChildNamespace().getUri();
-                String localName = child.getChildName();
-                Name childName = nameFactory.create(namespaceUri, localName);
-                int sns = child.getSameNameSiblingIndex();
-                Path childPath = pathFactory.create(path, childName, sns);
-                String childUuidString = child.getId().getChildUuidString();
-                Location childLocation = new Location(childPath, UUID.fromString(childUuidString));
+            // Get the children for this node ...
+            for (Location childLocation : getAllChildren(actual)) {
                 request.addChild(childLocation);
             }
         } catch (NoResultException e) {
@@ -315,6 +328,44 @@ public class BasicRequestProcessor extends RequestProcessor {
             return;
         }
         if (actualLocation != null) request.setActualLocationOfNode(actualLocation);
+    }
+
+    /**
+     * Utility method to obtain all of the children for a node, either from the cache (if all children are known to this
+     * processor) or by querying the database (and caching the list of children).
+     * 
+     * @param parent the actual location of the parent node; may not be null
+     * @return the list of child locations
+     */
+    protected LinkedList<Location> getAllChildren( ActualLocation parent ) {
+        assert parent != null;
+        Path parentPath = parent.location.getPath();
+        assert parentPath != null;
+        LinkedList<Location> cachedChildren = cache.getAllChildren(parentPath);
+        if (cachedChildren != null) {
+            // The cache has all of the children for the node ...
+            return cachedChildren;
+        }
+
+        // Not found in the cache, so query the database ...
+        Query query = entities.createNamedQuery("ChildEntity.findAllUnderParent");
+        query.setParameter("parentUuidString", parent.uuid);
+        LinkedList<Location> childLocations = new LinkedList<Location>();
+        @SuppressWarnings( "unchecked" )
+        List<ChildEntity> children = query.getResultList();
+        for (ChildEntity child : children) {
+            String namespaceUri = child.getChildNamespace().getUri();
+            String localName = child.getChildName();
+            Name childName = nameFactory.create(namespaceUri, localName);
+            int sns = child.getSameNameSiblingIndex();
+            Path childPath = pathFactory.create(parentPath, childName, sns);
+            String childUuidString = child.getId().getChildUuidString();
+            Location childLocation = new Location(childPath, UUID.fromString(childUuidString));
+            childLocations.add(childLocation);
+        }
+        // Update the cache ...
+        cache.setAllChildren(parentPath, childLocations);
+        return childLocations;
     }
 
     /**
@@ -347,7 +398,7 @@ public class BasicRequestProcessor extends RequestProcessor {
             byte[] data = entity.getData();
             LargeValueSerializer largeValues = new LargeValueSerializer(entity);
             ByteArrayInputStream bais = new ByteArrayInputStream(data);
-            InputStream is = compressed ? new ZipInputStream(bais) : bais;
+            InputStream is = compressed ? new GZIPInputStream(bais) : bais;
             ObjectInputStream ois = new ObjectInputStream(is);
             try {
                 serializer.deserializeAllProperties(ois, properties, largeValues);
@@ -407,7 +458,7 @@ public class BasicRequestProcessor extends RequestProcessor {
             byte[] data = entity.getData();
             LargeValueSerializer largeValues = new LargeValueSerializer(entity);
             ByteArrayInputStream bais = new ByteArrayInputStream(data);
-            InputStream is = compressed ? new ZipInputStream(bais) : bais;
+            InputStream is = compressed ? new GZIPInputStream(bais) : bais;
             ObjectInputStream ois = new ObjectInputStream(is);
             try {
                 Serializer.LargeValues skippedLargeValues = Serializer.NO_LARGE_VALUES;
@@ -453,10 +504,10 @@ public class BasicRequestProcessor extends RequestProcessor {
                 // properties ...
                 boolean compressed = entity.isCompressed();
                 ByteArrayInputStream bais = new ByteArrayInputStream(entity.getData());
-                InputStream is = compressed ? new ZipInputStream(bais) : bais;
+                InputStream is = compressed ? new GZIPInputStream(bais) : bais;
                 ObjectInputStream ois = new ObjectInputStream(is);
                 ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                OutputStream os = compressed ? new ZipOutputStream(baos) : baos;
+                OutputStream os = compressed ? new GZIPOutputStream(baos) : baos;
                 ObjectOutputStream oos = new ObjectOutputStream(os);
                 int numProperties = 0;
                 Set<String> largeValueHashesWritten = hadLargeValues ? new HashSet<String>() : null;
@@ -517,40 +568,49 @@ public class BasicRequestProcessor extends RequestProcessor {
             locationsByUuid.put(actual.uuid, location);
 
             // Compute the subgraph, including the root ...
-            SubgraphQuery query = SubgraphQuery.create(getExecutionContext(), entities, actualLocation.getUuid(), path, 0);
+            int maxDepth = request.maximumDepth();
+            SubgraphQuery query = SubgraphQuery.create(getExecutionContext(), entities, actualLocation.getUuid(), path, maxDepth);
 
             // Record all of the children ...
             Path parent = path;
+            String parentUuid = actual.uuid;
             Location parentLocation = actualLocation;
             List<Location> children = new LinkedList<Location>();
-            for (ChildEntity child : query.getNodes(false)) {
+            boolean includeChildrenOfNodesAtMaxDepth = true;
+            for (ChildEntity child : query.getNodes(false, includeChildrenOfNodesAtMaxDepth)) {
                 String namespaceUri = child.getChildNamespace().getUri();
                 String localName = child.getChildName();
                 Name childName = nameFactory.create(namespaceUri, localName);
                 int sns = child.getSameNameSiblingIndex();
-                Path childPath = pathFactory.create(path, childName, sns);
+                // Figure out who the parent is ...
+                String childParentUuid = child.getId().getParentUuidString();
+                if (!parentUuid.equals(childParentUuid)) {
+                    // The parent isn't the last parent, so record the children found so far ...
+                    request.setChildren(parentLocation, children);
+                    // And find the correct parent ...
+                    parentLocation = locationsByUuid.get(childParentUuid);
+                    parent = parentLocation.getPath();
+                    parentUuid = childParentUuid;
+                    children = new LinkedList<Location>();
+                }
+                Path childPath = pathFactory.create(parent, childName, sns);
                 String childUuidString = child.getId().getChildUuidString();
                 Location childLocation = new Location(childPath, UUID.fromString(childUuidString));
                 locationsByUuid.put(childUuidString, childLocation);
-                // Determine if this child goes into the current list of children ...
-                Path childParent = childPath.getParent();
-                if (childParent.equals(parent)) {
-                    children.add(childLocation);
-                } else {
-                    // Record the children found so far ...
-                    request.setChildren(parentLocation, children);
-                    parentLocation = locationsByUuid.get(child.getId().getParentUuidString());
-                    parent = parentLocation.getPath();
-                    children = new LinkedList<Location>();
-                    children.add(childLocation);
-                }
+                children.add(childLocation);
             }
             if (!children.isEmpty()) {
                 request.setChildren(parentLocation, children);
             }
 
+            // Note that we've found children for nodes that are at the maximum depth. This is so that the nodes
+            // in the subgraph all have the correct children. However, we don't want to store the properties for
+            // any node whose depth is greater than the maximum depth. Therefore, only get the properties that
+            // include nodes within the maximum depth...
+            includeChildrenOfNodesAtMaxDepth = false;
+
             // Now record all of the properties ...
-            for (PropertiesEntity props : query.getProperties(true)) {
+            for (PropertiesEntity props : query.getProperties(true, includeChildrenOfNodesAtMaxDepth)) {
                 boolean compressed = props.isCompressed();
                 int propertyCount = props.getPropertyCount();
                 Collection<Property> properties = new ArrayList<Property>(propertyCount);
@@ -562,7 +622,7 @@ public class BasicRequestProcessor extends RequestProcessor {
                 byte[] data = props.getData();
                 LargeValueSerializer largeValues = new LargeValueSerializer(props);
                 ByteArrayInputStream bais = new ByteArrayInputStream(data);
-                InputStream is = compressed ? new ZipInputStream(bais) : bais;
+                InputStream is = compressed ? new GZIPInputStream(bais) : bais;
                 ObjectInputStream ois = new ObjectInputStream(is);
                 try {
                     serializer.deserializeAllProperties(ois, properties, largeValues);
@@ -571,8 +631,6 @@ public class BasicRequestProcessor extends RequestProcessor {
                     ois.close();
                 }
             }
-
-            // TODO: Now update the 'index in parent' and SNS indexes of the siblings of the deleted node.
 
         } catch (Throwable e) { // Includes PathNotFoundException
             request.setError(e);
@@ -610,10 +668,16 @@ public class BasicRequestProcessor extends RequestProcessor {
             SubgraphQuery query = SubgraphQuery.create(getExecutionContext(), entities, actualLocation.getUuid(), path, 0);
 
             // Get the locations of all deleted nodes, which will be required by events ...
-            // List<Location> deletedLocations = query.getNodeLocations(true);
+            List<Location> deletedLocations = query.getNodeLocations(true, true);
 
             // Now delete the subgraph ...
             query.deleteSubgraph(true);
+
+            // And adjust the SNS index and indexes ...
+            // adjustSnsIndexesAndIndexesAfterRemoving(oldParentUuid, childLocalName, ns.getId(), oldIndex, oldSnsIndex);
+
+            // Remove from the cache of children locations all entries for deleted nodes ...
+            cache.removeBranch(deletedLocations);
 
         } catch (Throwable e) { // Includes PathNotFoundException
             request.setError(e);
@@ -637,9 +701,10 @@ public class BasicRequestProcessor extends RequestProcessor {
             ActualLocation actualLocation = getActualLocation(fromLocation);
             String fromUuidString = actualLocation.uuid;
             actualOldLocation = actualLocation.location;
+            Path oldPath = actualOldLocation.getPath();
 
             // It's not possible to move the root node
-            if (actualOldLocation.getPath().isRoot()) {
+            if (oldPath.isRoot()) {
                 String msg = JpaConnectorI18n.unableToMoveRootNode.text(getSourceName());
                 throw new InvalidRequestException(msg);
             }
@@ -689,9 +754,19 @@ public class BasicRequestProcessor extends RequestProcessor {
                     fromEntity.setIndexInParent(nextIndexInParent);
                     fromEntity.setSameNameSiblingIndex(nextSnsIndex);
 
+                    // Determine the new location ...
+                    Path newParentPath = actualIntoLocation.location.getPath();
+                    Name childName = oldPath.getLastSegment().getName();
+                    Path newPath = pathFactory.create(newParentPath, childName, nextSnsIndex);
+                    actualNewLocation = actualOldLocation.with(newPath);
+
                     // And adjust the SNS index and indexes ...
                     adjustSnsIndexesAndIndexesAfterRemoving(oldParentUuid, childLocalName, ns.getId(), oldIndex, oldSnsIndex);
+
+                    // Update the cache ...
+                    cache.moveNode(actualOldLocation, oldIndex, actualNewLocation);
                 }
+
             }
 
         } catch (Throwable e) { // Includes PathNotFoundException
@@ -703,15 +778,18 @@ public class BasicRequestProcessor extends RequestProcessor {
 
     protected void adjustSnsIndexesAndIndexesAfterRemoving( String uuidParent,
                                                             String childName,
-                                                            int childNamespaceIndex,
+                                                            long childNamespaceIndex,
                                                             int childIndex,
                                                             int childSnsIndex ) {
+        // TODO: Now update the 'index in parent' and SNS indexes of the siblings of the deleted node.
 
     }
 
     protected String createProperties( String uuidString,
                                        Collection<Property> properties ) throws IOException {
         assert uuidString != null;
+        if (properties.isEmpty()) return uuidString;
+        if (properties.size() == 1 && properties.iterator().next().getName().equals(JcrLexicon.NAME)) return uuidString;
 
         // Create the PropertiesEntity ...
         NodeId nodeId = new NodeId(uuidString);
@@ -719,7 +797,7 @@ public class BasicRequestProcessor extends RequestProcessor {
 
         LargeValueSerializer largeValues = new LargeValueSerializer(props);
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        OutputStream os = compressData ? new ZipOutputStream(baos) : baos;
+        OutputStream os = compressData ? new GZIPOutputStream(baos) : baos;
         ObjectOutputStream oos = new ObjectOutputStream(os);
         int numProperties = properties.size();
         try {
@@ -781,6 +859,15 @@ public class BasicRequestProcessor extends RequestProcessor {
         Property uuidProperty = original.getIdProperty(DnaLexicon.UUID);
         String uuidString = uuidProperty != null && !uuidProperty.isEmpty() ? stringFactory.create(uuidProperty.getFirstValue()) : null;
 
+        Path path = original.getPath();
+        if (path != null) {
+            // See if the location is already in the cache ...
+            Location cached = cache.getLocationFor(path);
+            if (cached != null) {
+                return new ActualLocation(cached, cached.getUuid().toString(), null);
+            }
+        }
+
         // If the original location has a UUID, then use that to find the child entity that represents the location ...
         if (uuidString != null) {
             // The original has a UUID, so use that to find the child entity.
@@ -805,11 +892,12 @@ public class BasicRequestProcessor extends RequestProcessor {
                 }
             }
             Path fullPath = pathFactory.createAbsolutePath(segments);
-            return new ActualLocation(new Location(fullPath, uuidProperty), nodeUuidString, entity);
+            Location newLocation = new Location(fullPath, uuidProperty);
+            cache.addNewNode(newLocation);
+            return new ActualLocation(newLocation, nodeUuidString, entity);
         }
 
         // There is no UUID, so look for a path ...
-        Path path = original.getPath();
         if (path == null) {
             String propName = DnaLexicon.UUID.getString(getExecutionContext().getNamespaceRegistry());
             String msg = JpaConnectorI18n.locationShouldHavePathAndOrProperty.text(getSourceName(), propName);
@@ -818,36 +906,11 @@ public class BasicRequestProcessor extends RequestProcessor {
 
         // Walk the child entities, starting at the root, down the to the path ...
         if (path.isRoot()) {
-            return new ActualLocation(original.with(rootNodeUuid), rootNodeUuidString, null);
+            Location newLocation = original.with(rootNodeUuid);
+            cache.addNewNode(newLocation);
+            return new ActualLocation(newLocation, rootNodeUuidString, null);
         }
         String parentUuid = this.rootNodeUuidString;
-        // String childUuid = null;
-        // for (Path.Segment segment : path) {
-        // Name name = segment.getName();
-        // String localName = name.getLocalName();
-        // String nsUri = name.getNamespaceUri();
-        // int snsIndex = segment.hasIndex() ? segment.getIndex() : 1;
-        //
-        // Query query = entities.createNamedQuery("ChildEntity.findChildUuidByPathSegment");
-        // query.setParameter("parentUuidString", parentUuid);
-        // query.setParameter("nsUri", nsUri);
-        // query.setParameter("childName", localName);
-        // query.setParameter("sns", snsIndex);
-        // try {
-        // childUuid = (String)query.getSingleResult();
-        // } catch (NoResultException e) {
-        // // Unable to complete the path, so prepare the exception by determining the lowest path that exists ...
-        // Path lowest = path;
-        // while (lowest.getLastSegment() != segment) {
-        // lowest = lowest.getParent();
-        // }
-        // lowest = lowest.getParent();
-        // throw new PathNotFoundException(original, lowest);
-        // }
-        // parentUuid = childUuid;
-        // }
-        // return new ActualLocation(original.with(UUID.fromString(childUuid)), childUuid, null);
-
         ChildEntity child = null;
         for (Path.Segment segment : path) {
             child = findByPathSegment(parentUuid, segment);
@@ -864,7 +927,9 @@ public class BasicRequestProcessor extends RequestProcessor {
         }
         assert child != null;
         uuidString = child.getId().getChildUuidString();
-        return new ActualLocation(original.with(UUID.fromString(uuidString)), uuidString, child);
+        Location newLocation = original.with(UUID.fromString(uuidString));
+        cache.addNewNode(newLocation);
+        return new ActualLocation(newLocation, uuidString, child);
     }
 
     /**
@@ -960,6 +1025,14 @@ public class BasicRequestProcessor extends RequestProcessor {
             if (entity != null) {
                 // Find the large value from the existing property entity ...
                 byte[] data = entity.getData();
+                if (entity.isCompressed()) {
+                    InputStream stream = new GZIPInputStream(new ByteArrayInputStream(data));
+                    try {
+                        data = IoUtil.readBytes(stream);
+                    } finally {
+                        stream.close();
+                    }
+                }
                 return valueFactories.getValueFactory(entity.getType()).create(data);
             }
             throw new IOException(JpaConnectorI18n.unableToReadLargeValue.text(getSourceName(), hashStr));
@@ -1004,7 +1077,7 @@ public class BasicRequestProcessor extends RequestProcessor {
                         try {
                             binary.acquire();
                             stream = binary.getStream();
-                            if (compressData) stream = new ZipInputStream(stream);
+                            if (compressData) stream = new GZIPInputStream(stream);
                             bytes = IoUtil.readBytes(stream);
                         } finally {
                             try {
@@ -1016,14 +1089,17 @@ public class BasicRequestProcessor extends RequestProcessor {
                         break;
                     default:
                         String str = factories.getStringFactory().create(value);
-                        bytes = str.getBytes();
                         if (compressData) {
-                            InputStream strStream = new ZipInputStream(new ByteArrayInputStream(bytes));
+                            ByteArrayOutputStream bs = new ByteArrayOutputStream();
+                            OutputStream strStream = new GZIPOutputStream(bs);
                             try {
-                                bytes = IoUtil.readBytes(strStream);
+                                IoUtil.write(str, strStream);
                             } finally {
                                 strStream.close();
                             }
+                            bytes = bs.toByteArray();
+                        } else {
+                            bytes = str.getBytes();
                         }
                         break;
                 }

@@ -25,7 +25,7 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.jboss.dna.graph.IsNodeWithChildren.hasChild;
 import static org.jboss.dna.graph.IsNodeWithChildren.hasChildren;
-import static org.jboss.dna.graph.IsNodeWithChildren.hasNoChildren;
+import static org.jboss.dna.graph.IsNodeWithChildren.isEmpty;
 import static org.jboss.dna.graph.IsNodeWithProperty.hasProperty;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.mock;
@@ -58,7 +58,7 @@ import org.junit.Test;
  * 
  * @author Randall Hauch
  */
-public class JpaConnectionTest {
+public abstract class JpaConnectionTest {
 
     private ExecutionContext context;
     private JpaConnection connection;
@@ -71,6 +71,7 @@ public class JpaConnectionTest {
     private boolean compressData;
     private Graph graph;
     private String[] validLargeValues;
+    private int numPropsOnEach;
 
     @Before
     public void beforeEach() throws Exception {
@@ -78,7 +79,8 @@ public class JpaConnectionTest {
         model = getModel();
         rootNodeUuid = UUID.randomUUID();
         largeValueSize = 2 ^ 10; // 1 kilobyte
-        compressData = false;
+        compressData = true;
+        numPropsOnEach = 0;
 
         // Load in the large value ...
         validLargeValues = new String[] {IoUtil.read(getClass().getClassLoader().getResourceAsStream("LoremIpsum1.txt")),
@@ -88,11 +90,12 @@ public class JpaConnectionTest {
         // Connect to the database ...
         Ejb3Configuration configurator = new Ejb3Configuration();
         model.configure(configurator);
-        configurator.setProperty("hibernate.dialect", "org.hibernate.dialect.HSQLDialect");
-        configurator.setProperty("hibernate.connection.driver_class", "org.hsqldb.jdbcDriver");
-        configurator.setProperty("hibernate.connection.username", "sa");
-        configurator.setProperty("hibernate.connection.password", "");
-        configurator.setProperty("hibernate.connection.url", "jdbc:hsqldb:.");
+        configureDatabaseProperties(configurator);
+        // configurator.setProperty("hibernate.dialect", "org.hibernate.dialect.HSQLDialect");
+        // configurator.setProperty("hibernate.connection.driver_class", "org.hsqldb.jdbcDriver");
+        // configurator.setProperty("hibernate.connection.username", "sa");
+        // configurator.setProperty("hibernate.connection.password", "");
+        // configurator.setProperty("hibernate.connection.url", "jdbc:hsqldb:.");
         configurator.setProperty("hibernate.show_sql", "false");
         configurator.setProperty("hibernate.format_sql", "true");
         configurator.setProperty("hibernate.use_sql_comments", "true");
@@ -107,6 +110,8 @@ public class JpaConnectionTest {
         // And create the graph ...
         graph = Graph.create(connection, context);
     }
+
+    protected abstract void configureDatabaseProperties( Ejb3Configuration configurator );
 
     @After
     public void afterEach() throws Exception {
@@ -152,6 +157,12 @@ public class JpaConnectionTest {
         return context.getValueFactories().getNameFactory().create(name);
     }
 
+    protected Property property( String name,
+                                 Object... values ) {
+        Name propName = name(name);
+        return context.getPropertyFactory().create(propName, values);
+    }
+
     protected Path.Segment child( String name ) {
         return context.getValueFactories().getPathFactory().createSegment(name);
     }
@@ -192,57 +203,56 @@ public class JpaConnectionTest {
         Node root = graph.getNodeAt("/");
         assertThat(root, is(notNullValue()));
         assertThat(root, hasProperty(DnaLexicon.UUID, rootNodeUuid));
-        assertThat(root, hasChild(child("a")));
+        assertThat(root.getChildren(), hasChild(child("a")));
 
         // Now look up node A ...
         Node nodeA = graph.getNodeAt("/a");
         assertThat(nodeA, is(notNullValue()));
         assertThat(nodeA, hasProperty("propB", "valueB"));
         assertThat(nodeA, hasProperty("propC", "valueC"));
-        assertThat(nodeA, hasNoChildren());
+        assertThat(nodeA.getChildren(), isEmpty());
     }
 
     @Test
     public void shouldAddChildrenOnRootNode() {
-        graph.batch().set("propA").to("valueA").on("/").and()
-                     .create("/a").with("propB", "valueB").and("propC", "valueC").and()
-                     .create("/b").with("propD", "valueD").and("propE", "valueE")
-                     .execute();
+        graph.batch().set("propA").to("valueA").on("/").and().create("/a").with("propB", "valueB").and("propC", "valueC").and().create("/b").with("propD",
+                                                                                                                                                  "valueD").and("propE",
+                                                                                                                                                                "valueE").execute();
         // Now look up the root node ...
         Node root = graph.getNodeAt("/");
         assertThat(root, is(notNullValue()));
         assertThat(root, hasProperty(DnaLexicon.UUID, rootNodeUuid));
         assertThat(root, hasProperty("propA", "valueA"));
-        assertThat(root, hasChildren(child("a"), child("b")));
+        assertThat(root.getChildren(), hasChildren(child("a"), child("b")));
 
         // Now look up node A ...
         Node nodeA = graph.getNodeAt("/a");
         assertThat(nodeA, is(notNullValue()));
         assertThat(nodeA, hasProperty("propB", "valueB"));
         assertThat(nodeA, hasProperty("propC", "valueC"));
-        assertThat(nodeA, hasNoChildren());
+        assertThat(nodeA.getChildren(), isEmpty());
 
         // Now look up node B ...
         Node nodeB = graph.getNodeAt("/b");
         assertThat(nodeB, is(notNullValue()));
         assertThat(nodeB, hasProperty("propD", "valueD"));
         assertThat(nodeB, hasProperty("propE", "valueE"));
-        assertThat(nodeB, hasNoChildren());
+        assertThat(nodeB.getChildren(), isEmpty());
 
         // Get the subgraph ...
         Subgraph subgraph = graph.getSubgraphOfDepth(3).at("/");
         assertThat(subgraph, is(notNullValue()));
         assertThat(subgraph.getNode("."), hasProperty(DnaLexicon.UUID, rootNodeUuid));
         assertThat(subgraph.getNode("."), hasProperty("propA", "valueA"));
-        assertThat(subgraph.getNode("."), hasChildren(child("a"), child("b")));
+        assertThat(subgraph.getNode(".").getChildren(), hasChildren(child("a"), child("b")));
         assertThat(subgraph.getNode("a"), is(notNullValue()));
         assertThat(subgraph.getNode("a"), hasProperty("propB", "valueB"));
         assertThat(subgraph.getNode("a"), hasProperty("propC", "valueC"));
-        assertThat(subgraph.getNode("a"), hasNoChildren());
+        assertThat(subgraph.getNode("a").getChildren(), isEmpty());
         assertThat(subgraph.getNode("b"), is(notNullValue()));
         assertThat(subgraph.getNode("b"), hasProperty("propD", "valueD"));
         assertThat(subgraph.getNode("b"), hasProperty("propE", "valueE"));
-        assertThat(subgraph.getNode("b"), hasNoChildren());
+        assertThat(subgraph.getNode("b").getChildren(), isEmpty());
     }
 
     @Test
@@ -258,7 +268,7 @@ public class JpaConnectionTest {
         for (int i = 0; i != 100; ++i) {
             assertThat(nodeA, hasProperty("property" + i, "value" + i));
         }
-        assertThat(nodeA, hasNoChildren());
+        assertThat(nodeA.getChildren(), isEmpty());
     }
 
     @Test
@@ -276,7 +286,7 @@ public class JpaConnectionTest {
         for (int i = 0; i != 10; ++i) {
             assertThat(nodeA, hasProperty("property" + i, "value" + i));
         }
-        assertThat(nodeA, hasNoChildren());
+        assertThat(nodeA.getChildren(), isEmpty());
 
         // Now, remove some of the properties and add some others ...
         Graph.Batch batch = graph.batch();
@@ -296,7 +306,7 @@ public class JpaConnectionTest {
                 assertThat(nodeA, hasProperty("property" + i, "value" + i));
             }
         }
-        assertThat(nodeA, hasNoChildren());
+        assertThat(nodeA.getChildren(), isEmpty());
 
     }
 
@@ -319,7 +329,7 @@ public class JpaConnectionTest {
         }
         assertThat(nodeA, hasProperty("largeProperty1", validLargeValues[0]));
         assertThat(nodeA, hasProperty("largeProperty2", validLargeValues[1]));
-        assertThat(nodeA, hasNoChildren());
+        assertThat(nodeA.getChildren(), isEmpty());
 
         // Now, remove some of the properties and add some others ...
         Graph.Batch batch = graph.batch();
@@ -342,7 +352,7 @@ public class JpaConnectionTest {
         }
         assertThat(nodeA, hasProperty("largeProperty2", validLargeValues[1]));
         assertThat(nodeA, hasProperty("largeProperty3", validLargeValues[2]));
-        assertThat(nodeA, hasNoChildren());
+        assertThat(nodeA.getChildren(), isEmpty());
 
     }
 
@@ -404,97 +414,349 @@ public class JpaConnectionTest {
 
     @Test
     public void shouldCreateDeepBranch() {
-        createTree("", 1, 50, "deep and narrow tree, 1x50", false);
+        createTree("", 1, 50, numPropsOnEach, "deep and narrow tree, 1x50", false, false);
+    }
+
+    @Test
+    public void shouldCreateDeepBranchUsingOneBatch() {
+        createTree("", 1, 50, numPropsOnEach, "deep and narrow tree, 1x50", true, false);
     }
 
     // @Test
     // public void shouldCreateBinaryTree() {
-    // createTree("", 2, 8, "binary tree, 2x8", false);
+    // createTree("", 2, 8, "binary tree, 2x8", false,false);
     // }
 
     @Test
     public void shouldCreate10x2Tree() {
-        createTree("", 10, 2, null, false);
+        createTree("", 10, 2, numPropsOnEach, null, false, false);
+    }
+
+    @Test
+    public void shouldCreate10x2TreeUsingOneBatch() {
+        createTree("", 10, 2, numPropsOnEach, null, true, false);
+    }
+
+    @Test
+    public void shouldCreate10x2TreeWith10PropertiesOnEachNodeUsingOneBatch() {
+        numPropsOnEach = 10;
+        createTree("", 10, 2, numPropsOnEach, null, true, false);
     }
 
     // @Test
     // public void shouldCreate10x3DecimalTree() {
-    // createTree("", 10, 3, null, false);
+    // createTree("", 10, 3, numPropsOnEach, null, false, true);
+    // }
+    //
+    // @Test
+    // public void shouldCreate10x3DecimalTreeUsingOneBatch() {
+    // createTree("", 10, 3, numPropsOnEach, null, true, false);
+    // }
+    //
+    // @Test
+    // public void shouldCreate10x3DecimalTreeWith10PropertiesOnEachNodeCompressedUsingOneBatch() {
+    // // compressData = true; the default
+    // connection = new JpaConnection("source", cachePolicy, manager, model, rootNodeUuid, largeValueSize, compressData);
+    // graph = Graph.create(connection, context);
+    //
+    // numPropsOnEach = 10;
+    // createTree("", 10, 3, numPropsOnEach, null, true, false);
+    // }
+    //
+    // @Test
+    // public void shouldCreate10x3DecimalTreeWith10PropertiesOnEachNodeUsingOneBatch() {
+    // compressData = false;
+    // connection = new JpaConnection("source", cachePolicy, manager, model, rootNodeUuid, largeValueSize, compressData);
+    // graph = Graph.create(connection, context);
+    //
+    // numPropsOnEach = 10;
+    // createTree("", 10, 3, numPropsOnEach, null, true, false);
     // }
 
-    // @Test
-    // public void shouldCreateWideTree() {
-    // createTree("", 1000, 1, "wide/flat tree, 1000x1", false);
-    // }
+    @Test
+    public void shouldReadNodes() {
+        // Create the tree (at total of 40 nodes, plus the extra 6 added later)...
+        // /
+        // /node1
+        // /node1/node1
+        // /node1/node1/node1
+        // /node1/node1/node2
+        // /node1/node1/node3
+        // /node1/node2
+        // /node1/node2/node1
+        // /node1/node2/node2
+        // /node1/node2/node3
+        // /node1/node3
+        // /node1/node3/node1
+        // /node1/node3/node2
+        // /node1/node3/node3
+        // /node2
+        // /node2/node1
+        // /node2/node1/node1
+        // /node2/node1/node2
+        // /node2/node1/node3
+        // /node2/node2
+        // /node2/node2/node1
+        // /node2/node2/node2
+        // /node2/node2/node3
+        // /node2/node3
+        // /node2/node3/node1
+        // /node2/node3/node2
+        // /node2/node3/node3
+        // /node3
+        // /node3/node1
+        // /node3/node1/node1
+        // /node3/node1/node2
+        // /node3/node1/node3
+        // /node3/node2
+        // /node3/node2/node1
+        // /node3/node2/node2
+        // /node3/node2/node3
+        // /node3/node3
+        // /node3/node3/node1
+        // /node3/node3/node2
+        // /node3/node3/node3
+        // /secondBranch1
+        // /secondBranch1/secondBranch1
+        // /secondBranch1/secondBranch2
+        // /secondBranch2
+        // /secondBranch2/secondBranch1
+        // /secondBranch2/secondBranch2
 
-    // @Test
-    // public void shouldCreateVeryWideTree() {
-    // createTree("", 3000, 1, "wide/flat tree, 3000x1", false);
-    // }
+        numPropsOnEach = 3;
+        createTree("", 3, 3, numPropsOnEach, null, true, false);
+        assertThat(graph.getChildren().of("/node1"), hasChildren(child("node1"), child("node2"), child("node3")));
+        assertThat(graph.getChildren().of("/node1/node1"), hasChildren(child("node1"), child("node2"), child("node3")));
+        assertThat(graph.getChildren().of("/node1/node2"), hasChildren(child("node1"), child("node2"), child("node3")));
+        assertThat(graph.getChildren().of("/node1/node3"), hasChildren(child("node1"), child("node2"), child("node3")));
+        assertThat(graph.getChildren().of("/node1/node3/node1"), isEmpty());
 
-    // @Test
-    // public void shouldCreate10KDecimalTree() {
-    // createTree("", 10, 4, "10K decimal tree, 10x4", false);
-    // }
+        assertThat(graph.getChildren().of("/node2"), hasChildren(child("node1"), child("node2"), child("node3")));
+        assertThat(graph.getChildren().of("/node2/node1"), hasChildren(child("node1"), child("node2"), child("node3")));
+        assertThat(graph.getChildren().of("/node2/node2"), hasChildren(child("node1"), child("node2"), child("node3")));
+        assertThat(graph.getChildren().of("/node2/node3"), hasChildren(child("node1"), child("node2"), child("node3")));
+        assertThat(graph.getChildren().of("/node2/node3/node1"), isEmpty());
 
-    // @Test
-    // public void shouldCreate8x4Tree() {
-    // createTree("", 8, 4, null, false);
-    // }
+        assertThat(graph.getChildren().of("/node3"), hasChildren(child("node1"), child("node2"), child("node3")));
+        assertThat(graph.getChildren().of("/node3/node1"), hasChildren(child("node1"), child("node2"), child("node3")));
+        assertThat(graph.getChildren().of("/node3/node2"), hasChildren(child("node1"), child("node2"), child("node3")));
+        assertThat(graph.getChildren().of("/node3/node3"), hasChildren(child("node1"), child("node2"), child("node3")));
+        assertThat(graph.getChildren().of("/node3/node3/node1"), isEmpty());
+
+        Subgraph subgraph = graph.getSubgraphOfDepth(2).at("/node3/node2");
+        assertThat(subgraph, is(notNullValue()));
+        assertThat(subgraph.getNode(".").getChildren(), hasChildren(child("node1"), child("node2"), child("node3")));
+        assertThat(subgraph.getNode("."), hasProperty("property1", "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("."), hasProperty("property2", "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("."), hasProperty("property3", "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("node1").getChildren(), isEmpty());
+        assertThat(subgraph.getNode("node1"), hasProperty("property1", "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("node1"), hasProperty("property2", "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("node1"), hasProperty("property3", "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("node2").getChildren(), isEmpty());
+        assertThat(subgraph.getNode("node2"), hasProperty("property1", "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("node2"), hasProperty("property2", "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("node2"), hasProperty("property3", "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("node3").getChildren(), isEmpty());
+        assertThat(subgraph.getNode("node3"), hasProperty("property1", "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("node3"), hasProperty("property2", "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("node3"), hasProperty("property3", "The quick brown fox jumped over the moon. What? "));
+
+        subgraph = graph.getSubgraphOfDepth(2).at("/node3");
+        assertThat(subgraph, is(notNullValue()));
+        assertThat(subgraph.getNode(".").getChildren(), hasChildren(child("node1"), child("node2"), child("node3")));
+        assertThat(subgraph.getNode("."), hasProperty("property1", "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("."), hasProperty("property2", "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("."), hasProperty("property3", "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("node1").getChildren(), isEmpty());
+        assertThat(subgraph.getNode("node1"), hasProperty("property1", "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("node1"), hasProperty("property2", "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("node1"), hasProperty("property3", "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("node2").getChildren(), isEmpty());
+        assertThat(subgraph.getNode("node2"), hasProperty("property1", "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("node2"), hasProperty("property2", "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("node2"), hasProperty("property3", "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("node3").getChildren(), isEmpty());
+        assertThat(subgraph.getNode("node3"), hasProperty("property1", "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("node3"), hasProperty("property2", "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("node3"), hasProperty("property3", "The quick brown fox jumped over the moon. What? "));
+    }
+
+    @Test
+    public void shouldDeleteNodes() {
+        // Create the tree (at total of 40 nodes, plus the extra 6 added later)...
+        // /
+        // /node1
+        // /node1/node1
+        // /node1/node1/node1
+        // /node1/node1/node2
+        // /node1/node1/node3
+        // /node1/node2
+        // /node1/node2/node1
+        // /node1/node2/node2
+        // /node1/node2/node3
+        // /node1/node3
+        // /node1/node3/node1
+        // /node1/node3/node2
+        // /node1/node3/node3
+        // /node2
+        // /node2/node1
+        // /node2/node1/node1
+        // /node2/node1/node2
+        // /node2/node1/node3
+        // /node2/node2
+        // /node2/node2/node1
+        // /node2/node2/node2
+        // /node2/node2/node3
+        // /node2/node3
+        // /node2/node3/node1
+        // /node2/node3/node2
+        // /node2/node3/node3
+        // /node3
+        // /node3/node1
+        // /node3/node1/node1
+        // /node3/node1/node2
+        // /node3/node1/node3
+        // /node3/node2
+        // /node3/node2/node1
+        // /node3/node2/node2
+        // /node3/node2/node3
+        // /node3/node3
+        // /node3/node3/node1
+        // /node3/node3/node2
+        // /node3/node3/node3
+        // /secondBranch1
+        // /secondBranch1/secondBranch1
+        // /secondBranch1/secondBranch2
+        // /secondBranch2
+        // /secondBranch2/secondBranch1
+        // /secondBranch2/secondBranch2
+
+        numPropsOnEach = 3;
+        createTree("", 3, 3, numPropsOnEach, null, true, false);
+
+        // Delete two branches ...
+        graph.delete("/node2/node2").and().delete("/node3/node1");
+
+        assertThat(graph.getChildren().of("/node1"), hasChildren(child("node1"), child("node2"), child("node3")));
+        assertThat(graph.getChildren().of("/node1/node1"), hasChildren(child("node1"), child("node2"), child("node3")));
+        assertThat(graph.getChildren().of("/node1/node2"), hasChildren(child("node1"), child("node2"), child("node3")));
+        assertThat(graph.getChildren().of("/node1/node3"), hasChildren(child("node1"), child("node2"), child("node3")));
+        assertThat(graph.getChildren().of("/node1/node3/node1"), hasChildren());
+
+        assertThat(graph.getChildren().of("/node2"), hasChildren(child("node1"), child("node3")));
+        assertThat(graph.getChildren().of("/node2/node1"), hasChildren(child("node1"), child("node2"), child("node3")));
+        assertThat(graph.getChildren().of("/node2/node3"), hasChildren(child("node1"), child("node2"), child("node3")));
+        assertThat(graph.getChildren().of("/node2/node3/node1"), hasChildren());
+
+        assertThat(graph.getChildren().of("/node3"), hasChildren(child("node2"), child("node3")));
+        assertThat(graph.getChildren().of("/node3/node2"), hasChildren(child("node1"), child("node2"), child("node3")));
+        assertThat(graph.getChildren().of("/node3/node3"), hasChildren(child("node1"), child("node2"), child("node3")));
+        assertThat(graph.getChildren().of("/node3/node3/node1"), hasChildren());
+
+        Subgraph subgraph = graph.getSubgraphOfDepth(3).at("/");
+        assertThat(subgraph, is(notNullValue()));
+        assertThat(subgraph.getNode(".").getChildren(), hasChildren(child("node1"), child("node3")));
+        assertThat(subgraph.getNode("node1").getChildren(), hasChildren(child("node1"), child("node2"), child("node3")));
+        assertThat(subgraph.getNode("node1"), hasProperty("property1", "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("node1"), hasProperty("property2", "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("node1"), hasProperty("property3", "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("node2").getChildren(), hasChildren(child("node1"), child("node3")));
+        assertThat(subgraph.getNode("node2"), hasProperty("property1", "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("node2"), hasProperty("property2", "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("node2"), hasProperty("property3", "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("node3").getChildren(), hasChildren(child("node2"), child("node3")));
+        assertThat(subgraph.getNode("node3"), hasProperty("property1", "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("node3"), hasProperty("property2", "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("node3"), hasProperty("property3", "The quick brown fox jumped over the moon. What? "));
+
+        subgraph = graph.getSubgraphOfDepth(2).at("/node3");
+        assertThat(subgraph, is(notNullValue()));
+        assertThat(subgraph.getNode(".").getChildren(), hasChildren(child("node2"), child("node3")));
+        assertThat(subgraph.getNode("."), hasProperty("property1", "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("."), hasProperty("property2", "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("."), hasProperty("property3", "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("node2").getChildren(), isEmpty());
+        assertThat(subgraph.getNode("node2"), hasProperty("property1", "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("node2"), hasProperty("property2", "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("node2"), hasProperty("property3", "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("node3").getChildren(), isEmpty());
+        assertThat(subgraph.getNode("node3"), hasProperty("property1", "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("node3"), hasProperty("property2", "The quick brown fox jumped over the moon. What? "));
+        assertThat(subgraph.getNode("node3"), hasProperty("property3", "The quick brown fox jumped over the moon. What? "));
+    }
 
     protected int createTree( String initialPath,
                               int numberPerDepth,
                               int depth,
+                              int numProps,
                               String description,
-                              boolean oneBatch ) {
-        int totalNumber = numberNodesInTree(numberPerDepth, depth) - 1; // this method doesn't create the root
-        if (description == null) description = "" + numberPerDepth + "x" + depth + " tree";
-        boolean printIntermediate = totalNumber > 500;
+                              boolean oneBatch,
+                              boolean printIntermediate ) {
+        long totalNumber = numberNodesInTree(numberPerDepth, depth) - 1; // this method doesn't create the root
+        if (description == null) description = "" + numberPerDepth + "x" + depth + " tree with " + numProps
+                                               + " properties per node" + (compressData ? " (compressed)" : "");
         System.out.println(description + " (" + totalNumber + " nodes):");
-        int totalNumberCreated = 0;
+        long totalNumberCreated = 0;
+        String batchStr = "batch ";
         Graph.Batch batch = oneBatch ? graph.batch() : null;
         Stopwatch sw = new Stopwatch();
         if (batch != null) {
-            totalNumberCreated += createChildren(batch, initialPath, "node", numberPerDepth, depth, printIntermediate);
+            totalNumberCreated += createChildren(batch, initialPath, "node", numberPerDepth, numProps, depth, printIntermediate);
             sw.start();
             batch.execute();
         } else {
+            batchStr = "";
             sw.start();
-            totalNumberCreated += createChildren(null, initialPath, "node", numberPerDepth, depth, printIntermediate);
+            totalNumberCreated += createChildren(null, initialPath, "node", numberPerDepth, numProps, depth, printIntermediate);
         }
         sw.stop();
-        long totalDurationInMillis = TimeUnit.NANOSECONDS.toMillis(sw.getTotalDuration().longValue());
-        long avgDurationInMillis = totalDurationInMillis / totalNumber;
-        System.out.println("     Total = " + sw.getTotalDuration() + "; avg = " + avgDurationInMillis + " ms");
+        long totalDurationInMicroseconds = TimeUnit.NANOSECONDS.toMicros(sw.getTotalDuration().longValue());
+        long avgDuration = totalDurationInMicroseconds / totalNumber / 1000L;
+        String units = " millisecond(s)";
+        if (avgDuration == 0L) {
+            avgDuration = totalDurationInMicroseconds / totalNumber;
+            units = " microsecond(s)";
+        }
+        System.out.println("     Total = " + sw.getTotalDuration() + "; avg = " + avgDuration + units);
 
         // Perform second batch ...
         batch = graph.batch();
-        totalNumberCreated += createChildren(batch, initialPath, "secondBranch", 2, 2, printIntermediate);
+        totalNumberCreated += createChildren(batch, initialPath, "secondBranch", 2, numProps, 2, printIntermediate);
         sw = new Stopwatch();
         sw.start();
         batch.execute();
         sw.stop();
-        System.out.println("     Final batch total = " + sw.getTotalDuration() + "; avg = " + avgDurationInMillis + " ms");
+        totalDurationInMicroseconds = TimeUnit.NANOSECONDS.toMicros(sw.getTotalDuration().longValue());
+        avgDuration = totalDurationInMicroseconds / totalNumber / 1000L;
+        units = " millisecond(s)";
+        if (avgDuration == 0L) {
+            avgDuration = totalDurationInMicroseconds / totalNumber;
+            units = " microsecond(s)";
+        }
+        System.out.println("     Final " + batchStr + "total = " + sw.getTotalDuration() + "; avg = " + avgDuration + units);
         assertThat(totalNumberCreated, is(totalNumber + numberNodesInTree(2, 2) - 1));
-        return totalNumberCreated;
+        return (int)totalNumberCreated;
     }
 
     protected int createChildren( Graph.Batch useBatch,
                                   String parentPath,
                                   String nodePrefix,
                                   int number,
+                                  int numProps,
                                   int depthRemaining,
                                   boolean printIntermediateStatus ) {
         int numberCreated = 0;
         Graph.Batch batch = useBatch;
         if (batch == null) batch = graph.batch();
         for (int i = 0; i != number; ++i) {
-            String path = parentPath + "/" + nodePrefix + i;
+            String path = parentPath + "/" + nodePrefix + (i + 1);
             Graph.Create<Graph.Batch> create = batch.create(path);
-            String value = "the quick brown fox jumped over the moon. What? ";
-            for (int j = 0; j != 10; ++j) {
-                // value = value + value;
-                create = create.with("property" + j, value);
+            String originalValue = "The quick brown fox jumped over the moon. What? ";
+            String value = originalValue;
+            for (int j = 0; j != numProps; ++j) {
+                // value = value + originalValue;
+                create = create.with("property" + (j + 1), value);
             }
             create.and();
         }
@@ -507,8 +769,8 @@ public class JpaConnectionTest {
         }
         if (depthRemaining > 1) {
             for (int i = 0; i != number; ++i) {
-                String path = parentPath + "/" + nodePrefix + i;
-                numberCreated += createChildren(useBatch, path, nodePrefix, number, depthRemaining - 1, false);
+                String path = parentPath + "/" + nodePrefix + (i + 1);
+                numberCreated += createChildren(useBatch, path, nodePrefix, number, numProps, depthRemaining - 1, false);
                 if (printIntermediateStatus) {
                     System.out.println("         total created ... " + numberCreated);
                 }

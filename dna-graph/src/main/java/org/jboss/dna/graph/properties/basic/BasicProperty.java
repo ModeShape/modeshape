@@ -24,7 +24,11 @@ package org.jboss.dna.graph.properties.basic;
 import java.util.Arrays;
 import java.util.Iterator;
 import net.jcip.annotations.Immutable;
+import org.jboss.dna.common.text.TextEncoder;
+import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.graph.properties.Name;
+import org.jboss.dna.graph.properties.NamespaceRegistry;
+import org.jboss.dna.graph.properties.Path;
 import org.jboss.dna.graph.properties.Property;
 import org.jboss.dna.graph.properties.ValueComparators;
 
@@ -107,6 +111,72 @@ public abstract class BasicProperty implements Property {
             return true;
         }
         return false;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public String getString() {
+        return getString(null, null, null);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public String getString( TextEncoder encoder ) {
+        return getString(null, encoder, null);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public String getString( NamespaceRegistry namespaceRegistry ) {
+        CheckArg.isNotNull(namespaceRegistry, "namespaceRegistry");
+        return getString(namespaceRegistry, null, null);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public String getString( NamespaceRegistry namespaceRegistry,
+                             TextEncoder encoder ) {
+        CheckArg.isNotNull(namespaceRegistry, "namespaceRegistry");
+        return getString(namespaceRegistry, encoder, null);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.properties.Path#getString(org.jboss.dna.graph.properties.NamespaceRegistry,
+     *      org.jboss.dna.common.text.TextEncoder, org.jboss.dna.common.text.TextEncoder)
+     */
+    public String getString( NamespaceRegistry namespaceRegistry,
+                             TextEncoder encoder,
+                             TextEncoder delimiterEncoder ) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(getName().getString(namespaceRegistry, encoder, delimiterEncoder));
+        sb.append(" = ");
+        if (isEmpty()) {
+            sb.append("null");
+        } else {
+            if (isMultiple()) sb.append("[");
+            boolean first = true;
+            for (Object value : this) {
+                if (first) first = false;
+                else sb.append(",");
+                if (value instanceof Path) {
+                    Path path = (Path)value;
+                    sb.append(path.getString(namespaceRegistry, encoder, delimiterEncoder));
+                } else if (value instanceof Name) {
+                    Name name = (Name)value;
+                    sb.append(name.getString(namespaceRegistry, encoder, delimiterEncoder));
+                } else {
+                    sb.append(value);
+                }
+            }
+            if (isMultiple()) sb.append("]");
+        }
+        return sb.toString();
     }
 
     /**

@@ -31,6 +31,12 @@ import org.jboss.dna.graph.properties.Path;
  * Since this subgraph has a single {@link #getLocation() node that is the top of the subgraph}, the methods that take a String
  * path or {@link Path path object} will accept absolute or relative paths.
  * </p>
+ * <p>
+ * This subgraph will not contain any {@link #iterator() nodes} that exist below the {@link #getMaximumDepth() maximum depth}.
+ * Also, all nodes included in the subgraph have all their properties and children. However, nodes that are at the maximum depth
+ * of the subgraph will contain the locations for child nodes that are below the maximum depth and therefore not included in this
+ * subgraph.
+ * </p>
  * 
  * @author Randall Hauch
  */
@@ -38,9 +44,9 @@ import org.jboss.dna.graph.properties.Path;
 public interface Subgraph extends Results {
 
     /**
-     * Get the location of the node.
+     * Get the location of the subgraph, which is the location of the node at the top of the subgraph.
      * 
-     * @return the node's location
+     * @return the location of the top node in the subgraph; never null
      */
     Location getLocation();
 

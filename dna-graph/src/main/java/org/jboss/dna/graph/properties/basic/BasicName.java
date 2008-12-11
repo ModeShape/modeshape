@@ -134,6 +134,7 @@ public class BasicName implements Name {
             return "{" + encoder.encode(this.namespaceUri) + "}" + encoder.encode(this.localName);
 
         }
+        if (encoder == null) encoder = Path.DEFAULT_ENCODER;
         String prefix = namespaceRegistry.getPrefixForNamespaceUri(this.namespaceUri, true);
         if (prefix != null && prefix.length() != 0) {
             String delim = delimiterEncoder != null ? delimiterEncoder.encode(":") : ":";

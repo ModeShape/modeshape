@@ -50,7 +50,7 @@ public class NamespaceEntity {
 
     @Id
     @GeneratedValue( strategy = GenerationType.AUTO )
-    private Integer id;
+    private Long id;
 
     @Column( name = "URI", nullable = false, unique = false, length = 512, updatable = false )
     private String uri;
@@ -71,14 +71,14 @@ public class NamespaceEntity {
     /**
      * @return id
      */
-    public Integer getId() {
+    public Long getId() {
         return id;
     }
 
     /**
      * @param id Sets id to the specified value.
      */
-    public void setId( Integer id ) {
+    public void setId( Long id ) {
         this.id = id;
     }
 
