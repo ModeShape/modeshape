@@ -283,8 +283,22 @@ public abstract class RequestProcessor {
      */
     public void process( ReadNextBlockOfChildrenRequest request ) {
         if (request == null) return;
+
+        // Get the parent path ...
+        Path path = request.startingAfter().getPath();
+        Location actualSiblingLocation = request.startingAfter();
+        Path parentPath = null;
+        if (path != null) parentPath = path.getParent();
+        if (parentPath == null) {
+            ReadAllPropertiesRequest readPropertiesOfSibling = new ReadAllPropertiesRequest(request.startingAfter());
+            process(readPropertiesOfSibling);
+            actualSiblingLocation = readPropertiesOfSibling.getActualLocationOfNode();
+            parentPath = actualSiblingLocation.getPath().getParent();
+        }
+        assert parentPath != null;
+
         // Convert the request to a ReadAllChildrenRequest and execute it ...
-        ReadAllChildrenRequest readAll = new ReadAllChildrenRequest(request.of());
+        ReadAllChildrenRequest readAll = new ReadAllChildrenRequest(new Location(parentPath));
         process(readAll);
         if (readAll.hasError()) {
             request.setError(readAll.getError());
@@ -308,7 +322,7 @@ public abstract class RequestProcessor {
         }
 
         // Set the actual location ...
-        request.setActualLocationOfNode(readAll.getActualLocationOfNode());
+        request.setActualLocationOfStartingAfterNode(actualSiblingLocation);
     }
 
     /**

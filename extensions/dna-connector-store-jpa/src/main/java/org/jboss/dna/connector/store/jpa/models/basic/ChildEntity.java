@@ -64,6 +64,7 @@ public class ChildEntity {
     @Id
     private ChildId id;
 
+    /** The zero-based index */
     @Column( name = "CHILD_INDEX", nullable = false, unique = false )
     private int indexInParent;
 
@@ -118,7 +119,9 @@ public class ChildEntity {
     }
 
     /**
-     * @return indexInParent
+     * Get the zero-based index of this child within the parent's list of children
+     * 
+     * @return the zero-based index of this child
      */
     public int getIndexInParent() {
         return indexInParent;

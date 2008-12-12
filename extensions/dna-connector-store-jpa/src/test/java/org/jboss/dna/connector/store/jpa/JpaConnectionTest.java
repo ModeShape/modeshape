@@ -29,6 +29,7 @@ import static org.jboss.dna.graph.IsNodeWithChildren.isEmpty;
 import static org.jboss.dna.graph.IsNodeWithProperty.hasProperty;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.mock;
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import javax.persistence.EntityManager;
@@ -58,7 +59,7 @@ import org.junit.Test;
  * 
  * @author Randall Hauch
  */
-public abstract class JpaConnectionTest {
+public class JpaConnectionTest {
 
     private ExecutionContext context;
     private JpaConnection connection;
@@ -91,11 +92,6 @@ public abstract class JpaConnectionTest {
         Ejb3Configuration configurator = new Ejb3Configuration();
         model.configure(configurator);
         configureDatabaseProperties(configurator);
-        // configurator.setProperty("hibernate.dialect", "org.hibernate.dialect.HSQLDialect");
-        // configurator.setProperty("hibernate.connection.driver_class", "org.hsqldb.jdbcDriver");
-        // configurator.setProperty("hibernate.connection.username", "sa");
-        // configurator.setProperty("hibernate.connection.password", "");
-        // configurator.setProperty("hibernate.connection.url", "jdbc:hsqldb:.");
         configurator.setProperty("hibernate.show_sql", "false");
         configurator.setProperty("hibernate.format_sql", "true");
         configurator.setProperty("hibernate.use_sql_comments", "true");
@@ -111,7 +107,13 @@ public abstract class JpaConnectionTest {
         graph = Graph.create(connection, context);
     }
 
-    protected abstract void configureDatabaseProperties( Ejb3Configuration configurator );
+    protected void configureDatabaseProperties( Ejb3Configuration configurator ) {
+        configurator.setProperty("hibernate.dialect", "org.hibernate.dialect.HSQLDialect");
+        configurator.setProperty("hibernate.connection.driver_class", "org.hsqldb.jdbcDriver");
+        configurator.setProperty("hibernate.connection.username", "sa");
+        configurator.setProperty("hibernate.connection.password", "");
+        configurator.setProperty("hibernate.connection.url", "jdbc:hsqldb:.");
+    }
 
     @After
     public void afterEach() throws Exception {
@@ -684,6 +686,94 @@ public abstract class JpaConnectionTest {
         assertThat(subgraph.getNode("node3"), hasProperty("property1", "The quick brown fox jumped over the moon. What? "));
         assertThat(subgraph.getNode("node3"), hasProperty("property2", "The quick brown fox jumped over the moon. What? "));
         assertThat(subgraph.getNode("node3"), hasProperty("property3", "The quick brown fox jumped over the moon. What? "));
+    }
+
+    @Test
+    public void shouldReadRangeOfChildren() {
+        // Create a shallow tree with many children under one node ...
+        // /
+        // /node1
+        // /node1/node1
+        // /node1/node2
+        // ...
+        // /node1/node10
+        // /node1/secondBranch1
+        // ...
+
+        graph.batch().create("/node1").with("prop1", "value1").and("prop2", "value2").execute();
+        numPropsOnEach = 3;
+        createTree("/node1", 10, 2, numPropsOnEach, null, true, false);
+
+        // Verify that the children were created ...
+        List<Location> allChildren = graph.getChildren().of("/node1");
+        assertThat(allChildren, hasChildren(child("node1"),
+                                            child("node2"),
+                                            child("node3"),
+                                            child("node4"),
+                                            child("node5"),
+                                            child("node6"),
+                                            child("node7"),
+                                            child("node8"),
+                                            child("node9"),
+                                            child("node10")));
+
+        // Now test reading children in various ranges ...
+        List<Location> children = graph.getChildren().inBlockOf(4).startingAt(4).under("/node1");
+        assertThat(children, is(notNullValue()));
+        assertThat(children, hasChildren(child("node5"), child("node6"), child("node7"), child("node8")));
+
+        children = graph.getChildren().inBlockOf(3).startingAt(4).under("/node1");
+        assertThat(children, is(notNullValue()));
+        assertThat(children, hasChildren(child("node5"), child("node6"), child("node7")));
+
+        children = graph.getChildren().inBlockOf(10).startingAt(7).under("/node1");
+        assertThat(children, is(notNullValue()));
+        assertThat(children, hasChildren(child("node8"), child("node9"), child("node10")));
+    }
+
+    @Test
+    public void shouldReadNextBlockOfChildren() {
+        // Create a shallow tree with many children under one node ...
+        // /
+        // /node1
+        // /node1/node1
+        // /node1/node2
+        // ...
+        // /node1/node10
+        // /node1/secondBranch1
+        // ...
+
+        graph.batch().create("/node1").with("prop1", "value1").and("prop2", "value2").execute();
+        numPropsOnEach = 3;
+        createTree("/node1", 10, 2, numPropsOnEach, null, true, false);
+
+        // Verify that the children were created ...
+        List<Location> allChildren = graph.getChildren().of("/node1");
+        assertThat(allChildren, hasChildren(child("node1"),
+                                            child("node2"),
+                                            child("node3"),
+                                            child("node4"),
+                                            child("node5"),
+                                            child("node6"),
+                                            child("node7"),
+                                            child("node8"),
+                                            child("node9"),
+                                            child("node10")));
+
+        // Now test reading children in various ranges ...
+        Location node4 = allChildren.get(3);
+        List<Location> children = graph.getChildren().inBlockOf(4).startingAfter(node4);
+        assertThat(children, is(notNullValue()));
+        assertThat(children, hasChildren(child("node5"), child("node6"), child("node7"), child("node8")));
+
+        children = graph.getChildren().inBlockOf(3).startingAfter(node4);
+        assertThat(children, is(notNullValue()));
+        assertThat(children, hasChildren(child("node5"), child("node6"), child("node7")));
+
+        Location node7 = allChildren.get(6);
+        children = graph.getChildren().inBlockOf(10).startingAfter(node7);
+        assertThat(children, is(notNullValue()));
+        assertThat(children, hasChildren(child("node8"), child("node9"), child("node10")));
     }
 
     protected int createTree( String initialPath,

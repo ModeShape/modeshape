@@ -58,7 +58,7 @@ public class ReadBlockOfChildrenRequest extends CacheableRequest {
      * an array.
      * 
      * @param of the location of the node whose children are to be read
-     * @param startingIndex the index of the first child to be included in the block
+     * @param startingIndex the zero-based index of the first child to be included in the block
      * @param count the maximum number of children that should be included in the block
      * @throws IllegalArgumentException if the location is null, if <code>startingIndex</code> is negative, or if
      *         <code>count</count> is less than 1.
@@ -108,7 +108,8 @@ public class ReadBlockOfChildrenRequest extends CacheableRequest {
      * Get the starting index of the block, which is the index of the first child to include. This index corresponds to the index
      * of all children in the list, not the {@link Path.Segment#getIndex() same-name-sibiling index}.
      * 
-     * @return the child index at which this block starts; never negative and always less than {@link #endingBefore()}
+     * @return the (zero-based) child index at which this block starts; never negative and always less than
+     *         {@link #endingBefore()}
      * @see #endingBefore()
      * @see #count()
      */

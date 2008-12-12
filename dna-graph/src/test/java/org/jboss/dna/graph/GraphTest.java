@@ -56,6 +56,7 @@ import org.jboss.dna.graph.requests.MoveBranchRequest;
 import org.jboss.dna.graph.requests.ReadAllChildrenRequest;
 import org.jboss.dna.graph.requests.ReadAllPropertiesRequest;
 import org.jboss.dna.graph.requests.ReadBlockOfChildrenRequest;
+import org.jboss.dna.graph.requests.ReadNextBlockOfChildrenRequest;
 import org.jboss.dna.graph.requests.ReadNodeRequest;
 import org.jboss.dna.graph.requests.ReadPropertyRequest;
 import org.jboss.dna.graph.requests.Request;
@@ -214,11 +215,15 @@ public class GraphTest {
         assertThat(read.getChildren(), hasItems(children));
     }
 
-    protected void assertNextRequestReadRangeOfChildren( Location at,
-                                                         int startIndex,
-                                                         int endIndex,
-                                                         Location... children ) {
-        assertNextRequestReadBlockOfChildren(at, startIndex, endIndex - startIndex, children);
+    protected void assertNextRequestReadNextBlockOfChildren( Location previousSibling,
+                                                             int maxCount,
+                                                             Location... children ) {
+        Request request = executedRequests.poll();
+        assertThat(request, is(instanceOf(ReadNextBlockOfChildrenRequest.class)));
+        ReadNextBlockOfChildrenRequest read = (ReadNextBlockOfChildrenRequest)request;
+        assertThat(read.startingAfter(), is(previousSibling));
+        assertThat(read.count(), is(maxCount));
+        assertThat(read.getChildren(), hasItems(children));
     }
 
     protected void assertNextRequestReadNode( Location at ) {
@@ -418,36 +423,36 @@ public class GraphTest {
     }
 
     @Test
-    public void shouldGetChildrenInBlockOnNode() {
+    public void shouldGetChildrenInBlockAtStartingIndex() {
         Location child1 = new Location(createPath(validPath, "x"));
         Location child2 = new Location(createPath(validPath, "y"));
         Location child3 = new Location(createPath(validPath, "z"));
         setChildrenToReadOn(new Location(validPath), child1, child2, child3);
-        List<Location> children = graph.getChildrenInBlock(0, 2).of(validPath);
+        List<Location> children = graph.getChildren().inBlockOf(2).startingAt(0).under(validPath);
         assertThat(numberOfExecutions, is(1));
         assertNextRequestReadBlockOfChildren(new Location(validPath), 0, 2, child1, child2);
         assertNoMoreRequests();
         assertThat(children, hasItems(child1, child2));
 
-        children = graph.getChildrenInBlock(1, 2).of(validPath);
+        children = graph.getChildren().inBlockOf(2).startingAt(1).under(validPath);
         assertThat(numberOfExecutions, is(1));
         assertNextRequestReadBlockOfChildren(new Location(validPath), 1, 2, child2, child3);
         assertNoMoreRequests();
         assertThat(children, hasItems(child2, child3));
 
-        children = graph.getChildrenInBlock(2, 2).of(validPath);
+        children = graph.getChildren().inBlockOf(2).startingAt(2).under(validPath);
         assertThat(numberOfExecutions, is(1));
         assertNextRequestReadBlockOfChildren(new Location(validPath), 2, 2, child3);
         assertNoMoreRequests();
         assertThat(children, hasItems(child3));
 
-        children = graph.getChildrenInBlock(20, 2).of(validPath);
+        children = graph.getChildren().inBlockOf(2).startingAt(20).under(validPath);
         assertThat(numberOfExecutions, is(1));
         assertNextRequestReadBlockOfChildren(new Location(validPath), 20, 2);
         assertNoMoreRequests();
         assertThat(children.isEmpty(), is(true));
 
-        children = graph.getChildrenInBlock(0, 20).of(validPath);
+        children = graph.getChildren().inBlockOf(20).startingAt(0).under(validPath);
         assertThat(numberOfExecutions, is(1));
         assertNextRequestReadBlockOfChildren(new Location(validPath), 0, 20, child1, child2, child3);
         assertNoMoreRequests();
@@ -455,40 +460,32 @@ public class GraphTest {
     }
 
     @Test
-    public void shouldGetChildrenInRangeOnNode() {
-        Location child1 = new Location(createPath(validPath, "x"));
-        Location child2 = new Location(createPath(validPath, "y"));
-        Location child3 = new Location(createPath(validPath, "z"));
+    public void shouldGetChildrenInBlockAfterPreviousSibling() {
+        Path pathX = createPath(validPath, "x");
+        Path pathY = createPath(validPath, "y");
+        Path pathZ = createPath(validPath, "z");
+        Location child1 = new Location(pathX);
+        Location child2 = new Location(pathY);
+        Location child3 = new Location(pathZ);
         setChildrenToReadOn(new Location(validPath), child1, child2, child3);
-        List<Location> children = graph.getChildrenInRange(0, 2).of(validPath);
-        assertThat(numberOfExecutions, is(1));
-        assertNextRequestReadRangeOfChildren(new Location(validPath), 0, 2, child1, child2);
-        assertNoMoreRequests();
-        assertThat(children, hasItems(child1, child2));
 
-        children = graph.getChildrenInRange(1, 3).of(validPath);
+        List<Location> children = graph.getChildren().inBlockOf(2).startingAfter(pathX);
         assertThat(numberOfExecutions, is(1));
-        assertNextRequestReadRangeOfChildren(new Location(validPath), 1, 3, child2, child3);
+        assertNextRequestReadNextBlockOfChildren(new Location(pathX), 2, child2, child3);
         assertNoMoreRequests();
         assertThat(children, hasItems(child2, child3));
 
-        children = graph.getChildrenInRange(2, 4).of(validPath);
+        children = graph.getChildren().inBlockOf(3).startingAfter(pathX);
         assertThat(numberOfExecutions, is(1));
-        assertNextRequestReadRangeOfChildren(new Location(validPath), 2, 4, child3);
+        assertNextRequestReadNextBlockOfChildren(new Location(pathX), 3, child2, child3);
+        assertNoMoreRequests();
+        assertThat(children, hasItems(child2, child3));
+
+        children = graph.getChildren().inBlockOf(2).startingAfter(pathY);
+        assertThat(numberOfExecutions, is(1));
+        assertNextRequestReadNextBlockOfChildren(new Location(pathY), 2, child3);
         assertNoMoreRequests();
         assertThat(children, hasItems(child3));
-
-        children = graph.getChildrenInRange(20, 21).of(validPath);
-        assertThat(numberOfExecutions, is(1));
-        assertNextRequestReadRangeOfChildren(new Location(validPath), 20, 21);
-        assertNoMoreRequests();
-        assertThat(children.isEmpty(), is(true));
-
-        children = graph.getChildrenInRange(0, 20).of(validPath);
-        assertThat(numberOfExecutions, is(1));
-        assertNextRequestReadRangeOfChildren(new Location(validPath), 0, 20, child1, child2, child3);
-        assertNoMoreRequests();
-        assertThat(children, hasItems(child1, child2, child3));
     }
 
     @Test

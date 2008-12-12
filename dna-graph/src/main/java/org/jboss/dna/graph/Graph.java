@@ -56,6 +56,7 @@ import org.jboss.dna.graph.requests.ReadAllChildrenRequest;
 import org.jboss.dna.graph.requests.ReadAllPropertiesRequest;
 import org.jboss.dna.graph.requests.ReadBlockOfChildrenRequest;
 import org.jboss.dna.graph.requests.ReadBranchRequest;
+import org.jboss.dna.graph.requests.ReadNextBlockOfChildrenRequest;
 import org.jboss.dna.graph.requests.ReadNodeRequest;
 import org.jboss.dna.graph.requests.ReadPropertyRequest;
 import org.jboss.dna.graph.requests.RemovePropertiesRequest;
@@ -877,12 +878,13 @@ public class Graph {
 
     /**
      * Request that the children be read on the node defined via the <code>of(...)</code> method on the returned {@link Of}
-     * object. Once the location is specified, the {@link List list of children} are read and then returned.
+     * object. The returned object is used to supply the remaining information, including either the {@link Children#of(Location)
+     * location of the parent}, or that a subset of the children should be retrieved {@link Children#inBlockOf(int) in a block}.
      * 
-     * @return the object that is used to specified the node whose children are to be read, and which will return the children
+     * @return the object that is used to specify the remaining inputs for the request, and which will return the children
      */
-    public Of<List<Location>> getChildren() {
-        return new Of<List<Location>>() {
+    public Children<List<Location>> getChildren() {
+        return new Children<List<Location>>() {
             public List<Location> of( String path ) {
                 return of(new Location(createPath(path)));
             }
@@ -909,64 +911,68 @@ public class Graph {
                 queue().submit(request);
                 return request.getChildren();
             }
-        };
-    }
 
-    /**
-     * Request that the children in the specified index range be read on the node defined via the <code>of(...)</code> method on
-     * the returned {@link Of} object. Once the location is specified, the {@link List list of children} are read and then
-     * returned.
-     * 
-     * @param startingIndex the index of the first child to be read
-     * @param endingIndex the index past the last the first child to be read
-     * @return the object that is used to specified the node whose children are to be read, and which will return the children
-     */
-    public Of<List<Location>> getChildrenInRange( final int startingIndex,
-                                                  final int endingIndex ) {
-        CheckArg.isNonNegative(startingIndex, "startingIndex");
-        CheckArg.isPositive(endingIndex, "endingIndex");
-        int count = endingIndex - startingIndex;
-        return getChildrenInBlock(startingIndex, count);
-    }
+            public BlockOfChildren<List<Location>> inBlockOf( final int blockSize ) {
+                return new BlockOfChildren<List<Location>>() {
+                    public Under<List<Location>> startingAt( final int startingIndex ) {
+                        return new Under<List<Location>>() {
+                            public List<Location> under( String path ) {
+                                return under(new Location(createPath(path)));
+                            }
 
-    /**
-     * Request that the children in the specified block be read on the node defined via the <code>of(...)</code> method on the
-     * returned {@link Of} object. Once the location is specified, the {@link List list of children} are read and then returned.
-     * 
-     * @param startingIndex the index of the first child to be read
-     * @param blockSize the maximum number of children that should be read
-     * @return the object that is used to specified the node whose children are to be read, and which will return the children
-     */
-    public Of<List<Location>> getChildrenInBlock( final int startingIndex,
-                                                  final int blockSize ) {
-        CheckArg.isNonNegative(startingIndex, "startingIndex");
-        CheckArg.isPositive(blockSize, "blockSize");
-        return new Of<List<Location>>() {
-            public List<Location> of( String path ) {
-                return of(new Location(createPath(path)));
-            }
+                            public List<Location> under( Path path ) {
+                                return under(new Location(path));
+                            }
 
-            public List<Location> of( Path path ) {
-                return of(new Location(path));
-            }
+                            public List<Location> under( Property idProperty ) {
+                                return under(new Location(idProperty));
+                            }
 
-            public List<Location> of( Property idProperty ) {
-                return of(new Location(idProperty));
-            }
+                            public List<Location> under( Property firstIdProperty,
+                                                         Property... additionalIdProperties ) {
+                                return under(new Location(firstIdProperty, additionalIdProperties));
+                            }
 
-            public List<Location> of( Property firstIdProperty,
-                                      Property... additionalIdProperties ) {
-                return of(new Location(firstIdProperty, additionalIdProperties));
-            }
+                            public List<Location> under( UUID uuid ) {
+                                return under(new Location(uuid));
+                            }
 
-            public List<Location> of( UUID uuid ) {
-                return of(new Location(uuid));
-            }
+                            public List<Location> under( Location at ) {
+                                ReadBlockOfChildrenRequest request = new ReadBlockOfChildrenRequest(at, startingIndex, blockSize);
+                                queue().submit(request);
+                                return request.getChildren();
+                            }
+                        };
+                    }
 
-            public List<Location> of( Location at ) {
-                ReadBlockOfChildrenRequest request = new ReadBlockOfChildrenRequest(at, startingIndex, blockSize);
-                queue().submit(request);
-                return request.getChildren();
+                    public List<Location> startingAfter( final Location previousSibling ) {
+                        ReadNextBlockOfChildrenRequest request = new ReadNextBlockOfChildrenRequest(previousSibling, blockSize);
+                        queue().submit(request);
+                        return request.getChildren();
+                    }
+
+                    public List<Location> startingAfter( String pathOfPreviousSibling ) {
+                        return startingAfter(new Location(createPath(pathOfPreviousSibling)));
+                    }
+
+                    public List<Location> startingAfter( Path pathOfPreviousSibling ) {
+                        return startingAfter(new Location(pathOfPreviousSibling));
+                    }
+
+                    public List<Location> startingAfter( UUID uuidOfPreviousSibling ) {
+                        return startingAfter(new Location(uuidOfPreviousSibling));
+                    }
+
+                    public List<Location> startingAfter( Property idPropertyOfPreviousSibling ) {
+                        return startingAfter(new Location(idPropertyOfPreviousSibling));
+                    }
+
+                    public List<Location> startingAfter( Property firstIdProperyOfPreviousSibling,
+                                                         Property... additionalIdPropertiesOfPreviousSibling ) {
+                        return startingAfter(new Location(firstIdProperyOfPreviousSibling,
+                                                          additionalIdPropertiesOfPreviousSibling));
+                    }
+                };
             }
         };
     }
@@ -2693,6 +2699,166 @@ public class Graph {
          */
         Next at( Property firstIdProperty,
                  Property... additionalIdProperties );
+    }
+
+    /**
+     * A component used to supply the details for getting children of another node. If all of the children are to be obtained,
+     * then the parent can be specified using one of the <code>of(...)</code> methods on this component. If, however, only some of
+     * the nodes are to be returned (e.g., a "block" of children), then specify the {@link #inBlockOf(int) block size} followed by
+     * the {@link BlockOfChildren block size and parent}.
+     * 
+     * @param <Next>
+     * @author Randall Hauch
+     */
+    public interface Children<Next> extends Of<Next> {
+        /**
+         * Specify that a block of children are to be retreived, and in particular the number of children that are to be returned.
+         * 
+         * @param blockSize the number of children that are to be retrieved in the block; must be positive
+         * @return the interface used to specify the starting point for the block and the parent
+         */
+        BlockOfChildren<Next> inBlockOf( int blockSize );
+    }
+
+    /**
+     * A component used to specify a block of children starting either {@link #startingAt(int) at a particular index} or
+     * {@link #startingAfter(Location) after a previous sibling}.
+     * 
+     * @param <Next>
+     * @author Randall Hauch
+     */
+    public interface BlockOfChildren<Next> {
+        /**
+         * Specify the block of children is to start at the supplied index.
+         * 
+         * @param startingIndex the zero-based index of the first child to be returned in the block
+         * @return interface used to specify the parent of the children; never null
+         */
+        Under<Next> startingAt( int startingIndex );
+
+        /**
+         * Specify the block of children is to start with the child immediately following the supplied node. This method is
+         * typically used when a previous block of children has already been retrieved and this request is retrieving the next
+         * block.
+         * 
+         * @param previousSibling the location of the sibling node that is before the first node in the block
+         * @return the children; never null
+         */
+        Next startingAfter( Location previousSibling );
+
+        /**
+         * Specify the block of children is to start with the child immediately following the supplied node. This method is
+         * typically used when a previous block of children has already been retrieved and this request is retrieving the next
+         * block.
+         * 
+         * @param pathToPreviousSiblingName the path of the sibling node that is before the first node in the block
+         * @return the children; never null
+         */
+        Next startingAfter( String pathToPreviousSiblingName );
+
+        /**
+         * Specify the block of children is to start with the child immediately following the supplied node. This method is
+         * typically used when a previous block of children has already been retrieved and this request is retrieving the next
+         * block.
+         * 
+         * @param previousSibling the path of the sibling node that is before the first node in the block
+         * @return the children; never null
+         */
+        Next startingAfter( Path previousSibling );
+
+        /**
+         * Specify the block of children is to start with the child immediately following the supplied node. This method is
+         * typically used when a previous block of children has already been retrieved and this request is retrieving the next
+         * block.
+         * 
+         * @param previousSiblingUuid the UUID of the sibling node that is before the first node in the block
+         * @return the children; never null
+         */
+        Next startingAfter( UUID previousSiblingUuid );
+
+        /**
+         * Specify the block of children is to start with the child immediately following the supplied node. This method is
+         * typically used when a previous block of children has already been retrieved and this request is retrieving the next
+         * block.
+         * 
+         * @param idPropertyOfPreviousSibling the property that uniquely identifies the previous sibling
+         * @return the children; never null
+         */
+        Next startingAfter( Property idPropertyOfPreviousSibling );
+
+        /**
+         * Specify the block of children is to start with the child immediately following the supplied node. This method is
+         * typically used when a previous block of children has already been retrieved and this request is retrieving the next
+         * block.
+         * 
+         * @param firstIdPropertyOfPreviousSibling the first property that, with the <code>additionalIdProperties</code>, uniquely
+         *        identifies the previous sibling
+         * @param additionalIdPropertiesOfPreviousSibling the additional properties that, with the
+         *        <code>additionalIdProperties</code>, uniquely identifies the previous sibling
+         * @return the children; never null
+         */
+        Next startingAfter( Property firstIdPropertyOfPreviousSibling,
+                            Property... additionalIdPropertiesOfPreviousSibling );
+    }
+
+    /**
+     * The interface for defining the node under which which a request operates.
+     * 
+     * @param <Next> The interface that is to be returned when the request is completed
+     * @author Randall Hauch
+     */
+    public interface Under<Next> {
+        /**
+         * Specify the location of the node under which the request is to operate.
+         * 
+         * @param to the location of the new parent
+         * @return the interface for additional requests or actions
+         */
+        Next under( Location to );
+
+        /**
+         * Specify the path of the node under which the request is to operate.
+         * 
+         * @param toPath the path of the new parent
+         * @return the interface for additional requests or actions
+         */
+        Next under( String toPath );
+
+        /**
+         * Specify the path of the node under which the request is to operate.
+         * 
+         * @param to the path of the new parent
+         * @return the interface for additional requests or actions
+         */
+        Next under( Path to );
+
+        /**
+         * Specify the UUID of the node under which the request is to operate.
+         * 
+         * @param to the UUID of the new parent
+         * @return the interface for additional requests or actions
+         */
+        Next under( UUID to );
+
+        /**
+         * Specify the unique identification property that identifies the node under which the request is to operate.
+         * 
+         * @param idProperty the property that uniquely identifies the new parent
+         * @return the interface for additional requests or actions
+         */
+        Next under( Property idProperty );
+
+        /**
+         * Specify the unique identification properties that identify the node under which the request is to operate.
+         * 
+         * @param firstIdProperty the first property that, with the <code>additionalIdProperties</code>, uniquely identifies the
+         *        new parent
+         * @param additionalIdProperties the additional properties that, with the <code>additionalIdProperties</code>, uniquely
+         *        identifies the new parent
+         * @return the interface for additional requests or actions
+         */
+        Next under( Property firstIdProperty,
+                    Property... additionalIdProperties );
     }
 
     /**

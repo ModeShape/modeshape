@@ -77,7 +77,9 @@ import org.jboss.dna.graph.requests.InvalidRequestException;
 import org.jboss.dna.graph.requests.MoveBranchRequest;
 import org.jboss.dna.graph.requests.ReadAllChildrenRequest;
 import org.jboss.dna.graph.requests.ReadAllPropertiesRequest;
+import org.jboss.dna.graph.requests.ReadBlockOfChildrenRequest;
 import org.jboss.dna.graph.requests.ReadBranchRequest;
+import org.jboss.dna.graph.requests.ReadNextBlockOfChildrenRequest;
 import org.jboss.dna.graph.requests.ReadNodeRequest;
 import org.jboss.dna.graph.requests.ReadPropertyRequest;
 import org.jboss.dna.graph.requests.UpdatePropertiesRequest;
@@ -172,8 +174,8 @@ public class BasicRequestProcessor extends RequestProcessor {
             assert ns != null;
 
             // Figure out the next SNS index and index-in-parent for this new child ...
-            int nextSnsIndex = 1;
-            int nextIndexInParent = 1;
+            int nextSnsIndex = 1; // SNS index is 1-based
+            int nextIndexInParent = 0; // index-in-parent is 0-based
             final Path parentPath = actual.location.getPath();
             assert parentPath != null;
             // Look in the cache for the children of the parent node.
@@ -181,7 +183,7 @@ public class BasicRequestProcessor extends RequestProcessor {
             if (childrenOfParent != null) {
                 // The cache had the complete list of children for the parent node, which means
                 // we know about all of the children and can walk the children to figure out the next indexes.
-                nextIndexInParent = childrenOfParent.size() + 1;
+                nextIndexInParent = childrenOfParent.size();
                 if (nextIndexInParent > 1) {
                     // Since we want the last indexes, process the list backwards ...
                     ListIterator<Location> iter = childrenOfParent.listIterator(childrenOfParent.size());
@@ -205,7 +207,7 @@ public class BasicRequestProcessor extends RequestProcessor {
                 query.setParameter("childName", childLocalName);
                 try {
                     Integer result = (Integer)query.getSingleResult();
-                    nextSnsIndex = result != null ? result + 1 : 1;
+                    nextSnsIndex = result != null ? result + 1 : 1; // SNS index is 1-based
                 } catch (NoResultException e) {
                 }
 
@@ -214,7 +216,7 @@ public class BasicRequestProcessor extends RequestProcessor {
                 query.setParameter("parentUuid", parentUuidString);
                 try {
                     Integer result = (Integer)query.getSingleResult();
-                    nextIndexInParent = result != null ? result + 1 : 1;
+                    nextIndexInParent = result != null ? result + 1 : 0; // index-in-parent is 0-based
                 } catch (NoResultException e) {
                 }
             }
@@ -369,6 +371,158 @@ public class BasicRequestProcessor extends RequestProcessor {
         // Update the cache ...
         cache.setAllChildren(parentPath, childLocations);
         return childLocations;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.requests.processor.RequestProcessor#process(org.jboss.dna.graph.requests.ReadBlockOfChildrenRequest)
+     */
+    @Override
+    public void process( ReadBlockOfChildrenRequest request ) {
+        logger.trace(request.toString());
+        Location actualLocation = null;
+        final int startingIndex = request.startingAtIndex();
+        try {
+            Location parentLocation = request.of();
+            ActualLocation actualParent = getActualLocation(parentLocation);
+            actualLocation = actualParent.location;
+
+            Path parentPath = actualParent.location.getPath();
+            assert parentPath != null;
+            LinkedList<Location> cachedChildren = cache.getAllChildren(parentPath);
+            if (cachedChildren != null) {
+                // The cache has all of the children for the node ...
+                if (startingIndex < cachedChildren.size()) {
+                    ListIterator<Location> iter = cachedChildren.listIterator(startingIndex);
+                    for (int i = 0; i != request.count() && iter.hasNext(); ++i) {
+                        Location child = iter.next();
+                        request.addChild(child);
+                    }
+                }
+            } else {
+                // Nothing was cached, so we need to search the database for the children ...
+                Query query = entities.createNamedQuery("ChildEntity.findRangeUnderParent");
+                query.setParameter("parentUuidString", actualParent.uuid);
+                query.setParameter("firstIndex", startingIndex);
+                query.setParameter("afterIndex", startingIndex + request.count());
+                @SuppressWarnings( "unchecked" )
+                List<ChildEntity> children = query.getResultList();
+                for (ChildEntity child : children) {
+                    String namespaceUri = child.getChildNamespace().getUri();
+                    String localName = child.getChildName();
+                    Name childName = nameFactory.create(namespaceUri, localName);
+                    int sns = child.getSameNameSiblingIndex();
+                    Path childPath = pathFactory.create(parentPath, childName, sns);
+                    String childUuidString = child.getId().getChildUuidString();
+                    Location childLocation = new Location(childPath, UUID.fromString(childUuidString));
+                    request.addChild(childLocation);
+                }
+                // Do not update the cache, since we don't know all of the children.
+            }
+
+        } catch (NoResultException e) {
+            // there are no properties (probably not expected, but still okay) ...
+        } catch (Throwable e) { // Includes PathNotFoundException
+            request.setError(e);
+            return;
+        }
+        if (actualLocation != null) request.setActualLocationOfNode(actualLocation);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.requests.processor.RequestProcessor#process(org.jboss.dna.graph.requests.ReadNextBlockOfChildrenRequest)
+     */
+    @Override
+    public void process( ReadNextBlockOfChildrenRequest request ) {
+        logger.trace(request.toString());
+        Location actualLocation = null;
+        final Location previousSibling = request.startingAfter();
+        final int count = request.count();
+        try {
+            ActualLocation actualSibling = getActualLocation(previousSibling);
+            actualLocation = actualSibling.location;
+            if (!actualLocation.getPath().isRoot()) {
+                // First look in the cache for the children of the parent ...
+                Path parentPath = actualSibling.location.getPath().getParent();
+                assert parentPath != null;
+                LinkedList<Location> cachedChildren = cache.getAllChildren(parentPath);
+                if (cachedChildren != null) {
+                    // The cache has all of the children for the node.
+                    // First find the location of the previous sibling ...
+                    boolean accumulate = false;
+                    int counter = 0;
+                    for (Location child : cachedChildren) {
+                        if (accumulate) {
+                            // We're accumulating children ...
+                            request.addChild(child);
+                            ++counter;
+                            if (counter <= count) continue;
+                            break;
+                        }
+                        // Haven't found the previous sibling yet ...
+                        if (child.isSame(previousSibling)) {
+                            accumulate = true;
+                        }
+                    }
+                } else {
+                    // The children were not found in the cache, so we have to search the database.
+                    // We don't know the UUID of the parent, so find the previous sibling and
+                    // then get the starting index and the parent UUID ...
+                    ChildEntity previousChild = actualSibling.childEntity;
+                    if (previousChild == null) {
+                        Query query = entities.createNamedQuery("ChildEntity.findByChildUuid");
+                        query.setParameter("childUuidString", actualSibling.uuid);
+                        previousChild = (ChildEntity)query.getSingleResult();
+                    }
+                    int startingIndex = previousChild.getIndexInParent() + 1;
+                    String parentUuid = previousChild.getId().getParentUuidString();
+
+                    // Now search the database for the children ...
+                    Query query = entities.createNamedQuery("ChildEntity.findRangeUnderParent");
+                    query.setParameter("parentUuidString", parentUuid);
+                    query.setParameter("firstIndex", startingIndex);
+                    query.setParameter("afterIndex", startingIndex + request.count());
+                    @SuppressWarnings( "unchecked" )
+                    List<ChildEntity> children = query.getResultList();
+                    LinkedList<Location> allChildren = null;
+                    if (startingIndex == 1 && children.size() < request.count()) {
+                        // The previous child was the first sibling, and we got fewer children than
+                        // the max count. This means we know all of the children, so accumulate the locations
+                        // so they can be cached ...
+                        allChildren = new LinkedList<Location>();
+                        allChildren.add(actualSibling.location);
+                    }
+                    for (ChildEntity child : children) {
+                        String namespaceUri = child.getChildNamespace().getUri();
+                        String localName = child.getChildName();
+                        Name childName = nameFactory.create(namespaceUri, localName);
+                        int sns = child.getSameNameSiblingIndex();
+                        Path childPath = pathFactory.create(parentPath, childName, sns);
+                        String childUuidString = child.getId().getChildUuidString();
+                        Location childLocation = new Location(childPath, UUID.fromString(childUuidString));
+                        request.addChild(childLocation);
+                        if (allChildren != null) {
+                            // We're going to cache the results, so add this child ...
+                            allChildren.add(childLocation);
+                        }
+                    }
+
+                    if (allChildren != null) {
+                        cache.setAllChildren(parentPath, allChildren);
+                    }
+                }
+            }
+
+        } catch (NoResultException e) {
+            // there are no properties (probably not expected, but still okay) ...
+        } catch (Throwable e) { // Includes PathNotFoundException
+            request.setError(e);
+            return;
+        }
+        if (actualLocation != null) request.setActualLocationOfStartingAfterNode(actualLocation);
     }
 
     /**
@@ -882,12 +1036,14 @@ public class BasicRequestProcessor extends RequestProcessor {
             String nodeUuidString = uuidString;
             LinkedList<Path.Segment> segments = new LinkedList<Path.Segment>();
             ChildEntity entity = null;
+            ChildEntity originalEntity = null;
             while (uuidString != null && !uuidString.equals(this.rootNodeUuidString)) {
                 Query query = entities.createNamedQuery("ChildEntity.findByChildUuid");
                 query.setParameter("childUuidString", uuidString);
                 try {
                     // Find the parent of the UUID ...
                     entity = (ChildEntity)query.getSingleResult();
+                    if (originalEntity == null) originalEntity = entity;
                     String localName = entity.getChildName();
                     String uri = entity.getChildNamespace().getUri();
                     int sns = entity.getSameNameSiblingIndex();
@@ -901,7 +1057,7 @@ public class BasicRequestProcessor extends RequestProcessor {
             Path fullPath = pathFactory.createAbsolutePath(segments);
             Location newLocation = new Location(fullPath, uuidProperty);
             cache.addNewNode(newLocation);
-            return new ActualLocation(newLocation, nodeUuidString, entity);
+            return new ActualLocation(newLocation, nodeUuidString, originalEntity);
         }
 
         // There is no UUID, so look for a path ...
@@ -917,6 +1073,18 @@ public class BasicRequestProcessor extends RequestProcessor {
             cache.addNewNode(newLocation);
             return new ActualLocation(newLocation, rootNodeUuidString, null);
         }
+        // See if the parent location is known in the cache ...
+        Location cachedParent = cache.getLocationFor(path.getParent());
+        if (cachedParent != null) {
+            // We know the UUID of the parent, so we can find the child a little faster ...
+            ChildEntity child = findByPathSegment(cachedParent.getUuid().toString(), path.getLastSegment());
+            uuidString = child.getId().getChildUuidString();
+            Location newLocation = original.with(UUID.fromString(uuidString));
+            cache.addNewNode(newLocation);
+            return new ActualLocation(newLocation, uuidString, child);
+        }
+
+        // We couldn't find the parent, so we need to search by path ...
         String parentUuid = this.rootNodeUuidString;
         ChildEntity child = null;
         for (Path.Segment segment : path) {

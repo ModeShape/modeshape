@@ -33,7 +33,8 @@ import org.jboss.dna.graph.properties.Property;
 /**
  * Instruction to read a block of the children of a node, where the block is dictated by the {@link #startingAfter location of the
  * child preceding the block} and the {@link #count() maximum number of children} to include in the block. This command is useful
- * when paging through a large number of children.
+ * when paging through a large number of children, when the previous block of children was already retrieved and the next block is
+ * to be read.
  * 
  * @see ReadBlockOfChildrenRequest
  * @author Randall Hauch
@@ -44,31 +45,23 @@ public class ReadNextBlockOfChildrenRequest extends CacheableRequest {
 
     private static final long serialVersionUID = 1L;
 
-    private final Location of;
     private final List<Location> children = new LinkedList<Location>();
     private final Location startingAfter;
     private final int count;
-    private Location actualLocation;
+    private Location actualStartingAfter;
 
     /**
-     * Create a request to read a block of the children of a node at the supplied location. The block is defined by the starting
-     * index of the first child and the number of children to include. Note that this index is <i>not</i> the
-     * {@link Path.Segment#getIndex() same-name-sibiling index}, but rather is the index of the child as if the children were in
-     * an array.
+     * Create a request to read those children of a node that are immediately after a supplied sibling node.
      * 
-     * @param of the location of the node whose children are to be read
-     * @param startingAfter the child that was the last child of the previous block of children read
+     * @param startingAfter the location of the previous sibling that was the last child of the previous block of children read
      * @param count the maximum number of children that should be included in the block
      * @throws IllegalArgumentException if the location is null, if <code>startingAfter</code> is null, or if
      *         <code>count</count> is less than 1.
      */
-    public ReadNextBlockOfChildrenRequest( Location of,
-                                           Location startingAfter,
+    public ReadNextBlockOfChildrenRequest( Location startingAfter,
                                            int count ) {
-        CheckArg.isNotNull(of, "of");
         CheckArg.isNotNull(startingAfter, "startingAfter");
         CheckArg.isPositive(count, "count");
-        this.of = of;
         this.startingAfter = startingAfter;
         this.count = count;
     }
@@ -81,15 +74,6 @@ public class ReadNextBlockOfChildrenRequest extends CacheableRequest {
     @Override
     public boolean isReadOnly() {
         return true;
-    }
-
-    /**
-     * Get the location defining the node whose children are to be read.
-     * 
-     * @return the location of the parent node; never null
-     */
-    public Location of() {
-        return of;
     }
 
     /**
@@ -176,28 +160,29 @@ public class ReadNextBlockOfChildrenRequest extends CacheableRequest {
      * Sets the actual and complete location of the node whose children have been read. This method must be called when processing
      * the request, and the actual location must have a {@link Location#getPath() path}.
      * 
-     * @param actual the actual location of the node being read, or null if the {@link #of() current location} should be used
+     * @param actual the actual location of the node being read, or null if the {@link #startingAfter() starting after location}
+     *        should be used
      * @throws IllegalArgumentException if the actual location does not represent the {@link Location#isSame(Location) same
-     *         location} as the {@link #of() current location}, or if the actual location does not have a path.
+     *         location} as the {@link #startingAfter() starting after location}, or if the actual location does not have a path.
      */
-    public void setActualLocationOfNode( Location actual ) {
-        if (!of.isSame(actual)) { // not same if actual is null
-            throw new IllegalArgumentException(GraphI18n.actualLocationIsNotSameAsInputLocation.text(actual, of));
+    public void setActualLocationOfStartingAfterNode( Location actual ) {
+        if (!startingAfter.isSame(actual)) { // not same if actual is null
+            throw new IllegalArgumentException(GraphI18n.actualLocationIsNotSameAsInputLocation.text(actual, startingAfter));
         }
         assert actual != null;
         if (!actual.hasPath()) {
             throw new IllegalArgumentException(GraphI18n.actualLocationMustHavePath.text(actual));
         }
-        this.actualLocation = actual;
+        this.actualStartingAfter = actual;
     }
 
     /**
-     * Get the actual location of the node whose children were read.
+     * Get the actual location of the {@link #startingAfter() starting after} sibling.
      * 
      * @return the actual location, or null if the actual location was not set
      */
-    public Location getActualLocationOfNode() {
-        return actualLocation;
+    public Location getActualLocationOfStartingAfterNode() {
+        return actualStartingAfter;
     }
 
     /**
@@ -209,7 +194,6 @@ public class ReadNextBlockOfChildrenRequest extends CacheableRequest {
     public boolean equals( Object obj ) {
         if (this.getClass().isInstance(obj)) {
             ReadNextBlockOfChildrenRequest that = (ReadNextBlockOfChildrenRequest)obj;
-            if (!this.of().equals(that.of())) return false;
             if (!this.startingAfter().equals(that.startingAfter())) return false;
             if (this.count() != that.count()) return false;
             return true;
@@ -225,9 +209,9 @@ public class ReadNextBlockOfChildrenRequest extends CacheableRequest {
     @Override
     public String toString() {
         if (count() == 1) {
-            return "read one child of " + of() + " starting after " + startingAfter();
+            return "read the next child after " + startingAfter();
         }
-        return "read " + count() + " children of " + of();
+        return "read the next " + count() + " children after " + startingAfter();
     }
 
 }
