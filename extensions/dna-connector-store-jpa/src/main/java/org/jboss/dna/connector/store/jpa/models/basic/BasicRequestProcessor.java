@@ -237,6 +237,9 @@ public class BasicRequestProcessor extends RequestProcessor {
             // Since we've just created this node, we know about all the children (actually, there are none).
             cache.setAllChildren(path, new LinkedList<Location>());
 
+            // Flush the entities ...
+            // entities.flush();
+
         } catch (Throwable e) { // Includes PathNotFoundException
             request.setError(e);
             logger.trace(e, "Problem " + request);
@@ -666,6 +669,11 @@ public class BasicRequestProcessor extends RequestProcessor {
 
             // Compute the subgraph, including the root ...
             SubgraphQuery query = SubgraphQuery.create(getExecutionContext(), entities, actualLocation.getUuid(), path, 0);
+            ChildEntity deleted = query.getNode();
+            String parentUuidString = deleted.getId().getParentUuidString();
+            String childName = deleted.getChildName();
+            long nsId = deleted.getChildNamespace().getId();
+            int indexInParent = deleted.getIndexInParent();
 
             // Get the locations of all deleted nodes, which will be required by events ...
             List<Location> deletedLocations = query.getNodeLocations(true, true);
@@ -674,7 +682,8 @@ public class BasicRequestProcessor extends RequestProcessor {
             query.deleteSubgraph(true);
 
             // And adjust the SNS index and indexes ...
-            // adjustSnsIndexesAndIndexesAfterRemoving(oldParentUuid, childLocalName, ns.getId(), oldIndex, oldSnsIndex);
+            ChildEntity.adjustSnsIndexesAndIndexesAfterRemoving(entities, parentUuidString, childName, nsId, indexInParent);
+            entities.flush();
 
             // Remove from the cache of children locations all entries for deleted nodes ...
             cache.removeBranch(deletedLocations);
@@ -724,7 +733,6 @@ public class BasicRequestProcessor extends RequestProcessor {
                 toUuidString = actualIntoLocation.uuid;
                 if (!toUuidString.equals(oldParentUuid)) {
                     // Now we know that the new parent is not the existing parent ...
-                    final int oldSnsIndex = fromEntity.getSameNameSiblingIndex();
                     final int oldIndex = fromEntity.getIndexInParent();
 
                     // Find the largest SNS index in the existing ChildEntity objects with the same name ...
@@ -754,6 +762,9 @@ public class BasicRequestProcessor extends RequestProcessor {
                     fromEntity.setIndexInParent(nextIndexInParent);
                     fromEntity.setSameNameSiblingIndex(nextSnsIndex);
 
+                    // Flush the entities to the database ...
+                    entities.flush();
+
                     // Determine the new location ...
                     Path newParentPath = actualIntoLocation.location.getPath();
                     Name childName = oldPath.getLastSegment().getName();
@@ -761,10 +772,15 @@ public class BasicRequestProcessor extends RequestProcessor {
                     actualNewLocation = actualOldLocation.with(newPath);
 
                     // And adjust the SNS index and indexes ...
-                    adjustSnsIndexesAndIndexesAfterRemoving(oldParentUuid, childLocalName, ns.getId(), oldIndex, oldSnsIndex);
+                    ChildEntity.adjustSnsIndexesAndIndexesAfterRemoving(entities,
+                                                                        oldParentUuid,
+                                                                        childLocalName,
+                                                                        ns.getId(),
+                                                                        oldIndex);
 
                     // Update the cache ...
                     cache.moveNode(actualOldLocation, oldIndex, actualNewLocation);
+
                 }
 
             }
@@ -774,15 +790,6 @@ public class BasicRequestProcessor extends RequestProcessor {
             return;
         }
         request.setActualLocations(actualOldLocation, actualNewLocation);
-    }
-
-    protected void adjustSnsIndexesAndIndexesAfterRemoving( String uuidParent,
-                                                            String childName,
-                                                            long childNamespaceIndex,
-                                                            int childIndex,
-                                                            int childSnsIndex ) {
-        // TODO: Now update the 'index in parent' and SNS indexes of the siblings of the deleted node.
-
     }
 
     protected String createProperties( String uuidString,

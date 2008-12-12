@@ -175,6 +175,22 @@ public class SubgraphQuery {
     }
 
     /**
+     * Get the {@link ChildEntity root node} of the subgraph. This must be called before the query is {@link #close() closed}.
+     * 
+     * @return the subgraph's root nodes
+     */
+    public ChildEntity getNode() {
+        // Now query for all the nodes and put into a list ...
+        Query search = manager.createNamedQuery("SubgraphNodeEntity.getChildEntities");
+        search.setParameter("queryId", query.getId());
+        search.setParameter("depth", 0);
+        search.setParameter("maxDepth", 0);
+
+        // Now process the nodes below the subgraph's root ...
+        return (ChildEntity)search.getSingleResult();
+    }
+
+    /**
      * Get the {@link ChildEntity nodes} in the subgraph. This must be called before the query is {@link #close() closed}.
      * 
      * @param includeRoot true if the subgraph's root node is to be included, or false otherwise

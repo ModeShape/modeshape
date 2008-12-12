@@ -21,15 +21,19 @@
  */
 package org.jboss.dna.connector.store.jpa.models.basic;
 
+import java.util.List;
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.EntityManager;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
+import javax.persistence.Query;
 import javax.persistence.Table;
 import org.hibernate.annotations.Index;
+import org.jboss.dna.common.text.Inflector;
 import org.jboss.dna.common.util.HashCode;
 import org.jboss.dna.connector.store.jpa.models.common.NamespaceEntity;
 
@@ -48,11 +52,13 @@ import org.jboss.dna.connector.store.jpa.models.common.NamespaceEntity;
     @Index( name = "CHILDUUID_INX", columnNames = {"CHILD_UUID"} ),
     @Index( name = "CHILDNAME_INX", columnNames = {"PARENT_UUID", "CHILD_NAME_NS_ID", "CHILD_NAME_LOCAL", "SNS_INDEX"} )} )
 @NamedQueries( {
-    @NamedQuery( name = "ChildEntity.findByPathSegment", query = "select child from ChildEntity as child where child.id.parentUuidString = :parentUuidString AND child.childNamespace.id = :ns AND child.childName = :childName AND child.sameNameSiblingIndex = :sns and child.deleted is null" ),
-    @NamedQuery( name = "ChildEntity.findAllUnderParent", query = "select child from ChildEntity as child where child.id.parentUuidString = :parentUuidString and child.deleted is null" ),
-    @NamedQuery( name = "ChildEntity.findByChildUuid", query = "select child from ChildEntity as child where child.id.childUuidString = :childUuidString and child.deleted is null" ),
-    @NamedQuery( name = "ChildEntity.findMaximumSnsIndex", query = "select max(child.sameNameSiblingIndex) from ChildEntity as child where child.id.parentUuidString = :parentUuid AND child.childNamespace.id = :ns AND child.childName = :childName and child.deleted is null" ),
-    @NamedQuery( name = "ChildEntity.findMaximumChildIndex", query = "select max(child.indexInParent) from ChildEntity as child where child.id.parentUuidString = :parentUuid and child.deleted is null" )} )
+    @NamedQuery( name = "ChildEntity.findByPathSegment", query = "select child from ChildEntity as child where child.id.parentUuidString = :parentUuidString AND child.childNamespace.id = :ns AND child.childName = :childName AND child.sameNameSiblingIndex = :sns" ),
+    @NamedQuery( name = "ChildEntity.findAllUnderParent", query = "select child from ChildEntity as child where child.id.parentUuidString = :parentUuidString order by child.indexInParent" ),
+    @NamedQuery( name = "ChildEntity.findRangeUnderParent", query = "select child from ChildEntity as child where child.id.parentUuidString = :parentUuidString and child.indexInParent >= :firstIndex and child.indexInParent < :afterIndex order by child.indexInParent" ),
+    @NamedQuery( name = "ChildEntity.findChildrenAfterIndexUnderParent", query = "select child from ChildEntity as child where child.id.parentUuidString = :parentUuidString and child.indexInParent >= :afterIndex order by child.indexInParent" ),
+    @NamedQuery( name = "ChildEntity.findByChildUuid", query = "select child from ChildEntity as child where child.id.childUuidString = :childUuidString" ),
+    @NamedQuery( name = "ChildEntity.findMaximumSnsIndex", query = "select max(child.sameNameSiblingIndex) from ChildEntity as child where child.id.parentUuidString = :parentUuid AND child.childNamespace.id = :ns AND child.childName = :childName" ),
+    @NamedQuery( name = "ChildEntity.findMaximumChildIndex", query = "select max(child.indexInParent) from ChildEntity as child where child.id.parentUuidString = :parentUuid" )} )
 public class ChildEntity {
 
     @Id
@@ -71,9 +77,6 @@ public class ChildEntity {
     @Column( name = "SNS_INDEX", nullable = false, unique = false )
     private int sameNameSiblingIndex;
 
-    @Column( name = "DELETED", nullable = true, unique = false )
-    private Boolean deleted;
-
     public ChildEntity() {
     }
 
@@ -85,6 +88,7 @@ public class ChildEntity {
         this.indexInParent = indexInParent;
         this.childNamespace = ns;
         this.childName = name;
+        this.sameNameSiblingIndex = 1;
     }
 
     public ChildEntity( ChildId id,
@@ -170,20 +174,6 @@ public class ChildEntity {
     }
 
     /**
-     * @return deleted
-     */
-    public boolean isDeleted() {
-        return Boolean.TRUE.equals(deleted);
-    }
-
-    /**
-     * @param deleted Sets deleted to the specified value.
-     */
-    public void setDeleted( boolean deleted ) {
-        this.deleted = deleted ? Boolean.TRUE : null;
-    }
-
-    /**
      * {@inheritDoc}
      * 
      * @see java.lang.Object#hashCode()
@@ -232,12 +222,35 @@ public class ChildEntity {
             sb.append(" (id=").append(id.getChildUuidString()).append(")");
             String parentId = id.getParentUuidString();
             if (parentId != null) {
-                sb.append(" is child of ").append(parentId);
+                sb.append(" is ");
+                sb.append(Inflector.getInstance().ordinalize(indexInParent));
+                sb.append(" child of ");
+                sb.append(parentId);
             } else {
                 sb.append(" is root");
             }
         }
         return sb.toString();
+    }
+
+    @SuppressWarnings( "unchecked" )
+    public static void adjustSnsIndexesAndIndexesAfterRemoving( EntityManager entities,
+                                                                String uuidParent,
+                                                                String childName,
+                                                                long childNamespaceIndex,
+                                                                int childIndex ) {
+        // Decrement the 'indexInParent' index values for all nodes above the previously removed sibling ...
+        Query query = entities.createNamedQuery("ChildEntity.findChildrenAfterIndexUnderParent");
+        query.setParameter("parentUuidString", uuidParent);
+        query.setParameter("afterIndex", childIndex);
+        for (ChildEntity entity : (List<ChildEntity>)query.getResultList()) {
+            // Decrement the index in parent ...
+            entity.setIndexInParent(entity.getIndexInParent() - 1);
+            if (entity.getChildName().equals(childName) && entity.getChildNamespace().getId() == childNamespaceIndex) {
+                // The name matches, so decrement the SNS index ...
+                entity.setSameNameSiblingIndex(entity.getSameNameSiblingIndex() - 1);
+            }
+        }
     }
 
 }
