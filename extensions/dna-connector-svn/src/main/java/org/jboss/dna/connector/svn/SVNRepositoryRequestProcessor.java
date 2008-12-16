@@ -23,10 +23,8 @@ package org.jboss.dna.connector.svn;
 
 import java.io.ByteArrayOutputStream;
 import java.io.OutputStream;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
-import java.util.List;
 import org.jboss.dna.common.i18n.I18n;
 import org.jboss.dna.common.util.Logger;
 import org.jboss.dna.graph.ExecutionContext;
@@ -44,8 +42,6 @@ import org.jboss.dna.graph.properties.PathNotFoundException;
 import org.jboss.dna.graph.properties.Property;
 import org.jboss.dna.graph.properties.PropertyFactory;
 import org.jboss.dna.graph.properties.ValueFactory;
-import org.jboss.dna.graph.properties.basic.BasicMultiValueProperty;
-import org.jboss.dna.graph.properties.basic.InMemoryBinary;
 import org.jboss.dna.graph.requests.CopyBranchRequest;
 import org.jboss.dna.graph.requests.CreateNodeRequest;
 import org.jboss.dna.graph.requests.DeleteBranchRequest;
@@ -239,8 +235,7 @@ public class SVNRepositoryRequestProcessor extends RequestProcessor {
                     request.addProperty(jcrLastModifiedProperty);
                 }
                 if (os.toByteArray().length > 0) {
-                    Property jcrDataProperty = propertyFactory().create(JcrLexicon.DATA,
-                                                                        binaryFactory().create(os.toByteArray()));
+                    Property jcrDataProperty = propertyFactory().create(JcrLexicon.DATA, binaryFactory().create(os.toByteArray()));
                     request.addProperty(jcrDataProperty);
                 }
             } else {

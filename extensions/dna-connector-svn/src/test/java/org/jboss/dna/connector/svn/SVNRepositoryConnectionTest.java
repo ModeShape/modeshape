@@ -26,13 +26,10 @@ import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsSame.sameInstance;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.stub;
-import static org.mockito.Mockito.verify;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 import org.jboss.dna.common.text.UrlEncoder;
 import org.jboss.dna.common.util.FileUtil;
 import org.jboss.dna.graph.BasicExecutionContext;
@@ -78,7 +75,6 @@ public class SVNRepositoryConnectionTest {
     @Mock
     private ReadAllChildrenRequest request;
 
-    @SuppressWarnings( "deprecation" )
     @Before
     public void beforeEach() throws Exception {
         MockitoAnnotations.initMocks(this);
