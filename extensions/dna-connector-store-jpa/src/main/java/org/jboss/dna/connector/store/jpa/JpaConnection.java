@@ -47,6 +47,7 @@ public class JpaConnection implements RepositoryConnection {
     private final UUID rootNodeUuid;
     private final long largeValueMinimumSizeInBytes;
     private final boolean compressData;
+    private final boolean enforceReferentialIntegrity;
 
     /*package*/JpaConnection( String sourceName,
                                CachePolicy cachePolicy,
@@ -54,7 +55,8 @@ public class JpaConnection implements RepositoryConnection {
                                Model model,
                                UUID rootNodeUuid,
                                long largeValueMinimumSizeInBytes,
-                               boolean compressData ) {
+                               boolean compressData,
+                               boolean enforceReferentialIntegrity ) {
         assert sourceName != null;
         assert entityManager != null;
         assert model != null;
@@ -66,6 +68,7 @@ public class JpaConnection implements RepositoryConnection {
         this.rootNodeUuid = rootNodeUuid;
         this.largeValueMinimumSizeInBytes = largeValueMinimumSizeInBytes;
         this.compressData = compressData;
+        this.enforceReferentialIntegrity = enforceReferentialIntegrity;
     }
 
     /**
@@ -125,7 +128,13 @@ public class JpaConnection implements RepositoryConnection {
     public void execute( ExecutionContext context,
                          Request request ) throws RepositorySourceException {
         long size = largeValueMinimumSizeInBytes;
-        RequestProcessor proc = model.createRequestProcessor(name, context, entityManager, rootNodeUuid, size, compressData);
+        RequestProcessor proc = model.createRequestProcessor(name,
+                                                             context,
+                                                             entityManager,
+                                                             rootNodeUuid,
+                                                             size,
+                                                             compressData,
+                                                             enforceReferentialIntegrity);
         try {
             proc.process(request);
         } finally {

@@ -55,6 +55,7 @@ import org.jboss.dna.graph.properties.ValueFactories;
 public class Serializer {
 
     public static final LargeValues NO_LARGE_VALUES = new NoLargeValues();
+    public static final ReferenceValues NO_REFERENCES_VALUES = new NoReferenceValues();
 
     private final PropertyFactory propertyFactory;
     private final ValueFactories valueFactories;
@@ -111,6 +112,30 @@ public class Serializer {
     }
 
     /**
+     * Interface used to record how Reference values are processed during serialization and deserialization.
+     * 
+     * @author Randall Hauch
+     */
+    public interface ReferenceValues {
+        void read( Reference reference );
+
+        void write( Reference reference );
+
+        void remove( Reference reference );
+    }
+
+    protected static class NoReferenceValues implements ReferenceValues {
+        public void read( Reference arg0 ) {
+        }
+
+        public void remove( Reference arg0 ) {
+        }
+
+        public void write( Reference arg0 ) {
+        }
+    }
+
+    /**
      * Serialize the properties' values to the object stream.
      * <p>
      * If any of the property values are considered {@link LargeValues#getMinimumSize() large}, the value's hash and length of the
@@ -129,22 +154,25 @@ public class Serializer {
      * @param number the number of properties exposed by the supplied <code>properties</code> iterator; must be 0 or positive
      * @param properties the iterator over the properties that are to be serialized; may not be null
      * @param largeValues the interface to use for writing large values; may not be null
+     * @param references the interface to use for recording which {@link Reference} values were found during serialization, or
+     *        null if the references do not need to be accumulated
      * @throws IOException if there is an error writing to the <code>stream</code> or <code>largeValues</code>
      * @see #deserializeAllProperties(ObjectInputStream, Collection, LargeValues)
      * @see #deserializeSomeProperties(ObjectInputStream, Collection, LargeValues, LargeValues, Name...)
-     * @see #serializeProperties(ObjectOutputStream, int, Iterable, LargeValues)
+     * @see #serializeProperty(ObjectOutputStream, Property, LargeValues, ReferenceValues)
      */
     public void serializeProperties( ObjectOutputStream stream,
                                      int number,
                                      Iterable<Property> properties,
-                                     LargeValues largeValues ) throws IOException {
+                                     LargeValues largeValues,
+                                     ReferenceValues references ) throws IOException {
         assert number >= 0;
         assert properties != null;
         assert largeValues != null;
         stream.writeInt(number);
         for (Property property : properties) {
             if (property == null) continue;
-            serializeProperty(stream, property, largeValues);
+            serializeProperty(stream, property, largeValues, references);
         }
     }
 
@@ -166,17 +194,21 @@ public class Serializer {
      * @param stream the stream where the property's values are to be serialized; may not be null
      * @param property the property to be serialized; may not be null
      * @param largeValues the interface to use for writing large values; may not be null
+     * @param references the interface to use for recording which {@link Reference} values were found during serialization, or
+     *        null if the references do not need to be accumulated
      * @return true if the property was serialized, or false if it was not
      * @throws IOException if there is an error writing to the <code>stream</code> or <code>largeValues</code>
-     * @see #serializeProperties(ObjectOutputStream, int, Iterable, LargeValues)
-     * @see #deserializePropertyValues(ObjectInputStream, Name, boolean, LargeValues, LargeValues)
+     * @see #serializeProperties(ObjectOutputStream, int, Iterable, LargeValues, ReferenceValues)
+     * @see #deserializePropertyValues(ObjectInputStream, Name, boolean, LargeValues, LargeValues, ReferenceValues)
      */
     public boolean serializeProperty( ObjectOutputStream stream,
                                       Property property,
-                                      LargeValues largeValues ) throws IOException {
+                                      LargeValues largeValues,
+                                      ReferenceValues references ) throws IOException {
         assert stream != null;
         assert property != null;
         assert largeValues != null;
+        assert references != null;
         final Name name = property.getName();
         if (this.excludeUuidProperty && DnaLexicon.UUID.equals(name)) return false;
         // Write the name ...
@@ -243,7 +275,9 @@ public class Serializer {
                 stream.writeChar(c);
             } else if (value instanceof Reference) {
                 stream.writeChar('R');
-                stream.writeObject(((Reference)value).getString());
+                Reference ref = (Reference)value;
+                stream.writeObject(ref.getString());
+                references.write(ref);
             } else if (value instanceof Binary) {
                 Binary binary = (Binary)value;
                 byte[] hash = null;
@@ -300,6 +334,8 @@ public class Serializer {
      * @param updatedProperties the properties that are being updated (or removed, if there are no values); may not be null
      * @param largeValues the interface to use for writing large values; may not be null
      * @param removedLargeValues the interface to use for recording the large values that were removed; may not be null
+     * @param references the interface to use for recording which {@link Reference} values were found during serialization, or
+     *        null if the references do not need to be accumulated
      * @return the number of properties
      * @throws IOException if there is an error writing to the <code>stream</code> or <code>largeValues</code>
      * @throws ClassNotFoundException if the class for the value's object could not be found
@@ -308,11 +344,13 @@ public class Serializer {
                                       ObjectOutputStream output,
                                       Collection<Property> updatedProperties,
                                       LargeValues largeValues,
-                                      LargeValues removedLargeValues ) throws IOException, ClassNotFoundException {
+                                      LargeValues removedLargeValues,
+                                      ReferenceValues references ) throws IOException, ClassNotFoundException {
         assert input != null;
         assert output != null;
         assert updatedProperties != null;
         assert largeValues != null;
+        assert references != null;
         // Assemble a set of property names to skip deserializing
         Set<Name> skipNames = new HashSet<Name>();
         for (Property property : updatedProperties) {
@@ -330,10 +368,10 @@ public class Serializer {
             assert name != null;
             if (skipNames.contains(name)) {
                 // Deserialized, but don't materialize ...
-                deserializePropertyValues(input, name, true, largeValues, removedLargeValues);
+                deserializePropertyValues(input, name, true, largeValues, removedLargeValues, references);
             } else {
                 // Now read the property values ...
-                Object[] values = deserializePropertyValues(input, name, false, largeValues, removedLargeValues);
+                Object[] values = deserializePropertyValues(input, name, false, largeValues, removedLargeValues, references);
                 // Add the property to the collection ...
                 Property property = propertyFactory.create(name, values);
                 assert property != null;
@@ -355,7 +393,7 @@ public class Serializer {
         output.writeInt(numProperties);
         for (Property property : allProperties.values()) {
             if (property == null) continue;
-            serializeProperty(output, property, largeValues);
+            serializeProperty(output, property, largeValues, references);
         }
         return numProperties;
     }
@@ -368,8 +406,8 @@ public class Serializer {
      * @param largeValues the interface to use for writing large values; may not be null
      * @throws IOException if there is an error writing to the <code>stream</code> or <code>largeValues</code>
      * @throws ClassNotFoundException if the class for the value's object could not be found
-     * @see #deserializePropertyValues(ObjectInputStream, Name, boolean, LargeValues, LargeValues)
-     * @see #serializeProperties(ObjectOutputStream, int, Iterable, LargeValues)
+     * @see #deserializePropertyValues(ObjectInputStream, Name, boolean, LargeValues, LargeValues, ReferenceValues)
+     * @see #serializeProperties(ObjectOutputStream, int, Iterable, LargeValues, ReferenceValues)
      */
     public void deserializeAllProperties( ObjectInputStream stream,
                                           Collection<Property> properties,
@@ -395,8 +433,8 @@ public class Serializer {
      * @param skippedLargeValues the interface to use for recording the large values that were skipped; may not be null
      * @throws IOException if there is an error writing to the <code>stream</code> or <code>largeValues</code>
      * @throws ClassNotFoundException if the class for the value's object could not be found
-     * @see #deserializePropertyValues(ObjectInputStream, Name, boolean, LargeValues, LargeValues)
-     * @see #serializeProperties(ObjectOutputStream, int, Iterable, LargeValues)
+     * @see #deserializePropertyValues(ObjectInputStream, Name, boolean, LargeValues, LargeValues, ReferenceValues)
+     * @see #serializeProperties(ObjectOutputStream, int, Iterable, LargeValues, ReferenceValues)
      */
     public void deserializeSomeProperties( ObjectInputStream stream,
                                            Collection<Property> properties,
@@ -431,14 +469,14 @@ public class Serializer {
             read = name.equals(nameToRead) || (namesToRead != null && namesToRead.contains(namesToRead));
             if (read) {
                 // Now read the property values ...
-                Object[] values = deserializePropertyValues(stream, name, false, skippedLargeValues, skippedLargeValues);
+                Object[] values = deserializePropertyValues(stream, name, false, skippedLargeValues, skippedLargeValues, null);
                 // Add the property to the collection ...
                 Property property = propertyFactory.create(name, values);
                 assert property != null;
                 properties.add(property);
             } else {
                 // Skip the property ...
-                deserializePropertyValues(stream, name, true, largeValues, skippedLargeValues);
+                deserializePropertyValues(stream, name, true, largeValues, skippedLargeValues, null);
             }
         }
     }
@@ -452,7 +490,7 @@ public class Serializer {
      * @throws IOException if there is an error writing to the <code>stream</code> or <code>largeValues</code>
      * @throws ClassNotFoundException if the class for the value's object could not be found
      * @see #deserializeAllProperties(ObjectInputStream, Collection, LargeValues)
-     * @see #serializeProperty(ObjectOutputStream, Property, LargeValues)
+     * @see #serializeProperty(ObjectOutputStream, Property, LargeValues, ReferenceValues)
      */
     public Property deserializeProperty( ObjectInputStream stream,
                                          LargeValues largeValues ) throws IOException, ClassNotFoundException {
@@ -461,7 +499,7 @@ public class Serializer {
         Name name = valueFactories.getNameFactory().create(nameStr);
         assert name != null;
         // Now read the property values ...
-        Object[] values = deserializePropertyValues(stream, name, false, largeValues, largeValues);
+        Object[] values = deserializePropertyValues(stream, name, false, largeValues, largeValues, null);
         // Add the property to the collection ...
         return propertyFactory.create(name, values);
     }
@@ -474,19 +512,24 @@ public class Serializer {
      * @param skip true if the values don't need to be read, or false if they are to be read
      * @param largeValues the interface to use for writing large values; may not be null
      * @param skippedLargeValues the interface to use for recording the large values that were skipped; may not be null
+     * @param references the interface to use for recording which {@link Reference} values were found (and/or removed) during
+     *        deserialization; may not be null
      * @return the deserialized property values, or an empty list if there are no values
      * @throws IOException if there is an error writing to the <code>stream</code> or <code>largeValues</code>
      * @throws ClassNotFoundException if the class for the value's object could not be found
      * @see #deserializeAllProperties(ObjectInputStream, Collection, LargeValues)
-     * @see #serializeProperty(ObjectOutputStream, Property, LargeValues)
+     * @see #serializeProperty(ObjectOutputStream, Property, LargeValues, ReferenceValues)
      */
     public Object[] deserializePropertyValues( ObjectInputStream stream,
                                                Name propertyName,
                                                boolean skip,
                                                LargeValues largeValues,
-                                               LargeValues skippedLargeValues ) throws IOException, ClassNotFoundException {
+                                               LargeValues skippedLargeValues,
+                                               ReferenceValues references ) throws IOException, ClassNotFoundException {
         assert stream != null;
         assert propertyName != null;
+        assert largeValues != null;
+        assert skippedLargeValues != null;
         // Read the number of values ...
         int size = stream.readInt();
         Object[] values = skip ? null : new Object[size];
@@ -565,7 +608,16 @@ public class Serializer {
                 case 'R':
                     // Reference
                     String refValue = (String)stream.readObject();
-                    if (!skip) value = valueFactories.getReferenceFactory().create(refValue);
+                    Reference ref = valueFactories.getReferenceFactory().create(refValue);
+                    if (!skip || references != null) {
+                        if (!skip) {
+                            value = ref;
+                            if (references != null) references.remove(ref);
+                        } else {
+                            assert references != null;
+                            references.read(ref);
+                        }
+                    }
                     break;
                 case 'B':
                     // Binary

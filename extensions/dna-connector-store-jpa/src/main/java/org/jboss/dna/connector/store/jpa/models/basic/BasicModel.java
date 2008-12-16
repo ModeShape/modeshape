@@ -50,6 +50,7 @@ import org.jboss.dna.graph.requests.processor.RequestProcessor;
  * possible to efficiently work with nodes containing large numbers of children, where adding and removing child nodes is largely
  * independent of the number of children. Also, working with properties is also completely independent of the number of child
  * nodes.</li>
+ * <li>ReferenceChanges - the references from one node to another</li>
  * <li>Subgraph - a working area for efficiently computing the space of a subgraph; see below</li>
  * <li>Change log - a record of the changes that have been made to the repository. This is used to distribute change events across
  * multiple distributed processes, and to allow a recently-connected client to identify the set of changes that have been made
@@ -98,7 +99,7 @@ public class BasicModel extends Model {
      * {@inheritDoc}
      * 
      * @see org.jboss.dna.connector.store.jpa.Model#createRequestProcessor(java.lang.String, org.jboss.dna.graph.ExecutionContext,
-     *      javax.persistence.EntityManager, java.util.UUID, long, boolean)
+     *      javax.persistence.EntityManager, java.util.UUID, long, boolean, boolean)
      */
     @Override
     public RequestProcessor createRequestProcessor( String sourceName,
@@ -106,9 +107,10 @@ public class BasicModel extends Model {
                                                     EntityManager entityManager,
                                                     UUID rootNodeUuid,
                                                     long largeValueMinimumSizeInBytes,
-                                                    boolean compressData ) {
+                                                    boolean compressData,
+                                                    boolean enforceReferentialIntegrity ) {
         return new BasicRequestProcessor(sourceName, context, entityManager, rootNodeUuid, largeValueMinimumSizeInBytes,
-                                         compressData);
+                                         compressData, enforceReferentialIntegrity);
     }
 
     /**
@@ -126,6 +128,8 @@ public class BasicModel extends Model {
         configurator.addAnnotatedClass(LargeValueId.class);
         configurator.addAnnotatedClass(ChildEntity.class);
         configurator.addAnnotatedClass(ChildId.class);
+        configurator.addAnnotatedClass(ReferenceEntity.class);
+        configurator.addAnnotatedClass(ReferenceId.class);
         configurator.addAnnotatedClass(SubgraphQueryEntity.class);
         configurator.addAnnotatedClass(SubgraphNodeEntity.class);
         configurator.addAnnotatedClass(ChangeLogEntity.class);

@@ -70,6 +70,7 @@ public class JpaConnectionTest {
     private UUID rootNodeUuid;
     private long largeValueSize;
     private boolean compressData;
+    private boolean enforceReferentialIntegrity;
     private Graph graph;
     private String[] validLargeValues;
     private int numPropsOnEach;
@@ -81,6 +82,7 @@ public class JpaConnectionTest {
         rootNodeUuid = UUID.randomUUID();
         largeValueSize = 2 ^ 10; // 1 kilobyte
         compressData = true;
+        enforceReferentialIntegrity = true;
         numPropsOnEach = 0;
 
         // Load in the large value ...
@@ -101,7 +103,8 @@ public class JpaConnectionTest {
 
         // Create the connection ...
         cachePolicy = mock(CachePolicy.class);
-        connection = new JpaConnection("source", cachePolicy, manager, model, rootNodeUuid, largeValueSize, compressData);
+        connection = new JpaConnection("source", cachePolicy, manager, model, rootNodeUuid, largeValueSize, compressData,
+                                       enforceReferentialIntegrity);
 
         // And create the graph ...
         graph = Graph.create(connection, context);

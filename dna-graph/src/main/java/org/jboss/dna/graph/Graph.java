@@ -1825,7 +1825,7 @@ public class Graph {
             return new On<BatchConjunction>() {
                 public BatchConjunction on( Location location ) {
                     UpdatePropertiesRequest request = new UpdatePropertiesRequest(location, properties);
-                    queue().submit(request);
+                    requestQueue.submit(request);
                     return nextRequests;
                 }
 
@@ -1902,7 +1902,7 @@ public class Graph {
             return new On<BatchConjunction>() {
                 public BatchConjunction on( Location location ) {
                     RemovePropertiesRequest request = new RemovePropertiesRequest(location, propertyNames);
-                    queue().submit(request);
+                    requestQueue.submit(request);
                     return nextRequests;
                 }
 
@@ -1944,7 +1944,7 @@ public class Graph {
             return new On<BatchConjunction>() {
                 public BatchConjunction on( Location location ) {
                     RemovePropertiesRequest request = new RemovePropertiesRequest(location, names);
-                    queue().submit(request);
+                    requestQueue.submit(request);
                     return nextRequests;
                 }
 
@@ -2115,7 +2115,7 @@ public class Graph {
 
                 public BatchConjunction on( Location at ) {
                     ReadPropertyRequest request = new ReadPropertyRequest(at, name);
-                    queue().submit(request);
+                    requestQueue.submit(request);
                     return Batch.this.nextRequests;
                 }
             };
@@ -2136,7 +2136,7 @@ public class Graph {
             return new On<BatchConjunction>() {
                 public BatchConjunction on( Location location ) {
                     ReadAllPropertiesRequest request = new ReadAllPropertiesRequest(location);
-                    queue().submit(request);
+                    requestQueue.submit(request);
                     return Batch.this.nextRequests;
                 }
 
@@ -2199,7 +2199,7 @@ public class Graph {
 
                 public BatchConjunction of( Location at ) {
                     ReadAllChildrenRequest request = new ReadAllChildrenRequest(at);
-                    queue().submit(request);
+                    requestQueue.submit(request);
                     return Batch.this.nextRequests;
                 }
             };
@@ -2221,7 +2221,7 @@ public class Graph {
             return new At<BatchConjunction>() {
                 public BatchConjunction at( Location location ) {
                     ReadBranchRequest request = new ReadBranchRequest(location, depth);
-                    queue().submit(request);
+                    requestQueue.submit(request);
                     return Batch.this.nextRequests;
                 }
 
@@ -3106,7 +3106,7 @@ public class Graph {
         }
 
         public void submit( Request request ) {
-            if (request instanceof UpdatePropertiesRequest) {
+            if (!requests.isEmpty() && request instanceof UpdatePropertiesRequest) {
                 // If the previous request was also an update, then maybe they can be merged ...
                 Request previous = requests.getLast();
                 if (previous instanceof UpdatePropertiesRequest) {

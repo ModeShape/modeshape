@@ -28,53 +28,48 @@ import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.util.HashCode;
 
 /**
- * A unique identifer for a parent-child relationship.
+ * An identifier for a reference, comprised of a single {@link NodeId} of the node containing the reference and a single
+ * {@link NodeId} of the node being referenced.
  * 
  * @author Randall Hauch
  */
 @Embeddable
 @Immutable
 @org.hibernate.annotations.Immutable
-public class ChildId implements Serializable {
+public class ReferenceId implements Serializable {
 
     /**
      * Version {@value}
      */
     private static final long serialVersionUID = 1L;
 
-    @Column( name = "PARENT_UUID", nullable = false, length = 36 )
-    private String parentUuidString;
+    @Column( name = "FROM_UUID", nullable = false, updatable = false, length = 36 )
+    private String fromUuidString;
 
-    @Column( name = "CHILD_UUID", nullable = false, length = 36 )
-    private String childUuidString;
+    @Column( name = "TO_UUID", nullable = false, updatable = false, length = 36 )
+    private String toUuidString;
 
-    public ChildId() {
+    public ReferenceId() {
     }
 
-    public ChildId( NodeId parentId,
-                    NodeId childId ) {
-        if (parentId != null) this.parentUuidString = parentId.getUuidString();
-        if (childId != null) this.childUuidString = childId.getUuidString();
-    }
-
-    public ChildId( String parentUuid,
-                    String childUuid ) {
-        this.parentUuidString = parentUuid;
-        this.childUuidString = childUuid;
+    public ReferenceId( String fromUuid,
+                        String toUuid ) {
+        this.fromUuidString = fromUuid;
+        this.toUuidString = toUuid;
     }
 
     /**
-     * @return parentUuidString
+     * @return fromUuidString
      */
-    public String getParentUuidString() {
-        return parentUuidString;
+    public String getFromUuidString() {
+        return fromUuidString;
     }
 
     /**
-     * @return childUuidString
+     * @return toUuidString
      */
-    public String getChildUuidString() {
-        return childUuidString;
+    public String getToUuidString() {
+        return toUuidString;
     }
 
     /**
@@ -84,7 +79,7 @@ public class ChildId implements Serializable {
      */
     @Override
     public int hashCode() {
-        return HashCode.compute(parentUuidString, childUuidString);
+        return HashCode.compute(fromUuidString, toUuidString);
     }
 
     /**
@@ -95,17 +90,17 @@ public class ChildId implements Serializable {
     @Override
     public boolean equals( Object obj ) {
         if (obj == this) return true;
-        if (obj instanceof ChildId) {
-            ChildId that = (ChildId)obj;
-            if (this.parentUuidString == null) {
-                if (that.parentUuidString != null) return false;
+        if (obj instanceof ReferenceId) {
+            ReferenceId that = (ReferenceId)obj;
+            if (this.fromUuidString == null) {
+                if (that.fromUuidString != null) return false;
             } else {
-                if (!this.parentUuidString.equals(that.parentUuidString)) return false;
+                if (!this.fromUuidString.equals(that.fromUuidString)) return false;
             }
-            if (this.childUuidString == null) {
-                if (that.childUuidString != null) return false;
+            if (this.toUuidString == null) {
+                if (that.toUuidString != null) return false;
             } else {
-                if (!this.childUuidString.equals(that.childUuidString)) return false;
+                if (!this.toUuidString.equals(that.toUuidString)) return false;
             }
             return true;
         }
@@ -119,7 +114,7 @@ public class ChildId implements Serializable {
      */
     @Override
     public String toString() {
-        return "Child " + childUuidString + " of " + parentUuidString;
+        return "Reference from " + fromUuidString + " to " + toUuidString;
     }
 
 }

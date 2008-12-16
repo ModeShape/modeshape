@@ -31,6 +31,7 @@ import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -68,8 +69,12 @@ import org.jboss.dna.graph.properties.PathFactory;
 import org.jboss.dna.graph.properties.PathNotFoundException;
 import org.jboss.dna.graph.properties.Property;
 import org.jboss.dna.graph.properties.PropertyType;
+import org.jboss.dna.graph.properties.Reference;
+import org.jboss.dna.graph.properties.ReferentialIntegrityException;
+import org.jboss.dna.graph.properties.UuidFactory;
 import org.jboss.dna.graph.properties.ValueFactories;
 import org.jboss.dna.graph.properties.ValueFactory;
+import org.jboss.dna.graph.properties.ValueFormatException;
 import org.jboss.dna.graph.requests.CopyBranchRequest;
 import org.jboss.dna.graph.requests.CreateNodeRequest;
 import org.jboss.dna.graph.requests.DeleteBranchRequest;
@@ -95,6 +100,7 @@ public class BasicRequestProcessor extends RequestProcessor {
     protected final ValueFactory<String> stringFactory;
     protected final PathFactory pathFactory;
     protected final NameFactory nameFactory;
+    protected final UuidFactory uuidFactory;
     protected final Namespaces namespaces;
     protected final UUID rootNodeUuid;
     protected final String rootNodeUuidString;
@@ -103,6 +109,8 @@ public class BasicRequestProcessor extends RequestProcessor {
     protected final boolean compressData;
     protected final Logger logger;
     protected final RequestProcessorCache cache;
+    protected final boolean enforceReferentialIntegrity;
+    private boolean referencesChanged;
 
     /**
      * @param sourceName
@@ -111,25 +119,30 @@ public class BasicRequestProcessor extends RequestProcessor {
      * @param rootNodeUuid
      * @param largeValueMinimumSizeInBytes
      * @param compressData
+     * @param enforceReferentialIntegrity
      */
     public BasicRequestProcessor( String sourceName,
                                   ExecutionContext context,
                                   EntityManager entityManager,
                                   UUID rootNodeUuid,
                                   long largeValueMinimumSizeInBytes,
-                                  boolean compressData ) {
+                                  boolean compressData,
+                                  boolean enforceReferentialIntegrity ) {
         super(sourceName, context);
         assert entityManager != null;
         assert rootNodeUuid != null;
         this.entities = entityManager;
-        this.stringFactory = context.getValueFactories().getStringFactory();
-        this.pathFactory = context.getValueFactories().getPathFactory();
-        this.nameFactory = context.getValueFactories().getNameFactory();
+        ValueFactories valuesFactory = context.getValueFactories();
+        this.stringFactory = valuesFactory.getStringFactory();
+        this.pathFactory = valuesFactory.getPathFactory();
+        this.nameFactory = valuesFactory.getNameFactory();
+        this.uuidFactory = valuesFactory.getUuidFactory();
         this.namespaces = new Namespaces(entityManager);
         this.rootNodeUuid = rootNodeUuid;
         this.rootNodeUuidString = this.rootNodeUuid.toString();
         this.largeValueMinimumSizeInBytes = largeValueMinimumSizeInBytes;
         this.compressData = compressData;
+        this.enforceReferentialIntegrity = enforceReferentialIntegrity;
         this.serializer = new Serializer(context, true);
         this.logger = getExecutionContext().getLogger(getClass());
         this.cache = new RequestProcessorCache(this.pathFactory);
@@ -147,7 +160,6 @@ public class BasicRequestProcessor extends RequestProcessor {
     public void process( CreateNodeRequest request ) {
         logger.trace(request.toString());
         Location actualLocation = null;
-        String childUuidString = null;
         try {
             // Create nodes have to be defined via a path ...
             Location parentLocation = request.under();
@@ -165,7 +177,8 @@ public class BasicRequestProcessor extends RequestProcessor {
                 }
             }
             if (uuidString == null) uuidString = UUID.randomUUID().toString();
-            childUuidString = createProperties(uuidString, request.properties());
+            assert uuidString != null;
+            createProperties(uuidString, request.properties());
 
             // Find or create the namespace for the child ...
             Name childName = request.named();
@@ -222,14 +235,13 @@ public class BasicRequestProcessor extends RequestProcessor {
             }
 
             // Create the new ChildEntity ...
-            ChildId id = new ChildId(parentUuidString, childUuidString);
+            ChildId id = new ChildId(parentUuidString, uuidString);
             ChildEntity entity = new ChildEntity(id, nextIndexInParent, ns, childName.getLocalName(), nextSnsIndex);
             entities.persist(entity);
 
             // Set the actual path, regardless of the supplied path...
-            assert childUuidString != null;
             Path path = pathFactory.create(parentPath, childName, nextSnsIndex);
-            actualLocation = new Location(path, UUID.fromString(childUuidString));
+            actualLocation = new Location(path, UUID.fromString(uuidString));
 
             // Finally, update the cache with the information we know ...
             if (childrenOfParent != null) {
@@ -278,17 +290,19 @@ public class BasicRequestProcessor extends RequestProcessor {
                 boolean compressed = entity.isCompressed();
                 Collection<Property> properties = new LinkedList<Property>();
                 byte[] data = entity.getData();
-                LargeValueSerializer largeValues = new LargeValueSerializer(entity);
-                ByteArrayInputStream bais = new ByteArrayInputStream(data);
-                InputStream is = compressed ? new GZIPInputStream(bais) : bais;
-                ObjectInputStream ois = new ObjectInputStream(is);
-                try {
-                    serializer.deserializeAllProperties(ois, properties, largeValues);
-                    for (Property property : properties) {
-                        request.addProperty(property);
+                if (data != null) {
+                    LargeValueSerializer largeValues = new LargeValueSerializer(entity);
+                    ByteArrayInputStream bais = new ByteArrayInputStream(data);
+                    InputStream is = compressed ? new GZIPInputStream(bais) : bais;
+                    ObjectInputStream ois = new ObjectInputStream(is);
+                    try {
+                        serializer.deserializeAllProperties(ois, properties, largeValues);
+                        for (Property property : properties) {
+                            request.addProperty(property);
+                        }
+                    } finally {
+                        ois.close();
                     }
-                } finally {
-                    ois.close();
                 }
 
             } catch (NoResultException e) {
@@ -553,17 +567,19 @@ public class BasicRequestProcessor extends RequestProcessor {
             int propertyCount = entity.getPropertyCount();
             Collection<Property> properties = new ArrayList<Property>(propertyCount);
             byte[] data = entity.getData();
-            LargeValueSerializer largeValues = new LargeValueSerializer(entity);
-            ByteArrayInputStream bais = new ByteArrayInputStream(data);
-            InputStream is = compressed ? new GZIPInputStream(bais) : bais;
-            ObjectInputStream ois = new ObjectInputStream(is);
-            try {
-                serializer.deserializeAllProperties(ois, properties, largeValues);
-                for (Property property : properties) {
-                    request.addProperty(property);
+            if (data != null) {
+                LargeValueSerializer largeValues = new LargeValueSerializer(entity);
+                ByteArrayInputStream bais = new ByteArrayInputStream(data);
+                InputStream is = compressed ? new GZIPInputStream(bais) : bais;
+                ObjectInputStream ois = new ObjectInputStream(is);
+                try {
+                    serializer.deserializeAllProperties(ois, properties, largeValues);
+                    for (Property property : properties) {
+                        request.addProperty(property);
+                    }
+                } finally {
+                    ois.close();
                 }
-            } finally {
-                ois.close();
             }
         } catch (NoResultException e) {
             // there are no properties (probably not expected, but still okay) ...
@@ -613,18 +629,20 @@ public class BasicRequestProcessor extends RequestProcessor {
             int propertyCount = entity.getPropertyCount();
             Collection<Property> properties = new ArrayList<Property>(propertyCount);
             byte[] data = entity.getData();
-            LargeValueSerializer largeValues = new LargeValueSerializer(entity);
-            ByteArrayInputStream bais = new ByteArrayInputStream(data);
-            InputStream is = compressed ? new GZIPInputStream(bais) : bais;
-            ObjectInputStream ois = new ObjectInputStream(is);
-            try {
-                Serializer.LargeValues skippedLargeValues = Serializer.NO_LARGE_VALUES;
-                serializer.deserializeSomeProperties(ois, properties, largeValues, skippedLargeValues, propertyName);
-                for (Property property : properties) {
-                    request.setProperty(property); // should be only one property
+            if (data != null) {
+                LargeValueSerializer largeValues = new LargeValueSerializer(entity);
+                ByteArrayInputStream bais = new ByteArrayInputStream(data);
+                InputStream is = compressed ? new GZIPInputStream(bais) : bais;
+                ObjectInputStream ois = new ObjectInputStream(is);
+                try {
+                    Serializer.LargeValues skippedLargeValues = Serializer.NO_LARGE_VALUES;
+                    serializer.deserializeSomeProperties(ois, properties, largeValues, skippedLargeValues, propertyName);
+                    for (Property property : properties) {
+                        request.setProperty(property); // should be only one property
+                    }
+                } finally {
+                    ois.close();
                 }
-            } finally {
-                ois.close();
             }
         } catch (NoResultException e) {
             // there are no properties (probably not expected, but still okay) ...
@@ -655,42 +673,88 @@ public class BasicRequestProcessor extends RequestProcessor {
             PropertiesEntity entity = null;
             try {
                 entity = (PropertiesEntity)query.getSingleResult();
-                final boolean hadLargeValues = !entity.getLargeValues().isEmpty();
 
                 // Prepare the streams so we can deserialize all existing properties and reserialize the old and updated
                 // properties ...
                 boolean compressed = entity.isCompressed();
-                ByteArrayInputStream bais = new ByteArrayInputStream(entity.getData());
-                InputStream is = compressed ? new GZIPInputStream(bais) : bais;
-                ObjectInputStream ois = new ObjectInputStream(is);
+                byte[] originalData = entity.getData();
                 ByteArrayOutputStream baos = new ByteArrayOutputStream();
                 OutputStream os = compressed ? new GZIPOutputStream(baos) : baos;
                 ObjectOutputStream oos = new ObjectOutputStream(os);
-                int numProperties = 0;
-                Set<String> largeValueHashesWritten = hadLargeValues ? new HashSet<String>() : null;
-                LargeValueSerializer largeValues = new LargeValueSerializer(entity, largeValueHashesWritten);
-                SkippedLargeValues removedValues = new SkippedLargeValues(largeValues);
-                try {
-                    numProperties = serializer.reserializeProperties(ois, oos, request.properties(), largeValues, removedValues);
-                } finally {
+                int numProps = 0;
+                LargeValueSerializer largeValues = null;
+                Collection<Property> props = request.properties();
+                References refs = enforceReferentialIntegrity ? new References() : null;
+                if (originalData == null) {
+                    largeValues = new LargeValueSerializer(entity);
+                    numProps = props.size();
+                    serializer.serializeProperties(oos, numProps, props, largeValues, refs);
+                } else {
+                    boolean hadLargeValues = !entity.getLargeValues().isEmpty();
+                    Set<String> largeValueHashesWritten = hadLargeValues ? new HashSet<String>() : null;
+                    largeValues = new LargeValueSerializer(entity, largeValueHashesWritten);
+                    ByteArrayInputStream bais = new ByteArrayInputStream(originalData);
+                    InputStream is = compressed ? new GZIPInputStream(bais) : bais;
+                    ObjectInputStream ois = new ObjectInputStream(is);
+                    SkippedLargeValues removedValues = new SkippedLargeValues(largeValues);
                     try {
-                        ois.close();
+                        Serializer.ReferenceValues refValues = refs != null ? refs : Serializer.NO_REFERENCES_VALUES;
+                        numProps = serializer.reserializeProperties(ois, oos, props, largeValues, removedValues, refValues);
                     } finally {
-                        oos.close();
+                        try {
+                            ois.close();
+                        } finally {
+                            oos.close();
+                        }
+                    }
+                    // The new large values were recorded and associated with the properties entity during reserialization.
+                    // However, any values no longer used now need to be removed ...
+                    if (hadLargeValues) {
+                        // Remove any large value from the 'skipped' list that was also written ...
+                        removedValues.skippedKeys.removeAll(largeValueHashesWritten);
+                        for (String oldHexKey : removedValues.skippedKeys) {
+                            LargeValueId id = new LargeValueId(oldHexKey);
+                            entity.getLargeValues().remove(id);
+                        }
+                    }
+
+                    if (refs != null) {
+                        // Remove any existing references ...
+                        if (refs.hasRemoved()) {
+                            for (Reference reference : refs.getRemoved()) {
+                                String toUuid = resolveToUuid(reference);
+                                if (toUuid != null) {
+                                    ReferenceId id = new ReferenceId(actual.uuid, toUuid);
+                                    ReferenceEntity refEntity = entities.find(ReferenceEntity.class, id);
+                                    if (refEntity != null) {
+                                        entities.remove(refEntity);
+                                        referencesChanged = true;
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
-                entity.setPropertyCount(numProperties);
+                entity.setPropertyCount(numProps);
                 entity.setData(baos.toByteArray());
                 entity.setCompressed(compressData);
 
-                // The new large values were recorded and associated with the properties entity during reserialization.
-                // However, any values no longer used now need to be removed ...
-                if (hadLargeValues) {
-                    // Remove any large value from the 'skipped' list that was also written ...
-                    removedValues.skippedKeys.removeAll(largeValueHashesWritten);
-                    for (String oldHexKey : removedValues.skippedKeys) {
-                        LargeValueId id = new LargeValueId(oldHexKey);
-                        entity.getLargeValues().remove(id);
+                if (refs != null && refs.hasWritten()) {
+                    // If there were references from the updated node ...
+                    Set<Reference> newReferences = refs.getWritten();
+                    // Remove any reference that was written (and not removed) ...
+                    newReferences.removeAll(refs.getRead());
+                    if (newReferences.size() != 0) {
+                        // Now save the new references ...
+                        for (Reference reference : newReferences) {
+                            String toUuid = resolveToUuid(reference);
+                            if (toUuid != null) {
+                                ReferenceId id = new ReferenceId(actual.uuid, toUuid);
+                                ReferenceEntity refEntity = new ReferenceEntity(id);
+                                entities.persist(refEntity);
+                                referencesChanged = true;
+                            }
+                        }
                     }
                 }
             } catch (NoResultException e) {
@@ -777,15 +841,17 @@ public class BasicRequestProcessor extends RequestProcessor {
                 properties.add(actualLocation.getIdProperty(DnaLexicon.UUID));
                 // Deserialize all the properties (except the UUID)...
                 byte[] data = props.getData();
-                LargeValueSerializer largeValues = new LargeValueSerializer(props);
-                ByteArrayInputStream bais = new ByteArrayInputStream(data);
-                InputStream is = compressed ? new GZIPInputStream(bais) : bais;
-                ObjectInputStream ois = new ObjectInputStream(is);
-                try {
-                    serializer.deserializeAllProperties(ois, properties, largeValues);
-                    request.setProperties(nodeLocation, properties);
-                } finally {
-                    ois.close();
+                if (data != null) {
+                    LargeValueSerializer largeValues = new LargeValueSerializer(props);
+                    ByteArrayInputStream bais = new ByteArrayInputStream(data);
+                    InputStream is = compressed ? new GZIPInputStream(bais) : bais;
+                    ObjectInputStream ois = new ObjectInputStream(is);
+                    try {
+                        serializer.deserializeAllProperties(ois, properties, largeValues);
+                        request.setProperties(nodeLocation, properties);
+                    } finally {
+                        ois.close();
+                    }
                 }
             }
 
@@ -946,35 +1012,6 @@ public class BasicRequestProcessor extends RequestProcessor {
         request.setActualLocations(actualOldLocation, actualNewLocation);
     }
 
-    protected String createProperties( String uuidString,
-                                       Collection<Property> properties ) throws IOException {
-        assert uuidString != null;
-        if (properties.isEmpty()) return uuidString;
-        if (properties.size() == 1 && properties.iterator().next().getName().equals(JcrLexicon.NAME)) return uuidString;
-
-        // Create the PropertiesEntity ...
-        NodeId nodeId = new NodeId(uuidString);
-        PropertiesEntity props = new PropertiesEntity(nodeId);
-
-        LargeValueSerializer largeValues = new LargeValueSerializer(props);
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        OutputStream os = compressData ? new GZIPOutputStream(baos) : baos;
-        ObjectOutputStream oos = new ObjectOutputStream(os);
-        int numProperties = properties.size();
-        try {
-            serializer.serializeProperties(oos, numProperties, properties, largeValues);
-        } finally {
-            oos.close();
-        }
-
-        props.setData(baos.toByteArray());
-        props.setCompressed(compressData);
-        props.setPropertyCount(numProperties);
-
-        entities.persist(props);
-        return uuidString;
-    }
-
     /**
      * {@inheritDoc}
      * 
@@ -982,9 +1019,130 @@ public class BasicRequestProcessor extends RequestProcessor {
      */
     @Override
     public void close() {
+        // Verify that the references are valid so far ...
+        verifyReferences();
+
+        // Now commit the transaction ...
         EntityTransaction txn = entities.getTransaction();
         if (txn != null) txn.commit();
         super.close();
+    }
+
+    /**
+     * {@link ReferenceEntity Reference entities} are added and removed in the appropriate <code>process(...)</code> methods.
+     * However, this method is typically called in {@link BasicRequestProcessor#close()} and performs the following steps:
+     * <ol>
+     * <li>Remove all references that have a "from" node that is under the versions branch.</li>
+     * <li>Verify that all remaining references have a valid and existing "to" node</li>
+     * </ol>
+     */
+    protected void verifyReferences() {
+        if (!enforceReferentialIntegrity) return;
+        if (referencesChanged) {
+
+            // Remove all references that have a "from" node that doesn't support referential integrity ...
+            ReferenceEntity.deleteUnenforcedReferences(entities);
+
+            // Verify that all references are resolved to existing nodes ...
+            int numUnresolved = ReferenceEntity.countAllReferencesResolved(entities);
+            if (numUnresolved != 0) {
+                List<ReferenceEntity> references = ReferenceEntity.verifyAllReferencesResolved(entities);
+                ValueFactory<Reference> refFactory = getExecutionContext().getValueFactories().getReferenceFactory();
+                Map<Location, List<Reference>> invalidRefs = new HashMap<Location, List<Reference>>();
+                for (ReferenceEntity entity : references) {
+                    UUID fromUuid = UUID.fromString(entity.getId().getFromUuidString());
+                    Location location = new Location(fromUuid);
+                    location = getActualLocation(location).location;
+                    List<Reference> refs = invalidRefs.get(location);
+                    if (refs == null) {
+                        refs = new ArrayList<Reference>();
+                        invalidRefs.put(location, refs);
+                    }
+                    UUID toUuid = UUID.fromString(entity.getId().getToUuidString());
+                    refs.add(refFactory.create(toUuid));
+                }
+                String msg = JpaConnectorI18n.invalidReferences.text(getSourceName());
+                throw new ReferentialIntegrityException(invalidRefs, msg);
+            }
+
+            referencesChanged = false;
+        }
+    }
+
+    protected String createProperties( String uuidString,
+                                       Collection<Property> properties ) throws IOException {
+        assert uuidString != null;
+
+        // Create the PropertiesEntity ...
+        NodeId nodeId = new NodeId(uuidString);
+        PropertiesEntity props = new PropertiesEntity(nodeId);
+
+        // If there are properties ...
+        boolean processProperties = true;
+        if (properties.isEmpty()) processProperties = false;
+        else if (properties.size() == 1 && properties.iterator().next().getName().equals(JcrLexicon.NAME)) processProperties = false;
+
+        if (processProperties) {
+            References refs = enforceReferentialIntegrity ? new References() : null;
+            LargeValueSerializer largeValues = new LargeValueSerializer(props);
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            OutputStream os = compressData ? new GZIPOutputStream(baos) : baos;
+            ObjectOutputStream oos = new ObjectOutputStream(os);
+            int numProperties = properties.size();
+            try {
+                Serializer.ReferenceValues refValues = refs != null ? refs : Serializer.NO_REFERENCES_VALUES;
+                serializer.serializeProperties(oos, numProperties, properties, largeValues, refValues);
+            } finally {
+                oos.close();
+            }
+
+            props.setData(baos.toByteArray());
+            props.setPropertyCount(numProperties);
+
+            // Record the changes to the references ...
+            if (refs != null && refs.hasWritten()) {
+                for (Reference reference : refs.getWritten()) {
+                    String toUuid = resolveToUuid(reference);
+                    if (toUuid != null) {
+                        ReferenceId id = new ReferenceId(uuidString, toUuid);
+                        ReferenceEntity refEntity = new ReferenceEntity(id);
+                        entities.persist(refEntity);
+                        referencesChanged = true;
+                    }
+                }
+            }
+        } else {
+            props.setData(null);
+            props.setPropertyCount(0);
+        }
+        props.setCompressed(compressData);
+        props.setReferentialIntegrityEnforced(true);
+
+        entities.persist(props);
+
+        // References will be persisted in the commit ...
+        return uuidString;
+    }
+
+    /**
+     * Attempt to resolve the reference.
+     * 
+     * @param reference the reference
+     * @return the UUID of the node to which the reference points, or null if the reference could not be resolved
+     */
+    protected String resolveToUuid( Reference reference ) {
+        // See if the reference is by UUID ...
+        try {
+            UUID uuid = uuidFactory.create(reference);
+            ActualLocation actualLocation = getActualLocation(new Location(uuid));
+            return actualLocation.uuid;
+        } catch (ValueFormatException e) {
+            // Unknown kind of reference, which we don't track
+        } catch (PathNotFoundException e) {
+            // Unable to resolve reference ...
+        }
+        // Unable to resolve reference ...
+        return null;
     }
 
     /**
@@ -1398,6 +1556,81 @@ public class BasicRequestProcessor extends RequestProcessor {
         @Override
         public String toString() {
             return this.location.toString() + " (uuid=" + uuid + ") " + childEntity;
+        }
+    }
+
+    protected class References implements Serializer.ReferenceValues {
+        private Set<Reference> read;
+        private Set<Reference> removed;
+        private Set<Reference> written;
+
+        protected References() {
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.connector.store.jpa.util.Serializer.ReferenceValues#read(org.jboss.dna.graph.properties.Reference)
+         */
+        public void read( Reference reference ) {
+            if (read == null) read = new HashSet<Reference>();
+            read.add(reference);
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.connector.store.jpa.util.Serializer.ReferenceValues#remove(org.jboss.dna.graph.properties.Reference)
+         */
+        public void remove( Reference reference ) {
+            if (removed == null) removed = new HashSet<Reference>();
+            removed.add(reference);
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.connector.store.jpa.util.Serializer.ReferenceValues#write(org.jboss.dna.graph.properties.Reference)
+         */
+        public void write( Reference reference ) {
+            if (written == null) written = new HashSet<Reference>();
+            written.add(reference);
+        }
+
+        public boolean hasRead() {
+            return read != null;
+        }
+
+        public boolean hasRemoved() {
+            return removed != null;
+        }
+
+        public boolean hasWritten() {
+            return written != null;
+        }
+
+        /**
+         * @return read
+         */
+        public Set<Reference> getRead() {
+            if (read != null) return read;
+            return Collections.emptySet();
+        }
+
+        /**
+         * @return removed
+         */
+        public Set<Reference> getRemoved() {
+            if (removed != null) return removed;
+            return Collections.emptySet();
+        }
+
+        /**
+         * @return written
+         */
+        public Set<Reference> getWritten() {
+            if (written != null) return written;
+            return Collections.emptySet();
         }
     }
 }

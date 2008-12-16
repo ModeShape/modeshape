@@ -53,7 +53,7 @@ public class PropertiesEntity {
     private NodeId id;
 
     @Lob
-    @Column( name = "DATA", nullable = false, unique = false )
+    @Column( name = "DATA", nullable = true, unique = false )
     private byte[] data;
 
     @Column( name = "NUM_PROPS", nullable = false )
@@ -64,6 +64,12 @@ public class PropertiesEntity {
      */
     @Column( name = "COMPRESSED", nullable = true )
     private Boolean compressed;
+
+    /**
+     * Flag specifying whether the binary data is stored in a compressed format.
+     */
+    @Column( name = "ENFORCEREFINTEG", nullable = false )
+    private boolean referentialIntegrityEnforced = true;
 
     @org.hibernate.annotations.CollectionOfElements( fetch = FetchType.LAZY )
     @JoinTable( name = "DNA_LARGEVALUE_USAGES", joinColumns = @JoinColumn( name = "NODE_UUID" ) )
@@ -145,6 +151,20 @@ public class PropertiesEntity {
      */
     public Collection<LargeValueId> getLargeValues() {
         return largeValues;
+    }
+
+    /**
+     * @return referentialIntegrityEnforced
+     */
+    public boolean isReferentialIntegrityEnforced() {
+        return referentialIntegrityEnforced;
+    }
+
+    /**
+     * @param referentialIntegrityEnforced Sets referentialIntegrityEnforced to the specified value.
+     */
+    public void setReferentialIntegrityEnforced( boolean referentialIntegrityEnforced ) {
+        this.referentialIntegrityEnforced = referentialIntegrityEnforced;
     }
 
     /**

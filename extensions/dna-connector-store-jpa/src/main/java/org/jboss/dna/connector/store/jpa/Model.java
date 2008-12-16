@@ -79,7 +79,8 @@ public abstract class Model {
                                                              EntityManager entityManager,
                                                              UUID rootNodeUuid,
                                                              long largeValueMinimumSizeInBytes,
-                                                             boolean comparessData );
+                                                             boolean comparessData,
+                                                             boolean enforceReferentialIntegrity );
 
     /**
      * Configure the entity class that will be used by JPA to store information in the database.

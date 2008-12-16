@@ -117,6 +117,7 @@ public class JpaSource implements RepositorySource, ObjectFactory {
     protected static final String MODEL_NAME = "modelName";
     protected static final String LARGE_VALUE_SIZE_IN_BYTES = "largeValueSizeInBytes";
     protected static final String COMPRESS_DATA = "compressData";
+    protected static final String ENFORCE_REFERENTIAL_INTEGRITY = "enforceReferentialIntegrity";
 
     /**
      * This source supports events.
@@ -148,6 +149,7 @@ public class JpaSource implements RepositorySource, ObjectFactory {
     private static final int DEFAULT_IDLE_TIME_IN_SECONDS_BEFORE_TESTING_CONNECTIONS = 60 * 3; // 3 minutes
     private static final int DEFAULT_LARGE_VALUE_SIZE_IN_BYTES = 2 ^ 10; // 1 kilobyte
     private static final boolean DEFAULT_COMPRESS_DATA = true;
+    private static final boolean DEFAULT_ENFORCE_REFERENTIAL_INTEGRITY = true;
 
     /**
      * The first serialized version of this source.
@@ -173,6 +175,7 @@ public class JpaSource implements RepositorySource, ObjectFactory {
     private int cacheTimeToLiveInMilliseconds = DEFAULT_CACHE_TIME_TO_LIVE_IN_SECONDS * 1000;
     private long largeValueSizeInBytes = DEFAULT_LARGE_VALUE_SIZE_IN_BYTES;
     private boolean compressData = DEFAULT_COMPRESS_DATA;
+    private boolean referentialIntegrityEnforced = DEFAULT_ENFORCE_REFERENTIAL_INTEGRITY;
     private final Capabilities capabilities = new Capabilities();
     private transient Model model;
     private String modelName;
@@ -577,6 +580,20 @@ public class JpaSource implements RepositorySource, ObjectFactory {
     }
 
     /**
+     * @return referentialIntegrityEnforced
+     */
+    public boolean isReferentialIntegrityEnforced() {
+        return referentialIntegrityEnforced;
+    }
+
+    /**
+     * @param referentialIntegrityEnforced Sets referentialIntegrityEnforced to the specified value.
+     */
+    public void setReferentialIntegrityEnforced( boolean referentialIntegrityEnforced ) {
+        this.referentialIntegrityEnforced = referentialIntegrityEnforced;
+    }
+
+    /**
      * {@inheritDoc}
      * 
      * @see org.jboss.dna.graph.connectors.RepositorySource#initialize(org.jboss.dna.graph.connectors.RepositoryContext)
@@ -634,6 +651,7 @@ public class JpaSource implements RepositorySource, ObjectFactory {
         ref.add(new StringRefAddr(CACHE_TIME_TO_LIVE_IN_MILLISECONDS, Integer.toString(getCacheTimeToLiveInMilliseconds())));
         ref.add(new StringRefAddr(LARGE_VALUE_SIZE_IN_BYTES, Long.toString(getLargeValueSizeInBytes())));
         ref.add(new StringRefAddr(COMPRESS_DATA, Boolean.toString(isCompressData())));
+        ref.add(new StringRefAddr(ENFORCE_REFERENTIAL_INTEGRITY, Boolean.toString(isReferentialIntegrityEnforced())));
         if (getModel() != null) {
             ref.add(new StringRefAddr(MODEL_NAME, getModel()));
         }
@@ -680,6 +698,7 @@ public class JpaSource implements RepositorySource, ObjectFactory {
             String retryLimit = values.get(RETRY_LIMIT);
             String largeModelSize = values.get(LARGE_VALUE_SIZE_IN_BYTES);
             String compressData = values.get(COMPRESS_DATA);
+            String refIntegrity = values.get(ENFORCE_REFERENTIAL_INTEGRITY);
 
             // Create the source instance ...
             JpaSource source = new JpaSource();
@@ -703,6 +722,7 @@ public class JpaSource implements RepositorySource, ObjectFactory {
             if (modelName != null) source.setModel(modelName);
             if (largeModelSize != null) source.setLargeValueSizeInBytes(Long.parseLong(largeModelSize));
             if (compressData != null) source.setCompressData(Boolean.parseBoolean(compressData));
+            if (refIntegrity != null) source.setReferentialIntegrityEnforced(Boolean.parseBoolean(refIntegrity));
             return source;
         }
         return null;
@@ -807,7 +827,8 @@ public class JpaSource implements RepositorySource, ObjectFactory {
         if (entityManager == null) {
             entityManager = entityManagerFactory.createEntityManager();
         }
-        return new JpaConnection(getName(), cachePolicy, entityManager, model, rootUuid, largeValueSizeInBytes, compressData);
+        return new JpaConnection(getName(), cachePolicy, entityManager, model, rootUuid, largeValueSizeInBytes, compressData,
+                                 referentialIntegrityEnforced);
     }
 
     /**

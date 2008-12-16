@@ -45,6 +45,7 @@ import java.util.UUID;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.common.util.SecureHash;
 import org.jboss.dna.common.util.StringUtil;
+import org.jboss.dna.connector.store.jpa.util.Serializer.ReferenceValues;
 import org.jboss.dna.graph.BasicExecutionContext;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.properties.Binary;
@@ -66,6 +67,7 @@ public class SerializerTest {
     private LargeValuesHolder largeValues;
     private PropertyFactory propertyFactory;
     private ValueFactories valueFactories;
+    private ReferenceValues references;
 
     @Before
     public void beforeEach() {
@@ -74,6 +76,7 @@ public class SerializerTest {
         valueFactories = context.getValueFactories();
         serializer = new Serializer(context, false);
         largeValues = new LargeValuesHolder();
+        references = Serializer.NO_REFERENCES_VALUES;
     }
 
     @Test
@@ -274,7 +277,7 @@ public class SerializerTest {
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             ObjectOutputStream oos = new ObjectOutputStream(baos);
             try {
-                serializer.serializeProperty(oos, property, largeValues);
+                serializer.serializeProperty(oos, property, largeValues, references);
             } finally {
                 oos.close();
             }
@@ -301,7 +304,7 @@ public class SerializerTest {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         ObjectOutputStream oos = new ObjectOutputStream(baos);
         try {
-            serializer.serializeProperties(oos, propertyList.size(), propertyList, largeValues);
+            serializer.serializeProperties(oos, propertyList.size(), propertyList, largeValues, references);
         } finally {
             oos.close();
         }
@@ -344,7 +347,7 @@ public class SerializerTest {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         ObjectOutputStream oos = new ObjectOutputStream(baos);
         try {
-            serializer.serializeProperties(oos, initialProps.size(), initialProps, largeValues);
+            serializer.serializeProperties(oos, initialProps.size(), initialProps, largeValues, references);
         } finally {
             oos.close();
         }
@@ -357,7 +360,7 @@ public class SerializerTest {
         baos = new ByteArrayOutputStream();
         oos = new ObjectOutputStream(baos);
         try {
-            serializer.reserializeProperties(ois, oos, updatedProps, largeValues, removedLargeValues);
+            serializer.reserializeProperties(ois, oos, updatedProps, largeValues, removedLargeValues, references);
         } finally {
             oos.close();
             ois.close();

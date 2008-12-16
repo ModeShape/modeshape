@@ -108,7 +108,8 @@ public class ModelTest {
                                                         EntityManager entityManager,
                                                         UUID rootNodeUuid,
                                                         long largeValueMinimumSizeInBytes,
-                                                        boolean compressData ) {
+                                                        boolean compressData,
+                                                        boolean enforceReferentialIntegrity ) {
             return requestProcessor;
         }
     }
