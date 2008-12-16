@@ -39,13 +39,15 @@ import org.hibernate.annotations.Index;
  */
 @Entity
 @Table( name = "DNA_SUBGRAPH_NODES" )
-@org.hibernate.annotations.Table( appliesTo = "DNA_SUBGRAPH_NODES", indexes = @Index( name = "QUERYID_INX", columnNames = {"QUERY_ID"} ) )
+@org.hibernate.annotations.Table( appliesTo = "DNA_SUBGRAPH_NODES", indexes = @Index( name = "QUERYID_INX", columnNames = {
+    "QUERY_ID", "UUID"} ) )
 @NamedQueries( {
     @NamedQuery( name = "SubgraphNodeEntity.insertChildren", query = "insert into SubgraphNodeEntity(queryId,nodeUuid,depth,parentIndexInParent,indexInParent) select parentNode.queryId, child.id.childUuidString, parentNode.depth+1, parentNode.indexInParent, child.indexInParent from ChildEntity child, SubgraphNodeEntity parentNode where child.id.parentUuidString = parentNode.nodeUuid and parentNode.queryId = :queryId and parentNode.depth = :parentDepth" ),
     @NamedQuery( name = "SubgraphNodeEntity.getCount", query = "select count(*) from SubgraphNodeEntity where queryId = :queryId" ),
     @NamedQuery( name = "SubgraphNodeEntity.getPropertiesEntities", query = "select props from PropertiesEntity props, SubgraphNodeEntity node where props.id.uuidString = node.nodeUuid and node.queryId = :queryId and node.depth >= :depth and node.depth <= :maxDepth order by node.depth, node.parentIndexInParent, node.indexInParent" ),
     @NamedQuery( name = "SubgraphNodeEntity.getPropertiesEntitiesWithLargeValues", query = "select props from PropertiesEntity props, SubgraphNodeEntity node where props.id.uuidString = node.nodeUuid and node.queryId = :queryId and node.depth >= :depth and size(props.largeValues) > 0" ),
     @NamedQuery( name = "SubgraphNodeEntity.getChildEntities", query = "select child from ChildEntity child, SubgraphNodeEntity node where child.id.childUuidString = node.nodeUuid and node.queryId = :queryId and node.depth >= :depth and node.depth <= :maxDepth order by node.depth, node.parentIndexInParent, node.indexInParent" ),
+    @NamedQuery( name = "SubgraphNodeEntity.getReferenceThatWillBeInvalid", query = "select ref from ReferenceEntity as ref where ref.id.toUuidString in ( select node.nodeUuid from SubgraphNodeEntity node where node.queryId = :queryId) and ref.id.fromUuidString not in (select node.nodeUuid from SubgraphNodeEntity node where node.queryId = :queryId)" ),
     @NamedQuery( name = "SubgraphNodeEntity.deletePropertiesEntities", query = "delete PropertiesEntity props where props.id.uuidString in ( select node.nodeUuid from SubgraphNodeEntity node where node.queryId = :queryId and node.depth >= :depth )" ),
     @NamedQuery( name = "SubgraphNodeEntity.deleteChildEntities", query = "delete ChildEntity child where child.id.childUuidString in ( select node.nodeUuid from SubgraphNodeEntity node where node.queryId = :queryId and node.depth >= :depth )" ),
     @NamedQuery( name = "SubgraphNodeEntity.deleteByQueryId", query = "delete SubgraphNodeEntity where queryId = :queryId" )} )

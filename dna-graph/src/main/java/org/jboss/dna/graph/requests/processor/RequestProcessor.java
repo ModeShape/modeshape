@@ -36,6 +36,7 @@ import org.jboss.dna.graph.properties.DateTime;
 import org.jboss.dna.graph.properties.Name;
 import org.jboss.dna.graph.properties.Path;
 import org.jboss.dna.graph.properties.Property;
+import org.jboss.dna.graph.properties.ReferentialIntegrityException;
 import org.jboss.dna.graph.properties.basic.BasicEmptyProperty;
 import org.jboss.dna.graph.requests.CompositeRequest;
 import org.jboss.dna.graph.requests.CopyBranchRequest;
@@ -213,6 +214,8 @@ public abstract class RequestProcessor {
      * </p>
      * 
      * @param request the delete request
+     * @throws ReferentialIntegrityException if the delete could not be performed because some references to deleted nodes would
+     *         have remained after the delete operation completed
      */
     public abstract void process( DeleteBranchRequest request );
 

@@ -222,15 +222,15 @@ public class RequestProcessorCacheTest {
         assertThat(cache.getLocationFor(children2[6].getPath()), is(children2[6]));
         assertThat(cache.getLocationFor(children2[7].getPath()), is(children2[7]));
 
-        System.out.println("Before:");
-        System.out.println(cache.getString(namespaces));
+        // System.out.println("Before:");
+        // System.out.println(cache.getString(namespaces));
 
         // Move the branch (without a known index) ...
         assertThat(cache.moveNode(oldLocation, -1, newLocation), is(true));
 
-        System.out.println("After moving " + oldLocation.getPath().getString(namespaces) + " to "
-                           + newLocation.getPath().getString(namespaces));
-        System.out.println(cache.getString(namespaces));
+        // System.out.println("After moving " + oldLocation.getPath().getString(namespaces) + " to "
+        // + newLocation.getPath().getString(namespaces));
+        // System.out.println(cache.getString(namespaces));
 
         // Check the cache content, which should no longer have any content below the old and new locations ...
         LinkedList<Location> afterRemoval = cache.getAllChildren(location.getPath());
@@ -347,8 +347,8 @@ public class RequestProcessorCacheTest {
         assertThat(cache.getLocationFor(children2[6].getPath()), is(children2[6]));
         assertThat(cache.getLocationFor(children2[7].getPath()), is(children2[7]));
 
-        System.out.println("Before:");
-        System.out.println(cache.getString(namespaces));
+        // System.out.println("Before:");
+        // System.out.println(cache.getString(namespaces));
 
         // Create the locations that in the branch to be removed ...
         List<Location> locationsToRemove = new LinkedList<Location>();
@@ -363,8 +363,8 @@ public class RequestProcessorCacheTest {
         // Remove the branch ...
         assertThat(cache.removeBranch(locationsToRemove), is(true));
 
-        System.out.println("After removing " + locationsToRemove.get(0).getString(namespaces));
-        System.out.println(cache.getString(namespaces));
+        // System.out.println("After removing " + locationsToRemove.get(0).getString(namespaces));
+        // System.out.println(cache.getString(namespaces));
 
         // Check the cache content, which should no longer have any content below the old and new locations ...
         LinkedList<Location> afterRemoval = cache.getAllChildren(location.getPath());

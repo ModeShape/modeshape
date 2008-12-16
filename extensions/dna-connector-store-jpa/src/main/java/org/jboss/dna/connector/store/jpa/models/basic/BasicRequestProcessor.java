@@ -792,67 +792,72 @@ public class BasicRequestProcessor extends RequestProcessor {
             int maxDepth = request.maximumDepth();
             SubgraphQuery query = SubgraphQuery.create(getExecutionContext(), entities, actualLocation.getUuid(), path, maxDepth);
 
-            // Record all of the children ...
-            Path parent = path;
-            String parentUuid = actual.uuid;
-            Location parentLocation = actualLocation;
-            List<Location> children = new LinkedList<Location>();
-            boolean includeChildrenOfNodesAtMaxDepth = true;
-            for (ChildEntity child : query.getNodes(false, includeChildrenOfNodesAtMaxDepth)) {
-                String namespaceUri = child.getChildNamespace().getUri();
-                String localName = child.getChildName();
-                Name childName = nameFactory.create(namespaceUri, localName);
-                int sns = child.getSameNameSiblingIndex();
-                // Figure out who the parent is ...
-                String childParentUuid = child.getId().getParentUuidString();
-                if (!parentUuid.equals(childParentUuid)) {
-                    // The parent isn't the last parent, so record the children found so far ...
-                    request.setChildren(parentLocation, children);
-                    // And find the correct parent ...
-                    parentLocation = locationsByUuid.get(childParentUuid);
-                    parent = parentLocation.getPath();
-                    parentUuid = childParentUuid;
-                    children = new LinkedList<Location>();
+            try {
+                // Record all of the children ...
+                Path parent = path;
+                String parentUuid = actual.uuid;
+                Location parentLocation = actualLocation;
+                List<Location> children = new LinkedList<Location>();
+                boolean includeChildrenOfNodesAtMaxDepth = true;
+                for (ChildEntity child : query.getNodes(false, includeChildrenOfNodesAtMaxDepth)) {
+                    String namespaceUri = child.getChildNamespace().getUri();
+                    String localName = child.getChildName();
+                    Name childName = nameFactory.create(namespaceUri, localName);
+                    int sns = child.getSameNameSiblingIndex();
+                    // Figure out who the parent is ...
+                    String childParentUuid = child.getId().getParentUuidString();
+                    if (!parentUuid.equals(childParentUuid)) {
+                        // The parent isn't the last parent, so record the children found so far ...
+                        request.setChildren(parentLocation, children);
+                        // And find the correct parent ...
+                        parentLocation = locationsByUuid.get(childParentUuid);
+                        parent = parentLocation.getPath();
+                        parentUuid = childParentUuid;
+                        children = new LinkedList<Location>();
+                    }
+                    Path childPath = pathFactory.create(parent, childName, sns);
+                    String childUuidString = child.getId().getChildUuidString();
+                    Location childLocation = new Location(childPath, UUID.fromString(childUuidString));
+                    locationsByUuid.put(childUuidString, childLocation);
+                    children.add(childLocation);
                 }
-                Path childPath = pathFactory.create(parent, childName, sns);
-                String childUuidString = child.getId().getChildUuidString();
-                Location childLocation = new Location(childPath, UUID.fromString(childUuidString));
-                locationsByUuid.put(childUuidString, childLocation);
-                children.add(childLocation);
-            }
-            if (!children.isEmpty()) {
-                request.setChildren(parentLocation, children);
-            }
+                if (!children.isEmpty()) {
+                    request.setChildren(parentLocation, children);
+                }
 
-            // Note that we've found children for nodes that are at the maximum depth. This is so that the nodes
-            // in the subgraph all have the correct children. However, we don't want to store the properties for
-            // any node whose depth is greater than the maximum depth. Therefore, only get the properties that
-            // include nodes within the maximum depth...
-            includeChildrenOfNodesAtMaxDepth = false;
+                // Note that we've found children for nodes that are at the maximum depth. This is so that the nodes
+                // in the subgraph all have the correct children. However, we don't want to store the properties for
+                // any node whose depth is greater than the maximum depth. Therefore, only get the properties that
+                // include nodes within the maximum depth...
+                includeChildrenOfNodesAtMaxDepth = false;
 
-            // Now record all of the properties ...
-            for (PropertiesEntity props : query.getProperties(true, includeChildrenOfNodesAtMaxDepth)) {
-                boolean compressed = props.isCompressed();
-                int propertyCount = props.getPropertyCount();
-                Collection<Property> properties = new ArrayList<Property>(propertyCount);
-                Location nodeLocation = locationsByUuid.get(props.getId().getUuidString());
-                assert nodeLocation != null;
-                // Record the UUID as a property, since it's not stored in the serialized properties...
-                properties.add(actualLocation.getIdProperty(DnaLexicon.UUID));
-                // Deserialize all the properties (except the UUID)...
-                byte[] data = props.getData();
-                if (data != null) {
-                    LargeValueSerializer largeValues = new LargeValueSerializer(props);
-                    ByteArrayInputStream bais = new ByteArrayInputStream(data);
-                    InputStream is = compressed ? new GZIPInputStream(bais) : bais;
-                    ObjectInputStream ois = new ObjectInputStream(is);
-                    try {
-                        serializer.deserializeAllProperties(ois, properties, largeValues);
-                        request.setProperties(nodeLocation, properties);
-                    } finally {
-                        ois.close();
+                // Now record all of the properties ...
+                for (PropertiesEntity props : query.getProperties(true, includeChildrenOfNodesAtMaxDepth)) {
+                    boolean compressed = props.isCompressed();
+                    int propertyCount = props.getPropertyCount();
+                    Collection<Property> properties = new ArrayList<Property>(propertyCount);
+                    Location nodeLocation = locationsByUuid.get(props.getId().getUuidString());
+                    assert nodeLocation != null;
+                    // Record the UUID as a property, since it's not stored in the serialized properties...
+                    properties.add(actualLocation.getIdProperty(DnaLexicon.UUID));
+                    // Deserialize all the properties (except the UUID)...
+                    byte[] data = props.getData();
+                    if (data != null) {
+                        LargeValueSerializer largeValues = new LargeValueSerializer(props);
+                        ByteArrayInputStream bais = new ByteArrayInputStream(data);
+                        InputStream is = compressed ? new GZIPInputStream(bais) : bais;
+                        ObjectInputStream ois = new ObjectInputStream(is);
+                        try {
+                            serializer.deserializeAllProperties(ois, properties, largeValues);
+                            request.setProperties(nodeLocation, properties);
+                        } finally {
+                            ois.close();
+                        }
                     }
                 }
+            } finally {
+                // Close and release the temporary data used for this operation ...
+                query.close();
             }
 
         } catch (Throwable e) { // Includes PathNotFoundException
@@ -889,24 +894,35 @@ public class BasicRequestProcessor extends RequestProcessor {
 
             // Compute the subgraph, including the root ...
             SubgraphQuery query = SubgraphQuery.create(getExecutionContext(), entities, actualLocation.getUuid(), path, 0);
-            ChildEntity deleted = query.getNode();
-            String parentUuidString = deleted.getId().getParentUuidString();
-            String childName = deleted.getChildName();
-            long nsId = deleted.getChildNamespace().getId();
-            int indexInParent = deleted.getIndexInParent();
+            try {
+                ChildEntity deleted = query.getNode();
+                String parentUuidString = deleted.getId().getParentUuidString();
+                String childName = deleted.getChildName();
+                long nsId = deleted.getChildNamespace().getId();
+                int indexInParent = deleted.getIndexInParent();
 
-            // Get the locations of all deleted nodes, which will be required by events ...
-            List<Location> deletedLocations = query.getNodeLocations(true, true);
+                // Get the locations of all deleted nodes, which will be required by events ...
+                List<Location> deletedLocations = query.getNodeLocations(true, true);
 
-            // Now delete the subgraph ...
-            query.deleteSubgraph(true);
+                // Now delete the subgraph ...
+                SubgraphQuery.Resolver resolver = new SubgraphQuery.Resolver() {
+                    public Location getLocationFor( UUID uuid ) {
+                        ActualLocation actual = getActualLocation(new Location(uuid));
+                        return (actual != null) ? actual.location : null;
+                    }
+                };
+                query.deleteSubgraph(true, resolver);
 
-            // And adjust the SNS index and indexes ...
-            ChildEntity.adjustSnsIndexesAndIndexesAfterRemoving(entities, parentUuidString, childName, nsId, indexInParent);
-            entities.flush();
+                // And adjust the SNS index and indexes ...
+                ChildEntity.adjustSnsIndexesAndIndexesAfterRemoving(entities, parentUuidString, childName, nsId, indexInParent);
+                entities.flush();
 
-            // Remove from the cache of children locations all entries for deleted nodes ...
-            cache.removeBranch(deletedLocations);
+                // Remove from the cache of children locations all entries for deleted nodes ...
+                cache.removeBranch(deletedLocations);
+            } finally {
+                // Close and release the temporary data used for this operation ...
+                query.close();
+            }
 
         } catch (Throwable e) { // Includes PathNotFoundException
             request.setError(e);

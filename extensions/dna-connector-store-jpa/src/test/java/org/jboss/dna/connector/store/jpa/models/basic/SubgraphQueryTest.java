@@ -67,6 +67,7 @@ public class SubgraphQueryTest {
     private List<Location> locations;
     private String[] validLargeValues;
     private SubgraphQuery query;
+    private SubgraphQuery.Resolver resolver;
 
     @BeforeClass
     public static void beforeAll() throws Exception {
@@ -97,6 +98,11 @@ public class SubgraphQueryTest {
         factory = configurator.buildEntityManagerFactory();
         manager = factory.createEntityManager();
         namespaces = new Namespaces(manager);
+        resolver = new SubgraphQuery.Resolver() {
+            public Location getLocationFor( UUID uuid ) {
+                return new Location(uuid);
+            }
+        };
 
         manager.getTransaction().begin();
 
@@ -440,7 +446,7 @@ public class SubgraphQueryTest {
         verifyNextLocationIs("/a/a1/a2");
         verifyNextLocationIs("/a/a1/a3");
         verifyNoMoreLocations();
-        query.deleteSubgraph(true);
+        query.deleteSubgraph(true, resolver);
         query.close();
 
         // Commit the transaction, and start another ...

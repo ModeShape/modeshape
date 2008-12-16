@@ -26,6 +26,8 @@ import javax.transaction.xa.XAResource;
 import net.jcip.annotations.NotThreadSafe;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.cache.CachePolicy;
+import org.jboss.dna.graph.properties.PathNotFoundException;
+import org.jboss.dna.graph.properties.ReferentialIntegrityException;
 import org.jboss.dna.graph.requests.Request;
 
 /**
@@ -85,6 +87,9 @@ public interface RepositoryConnection {
      * 
      * @param context the environment in which the commands are being executed; never null
      * @param request the request to be executed; never null
+     * @throws PathNotFoundException if the request(s) contain paths to nodes that do not exist
+     * @throws ReferentialIntegrityException if the request is or contains a delete operation, where the delete could not be
+     *         performed because some references to deleted nodes would have remained after the delete operation completed
      * @throws RepositorySourceException if there is a problem loading the node data
      */
     void execute( ExecutionContext context,

@@ -42,6 +42,7 @@ public final class JpaConnectorI18n {
     public static I18n unableToMoveRootNode;
     public static I18n locationShouldHavePathAndOrProperty;
     public static I18n invalidReferences;
+    public static I18n unableToDeleteBecauseOfReferences;
 
     public static I18n basicModelDescription;
 
