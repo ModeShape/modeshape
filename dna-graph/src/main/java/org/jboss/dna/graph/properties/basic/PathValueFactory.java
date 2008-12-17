@@ -507,6 +507,7 @@ public class PathValueFactory extends AbstractValueFactory<Path> implements Path
      */
     public Path create( Path parentPath,
                         String subpath ) {
+        CheckArg.isNotNull(parentPath, "parentPath");
         CheckArg.isNotNull(subpath, "subpath");
         subpath = subpath.trim();
         boolean singleChild = subpath.indexOf(Path.DELIMITER) == -1;
