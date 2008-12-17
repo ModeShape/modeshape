@@ -27,6 +27,7 @@ import static org.junit.Assert.assertThat;
 import static org.junit.matchers.IsCollectionContaining.hasItems;
 import java.io.UnsupportedEncodingException;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -67,7 +68,6 @@ public class SubgraphQueryTest {
     private List<Location> locations;
     private String[] validLargeValues;
     private SubgraphQuery query;
-    private SubgraphQuery.Resolver resolver;
 
     @BeforeClass
     public static void beforeAll() throws Exception {
@@ -98,11 +98,6 @@ public class SubgraphQueryTest {
         factory = configurator.buildEntityManagerFactory();
         manager = factory.createEntityManager();
         namespaces = new Namespaces(manager);
-        resolver = new SubgraphQuery.Resolver() {
-            public Location getLocationFor( UUID uuid ) {
-                return new Location(uuid);
-            }
-        };
 
         manager.getTransaction().begin();
 
@@ -187,6 +182,23 @@ public class SubgraphQueryTest {
         manager.persist(props);
 
         uuidByPath.put(path, childUuid);
+    }
+
+    protected ReferenceEntity createReferenceBetween( String fromPathStr,
+                                                      String toPathStr ) {
+        Path fromPath = path(fromPathStr);
+        Path toPath = path(toPathStr);
+
+        // Look up the UUIDs ...
+        UUID fromUuid = uuidByPath.get(fromPath);
+        UUID toUuid = uuidByPath.get(toPath);
+        assert fromUuid != null;
+        assert toUuid != null;
+
+        // Now create a reference entity ...
+        ReferenceEntity entity = new ReferenceEntity(new ReferenceId(fromUuid.toString(), toUuid.toString()));
+        manager.persist(entity);
+        return entity;
     }
 
     protected UUID uuidForPath( String pathStr ) {
@@ -446,7 +458,8 @@ public class SubgraphQueryTest {
         verifyNextLocationIs("/a/a1/a2");
         verifyNextLocationIs("/a/a1/a3");
         verifyNoMoreLocations();
-        query.deleteSubgraph(true, resolver);
+        query.deleteSubgraph(true);
+        assertThat(query.getInvalidReferences().isEmpty(), is(true));
         query.close();
 
         // Commit the transaction, and start another ...
@@ -494,8 +507,92 @@ public class SubgraphQueryTest {
         // Now, load the one node remaining with
     }
 
-    // @Test
-    // public void shouldCreateMultipleSubgraphQueriesInDatabase() {
-    // }
+    @Test
+    public void shouldNotDeleteSubgraphThatHasNodesReferencedByOtherNodesNotBeingDeleted() throws Exception {
+        // Verify that all the nodes with large values do indeed have them ...
+        verifyNodesHaveLargeValues("/a/a1", "/a/a2", "/a/a2/a1");
+
+        // Count the number of objects ...
+        assertThat((Long)manager.createQuery("select count(*) from LargeValueEntity").getSingleResult(), is(3L));
+        assertThat((Long)manager.createQuery("select count(*) from PropertiesEntity").getSingleResult(), is(14L));
+        assertThat((Long)manager.createQuery("select count(*) from ChildEntity").getSingleResult(), is(14L));
+
+        // Create references from the "/a/a2" (not being deleted) branch, to the branch being deleted...
+        List<ReferenceEntity> expectedInvalidRefs = new ArrayList<ReferenceEntity>();
+        expectedInvalidRefs.add(createReferenceBetween("/a/a2", "/a/a1"));
+        expectedInvalidRefs.add(createReferenceBetween("/a/a2/a1", "/a/a1/a1"));
+        expectedInvalidRefs.add(createReferenceBetween("/a/a2/a2", "/a/a1/a2"));
+
+        // Create references between nodes in the branch being deleted (these shouldn't matter) ...
+        createReferenceBetween("/a/a1", "/a/a1/a1");
+        createReferenceBetween("/a/a1/a2", "/a/a1/a3");
+
+        // Delete "/a/a1". Note that "/a/a1" has a large value that is shared by "/a/a2", but it's also the only
+        // user of large value #1.
+        Path path = path("/a/a1");
+        UUID uuid = uuidByPath.get(path);
+
+        query = SubgraphQuery.create(context, manager, uuid, path, Integer.MAX_VALUE);
+        locations = query.getNodeLocations(true, true);
+        verifyNextLocationIs("/a/a1");
+        verifyNextLocationIs("/a/a1/a1");
+        verifyNextLocationIs("/a/a1/a2");
+        verifyNextLocationIs("/a/a1/a3");
+        verifyNoMoreLocations();
+        query.deleteSubgraph(true);
+
+        // Now there should be invalid references ...
+        List<ReferenceEntity> invalidReferences = query.getInvalidReferences();
+        assertThat(invalidReferences.size(), is(3));
+        invalidReferences.removeAll(invalidReferences);
+        assertThat(invalidReferences.size(), is(0));
+        query.close();
+    }
+
+    @SuppressWarnings( "unchecked" )
+    @Test
+    public void shouldDeleteSubgraphThatHasInternalReferences() throws Exception {
+        // Verify that all the nodes with large values do indeed have them ...
+        verifyNodesHaveLargeValues("/a/a1", "/a/a2", "/a/a2/a1");
+
+        // Count the number of objects ...
+        assertThat((Long)manager.createQuery("select count(*) from LargeValueEntity").getSingleResult(), is(3L));
+        assertThat((Long)manager.createQuery("select count(*) from PropertiesEntity").getSingleResult(), is(14L));
+        assertThat((Long)manager.createQuery("select count(*) from ChildEntity").getSingleResult(), is(14L));
+
+        // Create references from the nodes that aren't being deleted (these won't matter, but will remain)...
+        List<ReferenceEntity> expectedValidRefs = new ArrayList<ReferenceEntity>();
+        expectedValidRefs.add(createReferenceBetween("/a/a2", "/a/a2/a1"));
+
+        // Create references between nodes in the branch being deleted (these shouldn't matter) ...
+        createReferenceBetween("/a/a1", "/a/a1/a1");
+        createReferenceBetween("/a/a1/a2", "/a/a1/a3");
+
+        // Delete "/a/a1". Note that "/a/a1" has a large value that is shared by "/a/a2", but it's also the only
+        // user of large value #1.
+        Path path = path("/a/a1");
+        UUID uuid = uuidByPath.get(path);
+
+        query = SubgraphQuery.create(context, manager, uuid, path, Integer.MAX_VALUE);
+        locations = query.getNodeLocations(true, true);
+        verifyNextLocationIs("/a/a1");
+        verifyNextLocationIs("/a/a1/a1");
+        verifyNextLocationIs("/a/a1/a2");
+        verifyNextLocationIs("/a/a1/a3");
+        verifyNoMoreLocations();
+        query.deleteSubgraph(true);
+
+        // Now there should be invalid references ...
+        List<ReferenceEntity> invalidReferences = query.getInvalidReferences();
+        assertThat(invalidReferences.size(), is(0));
+        query.close();
+
+        // There should be no references any more ...
+        Query refQuery = manager.createQuery("select ref from ReferenceEntity as ref");
+        List<ReferenceEntity> remainingReferences = refQuery.getResultList();
+        assertThat(remainingReferences.size(), is(1));
+        remainingReferences.removeAll(expectedValidRefs);
+        assertThat(remainingReferences.size(), is(0));
+    }
 
 }

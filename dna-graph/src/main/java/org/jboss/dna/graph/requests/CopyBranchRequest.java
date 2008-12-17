@@ -118,7 +118,7 @@ public class CopyBranchRequest extends Request {
      * processing the request, and the actual location must have a {@link Location#getPath() path}.
      * 
      * @param oldLocation the actual location of the node before being renamed
-     * @param newLocation the actual location of the node after being renamed
+     * @param newLocation the actual location of the new copy of the node
      * @throws IllegalArgumentException if the either location is null, if the old location does not represent the
      *         {@link Location#isSame(Location) same location} as the {@link #from() from location}, if the new location does not
      *         represent the {@link Location#isSame(Location) same location} as the {@link #into() into location}, or if the
@@ -129,9 +129,7 @@ public class CopyBranchRequest extends Request {
         if (!from.isSame(oldLocation)) { // not same if actual is null
             throw new IllegalArgumentException(GraphI18n.actualLocationIsNotSameAsInputLocation.text(oldLocation, from));
         }
-        if (!into.isSame(newLocation, false)) { // not same if actual is null
-            throw new IllegalArgumentException(GraphI18n.actualLocationIsNotSameAsInputLocation.text(newLocation, into));
-        }
+        CheckArg.isNotNull(newLocation, "newLocation");
         assert oldLocation != null;
         assert newLocation != null;
         if (!oldLocation.hasPath()) {
@@ -139,6 +137,10 @@ public class CopyBranchRequest extends Request {
         }
         if (!newLocation.hasPath()) {
             throw new IllegalArgumentException(GraphI18n.actualNewLocationMustHavePath.text(newLocation));
+        }
+        // The 'into' should be the parent of the 'newLocation' ...
+        if (into.hasPath() && !newLocation.getPath().getParent().equals(into.getPath())) {
+            throw new IllegalArgumentException(GraphI18n.actualLocationIsNotChildOfInputLocation.text(newLocation, into));
         }
         this.actualNewLocation = newLocation;
     }

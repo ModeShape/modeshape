@@ -67,6 +67,7 @@ public final class GraphI18n {
     public static I18n multipleErrorsWhileExecutingRequests;
     public static I18n unableToAddMoreRequestsToAlreadyExecutedBatch;
     public static I18n actualLocationIsNotSameAsInputLocation;
+    public static I18n actualLocationIsNotChildOfInputLocation;
     public static I18n actualLocationMustHavePath;
     public static I18n actualNewLocationIsNotSameAsInputLocation;
     public static I18n actualNewLocationMustHavePath;

@@ -34,6 +34,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
@@ -185,71 +186,14 @@ public class BasicRequestProcessor extends RequestProcessor {
             String childNsUri = childName.getNamespaceUri();
             NamespaceEntity ns = namespaces.get(childNsUri, true);
             assert ns != null;
-
-            // Figure out the next SNS index and index-in-parent for this new child ...
-            int nextSnsIndex = 1; // SNS index is 1-based
-            int nextIndexInParent = 0; // index-in-parent is 0-based
             final Path parentPath = actual.location.getPath();
             assert parentPath != null;
-            // Look in the cache for the children of the parent node.
-            LinkedList<Location> childrenOfParent = cache.getAllChildren(parentPath);
-            if (childrenOfParent != null) {
-                // The cache had the complete list of children for the parent node, which means
-                // we know about all of the children and can walk the children to figure out the next indexes.
-                nextIndexInParent = childrenOfParent.size();
-                if (nextIndexInParent > 1) {
-                    // Since we want the last indexes, process the list backwards ...
-                    ListIterator<Location> iter = childrenOfParent.listIterator(childrenOfParent.size());
-                    while (iter.hasPrevious()) {
-                        Location existing = iter.previous();
-                        Path.Segment segment = existing.getPath().getLastSegment();
-                        if (!segment.getName().equals(childName)) continue;
-                        // Otherwise the name matched, so get the indexes ...
-                        nextSnsIndex = segment.getIndex() + 1;
-                    }
-                }
-            } else {
-                // The cache did not have the complete list of children for the parent node,
-                // so we need to look the values up by querying the database ...
 
-                // Find the largest SNS index in the existing ChildEntity objects with the same name ...
-                String childLocalName = childName.getLocalName();
-                Query query = entities.createNamedQuery("ChildEntity.findMaximumSnsIndex");
-                query.setParameter("parentUuid", parentUuidString);
-                query.setParameter("ns", ns.getId());
-                query.setParameter("childName", childLocalName);
-                try {
-                    Integer result = (Integer)query.getSingleResult();
-                    nextSnsIndex = result != null ? result + 1 : 1; // SNS index is 1-based
-                } catch (NoResultException e) {
-                }
+            // Figure out the next SNS index and index-in-parent for this new child ...
+            actualLocation = addNewChild(actual, uuidString, childName);
 
-                // Find the largest child index in the existing ChildEntity objects ...
-                query = entities.createNamedQuery("ChildEntity.findMaximumChildIndex");
-                query.setParameter("parentUuid", parentUuidString);
-                try {
-                    Integer result = (Integer)query.getSingleResult();
-                    nextIndexInParent = result != null ? result + 1 : 0; // index-in-parent is 0-based
-                } catch (NoResultException e) {
-                }
-            }
-
-            // Create the new ChildEntity ...
-            ChildId id = new ChildId(parentUuidString, uuidString);
-            ChildEntity entity = new ChildEntity(id, nextIndexInParent, ns, childName.getLocalName(), nextSnsIndex);
-            entities.persist(entity);
-
-            // Set the actual path, regardless of the supplied path...
-            Path path = pathFactory.create(parentPath, childName, nextSnsIndex);
-            actualLocation = new Location(path, UUID.fromString(uuidString));
-
-            // Finally, update the cache with the information we know ...
-            if (childrenOfParent != null) {
-                // Add to the cached list of children ...
-                childrenOfParent.add(actualLocation);
-            }
             // Since we've just created this node, we know about all the children (actually, there are none).
-            cache.setAllChildren(path, new LinkedList<Location>());
+            cache.setAllChildren(actualLocation.getPath(), new LinkedList<Location>());
 
             // Flush the entities ...
             // entities.flush();
@@ -260,6 +204,89 @@ public class BasicRequestProcessor extends RequestProcessor {
             return;
         }
         request.setActualLocationOfNode(actualLocation);
+    }
+
+    protected Location addNewChild( ActualLocation parent,
+                                    String childUuid,
+                                    Name childName ) {
+        int nextSnsIndex = 1; // SNS index is 1-based
+        int nextIndexInParent = 0; // index-in-parent is 0-based
+        String childNsUri = childName.getNamespaceUri();
+        NamespaceEntity ns = namespaces.get(childNsUri, true);
+        assert ns != null;
+
+        final Path parentPath = parent.location.getPath();
+        assert parentPath != null;
+
+        // Look in the cache for the children of the parent node.
+        LinkedList<Location> childrenOfParent = cache.getAllChildren(parentPath);
+        if (childrenOfParent != null) {
+            // The cache had the complete list of children for the parent node, which means
+            // we know about all of the children and can walk the children to figure out the next indexes.
+            nextIndexInParent = childrenOfParent.size();
+            if (nextIndexInParent > 1) {
+                // Since we want the last indexes, process the list backwards ...
+                ListIterator<Location> iter = childrenOfParent.listIterator(childrenOfParent.size());
+                while (iter.hasPrevious()) {
+                    Location existing = iter.previous();
+                    Path.Segment segment = existing.getPath().getLastSegment();
+                    if (!segment.getName().equals(childName)) continue;
+                    // Otherwise the name matched, so get the indexes ...
+                    nextSnsIndex = segment.getIndex() + 1;
+                }
+            }
+        } else {
+            // The cache did not have the complete list of children for the parent node,
+            // so we need to look the values up by querying the database ...
+
+            // Find the largest SNS index in the existing ChildEntity objects with the same name ...
+            String childLocalName = childName.getLocalName();
+            Query query = entities.createNamedQuery("ChildEntity.findMaximumSnsIndex");
+            query.setParameter("parentUuid", parent.uuid);
+            query.setParameter("ns", ns.getId());
+            query.setParameter("childName", childLocalName);
+            try {
+                Integer result = (Integer)query.getSingleResult();
+                nextSnsIndex = result != null ? result + 1 : 1; // SNS index is 1-based
+            } catch (NoResultException e) {
+            }
+
+            // Find the largest child index in the existing ChildEntity objects ...
+            query = entities.createNamedQuery("ChildEntity.findMaximumChildIndex");
+            query.setParameter("parentUuid", parent.uuid);
+            try {
+                Integer result = (Integer)query.getSingleResult();
+                nextIndexInParent = result != null ? result + 1 : 0; // index-in-parent is 0-based
+            } catch (NoResultException e) {
+            }
+        }
+
+        // Create the new ChildEntity ...
+        ChildId id = new ChildId(parent.uuid, childUuid);
+        ChildEntity entity = new ChildEntity(id, nextIndexInParent, ns, childName.getLocalName(), nextSnsIndex);
+        entities.persist(entity);
+
+        // Set the actual path, regardless of the supplied path...
+        Path path = pathFactory.create(parentPath, childName, nextSnsIndex);
+        Location actualLocation = new Location(path, UUID.fromString(childUuid));
+
+        // Finally, update the cache with the information we know ...
+        if (childrenOfParent != null) {
+            // Add to the cached list of children ...
+            childrenOfParent.add(actualLocation);
+        }
+        return actualLocation;
+    }
+
+    protected class NextChildIndexes {
+        protected final int nextIndexInParent;
+        protected final int nextSnsIndex;
+
+        protected NextChildIndexes( int nextIndexInParent,
+                                    int nextSnsIndex ) {
+            this.nextIndexInParent = nextIndexInParent;
+            this.nextSnsIndex = nextSnsIndex;
+        }
     }
 
     /**
@@ -875,6 +902,85 @@ public class BasicRequestProcessor extends RequestProcessor {
     @Override
     public void process( CopyBranchRequest request ) {
         logger.trace(request.toString());
+        Location actualFromLocation = null;
+        Location actualToLocation = null;
+        try {
+            Location fromLocation = request.from();
+            ActualLocation actualFrom = getActualLocation(fromLocation);
+            actualFromLocation = actualFrom.location;
+            Path fromPath = actualFromLocation.getPath();
+
+            Location newParentLocation = request.into();
+            ActualLocation actualNewParent = getActualLocation(newParentLocation);
+            assert actualNewParent != null;
+
+            // Create a map that we'll use to record the new UUID for each of the original nodes ...
+            Map<String, String> originalToNewUuid = new HashMap<String, String>();
+
+            // Compute the subgraph, including the top node in the subgraph ...
+            SubgraphQuery query = SubgraphQuery.create(getExecutionContext(), entities, actualFromLocation.getUuid(), fromPath, 0);
+            try {
+                // Walk through the original nodes, creating new ChildEntity object (i.e., copy) for each original ...
+                List<ChildEntity> originalNodes = query.getNodes(true, true);
+                Iterator<ChildEntity> originalIter = originalNodes.iterator();
+
+                // Start with the original (top-level) node first, since we need to add it to the list of children ...
+                if (originalIter.hasNext()) {
+                    ChildEntity original = originalIter.next();
+
+                    // Create a new UUID for the copy ...
+                    String copyUuid = UUID.randomUUID().toString();
+                    originalToNewUuid.put(original.getId().getChildUuidString(), copyUuid);
+
+                    // Now add the new copy of the original ...
+                    Name childName = fromPath.getLastSegment().getName();
+                    actualToLocation = addNewChild(actualNewParent, copyUuid, childName);
+                }
+
+                // Now process the children in the subgraph ...
+                while (originalIter.hasNext()) {
+                    ChildEntity original = originalIter.next();
+                    String newParentUuidOfCopy = originalToNewUuid.get(original.getId().getParentUuidString());
+                    assert newParentUuidOfCopy != null;
+
+                    // Create a new UUID for the copy ...
+                    String copyUuid = UUID.randomUUID().toString();
+                    originalToNewUuid.put(original.getId().getChildUuidString(), copyUuid);
+
+                    // Create the copy ...
+                    ChildEntity copy = new ChildEntity(new ChildId(newParentUuidOfCopy, copyUuid), original.getIndexInParent(),
+                                                       original.getChildNamespace(), original.getChildName(),
+                                                       original.getSameNameSiblingIndex());
+                    entities.persist(copy);
+                }
+                entities.flush();
+
+                // Now process the properties, creating a copy (note references are not changed) ...
+                for (PropertiesEntity original : query.getProperties(true, true)) {
+                    // Find the UUID of the copy ...
+                    String copyUuid = originalToNewUuid.get(original.getId().getUuidString());
+                    assert copyUuid != null;
+
+                    // Create the copy ...
+                    PropertiesEntity copy = new PropertiesEntity(new NodeId(copyUuid));
+                    copy.setCompressed(original.isCompressed());
+                    copy.setData(original.getData());
+                    copy.setPropertyCount(original.getPropertyCount());
+                    copy.setReferentialIntegrityEnforced(original.isReferentialIntegrityEnforced());
+                    entities.persist(copy);
+                }
+                entities.flush();
+
+            } finally {
+                // Close and release the temporary data used for this operation ...
+                query.close();
+            }
+
+        } catch (Throwable e) { // Includes PathNotFoundException
+            request.setError(e);
+            return;
+        }
+        request.setActualLocations(actualFromLocation, actualToLocation);
     }
 
     /**
@@ -892,7 +998,7 @@ public class BasicRequestProcessor extends RequestProcessor {
             actualLocation = actual.location;
             Path path = actualLocation.getPath();
 
-            // Compute the subgraph, including the root ...
+            // Compute the subgraph, including the top node in the subgraph ...
             SubgraphQuery query = SubgraphQuery.create(getExecutionContext(), entities, actualLocation.getUuid(), path, 0);
             try {
                 ChildEntity deleted = query.getNode();
@@ -905,13 +1011,30 @@ public class BasicRequestProcessor extends RequestProcessor {
                 List<Location> deletedLocations = query.getNodeLocations(true, true);
 
                 // Now delete the subgraph ...
-                SubgraphQuery.Resolver resolver = new SubgraphQuery.Resolver() {
-                    public Location getLocationFor( UUID uuid ) {
-                        ActualLocation actual = getActualLocation(new Location(uuid));
-                        return (actual != null) ? actual.location : null;
+                query.deleteSubgraph(true);
+
+                // Verify referential integrity: that none of the deleted nodes are referenced by nodes not being deleted.
+                List<ReferenceEntity> invalidReferences = query.getInvalidReferences();
+                if (invalidReferences.size() > 0) {
+                    // Some of the references that remain will be invalid, since they point to nodes that
+                    // have just been deleted. Build up the information necessary to produce a useful exception ...
+                    ValueFactory<Reference> refFactory = getExecutionContext().getValueFactories().getReferenceFactory();
+                    Map<Location, List<Reference>> invalidRefs = new HashMap<Location, List<Reference>>();
+                    for (ReferenceEntity entity : invalidReferences) {
+                        UUID fromUuid = UUID.fromString(entity.getId().getFromUuidString());
+                        ActualLocation actualFromLocation = getActualLocation(new Location(fromUuid));
+                        Location fromLocation = actualFromLocation.location;
+                        List<Reference> refs = invalidRefs.get(fromLocation);
+                        if (refs == null) {
+                            refs = new ArrayList<Reference>();
+                            invalidRefs.put(fromLocation, refs);
+                        }
+                        UUID toUuid = UUID.fromString(entity.getId().getToUuidString());
+                        refs.add(refFactory.create(toUuid));
                     }
-                };
-                query.deleteSubgraph(true, resolver);
+                    String msg = JpaConnectorI18n.unableToDeleteBecauseOfReferences.text();
+                    throw new ReferentialIntegrityException(invalidRefs, msg);
+                }
 
                 // And adjust the SNS index and indexes ...
                 ChildEntity.adjustSnsIndexesAndIndexesAfterRemoving(entities, parentUuidString, childName, nsId, indexInParent);

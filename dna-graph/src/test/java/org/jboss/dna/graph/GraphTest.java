@@ -777,8 +777,16 @@ public class GraphTest {
 
         @Override
         public void process( CopyBranchRequest request ) {
-            // Just update the actual location
-            request.setActualLocations(actualLocationOf(request.from()), actualLocationOf(request.into()));
+            // Create a child under the new parent ...
+            if (request.into().hasPath()) {
+                Path childPath = context.getValueFactories().getPathFactory().create(request.into().getPath(), "child");
+                Location newChild = actualLocationOf(new Location(childPath));
+                // Just update the actual location
+                request.setActualLocations(actualLocationOf(request.from()), newChild);
+            } else {
+                // Just update the actual location
+                request.setActualLocations(actualLocationOf(request.from()), actualLocationOf(request.into()));
+            }
         }
 
         @Override

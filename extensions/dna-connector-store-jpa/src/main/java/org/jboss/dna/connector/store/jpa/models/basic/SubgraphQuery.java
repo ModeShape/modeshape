@@ -21,7 +21,6 @@
  */
 package org.jboss.dna.connector.store.jpa.models.basic;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -30,16 +29,12 @@ import java.util.UUID;
 import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
 import javax.persistence.Query;
-import org.jboss.dna.connector.store.jpa.JpaConnectorI18n;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.properties.Name;
 import org.jboss.dna.graph.properties.NameFactory;
 import org.jboss.dna.graph.properties.Path;
 import org.jboss.dna.graph.properties.PathFactory;
-import org.jboss.dna.graph.properties.Reference;
-import org.jboss.dna.graph.properties.ReferentialIntegrityException;
-import org.jboss.dna.graph.properties.ValueFactory;
 
 /**
  * Represents a temporary working area for a query that efficiently retrieves the nodes in a subgraph. This class uses the
@@ -54,10 +49,6 @@ import org.jboss.dna.graph.properties.ValueFactory;
  * @author Randall Hauch
  */
 public class SubgraphQuery {
-
-    public interface Resolver {
-        Location getLocationFor( UUID uuid );
-    }
 
     /**
      * Create a query that returns a subgraph at and below the node with the supplied path and the supplied UUID.
@@ -293,39 +284,27 @@ public class SubgraphQuery {
     }
 
     /**
-     * Delete the nodes in the subgraph. This method first checks for
+     * Determine whether there are any invalid references (typically called after {@link #deleteSubgraph(boolean)}).
      * 
-     * @param includeRoot true if the root node should also be deleted
-     * @param resolver the resolver that should be used to resolve UUIDs to the corresponding paths; may not be null
-     * @throws ReferentialIntegrityException if the repository's references after the delete would be invalid because they would
-     *         reference nodes that are to be deleted
+     * @return the list of references that are no longer valid
      */
     @SuppressWarnings( "unchecked" )
-    public void deleteSubgraph( boolean includeRoot,
-                                Resolver resolver ) throws ReferentialIntegrityException {
-        if (query == null) throw new IllegalStateException();
-
+    public List<ReferenceEntity> getInvalidReferences() {
         // Verify referential integrity: that none of the deleted nodes are referenced by nodes not being deleted.
         Query references = manager.createNamedQuery("SubgraphNodeEntity.getReferenceThatWillBeInvalid");
         references.setParameter("queryId", query.getId());
-        List<ReferenceEntity> invalidReferences = references.getResultList();
-        if (invalidReferences.size() > 0) {
-            ValueFactory<Reference> refFactory = context.getValueFactories().getReferenceFactory();
-            Map<Location, List<Reference>> invalidRefs = new HashMap<Location, List<Reference>>();
-            for (ReferenceEntity entity : invalidReferences) {
-                UUID fromUuid = UUID.fromString(entity.getId().getFromUuidString());
-                Location location = resolver.getLocationFor(fromUuid);
-                List<Reference> refs = invalidRefs.get(location);
-                if (refs == null) {
-                    refs = new ArrayList<Reference>();
-                    invalidRefs.put(location, refs);
-                }
-                UUID toUuid = UUID.fromString(entity.getId().getToUuidString());
-                refs.add(refFactory.create(toUuid));
-            }
-            String msg = JpaConnectorI18n.unableToDeleteBecauseOfReferences.text();
-            throw new ReferentialIntegrityException(invalidRefs, msg);
-        }
+        return references.getResultList();
+    }
+
+    /**
+     * Delete the nodes in the subgraph. This method first does not check for referential integrity (see
+     * {@link #getInvalidReferences()}).
+     * 
+     * @param includeRoot true if the root node should also be deleted
+     */
+    @SuppressWarnings( "unchecked" )
+    public void deleteSubgraph( boolean includeRoot ) {
+        if (query == null) throw new IllegalStateException();
 
         // Delete the PropertiesEntities ...
         //
@@ -349,13 +328,16 @@ public class SubgraphQuery {
         // Delete the PropertiesEntities, none of which will have large values ...
         Query delete = manager.createNamedQuery("SubgraphNodeEntity.deletePropertiesEntities");
         delete.setParameter("queryId", query.getId());
-        delete.setParameter("depth", includeRoot ? 0 : 1);
         delete.executeUpdate();
 
         // Delete the ChildEntities ...
         delete = manager.createNamedQuery("SubgraphNodeEntity.deleteChildEntities");
         delete.setParameter("queryId", query.getId());
-        delete.setParameter("depth", includeRoot ? 0 : 1);
+        delete.executeUpdate();
+
+        // Delete references ...
+        delete = manager.createNamedQuery("SubgraphNodeEntity.deleteReferences");
+        delete.setParameter("queryId", query.getId());
         delete.executeUpdate();
 
         // Delete unused large values ...
