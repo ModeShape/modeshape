@@ -46,6 +46,8 @@ import org.jboss.dna.graph.properties.NameFactory;
 import org.jboss.dna.graph.properties.Path;
 import org.jboss.dna.graph.properties.Property;
 import org.jboss.dna.graph.properties.PropertyFactory;
+import org.jboss.dna.graph.properties.Reference;
+import org.jboss.dna.graph.properties.ValueFormatException;
 import org.jboss.dna.graph.properties.Path.Segment;
 import org.jboss.dna.graph.requests.CompositeRequest;
 import org.jboss.dna.graph.requests.CopyBranchRequest;
@@ -687,7 +689,7 @@ public class Graph {
      * @param propertyName the property name
      * @return the interface used to specify the values
      */
-    public SetValuesTo<On<Conjunction<Graph>>> set( String propertyName ) {
+    public SetValues<Conjunction<Graph>> set( String propertyName ) {
         Name name = getContext().getValueFactories().getNameFactory().create(propertyName);
         return set(name);
     }
@@ -699,23 +701,130 @@ public class Graph {
      * @param propertyName the property name
      * @return the interface used to specify the values
      */
-    public SetValuesTo<On<Conjunction<Graph>>> set( final Name propertyName ) {
-        return new SetValuesTo<On<Conjunction<Graph>>>() {
+    public SetValues<Conjunction<Graph>> set( final Name propertyName ) {
+        return new SetValues<Conjunction<Graph>>() {
+            @SuppressWarnings( "synthetic-access" )
+            public SetValuesTo<Conjunction<Graph>> on( final Location location ) {
+                return new SetValuesTo<Conjunction<Graph>>() {
+                    public Conjunction<Graph> to( Node value ) {
+                        return to(value.getLocation());
+                    }
+
+                    public Conjunction<Graph> to( Location value ) {
+                        Reference ref = (Reference)convertReferenceValue(value);
+                        Property property = getContext().getPropertyFactory().create(propertyName, ref);
+                        UpdatePropertiesRequest request = new UpdatePropertiesRequest(location, property);
+                        queue().submit(request);
+                        return nextGraph;
+                    }
+
+                    public Conjunction<Graph> to( Object value ) {
+                        value = convertReferenceValue(value);
+                        Property property = getContext().getPropertyFactory().create(propertyName, value);
+                        UpdatePropertiesRequest request = new UpdatePropertiesRequest(location, property);
+                        queue().submit(request);
+                        return nextGraph;
+                    }
+
+                    public Conjunction<Graph> to( Object firstValue,
+                                                  Object... otherValues ) {
+                        firstValue = convertReferenceValue(firstValue);
+                        for (int i = 0, len = otherValues.length; i != len; ++i) {
+                            otherValues[i] = convertReferenceValue(otherValues[i]);
+                        }
+                        Property property = getContext().getPropertyFactory().create(propertyName, firstValue, otherValues);
+                        UpdatePropertiesRequest request = new UpdatePropertiesRequest(location, property);
+                        queue().submit(request);
+                        return nextGraph;
+                    }
+
+                    public Conjunction<Graph> to( Iterable<?> values ) {
+                        List<Object> valueList = new LinkedList<Object>();
+                        for (Object value : values) {
+                            value = convertReferenceValue(value);
+                            valueList.add(value);
+                        }
+                        Property property = getContext().getPropertyFactory().create(propertyName, valueList);
+                        UpdatePropertiesRequest request = new UpdatePropertiesRequest(location, property);
+                        queue().submit(request);
+                        return nextGraph;
+                    }
+
+                    public Conjunction<Graph> to( Iterator<?> values ) {
+                        List<Object> valueList = new LinkedList<Object>();
+                        while (values.hasNext()) {
+                            Object value = values.next();
+                            valueList.add(value);
+                        }
+                        Property property = getContext().getPropertyFactory().create(propertyName, valueList);
+                        UpdatePropertiesRequest request = new UpdatePropertiesRequest(location, property);
+                        queue().submit(request);
+                        return nextGraph;
+                    }
+                };
+            }
+
+            public SetValuesTo<Conjunction<Graph>> on( String path ) {
+                return on(new Location(createPath(path)));
+            }
+
+            public SetValuesTo<Conjunction<Graph>> on( Path path ) {
+                return on(new Location(path));
+            }
+
+            public SetValuesTo<Conjunction<Graph>> on( Property idProperty ) {
+                return on(new Location(idProperty));
+            }
+
+            public SetValuesTo<Conjunction<Graph>> on( Property firstIdProperty,
+                                                       Property... additionalIdProperties ) {
+                return on(new Location(firstIdProperty, additionalIdProperties));
+            }
+
+            public SetValuesTo<Conjunction<Graph>> on( UUID uuid ) {
+                return on(new Location(uuid));
+            }
+
+            public On<Conjunction<Graph>> to( Node node ) {
+                Reference value = (Reference)convertReferenceValue(node);
+                return set(getContext().getPropertyFactory().create(propertyName, value));
+            }
+
+            public On<Conjunction<Graph>> to( Location location ) {
+                Reference value = (Reference)convertReferenceValue(location);
+                return set(getContext().getPropertyFactory().create(propertyName, value));
+            }
+
             public On<Conjunction<Graph>> to( Object value ) {
+                value = convertReferenceValue(value);
                 return set(getContext().getPropertyFactory().create(propertyName, value));
             }
 
             public On<Conjunction<Graph>> to( Object firstValue,
                                               Object... otherValues ) {
+                firstValue = convertReferenceValue(firstValue);
+                for (int i = 0, len = otherValues.length; i != len; ++i) {
+                    otherValues[i] = convertReferenceValue(otherValues[i]);
+                }
                 return set(getContext().getPropertyFactory().create(propertyName, firstValue, otherValues));
             }
 
             public On<Conjunction<Graph>> to( Iterable<?> values ) {
-                return set(getContext().getPropertyFactory().create(propertyName, values));
+                List<Object> valueList = new LinkedList<Object>();
+                for (Object value : values) {
+                    value = convertReferenceValue(value);
+                    valueList.add(value);
+                }
+                return set(getContext().getPropertyFactory().create(propertyName, valueList));
             }
 
             public On<Conjunction<Graph>> to( Iterator<?> values ) {
-                return set(getContext().getPropertyFactory().create(propertyName, values));
+                List<Object> valueList = new LinkedList<Object>();
+                while (values.hasNext()) {
+                    Object value = values.next();
+                    valueList.add(value);
+                }
+                return set(getContext().getPropertyFactory().create(propertyName, valueList));
             }
         };
     }
@@ -1089,6 +1198,19 @@ public class Graph {
     public Node getNodeAt( Property firstIdProperty,
                            Property... additionalIdProperties ) {
         return getNodeAt(new Location(firstIdProperty, additionalIdProperties));
+    }
+
+    /**
+     * Request to read the node given by the supplied reference value.
+     * 
+     * @param reference the reference property value that is to be resolved into a node
+     * @return the node that is read from the repository
+     * @throws ValueFormatException if the supplied reference could not be converted to an identifier property value
+     */
+    public Node resolve( Reference reference ) {
+        CheckArg.isNotNull(reference, "reference");
+        UUID uuid = context.getValueFactories().getUuidFactory().create(reference);
+        return getNodeAt(uuid);
     }
 
     /**
@@ -1859,7 +1981,7 @@ public class Graph {
          * @param propertyName the property name
          * @return the interface used to specify the values
          */
-        public SetValuesTo<On<BatchConjunction>> set( String propertyName ) {
+        public SetValues<BatchConjunction> set( String propertyName ) {
             Name name = getContext().getValueFactories().getNameFactory().create(propertyName);
             return set(name);
         }
@@ -1871,23 +1993,129 @@ public class Graph {
          * @param propertyName the property name
          * @return the interface used to specify the values
          */
-        public SetValuesTo<On<BatchConjunction>> set( final Name propertyName ) {
-            return new SetValuesTo<On<BatchConjunction>>() {
+        public SetValues<BatchConjunction> set( final Name propertyName ) {
+            return new SetValues<BatchConjunction>() {
+                public SetValuesTo<BatchConjunction> on( final Location location ) {
+                    return new SetValuesTo<BatchConjunction>() {
+                        public BatchConjunction to( Node value ) {
+                            return to(value.getLocation());
+                        }
+
+                        public BatchConjunction to( Location value ) {
+                            Reference ref = (Reference)convertReferenceValue(value);
+                            Property property = getContext().getPropertyFactory().create(propertyName, ref);
+                            UpdatePropertiesRequest request = new UpdatePropertiesRequest(location, property);
+                            requestQueue.submit(request);
+                            return nextRequests;
+                        }
+
+                        public BatchConjunction to( Object value ) {
+                            value = convertReferenceValue(value);
+                            Property property = getContext().getPropertyFactory().create(propertyName, value);
+                            UpdatePropertiesRequest request = new UpdatePropertiesRequest(location, property);
+                            requestQueue.submit(request);
+                            return nextRequests;
+                        }
+
+                        public BatchConjunction to( Object firstValue,
+                                                    Object... otherValues ) {
+                            firstValue = convertReferenceValue(firstValue);
+                            for (int i = 0, len = otherValues.length; i != len; ++i) {
+                                otherValues[i] = convertReferenceValue(otherValues[i]);
+                            }
+                            Property property = getContext().getPropertyFactory().create(propertyName, firstValue, otherValues);
+                            UpdatePropertiesRequest request = new UpdatePropertiesRequest(location, property);
+                            requestQueue.submit(request);
+                            return nextRequests;
+                        }
+
+                        public BatchConjunction to( Iterable<?> values ) {
+                            List<Object> valueList = new LinkedList<Object>();
+                            for (Object value : values) {
+                                value = convertReferenceValue(value);
+                                valueList.add(value);
+                            }
+                            Property property = getContext().getPropertyFactory().create(propertyName, valueList);
+                            UpdatePropertiesRequest request = new UpdatePropertiesRequest(location, property);
+                            requestQueue.submit(request);
+                            return nextRequests;
+                        }
+
+                        public BatchConjunction to( Iterator<?> values ) {
+                            List<Object> valueList = new LinkedList<Object>();
+                            while (values.hasNext()) {
+                                Object value = values.next();
+                                valueList.add(value);
+                            }
+                            Property property = getContext().getPropertyFactory().create(propertyName, valueList);
+                            UpdatePropertiesRequest request = new UpdatePropertiesRequest(location, property);
+                            requestQueue.submit(request);
+                            return nextRequests;
+                        }
+                    };
+                }
+
+                public SetValuesTo<BatchConjunction> on( String path ) {
+                    return on(new Location(createPath(path)));
+                }
+
+                public SetValuesTo<BatchConjunction> on( Path path ) {
+                    return on(new Location(path));
+                }
+
+                public SetValuesTo<BatchConjunction> on( Property idProperty ) {
+                    return on(new Location(idProperty));
+                }
+
+                public SetValuesTo<BatchConjunction> on( Property firstIdProperty,
+                                                         Property... additionalIdProperties ) {
+                    return on(new Location(firstIdProperty, additionalIdProperties));
+                }
+
+                public SetValuesTo<BatchConjunction> on( UUID uuid ) {
+                    return on(new Location(uuid));
+                }
+
+                public On<BatchConjunction> to( Node value ) {
+                    Object reference = convertReferenceValue(value);
+                    return set(getContext().getPropertyFactory().create(propertyName, reference));
+                }
+
+                public On<BatchConjunction> to( Location value ) {
+                    Object reference = convertReferenceValue(value);
+                    return set(getContext().getPropertyFactory().create(propertyName, reference));
+                }
+
                 public On<BatchConjunction> to( Object value ) {
+                    value = convertReferenceValue(value);
                     return set(getContext().getPropertyFactory().create(propertyName, value));
                 }
 
                 public On<BatchConjunction> to( Object firstValue,
                                                 Object... otherValues ) {
+                    firstValue = convertReferenceValue(firstValue);
+                    for (int i = 0, len = otherValues.length; i != len; ++i) {
+                        otherValues[i] = convertReferenceValue(otherValues[i]);
+                    }
                     return set(getContext().getPropertyFactory().create(propertyName, firstValue, otherValues));
                 }
 
                 public On<BatchConjunction> to( Iterable<?> values ) {
-                    return set(getContext().getPropertyFactory().create(propertyName, values));
+                    List<Object> valueList = new LinkedList<Object>();
+                    for (Object value : values) {
+                        value = convertReferenceValue(value);
+                        valueList.add(value);
+                    }
+                    return set(getContext().getPropertyFactory().create(propertyName, valueList));
                 }
 
                 public On<BatchConjunction> to( Iterator<?> values ) {
-                    return set(getContext().getPropertyFactory().create(propertyName, values));
+                    List<Object> valueList = new LinkedList<Object>();
+                    while (values.hasNext()) {
+                        Object value = values.next();
+                        valueList.add(value);
+                    }
+                    return set(getContext().getPropertyFactory().create(propertyName, valueList));
                 }
             };
         }
@@ -2251,6 +2479,37 @@ public class Graph {
         public Results execute() {
             return this.requestQueue.execute();
         }
+    }
+
+    /**
+     * Utility method for checking a property value. If the value is a {@link Node} or {@link Location}, a {@link Reference} value
+     * is created (if the node/location has a UUID); otherwise, the value is returned as is.
+     * 
+     * @param value the property value
+     * @return the property value, which may be a {@link Reference} if the input value is a Node or Location
+     */
+    protected Object convertReferenceValue( Object value ) {
+        if (value instanceof Node) {
+            Node node = (Node)value;
+            UUID uuid = node.getLocation().getUuid();
+            if (uuid == null) {
+                String nodeString = node.getLocation().getString(getContext().getNamespaceRegistry());
+                String msg = GraphI18n.unableToCreateReferenceToNodeWithoutUuid.text(nodeString);
+                throw new IllegalArgumentException(msg);
+            }
+            return getContext().getValueFactories().getReferenceFactory().create(uuid);
+        }
+        if (value instanceof Location) {
+            Location location = (Location)value;
+            UUID uuid = location.getUuid();
+            if (uuid == null) {
+                String nodeString = location.getString(getContext().getNamespaceRegistry());
+                String msg = GraphI18n.unableToCreateReferenceToNodeWithoutUuid.text(nodeString);
+                throw new IllegalArgumentException(msg);
+            }
+            return getContext().getValueFactories().getReferenceFactory().create(uuid);
+        }
+        return value;
     }
 
     /**
@@ -2864,41 +3123,86 @@ public class Graph {
     /**
      * A component used to set the values on a property.
      * 
+     * @param <Next> the next command
+     * @author Randall Hauch
+     */
+    public interface SetValues<Next> extends On<SetValuesTo<Next>>, SetValuesTo<On<Next>> {
+    }
+
+    /**
+     * A component used to set the values on a property.
+     * 
      * @param <Next>
      * @author Randall Hauch
      */
     public interface SetValuesTo<Next> {
+
         /**
-         * Set the property value to the given object.
+         * Set the property value to be a reference to the given node. Note that it is an error if the Node does not have a
+         * {@link Location#getUuid() UUID}.
+         * 
+         * @param node the node to which a reference should be set
+         * @return the interface for additional requests or actions
+         * @throws IllegalArgumentException if the value is a Node that has no {@link Location#getUuid() UUID}
+         */
+        Next to( Node node );
+
+        /**
+         * Set the property value to be a reference to the given location. Note that it is an error if the Location does not have
+         * a {@link Location#getUuid() UUID}.
+         * 
+         * @param location the location to which a reference should be set
+         * @return the interface for additional requests or actions
+         * @throws IllegalArgumentException if the value is a Location that has no {@link Location#getUuid() UUID}
+         */
+        Next to( Location location );
+
+        /**
+         * Set the property value to the given object. The supplied <code>value</code> should be a valid property value, or a
+         * {@link Node} (or {@link Location}) if the property value is to be a reference to that node (or location). Note that it
+         * is an error if the Node (or Location) does not have a {@link Location#getUuid() UUID}.
          * 
          * @param value the property value
          * @return the interface for additional requests or actions
+         * @throws IllegalArgumentException if the value is a Node or Location that has no {@link Location#getUuid() UUID}
          */
         Next to( Object value );
 
         /**
-         * Set the property value to the given objects.
+         * Set the property value to the given objects. Each of the supplied values should be a valid property value, or a
+         * {@link Node} (or {@link Location}) if the property value is to be a reference to that node (or location). Note that it
+         * is an error if the Node (or Location) does not have a {@link Location#getUuid() UUID}.
          * 
          * @param firstValue the first property value
          * @param otherValues the remaining property values
          * @return the interface for additional requests or actions
+         * @throws IllegalArgumentException if the any of the values is a Node or Location that has no {@link Location#getUuid()
+         *         UUID}
          */
         Next to( Object firstValue,
                  Object... otherValues );
 
         /**
-         * Set the property value to the given object.
+         * Set the property value to the given object. Each of the supplied values should be a valid property value, or a
+         * {@link Node} (or {@link Location}) if the property value is to be a reference to that node (or location). Note that it
+         * is an error if the Node (or Location) does not have a {@link Location#getUuid() UUID}.
          * 
          * @param values the container for the property values
          * @return the interface for additional requests or actions
+         * @throws IllegalArgumentException if the any of the values is a Node or Location that has no {@link Location#getUuid()
+         *         UUID}
          */
         Next to( Iterable<?> values );
 
         /**
-         * Set the property value to the given object.
+         * Set the property value to the given object. Each of the supplied values should be a valid property value, or a
+         * {@link Node} (or {@link Location}) if the property value is to be a reference to that node (or location). Note that it
+         * is an error if the Node (or Location) does not have a {@link Location#getUuid() UUID}.
          * 
          * @param values the iterator over the property values
          * @return the interface for additional requests or actions
+         * @throws IllegalArgumentException if the any of the values is a Node or Location that has no {@link Location#getUuid()
+         *         UUID}
          */
         Next to( Iterator<?> values );
     }

@@ -66,6 +66,7 @@ public final class GraphI18n {
     public static I18n closedRequestProcessor;
     public static I18n multipleErrorsWhileExecutingRequests;
     public static I18n unableToAddMoreRequestsToAlreadyExecutedBatch;
+    public static I18n unableToCreateReferenceToNodeWithoutUuid;
     public static I18n actualLocationIsNotSameAsInputLocation;
     public static I18n actualLocationIsNotChildOfInputLocation;
     public static I18n actualLocationMustHavePath;
