@@ -22,6 +22,7 @@
 package org.jboss.dna.connector.store.jpa;
 
 import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsInstanceOf.instanceOf;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.jboss.dna.graph.IsNodeWithChildren.hasChild;
 import static org.jboss.dna.graph.IsNodeWithChildren.hasChildren;
@@ -49,6 +50,7 @@ import org.jboss.dna.graph.cache.CachePolicy;
 import org.jboss.dna.graph.properties.Name;
 import org.jboss.dna.graph.properties.Path;
 import org.jboss.dna.graph.properties.Property;
+import org.jboss.dna.graph.properties.Reference;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -744,9 +746,52 @@ public class JpaConnectionTest {
         numPropsOnEach = 3;
         createTree("", 3, 3, numPropsOnEach, null, true, false);
 
+        // Create some references between nodes that aren't involved with the copy ...
+        graph.set("refProp").on("/node1").to(graph.getNodeAt("/node1/node3"));
+        graph.set("refProp").on("/node1/node1").to(graph.getNodeAt("/node3/node2")); // will soon be /node3/node2[1]
+
+        // Create some "inward" references from nodes that are NOT being copied to nodes that are being copied ...
+        graph.set("refProp").on("/node1/node2").to(graph.getNodeAt("/node2/node2"));
+        graph.set("refProp").on("/node1/node3").to(graph.getNodeAt("/node2/node2"));
+
+        // Create some "outward" references from nodes that are being copied to nodes that are NOT being copied ...
+        graph.set("refProp").on("/node2/node1").to(graph.getNodeAt("/node1/node1"));
+        graph.set("refProp").on("/node2/node3").to(graph.getNodeAt("/node1/node2"));
+
+        // Create some "internal" references between nodes that are being copied ...
+        graph.set("refProp").on("/node2/node2").to(graph.getNodeAt("/node2/node2/node1"));
+        graph.set("refProp").on("/node2/node3/node1").to(graph.getNodeAt("/node2/node2/node1"));
+
+        // Verify the references are there ...
+        assertReference("/node1", "refProp", "/node1/node3");
+        assertReference("/node1/node1", "refProp", "/node3/node2");
+        assertReference("/node1/node2", "refProp", "/node2/node2");
+        assertReference("/node1/node3", "refProp", "/node2/node2");
+        assertReference("/node2/node1", "refProp", "/node1/node1");
+        assertReference("/node2/node3", "refProp", "/node1/node2");
+        assertReference("/node2/node2", "refProp", "/node2/node2/node1");
+        assertReference("/node2/node3/node1", "refProp", "/node2/node2/node1");
+
         // Copy a branches ...
         graph.copy("/node2").into("/node3");
 
+        // Verify the references are still there ...
+        assertReference("/node1", "refProp", "/node1/node3");
+        assertReference("/node1/node1", "refProp", "/node3/node2[1]");
+        assertReference("/node1/node2", "refProp", "/node2/node2");
+        assertReference("/node1/node3", "refProp", "/node2/node2");
+        assertReference("/node2/node1", "refProp", "/node1/node1");
+        assertReference("/node2/node3", "refProp", "/node1/node2");
+        assertReference("/node2/node2", "refProp", "/node2/node2/node1");
+        assertReference("/node2/node3/node1", "refProp", "/node2/node2/node1");
+
+        // And verify that we have a few new (outward and internal) references in the copy ...
+        assertReference("/node3/node2[2]/node1", "refProp", "/node1/node1"); // outward
+        assertReference("/node3/node2[2]/node3", "refProp", "/node1/node2"); // outward
+        assertReference("/node3/node2[2]/node2", "refProp", "/node3/node2[2]/node2/node1"); // internal
+        assertReference("/node3/node2[2]/node3/node1", "refProp", "/node3/node2[2]/node2/node1"); // internal
+
+        // Now assert the structure ...
         assertThat(graph.getChildren().of("/node1"), hasChildren(child("node1"), child("node2"), child("node3")));
         assertThat(graph.getChildren().of("/node1/node1"), hasChildren(child("node1"), child("node2"), child("node3")));
         assertThat(graph.getChildren().of("/node1/node2"), hasChildren(child("node1"), child("node2"), child("node3")));
@@ -871,6 +916,19 @@ public class JpaConnectionTest {
                                                                          "The quick brown fox jumped over the moon. What? "));
         assertThat(subgraph.getNode("node2[2]/node3/node3"), hasProperty("property3",
                                                                          "The quick brown fox jumped over the moon. What? "));
+    }
+
+    protected void assertReference( String fromNodePath,
+                                    String propertyName,
+                                    String... toNodePath ) {
+        Object[] values = graph.getProperty(propertyName).on(fromNodePath).getValuesAsArray();
+        assertThat(values.length, is(toNodePath.length));
+        for (int i = 0; i != values.length; ++i) {
+            Object value = values[i];
+            assertThat(value, is(instanceOf(Reference.class)));
+            Reference ref = (Reference)value;
+            assertThat(graph.resolve(ref), is(graph.getNodeAt(toNodePath[i])));
+        }
     }
 
     @Test

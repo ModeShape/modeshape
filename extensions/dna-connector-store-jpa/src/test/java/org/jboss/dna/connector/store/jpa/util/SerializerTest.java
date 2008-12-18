@@ -53,6 +53,7 @@ import org.jboss.dna.graph.properties.Name;
 import org.jboss.dna.graph.properties.Property;
 import org.jboss.dna.graph.properties.PropertyFactory;
 import org.jboss.dna.graph.properties.PropertyType;
+import org.jboss.dna.graph.properties.Reference;
 import org.jboss.dna.graph.properties.ValueFactories;
 import org.junit.Before;
 import org.junit.Test;
@@ -229,8 +230,14 @@ public class SerializerTest {
         Property prop5 = createProperty("p5", valueFactories.getBinaryFactory().create("something"));
         String binaryValue = "really really long string that will be converted to a binary value and tested like that";
         Property prop6 = createProperty("p6", valueFactories.getBinaryFactory().create(binaryValue));
+        UUID uuid7 = UUID.randomUUID();
+        Reference ref7 = valueFactories.getReferenceFactory().create(uuid7);
+        Property prop7 = createProperty("p7", ref7);
+        UUID uuid8 = UUID.randomUUID();
+        Reference ref8 = valueFactories.getReferenceFactory().create(uuid8);
+        Property prop8 = createProperty("p8", ref8);
 
-        assertSerializableAndDeserializable(serializer, prop1, prop2, prop3, prop4, prop5, prop6);
+        assertSerializableAndDeserializable(serializer, prop1, prop2, prop3, prop4, prop5, prop6, prop7, prop8);
         assertThat(largeValues.getCount(), is(2));
     }
 
@@ -245,6 +252,12 @@ public class SerializerTest {
         String binaryValueStr = "really really long string that will be converted to a binary value and tested like that";
         Binary binaryValue = valueFactories.getBinaryFactory().create(binaryValueStr);
         Property prop6 = createProperty("p6", binaryValue);
+        UUID uuid7 = UUID.randomUUID();
+        Reference ref7 = valueFactories.getReferenceFactory().create(uuid7);
+        Property prop7 = createProperty("p7", ref7);
+        UUID uuid8 = UUID.randomUUID();
+        Reference ref8 = valueFactories.getReferenceFactory().create(uuid8);
+        Property prop8 = createProperty("p8", ref8);
 
         Property prop2b = createProperty("p2");
         Property prop3b = createProperty("p3", "v3");
@@ -252,7 +265,7 @@ public class SerializerTest {
         Binary binaryValue2 = valueFactories.getBinaryFactory().create(binaryValueStr2);
         Property prop6b = createProperty("p6", binaryValue2);
 
-        Property[] initial = new Property[] {prop1, prop2, prop3, prop4, prop5, prop6};
+        Property[] initial = new Property[] {prop1, prop2, prop3, prop4, prop5, prop6, prop7, prop8};
         Property[] updated = new Property[] {prop2b, prop3b, prop6b};
         SkippedLargeValues removedLargeValues = new SkippedLargeValues();
         assertReserializable(serializer, removedLargeValues, initial, updated);
@@ -263,6 +276,61 @@ public class SerializerTest {
         assertThat(largeValues.get(binaryValue2), is(notNullValue()));
         assertThat(largeValues.get(binaryValue2), is(notNullValue()));
         assertThat(removedLargeValues.isSkipped(binaryValue), is(true));
+    }
+
+    @Test
+    public void shouldAdjustReferences() throws Exception {
+        Property prop1 = createProperty("p1", "v1");
+        String value = "v234567890123456789012345678901234567890";
+        Property prop2 = createProperty("p2", value);
+        Property prop3 = createProperty("p3", "v2");
+        Property prop4 = createProperty("p4", new String(value)); // make sure it's a different String object
+        Property prop5 = createProperty("p5", valueFactories.getBinaryFactory().create("something"));
+        String binaryValueStr = "really really long string that will be converted to a binary value and tested like that";
+        Binary binaryValue = valueFactories.getBinaryFactory().create(binaryValueStr);
+        Property prop6 = createProperty("p6", binaryValue);
+        UUID uuid7 = UUID.randomUUID();
+        Reference ref7 = valueFactories.getReferenceFactory().create(uuid7);
+        Property prop7 = createProperty("p7", ref7);
+        UUID uuid8 = UUID.randomUUID();
+        Reference ref8 = valueFactories.getReferenceFactory().create(uuid8);
+        Property prop8 = createProperty("p8", ref8);
+
+        // Serialize the properties (and verify they're serialized properly) ...
+        Property[] props = new Property[] {prop1, prop2, prop3, prop4, prop5, prop6, prop7, prop8};
+        byte[] content = serialize(serializer, props);
+        List<Property> properties = deserialize(serializer, content);
+        assertThat(properties, hasItems(props));
+
+        // Define the old-to-new UUID mapping ...
+        UUID newUuid7 = UUID.randomUUID();
+        Map<String, String> oldToNewUuids = new HashMap<String, String>();
+        oldToNewUuids.put(uuid7.toString(), newUuid7.toString());
+        // note that 'uuid8' is not included, so 'ref8' should be untouched
+
+        // Now update the references in the serialized properties ...
+        ByteArrayInputStream bais = new ByteArrayInputStream(content);
+        ObjectInputStream ois = new ObjectInputStream(bais);
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        ObjectOutputStream oos = new ObjectOutputStream(baos);
+        try {
+            serializer.adjustReferenceProperties(ois, oos, oldToNewUuids);
+        } finally {
+            baos.close();
+            oos.close();
+        }
+        byte[] newContent = baos.toByteArray();
+
+        // Now deserialize the updated content ...
+        properties = deserialize(serializer, newContent);
+
+        // Update a new 'prop7' ...
+        Reference newRef7 = valueFactories.getReferenceFactory().create(newUuid7);
+        Property newProp7 = createProperty("p7", newRef7);
+        Property[] newProps = new Property[] {prop1, prop2, prop3, prop4, prop5, prop6, newProp7, prop8};
+
+        // Finally verify that the updated content matches the expected new properties ...
+        assertThat(properties, hasItems(newProps));
     }
 
     protected Property createProperty( String name,
@@ -301,27 +369,42 @@ public class SerializerTest {
         List<Property> outputProperties = new ArrayList<Property>(propertyList.size());
 
         // Serialize the properties one at a time ...
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        ObjectOutputStream oos = new ObjectOutputStream(baos);
-        try {
-            serializer.serializeProperties(oos, propertyList.size(), propertyList, largeValues, references);
-        } finally {
-            oos.close();
-        }
-        byte[] bytes = baos.toByteArray();
+        byte[] bytes = serialize(serializer, propertyList.toArray(new Property[propertyList.size()]));
 
         // Deserialize ...
-        ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
-        ObjectInputStream ois = new ObjectInputStream(bais);
-        try {
-            serializer.deserializeAllProperties(ois, outputProperties, largeValues);
-        } finally {
-            ois.close();
-        }
+        outputProperties = deserialize(serializer, bytes);
 
         // Check the properties match ...
         assertThat(outputProperties.size(), is(propertyList.size()));
         assertThat(outputProperties, hasItems(propertyList.toArray(new Property[propertyList.size()])));
+    }
+
+    protected byte[] serialize( Serializer serializer,
+                                Property... originalProperties ) throws IOException {
+        // Serialize the properties one at a time ...
+        Collection<Property> initialProps = Arrays.asList(originalProperties);
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        ObjectOutputStream oos = new ObjectOutputStream(baos);
+        try {
+            serializer.serializeProperties(oos, initialProps.size(), initialProps, largeValues, references);
+        } finally {
+            oos.close();
+        }
+        return baos.toByteArray();
+    }
+
+    protected List<Property> deserialize( Serializer serializer,
+                                          byte[] content ) throws IOException, ClassNotFoundException {
+        // Deserialize ...
+        List<Property> afterProperties = new ArrayList<Property>();
+        ByteArrayInputStream bais = new ByteArrayInputStream(content);
+        ObjectInputStream ois = new ObjectInputStream(bais);
+        try {
+            serializer.deserializeAllProperties(ois, afterProperties, largeValues);
+        } finally {
+            ois.close();
+        }
+        return afterProperties;
     }
 
     protected void assertReserializable( Serializer serializer,
@@ -343,22 +426,14 @@ public class SerializerTest {
         }
 
         // Serialize the properties one at a time ...
-        Collection<Property> initialProps = Arrays.asList(originalProperties);
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        ObjectOutputStream oos = new ObjectOutputStream(baos);
-        try {
-            serializer.serializeProperties(oos, initialProps.size(), initialProps, largeValues, references);
-        } finally {
-            oos.close();
-        }
-        byte[] bytes = baos.toByteArray();
+        byte[] bytes = serialize(serializer, originalProperties);
 
         // Now reserialize, updating the properties ...
         Collection<Property> updatedProps = Arrays.asList(updatedProperties);
         ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
         ObjectInputStream ois = new ObjectInputStream(bais);
-        baos = new ByteArrayOutputStream();
-        oos = new ObjectOutputStream(baos);
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        ObjectOutputStream oos = new ObjectOutputStream(baos);
         try {
             serializer.reserializeProperties(ois, oos, updatedProps, largeValues, removedLargeValues, references);
         } finally {
@@ -367,14 +442,8 @@ public class SerializerTest {
         }
 
         // Deserialize ...
-        List<Property> afterProperties = new ArrayList<Property>();
-        bais = new ByteArrayInputStream(baos.toByteArray());
-        ois = new ObjectInputStream(bais);
-        try {
-            serializer.deserializeAllProperties(ois, afterProperties, largeValues);
-        } finally {
-            ois.close();
-        }
+        List<Property> afterProperties = deserialize(serializer, baos.toByteArray());
+
         Collection<Name> namesAfter = new HashSet<Name>();
         for (Property prop : afterProperties) {
             namesAfter.add(prop.getName());

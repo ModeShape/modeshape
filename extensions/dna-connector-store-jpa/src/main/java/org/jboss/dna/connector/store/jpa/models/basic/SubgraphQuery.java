@@ -284,21 +284,50 @@ public class SubgraphQuery {
     }
 
     /**
-     * Determine whether there are any invalid references (typically called after {@link #deleteSubgraph(boolean)}).
+     * Get the list of references that are owned by nodes within the subgraph and that point to other nodes <i>in this same
+     * subgraph</i>. This set of references is important in copying a subgraph, since all intra-subgraph references in the
+     * original subgraph must also be intra-subgraph references in the copy.
+     * 
+     * @return the list of references completely contained by this subgraphs
+     */
+    @SuppressWarnings( "unchecked" )
+    public List<ReferenceEntity> getInternalReferences() {
+        Query references = manager.createNamedQuery("SubgraphNodeEntity.getInternalReferences");
+        references.setParameter("queryId", query.getId());
+        return references.getResultList();
+    }
+
+    /**
+     * Get the list of references that are owned by nodes within the subgraph and that point to nodes <i>not in this same
+     * subgraph</i>. This set of references is important in copying a subgraph.
+     * 
+     * @return the list of references that are owned by the subgraph but that point to nodes outside of the subgraph
+     */
+    @SuppressWarnings( "unchecked" )
+    public List<ReferenceEntity> getOutwardReferences() {
+        Query references = manager.createNamedQuery("SubgraphNodeEntity.getOutwardReferences");
+        references.setParameter("queryId", query.getId());
+        return references.getResultList();
+    }
+
+    /**
+     * Get the list of references that are owned by nodes <i>outside</i> of the subgraph that point to nodes <i>in this
+     * subgraph</i>. This set of references is important in deleting nodes, since such references prevent the deletion of the
+     * subgraph.
      * 
      * @return the list of references that are no longer valid
      */
     @SuppressWarnings( "unchecked" )
-    public List<ReferenceEntity> getInvalidReferences() {
+    public List<ReferenceEntity> getInwardReferences() {
         // Verify referential integrity: that none of the deleted nodes are referenced by nodes not being deleted.
-        Query references = manager.createNamedQuery("SubgraphNodeEntity.getReferenceThatWillBeInvalid");
+        Query references = manager.createNamedQuery("SubgraphNodeEntity.getInwardReferences");
         references.setParameter("queryId", query.getId());
         return references.getResultList();
     }
 
     /**
      * Delete the nodes in the subgraph. This method first does not check for referential integrity (see
-     * {@link #getInvalidReferences()}).
+     * {@link #getInwardReferences()}).
      * 
      * @param includeRoot true if the root node should also be deleted
      */

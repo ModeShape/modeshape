@@ -459,7 +459,7 @@ public class SubgraphQueryTest {
         verifyNextLocationIs("/a/a1/a3");
         verifyNoMoreLocations();
         query.deleteSubgraph(true);
-        assertThat(query.getInvalidReferences().isEmpty(), is(true));
+        assertThat(query.getInwardReferences().isEmpty(), is(true));
         query.close();
 
         // Commit the transaction, and start another ...
@@ -542,7 +542,7 @@ public class SubgraphQueryTest {
         query.deleteSubgraph(true);
 
         // Now there should be invalid references ...
-        List<ReferenceEntity> invalidReferences = query.getInvalidReferences();
+        List<ReferenceEntity> invalidReferences = query.getInwardReferences();
         assertThat(invalidReferences.size(), is(3));
         invalidReferences.removeAll(invalidReferences);
         assertThat(invalidReferences.size(), is(0));
@@ -583,7 +583,7 @@ public class SubgraphQueryTest {
         query.deleteSubgraph(true);
 
         // Now there should be invalid references ...
-        List<ReferenceEntity> invalidReferences = query.getInvalidReferences();
+        List<ReferenceEntity> invalidReferences = query.getInwardReferences();
         assertThat(invalidReferences.size(), is(0));
         query.close();
 
@@ -593,6 +593,61 @@ public class SubgraphQueryTest {
         assertThat(remainingReferences.size(), is(1));
         remainingReferences.removeAll(expectedValidRefs);
         assertThat(remainingReferences.size(), is(0));
+    }
+
+    @Test
+    public void shouldGetVariousReferencesRelatedToSubgraph() throws Exception {
+        // Verify that all the nodes with large values do indeed have them ...
+        verifyNodesHaveLargeValues("/a/a1", "/a/a2", "/a/a2/a1");
+
+        // Count the number of objects ...
+        assertThat((Long)manager.createQuery("select count(*) from LargeValueEntity").getSingleResult(), is(3L));
+        assertThat((Long)manager.createQuery("select count(*) from PropertiesEntity").getSingleResult(), is(14L));
+        assertThat((Long)manager.createQuery("select count(*) from ChildEntity").getSingleResult(), is(14L));
+
+        // Create references from the nodes that aren't even part of the subgraph ...
+        List<ReferenceEntity> otherRefs = new ArrayList<ReferenceEntity>();
+        otherRefs.add(createReferenceBetween("/a/a2", "/a/a2/a1"));
+        otherRefs.add(createReferenceBetween("/a/a2/a1", "/a/a2/a2"));
+
+        // Create references between nodes in the subgraph ...
+        List<ReferenceEntity> internalRefs = new ArrayList<ReferenceEntity>();
+        internalRefs.add(createReferenceBetween("/a/a1", "/a/a1/a1"));
+        internalRefs.add(createReferenceBetween("/a/a1/a2", "/a/a1/a3"));
+
+        // Create references from nodes outside of the subgraph to nodes inside of the subgraph ...
+        List<ReferenceEntity> inwardRefs = new ArrayList<ReferenceEntity>();
+        inwardRefs.add(createReferenceBetween("/a/a2", "/a/a1/a1"));
+        inwardRefs.add(createReferenceBetween("/a/a2/a1", "/a/a1/a3"));
+
+        // Create references from nodes inside of the subgraph to nodes outside of the subgraph ...
+        List<ReferenceEntity> outwardRefs = new ArrayList<ReferenceEntity>();
+        outwardRefs.add(createReferenceBetween("/a/a1", "/a/a2"));
+        outwardRefs.add(createReferenceBetween("/a/a1/a1", "/a/a2/a1"));
+
+        // Create the query ...
+        Path path = path("/a/a1");
+        UUID uuid = uuidByPath.get(path);
+        query = SubgraphQuery.create(context, manager, uuid, path, Integer.MAX_VALUE);
+
+        // Check the various kinds of references ...
+        List<ReferenceEntity> actualInternal = query.getInternalReferences();
+        List<ReferenceEntity> actualInward = query.getInwardReferences();
+        List<ReferenceEntity> actualOutward = query.getOutwardReferences();
+
+        assertThat(actualInternal.size(), is(internalRefs.size()));
+        actualInternal.removeAll(internalRefs);
+        assertThat(actualInternal.size(), is(0));
+
+        assertThat(actualInward.size(), is(inwardRefs.size()));
+        actualInward.removeAll(inwardRefs);
+        assertThat(actualInward.size(), is(0));
+
+        assertThat(actualOutward.size(), is(outwardRefs.size()));
+        actualOutward.removeAll(outwardRefs);
+        assertThat(actualOutward.size(), is(0));
+
+        query.close();
     }
 
 }

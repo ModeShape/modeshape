@@ -937,7 +937,7 @@ public class BasicRequestProcessor extends RequestProcessor {
                     actualToLocation = addNewChild(actualNewParent, copyUuid, childName);
                 }
 
-                // Now process the children in the subgraph ...
+                // Now create copies of all children in the subgraph, assigning new UUIDs to each new child ...
                 while (originalIter.hasNext()) {
                     ChildEntity original = originalIter.next();
                     String newParentUuidOfCopy = originalToNewUuid.get(original.getId().getParentUuidString());
@@ -955,6 +955,29 @@ public class BasicRequestProcessor extends RequestProcessor {
                 }
                 entities.flush();
 
+                // Now create copies of all the intra-subgraph references, replacing the UUIDs on both ends ...
+                Set<String> newNodesWithReferenceProperties = new HashSet<String>();
+                for (ReferenceEntity reference : query.getInternalReferences()) {
+                    String newFromUuid = originalToNewUuid.get(reference.getId().getFromUuidString());
+                    assert newFromUuid != null;
+                    String newToUuid = originalToNewUuid.get(reference.getId().getToUuidString());
+                    assert newToUuid != null;
+                    ReferenceEntity copy = new ReferenceEntity(new ReferenceId(newFromUuid, newToUuid));
+                    entities.persist(copy);
+                    newNodesWithReferenceProperties.add(newFromUuid);
+                }
+
+                // Now create copies of all the references owned by the subgraph but pointing to non-subgraph nodes,
+                // so we only replaced the 'from' UUID ...
+                for (ReferenceEntity reference : query.getOutwardReferences()) {
+                    String oldToUuid = reference.getId().getToUuidString();
+                    String newFromUuid = originalToNewUuid.get(reference.getId().getFromUuidString());
+                    assert newFromUuid != null;
+                    ReferenceEntity copy = new ReferenceEntity(new ReferenceId(newFromUuid, oldToUuid));
+                    entities.persist(copy);
+                    newNodesWithReferenceProperties.add(newFromUuid);
+                }
+
                 // Now process the properties, creating a copy (note references are not changed) ...
                 for (PropertiesEntity original : query.getProperties(true, true)) {
                     // Find the UUID of the copy ...
@@ -962,9 +985,33 @@ public class BasicRequestProcessor extends RequestProcessor {
                     assert copyUuid != null;
 
                     // Create the copy ...
+                    boolean compressed = original.isCompressed();
+                    byte[] originalData = original.getData();
                     PropertiesEntity copy = new PropertiesEntity(new NodeId(copyUuid));
-                    copy.setCompressed(original.isCompressed());
-                    copy.setData(original.getData());
+                    copy.setCompressed(compressed);
+                    if (newNodesWithReferenceProperties.contains(copyUuid)) {
+
+                        // This node has internal or outward references that must be adjusted ...
+                        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                        OutputStream os = compressed ? new GZIPOutputStream(baos) : baos;
+                        ObjectOutputStream oos = new ObjectOutputStream(os);
+                        ByteArrayInputStream bais = new ByteArrayInputStream(originalData);
+                        InputStream is = compressed ? new GZIPInputStream(bais) : bais;
+                        ObjectInputStream ois = new ObjectInputStream(is);
+                        try {
+                            serializer.adjustReferenceProperties(ois, oos, originalToNewUuid);
+                        } finally {
+                            try {
+                                ois.close();
+                            } finally {
+                                oos.close();
+                            }
+                        }
+                        copy.setData(baos.toByteArray());
+                    } else {
+                        // No references to adjust, so just copy the original data ...
+                        copy.setData(originalData);
+                    }
                     copy.setPropertyCount(original.getPropertyCount());
                     copy.setReferentialIntegrityEnforced(original.isReferentialIntegrityEnforced());
                     entities.persist(copy);
@@ -1014,7 +1061,7 @@ public class BasicRequestProcessor extends RequestProcessor {
                 query.deleteSubgraph(true);
 
                 // Verify referential integrity: that none of the deleted nodes are referenced by nodes not being deleted.
-                List<ReferenceEntity> invalidReferences = query.getInvalidReferences();
+                List<ReferenceEntity> invalidReferences = query.getInwardReferences();
                 if (invalidReferences.size() > 0) {
                     // Some of the references that remain will be invalid, since they point to nodes that
                     // have just been deleted. Build up the information necessary to produce a useful exception ...

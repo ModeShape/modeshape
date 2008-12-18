@@ -47,7 +47,10 @@ import org.jboss.dna.graph.properties.Property;
 import org.jboss.dna.graph.properties.PropertyFactory;
 import org.jboss.dna.graph.properties.PropertyType;
 import org.jboss.dna.graph.properties.Reference;
+import org.jboss.dna.graph.properties.UuidFactory;
 import org.jboss.dna.graph.properties.ValueFactories;
+import org.jboss.dna.graph.properties.ValueFactory;
+import org.jboss.dna.graph.properties.ValueFormatException;
 
 /**
  * @author Randall Hauch
@@ -101,13 +104,12 @@ public class Serializer {
                            long length,
                            PropertyType type,
                            Object value ) {
-            throw new UnsupportedOperationException();
         }
 
         public Object read( ValueFactories valueFactories,
                             byte[] hash,
                             long length ) {
-            throw new UnsupportedOperationException();
+            return null;
         }
     }
 
@@ -399,6 +401,147 @@ public class Serializer {
     }
 
     /**
+     * Deserialize the properties, adjust all {@link Reference} values that point to an "old" UUID to point to the corresponding
+     * "new" UUID, and reserialize the properties. If any reference is to a UUID not in the map, it is left untouched.
+     * <p>
+     * This is an efficient method that (for the most part) reads from the input stream and directly writes to the output stream.
+     * The exception is when a Reference value is read, that Reference is attempted to be remapped to a new Reference and written
+     * in place of the old reference. (Of course, if the Reference is to a UUID that is not in the "old" to "new" map, the old is
+     * written directly.)
+     * </p>
+     * 
+     * @param input the stream from which the existing properties are to be deserialized; may not be null
+     * @param output the stream to which the updated properties are to be serialized; may not be null
+     * @param oldUuidToNewUuid the map of old-to-new UUIDs
+     * @throws IOException if there is an error writing to the <code>stream</code> or <code>largeValues</code>
+     * @throws ClassNotFoundException if the class for the value's object could not be found
+     */
+    public void adjustReferenceProperties( ObjectInputStream input,
+                                           ObjectOutputStream output,
+                                           Map<String, String> oldUuidToNewUuid ) throws IOException, ClassNotFoundException {
+        assert input != null;
+        assert output != null;
+        assert oldUuidToNewUuid != null;
+
+        UuidFactory uuidFactory = valueFactories.getUuidFactory();
+        ValueFactory<Reference> referenceFactory = valueFactories.getReferenceFactory();
+
+        // Read the number of properties ...
+        int count = input.readInt();
+        output.writeInt(count);
+        // Deserialize all of the proeprties ...
+        for (int i = 0; i != count; ++i) {
+            // Read and write the property name ...
+            Object name = input.readObject();
+            output.writeObject(name);
+            // Read and write the number of values ...
+            int numValues = input.readInt();
+            output.writeInt(numValues);
+            // Now read and write each property value ...
+            for (int j = 0; j != numValues; ++j) {
+                // Read and write the type of value ...
+                char type = input.readChar();
+                output.writeChar(type);
+                switch (type) {
+                    case 'S':
+                        output.writeObject(input.readObject());
+                        break;
+                    case 'b':
+                        output.writeBoolean(input.readBoolean());
+                        break;
+                    case 'i':
+                        output.writeInt(input.readInt());
+                        break;
+                    case 'l':
+                        output.writeLong(input.readLong());
+                        break;
+                    case 's':
+                        output.writeShort(input.readShort());
+                        break;
+                    case 'f':
+                        output.writeFloat(input.readFloat());
+                        break;
+                    case 'd':
+                        output.writeDouble(input.readDouble());
+                        break;
+                    case 'c':
+                        // char
+                        output.writeChar(input.readChar());
+                        break;
+                    case 'U':
+                        // UUID
+                        output.writeLong(input.readLong());
+                        output.writeLong(input.readLong());
+                        break;
+                    case 'I':
+                        // URI
+                        output.writeObject(input.readObject());
+                        break;
+                    case 'N':
+                        // Name
+                        output.writeObject(input.readObject());
+                        break;
+                    case 'P':
+                        // Path
+                        output.writeObject(input.readObject());
+                        break;
+                    case 'T':
+                        // DateTime
+                        output.writeObject(input.readObject());
+                        break;
+                    case 'D':
+                        // BigDecimal
+                        output.writeObject(input.readObject());
+                        break;
+                    case 'R':
+                        // Reference
+                        String refValue = (String)input.readObject();
+                        Reference ref = referenceFactory.create(refValue);
+                        try {
+                            UUID toUuid = uuidFactory.create(ref);
+                            String newUuid = oldUuidToNewUuid.get(toUuid.toString());
+                            if (newUuid != null) {
+                                // Create a new reference ...
+                                ref = referenceFactory.create(newUuid);
+                                refValue = ref.getString();
+                            }
+                        } catch (ValueFormatException e) {
+                            // Unknown reference, so simply write it again ...
+                        }
+                        // Write the reference ...
+                        output.writeObject(refValue);
+                        break;
+                    case 'B':
+                        // Binary
+                        // Read the length of the content ...
+                        long binaryLength = input.readLong();
+                        byte[] content = new byte[(int)binaryLength];
+                        input.read(content);
+                        // Now write out the value ...
+                        output.writeLong(binaryLength);
+                        output.write(content);
+                        break;
+                    case 'L':
+                        // Large object ...
+                        int hashLength = input.readInt();
+                        byte[] hash = new byte[hashLength];
+                        input.read(hash);
+                        long length = input.readLong();
+                        // write to the output ...
+                        output.writeInt(hash.length);
+                        output.write(hash);
+                        output.writeLong(length);
+                        break;
+                    default:
+                        // All other objects ...
+                        output.writeObject(input.readObject());
+                        break;
+                }
+            }
+        }
+    }
+
+    /**
      * Deserialize the serialized properties on the supplied object stream.
      * 
      * @param stream the stream that contains the serialized properties; may not be null
@@ -469,7 +612,7 @@ public class Serializer {
             read = name.equals(nameToRead) || (namesToRead != null && namesToRead.contains(namesToRead));
             if (read) {
                 // Now read the property values ...
-                Object[] values = deserializePropertyValues(stream, name, false, skippedLargeValues, skippedLargeValues, null);
+                Object[] values = deserializePropertyValues(stream, name, false, largeValues, skippedLargeValues, null);
                 // Add the property to the collection ...
                 Property property = propertyFactory.create(name, values);
                 assert property != null;
@@ -609,21 +752,22 @@ public class Serializer {
                     // Reference
                     String refValue = (String)stream.readObject();
                     Reference ref = valueFactories.getReferenceFactory().create(refValue);
-                    if (!skip || references != null) {
-                        if (!skip) {
-                            value = ref;
-                            if (references != null) references.remove(ref);
-                        } else {
-                            assert references != null;
-                            references.read(ref);
-                        }
+                    if (skip) {
+                        if (references != null) references.remove(ref);
+                    } else {
+                        value = ref;
+                        if (references != null) references.read(ref);
                     }
                     break;
                 case 'B':
                     // Binary
                     // Read the length of the content ...
                     long binaryLength = stream.readLong();
-                    if (!skip) value = valueFactories.getBinaryFactory().create(stream, binaryLength);
+                    byte[] content = new byte[(int)binaryLength];
+                    stream.read(content);
+                    if (!skip) {
+                        value = valueFactories.getBinaryFactory().create(content);
+                    }
                     break;
                 case 'L':
                     // Large object ...
@@ -657,5 +801,4 @@ public class Serializer {
             throw new SystemFailureException(e);
         }
     }
-
 }
