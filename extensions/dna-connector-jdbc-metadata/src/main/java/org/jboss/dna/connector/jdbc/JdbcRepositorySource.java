@@ -30,6 +30,7 @@ import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import javax.naming.BinaryRefAddr;
@@ -39,8 +40,13 @@ import javax.naming.RefAddr;
 import javax.naming.Reference;
 import javax.naming.StringRefAddr;
 import javax.naming.spi.ObjectFactory;
+
 import net.jcip.annotations.ThreadSafe;
 import org.jboss.dna.common.i18n.I18n;
+import org.jboss.dna.common.jdbc.provider.DataSourceDatabaseMetadataProvider;
+import org.jboss.dna.common.jdbc.provider.DefaultDataSourceDatabaseMetadataProvider;
+import org.jboss.dna.common.jdbc.provider.DefaultDriverDatabaseMetadataProvider;
+import org.jboss.dna.common.jdbc.provider.DriverDatabaseMetadataProvider;
 import org.jboss.dna.graph.cache.CachePolicy;
 import org.jboss.dna.graph.connectors.RepositoryConnection;
 import org.jboss.dna.graph.connectors.RepositoryContext;
@@ -54,7 +60,8 @@ import org.jboss.dna.graph.connectors.RepositorySourceException;
  * @author <a href="mailto:litsenko_sergey@yahoo.com">Sergiy Litsenko</a>
  */
 public class JdbcRepositorySource implements RepositorySource, ObjectFactory {
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 3380130639143030018L;
+
     /**
      * The default limit is {@value} for retrying {@link RepositoryConnection connection} calls to the underlying source.
      */
@@ -65,6 +72,10 @@ public class JdbcRepositorySource implements RepositorySource, ObjectFactory {
      * read-only or updateable}.
      */
     public static final boolean DEFAULT_SUPPORTS_UPDATES = true;
+    /**
+     * The default UUID that is used for root nodes in a JDBC connector.
+     */
+    public static final String DEFAULT_ROOT_NODE_UUID = "9f9a52c8-0a4d-40d0-ac58-7c77b24b3155";
 
     /**
      * This source supports events.
@@ -80,13 +91,46 @@ public class JdbcRepositorySource implements RepositorySource, ObjectFactory {
     protected final Capabilities capabilities = new Capabilities();
     protected transient RepositoryContext repositoryContext;
     protected CachePolicy defaultCachePolicy;
-
+    protected transient DriverDatabaseMetadataProvider driverProvider;
+    protected transient DataSourceDatabaseMetadataProvider dataSourceProvider;
+    protected transient UUID rootUuid = UUID.fromString(DEFAULT_ROOT_NODE_UUID);
+    
     protected static final String SOURCE_NAME = "sourceName";
+    protected static final String ROOT_NODE_UUID = "rootNodeUuid";
     protected static final String DEFAULT_CACHE_POLICY = "defaultCachePolicy";
-    protected static final String REPO_JNDI_NAME = "jndiName";
-    protected static final String REPO_FACTORY_JNDI_NAME = "factoryJndiName";
+    protected static final String DATA_SOURCE_JNDI_NAME = "dataSourceJndiName";
+    protected static final String USERNAME = "username";
+    protected static final String PASSWORD = "password";
+    protected static final String URL = "url";
+    protected static final String DRIVER_CLASS_NAME = "driverClassName";
     protected static final String RETRY_LIMIT = "retryLimit";
 
+    /**
+     * Get and optionally create driver based provider 
+     * @param create create provider
+     * @return driverProvider
+     */
+    protected DriverDatabaseMetadataProvider getDriverProvider(boolean create) {
+        // lazy creation
+        if (driverProvider == null) {
+            driverProvider = new DefaultDriverDatabaseMetadataProvider();
+        }
+        return driverProvider;
+    }
+
+    /**
+     * Get and optionally create data source based provider 
+     * @param create create provider
+     * @return dataSourceProvider
+     */
+    protected DataSourceDatabaseMetadataProvider getDataSourceProvider(boolean create) {
+        // lazy creation
+        if (dataSourceProvider == null && create) {
+            dataSourceProvider = new DefaultDataSourceDatabaseMetadataProvider();
+        }
+        return dataSourceProvider;
+    }
+    
     /**
      * default constructor
      */
@@ -108,8 +152,44 @@ public class JdbcRepositorySource implements RepositorySource, ObjectFactory {
      * @see org.jboss.dna.graph.connectors.RepositorySource#getConnection()
      */
     public RepositoryConnection getConnection() throws RepositorySourceException {
-        // TODO create Jdbc connection
-        return null;
+        String errMsg = null;
+        // check name
+        if (getName() == null) {
+            errMsg = JdbcMetadataI18n.propertyIsRequired.text("name");
+            throw new RepositorySourceException(errMsg);
+        }
+        
+        // create Jdbc connection using data source first
+        try {
+            if (dataSourceProvider != null) {
+                // create wrapper for Jdbc connection
+                return new JdbcConnection(getName(),
+                                          getDefaultCachePolicy(),
+                                          dataSourceProvider.getConnection(),
+                                          rootUuid);
+            }
+        } catch (Exception e) {
+            errMsg = JdbcMetadataI18n.unableToGetConnectionUsingDriver.text(getName(), getDriverClassName(), getDatabaseUrl());
+            throw new RepositorySourceException(errMsg, e);
+        }
+
+        // create Jdbc connection using driver and database URL
+        try {
+            if (driverProvider != null) {
+                // create wrapper for Jdbc connection
+                return new JdbcConnection(getName(),
+                                          getDefaultCachePolicy(),
+                                          driverProvider.getConnection(),
+                                          rootUuid);
+            }
+        } catch (Exception e) {
+            errMsg = JdbcMetadataI18n.unableToGetConnectionUsingDataSource.text(getName(), getDataSourceName());
+            throw new RepositorySourceException(errMsg, e);
+        }
+        
+        // Either data source name or JDBC driver connection properties must be defined
+        errMsg = JdbcMetadataI18n.oneOfPropertiesIsRequired.text(getName());
+        throw new RepositorySourceException(errMsg);
     }
 
     /**
@@ -193,6 +273,22 @@ public class JdbcRepositorySource implements RepositorySource, ObjectFactory {
     }
 
     /**
+     * @return rootNodeUuid
+     */
+    public String getRootNodeUuid() {
+        return rootUuid != null? rootUuid.toString() : null;
+    }
+
+    /**
+     * @param rootNodeUuid Sets rootNodeUuid to the specified value.
+     * @throws IllegalArgumentException if the string value cannot be converted to UUID
+     */
+    public void setRootNodeUuid( String rootNodeUuid ) {
+        if (rootNodeUuid != null && rootNodeUuid.trim().length() == 0) rootNodeUuid = DEFAULT_ROOT_NODE_UUID;
+        this.rootUuid = UUID.fromString(rootNodeUuid);
+    }
+    
+    /**
      * {@inheritDoc}
      */
     @Override
@@ -211,6 +307,140 @@ public class JdbcRepositorySource implements RepositorySource, ObjectFactory {
     }
 
     /**
+     * Gets JDBC driver class name
+     * 
+     * @return the JDBC driver class name if any
+     */
+    public String getDriverClassName() {
+        // get provider
+        DriverDatabaseMetadataProvider provider = getDriverProvider(false);
+        // return 
+        return (provider != null)? provider.getDriverClassName() : null;
+    }
+  
+    /**
+     * Sets JDBC driver class name
+     * 
+     * @param driverClassName the JDBC driver class name
+     */
+    public void setDriverClassName( String driverClassName ) {
+        if (driverClassName == null) {
+            driverProvider = null;
+        } else {
+            // get/create provider
+            DriverDatabaseMetadataProvider provider = getDriverProvider(true);
+            // set
+            provider.setDriverClassName(driverClassName);
+        }
+    }
+    
+    /**
+     * Gets database URL as string
+     * 
+     * @return database URL as string
+     */
+    public String getDatabaseUrl() {
+        // get provider
+        DriverDatabaseMetadataProvider provider = getDriverProvider(false);
+        // return 
+        return (provider != null)? provider.getDatabaseUrl() : null;
+    }
+
+    /**
+     * Sets the database URL as string
+     * 
+     * @param databaseUrl the database URL as string
+     */
+    public void setDatabaseUrl( String databaseUrl ) {
+        if (databaseUrl == null) {
+            driverProvider = null;
+        } else {
+            // get/create provider
+            DriverDatabaseMetadataProvider provider = getDriverProvider(true);
+            // set
+            provider.setDatabaseUrl(databaseUrl);
+        }
+    }
+    
+    /**
+     * Gets the user name
+     * 
+     * @return the user name
+     */
+    public String getUserName() {
+        // get provider
+        DriverDatabaseMetadataProvider provider = getDriverProvider(false);
+        return (provider != null)? provider.getUserName() : null;
+    }
+
+    /**
+     * Sets the user name
+     * 
+     * @param userName the user name
+     */
+    public void setUserName( String userName ) {
+        if (userName == null) {
+            driverProvider = null;
+        } else {
+            // get provider
+            DriverDatabaseMetadataProvider provider = getDriverProvider(true);
+            provider.setUserName(userName);
+        }
+    }
+    
+    /**
+     * Get user's password
+     * 
+     * @return user's password
+     */
+    public String getPassword() {
+        // get provider
+        DriverDatabaseMetadataProvider provider = getDriverProvider(false);
+        return (provider != null)? provider.getPassword() : null;
+     }
+
+    /**
+     * Sets the user's password
+     * 
+     * @param password the user's password
+     */
+    public void setPassword( String password ) {
+        if (password == null) {
+            driverProvider = null;
+        } else {
+            // get provider
+            DriverDatabaseMetadataProvider provider = getDriverProvider(true);
+            provider.setPassword(password);
+        }
+    }
+    
+    /**
+     * Sets data source JNDI name
+     * 
+     * @return data source JNDI name
+     */
+    public String getDataSourceName() {
+        // get provider
+        DataSourceDatabaseMetadataProvider provider = getDataSourceProvider(false);
+        return (provider != null)? provider.getDataSourceName() : null;
+    }
+
+    /**
+     * Sets data source JNDI name
+     * 
+     * @param dataSourceName the data source JNDI name
+     */
+    public void setDataSourceName( String dataSourceName ) {
+        if (dataSourceName == null) {
+            dataSourceProvider = null;
+        } else {
+            // get provider
+            DataSourceDatabaseMetadataProvider provider = getDataSourceProvider(true);
+            provider.setDataSourceName(dataSourceName);
+        }
+    }
+    
+    /**
      * {@inheritDoc}
      * 
      * @see javax.naming.Referenceable#getReference()
@@ -223,6 +453,29 @@ public class JdbcRepositorySource implements RepositorySource, ObjectFactory {
         if (getName() != null) {
             ref.add(new StringRefAddr(SOURCE_NAME, getName()));
         }
+        
+        if (getRootNodeUuid() != null) {
+            ref.add(new StringRefAddr(ROOT_NODE_UUID, getRootNodeUuid()));
+        }
+        if (getDataSourceName() != null) {
+            ref.add(new StringRefAddr(DATA_SOURCE_JNDI_NAME, getDataSourceName()));
+        }
+        
+        if (getUserName() != null) {
+            ref.add(new StringRefAddr(USERNAME, getUserName()));
+        }
+        
+        if (getPassword() != null) {
+            ref.add(new StringRefAddr(PASSWORD, getPassword()));
+        }
+        
+        if (getDatabaseUrl() != null) {
+            ref.add(new StringRefAddr(URL, getDatabaseUrl()));
+        }
+        if (getDriverClassName() != null) {
+            ref.add(new StringRefAddr(DRIVER_CLASS_NAME, getDriverClassName()));
+        }
+        
         if (getDefaultCachePolicy() != null) {
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             CachePolicy policy = getDefaultCachePolicy();
@@ -272,13 +525,27 @@ public class JdbcRepositorySource implements RepositorySource, ObjectFactory {
                     }
                 }
             }
+            // get individual properties
             String sourceName = (String)values.get(SOURCE_NAME);
+            String rootNodeUuid = (String)values.get(ROOT_NODE_UUID);
+            String dataSourceJndiName = (String)values.get(DATA_SOURCE_JNDI_NAME);
+            String userName = (String)values.get(USERNAME);
+            String password = (String)values.get(PASSWORD);
+            String url = (String)values.get(URL);
+            String driverClassName = (String)values.get(DRIVER_CLASS_NAME);
+            
             Object defaultCachePolicy = values.get(DEFAULT_CACHE_POLICY);
             String retryLimit = (String)values.get(RETRY_LIMIT);
 
             // Create the source instance ...
             JdbcRepositorySource source = new JdbcRepositorySource();
             if (sourceName != null) source.setName(sourceName);
+            if (rootNodeUuid != null) source.setRootNodeUuid(rootNodeUuid);
+            if (dataSourceJndiName != null) source.setDataSourceName(dataSourceJndiName);
+            if (userName != null) source.setUserName(userName);
+            if (password != null) source.setPassword(password);
+            if (url != null) source.setDatabaseUrl(url);
+            if (driverClassName != null) source.setDriverClassName(driverClassName);
             if (defaultCachePolicy instanceof CachePolicy) {
                 source.setDefaultCachePolicy((CachePolicy)defaultCachePolicy);
             }

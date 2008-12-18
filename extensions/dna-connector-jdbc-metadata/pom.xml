@@ -49,5 +49,46 @@
        <version>4.4</version>
        <scope>test</scope>
     </dependency>
+    <dependency>
+       <groupId>hsqldb</groupId>
+       <artifactId>hsqldb</artifactId>
+       <version>1.8.0.7</version>
+       <scope>test</scope>
+    </dependency>
+    <dependency>
+       <groupId>org.dbunit</groupId>
+       <artifactId>dbunit</artifactId>
+       <version>2.4.1</version>
+       <scope>test</scope>
+    </dependency>    
   </dependencies>
+  <properties>
+       <jdbc.driverClassName>org.hsqldb.jdbcDriver</jdbc.driverClassName>
+       <jdbc.username>sa</jdbc.username>
+       <jdbc.password />
+       <jdbc.url>jdbc:hsqldb:file:${basedir}/target/testdb/db</jdbc.url>
+  </properties>
+  <build>
+       <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>true</filtering>
+            </resource>
+       </resources>
+       <testResources>
+            <testResource>
+                <directory>src/test/resources</directory>
+                <filtering>true</filtering>
+            </testResource>
+            <testResource>
+                <directory>src/test/data</directory>
+                <filtering>true</filtering>
+                <targetPath>../</targetPath>
+            </testResource>
+            <testResource>
+                <directory>src/it/resources</directory>
+                <filtering>true</filtering>
+            </testResource>
+       </testResources>
+  </build>
 </project>

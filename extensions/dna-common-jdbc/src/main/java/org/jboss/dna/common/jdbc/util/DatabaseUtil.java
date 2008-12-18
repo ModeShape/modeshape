@@ -21,6 +21,8 @@
  */
 package org.jboss.dna.common.jdbc.util;
 
+import java.lang.reflect.Method;
+import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
@@ -3464,4 +3466,27 @@ public class DatabaseUtil {
                                          superTableName));
         }
     }
+    
+    /**
+     * Get simple database metadata for the getter method (no input parameters)
+     * @param <T> the return type 
+     * @param instance the instance of database metadata implementation
+     * @param methodName the full name of a getter method to execute
+     * @param traceLog the log
+     * @return simple database metadata for the getter method
+     */
+    @SuppressWarnings("unchecked")
+    public static <T> T getDatabaseMetadataProperty (DatabaseMetaData instance, String methodName, Logger traceLog) {
+        try {
+          // acces to the instance's RTTI  
+          Method m = instance.getClass().getDeclaredMethod (methodName);
+          // trying to execute method without parameters
+          return (T) m.invoke(instance);
+        } catch (Exception e) {
+           traceLog.debug(String.format ("Unable to execute getDatabaseMetadata for the '%1$s' method - %2$s: %3$s", 
+                                         methodName, e.getClass().getName(), e.getMessage()));
+           // default is null
+           return null;
+        }
+    } 
 }

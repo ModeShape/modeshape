@@ -34,9 +34,13 @@ public class JdbcMetadataI18n {
     public static I18n nodeDoesNotExist;
     public static I18n nodeTypeIsNotSupported;
     public static I18n propertyIsRequired;
+    public static I18n oneOfPropertiesIsRequired;
     public static I18n errorSerializingCachePolicyInSource;
     public static I18n locationInRequestMustHavePath;
     public static I18n sourceIsReadOnly;
+    public static I18n unableToGetConnectionUsingDriver;
+    public static I18n unableToGetConnectionUsingDataSource;
+    public static I18n unableToGetXAResource;
 
     static {
         try {
