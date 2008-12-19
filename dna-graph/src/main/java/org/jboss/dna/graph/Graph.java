@@ -23,10 +23,15 @@ package org.jboss.dna.graph;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.Reader;
+import java.math.BigDecimal;
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -41,6 +46,8 @@ import org.jboss.dna.graph.connectors.RepositoryConnection;
 import org.jboss.dna.graph.connectors.RepositoryConnectionFactory;
 import org.jboss.dna.graph.connectors.RepositorySource;
 import org.jboss.dna.graph.connectors.RepositorySourceException;
+import org.jboss.dna.graph.properties.Binary;
+import org.jboss.dna.graph.properties.DateTime;
 import org.jboss.dna.graph.properties.Name;
 import org.jboss.dna.graph.properties.NameFactory;
 import org.jboss.dna.graph.properties.Path;
@@ -718,6 +725,93 @@ public class Graph {
                         return nextGraph;
                     }
 
+                    protected Conjunction<Graph> toValue( Object value ) {
+                        Property property = getContext().getPropertyFactory().create(propertyName, value);
+                        UpdatePropertiesRequest request = new UpdatePropertiesRequest(location, property);
+                        queue().submit(request);
+                        return nextGraph;
+                    }
+
+                    public Conjunction<Graph> to( String value ) {
+                        return toValue(value);
+                    }
+
+                    public Conjunction<Graph> to( int value ) {
+                        return toValue(Integer.valueOf(value));
+                    }
+
+                    public Conjunction<Graph> to( long value ) {
+                        return toValue(Long.valueOf(value));
+                    }
+
+                    public Conjunction<Graph> to( boolean value ) {
+                        return toValue(Boolean.valueOf(value));
+                    }
+
+                    public Conjunction<Graph> to( float value ) {
+                        return toValue(Float.valueOf(value));
+                    }
+
+                    public Conjunction<Graph> to( double value ) {
+                        return toValue(Double.valueOf(value));
+                    }
+
+                    public Conjunction<Graph> to( BigDecimal value ) {
+                        return toValue(value);
+                    }
+
+                    public Conjunction<Graph> to( Calendar value ) {
+                        return toValue(value);
+                    }
+
+                    public Conjunction<Graph> to( Date value ) {
+                        return toValue(value);
+                    }
+
+                    public Conjunction<Graph> to( DateTime value ) {
+                        return toValue(value);
+                    }
+
+                    public Conjunction<Graph> to( Name value ) {
+                        return toValue(value);
+                    }
+
+                    public Conjunction<Graph> to( Path value ) {
+                        return toValue(value);
+                    }
+
+                    public Conjunction<Graph> to( Reference value ) {
+                        return toValue(value);
+                    }
+
+                    public Conjunction<Graph> to( URI value ) {
+                        return toValue(value);
+                    }
+
+                    public Conjunction<Graph> to( UUID value ) {
+                        return toValue(value);
+                    }
+
+                    public Conjunction<Graph> to( Binary value ) {
+                        return toValue(value);
+                    }
+
+                    public Conjunction<Graph> to( byte[] value ) {
+                        return toValue(value);
+                    }
+
+                    public Conjunction<Graph> to( InputStream stream,
+                                                  long approximateLength ) {
+                        Binary value = getContext().getValueFactories().getBinaryFactory().create(stream, approximateLength);
+                        return toValue(value);
+                    }
+
+                    public Conjunction<Graph> to( Reader reader,
+                                                  long approximateLength ) {
+                        Binary value = getContext().getValueFactories().getBinaryFactory().create(reader, approximateLength);
+                        return toValue(value);
+                    }
+
                     public Conjunction<Graph> to( Object value ) {
                         value = convertReferenceValue(value);
                         Property property = getContext().getPropertyFactory().create(propertyName, value);
@@ -793,6 +887,90 @@ public class Graph {
             public On<Conjunction<Graph>> to( Location location ) {
                 Reference value = (Reference)convertReferenceValue(location);
                 return set(getContext().getPropertyFactory().create(propertyName, value));
+            }
+
+            protected On<Conjunction<Graph>> toValue( Object value ) {
+                return set(getContext().getPropertyFactory().create(propertyName, value));
+            }
+
+            public On<Conjunction<Graph>> to( String value ) {
+                return toValue(value);
+            }
+
+            public On<Conjunction<Graph>> to( int value ) {
+                return toValue(Integer.valueOf(value));
+            }
+
+            public On<Conjunction<Graph>> to( long value ) {
+                return toValue(Long.valueOf(value));
+            }
+
+            public On<Conjunction<Graph>> to( boolean value ) {
+                return toValue(Boolean.valueOf(value));
+            }
+
+            public On<Conjunction<Graph>> to( float value ) {
+                return toValue(Float.valueOf(value));
+            }
+
+            public On<Conjunction<Graph>> to( double value ) {
+                return toValue(Double.valueOf(value));
+            }
+
+            public On<Conjunction<Graph>> to( BigDecimal value ) {
+                return toValue(value);
+            }
+
+            public On<Conjunction<Graph>> to( Calendar value ) {
+                return toValue(value);
+            }
+
+            public On<Conjunction<Graph>> to( Date value ) {
+                return toValue(value);
+            }
+
+            public On<Conjunction<Graph>> to( DateTime value ) {
+                return toValue(value);
+            }
+
+            public On<Conjunction<Graph>> to( Name value ) {
+                return toValue(value);
+            }
+
+            public On<Conjunction<Graph>> to( Path value ) {
+                return toValue(value);
+            }
+
+            public On<Conjunction<Graph>> to( Reference value ) {
+                return toValue(value);
+            }
+
+            public On<Conjunction<Graph>> to( URI value ) {
+                return toValue(value);
+            }
+
+            public On<Conjunction<Graph>> to( UUID value ) {
+                return toValue(value);
+            }
+
+            public On<Conjunction<Graph>> to( Binary value ) {
+                return toValue(value);
+            }
+
+            public On<Conjunction<Graph>> to( byte[] value ) {
+                return toValue(value);
+            }
+
+            public On<Conjunction<Graph>> to( InputStream stream,
+                                              long approximateLength ) {
+                Binary value = getContext().getValueFactories().getBinaryFactory().create(stream, approximateLength);
+                return toValue(value);
+            }
+
+            public On<Conjunction<Graph>> to( Reader reader,
+                                              long approximateLength ) {
+                Binary value = getContext().getValueFactories().getBinaryFactory().create(reader, approximateLength);
+                return toValue(value);
             }
 
             public On<Conjunction<Graph>> to( Object value ) {
@@ -2009,6 +2187,93 @@ public class Graph {
                             return nextRequests;
                         }
 
+                        protected BatchConjunction toValue( Object value ) {
+                            Property property = getContext().getPropertyFactory().create(propertyName, value);
+                            UpdatePropertiesRequest request = new UpdatePropertiesRequest(location, property);
+                            requestQueue.submit(request);
+                            return nextRequests;
+                        }
+
+                        public BatchConjunction to( String value ) {
+                            return toValue(value);
+                        }
+
+                        public BatchConjunction to( int value ) {
+                            return toValue(Integer.valueOf(value));
+                        }
+
+                        public BatchConjunction to( long value ) {
+                            return toValue(Long.valueOf(value));
+                        }
+
+                        public BatchConjunction to( boolean value ) {
+                            return toValue(Boolean.valueOf(value));
+                        }
+
+                        public BatchConjunction to( float value ) {
+                            return toValue(Float.valueOf(value));
+                        }
+
+                        public BatchConjunction to( double value ) {
+                            return toValue(Double.valueOf(value));
+                        }
+
+                        public BatchConjunction to( BigDecimal value ) {
+                            return toValue(value);
+                        }
+
+                        public BatchConjunction to( Calendar value ) {
+                            return toValue(value);
+                        }
+
+                        public BatchConjunction to( Date value ) {
+                            return toValue(value);
+                        }
+
+                        public BatchConjunction to( DateTime value ) {
+                            return toValue(value);
+                        }
+
+                        public BatchConjunction to( Name value ) {
+                            return toValue(value);
+                        }
+
+                        public BatchConjunction to( Path value ) {
+                            return toValue(value);
+                        }
+
+                        public BatchConjunction to( Reference value ) {
+                            return toValue(value);
+                        }
+
+                        public BatchConjunction to( URI value ) {
+                            return toValue(value);
+                        }
+
+                        public BatchConjunction to( UUID value ) {
+                            return toValue(value);
+                        }
+
+                        public BatchConjunction to( Binary value ) {
+                            return toValue(value);
+                        }
+
+                        public BatchConjunction to( byte[] value ) {
+                            return toValue(value);
+                        }
+
+                        public BatchConjunction to( InputStream stream,
+                                                    long approximateLength ) {
+                            Binary value = getContext().getValueFactories().getBinaryFactory().create(stream, approximateLength);
+                            return toValue(value);
+                        }
+
+                        public BatchConjunction to( Reader reader,
+                                                    long approximateLength ) {
+                            Binary value = getContext().getValueFactories().getBinaryFactory().create(reader, approximateLength);
+                            return toValue(value);
+                        }
+
                         public BatchConjunction to( Object value ) {
                             value = convertReferenceValue(value);
                             Property property = getContext().getPropertyFactory().create(propertyName, value);
@@ -2052,6 +2317,7 @@ public class Graph {
                             requestQueue.submit(request);
                             return nextRequests;
                         }
+
                     };
                 }
 
@@ -2084,6 +2350,90 @@ public class Graph {
                 public On<BatchConjunction> to( Location value ) {
                     Object reference = convertReferenceValue(value);
                     return set(getContext().getPropertyFactory().create(propertyName, reference));
+                }
+
+                protected On<BatchConjunction> toValue( Object value ) {
+                    return set(getContext().getPropertyFactory().create(propertyName, value));
+                }
+
+                public On<BatchConjunction> to( String value ) {
+                    return toValue(value);
+                }
+
+                public On<BatchConjunction> to( int value ) {
+                    return toValue(Integer.valueOf(value));
+                }
+
+                public On<BatchConjunction> to( long value ) {
+                    return toValue(Long.valueOf(value));
+                }
+
+                public On<BatchConjunction> to( boolean value ) {
+                    return toValue(Boolean.valueOf(value));
+                }
+
+                public On<BatchConjunction> to( float value ) {
+                    return toValue(Float.valueOf(value));
+                }
+
+                public On<BatchConjunction> to( double value ) {
+                    return toValue(Double.valueOf(value));
+                }
+
+                public On<BatchConjunction> to( BigDecimal value ) {
+                    return toValue(value);
+                }
+
+                public On<BatchConjunction> to( Calendar value ) {
+                    return toValue(value);
+                }
+
+                public On<BatchConjunction> to( Date value ) {
+                    return toValue(value);
+                }
+
+                public On<BatchConjunction> to( DateTime value ) {
+                    return toValue(value);
+                }
+
+                public On<BatchConjunction> to( Name value ) {
+                    return toValue(value);
+                }
+
+                public On<BatchConjunction> to( Path value ) {
+                    return toValue(value);
+                }
+
+                public On<BatchConjunction> to( Reference value ) {
+                    return toValue(value);
+                }
+
+                public On<BatchConjunction> to( URI value ) {
+                    return toValue(value);
+                }
+
+                public On<BatchConjunction> to( UUID value ) {
+                    return toValue(value);
+                }
+
+                public On<BatchConjunction> to( Binary value ) {
+                    return toValue(value);
+                }
+
+                public On<BatchConjunction> to( byte[] value ) {
+                    return toValue(value);
+                }
+
+                public On<BatchConjunction> to( InputStream stream,
+                                                long approximateLength ) {
+                    Binary value = getContext().getValueFactories().getBinaryFactory().create(stream, approximateLength);
+                    return toValue(value);
+                }
+
+                public On<BatchConjunction> to( Reader reader,
+                                                long approximateLength ) {
+                    Binary value = getContext().getValueFactories().getBinaryFactory().create(reader, approximateLength);
+                    return toValue(value);
                 }
 
                 public On<BatchConjunction> to( Object value ) {
@@ -3156,6 +3506,162 @@ public class Graph {
          * @throws IllegalArgumentException if the value is a Location that has no {@link Location#getUuid() UUID}
          */
         Next to( Location location );
+
+        /**
+         * Set the property value to the given string.
+         * 
+         * @param value the property value
+         * @return the interface for additional requests or actions
+         */
+        Next to( String value );
+
+        /**
+         * Set the property value to the given integer value.
+         * 
+         * @param value the property value
+         * @return the interface for additional requests or actions
+         */
+        Next to( int value );
+
+        /**
+         * Set the property value to the given long value.
+         * 
+         * @param value the property value
+         * @return the interface for additional requests or actions
+         */
+        Next to( long value );
+
+        /**
+         * Set the property value to the given boolean value.
+         * 
+         * @param value the property value
+         * @return the interface for additional requests or actions
+         */
+        Next to( boolean value );
+
+        /**
+         * Set the property value to the given float value.
+         * 
+         * @param value the property value
+         * @return the interface for additional requests or actions
+         */
+        Next to( float value );
+
+        /**
+         * Set the property value to the given double value.
+         * 
+         * @param value the property value
+         * @return the interface for additional requests or actions
+         */
+        Next to( double value );
+
+        /**
+         * Set the property value to the given decimal value.
+         * 
+         * @param value the property value
+         * @return the interface for additional requests or actions
+         */
+        Next to( BigDecimal value );
+
+        /**
+         * Set the property value to the date given by the supplied calendar.
+         * 
+         * @param value the property value
+         * @return the interface for additional requests or actions
+         */
+        Next to( Calendar value );
+
+        /**
+         * Set the property value to the given date.
+         * 
+         * @param value the property value
+         * @return the interface for additional requests or actions
+         */
+        Next to( Date value );
+
+        /**
+         * Set the property value to the given date-time instant.
+         * 
+         * @param value the property value
+         * @return the interface for additional requests or actions
+         */
+        Next to( DateTime value );
+
+        /**
+         * Set the property value to the given Name.
+         * 
+         * @param value the property value
+         * @return the interface for additional requests or actions
+         */
+        Next to( Name value );
+
+        /**
+         * Set the property value to the given Path.
+         * 
+         * @param value the property value
+         * @return the interface for additional requests or actions
+         */
+        Next to( Path value );
+
+        /**
+         * Set the property value to the given Reference. See also {@link #to(Node)}.
+         * 
+         * @param value the property value
+         * @return the interface for additional requests or actions
+         */
+        Next to( Reference value );
+
+        /**
+         * Set the property value to the given URI.
+         * 
+         * @param value the property value
+         * @return the interface for additional requests or actions
+         */
+        Next to( URI value );
+
+        /**
+         * Set the property value to the given UUID.
+         * 
+         * @param value the property value
+         * @return the interface for additional requests or actions
+         */
+        Next to( UUID value );
+
+        /**
+         * Set the property value to the given binary value.
+         * 
+         * @param value the property value
+         * @return the interface for additional requests or actions
+         */
+        Next to( Binary value );
+
+        /**
+         * Set the property value to the given byte array.
+         * 
+         * @param value the property value
+         * @return the interface for additional requests or actions
+         */
+        Next to( byte[] value );
+
+        /**
+         * Set the property value to the given string.
+         * 
+         * @param stream the stream containing the content to be used for the property value
+         * @param approximateLength the approximate length of the content (in bytes)
+         * @return the interface for additional requests or actions
+         */
+        Next to( InputStream stream,
+                 long approximateLength );
+
+        /**
+         * Set the property value to the given string.
+         * 
+         * @param reader the reader containing the content to be used for the property value
+         * @param approximateLength the approximate length of the content (in bytes)
+         * @return the interface for additional requests or actions
+         */
+        Next to( Reader reader,
+                 long approximateLength );
 
         /**
          * Set the property value to the given object. The supplied <code>value</code> should be a valid property value, or a

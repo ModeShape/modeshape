@@ -31,7 +31,9 @@ import static org.junit.matchers.JUnitMatchers.hasItems;
 import static org.mockito.Matchers.argThat;
 import static org.mockito.Mockito.stub;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.Collection;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -44,6 +46,7 @@ import org.jboss.dna.graph.connectors.RepositoryConnection;
 import org.jboss.dna.graph.connectors.RepositoryConnectionFactory;
 import org.jboss.dna.graph.connectors.RepositorySourceException;
 import org.jboss.dna.graph.connectors.RepositorySourceListener;
+import org.jboss.dna.graph.properties.DateTime;
 import org.jboss.dna.graph.properties.InvalidPathException;
 import org.jboss.dna.graph.properties.Name;
 import org.jboss.dna.graph.properties.Path;
@@ -137,6 +140,11 @@ public class GraphTest {
 
     protected Name createName( String name ) {
         return context.getValueFactories().getNameFactory().create(name);
+    }
+
+    protected Property createProperty( String name,
+                                       Object... values ) {
+        return context.getPropertyFactory().create(createName(name), values);
     }
 
     protected void setPropertiesToReadOn( Location location,
@@ -242,6 +250,15 @@ public class GraphTest {
         Request request = executedRequests.poll();
         assertThat(request, is(instanceOf(CompositeRequest.class)));
         executedRequests.addAll(0, ((CompositeRequest)request).getRequests());
+    }
+
+    protected void assertNextRequestUpdateProperties( Location on,
+                                                      Property... properties ) {
+        Request request = executedRequests.poll();
+        assertThat(request, is(instanceOf(UpdatePropertiesRequest.class)));
+        UpdatePropertiesRequest read = (UpdatePropertiesRequest)request;
+        assertThat(read.on(), is(on));
+        assertThat(read.properties(), hasItems(properties));
     }
 
     // ----------------------------------------------------------------------------------------------------------------
@@ -486,6 +503,53 @@ public class GraphTest {
         assertNextRequestReadNextBlockOfChildren(new Location(pathY), 2, child3);
         assertNoMoreRequests();
         assertThat(children, hasItems(child3));
+    }
+
+    @Test
+    public void shouldSetPropertiesWithEitherOnOrToMethodsCalledFirst() {
+        graph.set("propName").on(validPath).to(3.0f);
+        assertNextRequestUpdateProperties(new Location(validPath), createProperty("propName", 3.0f));
+
+        graph.set("propName").to(3.0f).on(validPath);
+        assertNextRequestUpdateProperties(new Location(validPath), createProperty("propName", 3.0f));
+    }
+
+    @Test
+    public void shouldSetPropertyValueToPrimitiveTypes() {
+        graph.set("propName").on(validPath).to(3.0F);
+        assertNextRequestUpdateProperties(new Location(validPath), createProperty("propName", new Float(3.0f)));
+
+        graph.set("propName").on(validPath).to(1.0D);
+        assertNextRequestUpdateProperties(new Location(validPath), createProperty("propName", new Double(1.0)));
+
+        graph.set("propName").on(validPath).to(false);
+        assertNextRequestUpdateProperties(new Location(validPath), createProperty("propName", Boolean.FALSE));
+
+        graph.set("propName").on(validPath).to(3);
+        assertNextRequestUpdateProperties(new Location(validPath), createProperty("propName", new Integer(3)));
+
+        graph.set("propName").on(validPath).to(5L);
+        assertNextRequestUpdateProperties(new Location(validPath), createProperty("propName", new Long(5)));
+
+        graph.set("propName").on(validPath).to(validPath);
+        assertNextRequestUpdateProperties(new Location(validPath), createProperty("propName", validPath));
+
+        graph.set("propName").on(validPath).to(validPath.getLastSegment().getName());
+        assertNextRequestUpdateProperties(new Location(validPath), createProperty("propName",
+                                                                                  validPath.getLastSegment().getName()));
+        Date now = new Date();
+        graph.set("propName").on(validPath).to(now);
+        assertNextRequestUpdateProperties(new Location(validPath), createProperty("propName", now));
+
+        DateTime dtNow = context.getValueFactories().getDateFactory().create(now);
+        graph.set("propName").on(validPath).to(dtNow);
+        assertNextRequestUpdateProperties(new Location(validPath), createProperty("propName", dtNow));
+
+        Calendar calNow = Calendar.getInstance();
+        calNow.setTime(now);
+        graph.set("propName").on(validPath).to(calNow);
+        assertNextRequestUpdateProperties(new Location(validPath), createProperty("propName", dtNow));
+
     }
 
     @Test
