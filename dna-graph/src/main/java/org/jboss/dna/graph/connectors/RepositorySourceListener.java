@@ -22,9 +22,12 @@
 package org.jboss.dna.graph.connectors;
 
 /**
+ * Interface for a component that wants to listen to changes occurring in a {@link RepositorySource}.
+ * 
  * @author Randall Hauch
  */
 public interface RepositorySourceListener {
 
-    void notify( String sourceName, Object... events );
+    void notify( String sourceName,
+                 Object... events );
 }

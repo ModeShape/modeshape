@@ -24,7 +24,8 @@ package org.jboss.dna.graph.connectors;
 import net.jcip.annotations.Immutable;
 
 /**
- * The capabilities of a {@link RepositorySource}. This class can be used as is, or subclassed to define more complex behavior.
+ * The capabilities of a {@link RepositorySource}. This class can be used as is, or subclassed by a connector to define more
+ * complex behavior.
  * 
  * @see RepositorySource#getCapabilities()
  * @author Randall Hauch

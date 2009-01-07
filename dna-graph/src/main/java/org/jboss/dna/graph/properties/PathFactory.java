@@ -178,23 +178,31 @@ public interface PathFactory extends ValueFactory<Path> {
                  String subpath );
 
     /**
-     * Create a path segment given the supplied segment name. The resulting segment will have no index.
+     * Create a path segment given the supplied segment name. The supplied string may contain a same-name-sibling index in the
+     * form of "<code>[<i>n</i>]</code>" at the end of the name, where <i>n</i> is a positive integer. Note that the
+     * same-name-sibling index is 1-based, not zero-based.
      * 
      * @param segmentName the name of the segment
      * @return the segment
      * @throws IllegalArgumentException if the segment name reference is <code>null</code> or the value could not be created from
      *         the supplied string
+     * @throws ValueFormatException if the same-name-sibling index is not an integer, or if the supplied string is not a valid
+     *         segment name
      */
     Path.Segment createSegment( String segmentName );
 
     /**
-     * Create a path segment given the supplied segment name. The resulting segment will have no index.
+     * Create a path segment given the supplied segment name. The supplied string may contain a same-name-sibling index in the
+     * form of "<code>[<i>n</i>]</code>" at the end of the name, where <i>n</i> is a positive integer. Note that the
+     * same-name-sibling index is 1-based, not zero-based.
      * 
      * @param segmentName the name of the segment
      * @param decoder the decoder that should be used to decode the qualified name
      * @return the segment
      * @throws IllegalArgumentException if the segment name reference is <code>null</code> or the value could not be created from
      *         the supplied string
+     * @throws ValueFormatException if the same-name-sibling index is not an integer, or if the supplied string is not a valid
+     *         segment name
      */
     Path.Segment createSegment( String segmentName,
                                 TextDecoder decoder );
@@ -206,6 +214,7 @@ public interface PathFactory extends ValueFactory<Path> {
      * @param index the index of the new segment
      * @return the segment
      * @throws IllegalArgumentException if the segment name reference is <code>null</code> or if the index is invalid
+     * @throws ValueFormatException if the supplied string is not a valid segment name
      */
     Path.Segment createSegment( String segmentName,
                                 int index );

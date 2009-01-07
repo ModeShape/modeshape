@@ -23,7 +23,8 @@ package org.jboss.dna.graph.connectors;
 
 /**
  * An interface for a factory of {@link RepositoryConnection}s using the names of the {@link RepositorySource} from which the
- * connections are to be obtained.
+ * connections are to be obtained. This interface need not be implemented by a {@link RepositorySource}, as implementations are
+ * usually provided by the system.
  * 
  * @author Randall Hauch
  */

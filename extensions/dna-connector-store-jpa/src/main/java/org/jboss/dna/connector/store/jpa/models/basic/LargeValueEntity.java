@@ -28,7 +28,6 @@ import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
 import javax.persistence.Id;
 import javax.persistence.Lob;
-import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.Query;
 import javax.persistence.Table;
@@ -42,11 +41,7 @@ import org.jboss.dna.graph.properties.PropertyType;
  */
 @Entity
 @Table( name = "DNA_BASIC_LARGE_VALUES" )
-@NamedQueries( {
-// @NamedQuery( name = "LargeValueEntity.selectUsed", query =
-// "select value from LargeValueEntity value where value.id in (select values.hash from PropertiesEntity prop join prop.largeValues values)"
-// ),
-@NamedQuery( name = "LargeValueEntity.deleteUnused", query = "delete LargeValueEntity value where value.id not in (select values.hash from PropertiesEntity prop join prop.largeValues values)" )} )
+@NamedQuery( name = "LargeValueEntity.deleteUnused", query = "delete LargeValueEntity value where value.id not in (select values.hash from PropertiesEntity prop join prop.largeValues values)" )
 public class LargeValueEntity {
 
     @Id

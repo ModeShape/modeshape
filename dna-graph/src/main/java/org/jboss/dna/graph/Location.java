@@ -335,6 +335,11 @@ public class Location implements Iterable<Property> {
         return null;
     }
 
+    /**
+     * Get the first UUID that is in one of the {@link #getIdProperties() identification properties}.
+     * 
+     * @return the UUID for this location, or null if there is no such identification property
+     */
     public UUID getUuid() {
         Property property = getIdProperty(DnaLexicon.UUID);
         if (property != null && !property.isEmpty()) {

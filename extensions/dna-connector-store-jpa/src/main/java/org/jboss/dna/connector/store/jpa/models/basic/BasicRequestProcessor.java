@@ -347,6 +347,7 @@ public class BasicRequestProcessor extends RequestProcessor {
             return;
         }
         if (actualLocation != null) request.setActualLocationOfNode(actualLocation);
+        setCacheableInfo(request);
     }
 
     /**
@@ -374,6 +375,7 @@ public class BasicRequestProcessor extends RequestProcessor {
             return;
         }
         if (actualLocation != null) request.setActualLocationOfNode(actualLocation);
+        setCacheableInfo(request);
     }
 
     /**
@@ -469,6 +471,7 @@ public class BasicRequestProcessor extends RequestProcessor {
             return;
         }
         if (actualLocation != null) request.setActualLocationOfNode(actualLocation);
+        setCacheableInfo(request);
     }
 
     /**
@@ -564,6 +567,7 @@ public class BasicRequestProcessor extends RequestProcessor {
             return;
         }
         if (actualLocation != null) request.setActualLocationOfStartingAfterNode(actualLocation);
+        setCacheableInfo(request);
     }
 
     /**
@@ -615,6 +619,7 @@ public class BasicRequestProcessor extends RequestProcessor {
             return;
         }
         if (actualLocation != null) request.setActualLocationOfNode(actualLocation);
+        setCacheableInfo(request);
     }
 
     /**
@@ -632,7 +637,11 @@ public class BasicRequestProcessor extends RequestProcessor {
                 // Just get the UUID ...
                 Location location = request.on();
                 ActualLocation actualLocation = getActualLocation(location);
+                UUID uuid = actualLocation.location.getUuid();
+                Property uuidProperty = getExecutionContext().getPropertyFactory().create(propertyName, uuid);
+                request.setProperty(uuidProperty);
                 request.setActualLocationOfNode(actualLocation.location);
+                setCacheableInfo(request);
             } catch (Throwable e) { // Includes PathNotFoundException
                 request.setError(e);
             }
@@ -678,6 +687,7 @@ public class BasicRequestProcessor extends RequestProcessor {
             return;
         }
         if (actualLocation != null) request.setActualLocationOfNode(actualLocation);
+        setCacheableInfo(request);
     }
 
     /**
@@ -825,6 +835,8 @@ public class BasicRequestProcessor extends RequestProcessor {
                 String parentUuid = actual.uuid;
                 Location parentLocation = actualLocation;
                 List<Location> children = new LinkedList<Location>();
+                Map<Location, List<Location>> childrenByParentLocation = new HashMap<Location, List<Location>>();
+                childrenByParentLocation.put(parentLocation, children);
                 boolean includeChildrenOfNodesAtMaxDepth = true;
                 for (ChildEntity child : query.getNodes(false, includeChildrenOfNodesAtMaxDepth)) {
                     String namespaceUri = child.getChildNamespace().getUri();
@@ -834,22 +846,30 @@ public class BasicRequestProcessor extends RequestProcessor {
                     // Figure out who the parent is ...
                     String childParentUuid = child.getId().getParentUuidString();
                     if (!parentUuid.equals(childParentUuid)) {
-                        // The parent isn't the last parent, so record the children found so far ...
-                        request.setChildren(parentLocation, children);
-                        // And find the correct parent ...
+                        // Find the correct parent ...
                         parentLocation = locationsByUuid.get(childParentUuid);
                         parent = parentLocation.getPath();
                         parentUuid = childParentUuid;
-                        children = new LinkedList<Location>();
+                        // See if there is already a list of children for this parent ...
+                        children = childrenByParentLocation.get(parentLocation);
+                        if (children == null) {
+                            children = new LinkedList<Location>();
+                            childrenByParentLocation.put(parentLocation, children);
+                        }
                     }
+                    assert children != null;
                     Path childPath = pathFactory.create(parent, childName, sns);
                     String childUuidString = child.getId().getChildUuidString();
                     Location childLocation = new Location(childPath, UUID.fromString(childUuidString));
                     locationsByUuid.put(childUuidString, childLocation);
                     children.add(childLocation);
                 }
-                if (!children.isEmpty()) {
-                    request.setChildren(parentLocation, children);
+                // Now add the list of children to the results ...
+                for (Map.Entry<Location, List<Location>> entry : childrenByParentLocation.entrySet()) {
+                    // Don't add if there are no children ...
+                    if (!entry.getValue().isEmpty()) {
+                        request.setChildren(entry.getKey(), entry.getValue());
+                    }
                 }
 
                 // Note that we've found children for nodes that are at the maximum depth. This is so that the nodes
@@ -892,6 +912,7 @@ public class BasicRequestProcessor extends RequestProcessor {
             return;
         }
         request.setActualLocationOfNode(actualLocation);
+        setCacheableInfo(request);
     }
 
     /**

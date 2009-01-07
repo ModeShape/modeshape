@@ -31,6 +31,7 @@ import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.GraphI18n;
 import org.jboss.dna.graph.Location;
+import org.jboss.dna.graph.cache.CachePolicy;
 import org.jboss.dna.graph.connectors.RepositorySourceException;
 import org.jboss.dna.graph.properties.DateTime;
 import org.jboss.dna.graph.properties.Name;
@@ -38,6 +39,7 @@ import org.jboss.dna.graph.properties.Path;
 import org.jboss.dna.graph.properties.Property;
 import org.jboss.dna.graph.properties.ReferentialIntegrityException;
 import org.jboss.dna.graph.properties.basic.BasicEmptyProperty;
+import org.jboss.dna.graph.requests.CacheableRequest;
 import org.jboss.dna.graph.requests.CompositeRequest;
 import org.jboss.dna.graph.requests.CopyBranchRequest;
 import org.jboss.dna.graph.requests.CreateNodeRequest;
@@ -68,20 +70,29 @@ public abstract class RequestProcessor {
     private final ExecutionContext context;
     private final String sourceName;
     private final DateTime nowInUtc;
+    private final CachePolicy defaultCachePolicy;
 
     protected RequestProcessor( String sourceName,
                                 ExecutionContext context ) {
-        this(sourceName, context, null);
+        this(sourceName, context, null, null);
     }
 
     protected RequestProcessor( String sourceName,
                                 ExecutionContext context,
                                 DateTime now ) {
+        this(sourceName, context, now, null);
+    }
+
+    protected RequestProcessor( String sourceName,
+                                ExecutionContext context,
+                                DateTime now,
+                                CachePolicy defaultCachePolicy ) {
         CheckArg.isNotEmpty(sourceName, "sourceName");
         CheckArg.isNotNull(context, "context");
         this.context = context;
         this.sourceName = sourceName;
         this.nowInUtc = now != null ? now : context.getValueFactories().getDateFactory().createUtc();
+        this.defaultCachePolicy = defaultCachePolicy;
     }
 
     /**
@@ -109,6 +120,28 @@ public abstract class RequestProcessor {
      */
     protected DateTime getNowInUtc() {
         return this.nowInUtc;
+    }
+
+    /**
+     * Set the supplied request to have the default cache policy and the {@link #getNowInUtc() current time in UTC}.
+     * 
+     * @param request the cacheable request
+     */
+    protected void setCacheableInfo( CacheableRequest request ) {
+        request.setCachePolicy(defaultCachePolicy);
+        request.setTimeLoaded(nowInUtc);
+    }
+
+    /**
+     * Set the supplied request to have the supplied cache policy and the {@link #getNowInUtc() current time in UTC}.
+     * 
+     * @param request the cacheable request
+     * @param cachePolicy the cache policy for the request; may be null if there is to be no cache policy
+     */
+    protected void setCacheableInfo( CacheableRequest request,
+                                     CachePolicy cachePolicy ) {
+        request.setCachePolicy(cachePolicy);
+        request.setTimeLoaded(nowInUtc);
     }
 
     /**
@@ -272,6 +305,7 @@ public abstract class RequestProcessor {
         }
         // Set the actual location ...
         request.setActualLocationOfNode(readAll.getActualLocationOfNode());
+        setCacheableInfo(request);
     }
 
     /**
@@ -326,6 +360,7 @@ public abstract class RequestProcessor {
 
         // Set the actual location ...
         request.setActualLocationOfStartingAfterNode(actualSiblingLocation);
+        setCacheableInfo(request);
     }
 
     /**
@@ -376,6 +411,7 @@ public abstract class RequestProcessor {
                 locationsToRead.add(new LocationWithDepth(child, read.depth + 1));
             }
         }
+        setCacheableInfo(request);
     }
 
     /**
@@ -424,6 +460,7 @@ public abstract class RequestProcessor {
         for (Location child : readChildren) {
             request.addChild(child);
         }
+        setCacheableInfo(request);
     }
 
     /**
@@ -447,6 +484,7 @@ public abstract class RequestProcessor {
         request.setProperty(property);
         // Set the actual location ...
         request.setActualLocationOfNode(readNode.getActualLocationOfNode());
+        setCacheableInfo(request);
     }
 
     /**
