@@ -181,5 +181,4 @@ public class SVNRepositoryConnection implements RepositoryConnection {
     protected RepositorySourceListener getListener() {
         return this.listener;
     }
-
 }

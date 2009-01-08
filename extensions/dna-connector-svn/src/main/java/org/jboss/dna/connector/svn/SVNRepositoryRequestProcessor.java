@@ -27,6 +27,8 @@ import java.util.Collection;
 import java.util.Date;
 import org.jboss.dna.common.i18n.I18n;
 import org.jboss.dna.common.util.Logger;
+import org.jboss.dna.connector.scm.ScmAction;
+import org.jboss.dna.connector.scm.ScmActionFactory;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.JcrLexicon;
 import org.jboss.dna.graph.JcrNtLexicon;
@@ -58,6 +60,7 @@ import org.tmatesoft.svn.core.SVNException;
 import org.tmatesoft.svn.core.SVNNodeKind;
 import org.tmatesoft.svn.core.SVNProperties;
 import org.tmatesoft.svn.core.SVNProperty;
+import org.tmatesoft.svn.core.io.ISVNEditor;
 import org.tmatesoft.svn.core.io.SVNRepository;
 
 /**
@@ -66,7 +69,7 @@ import org.tmatesoft.svn.core.io.SVNRepository;
  * 
  * @author Serge Emmanuel Pagop
  */
-public class SVNRepositoryRequestProcessor extends RequestProcessor {
+public class SVNRepositoryRequestProcessor extends RequestProcessor implements ScmActionFactory {
 
     protected static final String BACK_SLASH = "/";
 
@@ -100,7 +103,9 @@ public class SVNRepositoryRequestProcessor extends RequestProcessor {
      */
     @Override
     public void process( CopyBranchRequest request ) {
+        logger.trace(request.toString());
         verifyUpdatesAllowed();
+
     }
 
     /**
@@ -110,7 +115,54 @@ public class SVNRepositoryRequestProcessor extends RequestProcessor {
      */
     @Override
     public void process( CreateNodeRequest request ) {
+        logger.trace(request.toString());
         verifyUpdatesAllowed();
+        Location myLocation = request.under();
+        Path parent = getPathFor(myLocation, request);
+        try {
+            String root = parent.getString(getExecutionContext().getNamespaceRegistry());
+            SVNNodeKind rootKind = repository.checkPath(root, -1);
+            if (rootKind == SVNNodeKind.UNKNOWN) {
+                // TODO throw an checked exception
+            } else if (rootKind == SVNNodeKind.NONE) {
+                // TODO throw an checked exception
+            } else if (rootKind == SVNNodeKind.FILE) {
+                // TODO throw an checked exception
+            } else if (rootKind == SVNNodeKind.DIR) {
+                String childName = request.named().getString(getExecutionContext().getNamespaceRegistry());
+                if (root.length() == 1 && root.charAt(0) == '/') {
+                    // test if so a directory does not exist.
+                    mkdir("",childName, request.toString());
+                } else {
+                    if(root.length() > 1 && root.charAt(0) == '/') {
+                        // test if so a directory does not exist.
+                        mkdir(root.substring(1),childName, request.toString());
+                    }
+                }
+            }
+
+        } catch (Exception e) {
+        }
+        //
+    }
+
+    /**
+     * Create a directory .
+     * @param root - the root directory where the created directory will reside
+     * @param childName - the name of the created directory.
+     * @param message  - comment for the creation.
+     * @throws Exception - if during the creation, there is an error.
+     */
+    private void mkdir( String root,
+                              String childName, String message) throws Exception {
+        SVNNodeKind childKind = repository.checkPath(childName, -1);
+        if (childKind == SVNNodeKind.NONE) {
+            ScmAction addNodeAction = addDirectory(root, childName);
+            SVNActionExecutor executor = new SVNActionExecutor(repository);
+            executor.execute(addNodeAction, message);
+        } else {
+            // TODO throwns an exception
+        }
     }
 
     /**
@@ -120,6 +172,7 @@ public class SVNRepositoryRequestProcessor extends RequestProcessor {
      */
     @Override
     public void process( DeleteBranchRequest request ) {
+        logger.trace(request.toString());
         verifyUpdatesAllowed();
     }
 
@@ -130,6 +183,7 @@ public class SVNRepositoryRequestProcessor extends RequestProcessor {
      */
     @Override
     public void process( MoveBranchRequest request ) {
+        logger.trace(request.toString());
         verifyUpdatesAllowed();
     }
 
@@ -279,6 +333,7 @@ public class SVNRepositoryRequestProcessor extends RequestProcessor {
      */
     @Override
     public void process( RemovePropertiesRequest request ) {
+        logger.trace(request.toString());
         verifyUpdatesAllowed();
         super.process(request);
     }
@@ -290,6 +345,7 @@ public class SVNRepositoryRequestProcessor extends RequestProcessor {
      */
     @Override
     public void process( RenameNodeRequest request ) {
+        logger.trace(request.toString());
         verifyUpdatesAllowed();
         super.process(request);
     }
@@ -301,8 +357,15 @@ public class SVNRepositoryRequestProcessor extends RequestProcessor {
      */
     @Override
     public void process( UpdatePropertiesRequest request ) {
+        logger.trace(request.toString());
+        verifyUpdatesAllowed();
     }
 
+    /**
+     * Verify if change is allowed on a specific source.
+     * 
+     * @throws RepositorySourceException if change on that repository source is not allowed.
+     */
     protected void verifyUpdatesAllowed() {
         if (!updatesAllowed) {
             throw new RepositorySourceException(getSourceName(),
@@ -319,22 +382,50 @@ public class SVNRepositoryRequestProcessor extends RequestProcessor {
         return getExecutionContext().getValueFactories().getNameFactory();
     }
 
+    /**
+     * Factory for path creation.
+     * 
+     * @return a path factory.
+     */
     protected PathFactory pathFactory() {
         return getExecutionContext().getValueFactories().getPathFactory();
     }
 
+    /**
+     * Factory for property creation.
+     * 
+     * @return the property factory.
+     */
     protected PropertyFactory propertyFactory() {
         return getExecutionContext().getPropertyFactory();
     }
 
+    /**
+     * Factory for date creation.
+     * 
+     * @return the date factory.
+     */
     protected DateTimeFactory dateFactory() {
         return getExecutionContext().getValueFactories().getDateFactory();
     }
 
+    /**
+     * Factory for binary creation.
+     * 
+     * @return the binary factory..
+     */
     protected ValueFactory<Binary> binaryFactory() {
         return getExecutionContext().getValueFactories().getBinaryFactory();
     }
 
+    /**
+     * Get the path for a locarion and check if the path is null or not.
+     * 
+     * @param location - the location.
+     * @param request - the requested path.
+     * @return the path.
+     * @throws RepositorySourceException if the path of a location is null.
+     */
     protected Path getPathFor( Location location,
                                Request request ) {
         Path path = location.getPath();
@@ -361,6 +452,8 @@ public class SVNRepositoryRequestProcessor extends RequestProcessor {
     }
 
     /**
+     * Get the repository driver.
+     * 
      * @return repository
      */
     public SVNRepository getRepository() {
@@ -415,5 +508,198 @@ public class SVNRepositoryRequestProcessor extends RequestProcessor {
             // TODO RepositorySourceAuthenticationException
         }
         return entry;
+    }
+
+    /**
+     * Open the directories where change has to be made.
+     * 
+     * @param editor - abstract editor.
+     * @param rootPath - the pa to open.
+     * @throws SVNException
+     */
+    protected static void openDirectories( ISVNEditor editor,
+                                           String rootPath ) throws SVNException {
+        assert rootPath != null;
+        int pos = rootPath.indexOf('/', 0);
+        while (pos != -1) {
+            String dir = rootPath.substring(0, pos);
+            editor.openDir(dir, -1);
+            pos = rootPath.indexOf('/', pos + 1);
+        }
+        String dir = rootPath.substring(0, rootPath.length());
+        editor.openDir(dir, -1);
+    }
+
+    /**
+     * Close the directories where change was made.
+     * 
+     * @param editor - the abstract editor.
+     * @param path - the directories to open.
+     * @throws SVNException
+     */
+    protected static void closeDirectories( ISVNEditor editor,
+                                            String path ) throws SVNException {
+        int length = path.length() - 1;
+        int pos = path.lastIndexOf('/', length);
+        editor.closeDir();
+        while (pos != -1) {
+            editor.closeDir();
+            pos = path.lastIndexOf('/', pos - 1);
+        }
+    }
+
+    /**
+     * Get the last revision.
+     * 
+     * @return the last revision number.
+     * @throws Exception
+     */
+    public long getLatestRevision() throws Exception {
+        try {
+            return repository.getLatestRevision();
+        } catch (SVNException e) {
+            e.printStackTrace();
+            // logger.error( "svn error: " );
+            throw e;
+        }
+    }
+
+    /**
+     * @param repository
+     * @param root - the root path has to exist.
+     * @param child - new path to be added.
+     * @param message - information about the change action.
+     * @throws SVNException
+     */
+    protected void addDirEntry( SVNRepository repository,
+                                String root,
+                                String child,
+                                String message ) throws SVNException {
+        assert root.trim().length() != 0;
+        SVNNodeKind rootKind = repository.checkPath(root, -1);
+        if (rootKind == SVNNodeKind.UNKNOWN) {
+            // TODO throw an checked exception
+        } else if (rootKind == SVNNodeKind.NONE) {
+            // TODO throw an checked exception
+        } else if (rootKind == SVNNodeKind.FILE) {
+            // TODO throw an checked exception
+        } else if (rootKind == SVNNodeKind.DIR) {
+            ISVNEditor editor = repository.getCommitEditor(message, null, true, null);
+            if (root.length() == 1 && root.charAt(0) == '/') {
+                addProcess(editor, root, "", child);
+            } else {
+                String rootPath = root.substring(1);
+                addProcess(editor, rootPath, null, child);
+            }
+        }
+    }
+
+    private void addProcess( ISVNEditor editor,
+                             String rootPath,
+                             String editedRoot,
+                             String childSegmentName ) throws SVNException {
+        openDirectories(editor, editedRoot);
+        // test if so a directory does not exist.
+        SVNNodeKind childKind = repository.checkPath(childSegmentName, -1);
+        if (childKind == SVNNodeKind.NONE) {
+            editor.addDir(childSegmentName, null, -1);
+            closeDirectories(editor, childSegmentName);
+            if (editedRoot != null) {
+                closeDirectories(editor, editedRoot);
+            } else {
+                closeDirectories(editor, rootPath);
+            }
+
+        } else {
+            // TODO throws an exception
+            closeDirectories(editor, childSegmentName);
+            if (editedRoot != null) {
+                closeDirectories(editor, editedRoot);
+            } else {
+                closeDirectories(editor, rootPath);
+            }
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.connector.scm.ScmActionFactory#addDirectory(java.lang.String, java.lang.String)
+     */
+    public ScmAction addDirectory( String root,
+                                   String path ) {
+        return new AddDirectory(root, path);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.connector.scm.ScmActionFactory#addFile(java.lang.String, java.lang.String, byte[])
+     */
+    public ScmAction addFile( String path,
+                              String file,
+                              byte[] content ) {
+        return null;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.connector.scm.ScmActionFactory#copyDirectory(java.lang.String, java.lang.String, long)
+     */
+    public ScmAction copyDirectory( String path,
+                                    String newPath,
+                                    long revision ) {
+        return null;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.connector.scm.ScmActionFactory#deleteDirectory(java.lang.String)
+     */
+    public ScmAction deleteDirectory( String path ) {
+        return null;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.connector.scm.ScmActionFactory#deleteFile(java.lang.String, java.lang.String)
+     */
+    public ScmAction deleteFile( String path,
+                                 String file ) {
+        return null;
+    }
+
+    /**
+     * root should be the last, previously created, parent folder. Each directory in the path will be created.
+     */
+    public static class AddDirectory implements ScmAction {
+        private String root;
+        private String path;
+
+        public AddDirectory( String root,
+                             String path ) {
+            this.root = root;
+            this.path = path;
+        }
+
+        public void applyAction( Object context ) throws SVNException {
+
+            ISVNEditor editor = (ISVNEditor)context;
+            
+            openDirectories(editor, this.root);
+            String[] paths = this.path.split("/");
+            String newPath = this.root;
+            for (int i = 0, length = paths.length; i < length; i++) {
+                newPath = (newPath.length() != 0) ? newPath + "/" + paths[i] : paths[i];
+
+                editor.addDir(newPath, null, -1);
+            }
+
+            closeDirectories(editor, path);
+            closeDirectories(editor, this.root);
+        }
     }
 }

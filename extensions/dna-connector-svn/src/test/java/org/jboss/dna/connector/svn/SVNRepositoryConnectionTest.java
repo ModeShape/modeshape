@@ -24,11 +24,14 @@ package org.jboss.dna.connector.svn;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsSame.sameInstance;
+import static org.jboss.dna.graph.IsNodeWithChildren.hasChild;
+import static org.jboss.dna.graph.IsNodeWithProperty.hasProperty;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.mock;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Date;
 import java.util.List;
 import org.jboss.dna.common.text.UrlEncoder;
 import org.jboss.dna.common.util.FileUtil;
@@ -39,20 +42,29 @@ import org.jboss.dna.graph.Graph;
 import org.jboss.dna.graph.JcrLexicon;
 import org.jboss.dna.graph.JcrNtLexicon;
 import org.jboss.dna.graph.Location;
+import org.jboss.dna.graph.Node;
 import org.jboss.dna.graph.cache.CachePolicy;
 import org.jboss.dna.graph.connectors.RepositorySourceListener;
+import org.jboss.dna.graph.properties.Binary;
+import org.jboss.dna.graph.properties.DateTimeFactory;
+import org.jboss.dna.graph.properties.Name;
 import org.jboss.dna.graph.properties.NameFactory;
+import org.jboss.dna.graph.properties.Path;
 import org.jboss.dna.graph.properties.PathFactory;
 import org.jboss.dna.graph.properties.PathNotFoundException;
 import org.jboss.dna.graph.properties.Property;
 import org.jboss.dna.graph.properties.PropertyFactory;
+import org.jboss.dna.graph.properties.ValueFactory;
 import org.jboss.dna.graph.requests.ReadAllChildrenRequest;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.MockitoAnnotations;
 import org.mockito.MockitoAnnotations.Mock;
+import org.tmatesoft.svn.core.SVNException;
+import org.tmatesoft.svn.core.SVNNodeKind;
 import org.tmatesoft.svn.core.io.SVNRepository;
+import com.sun.org.apache.bcel.internal.generic.NEW;
 
 /**
  * @author Serge Pagop
@@ -106,7 +118,7 @@ public class SVNRepositoryConnectionTest {
         // Set up the appropriate factory for a particular protocol
         repository = SVNConnectorTestUtil.createRepository(svnUrl, username, password);
         sourceName = "the source name";
-        connection = new SVNRepositoryConnection(sourceName, policy, Boolean.FALSE, repository);
+        connection = new SVNRepositoryConnection(sourceName, policy, Boolean.TRUE, repository);
         // And create the graph ...
         graph = Graph.create(connection, context);
     }
@@ -244,9 +256,40 @@ public class SVNRepositoryConnectionTest {
         Collection<Property> itemA2ContentProperties = graph.getProperties().on(content);
         assertThat(itemA2ContentProperties, is(notNullValue()));
         assertThat(itemA2ContentProperties.isEmpty(), is(false));
-        // then for any causes, that I do not know now mimeType of this content is null.
+        // then for any causes that I do not know now mimeType of this content is null.
         assertThat(itemA2ContentProperties.size(), is(3));
     }
+
+    @Test
+    public void shouldAlwaysReadRootNodeByPath() {
+        Node root = graph.getNodeAt("/");
+        assertThat(root, is(notNullValue()));
+        assertThat(root.getLocation().getPath(), is(path("/")));
+    }
+
+    @Test
+    public void shouldAddAndDeleteChildUnderRootNode() throws Exception {
+        graph.batch().create("/nodeC")
+                       .with(propertyFactory().create(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FOLDER))
+        .and(propertyFactory().create(JcrLexicon.CREATED,dateFactory().create(new Date()))).execute();
+        // Now look up the root node ...
+        Node root = graph.getNodeAt("/");
+        assertThat(root, is(notNullValue()));
+        assertThat(root.getChildren(), hasChild(child("nodeC")));
+        SVNNodeKind nodeCKind = repository.checkPath("nodeC", -1);
+        assertThat(nodeCKind, is(SVNNodeKind.DIR));
+        graph.batch().create("/nodeC/nodeC_1")
+                     .with(propertyFactory().create(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FOLDER))
+                     .and(propertyFactory().create(JcrLexicon.CREATED,dateFactory().create(new Date()))).execute();
+        // Now look up the root node ...
+        Node nodeC = graph.getNodeAt("/nodeC");
+        assertThat(nodeC, is(notNullValue()));
+        assertThat(nodeC.getChildren(), hasChild(child("nodeC_1")));
+        SVNNodeKind nodeC1Kind = repository.checkPath("nodeC/nodeC_1", -1);
+        assertThat(nodeC1Kind, is(SVNNodeKind.DIR));
+
+    }
+
 
     protected Collection<String> containsPaths( Collection<Location> locations ) {
         List<String> paths = new ArrayList<String>();
@@ -254,6 +297,69 @@ public class SVNRepositoryConnectionTest {
             paths.add(location.getPath().getString(context.getNamespaceRegistry(), new UrlEncoder()));
         }
         return paths;
+    }
+
+    protected Path path( String path ) {
+        return context.getValueFactories().getPathFactory().create(path);
+    }
+
+    /**
+     * Factory for sample name.
+     * 
+     * @return the name factory
+     */
+    protected NameFactory nameFactory() {
+        return context.getValueFactories().getNameFactory();
+    }
+
+    /**
+     * Factory for path creation.
+     * 
+     * @return a path factory.
+     */
+    protected PathFactory pathFactory() {
+        return context.getValueFactories().getPathFactory();
+    }
+
+    /**
+     * Factory for property creation.
+     * 
+     * @return the property factory.
+     */
+    protected PropertyFactory propertyFactory() {
+        return context.getPropertyFactory();
+    }
+
+    /**
+     * Factory for date creation.
+     * 
+     * @return the date factory.
+     */
+    protected DateTimeFactory dateFactory() {
+        return context.getValueFactories().getDateFactory();
+    }
+
+    /**
+     * Factory for binary creation.
+     * 
+     * @return the binary factory..
+     */
+    protected ValueFactory<Binary> binaryFactory() {
+        return context.getValueFactories().getBinaryFactory();
+    }
+
+    protected Name name( String name ) {
+        return context.getValueFactories().getNameFactory().create(name);
+    }
+
+    protected Property property( String name,
+                                 Object... values ) {
+        Name propName = name(name);
+        return context.getPropertyFactory().create(propName, values);
+    }
+
+    protected Path.Segment child( String name ) {
+        return context.getValueFactories().getPathFactory().createSegment(name);
     }
 
 }
