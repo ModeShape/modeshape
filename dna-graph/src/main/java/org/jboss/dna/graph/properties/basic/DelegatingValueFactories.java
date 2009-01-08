@@ -23,7 +23,7 @@ package org.jboss.dna.graph.properties.basic;
 
 import java.math.BigDecimal;
 import java.net.URI;
-import org.jboss.dna.graph.properties.Binary;
+import org.jboss.dna.graph.properties.BinaryFactory;
 import org.jboss.dna.graph.properties.DateTimeFactory;
 import org.jboss.dna.graph.properties.NameFactory;
 import org.jboss.dna.graph.properties.PathFactory;
@@ -44,7 +44,7 @@ public class DelegatingValueFactories extends AbstractValueFactories {
         this.delegate = delegate;
     }
 
-    public ValueFactory<Binary> getBinaryFactory() {
+    public BinaryFactory getBinaryFactory() {
         return delegate.getBinaryFactory();
     }
 

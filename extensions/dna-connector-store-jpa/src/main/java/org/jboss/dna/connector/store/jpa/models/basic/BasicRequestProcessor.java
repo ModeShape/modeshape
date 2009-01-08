@@ -1627,6 +1627,8 @@ public class BasicRequestProcessor extends RequestProcessor {
                             }
                         }
                         break;
+                    case URI:
+                        // This will be treated as a string ...
                     default:
                         String str = factories.getStringFactory().create(value);
                         if (compressData) {

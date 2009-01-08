@@ -23,17 +23,9 @@ package org.jboss.dna.graph.properties.basic;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
-import java.security.NoSuchAlgorithmException;
-import java.util.Set;
-import java.util.concurrent.CopyOnWriteArraySet;
 import net.jcip.annotations.Immutable;
-import org.jboss.dna.common.util.Base64;
 import org.jboss.dna.common.util.CheckArg;
-import org.jboss.dna.common.util.Logger;
-import org.jboss.dna.common.util.SecureHash;
-import org.jboss.dna.graph.GraphI18n;
 import org.jboss.dna.graph.properties.Binary;
-import org.jboss.dna.graph.properties.ValueComparators;
 
 /**
  * An implementation of {@link Binary} that keeps the binary data in-memory.
@@ -41,17 +33,12 @@ import org.jboss.dna.graph.properties.ValueComparators;
  * @author Randall Hauch
  */
 @Immutable
-public class InMemoryBinary implements Binary {
-
-    protected static final Set<String> ALGORITHMS_NOT_FOUND_AND_LOGGED = new CopyOnWriteArraySet<String>();
-    private static final SecureHash.Algorithm ALGORITHM = SecureHash.Algorithm.SHA_1;
-    private static final byte[] NO_HASH = new byte[] {};
+public class InMemoryBinary extends AbstractBinary {
 
     /**
+     * Version {@value} .
      */
-    private static final long serialVersionUID = 8792863149767123559L;
-
-    protected static final byte[] EMPTY_CONTENT = new byte[0];
+    private static final long serialVersionUID = 2L;
 
     private final byte[] bytes;
     private byte[] sha1hash;
@@ -76,14 +63,7 @@ public class InMemoryBinary implements Binary {
     public byte[] getHash() {
         if (sha1hash == null) {
             // Idempotent, so doesn't matter if we recompute in concurrent threads ...
-            try {
-                sha1hash = SecureHash.getHash(ALGORITHM, bytes);
-            } catch (NoSuchAlgorithmException e) {
-                if (ALGORITHMS_NOT_FOUND_AND_LOGGED.add(ALGORITHM.digestName())) {
-                    Logger.getLogger(getClass()).error(e, GraphI18n.messageDigestNotFound, ALGORITHM.digestName());
-                }
-                sha1hash = NO_HASH;
-            }
+            sha1hash = computeHash(bytes);
         }
         return sha1hash;
     }
@@ -115,37 +95,4 @@ public class InMemoryBinary implements Binary {
     public void release() {
         // do nothing
     }
-
-    /**
-     * {@inheritDoc}
-     */
-    public int compareTo( Binary o ) {
-        return ValueComparators.BINARY_COMPARATOR.compare(this, o);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public boolean equals( Object obj ) {
-        if (obj == this) return true;
-        if (obj instanceof Binary) {
-            Binary that = (Binary)obj;
-            if (this.getSize() != that.getSize()) return false;
-            return ValueComparators.BINARY_COMPARATOR.compare(this, that) == 0;
-        }
-        return false;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public String toString() {
-        StringBuilder sb = new StringBuilder(super.toString());
-        sb.append(" len=").append(getSize()).append("; [");
-        sb.append(Base64.encodeBytes(this.bytes));
-        return sb.toString();
-    }
-
 }

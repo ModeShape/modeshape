@@ -22,10 +22,14 @@
 
 package org.jboss.dna.common.util;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 
@@ -89,9 +93,11 @@ public class FileUtil {
                 numberOfFilesCopied += copy(new File(src1), new File(dest1));
             }
         } else {
-            FileInputStream fin = new FileInputStream(sourceFileOrDirectory);
+            InputStream fin = new FileInputStream(sourceFileOrDirectory);
+            fin = new BufferedInputStream(fin);
             try {
-                FileOutputStream fout = new FileOutputStream(destinationFileOrDirectory);
+                OutputStream fout = new FileOutputStream(destinationFileOrDirectory);
+                fout = new BufferedOutputStream(fout);
                 try {
                     int c;
                     while ((c = fin.read()) >= 0) {

@@ -61,7 +61,7 @@ public interface ValueFactories extends Iterable<ValueFactory<?>> {
      * 
      * @return the factory; never null
      */
-    ValueFactory<Binary> getBinaryFactory();
+    BinaryFactory getBinaryFactory();
 
     /**
      * Get the value factory for {@link PropertyType#LONG long} properties.

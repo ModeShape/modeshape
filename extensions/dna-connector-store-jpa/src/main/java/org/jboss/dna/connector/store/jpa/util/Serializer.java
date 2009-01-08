@@ -40,6 +40,7 @@ import org.jboss.dna.connector.store.jpa.models.basic.LargeValueEntity;
 import org.jboss.dna.graph.DnaLexicon;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.properties.Binary;
+import org.jboss.dna.graph.properties.BinaryFactory;
 import org.jboss.dna.graph.properties.DateTime;
 import org.jboss.dna.graph.properties.Name;
 import org.jboss.dna.graph.properties.Path;
@@ -257,8 +258,21 @@ public class Serializer {
                 stream.writeLong(uuid.getMostSignificantBits());
                 stream.writeLong(uuid.getLeastSignificantBits());
             } else if (value instanceof URI) {
-                stream.writeChar('I');
-                stream.writeObject(((URI)value).toString());
+                URI uri = (URI)value;
+                String stringValue = uri.toString();
+                if (largeValues != null && stringValue.length() > largeValues.getMinimumSize()) {
+                    // Store the URI in the large values area, but record the hash and length here.
+                    byte[] hash = computeHash(stringValue);
+                    stream.writeChar('L');
+                    stream.writeInt(hash.length);
+                    stream.write(hash);
+                    stream.writeLong(stringValue.length());
+                    // Now write to the large objects ...
+                    largeValues.write(computeHash(stringValue), stringValue.length(), PropertyType.URI, stringValue);
+                } else {
+                    stream.writeChar('I');
+                    stream.writeObject(stringValue);
+                }
             } else if (value instanceof Name) {
                 stream.writeChar('N');
                 stream.writeObject(((Name)value).getString());
@@ -780,7 +794,13 @@ public class Serializer {
                     if (skip) {
                         skippedLargeValues.read(valueFactories, hash, length);
                     } else {
-                        value = largeValues.read(valueFactories, hash, length);
+                        BinaryFactory factory = valueFactories.getBinaryFactory();
+                        // Look for an already-loaded Binary value with the same hash ...
+                        value = factory.find(hash);
+                        if (value == null) {
+                            // Didn't find an existing large value, so we have to read the large value ...
+                            value = largeValues.read(valueFactories, hash, length);
+                        }
                     }
                     break;
                 default:

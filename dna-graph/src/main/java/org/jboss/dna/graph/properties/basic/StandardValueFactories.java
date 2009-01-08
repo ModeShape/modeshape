@@ -29,7 +29,7 @@ import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.text.TextDecoder;
 import org.jboss.dna.common.text.TextEncoder;
 import org.jboss.dna.common.util.CheckArg;
-import org.jboss.dna.graph.properties.Binary;
+import org.jboss.dna.graph.properties.BinaryFactory;
 import org.jboss.dna.graph.properties.DateTimeFactory;
 import org.jboss.dna.graph.properties.NameFactory;
 import org.jboss.dna.graph.properties.NamespaceRegistry;
@@ -49,7 +49,7 @@ public class StandardValueFactories extends AbstractValueFactories {
 
     // This class is implemented with separate members for each factory so that the typical usage is optimized.
     private final ValueFactory<String> stringFactory;
-    private final ValueFactory<Binary> binaryFactory;
+    private final BinaryFactory binaryFactory;
     private final ValueFactory<Boolean> booleanFactory;
     private final DateTimeFactory dateFactory;
     private final ValueFactory<BigDecimal> decimalFactory;
@@ -104,7 +104,8 @@ public class StandardValueFactories extends AbstractValueFactories {
 
         // Now assign the members, using the factories in the map or (if null) the supplied default ...
         this.stringFactory = getFactory(factories, new StringValueFactory(this.decoder, this.encoder));
-        this.binaryFactory = getFactory(factories, new InMemoryBinaryValueFactory(this.decoder, this.stringFactory));
+        this.binaryFactory = (BinaryFactory)getFactory(factories,
+                                                       new InMemoryBinaryValueFactory(this.decoder, this.stringFactory));
         this.booleanFactory = getFactory(factories, new BooleanValueFactory(this.decoder, this.stringFactory));
         this.dateFactory = (DateTimeFactory)getFactory(factories, new JodaDateTimeValueFactory(this.decoder, this.stringFactory));
         this.decimalFactory = getFactory(factories, new DecimalValueFactory(this.decoder, this.stringFactory));
@@ -149,7 +150,7 @@ public class StandardValueFactories extends AbstractValueFactories {
     /**
      * {@inheritDoc}
      */
-    public ValueFactory<Binary> getBinaryFactory() {
+    public BinaryFactory getBinaryFactory() {
         return this.binaryFactory;
     }
 

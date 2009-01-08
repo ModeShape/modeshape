@@ -61,6 +61,7 @@ public interface Binary extends Comparable<Binary>, Serializable {
      * 
      * @return the stream to this data's contents
      * @see #acquire()
+     * @throws IoException if there is a problem returning the stream
      */
     public InputStream getStream();
 
@@ -69,6 +70,7 @@ public interface Binary extends Comparable<Binary>, Serializable {
      * 
      * @return the data as an array
      * @see #acquire()
+     * @throws IoException if there is a problem returning the bytes
      */
     public byte[] getBytes();
 

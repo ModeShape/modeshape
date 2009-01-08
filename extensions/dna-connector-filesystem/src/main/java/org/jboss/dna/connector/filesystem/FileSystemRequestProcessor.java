@@ -30,6 +30,7 @@ import org.jboss.dna.graph.JcrLexicon;
 import org.jboss.dna.graph.JcrNtLexicon;
 import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.connectors.RepositorySourceException;
+import org.jboss.dna.graph.properties.BinaryFactory;
 import org.jboss.dna.graph.properties.DateTimeFactory;
 import org.jboss.dna.graph.properties.Name;
 import org.jboss.dna.graph.properties.NameFactory;
@@ -165,8 +166,8 @@ public class FileSystemRequestProcessor extends RequestProcessor {
                 // request.addProperty(factory.create(JcrLexicon.MIMETYPE, mimeType));
 
                 // Now put the file's content into the "jcr:data" property ...
-                // BinaryFactory binaryFactory = getExecutionContext().getValueFactories().getBinaryFactory();
-                // request.addProperty(factory.create(JcrLexicon.DATA, binaryFactory.create(file)));
+                BinaryFactory binaryFactory = getExecutionContext().getValueFactories().getBinaryFactory();
+                request.addProperty(factory.create(JcrLexicon.DATA, binaryFactory.create(file)));
 
             } else {
                 // The request is to get properties for the node representing the file

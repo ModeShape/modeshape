@@ -21,7 +21,10 @@
  */
 package org.jboss.dna.common.util;
 
+import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -37,6 +40,7 @@ public class IoUtil {
     /**
      * Read and return the entire contents of the supplied {@link InputStream stream}. This method always closes the stream when
      * finished reading.
+     * 
      * @param stream the stream to the contents; may be null
      * @return the contents, or an empty byte array if the supplied reader is null
      * @throws IOException if there is an error reading the content
@@ -45,21 +49,61 @@ public class IoUtil {
         if (stream == null) return new byte[] {};
         byte[] buffer = new byte[1024];
         ByteArrayOutputStream output = new ByteArrayOutputStream();
+        boolean error = false;
         try {
             int numRead = 0;
             while ((numRead = stream.read(buffer)) > -1) {
                 output.write(buffer, 0, numRead);
             }
+        } catch (IOException e) {
+            error = true; // this error should be thrown, even if there is an error closing stream
+            throw e;
+        } catch (RuntimeException e) {
+            error = true; // this error should be thrown, even if there is an error closing stream
+            throw e;
         } finally {
-            stream.close();
+            try {
+                stream.close();
+            } catch (IOException e) {
+                if (!error) throw e;
+            }
         }
         output.flush();
         return output.toByteArray();
     }
 
     /**
+     * Read and return the entire contents of the supplied {@link File file}.
+     * 
+     * @param file the file containing the contents; may be null
+     * @return the contents, or an empty byte array if the supplied file is null
+     * @throws IOException if there is an error reading the content
+     */
+    public static byte[] readBytes( File file ) throws IOException {
+        if (file == null) return new byte[] {};
+        InputStream stream = new BufferedInputStream(new FileInputStream(file));
+        boolean error = false;
+        try {
+            return readBytes(stream);
+        } catch (IOException e) {
+            error = true; // this error should be thrown, even if there is an error closing stream
+            throw e;
+        } catch (RuntimeException e) {
+            error = true; // this error should be thrown, even if there is an error closing stream
+            throw e;
+        } finally {
+            try {
+                stream.close();
+            } catch (IOException e) {
+                if (!error) throw e;
+            }
+        }
+    }
+
+    /**
      * Read and return the entire contents of the supplied {@link Reader}. This method always closes the reader when finished
      * reading.
+     * 
      * @param reader the reader of the contents; may be null
      * @return the contents, or an empty string if the supplied reader is null
      * @throws IOException if there is an error reading the content
@@ -67,21 +111,33 @@ public class IoUtil {
     public static String read( Reader reader ) throws IOException {
         if (reader == null) return "";
         char[] buffer = new char[1024];
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
+        boolean error = false;
         try {
             int numRead = 0;
             while ((numRead = reader.read(buffer)) > -1) {
                 sb.append(buffer, 0, numRead);
             }
+        } catch (IOException e) {
+            error = true; // this error should be thrown, even if there is an error closing reader
+            throw e;
+        } catch (RuntimeException e) {
+            error = true; // this error should be thrown, even if there is an error closing reader
+            throw e;
         } finally {
-            reader.close();
+            try {
+                reader.close();
+            } catch (IOException e) {
+                if (!error) throw e;
+            }
         }
         return sb.toString();
     }
 
     /**
-     * Read and return the entire contents of the supplied {@link InputStream}. This method always closes the stream when
-     * finished reading.
+     * Read and return the entire contents of the supplied {@link InputStream}. This method always closes the stream when finished
+     * reading.
+     * 
      * @param stream the streamed contents; may be null
      * @return the contents, or an empty string if the supplied stream is null
      * @throws IOException if there is an error reading the content
@@ -93,23 +149,38 @@ public class IoUtil {
     /**
      * Write the entire contents of the supplied string to the given stream. This method always flushes and closes the stream when
      * finished.
+     * 
      * @param content the content to write to the stream; may be null
      * @param stream the stream to which the content is to be written
      * @throws IOException
      * @throws IllegalArgumentException if the stream is null
      */
-    public static void write( String content, OutputStream stream ) throws IOException {
+    public static void write( String content,
+                              OutputStream stream ) throws IOException {
         CheckArg.isNotNull(stream, "destination stream");
+        boolean error = false;
         try {
             if (content != null) {
                 byte[] bytes = content.getBytes();
                 stream.write(bytes, 0, bytes.length);
             }
+        } catch (IOException e) {
+            error = true; // this error should be thrown, even if there is an error flushing/closing stream
+            throw e;
+        } catch (RuntimeException e) {
+            error = true; // this error should be thrown, even if there is an error flushing/closing stream
+            throw e;
         } finally {
             try {
                 stream.flush();
+            } catch (IOException e) {
+                if (!error) throw e;
             } finally {
-                stream.close();
+                try {
+                    stream.close();
+                } catch (IOException e) {
+                    if (!error) throw e;
+                }
             }
         }
     }
@@ -117,22 +188,37 @@ public class IoUtil {
     /**
      * Write the entire contents of the supplied string to the given writer. This method always flushes and closes the writer when
      * finished.
+     * 
      * @param content the content to write to the writer; may be null
      * @param writer the writer to which the content is to be written
      * @throws IOException
      * @throws IllegalArgumentException if the writer is null
      */
-    public static void write( String content, Writer writer ) throws IOException {
+    public static void write( String content,
+                              Writer writer ) throws IOException {
         CheckArg.isNotNull(writer, "destination writer");
+        boolean error = false;
         try {
             if (content != null) {
                 writer.write(content);
             }
+        } catch (IOException e) {
+            error = true; // this error should be thrown, even if there is an error flushing/closing writer
+            throw e;
+        } catch (RuntimeException e) {
+            error = true; // this error should be thrown, even if there is an error flushing/closing writer
+            throw e;
         } finally {
             try {
                 writer.flush();
+            } catch (IOException e) {
+                if (!error) throw e;
             } finally {
-                writer.close();
+                try {
+                    writer.close();
+                } catch (IOException e) {
+                    if (!error) throw e;
+                }
             }
         }
     }
@@ -140,13 +226,16 @@ public class IoUtil {
     /**
      * Write the entire contents of the supplied string to the given stream. This method always flushes and closes the stream when
      * finished.
+     * 
      * @param input the content to write to the stream; may be null
      * @param stream the stream to which the content is to be written
      * @throws IOException
      * @throws IllegalArgumentException if the stream is null
      */
-    public static void write( InputStream input, OutputStream stream ) throws IOException {
+    public static void write( InputStream input,
+                              OutputStream stream ) throws IOException {
         CheckArg.isNotNull(stream, "destination stream");
+        boolean error = false;
         try {
             if (input != null) {
                 byte[] buffer = new byte[1024];
@@ -159,11 +248,23 @@ public class IoUtil {
                     input.close();
                 }
             }
+        } catch (IOException e) {
+            error = true; // this error should be thrown, even if there is an error flushing/closing stream
+            throw e;
+        } catch (RuntimeException e) {
+            error = true; // this error should be thrown, even if there is an error flushing/closing stream
+            throw e;
         } finally {
             try {
                 stream.flush();
+            } catch (IOException e) {
+                if (!error) throw e;
             } finally {
-                stream.close();
+                try {
+                    stream.close();
+                } catch (IOException e) {
+                    if (!error) throw e;
+                }
             }
         }
     }
@@ -171,13 +272,16 @@ public class IoUtil {
     /**
      * Write the entire contents of the supplied string to the given writer. This method always flushes and closes the writer when
      * finished.
+     * 
      * @param input the content to write to the writer; may be null
      * @param writer the writer to which the content is to be written
      * @throws IOException
      * @throws IllegalArgumentException if the writer is null
      */
-    public static void write( Reader input, Writer writer ) throws IOException {
+    public static void write( Reader input,
+                              Writer writer ) throws IOException {
         CheckArg.isNotNull(writer, "destination writer");
+        boolean error = false;
         try {
             if (input != null) {
                 char[] buffer = new char[1024];
@@ -190,11 +294,23 @@ public class IoUtil {
                     input.close();
                 }
             }
+        } catch (IOException e) {
+            error = true; // this error should be thrown, even if there is an error flushing/closing writer
+            throw e;
+        } catch (RuntimeException e) {
+            error = true; // this error should be thrown, even if there is an error flushing/closing writer
+            throw e;
         } finally {
             try {
                 writer.flush();
+            } catch (IOException e) {
+                if (!error) throw e;
             } finally {
-                writer.close();
+                try {
+                    writer.close();
+                } catch (IOException e) {
+                    if (!error) throw e;
+                }
             }
         }
     }
