@@ -38,6 +38,9 @@ public interface MimeTypeDetector {
      * Returns the MIME-type of a data source, using its supplied content and/or its supplied name, depending upon the
      * implementation. If the MIME-type cannot be determined, either a "default" MIME-type or <code>null</code> may be returned,
      * where the former will prevent earlier registered MIME-type detectors from being consulted.
+     * <p>
+     * Note that detector implementations should <i>not</i> {@link InputStream#close() close} the supplied input stream.
+     * </p>
      * 
      * @param name The name of the data source; may be <code>null</code>.
      * @param content The content of the data source; may be <code>null</code>.
