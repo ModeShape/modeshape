@@ -134,6 +134,7 @@ public class FileSystemRequestProcessor extends RequestProcessor {
             }
         }
         request.setActualLocationOfNode(location);
+        setCacheableInfo(request);
     }
 
     /**
@@ -148,6 +149,7 @@ public class FileSystemRequestProcessor extends RequestProcessor {
         if (path.isRoot()) {
             // There are no properties on the root ...
             request.setActualLocationOfNode(location);
+            setCacheableInfo(request);
             return;
         }
 
@@ -204,6 +206,7 @@ public class FileSystemRequestProcessor extends RequestProcessor {
 
         }
         request.setActualLocationOfNode(location);
+        setCacheableInfo(request);
     }
 
     /**

@@ -74,10 +74,9 @@ public class FileSystemSource implements RepositorySource, ObjectFactory {
      */
     protected static final boolean SUPPORTS_SAME_NAME_SIBLINGS = true;
     /**
-     * This source supports udpates by default, but each instance may be configured to {@link #setSupportsUpdates(boolean) be
-     * read-only or updateable}.
+     * This source does not support udpates by default, but each instance may be configured to be read-only or updateable}.
      */
-    public static final boolean DEFAULT_SUPPORTS_UPDATES = true;
+    public static final boolean DEFAULT_SUPPORTS_UPDATES = false;
 
     public static final int DEFAULT_RETRY_LIMIT = 0;
     public static final int DEFAULT_CACHE_TIME_TO_LIVE_IN_SECONDS = 60 * 5; // 5 minutes
@@ -138,7 +137,7 @@ public class FileSystemSource implements RepositorySource, ObjectFactory {
     }
 
     /**
-     * Set the file system paths to each directory or file that should be exposed immediately the root node nodes in this
+     * Set the file system paths to each directory or file that should be exposed immediately under the root node in this
      * connector. If not specified, all of the file system's root will be used.
      * 
      * @param fileSystemPaths the paths in the file system path to the top-level files and/or directories, or null if not yet set
@@ -157,15 +156,15 @@ public class FileSystemSource implements RepositorySource, ObjectFactory {
         return capabilities.supportsUpdates();
     }
 
-    /**
-     * Set whether this source supports updates.
-     * 
-     * @param supportsUpdates true if this source supports updating content, or false if this source only supports reading
-     *        content.
-     */
-    public synchronized void setSupportsUpdates( boolean supportsUpdates ) {
-        capabilities.setSupportsUpdates(supportsUpdates);
-    }
+    // /**
+    // * Set whether this source supports updates.
+    // *
+    // * @param supportsUpdates true if this source supports updating content, or false if this source only supports reading
+    // * content.
+    // */
+    // public synchronized void setSupportsUpdates( boolean supportsUpdates ) {
+    // capabilities.setSupportsUpdates(supportsUpdates);
+    // }
 
     /**
      * {@inheritDoc}
@@ -304,8 +303,10 @@ public class FileSystemSource implements RepositorySource, ObjectFactory {
             }
             if (!pathsThatDontExist.isEmpty()) {
                 int count = pathsThatDontExist.size();
-                I18n msg = count == 1 ? FileSystemI18n.fileSystemPathDoesNotExist : FileSystemI18n.fileSystemPathsDoNotExist;
-                throw new RepositorySourceException(getName(), msg.text(getName(), pathsThatDontExist, count));
+                String msg = null;
+                if (count == 1) msg = FileSystemI18n.fileSystemPathDoesNotExist.text(getName(), pathsThatDontExist);
+                else msg = FileSystemI18n.fileSystemPathsDoNotExist.text(getName(), pathsThatDontExist, count);
+                throw new RepositorySourceException(getName(), msg);
             }
         } else {
             // No file system paths specified, so get all of the file system's roots ...

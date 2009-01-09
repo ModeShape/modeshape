@@ -45,6 +45,7 @@ import org.jboss.dna.graph.connectors.RepositoryConnectionFactory;
 import org.jboss.dna.graph.connectors.RepositoryContext;
 import org.jboss.dna.graph.connectors.RepositorySource;
 import org.jboss.dna.graph.connectors.RepositorySourceException;
+import org.jboss.dna.graph.properties.DateTime;
 import org.jboss.dna.graph.properties.Name;
 import org.jboss.dna.graph.properties.Path;
 import org.jboss.dna.graph.properties.Property;
@@ -188,8 +189,9 @@ public abstract class AbstractConnectorTest {
      * Set up a {@link RepositorySource} that should be used for each of the unit tests.
      * 
      * @return the repository source
+     * @throws Exception if there is a problem setting up the source
      */
-    protected abstract RepositorySource setUpSource();
+    protected abstract RepositorySource setUpSource() throws Exception;
 
     /**
      * Initialize the content of the {@link RepositorySource} set up for each of the unit tests. This method is called shortly
@@ -197,8 +199,9 @@ public abstract class AbstractConnectorTest {
      * {@link RepositorySource#initialize(RepositoryContext) initialized}.
      * 
      * @param graph the graph for the {@link RepositorySource} returned from {@link #setUpSource()}; never null
+     * @throws Exception if there is a problem initializing the source
      */
-    protected abstract void initializeContent( Graph graph );
+    protected abstract void initializeContent( Graph graph ) throws Exception;
 
     // ----------------------------------------------------------------------------------------------------------------
     // Helper methods commonly needed in unit tests
@@ -289,6 +292,26 @@ public abstract class AbstractConnectorTest {
             rootLocation = root.getLocation();
         }
         return rootLocation.getUuid();
+    }
+
+    protected String string( Object value ) {
+        if (value instanceof Property) value = ((Property)value).getFirstValue();
+        return context.getValueFactories().getStringFactory().create(value);
+    }
+
+    protected DateTime date( Object value ) {
+        if (value instanceof Property) value = ((Property)value).getFirstValue();
+        return context.getValueFactories().getDateFactory().create(value);
+    }
+
+    protected long longValue( Object value ) {
+        if (value instanceof Property) value = ((Property)value).getFirstValue();
+        return context.getValueFactories().getLongFactory().create(value);
+    }
+
+    protected Name name( Object value ) {
+        if (value instanceof Property) value = ((Property)value).getFirstValue();
+        return context.getValueFactories().getNameFactory().create(value);
     }
 
     // ----------------------------------------------------------------------------------------------------------------

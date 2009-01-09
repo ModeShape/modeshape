@@ -116,6 +116,7 @@ public abstract class AbstractValueFactory<T> implements ValueFactory<T> {
         if (value instanceof Path) return create((Path)value);
         if (value instanceof Reference) return create((Reference)value);
         if (value instanceof URI) return create((URI)value);
+        if (value instanceof Binary) return create((Binary)value);
         if (value instanceof byte[]) return create((byte[])value);
         if (value instanceof InputStream) return create((InputStream)value, 0);
         if (value instanceof Reader) return create((Reader)value, 0);
