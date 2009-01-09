@@ -26,6 +26,7 @@ import javax.security.auth.Subject;
 import javax.security.auth.login.LoginContext;
 import org.jboss.dna.common.component.ClassLoaderFactory;
 import org.jboss.dna.common.util.Logger;
+import org.jboss.dna.graph.mimetype.MimeTypeDetector;
 import org.jboss.dna.graph.properties.NamespaceRegistry;
 import org.jboss.dna.graph.properties.Property;
 import org.jboss.dna.graph.properties.PropertyFactory;
@@ -69,6 +70,13 @@ public interface ExecutionContext extends ClassLoaderFactory {
      * @see #getLogger(Class)
      */
     Logger getLogger( String name );
+
+    /**
+     * Return an object that can be used to determine the MIME type of some content, such as the content of a file.
+     * 
+     * @return the detector; never null
+     */
+    MimeTypeDetector getMimeTypeDetector();
 
     /**
      * @return the login context; may be <code>null</code>

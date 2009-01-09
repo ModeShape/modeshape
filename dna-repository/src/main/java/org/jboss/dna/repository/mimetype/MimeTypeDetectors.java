@@ -32,10 +32,14 @@ import org.jboss.dna.common.util.Logger;
 import org.jboss.dna.graph.mimetype.MimeTypeDetector;
 
 /**
+ * Facility for managing {@link MimeTypeDetectorConfig}s.
+ * 
  * @author jverhaeg
  */
 @ThreadSafe
-public final class MimeTypeDetectors {
+public final class MimeTypeDetectors implements MimeTypeDetector {
+
+    public static final MimeTypeDetectors DEFAULT_DETECTORS = new MimeTypeDetectors();
 
     /**
      * Class loader factory instance that always returns the {@link Thread#getContextClassLoader() current thread's context class
@@ -44,11 +48,12 @@ public final class MimeTypeDetectors {
     protected static final ClassLoaderFactory DEFAULT_CLASSLOADER_FACTORY = new StandardClassLoaderFactory(
                                                                                                            MimeTypeDetectors.class.getClassLoader());
 
-    private final ComponentLibrary<MimeTypeDetector, MimeTypeDetectorConfig> library = new ComponentLibrary<MimeTypeDetector, MimeTypeDetectorConfig>(
-                                                                                                                                                      true);
-    private final AtomicReference<Logger> logger = new AtomicReference<Logger>(Logger.getLogger(getClass()));
+    private final ComponentLibrary<MimeTypeDetector, MimeTypeDetectorConfig> library;
+    private final AtomicReference<Logger> logger;
 
     public MimeTypeDetectors() {
+        logger = new AtomicReference<Logger>(Logger.getLogger(getClass()));
+        library = new ComponentLibrary<MimeTypeDetector, MimeTypeDetectorConfig>(true);
         library.setClassLoaderFactory(DEFAULT_CLASSLOADER_FACTORY);
     }
 

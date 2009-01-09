@@ -41,6 +41,7 @@ import org.jboss.dna.graph.connectors.RepositoryConnectionFactory;
 import org.jboss.dna.graph.connectors.RepositoryConnectionPool;
 import org.jboss.dna.graph.connectors.RepositoryContext;
 import org.jboss.dna.graph.connectors.RepositorySource;
+import org.jboss.dna.repository.mimetype.MimeTypeDetectors;
 import org.jboss.dna.repository.services.AbstractServiceAdministrator;
 import org.jboss.dna.repository.services.ServiceAdministrator;
 
@@ -100,6 +101,7 @@ public class RepositoryLibrary implements RepositoryConnectionFactory {
 
     }
 
+    private final MimeTypeDetectors mimeTypeDetectors = new MimeTypeDetectors();
     private final ServiceAdministrator administrator = new Administrator();
     private final ReadWriteLock sourcesLock = new ReentrantReadWriteLock();
     private final CopyOnWriteArrayList<RepositoryConnectionPool> pools = new CopyOnWriteArrayList<RepositoryConnectionPool>();
@@ -165,6 +167,7 @@ public class RepositoryLibrary implements RepositoryConnectionFactory {
             public RepositoryConnectionFactory getRepositoryConnectionFactory() {
                 return RepositoryLibrary.this;
             }
+
         };
     }
 
@@ -173,6 +176,13 @@ public class RepositoryLibrary implements RepositoryConnectionFactory {
      */
     public ExecutionContextFactory getExecutionContextFactory() {
         return executionContextFactory;
+    }
+
+    /**
+     * @return mimeTypeDetectors
+     */
+    public MimeTypeDetectors getMimeTypeDetectors() {
+        return mimeTypeDetectors;
     }
 
     /**

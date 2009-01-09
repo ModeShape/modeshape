@@ -32,6 +32,7 @@ import org.jboss.dna.common.util.Logger;
 import org.jboss.dna.graph.BasicExecutionContext;
 import org.jboss.dna.graph.DnaLexicon;
 import org.jboss.dna.graph.ExecutionContext;
+import org.jboss.dna.graph.mimetype.MimeTypeDetector;
 import org.jboss.dna.graph.properties.Name;
 import org.jboss.dna.graph.properties.NamespaceRegistry;
 import org.jboss.dna.graph.properties.Path;
@@ -65,6 +66,15 @@ public class MockSequencerContext implements SequencerContext {
      */
     public ClassLoader getClassLoader( String... classpath ) {
         return context.getClassLoader(classpath);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.ExecutionContext#getMimeTypeDetector()
+     */
+    public MimeTypeDetector getMimeTypeDetector() {
+        return context.getMimeTypeDetector();
     }
 
     /**

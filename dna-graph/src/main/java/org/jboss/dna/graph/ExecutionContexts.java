@@ -26,6 +26,7 @@ import javax.security.auth.Subject;
 import javax.security.auth.login.LoginContext;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.common.util.Logger;
+import org.jboss.dna.graph.mimetype.MimeTypeDetector;
 import org.jboss.dna.graph.properties.NameFactory;
 import org.jboss.dna.graph.properties.NamespaceRegistry;
 import org.jboss.dna.graph.properties.PathFactory;
@@ -172,6 +173,15 @@ public class ExecutionContexts {
          */
         public LoginContext getLoginContext() {
             return delegate.getLoginContext();
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.graph.ExecutionContext#getMimeTypeDetector()
+         */
+        public MimeTypeDetector getMimeTypeDetector() {
+            return delegate.getMimeTypeDetector();
         }
 
         /**

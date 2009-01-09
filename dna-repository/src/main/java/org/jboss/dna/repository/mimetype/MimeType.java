@@ -32,7 +32,10 @@ import org.jboss.dna.common.component.ClassLoaderFactory;
  */
 public final class MimeType {
 
-    public static final MimeTypeDetectors DEFAULT_DETECTORS = new MimeTypeDetectors();
+    /**
+     * The set of
+     */
+    public static final MimeTypeDetectors DEFAULT_DETECTORS = MimeTypeDetectors.DEFAULT_DETECTORS;
 
     /**
      * @param config See {@link MimeTypeDetectors#addDetector(MimeTypeDetectorConfig)}.

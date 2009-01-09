@@ -21,8 +21,12 @@
  */
 package org.jboss.dna.connector.filesystem;
 
+import java.io.BufferedInputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FilenameFilter;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.Map;
 import org.jboss.dna.common.i18n.I18n;
 import org.jboss.dna.graph.ExecutionContext;
@@ -30,6 +34,7 @@ import org.jboss.dna.graph.JcrLexicon;
 import org.jboss.dna.graph.JcrNtLexicon;
 import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.connectors.RepositorySourceException;
+import org.jboss.dna.graph.mimetype.MimeTypeDetector;
 import org.jboss.dna.graph.properties.BinaryFactory;
 import org.jboss.dna.graph.properties.DateTimeFactory;
 import org.jboss.dna.graph.properties.Name;
@@ -58,10 +63,13 @@ import org.jboss.dna.graph.requests.processor.RequestProcessor;
  */
 public class FileSystemRequestProcessor extends RequestProcessor {
 
+    private static final String DEFAULT_MIME_TYPE = "application/octet";
+
     private final Map<String, File> rootsByName;
     private final String defaultNamespaceUri;
     private final FilenameFilter filenameFilter;
     private final boolean updatesAllowed;
+    private final MimeTypeDetector mimeTypeDetector;
 
     /**
      * @param sourceName
@@ -83,6 +91,7 @@ public class FileSystemRequestProcessor extends RequestProcessor {
         this.defaultNamespaceUri = getExecutionContext().getNamespaceRegistry().getDefaultNamespaceUri();
         this.filenameFilter = filenameFilter;
         this.updatesAllowed = updatesAllowed;
+        this.mimeTypeDetector = context.getMimeTypeDetector();
     }
 
     /**
@@ -162,8 +171,26 @@ public class FileSystemRequestProcessor extends RequestProcessor {
                 // request.addProperty(factory.create(JcrLexicon.ENCODED, stringFactory.create("UTF-8")));
 
                 // Discover the mime type ...
-                // String mimeType = ...
-                // request.addProperty(factory.create(JcrLexicon.MIMETYPE, mimeType));
+                String mimeType = null;
+                InputStream contents = null;
+                boolean mimeTypeError = false;
+                try {
+                    contents = new BufferedInputStream(new FileInputStream(file));
+                    mimeType = mimeTypeDetector.mimeTypeOf(file.getName(), contents);
+                    if (mimeType == null) mimeType = DEFAULT_MIME_TYPE;
+                    request.addProperty(factory.create(JcrLexicon.MIMETYPE, mimeType));
+                } catch (IOException e) {
+                    mimeTypeError = true;
+                    request.setError(e);
+                } finally {
+                    if (contents != null) {
+                        try {
+                            contents.close();
+                        } catch (IOException e) {
+                            if (!mimeTypeError) request.setError(e);
+                        }
+                    }
+                }
 
                 // Now put the file's content into the "jcr:data" property ...
                 BinaryFactory binaryFactory = getExecutionContext().getValueFactories().getBinaryFactory();

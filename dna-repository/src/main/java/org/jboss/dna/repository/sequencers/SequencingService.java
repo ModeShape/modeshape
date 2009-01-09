@@ -50,6 +50,7 @@ import org.jboss.dna.common.component.StandardClassLoaderFactory;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.common.util.HashCode;
 import org.jboss.dna.common.util.Logger;
+import org.jboss.dna.graph.mimetype.MimeTypeDetector;
 import org.jboss.dna.graph.properties.NamespaceRegistry;
 import org.jboss.dna.graph.properties.PropertyFactory;
 import org.jboss.dna.graph.properties.ValueFactories;
@@ -590,6 +591,15 @@ public class SequencingService implements AdministeredService, NodeChangeListene
          */
         public ClassLoader getClassLoader( String... classpath ) {
             return delegate.getClassLoader(classpath);
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.graph.ExecutionContext#getMimeTypeDetector()
+         */
+        public MimeTypeDetector getMimeTypeDetector() {
+            return delegate.getMimeTypeDetector();
         }
 
         /**

@@ -28,6 +28,8 @@ import javax.security.auth.login.LoginContext;
 import org.jboss.dna.common.component.ClassLoaderFactory;
 import org.jboss.dna.common.component.StandardClassLoaderFactory;
 import org.jboss.dna.common.util.Logger;
+import org.jboss.dna.graph.mimetype.ExtensionBasedMimeTypeDetector;
+import org.jboss.dna.graph.mimetype.MimeTypeDetector;
 import org.jboss.dna.graph.properties.NamespaceRegistry;
 import org.jboss.dna.graph.properties.PropertyFactory;
 import org.jboss.dna.graph.properties.ValueFactories;
@@ -48,46 +50,63 @@ public class BasicExecutionContext implements ExecutionContext {
     private final PropertyFactory propertyFactory;
     private final ValueFactories valueFactories;
     private final NamespaceRegistry namespaceRegistry;
+    private final MimeTypeDetector mimeTypeDetector;
 
     public BasicExecutionContext() {
-        this(null, null, null, null, null);
+        this(null, null, null, null, null, null);
     }
 
     public BasicExecutionContext( LoginContext loginContext ) {
-        this(loginContext, null, null, null, null);
+        this(loginContext, null, null, null, null, null);
     }
 
     public BasicExecutionContext( AccessControlContext accessControlContext ) {
-        this(null, accessControlContext, null, null, null);
+        this(null, accessControlContext, null, null, null, null);
     }
 
     public BasicExecutionContext( NamespaceRegistry namespaceRegistry,
                                   ValueFactories valueFactories,
                                   PropertyFactory propertyFactory ) {
-        this(null, null, namespaceRegistry, valueFactories, propertyFactory);
+        this(null, null, namespaceRegistry, valueFactories, propertyFactory, null);
     }
 
     public BasicExecutionContext( NamespaceRegistry namespaceRegistry ) {
-        this(null, null, namespaceRegistry, null, null);
+        this(null, null, namespaceRegistry, null, null, null);
     }
 
     public BasicExecutionContext( LoginContext loginContext,
                                   NamespaceRegistry namespaceRegistry,
                                   ValueFactories valueFactories,
                                   PropertyFactory propertyFactory ) {
-        this(loginContext, null, namespaceRegistry, valueFactories, propertyFactory);
+        this(loginContext, null, namespaceRegistry, valueFactories, propertyFactory, null);
     }
 
     public BasicExecutionContext( AccessControlContext accessControlContext,
                                   NamespaceRegistry namespaceRegistry,
                                   ValueFactories valueFactories,
                                   PropertyFactory propertyFactory ) {
-        this(null, accessControlContext, namespaceRegistry, valueFactories, propertyFactory);
+        this(null, accessControlContext, namespaceRegistry, valueFactories, propertyFactory, null);
+    }
+
+    public BasicExecutionContext( AccessControlContext accessControlContext,
+                                  NamespaceRegistry namespaceRegistry,
+                                  ValueFactories valueFactories,
+                                  PropertyFactory propertyFactory,
+                                  MimeTypeDetector mimeTypeDetector ) {
+        this(null, accessControlContext, namespaceRegistry, valueFactories, propertyFactory, mimeTypeDetector);
     }
 
     public BasicExecutionContext( ExecutionContext inheritedContext,
                                   NamespaceRegistry namespaceRegistry ) {
-        this(inheritedContext.getLoginContext(), inheritedContext.getAccessControlContext(), namespaceRegistry, null, null);
+        this(inheritedContext.getLoginContext(), inheritedContext.getAccessControlContext(), namespaceRegistry, null, null,
+             inheritedContext.getMimeTypeDetector());
+    }
+
+    public BasicExecutionContext( ExecutionContext inheritedContext,
+                                  MimeTypeDetector mimeTypeDetector ) {
+        this(inheritedContext.getLoginContext(), inheritedContext.getAccessControlContext(),
+             inheritedContext.getNamespaceRegistry(), inheritedContext.getValueFactories(),
+             inheritedContext.getPropertyFactory(), mimeTypeDetector);
     }
 
     /*
@@ -97,7 +116,8 @@ public class BasicExecutionContext implements ExecutionContext {
                                    AccessControlContext accessControlContext,
                                    NamespaceRegistry namespaceRegistry,
                                    ValueFactories valueFactories,
-                                   PropertyFactory propertyFactory ) {
+                                   PropertyFactory propertyFactory,
+                                   MimeTypeDetector mimeTypeDetector ) {
         this.loginContext = loginContext;
         this.accessControlContext = accessControlContext;
         if (loginContext == null) {
@@ -109,6 +129,7 @@ public class BasicExecutionContext implements ExecutionContext {
         this.valueFactories = valueFactories == null ? new StandardValueFactories(this.namespaceRegistry) : valueFactories;
         this.propertyFactory = propertyFactory == null ? new BasicPropertyFactory(this.valueFactories) : propertyFactory;
         this.classLoaderFactory = new StandardClassLoaderFactory();
+        this.mimeTypeDetector = mimeTypeDetector != null ? mimeTypeDetector : ExtensionBasedMimeTypeDetector.getInstance();
     }
 
     /**
@@ -143,6 +164,15 @@ public class BasicExecutionContext implements ExecutionContext {
      */
     public NamespaceRegistry getNamespaceRegistry() {
         return namespaceRegistry;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.ExecutionContext#getMimeTypeDetector()
+     */
+    public MimeTypeDetector getMimeTypeDetector() {
+        return mimeTypeDetector;
     }
 
     /**
