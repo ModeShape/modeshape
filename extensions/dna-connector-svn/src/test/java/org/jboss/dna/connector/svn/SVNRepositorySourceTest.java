@@ -66,7 +66,7 @@ public class SVNRepositorySourceTest {
         validUuidPropertyName = "dna:uuid";
 
         // For file protocol access
-        url = "file:///Users/sp/SVNRepos/test";
+        url = "file:///dummy_svn_repos";
 
         // For http protocol access
         // url = "http://anonsvn.jboss.org/repos/dna/trunk/extensions/dna-connector-svn/src/test/resources";
@@ -243,22 +243,11 @@ public class SVNRepositorySourceTest {
 
     // Only with local file protocol
 
-    @Test
-    public void shouldCreateFSRepositoryIfProtocolIsOfTypeFile() throws Exception {
-        this.source.setName(validName);
-        this.source.setSVNURL(url);
-        this.connection = source.getConnection();
-        assertThat(this.connection, is(notNullValue()));
-    }
-
-    // @Test
-    // public void shouldCreateDAVRepositoryIfProtocolIsOfTypeHttp() throws Exception {
-    // this.source.setName(validName);
-    // this.source.setSVNURL(url);
-    // this.source.setSVNUsername(username);
-    // this.source.setSVNPassword(password);
-    // this.connection = source.getConnection();
-    // assertThat(this.connection, is(notNullValue()));
-    // }
-
+//    @Test
+//    public void shouldCreateFSRepositoryIfProtocolIsOfTypeFile() throws Exception {
+//        this.source.setName(validName);
+//        this.source.setSVNURL(url);
+//        this.connection = source.getConnection();
+//        assertThat(this.connection, is(notNullValue()));
+//    }
 }
