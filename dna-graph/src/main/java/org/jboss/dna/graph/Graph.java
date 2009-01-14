@@ -120,6 +120,27 @@ public class Graph {
         return new Graph(connectorSourceName, connectionFactory, context);
     }
 
+    /**
+     * Create a graph instance that uses the supplied {@link RepositoryConnection} and {@link ExecutionContext context}.
+     * 
+     * @param source the source that should be used
+     * @param context the context in which all executions should be performed
+     * @return the new graph
+     * @throws IllegalArgumentException if the connection or context parameters are null
+     */
+    public static Graph create( final RepositorySource source,
+                                ExecutionContext context ) {
+        CheckArg.isNotNull(source, "source");
+        final String connectorSourceName = source.getName();
+        RepositoryConnectionFactory connectionFactory = new RepositoryConnectionFactory() {
+            public RepositoryConnection createConnection( String sourceName ) throws RepositorySourceException {
+                if (connectorSourceName.equals(sourceName)) return source.getConnection();
+                return null;
+            }
+        };
+        return new Graph(connectorSourceName, connectionFactory, context);
+    }
+
     private final String sourceName;
     private final RepositoryConnectionFactory connectionFactory;
     private final ExecutionContext context;
