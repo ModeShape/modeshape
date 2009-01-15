@@ -49,7 +49,6 @@ import org.jboss.dna.common.SystemFailureException;
 import org.jboss.dna.repository.observation.ObservationService;
 import org.jboss.dna.repository.sequencers.SequencerConfig;
 import org.jboss.dna.repository.sequencers.SequencingService;
-import org.jboss.dna.repository.util.BasicJcrExecutionContext;
 import org.jboss.dna.repository.util.JcrExecutionContext;
 import org.jboss.dna.repository.util.JcrTools;
 import org.jboss.dna.repository.util.SessionFactory;
@@ -210,8 +209,7 @@ public class SequencingClient {
 
             // Create an execution context for the sequencing service. This execution context provides an environment
             // for the DNA services which knows about the JCR repositories, workspaces, and credentials used to
-            // establish sessions to these workspaces. This example uses the BasicJcrExecutionContext, but there is
-            // implementation for use with JCR repositories registered in JNDI.
+            // establish sessions to these workspaces.
             final String repositoryWorkspaceName = this.repositoryName + "/" + this.workspaceName;
             SimpleSessionFactory sessionFactory = new SimpleSessionFactory();
             sessionFactory.registerRepository(this.repositoryName, this.repository);
@@ -219,7 +217,7 @@ public class SequencingClient {
                 Credentials credentials = new SimpleCredentials(this.username, this.password);
                 sessionFactory.registerCredentials(repositoryWorkspaceName, credentials);
             }
-            this.executionContext = new BasicJcrExecutionContext(sessionFactory, repositoryWorkspaceName);
+            this.executionContext = new JcrExecutionContext(sessionFactory, repositoryWorkspaceName);
 
             // Create the sequencing service, passing in the execution context ...
             this.sequencingService = new SequencingService();

@@ -27,10 +27,12 @@ import static org.hamcrest.core.IsNull.nullValue;
 import static org.hamcrest.core.IsSame.sameInstance;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
+import static org.mockito.Mockito.mock;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Set;
 import javax.jcr.Node;
 import javax.jcr.Session;
@@ -38,15 +40,13 @@ import javax.jcr.observation.Event;
 import org.jboss.dna.common.collection.Problems;
 import org.jboss.dna.common.collection.SimpleProblems;
 import org.jboss.dna.common.jcr.AbstractJcrRepositoryTest;
-import org.jboss.dna.graph.properties.NamespaceRegistry;
 import org.jboss.dna.graph.properties.Path;
+import org.jboss.dna.graph.properties.Property;
 import org.jboss.dna.graph.sequencers.SequencerContext;
 import org.jboss.dna.graph.sequencers.SequencerOutput;
 import org.jboss.dna.graph.sequencers.StreamSequencer;
 import org.jboss.dna.repository.observation.NodeChange;
-import org.jboss.dna.repository.util.BasicJcrExecutionContext;
 import org.jboss.dna.repository.util.JcrExecutionContext;
-import org.jboss.dna.repository.util.JcrNamespaceRegistry;
 import org.jboss.dna.repository.util.JcrTools;
 import org.jboss.dna.repository.util.RepositoryNodePath;
 import org.jboss.dna.repository.util.SessionFactory;
@@ -71,6 +71,7 @@ public class StreamSequencerAdapterTest extends AbstractJcrRepositoryTest {
     private JcrExecutionContext context;
     private String repositoryWorkspaceName = "something";
     private Problems problems;
+    private javax.jcr.Property sequencedProperty;
 
     @Before
     public void beforeEach() {
@@ -83,8 +84,7 @@ public class StreamSequencerAdapterTest extends AbstractJcrRepositoryTest {
             }
         };
         problems = new SimpleProblems();
-        NamespaceRegistry registry = new JcrNamespaceRegistry(sessionFactory, "doesn't matter");
-        this.context = new BasicJcrExecutionContext(sessionFactory, registry, null, null);
+        this.context = new JcrExecutionContext(sessionFactory, "doesn't matter");
         this.sequencerOutput = new SequencerOutputMap(this.context.getValueFactories());
         final SequencerOutputMap finalOutput = sequencerOutput;
         this.streamSequencer = new StreamSequencer() {
@@ -398,6 +398,122 @@ public class StreamSequencerAdapterTest extends AbstractJcrRepositoryTest {
                 assertThat(context, notNullValue());
             }
         });
+    }
+
+    @Test( expected = java.lang.AssertionError.class )
+    public void shouldNotAllowNullInputNode() throws Exception {
+        sequencer.createSequencerContext(null, sequencedProperty, context, problems);
+    }
+
+    @Test( expected = java.lang.AssertionError.class )
+    public void shouldNotAllowNullSequencedProperty() throws Exception {
+        startRepository();
+        session = getRepository().login(getTestCredentials());
+
+        Node input = tools.findOrCreateNode(session, "/a");
+        sequencer.createSequencerContext(input, null, context, problems);
+    }
+
+    @Test( expected = java.lang.AssertionError.class )
+    public void shouldNotAllowNullExecutionContext() throws Exception {
+        startRepository();
+        session = getRepository().login(getTestCredentials());
+
+        Node input = tools.findOrCreateNode(session, "/a");
+        sequencer.createSequencerContext(input, sequencedProperty, null, problems);
+    }
+
+    @Test
+    public void shouldProvideNamespaceRegistry() throws Exception {
+        startRepository();
+        session = getRepository().login(getTestCredentials());
+
+        this.sequencedProperty = mock(javax.jcr.Property.class);
+        Node input = tools.findOrCreateNode(session, "/a/b/c");
+        SequencerContext sequencerContext = sequencer.createSequencerContext(input, sequencedProperty, context, problems);
+        assertThat(sequencerContext.getNamespaceRegistry(), notNullValue());
+    }
+
+    @Test
+    public void shouldProvideValueFactories() throws Exception {
+        startRepository();
+        session = getRepository().login(getTestCredentials());
+
+        this.sequencedProperty = mock(javax.jcr.Property.class);
+        Node input = tools.findOrCreateNode(session, "/a/b/c");
+        SequencerContext sequencerContext = sequencer.createSequencerContext(input, sequencedProperty, context, problems);
+        assertThat(sequencerContext.getValueFactories(), notNullValue());
+    }
+
+    @Test
+    public void shouldProvidePathToInput() throws Exception {
+        startRepository();
+        session = getRepository().login(getTestCredentials());
+
+        this.sequencedProperty = mock(javax.jcr.Property.class);
+        Node input = tools.findOrCreateNode(session, "/a/b/c");
+        SequencerContext sequencerContext = sequencer.createSequencerContext(input, sequencedProperty, context, problems);
+        assertThat(sequencerContext.getInputPath(), is(context.getValueFactories().getPathFactory().create("/a/b/c")));
+    }
+
+    @Test
+    public void shouldNeverReturnNullInputProperties() throws Exception {
+        startRepository();
+        session = getRepository().login(getTestCredentials());
+
+        this.sequencedProperty = mock(javax.jcr.Property.class);
+        Node input = tools.findOrCreateNode(session, "/a/b/c");
+        SequencerContext sequencerContext = sequencer.createSequencerContext(input, sequencedProperty, context, problems);
+        assertThat(sequencerContext.getInputProperties(), notNullValue());
+        assertThat(sequencerContext.getInputProperties().isEmpty(), is(false));
+    }
+
+    @Test
+    public void shouldProvideInputProperties() throws Exception {
+        startRepository();
+        session = getRepository().login(getTestCredentials());
+
+        this.sequencedProperty = mock(javax.jcr.Property.class);
+        Node input = tools.findOrCreateNode(session, "/a/b/c");
+        input.setProperty("x", true);
+        input.setProperty("y", new String[] {"asdf", "xyzzy"});
+        SequencerContext sequencerContext = sequencer.createSequencerContext(input, sequencedProperty, context, problems);
+        assertThat(sequencerContext.getInputProperties(), notNullValue());
+        assertThat(sequencerContext.getInputProperties().isEmpty(), is(false));
+        assertThat(sequencerContext.getInputProperties().size(), is(3));
+        verifyProperty(sequencerContext,
+                       "jcr:primaryType",
+                       context.getValueFactories().getNameFactory().create("{http://www.jcp.org/jcr/nt/1.0}unstructured"));
+        verifyProperty(sequencerContext, "x", true);
+        verifyProperty(sequencerContext, "y", "asdf", "xyzzy");
+    }
+
+    @Test
+    public void shouldCreateSequencerContextThatProvidesMimeType() throws Exception {
+        startRepository();
+        session = getRepository().login(getTestCredentials());
+
+        this.sequencedProperty = mock(javax.jcr.Property.class);
+        Node input = tools.findOrCreateNode(session, "/a/b/c");
+        SequencerContext sequencerContext = sequencer.createSequencerContext(input, sequencedProperty, context, problems);
+        assertThat(sequencerContext.getMimeType(), is("text/plain"));
+    }
+
+    private void verifyProperty( SequencerContext context,
+                                 String name,
+                                 Object... values ) {
+        Property prop = context.getInputProperty(context.getValueFactories().getNameFactory().create(name));
+        assertThat(prop, notNullValue());
+        assertThat(prop.getName(), is(context.getValueFactories().getNameFactory().create(name)));
+        assertThat(prop.isEmpty(), is(false));
+        assertThat(prop.size(), is(values.length));
+        assertThat(prop.isMultiple(), is(values.length > 1));
+        assertThat(prop.isSingle(), is(values.length == 1));
+        Iterator<?> iter = prop.getValues();
+        for (Object val : values) {
+            assertThat(iter.hasNext(), is(true));
+            assertThat(iter.next(), is(val));
+        }
     }
 
 }

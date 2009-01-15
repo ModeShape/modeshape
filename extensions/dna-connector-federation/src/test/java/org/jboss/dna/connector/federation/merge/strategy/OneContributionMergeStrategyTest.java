@@ -34,7 +34,6 @@ import java.util.UUID;
 import org.jboss.dna.connector.federation.contribution.Contribution;
 import org.jboss.dna.connector.federation.merge.FederatedNode;
 import org.jboss.dna.connector.federation.merge.MergePlan;
-import org.jboss.dna.graph.BasicExecutionContext;
 import org.jboss.dna.graph.DnaLexicon;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.Location;
@@ -67,7 +66,7 @@ public class OneContributionMergeStrategyTest {
         strategy = new OneContributionMergeStrategy();
         contributions = new LinkedList<Contribution>();
         contributions.add(contribution);
-        context = new BasicExecutionContext();
+        context = new ExecutionContext();
         context.getNamespaceRegistry().register("dna", "http://www.jboss.org/dna/something");
         context.getNamespaceRegistry().register("jcr", "http://www.jcr.org");
         parentPath = context.getValueFactories().getPathFactory().create("/a/b/c");

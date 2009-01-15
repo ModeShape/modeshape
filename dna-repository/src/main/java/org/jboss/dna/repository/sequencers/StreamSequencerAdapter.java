@@ -21,26 +21,36 @@
  */
 package org.jboss.dna.repository.sequencers;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigDecimal;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.Set;
 import javax.jcr.Node;
 import javax.jcr.PathNotFoundException;
 import javax.jcr.Property;
+import javax.jcr.PropertyIterator;
+import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
+import javax.jcr.Value;
 import org.jboss.dna.common.collection.Problems;
 import org.jboss.dna.common.util.Logger;
+import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.properties.Binary;
 import org.jboss.dna.graph.properties.DateTime;
 import org.jboss.dna.graph.properties.Name;
 import org.jboss.dna.graph.properties.NamespaceRegistry;
 import org.jboss.dna.graph.properties.Path;
 import org.jboss.dna.graph.properties.PathFactory;
+import org.jboss.dna.graph.properties.ValueFactories;
+import org.jboss.dna.graph.sequencers.SequencerContext;
 import org.jboss.dna.graph.sequencers.StreamSequencer;
 import org.jboss.dna.repository.RepositoryI18n;
+import org.jboss.dna.repository.mimetype.MimeType;
 import org.jboss.dna.repository.observation.NodeChange;
 import org.jboss.dna.repository.util.JcrExecutionContext;
 import org.jboss.dna.repository.util.RepositoryNodePath;
@@ -103,7 +113,7 @@ public class StreamSequencerAdapter implements Sequencer {
         Throwable firstError = null;
         try {
             stream = sequencedProperty.getStream();
-            SequencerNodeContext sequencerContext = new SequencerNodeContext(input, sequencedProperty, execContext, problems);
+            SequencerContext sequencerContext = createSequencerContext(input, sequencedProperty, execContext, problems);
             this.streamSequencer.sequence(stream, output, sequencerContext);
         } catch (Throwable t) {
             // Record the error ...
@@ -288,4 +298,105 @@ public class StreamSequencerAdapter implements Sequencer {
         return null;
     }
 
+    protected SequencerContext createSequencerContext( Node input,
+                                                       Property sequencedProperty,
+                                                       ExecutionContext context,
+                                                       Problems problems ) throws RepositoryException {
+        assert input != null;
+        assert sequencedProperty != null;
+        assert context != null;
+        assert problems != null;
+        // Translate JCR path and property values to DNA constructs and cache them to improve performance and prevent
+        // RepositoryException from being thrown by getters
+        // Note: getMimeType() will still operate lazily, and thus throw a SequencerException, since it is very intrusive and
+        // potentially slow-running.
+        ValueFactories factories = context.getValueFactories();
+        Path path = factories.getPathFactory().create(input.getPath());
+        Set<org.jboss.dna.graph.properties.Property> props = new HashSet<org.jboss.dna.graph.properties.Property>();
+        for (PropertyIterator iter = input.getProperties(); iter.hasNext();) {
+            javax.jcr.Property jcrProp = iter.nextProperty();
+            org.jboss.dna.graph.properties.Property prop;
+            if (jcrProp.getDefinition().isMultiple()) {
+                Value[] jcrVals = jcrProp.getValues();
+                Object[] vals = new Object[jcrVals.length];
+                int ndx = 0;
+                for (Value jcrVal : jcrVals) {
+                    vals[ndx++] = convert(factories, jcrProp.getName(), jcrVal);
+                }
+                prop = context.getPropertyFactory().create(factories.getNameFactory().create(jcrProp.getName()), vals);
+            } else {
+                Value jcrVal = jcrProp.getValue();
+                Object val = convert(factories, jcrProp.getName(), jcrVal);
+                prop = context.getPropertyFactory().create(factories.getNameFactory().create(jcrProp.getName()), val);
+            }
+            props.add(prop);
+        }
+        props = Collections.unmodifiableSet(props);
+        String mimeType = getMimeType(sequencedProperty, path.getLastSegment().getName().getLocalName());
+        return new SequencerContext(context, path, props, mimeType, problems);
+    }
+
+    protected Object convert( ValueFactories factories,
+                              String name,
+                              Value jcrValue ) throws RepositoryException {
+        switch (jcrValue.getType()) {
+            case PropertyType.BINARY: {
+                return factories.getBinaryFactory().create(jcrValue.getStream());
+            }
+            case PropertyType.BOOLEAN: {
+                return factories.getBooleanFactory().create(jcrValue.getBoolean());
+            }
+            case PropertyType.DATE: {
+                return factories.getDateFactory().create(jcrValue.getDate());
+            }
+            case PropertyType.DOUBLE: {
+                return factories.getDoubleFactory().create(jcrValue.getDouble());
+            }
+            case PropertyType.LONG: {
+                return factories.getLongFactory().create(jcrValue.getLong());
+            }
+            case PropertyType.NAME: {
+                return factories.getNameFactory().create(jcrValue.getString());
+            }
+            case PropertyType.PATH: {
+                return factories.getPathFactory().create(jcrValue.getString());
+            }
+            case PropertyType.REFERENCE: {
+                return factories.getReferenceFactory().create(jcrValue.getString());
+            }
+            case PropertyType.STRING: {
+                return factories.getStringFactory().create(jcrValue.getString());
+            }
+            default: {
+                throw new RepositoryException(RepositoryI18n.unknownPropertyValueType.text(name, jcrValue.getType()));
+            }
+        }
+    }
+
+    @SuppressWarnings( "null" )
+    // The need for the SuppressWarnings looks like an Eclipse bug
+    protected String getMimeType( Property sequencedProperty,
+                                  String name ) {
+        SequencerException err = null;
+        String mimeType = null;
+        InputStream stream = null;
+        try {
+            stream = sequencedProperty.getStream();
+            mimeType = MimeType.of(name, stream);
+            return mimeType;
+        } catch (Exception error) {
+            err = new SequencerException(error);
+        } finally {
+            if (stream != null) {
+                try {
+                    stream.close();
+                } catch (IOException error) {
+                    // Only throw exception if an exception was not already thrown
+                    if (err == null) err = new SequencerException(error);
+                }
+            }
+        }
+        if (err != null) throw err;
+        return mimeType;
+    }
 }

@@ -24,7 +24,6 @@ package org.jboss.dna.graph.requests;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
 import java.util.UUID;
-import org.jboss.dna.graph.BasicExecutionContext;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.properties.Name;
@@ -53,7 +52,7 @@ public abstract class AbstractRequestTest {
 
     @Before
     public void beforeEach() {
-        context = new BasicExecutionContext();
+        context = new ExecutionContext();
         Path validPath = createPath("/a/b/c");
         UUID validUuid = UUID.randomUUID();
         Name idProperty1Name = createName("id1");

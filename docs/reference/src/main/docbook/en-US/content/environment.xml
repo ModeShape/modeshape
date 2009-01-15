@@ -135,43 +135,43 @@
 			added.  Here is what the &ExecutionContext; interface looks like:
 		</para>
 	  <programlisting>
-public interface &ExecutionContext; extends &ClassLoaderFactory; {
+public class &ExecutionContext; implements &ClassLoaderFactory; {
 
     /**
      * Get the factories that should be used to create values for {@link Property properties}.
      * @return the property value factory; never null
      */
-    &ValueFactories; getValueFactories();
+    public &ValueFactories; getValueFactories() {...}
 
     /**
      * Get the namespace registry for this context.
      * @return the namespace registry; never null
      */
-    &NamespaceRegistry; getNamespaceRegistry();
+    public &NamespaceRegistry; getNamespaceRegistry() {...}
 
     /**
      * Get the factory for creating {@link Property} objects.
      * @return the property factory; never null
      */
-    &PropertyFactory; getPropertyFactory();
+    public &PropertyFactory; getPropertyFactory() {...}
 
     /**
      * Get the current JAAS access control context.
      * @return the access control context; may be <code>null</code>
      */
-    &AccessControlContext; getAccessControlContext();
+    public &AccessControlContext; getAccessControlContext() {...}
 
     /**
      * Get the current JAAS login context.
      * @return the login context; may be <code>null</code>
      */
-    &LoginContext; getLoginContext();
+    public &LoginContext; getLoginContext() {...}
 
     /**
      * Get the JAAS subject for which this context was created.
      * @return the subject; never null
      */
-    &Subject; getSubject();
+    public &Subject; getSubject() {...}
 
     /**
      * Return a logger associated with this context. This logger records only those activities within the 
@@ -181,7 +181,7 @@ public interface &ExecutionContext; extends &ClassLoaderFactory; {
      * @param clazz the class that is doing the logging
      * @return the logger, named after <code>clazz</code>; never null
      */
-    &Logger; getLogger( Class&lt;?> clazz );
+    public &Logger; getLogger( Class&lt;?> clazz ) {...}
 
     /**
     * Return a logger associated with this context. This logger records only those activities within the 
@@ -191,12 +191,16 @@ public interface &ExecutionContext; extends &ClassLoaderFactory; {
      * @param name the name for the logger
      * @return the logger, named after <code>clazz</code>; never null
      */
-    &Logger; getLogger( String name );
+    public &Logger; getLogger( String name ) {...}
+
+		...
 }
 </programlisting>
 		<para>
-			Notice that &ExecutionContext; extends the &ClassLoaderFactory; interface described in the
-			<link linkend="classloaders">previous chapter</link>.
+			Notice that &ExecutionContext; implements the &ClassLoaderFactory; interface described in the
+			<link linkend="classloaders">previous chapter</link>, meaning it can be used to create other contexts.  These other methods are not shown,
+			but can be used to create create subcontexts with different <link linkend="security">JAAS</link>
+			login or access control contexts, with different namespace registry, or with different combinations of components.
 		</para>
 	  <para>
 			The fact that so many of the JBoss DNA components take &ExecutionContext; instances gives us some interesting possibilities.  
@@ -207,23 +211,20 @@ public interface &ExecutionContext; extends &ClassLoaderFactory; {
 			to be recorded for user feedback, monitoring and/or auditing purposes.
 		</para>
 		<para>
-			While execution contexts may sound complicated, they're actually very simple to use.  In fact, JBoss DNA provides an factory interface
-			for creating &ExecutionContext; instances.  Not surprisingly it's called &ExecutionContextFactory;
-			and it has methods for creating contexts using <link linkend="security">JAAS</link> login or access control contexts.
-			JBoss DNA even provides a &BasicExecutionContextFactory; implementation that can be created using its no-arg
-			constructor.
-		</para>
-		<para>
 			The following code fragment shows how easy it is to create various execution contexts:
 		</para>
 	  <programlisting>
-&ExecutionContextFactory; factory = new &BasicExecutionContextFactory;();
-&ExecutionContext; context1 = factory.create();
+&ExecutionContext; context1 = new &ExecutionContext;();
+&ExecutionContext; context2 = factory.create();	// same as 'context1'
 
 // Create a context for a user, authenticating using JAAS ...
+&LoginContext; loginContext = new LoginContext("username",callbackHandler);
+&ExecutionContext; context3 = context1.create(new LoginContext("username"));
+
+// Create a context for the same user, authenticating using JAAS, and using a different callback handler ...
 &CallbackHandler; callbackHandler = ...
 &LoginContext; loginContext = new LoginContext("username",callbackHandler);
-&ExecutionContext; context2 = factory.create(loginContext);
+&ExecutionContext; context4 = context1.create(loginContext);
 </programlisting>
 		<para>
 			These contexts (or the context factory) can then be passed to the various components as needed.

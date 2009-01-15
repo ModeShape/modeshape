@@ -43,7 +43,6 @@ import org.jboss.dna.common.util.SecureHash;
 import org.jboss.dna.common.util.StringUtil;
 import org.jboss.dna.connector.store.jpa.models.common.NamespaceEntity;
 import org.jboss.dna.connector.store.jpa.util.Namespaces;
-import org.jboss.dna.graph.BasicExecutionContext;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.properties.Name;
@@ -76,7 +75,7 @@ public class SubgraphQueryTest {
     @Before
     public void beforeEach() throws Exception {
         model = new BasicModel();
-        context = new BasicExecutionContext();
+        context = new ExecutionContext();
 
         // Load in the large value ...
         validLargeValues = new String[] {IoUtil.read(getClass().getClassLoader().getResourceAsStream("LoremIpsum1.txt")),

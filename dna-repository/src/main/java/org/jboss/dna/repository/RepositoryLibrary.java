@@ -33,7 +33,6 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import net.jcip.annotations.ThreadSafe;
 import org.jboss.dna.common.util.CheckArg;
-import org.jboss.dna.graph.BasicExecutionContextFactory;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.ExecutionContextFactory;
 import org.jboss.dna.graph.connectors.RepositoryConnection;
@@ -113,7 +112,7 @@ public class RepositoryLibrary implements RepositoryConnectionFactory {
      * Create a new manager instance.
      */
     public RepositoryLibrary() {
-        this(new BasicExecutionContextFactory(), null);
+        this(new ExecutionContext(), null);
     }
 
     /**
@@ -123,7 +122,7 @@ public class RepositoryLibrary implements RepositoryConnectionFactory {
      *        this manager; may be null if there is no delegate
      */
     public RepositoryLibrary( RepositoryConnectionFactory delegate ) {
-        this(new BasicExecutionContextFactory(), delegate);
+        this(new ExecutionContext(), delegate);
     }
 
     /**

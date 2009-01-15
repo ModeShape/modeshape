@@ -107,16 +107,13 @@
 		<para>Here's sample code that shows how to set up and start the repository service.  You can see something similar
 			in the example application in the <code>startRepositories()</code> method of the <code>org.jboss.example.dna.repository.RepositoryClient</code> class.</para>
     <programlisting role="JAVA"><![CDATA[
-  // Create the factory for execution contexts.
-  ExecutionContextFactory contextFactory = new BasicExecutionContextFactory();
-
   // Create the execution context that we'll use for the services. If we'd want to use JAAS, we'd 
   // create the context by supplying LoginContext, AccessControlContext, or even Subject with 
   // CallbackHandlers. But this example doesn't use JAAS in this example.
   ExecutionContext context = contextFactory.create();
 
   // Create the library for the RepositorySource instances ...
-  RepositoryLibrary sources = new RepositoryLibrary(contextFactory);
+  RepositoryLibrary sources = new RepositoryLibrary(context);
 
   // Load into the source manager the repository source for the configuration repository ...
   InMemoryRepositorySource configSource = new InMemoryRepositorySource();
@@ -151,7 +148,7 @@
 			  So after we create a <code>JcrRepository</code> instance pointing to our repository library, we can 
 			  then login to obtain a JCR session:</para>
       <programlisting role="JAVA"><![CDATA[
-	JcrRepository jcrRepository = new JcrRepository(contextFactory, sources);
+	JcrRepository jcrRepository = new JcrRepository(context, sources);
 	Session session = jcrRepository.login(sourceName);
  ]]></programlisting>
 			<para>Now, the above code doesn't do any authentication; it essentially trusts the caller has the appropriate privileges.
@@ -184,7 +181,7 @@
   Credentials credentials = new Credentials() {
 			public LoginContext getLoginContext() { return loginContext; }
   };
-  JcrRepository jcrRepository = new JcrRepository(contextFactory, sources);
+  JcrRepository jcrRepository = new JcrRepository(context, sources);
   Session session = jcrRepository.login(credentials, sourceName);
  ]]></programlisting>
 			<para>Once you have a JCR session, you can then use it to find the node of interest and access the necessary information. All of this

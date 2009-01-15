@@ -31,7 +31,6 @@ import net.jcip.annotations.NotThreadSafe;
 import org.jboss.dna.common.text.TextDecoder;
 import org.jboss.dna.common.text.XmlNameEncoder;
 import org.jboss.dna.common.util.CheckArg;
-import org.jboss.dna.graph.BasicExecutionContext;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.properties.Name;
 import org.jboss.dna.graph.properties.NameFactory;
@@ -202,7 +201,7 @@ public class XmlHandler extends DefaultHandler2 {
 
         // Set up a local namespace registry that is kept in sync with the namespaces found in this XML document ...
         NamespaceRegistry namespaceRegistry = new LocalNamespaceRegistry(this.context.getNamespaceRegistry());
-        final ExecutionContext localContext = new BasicExecutionContext(this.context, namespaceRegistry);
+        final ExecutionContext localContext = this.context.with(namespaceRegistry);
 
         // Set up references to frequently-used objects in the context ...
         this.nameFactory = localContext.getValueFactories().getNameFactory();

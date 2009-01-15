@@ -42,8 +42,8 @@ import org.junit.BeforeClass;
  * Typically, unit test classes need a repository for just some of it's unit tests (other unit tests don't need the repository
  * because they are just testing other functionality of the class under test), and this class was designed for this scenario. A
  * unit test method that needs a repository should call {@link #startRepository()}, and then may proceed to use the
- * {@link #getRepository() repository}. The test method need not call {@link #shutdownRepository()}, as it is called
- * automatically after every test (and does nothing if the repository was not started in the first place).
+ * {@link #getRepository() repository}. The test method need not call {@link #shutdownRepository()}, as it is called automatically
+ * after every test (and does nothing if the repository was not started in the first place).
  * </p>
  * <p>
  * Some unit test methods may have a need to repeatedly start and stop the repository, and this can be done by calling
@@ -172,4 +172,5 @@ public abstract class AbstractJcrRepositoryTest {
     public Credentials getTestCredentials() {
         return this.simpleCredentials;
     }
+
 }

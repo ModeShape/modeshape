@@ -72,7 +72,7 @@
 				</listitem>
 			</itemizedlist>
     </para>
-		<para>As mentioned above, the &ExecutionContext; provides access to a &SessionFactory; that is used
+		<para>As mentioned above, the &JcrExecutionContext; provides access to a &SessionFactory; that is used
       by JBoss DNA to establish sessions to your JCR repositories.  Two implementations are available:
 			<itemizedlist>
 				<listitem>
@@ -85,15 +85,17 @@
 			          with names, as well as methods to set the JCR &Credentials; for a given workspace name.</para>
 				</listitem>
 			</itemizedlist>
-      You can use the &BasicJcrExecutionContext; implementation of &JcrExecutionContext; and supply
-      a &SessionFactory; instance, or you can provide your own implementation.</para>
+      You can use the &JcrExecutionContext; and use one of these &SessionFactory; implementations or another
+      implementation that you provide.</para>
 		<para>Here's an example of how to instantiate and configure the &SequencingService;:</para>
     <programlisting>
 &SimpleSessionFactory; sessionFactory = new &SimpleSessionFactory;();
 sessionFactory.registerRepository("Main Repository", this.repository);
 &Credentials; credentials = new &SimpleCredentials;("jsmith", "secret".toCharArray());
 sessionFactory.registerCredentials("Main Repository/Workspace1", credentials);
-ExecutionContext executionContext = new &BasicJcrExecutionContext;(sessionFactory);
+// Now create the JCR execution context, with a reference to the session factory
+// and the name of the repository from which sessions will be obtained ...
+ExecutionContext executionContext = new &JcrExecutionContext;(sessionFactory,"Main Repository");
 
 // Create the sequencing service, passing in the execution context ...
 &SequencingService; sequencingService = new &SequencingService;();

@@ -28,7 +28,6 @@ import static org.junit.Assert.assertThat;
 import static org.junit.matchers.JUnitMatchers.hasItems;
 import org.jboss.dna.common.text.TextEncoder;
 import org.jboss.dna.common.text.UrlEncoder;
-import org.jboss.dna.graph.BasicExecutionContext;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.properties.NamespaceRegistry;
 import org.jboss.dna.graph.properties.Path;
@@ -52,7 +51,7 @@ public class ProjectionPathRuleTest {
 
     @Before
     public void beforeEach() {
-        context = new BasicExecutionContext();
+        context = new ExecutionContext();
         pathFactory = context.getValueFactories().getPathFactory();
         registry = context.getNamespaceRegistry();
         encoder = new UrlEncoder();

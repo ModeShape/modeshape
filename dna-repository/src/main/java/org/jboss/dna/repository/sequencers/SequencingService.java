@@ -21,7 +21,6 @@
  */
 package org.jboss.dna.repository.sequencers;
 
-import java.security.AccessControlContext;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -32,15 +31,12 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import javax.jcr.Node;
 import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.observation.Event;
-import javax.security.auth.Subject;
-import javax.security.auth.login.LoginContext;
 import net.jcip.annotations.Immutable;
 import net.jcip.annotations.ThreadSafe;
 import org.jboss.dna.common.collection.SimpleProblems;
@@ -50,10 +46,6 @@ import org.jboss.dna.common.component.StandardClassLoaderFactory;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.common.util.HashCode;
 import org.jboss.dna.common.util.Logger;
-import org.jboss.dna.graph.mimetype.MimeTypeDetector;
-import org.jboss.dna.graph.properties.NamespaceRegistry;
-import org.jboss.dna.graph.properties.PropertyFactory;
-import org.jboss.dna.graph.properties.ValueFactories;
 import org.jboss.dna.repository.RepositoryI18n;
 import org.jboss.dna.repository.observation.NodeChange;
 import org.jboss.dna.repository.observation.NodeChangeListener;
@@ -62,9 +54,7 @@ import org.jboss.dna.repository.services.AbstractServiceAdministrator;
 import org.jboss.dna.repository.services.AdministeredService;
 import org.jboss.dna.repository.services.ServiceAdministrator;
 import org.jboss.dna.repository.util.JcrExecutionContext;
-import org.jboss.dna.repository.util.JcrTools;
 import org.jboss.dna.repository.util.RepositoryNodePath;
-import org.jboss.dna.repository.util.SessionFactory;
 
 /**
  * A sequencing system is used to monitor changes in the content of {@link Repository JCR repositories} and to sequence the
@@ -524,10 +514,10 @@ public class SequencingService implements AdministeredService, NodeChangeListene
                         assert outputPaths != null && outputPaths.size() != 0;
 
                         // Create a new execution context for each sequencer
-                        final Context executionContext = new Context(context);
                         final SimpleProblems problems = new SimpleProblems();
+                        JcrExecutionContext sequencerContext = context.clone();
                         try {
-                            sequencer.execute(node, propertyName, changedNode, outputPaths, executionContext, problems);
+                            sequencer.execute(node, propertyName, changedNode, outputPaths, sequencerContext, problems);
                         } catch (RepositoryException e) {
                             logger.error(e, RepositoryI18n.errorInRepositoryWhileSequencingNode, sequencerName, changedNode);
                         } catch (SequencerException e) {
@@ -539,7 +529,7 @@ public class SequencingService implements AdministeredService, NodeChangeListene
                             } finally {
                                 // And always close the context.
                                 // This closes all sessions that may have been created by the sequencer.
-                                executionContext.close();
+                                sequencerContext.close();
                             }
                         }
                     }
@@ -552,138 +542,6 @@ public class SequencingService implements AdministeredService, NodeChangeListene
             logger.error(e, RepositoryI18n.errorInRepositoryWhileFindingSequencersToRunAgainstNode, changedNode);
         } catch (Throwable e) {
             logger.error(e, RepositoryI18n.errorFindingSequencersToRunAgainstNode, changedNode);
-        }
-    }
-
-    protected class Context implements JcrExecutionContext {
-
-        protected final JcrExecutionContext delegate;
-        protected final SessionFactory factory;
-        private final Set<Session> sessions = new HashSet<Session>();
-        protected final AtomicBoolean closed = new AtomicBoolean(false);
-
-        protected Context( JcrExecutionContext context ) {
-            this.delegate = context;
-            final SessionFactory delegateSessionFactory = this.delegate.getSessionFactory();
-            this.factory = new SessionFactory() {
-
-                public Session createSession( String name ) throws RepositoryException {
-                    if (closed.get()) throw new IllegalStateException(RepositoryI18n.executionContextHasBeenClosed.text());
-                    Session session = delegateSessionFactory.createSession(name);
-                    recordSession(session);
-                    return session;
-                }
-            };
-        }
-
-        public synchronized void close() {
-            if (this.closed.get()) return;
-            this.closed.set(true);
-            for (Session session : sessions) {
-                if (session != null) session.logout();
-            }
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.jboss.dna.common.component.ClassLoaderFactory#getClassLoader(java.lang.String[])
-         */
-        public ClassLoader getClassLoader( String... classpath ) {
-            return delegate.getClassLoader(classpath);
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.jboss.dna.graph.ExecutionContext#getMimeTypeDetector()
-         */
-        public MimeTypeDetector getMimeTypeDetector() {
-            return delegate.getMimeTypeDetector();
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.jboss.dna.graph.ExecutionContext#getAccessControlContext()
-         */
-        public AccessControlContext getAccessControlContext() {
-            return delegate.getAccessControlContext();
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.jboss.dna.graph.ExecutionContext#getLoginContext()
-         */
-        public LoginContext getLoginContext() {
-            return delegate.getLoginContext();
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        public NamespaceRegistry getNamespaceRegistry() {
-            return this.delegate.getNamespaceRegistry();
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        public PropertyFactory getPropertyFactory() {
-            return this.delegate.getPropertyFactory();
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        public SessionFactory getSessionFactory() {
-            return this.factory;
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.jboss.dna.graph.ExecutionContext#getSubject()
-         */
-        public Subject getSubject() {
-            return this.delegate.getSubject();
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        public JcrTools getTools() {
-            return SequencingService.this.getExecutionContext().getTools();
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        public ValueFactories getValueFactories() {
-            return this.delegate.getValueFactories();
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.jboss.dna.graph.ExecutionContext#getLogger(java.lang.Class)
-         */
-        public Logger getLogger( Class<?> clazz ) {
-            return this.delegate.getLogger(clazz);
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.jboss.dna.graph.ExecutionContext#getLogger(java.lang.String)
-         */
-        public Logger getLogger( String name ) {
-            return this.delegate.getLogger(name);
-        }
-
-        protected synchronized void recordSession( Session session ) {
-            if (session != null) sessions.add(session);
         }
     }
 

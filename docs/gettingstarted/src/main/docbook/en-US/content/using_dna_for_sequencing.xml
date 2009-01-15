@@ -82,7 +82,7 @@ SimpleSessionFactory sessionFactory = new SimpleSessionFactory();
 sessionFactory.registerRepository("Repository", this.repository);
 Credentials credentials = new SimpleCredentials("jsmith", "secret".toCharArray());
 sessionFactory.registerCredentials("Repository/Workspace1", credentials);
-JcrExecutionContext context = new BasicJcrExecutionContext(sessionFactory,"Repository/Workspace1");
+JcrExecutionContext context = new JcrExecutionContext(sessionFactory,"Repository/Workspace1");
 
 // Create the sequencing service, passing in the execution context ...
 SequencingService sequencingService = new SequencingService();

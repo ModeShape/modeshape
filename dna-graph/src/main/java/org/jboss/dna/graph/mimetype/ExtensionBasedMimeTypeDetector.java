@@ -40,17 +40,6 @@ import org.jboss.dna.graph.GraphI18n;
 @Immutable
 public class ExtensionBasedMimeTypeDetector implements MimeTypeDetector {
 
-    protected static final ExtensionBasedMimeTypeDetector DEFAULT_INSTANCE = new ExtensionBasedMimeTypeDetector();
-
-    /**
-     * Get an immutable shared instance of this detector with the {@link #MIME_TYPE_EXTENSIONS_RESOURCE_PATH default mappings}.
-     * 
-     * @return the shared instance
-     */
-    public static ExtensionBasedMimeTypeDetector getInstance() {
-        return DEFAULT_INSTANCE;
-    }
-
     /**
      * The default location of the properties file containing the extension patterns to MIME types.
      */

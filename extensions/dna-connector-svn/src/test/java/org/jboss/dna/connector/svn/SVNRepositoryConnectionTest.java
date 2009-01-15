@@ -25,7 +25,6 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsSame.sameInstance;
 import static org.jboss.dna.graph.IsNodeWithChildren.hasChild;
-import static org.jboss.dna.graph.IsNodeWithProperty.hasProperty;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.mock;
 import java.io.File;
@@ -35,7 +34,6 @@ import java.util.Date;
 import java.util.List;
 import org.jboss.dna.common.text.UrlEncoder;
 import org.jboss.dna.common.util.FileUtil;
-import org.jboss.dna.graph.BasicExecutionContext;
 import org.jboss.dna.graph.DnaLexicon;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.Graph;
@@ -61,10 +59,8 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.MockitoAnnotations;
 import org.mockito.MockitoAnnotations.Mock;
-import org.tmatesoft.svn.core.SVNException;
 import org.tmatesoft.svn.core.SVNNodeKind;
 import org.tmatesoft.svn.core.io.SVNRepository;
-import com.sun.org.apache.bcel.internal.generic.NEW;
 
 /**
  * @author Serge Pagop
@@ -90,7 +86,7 @@ public class SVNRepositoryConnectionTest {
     @Before
     public void beforeEach() throws Exception {
         MockitoAnnotations.initMocks(this);
-        context = new BasicExecutionContext();
+        context = new ExecutionContext();
         context.getNamespaceRegistry().register(DnaLexicon.Namespace.PREFIX, DnaLexicon.Namespace.URI);
         context.getNamespaceRegistry().register(JcrLexicon.Namespace.PREFIX, JcrLexicon.Namespace.URI);
         context.getNamespaceRegistry().register(JcrNtLexicon.Namespace.PREFIX, JcrNtLexicon.Namespace.URI);
@@ -269,18 +265,16 @@ public class SVNRepositoryConnectionTest {
 
     @Test
     public void shouldAddAndDeleteChildUnderRootNode() throws Exception {
-        graph.batch().create("/nodeC")
-                       .with(propertyFactory().create(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FOLDER))
-        .and(propertyFactory().create(JcrLexicon.CREATED,dateFactory().create(new Date()))).execute();
+        graph.batch().create("/nodeC").with(propertyFactory().create(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FOLDER)).and(propertyFactory().create(JcrLexicon.CREATED,
+                                                                                                                                                 dateFactory().create(new Date()))).execute();
         // Now look up the root node ...
         Node root = graph.getNodeAt("/");
         assertThat(root, is(notNullValue()));
         assertThat(root.getChildren(), hasChild(child("nodeC")));
         SVNNodeKind nodeCKind = repository.checkPath("nodeC", -1);
         assertThat(nodeCKind, is(SVNNodeKind.DIR));
-        graph.batch().create("/nodeC/nodeC_1")
-                     .with(propertyFactory().create(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FOLDER))
-                     .and(propertyFactory().create(JcrLexicon.CREATED,dateFactory().create(new Date()))).execute();
+        graph.batch().create("/nodeC/nodeC_1").with(propertyFactory().create(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FOLDER)).and(propertyFactory().create(JcrLexicon.CREATED,
+                                                                                                                                                         dateFactory().create(new Date()))).execute();
         // Now look up the root node ...
         Node nodeC = graph.getNodeAt("/nodeC");
         assertThat(nodeC, is(notNullValue()));
@@ -289,7 +283,6 @@ public class SVNRepositoryConnectionTest {
         assertThat(nodeC1Kind, is(SVNNodeKind.DIR));
 
     }
-
 
     protected Collection<String> containsPaths( Collection<Location> locations ) {
         List<String> paths = new ArrayList<String>();

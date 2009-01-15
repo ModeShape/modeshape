@@ -70,7 +70,7 @@ public class GraphImporterTest {
     public void beforeEach() throws Exception {
         MockitoAnnotations.initMocks(this);
         xmlContent = new File("src/test/resources/repositoryImporterTestData1.xml").toURI();
-        context = new BasicExecutionContext();
+        context = new ExecutionContext();
         context.getNamespaceRegistry().register(DnaLexicon.Namespace.PREFIX, DnaLexicon.Namespace.URI);
         context.getNamespaceRegistry().register("jcr", "http://www.jcp.org/jcr/1.0");
         context.getNamespaceRegistry().register("nt", "http://www.jcp.org/jcr/nt/1.0");

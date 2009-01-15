@@ -42,7 +42,6 @@ import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.text.NoOpEncoder;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.connector.inmemory.InMemoryRepositorySource;
-import org.jboss.dna.graph.BasicExecutionContextFactory;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.ExecutionContextFactory;
 import org.jboss.dna.graph.Graph;
@@ -130,7 +129,7 @@ public class RepositoryClient {
         if (repositoryService != null) return; // already started
 
         // Create the factory for execution contexts.
-        contextFactory = new BasicExecutionContextFactory();
+        contextFactory = new ExecutionContext();
 
         // Create the execution context that we'll use for the services. If we'd want to use JAAS, we'd create the context
         // by supplying LoginContext, AccessControlContext, or even Subject with CallbackHandlers. But no JAAS in this example.

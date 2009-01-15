@@ -40,7 +40,6 @@ import javax.naming.Reference;
 import javax.naming.spi.ObjectFactory;
 import javax.security.auth.callback.CallbackHandler;
 import javax.security.auth.login.LoginException;
-import org.jboss.dna.graph.BasicExecutionContext;
 import org.jboss.dna.graph.DnaLexicon;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.ExecutionContextFactory;
@@ -88,7 +87,7 @@ public class FederatedRepositorySourceTest {
     @Before
     public void beforeEach() throws Exception {
         MockitoAnnotations.initMocks(this);
-        context = new BasicExecutionContext();
+        context = new ExecutionContext();
         context.getNamespaceRegistry().register(DnaLexicon.Namespace.PREFIX, DnaLexicon.Namespace.URI);
         configurationSourceName = "configuration source name";
         repositoryName = "Test Repository";

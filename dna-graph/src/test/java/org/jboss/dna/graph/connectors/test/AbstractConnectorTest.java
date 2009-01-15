@@ -34,7 +34,6 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import org.jboss.dna.common.stats.Stopwatch;
-import org.jboss.dna.graph.BasicExecutionContextFactory;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.ExecutionContextFactory;
 import org.jboss.dna.graph.Graph;
@@ -84,7 +83,7 @@ public abstract class AbstractConnectorTest {
             // Set up the connection factory to other sources ...
 
             // Set up the execution context ...
-            contextFactory = new BasicExecutionContextFactory();
+            contextFactory = new ExecutionContext();
             context = setUpExecutionContext(contextFactory);
 
             // Set up the source ...

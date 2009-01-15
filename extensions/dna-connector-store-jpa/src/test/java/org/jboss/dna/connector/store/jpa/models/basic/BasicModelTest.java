@@ -39,7 +39,6 @@ import org.jboss.dna.common.util.SecureHash;
 import org.jboss.dna.common.util.StringUtil;
 import org.jboss.dna.connector.store.jpa.JpaConnectorI18n;
 import org.jboss.dna.connector.store.jpa.models.common.NamespaceEntity;
-import org.jboss.dna.graph.BasicExecutionContext;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.properties.PropertyType;
 import org.jboss.dna.graph.requests.processor.RequestProcessor;
@@ -70,7 +69,7 @@ public class BasicModelTest {
     @Before
     public void beforeEach() throws Exception {
         model = new BasicModel();
-        context = new BasicExecutionContext();
+        context = new ExecutionContext();
     }
 
     @After

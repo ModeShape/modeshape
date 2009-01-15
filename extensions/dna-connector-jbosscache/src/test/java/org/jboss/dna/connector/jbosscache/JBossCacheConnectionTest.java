@@ -39,7 +39,6 @@ import org.jboss.cache.CacheFactory;
 import org.jboss.cache.DefaultCacheFactory;
 import org.jboss.cache.Fqn;
 import org.jboss.cache.Node;
-import org.jboss.dna.graph.BasicExecutionContext;
 import org.jboss.dna.graph.DnaLexicon;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.Graph;
@@ -80,7 +79,7 @@ public class JBossCacheConnectionTest {
     @Before
     public void beforeEach() throws Exception {
         MockitoAnnotations.initMocks(this);
-        context = new BasicExecutionContext();
+        context = new ExecutionContext();
         context.getNamespaceRegistry().register(DnaLexicon.Namespace.PREFIX, DnaLexicon.Namespace.URI);
         pathFactory = context.getValueFactories().getPathFactory();
         propertyFactory = context.getPropertyFactory();

@@ -38,7 +38,6 @@ import org.hamcrest.Matcher;
 import org.jboss.dna.common.collection.IsIteratorContaining;
 import org.jboss.dna.connector.federation.contribution.Contribution;
 import org.jboss.dna.connector.federation.merge.FederatedNode;
-import org.jboss.dna.graph.BasicExecutionContext;
 import org.jboss.dna.graph.DnaLexicon;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.Location;
@@ -68,7 +67,7 @@ public class SimpleMergeStrategyTest {
         MockitoAnnotations.initMocks(this);
         strategy = new SimpleMergeStrategy();
         contributions = new LinkedList<Contribution>();
-        context = new BasicExecutionContext();
+        context = new ExecutionContext();
         context.getNamespaceRegistry().register("dna", "http://www.jboss.org/dna/something");
         context.getNamespaceRegistry().register("jcr", "http://www.jcr.org");
         parentPath = context.getValueFactories().getPathFactory().create("/a/b/c");

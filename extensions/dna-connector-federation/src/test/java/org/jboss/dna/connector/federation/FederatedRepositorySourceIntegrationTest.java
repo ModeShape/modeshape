@@ -36,7 +36,6 @@ import java.util.ArrayList;
 import java.util.List;
 import javax.naming.Context;
 import javax.security.auth.callback.CallbackHandler;
-import org.jboss.dna.graph.BasicExecutionContext;
 import org.jboss.dna.graph.DnaLexicon;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.ExecutionContextFactory;
@@ -101,7 +100,7 @@ public class FederatedRepositorySourceIntegrationTest {
         MockitoAnnotations.initMocks(this);
 
         // Set up the environment (ExecutionContext, JNDI, security, etc.)
-        context = new BasicExecutionContext();
+        context = new ExecutionContext();
         context.getNamespaceRegistry().register(DnaLexicon.Namespace.PREFIX, DnaLexicon.Namespace.URI);
         executionContextFactoryJndiName = "context factory jndi name";
         repositoryConnectionFactoryJndiName = "repository connection factory jndi name";

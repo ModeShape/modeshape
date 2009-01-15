@@ -26,7 +26,6 @@ import javax.security.auth.Subject;
 import javax.security.auth.callback.CallbackHandler;
 import javax.security.auth.login.LoginContext;
 import net.jcip.annotations.NotThreadSafe;
-import org.jboss.dna.graph.BasicExecutionContext;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.ExecutionContextFactory;
 import org.jboss.dna.graph.connectors.RepositoryConnection;
@@ -503,7 +502,7 @@ public class TestUtil {
     }
 
     public static ExecutionContextFactory getExecutionContextFactory() {
-        final ExecutionContext context = new BasicExecutionContext(Mockito.mock(LoginContext.class));
+        final ExecutionContext context = new ExecutionContext().create(Mockito.mock(LoginContext.class));
         NamespaceRegistry registry = context.getNamespaceRegistry();
         registry.register("dna", "http://www.jboss.org/dna/1.0");
         registry.register("fn", "http://www.w3.org/2005/xpath-functions");

@@ -21,8 +21,13 @@
  */
 package org.jboss.dna.graph.sequencers;
 
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import org.jboss.dna.common.collection.Problems;
+import org.jboss.dna.common.collection.SimpleProblems;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.properties.Name;
 import org.jboss.dna.graph.properties.Path;
@@ -31,21 +36,48 @@ import org.jboss.dna.graph.properties.Property;
 /**
  * @author John Verhaeg
  */
-public interface SequencerContext extends ExecutionContext {
+public class SequencerContext extends ExecutionContext {
+
+    private final Path inputPath;
+    private final Map<Name, Property> inputPropertiesByName;
+    private final Set<Property> inputProperties;
+    private final Problems problems;
+    private final String mimeType;
+
+    public SequencerContext( ExecutionContext context,
+                             Path inputPath,
+                             Set<Property> inputProperties,
+                             String mimeType,
+                             Problems problems ) {
+        super(context);
+        this.inputPath = inputPath;
+        this.inputProperties = inputProperties != null ? new HashSet<Property>(inputProperties) : new HashSet<Property>();
+        this.mimeType = mimeType;
+        this.problems = problems != null ? problems : new SimpleProblems();
+        Map<Name, Property> inputPropertiesByName = new HashMap<Name, Property>();
+        for (Property property : this.inputProperties) {
+            inputPropertiesByName.put(property.getName(), property);
+        }
+        this.inputPropertiesByName = Collections.unmodifiableMap(inputPropertiesByName);
+    }
 
     /**
      * Return the path of the input node containing the content being sequenced.
      * 
      * @return input node's path.
      */
-    Path getInputPath();
+    public Path getInputPath() {
+        return inputPath;
+    }
 
     /**
      * Return the set of properties from the input node containing the content being sequenced.
      * 
      * @return the input node's properties; never <code>null</code>.
      */
-    Set<Property> getInputProperties();
+    public Set<Property> getInputProperties() {
+        return inputProperties;
+    }
 
     /**
      * Return the property with the supplied name from the input node containing the content being sequenced.
@@ -53,14 +85,18 @@ public interface SequencerContext extends ExecutionContext {
      * @param name
      * @return the input node property, or <code>null</code> if none exists.
      */
-    Property getInputProperty( Name name );
+    public Property getInputProperty( Name name ) {
+        return inputPropertiesByName.get(name);
+    }
 
     /**
      * Return the MIME-type of the content being sequenced.
      * 
      * @return the MIME-type
      */
-    String getMimeType();
+    public String getMimeType() {
+        return this.mimeType;
+    }
 
     /**
      * Get an interface that can be used to record various problems, warnings, and errors that are not extreme enough to warrant
@@ -68,5 +104,7 @@ public interface SequencerContext extends ExecutionContext {
      * 
      * @return the interface for recording problems; never null
      */
-    Problems getProblems();
+    public Problems getProblems() {
+        return this.problems;
+    }
 }

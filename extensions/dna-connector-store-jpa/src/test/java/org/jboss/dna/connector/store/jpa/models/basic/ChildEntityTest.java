@@ -31,7 +31,6 @@ import javax.persistence.EntityManagerFactory;
 import javax.persistence.Query;
 import org.hibernate.ejb.Ejb3Configuration;
 import org.jboss.dna.connector.store.jpa.models.common.NamespaceEntity;
-import org.jboss.dna.graph.BasicExecutionContext;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.properties.Path;
 import org.junit.After;
@@ -51,7 +50,7 @@ public class ChildEntityTest {
     @Before
     public void beforeEach() throws Exception {
         model = new BasicModel();
-        context = new BasicExecutionContext();
+        context = new ExecutionContext();
         // Connect to the database ...
         Ejb3Configuration configurator = new Ejb3Configuration();
         model.configure(configurator);

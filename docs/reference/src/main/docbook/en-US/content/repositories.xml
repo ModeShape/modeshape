@@ -219,12 +219,11 @@
 			<code>org.jboss.example.dna.repository.RepositoryClient</code> class.
 		</para>
     <programlisting>
- // Create the factory for execution contexts, and create one ...
- &ExecutionContextFactory; contextFactory = new &BasicExecutionContextFactory;();
+ // Create the top-level execution context (which is also a factory) ...
  &ExecutionContext; context = contextFactory.create();
 
  // Create the library for the RepositorySource instances ...
- &RepositoryLibrary; sources = new &RepositoryLibrary;(contextFactory);
+ &RepositoryLibrary; sources = new &RepositoryLibrary;(context);
 
  // Load into the source manager the repository source for the configuration repository ...
  &InMemoryRepositorySource; configSource = new &InMemoryRepositorySource;();

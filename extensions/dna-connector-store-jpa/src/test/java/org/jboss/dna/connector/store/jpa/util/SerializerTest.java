@@ -46,7 +46,6 @@ import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.common.util.SecureHash;
 import org.jboss.dna.common.util.StringUtil;
 import org.jboss.dna.connector.store.jpa.util.Serializer.ReferenceValues;
-import org.jboss.dna.graph.BasicExecutionContext;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.properties.Binary;
 import org.jboss.dna.graph.properties.Name;
@@ -72,7 +71,7 @@ public class SerializerTest {
 
     @Before
     public void beforeEach() {
-        context = new BasicExecutionContext();
+        context = new ExecutionContext();
         propertyFactory = context.getPropertyFactory();
         valueFactories = context.getValueFactories();
         serializer = new Serializer(context, false);

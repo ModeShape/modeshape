@@ -41,7 +41,6 @@ import java.util.concurrent.TimeUnit;
 import org.jboss.dna.connector.federation.Projection;
 import org.jboss.dna.connector.federation.ProjectionParser;
 import org.jboss.dna.connector.federation.contribution.Contribution;
-import org.jboss.dna.graph.BasicExecutionContext;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.cache.BasicCachePolicy;
@@ -82,7 +81,7 @@ public class FederatingCommandExecutorTest {
     @Before
     public void beforeEach() throws Exception {
         MockitoAnnotations.initMocks(this);
-        context = new BasicExecutionContext();
+        context = new ExecutionContext();
         pathFactory = context.getValueFactories().getPathFactory();
         sourceName = "Federated Source";
         cachePolicy = new BasicCachePolicy(10L, TimeUnit.SECONDS);

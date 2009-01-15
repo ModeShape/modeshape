@@ -101,7 +101,7 @@ public class GraphTest {
         MockitoAnnotations.initMocks(this);
         executedRequests = new LinkedList<Request>();
         sourceName = "Source";
-        context = new BasicExecutionContext();
+        context = new ExecutionContext();
         connection = new MockRepositoryConnection();
         stub(connectionFactory.createConnection(sourceName)).toReturn(connection);
         graph = new Graph(sourceName, connectionFactory, context);

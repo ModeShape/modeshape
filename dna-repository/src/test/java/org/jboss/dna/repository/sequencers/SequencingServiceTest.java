@@ -28,15 +28,18 @@ import static org.hamcrest.core.IsNull.nullValue;
 import static org.hamcrest.core.IsSame.sameInstance;
 import static org.junit.Assert.assertThat;
 import static org.junit.matchers.JUnitMatchers.hasItem;
+import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 import javax.jcr.Node;
+import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.observation.Event;
+import org.jboss.dna.common.SystemFailureException;
 import org.jboss.dna.common.jcr.AbstractJcrRepositoryTest;
 import org.jboss.dna.repository.observation.ObservationService;
 import org.jboss.dna.repository.services.ServiceAdministrator;
 import org.jboss.dna.repository.util.JcrExecutionContext;
-import org.jboss.dna.repository.util.MockJcrExecutionContext;
+import org.jboss.dna.repository.util.SessionFactory;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -56,7 +59,17 @@ public class SequencingServiceTest extends AbstractJcrRepositoryTest {
 
     @Before
     public void beforeEach() {
-        this.executionContext = new MockJcrExecutionContext(this, REPOSITORY_WORKSPACE_NAME);
+        SessionFactory sessionFactory = new SessionFactory() {
+            public Session createSession( String name ) throws RepositoryException {
+                assertThat(name, is(REPOSITORY_WORKSPACE_NAME));
+                try {
+                    return getRepository().login(getTestCredentials());
+                } catch (IOException e) {
+                    throw new SystemFailureException(e);
+                }
+            }
+        };
+        this.executionContext = new JcrExecutionContext(sessionFactory, REPOSITORY_WORKSPACE_NAME);
         this.sequencingService = new SequencingService();
         this.sequencingService.setExecutionContext(this.executionContext);
         this.observationService = new ObservationService(this.executionContext.getSessionFactory());

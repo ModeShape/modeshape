@@ -35,7 +35,6 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import java.util.concurrent.TimeUnit;
 import org.jboss.dna.common.util.Logger;
 import org.jboss.dna.connector.federation.FederationException;
-import org.jboss.dna.graph.BasicExecutionContext;
 import org.jboss.dna.graph.DnaLexicon;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.connectors.RepositoryConnection;
@@ -68,7 +67,7 @@ public class RepositoryServiceTest {
     @Before
     public void beforeEach() throws Exception {
         MockitoAnnotations.initMocks(this);
-        context = new BasicExecutionContext();
+        context = new ExecutionContext();
         context.getNamespaceRegistry().register(DnaLexicon.Namespace.PREFIX, DnaLexicon.Namespace.URI);
         configSourceName = "configSource";
         configRepository = SimpleRepository.get("Configuration Repository");

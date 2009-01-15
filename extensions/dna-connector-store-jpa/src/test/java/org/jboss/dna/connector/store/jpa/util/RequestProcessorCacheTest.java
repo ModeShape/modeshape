@@ -29,7 +29,6 @@ import static org.junit.matchers.JUnitMatchers.hasItems;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.UUID;
-import org.jboss.dna.graph.BasicExecutionContext;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.properties.Name;
@@ -58,7 +57,7 @@ public class RequestProcessorCacheTest {
 
     @Before
     public void beforeEach() {
-        ExecutionContext context = new BasicExecutionContext();
+        ExecutionContext context = new ExecutionContext();
         pathFactory = context.getValueFactories().getPathFactory();
         nameFactory = context.getValueFactories().getNameFactory();
         namespaces = context.getNamespaceRegistry();

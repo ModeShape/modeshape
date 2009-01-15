@@ -34,7 +34,6 @@ import javax.jcr.PropertyType;
 import javax.jcr.Value;
 import javax.jcr.ValueFormatException;
 import javax.jcr.nodetype.PropertyDefinition;
-import org.jboss.dna.graph.BasicExecutionContext;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.properties.Name;
 import org.jboss.dna.graph.properties.Path;
@@ -52,7 +51,7 @@ public class JcrPropertyTest {
     private Property prop;
     @Mock
     private Node node;
-    private ExecutionContext executionContext = new BasicExecutionContext();
+    private ExecutionContext executionContext = new ExecutionContext();
     @Mock
     Name name;
 

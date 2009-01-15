@@ -35,7 +35,6 @@ import java.util.List;
 import java.util.Map;
 import org.jboss.dna.common.text.Jsr283Encoder;
 import org.jboss.dna.common.text.TextDecoder;
-import org.jboss.dna.graph.BasicExecutionContext;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.JcrLexicon;
 import org.jboss.dna.graph.Location;
@@ -73,7 +72,7 @@ public class XmlHandlerTest {
 
     @Before
     public void beforeEach() {
-        context = new BasicExecutionContext();
+        context = new ExecutionContext();
         context.getNamespaceRegistry().register(JcrLexicon.Namespace.PREFIX, JcrLexicon.Namespace.URI);
         context.getNamespaceRegistry().register("nt", NT_NAMESPACE_URI);
         destination = new RecordingDestination();

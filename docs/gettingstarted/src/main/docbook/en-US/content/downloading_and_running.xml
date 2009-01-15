@@ -93,7 +93,7 @@
 	</note>
 	<sect1 id="downloading">
 		<title>Downloading and compiling</title>
-		<para>The next step is to <ulink url="http://www.jboss.org/file-access/default/members/dna/downloads/0.2/jboss-dna-0.2-gettingstarted-examples.zip">download</ulink>
+		<para>The next step is to <ulink url="http://www.jboss.org/file-access/default/members/dna/downloads/0.4/jboss-dna-0.4-gettingstarted-examples.zip">download</ulink>
       the example for this Getting Started guide, and extract the contents to a convenient location on your local disk.
       You'll find the example contains the following files, which are organized according to the standard Maven directory structure:</para>
 		<programlisting><![CDATA[
