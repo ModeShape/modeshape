@@ -7,12 +7,27 @@
     <format>zip</format>
   </formats>
   <fileSets>
-	<fileSet>
-	  <!--
-		Gather into the distribution the JavaDoc for all projects
-	  -->
-	  <directory>target/site/apidocs</directory>
-	  <outputDirectory>apidocs</outputDirectory>
-	</fileSet>
+		<fileSet>
+		  <!--
+			Gather into the distribution the various text files for inclusion
+		  -->
+		  <directory>build</directory>
+		  <outputDirectory></outputDirectory>
+		  <includes>
+			<include>README*</include>
+			<include>LICENSE*</include>
+			<include>NOTICE*</include>
+			<include>AUTHORS*</include>
+			<include>COPYRIGHT*</include>
+			<include>*.txt</include>
+		  </includes>
+		</fileSet>
+		<fileSet>
+		  <!--
+			Gather into the distribution the JavaDoc for all projects
+		  -->
+		  <directory>target/site/apidocs</directory>
+		  <outputDirectory>apidocs</outputDirectory>
+		</fileSet>
   </fileSets>
 </assembly>

@@ -6,40 +6,42 @@
     <format>zip</format>
   </formats>
   <fileSets>
-	<fileSet>
-	  <!--
-		Gather into the distribution the various text files for inclusion
-	  -->
-	  <directory>build</directory>
-	  <outputDirectory></outputDirectory>
-	  <includes>
-		<include>README*</include>
-		<include>LICENSE*</include>
-		<include>NOTICE*</include>
-		<include>*.txt</include>
-	  </includes>
-	</fileSet>
-	<fileSet>
-	  <!--
-		Gather into the distribution the JavaDoc for all projects
-	  -->
-	  <directory>target/site/apidocs</directory>
-	  <outputDirectory>apidocs</outputDirectory>
-	</fileSet>
-	<fileSet>
-	  <!--
-		Gather into the distribution the Getting Started document
-	  -->
-	  <directory>docs/gettingstarted/target/docbook/publish/en-US</directory>
-	  <outputDirectory>manuals/gettingstarted</outputDirectory>
-	</fileSet>
-	<fileSet>
-	  <!--
-		Gather into the distribution the Getting Started document
-	  -->
-	  <directory>docs/reference/target/docbook/publish/en-US</directory>
-	  <outputDirectory>manuals/reference</outputDirectory>
-	</fileSet>
+		<fileSet>
+		  <!--
+			Gather into the distribution the various text files for inclusion
+		  -->
+		  <directory>build</directory>
+		  <outputDirectory></outputDirectory>
+		  <includes>
+			<include>README*</include>
+			<include>LICENSE*</include>
+			<include>NOTICE*</include>
+			<include>AUTHORS*</include>
+			<include>COPYRIGHT*</include>
+			<include>*.txt</include>
+		  </includes>
+		</fileSet>
+		<fileSet>
+		  <!--
+			Gather into the distribution the JavaDoc for all projects
+		  -->
+		  <directory>target/site/apidocs</directory>
+		  <outputDirectory>apidocs</outputDirectory>
+		</fileSet>
+		<fileSet>
+		  <!--
+			Gather into the distribution the Getting Started document
+		  -->
+		  <directory>docs/gettingstarted/target/docbook/publish/en-US</directory>
+		  <outputDirectory>manuals/gettingstarted</outputDirectory>
+		</fileSet>
+		<fileSet>
+		  <!--
+			Gather into the distribution the Getting Started document
+		  -->
+		  <directory>docs/reference/target/docbook/publish/en-US</directory>
+		  <outputDirectory>manuals/reference</outputDirectory>
+		</fileSet>
   </fileSets>
   <moduleSets>
     <moduleSet>
@@ -47,25 +49,25 @@
 		Gather into the distribution the source, jars, and test-jars for all projects
 	  -->
       <sources>
-		<includeModuleDirectory>false</includeModuleDirectory>
+				<includeModuleDirectory>false</includeModuleDirectory>
         <fileSets>
           <fileSet>
-			<directory>src</directory>
-	        <outputDirectory>src</outputDirectory>
+						<directory>src</directory>
+	        	<outputDirectory>src</outputDirectory>
           </fileSet>
           <fileSet>
-			<directory>target</directory>
-			<outputDirectory>lib</outputDirectory>
-		    <includes>
-		      <include>*-${project.version}.jar</include>
-		    </includes>
+						<directory>target</directory>
+						<outputDirectory>lib</outputDirectory>
+		    		<includes>
+		      		<include>*-${project.version}.jar</include>
+		    		</includes>
           </fileSet>
-          <fileSet>
-			<directory>target</directory>
-			<outputDirectory>lib/test</outputDirectory>
-		    <includes>
-		      <include>*-${project.version}-tests.jar</include>
-		    </includes>
+         	<fileSet>
+						<directory>target</directory>
+						<outputDirectory>lib/test</outputDirectory>
+		    		<includes>
+		      		<include>*-${project.version}-tests.jar</include>
+		    		</includes>
           </fileSet>
         </fileSets>
       </sources>
