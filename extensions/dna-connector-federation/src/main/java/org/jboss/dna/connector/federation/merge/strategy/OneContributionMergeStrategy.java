@@ -31,10 +31,10 @@ import org.jboss.dna.connector.federation.merge.MergePlan;
 import org.jboss.dna.graph.DnaLexicon;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.Location;
-import org.jboss.dna.graph.properties.Path;
-import org.jboss.dna.graph.properties.PathFactory;
-import org.jboss.dna.graph.properties.Property;
-import org.jboss.dna.graph.properties.ValueFormatException;
+import org.jboss.dna.graph.property.Path;
+import org.jboss.dna.graph.property.PathFactory;
+import org.jboss.dna.graph.property.Property;
+import org.jboss.dna.graph.property.ValueFormatException;
 
 /**
  * A merge strategy that is optimized for merging when there is a single contribution.

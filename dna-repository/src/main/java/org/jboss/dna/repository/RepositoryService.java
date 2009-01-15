@@ -37,16 +37,16 @@ import org.jboss.dna.graph.Graph;
 import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.Node;
 import org.jboss.dna.graph.Subgraph;
-import org.jboss.dna.graph.connectors.RepositorySource;
-import org.jboss.dna.graph.properties.Name;
-import org.jboss.dna.graph.properties.Path;
-import org.jboss.dna.graph.properties.PathNotFoundException;
-import org.jboss.dna.graph.properties.Property;
-import org.jboss.dna.graph.properties.ValueFactories;
-import org.jboss.dna.graph.properties.ValueFactory;
-import org.jboss.dna.repository.services.AbstractServiceAdministrator;
-import org.jboss.dna.repository.services.AdministeredService;
-import org.jboss.dna.repository.services.ServiceAdministrator;
+import org.jboss.dna.graph.connector.RepositorySource;
+import org.jboss.dna.graph.property.Name;
+import org.jboss.dna.graph.property.Path;
+import org.jboss.dna.graph.property.PathNotFoundException;
+import org.jboss.dna.graph.property.Property;
+import org.jboss.dna.graph.property.ValueFactories;
+import org.jboss.dna.graph.property.ValueFactory;
+import org.jboss.dna.repository.service.AbstractServiceAdministrator;
+import org.jboss.dna.repository.service.AdministeredService;
+import org.jboss.dna.repository.service.ServiceAdministrator;
 
 /**
  * @author Randall Hauch
@@ -85,7 +85,7 @@ public class RepositoryService implements AdministeredService {
         /**
          * {@inheritDoc}
          * 
-         * @see org.jboss.dna.repository.services.ServiceAdministrator#awaitTermination(long, java.util.concurrent.TimeUnit)
+         * @see org.jboss.dna.repository.service.ServiceAdministrator#awaitTermination(long, java.util.concurrent.TimeUnit)
          */
         public boolean awaitTermination( long timeout,
                                          TimeUnit unit ) {

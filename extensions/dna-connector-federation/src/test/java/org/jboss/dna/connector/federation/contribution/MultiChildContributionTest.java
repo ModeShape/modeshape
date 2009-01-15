@@ -31,11 +31,11 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import org.jboss.dna.graph.Location;
-import org.jboss.dna.graph.properties.DateTime;
-import org.jboss.dna.graph.properties.Name;
-import org.jboss.dna.graph.properties.Path;
-import org.jboss.dna.graph.properties.basic.JodaDateTime;
-import org.jboss.dna.graph.properties.basic.RootPath;
+import org.jboss.dna.graph.property.DateTime;
+import org.jboss.dna.graph.property.Name;
+import org.jboss.dna.graph.property.Path;
+import org.jboss.dna.graph.property.basic.JodaDateTime;
+import org.jboss.dna.graph.property.basic.RootPath;
 import org.junit.Before;
 import org.junit.Test;
 

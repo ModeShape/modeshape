@@ -26,7 +26,7 @@ import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.mock;
 import java.io.InputStream;
-import org.jboss.dna.graph.sequencers.SequencerContext;
+import org.jboss.dna.graph.sequencer.SequencerContext;
 import org.junit.After;
 import org.junit.Test;
 

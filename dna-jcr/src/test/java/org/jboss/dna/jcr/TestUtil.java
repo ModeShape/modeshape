@@ -28,11 +28,11 @@ import javax.security.auth.login.LoginContext;
 import net.jcip.annotations.NotThreadSafe;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.ExecutionContextFactory;
-import org.jboss.dna.graph.connectors.RepositoryConnection;
-import org.jboss.dna.graph.connectors.RepositoryConnectionFactory;
-import org.jboss.dna.graph.connectors.SimpleRepository;
-import org.jboss.dna.graph.connectors.SimpleRepositorySource;
-import org.jboss.dna.graph.properties.NamespaceRegistry;
+import org.jboss.dna.graph.connector.RepositoryConnection;
+import org.jboss.dna.graph.connector.RepositoryConnectionFactory;
+import org.jboss.dna.graph.connector.SimpleRepository;
+import org.jboss.dna.graph.connector.SimpleRepositorySource;
+import org.jboss.dna.graph.property.NamespaceRegistry;
 import org.mockito.Mockito;
 
 /**

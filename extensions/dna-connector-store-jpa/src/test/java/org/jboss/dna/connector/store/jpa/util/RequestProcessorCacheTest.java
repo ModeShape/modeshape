@@ -31,11 +31,11 @@ import java.util.List;
 import java.util.UUID;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.Location;
-import org.jboss.dna.graph.properties.Name;
-import org.jboss.dna.graph.properties.NameFactory;
-import org.jboss.dna.graph.properties.NamespaceRegistry;
-import org.jboss.dna.graph.properties.Path;
-import org.jboss.dna.graph.properties.PathFactory;
+import org.jboss.dna.graph.property.Name;
+import org.jboss.dna.graph.property.NameFactory;
+import org.jboss.dna.graph.property.NamespaceRegistry;
+import org.jboss.dna.graph.property.Path;
+import org.jboss.dna.graph.property.PathFactory;
 import org.junit.Before;
 import org.junit.Test;
 

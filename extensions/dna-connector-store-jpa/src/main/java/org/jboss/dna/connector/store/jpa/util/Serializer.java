@@ -36,22 +36,22 @@ import java.util.Set;
 import java.util.UUID;
 import org.jboss.dna.common.SystemFailureException;
 import org.jboss.dna.common.util.SecureHash;
-import org.jboss.dna.connector.store.jpa.models.basic.LargeValueEntity;
+import org.jboss.dna.connector.store.jpa.model.basic.LargeValueEntity;
 import org.jboss.dna.graph.DnaLexicon;
 import org.jboss.dna.graph.ExecutionContext;
-import org.jboss.dna.graph.properties.Binary;
-import org.jboss.dna.graph.properties.BinaryFactory;
-import org.jboss.dna.graph.properties.DateTime;
-import org.jboss.dna.graph.properties.Name;
-import org.jboss.dna.graph.properties.Path;
-import org.jboss.dna.graph.properties.Property;
-import org.jboss.dna.graph.properties.PropertyFactory;
-import org.jboss.dna.graph.properties.PropertyType;
-import org.jboss.dna.graph.properties.Reference;
-import org.jboss.dna.graph.properties.UuidFactory;
-import org.jboss.dna.graph.properties.ValueFactories;
-import org.jboss.dna.graph.properties.ValueFactory;
-import org.jboss.dna.graph.properties.ValueFormatException;
+import org.jboss.dna.graph.property.Binary;
+import org.jboss.dna.graph.property.BinaryFactory;
+import org.jboss.dna.graph.property.DateTime;
+import org.jboss.dna.graph.property.Name;
+import org.jboss.dna.graph.property.Path;
+import org.jboss.dna.graph.property.Property;
+import org.jboss.dna.graph.property.PropertyFactory;
+import org.jboss.dna.graph.property.PropertyType;
+import org.jboss.dna.graph.property.Reference;
+import org.jboss.dna.graph.property.UuidFactory;
+import org.jboss.dna.graph.property.ValueFactories;
+import org.jboss.dna.graph.property.ValueFactory;
+import org.jboss.dna.graph.property.ValueFormatException;
 
 /**
  * @author Randall Hauch

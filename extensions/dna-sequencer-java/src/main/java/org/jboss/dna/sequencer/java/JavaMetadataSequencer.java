@@ -25,12 +25,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 import org.apache.commons.lang.StringUtils;
-import org.jboss.dna.graph.properties.NameFactory;
-import org.jboss.dna.graph.properties.Path;
-import org.jboss.dna.graph.properties.PathFactory;
-import org.jboss.dna.graph.sequencers.SequencerContext;
-import org.jboss.dna.graph.sequencers.SequencerOutput;
-import org.jboss.dna.graph.sequencers.StreamSequencer;
+import org.jboss.dna.graph.property.NameFactory;
+import org.jboss.dna.graph.property.Path;
+import org.jboss.dna.graph.property.PathFactory;
+import org.jboss.dna.graph.sequencer.SequencerContext;
+import org.jboss.dna.graph.sequencer.SequencerOutput;
+import org.jboss.dna.graph.sequencer.StreamSequencer;
 import org.jboss.dna.sequencer.java.metadata.AnnotationMetadata;
 import org.jboss.dna.sequencer.java.metadata.ArrayTypeFieldMetadata;
 import org.jboss.dna.sequencer.java.metadata.ClassMetadata;
@@ -173,8 +173,8 @@ public class JavaMetadataSequencer implements JavaSourceCndDefinition, StreamSeq
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.graph.sequencers.StreamSequencer#sequence(java.io.InputStream,
-     *      org.jboss.dna.graph.sequencers.SequencerOutput, org.jboss.dna.graph.sequencers.SequencerContext)
+     * @see org.jboss.dna.graph.sequencer.StreamSequencer#sequence(java.io.InputStream,
+     *      org.jboss.dna.graph.sequencer.SequencerOutput, org.jboss.dna.graph.sequencer.SequencerContext)
      */
     public void sequence( InputStream stream,
                           SequencerOutput output,

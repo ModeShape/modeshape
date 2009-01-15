@@ -24,9 +24,9 @@ package org.jboss.dna.connector.federation.contribution;
 import java.util.Iterator;
 import net.jcip.annotations.Immutable;
 import org.jboss.dna.graph.Location;
-import org.jboss.dna.graph.properties.DateTime;
-import org.jboss.dna.graph.properties.Name;
-import org.jboss.dna.graph.properties.Property;
+import org.jboss.dna.graph.property.DateTime;
+import org.jboss.dna.graph.property.Name;
+import org.jboss.dna.graph.property.Property;
 
 /**
  * The record of a source contributing only properties to a node.
@@ -86,7 +86,7 @@ public class OnePropertyContribution extends NonEmptyContribution {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.connector.federation.contribution.Contribution#getProperty(org.jboss.dna.graph.properties.Name)
+     * @see org.jboss.dna.connector.federation.contribution.Contribution#getProperty(org.jboss.dna.graph.property.Name)
      */
     @Override
     public Property getProperty( Name name ) {

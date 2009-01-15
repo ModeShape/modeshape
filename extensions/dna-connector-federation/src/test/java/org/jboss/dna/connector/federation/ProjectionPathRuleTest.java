@@ -29,9 +29,9 @@ import static org.junit.matchers.JUnitMatchers.hasItems;
 import org.jboss.dna.common.text.TextEncoder;
 import org.jboss.dna.common.text.UrlEncoder;
 import org.jboss.dna.graph.ExecutionContext;
-import org.jboss.dna.graph.properties.NamespaceRegistry;
-import org.jboss.dna.graph.properties.Path;
-import org.jboss.dna.graph.properties.PathFactory;
+import org.jboss.dna.graph.property.NamespaceRegistry;
+import org.jboss.dna.graph.property.Path;
+import org.jboss.dna.graph.property.PathFactory;
 import org.junit.Before;
 import org.junit.Test;
 

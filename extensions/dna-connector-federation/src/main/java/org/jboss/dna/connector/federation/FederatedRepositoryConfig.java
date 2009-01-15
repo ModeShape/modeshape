@@ -30,7 +30,7 @@ import org.jboss.dna.common.collection.Problems;
 import org.jboss.dna.common.collection.ThreadSafeProblems;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.graph.cache.CachePolicy;
-import org.jboss.dna.graph.connectors.RepositorySource;
+import org.jboss.dna.graph.connector.RepositorySource;
 
 /**
  * The configuration of a federated repository. The configuration defines, among other things, the set of

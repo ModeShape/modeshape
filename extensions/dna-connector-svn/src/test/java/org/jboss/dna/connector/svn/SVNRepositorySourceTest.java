@@ -39,7 +39,7 @@ import javax.naming.RefAddr;
 import javax.naming.Reference;
 import javax.naming.spi.ObjectFactory;
 import org.jboss.dna.graph.cache.BasicCachePolicy;
-import org.jboss.dna.graph.connectors.RepositoryConnection;
+import org.jboss.dna.graph.connector.RepositoryConnection;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;

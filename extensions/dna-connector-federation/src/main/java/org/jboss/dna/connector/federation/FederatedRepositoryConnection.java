@@ -27,11 +27,11 @@ import javax.transaction.xa.XAResource;
 import net.jcip.annotations.ThreadSafe;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.cache.CachePolicy;
-import org.jboss.dna.graph.connectors.RepositoryConnection;
-import org.jboss.dna.graph.connectors.RepositorySourceException;
-import org.jboss.dna.graph.connectors.RepositorySourceListener;
-import org.jboss.dna.graph.requests.Request;
-import org.jboss.dna.graph.requests.processor.RequestProcessor;
+import org.jboss.dna.graph.connector.RepositoryConnection;
+import org.jboss.dna.graph.connector.RepositorySourceException;
+import org.jboss.dna.graph.connector.RepositorySourceListener;
+import org.jboss.dna.graph.request.Request;
+import org.jboss.dna.graph.request.processor.RequestProcessor;
 
 /**
  * @author Randall Hauch
@@ -111,8 +111,8 @@ public class FederatedRepositoryConnection implements RepositoryConnection {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.graph.connectors.RepositoryConnection#execute(org.jboss.dna.graph.ExecutionContext,
-     *      org.jboss.dna.graph.requests.Request)
+     * @see org.jboss.dna.graph.connector.RepositoryConnection#execute(org.jboss.dna.graph.ExecutionContext,
+     *      org.jboss.dna.graph.request.Request)
      */
     public void execute( ExecutionContext context,
                          Request request ) throws RepositorySourceException {

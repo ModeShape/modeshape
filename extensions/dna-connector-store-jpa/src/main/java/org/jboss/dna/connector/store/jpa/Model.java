@@ -28,7 +28,7 @@ import org.hibernate.ejb.Ejb3Configuration;
 import org.jboss.dna.common.i18n.I18n;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.graph.ExecutionContext;
-import org.jboss.dna.graph.requests.processor.RequestProcessor;
+import org.jboss.dna.graph.request.processor.RequestProcessor;
 
 /**
  * A descriptor of a schema used by this connector.

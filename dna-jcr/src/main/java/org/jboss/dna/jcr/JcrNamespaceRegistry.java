@@ -34,9 +34,9 @@ import javax.jcr.UnsupportedRepositoryOperationException;
  */
 final class JcrNamespaceRegistry implements NamespaceRegistry {
 
-    private org.jboss.dna.graph.properties.NamespaceRegistry dnaNamespaceRegistry;
+    private org.jboss.dna.graph.property.NamespaceRegistry dnaNamespaceRegistry;
 
-    JcrNamespaceRegistry( org.jboss.dna.graph.properties.NamespaceRegistry dnaNamespaceRegistry ) {
+    JcrNamespaceRegistry( org.jboss.dna.graph.property.NamespaceRegistry dnaNamespaceRegistry ) {
         this.dnaNamespaceRegistry = dnaNamespaceRegistry;
     }
 

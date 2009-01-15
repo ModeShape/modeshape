@@ -40,7 +40,7 @@ import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.ExecutionContextFactory;
 import org.jboss.dna.graph.Graph;
-import org.jboss.dna.graph.connectors.RepositoryConnectionFactory;
+import org.jboss.dna.graph.connector.RepositoryConnectionFactory;
 import com.google.common.base.ReferenceType;
 import com.google.common.collect.ReferenceMap;
 

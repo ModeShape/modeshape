@@ -26,8 +26,8 @@ import java.util.LinkedList;
 import java.util.List;
 import net.jcip.annotations.Immutable;
 import org.jboss.dna.graph.Location;
-import org.jboss.dna.graph.properties.DateTime;
-import org.jboss.dna.graph.properties.Property;
+import org.jboss.dna.graph.property.DateTime;
+import org.jboss.dna.graph.property.Property;
 
 /**
  * The contribution of a source to the information for a single federated node.

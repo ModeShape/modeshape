@@ -23,7 +23,7 @@ package org.jboss.dna.connector.federation.merge;
 
 import java.util.UUID;
 import org.jboss.dna.graph.Location;
-import org.jboss.dna.graph.requests.ReadNodeRequest;
+import org.jboss.dna.graph.request.ReadNodeRequest;
 
 /**
  * An in-memory (and temporary) representation of a federated node and it's merged properties and children.

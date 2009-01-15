@@ -26,13 +26,13 @@ import javax.transaction.xa.XAResource;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.cache.CachePolicy;
-import org.jboss.dna.graph.connectors.RepositoryConnection;
-import org.jboss.dna.graph.connectors.RepositorySourceException;
-import org.jboss.dna.graph.connectors.RepositorySourceListener;
-import org.jboss.dna.graph.properties.PathFactory;
-import org.jboss.dna.graph.properties.PropertyFactory;
-import org.jboss.dna.graph.requests.Request;
-import org.jboss.dna.graph.requests.processor.RequestProcessor;
+import org.jboss.dna.graph.connector.RepositoryConnection;
+import org.jboss.dna.graph.connector.RepositorySourceException;
+import org.jboss.dna.graph.connector.RepositorySourceListener;
+import org.jboss.dna.graph.property.PathFactory;
+import org.jboss.dna.graph.property.PropertyFactory;
+import org.jboss.dna.graph.request.Request;
+import org.jboss.dna.graph.request.processor.RequestProcessor;
 import org.tmatesoft.svn.core.SVNErrorCode;
 import org.tmatesoft.svn.core.SVNErrorMessage;
 import org.tmatesoft.svn.core.SVNException;
@@ -148,7 +148,7 @@ public class SVNRepositoryConnection implements RepositoryConnection {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.graph.connectors.RepositoryConnection#close()
+     * @see org.jboss.dna.graph.connector.RepositoryConnection#close()
      */
     public void close() {
         // do not care about.
@@ -157,8 +157,8 @@ public class SVNRepositoryConnection implements RepositoryConnection {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.graph.connectors.RepositoryConnection#execute(org.jboss.dna.graph.ExecutionContext,
-     *      org.jboss.dna.graph.requests.Request)
+     * @see org.jboss.dna.graph.connector.RepositoryConnection#execute(org.jboss.dna.graph.ExecutionContext,
+     *      org.jboss.dna.graph.request.Request)
      */
     @SuppressWarnings( "unused" )
     public void execute( final ExecutionContext context,

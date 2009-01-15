@@ -22,6 +22,8 @@
 package org.jboss.dna.graph.sequencers;
 
 import java.sql.Connection;
+import org.jboss.dna.graph.sequencer.SequencerContext;
+import org.jboss.dna.graph.sequencer.SequencerOutput;
 
 /**
  * The interface for a DNA sequencer that processes a JDBC connection (for instance, JDBC Metadata) and stores in the repository.

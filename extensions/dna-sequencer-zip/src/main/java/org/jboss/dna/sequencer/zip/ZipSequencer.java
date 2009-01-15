@@ -26,9 +26,9 @@ import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
-import org.jboss.dna.graph.sequencers.SequencerContext;
-import org.jboss.dna.graph.sequencers.SequencerOutput;
-import org.jboss.dna.graph.sequencers.StreamSequencer;
+import org.jboss.dna.graph.sequencer.SequencerContext;
+import org.jboss.dna.graph.sequencer.SequencerOutput;
+import org.jboss.dna.graph.sequencer.StreamSequencer;
 
 /**
  * @author Michael Trezzi
@@ -39,8 +39,8 @@ public class ZipSequencer implements StreamSequencer {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.graph.sequencers.StreamSequencer#sequence(java.io.InputStream,
-     *      org.jboss.dna.graph.sequencers.SequencerOutput, org.jboss.dna.graph.sequencers.SequencerContext)
+     * @see org.jboss.dna.graph.sequencer.StreamSequencer#sequence(java.io.InputStream,
+     *      org.jboss.dna.graph.sequencer.SequencerOutput, org.jboss.dna.graph.sequencer.SequencerContext)
      */
     public void sequence( InputStream stream,
                           SequencerOutput output,

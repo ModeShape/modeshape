@@ -50,10 +50,10 @@ import org.jboss.dna.common.util.StringUtil;
 import org.jboss.dna.graph.DnaLexicon;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.Graph;
-import org.jboss.dna.graph.properties.Name;
-import org.jboss.dna.graph.properties.Path;
-import org.jboss.dna.graph.properties.UuidFactory;
-import org.jboss.dna.graph.properties.ValueFactories;
+import org.jboss.dna.graph.property.Name;
+import org.jboss.dna.graph.property.Path;
+import org.jboss.dna.graph.property.UuidFactory;
+import org.jboss.dna.graph.property.ValueFactories;
 import org.xml.sax.ContentHandler;
 import com.google.common.base.ReferenceType;
 import com.google.common.collect.ReferenceMap;
@@ -222,7 +222,7 @@ class JcrSession implements Session {
         if (path.getLastSegment().hasIndex()) {
             try {
                 return getNode(path);
-            } catch (org.jboss.dna.graph.properties.PathNotFoundException e) {
+            } catch (org.jboss.dna.graph.property.PathNotFoundException e) {
                 // If the node isn't found, throw a PathNotFoundException
                 throw new PathNotFoundException(JcrI18n.pathNotFound.text(path));
             }
@@ -230,13 +230,13 @@ class JcrSession implements Session {
         // We can't tell from the name, so try a node first ...
         try {
             return getNode(path);
-        } catch (org.jboss.dna.graph.properties.PathNotFoundException e) {
+        } catch (org.jboss.dna.graph.property.PathNotFoundException e) {
             // A node was not found, so treat look for a node using the parent as the node's path ...
             Path parentPath = path.getParent();
             Name propertyName = path.getLastSegment().getName();
             try {
                 return getNode(parentPath).getProperty(propertyName.getString(executionContext.getNamespaceRegistry()));
-            } catch (org.jboss.dna.graph.properties.PathNotFoundException e2) {
+            } catch (org.jboss.dna.graph.property.PathNotFoundException e2) {
                 // If the node isn't found, throw a PathNotFoundException
                 throw new PathNotFoundException(JcrI18n.pathNotFound.text(path));
             }
@@ -284,7 +284,7 @@ class JcrSession implements Session {
         // Get node from source
         org.jboss.dna.graph.Node graphNode = graph.getNodeAt(path);
         // First check if node already exists. We don't need to check for changes since that will be handled by an observer
-        org.jboss.dna.graph.properties.Property dnaUuidProp = graphNode.getPropertiesByName().get(JcrLexicon.UUID);
+        org.jboss.dna.graph.property.Property dnaUuidProp = graphNode.getPropertiesByName().get(JcrLexicon.UUID);
         if (dnaUuidProp == null) dnaUuidProp = graphNode.getPropertiesByName().get(DnaLexicon.UUID);
         if (dnaUuidProp != null) {
             UUID uuid = executionContext.getValueFactories().getUuidFactory().create(dnaUuidProp.getValues()).next();
@@ -510,16 +510,16 @@ class JcrSession implements Session {
         Name jcrUuidName = executionContext.getValueFactories().getNameFactory().create("jcr:uuid");
         Name jcrMixinTypesName = executionContext.getValueFactories().getNameFactory().create("jcr:mixinTypes");
         UuidFactory uuidFactory = executionContext.getValueFactories().getUuidFactory();
-        org.jboss.dna.graph.properties.Property dnaUuidProp = null;
+        org.jboss.dna.graph.property.Property dnaUuidProp = null;
         boolean referenceable = false;
-        for (org.jboss.dna.graph.properties.Property dnaProp : graphNode.getProperties()) {
+        for (org.jboss.dna.graph.property.Property dnaProp : graphNode.getProperties()) {
             Name name = dnaProp.getName();
             if (dnaProp.isMultiple()) properties.add(new JcrMultiValueProperty(node, executionContext, name, dnaProp));
             else {
                 if (uuid == null && DnaLexicon.UUID.equals(name)) uuid = uuidFactory.create(dnaProp.getValues()).next();
                 else if (jcrUuidName.equals(name)) dnaUuidProp = dnaProp;
                 else if (jcrMixinTypesName.equals(name)) {
-                    org.jboss.dna.graph.properties.ValueFactory<String> stringFactory = executionContext.getValueFactories().getStringFactory();
+                    org.jboss.dna.graph.property.ValueFactory<String> stringFactory = executionContext.getValueFactories().getStringFactory();
                     for (String mixin : stringFactory.create(dnaProp)) {
                         if ("mix:referenceable".equals(mixin)) referenceable = true;
                     }

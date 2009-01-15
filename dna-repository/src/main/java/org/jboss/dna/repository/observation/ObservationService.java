@@ -44,9 +44,9 @@ import net.jcip.annotations.ThreadSafe;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.common.util.Logger;
 import org.jboss.dna.repository.RepositoryI18n;
-import org.jboss.dna.repository.services.AbstractServiceAdministrator;
-import org.jboss.dna.repository.services.AdministeredService;
-import org.jboss.dna.repository.services.ServiceAdministrator;
+import org.jboss.dna.repository.service.AbstractServiceAdministrator;
+import org.jboss.dna.repository.service.AdministeredService;
+import org.jboss.dna.repository.service.ServiceAdministrator;
 import org.jboss.dna.repository.util.SessionFactory;
 
 /**

@@ -27,7 +27,7 @@ import static org.junit.Assert.assertThat;
 import javax.jcr.Session;
 import javax.jcr.Workspace;
 import org.jboss.dna.graph.ExecutionContextFactory;
-import org.jboss.dna.graph.connectors.SimpleRepository;
+import org.jboss.dna.graph.connector.SimpleRepository;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;

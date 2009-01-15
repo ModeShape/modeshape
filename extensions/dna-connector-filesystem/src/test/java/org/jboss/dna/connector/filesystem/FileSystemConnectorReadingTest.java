@@ -33,9 +33,9 @@ import org.jboss.dna.graph.JcrLexicon;
 import org.jboss.dna.graph.JcrNtLexicon;
 import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.Node;
-import org.jboss.dna.graph.connectors.RepositorySource;
-import org.jboss.dna.graph.connectors.test.ReadableConnectorTest;
-import org.jboss.dna.graph.properties.PathNotFoundException;
+import org.jboss.dna.graph.connector.RepositorySource;
+import org.jboss.dna.graph.connector.test.ReadableConnectorTest;
+import org.jboss.dna.graph.property.PathNotFoundException;
 import org.junit.Test;
 
 /**
@@ -48,7 +48,7 @@ public class FileSystemConnectorReadingTest extends ReadableConnectorTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.graph.connectors.test.AbstractConnectorTest#setUpSource()
+     * @see org.jboss.dna.graph.connector.test.AbstractConnectorTest#setUpSource()
      */
     @Override
     protected RepositorySource setUpSource() throws IOException {
@@ -71,7 +71,7 @@ public class FileSystemConnectorReadingTest extends ReadableConnectorTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.graph.connectors.test.AbstractConnectorTest#initializeContent(org.jboss.dna.graph.Graph)
+     * @see org.jboss.dna.graph.connector.test.AbstractConnectorTest#initializeContent(org.jboss.dna.graph.Graph)
      */
     @Override
     protected void initializeContent( Graph graph ) {

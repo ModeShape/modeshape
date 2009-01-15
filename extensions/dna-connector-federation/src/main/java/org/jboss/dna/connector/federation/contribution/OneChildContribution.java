@@ -24,7 +24,7 @@ package org.jboss.dna.connector.federation.contribution;
 import java.util.Iterator;
 import net.jcip.annotations.Immutable;
 import org.jboss.dna.graph.Location;
-import org.jboss.dna.graph.properties.DateTime;
+import org.jboss.dna.graph.property.DateTime;
 
 /**
  * The record of a source contributing only a single child to a node.

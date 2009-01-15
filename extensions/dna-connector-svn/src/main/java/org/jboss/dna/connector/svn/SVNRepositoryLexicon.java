@@ -21,8 +21,8 @@
  */
 package org.jboss.dna.connector.svn;
 
-import org.jboss.dna.graph.properties.Name;
-import org.jboss.dna.graph.properties.basic.BasicName;
+import org.jboss.dna.graph.property.Name;
+import org.jboss.dna.graph.property.basic.BasicName;
 
 
 /**

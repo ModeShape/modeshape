@@ -38,9 +38,9 @@ import org.jboss.dna.common.CommonI18n;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.connector.federation.contribution.Contribution;
 import org.jboss.dna.connector.federation.contribution.EmptyContribution;
-import org.jboss.dna.graph.properties.DateTime;
-import org.jboss.dna.graph.properties.Name;
-import org.jboss.dna.graph.properties.Property;
+import org.jboss.dna.graph.property.DateTime;
+import org.jboss.dna.graph.property.Name;
+import org.jboss.dna.graph.property.Property;
 
 /**
  * This class represents the details about how information from different sources are merged into a single federated node.

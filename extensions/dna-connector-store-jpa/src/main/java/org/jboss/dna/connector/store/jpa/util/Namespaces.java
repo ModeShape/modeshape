@@ -24,7 +24,7 @@ package org.jboss.dna.connector.store.jpa.util;
 import java.util.HashMap;
 import java.util.Map;
 import javax.persistence.EntityManager;
-import org.jboss.dna.connector.store.jpa.models.common.NamespaceEntity;
+import org.jboss.dna.connector.store.jpa.model.common.NamespaceEntity;
 
 /**
  * @author Randall Hauch

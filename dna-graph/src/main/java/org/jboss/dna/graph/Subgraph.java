@@ -22,7 +22,7 @@
 package org.jboss.dna.graph;
 
 import net.jcip.annotations.Immutable;
-import org.jboss.dna.graph.properties.Path;
+import org.jboss.dna.graph.property.Path;
 
 /**
  * A subgraph returned by the {@link Graph}, containing the nodes in the subgraph as well as the properties and children for each

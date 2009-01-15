@@ -52,17 +52,17 @@ import org.jboss.dna.graph.Node;
 import org.jboss.dna.graph.Subgraph;
 import org.jboss.dna.graph.cache.BasicCachePolicy;
 import org.jboss.dna.graph.cache.CachePolicy;
-import org.jboss.dna.graph.connectors.RepositoryConnection;
-import org.jboss.dna.graph.connectors.RepositoryConnectionFactory;
-import org.jboss.dna.graph.connectors.RepositoryContext;
-import org.jboss.dna.graph.connectors.RepositorySource;
-import org.jboss.dna.graph.connectors.RepositorySourceCapabilities;
-import org.jboss.dna.graph.connectors.RepositorySourceException;
-import org.jboss.dna.graph.properties.NameFactory;
-import org.jboss.dna.graph.properties.Path;
-import org.jboss.dna.graph.properties.Property;
-import org.jboss.dna.graph.properties.ValueFactories;
-import org.jboss.dna.graph.properties.ValueFactory;
+import org.jboss.dna.graph.connector.RepositoryConnection;
+import org.jboss.dna.graph.connector.RepositoryConnectionFactory;
+import org.jboss.dna.graph.connector.RepositoryContext;
+import org.jboss.dna.graph.connector.RepositorySource;
+import org.jboss.dna.graph.connector.RepositorySourceCapabilities;
+import org.jboss.dna.graph.connector.RepositorySourceException;
+import org.jboss.dna.graph.property.NameFactory;
+import org.jboss.dna.graph.property.Path;
+import org.jboss.dna.graph.property.Property;
+import org.jboss.dna.graph.property.ValueFactories;
+import org.jboss.dna.graph.property.ValueFactory;
 
 /**
  * @author Randall Hauch
@@ -132,7 +132,7 @@ public class FederatedRepositorySource implements RepositorySource, ObjectFactor
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.graph.connectors.RepositorySource#initialize(org.jboss.dna.graph.connectors.RepositoryContext)
+     * @see org.jboss.dna.graph.connector.RepositorySource#initialize(org.jboss.dna.graph.connector.RepositoryContext)
      */
     public void initialize( RepositoryContext context ) throws RepositorySourceException {
         this.repositoryContext = context;
@@ -177,7 +177,7 @@ public class FederatedRepositorySource implements RepositorySource, ObjectFactor
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.graph.connectors.RepositorySource#getRetryLimit()
+     * @see org.jboss.dna.graph.connector.RepositorySource#getRetryLimit()
      */
     public int getRetryLimit() {
         return retryLimit.get();
@@ -186,7 +186,7 @@ public class FederatedRepositorySource implements RepositorySource, ObjectFactor
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.graph.connectors.RepositorySource#setRetryLimit(int)
+     * @see org.jboss.dna.graph.connector.RepositorySource#setRetryLimit(int)
      */
     public void setRetryLimit( int limit ) {
         retryLimit.set(limit < 0 ? 0 : limit);
@@ -418,7 +418,7 @@ public class FederatedRepositorySource implements RepositorySource, ObjectFactor
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.graph.connectors.RepositorySource#getConnection()
+     * @see org.jboss.dna.graph.connector.RepositorySource#getConnection()
      */
     public RepositoryConnection getConnection() throws RepositorySourceException {
         if (getName() == null) {
@@ -710,7 +710,7 @@ public class FederatedRepositorySource implements RepositorySource, ObjectFactor
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.graph.connectors.RepositorySource#getCapabilities()
+     * @see org.jboss.dna.graph.connector.RepositorySource#getCapabilities()
      */
     public RepositorySourceCapabilities getCapabilities() {
         return CAPABILITIES;

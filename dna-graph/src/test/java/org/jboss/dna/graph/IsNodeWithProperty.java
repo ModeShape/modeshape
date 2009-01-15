@@ -25,8 +25,8 @@ import org.hamcrest.Description;
 import org.hamcrest.Factory;
 import org.hamcrest.Matcher;
 import org.jboss.dna.graph.Node;
-import org.jboss.dna.graph.properties.Name;
-import org.jboss.dna.graph.properties.Property;
+import org.jboss.dna.graph.property.Name;
+import org.jboss.dna.graph.property.Property;
 import org.junit.matchers.IsCollectionContaining;
 import org.junit.matchers.TypeSafeMatcher;
 

@@ -24,10 +24,10 @@ package org.jboss.dna.sequencer.xml;
 import java.io.InputStream;
 import org.jboss.dna.common.text.TextDecoder;
 import org.jboss.dna.graph.JcrNtLexicon;
-import org.jboss.dna.graph.properties.Name;
-import org.jboss.dna.graph.sequencers.SequencerContext;
-import org.jboss.dna.graph.sequencers.SequencerOutput;
-import org.jboss.dna.graph.sequencers.StreamSequencer;
+import org.jboss.dna.graph.property.Name;
+import org.jboss.dna.graph.sequencer.SequencerContext;
+import org.jboss.dna.graph.sequencer.SequencerOutput;
+import org.jboss.dna.graph.sequencer.StreamSequencer;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXNotRecognizedException;
 import org.xml.sax.SAXNotSupportedException;
@@ -82,7 +82,7 @@ public class XmlSequencer implements StreamSequencer {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.graph.sequencers.StreamSequencer#sequence(InputStream, SequencerOutput, SequencerContext)
+     * @see org.jboss.dna.graph.sequencer.StreamSequencer#sequence(InputStream, SequencerOutput, SequencerContext)
      */
     public void sequence( InputStream stream,
                           SequencerOutput output,

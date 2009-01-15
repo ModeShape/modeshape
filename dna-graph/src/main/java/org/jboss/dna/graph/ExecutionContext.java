@@ -35,13 +35,13 @@ import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.common.util.Logger;
 import org.jboss.dna.graph.mimetype.ExtensionBasedMimeTypeDetector;
 import org.jboss.dna.graph.mimetype.MimeTypeDetector;
-import org.jboss.dna.graph.properties.NamespaceRegistry;
-import org.jboss.dna.graph.properties.Property;
-import org.jboss.dna.graph.properties.PropertyFactory;
-import org.jboss.dna.graph.properties.ValueFactories;
-import org.jboss.dna.graph.properties.basic.BasicNamespaceRegistry;
-import org.jboss.dna.graph.properties.basic.BasicPropertyFactory;
-import org.jboss.dna.graph.properties.basic.StandardValueFactories;
+import org.jboss.dna.graph.property.NamespaceRegistry;
+import org.jboss.dna.graph.property.Property;
+import org.jboss.dna.graph.property.PropertyFactory;
+import org.jboss.dna.graph.property.ValueFactories;
+import org.jboss.dna.graph.property.basic.BasicNamespaceRegistry;
+import org.jboss.dna.graph.property.basic.BasicPropertyFactory;
+import org.jboss.dna.graph.property.basic.StandardValueFactories;
 
 /**
  * An ExecutionContext is a representation of the environment or context in which a component or operation is operating. Some

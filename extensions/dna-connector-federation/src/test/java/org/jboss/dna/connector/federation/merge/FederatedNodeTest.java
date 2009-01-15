@@ -28,7 +28,7 @@ import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.mock;
 import java.util.UUID;
 import org.jboss.dna.graph.Location;
-import org.jboss.dna.graph.properties.Path;
+import org.jboss.dna.graph.property.Path;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.MockitoAnnotations;

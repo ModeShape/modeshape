@@ -29,10 +29,10 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import net.jcip.annotations.Immutable;
 import org.jboss.dna.graph.Location;
-import org.jboss.dna.graph.properties.DateTime;
-import org.jboss.dna.graph.properties.Name;
-import org.jboss.dna.graph.properties.Property;
-import org.jboss.dna.graph.properties.basic.JodaDateTime;
+import org.jboss.dna.graph.property.DateTime;
+import org.jboss.dna.graph.property.Name;
+import org.jboss.dna.graph.property.Property;
+import org.jboss.dna.graph.property.basic.JodaDateTime;
 
 /**
  * The contribution of a source to the information for a single federated node. Users of this interface should treat contributions

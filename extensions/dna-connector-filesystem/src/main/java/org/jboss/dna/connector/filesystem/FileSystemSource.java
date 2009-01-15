@@ -41,11 +41,11 @@ import net.jcip.annotations.ThreadSafe;
 import org.jboss.dna.common.i18n.I18n;
 import org.jboss.dna.common.util.StringUtil;
 import org.jboss.dna.graph.cache.CachePolicy;
-import org.jboss.dna.graph.connectors.RepositoryConnection;
-import org.jboss.dna.graph.connectors.RepositoryContext;
-import org.jboss.dna.graph.connectors.RepositorySource;
-import org.jboss.dna.graph.connectors.RepositorySourceCapabilities;
-import org.jboss.dna.graph.connectors.RepositorySourceException;
+import org.jboss.dna.graph.connector.RepositoryConnection;
+import org.jboss.dna.graph.connector.RepositoryContext;
+import org.jboss.dna.graph.connector.RepositorySource;
+import org.jboss.dna.graph.connector.RepositorySourceCapabilities;
+import org.jboss.dna.graph.connector.RepositorySourceException;
 
 /**
  * The {@link RepositorySource} for the connector that exposes an area of the local file system as content in a repository.
@@ -97,7 +97,7 @@ public class FileSystemSource implements RepositorySource, ObjectFactory {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.graph.connectors.RepositorySource#getCapabilities()
+     * @see org.jboss.dna.graph.connector.RepositorySource#getCapabilities()
      */
     public RepositorySourceCapabilities getCapabilities() {
         return capabilities;
@@ -106,7 +106,7 @@ public class FileSystemSource implements RepositorySource, ObjectFactory {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.graph.connectors.RepositorySource#getName()
+     * @see org.jboss.dna.graph.connector.RepositorySource#getName()
      */
     public String getName() {
         return name;
@@ -169,7 +169,7 @@ public class FileSystemSource implements RepositorySource, ObjectFactory {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.graph.connectors.RepositorySource#getRetryLimit()
+     * @see org.jboss.dna.graph.connector.RepositorySource#getRetryLimit()
      */
     public int getRetryLimit() {
         return retryLimit;
@@ -178,7 +178,7 @@ public class FileSystemSource implements RepositorySource, ObjectFactory {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.graph.connectors.RepositorySource#setRetryLimit(int)
+     * @see org.jboss.dna.graph.connector.RepositorySource#setRetryLimit(int)
      */
     public synchronized void setRetryLimit( int limit ) {
         if (limit < 0) limit = 0;
@@ -209,7 +209,7 @@ public class FileSystemSource implements RepositorySource, ObjectFactory {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.graph.connectors.RepositorySource#initialize(org.jboss.dna.graph.connectors.RepositoryContext)
+     * @see org.jboss.dna.graph.connector.RepositorySource#initialize(org.jboss.dna.graph.connector.RepositoryContext)
      */
     public void initialize( RepositoryContext context ) throws RepositorySourceException {
         // No need to do anything
@@ -280,7 +280,7 @@ public class FileSystemSource implements RepositorySource, ObjectFactory {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.graph.connectors.RepositorySource#getConnection()
+     * @see org.jboss.dna.graph.connector.RepositorySource#getConnection()
      */
     public synchronized RepositoryConnection getConnection() throws RepositorySourceException {
         String sourceName = getName();

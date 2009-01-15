@@ -38,12 +38,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.jboss.dna.connector.federation.contribution.Contribution;
-import org.jboss.dna.graph.properties.DateTime;
-import org.jboss.dna.graph.properties.Name;
-import org.jboss.dna.graph.properties.Property;
-import org.jboss.dna.graph.properties.basic.BasicEmptyProperty;
-import org.jboss.dna.graph.properties.basic.BasicName;
-import org.jboss.dna.graph.properties.basic.JodaDateTime;
+import org.jboss.dna.graph.property.DateTime;
+import org.jboss.dna.graph.property.Name;
+import org.jboss.dna.graph.property.Property;
+import org.jboss.dna.graph.property.basic.BasicEmptyProperty;
+import org.jboss.dna.graph.property.basic.BasicName;
+import org.jboss.dna.graph.property.basic.JodaDateTime;
 import org.junit.Before;
 import org.junit.Test;
 

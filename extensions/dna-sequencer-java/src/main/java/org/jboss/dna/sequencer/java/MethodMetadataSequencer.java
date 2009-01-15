@@ -21,8 +21,8 @@
  */
 package org.jboss.dna.sequencer.java;
 
-import org.jboss.dna.graph.properties.Path;
-import org.jboss.dna.graph.properties.PathFactory;
+import org.jboss.dna.graph.property.Path;
+import org.jboss.dna.graph.property.PathFactory;
 import org.jboss.dna.sequencer.java.metadata.MethodMetadata;
 
 /**

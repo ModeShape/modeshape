@@ -37,9 +37,9 @@ import javax.jcr.Value;
 import net.jcip.annotations.NotThreadSafe;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.graph.ExecutionContext;
-import org.jboss.dna.graph.properties.Name;
-import org.jboss.dna.graph.properties.Path;
-import org.jboss.dna.graph.properties.ValueFactories;
+import org.jboss.dna.graph.property.Name;
+import org.jboss.dna.graph.property.Path;
+import org.jboss.dna.graph.property.ValueFactories;
 
 /**
  * @author jverhaeg

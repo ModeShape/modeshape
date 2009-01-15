@@ -47,13 +47,13 @@ import org.jboss.dna.common.util.SecureHash;
 import org.jboss.dna.common.util.StringUtil;
 import org.jboss.dna.connector.store.jpa.util.Serializer.ReferenceValues;
 import org.jboss.dna.graph.ExecutionContext;
-import org.jboss.dna.graph.properties.Binary;
-import org.jboss.dna.graph.properties.Name;
-import org.jboss.dna.graph.properties.Property;
-import org.jboss.dna.graph.properties.PropertyFactory;
-import org.jboss.dna.graph.properties.PropertyType;
-import org.jboss.dna.graph.properties.Reference;
-import org.jboss.dna.graph.properties.ValueFactories;
+import org.jboss.dna.graph.property.Binary;
+import org.jboss.dna.graph.property.Name;
+import org.jboss.dna.graph.property.Property;
+import org.jboss.dna.graph.property.PropertyFactory;
+import org.jboss.dna.graph.property.PropertyType;
+import org.jboss.dna.graph.property.Reference;
+import org.jboss.dna.graph.property.ValueFactories;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -475,7 +475,7 @@ public class SerializerTest {
         /**
          * {@inheritDoc}
          * 
-         * @see org.jboss.dna.connector.store.jpa.util.Serializer.LargeValues#read(org.jboss.dna.graph.properties.ValueFactories,
+         * @see org.jboss.dna.connector.store.jpa.util.Serializer.LargeValues#read(org.jboss.dna.graph.property.ValueFactories,
          *      byte[], long)
          */
         public Object read( ValueFactories valueFactories,
@@ -489,7 +489,7 @@ public class SerializerTest {
          * {@inheritDoc}
          * 
          * @see org.jboss.dna.connector.store.jpa.util.Serializer.LargeValues#write(byte[], long,
-         *      org.jboss.dna.graph.properties.PropertyType, java.lang.Object)
+         *      org.jboss.dna.graph.property.PropertyType, java.lang.Object)
          */
         public void write( byte[] hash,
                            long length,
@@ -543,7 +543,7 @@ public class SerializerTest {
         /**
          * {@inheritDoc}
          * 
-         * @see org.jboss.dna.connector.store.jpa.util.Serializer.LargeValues#read(org.jboss.dna.graph.properties.ValueFactories,
+         * @see org.jboss.dna.connector.store.jpa.util.Serializer.LargeValues#read(org.jboss.dna.graph.property.ValueFactories,
          *      byte[], long)
          */
         public Object read( ValueFactories valueFactories,
@@ -571,7 +571,7 @@ public class SerializerTest {
          * {@inheritDoc}
          * 
          * @see org.jboss.dna.connector.store.jpa.util.Serializer.LargeValues#write(byte[], long,
-         *      org.jboss.dna.graph.properties.PropertyType, java.lang.Object)
+         *      org.jboss.dna.graph.property.PropertyType, java.lang.Object)
          */
         public void write( byte[] hash,
                            long length,

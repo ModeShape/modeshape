@@ -33,10 +33,10 @@ import java.util.Map;
 import java.util.Set;
 import org.jboss.dna.common.util.StringUtil;
 import org.jboss.dna.graph.Location;
-import org.jboss.dna.graph.properties.Name;
-import org.jboss.dna.graph.properties.NamespaceRegistry;
-import org.jboss.dna.graph.properties.Path;
-import org.jboss.dna.graph.properties.PathFactory;
+import org.jboss.dna.graph.property.Name;
+import org.jboss.dna.graph.property.NamespaceRegistry;
+import org.jboss.dna.graph.property.Path;
+import org.jboss.dna.graph.property.PathFactory;
 
 /**
  * Represents a cache of the known node information, including a node's actual {@link Location} and the complete set of children.

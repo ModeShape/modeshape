@@ -34,12 +34,12 @@ import org.jboss.dna.connector.federation.merge.MergePlan;
 import org.jboss.dna.graph.DnaLexicon;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.Location;
-import org.jboss.dna.graph.properties.Name;
-import org.jboss.dna.graph.properties.Path;
-import org.jboss.dna.graph.properties.PathFactory;
-import org.jboss.dna.graph.properties.Property;
-import org.jboss.dna.graph.properties.PropertyFactory;
-import org.jboss.dna.graph.properties.ValueComparators;
+import org.jboss.dna.graph.property.Name;
+import org.jboss.dna.graph.property.Path;
+import org.jboss.dna.graph.property.PathFactory;
+import org.jboss.dna.graph.property.Property;
+import org.jboss.dna.graph.property.PropertyFactory;
+import org.jboss.dna.graph.property.ValueComparators;
 
 /**
  * This merge strategy simply merges all of the contributions' properties and combines the children according to the order of the

@@ -48,11 +48,11 @@ import org.jboss.dna.common.jdbc.provider.DefaultDataSourceDatabaseMetadataProvi
 import org.jboss.dna.common.jdbc.provider.DefaultDriverDatabaseMetadataProvider;
 import org.jboss.dna.common.jdbc.provider.DriverDatabaseMetadataProvider;
 import org.jboss.dna.graph.cache.CachePolicy;
-import org.jboss.dna.graph.connectors.RepositoryConnection;
-import org.jboss.dna.graph.connectors.RepositoryContext;
-import org.jboss.dna.graph.connectors.RepositorySource;
-import org.jboss.dna.graph.connectors.RepositorySourceCapabilities;
-import org.jboss.dna.graph.connectors.RepositorySourceException;
+import org.jboss.dna.graph.connector.RepositoryConnection;
+import org.jboss.dna.graph.connector.RepositoryContext;
+import org.jboss.dna.graph.connector.RepositorySource;
+import org.jboss.dna.graph.connector.RepositorySourceCapabilities;
+import org.jboss.dna.graph.connector.RepositorySourceException;
 
 /**
  * A description of a JDBC resource that can be used to access database information.
@@ -140,7 +140,7 @@ public class JdbcRepositorySource implements RepositorySource, ObjectFactory {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.graph.connectors.RepositorySource#getCapabilities()
+     * @see org.jboss.dna.graph.connector.RepositorySource#getCapabilities()
      */
     public RepositorySourceCapabilities getCapabilities() {
         return capabilities;
@@ -149,7 +149,7 @@ public class JdbcRepositorySource implements RepositorySource, ObjectFactory {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.graph.connectors.RepositorySource#getConnection()
+     * @see org.jboss.dna.graph.connector.RepositorySource#getConnection()
      */
     public RepositoryConnection getConnection() throws RepositorySourceException {
         String errMsg = null;
@@ -195,7 +195,7 @@ public class JdbcRepositorySource implements RepositorySource, ObjectFactory {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.graph.connectors.RepositorySource#getName()
+     * @see org.jboss.dna.graph.connector.RepositorySource#getName()
      */
     public String getName() {
         return name;
@@ -213,7 +213,7 @@ public class JdbcRepositorySource implements RepositorySource, ObjectFactory {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.graph.connectors.RepositorySource#getRetryLimit()
+     * @see org.jboss.dna.graph.connector.RepositorySource#getRetryLimit()
      */
     public int getRetryLimit() {
         return retryLimit.get();
@@ -222,7 +222,7 @@ public class JdbcRepositorySource implements RepositorySource, ObjectFactory {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.graph.connectors.RepositorySource#initialize(org.jboss.dna.graph.connectors.RepositoryContext)
+     * @see org.jboss.dna.graph.connector.RepositorySource#initialize(org.jboss.dna.graph.connector.RepositoryContext)
      */
     public void initialize( RepositoryContext context ) throws RepositorySourceException {
         this.repositoryContext = context;
@@ -231,7 +231,7 @@ public class JdbcRepositorySource implements RepositorySource, ObjectFactory {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.graph.connectors.RepositorySource#setRetryLimit(int)
+     * @see org.jboss.dna.graph.connector.RepositorySource#setRetryLimit(int)
      */
     public void setRetryLimit( int limit ) {
         retryLimit.set(limit < 0 ? 0 : limit);

@@ -25,9 +25,9 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import net.jcip.annotations.Immutable;
-import org.jboss.dna.graph.properties.Name;
-import org.jboss.dna.graph.properties.Path;
-import org.jboss.dna.graph.properties.Property;
+import org.jboss.dna.graph.property.Name;
+import org.jboss.dna.graph.property.Path;
+import org.jboss.dna.graph.property.Property;
 
 /**
  * A node in a {@link Graph graph}, with methods to access the properties and children.

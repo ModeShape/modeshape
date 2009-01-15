@@ -26,7 +26,7 @@ import javax.jcr.ItemNotFoundException;
 import javax.jcr.Node;
 import javax.jcr.RepositoryException;
 import net.jcip.annotations.NotThreadSafe;
-import org.jboss.dna.graph.properties.Path.Segment;
+import org.jboss.dna.graph.property.Path.Segment;
 
 /**
  * @author jverhaeg

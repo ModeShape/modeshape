@@ -28,10 +28,10 @@ import java.util.Map;
 import java.util.UUID;
 import net.jcip.annotations.NotThreadSafe;
 import org.jboss.dna.graph.ExecutionContext;
-import org.jboss.dna.graph.properties.Name;
-import org.jboss.dna.graph.properties.Path;
-import org.jboss.dna.graph.properties.Property;
-import org.jboss.dna.graph.properties.PropertyFactory;
+import org.jboss.dna.graph.property.Name;
+import org.jboss.dna.graph.property.Path;
+import org.jboss.dna.graph.property.Property;
+import org.jboss.dna.graph.property.PropertyFactory;
 
 /**
  * @author Randall Hauch

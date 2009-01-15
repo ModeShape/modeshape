@@ -27,9 +27,9 @@ import java.util.Set;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import org.jboss.dna.common.util.CheckArg;
-import org.jboss.dna.graph.properties.NamespaceException;
-import org.jboss.dna.graph.properties.NamespaceRegistry;
-import org.jboss.dna.graph.properties.basic.BasicNamespace;
+import org.jboss.dna.graph.property.NamespaceException;
+import org.jboss.dna.graph.property.NamespaceRegistry;
+import org.jboss.dna.graph.property.basic.BasicNamespace;
 
 /**
  * @author Randall Hauch
@@ -144,7 +144,7 @@ public class JcrNamespaceRegistry implements NamespaceRegistry {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.graph.properties.NamespaceRegistry#unregister(java.lang.String)
+     * @see org.jboss.dna.graph.property.NamespaceRegistry#unregister(java.lang.String)
      */
     public boolean unregister( String namespaceUri ) {
         Session session = null;
@@ -190,7 +190,7 @@ public class JcrNamespaceRegistry implements NamespaceRegistry {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.graph.properties.NamespaceRegistry#getNamespaces()
+     * @see org.jboss.dna.graph.property.NamespaceRegistry#getNamespaces()
      */
     public Set<Namespace> getNamespaces() {
         Session session = null;

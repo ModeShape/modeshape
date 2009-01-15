@@ -46,8 +46,8 @@ import javax.jcr.version.Version;
 import javax.jcr.version.VersionHistory;
 import net.jcip.annotations.NotThreadSafe;
 import org.jboss.dna.common.util.CheckArg;
-import org.jboss.dna.graph.properties.Name;
-import org.jboss.dna.graph.properties.Path.Segment;
+import org.jboss.dna.graph.property.Name;
+import org.jboss.dna.graph.property.Path.Segment;
 
 /**
  * @author jverhaeg

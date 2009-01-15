@@ -24,7 +24,7 @@ package org.jboss.dna.connector.federation.contribution;
 import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.util.HashCode;
 import org.jboss.dna.graph.Location;
-import org.jboss.dna.graph.properties.DateTime;
+import org.jboss.dna.graph.property.DateTime;
 
 /**
  * The record of a non-empty source contribution from a single location within the source.

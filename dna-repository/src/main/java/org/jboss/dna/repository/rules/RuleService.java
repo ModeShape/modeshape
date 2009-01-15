@@ -55,9 +55,9 @@ import org.jboss.dna.common.component.StandardClassLoaderFactory;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.common.util.Logger;
 import org.jboss.dna.repository.RepositoryI18n;
-import org.jboss.dna.repository.services.AbstractServiceAdministrator;
-import org.jboss.dna.repository.services.AdministeredService;
-import org.jboss.dna.repository.services.ServiceAdministrator;
+import org.jboss.dna.repository.service.AbstractServiceAdministrator;
+import org.jboss.dna.repository.service.AdministeredService;
+import org.jboss.dna.repository.service.ServiceAdministrator;
 
 /**
  * A rule service that is capable of executing rule sets using one or more JSR-94 rule engines. Sets of rules are

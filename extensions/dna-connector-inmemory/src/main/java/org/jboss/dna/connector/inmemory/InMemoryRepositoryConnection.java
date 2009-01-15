@@ -24,15 +24,15 @@ package org.jboss.dna.connector.inmemory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import javax.transaction.xa.XAResource;
-import org.jboss.dna.common.stats.Stopwatch;
+import org.jboss.dna.common.statistic.Stopwatch;
 import org.jboss.dna.common.util.Logger;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.cache.CachePolicy;
-import org.jboss.dna.graph.connectors.RepositoryConnection;
-import org.jboss.dna.graph.connectors.RepositorySourceException;
-import org.jboss.dna.graph.connectors.RepositorySourceListener;
-import org.jboss.dna.graph.requests.Request;
-import org.jboss.dna.graph.requests.processor.RequestProcessor;
+import org.jboss.dna.graph.connector.RepositoryConnection;
+import org.jboss.dna.graph.connector.RepositorySourceException;
+import org.jboss.dna.graph.connector.RepositorySourceListener;
+import org.jboss.dna.graph.request.Request;
+import org.jboss.dna.graph.request.processor.RequestProcessor;
 
 /**
  * @author Randall Hauch
@@ -109,8 +109,8 @@ public class InMemoryRepositoryConnection implements RepositoryConnection {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.graph.connectors.RepositoryConnection#execute(org.jboss.dna.graph.ExecutionContext,
-     *      org.jboss.dna.graph.requests.Request)
+     * @see org.jboss.dna.graph.connector.RepositoryConnection#execute(org.jboss.dna.graph.ExecutionContext,
+     *      org.jboss.dna.graph.request.Request)
      */
     public void execute( ExecutionContext context,
                          Request request ) throws RepositorySourceException {

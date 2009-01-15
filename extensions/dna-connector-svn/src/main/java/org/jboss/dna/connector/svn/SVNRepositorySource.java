@@ -44,11 +44,11 @@ import net.jcip.annotations.ThreadSafe;
 import org.jboss.dna.common.i18n.I18n;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.graph.cache.CachePolicy;
-import org.jboss.dna.graph.connectors.RepositoryConnection;
-import org.jboss.dna.graph.connectors.RepositoryContext;
-import org.jboss.dna.graph.connectors.RepositorySource;
-import org.jboss.dna.graph.connectors.RepositorySourceCapabilities;
-import org.jboss.dna.graph.connectors.RepositorySourceException;
+import org.jboss.dna.graph.connector.RepositoryConnection;
+import org.jboss.dna.graph.connector.RepositoryContext;
+import org.jboss.dna.graph.connector.RepositorySource;
+import org.jboss.dna.graph.connector.RepositorySourceCapabilities;
+import org.jboss.dna.graph.connector.RepositorySourceException;
 import org.tmatesoft.svn.core.SVNException;
 import org.tmatesoft.svn.core.SVNURL;
 import org.tmatesoft.svn.core.auth.ISVNAuthenticationManager;
@@ -125,7 +125,7 @@ public class SVNRepositorySource implements RepositorySource, ObjectFactory {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.graph.connectors.RepositorySource#getCapabilities()
+     * @see org.jboss.dna.graph.connector.RepositorySource#getCapabilities()
      */
     public RepositorySourceCapabilities getCapabilities() {
         return capabilities;
@@ -134,7 +134,7 @@ public class SVNRepositorySource implements RepositorySource, ObjectFactory {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.graph.connectors.RepositorySource#initialize(org.jboss.dna.graph.connectors.RepositoryContext)
+     * @see org.jboss.dna.graph.connector.RepositorySource#initialize(org.jboss.dna.graph.connector.RepositoryContext)
      */
     public void initialize( RepositoryContext context ) throws RepositorySourceException {
         this.repositoryContext = context;
@@ -157,7 +157,7 @@ public class SVNRepositorySource implements RepositorySource, ObjectFactory {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.graph.connectors.RepositorySource#getRetryLimit()
+     * @see org.jboss.dna.graph.connector.RepositorySource#getRetryLimit()
      */
     public int getRetryLimit() {
         return retryLimit.get();
@@ -166,7 +166,7 @@ public class SVNRepositorySource implements RepositorySource, ObjectFactory {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.graph.connectors.RepositorySource#setRetryLimit(int)
+     * @see org.jboss.dna.graph.connector.RepositorySource#setRetryLimit(int)
      */
     public void setRetryLimit( int limit ) {
         retryLimit.set(limit < 0 ? 0 : limit);
@@ -259,7 +259,7 @@ public class SVNRepositorySource implements RepositorySource, ObjectFactory {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.graph.connectors.RepositorySource#getConnection()
+     * @see org.jboss.dna.graph.connector.RepositorySource#getConnection()
      */
     public RepositoryConnection getConnection() throws RepositorySourceException {
         if (getName() == null) {

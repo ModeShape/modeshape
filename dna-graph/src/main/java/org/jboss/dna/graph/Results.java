@@ -22,7 +22,7 @@
 package org.jboss.dna.graph;
 
 import net.jcip.annotations.Immutable;
-import org.jboss.dna.graph.properties.Path;
+import org.jboss.dna.graph.property.Path;
 
 /**
  * A set of nodes returned from a {@link Graph graph}, with methods to access the properties and children of the nodes in the

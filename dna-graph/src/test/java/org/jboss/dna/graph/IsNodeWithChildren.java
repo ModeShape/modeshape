@@ -26,9 +26,9 @@ import java.util.List;
 import org.hamcrest.Description;
 import org.hamcrest.Factory;
 import org.hamcrest.Matcher;
-import org.jboss.dna.graph.properties.Name;
-import org.jboss.dna.graph.properties.Path;
-import org.jboss.dna.graph.properties.basic.BasicPathSegment;
+import org.jboss.dna.graph.property.Name;
+import org.jboss.dna.graph.property.Path;
+import org.jboss.dna.graph.property.basic.BasicPathSegment;
 import org.junit.matchers.IsCollectionContaining;
 import org.junit.matchers.TypeSafeMatcher;
 

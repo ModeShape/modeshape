@@ -22,8 +22,8 @@
 package org.jboss.dna.connector.store.jpa;
 
 import org.jboss.dna.graph.Graph;
-import org.jboss.dna.graph.connectors.RepositorySource;
-import org.jboss.dna.graph.connectors.test.WritableConnectorTest;
+import org.jboss.dna.graph.connector.RepositorySource;
+import org.jboss.dna.graph.connector.test.WritableConnectorTest;
 
 /**
  * @author Randall Hauch
@@ -33,7 +33,7 @@ public class JpaConnectorWritingTest extends WritableConnectorTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.graph.connectors.test.AbstractConnectorTest#setUpSource()
+     * @see org.jboss.dna.graph.connector.test.AbstractConnectorTest#setUpSource()
      */
     @Override
     protected RepositorySource setUpSource() {
@@ -58,7 +58,7 @@ public class JpaConnectorWritingTest extends WritableConnectorTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.graph.connectors.test.AbstractConnectorTest#initializeContent(org.jboss.dna.graph.Graph)
+     * @see org.jboss.dna.graph.connector.test.AbstractConnectorTest#initializeContent(org.jboss.dna.graph.Graph)
      */
     @Override
     protected void initializeContent( Graph graph ) {

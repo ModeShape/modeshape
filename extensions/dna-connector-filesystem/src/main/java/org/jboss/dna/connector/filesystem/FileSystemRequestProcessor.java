@@ -33,27 +33,27 @@ import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.JcrLexicon;
 import org.jboss.dna.graph.JcrNtLexicon;
 import org.jboss.dna.graph.Location;
-import org.jboss.dna.graph.connectors.RepositorySourceException;
+import org.jboss.dna.graph.connector.RepositorySourceException;
 import org.jboss.dna.graph.mimetype.MimeTypeDetector;
-import org.jboss.dna.graph.properties.BinaryFactory;
-import org.jboss.dna.graph.properties.DateTimeFactory;
-import org.jboss.dna.graph.properties.Name;
-import org.jboss.dna.graph.properties.NameFactory;
-import org.jboss.dna.graph.properties.Path;
-import org.jboss.dna.graph.properties.PathFactory;
-import org.jboss.dna.graph.properties.PathNotFoundException;
-import org.jboss.dna.graph.properties.PropertyFactory;
-import org.jboss.dna.graph.requests.CopyBranchRequest;
-import org.jboss.dna.graph.requests.CreateNodeRequest;
-import org.jboss.dna.graph.requests.DeleteBranchRequest;
-import org.jboss.dna.graph.requests.MoveBranchRequest;
-import org.jboss.dna.graph.requests.ReadAllChildrenRequest;
-import org.jboss.dna.graph.requests.ReadAllPropertiesRequest;
-import org.jboss.dna.graph.requests.RemovePropertiesRequest;
-import org.jboss.dna.graph.requests.RenameNodeRequest;
-import org.jboss.dna.graph.requests.Request;
-import org.jboss.dna.graph.requests.UpdatePropertiesRequest;
-import org.jboss.dna.graph.requests.processor.RequestProcessor;
+import org.jboss.dna.graph.property.BinaryFactory;
+import org.jboss.dna.graph.property.DateTimeFactory;
+import org.jboss.dna.graph.property.Name;
+import org.jboss.dna.graph.property.NameFactory;
+import org.jboss.dna.graph.property.Path;
+import org.jboss.dna.graph.property.PathFactory;
+import org.jboss.dna.graph.property.PathNotFoundException;
+import org.jboss.dna.graph.property.PropertyFactory;
+import org.jboss.dna.graph.request.CopyBranchRequest;
+import org.jboss.dna.graph.request.CreateNodeRequest;
+import org.jboss.dna.graph.request.DeleteBranchRequest;
+import org.jboss.dna.graph.request.MoveBranchRequest;
+import org.jboss.dna.graph.request.ReadAllChildrenRequest;
+import org.jboss.dna.graph.request.ReadAllPropertiesRequest;
+import org.jboss.dna.graph.request.RemovePropertiesRequest;
+import org.jboss.dna.graph.request.RenameNodeRequest;
+import org.jboss.dna.graph.request.Request;
+import org.jboss.dna.graph.request.UpdatePropertiesRequest;
+import org.jboss.dna.graph.request.processor.RequestProcessor;
 
 /**
  * The {@link RequestProcessor} implementation for the file systme connector. This is the class that does the bulk of the work in
@@ -97,7 +97,7 @@ public class FileSystemRequestProcessor extends RequestProcessor {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.graph.requests.processor.RequestProcessor#process(org.jboss.dna.graph.requests.ReadAllChildrenRequest)
+     * @see org.jboss.dna.graph.request.processor.RequestProcessor#process(org.jboss.dna.graph.request.ReadAllChildrenRequest)
      */
     @Override
     public void process( ReadAllChildrenRequest request ) {
@@ -140,7 +140,7 @@ public class FileSystemRequestProcessor extends RequestProcessor {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.graph.requests.processor.RequestProcessor#process(org.jboss.dna.graph.requests.ReadAllPropertiesRequest)
+     * @see org.jboss.dna.graph.request.processor.RequestProcessor#process(org.jboss.dna.graph.request.ReadAllPropertiesRequest)
      */
     @Override
     public void process( ReadAllPropertiesRequest request ) {
@@ -212,7 +212,7 @@ public class FileSystemRequestProcessor extends RequestProcessor {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.graph.requests.processor.RequestProcessor#process(org.jboss.dna.graph.requests.CreateNodeRequest)
+     * @see org.jboss.dna.graph.request.processor.RequestProcessor#process(org.jboss.dna.graph.request.CreateNodeRequest)
      */
     @Override
     public void process( CreateNodeRequest request ) {
@@ -222,7 +222,7 @@ public class FileSystemRequestProcessor extends RequestProcessor {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.graph.requests.processor.RequestProcessor#process(org.jboss.dna.graph.requests.UpdatePropertiesRequest)
+     * @see org.jboss.dna.graph.request.processor.RequestProcessor#process(org.jboss.dna.graph.request.UpdatePropertiesRequest)
      */
     @Override
     public void process( UpdatePropertiesRequest request ) {
@@ -232,7 +232,7 @@ public class FileSystemRequestProcessor extends RequestProcessor {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.graph.requests.processor.RequestProcessor#process(org.jboss.dna.graph.requests.CopyBranchRequest)
+     * @see org.jboss.dna.graph.request.processor.RequestProcessor#process(org.jboss.dna.graph.request.CopyBranchRequest)
      */
     @Override
     public void process( CopyBranchRequest request ) {
@@ -242,7 +242,7 @@ public class FileSystemRequestProcessor extends RequestProcessor {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.graph.requests.processor.RequestProcessor#process(org.jboss.dna.graph.requests.DeleteBranchRequest)
+     * @see org.jboss.dna.graph.request.processor.RequestProcessor#process(org.jboss.dna.graph.request.DeleteBranchRequest)
      */
     @Override
     public void process( DeleteBranchRequest request ) {
@@ -252,7 +252,7 @@ public class FileSystemRequestProcessor extends RequestProcessor {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.graph.requests.processor.RequestProcessor#process(org.jboss.dna.graph.requests.MoveBranchRequest)
+     * @see org.jboss.dna.graph.request.processor.RequestProcessor#process(org.jboss.dna.graph.request.MoveBranchRequest)
      */
     @Override
     public void process( MoveBranchRequest request ) {
@@ -262,7 +262,7 @@ public class FileSystemRequestProcessor extends RequestProcessor {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.graph.requests.processor.RequestProcessor#process(org.jboss.dna.graph.requests.RemovePropertiesRequest)
+     * @see org.jboss.dna.graph.request.processor.RequestProcessor#process(org.jboss.dna.graph.request.RemovePropertiesRequest)
      */
     @Override
     public void process( RemovePropertiesRequest request ) {
@@ -273,7 +273,7 @@ public class FileSystemRequestProcessor extends RequestProcessor {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.graph.requests.processor.RequestProcessor#process(org.jboss.dna.graph.requests.RenameNodeRequest)
+     * @see org.jboss.dna.graph.request.processor.RequestProcessor#process(org.jboss.dna.graph.request.RenameNodeRequest)
      */
     @Override
     public void process( RenameNodeRequest request ) {

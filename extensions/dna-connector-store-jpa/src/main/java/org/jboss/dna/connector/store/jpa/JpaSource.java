@@ -47,16 +47,16 @@ import org.hibernate.ejb.Ejb3Configuration;
 import org.jboss.dna.common.i18n.I18n;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.common.util.Logger;
-import org.jboss.dna.connector.store.jpa.models.basic.BasicModel;
+import org.jboss.dna.connector.store.jpa.model.basic.BasicModel;
 import org.jboss.dna.connector.store.jpa.util.StoreOptionEntity;
 import org.jboss.dna.connector.store.jpa.util.StoreOptions;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.cache.CachePolicy;
-import org.jboss.dna.graph.connectors.RepositoryConnection;
-import org.jboss.dna.graph.connectors.RepositoryContext;
-import org.jboss.dna.graph.connectors.RepositorySource;
-import org.jboss.dna.graph.connectors.RepositorySourceCapabilities;
-import org.jboss.dna.graph.connectors.RepositorySourceException;
+import org.jboss.dna.graph.connector.RepositoryConnection;
+import org.jboss.dna.graph.connector.RepositoryContext;
+import org.jboss.dna.graph.connector.RepositorySource;
+import org.jboss.dna.graph.connector.RepositorySourceCapabilities;
+import org.jboss.dna.graph.connector.RepositorySourceException;
 
 /**
  * The {@link RepositorySource} for the connector that stores content in a (custom) relational database. This connector uses Java
@@ -188,7 +188,7 @@ public class JpaSource implements RepositorySource, ObjectFactory {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.graph.connectors.RepositorySource#getName()
+     * @see org.jboss.dna.graph.connector.RepositorySource#getName()
      */
     public String getName() {
         return name;
@@ -210,7 +210,7 @@ public class JpaSource implements RepositorySource, ObjectFactory {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.graph.connectors.RepositorySource#getCapabilities()
+     * @see org.jboss.dna.graph.connector.RepositorySource#getCapabilities()
      */
     public RepositorySourceCapabilities getCapabilities() {
         return capabilities;
@@ -238,7 +238,7 @@ public class JpaSource implements RepositorySource, ObjectFactory {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.graph.connectors.RepositorySource#getRetryLimit()
+     * @see org.jboss.dna.graph.connector.RepositorySource#getRetryLimit()
      */
     public int getRetryLimit() {
         return retryLimit;
@@ -247,7 +247,7 @@ public class JpaSource implements RepositorySource, ObjectFactory {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.graph.connectors.RepositorySource#setRetryLimit(int)
+     * @see org.jboss.dna.graph.connector.RepositorySource#setRetryLimit(int)
      */
     public synchronized void setRetryLimit( int limit ) {
         if (limit < 0) limit = 0;
@@ -596,7 +596,7 @@ public class JpaSource implements RepositorySource, ObjectFactory {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.graph.connectors.RepositorySource#initialize(org.jboss.dna.graph.connectors.RepositoryContext)
+     * @see org.jboss.dna.graph.connector.RepositorySource#initialize(org.jboss.dna.graph.connector.RepositoryContext)
      */
     public void initialize( RepositoryContext context ) throws RepositorySourceException {
         this.repositoryContext = context;
@@ -731,7 +731,7 @@ public class JpaSource implements RepositorySource, ObjectFactory {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.graph.connectors.RepositorySource#getConnection()
+     * @see org.jboss.dna.graph.connector.RepositorySource#getConnection()
      */
     public synchronized RepositoryConnection getConnection() throws RepositorySourceException {
         if (this.name == null || this.name.trim().length() == 0) {

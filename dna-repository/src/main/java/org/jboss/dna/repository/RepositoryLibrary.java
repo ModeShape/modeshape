@@ -35,14 +35,14 @@ import net.jcip.annotations.ThreadSafe;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.ExecutionContextFactory;
-import org.jboss.dna.graph.connectors.RepositoryConnection;
-import org.jboss.dna.graph.connectors.RepositoryConnectionFactory;
-import org.jboss.dna.graph.connectors.RepositoryConnectionPool;
-import org.jboss.dna.graph.connectors.RepositoryContext;
-import org.jboss.dna.graph.connectors.RepositorySource;
+import org.jboss.dna.graph.connector.RepositoryConnection;
+import org.jboss.dna.graph.connector.RepositoryConnectionFactory;
+import org.jboss.dna.graph.connector.RepositoryConnectionPool;
+import org.jboss.dna.graph.connector.RepositoryContext;
+import org.jboss.dna.graph.connector.RepositorySource;
 import org.jboss.dna.repository.mimetype.MimeTypeDetectors;
-import org.jboss.dna.repository.services.AbstractServiceAdministrator;
-import org.jboss.dna.repository.services.ServiceAdministrator;
+import org.jboss.dna.repository.service.AbstractServiceAdministrator;
+import org.jboss.dna.repository.service.ServiceAdministrator;
 
 /**
  * A library of {@link RepositorySource} instances and the {@link RepositoryConnectionPool} used to manage the connections for
@@ -152,7 +152,7 @@ public class RepositoryLibrary implements RepositoryConnectionFactory {
             /**
              * {@inheritDoc}
              * 
-             * @see org.jboss.dna.graph.connectors.RepositoryContext#getExecutionContextFactory()
+             * @see org.jboss.dna.graph.connector.RepositoryContext#getExecutionContextFactory()
              */
             public ExecutionContextFactory getExecutionContextFactory() {
                 return RepositoryLibrary.this.getExecutionContextFactory();
@@ -161,7 +161,7 @@ public class RepositoryLibrary implements RepositoryConnectionFactory {
             /**
              * {@inheritDoc}
              * 
-             * @see org.jboss.dna.graph.connectors.RepositoryContext#getRepositoryConnectionFactory()
+             * @see org.jboss.dna.graph.connector.RepositoryContext#getRepositoryConnectionFactory()
              */
             public RepositoryConnectionFactory getRepositoryConnectionFactory() {
                 return RepositoryLibrary.this;
@@ -441,7 +441,7 @@ public class RepositoryLibrary implements RepositoryConnectionFactory {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.graph.connectors.RepositoryConnectionFactory#createConnection(java.lang.String)
+     * @see org.jboss.dna.graph.connector.RepositoryConnectionFactory#createConnection(java.lang.String)
      */
     public RepositoryConnection createConnection( String sourceName ) {
         try {

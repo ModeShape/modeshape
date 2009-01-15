@@ -29,11 +29,11 @@ import java.util.concurrent.TimeUnit;
 import javax.transaction.xa.XAResource;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.cache.CachePolicy;
-import org.jboss.dna.graph.connectors.RepositoryConnection;
-import org.jboss.dna.graph.connectors.RepositorySourceException;
-import org.jboss.dna.graph.connectors.RepositorySourceListener;
-import org.jboss.dna.graph.requests.Request;
-import org.jboss.dna.graph.requests.processor.RequestProcessor;
+import org.jboss.dna.graph.connector.RepositoryConnection;
+import org.jboss.dna.graph.connector.RepositorySourceException;
+import org.jboss.dna.graph.connector.RepositorySourceListener;
+import org.jboss.dna.graph.request.Request;
+import org.jboss.dna.graph.request.processor.RequestProcessor;
 
 /**
  * The {@link RepositoryConnection} implementation for the file system connector. The bulk of the work is performed by the
@@ -69,7 +69,7 @@ public class FileSystemConnection implements RepositoryConnection {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.graph.connectors.RepositoryConnection#getSourceName()
+     * @see org.jboss.dna.graph.connector.RepositoryConnection#getSourceName()
      */
     public String getSourceName() {
         return sourceName;
@@ -78,7 +78,7 @@ public class FileSystemConnection implements RepositoryConnection {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.graph.connectors.RepositoryConnection#getDefaultCachePolicy()
+     * @see org.jboss.dna.graph.connector.RepositoryConnection#getDefaultCachePolicy()
      */
     public CachePolicy getDefaultCachePolicy() {
         return cachePolicy;
@@ -87,7 +87,7 @@ public class FileSystemConnection implements RepositoryConnection {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.graph.connectors.RepositoryConnection#getXAResource()
+     * @see org.jboss.dna.graph.connector.RepositoryConnection#getXAResource()
      */
     public XAResource getXAResource() {
         return null;
@@ -96,7 +96,7 @@ public class FileSystemConnection implements RepositoryConnection {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.graph.connectors.RepositoryConnection#setListener(org.jboss.dna.graph.connectors.RepositorySourceListener)
+     * @see org.jboss.dna.graph.connector.RepositoryConnection#setListener(org.jboss.dna.graph.connector.RepositorySourceListener)
      */
     public void setListener( RepositorySourceListener listener ) {
         if (listener != null) {
@@ -107,7 +107,7 @@ public class FileSystemConnection implements RepositoryConnection {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.graph.connectors.RepositoryConnection#ping(long, java.util.concurrent.TimeUnit)
+     * @see org.jboss.dna.graph.connector.RepositoryConnection#ping(long, java.util.concurrent.TimeUnit)
      */
     public boolean ping( long time,
                          TimeUnit unit ) {
@@ -117,8 +117,8 @@ public class FileSystemConnection implements RepositoryConnection {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.graph.connectors.RepositoryConnection#execute(org.jboss.dna.graph.ExecutionContext,
-     *      org.jboss.dna.graph.requests.Request)
+     * @see org.jboss.dna.graph.connector.RepositoryConnection#execute(org.jboss.dna.graph.ExecutionContext,
+     *      org.jboss.dna.graph.request.Request)
      */
     public void execute( ExecutionContext context,
                          Request request ) throws RepositorySourceException {
@@ -133,7 +133,7 @@ public class FileSystemConnection implements RepositoryConnection {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.graph.connectors.RepositoryConnection#close()
+     * @see org.jboss.dna.graph.connector.RepositoryConnection#close()
      */
     public void close() {
     }

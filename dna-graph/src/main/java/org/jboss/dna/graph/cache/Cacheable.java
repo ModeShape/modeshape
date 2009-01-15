@@ -22,7 +22,7 @@
 package org.jboss.dna.graph.cache;
 
 import java.io.Serializable;
-import org.jboss.dna.graph.properties.DateTime;
+import org.jboss.dna.graph.property.DateTime;
 
 /**
  * Interface defining an object that can be cached according to a {@link CachePolicy}.

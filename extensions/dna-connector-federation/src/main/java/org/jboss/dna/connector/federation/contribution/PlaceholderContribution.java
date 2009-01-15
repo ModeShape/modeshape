@@ -23,7 +23,7 @@ package org.jboss.dna.connector.federation.contribution;
 
 import net.jcip.annotations.Immutable;
 import org.jboss.dna.graph.Location;
-import org.jboss.dna.graph.properties.DateTime;
+import org.jboss.dna.graph.property.DateTime;
 
 /**
  * A placeholder contribution needed because of a source's contribution below the specified children.

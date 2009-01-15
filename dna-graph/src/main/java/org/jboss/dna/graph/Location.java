@@ -31,11 +31,11 @@ import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.text.TextEncoder;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.common.util.HashCode;
-import org.jboss.dna.graph.properties.Name;
-import org.jboss.dna.graph.properties.NamespaceRegistry;
-import org.jboss.dna.graph.properties.Path;
-import org.jboss.dna.graph.properties.Property;
-import org.jboss.dna.graph.properties.basic.BasicSingleValueProperty;
+import org.jboss.dna.graph.property.Name;
+import org.jboss.dna.graph.property.NamespaceRegistry;
+import org.jboss.dna.graph.property.Path;
+import org.jboss.dna.graph.property.Property;
+import org.jboss.dna.graph.property.basic.BasicSingleValueProperty;
 
 /**
  * The location of a node, as specified by either its path, UUID, and/or identification properties.

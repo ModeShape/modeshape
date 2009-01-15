@@ -49,27 +49,27 @@ import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.NodeConflictBehavior;
 import org.jboss.dna.graph.cache.CachePolicy;
-import org.jboss.dna.graph.connectors.RepositoryConnection;
-import org.jboss.dna.graph.connectors.RepositoryConnectionFactory;
-import org.jboss.dna.graph.connectors.RepositorySource;
-import org.jboss.dna.graph.connectors.RepositorySourceException;
-import org.jboss.dna.graph.properties.DateTime;
-import org.jboss.dna.graph.properties.Name;
-import org.jboss.dna.graph.properties.Path;
-import org.jboss.dna.graph.properties.PathFactory;
-import org.jboss.dna.graph.properties.PathNotFoundException;
-import org.jboss.dna.graph.properties.Property;
-import org.jboss.dna.graph.requests.CompositeRequest;
-import org.jboss.dna.graph.requests.CopyBranchRequest;
-import org.jboss.dna.graph.requests.CreateNodeRequest;
-import org.jboss.dna.graph.requests.DeleteBranchRequest;
-import org.jboss.dna.graph.requests.MoveBranchRequest;
-import org.jboss.dna.graph.requests.ReadAllChildrenRequest;
-import org.jboss.dna.graph.requests.ReadAllPropertiesRequest;
-import org.jboss.dna.graph.requests.ReadNodeRequest;
-import org.jboss.dna.graph.requests.Request;
-import org.jboss.dna.graph.requests.UpdatePropertiesRequest;
-import org.jboss.dna.graph.requests.processor.RequestProcessor;
+import org.jboss.dna.graph.connector.RepositoryConnection;
+import org.jboss.dna.graph.connector.RepositoryConnectionFactory;
+import org.jboss.dna.graph.connector.RepositorySource;
+import org.jboss.dna.graph.connector.RepositorySourceException;
+import org.jboss.dna.graph.property.DateTime;
+import org.jboss.dna.graph.property.Name;
+import org.jboss.dna.graph.property.Path;
+import org.jboss.dna.graph.property.PathFactory;
+import org.jboss.dna.graph.property.PathNotFoundException;
+import org.jboss.dna.graph.property.Property;
+import org.jboss.dna.graph.request.CompositeRequest;
+import org.jboss.dna.graph.request.CopyBranchRequest;
+import org.jboss.dna.graph.request.CreateNodeRequest;
+import org.jboss.dna.graph.request.DeleteBranchRequest;
+import org.jboss.dna.graph.request.MoveBranchRequest;
+import org.jboss.dna.graph.request.ReadAllChildrenRequest;
+import org.jboss.dna.graph.request.ReadAllPropertiesRequest;
+import org.jboss.dna.graph.request.ReadNodeRequest;
+import org.jboss.dna.graph.request.Request;
+import org.jboss.dna.graph.request.UpdatePropertiesRequest;
+import org.jboss.dna.graph.request.processor.RequestProcessor;
 
 /**
  * @author Randall Hauch
@@ -237,7 +237,7 @@ public class FederatingCommandExecutor extends RequestProcessor {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.graph.requests.processor.RequestProcessor#process(org.jboss.dna.graph.requests.ReadAllChildrenRequest)
+     * @see org.jboss.dna.graph.request.processor.RequestProcessor#process(org.jboss.dna.graph.request.ReadAllChildrenRequest)
      */
     @Override
     public void process( ReadAllChildrenRequest request ) {
@@ -252,7 +252,7 @@ public class FederatingCommandExecutor extends RequestProcessor {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.graph.requests.processor.RequestProcessor#process(org.jboss.dna.graph.requests.ReadAllPropertiesRequest)
+     * @see org.jboss.dna.graph.request.processor.RequestProcessor#process(org.jboss.dna.graph.request.ReadAllPropertiesRequest)
      */
     @Override
     public void process( ReadAllPropertiesRequest request ) {
@@ -267,7 +267,7 @@ public class FederatingCommandExecutor extends RequestProcessor {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.graph.requests.processor.RequestProcessor#process(org.jboss.dna.graph.requests.ReadNodeRequest)
+     * @see org.jboss.dna.graph.request.processor.RequestProcessor#process(org.jboss.dna.graph.request.ReadNodeRequest)
      */
     @Override
     public void process( ReadNodeRequest request ) {
@@ -285,7 +285,7 @@ public class FederatingCommandExecutor extends RequestProcessor {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.graph.requests.processor.RequestProcessor#process(org.jboss.dna.graph.requests.CopyBranchRequest)
+     * @see org.jboss.dna.graph.request.processor.RequestProcessor#process(org.jboss.dna.graph.request.CopyBranchRequest)
      */
     @Override
     public void process( CopyBranchRequest request ) {
@@ -295,7 +295,7 @@ public class FederatingCommandExecutor extends RequestProcessor {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.graph.requests.processor.RequestProcessor#process(org.jboss.dna.graph.requests.CreateNodeRequest)
+     * @see org.jboss.dna.graph.request.processor.RequestProcessor#process(org.jboss.dna.graph.request.CreateNodeRequest)
      */
     @Override
     public void process( CreateNodeRequest request ) {
@@ -305,7 +305,7 @@ public class FederatingCommandExecutor extends RequestProcessor {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.graph.requests.processor.RequestProcessor#process(org.jboss.dna.graph.requests.DeleteBranchRequest)
+     * @see org.jboss.dna.graph.request.processor.RequestProcessor#process(org.jboss.dna.graph.request.DeleteBranchRequest)
      */
     @Override
     public void process( DeleteBranchRequest request ) {
@@ -315,7 +315,7 @@ public class FederatingCommandExecutor extends RequestProcessor {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.graph.requests.processor.RequestProcessor#process(org.jboss.dna.graph.requests.MoveBranchRequest)
+     * @see org.jboss.dna.graph.request.processor.RequestProcessor#process(org.jboss.dna.graph.request.MoveBranchRequest)
      */
     @Override
     public void process( MoveBranchRequest request ) {
@@ -325,7 +325,7 @@ public class FederatingCommandExecutor extends RequestProcessor {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.graph.requests.processor.RequestProcessor#process(org.jboss.dna.graph.requests.UpdatePropertiesRequest)
+     * @see org.jboss.dna.graph.request.processor.RequestProcessor#process(org.jboss.dna.graph.request.UpdatePropertiesRequest)
      */
     @Override
     public void process( UpdatePropertiesRequest request ) {

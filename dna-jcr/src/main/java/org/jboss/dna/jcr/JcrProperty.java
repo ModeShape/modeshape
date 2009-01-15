@@ -29,8 +29,8 @@ import javax.jcr.Value;
 import javax.jcr.ValueFormatException;
 import javax.jcr.nodetype.PropertyDefinition;
 import org.jboss.dna.graph.ExecutionContext;
-import org.jboss.dna.graph.properties.Name;
-import org.jboss.dna.graph.properties.ValueFactories;
+import org.jboss.dna.graph.property.Name;
+import org.jboss.dna.graph.property.ValueFactories;
 
 /**
  * @author jverhaeg

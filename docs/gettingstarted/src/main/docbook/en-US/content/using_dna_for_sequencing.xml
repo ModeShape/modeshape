@@ -105,7 +105,7 @@ sequencingService.setExecutionContext(context);
     <programlisting role="JAVA"><![CDATA[
 String name = "Image Sequencer";
 String desc = "Sequences image files to extract the characteristics of the image";
-String classname = "org.jboss.dna.sequencer.images.ImageMetadataSequencer";
+String classname = "org.jboss.dna.sequencer.image.ImageMetadataSequencer";
 String[] classpath = null; // Use the current classpath
 String[] pathExpressions = {"//(*.(jpg|jpeg|gif|bmp|pcx|png)[*])/jcr:content[@jcr:data] => /images/$1"};
 SequencerConfig imageSequencerConfig = new SequencerConfig(name, desc, classname, 

@@ -1492,7 +1492,7 @@ public ConsoleInput( SequencerClient client ) {
       <para>Create a Maven 2 project for your sequencer;</para>
     </listitem>
     <listitem>
-      <para>Implement the <code>org.jboss.dna.graph.sequencers.StreamSequencer</code> interface with your own implementation, and create unit tests to verify
+      <para>Implement the <code>org.jboss.dna.graph.sequencer.StreamSequencer</code> interface with your own implementation, and create unit tests to verify
       the functionality and expected behavior;</para>
     </listitem>
     <listitem>
@@ -1631,7 +1631,7 @@ public ConsoleInput( SequencerClient client ) {
   <sect1 id="custom_sequencer_implementation">
     <title>Implementing the StreamSequencer interface</title>
     <para>After creating the project and setting up the dependencies, the next step is to create a Java class that implements
-    the <code>org.jboss.dna.graph.sequencers.StreamSequencer</code> interface.  This interface is very straightforward
+    the <code>org.jboss.dna.graph.sequencer.StreamSequencer</code> interface.  This interface is very straightforward
     and involves a single method:
     <programlisting>
 public interface StreamSequencer {
