@@ -71,6 +71,23 @@
 			If you don't see the correct version, double-check your JDK installation.
 		</para>
 	</sect1>
+	<sect1 id="jira">
+		<title>JIRA</title>
+		<para>
+			JBoss DNA uses <ulink url="&JIRA;">JIRA</ulink> as its bug tracking, issue tracking, and project management tool.
+			This is a browser-based tool, with very good functionality for managing the different tasks.  It also serves as
+			the community's roadmap, since we can define new features and manage them along side the bugs and other issues.
+			Although most of the issues have been created by community members, we encourage any users to suggest new features,
+			log defects, or identify shortcomings in JBoss DNA.
+		</para>
+		<para>
+			The JBoss DNA community also encourages its members to work only issues that are managed in JIRA, and preferably those
+			that are targeted to the current release effort.  If something isn't in JIRA but needs to get done, then create an 
+			issue before you start working on the code changes.  Once you have code changes, you can upload a patch to the JIRA issue
+			if the change is complex, if you want someone to review it, or if you don't have commit privileges and have fixed
+			a bug.
+		</para>
+	</sect1>
 	<sect1 id="svn">
 		<title>Subversion</title>
 		<para>JBoss DNA uses Subversion as its source code management system, and specifically the instance at 
@@ -113,6 +130,37 @@
 				</tbody>
 			</tgroup>
 		</table>
+		<para>
+			When committing to SVN, be sure to include in a commit comment that includes the JIRA issue that the commit applies to and a very
+			good and thorough description of what was done.  It only takes a minute or two to be very clear about the change.  And including
+			the JIRA issue (e.g., "DNA-123") in the comment allows the JIRA system to track the changes that have been made for each issue.
+		</para>
+		<para>
+			Also, any single SVN commit should apply to one and only one JIRA issue.  Doing this helps ensure that each commit is atomic
+			and focused on a single activity.  There are exceptions to this rule, but they are rare.
+		</para>
+		<para>
+			Sometimes you may have some local changes that you don't want to (or aren't allowed to) commit.  You can make a patch file
+			and upload it to the JIRA issue, allowing other committers to review the patch.  However, to ensure that patches are easily
+			applied, please use SVN to create the patch.  To do this, simply do the following in the top of the codebase (e.g., the 
+			<code>trunk</code> directory):
+		</para>
+		<programlisting>$ svn diff . > ~/DNA-000.patch</programlisting> 
+		<para>
+			where <code>DNA-000</code> represents the DNA issue number.  Note that the above command places the patch file in your home directory,
+			but you can place the patch file anywhere.  Then, simply use JIRA to attach the patch file to the particular issue, also adding
+			a comment that describes the version number against which the patch was created.
+		</para>
+		<para>
+			To apply a patch, you usually want to start with a workspace that has no changes.  Download the patch file, then issue the
+			following command (again, from the top-level of the workspace):
+		</para>
+		<programlisting>$ patch -E -p0 &lt; ~/DNA-000.patch</programlisting> 
+		<para>
+			The "-E" option specifies to delete any files that were made empty by the application of the patch, and the "-p0" option instructs
+			the patch tool to not change any of the paths.  After you run this command, your working area should have the changes defined
+			by the patch.
+		</para>
 	</sect1>
 	<sect1 id="maven">
 		<title>Maven</title>
