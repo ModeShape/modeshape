@@ -587,9 +587,9 @@
 	        and would like to help create it, please <link linkend="preface">join the community</link>.
 				</para>
 		    <para>In lieu of a Maven archetype, you may find it easier to start with a small existing connector project.
-					The <emphasis role="strong">dna-connector-inmemory</emphasis> project is small, but it may be tough to separate
+					The <emphasis role="strong">dna-connector-filesystem</emphasis> project is small, but it may be tough to separate
 					the stuff that every connector needs from the extra code and data structures that manage the content.
-		    	See the subversion repository: <ulink url="&Subversion;trunk/extensions/dna-connector-inmemory/">&Subversion;trunk/extensions/dna-connector-inmemory/</ulink>
+		    	See the subversion repository: <ulink url="&Subversion;trunk/extensions/dna-connector-filesystem/">&Subversion;trunk/extensions/dna-connector-filesystem/</ulink>
 		    </para>
 		  </note>
 	    <para>

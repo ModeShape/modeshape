@@ -331,13 +331,6 @@
         </listitem>
         <listitem>
           <para>
-            <emphasis role="strong">dna-connector-inmemory</emphasis>
-            is a simple DNA repository connector that manages content within memory. This can be used as a simple cache or as a
-            transient repository.
-          </para>
-        </listitem>
-        <listitem>
-          <para>
             <emphasis role="strong">dna-connector-jbosscache</emphasis>
             is a DNA repository connector that manages content within a
             <ulink url="http://www.jboss.org/jbosscache/">JBoss Cache</ulink>

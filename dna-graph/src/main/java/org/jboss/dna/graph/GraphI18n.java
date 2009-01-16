@@ -83,6 +83,12 @@ public final class GraphI18n {
     public static I18n errorImportingContent;
     public static I18n unableToFindRepositorySourceWithName;
 
+    /* In-Memory Connector */
+    public static I18n inMemoryConnectorName;
+    public static I18n inMemoryNodeDoesNotExist;
+    public static I18n errorSerializingInMemoryCachePolicyInSource;
+    public static I18n inMemoryConnectorRequestsMustHavePathOrUuid;
+
     static {
         try {
             I18n.initialize(GraphI18n.class);

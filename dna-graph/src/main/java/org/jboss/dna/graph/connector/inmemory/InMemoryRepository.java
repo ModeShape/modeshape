@@ -21,9 +21,11 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.jboss.dna.connector.inmemory;
+package org.jboss.dna.graph.connector.inmemory;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -31,10 +33,11 @@ import java.util.UUID;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import net.jcip.annotations.NotThreadSafe;
-import org.jboss.dna.common.CommonI18n;
+import org.jboss.dna.common.i18n.I18n;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.graph.DnaLexicon;
 import org.jboss.dna.graph.ExecutionContext;
+import org.jboss.dna.graph.GraphI18n;
 import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.Path;
@@ -42,6 +45,10 @@ import org.jboss.dna.graph.property.PathFactory;
 import org.jboss.dna.graph.property.PathNotFoundException;
 import org.jboss.dna.graph.property.Property;
 import org.jboss.dna.graph.property.PropertyFactory;
+import org.jboss.dna.graph.property.PropertyType;
+import org.jboss.dna.graph.property.Reference;
+import org.jboss.dna.graph.property.UuidFactory;
+import org.jboss.dna.graph.property.ValueFactory;
 import org.jboss.dna.graph.property.Path.Segment;
 import org.jboss.dna.graph.property.basic.RootPath;
 import org.jboss.dna.graph.request.CopyBranchRequest;
@@ -63,7 +70,7 @@ public class InMemoryRepository {
     protected final ReadWriteLock lock = new ReentrantReadWriteLock();
     private final String name;
     private final UUID rootNodeUuid;
-    private final Map<UUID, Node> nodesByUuid = new HashMap<UUID, Node>();
+    private final Map<UUID, InMemoryNode> nodesByUuid = new HashMap<UUID, InMemoryNode>();
 
     public InMemoryRepository( String name,
                                UUID rootNodeUUID ) {
@@ -72,7 +79,7 @@ public class InMemoryRepository {
         this.name = name;
         this.rootNodeUuid = rootNodeUUID;
         // Create the root node ...
-        Node root = new Node(rootNodeUUID);
+        InMemoryNode root = new InMemoryNode(rootNodeUUID);
         nodesByUuid.put(root.getUuid(), root);
     }
 
@@ -90,21 +97,21 @@ public class InMemoryRepository {
         return name;
     }
 
-    public Node getRoot() {
+    public InMemoryNode getRoot() {
         return nodesByUuid.get(this.rootNodeUuid);
     }
 
-    public Node getNode( UUID uuid ) {
+    public InMemoryNode getNode( UUID uuid ) {
         assert uuid != null;
         return nodesByUuid.get(uuid);
     }
 
-    protected Map<UUID, Node> getNodesByUuid() {
+    protected Map<UUID, InMemoryNode> getNodesByUuid() {
         return nodesByUuid;
     }
 
-    public Node getNode( ExecutionContext context,
-                         String path ) {
+    public InMemoryNode getNode( ExecutionContext context,
+                                 String path ) {
         assert context != null;
         assert path != null;
         return getNode(context.getValueFactories().getPathFactory().create(path));
@@ -116,12 +123,12 @@ public class InMemoryRepository {
      * @param path the path to the node; may not be null
      * @return the node with the path, or null if the node does not exist
      */
-    public Node getNode( Path path ) {
+    public InMemoryNode getNode( Path path ) {
         assert path != null;
-        Node node = getRoot();
+        InMemoryNode node = getRoot();
         for (Path.Segment segment : path) {
-            Node desiredChild = null;
-            for (Node child : node.getChildren()) {
+            InMemoryNode desiredChild = null;
+            for (InMemoryNode child : node.getChildren()) {
                 if (child == null) continue;
                 Path.Segment childName = child.getName();
                 if (childName == null) continue;
@@ -147,11 +154,11 @@ public class InMemoryRepository {
      */
     public Path getLowestExistingPath( Path path ) {
         assert path != null;
-        Node node = getRoot();
+        InMemoryNode node = getRoot();
         int segmentNumber = 0;
         for (Path.Segment segment : path) {
-            Node desiredChild = null;
-            for (Node child : node.getChildren()) {
+            InMemoryNode desiredChild = null;
+            for (InMemoryNode child : node.getChildren()) {
                 if (child == null) continue;
                 Path.Segment childName = child.getName();
                 if (childName == null) continue;
@@ -175,20 +182,20 @@ public class InMemoryRepository {
     }
 
     public void removeNode( ExecutionContext context,
-                            Node node ) {
+                            InMemoryNode node ) {
         assert context != null;
         assert node != null;
         assert getRoot().equals(node) != true;
-        Node parent = node.getParent();
+        InMemoryNode parent = node.getParent();
         assert parent != null;
         parent.getChildren().remove(node);
         correctSameNameSiblingIndexes(context, parent, node.getName().getName());
         removeUuidReference(node);
     }
 
-    protected void removeUuidReference( Node node ) {
+    protected void removeUuidReference( InMemoryNode node ) {
         nodesByUuid.remove(node.getUuid());
-        for (Node child : node.getChildren()) {
+        for (InMemoryNode child : node.getChildren()) {
             removeUuidReference(child);
         }
     }
@@ -200,14 +207,14 @@ public class InMemoryRepository {
      * @param pathToNewNode the path to the new node; may not be null
      * @return the new node (or root if the path specified the root)
      */
-    public Node createNode( ExecutionContext context,
-                            String pathToNewNode ) {
+    public InMemoryNode createNode( ExecutionContext context,
+                                    String pathToNewNode ) {
         assert context != null;
         assert pathToNewNode != null;
         Path path = context.getValueFactories().getPathFactory().create(pathToNewNode);
         if (path.isRoot()) return getRoot();
         Path parentPath = path.getParent();
-        Node parentNode = getNode(parentPath);
+        InMemoryNode parentNode = getNode(parentPath);
         Name name = path.getLastSegment().getName();
         return createNode(context, parentNode, name, null);
     }
@@ -221,15 +228,15 @@ public class InMemoryRepository {
      * @param uuid the UUID of the node, or null if the UUID is to be generated
      * @return the new node
      */
-    public Node createNode( ExecutionContext context,
-                            Node parentNode,
-                            Name name,
-                            UUID uuid ) {
+    public InMemoryNode createNode( ExecutionContext context,
+                                    InMemoryNode parentNode,
+                                    Name name,
+                                    UUID uuid ) {
         assert context != null;
         assert name != null;
         if (parentNode == null) parentNode = getRoot();
         if (uuid == null) uuid = generateUuid();
-        Node node = new Node(uuid);
+        InMemoryNode node = new InMemoryNode(uuid);
         nodesByUuid.put(node.getUuid(), node);
         node.setParent(parentNode);
         Path.Segment newName = context.getValueFactories().getPathFactory().createSegment(name);
@@ -240,23 +247,23 @@ public class InMemoryRepository {
     }
 
     protected void correctSameNameSiblingIndexes( ExecutionContext context,
-                                                  Node parentNode,
+                                                  InMemoryNode parentNode,
                                                   Name name ) {
         if (parentNode == null) return;
         // Look for the highest existing index ...
-        List<Node> childrenWithSameNames = new LinkedList<Node>();
-        for (Node child : parentNode.getChildren()) {
+        List<InMemoryNode> childrenWithSameNames = new LinkedList<InMemoryNode>();
+        for (InMemoryNode child : parentNode.getChildren()) {
             if (child.getName().getName().equals(name)) childrenWithSameNames.add(child);
         }
         if (childrenWithSameNames.size() == 0) return;
         if (childrenWithSameNames.size() == 1) {
-            Node childWithSameName = childrenWithSameNames.get(0);
+            InMemoryNode childWithSameName = childrenWithSameNames.get(0);
             Path.Segment newName = context.getValueFactories().getPathFactory().createSegment(name, Path.NO_INDEX);
             childWithSameName.setName(newName);
             return;
         }
         int index = 1;
-        for (Node childWithSameName : childrenWithSameNames) {
+        for (InMemoryNode childWithSameName : childrenWithSameNames) {
             Path.Segment segment = childWithSameName.getName();
             if (segment.getIndex() != index) {
                 Path.Segment newName = context.getValueFactories().getPathFactory().createSegment(name, index);
@@ -275,14 +282,14 @@ public class InMemoryRepository {
      * @param newParent the new parent; may not be the {@link #getRoot() root}
      */
     public void moveNode( ExecutionContext context,
-                          Node node,
-                          Node newParent ) {
+                          InMemoryNode node,
+                          InMemoryNode newParent ) {
         assert context != null;
         assert newParent != null;
         assert node != null;
         assert getRoot().equals(newParent) != true;
         assert getRoot().equals(node) != true;
-        Node oldParent = node.getParent();
+        InMemoryNode oldParent = node.getParent();
         if (oldParent != null) {
             if (oldParent.equals(newParent)) return;
             boolean removed = oldParent.getChildren().remove(node);
@@ -295,25 +302,80 @@ public class InMemoryRepository {
         correctSameNameSiblingIndexes(context, newParent, node.getName().getName());
     }
 
-    public Node copyNode( ExecutionContext context,
-                          Node original,
-                          Node newParent,
-                          boolean recursive ) {
+    /**
+     * This should copy the subgraph given by the original node and place the new copy under the supplied new parent. Note that
+     * internal references between nodes within the original subgraph must be reflected as internal nodes within the new subgraph.
+     * 
+     * @param context
+     * @param original
+     * @param newParent
+     * @param recursive
+     * @param oldToNewUuids the map of UUIDs of nodes in the new subgraph keyed by the UUIDs of nodes in the original; may not be
+     *        null
+     * @return the new node, which is the top of the new subgraph
+     */
+    public InMemoryNode copyNode( ExecutionContext context,
+                                  InMemoryNode original,
+                                  InMemoryNode newParent,
+                                  boolean recursive,
+                                  Map<UUID, UUID> oldToNewUuids ) {
         assert context != null;
         assert original != null;
         assert newParent != null;
+        assert oldToNewUuids != null;
+
         // Get or create the new node ...
-        Node copy = createNode(context, newParent, original.getName().getName(), null);
+        InMemoryNode copy = createNode(context, newParent, original.getName().getName(), null);
+        oldToNewUuids.put(original.getUuid(), copy.getUuid());
 
         // Copy the properties ...
         copy.getProperties().clear();
         copy.getProperties().putAll(original.getProperties());
         if (recursive) {
             // Loop over each child and call this method ...
-            for (Node child : original.getChildren()) {
-                copyNode(context, child, copy, true);
+            for (InMemoryNode child : original.getChildren()) {
+                copyNode(context, child, copy, true, oldToNewUuids);
             }
         }
+
+        // Now, adjust any references in the new subgraph to objects in the original subgraph
+        // (because they were internal references, and need to be internal to the new subgraph)
+        PropertyFactory propertyFactory = context.getPropertyFactory();
+        UuidFactory uuidFactory = context.getValueFactories().getUuidFactory();
+        ValueFactory<Reference> referenceFactory = context.getValueFactories().getReferenceFactory();
+        for (Map.Entry<UUID, UUID> oldToNew : oldToNewUuids.entrySet()) {
+            InMemoryNode oldNode = nodesByUuid.get(oldToNew.getKey());
+            InMemoryNode newNode = nodesByUuid.get(oldToNew.getValue());
+            assert oldNode != null;
+            assert newNode != null;
+            // Iterate over the properties of the new ...
+            for (Map.Entry<Name, Property> entry : newNode.getProperties().entrySet()) {
+                Property property = entry.getValue();
+                // Now see if any of the property values are references ...
+                List<Object> newValues = new ArrayList<Object>();
+                boolean foundReference = false;
+                for (Iterator<?> iter = property.getValues(); iter.hasNext();) {
+                    Object value = iter.next();
+                    PropertyType type = PropertyType.discoverType(value);
+                    if (type == PropertyType.REFERENCE) {
+                        UUID oldReferencedUuid = uuidFactory.create(value);
+                        UUID newReferencedUuid = oldToNewUuids.get(oldReferencedUuid);
+                        if (newReferencedUuid != null) {
+                            newValues.add(referenceFactory.create(newReferencedUuid));
+                            foundReference = true;
+                        }
+                    } else {
+                        newValues.add(value);
+                    }
+                }
+                // If we found at least one reference, we have to build a new Property object ...
+                if (foundReference) {
+                    Property newProperty = propertyFactory.create(property.getName(), newValues);
+                    entry.setValue(newProperty);
+                }
+            }
+        }
+
         return copy;
     }
 
@@ -342,42 +404,45 @@ public class InMemoryRepository {
 
         @Override
         public void process( ReadAllChildrenRequest request ) {
-            Node node = getTargetNode(request, request.of());
+            InMemoryNode node = getTargetNode(request, request.of());
             if (node == null) return;
-            Path path = request.of().getPath();
+            Location actualLocation = getActualLocation(request.of().getPath(), node);
+            Path path = actualLocation.getPath();
             // Get the names of the children ...
-            List<Node> children = node.getChildren();
-            for (Node child : children) {
+            List<InMemoryNode> children = node.getChildren();
+            for (InMemoryNode child : children) {
                 Segment childName = child.getName();
                 Path childPath = pathFactory.create(path, childName);
                 request.addChild(childPath, propertyFactory.create(DnaLexicon.UUID, child.getUuid()));
             }
-            request.setActualLocationOfNode(new Location(path, node.getUuid()));
+            request.setActualLocationOfNode(actualLocation);
+            setCacheableInfo(request);
         }
 
         @Override
         public void process( ReadAllPropertiesRequest request ) {
-            Node node = getTargetNode(request, request.at());
+            InMemoryNode node = getTargetNode(request, request.at());
             if (node == null) return;
             // Get the properties of the node ...
+            Location actualLocation = getActualLocation(request.at().getPath(), node);
             request.addProperty(propertyFactory.create(DnaLexicon.UUID, node.getUuid()));
             for (Property property : node.getProperties().values()) {
                 request.addProperty(property);
             }
-            request.setActualLocationOfNode(new Location(request.at().getPath(), node.getUuid()));
+            request.setActualLocationOfNode(actualLocation);
+            setCacheableInfo(request);
         }
 
         @Override
         public void process( CopyBranchRequest request ) {
-            Node node = getTargetNode(request, request.from());
+            InMemoryNode node = getTargetNode(request, request.from());
             if (node == null) return;
             // Look up the new parent, which must exist ...
-            Path newPath = request.into().getPath();
-            Path newParentPath = newPath.getParent();
-            Node newParent = getNode(newParentPath);
-            Node newNode = copyNode(getExecutionContext(), node, newParent, true);
-            newPath = getExecutionContext().getValueFactories().getPathFactory().create(newParentPath, newNode.getName());
-            Location oldLocation = new Location(request.from().getPath(), node.getUuid());
+            Path newParentPath = request.into().getPath();
+            InMemoryNode newParent = getNode(newParentPath);
+            InMemoryNode newNode = copyNode(getExecutionContext(), node, newParent, true, new HashMap<UUID, UUID>());
+            Path newPath = getExecutionContext().getValueFactories().getPathFactory().create(newParentPath, newNode.getName());
+            Location oldLocation = getActualLocation(request.from().getPath(), node);
             Location newLocation = new Location(newPath, newNode.getUuid());
             request.setActualLocations(oldLocation, newLocation);
         }
@@ -386,13 +451,13 @@ public class InMemoryRepository {
         public void process( CreateNodeRequest request ) {
             Path parent = request.under().getPath();
             CheckArg.isNotNull(parent, "request.under().getPath()");
-            Node node = null;
+            InMemoryNode node = null;
             // Look up the parent node, which must exist ...
-            Node parentNode = getNode(parent);
+            InMemoryNode parentNode = getNode(parent);
             if (parentNode == null) {
                 Path lowestExisting = getLowestExistingPath(parent);
-                throw new PathNotFoundException(request.under(), lowestExisting,
-                                                InMemoryConnectorI18n.nodeDoesNotExist.text(parent));
+                request.setError(new PathNotFoundException(request.under(), lowestExisting,
+                                                           GraphI18n.inMemoryNodeDoesNotExist.text(parent)));
             }
             UUID uuid = null;
             for (Property property : request.properties()) {
@@ -415,35 +480,37 @@ public class InMemoryRepository {
                     node.getProperties().put(propName, property);
                 }
             }
-            request.setActualLocationOfNode(new Location(path, node.getUuid()));
+            Location actualLocation = getActualLocation(path, node);
+            request.setActualLocationOfNode(actualLocation);
         }
 
         @Override
         public void process( DeleteBranchRequest request ) {
-            Node node = getTargetNode(request, request.at());
+            InMemoryNode node = getTargetNode(request, request.at());
             if (node == null) return;
             removeNode(getExecutionContext(), node);
-            request.setActualLocationOfNode(new Location(request.at().getPath(), node.getUuid()));
+            Location actualLocation = getActualLocation(request.at().getPath(), node);
+            request.setActualLocationOfNode(actualLocation);
         }
 
         @Override
         public void process( MoveBranchRequest request ) {
-            Node node = getTargetNode(request, request.from());
+            InMemoryNode node = getTargetNode(request, request.from());
             if (node == null) return;
             // Look up the new parent, which must exist ...
             Path newPath = request.into().getPath();
             Path newParentPath = newPath.getParent();
-            Node newParent = getNode(newParentPath);
+            InMemoryNode newParent = getNode(newParentPath);
             node.setParent(newParent);
             newPath = getExecutionContext().getValueFactories().getPathFactory().create(newParentPath, node.getName());
-            Location oldLocation = new Location(request.from().getPath(), node.getUuid());
+            Location oldLocation = getActualLocation(request.from().getPath(), node);
             Location newLocation = new Location(newPath, node.getUuid());
             request.setActualLocations(oldLocation, newLocation);
         }
 
         @Override
         public void process( UpdatePropertiesRequest request ) {
-            Node node = getTargetNode(request, request.on());
+            InMemoryNode node = getTargetNode(request, request.on());
             if (node == null) return;
             // Now set (or remove) the properties to the supplied node ...
             for (Property property : request.properties()) {
@@ -456,23 +523,59 @@ public class InMemoryRepository {
                     node.getProperties().put(propName, property);
                 }
             }
-            request.setActualLocationOfNode(new Location(request.on().getPath(), node.getUuid()));
+            Location actualLocation = getActualLocation(request.on().getPath(), node);
+            request.setActualLocationOfNode(actualLocation);
         }
 
-        protected Node getTargetNode( Request request,
-                                      Location location ) {
-            Path path = location.getPath();
+        protected Location getActualLocation( Path path,
+                                              InMemoryNode node ) {
             if (path == null) {
-                request.setError(new IllegalArgumentException(CommonI18n.argumentMayNotBeNull.text("location.getPath()")));
-                return null;
+                // Find the path on the node ...
+                LinkedList<Path.Segment> segments = new LinkedList<Path.Segment>();
+                InMemoryNode n = node;
+                while (n != null) {
+                    if (n.getParent() == null) break;
+                    segments.addFirst(n.getName());
+                    n = n.getParent();
+                }
+                path = pathFactory.createAbsolutePath(segments);
             }
-            // Look up the node with the supplied path ...
-            Node node = InMemoryRepository.this.getNode(path);
+            return new Location(path, node.getUuid());
+        }
+
+        protected InMemoryNode getTargetNode( Request request,
+                                              Location location ) {
+            // Check first for the UUID ...
+            InMemoryNode node = null;
+            UUID uuid = location.getUuid();
+            if (uuid != null) {
+                node = InMemoryRepository.this.getNode(uuid);
+            }
+            Path path = null;
             if (node == null) {
+                // Look up the node with the supplied path ...
+                path = location.getPath();
+                if (path != null) {
+                    node = InMemoryRepository.this.getNode(path);
+                }
+            }
+            if (node == null) {
+                if (path == null) {
+                    if (uuid == null) {
+                        // Missing both path and UUID ...
+                        I18n msg = GraphI18n.inMemoryConnectorRequestsMustHavePathOrUuid;
+                        request.setError(new IllegalArgumentException(msg.text()));
+                        return null;
+                    }
+                    // Missing path, and could not find by UUID ...
+                    request.setError(new PathNotFoundException(location, pathFactory.createRootPath(),
+                                                               GraphI18n.inMemoryNodeDoesNotExist.text(path)));
+                    return null;
+                }
+                // Could not find the node given the supplied path, so find the lowest path that does exist ...
                 Path lowestExisting = getLowestExistingPath(path);
                 request.setError(new PathNotFoundException(location, lowestExisting,
-                                                           InMemoryConnectorI18n.nodeDoesNotExist.text(path)));
-                return null;
+                                                           GraphI18n.inMemoryNodeDoesNotExist.text(path)));
             }
             return node;
         }

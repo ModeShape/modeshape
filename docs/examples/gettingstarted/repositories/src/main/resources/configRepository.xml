@@ -27,15 +27,15 @@
 <dna:system xmlns:dna="http://www.jboss.org/dna" xmlns:jcr="http://www.jcp.org/jcr/1.0">
     <!-- Define the sources from which content is made available -->
     <dna:sources>
-        <dna:source jcr:name="SourceA" dna:name="Cars" dna:classname="org.jboss.dna.connector.inmemory.InMemoryRepositorySource" dna:retryLimit="3" />
-        <dna:source jcr:name="SourceB" dna:name="Aircraft" dna:classname="org.jboss.dna.connector.inmemory.InMemoryRepositorySource" />
+        <dna:source jcr:name="SourceA" dna:name="Cars" dna:classname="org.jboss.dna.graph.connector.inmemory.InMemoryRepositorySource" dna:retryLimit="3" />
+        <dna:source jcr:name="SourceB" dna:name="Aircraft" dna:classname="org.jboss.dna.graph.connector.inmemory.InMemoryRepositorySource" />
         <dna:source jcr:name="SourceC" dna:name="Vehicles" dna:classname="org.jboss.dna.connector.federation.FederatedRepositorySource" 
                     dna:repositoryName="Configuration Repository"
                     dna:configurationSourceName="Configuration" 
                     dna:configurationSourcePath="/dna:system/dna:federatedRepositories/Vehicles" 
                     dna:repositoryConnectionFactoryJndiName="/dna/connectionFactory"
                     dna:executionContextFactoryJndiName="/dna/contextFactory"/>
-        <dna:source jcr:name="SourceD" dna:name="Cache" dna:classname="org.jboss.dna.connector.inmemory.InMemoryRepositorySource" />
+        <dna:source jcr:name="SourceD" dna:name="Cache" dna:classname="org.jboss.dna.graph.connector.inmemory.InMemoryRepositorySource" />
     </dna:sources>
     <dna:federatedRepositories>
         <!-- This section defines from where the content of the 'Vehicles' federated repository is obtained.

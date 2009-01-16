@@ -360,12 +360,6 @@
       <itemizedlist>
         <listitem>
           <para>
-            <emphasis role="strong">In-Memory Connector</emphasis>
-            - Creates a transient, in-memory repository.
-          </para>
-        </listitem>
-        <listitem>
-          <para>
             <emphasis role="strong">JBoss Cache Connector</emphasis>
             - Uses a JBoss Cache instance as a repository.  JBoss Cache is a powerful cache capable of persisting the information
  						and being clustered for concurrent use by multiple processes.

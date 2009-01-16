@@ -21,7 +21,7 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.jboss.dna.connector.inmemory;
+package org.jboss.dna.graph.connector.inmemory;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -45,6 +45,7 @@ import javax.naming.spi.ObjectFactory;
 import net.jcip.annotations.GuardedBy;
 import org.jboss.dna.common.i18n.I18n;
 import org.jboss.dna.common.util.CheckArg;
+import org.jboss.dna.graph.GraphI18n;
 import org.jboss.dna.graph.cache.CachePolicy;
 import org.jboss.dna.graph.connector.RepositoryConnection;
 import org.jboss.dna.graph.connector.RepositoryContext;
@@ -256,7 +257,7 @@ public class InMemoryRepositorySource implements RepositorySource, ObjectFactory
                 oos.writeObject(policy);
                 ref.add(new BinaryRefAddr(DEFAULT_CACHE_POLICY, baos.toByteArray()));
             } catch (IOException e) {
-                I18n msg = InMemoryConnectorI18n.errorSerializingCachePolicyInSource;
+                I18n msg = GraphI18n.errorSerializingInMemoryCachePolicyInSource;
                 throw new RepositorySourceException(getName(), msg.text(policy.getClass().getName(), getName()), e);
             }
         }

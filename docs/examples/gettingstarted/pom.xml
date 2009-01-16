@@ -52,11 +52,6 @@
       </dependency>
       <dependency>
         <groupId>org.jboss.dna</groupId>
-        <artifactId>dna-connector-inmemory</artifactId>
-        <version>${pom.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.jboss.dna</groupId>
         <artifactId>dna-connector-jbosscache</artifactId>
         <version>${pom.version}</version>
       </dependency>

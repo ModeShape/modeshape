@@ -75,6 +75,8 @@
 <!ENTITY RepositoryConnectionFactory	"<ulink url='&API;graph/connector/RepositoryConnectionFactory.html'><interface>RepositoryConnectionFactory</interface></ulink>">
 <!ENTITY RepositorySourceListener			"<ulink url='&API;graph/connector/RepositorySourceListener.html'><interface>RepositorySourceListener</interface></ulink>">
 <!ENTITY RepositorySourceCapabilities	"<ulink url='&API;graph/connector/RepositorySourceCapabilities.html'><classname>RepositorySourceCapabilities</classname></ulink>">
+<!ENTITY InMemoryRepository			  		"<ulink url='&API;graph.connector/inmemory/InMemoryRepository.html'><classname>InMemoryRepository</classname></ulink>">
+<!ENTITY InMemoryRepositorySource  		"<ulink url='&API;graph.connector/inmemory/InMemoryRepositorySource.html'><classname>InMemoryRepositorySource</classname></ulink>">
 <!ENTITY CachePolicy							    "<ulink url='&API;graph/cache/CachePolicy.html'><interface>CachePolicy</interface></ulink>">
 <!ENTITY Request					       			"<ulink url='&API;graph/request/Requests.html'><classname>Request</classname></ulink>">
 <!ENTITY CompositeRequest					    "<ulink url='&API;graph/request/CompositeRequest.html'><classname>CompositeRequest</classname></ulink>">
@@ -110,8 +112,6 @@
 
 <!-- Types in extensions/ -->
 
-<!ENTITY InMemoryRepository			  		"<ulink url='&API;connector/inmemory/InMemoryRepository.html'><classname>InMemoryRepository</classname></ulink>">
-<!ENTITY InMemoryRepositorySource  		"<ulink url='&API;connector/inmemory/InMemoryRepositorySource.html'><classname>InMemoryRepositorySource</classname></ulink>">
 <!ENTITY JBossCacheRepository			  	"<ulink url='&API;connector/jbosscache/JBossCacheRepository.html'><classname>JBossCacheRepository</classname></ulink>">
 <!ENTITY JBossCacheSource  						"<ulink url='&API;connector/jbosscache/JBossCacheSource.html'><classname>JBossCacheSource</classname></ulink>">
 <!ENTITY FederatedRepositorySource  	"<ulink url='&API;connector/federation/FederatedRepositorySource.html'><classname>FederatedRepositorySource</classname></ulink>">

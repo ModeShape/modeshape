@@ -21,7 +21,7 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.jboss.dna.connector.inmemory;
+package org.jboss.dna.graph.connector.inmemory;
 
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -39,15 +39,15 @@ import org.jboss.dna.graph.property.PropertyFactory;
  * @author Randall Hauch
  */
 @NotThreadSafe
-public class Node {
+public class InMemoryNode {
 
     private final UUID uuid;
-    private Node parent;
+    private InMemoryNode parent;
     private Path.Segment name;
     private final Map<Name, Property> properties = new HashMap<Name, Property>();
-    private final List<Node> children = new LinkedList<Node>();
+    private final List<InMemoryNode> children = new LinkedList<InMemoryNode>();
 
-    public Node( UUID uuid ) {
+    public InMemoryNode( UUID uuid ) {
         assert uuid != null;
         this.uuid = uuid;
     }
@@ -76,21 +76,21 @@ public class Node {
     /**
      * @return parent
      */
-    public Node getParent() {
+    public InMemoryNode getParent() {
         return parent;
     }
 
     /**
      * @param parent Sets parent to the specified value.
      */
-    protected void setParent( Node parent ) {
+    protected void setParent( InMemoryNode parent ) {
         this.parent = parent;
     }
 
     /**
      * @return children
      */
-    protected List<Node> getChildren() {
+    protected List<InMemoryNode> getChildren() {
         return children;
     }
 
@@ -101,14 +101,14 @@ public class Node {
         return properties;
     }
 
-    public Node setProperty( Property property ) {
+    public InMemoryNode setProperty( Property property ) {
         if (property != null) {
             this.properties.put(property.getName(), property);
         }
         return this;
     }
 
-    public Node setProperty( ExecutionContext context,
+    public InMemoryNode setProperty( ExecutionContext context,
                              String name,
                              Object... values ) {
         PropertyFactory propertyFactory = context.getPropertyFactory();
@@ -144,8 +144,8 @@ public class Node {
     @Override
     public boolean equals( Object obj ) {
         if (obj == this) return true;
-        if (obj instanceof Node) {
-            Node that = (Node)obj;
+        if (obj instanceof InMemoryNode) {
+            InMemoryNode that = (InMemoryNode)obj;
             if (!this.getUuid().equals(that.getUuid())) return false;
             return true;
         }

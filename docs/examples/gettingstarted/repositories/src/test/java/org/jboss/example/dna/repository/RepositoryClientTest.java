@@ -125,7 +125,7 @@ public class RepositoryClientTest {
         assertThat(children.size(), is(0));
         assertThat(properties.containsKey("jcr:primaryType"), is(true));
         assertThat(properties.containsKey("dna:uuid"), is(true));
-        assertProperty("dna:classname", "org.jboss.dna.connector.inmemory.InMemoryRepositorySource");
+        assertProperty("dna:classname", org.jboss.dna.graph.connector.inmemory.InMemoryRepositorySource.class.getName());
         assertProperty("dna:name", "Cars");
         assertProperty("dna:retryLimit", "3");
         assertThat(properties.size(), is(5));

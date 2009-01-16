@@ -126,7 +126,6 @@
 		<module>extensions/dna-sequencer-xml</module>
 		<module>extensions/dna-sequencer-zip</module>
 		<module>extensions/dna-connector-federation</module>
-		<module>extensions/dna-connector-inmemory</module>
 		<module>extensions/dna-connector-jbosscache</module>
 		<module>extensions/dna-connector-svn</module>
 		<module>extensions/dna-connector-store-jpa</module>
@@ -397,11 +396,6 @@
 			<dependency>
 				<groupId>org.jboss.dna</groupId>
 				<artifactId>dna-connector-jbosscache</artifactId>
-				<version>${pom.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.jboss.dna</groupId>
-				<artifactId>dna-connector-inmemory</artifactId>
 				<version>${pom.version}</version>
 			</dependency>
 			<dependency>

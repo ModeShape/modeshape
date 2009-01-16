@@ -36,12 +36,6 @@
     </dependency>
     <dependency>
       <groupId>org.jboss.dna</groupId>
-      <artifactId>dna-connector-inmemory</artifactId>
-      <version>${pom.version}</version>
-      <scope>compile</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.jboss.dna</groupId>
       <artifactId>dna-connector-jbosscache</artifactId>
       <version>${pom.version}</version>
       <scope>runtime</scope>
