@@ -40,7 +40,6 @@ import javax.naming.Context;
 import javax.security.auth.callback.CallbackHandler;
 import org.jboss.dna.graph.DnaLexicon;
 import org.jboss.dna.graph.ExecutionContext;
-import org.jboss.dna.graph.ExecutionContextFactory;
 import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.connector.RepositoryConnection;
 import org.jboss.dna.graph.connector.RepositoryConnectionFactory;
@@ -93,7 +92,7 @@ public class FederatedRepositorySourceIntegrationTest {
     @Mock
     private RepositoryConnectionFactory connectionFactory;
     @Mock
-    private ExecutionContextFactory executionContextFactory;
+    private ExecutionContext executionContextFactory;
     @Mock
     private RepositoryContext repositoryContext;
 
@@ -110,8 +109,8 @@ public class FederatedRepositorySourceIntegrationTest {
         securityDomain = "security domain";
         stub(jndiContext.lookup(executionContextFactoryJndiName)).toReturn(executionContextFactory);
         stub(jndiContext.lookup(repositoryConnectionFactoryJndiName)).toReturn(connectionFactory);
-        stub(executionContextFactory.create(eq(securityDomain), anyCallbackHandler())).toReturn(context);
-        stub(repositoryContext.getExecutionContextFactory()).toReturn(executionContextFactory);
+        stub(executionContextFactory.with(eq(securityDomain), anyCallbackHandler())).toReturn(context);
+        stub(repositoryContext.getExecutionContext()).toReturn(executionContextFactory);
         stub(repositoryContext.getRepositoryConnectionFactory()).toReturn(connectionFactory);
 
         // Set up the federated repository source ...

@@ -28,7 +28,6 @@ import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
 import javax.jcr.Session;
 import javax.jcr.Workspace;
-import org.jboss.dna.graph.ExecutionContextFactory;
 import org.jboss.dna.graph.connector.SimpleRepository;
 import org.junit.After;
 import org.junit.AfterClass;
@@ -44,12 +43,11 @@ public class JcrWorkspaceTest {
 
     @BeforeClass
     public static void beforeClass() throws Exception {
-        ExecutionContextFactory factory = TestUtil.getExecutionContextFactory();
-        JcrSessionTest.executionContext = factory.create();
+        JcrSessionTest.executionContext = TestUtil.getExecutionContext();
         JcrSessionTest.simpleRepository = SimpleRepository.get(JcrSessionTest.WORKSPACE_NAME);
         JcrSessionTest.connectionFactory = TestUtil.createJackRabbitConnectionFactory(JcrSessionTest.simpleRepository,
                                                                                       JcrSessionTest.executionContext);
-        JcrSessionTest.repository = new JcrRepository(factory, JcrSessionTest.connectionFactory);
+        JcrSessionTest.repository = new JcrRepository(JcrSessionTest.executionContext, JcrSessionTest.connectionFactory);
     }
 
     @AfterClass

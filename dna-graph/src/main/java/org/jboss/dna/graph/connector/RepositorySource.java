@@ -128,7 +128,7 @@ public interface RepositorySource extends Referenceable, Serializable {
     /**
      * Initialize this source to use the supplied {@link RepositoryContext}, from which this source can obtain
      * {@link RepositoryContext#getRepositoryConnectionFactory() connections} to other {@link RepositorySource sources} as well as
-     * {@link RepositoryContext#getExecutionContextFactory() execution contexts}.
+     * {@link RepositoryContext#getExecutionContext() execution contexts}.
      * 
      * @param context
      * @throws RepositorySourceException

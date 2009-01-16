@@ -37,7 +37,6 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import org.jboss.dna.common.statistic.Stopwatch;
 import org.jboss.dna.graph.ExecutionContext;
-import org.jboss.dna.graph.ExecutionContextFactory;
 import org.jboss.dna.graph.Graph;
 import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.Node;
@@ -71,7 +70,6 @@ import org.junit.Before;
  */
 public abstract class AbstractConnectorTest {
 
-    protected static ExecutionContextFactory contextFactory;
     protected static ExecutionContext context;
     protected static RepositorySource source;
     protected static Graph graph;
@@ -85,8 +83,7 @@ public abstract class AbstractConnectorTest {
             // Set up the connection factory to other sources ...
 
             // Set up the execution context ...
-            contextFactory = new ExecutionContext();
-            context = setUpExecutionContext(contextFactory);
+            context = setUpExecutionContext(new ExecutionContext());
 
             // Set up the source ...
             source = setUpSource();
@@ -108,8 +105,8 @@ public abstract class AbstractConnectorTest {
 
             // Initialize the source with the rest of the environment ...
             source.initialize(new RepositoryContext() {
-                public ExecutionContextFactory getExecutionContextFactory() {
-                    return contextFactory;
+                public ExecutionContext getExecutionContext() {
+                    return context;
                 }
 
                 @SuppressWarnings( "synthetic-access" )
@@ -179,11 +176,11 @@ public abstract class AbstractConnectorTest {
     /**
      * Set up the {@link ExecutionContext} for each unit test.
      * 
-     * @param contextFactory the context factory that may be used; never null
+     * @param context the context that may be used directly, or used to create another context; never null
      * @return the execution context; may not be null
      */
-    protected ExecutionContext setUpExecutionContext( ExecutionContextFactory contextFactory ) {
-        return contextFactory.create();
+    protected ExecutionContext setUpExecutionContext( ExecutionContext context ) {
+        return context;
     }
 
     /**

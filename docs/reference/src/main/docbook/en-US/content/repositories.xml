@@ -191,7 +191,7 @@
 			<itemizedlist>
 				<listitem>
 					<para>
-						A &ExecutionContextFactory; instance, as discussed <link linkend="execution-context">earlier</link>.
+						A &ExecutionContext; instance, as discussed <link linkend="execution-context">earlier</link>.
 					</para>
 				</listitem>
 				<listitem>
@@ -221,8 +221,8 @@
 			<code>org.jboss.example.dna.repository.RepositoryClient</code> class.
 		</para>
     <programlisting>
- // Create the top-level execution context (which is also a factory) ...
- &ExecutionContext; context = contextFactory.create();
+ // Create the top-level execution context with all standard components ...
+ &ExecutionContext; context = new ExecutionContext();
 
  // Create the library for the RepositorySource instances ...
  &RepositoryLibrary; sources = new &RepositoryLibrary;(context);

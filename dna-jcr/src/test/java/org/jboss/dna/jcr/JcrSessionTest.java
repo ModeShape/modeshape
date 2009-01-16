@@ -47,7 +47,6 @@ import javax.jcr.ValueFactory;
 import javax.security.auth.Subject;
 import javax.security.auth.login.LoginContext;
 import org.jboss.dna.graph.ExecutionContext;
-import org.jboss.dna.graph.ExecutionContextFactory;
 import org.jboss.dna.graph.Graph;
 import org.jboss.dna.graph.connector.RepositoryConnection;
 import org.jboss.dna.graph.connector.RepositoryConnectionFactory;
@@ -77,13 +76,12 @@ public class JcrSessionTest {
 
     @BeforeClass
     public static void beforeClass() throws Exception {
-        ExecutionContextFactory factory = TestUtil.getExecutionContextFactory();
-        executionContext = factory.create();
+        executionContext = TestUtil.getExecutionContext();
         simpleRepository = SimpleRepository.get(WORKSPACE_NAME);
         simpleRepository.setProperty(executionContext, "/a/b", "booleanProperty", true);
         simpleRepository.setProperty(executionContext, "/a/b/c", "stringProperty", "value");
         connectionFactory = TestUtil.createJackRabbitConnectionFactory(simpleRepository, executionContext);
-        repository = new JcrRepository(factory, connectionFactory);
+        repository = new JcrRepository(executionContext, connectionFactory);
     }
 
     @AfterClass

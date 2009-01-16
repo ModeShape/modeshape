@@ -40,7 +40,6 @@ import javax.security.auth.login.LoginContext;
 import net.jcip.annotations.ThreadSafe;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.graph.ExecutionContext;
-import org.jboss.dna.graph.ExecutionContextFactory;
 import org.jboss.dna.graph.Graph;
 import org.jboss.dna.graph.connector.RepositoryConnectionFactory;
 import com.google.common.base.ReferenceType;
@@ -50,9 +49,9 @@ import com.google.common.collect.ReferenceMap;
  * Creates JCR {@link Session sessions} to an underlying repository (which may be a federated repository).
  * <p>
  * This JCR repository must be configured with the ability to connect to a repository via a supplied
- * {@link RepositoryConnectionFactory repository connection factory} and repository source name. An
- * {@link ExecutionContextFactory execution context factory} must also be supplied to enable working with the underlying DNA graph
- * implementation to which this JCR implementation delegates.
+ * {@link RepositoryConnectionFactory repository connection factory} and repository source name. An {@link ExecutionContext
+ * execution context} must also be supplied to enable working with the underlying DNA graph implementation to which this JCR
+ * implementation delegates.
  * </p>
  * <p>
  * If {@link Credentials credentials} are used to login, implementations <em>must</em> also implement one of the following
@@ -74,21 +73,21 @@ import com.google.common.collect.ReferenceMap;
 public class JcrRepository implements Repository {
 
     private final Map<String, String> descriptors;
-    private final ExecutionContextFactory executionContextFactory;
+    private final ExecutionContext executionContext;
     private final RepositoryConnectionFactory connectionFactory;
 
     /**
      * Creates a JCR repository that uses the supplied {@link RepositoryConnectionFactory repository connection factory} to
      * establish {@link Session sessions} to the underlying repository source upon {@link #login() login}.
      * 
-     * @param executionContextFactory An execution context factory.
+     * @param executionContext An execution context.
      * @param connectionFactory A repository connection factory.
      * @throws IllegalArgumentException If <code>executionContextFactory</code> or <code>connectionFactory</code> is
      *         <code>null</code>.
      */
-    public JcrRepository( ExecutionContextFactory executionContextFactory,
+    public JcrRepository( ExecutionContext executionContext,
                           RepositoryConnectionFactory connectionFactory ) {
-        this(null, executionContextFactory, connectionFactory);
+        this(null, executionContext, connectionFactory);
     }
 
     /**
@@ -96,17 +95,17 @@ public class JcrRepository implements Repository {
      * establish {@link Session sessions} to the underlying repository source upon {@link #login() login}.
      * 
      * @param descriptors The {@link #getDescriptorKeys() descriptors} for this repository; may be <code>null</code>.
-     * @param executionContextFactory An execution context factory.
+     * @param executionContext An execution context.
      * @param connectionFactory A repository connection factory.
      * @throws IllegalArgumentException If <code>executionContextFactory</code> or <code>connectionFactory</code> is
      *         <code>null</code>.
      */
     public JcrRepository( Map<String, String> descriptors,
-                          ExecutionContextFactory executionContextFactory,
+                          ExecutionContext executionContext,
                           RepositoryConnectionFactory connectionFactory ) {
-        CheckArg.isNotNull(executionContextFactory, "executionContextFactory");
+        CheckArg.isNotNull(executionContext, "executionContext");
         CheckArg.isNotNull(connectionFactory, "connectionFactory");
-        this.executionContextFactory = executionContextFactory;
+        this.executionContext = executionContext;
         this.connectionFactory = connectionFactory;
         Map<String, String> modifiableDescriptors;
         if (descriptors == null) {
@@ -209,7 +208,7 @@ public class JcrRepository implements Repository {
         // Ensure credentials are either null or provide a JAAS method
         ExecutionContext execContext;
         if (credentials == null) {
-            execContext = executionContextFactory.create();
+            execContext = executionContext;
         } else {
             try {
                 // Check if credentials provide a login context
@@ -222,7 +221,7 @@ public class JcrRepository implements Repository {
                     if (loginContext == null) {
                         throw new IllegalArgumentException(JcrI18n.credentialsMustReturnLoginContext.text(credentials.getClass()));
                     }
-                    execContext = executionContextFactory.create(loginContext);
+                    execContext = executionContext.create(loginContext);
                 } catch (NoSuchMethodException error) {
                     // Check if credentials provide an access control context
                     try {
@@ -236,7 +235,7 @@ public class JcrRepository implements Repository {
                             throw new IllegalArgumentException(
                                                                JcrI18n.credentialsMustReturnAccessControlContext.text(credentials.getClass()));
                         }
-                        execContext = executionContextFactory.create(accessControlContext);
+                        execContext = executionContext.create(accessControlContext);
                     } catch (NoSuchMethodException error2) {
                         throw new IllegalArgumentException(JcrI18n.credentialsMustProvideJaasMethod.text(credentials.getClass()),
                                                            error2);

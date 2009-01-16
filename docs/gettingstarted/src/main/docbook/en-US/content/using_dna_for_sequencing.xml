@@ -63,7 +63,7 @@
 				</listitem>
 			</itemizedlist>
     </para>
-		<para>As mentioned above, the <code>ExecutionContext</code> provides access to a <code>SessionFactory</code> that is used
+		<para>As mentioned above, the <code>JcrExecutionContext</code> provides access to a <code>SessionFactory</code> that is used
       by JBoss DNA to establish sessions to your JCR repositories.  Two implementations are available:
 			<itemizedlist>
 				<listitem>
@@ -440,7 +440,7 @@ public void startDnaServices() throws Exception {
             Credentials credentials = new SimpleCredentials(this.username, this.password);
             sessionFactory.registerCredentials(this.repositoryName + "/" + this.workspaceName, credentials);
         }
-        this.executionContext = new SimpleExecutionContext(sessionFactory);
+        this.executionContext = new JcrExecutionContext(sessionFactory, repositoryWorkspaceName);
 
         // Create the sequencing service, passing in the execution context ...
         this.sequencingService = new SequencingService();

@@ -217,19 +217,18 @@ public class &ExecutionContext; implements &ClassLoaderFactory; {
 		</para>
 	  <programlisting>
 &ExecutionContext; context1 = new &ExecutionContext;();
-&ExecutionContext; context2 = factory.create();	// same as 'context1'
 
 // Create a context for a user, authenticating using JAAS ...
 &LoginContext; loginContext = new LoginContext("username",callbackHandler);
-&ExecutionContext; context3 = context1.create(new LoginContext("username"));
+&ExecutionContext; context2 = context1.with(new LoginContext("username"));
 
 // Create a context for the same user, authenticating using JAAS, and using a different callback handler ...
 &CallbackHandler; callbackHandler = ...
 &LoginContext; loginContext = new LoginContext("username",callbackHandler);
-&ExecutionContext; context4 = context1.create(loginContext);
+&ExecutionContext; context3 = context1.with(loginContext);
 </programlisting>
 		<para>
-			These contexts (or the context factory) can then be passed to the various components as needed.
+			These contexts can then be passed to the various components as needed.
 		</para>
 	</sect1>
 	<sect1>

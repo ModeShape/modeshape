@@ -61,7 +61,6 @@
 <!ENTITY Results							       	"<ulink url='&API;graph/Results.html'><interface>Results</interface></ulink>">
 <!ENTITY Location							       	"<ulink url='&API;graph/Location.html'><classname>Location</classname></ulink>">
 <!ENTITY ExecutionContext		       		"<ulink url='&API;graph/ExecutionContext.html'><classname>ExecutionContext</classname></ulink>">
-<!ENTITY ExecutionContextFactory   		"<ulink url='&API;graph/ExecutionContextFactory.html'><interface>ExecutionContextFactory</interface></ulink>">
 <!ENTITY Name								       		"<ulink url='&API;graph/property/Name.html'><interface>Name</interface></ulink>">
 <!ENTITY Path								       		"<ulink url='&API;graph/property/Path.html'><interface>Path</interface></ulink>">
 <!ENTITY PathSegment				       		"<ulink url='&API;graph/property/Path.Segment.html'><interface>Path.Segment</interface></ulink>">

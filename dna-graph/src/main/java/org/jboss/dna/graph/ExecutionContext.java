@@ -27,6 +27,7 @@ import java.security.AccessControlContext;
 import java.security.AccessController;
 import javax.security.auth.Subject;
 import javax.security.auth.callback.CallbackHandler;
+import javax.security.auth.login.Configuration;
 import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
 import javax.security.auth.spi.LoginModule;
@@ -52,16 +53,16 @@ import org.jboss.dna.graph.property.basic.StandardValueFactories;
  * it is given a different one).
  * <p>
  * ExecutionContext instances are {@link Immutable immutable}, so components may hold onto references to them without concern of
- * those contexts changing. However, contexts may be used to create other context with variations in the environment and/or
- * security context. For example, an ExecutionContext could be used to create another context that references the same
- * {@link #getNamespaceRegistry() namespace registry} but which has a different {@link #getSubject() JAAS subject}.
+ * those contexts changing. Contexts may be used to create other contexts that vary the environment and/or security context. For
+ * example, an ExecutionContext could be used to create another context that references the same {@link #getNamespaceRegistry()
+ * namespace registry} but which has a different {@link #getSubject() JAAS subject}.
  * </p>
  * 
  * @author Randall Hauch
  * @author John Verhaeg
  */
 @Immutable
-public class ExecutionContext implements ClassLoaderFactory, Cloneable, ExecutionContextFactory {
+public class ExecutionContext implements ClassLoaderFactory, Cloneable {
 
     private final ClassLoaderFactory classLoaderFactory;
     private final LoginContext loginContext;
@@ -73,9 +74,9 @@ public class ExecutionContext implements ClassLoaderFactory, Cloneable, Executio
     private final MimeTypeDetector mimeTypeDetector;
 
     /**
-     * Create an instance of an execution context that inherits the {@link AccessControlContext security context} from the
-     * {@link AccessController#getContext() current calling context}, with default implementations for all other components
-     * (including default namespaces in the {@link #getNamespaceRegistry() namespace registry}.
+     * Create an instance of an execution context that uses the {@link AccessController#getContext() current JAAS calling context}
+     * , with default implementations for all other components (including default namespaces in the
+     * {@link #getNamespaceRegistry() namespace registry}.
      */
     public ExecutionContext() {
         this(null, null, null, null, null, null, null);
@@ -295,7 +296,8 @@ public class ExecutionContext implements ClassLoaderFactory, Cloneable, Executio
      * the new namespace registry.
      * 
      * @param namespaceRegistry the new namespace registry implementation, or null if the default implementation should be used
-     * @return the new execution context
+     * @return the execution context that is identical with this execution context, but which uses the supplied registry; never
+     *         null
      */
     public ExecutionContext with( NamespaceRegistry namespaceRegistry ) {
         // Don't supply the value factories or property factories, since they'll have to be recreated
@@ -305,11 +307,12 @@ public class ExecutionContext implements ClassLoaderFactory, Cloneable, Executio
     }
 
     /**
-     * Create a new execution context that mirrors this context but that uses the supplied {@link MimeTypeDetector MIME type
-     * detector}.
+     * Create a new execution context that is the same as this context, but which uses the supplied {@link MimeTypeDetector MIME
+     * type detector}.
      * 
      * @param mimeTypeDetector the new MIME type detector implementation, or null if the default implementation should be used
-     * @return the new execution context
+     * @return the execution context that is identical with this execution context, but which uses the supplied detector
+     *         implementation; never null
      */
     public ExecutionContext with( MimeTypeDetector mimeTypeDetector ) {
         // Don't supply the value factories or property factories, since they'll have to be recreated
@@ -323,7 +326,8 @@ public class ExecutionContext implements ClassLoaderFactory, Cloneable, Executio
      * factory}.
      * 
      * @param classLoaderFactory the new class loader factory implementation, or null if the default implementation should be used
-     * @return the new execution context
+     * @return the execution context that is identical with this execution context, but which uses the supplied class loader
+     *         factory implementation; never null
      */
     public ExecutionContext with( ClassLoaderFactory classLoaderFactory ) {
         // Don't supply the value factories or property factories, since they'll have to be recreated
@@ -333,10 +337,12 @@ public class ExecutionContext implements ClassLoaderFactory, Cloneable, Executio
     }
 
     /**
-     * Creates an {@link ExecutionContext} using the supplied {@link AccessControlContext access control context}.
+     * Creates an {@link ExecutionContext} that is the same as this context, but which uses the supplied
+     * {@link AccessControlContext access control context}.
      * 
-     * @param accessControlContext An access control context.
-     * @return the execution context; never <code>null</code>.
+     * @param accessControlContext the JAAS access control context that should be used
+     * @return the execution context that is identical with this execution context, but with a different security context; never
+     *         null
      * @throws IllegalArgumentException if <code>accessControlContext</code> is <code>null</code>.
      */
     public ExecutionContext create( AccessControlContext accessControlContext ) {
@@ -344,10 +350,14 @@ public class ExecutionContext implements ClassLoaderFactory, Cloneable, Executio
     }
 
     /**
-     * Create an {@link ExecutionContext} for the supplied {@link LoginContext}.
+     * Create an {@link ExecutionContext} that is the same as this context, but which uses the supplied {@link LoginContext}. A
+     * LoginContext has a variety of constructors, including contructors that take combinations of
+     * {@link Configuration#getAppConfigurationEntry(String) application configuration name}, {@link Subject subject},
+     * {@link CallbackHandler callback handlers}, and a {@link Configuration JAAS configuration}.
      * 
      * @param loginContext the JAAS login context
-     * @return the execution context
+     * @return the execution context that is identical with this execution context, but with a different security context; never
+     *         null
      * @throws IllegalArgumentException if the <code>loginContext</code> is null
      */
     public ExecutionContext create( LoginContext loginContext ) {
@@ -355,63 +365,74 @@ public class ExecutionContext implements ClassLoaderFactory, Cloneable, Executio
     }
 
     /**
-     * @param name the name of the JAAS login context
-     * @return the execution context
+     * Create an {@link ExecutionContext} that is the same as this context, but which uses the supplied
+     * {@link Configuration#getAppConfigurationEntry(String) application configuration name}.
+     * 
+     * @param name the name of the {@link Configuration#getAppConfigurationEntry(String) JAAS application configuration name}
+     * @return the execution context that is identical with this execution context, but with a different security context; never
+     *         null
      * @throws IllegalArgumentException if the <code>name</code> is null
      * @throws LoginException if there <code>name</code> is invalid (or there is no login context named "other"), or if the
      *         default callback handler JAAS property was not set or could not be loaded
      */
-    public ExecutionContext create( String name ) throws LoginException {
+    public ExecutionContext with( String name ) throws LoginException {
         return new ExecutionContext(this, new LoginContext(name));
     }
 
     /**
-     * @param name the name of the JAAS login context
+     * Create an {@link ExecutionContext} that is the same as this context, but which uses the supplied
+     * {@link Configuration#getAppConfigurationEntry(String) application configuration name} and a {@link Subject JAAS subject}.
+     * 
+     * @param name the name of the {@link Configuration#getAppConfigurationEntry(String) JAAS application configuration name}
      * @param subject the subject to authenticate
-     * @return the execution context
+     * @return the execution context that is identical with this execution context, but with a different security context; never
+     *         null
      * @throws LoginException if there <code>name</code> is invalid (or there is no login context named "other"), if the default
      *         callback handler JAAS property was not set or could not be loaded, or if the <code>subject</code> is null or
      *         unknown
      */
-    public ExecutionContext create( String name,
-                                    Subject subject ) throws LoginException {
+    public ExecutionContext with( String name,
+                                  Subject subject ) throws LoginException {
         return new ExecutionContext(this, new LoginContext(name, subject));
     }
 
     /**
-     * @param name the name of the JAAS login context
-     * @param callbackHandler the callback handler that will be used by {@link LoginModule}s to communicate with the user.
-     * @return the execution context
+     * Create an {@link ExecutionContext} that is the same as this context, but which uses the supplied
+     * {@link Configuration#getAppConfigurationEntry(String) application configuration name} and a {@link CallbackHandler JAAS
+     * callback handler} (used to handle authentication callbacks).
+     * 
+     * @param name the name of the {@link Configuration#getAppConfigurationEntry(String) JAAS application configuration name}
+     * @param callbackHandler the callback handler that will be used by {@link LoginModule}s to communicate with the user to
+     *        authenticate
+     * @return the execution context that is identical with this execution context, but with a different security context; never
+     *         null
      * @throws LoginException if there <code>name</code> is invalid (or there is no login context named "other"), or if the
      *         <code>callbackHandler</code> is null
      */
-    public ExecutionContext create( String name,
-                                    CallbackHandler callbackHandler ) throws LoginException {
+    public ExecutionContext with( String name,
+                                  CallbackHandler callbackHandler ) throws LoginException {
         return new ExecutionContext(this, new LoginContext(name, callbackHandler));
     }
 
     /**
-     * @param name the name of the JAAS login context
+     * Create an {@link ExecutionContext} that is the same as this context, but which uses the supplied
+     * {@link Configuration#getAppConfigurationEntry(String) application configuration name}, a {@link Subject JAAS subject}, and
+     * a {@link CallbackHandler JAAS callback handler} (used to handle authentication callbacks).
+     * 
+     * @param name the name of the {@link Configuration#getAppConfigurationEntry(String) JAAS application configuration name}
      * @param subject the subject to authenticate
-     * @param callbackHandler the callback handler that will be used by {@link LoginModule}s to communicate with the user.
-     * @return the execution context
+     * @param callbackHandler the callback handler that will be used by {@link LoginModule}s to communicate with the user to
+     *        authenticate
+     * @return the execution context that is identical with this execution context, but with a different security context; never
+     *         null
      * @throws LoginException if there <code>name</code> is invalid (or there is no login context named "other"), if the default
      *         callback handler JAAS property was not set or could not be loaded, if the <code>subject</code> is null or unknown,
      *         or if the <code>callbackHandler</code> is null
      */
-    public ExecutionContext create( String name,
-                                    Subject subject,
-                                    CallbackHandler callbackHandler ) throws LoginException {
+    public ExecutionContext with( String name,
+                                  Subject subject,
+                                  CallbackHandler callbackHandler ) throws LoginException {
         return new ExecutionContext(this, new LoginContext(name, subject, callbackHandler));
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.jboss.dna.graph.ExecutionContextFactory#create()
-     */
-    public ExecutionContext create() {
-        return new ExecutionContext(this);
     }
 
     /**

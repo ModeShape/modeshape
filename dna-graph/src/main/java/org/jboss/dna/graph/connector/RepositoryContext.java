@@ -23,7 +23,7 @@
  */
 package org.jboss.dna.graph.connector;
 
-import org.jboss.dna.graph.ExecutionContextFactory;
+import org.jboss.dna.graph.ExecutionContext;
 
 /**
  * The context for a repository. This interface need not be implemented by a {@link RepositorySource}, as it is normally provided
@@ -34,11 +34,11 @@ import org.jboss.dna.graph.ExecutionContextFactory;
 public interface RepositoryContext {
 
     /**
-     * Get the factory that can be used to create execution contexts.
+     * Get the execution context, which can be used to create other contexts with specific JAAS security contexts.
      * 
-     * @return the execution context factory
+     * @return the execution context; never null
      */
-    ExecutionContextFactory getExecutionContextFactory();
+    ExecutionContext getExecutionContext();
 
     /**
      * Get the factory for {@link RepositoryConnection connections} to other sources.

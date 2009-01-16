@@ -23,13 +23,9 @@
  */
 package org.jboss.dna.jcr;
 
-import java.security.AccessControlContext;
-import javax.security.auth.Subject;
-import javax.security.auth.callback.CallbackHandler;
 import javax.security.auth.login.LoginContext;
 import net.jcip.annotations.NotThreadSafe;
 import org.jboss.dna.graph.ExecutionContext;
-import org.jboss.dna.graph.ExecutionContextFactory;
 import org.jboss.dna.graph.connector.RepositoryConnection;
 import org.jboss.dna.graph.connector.RepositoryConnectionFactory;
 import org.jboss.dna.graph.connector.SimpleRepository;
@@ -503,7 +499,7 @@ public class TestUtil {
         };
     }
 
-    public static ExecutionContextFactory getExecutionContextFactory() {
+    public static ExecutionContext getExecutionContext() {
         final ExecutionContext context = new ExecutionContext().create(Mockito.mock(LoginContext.class));
         NamespaceRegistry registry = context.getNamespaceRegistry();
         registry.register("dna", "http://www.jboss.org/dna/1.0");
@@ -515,40 +511,7 @@ public class TestUtil {
         registry.register("rep", "internal");
         registry.register("sv", "http://www.jcp.org/jcr/sv/1.0");
         registry.register("xs", "http://www.w3.org/2001/XMLSchema");
-        return new ExecutionContextFactory() {
-
-            public ExecutionContext create() {
-                return context;
-            }
-
-            public ExecutionContext create( AccessControlContext accessControlContext ) {
-                return context;
-            }
-
-            public ExecutionContext create( LoginContext loginContext ) {
-                return context;
-            }
-
-            public ExecutionContext create( String name ) {
-                return context;
-            }
-
-            public ExecutionContext create( String name,
-                                            CallbackHandler callbackHandler ) {
-                return context;
-            }
-
-            public ExecutionContext create( String name,
-                                            Subject subject ) {
-                return context;
-            }
-
-            public ExecutionContext create( String name,
-                                            Subject subject,
-                                            CallbackHandler callbackHandler ) {
-                return context;
-            }
-        };
+        return context;
     }
 
     private static void createChildDefinition( SimpleRepository repository,

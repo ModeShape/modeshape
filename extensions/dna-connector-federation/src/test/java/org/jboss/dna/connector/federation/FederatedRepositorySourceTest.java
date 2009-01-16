@@ -44,7 +44,6 @@ import javax.security.auth.callback.CallbackHandler;
 import javax.security.auth.login.LoginException;
 import org.jboss.dna.graph.DnaLexicon;
 import org.jboss.dna.graph.ExecutionContext;
-import org.jboss.dna.graph.ExecutionContextFactory;
 import org.jboss.dna.graph.connector.RepositoryConnection;
 import org.jboss.dna.graph.connector.RepositoryConnectionFactory;
 import org.jboss.dna.graph.connector.RepositoryContext;
@@ -79,7 +78,7 @@ public class FederatedRepositorySourceTest {
     @Mock
     private RepositoryConnectionFactory connectionFactory;
     @Mock
-    private ExecutionContextFactory executionContextFactory;
+    private ExecutionContext executionContextFactory;
     @Mock
     private RepositoryContext repositoryContext;
 
@@ -124,10 +123,10 @@ public class FederatedRepositorySourceTest {
         configRepositorySource.setRepositoryName(configRepository.getRepositoryName());
         configRepositorySource.setName(configurationSourceName);
         configRepositoryConnection = configRepositorySource.getConnection();
-        stub(repositoryContext.getExecutionContextFactory()).toReturn(executionContextFactory);
+        stub(repositoryContext.getExecutionContext()).toReturn(executionContextFactory);
         stub(repositoryContext.getRepositoryConnectionFactory()).toReturn(connectionFactory);
         stub(connectionFactory.createConnection(configurationSourceName)).toReturn(configRepositoryConnection);
-        stub(executionContextFactory.create(eq(securityDomain), anyCallbackHandler())).toReturn(context);
+        stub(executionContextFactory.with(eq(securityDomain), anyCallbackHandler())).toReturn(context);
     }
 
     protected static CallbackHandler anyCallbackHandler() {
@@ -168,14 +167,14 @@ public class FederatedRepositorySourceTest {
     @Test( expected = RepositorySourceException.class )
     public void shouldNotCreateConnectionWhenAuthenticationFails() throws Exception {
         // Stub the execution context factory to throw a LoginException to simulate failed authentication
-        stub(executionContextFactory.create(eq(securityDomain), anyCallbackHandler())).toThrow(new LoginException());
+        stub(executionContextFactory.with(eq(securityDomain), anyCallbackHandler())).toThrow(new LoginException());
         source.getConnection();
     }
 
     @Test( expected = NullPointerException.class )
     public void shouldPropogateAllExceptionsExceptLoginExceptionThrownFromExecutionContextFactory() throws Exception {
         // Stub the execution context factory to throw a LoginException to simulate failed authentication
-        stub(executionContextFactory.create(eq(securityDomain), anyCallbackHandler())).toThrow(new NullPointerException());
+        stub(executionContextFactory.with(eq(securityDomain), anyCallbackHandler())).toThrow(new NullPointerException());
         source.getConnection();
     }
 

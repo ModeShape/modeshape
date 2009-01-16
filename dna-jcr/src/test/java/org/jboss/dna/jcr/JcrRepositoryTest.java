@@ -38,7 +38,6 @@ import javax.jcr.Session;
 import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
 import org.jboss.dna.graph.ExecutionContext;
-import org.jboss.dna.graph.ExecutionContextFactory;
 import org.jboss.dna.graph.connector.RepositoryConnection;
 import org.jboss.dna.graph.connector.RepositoryConnectionFactory;
 import org.junit.Before;
@@ -55,8 +54,6 @@ public class JcrRepositoryTest {
     private Repository repository;
     @Mock
     private Map<String, String> descriptors;
-    @Mock
-    private ExecutionContextFactory executionContextFactory;
     @Mock
     private RepositoryConnectionFactory connectionFactory;
     @Mock
@@ -79,15 +76,14 @@ public class JcrRepositoryTest {
     @Before
     public void before() throws Exception {
         MockitoAnnotations.initMocks(this);
-        stub(executionContextFactory.create()).toReturn(executionContext);
-        stub(executionContextFactory.create(accessControlContext)).toReturn(executionContext);
+        stub(executionContext.create(accessControlContext)).toReturn(executionContext);
         stub(connectionFactory.createConnection(JcrI18n.defaultWorkspaceName.text())).toReturn(connection);
-        repository = new JcrRepository(descriptors, executionContextFactory, connectionFactory);
+        repository = new JcrRepository(descriptors, executionContext, connectionFactory);
     }
 
     @Test
     public void shouldAllowNoDescriptors() {
-        new JcrRepository(descriptors, executionContextFactory, connectionFactory);
+        new JcrRepository(descriptors, executionContext, connectionFactory);
     }
 
     @Test( expected = IllegalArgumentException.class )
@@ -97,7 +93,7 @@ public class JcrRepositoryTest {
 
     @Test( expected = IllegalArgumentException.class )
     public void shouldNotAllowNoConnectionFactories() throws Exception {
-        new JcrRepository(executionContextFactory, null);
+        new JcrRepository(executionContext, null);
     }
 
     @Test( expected = IllegalArgumentException.class )
@@ -122,7 +118,7 @@ public class JcrRepositoryTest {
 
     @Test
     public void shouldProvideBuiltInDescriptorsWhenNotSuppliedDescriptors() {
-        Repository repository = new JcrRepository(descriptors, executionContextFactory, connectionFactory);
+        Repository repository = new JcrRepository(descriptors, executionContext, connectionFactory);
         testDescriptorKeys(repository);
         testDescriptorValues(repository);
     }
@@ -131,7 +127,7 @@ public class JcrRepositoryTest {
     public void shouldProvideUserSuppliedDescriptors() {
         Map<String, String> descriptors = new HashMap<String, String>();
         descriptors.put("property", "value");
-        Repository repository = new JcrRepository(descriptors, executionContextFactory, connectionFactory);
+        Repository repository = new JcrRepository(descriptors, executionContext, connectionFactory);
         testDescriptorKeys(repository);
         testDescriptorValues(repository);
         assertThat(repository.getDescriptor("property"), is("value"));
@@ -152,7 +148,7 @@ public class JcrRepositoryTest {
     @Test
     public void shouldAllowLoginWithProperCredentials() throws Exception {
         repository.login(credentials);
-        stub(executionContextFactory.create(loginContext)).toReturn(executionContext);
+        stub(executionContext.create(loginContext)).toReturn(executionContext);
         repository.login(new Credentials() {
 
             private static final long serialVersionUID = 1L;

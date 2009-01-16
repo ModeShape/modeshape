@@ -30,7 +30,6 @@ import static org.junit.Assert.assertThat;
 import javax.jcr.NamespaceException;
 import javax.jcr.UnsupportedRepositoryOperationException;
 import org.jboss.dna.graph.ExecutionContext;
-import org.jboss.dna.graph.ExecutionContextFactory;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -45,8 +44,7 @@ public class JcrNamespaceRegistryTest {
 
     @BeforeClass
     public static void beforeClass() throws Exception {
-        ExecutionContextFactory factory = TestUtil.getExecutionContextFactory();
-        executionContext = factory.create();
+        executionContext = TestUtil.getExecutionContext();
     }
 
     @Before
@@ -105,7 +103,7 @@ public class JcrNamespaceRegistryTest {
         assertThat(registry.getPrefix("http://www.jcp.org/jcr/1.0"), is("jcr"));
         assertThat(registry.getPrefix("http://www.jcp.org/jcr/mix/1.0"), is("mix"));
         assertThat(registry.getPrefix("http://www.jcp.org/jcr/nt/1.0"), is("nt"));
-//        assertThat(registry.getPrefix("http://www.w3.org/XML/1998/namespace"), is("xml"));
+        // assertThat(registry.getPrefix("http://www.w3.org/XML/1998/namespace"), is("xml"));
     }
 
     @Test
@@ -115,7 +113,7 @@ public class JcrNamespaceRegistryTest {
         assertThat(registry.getURI("jcr"), is("http://www.jcp.org/jcr/1.0"));
         assertThat(registry.getURI("mix"), is("http://www.jcp.org/jcr/mix/1.0"));
         assertThat(registry.getURI("nt"), is("http://www.jcp.org/jcr/nt/1.0"));
-//        assertThat(registry.getURI("xml"), is("http://www.w3.org/XML/1998/namespace"));
+        // assertThat(registry.getURI("xml"), is("http://www.w3.org/XML/1998/namespace"));
     }
 
     @Test( expected = NamespaceException.class )

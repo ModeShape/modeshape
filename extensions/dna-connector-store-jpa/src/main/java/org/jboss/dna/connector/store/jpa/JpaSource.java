@@ -771,7 +771,7 @@ public class JpaSource implements RepositorySource, ObjectFactory {
                 // Set the context class loader, so that the driver could be found ...
                 if (this.repositoryContext != null && this.driverClassloaderName != null) {
                     try {
-                        ExecutionContext context = this.repositoryContext.getExecutionContextFactory().create();
+                        ExecutionContext context = this.repositoryContext.getExecutionContext();
                         ClassLoader loader = context.getClassLoader(this.driverClassloaderName);
                         if (loader != null) {
                             Thread.currentThread().setContextClassLoader(loader);

@@ -44,7 +44,6 @@ import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.text.NoOpEncoder;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.graph.ExecutionContext;
-import org.jboss.dna.graph.ExecutionContextFactory;
 import org.jboss.dna.graph.Graph;
 import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.connector.inmemory.InMemoryRepositorySource;
@@ -86,7 +85,6 @@ public class RepositoryClient {
     }
 
     private RepositoryLibrary sources;
-    private ExecutionContextFactory contextFactory;
     private RepositoryService repositoryService;
     private Api api = Api.JCR;
     private String jaasContextName;
@@ -130,15 +128,12 @@ public class RepositoryClient {
     public void startRepositories() throws IOException, SAXException, NamingException {
         if (repositoryService != null) return; // already started
 
-        // Create the factory for execution contexts.
-        contextFactory = new ExecutionContext();
-
         // Create the execution context that we'll use for the services. If we'd want to use JAAS, we'd create the context
         // by supplying LoginContext, AccessControlContext, or even Subject with CallbackHandlers. But no JAAS in this example.
-        context = contextFactory.create();
+        context = new ExecutionContext();
 
         // Create the library for the RepositorySource instances ...
-        sources = new RepositoryLibrary(contextFactory);
+        sources = new RepositoryLibrary(context);
 
         // Load into the source manager the repository source for the configuration repository ...
         InMemoryRepositorySource configSource = new InMemoryRepositorySource();
@@ -243,7 +238,7 @@ public class RepositoryClient {
         LoginContext loginContext = getLoginContext(); // will ask user to authenticate if needed
         switch (api) {
             case JCR: {
-                JcrRepository jcrRepository = new JcrRepository(contextFactory, sources);
+                JcrRepository jcrRepository = new JcrRepository(context, sources);
                 Session session = null;
                 if (loginContext != null) {
                     Credentials credentials = new JaasCredentials(loginContext);
@@ -304,7 +299,7 @@ public class RepositoryClient {
             case DNA: {
                 try {
                     // Use the DNA Graph API to read the properties and children of the node ...
-                    ExecutionContext context = loginContext != null ? contextFactory.create(loginContext) : contextFactory.create();
+                    ExecutionContext context = loginContext != null ? this.context.create(loginContext) : this.context;
                     Graph graph = Graph.create(sourceName, sources, context);
                     org.jboss.dna.graph.Node node = graph.getNodeAt(pathToNode);
 

@@ -36,7 +36,6 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import net.jcip.annotations.ThreadSafe;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.graph.ExecutionContext;
-import org.jboss.dna.graph.ExecutionContextFactory;
 import org.jboss.dna.graph.connector.RepositoryConnection;
 import org.jboss.dna.graph.connector.RepositoryConnectionFactory;
 import org.jboss.dna.graph.connector.RepositoryConnectionPool;
@@ -107,7 +106,7 @@ public class RepositoryLibrary implements RepositoryConnectionFactory {
     private final ReadWriteLock sourcesLock = new ReentrantReadWriteLock();
     private final CopyOnWriteArrayList<RepositoryConnectionPool> pools = new CopyOnWriteArrayList<RepositoryConnectionPool>();
     private RepositoryConnectionFactory delegate;
-    private final ExecutionContextFactory executionContextFactory;
+    protected final ExecutionContext executionContext;
     private final RepositoryContext repositoryContext;
 
     /**
@@ -130,34 +129,36 @@ public class RepositoryLibrary implements RepositoryConnectionFactory {
     /**
      * Create a new manager instance.
      * 
-     * @param executionContextFactory the execution context factory, used by sources to create {@link ExecutionContext} instances
+     * @param executionContext the execution context, which can be used used by sources to create other {@link ExecutionContext}
+     *        instances with different JAAS security contexts
      * @throws IllegalArgumentException if the <code>executionContextFactory</code> reference is null
      */
-    public RepositoryLibrary( ExecutionContextFactory executionContextFactory ) {
-        this(executionContextFactory, null);
+    public RepositoryLibrary( ExecutionContext executionContext ) {
+        this(executionContext, null);
     }
 
     /**
      * Create a new manager instance.
      * 
-     * @param executionContextFactory the execution context factory, used by sources to create {@link ExecutionContext} instances
+     * @param executionContext the execution context, which can be used used by sources to create other {@link ExecutionContext}
+     *        instances with different JAAS security contexts
      * @param delegate the connection factory to which this instance should delegate in the event that a source is not found in
      *        this manager; may be null if there is no delegate
      * @throws IllegalArgumentException if the <code>executionContextFactory</code> reference is null
      */
-    public RepositoryLibrary( ExecutionContextFactory executionContextFactory,
+    public RepositoryLibrary( ExecutionContext executionContext,
                               RepositoryConnectionFactory delegate ) {
-        CheckArg.isNotNull(executionContextFactory, "executionContextFactory");
+        CheckArg.isNotNull(executionContext, "executionContext");
         this.delegate = delegate;
-        this.executionContextFactory = executionContextFactory;
+        this.executionContext = executionContext;
         this.repositoryContext = new RepositoryContext() {
             /**
              * {@inheritDoc}
              * 
-             * @see org.jboss.dna.graph.connector.RepositoryContext#getExecutionContextFactory()
+             * @see org.jboss.dna.graph.connector.RepositoryContext#getExecutionContext()
              */
-            public ExecutionContextFactory getExecutionContextFactory() {
-                return RepositoryLibrary.this.getExecutionContextFactory();
+            public ExecutionContext getExecutionContext() {
+                return RepositoryLibrary.this.executionContext;
             }
 
             /**
@@ -175,8 +176,8 @@ public class RepositoryLibrary implements RepositoryConnectionFactory {
     /**
      * @return executionContextFactory
      */
-    public ExecutionContextFactory getExecutionContextFactory() {
-        return executionContextFactory;
+    public ExecutionContext getExecutionContext() {
+        return executionContext;
     }
 
     /**

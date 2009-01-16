@@ -47,7 +47,6 @@ import org.jboss.dna.common.collection.SimpleProblems;
 import org.jboss.dna.common.i18n.I18n;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.graph.ExecutionContext;
-import org.jboss.dna.graph.ExecutionContextFactory;
 import org.jboss.dna.graph.Graph;
 import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.Node;
@@ -474,14 +473,14 @@ public class FederatedRepositorySource implements RepositorySource, ObjectFactor
     }
 
     protected ExecutionContext getExecutionContext() {
-        ExecutionContextFactory factory = getRepositoryContext().getExecutionContextFactory();
+        ExecutionContext factory = getRepositoryContext().getExecutionContext();
         CallbackHandler handler = createCallbackHandler();
         try {
             String securityDomain = getSecurityDomain();
             if (securityDomain != null || getUsername() != null) {
-                return factory.create(securityDomain, handler);
+                return factory.with(securityDomain, handler);
             }
-            return factory.create();
+            return factory;
         } catch (LoginException e) {
             I18n msg = FederationI18n.unableToCreateExecutionContext;
             throw new RepositorySourceException(getName(), msg.text(this.sourceName, securityDomain), e);

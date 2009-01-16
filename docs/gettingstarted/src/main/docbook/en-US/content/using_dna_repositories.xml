@@ -81,13 +81,13 @@
 		<para>To set up the repository service, we need to first set up a few other objects:
 			<itemizedlist>
 				<listitem>
-					<para>A <emphasis>factory for execution contexts</emphasis>.  Execution contexts define the context (or environment) 
+					<para>An <emphasis>execution contexts</emphasis>.  Execution contexts define the context (or environment) 
 					    in which the service runs and in which operations against repositories are performed.  <code>ExecutionContext</code>
 					    instances can be created using JAAS application contexts, meaning that they contain the information about the subject
 					    that the software represents.  Execution contexts also provide access to the all of the factories and utilities
 					    used throughout the services and components, and it is through this mechanism that you can inject your own behavior.
-							For example, if your application already had a notion of namespaces, you could override the execution context's
-							<code>NamespaceRegistry</code> to use the namespaces defined in your application.</para>
+							For example, if your application already had a notion of namespaces, you could create an execution context that
+							uses your own <code>NamespaceRegistry</code> implementation (which would use the namespaces defined in your application).</para>
 				</listitem>
 				<listitem>
 					<para>A <emphasis>repository library</emphasis> that manages the list of <code>RepositorySource</code> instances.
@@ -112,7 +112,7 @@
   // Create the execution context that we'll use for the services. If we'd want to use JAAS, we'd 
   // create the context by supplying LoginContext, AccessControlContext, or even Subject with 
   // CallbackHandlers. But this example doesn't use JAAS in this example.
-  ExecutionContext context = contextFactory.create();
+  ExecutionContext context = new ExecutionContext();
 
   // Create the library for the RepositorySource instances ...
   RepositoryLibrary sources = new RepositoryLibrary(context);
