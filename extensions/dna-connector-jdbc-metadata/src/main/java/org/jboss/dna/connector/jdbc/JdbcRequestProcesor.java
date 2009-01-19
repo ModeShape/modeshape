@@ -24,6 +24,7 @@
 package org.jboss.dna.connector.jdbc;
 
 import java.sql.Connection;
+import java.util.UUID;
 import org.jboss.dna.common.util.Logger;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.property.DateTime;
@@ -44,6 +45,7 @@ import org.jboss.dna.graph.request.processor.RequestProcessor;
  */
 public class JdbcRequestProcesor extends RequestProcessor {
     protected Connection connection;
+    protected UUID rootNodeUuid;
     
     /**
      * Logging for this instance
@@ -54,26 +56,32 @@ public class JdbcRequestProcesor extends RequestProcessor {
      * @param sourceName
      * @param context
      * @param connection 
+     * @param rootNodeUuid 
      */
     public JdbcRequestProcesor( String sourceName,
                                 ExecutionContext context,
-                                Connection connection) {
+                                Connection connection,
+                                UUID rootNodeUuid) {
         super(sourceName, context);
         this.connection = connection;
+        this.rootNodeUuid = rootNodeUuid;
     }
 
     /**
      * @param sourceName
      * @param context
      * @param connection 
+     * @param rootNodeUuid 
      * @param now
      */
     public JdbcRequestProcesor( String sourceName,
                                 ExecutionContext context,
                                 Connection connection,
+                                UUID rootNodeUuid,
                                 DateTime now ) {
         super(sourceName, context, now);
         this.connection = connection;
+        this.rootNodeUuid = rootNodeUuid;
     }
 
     /**

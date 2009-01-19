@@ -148,7 +148,7 @@ public class JdbcConnection implements RepositoryConnection {
     public void execute( ExecutionContext context,
                          Request request ) throws RepositorySourceException {
         // create processor and delegate handling 
-        RequestProcessor proc = new JdbcRequestProcesor(getSourceName(),context, connection);
+        RequestProcessor proc = new JdbcRequestProcesor(getSourceName(),context, connection, rootNodeUuid);
         try {
             proc.process(request);
         } finally {

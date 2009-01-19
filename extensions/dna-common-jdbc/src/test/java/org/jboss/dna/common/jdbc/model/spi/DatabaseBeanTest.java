@@ -80,6 +80,13 @@ public class DatabaseBeanTest extends TestCase {
     /**
      * testDatabaseMetadataExceptions
      */
+    public void testModelFactoryIsNotNull() {
+        assertNotNull("Default model factory shall be set", factory);
+    }
+   
+    /**
+     * testDatabaseMetadataExceptions
+     */
     public void testGetExceptions() {
         // get list of exceptions
         List<DatabaseMetaDataMethodException> exceptionList = bean.getExceptionList();

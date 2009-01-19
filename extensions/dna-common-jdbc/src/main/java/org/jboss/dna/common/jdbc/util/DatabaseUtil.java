@@ -2261,7 +2261,7 @@ public class DatabaseUtil {
             // foreign key name
             String foreignKeyName = getString(resultSet, "FK_NAME", false);
             // primary key name
-            String primaryKeyName = getString(resultSet, "PK_NAME", false);
+            //String primaryKeyName = getString(resultSet, "PK_NAME", false);
             // can the evaluation of foreign key constraints be deferred until commit
             Integer defferability = getInteger(resultSet, "DEFERRABILITY", false);
 
