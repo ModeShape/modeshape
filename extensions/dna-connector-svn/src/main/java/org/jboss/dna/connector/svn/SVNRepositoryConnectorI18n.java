@@ -42,6 +42,7 @@ public final class SVNRepositoryConnectorI18n {
     public static I18n objectFoundInJndiWasNotCacheFactory;
     public static I18n locationInRequestMustHavePath;
     public static I18n sourceIsReadOnly;
+    public static I18n connectingFailureOrUserAuthenticationProblem;
 
     static {
         try {

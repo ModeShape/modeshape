@@ -58,6 +58,8 @@ import org.jboss.dna.graph.request.Request;
 import org.jboss.dna.graph.request.UpdatePropertiesRequest;
 import org.jboss.dna.graph.request.processor.RequestProcessor;
 import org.tmatesoft.svn.core.SVNDirEntry;
+import org.tmatesoft.svn.core.SVNErrorCode;
+import org.tmatesoft.svn.core.SVNErrorMessage;
 import org.tmatesoft.svn.core.SVNException;
 import org.tmatesoft.svn.core.SVNNodeKind;
 import org.tmatesoft.svn.core.SVNProperties;
@@ -125,45 +127,42 @@ public class SVNRepositoryRequestProcessor extends RequestProcessor implements S
             String root = parent.getString(getExecutionContext().getNamespaceRegistry());
             SVNNodeKind rootKind = repository.checkPath(root, -1);
             if (rootKind == SVNNodeKind.UNKNOWN) {
-                // TODO throw an checked exception
+                SVNErrorMessage err = SVNErrorMessage.create(SVNErrorCode.UNKNOWN,
+                                                             "path with name '{0}' is unknown in the repository",
+                                                             root);
+                SVNException ex = new SVNException(err);
+                request.setError(ex);
             } else if (rootKind == SVNNodeKind.NONE) {
-                // TODO throw an checked exception
+                SVNErrorMessage err = SVNErrorMessage.create(SVNErrorCode.UNKNOWN,
+                                                             "path with name '{0}' is missing in the repository",
+                                                             root);
+                SVNException ex = new SVNException(err);
+                request.setError(ex);
             } else if (rootKind == SVNNodeKind.FILE) {
-                // TODO throw an checked exception
+                SVNErrorMessage err = SVNErrorMessage.create(SVNErrorCode.UNKNOWN,
+                                                             "pretended root item with name '{0}' is a file",
+                                                             root);
+                SVNException ex = new SVNException(err);
+                request.setError(ex);
             } else if (rootKind == SVNNodeKind.DIR) {
+                
+                // TODO if node is a file 
+                 
+                // if the node is a directory
                 String childName = request.named().getString(getExecutionContext().getNamespaceRegistry());
                 if (root.length() == 1 && root.charAt(0) == '/') {
                     // test if so a directory does not exist.
-                    mkdir("",childName, request.toString());
+                    mkdir("", childName, request.toString());
                 } else {
-                    if(root.length() > 1 && root.charAt(0) == '/') {
+                    if (root.length() > 1 && root.charAt(0) == '/') {
                         // test if so a directory does not exist.
-                        mkdir(root.substring(1),childName, request.toString());
+                        mkdir(root.substring(1), childName, request.toString());
                     }
                 }
             }
 
-        } catch (Exception e) {
-        }
-        //
-    }
-
-    /**
-     * Create a directory .
-     * @param root - the root directory where the created directory will reside
-     * @param childName - the name of the created directory.
-     * @param message  - comment for the creation.
-     * @throws Exception - if during the creation, there is an error.
-     */
-    private void mkdir( String root,
-                              String childName, String message) throws Exception {
-        SVNNodeKind childKind = repository.checkPath(childName, -1);
-        if (childKind == SVNNodeKind.NONE) {
-            ScmAction addNodeAction = addDirectory(root, childName);
-            SVNActionExecutor executor = new SVNActionExecutor(repository);
-            executor.execute(addNodeAction, message);
-        } else {
-            // TODO throwns an exception
+        } catch (SVNException e) {
+            request.setError(e);
         }
     }
 
@@ -240,11 +239,6 @@ public class SVNRepositoryRequestProcessor extends RequestProcessor implements S
             }
             request.setActualLocationOfNode(myLocation);
         } catch (SVNException e) {
-            // if a failure occured while connecting to a repository
-            // or the user's authentication failed (see
-            // path not found in the specified revision
-            // or is not a directory
-            e.printStackTrace();
             request.setError(e);
         }
 
@@ -323,7 +317,6 @@ public class SVNRepositoryRequestProcessor extends RequestProcessor implements S
             request.setActualLocationOfNode(myLocation);
 
         } catch (SVNException e) {
-            e.printStackTrace();
             request.setError(e);
         }
     }
@@ -483,10 +476,9 @@ public class SVNRepositoryRequestProcessor extends RequestProcessor implements S
                                                 SVNRepositoryConnectorI18n.nodeIsActuallyUnknow.text(myPath));
             }
         } catch (SVNException e) {
-            // if a failure occured while connecting to a repository
-            // * or the user's authentication failed (see
-            // * {@link org.tmatesoft.svn.core.SVNAuthenticationException})
-            // TODO RepositorySourceAuthenticationException
+            throw new RepositorySourceException(
+                                                getSourceName(),
+                                                SVNRepositoryConnectorI18n.connectingFailureOrUserAuthenticationProblem.text(getSourceName()));
         }
 
         return kind;
@@ -504,10 +496,9 @@ public class SVNRepositoryRequestProcessor extends RequestProcessor implements S
         try {
             entry = getRepository().info(path, -1);
         } catch (SVNException e) {
-            // if a failure occured while connecting to a repository
-            // * or the user's authentication failed (see
-            // * {@link org.tmatesoft.svn.core.SVNAuthenticationException})
-            // TODO RepositorySourceAuthenticationException
+            throw new RepositorySourceException(
+                                                getSourceName(),
+                                                SVNRepositoryConnectorI18n.connectingFailureOrUserAuthenticationProblem.text(getSourceName()));
         }
         return entry;
     }
@@ -517,7 +508,7 @@ public class SVNRepositoryRequestProcessor extends RequestProcessor implements S
      * 
      * @param editor - abstract editor.
      * @param rootPath - the pa to open.
-     * @throws SVNException
+     * @throws SVNException when a error occur.
      */
     protected static void openDirectories( ISVNEditor editor,
                                            String rootPath ) throws SVNException {
@@ -537,7 +528,7 @@ public class SVNRepositoryRequestProcessor extends RequestProcessor implements S
      * 
      * @param editor - the abstract editor.
      * @param path - the directories to open.
-     * @throws SVNException
+     * @throws SVNException when a error occur.
      */
     protected static void closeDirectories( ISVNEditor editor,
                                             String path ) throws SVNException {
@@ -567,11 +558,13 @@ public class SVNRepositoryRequestProcessor extends RequestProcessor implements S
     }
 
     /**
-     * @param repository
+     * Add directory in a repository
+     * 
+     * @param repository - the repository.
      * @param root - the root path has to exist.
      * @param child - new path to be added.
      * @param message - information about the change action.
-     * @throws SVNException
+     * @throws SVNException when a error occur.
      */
     protected void addDirEntry( SVNRepository repository,
                                 String root,
@@ -580,11 +573,20 @@ public class SVNRepositoryRequestProcessor extends RequestProcessor implements S
         assert root.trim().length() != 0;
         SVNNodeKind rootKind = repository.checkPath(root, -1);
         if (rootKind == SVNNodeKind.UNKNOWN) {
-            // TODO throw an checked exception
+            SVNErrorMessage err = SVNErrorMessage.create(SVNErrorCode.UNKNOWN,
+                                                         "path with name '{0}' is unknown in the repository",
+                                                         root);
+            throw new SVNException(err);
         } else if (rootKind == SVNNodeKind.NONE) {
-            // TODO throw an checked exception
+            SVNErrorMessage err = SVNErrorMessage.create(SVNErrorCode.UNKNOWN,
+                                                         "path with name '{0}' is missing in the repository",
+                                                         root);
+            throw new SVNException(err);
         } else if (rootKind == SVNNodeKind.FILE) {
-            // TODO throw an checked exception
+            SVNErrorMessage err = SVNErrorMessage.create(SVNErrorCode.UNKNOWN,
+                                                         "path with name '{0}' is a file, you need a directory",
+                                                         root);
+            throw new SVNException(err);
         } else if (rootKind == SVNNodeKind.DIR) {
             ISVNEditor editor = repository.getCommitEditor(message, null, true, null);
             if (root.length() == 1 && root.charAt(0) == '/') {
@@ -613,13 +615,34 @@ public class SVNRepositoryRequestProcessor extends RequestProcessor implements S
             }
 
         } else {
-            // TODO throws an exception
             closeDirectories(editor, childSegmentName);
             if (editedRoot != null) {
                 closeDirectories(editor, editedRoot);
             } else {
                 closeDirectories(editor, rootPath);
             }
+        }
+    }
+
+    /**
+     * Create a directory .
+     * 
+     * @param root - the root directory where the created directory will reside
+     * @param childName - the name of the created directory.
+     * @param message - comment for the creation.
+     * @throws SVNException - if during the creation, there is an error.
+     */
+    private void mkdir( String root,
+                        String childName,
+                        String message ) throws SVNException {
+        SVNNodeKind childKind = repository.checkPath(childName, -1);
+        if (childKind == SVNNodeKind.NONE) {
+            ScmAction addNodeAction = addDirectory(root, childName);
+            SVNActionExecutor executor = new SVNActionExecutor(repository);
+            executor.execute(addNodeAction, message);
+        } else {
+            SVNErrorMessage err = SVNErrorMessage.create(SVNErrorCode.UNKNOWN, "Item with name '{0}' can't be created", childName);
+            throw new SVNException(err);
         }
     }
 
@@ -690,7 +713,7 @@ public class SVNRepositoryRequestProcessor extends RequestProcessor implements S
         public void applyAction( Object context ) throws SVNException {
 
             ISVNEditor editor = (ISVNEditor)context;
-            
+
             openDirectories(editor, this.root);
             String[] paths = this.path.split("/");
             String newPath = this.root;

@@ -25,6 +25,8 @@ package org.jboss.dna.connector.svn;
 
 import org.jboss.dna.connector.scm.ScmAction;
 import org.jboss.dna.connector.scm.ScmActionExecutor;
+import org.tmatesoft.svn.core.SVNErrorCode;
+import org.tmatesoft.svn.core.SVNErrorMessage;
 import org.tmatesoft.svn.core.SVNException;
 import org.tmatesoft.svn.core.io.ISVNEditor;
 import org.tmatesoft.svn.core.io.SVNRepository;
@@ -53,21 +55,20 @@ public class SVNActionExecutor implements ScmActionExecutor {
     /**
      * @param action
      * @param message
-     * @throws Exception 
+     * @throws SVNException
      */
     public void execute( ScmAction action,
-                         String message ) throws Exception {
+                         String message ) throws SVNException {
+        ISVNEditor editor = this.repository.getCommitEditor(message, null);
+        editor.openRoot(-1);
         try {
-            ISVNEditor editor = this.repository.getCommitEditor( message,
-                                                                 null );
-            editor.openRoot( -1 );
-            action.applyAction( editor );
-            editor.closeDir();
-            editor.closeEdit();
-        } catch ( SVNException e ) {
-            e.printStackTrace();
-            //logger.error( "svn error: " );
-            throw e;
+            action.applyAction(editor);
+        } catch (Exception e) {
+            SVNErrorMessage err = SVNErrorMessage.create(SVNErrorCode.UNKNOWN, "This error is appeared: '{0}'", e.getMessage());
+            throw new SVNException(err);
         }
+        editor.closeDir();
+        editor.closeEdit();
+
     }
 }
