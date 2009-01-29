@@ -81,7 +81,20 @@ public abstract class BasicProperty implements Property {
     /**
      * {@inheritDoc}
      */
-    public int compareTo( Property o ) {
+    public int compareTo( Property that ) {
+        if (this == that) return 0;
+        int diff = this.getName().compareTo(that.getName());
+        if (diff != 0) return diff;
+        diff = this.size() - that.size();
+        if (diff != 0) return diff;
+        Iterator<?> thisIter = iterator();
+        Iterator<?> thatIter = that.iterator();
+        while (thisIter.hasNext()) { // && thatIter.hasNext()
+            Object thisValue = thisIter.next();
+            Object thatValue = thatIter.next();
+            diff = ValueComparators.OBJECT_COMPARATOR.compare(thisValue, thatValue);
+            if (diff != 0) return diff;
+        }
         return 0;
     }
 
