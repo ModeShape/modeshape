@@ -73,6 +73,16 @@ public class RootPath extends AbstractPath {
     /**
      * {@inheritDoc}
      * 
+     * @see org.jboss.dna.graph.property.basic.AbstractPath#getSegmentsOfParent()
+     */
+    @Override
+    protected Iterator<Segment> getSegmentsOfParent() {
+        return EMPTY_PATH_ITERATOR;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
      * @see org.jboss.dna.graph.property.Path#getCanonicalPath()
      */
     @Override

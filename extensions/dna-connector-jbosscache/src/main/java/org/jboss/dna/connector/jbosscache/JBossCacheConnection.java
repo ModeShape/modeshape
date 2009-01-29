@@ -51,7 +51,6 @@ import org.jboss.dna.graph.property.PathNotFoundException;
 import org.jboss.dna.graph.property.Property;
 import org.jboss.dna.graph.property.PropertyFactory;
 import org.jboss.dna.graph.property.ValueFactory;
-import org.jboss.dna.graph.property.Path.Segment;
 import org.jboss.dna.graph.request.CopyBranchRequest;
 import org.jboss.dna.graph.request.CreateNodeRequest;
 import org.jboss.dna.graph.request.DeleteBranchRequest;
@@ -259,7 +258,8 @@ public class JBossCacheConnection implements RepositoryConnection {
                 // Look up the new parent, which must exist ...
                 Path newParentPath = request.into().getPath();
                 Node<Name, Object> newParent = getNode(context, newParentPath);
-                Path.Segment newSegment = copyNode(node, newParent, true, null, null, getExecutionContext());
+                Name desiredName = request.desiredName();
+                Path.Segment newSegment = copyNode(node, newParent, desiredName, true, null, null, getExecutionContext());
 
                 UUID uuid = uuidFactory.create(node.get(DnaLexicon.UUID));
                 Path newPath = pathFactory.create(newParentPath, newSegment);
@@ -283,7 +283,7 @@ public class JBossCacheConnection implements RepositoryConnection {
                 // Look up the new parent, which must exist ...
                 Path newParentPath = request.into().getPath();
                 Node<Name, Object> newParent = getNode(context, newParentPath);
-                Path.Segment newSegment = copyNode(node, newParent, recursive, DnaLexicon.UUID, null, getExecutionContext());
+                Path.Segment newSegment = copyNode(node, newParent, null, recursive, DnaLexicon.UUID, null, getExecutionContext());
 
                 // Now delete the old node ...
                 Node<Name, Object> oldParent = node.getParent();
@@ -357,6 +357,7 @@ public class JBossCacheConnection implements RepositoryConnection {
 
     protected Path.Segment copyNode( Node<Name, Object> original,
                                      Node<Name, Object> newParent,
+                                     Name desiredName,
                                      boolean recursive,
                                      Name uuidProperty,
                                      AtomicInteger count,
@@ -364,7 +365,7 @@ public class JBossCacheConnection implements RepositoryConnection {
         assert original != null;
         assert newParent != null;
         // Get or create the new node ...
-        Segment name = (Segment)original.getFqn().getLastElement();
+        Path.Segment name = desiredName != null ? context.getValueFactories().getPathFactory().createSegment(desiredName) : (Path.Segment)original.getFqn().getLastElement();
 
         // Update the children to account for same-name siblings.
         // This not only updates the FQN of the child nodes, but it also sets the property that stores the
@@ -383,7 +384,7 @@ public class JBossCacheConnection implements RepositoryConnection {
         if (recursive) {
             // Loop over each child and call this method ...
             for (Node<Name, Object> child : original.getChildren()) {
-                copyNode(child, copy, true, uuidProperty, count, context);
+                copyNode(child, copy, null, true, uuidProperty, count, context);
             }
         }
         return newSegment;

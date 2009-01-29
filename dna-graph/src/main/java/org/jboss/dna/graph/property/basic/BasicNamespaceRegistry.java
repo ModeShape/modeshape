@@ -24,9 +24,11 @@
 package org.jboss.dna.graph.property.basic;
 
 import java.text.DecimalFormat;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.locks.Lock;
@@ -250,6 +252,18 @@ public class BasicNamespaceRegistry implements NamespaceRegistry {
             lock.unlock();
         }
         return Collections.unmodifiableSet(result);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see java.lang.Object#toString()
+     */
+    @Override
+    public String toString() {
+        List<Namespace> namespaces = new ArrayList<Namespace>(getNamespaces());
+        Collections.sort(namespaces);
+        return namespaces.toString();
     }
 
     @GuardedBy( "registryLock" )

@@ -309,6 +309,7 @@ public class InMemoryRepository {
      * @param context
      * @param original
      * @param newParent
+     * @param desiredName
      * @param recursive
      * @param oldToNewUuids the map of UUIDs of nodes in the new subgraph keyed by the UUIDs of nodes in the original; may not be
      *        null
@@ -317,6 +318,7 @@ public class InMemoryRepository {
     public InMemoryNode copyNode( ExecutionContext context,
                                   InMemoryNode original,
                                   InMemoryNode newParent,
+                                  Name desiredName,
                                   boolean recursive,
                                   Map<UUID, UUID> oldToNewUuids ) {
         assert context != null;
@@ -325,7 +327,8 @@ public class InMemoryRepository {
         assert oldToNewUuids != null;
 
         // Get or create the new node ...
-        InMemoryNode copy = createNode(context, newParent, original.getName().getName(), null);
+        Name childName = desiredName != null ? desiredName : original.getName().getName();
+        InMemoryNode copy = createNode(context, newParent, childName, null);
         oldToNewUuids.put(original.getUuid(), copy.getUuid());
 
         // Copy the properties ...
@@ -334,7 +337,7 @@ public class InMemoryRepository {
         if (recursive) {
             // Loop over each child and call this method ...
             for (InMemoryNode child : original.getChildren()) {
-                copyNode(context, child, copy, true, oldToNewUuids);
+                copyNode(context, child, copy, null, true, oldToNewUuids);
             }
         }
 
@@ -439,8 +442,9 @@ public class InMemoryRepository {
             if (node == null) return;
             // Look up the new parent, which must exist ...
             Path newParentPath = request.into().getPath();
+            Name desiredName = request.desiredName();
             InMemoryNode newParent = getNode(newParentPath);
-            InMemoryNode newNode = copyNode(getExecutionContext(), node, newParent, true, new HashMap<UUID, UUID>());
+            InMemoryNode newNode = copyNode(getExecutionContext(), node, newParent, desiredName, true, new HashMap<UUID, UUID>());
             Path newPath = getExecutionContext().getValueFactories().getPathFactory().create(newParentPath, newNode.getName());
             Location oldLocation = getActualLocation(request.from().getPath(), node);
             Location newLocation = new Location(newPath, newNode.getUuid());

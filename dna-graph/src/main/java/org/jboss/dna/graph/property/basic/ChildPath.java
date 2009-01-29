@@ -74,6 +74,16 @@ public class ChildPath extends AbstractPath {
     /**
      * {@inheritDoc}
      * 
+     * @see org.jboss.dna.graph.property.basic.AbstractPath#getSegmentsOfParent()
+     */
+    @Override
+    protected Iterator<Segment> getSegmentsOfParent() {
+        return parent.iterator();
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
      * @see org.jboss.dna.graph.property.Path#getLastSegment()
      */
     @Override

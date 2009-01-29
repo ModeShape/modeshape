@@ -1,0 +1,137 @@
+/*
+ * JBoss DNA (http://www.jboss.org/dna)
+ * See the COPYRIGHT.txt file distributed with this work for information
+ * regarding copyright ownership.  Some portions may be licensed
+ * to Red Hat, Inc. under one or more contributor license agreements.
+ * See the AUTHORS.txt file in the distribution for a full listing of 
+ * individual contributors. 
+ *
+ * JBoss DNA is free software. Unless otherwise indicated, all code in JBoss DNA
+ * is licensed to you under the terms of the GNU Lesser General Public License as
+ * published by the Free Software Foundation; either version 2.1 of
+ * the License, or (at your option) any later version.
+ *
+ * JBoss DNA is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this software; if not, write to the Free
+ * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+ * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+ */
+package org.jboss.dna.graph.request;
+
+import org.jboss.dna.common.util.CheckArg;
+import org.jboss.dna.graph.GraphI18n;
+import org.jboss.dna.graph.Location;
+
+/**
+ * Instruction to verify the existance of a node at the specified location. This request also returns the actual location.
+ * 
+ * @author Randall Hauch
+ */
+public class VerifyNodeExistsRequest extends CacheableRequest {
+
+    private static final long serialVersionUID = 1L;
+
+    private final Location at;
+    private Location actualLocation;
+
+    /**
+     * Create a request to verify the existance and location of a node at the supplied location.
+     * 
+     * @param at the location of the node to be verified
+     * @throws IllegalArgumentException if the location is null
+     */
+    public VerifyNodeExistsRequest( Location at ) {
+        CheckArg.isNotNull(at, "at");
+        this.at = at;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.request.Request#isReadOnly()
+     */
+    @Override
+    public boolean isReadOnly() {
+        return true;
+    }
+
+    /**
+     * Get the location defining the node that is to be read.
+     * 
+     * @return the location of the node; never null
+     */
+    public Location at() {
+        return at;
+    }
+
+    /**
+     * Sets the actual and complete location of the node whose properties have been read. This method must be called when
+     * processing the request, and the actual location must have a {@link Location#getPath() path}.
+     * 
+     * @param actual the actual location of the node being read, or null if the {@link #at() current location} should be used
+     * @throws IllegalArgumentException if the actual location does not represent the {@link Location#isSame(Location) same
+     *         location} as the {@link #at() current location}, or if the actual location does not have a path.
+     */
+    public void setActualLocationOfNode( Location actual ) {
+        if (!at.isSame(actual)) { // not same if actual is null
+            throw new IllegalArgumentException(GraphI18n.actualLocationIsNotSameAsInputLocation.text(actual, at));
+        }
+        assert actual != null;
+        if (!actual.hasPath()) {
+            throw new IllegalArgumentException(GraphI18n.actualLocationMustHavePath.text(actual));
+        }
+        this.actualLocation = actual;
+    }
+
+    /**
+     * Get the actual location of the node whose properties were read.
+     * 
+     * @return the actual location, or null if the actual location was not set
+     */
+    public Location getActualLocationOfNode() {
+        return actualLocation;
+    }
+
+    /**
+     * Return whether this node is known to exist. If the request has been processed, it will have an
+     * {@link #getActualLocationOfNode() actual location} or an {@link #getError() error}.
+     * 
+     * @return true if this node is known to exist
+     * @see #getActualLocationOfNode()
+     * @see #getError()
+     */
+    public boolean exists() {
+        return actualLocation != null;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see java.lang.Object#equals(java.lang.Object)
+     */
+    @Override
+    public boolean equals( Object obj ) {
+        if (this.getClass().isInstance(obj)) {
+            VerifyNodeExistsRequest that = (VerifyNodeExistsRequest)obj;
+            if (!this.at().equals(that.at())) return false;
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see java.lang.Object#toString()
+     */
+    @Override
+    public String toString() {
+        return "verify node exists at " + at();
+    }
+
+}

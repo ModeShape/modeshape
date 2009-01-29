@@ -99,7 +99,7 @@ public class GraphImporterTest {
                          "/a/b/dna:system[1]/dna:sources[1]/sourceA[1]",
                          "repositoryName=repositoryA",
                          "retryLimit=3",
-                         "jcr:primaryType={http://www.jboss.org/dna}xyz",
+                         "jcr:primaryType={http://www.jboss.org/dna/1.0}xyz",
                          "dna:classname=org.jboss.dna.connector.inmemory.InMemoryRepositorySource");
         assertCreateNode(iter,
                          "/a/b/dna:system[1]/dna:sources[1]/sourceB[1]",

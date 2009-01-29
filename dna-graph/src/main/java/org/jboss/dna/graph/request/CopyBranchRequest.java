@@ -27,6 +27,7 @@ import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.graph.GraphI18n;
 import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.NodeConflictBehavior;
+import org.jboss.dna.graph.property.Name;
 
 /**
  * Instruction that a branch be copied from one location into another.
@@ -41,6 +42,7 @@ public class CopyBranchRequest extends Request {
 
     private final Location from;
     private final Location into;
+    private final Name desiredNameForCopy;
     private final NodeConflictBehavior conflictBehavior;
     private Location actualOldLocation;
     private Location actualNewLocation;
@@ -54,7 +56,7 @@ public class CopyBranchRequest extends Request {
      */
     public CopyBranchRequest( Location from,
                               Location into ) {
-        this(from, into, DEFAULT_CONFLICT_BEHAVIOR);
+        this(from, into, null, DEFAULT_CONFLICT_BEHAVIOR);
     }
 
     /**
@@ -62,18 +64,37 @@ public class CopyBranchRequest extends Request {
      * 
      * @param from the location of the top node in the existing branch that is to be copied
      * @param into the location of the existing node into which the copy should be placed
+     * @param nameForCopy the desired name for the node that results from the copy, or null if the name of the original should be
+     *        used
+     * @throws IllegalArgumentException if <code>from</code> or <code>into</code> are null
+     */
+    public CopyBranchRequest( Location from,
+                              Location into,
+                              Name nameForCopy ) {
+        this(from, into, nameForCopy, DEFAULT_CONFLICT_BEHAVIOR);
+    }
+
+    /**
+     * Create a request to copy a branch to another.
+     * 
+     * @param from the location of the top node in the existing branch that is to be copied
+     * @param into the location of the existing node into which the copy should be placed
+     * @param nameForCopy the desired name for the node that results from the copy, or null if the name of the original should be
+     *        used
      * @param conflictBehavior the expected behavior if an equivalently-named child already exists at the <code>into</code>
      *        location
      * @throws IllegalArgumentException if any of the parameters are null
      */
     public CopyBranchRequest( Location from,
                               Location into,
+                              Name nameForCopy,
                               NodeConflictBehavior conflictBehavior ) {
         CheckArg.isNotNull(from, "from");
         CheckArg.isNotNull(into, "into");
         CheckArg.isNotNull(conflictBehavior, "conflictBehavior");
         this.from = from;
         this.into = into;
+        this.desiredNameForCopy = nameForCopy;
         this.conflictBehavior = conflictBehavior;
     }
 
@@ -93,6 +114,15 @@ public class CopyBranchRequest extends Request {
      */
     public Location into() {
         return into;
+    }
+
+    /**
+     * Get the name of the copy if it is to be different than that of the original.
+     * 
+     * @return the desired name of the copy, or null if the name of the original is to be used
+     */
+    public Name desiredName() {
+        return desiredNameForCopy;
     }
 
     /**
@@ -189,6 +219,9 @@ public class CopyBranchRequest extends Request {
      */
     @Override
     public String toString() {
+        if (desiredNameForCopy != null) {
+            return "copy branch " + from() + " into " + into() + " with name " + desiredNameForCopy;
+        }
         return "copy branch " + from() + " into " + into();
     }
 }

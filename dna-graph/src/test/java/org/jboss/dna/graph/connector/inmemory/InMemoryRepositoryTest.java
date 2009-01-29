@@ -329,7 +329,7 @@ public class InMemoryRepositoryTest {
 
         assertThat(repository.getNode(pathFactory.create("/a/b")).getProperties().get(propertyName), is(property));
 
-        repository.copyNode(context, node_b, node_d, true, new HashMap<UUID, UUID>());
+        repository.copyNode(context, node_b, node_d, null, true, new HashMap<UUID, UUID>());
 
         assertThat(repository.getNodesByUuid().size(), is(9));
         assertThat(repository.getNode(pathFactory.create("/")), is(sameInstance(repository.getRoot())));
@@ -344,6 +344,49 @@ public class InMemoryRepositoryTest {
 
         assertThat(repository.getNode(pathFactory.create("/a/b")).getProperties().get(propertyName), is(property));
         assertThat(repository.getNode(pathFactory.create("/d/b[2]")).getProperties().get(propertyName), is(property));
+    }
+
+    @Test
+    public void shouldCopyNodesWhenDesiredNameIsSpecified() {
+        InMemoryNode root = repository.getRoot();
+        InMemoryNode node_a = repository.createNode(context, root, nameFactory.create("a"), null);
+        InMemoryNode node_b = repository.createNode(context, node_a, nameFactory.create("b"), null);
+        InMemoryNode node_c = repository.createNode(context, node_b, nameFactory.create("c"), null);
+        InMemoryNode node_d = repository.createNode(context, root, nameFactory.create("d"), null);
+        InMemoryNode node_e = repository.createNode(context, node_d, nameFactory.create("e"), null);
+        InMemoryNode node_b2 = repository.createNode(context, node_d, nameFactory.create("b"), null);
+
+        ValueFactory<String> stringFactory = valueFactories.getStringFactory();
+        Name propertyName = nameFactory.create("something");
+        Property property = propertyFactory.create(propertyName, stringFactory.create("Worth the wait"));
+        node_b.getProperties().put(propertyName, property);
+
+        assertThat(repository.getNodesByUuid().size(), is(7));
+        assertThat(repository.getNode(pathFactory.create("/")), is(sameInstance(repository.getRoot())));
+        assertThat(repository.getNode(pathFactory.create("/a")), is(sameInstance(node_a)));
+        assertThat(repository.getNode(pathFactory.create("/a/b")), is(sameInstance(node_b)));
+        assertThat(repository.getNode(pathFactory.create("/a/b/c")), is(sameInstance(node_c)));
+        assertThat(repository.getNode(pathFactory.create("/d")), is(sameInstance(node_d)));
+        assertThat(repository.getNode(pathFactory.create("/d/e")), is(sameInstance(node_e)));
+        assertThat(repository.getNode(pathFactory.create("/d/b")), is(sameInstance(node_b2)));
+
+        assertThat(repository.getNode(pathFactory.create("/a/b")).getProperties().get(propertyName), is(property));
+
+        repository.copyNode(context, node_b, node_d, nameFactory.create("x"), true, new HashMap<UUID, UUID>());
+
+        assertThat(repository.getNodesByUuid().size(), is(9));
+        assertThat(repository.getNode(pathFactory.create("/")), is(sameInstance(repository.getRoot())));
+        assertThat(repository.getNode(pathFactory.create("/a")), is(sameInstance(node_a)));
+        assertThat(repository.getNode(pathFactory.create("/a/b")), is(sameInstance(node_b)));
+        assertThat(repository.getNode(pathFactory.create("/a/b/c")), is(sameInstance(node_c)));
+        assertThat(repository.getNode(pathFactory.create("/d")), is(sameInstance(node_d)));
+        assertThat(repository.getNode(pathFactory.create("/d/e")), is(sameInstance(node_e)));
+        assertThat(repository.getNode(pathFactory.create("/d/b")), is(sameInstance(node_b2)));
+        assertThat(repository.getNode(pathFactory.create("/d/x")), is(notNullValue()));
+        assertThat(repository.getNode(pathFactory.create("/d/x/c")), is(notNullValue()));
+
+        assertThat(repository.getNode(pathFactory.create("/a/b")).getProperties().get(propertyName), is(property));
+        assertThat(repository.getNode(pathFactory.create("/d/x")).getProperties().get(propertyName), is(property));
     }
 
     @Test

@@ -80,6 +80,17 @@ public class BasicNamespace implements NamespaceRegistry.Namespace {
     /**
      * {@inheritDoc}
      * 
+     * @see java.lang.Comparable#compareTo(java.lang.Object)
+     */
+    public int compareTo( Namespace that ) {
+        if (that == null) return 1;
+        if (this == that) return 0;
+        return this.getNamespaceUri().compareTo(that.getNamespaceUri());
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
      * @see java.lang.Object#equals(java.lang.Object)
      */
     @Override
@@ -101,6 +112,6 @@ public class BasicNamespace implements NamespaceRegistry.Namespace {
      */
     @Override
     public String toString() {
-        return prefix + ":" + namespaceUri;
+        return prefix + "=" + namespaceUri;
     }
 }

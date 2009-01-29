@@ -46,6 +46,7 @@ import org.jboss.dna.graph.request.CompositeRequest;
 import org.jboss.dna.graph.request.CopyBranchRequest;
 import org.jboss.dna.graph.request.CreateNodeRequest;
 import org.jboss.dna.graph.request.DeleteBranchRequest;
+import org.jboss.dna.graph.request.InvalidRequestException;
 import org.jboss.dna.graph.request.MoveBranchRequest;
 import org.jboss.dna.graph.request.ReadAllChildrenRequest;
 import org.jboss.dna.graph.request.ReadAllPropertiesRequest;
@@ -58,6 +59,7 @@ import org.jboss.dna.graph.request.RemovePropertiesRequest;
 import org.jboss.dna.graph.request.RenameNodeRequest;
 import org.jboss.dna.graph.request.Request;
 import org.jboss.dna.graph.request.UpdatePropertiesRequest;
+import org.jboss.dna.graph.request.VerifyNodeExistsRequest;
 
 /**
  * A component that is used to process and execute {@link Request}s. This class is intended to be subclassed and methods
@@ -188,6 +190,10 @@ public abstract class RequestProcessor {
             process((RenameNodeRequest)request);
         } else if (request instanceof UpdatePropertiesRequest) {
             process((UpdatePropertiesRequest)request);
+        } else if (request instanceof VerifyNodeExistsRequest) {
+            process((VerifyNodeExistsRequest)request);
+        } else {
+            processUnknownRequest(request);
         }
     }
 
@@ -220,6 +226,16 @@ public abstract class RequestProcessor {
             String msg = GraphI18n.multipleErrorsWhileExecutingRequests.text(numberOfErrors, request.size());
             request.setError(new RepositorySourceException(getSourceName(), msg));
         }
+    }
+
+    /**
+     * Method that is called by {@link #process(Request)} when the request was found to be of a request type that is not known by
+     * this processor. By default this method sets an {@link InvalidRequestException invalid request error} on the request.
+     * 
+     * @param request the unknown request
+     */
+    protected void processUnknownRequest( Request request ) {
+        request.setError(new InvalidRequestException(GraphI18n.unknownTypeOfRequest.text(request.getClass().getName(), request)));
     }
 
     /**
@@ -469,7 +485,7 @@ public abstract class RequestProcessor {
      * Process a request to read a single property of a node at the supplied location.
      * <p>
      * This method does nothing if the request is null. Unless overridden, this method converts the request that
-     * {@link ReadNodeRequest reads the node} and simply returns the one property.
+     * {@link ReadAllPropertiesRequest reads the node} and simply returns the one property.
      * </p>
      * 
      * @param request the read request
@@ -484,6 +500,28 @@ public abstract class RequestProcessor {
         }
         Property property = readNode.getPropertiesByName().get(request.named());
         request.setProperty(property);
+        // Set the actual location ...
+        request.setActualLocationOfNode(readNode.getActualLocationOfNode());
+        setCacheableInfo(request);
+    }
+
+    /**
+     * Process a request to verify that a node exists at the supplied location.
+     * <p>
+     * This method does nothing if the request is null. Unless overridden, this method converts the request that
+     * {@link ReadAllPropertiesRequest reads the node} and uses the result to determine if the node exists.
+     * </p>
+     * 
+     * @param request the read request
+     */
+    public void process( VerifyNodeExistsRequest request ) {
+        if (request == null) return;
+        ReadAllPropertiesRequest readNode = new ReadAllPropertiesRequest(request.at());
+        process(readNode);
+        if (readNode.hasError()) {
+            request.setError(readNode.getError());
+            return;
+        }
         // Set the actual location ...
         request.setActualLocationOfNode(readNode.getActualLocationOfNode());
         setCacheableInfo(request);

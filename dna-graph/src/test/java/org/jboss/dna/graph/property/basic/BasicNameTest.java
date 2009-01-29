@@ -31,8 +31,6 @@ import org.jboss.dna.common.text.TextEncoder;
 import org.jboss.dna.graph.DnaLexicon;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.Path;
-import org.jboss.dna.graph.property.basic.BasicName;
-import org.jboss.dna.graph.property.basic.BasicNamespaceRegistry;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -154,7 +152,7 @@ public class BasicNameTest {
         String encodedLocalName = encoder.encode(validLocalName);
         String result = name.getString(encoder);
         assertThat(result, is("{" + encodedNamespaceUri + "}" + encodedLocalName));
-        assertThat(encodedNamespaceUri, is("http%3a%2f%2fwww.jboss.org%2fdna"));
+        assertThat(encodedNamespaceUri, is("http%3a%2f%2fwww.jboss.org%2fdna%2f1.0"));
         assertThat(encodedLocalName, is("some%3aname%3awith%3acolons"));
     }
 

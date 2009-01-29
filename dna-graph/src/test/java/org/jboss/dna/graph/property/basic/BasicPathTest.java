@@ -23,10 +23,10 @@
  */
 package org.jboss.dna.graph.property.basic;
 
-import static org.jboss.dna.graph.property.basic.IsPathContaining.hasSegments;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.IsSame.sameInstance;
+import static org.jboss.dna.graph.property.basic.IsPathContaining.hasSegments;
 import static org.junit.Assert.assertThat;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -39,14 +39,6 @@ import org.jboss.dna.graph.property.InvalidPathException;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.ValueFormatException;
-import org.jboss.dna.graph.property.basic.BasicName;
-import org.jboss.dna.graph.property.basic.BasicNamespaceRegistry;
-import org.jboss.dna.graph.property.basic.BasicPath;
-import org.jboss.dna.graph.property.basic.BasicPathSegment;
-import org.jboss.dna.graph.property.basic.NameValueFactory;
-import org.jboss.dna.graph.property.basic.PathValueFactory;
-import org.jboss.dna.graph.property.basic.RootPath;
-import org.jboss.dna.graph.property.basic.StringValueFactory;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -630,7 +622,7 @@ public class BasicPathTest extends AbstractPathTest {
     public void shouldGetStringWithNamespaceUrisIfNoNamespaceRegistryIsProvided() {
         path = pathFactory.create("/dna:a/b/dna:c/../d/./dna:e/../..");
         assertThat(path.getString(NO_OP_ENCODER),
-                   is("/{http://www.jboss.org/dna}a/{}b/{http://www.jboss.org/dna}c/../{}d/./{http://www.jboss.org/dna}e/../.."));
+                   is("/{http://www.jboss.org/dna/1.0}a/{}b/{http://www.jboss.org/dna/1.0}c/../{}d/./{http://www.jboss.org/dna/1.0}e/../.."));
     }
 
     @Test
@@ -846,9 +838,33 @@ public class BasicPathTest extends AbstractPathTest {
         assertThat(path.resolve(pathFactory.create("../x")), hasSegments(pathFactory, "a", "b", "c", "d", "e", "x"));
     }
 
+    @Test
     public void shouldResolveNonAbsolutePaths() {
         path = pathFactory.create("a/b/c");
         assertThat(path, hasSegments(pathFactory, "a", "b", "c"));
+    }
+
+    @Test
+    public void shouldConsiderTwoEquivalentPathsEqual() {
+        Path path1 = pathFactory.create("/a/b/c");
+        Path path2 = pathFactory.create("/a/b/c");
+        assertThat(path1.equals(path2), is(true));
+    }
+
+    @Test
+    public void shouldConsiderTwoDifferentPathsNotEqual() {
+        Path path1 = pathFactory.create("/a/b/c");
+        Path path2 = pathFactory.create("/a/b/d");
+        assertThat(path1.equals(path2), is(false));
+
+        path2 = pathFactory.create("/a/b");
+        assertThat(path1.equals(path2), is(false));
+
+        path2 = pathFactory.create("/a/b/c[2]");
+        assertThat(path1.equals(path2), is(false));
+
+        path2 = pathFactory.create("/a/b/c/c");
+        assertThat(path1.equals(path2), is(false));
     }
 
     @Test

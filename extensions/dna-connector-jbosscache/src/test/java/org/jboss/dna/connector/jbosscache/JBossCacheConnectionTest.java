@@ -299,7 +299,7 @@ public class JBossCacheConnectionTest {
         assertThat(newNodeC, is(nullValue()));
         // Copy node B and place under node D
         AtomicInteger count = new AtomicInteger();
-        connection.copyNode(nodeB, nodeD, true, uuidProperty, count, context);
+        connection.copyNode(nodeB, nodeD, null, true, uuidProperty, count, context);
         assertThat(count.get(), is(2));
         newNodeB = cache.getNode(Fqn.fromList(newPathB.getSegmentsList()));
         newNodeC = cache.getNode(Fqn.fromList(newPathC.getSegmentsList()));

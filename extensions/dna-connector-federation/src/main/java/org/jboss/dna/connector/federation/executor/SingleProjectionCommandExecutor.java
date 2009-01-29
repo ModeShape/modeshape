@@ -257,7 +257,7 @@ public class SingleProjectionCommandExecutor extends RequestProcessor {
     public void process( CopyBranchRequest request ) {
         Location fromLocationInSource = projectIntoSource(request.from());
         Location intoLocationInSource = projectIntoSource(request.into());
-        CopyBranchRequest projected = new CopyBranchRequest(fromLocationInSource, intoLocationInSource);
+        CopyBranchRequest projected = new CopyBranchRequest(fromLocationInSource, intoLocationInSource, request.desiredName());
         getConnection().execute(this.getExecutionContext(), projected);
         if (projected.hasError()) {
             projectError(projected, null, request);

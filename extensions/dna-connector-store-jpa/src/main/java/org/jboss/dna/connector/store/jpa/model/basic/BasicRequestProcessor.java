@@ -956,7 +956,8 @@ public class BasicRequestProcessor extends RequestProcessor {
                     originalToNewUuid.put(original.getId().getChildUuidString(), copyUuid);
 
                     // Now add the new copy of the original ...
-                    Name childName = fromPath.getLastSegment().getName();
+                    Name childName = request.desiredName();
+                    if (childName == null) childName = fromPath.getLastSegment().getName();
                     actualToLocation = addNewChild(actualNewParent, copyUuid, childName);
                 }
 

@@ -28,6 +28,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.NoSuchElementException;
 import org.jboss.dna.common.CommonI18n;
 import org.jboss.dna.common.text.TextEncoder;
 import org.jboss.dna.common.util.CheckArg;
@@ -52,6 +53,35 @@ public abstract class AbstractPath implements Path {
     private static final long serialVersionUID = 1L;
 
     public static final Path SELF_PATH = new BasicPath(Collections.singletonList(Path.SELF_SEGMENT), false);
+
+    protected static Iterator<Path.Segment> EMPTY_PATH_ITERATOR = new Iterator<Segment>() {
+        /**
+         * {@inheritDoc}
+         * 
+         * @see java.util.Iterator#hasNext()
+         */
+        public boolean hasNext() {
+            return false;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see java.util.Iterator#next()
+         */
+        public Segment next() {
+            throw new NoSuchElementException();
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see java.util.Iterator#remove()
+         */
+        public void remove() {
+            throw new UnsupportedOperationException();
+        }
+    };
 
     private transient int hc = 0;
 
@@ -471,6 +501,14 @@ public abstract class AbstractPath implements Path {
     }
 
     /**
+     * Method used by {@link AbstractPath#equals(Object)} implementation to quickly get an Iterator over the segments in the
+     * parent.
+     * 
+     * @return the iterator over the segments; never null, but may not have any elements
+     */
+    protected abstract Iterator<Segment> getSegmentsOfParent();
+
+    /**
      * {@inheritDoc}
      */
     @Override
@@ -478,10 +516,18 @@ public abstract class AbstractPath implements Path {
         if (obj == this) return true;
         if (obj instanceof Path) {
             Path that = (Path)obj;
-            if (this.size() != that.size()) return false;
+            // First check whether the paths are roots ...
+            if (this.isRoot()) return that.isRoot();
+            else if (that.isRoot()) return false;
+            // Now check the hash code and size ...
             if (this.hashCode() != that.hashCode()) return false;
-            Iterator<Segment> thisIter = this.iterator();
-            Iterator<Segment> thatIter = that.iterator();
+            if (this.size() != that.size()) return false;
+            // Check the last segments, since these will often differ anyway ...
+            if (!this.getLastSegment().equals(that.getLastSegment())) return false;
+            if (this.size() == 1) return true;
+            // Check the rest of the names ...
+            Iterator<Segment> thisIter = that instanceof AbstractPath ? this.getSegmentsOfParent() : this.iterator();
+            Iterator<Segment> thatIter = that instanceof AbstractPath ? ((AbstractPath)that).getSegmentsOfParent() : that.iterator();
             while (thisIter.hasNext()) {
                 Segment thisSegment = thisIter.next();
                 Segment thatSegment = thatIter.next();

@@ -24,7 +24,7 @@
   ~ 51 Franklin Street, Fifth Floor
   ~ Boston, MA  02110-1301  USA
   -->
-<dna:system xmlns:dna="http://www.jboss.org/dna" xmlns:jcr="http://www.jcp.org/jcr/1.0">
+<dna:system xmlns:dna="http://www.jboss.org/dna/1.0" xmlns:jcr="http://www.jcp.org/jcr/1.0">
     <!-- Define the sources from which content is made available -->
     <dna:sources>
         <dna:source jcr:name="SourceA" dna:name="Cars" dna:classname="org.jboss.dna.graph.connector.inmemory.InMemoryRepositorySource" dna:retryLimit="3" />

@@ -32,7 +32,7 @@ import org.jboss.dna.graph.property.basic.BasicName;
 public class DnaLexicon {
 
     public static class Namespace {
-        public static final String URI = "http://www.jboss.org/dna";
+        public static final String URI = "http://www.jboss.org/dna/1.0";
         public static final String PREFIX = "dna";
     }
 

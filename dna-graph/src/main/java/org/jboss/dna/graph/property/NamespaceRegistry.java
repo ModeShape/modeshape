@@ -119,7 +119,7 @@ public interface NamespaceRegistry {
      * @author Randall Hauch
      */
     @Immutable
-    interface Namespace {
+    interface Namespace extends Comparable<Namespace> {
         /**
          * Get the prefix for the namespace
          * 

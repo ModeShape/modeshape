@@ -24,7 +24,7 @@
   ~ 51 Franklin Street, Fifth Floor
   ~ Boston, MA  02110-1301  USA
   -->
-<dna:system xmlns:dna="http://www.jboss.org/dna" xmlns:jcr="http://www.jcp.org/jcr/1.0">
+<dna:system xmlns:dna="http://www.jboss.org/dna/1.0" xmlns:jcr="http://www.jcp.org/jcr/1.0">
     <!-- Define the RepositorySource instances that will be added if not already defined -->
     <dna:sources>
         <sourceA jcr:primaryType="dna:xyz" repositoryName="repositoryA" dna:classname="org.jboss.dna.connector.inmemory.InMemoryRepositorySource" retryLimit="3" />

@@ -89,14 +89,14 @@ public class BasicPathSegment implements Path.Segment {
      * {@inheritDoc}
      */
     public boolean isParentReference() {
-        return this.name.getNamespaceUri().length() == 0 && this.name.getLocalName().equals(Path.PARENT);
+        return this.name.getLocalName().equals(Path.PARENT) && this.name.getNamespaceUri().length() == 0;
     }
 
     /**
      * {@inheritDoc}
      */
     public boolean isSelfReference() {
-        return this.name.getNamespaceUri().length() == 0 && this.name.getLocalName().equals(Path.SELF);
+        return this.name.getLocalName().equals(Path.SELF) && this.name.getNamespaceUri().length() == 0;
     }
 
     /**

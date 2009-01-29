@@ -24,6 +24,7 @@
 package org.jboss.dna.graph.property.basic;
 
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.text.Inflector;
@@ -83,6 +84,18 @@ public class BasicPath extends AbstractPath {
             throw new InvalidPathException(msg);
         }
         return subpath(0, endIndex);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.property.basic.AbstractPath#getSegmentsOfParent()
+     */
+    @Override
+    protected Iterator<Segment> getSegmentsOfParent() {
+        int size = this.segments.size();
+        if (size == 1) return EMPTY_PATH_ITERATOR;
+        return this.segments.subList(0, size - 1).iterator();
     }
 
     /**

@@ -23,11 +23,11 @@
  */
 package org.jboss.dna.graph.property.basic;
 
-import static org.jboss.dna.graph.property.basic.IsPathContaining.hasSegments;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.hamcrest.core.IsSame.sameInstance;
+import static org.jboss.dna.graph.property.basic.IsPathContaining.hasSegments;
 import static org.junit.Assert.assertThat;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -40,14 +40,6 @@ import org.jboss.dna.graph.property.InvalidPathException;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.ValueFormatException;
-import org.jboss.dna.graph.property.basic.BasicName;
-import org.jboss.dna.graph.property.basic.BasicNamespaceRegistry;
-import org.jboss.dna.graph.property.basic.BasicPath;
-import org.jboss.dna.graph.property.basic.BasicPathSegment;
-import org.jboss.dna.graph.property.basic.NameValueFactory;
-import org.jboss.dna.graph.property.basic.PathValueFactory;
-import org.jboss.dna.graph.property.basic.RootPath;
-import org.jboss.dna.graph.property.basic.StringValueFactory;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -708,7 +700,7 @@ public class BasicPathOldTest {
     public void shouldGetStringWithNamespaceUrisIfNoNamespaceRegistryIsProvided() {
         path = pathFactory.create("/dna:a/b/dna:c/../d/./dna:e/../..");
         assertThat(path.getString(NO_OP_ENCODER),
-                   is("/{http://www.jboss.org/dna}a/{}b/{http://www.jboss.org/dna}c/../{}d/./{http://www.jboss.org/dna}e/../.."));
+                   is("/{http://www.jboss.org/dna/1.0}a/{}b/{http://www.jboss.org/dna/1.0}c/../{}d/./{http://www.jboss.org/dna/1.0}e/../.."));
     }
 
     @Test

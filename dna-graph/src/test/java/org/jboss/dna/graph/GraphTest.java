@@ -845,7 +845,9 @@ public class GraphTest {
         public void process( CopyBranchRequest request ) {
             // Create a child under the new parent ...
             if (request.into().hasPath()) {
-                Path childPath = context.getValueFactories().getPathFactory().create(request.into().getPath(), "child");
+                Name childName = request.desiredName();
+                if (childName == null) childName = createName("child");
+                Path childPath = context.getValueFactories().getPathFactory().create(request.into().getPath(), childName);
                 Location newChild = actualLocationOf(new Location(childPath));
                 // Just update the actual location
                 request.setActualLocations(actualLocationOf(request.from()), newChild);

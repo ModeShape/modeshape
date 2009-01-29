@@ -68,8 +68,8 @@ public class FileSystemSourceTest {
     }
 
     @Test
-    public void shouldSupportUpdates() {
-        assertThat(source.getCapabilities().supportsUpdates(), is(true));
+    public void shouldNotSupportUpdates() {
+        assertThat(source.getCapabilities().supportsUpdates(), is(false));
     }
 
     @Test

@@ -158,12 +158,12 @@ public class Graph {
         this.sourceName = sourceName;
         this.connectionFactory = connectionFactory;
         this.context = context;
-        this.requestQueue = new GraphRequestQueue();
         this.nextGraph = new Conjunction<Graph>() {
             public Graph and() {
                 return Graph.this;
             }
         };
+        this.requestQueue = new GraphRequestQueue();
     }
 
     /**
@@ -1527,11 +1527,11 @@ public class Graph {
         return importXmlFrom(file.toURI());
     }
 
-    /*package*/Path createPath( String path ) {
+    protected Path createPath( String path ) {
         return getContext().getValueFactories().getPathFactory().create(path);
     }
 
-    /*package*/void execute( Request request ) {
+    protected void execute( Request request ) {
         RepositoryConnection connection = Graph.this.getConnectionFactory().createConnection(getSourceName());
         if (connection == null) {
             throw new RepositorySourceException(GraphI18n.unableToFindRepositorySourceWithName.text(getSourceName()));
@@ -1548,7 +1548,7 @@ public class Graph {
         }
     }
 
-    /*package*/List<Segment> getSegments( List<Location> locations ) {
+    protected List<Segment> getSegments( List<Location> locations ) {
         List<Segment> segments = new ArrayList<Segment>(locations.size());
         for (Location location : locations) {
             segments.add(location.getPath().getLastSegment());
@@ -2922,56 +2922,115 @@ public class Graph {
      */
     public interface Into<Next> {
         /**
-         * Finish the request by specifying the new location into which the node should be copied/moved.
+         * Finish the request by specifying the location of the parent into which the node should be copied/moved. This operation
+         * will result in the copied/moved node having the same name as the original (but with the appropriately-determined
+         * same-name-sibling index). If you want to control the name of the node for the newly copied/moved node, use
+         * {@link To#to(Location)} instead.
          * 
-         * @param to the location of the new parent
+         * @param parentLocation the location of the new parent
          * @return the interface for additional requests or actions
+         * @see To#to(Location)
          */
-        Next into( Location to );
+        Next into( Location parentLocation );
 
         /**
-         * Finish the request by specifying the new location into which the node should be copied/moved.
+         * Finish the request by specifying the location of the parent into which the node should be copied/moved. This operation
+         * will result in the copied/moved node having the same name as the original (but with the appropriately-determined
+         * same-name-sibling index). If you want to control the name of the node for the newly copied/moved node, use
+         * {@link To#to(String)} instead.
          * 
-         * @param toPath the path of the new parent
+         * @param parentPath the path of the new parent
          * @return the interface for additional requests or actions
+         * @see To#to(String)
          */
-        Next into( String toPath );
+        Next into( String parentPath );
 
         /**
-         * Finish the request by specifying the new location into which the node should be copied/moved.
+         * Finish the request by specifying the location of the parent into which the node should be copied/moved. This operation
+         * will result in the copied/moved node having the same name as the original (but with the appropriately-determined
+         * same-name-sibling index). If you want to control the name of the node for the newly copied/moved node, use
+         * {@link To#to(Path)} instead.
          * 
-         * @param to the path of the new parent
+         * @param parentPath the path of the new parent
          * @return the interface for additional requests or actions
+         * @see To#to(Path)
          */
-        Next into( Path to );
+        Next into( Path parentPath );
 
         /**
-         * Finish the request by specifying the new location into which the node should be copied/moved.
+         * Finish the request by specifying the location of the parent into which the node should be copied/moved. This operation
+         * will result in the copied/moved node having the same name as the original (but with the appropriately-determined
+         * same-name-sibling index).
          * 
-         * @param to the UUID of the new parent
+         * @param parentUuid the UUID of the new parent
          * @return the interface for additional requests or actions
          */
-        Next into( UUID to );
+        Next into( UUID parentUuid );
 
         /**
-         * Finish the request by specifying the new location into which the node should be copied/moved.
+         * Finish the request by specifying the location of the parent into which the node should be copied/moved. This operation
+         * will result in the copied/moved node having the same name as the original (but with the appropriately-determined
+         * same-name-sibling index).
          * 
-         * @param idProperty the property that uniquely identifies the new parent
+         * @param parentIdProperty the property that uniquely identifies the new parent
          * @return the interface for additional requests or actions
          */
-        Next into( Property idProperty );
+        Next into( Property parentIdProperty );
 
         /**
-         * Finish the request by specifying the new location into which the node should be copied/moved.
+         * Finish the request by specifying the location of the parent into which the node should be copied/moved. This operation
+         * will result in the copied/moved node having the same name as the original (but with the appropriately-determined
+         * same-name-sibling index).
          * 
-         * @param firstIdProperty the first property that, with the <code>additionalIdProperties</code>, uniquely identifies the
-         *        new parent
-         * @param additionalIdProperties the additional properties that, with the <code>additionalIdProperties</code>, uniquely
-         *        identifies the new parent
+         * @param firstParentIdProperty the first property that, with the <code>additionalIdProperties</code>, uniquely identifies
+         *        the new parent
+         * @param additionalParentIdProperties the additional properties that, with the <code>additionalIdProperties</code>,
+         *        uniquely identifies the new parent
          * @return the interface for additional requests or actions
          */
-        Next into( Property firstIdProperty,
-                   Property... additionalIdProperties );
+        Next into( Property firstParentIdProperty,
+                   Property... additionalParentIdProperties );
+    }
+
+    /**
+     * A component that defines the location to which a node should be copied or moved.
+     * 
+     * @param <Next> The interface that is to be returned when this request is completed
+     * @author Randall Hauch
+     */
+    public interface To<Next> {
+        /**
+         * Finish the request by specifying the new location where the node should be copied/moved. Unlike
+         * {@link Into#into(Location)}, which specifies the location of the parent and which assumes the new node should have the
+         * same name as the original, this method allows the caller to specify a new name for the new node.
+         * 
+         * @param desiredLocation the desired location for the new node, which must have a {@link Location#getPath() path}
+         * @return the interface for additional requests or actions
+         * @see Into#into(Location)
+         */
+        Next to( Location desiredLocation );
+
+        /**
+         * Finish the request by specifying the new location where the node should be copied/moved. Unlike
+         * {@link Into#into(String)}, which specifies the location of the parent and which assumes the new node should have the
+         * same name as the original, this method allows the caller to specify a new name for the new node.
+         * 
+         * @param desiredPath the path for the new node
+         * @return the interface for additional requests or actions
+         * @see Into#into(String)
+         */
+        Next to( String desiredPath );
+
+        /**
+         * Finish the request by specifying the new location where the node should be copied/moved. Unlike {@link Into#into(Path)}
+         * , which specifies the location of the parent and which assumes the new node should have the same name as the original,
+         * this method allows the caller to specify a new name for the new node.
+         * 
+         * @param desiredPath the path for the new node
+         * @return the interface for additional requests or actions
+         * @see Into#into(Path)
+         */
+        Next to( Path desiredPath );
     }
 
     /**
@@ -3044,13 +3103,15 @@ public class Graph {
     }
 
     /**
-     * The interface for defining additional nodes to be copied and the parent into which the node(s) are to be copied. where the
-     * node(s) are to be moved.
+     * The interface for defining additional nodes to be copied and the locations where the copy is to be placed. The
+     * <code>to(...)</code> methods allow you to specify the location of the copy, including the name for the node that results
+     * from the copy. Alternatively, you can use the <code>into(...)</code> methods to specify the parent location where the copy
+     * is to be placed, which will assume the new copy will have the same name as the original.
      * 
      * @param <Next> The interface that is to be returned when this request is completed
      * @author Randall Hauch
      */
-    public interface Copy<Next> extends Into<Next>, And<Copy<Next>> {
+    public interface Copy<Next> extends To<Next>, Into<Next>, And<Copy<Next>> {
     }
 
     /**
@@ -3885,7 +3946,7 @@ public class Graph {
      * 
      * @author Randall Hauch
      */
-    /*package*/interface RequestQueue extends Executable {
+    protected interface RequestQueue extends Executable {
         Graph getGraph();
 
         void submit( Request request );
@@ -3899,7 +3960,7 @@ public class Graph {
      * @author Randall Hauch
      */
     @NotThreadSafe
-    /*package*/class GraphRequestQueue implements RequestQueue {
+    protected class GraphRequestQueue implements RequestQueue {
         public Graph getGraph() {
             return Graph.this;
         }
@@ -4598,47 +4659,73 @@ public class Graph {
          * Submit any requests to move the targets into the supplied parent location
          * 
          * @param into the parent location
+         * @param nameForCopy the name that should be used for the copy, or null if the name should be the same as the original
          * @return this object, for method chaining
          */
-        private T submit( Location into ) {
+        private T submit( Location into,
+                          Name nameForCopy ) {
             if (this.from.hasNext()) {
                 List<Request> requests = new LinkedList<Request>();
                 Locations locations = this.from;
                 while (locations.hasNext()) {
                     Location location = locations.getLocation();
-                    requests.add(new CopyBranchRequest(location, into));
+                    requests.add(new CopyBranchRequest(location, into, nameForCopy));
                     locations = locations.next();
                 }
                 queue().submit(requests);
             } else {
-                queue().submit(new CopyBranchRequest(this.from.getLocation(), into));
+                queue().submit(new CopyBranchRequest(this.from.getLocation(), into, nameForCopy));
             }
             return and();
         }
 
         public T into( Location into ) {
-            return submit(into);
+            return submit(into, null);
         }
 
         public T into( Path into ) {
-            return submit(new Location(into));
+            return submit(new Location(into), null);
         }
 
         public T into( UUID into ) {
-            return submit(new Location(into));
+            return submit(new Location(into), null);
         }
 
         public T into( Property firstIdProperty,
                        Property... additionalIdProperties ) {
-            return submit(new Location(firstIdProperty, additionalIdProperties));
+            return submit(new Location(firstIdProperty, additionalIdProperties), null);
         }
 
         public T into( Property into ) {
-            return submit(new Location(into));
+            return submit(new Location(into), null);
         }
 
         public T into( String into ) {
-            return submit(new Location(createPath(into)));
+            return submit(new Location(createPath(into)), null);
+        }
+
+        public T to( Location desiredLocation ) {
+            if (!desiredLocation.hasPath()) {
+                throw new IllegalArgumentException(GraphI18n.unableToCopyToLocationWithoutAPath.text(this.from, desiredLocation));
+            }
+            Path desiredPath = desiredLocation.getPath();
+            if (desiredPath.isRoot()) {
+                throw new IllegalArgumentException(GraphI18n.unableToCopyToTheRoot.text(this.from, desiredLocation));
+            }
+            Path parent = desiredPath.getParent();
+            return submit(new Location(parent), desiredPath.getLastSegment().getName());
+        }
+
+        public T to( Path desiredPath ) {
+            if (desiredPath.isRoot()) {
+                throw new IllegalArgumentException(GraphI18n.unableToCopyToTheRoot.text(this.from, desiredPath));
+            }
+            Path parent = desiredPath.getParent();
+            return submit(new Location(parent), desiredPath.getLastSegment().getName());
+        }
+
+        public T to( String desiredPath ) {
+            return to(createPath(desiredPath));
         }
 
         @Override
