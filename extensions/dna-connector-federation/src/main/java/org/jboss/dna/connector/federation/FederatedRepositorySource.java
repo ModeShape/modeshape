@@ -51,6 +51,7 @@ import org.jboss.dna.graph.Graph;
 import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.Node;
 import org.jboss.dna.graph.Subgraph;
+import org.jboss.dna.graph.SubgraphNode;
 import org.jboss.dna.graph.cache.BasicCachePolicy;
 import org.jboss.dna.graph.cache.CachePolicy;
 import org.jboss.dna.graph.connector.RepositoryConnection;
@@ -59,7 +60,6 @@ import org.jboss.dna.graph.connector.RepositoryContext;
 import org.jboss.dna.graph.connector.RepositorySource;
 import org.jboss.dna.graph.connector.RepositorySourceCapabilities;
 import org.jboss.dna.graph.connector.RepositorySourceException;
-import org.jboss.dna.graph.property.NameFactory;
 import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.Property;
 import org.jboss.dna.graph.property.ValueFactories;
@@ -93,17 +93,12 @@ public class FederatedRepositorySource implements RepositorySource, ObjectFactor
     protected static final String SECURITY_DOMAIN = "securityDomain";
     protected static final String RETRY_LIMIT = "retryLimit";
 
-    public static final String DNA_FEDERATION_SEGMENT = "dna:federation";
-    public static final String DNA_CACHE_SEGMENT = "dna:cache";
-    public static final String DNA_PROJECTIONS_SEGMENT = "dna:projections";
-    public static final String PROJECTION_RULES_CONFIG_PROPERTY_NAME = "dna:projectionRules";
-    public static final String CACHE_POLICY_TIME_TO_LIVE_CONFIG_PROPERTY_NAME = "dna:timeToCache";
-
     private String repositoryName;
     private String sourceName;
     private String username;
     private String password;
     private String configurationSourceName;
+    private String configurationWorkspaceName;
     private String configurationSourcePath = DEFAULT_CONFIGURATION_SOURCE_PATH;
     private String securityDomain;
     private final AtomicInteger retryLimit = new AtomicInteger(DEFAULT_RETRY_LIMIT);
@@ -230,6 +225,33 @@ public class FederatedRepositorySource implements RepositorySource, ObjectFactor
         if (this.configurationSourceName == sourceName || this.configurationSourceName != null
             && this.configurationSourceName.equals(sourceName)) return; // unchanged
         this.configurationSourceName = sourceName;
+        changeRepositoryConfig();
+    }
+
+    /**
+     * Set the name of the workspace in the {@link #getConfigurationSourceName() source} used by the {@link FederatedRepository
+     * federated repository} as the configuration repository. If this workspace name is null, the default workspace as defined by
+     * that source will be used.
+     * 
+     * @return the name of the configuration workspace, or null if the default workspace for the
+     *         {@link #getConfigurationSourceName() configuration source} should be used
+     */
+    public String getConfigurationWorkspaceName() {
+        return configurationWorkspaceName;
+    }
+
+    /**
+     * Set the name of the workspace in the {@link #getConfigurationSourceName() source} used by the {@link FederatedRepository
+     * federated repository} as the configuration repository. If this workspace name is null, the default workspace as defined by
+     * that source will be used.
+     * 
+     * @param workspaceName the name of the configuration workspace, or null if the default workspace for the
+     *        {@link #getConfigurationSourceName() configuration source} should be used
+     */
+    public void setConfigurationWorkspaceName( String workspaceName ) {
+        if (this.configurationWorkspaceName == workspaceName || this.configurationWorkspaceName != null
+            && this.configurationWorkspaceName.equals(workspaceName)) return; // unchanged
+        this.configurationWorkspaceName = workspaceName;
         changeRepositoryConfig();
     }
 
@@ -399,19 +421,14 @@ public class FederatedRepositorySource implements RepositorySource, ObjectFactor
     /**
      * This method is called to signal that some aspect of the configuration has changed. If a {@link #getRepository() repository}
      * instance has been created, it's configuration is
-     * {@link #getRepositoryConfiguration(ExecutionContext, RepositoryConnectionFactory) rebuilt} and updated. Nothing is done,
+     * {@link #getWorkspaceConfigurations(ExecutionContext, RepositoryConnectionFactory) rebuilt} and updated. Nothing is done,
      * however, if there is currently no {@link #getRepository() repository}.
      */
     protected synchronized void changeRepositoryConfig() {
         if (this.repository != null) {
             RepositoryContext repositoryContext = getRepositoryContext();
             if (repositoryContext != null) {
-                // Find in JNDI the repository source registry and the environment ...
-                ExecutionContext context = getExecutionContext();
-                RepositoryConnectionFactory factory = getRepositoryContext().getRepositoryConnectionFactory();
-                // Compute a new repository config and set it on the repository ...
-                FederatedRepositoryConfig newConfig = getRepositoryConfiguration(context, factory);
-                this.repository.setConfiguration(newConfig);
+                this.repository = getRepository();
             }
         }
     }
@@ -452,8 +469,8 @@ public class FederatedRepositorySource implements RepositorySource, ObjectFactor
      * Get the {@link FederatedRepository} instance that this source is using. This method uses the following logic:
      * <ol>
      * <li>If a {@link FederatedRepository} already was obtained from a prior call, the same instance is returned.</li>
-     * <li>A {@link FederatedRepository} is created using a {@link FederatedRepositoryConfig} is created from this instance's
-     * properties and {@link ExecutionContext} and {@link RepositoryConnectionFactory} instances obtained from JNDI.</li>
+     * <li>A {@link FederatedRepository} is created using a {@link FederatedWorkspace} is created from this instance's properties
+     * and {@link ExecutionContext} and {@link RepositoryConnectionFactory} instances obtained from JNDI.</li>
      * <li></li>
      * <li></li>
      * </ol>
@@ -466,8 +483,8 @@ public class FederatedRepositorySource implements RepositorySource, ObjectFactor
             ExecutionContext context = getExecutionContext();
             RepositoryConnectionFactory connectionFactory = getRepositoryContext().getRepositoryConnectionFactory();
             // And create the configuration and the repository ...
-            FederatedRepositoryConfig config = getRepositoryConfiguration(context, connectionFactory);
-            repository = new FederatedRepository(context, connectionFactory, config);
+            List<FederatedWorkspace> configs = getWorkspaceConfigurations(context, connectionFactory);
+            repository = new FederatedRepository(repositoryName, context, connectionFactory, configs);
         }
         return repository;
     }
@@ -505,68 +522,108 @@ public class FederatedRepositorySource implements RepositorySource, ObjectFactor
     }
 
     /**
-     * Create a {@link FederatedRepositoryConfig} instance from the current properties of this instance. This method does
-     * <i>not</i> modify the state of this instance.
+     * Create a {@link FederatedWorkspace} instances from the current properties of this instance. This method does <i>not</i>
+     * modify the state of this instance.
      * 
      * @param context the execution context that should be used to read the configuration; may not be null
      * @param connectionFactory the factory for {@link RepositoryConnection}s can be obtained; may not be null
-     * @return a configuration reflecting the current state of this instance
+     * @return the collection of configurations reflecting the workspaces as currently defined, order such that the default
+     *         workspace is first; never null
      */
-    protected synchronized FederatedRepositoryConfig getRepositoryConfiguration( ExecutionContext context,
-                                                                                 RepositoryConnectionFactory connectionFactory ) {
+    protected synchronized List<FederatedWorkspace> getWorkspaceConfigurations( ExecutionContext context,
+                                                                                RepositoryConnectionFactory connectionFactory ) {
         Problems problems = new SimpleProblems();
         ValueFactories valueFactories = context.getValueFactories();
-        NameFactory nameFactory = valueFactories.getNameFactory();
-        ValueFactory<Long> longFactory = valueFactories.getLongFactory();
+        ValueFactory<String> strings = valueFactories.getStringFactory();
+        ValueFactory<Long> longs = valueFactories.getLongFactory();
         ProjectionParser projectionParser = ProjectionParser.getInstance();
 
         // Create a graph to access the configuration ...
-        Graph config = Graph.create(configurationSourceName, connectionFactory, context);
+        Graph config = Graph.create(this.configurationSourceName, connectionFactory, context);
+        if (this.configurationWorkspaceName != null) config.useWorkspace(this.configurationWorkspaceName);
+        String configurationWorkspaceName = config.getCurrentWorkspaceName();
 
-        // Read the federated repositories subgraph (of max depth 4)...
-        Subgraph repositories = config.getSubgraphOfDepth(4).at(getConfigurationSourcePath());
+        // Read the federated repositories subgraph, of max depth 6:
+        // Level 1: the node representing the federated repository
+        // Level 2: the "dna:workspaces" node
+        // Level 3: a node for each workspace in the federated repository
+        // Level 4: the "dna:cache" project node, or the "dna:projections" nodes
+        // Level 5: a node below "dna:projections" for each projection, with properties for the source name,
+        // workspace name, cache expiration time, and projection rules
+        Subgraph repositories = config.getSubgraphOfDepth(5).at(getConfigurationSourcePath());
 
-        // Set up the default cache policy by reading the "dna:federation" node ...
-        CachePolicy defaultCachePolicy = null;
-        Node federation = repositories.getNode(DNA_FEDERATION_SEGMENT);
-        if (federation == null) {
+        // Get the name of the default workspace ...
+        String defaultWorkspaceName = null;
+        Property defaultWorkspaceNameProperty = repositories.getRoot().getProperty(FederatedLexicon.DEFAULT_WORKSPACE_NAME);
+        if (defaultWorkspaceNameProperty != null) {
+            // Set the name using the property if there is one ...
+            defaultWorkspaceName = strings.create(defaultWorkspaceNameProperty.getFirstValue());
+        }
+
+        Node workspacesNode = repositories.getNode(FederatedLexicon.WORKSPACES);
+        if (workspacesNode == null) {
             I18n msg = FederationI18n.requiredNodeDoesNotExistRelativeToNode;
-            throw new FederationException(msg.text(DNA_FEDERATION_SEGMENT, repositories.getLocation().getPath()));
+            String name = FederatedLexicon.WORKSPACES.getString(context.getNamespaceRegistry());
+            String relativeTo = repositories.getLocation().getPath().getString(context.getNamespaceRegistry());
+            throw new FederationException(msg.text(name, relativeTo, configurationWorkspaceName, configurationSourceName));
         }
-        Property timeToLiveProperty = federation.getProperty(nameFactory.create(CACHE_POLICY_TIME_TO_LIVE_CONFIG_PROPERTY_NAME));
-        if (timeToLiveProperty != null && !timeToLiveProperty.isEmpty()) {
-            long timeToCacheInMillis = longFactory.create(timeToLiveProperty.getValues().next());
-            BasicCachePolicy policy = new BasicCachePolicy(timeToCacheInMillis, TimeUnit.MILLISECONDS);
-            defaultCachePolicy = policy.getUnmodifiable();
+        LinkedList<FederatedWorkspace> workspaces = new LinkedList<FederatedWorkspace>();
+        for (Location workspace : workspacesNode) {
+            // Get the name of the workspace ...
+            String workspaceName = null;
+            SubgraphNode workspaceNode = repositories.getNode(workspace);
+            Property workspaceNameProperty = workspaceNode.getProperty(FederatedLexicon.WORKSPACE_NAME);
+            if (workspaceNameProperty != null) {
+                // Set the name using the property if there is one ...
+                workspaceName = strings.create(workspaceNameProperty.getFirstValue());
+            }
+            if (workspaceName == null) {
+                // Otherwise, set the name using the local name of the workspace node ...
+                workspaceName = workspace.getPath().getLastSegment().getName().getLocalName();
+            }
+
+            // Get the cache projection ...
+            Projection cacheProjection = null;
+            CachePolicy cachePolicy = null;
+            Node cacheNode = workspaceNode.getNode(FederatedLexicon.CACHE);
+            if (cacheNode != null) {
+                // Create the projection from the "dna:cache" node ...
+                cacheProjection = createProjection(context, projectionParser, cacheNode, problems);
+
+                // Get the cache expiration time for the cache ...
+                Property timeToExpire = cacheNode.getProperty(FederatedLexicon.TIME_TO_EXPIRE);
+                if (timeToExpire != null && !timeToExpire.isEmpty()) {
+                    long timeToCacheInMillis = longs.create(timeToExpire.getFirstValue());
+                    cachePolicy = new BasicCachePolicy(timeToCacheInMillis, TimeUnit.MILLISECONDS).getUnmodifiable();
+                }
+            }
+
+            // Get the source projections ...
+            Node projectionsNode = workspaceNode.getNode(FederatedLexicon.PROJECTIONS);
+            if (projectionsNode == null) {
+                I18n msg = FederationI18n.requiredNodeDoesNotExistRelativeToNode;
+                String name = FederatedLexicon.PROJECTIONS.getString(context.getNamespaceRegistry());
+                String relativeTo = workspaceNode.getLocation().getPath().getString(context.getNamespaceRegistry());
+                throw new FederationException(msg.text(name, relativeTo, configurationWorkspaceName, configurationSourceName));
+            }
+            List<Projection> sourceProjections = new LinkedList<Projection>();
+            for (Location projection : projectionsNode) {
+                Node projectionNode = repositories.getNode(projection);
+
+                // Create the projection ...
+                sourceProjections.add(createProjection(context, projectionParser, projectionNode, problems));
+            }
+
+            // Create the federated workspace configuration ...
+            FederatedWorkspace space = new FederatedWorkspace(workspaceName, cacheProjection, sourceProjections, cachePolicy);
+            if (workspaceName.equals(defaultWorkspaceName)) {
+                workspaces.addFirst(space);
+            } else {
+                workspaces.add(space);
+            }
         }
 
-        // Read the "dna:cache" and its projection ...
-        String cacheNodePath = DNA_FEDERATION_SEGMENT + "/" + DNA_CACHE_SEGMENT;
-        Node cacheNode = repositories.getNode(cacheNodePath);
-        if (cacheNode == null) {
-            I18n msg = FederationI18n.requiredNodeDoesNotExistRelativeToNode;
-            throw new FederationException(msg.text(cacheNodePath, repositories.getLocation().getPath()));
-        }
-        Projection cacheProjection = null;
-        for (Location cacheProjectionLocation : cacheNode) {
-            Node projection = repositories.getNode(cacheProjectionLocation);
-            cacheProjection = createProjection(context, projectionParser, projection, problems);
-        }
-
-        // Read the "dna:projections" and create a projection for each ...
-        String projectionsPath = DNA_FEDERATION_SEGMENT + "/" + DNA_PROJECTIONS_SEGMENT;
-        Node projectionsNode = repositories.getNode(projectionsPath);
-        if (projectionsNode == null) {
-            I18n msg = FederationI18n.requiredNodeDoesNotExistRelativeToNode;
-            throw new FederationException(msg.text(projectionsNode, repositories.getLocation().getPath()));
-        }
-        List<Projection> sourceProjections = new LinkedList<Projection>();
-        for (Location location : projectionsNode) {
-            Node projection = repositories.getNode(location);
-            sourceProjections.add(createProjection(context, projectionParser, projection, problems));
-        }
-
-        return new FederatedRepositoryConfig(repositoryName, cacheProjection, sourceProjections, defaultCachePolicy);
+        return workspaces;
     }
 
     /**
@@ -582,26 +639,39 @@ public class FederatedRepositorySource implements RepositorySource, ObjectFactor
                                            ProjectionParser projectionParser,
                                            Node node,
                                            Problems problems ) {
-        ValueFactories valueFactories = context.getValueFactories();
-        NameFactory nameFactory = valueFactories.getNameFactory();
-        ValueFactory<String> stringFactory = valueFactories.getStringFactory();
+        ValueFactory<String> strings = context.getValueFactories().getStringFactory();
 
         Path path = node.getLocation().getPath();
-        String sourceName = path.getLastSegment().getName().getLocalName();
 
-        // Get the rules ...
+        // Get the source name from the local name of the node ...
+        String sourceName = path.getLastSegment().getName().getLocalName();
+        Property sourceNameProperty = node.getProperty(FederatedLexicon.SOURCE_NAME);
+        if (sourceNameProperty != null && !sourceNameProperty.isEmpty()) {
+            // There is a "dna:sourceName" property, so use this instead ...
+            sourceName = strings.create(sourceNameProperty.getFirstValue());
+        }
+        assert sourceName != null;
+
+        // Get the workspace name ...
+        String workspaceName = null;
+        Property workspaceNameProperty = node.getProperty(FederatedLexicon.WORKSPACE_NAME);
+        if (workspaceNameProperty != null && !workspaceNameProperty.isEmpty()) {
+            // There is a "dna:workspaceName" property, so use this instead ...
+            workspaceName = strings.create(workspaceNameProperty.getFirstValue());
+        }
+
+        // Get the projection rules ...
         Projection.Rule[] projectionRules = null;
-        Property projectionRulesProperty = node.getProperty(nameFactory.create(PROJECTION_RULES_CONFIG_PROPERTY_NAME));
+        Property projectionRulesProperty = node.getProperty(FederatedLexicon.PROJECTION_RULES);
         if (projectionRulesProperty != null && !projectionRulesProperty.isEmpty()) {
-            String[] projectionRuleStrs = stringFactory.create(projectionRulesProperty.getValuesAsArray());
+            String[] projectionRuleStrs = strings.create(projectionRulesProperty.getValuesAsArray());
             if (projectionRuleStrs != null && projectionRuleStrs.length != 0) {
                 projectionRules = projectionParser.rulesFromStrings(context, projectionRuleStrs);
             }
         }
         if (problems.hasErrors()) return null;
 
-        Projection region = new Projection(sourceName, projectionRules);
-        return region;
+        return new Projection(sourceName, workspaceName, projectionRules);
     }
 
     /**

@@ -47,6 +47,7 @@ public class UpdatePropertiesRequest extends Request implements Iterable<Propert
     private static final long serialVersionUID = 1L;
 
     private final Location on;
+    private final String workspaceName;
     private final List<Property> properties;
     private Location actualLocation;
 
@@ -54,13 +55,17 @@ public class UpdatePropertiesRequest extends Request implements Iterable<Propert
      * Create a request to update the properties on the node at the supplied location.
      * 
      * @param on the location of the node to be read
+     * @param workspaceName the name of the workspace containing the node
      * @param properties the new properties on the node
-     * @throws IllegalArgumentException if the location is null or if there are no properties to update
+     * @throws IllegalArgumentException if the location or workspace name is null or if there are no properties to update
      */
     public UpdatePropertiesRequest( Location on,
+                                    String workspaceName,
                                     Property... properties ) {
         CheckArg.isNotNull(on, "on");
         CheckArg.isNotEmpty(properties, "properties");
+        CheckArg.isNotNull(workspaceName, "workspaceName");
+        this.workspaceName = workspaceName;
         this.on = on;
         this.properties = Collections.unmodifiableList(Arrays.asList(properties));
     }
@@ -69,13 +74,17 @@ public class UpdatePropertiesRequest extends Request implements Iterable<Propert
      * Create a request to update the properties on the node at the supplied location.
      * 
      * @param on the location of the node to be read
+     * @param workspaceName the name of the workspace containing the node
      * @param properties the new properties on the node
-     * @throws IllegalArgumentException if the location is null or if there are no properties to update
+     * @throws IllegalArgumentException if the location or workspace name is null or if there are no properties to update
      */
     public UpdatePropertiesRequest( Location on,
+                                    String workspaceName,
                                     Iterable<Property> properties ) {
         CheckArg.isNotNull(on, "on");
         CheckArg.isNotNull(properties, "properties");
+        CheckArg.isNotNull(workspaceName, "workspaceName");
+        this.workspaceName = workspaceName;
         this.on = on;
         List<Property> props = new LinkedList<Property>();
         for (Property property : properties) {
@@ -89,13 +98,17 @@ public class UpdatePropertiesRequest extends Request implements Iterable<Propert
      * Create a request to update the properties on the node at the supplied location.
      * 
      * @param on the location of the node to be read
+     * @param workspaceName the name of the workspace containing the node
      * @param properties the new properties on the node
-     * @throws IllegalArgumentException if the location is null or if there are no properties to update
+     * @throws IllegalArgumentException if the location or workspace name is null or if there are no properties to update
      */
     public UpdatePropertiesRequest( Location on,
+                                    String workspaceName,
                                     Iterator<Property> properties ) {
         CheckArg.isNotNull(on, "on");
         CheckArg.isNotNull(properties, "properties");
+        CheckArg.isNotNull(workspaceName, "workspaceName");
+        this.workspaceName = workspaceName;
         this.on = on;
         List<Property> props = new LinkedList<Property>();
         while (properties.hasNext()) {
@@ -110,13 +123,17 @@ public class UpdatePropertiesRequest extends Request implements Iterable<Propert
      * Create a request to update the properties on the node at the supplied location.
      * 
      * @param on the location of the node to be read
+     * @param workspaceName the name of the workspace containing the node
      * @param properties the new properties on the node
-     * @throws IllegalArgumentException if the location is null or if there are no properties to update
+     * @throws IllegalArgumentException if the location or workspace name is null or if there are no properties to update
      */
     private UpdatePropertiesRequest( Location on,
+                                     String workspaceName,
                                      List<Property> properties ) {
         CheckArg.isNotNull(on, "on");
         CheckArg.isNotNull(properties, "properties");
+        CheckArg.isNotNull(workspaceName, "workspaceName");
+        this.workspaceName = workspaceName;
         this.on = on;
         this.properties = properties;
         CheckArg.isNotEmpty(this.properties, "properties");
@@ -139,6 +156,15 @@ public class UpdatePropertiesRequest extends Request implements Iterable<Propert
      */
     public Location on() {
         return on;
+    }
+
+    /**
+     * Get the name of the workspace in which the node exists.
+     * 
+     * @return the name of the workspace; never null
+     */
+    public String inWorkspace() {
+        return workspaceName;
     }
 
     /**
@@ -194,10 +220,12 @@ public class UpdatePropertiesRequest extends Request implements Iterable<Propert
      */
     @Override
     public boolean equals( Object obj ) {
+        if (obj == this) return true;
         if (this.getClass().isInstance(obj)) {
             UpdatePropertiesRequest that = (UpdatePropertiesRequest)obj;
             if (!this.on().equals(that.on())) return false;
             if (!this.properties().equals(that.properties())) return false;
+            if (!this.inWorkspace().equals(that.inWorkspace())) return false;
             return true;
         }
         return false;
@@ -210,7 +238,7 @@ public class UpdatePropertiesRequest extends Request implements Iterable<Propert
      */
     @Override
     public String toString() {
-        return "update properties on " + on() + " to " + properties();
+        return "update properties on " + on() + " in the \"" + workspaceName + "\" workspace to " + properties();
     }
 
     /**
@@ -231,7 +259,7 @@ public class UpdatePropertiesRequest extends Request implements Iterable<Propert
                 }
             }
             newProps.add(newProp);
-            return new UpdatePropertiesRequest(on, Collections.unmodifiableList(newProps));
+            return new UpdatePropertiesRequest(on, workspaceName, Collections.unmodifiableList(newProps));
         }
         Set<Name> otherNames = new HashSet<Name>();
         for (Property prop : other.properties()) {
@@ -244,7 +272,7 @@ public class UpdatePropertiesRequest extends Request implements Iterable<Propert
             }
         }
         newProps.addAll(other.properties);
-        return new UpdatePropertiesRequest(on, Collections.unmodifiableList(newProps));
+        return new UpdatePropertiesRequest(on, workspaceName, Collections.unmodifiableList(newProps));
 
     }
 

@@ -28,7 +28,7 @@ import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
 import javax.jcr.Session;
 import javax.jcr.Workspace;
-import org.jboss.dna.graph.connector.SimpleRepository;
+import org.jboss.dna.graph.connector.inmemory.InMemoryRepositorySource;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -44,15 +44,16 @@ public class JcrWorkspaceTest {
     @BeforeClass
     public static void beforeClass() throws Exception {
         JcrSessionTest.executionContext = TestUtil.getExecutionContext();
-        JcrSessionTest.simpleRepository = SimpleRepository.get(JcrSessionTest.WORKSPACE_NAME);
-        JcrSessionTest.connectionFactory = TestUtil.createJackRabbitConnectionFactory(JcrSessionTest.simpleRepository,
+        InMemoryRepositorySource source = new InMemoryRepositorySource();
+        source.setName(JcrSessionTest.REPOSITORY_NAME);
+        JcrSessionTest.repositorySource = source;
+        JcrSessionTest.connectionFactory = TestUtil.createJackRabbitConnectionFactory(JcrSessionTest.repositorySource,
                                                                                       JcrSessionTest.executionContext);
         JcrSessionTest.repository = new JcrRepository(JcrSessionTest.executionContext, JcrSessionTest.connectionFactory);
     }
 
     @AfterClass
     public static void afterClass() {
-        SimpleRepository.shutdownAll();
     }
 
     private Session session;

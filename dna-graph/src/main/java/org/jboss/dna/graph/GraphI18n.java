@@ -68,7 +68,7 @@ public final class GraphI18n {
     public static I18n closingRequestProcessor;
     public static I18n closedRequestProcessor;
     public static I18n multipleErrorsWhileExecutingRequests;
-    public static I18n unknownTypeOfRequest;
+    public static I18n unsupportedRequestType;
     public static I18n unableToAddMoreRequestsToAlreadyExecutedBatch;
     public static I18n unableToCreateReferenceToNodeWithoutUuid;
     public static I18n unableToCopyToLocationWithoutAPath;
@@ -91,6 +91,8 @@ public final class GraphI18n {
     public static I18n inMemoryNodeDoesNotExist;
     public static I18n errorSerializingInMemoryCachePolicyInSource;
     public static I18n inMemoryConnectorRequestsMustHavePathOrUuid;
+    public static I18n workspaceDoesNotExistInRepository;
+    public static I18n workspaceAlreadyExistsInRepository;
 
     static {
         try {

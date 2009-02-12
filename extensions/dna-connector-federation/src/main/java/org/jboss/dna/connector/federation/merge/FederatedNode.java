@@ -23,7 +23,6 @@
  */
 package org.jboss.dna.connector.federation.merge;
 
-import java.util.UUID;
 import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.request.ReadNodeRequest;
 
@@ -36,37 +35,18 @@ public class FederatedNode extends ReadNodeRequest {
 
     private static final long serialVersionUID = 1L;
 
-    private UUID uuid;
     private MergePlan mergePlan;
 
     /**
      * Create a federated node given the path and UUID.
      * 
      * @param location the location of the federated node; may not be null
-     * @param uuid the UUID of the federated node; may not be null
+     * @param workspaceName the name of the (federated) workspace in which this node exists
      */
     public FederatedNode( Location location,
-                          UUID uuid ) {
-        super(location);
-        assert uuid != null;
-        this.uuid = uuid;
+                          String workspaceName ) {
+        super(location, workspaceName);
         super.setActualLocationOfNode(location);
-    }
-
-    /**
-     * Get the UUID for this federated node.
-     * 
-     * @return the UUID; never null
-     */
-    public UUID getUuid() {
-        return uuid;
-    }
-
-    /**
-     * @param uuid Sets uuid to the specified value.
-     */
-    public void setUuid( UUID uuid ) {
-        this.uuid = uuid;
     }
 
     /**
@@ -107,8 +87,9 @@ public class FederatedNode extends ReadNodeRequest {
         if (obj == this) return true;
         if (obj instanceof FederatedNode) {
             FederatedNode that = (FederatedNode)obj;
-            if (this.at().equals(that.at())) return true;
-            if (this.getUuid().equals(that.getUuid())) return true;
+            if (!this.at().equals(that.at())) return false;
+            if (!this.inWorkspace().equals(that.inWorkspace())) return false;
+            return true;
         }
         return false;
     }

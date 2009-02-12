@@ -27,6 +27,7 @@ import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -112,11 +113,11 @@ public class IoUtil {
      */
     public static String read( Reader reader ) throws IOException {
         if (reader == null) return "";
-        char[] buffer = new char[1024];
         StringBuilder sb = new StringBuilder();
         boolean error = false;
         try {
             int numRead = 0;
+            char[] buffer = new char[1024];
             while ((numRead = reader.read(buffer)) > -1) {
                 sb.append(buffer, 0, numRead);
             }
@@ -146,6 +147,40 @@ public class IoUtil {
      */
     public static String read( InputStream stream ) throws IOException {
         return stream == null ? "" : read(new InputStreamReader(stream));
+    }
+
+    /**
+     * Read and return the entire contents of the supplied {@link File}.
+     * 
+     * @param file the file containing the information to be read; may be null
+     * @return the contents, or an empty string if the supplied reader is null
+     * @throws IOException if there is an error reading the content
+     */
+    public static String read( File file ) throws IOException {
+        if (file == null) return "";
+        StringBuilder sb = new StringBuilder();
+        boolean error = false;
+        Reader reader = new FileReader(file);
+        try {
+            int numRead = 0;
+            char[] buffer = new char[1024];
+            while ((numRead = reader.read(buffer)) > -1) {
+                sb.append(buffer, 0, numRead);
+            }
+        } catch (IOException e) {
+            error = true; // this error should be thrown, even if there is an error closing reader
+            throw e;
+        } catch (RuntimeException e) {
+            error = true; // this error should be thrown, even if there is an error closing reader
+            throw e;
+        } finally {
+            try {
+                reader.close();
+            } catch (IOException e) {
+                if (!error) throw e;
+            }
+        }
+        return sb.toString();
     }
 
     /**

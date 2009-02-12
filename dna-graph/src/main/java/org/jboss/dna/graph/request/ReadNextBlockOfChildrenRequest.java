@@ -49,6 +49,7 @@ public class ReadNextBlockOfChildrenRequest extends CacheableRequest {
 
     private final List<Location> children = new LinkedList<Location>();
     private final Location startingAfter;
+    private final String workspaceName;
     private final int count;
     private Location actualStartingAfter;
 
@@ -56,14 +57,18 @@ public class ReadNextBlockOfChildrenRequest extends CacheableRequest {
      * Create a request to read those children of a node that are immediately after a supplied sibling node.
      * 
      * @param startingAfter the location of the previous sibling that was the last child of the previous block of children read
+     * @param workspaceName the name of the workspace containing the node
      * @param count the maximum number of children that should be included in the block
-     * @throws IllegalArgumentException if the location is null, if <code>startingAfter</code> is null, or if
+     * @throws IllegalArgumentException if the workspace name or <code>startingAfter</code> location is null, or if
      *         <code>count</count> is less than 1.
      */
     public ReadNextBlockOfChildrenRequest( Location startingAfter,
+                                           String workspaceName,
                                            int count ) {
         CheckArg.isNotNull(startingAfter, "startingAfter");
         CheckArg.isPositive(count, "count");
+        CheckArg.isNotNull(workspaceName, "workspaceName");
+        this.workspaceName = workspaceName;
         this.startingAfter = startingAfter;
         this.count = count;
     }
@@ -98,6 +103,15 @@ public class ReadNextBlockOfChildrenRequest extends CacheableRequest {
      */
     public Location startingAfter() {
         return this.startingAfter;
+    }
+
+    /**
+     * Get the name of the workspace in which the parent and children exist.
+     * 
+     * @return the name of the workspace; never null
+     */
+    public String inWorkspace() {
+        return workspaceName;
     }
 
     /**
@@ -194,10 +208,12 @@ public class ReadNextBlockOfChildrenRequest extends CacheableRequest {
      */
     @Override
     public boolean equals( Object obj ) {
+        if (obj == this) return true;
         if (this.getClass().isInstance(obj)) {
             ReadNextBlockOfChildrenRequest that = (ReadNextBlockOfChildrenRequest)obj;
             if (!this.startingAfter().equals(that.startingAfter())) return false;
             if (this.count() != that.count()) return false;
+            if (!this.inWorkspace().equals(that.inWorkspace())) return false;
             return true;
         }
         return false;
@@ -211,9 +227,9 @@ public class ReadNextBlockOfChildrenRequest extends CacheableRequest {
     @Override
     public String toString() {
         if (count() == 1) {
-            return "read the next child after " + startingAfter();
+            return "read the next child after " + startingAfter() + " in the \"" + workspaceName + "\" workspace";
         }
-        return "read the next " + count() + " children after " + startingAfter();
+        return "read the next " + count() + " children after " + startingAfter() + " in the \"" + workspaceName + "\" workspace";
     }
 
 }

@@ -49,6 +49,7 @@ public class TwoChildContributionTest {
     public static final DateTime TOMORROW = new JodaDateTime(NOW.getMilliseconds() + TWENTY_FOUR_HOURS_IN_MILLISECONDS).toUtcTimeZone();
 
     private String sourceName;
+    private String workspaceName;
     private Path pathInSource;
     private TwoChildContribution contribution;
     private DateTime expiration;
@@ -58,36 +59,37 @@ public class TwoChildContributionTest {
     @Before
     public void beforeEach() throws Exception {
         sourceName = "some source";
+        workspaceName = "some workspace";
         pathInSource = RootPath.INSTANCE;
         expiration = TOMORROW;
         child1 = mock(Location.class);
         child2 = mock(Location.class);
-        contribution = new TwoChildContribution(sourceName, new Location(pathInSource), expiration, child1, child2);
+        contribution = new TwoChildContribution(sourceName, workspaceName, new Location(pathInSource), expiration, child1, child2);
     }
 
     @Test
     public void shouldAllowNullExpiration() {
         expiration = null;
-        contribution = new TwoChildContribution(sourceName, new Location(pathInSource), expiration, child1, child2);
+        contribution = new TwoChildContribution(sourceName, workspaceName, new Location(pathInSource), expiration, child1, child2);
         assertThat(contribution.getExpirationTimeInUtc(), is(nullValue()));
     }
 
     @Test( expected = IllegalArgumentException.class )
     public void shouldNotAllowExpirationTimeIfNotInUtcTime() {
         expiration = new JodaDateTime(System.currentTimeMillis(), "CST");
-        contribution = new TwoChildContribution(sourceName, new Location(pathInSource), expiration, child1, child2);
+        contribution = new TwoChildContribution(sourceName, workspaceName, new Location(pathInSource), expiration, child1, child2);
     }
 
     @Test( expected = AssertionError.class )
     public void shouldNotAllowNullFirstChild() {
         child1 = null;
-        contribution = new TwoChildContribution(sourceName, new Location(pathInSource), expiration, child1, child2);
+        contribution = new TwoChildContribution(sourceName, workspaceName, new Location(pathInSource), expiration, child1, child2);
     }
 
     @Test( expected = AssertionError.class )
     public void shouldNotAllowNullSecondChild() {
         child2 = null;
-        contribution = new TwoChildContribution(sourceName, new Location(pathInSource), expiration, child1, child2);
+        contribution = new TwoChildContribution(sourceName, workspaceName, new Location(pathInSource), expiration, child1, child2);
     }
 
     @Test
@@ -102,7 +104,7 @@ public class TwoChildContributionTest {
 
     @Test
     public void shouldNotBeExpiredIfExpirationIsInTheFuture() {
-        contribution = new TwoChildContribution(sourceName, new Location(pathInSource), NOW, child1, child2);
+        contribution = new TwoChildContribution(sourceName, workspaceName, new Location(pathInSource), NOW, child1, child2);
         assertThat(contribution.isExpired(YESTERDAY), is(false));
         assertThat(contribution.isExpired(TOMORROW), is(true));
     }

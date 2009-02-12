@@ -144,15 +144,22 @@ public class RepositoryClient {
         // Normally, these would exist already and would simply be accessed. But in this example, we're going to
         // populate these repositories here by importing from files. First do the configuration repository ...
         String location = this.userInterface.getLocationOfRepositoryFiles();
-        Graph.create("Configuration", sources, context).importXmlFrom(location + "/configRepository.xml").into("/");
+        Graph config = Graph.create("Configuration", sources, context);
+        config.createWorkspace().named("default");
+        config.importXmlFrom(location + "/configRepository.xml").into("/");
 
         // Now instantiate the Repository Service ...
-        repositoryService = new RepositoryService(sources, configSource.getName(), context);
+        repositoryService = new RepositoryService(sources, configSource.getName(), "default", context);
         repositoryService.getAdministrator().start();
 
         // Now import the conten for two of the other in-memory repositories ...
-        Graph.create("Cars", sources, context).importXmlFrom(location + "/cars.xml").into("/");
-        Graph.create("Aircraft", sources, context).importXmlFrom(location + "/aircraft.xml").into("/");
+        Graph cars = Graph.create("Cars", sources, context);
+        cars.createWorkspace().named("default");
+        cars.importXmlFrom(location + "/cars.xml").into("/");
+
+        Graph aircraft = Graph.create("Aircraft", sources, context);
+        aircraft.createWorkspace().named("default");
+        aircraft.importXmlFrom(location + "/aircraft.xml").into("/");
     }
 
     /**
@@ -301,6 +308,7 @@ public class RepositoryClient {
                     // Use the DNA Graph API to read the properties and children of the node ...
                     ExecutionContext context = loginContext != null ? this.context.create(loginContext) : this.context;
                     Graph graph = Graph.create(sourceName, sources, context);
+                    graph.useWorkspace("default");
                     org.jboss.dna.graph.Node node = graph.getNodeAt(pathToNode);
 
                     if (properties != null) {

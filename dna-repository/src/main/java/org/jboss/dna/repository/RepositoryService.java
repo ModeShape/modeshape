@@ -98,6 +98,7 @@ public class RepositoryService implements AdministeredService {
     private final ExecutionContext context;
     private final RepositoryLibrary sources;
     private final String configurationSourceName;
+    private final String configurationWorkspaceName;
     private final Path pathToConfigurationRoot;
     private final Administrator administrator = new Administrator();
     private final AtomicBoolean started = new AtomicBoolean(false);
@@ -108,13 +109,16 @@ public class RepositoryService implements AdministeredService {
      * 
      * @param sources the source manager
      * @param configurationSourceName the name of the {@link RepositorySource} that is the configuration repository
+     * @param configurationWorkspaceName the name of the workspace in the {@link RepositorySource} that is the configuration
+     *        repository
      * @param context the execution context in which this service should run
      * @throws IllegalArgumentException if the bootstrap source is null or the execution context is null
      */
     public RepositoryService( RepositoryLibrary sources,
                               String configurationSourceName,
+                              String configurationWorkspaceName,
                               ExecutionContext context ) {
-        this(sources, configurationSourceName, null, context);
+        this(sources, configurationSourceName, configurationWorkspaceName, null, context);
     }
 
     /**
@@ -123,6 +127,8 @@ public class RepositoryService implements AdministeredService {
      * 
      * @param sources the source manager
      * @param configurationSourceName the name of the {@link RepositorySource} that is the configuration repository
+     * @param configurationWorkspaceName the name of the workspace in the {@link RepositorySource} that is the configuration
+     *        repository, or null if the default workspace of the source should be used (if there is one)
      * @param pathToConfigurationRoot the path of the node in the configuration source repository that should be treated by this
      *        service as the root of the service's configuration; if null, then "/dna:system" is used
      * @param context the execution context in which this service should run
@@ -130,15 +136,19 @@ public class RepositoryService implements AdministeredService {
      */
     public RepositoryService( RepositoryLibrary sources,
                               String configurationSourceName,
+                              String configurationWorkspaceName,
                               Path pathToConfigurationRoot,
                               ExecutionContext context ) {
         CheckArg.isNotNull(configurationSourceName, "configurationSourceName");
         CheckArg.isNotNull(sources, "sources");
         CheckArg.isNotNull(context, "context");
-        if (pathToConfigurationRoot == null) pathToConfigurationRoot = context.getValueFactories().getPathFactory().create("/dna:system");
+        if (pathToConfigurationRoot == null) pathToConfigurationRoot = context.getValueFactories()
+                                                                              .getPathFactory()
+                                                                              .create("/dna:system");
         this.sources = sources;
         this.pathToConfigurationRoot = pathToConfigurationRoot;
         this.configurationSourceName = configurationSourceName;
+        this.configurationWorkspaceName = configurationWorkspaceName;
         this.context = context;
     }
 
@@ -154,6 +164,13 @@ public class RepositoryService implements AdministeredService {
      */
     public String getConfigurationSourceName() {
         return configurationSourceName;
+    }
+
+    /**
+     * @return configurationWorkspaceName
+     */
+    public String getConfigurationWorkspaceName() {
+        return configurationWorkspaceName;
     }
 
     /**
@@ -187,6 +204,9 @@ public class RepositoryService implements AdministeredService {
             Graph graph = Graph.create(getConfigurationSourceName(), sources, context);
             Path pathToSourcesNode = context.getValueFactories().getPathFactory().create(pathToConfigurationRoot, "dna:sources");
             try {
+                String workspaceName = getConfigurationWorkspaceName();
+                if (workspaceName != null) graph.useWorkspace(workspaceName);
+
                 Subgraph sourcesGraph = graph.getSubgraphOfDepth(3).at(pathToSourcesNode);
 
                 // Iterate over each of the children, and create the RepositorySource ...

@@ -80,7 +80,7 @@ public class FederatedRepositoryConnection implements RepositoryConnection {
      * {@inheritDoc}
      */
     public CachePolicy getDefaultCachePolicy() {
-        return this.repository.getConfiguration().getDefaultCachePolicy();
+        return null;
     }
 
     /**

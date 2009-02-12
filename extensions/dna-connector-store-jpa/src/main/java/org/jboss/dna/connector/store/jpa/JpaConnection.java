@@ -47,6 +47,9 @@ public class JpaConnection implements RepositoryConnection {
     private final EntityManager entityManager;
     private final Model model;
     private final UUID rootNodeUuid;
+    private final String nameOfDefaultWorkspace;
+    private final String[] predefinedWorkspaceNames;
+    private final boolean creatingWorkspacesAllowed;
     private final long largeValueMinimumSizeInBytes;
     private final boolean compressData;
     private final boolean enforceReferentialIntegrity;
@@ -56,7 +59,10 @@ public class JpaConnection implements RepositoryConnection {
                                EntityManager entityManager,
                                Model model,
                                UUID rootNodeUuid,
+                               String nameOfDefaultWorkspace,
+                               String[] predefinedWorkspaceNames,
                                long largeValueMinimumSizeInBytes,
+                               boolean creatingWorkspacesAllowed,
                                boolean compressData,
                                boolean enforceReferentialIntegrity ) {
         assert sourceName != null;
@@ -71,6 +77,9 @@ public class JpaConnection implements RepositoryConnection {
         this.largeValueMinimumSizeInBytes = largeValueMinimumSizeInBytes;
         this.compressData = compressData;
         this.enforceReferentialIntegrity = enforceReferentialIntegrity;
+        this.nameOfDefaultWorkspace = nameOfDefaultWorkspace;
+        this.predefinedWorkspaceNames = predefinedWorkspaceNames != null ? predefinedWorkspaceNames : new String[] {};
+        this.creatingWorkspacesAllowed = creatingWorkspacesAllowed;
     }
 
     /**
@@ -134,7 +143,10 @@ public class JpaConnection implements RepositoryConnection {
                                                              context,
                                                              entityManager,
                                                              rootNodeUuid,
+                                                             nameOfDefaultWorkspace,
+                                                             predefinedWorkspaceNames,
                                                              size,
+                                                             creatingWorkspacesAllowed,
                                                              compressData,
                                                              enforceReferentialIntegrity);
         try {

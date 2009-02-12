@@ -49,16 +49,18 @@ public class OnePropertyContribution extends NonEmptyContribution {
      * Create a contribution of node properties from the source with the supplied name.
      * 
      * @param sourceName the name of the source, which may not be null or blank
+     * @param workspaceName the name of the workspace, which may not be null or blank
      * @param locationInSource the location in the source for this contributed information; may not be null
      * @param expirationTime the time (in UTC) after which this contribution should be considered expired, or null if there is no
      *        expiration time
      * @param property the property from the source; may not be null
      */
     public OnePropertyContribution( String sourceName,
+                                    String workspaceName,
                                     Location locationInSource,
                                     DateTime expirationTime,
                                     Property property ) {
-        super(sourceName, locationInSource, expirationTime);
+        super(sourceName, workspaceName, locationInSource, expirationTime);
         assert property != null;
         assert property.isEmpty() == false;
         this.property = property;

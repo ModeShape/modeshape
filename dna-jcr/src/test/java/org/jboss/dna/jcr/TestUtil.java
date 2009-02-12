@@ -26,10 +26,11 @@ package org.jboss.dna.jcr;
 import javax.security.auth.login.LoginContext;
 import net.jcip.annotations.NotThreadSafe;
 import org.jboss.dna.graph.ExecutionContext;
+import org.jboss.dna.graph.Graph;
+import org.jboss.dna.graph.JcrNtLexicon;
 import org.jboss.dna.graph.connector.RepositoryConnection;
 import org.jboss.dna.graph.connector.RepositoryConnectionFactory;
-import org.jboss.dna.graph.connector.SimpleRepository;
-import org.jboss.dna.graph.connector.SimpleRepositorySource;
+import org.jboss.dna.graph.connector.RepositorySource;
 import org.jboss.dna.graph.property.NamespaceRegistry;
 import org.mockito.Mockito;
 
@@ -39,12 +40,16 @@ import org.mockito.Mockito;
 @NotThreadSafe
 public class TestUtil {
 
-    public static RepositoryConnectionFactory createJackRabbitConnectionFactory( SimpleRepository repository,
-                                                                                 ExecutionContext context ) {
-        repository.setProperty(context, "/", "jcr:primaryType", "nt:unstructured");
-        // repository.setProperty(context, "/dna:system/dna:jcr", "jcr:primaryType", "nt:unstructured");
-        // repository.setProperty(context, "/dna:system/dna:jcr/jcr:versionStorage", "jcr:primaryType", "rep:versionStorage");
-        // repository.setProperty(context, "/dna:system/dna:jcr/jcr:nodeTypes", "jcr:primaryType", "rep:nodeTypes");
+    public static RepositoryConnectionFactory createJackRabbitConnectionFactory( final RepositorySource source,
+                                                                                 final ExecutionContext context ) {
+        Graph repository = Graph.create(source, context);
+        Graph.Batch batch = repository.batch();
+        batch.set(JcrLexicon.PRIMARY_TYPE).on("/").to(JcrNtLexicon.UNSTRUCTURED).and();
+        batch.create("/dna:system").with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.UNSTRUCTURED).and();
+        batch.create("/dna:system/jcr:versionStorage").with(JcrLexicon.PRIMARY_TYPE, "rep:versionStorage").and();
+        batch.create("/dna:system/jcr:nodeTypes").with(JcrLexicon.PRIMARY_TYPE, "rep:nodeTypes").and();
+        batch.execute();
+
         createNodeType(repository, context, "rep:nodeTypes", false, false);
         createChildDefinition(repository, context, "rep:nodeTypes", false, "nt:nodeType", false, "ABORT", true, false);
         createNodeType(repository, context, "mix:versionable", false, true);
@@ -488,9 +493,7 @@ public class TestUtil {
                 <jcr:propertyDefinition jcr:primaryType="nt:propertyDefinition" jcr:autoCreated="false" jcr:mandatory="true" jcr:multiple="false" jcr:name="jcr:content" jcr:onParentVersion="COPY" jcr:protected="false" jcr:requiredType="REFERENCE"/>
             </nt:linkedFile>
          */
-        final SimpleRepositorySource source = new SimpleRepositorySource();
-        source.setRepositoryName(repository.getRepositoryName());
-        source.setName(repository.getRepositoryName());
+
         return new RepositoryConnectionFactory() {
 
             public RepositoryConnection createConnection( String sourceName ) {
@@ -514,7 +517,7 @@ public class TestUtil {
         return context;
     }
 
-    private static void createChildDefinition( SimpleRepository repository,
+    private static void createChildDefinition( Graph repository,
                                                ExecutionContext context,
                                                String node,
                                                Boolean autoCreated,
@@ -535,7 +538,7 @@ public class TestUtil {
                               sameNameSiblings);
     }
 
-    private static void createChildDefinition( SimpleRepository repository,
+    private static void createChildDefinition( Graph repository,
                                                ExecutionContext context,
                                                String node,
                                                Boolean autoCreated,
@@ -557,7 +560,7 @@ public class TestUtil {
                               sameNameSiblings);
     }
 
-    private static void createChildDefinition( SimpleRepository repository,
+    private static void createChildDefinition( Graph repository,
                                                ExecutionContext context,
                                                String node,
                                                Boolean autoCreated,
@@ -579,7 +582,7 @@ public class TestUtil {
                               sameNameSiblings);
     }
 
-    private static void createChildDefinition( SimpleRepository repository,
+    private static void createChildDefinition( Graph repository,
                                                ExecutionContext context,
                                                String node,
                                                int index,
@@ -590,7 +593,7 @@ public class TestUtil {
                                                String onParentVersion,
                                                Boolean isProtected,
                                                Boolean sameNameSiblings ) {
-        String defNode = node + "/jcr:childNodeDefinition";
+        String defNode = "/dna:system/jcr:nodeTypes/" + node + "/jcr:childNodeDefinition";
         if (index > 0) {
             defNode += '[' + index + ']';
         }
@@ -617,26 +620,28 @@ public class TestUtil {
     // createProperty(repository, context, node + "/jcr:childNodeDefinition", property, value);
     // }
 
-    private static void createNodeType( SimpleRepository repository,
+    private static void createNodeType( Graph repository,
                                         ExecutionContext context,
                                         String node,
                                         Boolean hasOrderableChildNodes,
                                         Boolean isMixin ) {
+        node = "/dna:system/jcr:nodeTypes/" + node;
+        repository.create(node);
         createProperty(repository, context, node, "jcr:primaryType", "nt:nodeType");
         createProperty(repository, context, node, "jcr:hasOrderableChildNodes", hasOrderableChildNodes.toString());
         createProperty(repository, context, node, "jcr:isMixin", isMixin.toString());
         createProperty(repository, context, node, "jcr:nodeTypeName", node);
     }
 
-    private static void createProperty( SimpleRepository repository,
+    private static void createProperty( Graph repository,
                                         ExecutionContext context,
                                         String node,
                                         String property,
                                         String value ) {
-        repository.setProperty(context, "/dna:system/dna:jcr/" + node, property, value);
+        repository.set(property).on(node).to(value);
     }
 
-    private static void createPropertyDefinition( SimpleRepository repository,
+    private static void createPropertyDefinition( Graph repository,
                                                   ExecutionContext context,
                                                   String node,
                                                   Boolean autoCreated,
@@ -658,7 +663,7 @@ public class TestUtil {
                                  requiredType);
     }
 
-    private static void createPropertyDefinition( SimpleRepository repository,
+    private static void createPropertyDefinition( Graph repository,
                                                   ExecutionContext context,
                                                   String node,
                                                   Boolean autoCreated,
@@ -681,7 +686,7 @@ public class TestUtil {
                                  requiredType);
     }
 
-    private static void createPropertyDefinition( SimpleRepository repository,
+    private static void createPropertyDefinition( Graph repository,
                                                   ExecutionContext context,
                                                   String node,
                                                   int index,
@@ -692,10 +697,11 @@ public class TestUtil {
                                                   String onParentVersion,
                                                   Boolean isProtected,
                                                   String requiredType ) {
-        String defNode = node + "/nt:propertyDefinition";
+        String defNode = "/dna:system/jcr:nodeTypes/" + node + "/nt:propertyDefinition";
         if (index > 0) {
             defNode += '[' + index + ']';
         }
+        repository.create(defNode);
         createProperty(repository, context, defNode, "jcr:primaryType", "nt:propertyDefinition");
         createProperty(repository, context, defNode, "jcr:autoCreated", autoCreated.toString());
         createProperty(repository, context, defNode, "jcr:mandatory", mandatory.toString());

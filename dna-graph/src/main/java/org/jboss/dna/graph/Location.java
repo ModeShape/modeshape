@@ -553,11 +553,12 @@ public class Location implements Iterable<Property> {
                              TextEncoder delimiterEncoder ) {
         StringBuilder sb = new StringBuilder();
         sb.append("{ ");
-        if (this.hasPath()) {
+        boolean hasPath = this.hasPath();
+        if (hasPath) {
             sb.append(this.getPath().getString(namespaceRegistry, encoder, delimiterEncoder));
-            if (this.hasIdProperties()) sb.append(" && ");
         }
         if (this.hasIdProperties()) {
+            if (hasPath) sb.append(" && ");
             sb.append("[");
             boolean first = true;
             for (Property idProperty : this.getIdProperties()) {
@@ -580,11 +581,12 @@ public class Location implements Iterable<Property> {
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append("{ ");
-        if (this.hasPath()) {
+        boolean hasPath = this.hasPath();
+        if (hasPath) {
             sb.append(this.getPath());
-            if (this.hasIdProperties()) sb.append(" && ");
         }
         if (this.hasIdProperties()) {
+            if (hasPath) sb.append(" && ");
             sb.append("[");
             boolean first = true;
             for (Property idProperty : this.getIdProperties()) {

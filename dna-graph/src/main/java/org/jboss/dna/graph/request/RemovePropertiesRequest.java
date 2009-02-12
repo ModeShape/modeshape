@@ -43,6 +43,7 @@ public class RemovePropertiesRequest extends Request implements Iterable<Name> {
     private static final long serialVersionUID = 1L;
 
     private final Location from;
+    private final String workspaceName;
     private final Set<Name> propertyNames;
     private Location actualLocation;
 
@@ -50,13 +51,17 @@ public class RemovePropertiesRequest extends Request implements Iterable<Name> {
      * Create a request to remove the properties with the given names from the node at the supplied location.
      * 
      * @param from the location of the node to be read
+     * @param workspaceName the name of the workspace containing the node
      * @param propertyNames the names of the properties to be removed from the node
      * @throws IllegalArgumentException if the location is null or if there are no properties to remove
      */
     public RemovePropertiesRequest( Location from,
+                                    String workspaceName,
                                     Name... propertyNames ) {
         CheckArg.isNotNull(from, "from");
         CheckArg.isNotEmpty(propertyNames, "propertyNames");
+        CheckArg.isNotNull(workspaceName, "workspaceName");
+        this.workspaceName = workspaceName;
         this.from = from;
         Set<Name> names = new HashSet<Name>();
         for (Name name : propertyNames) {
@@ -69,13 +74,17 @@ public class RemovePropertiesRequest extends Request implements Iterable<Name> {
      * Create a request to remove the properties with the given names from the node at the supplied location.
      * 
      * @param from the location of the node to be read
+     * @param workspaceName the name of the workspace containing the node
      * @param propertyNames the names of the properties to be removed from the node
      * @throws IllegalArgumentException if the location is null or if there are no properties to remove
      */
     public RemovePropertiesRequest( Location from,
+                                    String workspaceName,
                                     Iterable<Name> propertyNames ) {
         CheckArg.isNotNull(from, "from");
         CheckArg.isNotNull(propertyNames, "propertyNames");
+        CheckArg.isNotNull(workspaceName, "workspaceName");
+        this.workspaceName = workspaceName;
         this.from = from;
         Set<Name> names = new HashSet<Name>();
         for (Name name : propertyNames) {
@@ -89,13 +98,17 @@ public class RemovePropertiesRequest extends Request implements Iterable<Name> {
      * Create a request to remove the properties with the given names from the node at the supplied location.
      * 
      * @param from the location of the node to be read
+     * @param workspaceName the name of the workspace containing the node
      * @param propertyNames the names of the properties to be removed from the node
      * @throws IllegalArgumentException if the location is null or if there are no properties to remove
      */
     public RemovePropertiesRequest( Location from,
+                                    String workspaceName,
                                     Iterator<Name> propertyNames ) {
         CheckArg.isNotNull(from, "from");
         CheckArg.isNotNull(propertyNames, "propertyNames");
+        CheckArg.isNotNull(workspaceName, "workspaceName");
+        this.workspaceName = workspaceName;
         this.from = from;
         Set<Name> names = new HashSet<Name>();
         while (propertyNames.hasNext()) {
@@ -123,6 +136,15 @@ public class RemovePropertiesRequest extends Request implements Iterable<Name> {
      */
     public Location from() {
         return from;
+    }
+
+    /**
+     * Get the name of the workspace in which the node exists.
+     * 
+     * @return the name of the workspace; never null
+     */
+    public String inWorkspace() {
+        return workspaceName;
     }
 
     /**
@@ -178,10 +200,12 @@ public class RemovePropertiesRequest extends Request implements Iterable<Name> {
      */
     @Override
     public boolean equals( Object obj ) {
+        if (obj == this) return true;
         if (this.getClass().isInstance(obj)) {
             RemovePropertiesRequest that = (RemovePropertiesRequest)obj;
             if (!this.from().equals(that.from())) return false;
             if (!this.propertyNames().equals(that.propertyNames())) return false;
+            if (!this.inWorkspace().equals(that.inWorkspace())) return false;
             return true;
         }
         return false;
@@ -194,7 +218,11 @@ public class RemovePropertiesRequest extends Request implements Iterable<Name> {
      */
     @Override
     public String toString() {
-        return "remove from " + from() + " properties named " + propertyNames();
+        if (propertyNames.size() == 1) {
+            return "remove from " + from() + " in the \"" + workspaceName + "\" workspace the property named "
+                   + propertyNames.iterator().next();
+        }
+        return "remove from " + from() + " in the \"" + workspaceName + "\" workspace the properties named " + propertyNames();
     }
 
 }

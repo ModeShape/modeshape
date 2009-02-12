@@ -31,6 +31,7 @@ import java.util.Calendar;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.UUID;
+import org.jboss.dna.common.util.SecureHash;
 import org.jboss.dna.graph.GraphI18n;
 import org.jboss.dna.graph.property.basic.StringValueFactory;
 
@@ -122,7 +123,13 @@ public class ValueComparators {
                             if (diff != 0) return diff;
                         }
                         return 0;
+                        // If the hashes match, then we should assume that the values match.
+                        // That's the whole point of using a secure hash.
                     }
+
+                    // One or both of the hashes could not be generated, so we have to go compare
+                    // the whole values. This is unfortunate, but should happen very rarely (if ever)
+                    // as long as the BinaryValue.getHash() is always implemented
 
                     // Otherwise they are the same length ...
                     InputStream stream1 = null;
@@ -313,9 +320,43 @@ public class ValueComparators {
                 }
             }
 
+            // The types are different. See if one is a BINARY value (because we can use the secure
+            // hashes to efficiently do the comparison) ...
+            ValueFactory<String> stringFactory = getStringValueFactory();
+            String value1 = null;
+            String value2 = null;
+            if (type1 == PropertyType.BINARY || type2 == PropertyType.BINARY) {
+                try {
+                    byte[] hash1 = null;
+                    byte[] hash2 = null;
+                    // We don't have access to a binary factory, so do this brute force.
+                    // Conver the non-binary value to a string, then compute the hash of the string ...
+                    if (type1 == PropertyType.BINARY) {
+                        value2 = stringFactory.create(o2);
+                        hash2 = SecureHash.getHash(SecureHash.Algorithm.SHA_1, value2.getBytes());
+                        hash1 = ((Binary)o1).getHash();
+                    } else {
+                        assert type2 == PropertyType.BINARY;
+                        value1 = stringFactory.create(o1);
+                        hash1 = SecureHash.getHash(SecureHash.Algorithm.SHA_1, value1.getBytes());
+                        hash2 = ((Binary)o2).getHash();
+                    }
+                    // Compute the difference in the hashes ...
+                    if (hash1.length == hash2.length) {
+                        for (int i = 0; i != hash1.length; ++i) {
+                            int diff = hash1[i] - hash2[i];
+                            if (diff != 0) return diff;
+                        }
+                        return 0;
+                    }
+                } catch (Throwable error) {
+                    // If anything went wrong, just continue with the string comparison
+                }
+            }
+
             // The types are different and must be converted ...
-            String value1 = getStringValueFactory().create(o1);
-            String value2 = getStringValueFactory().create(o2);
+            if (value1 == null) value1 = stringFactory.create(o1);
+            if (value2 == null) value2 = stringFactory.create(o2);
             return value1.compareTo(value2);
         }
     };

@@ -31,6 +31,7 @@ import java.math.BigDecimal;
 import java.net.URI;
 import java.security.NoSuchAlgorithmException;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -437,7 +438,7 @@ public class Serializer {
                                            Map<String, String> oldUuidToNewUuid ) throws IOException, ClassNotFoundException {
         assert input != null;
         assert output != null;
-        assert oldUuidToNewUuid != null;
+        if (oldUuidToNewUuid == null) oldUuidToNewUuid = Collections.emptyMap();
 
         UuidFactory uuidFactory = valueFactories.getUuidFactory();
         ValueFactory<Reference> referenceFactory = valueFactories.getReferenceFactory();

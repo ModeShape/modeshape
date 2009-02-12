@@ -56,6 +56,7 @@ public class NodeContributionTest {
     public static final DateTime TOMORROW = new JodaDateTime(NOW.getMilliseconds() + TWENTY_FOUR_HOURS_IN_MILLISECONDS).toUtcTimeZone();
 
     private String sourceName;
+    private String workspaceName;
     private Path pathInSource;
     private NodeContribution contribution;
     private DateTime expiration;
@@ -71,6 +72,7 @@ public class NodeContributionTest {
     @Before
     public void beforeEach() throws Exception {
         sourceName = "some source";
+        workspaceName = "some workspace";
         pathInSource = RootPath.INSTANCE;
         expiration = TOMORROW;
         String nsUri = "http://www.jboss.org/default";
@@ -82,44 +84,51 @@ public class NodeContributionTest {
         child2 = mock(Location.class);
         child3 = mock(Location.class);
         children = Arrays.asList(child1, child2, child3);
-        contribution = new NodeContribution(sourceName, new Location(pathInSource), expiration, properties, children);
+        contribution = new NodeContribution(sourceName, workspaceName, new Location(pathInSource), expiration, properties,
+                                            children);
     }
 
     @Test
     public void shouldAllowNullExpiration() {
         expiration = null;
-        contribution = new NodeContribution(sourceName, new Location(pathInSource), expiration, properties, children);
+        contribution = new NodeContribution(sourceName, workspaceName, new Location(pathInSource), expiration, properties,
+                                            children);
         assertThat(contribution.getExpirationTimeInUtc(), is(nullValue()));
     }
 
     @Test( expected = IllegalArgumentException.class )
     public void shouldNotAllowExpirationTimeIfNotInUtcTime() {
         expiration = new JodaDateTime(System.currentTimeMillis(), "CST");
-        contribution = new NodeContribution(sourceName, new Location(pathInSource), expiration, properties, children);
+        contribution = new NodeContribution(sourceName, workspaceName, new Location(pathInSource), expiration, properties,
+                                            children);
     }
 
     @Test( expected = AssertionError.class )
     public void shouldNotAllowNullProperties() {
         properties = null;
-        contribution = new NodeContribution(sourceName, new Location(pathInSource), expiration, properties, children);
+        contribution = new NodeContribution(sourceName, workspaceName, new Location(pathInSource), expiration, properties,
+                                            children);
     }
 
     @Test( expected = AssertionError.class )
     public void shouldNotAllowEmptyProperties() {
         properties = Collections.emptyList();
-        contribution = new NodeContribution(sourceName, new Location(pathInSource), expiration, properties, children);
+        contribution = new NodeContribution(sourceName, workspaceName, new Location(pathInSource), expiration, properties,
+                                            children);
     }
 
     @Test( expected = AssertionError.class )
     public void shouldNotAllowNullChildren() {
         children = null;
-        contribution = new NodeContribution(sourceName, new Location(pathInSource), expiration, properties, children);
+        contribution = new NodeContribution(sourceName, workspaceName, new Location(pathInSource), expiration, properties,
+                                            children);
     }
 
     @Test( expected = AssertionError.class )
     public void shouldNotAllowEmptyChildren() {
         children = Collections.emptyList();
-        contribution = new NodeContribution(sourceName, new Location(pathInSource), expiration, properties, children);
+        contribution = new NodeContribution(sourceName, workspaceName, new Location(pathInSource), expiration, properties,
+                                            children);
     }
 
     @Test
@@ -134,7 +143,7 @@ public class NodeContributionTest {
 
     @Test
     public void shouldNotBeExpiredIfExpirationIsInTheFuture() {
-        contribution = new NodeContribution(sourceName, new Location(pathInSource), NOW, properties, children);
+        contribution = new NodeContribution(sourceName, workspaceName, new Location(pathInSource), NOW, properties, children);
         assertThat(contribution.isExpired(YESTERDAY), is(false));
         assertThat(contribution.isExpired(TOMORROW), is(true));
     }

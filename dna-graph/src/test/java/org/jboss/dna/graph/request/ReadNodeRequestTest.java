@@ -28,9 +28,6 @@ import static org.hamcrest.core.IsNull.nullValue;
 import static org.hamcrest.core.IsSame.sameInstance;
 import static org.junit.Assert.assertThat;
 import static org.junit.matchers.JUnitMatchers.hasItems;
-import org.jboss.dna.graph.request.CopyBranchRequest;
-import org.jboss.dna.graph.request.ReadNodeRequest;
-import org.jboss.dna.graph.request.Request;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -49,44 +46,52 @@ public class ReadNodeRequestTest extends AbstractRequestTest {
 
     @Override
     protected Request createRequest() {
-        return new ReadNodeRequest(validPathLocation1);
+        return new ReadNodeRequest(validPathLocation1, workspace1);
     }
 
     @Test( expected = IllegalArgumentException.class )
-    public void shouldNotAllowCreatingRequestWithNullFromLocation() {
-        new CopyBranchRequest(null, validPathLocation);
+    public void shouldNotAllowCreatingRequestWithNullLocation() {
+        new ReadNodeRequest(null, workspace1);
     }
 
     @Test( expected = IllegalArgumentException.class )
-    public void shouldNotAllowCreatingRequestWithNullToLocation() {
-        new CopyBranchRequest(validPathLocation, null);
+    public void shouldNotAllowCreatingRequestWithNullWorkspaceName() {
+        new ReadNodeRequest(validPathLocation, null);
     }
 
     @Test
     public void shouldCreateValidRequestWithValidLocation() {
-        request = new ReadNodeRequest(validPathLocation1);
+        request = new ReadNodeRequest(validPathLocation1, workspace1);
         assertThat(request.at(), is(sameInstance(validPathLocation1)));
+        assertThat(request.inWorkspace(), is(sameInstance(workspace1)));
         assertThat(request.hasError(), is(false));
         assertThat(request.getError(), is(nullValue()));
     }
 
     @Test
     public void shouldConsiderEqualTwoRequestsWithSameLocations() {
-        request = new ReadNodeRequest(validPathLocation1);
-        ReadNodeRequest request2 = new ReadNodeRequest(validPathLocation1);
+        request = new ReadNodeRequest(validPathLocation1, workspace1);
+        ReadNodeRequest request2 = new ReadNodeRequest(validPathLocation1, new String(workspace1));
         assertThat(request, is(request2));
     }
 
     @Test
     public void shouldConsiderNotEqualTwoRequestsWithDifferentLocations() {
-        request = new ReadNodeRequest(validPathLocation1);
-        ReadNodeRequest request2 = new ReadNodeRequest(validPathLocation2);
+        request = new ReadNodeRequest(validPathLocation1, workspace1);
+        ReadNodeRequest request2 = new ReadNodeRequest(validPathLocation2, workspace1);
+        assertThat(request.equals(request2), is(false));
+    }
+
+    @Test
+    public void shouldConsiderNotEqualTwoRequestsWithDifferentWorkspaceNames() {
+        request = new ReadNodeRequest(validPathLocation1, workspace1);
+        ReadNodeRequest request2 = new ReadNodeRequest(validPathLocation1, workspace2);
         assertThat(request.equals(request2), is(false));
     }
 
     @Test
     public void shouldAllowAddingChildren() {
-        request = new ReadNodeRequest(validPathLocation);
+        request = new ReadNodeRequest(validPathLocation, workspace1);
         request.addChild(validPathLocation1);
         request.addChild(validPathLocation2);
         assertThat(request.getChildren().size(), is(2));
@@ -95,7 +100,7 @@ public class ReadNodeRequestTest extends AbstractRequestTest {
 
     @Test
     public void shouldAllowAddingProperties() {
-        request = new ReadNodeRequest(validPathLocation);
+        request = new ReadNodeRequest(validPathLocation, workspace1);
         request.addProperty(validProperty1);
         request.addProperty(validProperty2);
         assertThat(request.getProperties().size(), is(2));

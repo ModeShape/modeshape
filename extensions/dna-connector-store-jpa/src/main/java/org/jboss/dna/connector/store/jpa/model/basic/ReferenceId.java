@@ -45,6 +45,9 @@ public class ReferenceId implements Serializable {
      */
     private static final long serialVersionUID = 1L;
 
+    @Column( name = "WORKSPACE_ID", nullable = false )
+    private Long workspaceId;
+
     @Column( name = "FROM_UUID", nullable = false, updatable = false, length = 36 )
     private String fromUuidString;
 
@@ -54,8 +57,10 @@ public class ReferenceId implements Serializable {
     public ReferenceId() {
     }
 
-    public ReferenceId( String fromUuid,
+    public ReferenceId( Long workspaceId,
+                        String fromUuid,
                         String toUuid ) {
+        this.workspaceId = workspaceId;
         this.fromUuidString = fromUuid;
         this.toUuidString = toUuid;
     }
@@ -72,6 +77,13 @@ public class ReferenceId implements Serializable {
      */
     public String getToUuidString() {
         return toUuidString;
+    }
+
+    /**
+     * @return workspaceId
+     */
+    public Long getWorkspaceId() {
+        return workspaceId;
     }
 
     /**
@@ -94,6 +106,11 @@ public class ReferenceId implements Serializable {
         if (obj == this) return true;
         if (obj instanceof ReferenceId) {
             ReferenceId that = (ReferenceId)obj;
+            if (this.workspaceId == null) {
+                if (that.workspaceId != null) return false;
+            } else {
+                if (!this.workspaceId.equals(that.workspaceId)) return false;
+            }
             if (this.fromUuidString == null) {
                 if (that.fromUuidString != null) return false;
             } else {
@@ -116,7 +133,7 @@ public class ReferenceId implements Serializable {
      */
     @Override
     public String toString() {
-        return "Reference from " + fromUuidString + " to " + toUuidString;
+        return "Reference from " + fromUuidString + " to " + toUuidString + " in workspace " + workspaceId;
     }
 
 }

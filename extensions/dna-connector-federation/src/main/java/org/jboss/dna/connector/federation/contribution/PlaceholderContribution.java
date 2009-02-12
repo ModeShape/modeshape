@@ -44,16 +44,18 @@ public class PlaceholderContribution extends MultiChildContribution {
      * Create a contribution of children from the source with the supplied name.
      * 
      * @param sourceName the name of the source, which may not be null or blank
+     * @param workspaceName the name of the workspace, which may not be null or blank
      * @param locationInSource the location in the source for this contributed information; may not be null
      * @param expirationTime the time (in UTC) after which this contribution should be considered expired, or null if there is no
      *        expiration time
      * @param children the children from the source; may not be null or empty
      */
     public PlaceholderContribution( String sourceName,
+                                    String workspaceName,
                                     Location locationInSource,
                                     DateTime expirationTime,
                                     Iterable<Location> children ) {
-        super(sourceName, locationInSource, expirationTime, children);
+        super(sourceName, workspaceName, locationInSource, expirationTime, children);
     }
 
     /**

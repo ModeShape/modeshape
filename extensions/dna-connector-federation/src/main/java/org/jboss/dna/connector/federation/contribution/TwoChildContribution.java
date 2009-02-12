@@ -48,6 +48,7 @@ public class TwoChildContribution extends NonEmptyContribution {
      * Create a contribution of two children from the source with the supplied name.
      * 
      * @param sourceName the name of the source, which may not be null or blank
+     * @param workspaceName the name of the workspace, which may not be null or blank
      * @param locationInSource the path in the source for this contributed information; may not be null
      * @param expirationTime the time (in UTC) after which this contribution should be considered expired, or null if there is no
      *        expiration time
@@ -55,11 +56,12 @@ public class TwoChildContribution extends NonEmptyContribution {
      * @param child2 the second child contributed from the source; may not be null
      */
     public TwoChildContribution( String sourceName,
+                                 String workspaceName,
                                  Location locationInSource,
                                  DateTime expirationTime,
                                  Location child1,
                                  Location child2 ) {
-        super(sourceName, locationInSource, expirationTime);
+        super(sourceName, workspaceName, locationInSource, expirationTime);
         assert child1 != null;
         assert child2 != null;
         this.child1 = child1;

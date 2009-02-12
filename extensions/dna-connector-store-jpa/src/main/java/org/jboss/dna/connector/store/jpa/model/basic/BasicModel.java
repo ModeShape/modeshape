@@ -30,6 +30,7 @@ import org.jboss.dna.connector.store.jpa.JpaConnectorI18n;
 import org.jboss.dna.connector.store.jpa.Model;
 import org.jboss.dna.connector.store.jpa.model.common.ChangeLogEntity;
 import org.jboss.dna.connector.store.jpa.model.common.NamespaceEntity;
+import org.jboss.dna.connector.store.jpa.model.common.WorkspaceEntity;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.request.CopyBranchRequest;
 import org.jboss.dna.graph.request.DeleteBranchRequest;
@@ -100,18 +101,22 @@ public class BasicModel extends Model {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.connector.store.jpa.Model#createRequestProcessor(java.lang.String, org.jboss.dna.graph.ExecutionContext,
-     *      javax.persistence.EntityManager, java.util.UUID, long, boolean, boolean)
+     * @see org.jboss.dna.connector.store.jpa.Model#createRequestProcessor(String, ExecutionContext, EntityManager, UUID, String,
+     *      String[], long, boolean, boolean, boolean)
      */
     @Override
     public RequestProcessor createRequestProcessor( String sourceName,
                                                     ExecutionContext context,
                                                     EntityManager entityManager,
                                                     UUID rootNodeUuid,
+                                                    String nameOfDefaultWorkspace,
+                                                    String[] predefinedWorkspaceNames,
                                                     long largeValueMinimumSizeInBytes,
+                                                    boolean creatingWorkspacesAllowed,
                                                     boolean compressData,
                                                     boolean enforceReferentialIntegrity ) {
-        return new BasicRequestProcessor(sourceName, context, entityManager, rootNodeUuid, largeValueMinimumSizeInBytes,
+        return new BasicRequestProcessor(sourceName, context, entityManager, rootNodeUuid, nameOfDefaultWorkspace,
+                                         predefinedWorkspaceNames, largeValueMinimumSizeInBytes, creatingWorkspacesAllowed,
                                          compressData, enforceReferentialIntegrity);
     }
 
@@ -123,6 +128,7 @@ public class BasicModel extends Model {
     @Override
     public void configure( Ejb3Configuration configurator ) {
         // Add the annotated classes ...
+        configurator.addAnnotatedClass(WorkspaceEntity.class);
         configurator.addAnnotatedClass(NamespaceEntity.class);
         configurator.addAnnotatedClass(NodeId.class);
         configurator.addAnnotatedClass(PropertiesEntity.class);

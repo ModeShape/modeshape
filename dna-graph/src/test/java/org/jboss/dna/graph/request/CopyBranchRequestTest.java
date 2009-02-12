@@ -27,8 +27,6 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.hamcrest.core.IsSame.sameInstance;
 import static org.junit.Assert.assertThat;
-import org.jboss.dna.graph.request.CopyBranchRequest;
-import org.jboss.dna.graph.request.Request;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -47,39 +45,77 @@ public class CopyBranchRequestTest extends AbstractRequestTest {
 
     @Override
     protected Request createRequest() {
-        return new CopyBranchRequest(validPathLocation1, validPathLocation2);
+        return new CopyBranchRequest(validPathLocation1, workspace1, validPathLocation2, workspace2);
     }
 
     @Test( expected = IllegalArgumentException.class )
     public void shouldNotAllowCreatingRequestWithNullFromLocation() {
-        new CopyBranchRequest(null, validPathLocation);
+        new CopyBranchRequest(null, workspace1, validPathLocation2, workspace2);
     }
 
     @Test( expected = IllegalArgumentException.class )
     public void shouldNotAllowCreatingRequestWithNullToLocation() {
-        new CopyBranchRequest(validPathLocation, null);
+        new CopyBranchRequest(validPathLocation1, workspace1, null, workspace2);
+    }
+
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldNotAllowCreatingRequestWithNullFromWorkspace() {
+        new CopyBranchRequest(validPathLocation1, null, validPathLocation2, workspace2);
+    }
+
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldNotAllowCreatingRequestWithNullToWorkspace() {
+        new CopyBranchRequest(validPathLocation1, workspace1, validPathLocation2, null);
+    }
+
+    @Test
+    public void shouldConsiderRequestsToBeInSameWorkspaceIfFromAndToWorkspaceNamesMatch() {
+        request = new CopyBranchRequest(validPathLocation1, workspace1, validPathLocation2, new String(workspace1));
+        assertThat(request.isSameWorkspace(), is(true));
+    }
+
+    @Test
+    public void shouldConsiderRequestsToNotBeInSameWorkspaceIfFromAndToWorkspaceNamesDoNotMatch() {
+        request = new CopyBranchRequest(validPathLocation1, workspace1, validPathLocation2, workspace2);
+        assertThat(request.isSameWorkspace(), is(false));
     }
 
     @Test
     public void shouldCreateValidRequestWithValidFromLocationAndValidToLocation() {
-        request = new CopyBranchRequest(validPathLocation1, validPathLocation2);
+        request = new CopyBranchRequest(validPathLocation1, workspace1, validPathLocation2, workspace2);
         assertThat(request.from(), is(sameInstance(validPathLocation1)));
         assertThat(request.into(), is(sameInstance(validPathLocation2)));
+        assertThat(request.fromWorkspace(), is(sameInstance(workspace1)));
+        assertThat(request.intoWorkspace(), is(sameInstance(workspace2)));
         assertThat(request.hasError(), is(false));
         assertThat(request.getError(), is(nullValue()));
     }
 
     @Test
     public void shouldConsiderEqualTwoRequestsWithSameLocations() {
-        request = new CopyBranchRequest(validPathLocation1, validPathLocation2);
-        CopyBranchRequest request2 = new CopyBranchRequest(validPathLocation1, validPathLocation2);
+        request = new CopyBranchRequest(validPathLocation1, workspace1, validPathLocation2, workspace2);
+        CopyBranchRequest request2 = new CopyBranchRequest(validPathLocation1, workspace1, validPathLocation2, workspace2);
         assertThat(request, is(request2));
     }
 
     @Test
     public void shouldConsiderNotEqualTwoRequestsWithDifferentLocations() {
-        request = new CopyBranchRequest(validPathLocation1, validPathLocation2);
-        CopyBranchRequest request2 = new CopyBranchRequest(validPathLocation1, validUuidLocation2);
+        request = new CopyBranchRequest(validPathLocation1, workspace1, validPathLocation2, workspace2);
+        CopyBranchRequest request2 = new CopyBranchRequest(validPathLocation2, workspace1, validPathLocation1, workspace2);
+        assertThat(request.equals(request2), is(false));
+    }
+
+    @Test
+    public void shouldConsiderNotEqualTwoRequestsWithDifferentFromWorkspaceName() {
+        request = new CopyBranchRequest(validPathLocation1, workspace1 + "a", validPathLocation2, workspace2);
+        CopyBranchRequest request2 = new CopyBranchRequest(validPathLocation1, workspace1, validPathLocation2, workspace2);
+        assertThat(request.equals(request2), is(false));
+    }
+
+    @Test
+    public void shouldConsiderNotEqualTwoRequestsWithDifferentToWorkspaceName() {
+        request = new CopyBranchRequest(validPathLocation1, workspace1, validPathLocation2, workspace2 + "a");
+        CopyBranchRequest request2 = new CopyBranchRequest(validPathLocation1, workspace1, validPathLocation2, workspace2);
         assertThat(request.equals(request2), is(false));
     }
 }

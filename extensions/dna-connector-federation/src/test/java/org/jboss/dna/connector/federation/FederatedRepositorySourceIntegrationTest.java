@@ -24,9 +24,9 @@
 package org.jboss.dna.connector.federation;
 
 import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsInstanceOf.instanceOf;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
 import static org.junit.matchers.JUnitMatchers.hasItems;
 import static org.mockito.Matchers.argThat;
 import static org.mockito.Matchers.eq;
@@ -40,19 +40,18 @@ import javax.naming.Context;
 import javax.security.auth.callback.CallbackHandler;
 import org.jboss.dna.graph.DnaLexicon;
 import org.jboss.dna.graph.ExecutionContext;
+import org.jboss.dna.graph.Graph;
 import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.connector.RepositoryConnection;
 import org.jboss.dna.graph.connector.RepositoryConnectionFactory;
 import org.jboss.dna.graph.connector.RepositoryContext;
 import org.jboss.dna.graph.connector.RepositorySource;
-import org.jboss.dna.graph.connector.SimpleRepository;
-import org.jboss.dna.graph.connector.SimpleRepositorySource;
-import org.jboss.dna.graph.property.Name;
+import org.jboss.dna.graph.connector.inmemory.InMemoryRepositorySource;
 import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.PathNotFoundException;
 import org.jboss.dna.graph.property.Property;
-import org.jboss.dna.graph.request.ReadNodeRequest;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.ArgumentMatcher;
 import org.mockito.MockitoAnnotations;
@@ -77,14 +76,14 @@ public class FederatedRepositorySourceIntegrationTest {
     private String repositoryConnectionFactoryJndiName;
     private String configurationSourceName;
     private String securityDomain;
-    private SimpleRepository config;
-    private SimpleRepositorySource configSource;
-    private SimpleRepository cache;
-    private SimpleRepositorySource cacheSource;
-    private SimpleRepository repository1;
-    private SimpleRepositorySource source1;
-    private SimpleRepository repository2;
-    private SimpleRepositorySource source2;
+    private Graph config;
+    private InMemoryRepositorySource configSource;
+    private Graph cache;
+    private InMemoryRepositorySource cacheSource;
+    private Graph repository1;
+    private InMemoryRepositorySource source1;
+    private Graph repository2;
+    private InMemoryRepositorySource source2;
     private ExecutionContext context;
     private RepositorySource[] sources;
     @Mock
@@ -122,33 +121,30 @@ public class FederatedRepositorySourceIntegrationTest {
         source.setUsername(username);
         source.setPassword(credentials);
         source.setConfigurationSourceName(configurationSourceName);
+        source.setConfigurationWorkspaceName("configSpace");
         source.setConfigurationSourcePath("/repos/RepoX");
         source.setSecurityDomain(securityDomain);
         source.initialize(repositoryContext);
 
         // Set up the configuration repository with its content ...
-        config = SimpleRepository.get("Configuration Repository");
-        configSource = new SimpleRepositorySource();
-        configSource.setRepositoryName(config.getRepositoryName());
+        configSource = new InMemoryRepositorySource();
         configSource.setName(configurationSourceName);
+        config = Graph.create(configSource, context);
 
         // Set up the cache repository ...
-        cache = SimpleRepository.get("Cache");
-        cacheSource = new SimpleRepositorySource();
-        cacheSource.setRepositoryName(cache.getRepositoryName());
+        cacheSource = new InMemoryRepositorySource();
         cacheSource.setName("cache source");
+        cache = Graph.create(cacheSource, context);
 
         // Set up the first source repository ...
-        repository1 = SimpleRepository.get("source 1");
-        source1 = new SimpleRepositorySource();
-        source1.setRepositoryName(repository1.getRepositoryName());
+        source1 = new InMemoryRepositorySource();
         source1.setName("source 1");
+        repository1 = Graph.create(source1, context);
 
         // Set up the second source repository ...
-        repository2 = SimpleRepository.get("source 2");
-        source2 = new SimpleRepositorySource();
-        source2.setRepositoryName(repository2.getRepositoryName());
+        source2 = new InMemoryRepositorySource();
         source2.setName("source 2");
+        repository2 = Graph.create(source2, context);
 
         // Set up the connection factory to return connections to the sources ...
         sources = new RepositorySource[] {spy(configSource), spy(cacheSource), spy(source1), spy(source2)};
@@ -170,80 +166,48 @@ public class FederatedRepositorySourceIntegrationTest {
         });
     }
 
-    protected void set( SimpleRepository repository,
-                        String path,
-                        String propertyName,
-                        Object... values ) {
-        repository.setProperty(context, path, propertyName, values);
-    }
-
-    protected void assertNonExistant( RepositorySource source,
+    protected void assertNonExistant( Graph source,
                                       String path ) throws Exception {
-        RepositoryConnection connection = null;
-        Path pathObj = context.getValueFactories().getPathFactory().create(path);
         try {
-            connection = source.getConnection();
-            ReadNodeRequest request = new ReadNodeRequest(new Location(pathObj));
-            connection.execute(context, request);
-            assertThat(request.hasError(), is(true));
-            assertThat(request.getError(), instanceOf(PathNotFoundException.class));
-        } finally {
-            if (connection != null) connection.close();
+            source.getNodeAt(path);
+            fail("failed to find node in " + source + " in workspace " + source.getCurrentWorkspaceName() + " at " + path);
+        } catch (PathNotFoundException e) {
+            // expected
         }
     }
 
-    protected void assertChildren( RepositorySource source,
+    protected void assertChildren( Graph source,
                                    String path,
                                    String... children ) throws Exception {
-        RepositoryConnection connection = null;
-        Path pathObj = context.getValueFactories().getPathFactory().create(path);
-        try {
-            connection = source.getConnection();
-            ReadNodeRequest request = new ReadNodeRequest(new Location(pathObj));
-            connection.execute(context, request);
-            assertThat(request.hasError(), is(false));
-            if (children == null || children.length == 0) {
-                assertThat(request.getChildren().isEmpty(), is(true));
-            } else {
-                // We can't use Location.equals(...), since we're only given the expected paths and the actual
-                // locations may have more than just paths. So, create a list of actual locations that just have paths ...
-                List<Location> actualChildren = request.getChildren();
-                List<Location> actualPathOnlyChildren = new ArrayList<Location>(actualChildren.size());
-                for (Location actualChild : actualChildren) {
-                    actualPathOnlyChildren.add(new Location(actualChild.getPath()));
-                }
-                // Now create the array of expected locations (that each contain only a path) ...
-                Location[] expectedChildren = new Location[children.length];
-                int i = 0;
-                for (String child : children) {
-                    Path.Segment segment = context.getValueFactories().getPathFactory().createSegment(child);
-                    Path childPath = context.getValueFactories().getPathFactory().create(pathObj, segment);
-                    expectedChildren[i++] = new Location(childPath);
-                }
-                assertThat(actualPathOnlyChildren, hasItems(expectedChildren));
+        List<Location> childLocations = source.getChildren().of(path);
+        if (children == null || children.length == 0) {
+            assertThat(childLocations.isEmpty(), is(true));
+        } else {
+            // We can't use Location.equals(...), since we're only given the expected paths and the actual
+            // locations may have more than just paths. So, create a list of actual locations that just have paths ...
+            List<Location> actualPathOnlyChildren = new ArrayList<Location>(childLocations.size());
+            for (Location actualChild : childLocations) {
+                actualPathOnlyChildren.add(new Location(actualChild.getPath()));
             }
-        } finally {
-            if (connection != null) connection.close();
+            // Now create the array of expected locations (that each contain only a path) ...
+            Location[] expectedChildren = new Location[children.length];
+            Path parentPath = context.getValueFactories().getPathFactory().create(path);
+            int i = 0;
+            for (String child : children) {
+                Path.Segment segment = context.getValueFactories().getPathFactory().createSegment(child);
+                Path childPath = context.getValueFactories().getPathFactory().create(parentPath, segment);
+                expectedChildren[i++] = new Location(childPath);
+            }
+            assertThat(actualPathOnlyChildren, hasItems(expectedChildren));
         }
     }
 
-    protected void assertProperty( RepositorySource source,
+    protected void assertProperty( Graph source,
                                    String path,
                                    String propertyName,
                                    Object... values ) throws Exception {
-        RepositoryConnection connection = null;
-        Path pathObj = context.getValueFactories().getPathFactory().create(path);
-        try {
-            connection = source.getConnection();
-            ReadNodeRequest request = new ReadNodeRequest(new Location(pathObj));
-            connection.execute(context, request);
-            assertThat(request.hasError(), is(false));
-            Name name = context.getValueFactories().getNameFactory().create(propertyName);
-            Property property = request.getPropertiesByName().get(name);
-            assertThat(property.getValuesAsArray(), is(values));
-        } finally {
-            if (connection != null) connection.close();
-        }
+        Property property = source.getProperty(propertyName).on(path);
+        assertThat(property.getValuesAsArray(), is(values));
     }
 
     @Test
@@ -263,27 +227,55 @@ public class FederatedRepositorySourceIntegrationTest {
         }
     }
 
+    @Ignore
     @Test
     public void shouldProvideReadAccessToContentFederatedFromOneSourceThatMatchesTheContentFromTheSource() throws Exception {
-        // Set up the configuration to use a single sources.
-        set(config, "/repos/RepoX/dna:federation/", "dna:timeToCache", 100000);
-        set(config, "/repos/RepoX/dna:federation/dna:cache/cache source/", "dna:projectionRules", "/ => /");
-        set(config, "/repos/RepoX/dna:federation/dna:projections/source 1/", "dna:projectionRules", "/ => /s1");
+        // Set up the configuration to use a single source.
+        config.createWorkspace().named("configSpace");
+        Graph.Batch batch = config.batch();
+        batch.create("/repos").and();
+        batch.create("/repos/RepoX").with(FederatedLexicon.DEFAULT_WORKSPACE_NAME, "fedSpace").and();
+        batch.create("/repos/RepoX/dna:workspaces").and();
+        batch.create("/repos/RepoX/dna:workspaces/fedSpace").and();
+        batch.create("/repos/RepoX/dna:workspaces/fedSpace/dna:cache")
+             .with(FederatedLexicon.PROJECTION_RULES, "/ => /")
+             .with(FederatedLexicon.SOURCE_NAME, "cache source")
+             .with(FederatedLexicon.WORKSPACE_NAME, "cacheSpace")
+             .with(FederatedLexicon.TIME_TO_EXPIRE, 100000)
+             .and();
+        batch.create("/repos/RepoX/dna:workspaces/fedSpace/dna:projections").and();
+        batch.create("/repos/RepoX/dna:workspaces/fedSpace/dna:projections/projection1")
+             .with(FederatedLexicon.PROJECTION_RULES, "/ => /s1")
+             .with(FederatedLexicon.SOURCE_NAME, "source 1")
+             .with(FederatedLexicon.WORKSPACE_NAME, "s1 workspace")
+             .and();
+        batch.execute();
+
+        // Set up the cache ...
+        cache.createWorkspace().named("cacheSpace");
 
         // Set up the content in the first source ...
-        set(repository1, "/s1/a/a/a", "desc", "description for /a/a/a");
-        set(repository1, "/s1/a/a/b", "desc", "description for /a/a/b");
-        set(repository1, "/s1/a/a/c", "desc", "description for /a/a/c");
-        set(repository1, "/s1/a/b/a", "desc", "description for /a/b/a");
-        set(repository1, "/s1/a/b/b", "desc", "description for /a/b/b");
-        set(repository1, "/s1/a/b/c", "desc", "description for /a/b/c");
-        set(repository1, "/s1/b/a", "desc", "description for /b/a");
-        set(repository1, "/s1/b/b", "desc", "description for /b/b");
-        set(repository1, "/s1/b/c", "desc", "description for /b/c");
+        repository1.createWorkspace().named("s1 workspace");
+        batch = repository1.batch();
+        batch.create("/s1").and();
+        batch.create("/s1/a").and();
+        batch.create("/s1/a/a").and();
+        batch.create("/s1/a/a/a").with("desc", "description for /a/a/a").and();
+        batch.create("/s1/a/a/b").with("desc", "description for /a/a/b").and();
+        batch.create("/s1/a/a/c").with("desc", "description for /a/a/c").and();
+        batch.create("/s1/a/b").and();
+        batch.create("/s1/a/b/a").with("desc", "description for /a/b/a").and();
+        batch.create("/s1/a/b/b").with("desc", "description for /a/b/b").and();
+        batch.create("/s1/a/b/c").with("desc", "description for /a/b/c").and();
+        batch.create("/s1/b").and();
+        batch.create("/s1/b/a").with("desc", "description for /b/a").and();
+        batch.create("/s1/b/b").with("desc", "description for /b/b").and();
+        batch.create("/s1/b/c").with("desc", "description for /b/c").and();
+        batch.execute();
 
         // Create a connection to the federated repository. Doing so will read the config information.
-        RepositoryConnection fedConnection = source.getConnection();
-        assertThat(fedConnection, is(notNullValue()));
+        Graph source = Graph.create(this.source, context);
+        source.useWorkspace("fedSpace");
         assertChildren(source, "/", "a", "b");
         assertChildren(source, "/a/", "a", "b");
         assertChildren(source, "/a/a", "a", "b", "c");
@@ -300,39 +292,80 @@ public class FederatedRepositorySourceIntegrationTest {
         assertChildren(source, "/b/c");
     }
 
+    @Ignore
     @Test
     public void shouldProvideReadAccessToContentFederatedFromMultipleSources() throws Exception {
         // Set up the configuration to use multiple sources.
-        set(config, "/repos/RepoX/dna:federation/", "dna:timeToCache", 100000);
-        set(config, "/repos/RepoX/dna:federation/dna:cache/cache source/", "dna:projectionRules", "/ => /");
-        set(config, "/repos/RepoX/dna:federation/dna:projections/source 1/", "dna:projectionRules", "/ => /s1");
-        set(config, "/repos/RepoX/dna:federation/dna:projections/source 2/", "dna:projectionRules", "/ => /s2");
+        config.createWorkspace().named("configSpace");
+        Graph.Batch batch = config.batch();
+        batch.create("/repos").and();
+        batch.create("/repos/RepoX").and();
+        batch.create("/repos/RepoX/dna:workspaces").and();
+        batch.create("/repos/RepoX/dna:workspaces/fedSpace").and();
+        batch.create("/repos/RepoX/dna:workspaces/fedSpace/dna:cache")
+             .with(FederatedLexicon.PROJECTION_RULES, "/ => /")
+             .with(FederatedLexicon.SOURCE_NAME, "cache source")
+             .with(FederatedLexicon.WORKSPACE_NAME, "cacheSpace")
+             .with(FederatedLexicon.TIME_TO_EXPIRE, 100000)
+             .and();
+        batch.create("/repos/RepoX/dna:workspaces/fedSpace/dna:projections").and();
+        batch.create("/repos/RepoX/dna:workspaces/fedSpace/dna:projections/projection1")
+             .with(FederatedLexicon.PROJECTION_RULES, "/ => /s1")
+             .with(FederatedLexicon.SOURCE_NAME, "source 1")
+             .with(FederatedLexicon.WORKSPACE_NAME, "s1 workspace")
+             .and();
+        batch.create("/repos/RepoX/dna:workspaces/fedSpace/dna:projections/projection2")
+             .with(FederatedLexicon.PROJECTION_RULES, "/ => /s2")
+             .with(FederatedLexicon.SOURCE_NAME, "source 2")
+             .with(FederatedLexicon.WORKSPACE_NAME, "s2 worskspace")
+             .and();
+        batch.execute();
+
+        // Set up the cache ...
+        cache.createWorkspace().named("cacheSpace");
 
         // Set up the content in the first source ...
-        set(repository1, "/s1/a/a/a", "desc", "description for /a/a/a");
-        set(repository1, "/s1/a/a/b", "desc", "description for /a/a/b");
-        set(repository1, "/s1/a/a/c", "desc", "description for /a/a/c");
-        set(repository1, "/s1/a/b/a", "desc", "description for /a/b/a");
-        set(repository1, "/s1/a/b/b", "desc", "description for /a/b/b");
-        set(repository1, "/s1/a/b/c", "desc", "description for /a/b/c");
-        set(repository1, "/s1/b/a", "desc", "description for /b/a");
-        set(repository1, "/s1/b/b", "desc", "description for /b/b");
-        set(repository1, "/s1/b/c", "desc", "description for /b/c");
+        repository1.createWorkspace().named("s1Space");
+        batch = repository1.batch();
+        batch.create("/s1").and();
+        batch.create("/s1/a").and();
+        batch.create("/s1/a/a").and();
+        batch.create("/s1/a/a/a").with("desc", "description for /a/a/a").and();
+        batch.create("/s1/a/a/b").with("desc", "description for /a/a/b").and();
+        batch.create("/s1/a/a/c").with("desc", "description for /a/a/c").and();
+        batch.create("/s1/a/b").and();
+        batch.create("/s1/a/b/a").with("desc", "description for /a/b/a").and();
+        batch.create("/s1/a/b/b").with("desc", "description for /a/b/b").and();
+        batch.create("/s1/a/b/c").with("desc", "description for /a/b/c").and();
+        batch.create("/s1/b").and();
+        batch.create("/s1/b/a").with("desc", "description for /b/a").and();
+        batch.create("/s1/b/b").with("desc", "description for /b/b").and();
+        batch.create("/s1/b/c").with("desc", "description for /b/c").and();
+        batch.execute();
 
-        // Set up the content in the first source ...
-        set(repository2, "/s2/x/x/x", "desc", "description for /x/x/x");
-        set(repository2, "/s2/x/x/y", "desc", "description for /x/x/y");
-        set(repository2, "/s2/x/x/z", "desc", "description for /x/x/z");
-        set(repository2, "/s2/x/y/x", "desc", "description for /x/y/x");
-        set(repository2, "/s2/x/y/y", "desc", "description for /x/y/y");
-        set(repository2, "/s2/x/y/z", "desc", "description for /x/y/z");
-        set(repository2, "/s2/y/x", "desc", "description for /y/x");
-        set(repository2, "/s2/y/y", "desc", "description for /y/y");
-        set(repository2, "/s2/y/z", "desc", "description for /y/z");
+        // Set up the content in the second source ...
+        repository2.createWorkspace().named("s2 workspace");
+        batch = repository2.batch();
+        batch.create("/s2").and();
+        batch.create("/s2/x").and();
+        batch.create("/s2/x/x").and();
+        batch.create("/s2/x/x/x").with("desc", "description for /x/x/x").and();
+        batch.create("/s2/x/x/y").with("desc", "description for /x/x/y").and();
+        batch.create("/s2/x/x/z").with("desc", "description for /x/x/z").and();
+        batch.create("/s2/x").and();
+        batch.create("/s2/x/y").and();
+        batch.create("/s2/x/y/x").with("desc", "description for /x/y/x").and();
+        batch.create("/s2/x/y/y").with("desc", "description for /x/y/y").and();
+        batch.create("/s2/x/y/z").with("desc", "description for /x/y/z").and();
+        batch.create("/s2/y").and();
+        batch.create("/s2/y/x").with("desc", "description for /y/x").and();
+        batch.create("/s2/y/y").with("desc", "description for /y/y").and();
+        batch.create("/s2/y/z").with("desc", "description for /y/z").and();
+        batch.execute();
 
         // Create a connection to the federated repository. Doing so will read the config information.
-        RepositoryConnection fedConnection = source.getConnection();
-        assertThat(fedConnection, is(notNullValue()));
+        Graph source = Graph.create(this.source, context);
+        source.useWorkspace("fedSpace");
         assertChildren(source, "/", "a", "b", "x", "y");
         assertChildren(source, "/a/", "a", "b");
         assertChildren(source, "/a/a", "a", "b", "c");

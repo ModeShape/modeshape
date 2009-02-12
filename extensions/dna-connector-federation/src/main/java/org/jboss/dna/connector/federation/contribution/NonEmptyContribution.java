@@ -47,14 +47,16 @@ public abstract class NonEmptyContribution extends Contribution {
      * Create a contribution of node properties from the source with the supplied name.
      * 
      * @param sourceName the name of the source, which may not be null or blank
+     * @param workspaceName the name of the workspace, which may not be null or blank
      * @param locationInSource the location in the source for this contributed information; may not be null
      * @param expirationTime the time (in UTC) after which this contribution should be considered expired, or null if there is no
      *        expiration time
      */
     protected NonEmptyContribution( String sourceName,
+                                    String workspaceName,
                                     Location locationInSource,
                                     DateTime expirationTime ) {
-        super(sourceName, expirationTime);
+        super(sourceName, workspaceName, expirationTime);
         assert locationInSource != null;
         this.locationInSource = locationInSource;
     }
@@ -90,6 +92,7 @@ public abstract class NonEmptyContribution extends Contribution {
         if (obj instanceof NonEmptyContribution) {
             NonEmptyContribution that = (NonEmptyContribution)obj;
             if (!this.getSourceName().equals(that.getSourceName())) return false;
+            if (!this.getWorkspaceName().equals(that.getWorkspaceName())) return false;
             if (!this.getLocationInSource().equals(that.getLocationInSource())) return false;
             return true;
         }

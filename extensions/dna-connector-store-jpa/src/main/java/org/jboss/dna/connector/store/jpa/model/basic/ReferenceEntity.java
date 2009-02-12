@@ -42,13 +42,14 @@ import org.hibernate.annotations.Index;
 @Entity
 @Table( name = "DNA_BASIC_REFERENCES" )
 @org.hibernate.annotations.Table( appliesTo = "DNA_BASIC_REFERENCES", indexes = {
-    @Index( name = "REFINDEX_INX", columnNames = {"FROM_UUID", "TO_UUID"} ),
-    @Index( name = "REFTOUUID_INX", columnNames = {"TO_UUID"} )} )
+    @Index( name = "REFINDEX_INX", columnNames = {"WORKSPACE_ID", "FROM_UUID", "TO_UUID"} ),
+    @Index( name = "REFTOUUID_INX", columnNames = {"WORKSPACE_ID", "TO_UUID"} )} )
 @NamedQueries( {
-    @NamedQuery( name = "ReferenceEntity.removeReferencesFrom", query = "delete ReferenceEntity where id.fromUuidString = :fromUuid" ),
-    @NamedQuery( name = "ReferenceEntity.removeNonEnforcedReferences", query = "delete ReferenceEntity as ref where ref.id.fromUuidString not in ( select props.id.uuidString from PropertiesEntity props where props.referentialIntegrityEnforced = true )" ),
-    @NamedQuery( name = "ReferenceEntity.countUnresolveReferences", query = "select count(*) from ReferenceEntity as ref where ref.id.toUuidString not in ( select props.id.uuidString from PropertiesEntity props where props.referentialIntegrityEnforced = true )" ),
-    @NamedQuery( name = "ReferenceEntity.getUnresolveReferences", query = "select ref from ReferenceEntity as ref where ref.id.toUuidString not in ( select props.id.uuidString from PropertiesEntity props where props.referentialIntegrityEnforced = true )" )} )
+    @NamedQuery( name = "ReferenceEntity.removeReferencesFrom", query = "delete ReferenceEntity where id.workspaceId = :workspaceId and id.fromUuidString = :fromUuid" ),
+    @NamedQuery( name = "ReferenceEntity.removeNonEnforcedReferences", query = "delete ReferenceEntity as ref where ref.id.workspaceId = :workspaceId and ref.id.fromUuidString not in ( select props.id.uuidString from PropertiesEntity props where props.referentialIntegrityEnforced = true and props.id.workspaceId = :workspaceId )" ),
+    @NamedQuery( name = "ReferenceEntity.countUnresolveReferences", query = "select count(*) from ReferenceEntity as ref where ref.id.workspaceId = :workspaceId and ref.id.toUuidString not in ( select props.id.uuidString from PropertiesEntity props where props.referentialIntegrityEnforced = true and props.id.workspaceId = :workspaceId )" ),
+    @NamedQuery( name = "ReferenceEntity.getUnresolveReferences", query = "select ref from ReferenceEntity as ref where ref.id.workspaceId = :workspaceId and ref.id.toUuidString not in ( select props.id.uuidString from PropertiesEntity props where props.referentialIntegrityEnforced = true and props.id.workspaceId = :workspaceId )" ),
+    @NamedQuery( name = "ReferenceEntity.findInWorkspace", query = "select ref from ReferenceEntity as ref where ref.id.workspaceId = :workspaceId" )} )
 public class ReferenceEntity {
 
     @Id
@@ -119,29 +120,35 @@ public class ReferenceEntity {
     /**
      * Delete all references that start from the node with the supplied UUID.
      * 
+     * @param workspaceId the ID of the workspace; may not be null
      * @param uuid the UUID of the node from which the references start
      * @param manager the manager; may not be null
      * @return the number of deleted references
      */
-    public static int deleteReferencesFrom( String uuid,
+    public static int deleteReferencesFrom( Long workspaceId,
+                                            String uuid,
                                             EntityManager manager ) {
         assert manager != null;
         Query delete = manager.createNamedQuery("ReferenceEntity.removeReferencesFrom");
         delete.setParameter("fromUuid", uuid);
+        delete.setParameter("workspaceId", workspaceId);
         int result = delete.executeUpdate();
         manager.flush();
         return result;
     }
 
     /**
-     * Delete all references that start from nodes that do not support enforced referential integrity.
+     * Delete all references (in all workspaces) that start from nodes that do not require enforced referential integrity.
      * 
+     * @param workspaceId the ID of the workspace; may not be null
      * @param manager the manager; may not be null
      * @return the number of deleted references
      */
-    public static int deleteUnenforcedReferences( EntityManager manager ) {
+    public static int deleteUnenforcedReferences( Long workspaceId,
+                                                  EntityManager manager ) {
         assert manager != null;
         Query delete = manager.createNamedQuery("ReferenceEntity.removeNonEnforcedReferences");
+        delete.setParameter("workspaceId", workspaceId);
         int result = delete.executeUpdate();
         manager.flush();
         return result;
@@ -150,12 +157,15 @@ public class ReferenceEntity {
     /**
      * Delete all references that start from nodes that do not support enforced referential integrity.
      * 
+     * @param workspaceId the ID of the workspace; may not be null
      * @param manager the manager; may not be null
      * @return the number of deleted references
      */
-    public static int countAllReferencesResolved( EntityManager manager ) {
+    public static int countAllReferencesResolved( Long workspaceId,
+                                                  EntityManager manager ) {
         assert manager != null;
         Query query = manager.createNamedQuery("ReferenceEntity.getUnresolveReferences");
+        query.setParameter("workspaceId", workspaceId);
         try {
             return (Integer)query.getSingleResult();
         } catch (NoResultException e) {
@@ -166,13 +176,16 @@ public class ReferenceEntity {
     /**
      * Delete all references that start from nodes that do not support enforced referential integrity.
      * 
+     * @param workspaceId the ID of the workspace; may not be null
      * @param manager the manager; may not be null
      * @return the number of deleted references
      */
     @SuppressWarnings( "unchecked" )
-    public static List<ReferenceEntity> verifyAllReferencesResolved( EntityManager manager ) {
+    public static List<ReferenceEntity> verifyAllReferencesResolved( Long workspaceId,
+                                                                     EntityManager manager ) {
         assert manager != null;
         Query query = manager.createNamedQuery("ReferenceEntity.getUnresolveReferences");
+        query.setParameter("workspaceId", workspaceId);
         return query.getResultList();
     }
 }

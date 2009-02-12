@@ -50,28 +50,37 @@ public class RepositorySourceCapabilities {
      */
     public static final boolean DEFAULT_SUPPORT_EVENTS = false;
 
+    /**
+     * The default support for creating workspaces is {@value} .
+     */
+    public static final boolean DEFAULT_SUPPORT_CREATING_WORKSPACES = false;
+
     private boolean sameNameSiblings;
     private boolean updates;
     private boolean events;
+    private boolean creatingWorkspaces;
 
     /**
      * Create a capabilities object using the defaults, .
      */
     public RepositorySourceCapabilities() {
-        this(DEFAULT_SUPPORT_SAME_NAME_SIBLINGS, DEFAULT_SUPPORT_UPDATES, DEFAULT_SUPPORT_EVENTS);
+        this(DEFAULT_SUPPORT_SAME_NAME_SIBLINGS, DEFAULT_SUPPORT_UPDATES, DEFAULT_SUPPORT_EVENTS,
+             DEFAULT_SUPPORT_CREATING_WORKSPACES);
     }
 
     public RepositorySourceCapabilities( boolean supportsSameNameSiblings,
                                          boolean supportsUpdates ) {
-        this(supportsSameNameSiblings, supportsUpdates, DEFAULT_SUPPORT_EVENTS);
+        this(supportsSameNameSiblings, supportsUpdates, DEFAULT_SUPPORT_EVENTS, DEFAULT_SUPPORT_CREATING_WORKSPACES);
     }
 
     public RepositorySourceCapabilities( boolean supportsSameNameSiblings,
                                          boolean supportsUpdates,
-                                         boolean supportsEvents ) {
+                                         boolean supportsEvents,
+                                         boolean supportsCreatingWorkspaces ) {
         this.sameNameSiblings = supportsSameNameSiblings;
         this.updates = supportsUpdates;
         this.events = supportsEvents;
+        this.creatingWorkspaces = supportsCreatingWorkspaces;
     }
 
     /**
@@ -101,5 +110,14 @@ public class RepositorySourceCapabilities {
      */
     public boolean supportsEvents() {
         return events;
+    }
+
+    /**
+     * Return whether the source supports creating workspaces through the connector.
+     * 
+     * @return true if creating workspaces is supported, or false if the source is not capable of creating workspaces
+     */
+    public boolean supportsCreatingWorkspaces() {
+        return creatingWorkspaces;
     }
 }

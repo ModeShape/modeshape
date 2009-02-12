@@ -27,8 +27,6 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.hamcrest.core.IsSame.sameInstance;
 import static org.junit.Assert.assertThat;
-import org.jboss.dna.graph.request.DeleteBranchRequest;
-import org.jboss.dna.graph.request.Request;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -47,33 +45,46 @@ public class DeleteBranchRequestTest extends AbstractRequestTest {
 
     @Override
     protected Request createRequest() {
-        return new DeleteBranchRequest(validPathLocation1);
+        return new DeleteBranchRequest(validPathLocation1, workspace1);
     }
 
     @Test( expected = IllegalArgumentException.class )
     public void shouldNotAllowCreatingRequestWithNullFromLocation() {
-        new DeleteBranchRequest(null);
+        new DeleteBranchRequest(null, workspace1);
+    }
+
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldNotAllowCreatingRequestWithNullWorkspaceName() {
+        new DeleteBranchRequest(validPathLocation1, null);
     }
 
     @Test
     public void shouldCreateValidRequestWithValidLocation() {
-        request = new DeleteBranchRequest(validPathLocation1);
+        request = new DeleteBranchRequest(validPathLocation1, workspace1);
         assertThat(request.at(), is(sameInstance(validPathLocation1)));
+        assertThat(request.inWorkspace(), is(sameInstance(workspace1)));
         assertThat(request.hasError(), is(false));
         assertThat(request.getError(), is(nullValue()));
     }
 
     @Test
     public void shouldConsiderEqualTwoRequestsWithSameLocations() {
-        request = new DeleteBranchRequest(validPathLocation1);
-        DeleteBranchRequest request2 = new DeleteBranchRequest(validPathLocation1);
+        request = new DeleteBranchRequest(validPathLocation1, workspace1);
+        DeleteBranchRequest request2 = new DeleteBranchRequest(validPathLocation1, workspace1);
         assertThat(request, is(request2));
     }
 
     @Test
     public void shouldConsiderNotEqualTwoRequestsWithDifferentLocations() {
-        request = new DeleteBranchRequest(validPathLocation1);
-        DeleteBranchRequest request2 = new DeleteBranchRequest(validPathLocation2);
+        request = new DeleteBranchRequest(validPathLocation1, workspace1);
+        DeleteBranchRequest request2 = new DeleteBranchRequest(validPathLocation2, workspace1);
+        assertThat(request.equals(request2), is(false));
+    }
+
+    @Test
+    public void shouldConsiderNotEqualTwoRequestsWithDifferentWorkspaceNames() {
+        request = new DeleteBranchRequest(validPathLocation1, workspace1);
+        DeleteBranchRequest request2 = new DeleteBranchRequest(validPathLocation1, workspace2);
         assertThat(request.equals(request2), is(false));
     }
 }

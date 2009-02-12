@@ -39,6 +39,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import net.jcip.annotations.Immutable;
 import net.jcip.annotations.NotThreadSafe;
@@ -58,10 +59,14 @@ import org.jboss.dna.graph.property.PropertyFactory;
 import org.jboss.dna.graph.property.Reference;
 import org.jboss.dna.graph.property.ValueFormatException;
 import org.jboss.dna.graph.property.Path.Segment;
+import org.jboss.dna.graph.request.CloneWorkspaceRequest;
 import org.jboss.dna.graph.request.CompositeRequest;
 import org.jboss.dna.graph.request.CopyBranchRequest;
 import org.jboss.dna.graph.request.CreateNodeRequest;
+import org.jboss.dna.graph.request.CreateWorkspaceRequest;
 import org.jboss.dna.graph.request.DeleteBranchRequest;
+import org.jboss.dna.graph.request.GetWorkspacesRequest;
+import org.jboss.dna.graph.request.InvalidWorkspaceException;
 import org.jboss.dna.graph.request.MoveBranchRequest;
 import org.jboss.dna.graph.request.ReadAllChildrenRequest;
 import org.jboss.dna.graph.request.ReadAllPropertiesRequest;
@@ -73,6 +78,9 @@ import org.jboss.dna.graph.request.ReadPropertyRequest;
 import org.jboss.dna.graph.request.RemovePropertiesRequest;
 import org.jboss.dna.graph.request.Request;
 import org.jboss.dna.graph.request.UpdatePropertiesRequest;
+import org.jboss.dna.graph.request.VerifyWorkspaceRequest;
+import org.jboss.dna.graph.request.CloneWorkspaceRequest.CloneConflictBehavior;
+import org.jboss.dna.graph.request.CreateWorkspaceRequest.CreateConflictBehavior;
 import org.xml.sax.SAXException;
 
 /**
@@ -148,6 +156,7 @@ public class Graph {
     private final ExecutionContext context;
     private final RequestQueue requestQueue;
     private final Conjunction<Graph> nextGraph;
+    private Workspace currentWorkspace;
 
     protected Graph( String sourceName,
                      RepositoryConnectionFactory connectionFactory,
@@ -200,6 +209,33 @@ public class Graph {
     }
 
     /**
+     * Obtain a connection to the source, execute the supplied request, and check the request for {@link Request#getError()
+     * errors}. If an error is found, then it is thrown (or wrapped by a {@link RepositorySourceException} if the error is not a
+     * {@link RuntimeException}.
+     * <p>
+     * This method is called by one of the {@link RequestQueue} implementations.
+     * </p>
+     * 
+     * @param request the request to be executed (may be a {@link CompositeRequest}.
+     */
+    protected void execute( Request request ) {
+        RepositoryConnection connection = Graph.this.getConnectionFactory().createConnection(getSourceName());
+        if (connection == null) {
+            throw new RepositorySourceException(GraphI18n.unableToFindRepositorySourceWithName.text(getSourceName()));
+        }
+        try {
+            connection.execute(Graph.this.getContext(), request);
+        } finally {
+            connection.close();
+        }
+        if (request.hasError()) {
+            Throwable error = request.getError();
+            if (error instanceof RuntimeException) throw (RuntimeException)error;
+            throw new RepositorySourceException(getSourceName(), error);
+        }
+    }
+
+    /**
      * Get the default cache policy for this graph. May be null if such a policy has not been defined for thie
      * {@link #getSourceName() source}.
      * 
@@ -216,6 +252,149 @@ public class Graph {
         } finally {
             connection.close();
         }
+    }
+
+    /**
+     * Utility method to set the workspace that will be used by this graph.
+     * 
+     * @param workspaceName the name of the workspace; may not be null
+     * @param actualRootLocation the actual location of the root node in the workspace; may not be null
+     * @return the workspace; never null
+     */
+    protected Workspace setWorkspace( String workspaceName,
+                                      Location actualRootLocation ) {
+        assert workspaceName != null;
+        assert actualRootLocation != null;
+        this.currentWorkspace = new GraphWorkspace(workspaceName, actualRootLocation);
+        return this.currentWorkspace;
+    }
+
+    /**
+     * Get the name of the current workspace being used by this graph. If the graph has not yet been instructed to
+     * {@link #useWorkspace(String) use} or {@link #createWorkspace() create} a workspace, this method will assume that the
+     * source's default workspace is to be used and will obtain from the source the name of that default workspace.
+     * 
+     * @return the name of the current workspace; never null
+     * @see #getCurrentWorkspace()
+     */
+    public String getCurrentWorkspaceName() {
+        return getCurrentWorkspace().getName();
+    }
+
+    /**
+     * Get the name of the current workspace being used by this graph. If the graph has not yet been instructed to
+     * {@link #useWorkspace(String) use} or {@link #createWorkspace() create} a workspace, this method will assume that the
+     * source's default workspace is to be used and will obtain from the source the name of that default workspace. If the source
+     * does not have a default workspace, this method will fail with an {@link InvalidWorkspaceException}.
+     * 
+     * @return the name of the current workspace; never null
+     * @see #getCurrentWorkspaceName()
+     * @throws InvalidWorkspaceException if there is no current workspace
+     */
+    public Workspace getCurrentWorkspace() {
+        if (this.currentWorkspace == null) {
+            useWorkspace(null);
+        }
+        assert this.currentWorkspace != null;
+        return this.currentWorkspace;
+    }
+
+    /**
+     * Get the set of workspace names that are known to this source and accessible by this {@link #getContext() context}.
+     * 
+     * @return the set of workspace names; never null
+     */
+    public Set<String> getWorkspaces() {
+        GetWorkspacesRequest request = new GetWorkspacesRequest();
+        this.requestQueue.submit(request);
+        return request.getAvailableWorkspaceNames();
+    }
+
+    /**
+     * Switch this graph to use another existing workspace in the same source.
+     * 
+     * @param workspaceName the name of the existing workspace that this graph should begin using, or null if the graph should use
+     *        the "default" workspace in the source (if there is one)
+     * @return the workspace; never null
+     * @throws InvalidWorkspaceException if the workspace with the supplied name does not exist, or if null is supplied as the
+     *         workspace name but the source does not have a default workspace
+     */
+    public Workspace useWorkspace( String workspaceName ) {
+        VerifyWorkspaceRequest request = new VerifyWorkspaceRequest(workspaceName);
+        requestQueue.submit(request); // will throw error if there is one ...
+        return setWorkspace(request.getActualWorkspaceName(), request.getActualLocationOfRoot());
+    }
+
+    /**
+     * Create a new workspace in the source used by this graph. This graph's workspace will be set as soon as the new workspace is
+     * created, and all subsequent operations will use the new workspace (until it is changed again by
+     * {@link #useWorkspace(String) using another workspace} or {@link #createWorkspace() creating another}.
+     * 
+     * @return the interface used to complete the request to create a new workspace; never null
+     */
+    public CreateWorkspace createWorkspace() {
+        return new CreateWorkspace() {
+            /**
+             * {@inheritDoc}
+             * 
+             * @see org.jboss.dna.graph.Graph.NameWorkspace#named(java.lang.String)
+             */
+            public Workspace named( String workspaceName ) {
+                CreateWorkspaceRequest request = new CreateWorkspaceRequest(workspaceName, CreateConflictBehavior.DO_NOT_CREATE);
+                queue().submit(request); // will throw error if there is one ...
+                return setWorkspace(request.getActualWorkspaceName(), request.getActualLocationOfRoot());
+            }
+
+            /**
+             * {@inheritDoc}
+             * 
+             * @see org.jboss.dna.graph.Graph.CreateWorkspace#namedSomethingLike(java.lang.String)
+             */
+            public Workspace namedSomethingLike( String workspaceName ) {
+                CreateWorkspaceRequest request = new CreateWorkspaceRequest(workspaceName,
+                                                                            CreateConflictBehavior.CREATE_WITH_ADJUSTED_NAME);
+                queue().submit(request); // will throw error if there is one ...
+                return setWorkspace(request.getActualWorkspaceName(), request.getActualLocationOfRoot());
+            }
+
+            /**
+             * {@inheritDoc}
+             * 
+             * @see org.jboss.dna.graph.Graph.CreateWorkspace#clonedFrom(java.lang.String)
+             */
+            public NameWorkspace clonedFrom( final String nameOfWorkspaceToClone ) {
+                return new NameWorkspace() {
+                    /**
+                     * {@inheritDoc}
+                     * 
+                     * @see org.jboss.dna.graph.Graph.NameWorkspace#named(java.lang.String)
+                     */
+                    public Workspace named( String nameOfWorkspaceToCreate ) {
+                        CloneWorkspaceRequest request = new CloneWorkspaceRequest(nameOfWorkspaceToClone,
+                                                                                  nameOfWorkspaceToCreate,
+                                                                                  CreateConflictBehavior.DO_NOT_CREATE,
+                                                                                  CloneConflictBehavior.DO_NOT_CLONE);
+                        queue().submit(request); // will throw error if there is one ...
+                        return setWorkspace(request.getActualWorkspaceName(), request.getActualLocationOfRoot());
+                    }
+
+                    /**
+                     * {@inheritDoc}
+                     * 
+                     * @see org.jboss.dna.graph.Graph.NameWorkspace#namedSomethingLike(java.lang.String)
+                     */
+                    public Workspace namedSomethingLike( String nameOfWorkspaceToCreate ) {
+                        CloneWorkspaceRequest request = new CloneWorkspaceRequest(
+                                                                                  nameOfWorkspaceToClone,
+                                                                                  nameOfWorkspaceToCreate,
+                                                                                  CreateConflictBehavior.CREATE_WITH_ADJUSTED_NAME,
+                                                                                  CloneConflictBehavior.DO_NOT_CLONE);
+                        queue().submit(request); // will throw error if there is one ...
+                        return setWorkspace(request.getActualWorkspaceName(), request.getActualLocationOfRoot());
+                    }
+                };
+            }
+        };
     }
 
     /**
@@ -458,7 +637,7 @@ public class Graph {
      * @return an object that may be used to start another request
      */
     public Conjunction<Graph> delete( Node at ) {
-        this.requestQueue.submit(new DeleteBranchRequest(at.getLocation()));
+        this.requestQueue.submit(new DeleteBranchRequest(at.getLocation(), getCurrentWorkspaceName()));
         return nextGraph;
     }
 
@@ -469,7 +648,7 @@ public class Graph {
      * @return an object that may be used to start another request
      */
     public Conjunction<Graph> delete( Location at ) {
-        this.requestQueue.submit(new DeleteBranchRequest(at));
+        this.requestQueue.submit(new DeleteBranchRequest(at, getCurrentWorkspaceName()));
         return nextGraph;
     }
 
@@ -480,7 +659,7 @@ public class Graph {
      * @return an object that may be used to start another request
      */
     public Conjunction<Graph> delete( String atPath ) {
-        this.requestQueue.submit(new DeleteBranchRequest(new Location(createPath(atPath))));
+        this.requestQueue.submit(new DeleteBranchRequest(new Location(createPath(atPath)), getCurrentWorkspaceName()));
         return nextGraph;
     }
 
@@ -491,7 +670,7 @@ public class Graph {
      * @return an object that may be used to start another request
      */
     public Conjunction<Graph> delete( Path at ) {
-        this.requestQueue.submit(new DeleteBranchRequest(new Location(at)));
+        this.requestQueue.submit(new DeleteBranchRequest(new Location(at), getCurrentWorkspaceName()));
         return nextGraph;
     }
 
@@ -502,7 +681,7 @@ public class Graph {
      * @return an object that may be used to start another request
      */
     public Conjunction<Graph> delete( UUID at ) {
-        this.requestQueue.submit(new DeleteBranchRequest(new Location(at)));
+        this.requestQueue.submit(new DeleteBranchRequest(new Location(at), getCurrentWorkspaceName()));
         return nextGraph;
     }
 
@@ -514,7 +693,7 @@ public class Graph {
      * @return an object that may be used to start another request
      */
     public Conjunction<Graph> delete( Property idProperty ) {
-        this.requestQueue.submit(new DeleteBranchRequest(new Location(idProperty)));
+        this.requestQueue.submit(new DeleteBranchRequest(new Location(idProperty), getCurrentWorkspaceName()));
         return nextGraph;
     }
 
@@ -528,7 +707,8 @@ public class Graph {
      */
     public Conjunction<Graph> delete( Property firstIdProperty,
                                       Property... additionalIdProperties ) {
-        this.requestQueue.submit(new DeleteBranchRequest(new Location(firstIdProperty, additionalIdProperties)));
+        this.requestQueue.submit(new DeleteBranchRequest(new Location(firstIdProperty, additionalIdProperties),
+                                                         getCurrentWorkspaceName()));
         return nextGraph;
     }
 
@@ -547,7 +727,7 @@ public class Graph {
         Path at = createPath(atPath);
         Path parent = at.getParent();
         Name child = at.getLastSegment().getName();
-        this.requestQueue.submit(new CreateNodeRequest(new Location(parent), child));
+        this.requestQueue.submit(new CreateNodeRequest(new Location(parent), getCurrentWorkspaceName(), child));
         return nextGraph;
     }
 
@@ -568,7 +748,7 @@ public class Graph {
         Path at = createPath(atPath);
         Path parent = at.getParent();
         Name child = at.getLastSegment().getName();
-        this.requestQueue.submit(new CreateNodeRequest(new Location(parent), child, properties));
+        this.requestQueue.submit(new CreateNodeRequest(new Location(parent), getCurrentWorkspaceName(), child, properties));
         return nextGraph;
     }
 
@@ -587,7 +767,7 @@ public class Graph {
         CheckArg.isNotNull(at, "at");
         Path parent = at.getParent();
         Name child = at.getLastSegment().getName();
-        this.requestQueue.submit(new CreateNodeRequest(new Location(parent), child));
+        this.requestQueue.submit(new CreateNodeRequest(new Location(parent), getCurrentWorkspaceName(), child));
         return nextGraph;
     }
 
@@ -608,7 +788,7 @@ public class Graph {
         CheckArg.isNotNull(at, "at");
         Path parent = at.getParent();
         Name child = at.getLastSegment().getName();
-        this.requestQueue.submit(new CreateNodeRequest(new Location(parent), child, properties));
+        this.requestQueue.submit(new CreateNodeRequest(new Location(parent), getCurrentWorkspaceName(), child, properties));
         return nextGraph;
     }
 
@@ -629,7 +809,7 @@ public class Graph {
         CheckArg.isNotNull(at, "at");
         Path parent = at.getParent();
         Name child = at.getLastSegment().getName();
-        this.requestQueue.submit(new CreateNodeRequest(new Location(parent), child, properties));
+        this.requestQueue.submit(new CreateNodeRequest(new Location(parent), getCurrentWorkspaceName(), child, properties));
         return nextGraph;
     }
 
@@ -652,7 +832,7 @@ public class Graph {
             public Conjunction<Graph> node( String name,
                                             Property... properties ) {
                 Name child = nameFactory.create(name);
-                requestQueue.submit(new CreateNodeRequest(parent, child, properties));
+                requestQueue.submit(new CreateNodeRequest(parent, getCurrentWorkspaceName(), child, properties));
                 return nextGraph;
             }
 
@@ -660,7 +840,7 @@ public class Graph {
             public Conjunction<Graph> node( String name,
                                             Iterator<Property> properties ) {
                 Name child = nameFactory.create(name);
-                requestQueue.submit(new CreateNodeRequest(parent, child, properties));
+                requestQueue.submit(new CreateNodeRequest(parent, getCurrentWorkspaceName(), child, properties));
                 return nextGraph;
             }
 
@@ -668,7 +848,7 @@ public class Graph {
             public Conjunction<Graph> node( String name,
                                             Iterable<Property> properties ) {
                 Name child = nameFactory.create(name);
-                requestQueue.submit(new CreateNodeRequest(parent, child, properties));
+                requestQueue.submit(new CreateNodeRequest(parent, getCurrentWorkspaceName(), child, properties));
                 return nextGraph;
             }
         };
@@ -684,7 +864,7 @@ public class Graph {
         return new On<Conjunction<Graph>>() {
             @SuppressWarnings( "synthetic-access" )
             public Conjunction<Graph> on( Location location ) {
-                UpdatePropertiesRequest request = new UpdatePropertiesRequest(location, properties);
+                UpdatePropertiesRequest request = new UpdatePropertiesRequest(location, getCurrentWorkspaceName(), properties);
                 queue().submit(request);
                 return nextGraph;
             }
@@ -704,6 +884,10 @@ public class Graph {
             public Conjunction<Graph> on( Property firstIdProperty,
                                           Property... additionalIdProperties ) {
                 return on(new Location(firstIdProperty, additionalIdProperties));
+            }
+
+            public Conjunction<Graph> on( Iterable<Property> idProperties ) {
+                return on(new Location(idProperties));
             }
 
             public Conjunction<Graph> on( UUID uuid ) {
@@ -743,14 +927,16 @@ public class Graph {
                     public Conjunction<Graph> to( Location value ) {
                         Reference ref = (Reference)convertReferenceValue(value);
                         Property property = getContext().getPropertyFactory().create(propertyName, ref);
-                        UpdatePropertiesRequest request = new UpdatePropertiesRequest(location, property);
+                        UpdatePropertiesRequest request = new UpdatePropertiesRequest(location, getCurrentWorkspaceName(),
+                                                                                      property);
                         queue().submit(request);
                         return nextGraph;
                     }
 
                     protected Conjunction<Graph> toValue( Object value ) {
                         Property property = getContext().getPropertyFactory().create(propertyName, value);
-                        UpdatePropertiesRequest request = new UpdatePropertiesRequest(location, property);
+                        UpdatePropertiesRequest request = new UpdatePropertiesRequest(location, getCurrentWorkspaceName(),
+                                                                                      property);
                         queue().submit(request);
                         return nextGraph;
                     }
@@ -838,7 +1024,8 @@ public class Graph {
                     public Conjunction<Graph> to( Object value ) {
                         value = convertReferenceValue(value);
                         Property property = getContext().getPropertyFactory().create(propertyName, value);
-                        UpdatePropertiesRequest request = new UpdatePropertiesRequest(location, property);
+                        UpdatePropertiesRequest request = new UpdatePropertiesRequest(location, getCurrentWorkspaceName(),
+                                                                                      property);
                         queue().submit(request);
                         return nextGraph;
                     }
@@ -850,7 +1037,8 @@ public class Graph {
                             otherValues[i] = convertReferenceValue(otherValues[i]);
                         }
                         Property property = getContext().getPropertyFactory().create(propertyName, firstValue, otherValues);
-                        UpdatePropertiesRequest request = new UpdatePropertiesRequest(location, property);
+                        UpdatePropertiesRequest request = new UpdatePropertiesRequest(location, getCurrentWorkspaceName(),
+                                                                                      property);
                         queue().submit(request);
                         return nextGraph;
                     }
@@ -862,7 +1050,8 @@ public class Graph {
                             valueList.add(value);
                         }
                         Property property = getContext().getPropertyFactory().create(propertyName, valueList);
-                        UpdatePropertiesRequest request = new UpdatePropertiesRequest(location, property);
+                        UpdatePropertiesRequest request = new UpdatePropertiesRequest(location, getCurrentWorkspaceName(),
+                                                                                      property);
                         queue().submit(request);
                         return nextGraph;
                     }
@@ -874,7 +1063,8 @@ public class Graph {
                             valueList.add(value);
                         }
                         Property property = getContext().getPropertyFactory().create(propertyName, valueList);
-                        UpdatePropertiesRequest request = new UpdatePropertiesRequest(location, property);
+                        UpdatePropertiesRequest request = new UpdatePropertiesRequest(location, getCurrentWorkspaceName(),
+                                                                                      property);
                         queue().submit(request);
                         return nextGraph;
                     }
@@ -896,6 +1086,10 @@ public class Graph {
             public SetValuesTo<Conjunction<Graph>> on( Property firstIdProperty,
                                                        Property... additionalIdProperties ) {
                 return on(new Location(firstIdProperty, additionalIdProperties));
+            }
+
+            public SetValuesTo<Conjunction<Graph>> on( Iterable<Property> idProperties ) {
+                return on(new Location(idProperties));
             }
 
             public SetValuesTo<Conjunction<Graph>> on( UUID uuid ) {
@@ -1040,7 +1234,7 @@ public class Graph {
         return new On<Conjunction<Graph>>() {
             @SuppressWarnings( "synthetic-access" )
             public Conjunction<Graph> on( Location location ) {
-                RemovePropertiesRequest request = new RemovePropertiesRequest(location, propertyNames);
+                RemovePropertiesRequest request = new RemovePropertiesRequest(location, getCurrentWorkspaceName(), propertyNames);
                 queue().submit(request);
                 return nextGraph;
             }
@@ -1060,6 +1254,10 @@ public class Graph {
             public Conjunction<Graph> on( Property firstIdProperty,
                                           Property... additionalIdProperties ) {
                 return on(new Location(firstIdProperty, additionalIdProperties));
+            }
+
+            public Conjunction<Graph> on( Iterable<Property> idProperties ) {
+                return on(new Location(idProperties));
             }
 
             public Conjunction<Graph> on( UUID uuid ) {
@@ -1083,7 +1281,7 @@ public class Graph {
         return new On<Conjunction<Graph>>() {
             @SuppressWarnings( "synthetic-access" )
             public Conjunction<Graph> on( Location location ) {
-                RemovePropertiesRequest request = new RemovePropertiesRequest(location, names);
+                RemovePropertiesRequest request = new RemovePropertiesRequest(location, getCurrentWorkspaceName(), names);
                 queue().submit(request);
                 return nextGraph;
             }
@@ -1105,6 +1303,10 @@ public class Graph {
                 return on(new Location(firstIdProperty, additionalIdProperties));
             }
 
+            public Conjunction<Graph> on( Iterable<Property> idProperties ) {
+                return on(new Location(idProperties));
+            }
+
             public Conjunction<Graph> on( UUID uuid ) {
                 return on(new Location(uuid));
             }
@@ -1120,7 +1322,7 @@ public class Graph {
     public On<Collection<Property>> getProperties() {
         return new On<Collection<Property>>() {
             public Collection<Property> on( Location location ) {
-                ReadAllPropertiesRequest request = new ReadAllPropertiesRequest(location);
+                ReadAllPropertiesRequest request = new ReadAllPropertiesRequest(location, getCurrentWorkspaceName());
                 queue().submit(request);
                 return request.getProperties();
             }
@@ -1142,6 +1344,10 @@ public class Graph {
                 return on(new Location(firstIdProperty, additionalIdProperties));
             }
 
+            public Collection<Property> on( Iterable<Property> idProperties ) {
+                return on(new Location(idProperties));
+            }
+
             public Collection<Property> on( UUID uuid ) {
                 return on(new Location(uuid));
             }
@@ -1158,7 +1364,7 @@ public class Graph {
     public On<Map<Name, Property>> getPropertiesByName() {
         return new On<Map<Name, Property>>() {
             public Map<Name, Property> on( Location location ) {
-                ReadAllPropertiesRequest request = new ReadAllPropertiesRequest(location);
+                ReadAllPropertiesRequest request = new ReadAllPropertiesRequest(location, getCurrentWorkspaceName());
                 queue().submit(request);
                 return request.getPropertiesByName();
             }
@@ -1178,6 +1384,10 @@ public class Graph {
             public Map<Name, Property> on( Property firstIdProperty,
                                            Property... additionalIdProperties ) {
                 return on(new Location(firstIdProperty, additionalIdProperties));
+            }
+
+            public Map<Name, Property> on( Iterable<Property> idProperties ) {
+                return on(new Location(idProperties));
             }
 
             public Map<Name, Property> on( UUID uuid ) {
@@ -1212,12 +1422,16 @@ public class Graph {
                 return of(new Location(firstIdProperty, additionalIdProperties));
             }
 
+            public List<Location> of( Iterable<Property> idProperties ) {
+                return of(new Location(idProperties));
+            }
+
             public List<Location> of( UUID uuid ) {
                 return of(new Location(uuid));
             }
 
             public List<Location> of( Location at ) {
-                ReadAllChildrenRequest request = new ReadAllChildrenRequest(at);
+                ReadAllChildrenRequest request = new ReadAllChildrenRequest(at, getCurrentWorkspaceName());
                 queue().submit(request);
                 return request.getChildren();
             }
@@ -1248,7 +1462,9 @@ public class Graph {
                             }
 
                             public List<Location> under( Location at ) {
-                                ReadBlockOfChildrenRequest request = new ReadBlockOfChildrenRequest(at, startingIndex, blockSize);
+                                ReadBlockOfChildrenRequest request = new ReadBlockOfChildrenRequest(at,
+                                                                                                    getCurrentWorkspaceName(),
+                                                                                                    startingIndex, blockSize);
                                 queue().submit(request);
                                 return request.getChildren();
                             }
@@ -1256,7 +1472,9 @@ public class Graph {
                     }
 
                     public List<Location> startingAfter( final Location previousSibling ) {
-                        ReadNextBlockOfChildrenRequest request = new ReadNextBlockOfChildrenRequest(previousSibling, blockSize);
+                        ReadNextBlockOfChildrenRequest request = new ReadNextBlockOfChildrenRequest(previousSibling,
+                                                                                                    getCurrentWorkspaceName(),
+                                                                                                    blockSize);
                         queue().submit(request);
                         return request.getChildren();
                     }
@@ -1325,12 +1543,16 @@ public class Graph {
                 return on(new Location(firstIdProperty, additionalIdProperties));
             }
 
+            public Property on( Iterable<Property> idProperties ) {
+                return on(new Location(idProperties));
+            }
+
             public Property on( UUID uuid ) {
                 return on(new Location(uuid));
             }
 
             public Property on( Location at ) {
-                ReadPropertyRequest request = new ReadPropertyRequest(at, name);
+                ReadPropertyRequest request = new ReadPropertyRequest(at, getCurrentWorkspaceName(), name);
                 queue().submit(request);
                 return request.getProperty();
             }
@@ -1354,7 +1576,7 @@ public class Graph {
      * @return the node that is read from the repository
      */
     public Node getNodeAt( Location location ) {
-        ReadNodeRequest request = new ReadNodeRequest(location);
+        ReadNodeRequest request = new ReadNodeRequest(location, getCurrentWorkspaceName());
         this.requestQueue.submit(request);
         return new GraphNode(request);
     }
@@ -1402,6 +1624,16 @@ public class Graph {
     }
 
     /**
+     * Request to read the node with the supplied unique identifier properties.
+     * 
+     * @param idProperties the identification properties that uniquely identify the node that is to be read
+     * @return the node that is read from the repository
+     */
+    public Node getNodeAt( Iterable<Property> idProperties ) {
+        return getNodeAt(new Location(idProperties));
+    }
+
+    /**
      * Request to read the node given by the supplied reference value.
      * 
      * @param reference the reference property value that is to be resolved into a node
@@ -1426,7 +1658,7 @@ public class Graph {
     public At<Subgraph> getSubgraphOfDepth( final int depth ) {
         return new At<Subgraph>() {
             public Subgraph at( Location location ) {
-                ReadBranchRequest request = new ReadBranchRequest(location, depth);
+                ReadBranchRequest request = new ReadBranchRequest(location, getCurrentWorkspaceName(), depth);
                 queue().submit(request);
                 return new SubgraphResults(request);
             }
@@ -1450,6 +1682,10 @@ public class Graph {
             public Subgraph at( Property firstIdProperty,
                                 Property... additionalIdProperties ) {
                 return at(new Location(firstIdProperty, additionalIdProperties));
+            }
+
+            public Subgraph at( Iterable<Property> idProperties ) {
+                return at(new Location(idProperties));
             }
         };
     }
@@ -1486,6 +1722,10 @@ public class Graph {
             public Conjunction<Graph> into( Property firstIdProperty,
                                             Property... additionalIdProperties ) throws IOException, SAXException {
                 return into(new Location(firstIdProperty, additionalIdProperties));
+            }
+
+            public Conjunction<Graph> into( Iterable<Property> idProperties ) throws IOException, SAXException {
+                return into(new Location(idProperties));
             }
 
             public Conjunction<Graph> into( UUID uuid ) throws IOException, SAXException {
@@ -1531,23 +1771,6 @@ public class Graph {
         return getContext().getValueFactories().getPathFactory().create(path);
     }
 
-    protected void execute( Request request ) {
-        RepositoryConnection connection = Graph.this.getConnectionFactory().createConnection(getSourceName());
-        if (connection == null) {
-            throw new RepositorySourceException(GraphI18n.unableToFindRepositorySourceWithName.text(getSourceName()));
-        }
-        try {
-            connection.execute(Graph.this.getContext(), request);
-        } finally {
-            connection.close();
-        }
-        if (request.hasError()) {
-            Throwable error = request.getError();
-            if (error instanceof RuntimeException) throw (RuntimeException)error;
-            throw new RepositorySourceException(getSourceName(), error);
-        }
-    }
-
     protected List<Segment> getSegments( List<Location> locations ) {
         List<Segment> segments = new ArrayList<Segment>(locations.size());
         for (Location location : locations) {
@@ -1577,12 +1800,14 @@ public class Graph {
      * @author Randall Hauch
      */
     @Immutable
-    public final class Batch implements Executable {
+    public final class Batch implements Executable<Node> {
         protected final CompositingRequestQueue requestQueue = new CompositingRequestQueue();
         protected final BatchConjunction nextRequests;
+        protected final String workspaceName;
         protected boolean executed = false;
 
         /*package*/Batch() {
+            this.workspaceName = Graph.this.getCurrentWorkspaceName();
             this.nextRequests = new BatchConjunction() {
                 public Batch and() {
                     return Batch.this;
@@ -1602,6 +1827,15 @@ public class Graph {
          */
         public Graph getGraph() {
             return Graph.this;
+        }
+
+        /**
+         * Get the name of the workspace that this batch is using. This is always constant throughout the lifetime of the batch.
+         * 
+         * @return the name of the workspace; never null
+         */
+        public String getCurrentWorkspaceName() {
+            return this.workspaceName;
         }
 
         protected final void assertNotExecuted() {
@@ -1735,6 +1969,24 @@ public class Graph {
         }
 
         /**
+         * Begin the request to move a node with the specified identification properties into a parent node at a different
+         * location, which is specified via the <code>into(...)</code> method on the returned {@link Move} object. The
+         * identification properties should uniquely identify a single node.
+         * <p>
+         * Like all other methods on the {@link Batch}, the request will be performed when the {@link #execute()} method is
+         * called.
+         * </p>
+         * 
+         * @param idProperties the idenficiation properties of the node that is to be moved
+         * @return the object that can be used to specify addition nodes to be moved or the location of the node where the node is
+         *         to be moved
+         */
+        public Move<BatchConjunction> move( Iterable<Property> idProperties ) {
+            assertNotExecuted();
+            return new MoveAction<BatchConjunction>(this.nextRequests, this.requestQueue, new Location(idProperties));
+        }
+
+        /**
          * Begin the request to copy the specified node into a parent node at a different location, which is specified via the
          * <code>into(...)</code> method on the returned {@link Copy} object.
          * <p>
@@ -1859,6 +2111,24 @@ public class Graph {
         }
 
         /**
+         * Begin the request to copy a node with the specified identification properties into a parent node at a different
+         * location, which is specified via the <code>into(...)</code> method on the returned {@link Copy} object. The
+         * identification properties should uniquely identify a single node.
+         * <p>
+         * Like all other methods on the {@link Batch}, the request will be performed when the {@link #execute()} method is
+         * called.
+         * </p>
+         * 
+         * @param idProperties the identification properties of the node that is to be copied
+         * @return the object that can be used to specify addition nodes to be copied or the location of the node where the node
+         *         is to be copied
+         */
+        public Copy<BatchConjunction> copy( Iterable<Property> idProperties ) {
+            assertNotExecuted();
+            return new CopyAction<BatchConjunction>(nextRequests, this.requestQueue, new Location(idProperties));
+        }
+
+        /**
          * Request to delete the specified node.
          * <p>
          * Like all other methods on the {@link Batch}, the request will be performed when the {@link #execute()} method is
@@ -1870,7 +2140,7 @@ public class Graph {
          */
         public BatchConjunction delete( Node at ) {
             assertNotExecuted();
-            this.requestQueue.submit(new DeleteBranchRequest(at.getLocation()));
+            this.requestQueue.submit(new DeleteBranchRequest(at.getLocation(), getCurrentWorkspaceName()));
             return nextRequests;
         }
 
@@ -1886,7 +2156,7 @@ public class Graph {
          */
         public BatchConjunction delete( Location at ) {
             assertNotExecuted();
-            this.requestQueue.submit(new DeleteBranchRequest(at));
+            this.requestQueue.submit(new DeleteBranchRequest(at, getCurrentWorkspaceName()));
             return nextRequests;
         }
 
@@ -1902,7 +2172,7 @@ public class Graph {
          */
         public BatchConjunction delete( String atPath ) {
             assertNotExecuted();
-            this.requestQueue.submit(new DeleteBranchRequest(new Location(createPath(atPath))));
+            this.requestQueue.submit(new DeleteBranchRequest(new Location(createPath(atPath)), getCurrentWorkspaceName()));
             return nextRequests;
         }
 
@@ -1918,7 +2188,7 @@ public class Graph {
          */
         public BatchConjunction delete( Path at ) {
             assertNotExecuted();
-            this.requestQueue.submit(new DeleteBranchRequest(new Location(at)));
+            this.requestQueue.submit(new DeleteBranchRequest(new Location(at), getCurrentWorkspaceName()));
             return nextRequests;
         }
 
@@ -1934,7 +2204,7 @@ public class Graph {
          */
         public BatchConjunction delete( UUID at ) {
             assertNotExecuted();
-            this.requestQueue.submit(new DeleteBranchRequest(new Location(at)));
+            this.requestQueue.submit(new DeleteBranchRequest(new Location(at), getCurrentWorkspaceName()));
             return nextRequests;
         }
 
@@ -1950,7 +2220,7 @@ public class Graph {
          */
         public BatchConjunction delete( Property idProperty ) {
             assertNotExecuted();
-            this.requestQueue.submit(new DeleteBranchRequest(new Location(idProperty)));
+            this.requestQueue.submit(new DeleteBranchRequest(new Location(idProperty), getCurrentWorkspaceName()));
             return nextRequests;
         }
 
@@ -1969,7 +2239,25 @@ public class Graph {
         public BatchConjunction delete( Property firstIdProperty,
                                         Property... additionalIdProperties ) {
             assertNotExecuted();
-            this.requestQueue.submit(new DeleteBranchRequest(new Location(firstIdProperty, additionalIdProperties)));
+            this.requestQueue.submit(new DeleteBranchRequest(new Location(firstIdProperty, additionalIdProperties),
+                                                             getCurrentWorkspaceName()));
+            return nextRequests;
+        }
+
+        /**
+         * Request to delete the node with the given identification properties. The identification properties should uniquely
+         * identify a single node.
+         * <p>
+         * Like all other methods on the {@link Batch}, the request will be performed when the {@link #execute()} method is
+         * called.
+         * </p>
+         * 
+         * @param idProperties the identification property of the node that is to be copied
+         * @return an object that may be used to start another request
+         */
+        public BatchConjunction delete( Iterable<Property> idProperties ) {
+            assertNotExecuted();
+            this.requestQueue.submit(new DeleteBranchRequest(new Location(idProperties), getCurrentWorkspaceName()));
             return nextRequests;
         }
 
@@ -1989,7 +2277,7 @@ public class Graph {
             Path at = createPath(atPath);
             Path parent = at.getParent();
             Name name = at.getLastSegment().getName();
-            return new CreateAction<Batch>(this, requestQueue, new Location(parent), name);
+            return new CreateAction<Batch>(this, requestQueue, new Location(parent), getCurrentWorkspaceName(), name);
         }
 
         /**
@@ -2010,7 +2298,7 @@ public class Graph {
             Path at = createPath(atPath);
             Path parent = at.getParent();
             Name name = at.getLastSegment().getName();
-            return new CreateAction<Batch>(this, requestQueue, new Location(parent), name).with(property);
+            return new CreateAction<Batch>(this, requestQueue, new Location(parent), getCurrentWorkspaceName(), name).with(property);
         }
 
         /**
@@ -2033,8 +2321,8 @@ public class Graph {
             Path at = createPath(atPath);
             Path parent = at.getParent();
             Name name = at.getLastSegment().getName();
-            return new CreateAction<Batch>(this, requestQueue, new Location(parent), name).with(firstProperty,
-                                                                                                additionalProperties);
+            return new CreateAction<Batch>(this, requestQueue, new Location(parent), getCurrentWorkspaceName(), name).with(firstProperty,
+                                                                                                                           additionalProperties);
         }
 
         /**
@@ -2053,7 +2341,7 @@ public class Graph {
             CheckArg.isNotNull(at, "at");
             Path parent = at.getParent();
             Name name = at.getLastSegment().getName();
-            return new CreateAction<Batch>(this, requestQueue, new Location(parent), name);
+            return new CreateAction<Batch>(this, requestQueue, new Location(parent), getCurrentWorkspaceName(), name);
         }
 
         /**
@@ -2074,7 +2362,8 @@ public class Graph {
             CheckArg.isNotNull(at, "at");
             Path parent = at.getParent();
             Name name = at.getLastSegment().getName();
-            CreateAction<Batch> action = new CreateAction<Batch>(this, requestQueue, new Location(parent), name);
+            CreateAction<Batch> action = new CreateAction<Batch>(this, requestQueue, new Location(parent),
+                                                                 getCurrentWorkspaceName(), name);
             for (Property property : properties) {
                 action.and(property);
             }
@@ -2099,7 +2388,7 @@ public class Graph {
             CheckArg.isNotNull(at, "at");
             Path parent = at.getParent();
             Name name = at.getLastSegment().getName();
-            return new CreateAction<Batch>(this, requestQueue, new Location(parent), name).with(property);
+            return new CreateAction<Batch>(this, requestQueue, new Location(parent), getCurrentWorkspaceName(), name).with(property);
         }
 
         /**
@@ -2122,8 +2411,8 @@ public class Graph {
             CheckArg.isNotNull(at, "at");
             Path parent = at.getParent();
             Name name = at.getLastSegment().getName();
-            return new CreateAction<Batch>(this, requestQueue, new Location(parent), name).with(firstProperty,
-                                                                                                additionalProperties);
+            return new CreateAction<Batch>(this, requestQueue, new Location(parent), getCurrentWorkspaceName(), name).with(firstProperty,
+                                                                                                                           additionalProperties);
         }
 
         /**
@@ -2135,7 +2424,7 @@ public class Graph {
          */
         public CreateNodeNamed<Batch> createUnder( Location parent ) {
             CheckArg.isNotNull(parent, "parent");
-            return new CreateNodeNamedAction<Batch>(this, requestQueue, parent);
+            return new CreateNodeNamedAction<Batch>(this, requestQueue, parent, getCurrentWorkspaceName());
         }
 
         /**
@@ -2147,7 +2436,7 @@ public class Graph {
         public On<BatchConjunction> set( final Property... properties ) {
             return new On<BatchConjunction>() {
                 public BatchConjunction on( Location location ) {
-                    UpdatePropertiesRequest request = new UpdatePropertiesRequest(location, properties);
+                    UpdatePropertiesRequest request = new UpdatePropertiesRequest(location, getCurrentWorkspaceName(), properties);
                     requestQueue.submit(request);
                     return nextRequests;
                 }
@@ -2167,6 +2456,10 @@ public class Graph {
                 public BatchConjunction on( Property firstIdProperty,
                                             Property... additionalIdProperties ) {
                     return on(new Location(firstIdProperty, additionalIdProperties));
+                }
+
+                public BatchConjunction on( Iterable<Property> idProperties ) {
+                    return on(new Location(idProperties));
                 }
 
                 public BatchConjunction on( UUID uuid ) {
@@ -2205,14 +2498,16 @@ public class Graph {
                         public BatchConjunction to( Location value ) {
                             Reference ref = (Reference)convertReferenceValue(value);
                             Property property = getContext().getPropertyFactory().create(propertyName, ref);
-                            UpdatePropertiesRequest request = new UpdatePropertiesRequest(location, property);
+                            UpdatePropertiesRequest request = new UpdatePropertiesRequest(location, getCurrentWorkspaceName(),
+                                                                                          property);
                             requestQueue.submit(request);
                             return nextRequests;
                         }
 
                         protected BatchConjunction toValue( Object value ) {
                             Property property = getContext().getPropertyFactory().create(propertyName, value);
-                            UpdatePropertiesRequest request = new UpdatePropertiesRequest(location, property);
+                            UpdatePropertiesRequest request = new UpdatePropertiesRequest(location, getCurrentWorkspaceName(),
+                                                                                          property);
                             requestQueue.submit(request);
                             return nextRequests;
                         }
@@ -2300,7 +2595,8 @@ public class Graph {
                         public BatchConjunction to( Object value ) {
                             value = convertReferenceValue(value);
                             Property property = getContext().getPropertyFactory().create(propertyName, value);
-                            UpdatePropertiesRequest request = new UpdatePropertiesRequest(location, property);
+                            UpdatePropertiesRequest request = new UpdatePropertiesRequest(location, getCurrentWorkspaceName(),
+                                                                                          property);
                             requestQueue.submit(request);
                             return nextRequests;
                         }
@@ -2312,7 +2608,8 @@ public class Graph {
                                 otherValues[i] = convertReferenceValue(otherValues[i]);
                             }
                             Property property = getContext().getPropertyFactory().create(propertyName, firstValue, otherValues);
-                            UpdatePropertiesRequest request = new UpdatePropertiesRequest(location, property);
+                            UpdatePropertiesRequest request = new UpdatePropertiesRequest(location, getCurrentWorkspaceName(),
+                                                                                          property);
                             requestQueue.submit(request);
                             return nextRequests;
                         }
@@ -2324,7 +2621,8 @@ public class Graph {
                                 valueList.add(value);
                             }
                             Property property = getContext().getPropertyFactory().create(propertyName, valueList);
-                            UpdatePropertiesRequest request = new UpdatePropertiesRequest(location, property);
+                            UpdatePropertiesRequest request = new UpdatePropertiesRequest(location, getCurrentWorkspaceName(),
+                                                                                          property);
                             requestQueue.submit(request);
                             return nextRequests;
                         }
@@ -2336,7 +2634,8 @@ public class Graph {
                                 valueList.add(value);
                             }
                             Property property = getContext().getPropertyFactory().create(propertyName, valueList);
-                            UpdatePropertiesRequest request = new UpdatePropertiesRequest(location, property);
+                            UpdatePropertiesRequest request = new UpdatePropertiesRequest(location, getCurrentWorkspaceName(),
+                                                                                          property);
                             requestQueue.submit(request);
                             return nextRequests;
                         }
@@ -2359,6 +2658,10 @@ public class Graph {
                 public SetValuesTo<BatchConjunction> on( Property firstIdProperty,
                                                          Property... additionalIdProperties ) {
                     return on(new Location(firstIdProperty, additionalIdProperties));
+                }
+
+                public SetValuesTo<BatchConjunction> on( Iterable<Property> idProperties ) {
+                    return on(new Location(idProperties));
                 }
 
                 public SetValuesTo<BatchConjunction> on( UUID uuid ) {
@@ -2502,7 +2805,8 @@ public class Graph {
         public On<BatchConjunction> remove( final Name... propertyNames ) {
             return new On<BatchConjunction>() {
                 public BatchConjunction on( Location location ) {
-                    RemovePropertiesRequest request = new RemovePropertiesRequest(location, propertyNames);
+                    RemovePropertiesRequest request = new RemovePropertiesRequest(location, getCurrentWorkspaceName(),
+                                                                                  propertyNames);
                     requestQueue.submit(request);
                     return nextRequests;
                 }
@@ -2522,6 +2826,10 @@ public class Graph {
                 public BatchConjunction on( Property firstIdProperty,
                                             Property... additionalIdProperties ) {
                     return on(new Location(firstIdProperty, additionalIdProperties));
+                }
+
+                public BatchConjunction on( Iterable<Property> idProperties ) {
+                    return on(new Location(idProperties));
                 }
 
                 public BatchConjunction on( UUID uuid ) {
@@ -2544,7 +2852,7 @@ public class Graph {
             }
             return new On<BatchConjunction>() {
                 public BatchConjunction on( Location location ) {
-                    RemovePropertiesRequest request = new RemovePropertiesRequest(location, names);
+                    RemovePropertiesRequest request = new RemovePropertiesRequest(location, getCurrentWorkspaceName(), names);
                     requestQueue.submit(request);
                     return nextRequests;
                 }
@@ -2564,6 +2872,10 @@ public class Graph {
                 public BatchConjunction on( Property firstIdProperty,
                                             Property... additionalIdProperties ) {
                     return on(new Location(firstIdProperty, additionalIdProperties));
+                }
+
+                public BatchConjunction on( Iterable<Property> idProperties ) {
+                    return on(new Location(idProperties));
                 }
 
                 public BatchConjunction on( UUID uuid ) {
@@ -2598,7 +2910,7 @@ public class Graph {
          */
         public BatchConjunction read( Location location ) {
             assertNotExecuted();
-            ReadNodeRequest request = new ReadNodeRequest(location);
+            ReadNodeRequest request = new ReadNodeRequest(location, getCurrentWorkspaceName());
             requestQueue.submit(request);
             return nextRequests;
         }
@@ -2663,6 +2975,20 @@ public class Graph {
         }
 
         /**
+         * Request to read the node with the supplied unique identifier properties.
+         * <p>
+         * Like all other methods on the {@link Batch}, the request will be performed when the {@link #execute()} method is
+         * called.
+         * </p>
+         * 
+         * @param idProperties the identification properties that uniquely identify the node that is to be read
+         * @return the interface that can either execute the batched requests or continue to add additional requests to the batch
+         */
+        public BatchConjunction read( Iterable<Property> idProperties ) {
+            return read(new Location(idProperties));
+        }
+
+        /**
          * Request that the property with the given name be read on the node defined via the <code>on(...)</code> method on the
          * returned {@link On} object.
          * <p>
@@ -2710,12 +3036,16 @@ public class Graph {
                     return on(new Location(firstIdProperty, additionalIdProperties));
                 }
 
+                public BatchConjunction on( Iterable<Property> idProperties ) {
+                    return on(new Location(idProperties));
+                }
+
                 public BatchConjunction on( UUID uuid ) {
                     return on(new Location(uuid));
                 }
 
                 public BatchConjunction on( Location at ) {
-                    ReadPropertyRequest request = new ReadPropertyRequest(at, name);
+                    ReadPropertyRequest request = new ReadPropertyRequest(at, getCurrentWorkspaceName(), name);
                     requestQueue.submit(request);
                     return Batch.this.nextRequests;
                 }
@@ -2736,7 +3066,7 @@ public class Graph {
             assertNotExecuted();
             return new On<BatchConjunction>() {
                 public BatchConjunction on( Location location ) {
-                    ReadAllPropertiesRequest request = new ReadAllPropertiesRequest(location);
+                    ReadAllPropertiesRequest request = new ReadAllPropertiesRequest(location, getCurrentWorkspaceName());
                     requestQueue.submit(request);
                     return Batch.this.nextRequests;
                 }
@@ -2756,6 +3086,10 @@ public class Graph {
                 public BatchConjunction on( Property firstIdProperty,
                                             Property... additionalIdProperties ) {
                     return on(new Location(firstIdProperty, additionalIdProperties));
+                }
+
+                public BatchConjunction on( Iterable<Property> idProperties ) {
+                    return on(new Location(idProperties));
                 }
 
                 public BatchConjunction on( UUID uuid ) {
@@ -2794,12 +3128,16 @@ public class Graph {
                     return of(new Location(firstIdProperty, additionalIdProperties));
                 }
 
+                public BatchConjunction of( Iterable<Property> idProperties ) {
+                    return of(new Location(idProperties));
+                }
+
                 public BatchConjunction of( UUID uuid ) {
                     return of(new Location(uuid));
                 }
 
                 public BatchConjunction of( Location at ) {
-                    ReadAllChildrenRequest request = new ReadAllChildrenRequest(at);
+                    ReadAllChildrenRequest request = new ReadAllChildrenRequest(at, getCurrentWorkspaceName());
                     requestQueue.submit(request);
                     return Batch.this.nextRequests;
                 }
@@ -2821,7 +3159,7 @@ public class Graph {
             assertNotExecuted();
             return new At<BatchConjunction>() {
                 public BatchConjunction at( Location location ) {
-                    ReadBranchRequest request = new ReadBranchRequest(location, depth);
+                    ReadBranchRequest request = new ReadBranchRequest(location, getCurrentWorkspaceName(), depth);
                     requestQueue.submit(request);
                     return Batch.this.nextRequests;
                 }
@@ -2845,6 +3183,10 @@ public class Graph {
                 public BatchConjunction at( Property firstIdProperty,
                                             Property... additionalIdProperties ) {
                     return at(new Location(firstIdProperty, additionalIdProperties));
+                }
+
+                public BatchConjunction at( Iterable<Property> idProperties ) {
+                    return at(new Location(idProperties));
                 }
             };
         }
@@ -2886,11 +3228,53 @@ public class Graph {
     }
 
     /**
+     * The interface used to specify the name of a new workspace.
+     */
+    public interface NameWorkspace {
+
+        /**
+         * Specify the name of the new workspace that is to be created.
+         * 
+         * @param workspaceName the name of the existing workspace that will be cloned to create the new workspace;
+         * @return the workspace; never null
+         * @throws IllegalArgumentException if the name of the new workspace is null
+         * @throws InvalidWorkspaceException if there is already an existing workspace with the supplied name
+         */
+        Workspace named( String workspaceName );
+
+        /**
+         * Specify the name of the new workspace that is to be created. If a workspace with the supplied name already exists, the
+         * new workspace name will be adjusted so that it is unique.
+         * 
+         * @param workspaceName the name of the existing workspace that will be cloned to create the new workspace;
+         * @return the workspace; never null
+         * @throws IllegalArgumentException if the name of the new workspace is null
+         */
+        Workspace namedSomethingLike( String workspaceName );
+    }
+
+    /**
+     * The interface used to create a new workspace.
+     */
+    public interface CreateWorkspace extends NameWorkspace {
+        /**
+         * Specify that the new workspace should be initialized as a clone of another existing workspace.
+         * 
+         * @param originalWorkspaceName the name of the existing workspace that will be cloned to create the new workspace;
+         * @return the interface that should be used to set the name of the new workspace; never null
+         * @throws IllegalArgumentException if the name of the original workspace is null
+         * @throws InvalidWorkspaceException if there is no such workspace with the supplied name
+         */
+        NameWorkspace clonedFrom( String originalWorkspaceName );
+    }
+
+    /**
      * A interface used to execute the accumulated {@link Batch requests}.
      * 
      * @author Randall Hauch
+     * @param <NodeType> the type of node that is returned
      */
-    public interface Executable {
+    public interface Executable<NodeType extends Node> {
         /**
          * Stop accumulating the requests, submit them to the repository source, and return the results.
          * 
@@ -3091,6 +3475,14 @@ public class Graph {
          */
         Next and( Property firstIdProperty,
                   Property... additionalIdProperties );
+
+        /**
+         * Specify that another node should also be copied or moved.
+         * 
+         * @param idProperties the properties that uniquely identifies the node to be copied or moved
+         * @return the interface for finishing the request
+         */
+        Next and( Iterable<Property> idProperties );
     }
 
     /**
@@ -3120,7 +3512,7 @@ public class Graph {
      * @param <Next> The interface that is to be returned when this create request is completed
      * @author Randall Hauch
      */
-    public interface Create<Next> extends Conjunction<Next>, Executable {
+    public interface Create<Next> extends Conjunction<Next>, Executable<Node> {
         /**
          * Specify the UUID that should the new node should have. This is an alias for {@link #and(UUID)}.
          * 
@@ -3272,6 +3664,14 @@ public class Graph {
          */
         Next on( Property firstIdProperty,
                  Property... additionalIdProperties );
+
+        /**
+         * Specify the unique identification properties that identify the node upon which the request is to operate.
+         * 
+         * @param idProperties the properties that uniquely identifies the new parent
+         * @return the interface for additional requests or actions
+         */
+        Next on( Iterable<Property> idProperties );
     }
 
     /**
@@ -3332,6 +3732,14 @@ public class Graph {
          */
         Next of( Property firstIdProperty,
                  Property... additionalIdProperties );
+
+        /**
+         * Specify the unique identification properties that identify the node upon which the request is to operate.
+         * 
+         * @param idProperties the properties that uniquely identifies the new parent
+         * @return the interface for additional requests or actions
+         */
+        Next of( Iterable<Property> idProperties );
     }
 
     /**
@@ -3392,6 +3800,14 @@ public class Graph {
          */
         Next at( Property firstIdProperty,
                  Property... additionalIdProperties );
+
+        /**
+         * Specify the unique identification properties that identify the node upon which the request is to operate.
+         * 
+         * @param idProperties the properties that uniquely identifies the new parent
+         * @return the interface for additional requests or actions
+         */
+        Next at( Iterable<Property> idProperties );
     }
 
     /**
@@ -3930,9 +4346,19 @@ public class Graph {
          */
         Next into( Property firstIdProperty,
                    Property... additionalIdProperties ) throws IOException, SAXException;
+
+        /**
+         * Finish the import by specifying the new location into which the node should be copied/moved.
+         * 
+         * @param idProperties the properties that uniquely identifies the new parent
+         * @return the interface for additional requests or actions
+         * @throws IOException if there is a problem reading the content being imported
+         * @throws SAXException if there is a problem with the SAX Parser
+         */
+        Next into( Iterable<Property> idProperties ) throws IOException, SAXException;
     }
 
-    public interface BatchConjunction extends Conjunction<Batch>, Executable {
+    public interface BatchConjunction extends Conjunction<Batch>, Executable<Node> {
     }
 
     // ----------------------------------------------------------------------------------------------------------------
@@ -3946,7 +4372,7 @@ public class Graph {
      * 
      * @author Randall Hauch
      */
-    protected interface RequestQueue extends Executable {
+    protected interface RequestQueue extends Executable<Node> {
         Graph getGraph();
 
         void submit( Request request );
@@ -4323,7 +4749,7 @@ public class Graph {
             return request.getActualLocationOfNode();
         }
 
-        public Node getRoot() {
+        public SubgraphNode getRoot() {
             return getNode(getLocation());
         }
 
@@ -4331,14 +4757,14 @@ public class Graph {
             return request.maximumDepth();
         }
 
-        public Iterator<Node> iterator() {
+        public Iterator<SubgraphNode> iterator() {
             final Iterator<Location> iter = request.iterator();
-            return new Iterator<Node>() {
+            return new Iterator<SubgraphNode>() {
                 public boolean hasNext() {
                     return iter.hasNext();
                 }
 
-                public Node next() {
+                public SubgraphNode next() {
                     return getNode(iter.next());
                 }
 
@@ -4365,25 +4791,34 @@ public class Graph {
             return includes(path);
         }
 
-        public Node getNode( Location location ) {
+        public SubgraphNode getNode( Location location ) {
             if (!location.hasPath()) return null;
             Location actualLocation = request.getLocationFor(location.getPath());
             if (actualLocation == null) return null;
-            return new SubgraphNode(actualLocation, request);
+            return new SubgraphNodeImpl(actualLocation, request);
         }
 
-        public Node getNode( Path path ) {
+        public SubgraphNode getNode( Path path ) {
             path = getAbsolutePath(path);
             if (!includes(path)) return null;
             Location location = request.getLocationFor(path);
             if (location == null) return null;
-            return new SubgraphNode(location, request);
+            return new SubgraphNodeImpl(location, request);
         }
 
-        public Node getNode( String pathStr ) {
+        public SubgraphNode getNode( String pathStr ) {
             CheckArg.isNotEmpty(pathStr, "path");
             Path path = createPath(pathStr);
             path = getAbsolutePath(path);
+            return getNode(path);
+        }
+
+        public SubgraphNode getNode( Name relativePath ) {
+            Path path = getGraph().getContext()
+                                  .getValueFactories()
+                                  .getPathFactory()
+                                  .create(getLocation().getPath(), relativePath);
+            path = path.getNormalizedPath();
             return getNode(path);
         }
 
@@ -4410,12 +4845,12 @@ public class Graph {
     protected static final List<Location> NO_CHILDREN = Collections.emptyList();
 
     @Immutable
-    class SubgraphNode implements Node {
+    class SubgraphNodeImpl implements SubgraphNode {
         private final Location location;
         private final ReadBranchRequest request;
 
-        SubgraphNode( Location location,
-                      ReadBranchRequest request ) {
+        SubgraphNodeImpl( Location location,
+                          ReadBranchRequest request ) {
             this.location = location;
             this.request = request;
         }
@@ -4463,6 +4898,21 @@ public class Graph {
             return getChildren().iterator();
         }
 
+        public SubgraphNode getNode( Name childName ) {
+            Path path = getContext().getValueFactories().getPathFactory().create(location.getPath(), childName);
+            Location location = request.getLocationFor(path);
+            if (location == null) return null;
+            return new SubgraphNodeImpl(location, request);
+        }
+
+        public SubgraphNode getNode( Path relativePath ) {
+            Path path = getContext().getValueFactories().getPathFactory().create(location.getPath(), relativePath);
+            path = path.getNormalizedPath();
+            Location location = request.getLocationFor(path);
+            if (location == null) return null;
+            return new SubgraphNodeImpl(location, request);
+        }
+
         @Override
         public int hashCode() {
             return location.hashCode();
@@ -4487,7 +4937,7 @@ public class Graph {
     // Action Implementations
     // ----------------------------------------------------------------------------------------------------------------
     @Immutable
-    static abstract class AbstractAction<T> implements Conjunction<T>, Executable {
+    protected static abstract class AbstractAction<T> implements Conjunction<T>, Executable<Node> {
         private final RequestQueue queue;
         private final T afterConjunction;
 
@@ -4519,7 +4969,7 @@ public class Graph {
     }
 
     @NotThreadSafe
-    static class MoveAction<T> extends AbstractAction<T> implements Move<T> {
+    protected class MoveAction<T> extends AbstractAction<T> implements Move<T> {
         private final Locations from;
 
         /*package*/MoveAction( T afterConjunction,
@@ -4550,6 +5000,11 @@ public class Graph {
             return this;
         }
 
+        public Move<T> and( Iterable<Property> idPropertiesFrom ) {
+            this.from.add(new Location(idPropertiesFrom));
+            return this;
+        }
+
         public Move<T> and( Property from ) {
             this.from.add(new Location(from));
             return this;
@@ -4567,17 +5022,18 @@ public class Graph {
          * @return this object, for method chaining
          */
         private T submit( Location into ) {
+            String workspaceName = getCurrentWorkspaceName();
             if (this.from.hasNext()) {
                 List<Request> requests = new LinkedList<Request>();
                 Locations locations = this.from;
                 while (locations.hasNext()) {
                     Location location = locations.getLocation();
-                    requests.add(new MoveBranchRequest(location, into));
+                    requests.add(new MoveBranchRequest(location, into, workspaceName));
                     locations = locations.next();
                 }
                 queue().submit(requests);
             } else {
-                queue().submit(new MoveBranchRequest(this.from.getLocation(), into));
+                queue().submit(new MoveBranchRequest(this.from.getLocation(), into, workspaceName));
             }
             return and();
         }
@@ -4614,7 +5070,7 @@ public class Graph {
     }
 
     @NotThreadSafe
-    static class CopyAction<T> extends AbstractAction<T> implements Copy<T> {
+    protected class CopyAction<T> extends AbstractAction<T> implements Copy<T> {
         private final Locations from;
 
         /*package*/CopyAction( T afterConjunction,
@@ -4645,6 +5101,11 @@ public class Graph {
             return this;
         }
 
+        public Copy<T> and( Iterable<Property> idProperties ) {
+            this.from.add(new Location(idProperties));
+            return this;
+        }
+
         public Copy<T> and( Property from ) {
             this.from.add(new Location(from));
             return this;
@@ -4664,17 +5125,18 @@ public class Graph {
          */
         private T submit( Location into,
                           Name nameForCopy ) {
+            String workspaceName = getCurrentWorkspaceName();
             if (this.from.hasNext()) {
                 List<Request> requests = new LinkedList<Request>();
                 Locations locations = this.from;
                 while (locations.hasNext()) {
                     Location location = locations.getLocation();
-                    requests.add(new CopyBranchRequest(location, into, nameForCopy));
+                    requests.add(new CopyBranchRequest(location, workspaceName, into, workspaceName, nameForCopy));
                     locations = locations.next();
                 }
                 queue().submit(requests);
             } else {
-                queue().submit(new CopyBranchRequest(this.from.getLocation(), into, nameForCopy));
+                queue().submit(new CopyBranchRequest(this.from.getLocation(), workspaceName, into, workspaceName, nameForCopy));
             }
             return and();
         }
@@ -4735,7 +5197,8 @@ public class Graph {
     }
 
     @NotThreadSafe
-    static class CreateAction<T> extends AbstractAction<T> implements Create<T> {
+    protected static class CreateAction<T> extends AbstractAction<T> implements Create<T> {
+        private final String workspaceName;
         private final Location parent;
         private final Name childName;
         private final List<Property> properties = new LinkedList<Property>();
@@ -4743,9 +5206,11 @@ public class Graph {
         /*package*/CreateAction( T afterConjunction,
                                   RequestQueue queue,
                                   Location parent,
+                                  String workspaceName,
                                   Name childName ) {
             super(afterConjunction, queue);
             this.parent = parent;
+            this.workspaceName = workspaceName;
             this.childName = childName;
         }
 
@@ -4811,33 +5276,172 @@ public class Graph {
 
         @Override
         public T and() {
-            this.queue().submit(new CreateNodeRequest(parent, childName, this.properties));
+            this.queue().submit(new CreateNodeRequest(parent, workspaceName, childName, this.properties));
             return super.and();
         }
 
         @Override
         public Results execute() {
-            this.queue().submit(new CreateNodeRequest(parent, childName, this.properties));
+            this.queue().submit(new CreateNodeRequest(parent, workspaceName, childName, this.properties));
             return queue().execute();
         }
     }
 
     @NotThreadSafe
-    static class CreateNodeNamedAction<T> extends AbstractAction<T> implements CreateNodeNamed<T> {
+    protected static class CreateNodeNamedAction<T> extends AbstractAction<T> implements CreateNodeNamed<T> {
         private final Location parent;
+        private final String workspaceName;
 
         /*package*/CreateNodeNamedAction( T afterConjunction,
                                            RequestQueue queue,
-                                           Location parent ) {
+                                           Location parent,
+                                           String workspaceName ) {
             super(afterConjunction, queue);
             this.parent = parent;
+            this.workspaceName = workspaceName;
         }
 
         public CreateAction<T> nodeNamed( String name ) {
             ExecutionContext context = queue().getGraph().getContext();
             NameFactory factory = context.getValueFactories().getNameFactory();
             Name nameObj = factory.create(name);
-            return new CreateAction<T>(afterConjunction(), queue(), parent, nameObj);
+            return new CreateAction<T>(afterConjunction(), queue(), parent, workspaceName, nameObj);
         }
+    }
+
+    @Immutable
+    protected static final class GraphWorkspace implements Workspace {
+        private final String name;
+        private final Location root;
+
+        GraphWorkspace( String name,
+                        Location root ) {
+            assert name != null;
+            assert root != null;
+            this.name = name;
+            this.root = root;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.graph.Workspace#getName()
+         */
+        public String getName() {
+            return name;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.graph.Workspace#getRoot()
+         */
+        public Location getRoot() {
+            return root;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see java.lang.Object#hashCode()
+         */
+        @Override
+        public int hashCode() {
+            return this.name.hashCode();
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see java.lang.Object#equals(java.lang.Object)
+         */
+        @Override
+        public boolean equals( Object obj ) {
+            if (obj == this) return true;
+            if (obj instanceof GraphWorkspace) {
+                GraphWorkspace that = (GraphWorkspace)obj;
+                if (!this.getName().equals(that.getName())) return false;
+                // all root nodes should be equivalent, so no need to check
+                return true;
+            }
+            return false;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see java.lang.Object#toString()
+         */
+        @Override
+        public String toString() {
+            return "Workspace \"" + this.name + "\" (root = " + this.root + " )";
+        }
+    }
+
+    /**
+     * A set of nodes returned from a {@link Graph graph}, with methods to access the properties and children of the nodes in the
+     * result. The {@link #iterator()} method can be used to iterate all over the nodes in the result.
+     * 
+     * @author Randall Hauch
+     * @param <NodeType> the type of node that tis results deals with
+     */
+    @Immutable
+    public interface BaseResults<NodeType extends Node> extends Iterable<NodeType> {
+
+        /**
+         * Get the graph containing the node.
+         * 
+         * @return the graph
+         */
+        Graph getGraph();
+
+        /**
+         * Get the node at the supplied location.
+         * 
+         * @param path the path of the node in these results
+         * @return the node, or null if the node is not {@link #includes(Path) included} in these results
+         */
+        NodeType getNode( String path );
+
+        /**
+         * Get the node at the supplied location.
+         * 
+         * @param path the path of the node in these results
+         * @return the node, or null if the node is not {@link #includes(Path) included} in these results
+         */
+        NodeType getNode( Path path );
+
+        /**
+         * Get the node at the supplied location.
+         * 
+         * @param location the location of the node
+         * @return the node, or null if the node is not {@link #includes(Path) included} in these results
+         */
+        NodeType getNode( Location location );
+
+        /**
+         * Return whether these results include a node at the supplied location.
+         * 
+         * @param path the path of the node in these results
+         * @return true if this subgraph includes the supplied location, or false otherwise
+         */
+        boolean includes( String path );
+
+        /**
+         * Return whether this subgraph has a node at the supplied location.
+         * 
+         * @param path the path of the node in these results
+         * @return true if these results includes the supplied location, or false otherwise
+         */
+        boolean includes( Path path );
+
+        /**
+         * Return whether this subgraph has a node at the supplied location.
+         * 
+         * @param location the location of the node in these results
+         * @return true if these results includes the supplied location, or false otherwise
+         */
+        boolean includes( Location location );
+
     }
 }

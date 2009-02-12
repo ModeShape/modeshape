@@ -46,13 +46,18 @@ public class NodeId implements Serializable {
      */
     private static final long serialVersionUID = 1L;
 
+    @Column( name = "WORKSPACE_ID", nullable = false )
+    private Long workspaceId;
+
     @Column( name = "UUID", nullable = true )
     private String uuidString;
 
     public NodeId() {
     }
 
-    public NodeId( String uuidString ) {
+    public NodeId( Long workspaceId,
+                   String uuidString ) {
+        this.workspaceId = workspaceId;
         this.uuidString = uuidString;
     }
 
@@ -68,6 +73,20 @@ public class NodeId implements Serializable {
      */
     public void setUuidString( String uuidString ) {
         this.uuidString = uuidString;
+    }
+
+    /**
+     * @return workspaceId
+     */
+    public Long getWorkspaceId() {
+        return workspaceId;
+    }
+
+    /**
+     * @param workspaceId Sets workspaceId to the specified value.
+     */
+    public void setWorkspaceId( Long workspaceId ) {
+        this.workspaceId = workspaceId;
     }
 
     /**
@@ -107,6 +126,6 @@ public class NodeId implements Serializable {
      */
     @Override
     public String toString() {
-        return uuidString;
+        return uuidString + " in workspace " + workspaceId;
     }
 }

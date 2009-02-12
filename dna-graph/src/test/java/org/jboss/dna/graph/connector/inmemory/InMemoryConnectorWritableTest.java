@@ -23,15 +23,14 @@
  */
 package org.jboss.dna.graph.connector.inmemory;
 
-import org.jboss.dna.common.statistic.Stopwatch;
 import org.jboss.dna.graph.Graph;
 import org.jboss.dna.graph.connector.RepositorySource;
-import org.jboss.dna.graph.connector.test.ReadableConnectorTest;
+import org.jboss.dna.graph.connector.test.WritableConnectorTest;
 
 /**
  * @author Randall Hauch
  */
-public class InMemoryConnectorReadingTest extends ReadableConnectorTest {
+public class InMemoryConnectorWritableTest extends WritableConnectorTest {
 
     /**
      * {@inheritDoc}
@@ -52,12 +51,6 @@ public class InMemoryConnectorReadingTest extends ReadableConnectorTest {
      */
     @Override
     protected void initializeContent( Graph graph ) {
-        String initialPath = "";
-        int depth = 4;
-        int numChildrenPerNode = 4;
-        int numPropertiesPerNode = 7;
-        Stopwatch sw = new Stopwatch();
-        boolean batch = true;
-        createSubgraph(graph, initialPath, depth, numChildrenPerNode, numPropertiesPerNode, batch, sw, System.out, null);
     }
+
 }

@@ -33,7 +33,7 @@ import org.jboss.dna.graph.property.Path;
  * @author Randall Hauch
  */
 @Immutable
-public interface Results extends Iterable<Node> {
+public interface Results extends Graph.BaseResults<Node> {
 
     /**
      * Get the graph containing the node.

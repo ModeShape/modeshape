@@ -51,6 +51,7 @@ public class ReadBranchRequest extends CacheableRequest implements Iterable<Loca
     private static final long serialVersionUID = 1L;
 
     public static final int DEFAULT_MAXIMUM_DEPTH = 2;
+    public static final int NO_MAXIMUM_DEPTH = Integer.MAX_VALUE;
 
     private static class Node {
         private final Location location;
@@ -80,6 +81,7 @@ public class ReadBranchRequest extends CacheableRequest implements Iterable<Loca
     }
 
     private final Location at;
+    private final String workspaceName;
     private final int maxDepth;
     private final Map<Path, Node> nodes = new HashMap<Path, Node>();
     private Location actualLocation;
@@ -88,10 +90,14 @@ public class ReadBranchRequest extends CacheableRequest implements Iterable<Loca
      * Create a request to read the branch at the supplied location, to a maximum depth of 2.
      * 
      * @param at the location of the branch
-     * @throws IllegalArgumentException if the location is null
+     * @param workspaceName the name of the workspace containing the parent
+     * @throws IllegalArgumentException if the location or workspace name is null
      */
-    public ReadBranchRequest( Location at ) {
+    public ReadBranchRequest( Location at,
+                              String workspaceName ) {
         CheckArg.isNotNull(at, "at");
+        CheckArg.isNotNull(workspaceName, "workspaceName");
+        this.workspaceName = workspaceName;
         this.at = at;
         this.maxDepth = DEFAULT_MAXIMUM_DEPTH;
     }
@@ -100,13 +106,17 @@ public class ReadBranchRequest extends CacheableRequest implements Iterable<Loca
      * Create a request to read the branch (of given depth) at the supplied location.
      * 
      * @param at the location of the branch
+     * @param workspaceName the name of the workspace containing the branch
      * @param maxDepth the maximum depth to read
-     * @throws IllegalArgumentException if the location is null or if the maximum depth is not positive
+     * @throws IllegalArgumentException if the location or workspace name is null or if the maximum depth is not positive
      */
     public ReadBranchRequest( Location at,
+                              String workspaceName,
                               int maxDepth ) {
         CheckArg.isNotNull(at, "at");
         CheckArg.isPositive(maxDepth, "maxDepth");
+        CheckArg.isNotNull(workspaceName, "workspaceName");
+        this.workspaceName = workspaceName;
         this.at = at;
         this.maxDepth = maxDepth;
     }
@@ -122,12 +132,21 @@ public class ReadBranchRequest extends CacheableRequest implements Iterable<Loca
     }
 
     /**
-     * Get the location defining the top of the branch to be deleted
+     * Get the location defining the top of the branch to be read
      * 
      * @return the location of the branch; never null
      */
     public Location at() {
         return at;
+    }
+
+    /**
+     * Get the name of the workspace in which the branch exists.
+     * 
+     * @return the name of the workspace; never null
+     */
+    public String inWorkspace() {
+        return workspaceName;
     }
 
     /**
@@ -363,10 +382,12 @@ public class ReadBranchRequest extends CacheableRequest implements Iterable<Loca
      */
     @Override
     public boolean equals( Object obj ) {
+        if (obj == this) return true;
         if (this.getClass().isInstance(obj)) {
             ReadBranchRequest that = (ReadBranchRequest)obj;
             if (!this.at().equals(that.at())) return false;
             if (this.maximumDepth() != that.maximumDepth()) return false;
+            if (!this.inWorkspace().equals(that.inWorkspace())) return false;
             return true;
         }
         return false;
@@ -379,6 +400,6 @@ public class ReadBranchRequest extends CacheableRequest implements Iterable<Loca
      */
     @Override
     public String toString() {
-        return "read branch " + at() + " to depth " + maximumDepth();
+        return "read branch " + at() + " in the \"" + workspaceName + "\" workspace to depth " + maximumDepth();
     }
 }

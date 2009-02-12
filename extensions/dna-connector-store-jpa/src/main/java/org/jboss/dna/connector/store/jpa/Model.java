@@ -80,7 +80,10 @@ public abstract class Model {
                                                              ExecutionContext context,
                                                              EntityManager entityManager,
                                                              UUID rootNodeUuid,
+                                                             String nameOfDefaultWorkspace,
+                                                             String[] predefinedWorkspaceNames,
                                                              long largeValueMinimumSizeInBytes,
+                                                             boolean creatingWorkspacesAllowed,
                                                              boolean comparessData,
                                                              boolean enforceReferentialIntegrity );
 

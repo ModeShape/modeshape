@@ -42,10 +42,14 @@ import org.jboss.dna.graph.property.Property;
 import org.jboss.dna.graph.property.ReferentialIntegrityException;
 import org.jboss.dna.graph.property.basic.BasicEmptyProperty;
 import org.jboss.dna.graph.request.CacheableRequest;
+import org.jboss.dna.graph.request.CloneWorkspaceRequest;
 import org.jboss.dna.graph.request.CompositeRequest;
 import org.jboss.dna.graph.request.CopyBranchRequest;
 import org.jboss.dna.graph.request.CreateNodeRequest;
+import org.jboss.dna.graph.request.CreateWorkspaceRequest;
 import org.jboss.dna.graph.request.DeleteBranchRequest;
+import org.jboss.dna.graph.request.DestroyWorkspaceRequest;
+import org.jboss.dna.graph.request.GetWorkspacesRequest;
 import org.jboss.dna.graph.request.InvalidRequestException;
 import org.jboss.dna.graph.request.MoveBranchRequest;
 import org.jboss.dna.graph.request.ReadAllChildrenRequest;
@@ -58,8 +62,10 @@ import org.jboss.dna.graph.request.ReadPropertyRequest;
 import org.jboss.dna.graph.request.RemovePropertiesRequest;
 import org.jboss.dna.graph.request.RenameNodeRequest;
 import org.jboss.dna.graph.request.Request;
+import org.jboss.dna.graph.request.UnsupportedRequestException;
 import org.jboss.dna.graph.request.UpdatePropertiesRequest;
 import org.jboss.dna.graph.request.VerifyNodeExistsRequest;
+import org.jboss.dna.graph.request.VerifyWorkspaceRequest;
 
 /**
  * A component that is used to process and execute {@link Request}s. This class is intended to be subclassed and methods
@@ -192,6 +198,16 @@ public abstract class RequestProcessor {
             process((UpdatePropertiesRequest)request);
         } else if (request instanceof VerifyNodeExistsRequest) {
             process((VerifyNodeExistsRequest)request);
+        } else if (request instanceof VerifyWorkspaceRequest) {
+            process((VerifyWorkspaceRequest)request);
+        } else if (request instanceof GetWorkspacesRequest) {
+            process((GetWorkspacesRequest)request);
+        } else if (request instanceof CreateWorkspaceRequest) {
+            process((CreateWorkspaceRequest)request);
+        } else if (request instanceof CloneWorkspaceRequest) {
+            process((CloneWorkspaceRequest)request);
+        } else if (request instanceof DestroyWorkspaceRequest) {
+            process((DestroyWorkspaceRequest)request);
         } else {
             processUnknownRequest(request);
         }
@@ -209,34 +225,97 @@ public abstract class RequestProcessor {
     public void process( CompositeRequest request ) {
         if (request == null) return;
         int numberOfErrors = 0;
-        Throwable firstError = null;
+        List<Throwable> errors = null;
         for (Request embedded : request) {
             assert embedded != null;
             if (embedded.isCancelled()) return;
             process(embedded);
             if (embedded.hasError()) {
-                if (numberOfErrors == 0) firstError = embedded.getError();
+                if (numberOfErrors == 0) {
+                    errors = new LinkedList<Throwable>();
+                }
+                assert errors != null;
+                errors.add(embedded.getError());
                 ++numberOfErrors;
             }
         }
-        if (firstError == null) return;
+        if (numberOfErrors == 0) return;
+        assert errors != null;
         if (numberOfErrors == 1) {
-            request.setError(firstError);
+            request.setError(errors.get(0));
         } else {
-            String msg = GraphI18n.multipleErrorsWhileExecutingRequests.text(numberOfErrors, request.size());
+            StringBuilder errorString = new StringBuilder();
+            for (Throwable error : errors) {
+                errorString.append("\n");
+                errorString.append("\t" + error.getMessage());
+            }
+            String msg = GraphI18n.multipleErrorsWhileExecutingRequests.text(numberOfErrors,
+                                                                             request.size(),
+                                                                             errorString.toString());
             request.setError(new RepositorySourceException(getSourceName(), msg));
         }
     }
 
     /**
      * Method that is called by {@link #process(Request)} when the request was found to be of a request type that is not known by
-     * this processor. By default this method sets an {@link InvalidRequestException invalid request error} on the request.
+     * this processor. By default this method sets an {@link UnsupportedRequestException unsupported request error} on the
+     * request.
      * 
      * @param request the unknown request
      */
     protected void processUnknownRequest( Request request ) {
-        request.setError(new InvalidRequestException(GraphI18n.unknownTypeOfRequest.text(request.getClass().getName(), request)));
+        request.setError(new InvalidRequestException(GraphI18n.unsupportedRequestType.text(request.getClass().getName(), request)));
     }
+
+    /**
+     * Process a request to verify a named workspace.
+     * <p>
+     * This method does nothing if the request is null.
+     * </p>
+     * 
+     * @param request the request
+     */
+    public abstract void process( VerifyWorkspaceRequest request );
+
+    /**
+     * Process a request to get the information about the available workspaces.
+     * <p>
+     * This method does nothing if the request is null.
+     * </p>
+     * 
+     * @param request the request
+     */
+    public abstract void process( GetWorkspacesRequest request );
+
+    /**
+     * Process a request to create a new workspace.
+     * <p>
+     * This method does nothing if the request is null.
+     * </p>
+     * 
+     * @param request the request
+     */
+    public abstract void process( CreateWorkspaceRequest request );
+
+    /**
+     * Process a request to clone an existing workspace as a new workspace.
+     * <p>
+     * This method does nothing if the request is null.
+     * </p>
+     * 
+     * @param request the request
+     */
+    public abstract void process( CloneWorkspaceRequest request );
+
+    /**
+     * Process a request to permanently destroy a workspace.
+     * <p>
+     * This method does nothing if the request is null.
+     * </p>
+     * 
+     * @param request the request
+     */
+    public abstract void process( DestroyWorkspaceRequest request );
 
     /**
      * Process a request to copy a branch into another location.
@@ -305,7 +384,7 @@ public abstract class RequestProcessor {
     public void process( ReadBlockOfChildrenRequest request ) {
         if (request == null) return;
         // Convert the request to a ReadAllChildrenRequest and execute it ...
-        ReadAllChildrenRequest readAll = new ReadAllChildrenRequest(request.of());
+        ReadAllChildrenRequest readAll = new ReadAllChildrenRequest(request.of(), request.inWorkspace());
         process(readAll);
         if (readAll.hasError()) {
             request.setError(readAll.getError());
@@ -340,20 +419,21 @@ public abstract class RequestProcessor {
         if (request == null) return;
 
         // Get the parent path ...
-        Path path = request.startingAfter().getPath();
         Location actualSiblingLocation = request.startingAfter();
+        Path path = actualSiblingLocation.getPath();
         Path parentPath = null;
         if (path != null) parentPath = path.getParent();
         if (parentPath == null) {
-            ReadAllPropertiesRequest readPropertiesOfSibling = new ReadAllPropertiesRequest(request.startingAfter());
-            process(readPropertiesOfSibling);
-            actualSiblingLocation = readPropertiesOfSibling.getActualLocationOfNode();
+            // Need to find the parent path, so get the actual location of the sibling ...
+            VerifyNodeExistsRequest verifySibling = new VerifyNodeExistsRequest(request.startingAfter(), request.inWorkspace());
+            process(verifySibling);
+            actualSiblingLocation = verifySibling.getActualLocationOfNode();
             parentPath = actualSiblingLocation.getPath().getParent();
         }
         assert parentPath != null;
 
         // Convert the request to a ReadAllChildrenRequest and execute it ...
-        ReadAllChildrenRequest readAll = new ReadAllChildrenRequest(new Location(parentPath));
+        ReadAllChildrenRequest readAll = new ReadAllChildrenRequest(new Location(parentPath), request.inWorkspace());
         process(readAll);
         if (readAll.hasError()) {
             request.setError(readAll.getError());
@@ -407,7 +487,7 @@ public abstract class RequestProcessor {
             if (read.depth > request.maximumDepth()) break;
 
             // Read the properties ...
-            ReadNodeRequest readNode = new ReadNodeRequest(read.location);
+            ReadNodeRequest readNode = new ReadNodeRequest(read.location, request.inWorkspace());
             process(readNode);
             if (readNode.hasError()) {
                 request.setError(readNode.getError());
@@ -454,7 +534,7 @@ public abstract class RequestProcessor {
     public void process( ReadNodeRequest request ) {
         if (request == null) return;
         // Read the properties ...
-        ReadAllPropertiesRequest readProperties = new ReadAllPropertiesRequest(request.at());
+        ReadAllPropertiesRequest readProperties = new ReadAllPropertiesRequest(request.at(), request.inWorkspace());
         process(readProperties);
         if (readProperties.hasError()) {
             request.setError(readProperties.getError());
@@ -464,7 +544,7 @@ public abstract class RequestProcessor {
         request.setActualLocationOfNode(readProperties.getActualLocationOfNode());
 
         // Read the children ...
-        ReadAllChildrenRequest readChildren = new ReadAllChildrenRequest(request.at());
+        ReadAllChildrenRequest readChildren = new ReadAllChildrenRequest(request.at(), request.inWorkspace());
         process(readChildren);
         if (readChildren.hasError()) {
             request.setError(readChildren.getError());
@@ -492,7 +572,7 @@ public abstract class RequestProcessor {
      */
     public void process( ReadPropertyRequest request ) {
         if (request == null) return;
-        ReadAllPropertiesRequest readNode = new ReadAllPropertiesRequest(request.on());
+        ReadAllPropertiesRequest readNode = new ReadAllPropertiesRequest(request.on(), request.inWorkspace());
         process(readNode);
         if (readNode.hasError()) {
             request.setError(readNode.getError());
@@ -516,7 +596,7 @@ public abstract class RequestProcessor {
      */
     public void process( VerifyNodeExistsRequest request ) {
         if (request == null) return;
-        ReadAllPropertiesRequest readNode = new ReadAllPropertiesRequest(request.at());
+        ReadAllPropertiesRequest readNode = new ReadAllPropertiesRequest(request.at(), request.inWorkspace());
         process(readNode);
         if (readNode.hasError()) {
             request.setError(readNode.getError());
@@ -544,7 +624,7 @@ public abstract class RequestProcessor {
         for (Name propertyName : names) {
             emptyProperties.add(new BasicEmptyProperty(propertyName));
         }
-        UpdatePropertiesRequest update = new UpdatePropertiesRequest(request.from(), emptyProperties);
+        UpdatePropertiesRequest update = new UpdatePropertiesRequest(request.from(), request.inWorkspace(), emptyProperties);
         process(update);
         if (update.hasError()) {
             request.setError(update.getError());
@@ -582,7 +662,7 @@ public abstract class RequestProcessor {
         }
         Path newPath = getExecutionContext().getValueFactories().getPathFactory().create(from.getPath(), request.toName());
         Location to = new Location(newPath);
-        MoveBranchRequest move = new MoveBranchRequest(from, to);
+        MoveBranchRequest move = new MoveBranchRequest(from, to, request.inWorkspace());
         process(move);
         // Set the actual locations ...
         request.setActualLocations(move.getActualLocationBefore(), move.getActualLocationAfter());

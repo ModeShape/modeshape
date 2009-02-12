@@ -54,6 +54,9 @@ import org.jboss.dna.graph.connector.RepositorySourceCapabilities;
 import org.jboss.dna.graph.connector.RepositorySourceException;
 
 /**
+ * A {@link RepositorySource} for an in-memory repository. Each {@link InMemoryRepositorySource} instance contains its own
+ * repository, and the lifetime of the source dictates the lifetime of the repository and its content.
+ * 
  * @author Randall Hauch
  */
 public class InMemoryRepositorySource implements RepositorySource, ObjectFactory {
@@ -68,10 +71,11 @@ public class InMemoryRepositorySource implements RepositorySource, ObjectFactory
      */
     public static final int DEFAULT_RETRY_LIMIT = 0;
 
-    protected static final RepositorySourceCapabilities CAPABILITIES = new RepositorySourceCapabilities(true, true);
+    protected static final RepositorySourceCapabilities CAPABILITIES = new RepositorySourceCapabilities(true, true, false, true);
 
     protected static final String ROOT_NODE_UUID = "rootNodeUuid";
     protected static final String SOURCE_NAME = "sourceName";
+    protected static final String DEFAULT_WORKSPACE_NAME = "defaultWorkspaceName";
     protected static final String DEFAULT_CACHE_POLICY = "defaultCachePolicy";
     protected static final String JNDI_NAME = "jndiName";
     protected static final String RETRY_LIMIT = "retryLimit";
@@ -80,6 +84,7 @@ public class InMemoryRepositorySource implements RepositorySource, ObjectFactory
     private String name;
     @GuardedBy( "this" )
     private String jndiName;
+    private String defaultWorkspaceName;
     private UUID rootNodeUuid = UUID.randomUUID();
     private CachePolicy defaultCachePolicy;
     private final AtomicInteger retryLimit = new AtomicInteger(DEFAULT_RETRY_LIMIT);
@@ -141,6 +146,24 @@ public class InMemoryRepositorySource implements RepositorySource, ObjectFactory
      */
     public void setDefaultCachePolicy( CachePolicy defaultCachePolicy ) {
         this.defaultCachePolicy = defaultCachePolicy;
+    }
+
+    /**
+     * Get the name of the workspace that should be used by default.
+     * 
+     * @return the name of the default workspace
+     */
+    public String getDefaultWorkspaceName() {
+        return defaultWorkspaceName;
+    }
+
+    /**
+     * Set the default workspace name.
+     * 
+     * @param defaultWorkspaceName the name of the workspace that should be used by default, or null if "" should be used
+     */
+    public void setDefaultWorkspaceName( String defaultWorkspaceName ) {
+        this.defaultWorkspaceName = defaultWorkspaceName;
     }
 
     /**
@@ -227,7 +250,7 @@ public class InMemoryRepositorySource implements RepositorySource, ObjectFactory
      */
     public RepositoryConnection getConnection() throws RepositorySourceException {
         if (repository == null) {
-            repository = new InMemoryRepository(name, rootNodeUuid);
+            repository = new InMemoryRepository(name, rootNodeUuid, defaultWorkspaceName);
         }
         return new InMemoryRepositoryConnection(this, repository);
     }
@@ -248,6 +271,9 @@ public class InMemoryRepositorySource implements RepositorySource, ObjectFactory
         }
         if (getJndiName() != null) {
             ref.add(new StringRefAddr(JNDI_NAME, getJndiName()));
+        }
+        if (getDefaultWorkspaceName() != null) {
+            ref.add(new StringRefAddr(DEFAULT_WORKSPACE_NAME, getDefaultWorkspaceName()));
         }
         if (getDefaultCachePolicy() != null) {
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -297,6 +323,7 @@ public class InMemoryRepositorySource implements RepositorySource, ObjectFactory
             String sourceName = (String)values.get(SOURCE_NAME);
             String rootNodeUuidString = (String)values.get(ROOT_NODE_UUID);
             String jndiName = (String)values.get(JNDI_NAME);
+            String defaultWorkspaceName = (String)values.get(DEFAULT_WORKSPACE_NAME);
             Object defaultCachePolicy = values.get(DEFAULT_CACHE_POLICY);
             String retryLimit = (String)values.get(RETRY_LIMIT);
 
@@ -304,6 +331,7 @@ public class InMemoryRepositorySource implements RepositorySource, ObjectFactory
             InMemoryRepositorySource source = new InMemoryRepositorySource();
             if (sourceName != null) source.setName(sourceName);
             if (rootNodeUuidString != null) source.setRootNodeUuid(UUID.fromString(rootNodeUuidString));
+            if (defaultWorkspaceName != null) source.setDefaultWorkspaceName(defaultWorkspaceName);
             if (jndiName != null) source.setJndiName(jndiName);
             if (defaultCachePolicy instanceof CachePolicy) {
                 source.setDefaultCachePolicy((CachePolicy)defaultCachePolicy);
@@ -321,5 +349,15 @@ public class InMemoryRepositorySource implements RepositorySource, ObjectFactory
      */
     public RepositorySourceCapabilities getCapabilities() {
         return CAPABILITIES;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see java.lang.Object#toString()
+     */
+    @Override
+    public String toString() {
+        return "The \"" + name + "\" in-memory repository";
     }
 }

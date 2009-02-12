@@ -58,7 +58,6 @@ public class JBossCacheSourceTest {
     private JBossCacheSource source;
     private RepositoryConnection connection;
     private String validName;
-    private String validUuidPropertyName;
     private String validCacheConfigurationName;
     private String validCacheFactoryJndiName;
     private String validCacheJndiName;
@@ -74,7 +73,6 @@ public class JBossCacheSourceTest {
     public void beforeEach() throws Exception {
         MockitoAnnotations.initMocks(this);
         validName = "cache source";
-        validUuidPropertyName = "dna:uuid";
         validCacheConfigurationName = "cache config name";
         validCacheFactoryJndiName = "cache factory jndi name";
         validCacheJndiName = "cache jndi name";
@@ -162,7 +160,6 @@ public class JBossCacheSourceTest {
                                       validCacheConfigurationName,
                                       validCacheJndiName,
                                       validCacheFactoryJndiName,
-                                      validUuidPropertyName,
                                       cachePolicy,
                                       100);
     }
@@ -171,8 +168,8 @@ public class JBossCacheSourceTest {
     public void shouldCreateJndiReferenceAndRecreatedObjectFromReferenceWithNullProperties() throws Exception {
         BasicCachePolicy cachePolicy = new BasicCachePolicy();
         cachePolicy.setTimeToLive(1000L, TimeUnit.MILLISECONDS);
-        convertToAndFromJndiReference("some source", null, null, null, null, null, null, 100);
-        convertToAndFromJndiReference(null, null, null, null, null, null, null, 100);
+        convertToAndFromJndiReference("some source", null, null, null, null, null, 100);
+        convertToAndFromJndiReference(null, null, null, null, null, null, 100);
     }
 
     private void convertToAndFromJndiReference( String sourceName,
@@ -180,7 +177,6 @@ public class JBossCacheSourceTest {
                                                 String cacheConfigName,
                                                 String cacheJndiName,
                                                 String cacheFactoryJndiName,
-                                                String uuidPropertyName,
                                                 BasicCachePolicy cachePolicy,
                                                 int retryLimit ) throws Exception {
         source.setRetryLimit(retryLimit);
@@ -190,7 +186,6 @@ public class JBossCacheSourceTest {
         source.setCacheJndiName(cacheJndiName);
         source.setDefaultCachePolicy(cachePolicy);
         source.setRootNodeUuid(rootNodeUuid != null ? rootNodeUuid.toString() : null);
-        source.setUuidPropertyName(uuidPropertyName);
 
         Reference ref = source.getReference();
         assertThat(ref.getClassName(), is(JBossCacheSource.class.getName()));
@@ -203,17 +198,6 @@ public class JBossCacheSourceTest {
             refAttributes.put(addr.getType(), addr.getContent());
         }
 
-        assertThat((String)refAttributes.remove(JBossCacheSource.SOURCE_NAME), is(source.getName()));
-        assertThat((String)refAttributes.remove(JBossCacheSource.ROOT_NODE_UUID), is(source.getRootNodeUuid()));
-        assertThat((String)refAttributes.remove(JBossCacheSource.UUID_PROPERTY_NAME), is(source.getUuidPropertyName()));
-        assertThat((String)refAttributes.remove(JBossCacheSource.CACHE_JNDI_NAME), is(source.getCacheJndiName()));
-        assertThat((String)refAttributes.remove(JBossCacheSource.CACHE_FACTORY_JNDI_NAME), is(source.getCacheFactoryJndiName()));
-        assertThat((String)refAttributes.remove(JBossCacheSource.CACHE_CONFIGURATION_NAME),
-                   is(source.getCacheConfigurationName()));
-        assertThat((String)refAttributes.remove(JBossCacheSource.RETRY_LIMIT), is(Integer.toString(source.getRetryLimit())));
-        refAttributes.remove(JBossCacheSource.DEFAULT_CACHE_POLICY);
-        assertThat(refAttributes.isEmpty(), is(true));
-
         // Recreate the object, use a newly constructed source ...
         ObjectFactory factory = new JBossCacheSource();
         Name name = mock(Name.class);
@@ -224,7 +208,6 @@ public class JBossCacheSourceTest {
 
         assertThat(recoveredSource.getName(), is(source.getName()));
         assertThat(recoveredSource.getRootNodeUuid(), is(source.getRootNodeUuid()));
-        assertThat(recoveredSource.getUuidPropertyName(), is(source.getUuidPropertyName()));
         assertThat(recoveredSource.getCacheJndiName(), is(source.getCacheJndiName()));
         assertThat(recoveredSource.getRetryLimit(), is(source.getRetryLimit()));
         assertThat(recoveredSource.getCacheFactoryJndiName(), is(source.getCacheFactoryJndiName()));

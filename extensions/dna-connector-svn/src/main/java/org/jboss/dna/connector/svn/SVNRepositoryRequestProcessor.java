@@ -26,6 +26,7 @@ package org.jboss.dna.connector.svn;
 import java.io.ByteArrayOutputStream;
 import java.io.OutputStream;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import org.jboss.dna.common.i18n.I18n;
 import org.jboss.dna.common.util.Logger;
@@ -46,9 +47,14 @@ import org.jboss.dna.graph.property.PathNotFoundException;
 import org.jboss.dna.graph.property.Property;
 import org.jboss.dna.graph.property.PropertyFactory;
 import org.jboss.dna.graph.property.ValueFactory;
+import org.jboss.dna.graph.request.CloneWorkspaceRequest;
 import org.jboss.dna.graph.request.CopyBranchRequest;
 import org.jboss.dna.graph.request.CreateNodeRequest;
+import org.jboss.dna.graph.request.CreateWorkspaceRequest;
 import org.jboss.dna.graph.request.DeleteBranchRequest;
+import org.jboss.dna.graph.request.DestroyWorkspaceRequest;
+import org.jboss.dna.graph.request.GetWorkspacesRequest;
+import org.jboss.dna.graph.request.InvalidRequestException;
 import org.jboss.dna.graph.request.MoveBranchRequest;
 import org.jboss.dna.graph.request.ReadAllChildrenRequest;
 import org.jboss.dna.graph.request.ReadAllPropertiesRequest;
@@ -56,6 +62,7 @@ import org.jboss.dna.graph.request.RemovePropertiesRequest;
 import org.jboss.dna.graph.request.RenameNodeRequest;
 import org.jboss.dna.graph.request.Request;
 import org.jboss.dna.graph.request.UpdatePropertiesRequest;
+import org.jboss.dna.graph.request.VerifyWorkspaceRequest;
 import org.jboss.dna.graph.request.processor.RequestProcessor;
 import org.tmatesoft.svn.core.SVNDirEntry;
 import org.tmatesoft.svn.core.SVNErrorCode;
@@ -145,9 +152,9 @@ public class SVNRepositoryRequestProcessor extends RequestProcessor implements S
                 SVNException ex = new SVNException(err);
                 request.setError(ex);
             } else if (rootKind == SVNNodeKind.DIR) {
-                
-                // TODO if node is a file 
-                 
+
+                // TODO if node is a file
+
                 // if the node is a directory
                 String childName = request.named().getString(getExecutionContext().getNamespaceRegistry());
                 if (root.length() == 1 && root.charAt(0) == '/') {
@@ -357,14 +364,70 @@ public class SVNRepositoryRequestProcessor extends RequestProcessor implements S
     }
 
     /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.request.processor.RequestProcessor#process(org.jboss.dna.graph.request.VerifyWorkspaceRequest)
+     */
+    @Override
+    public void process( VerifyWorkspaceRequest request ) {
+        // This does the job of converting a null workspace name to a valid workspace
+        String workspaceName = request.workspaceName();
+        if (workspaceName == null) workspaceName = "default";
+        request.setActualRootLocation(new Location(pathFactory().createRootPath()));
+        request.setActualWorkspaceName(workspaceName);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.request.processor.RequestProcessor#process(org.jboss.dna.graph.request.GetWorkspacesRequest)
+     */
+    @Override
+    public void process( GetWorkspacesRequest request ) {
+        request.setAvailableWorkspaceNames(Collections.singleton("default"));
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.request.processor.RequestProcessor#process(org.jboss.dna.graph.request.CreateWorkspaceRequest)
+     */
+    @Override
+    public void process( CreateWorkspaceRequest request ) {
+        String msg = SVNRepositoryConnectorI18n.sourceDoesNotSupportCreatingWorkspaces.text(getSourceName());
+        request.setError(new InvalidRequestException(msg));
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.request.processor.RequestProcessor#process(org.jboss.dna.graph.request.CloneWorkspaceRequest)
+     */
+    @Override
+    public void process( CloneWorkspaceRequest request ) {
+        String msg = SVNRepositoryConnectorI18n.sourceDoesNotSupportCloningWorkspaces.text(getSourceName());
+        request.setError(new InvalidRequestException(msg));
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.request.processor.RequestProcessor#process(org.jboss.dna.graph.request.DestroyWorkspaceRequest)
+     */
+    @Override
+    public void process( DestroyWorkspaceRequest request ) {
+        String msg = SVNRepositoryConnectorI18n.sourceDoesNotSupportDeletingWorkspaces.text(getSourceName());
+        request.setError(new InvalidRequestException(msg));
+    }
+
+    /**
      * Verify if change is allowed on a specific source.
      * 
      * @throws RepositorySourceException if change on that repository source is not allowed.
      */
     protected void verifyUpdatesAllowed() {
         if (!updatesAllowed) {
-            throw new RepositorySourceException(getSourceName(),
-                                                SVNRepositoryConnectorI18n.sourceIsReadOnly.text(getSourceName()));
+            throw new InvalidRequestException(SVNRepositoryConnectorI18n.sourceIsReadOnly.text(getSourceName()));
         }
     }
 

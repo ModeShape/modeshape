@@ -32,8 +32,6 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import org.jboss.dna.graph.property.Name;
-import org.jboss.dna.graph.request.RemovePropertiesRequest;
-import org.jboss.dna.graph.request.Request;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -58,48 +56,54 @@ public class RemovePropertiesRequestTest extends AbstractRequestTest {
 
     @Override
     protected Request createRequest() {
-        return new RemovePropertiesRequest(validPathLocation1, validPropertyName1);
+        return new RemovePropertiesRequest(validPathLocation1, workspace1, validPropertyName1);
     }
 
     @Test( expected = IllegalArgumentException.class )
     public void shouldNotAllowCreatingRequestWithNullFromLocation() {
-        new RemovePropertiesRequest(null, validPropertyName1);
+        new RemovePropertiesRequest(null, workspace1, validPropertyName1);
+    }
+
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldNotAllowCreatingRequestWithNullFromWorkspaceName() {
+        new RemovePropertiesRequest(validPathLocation1, null, validPropertyName1);
     }
 
     @Test( expected = IllegalArgumentException.class )
     public void shouldNotAllowCreatingRequestWithNullPropertyName() {
-        new RemovePropertiesRequest(validPathLocation, (Name[])null);
+        new RemovePropertiesRequest(validPathLocation, workspace1, (Name[])null);
     }
 
     @Test( expected = IllegalArgumentException.class )
     public void shouldNotAllowCreatingRequestWithEmptyPropertyNameArray() {
-        new RemovePropertiesRequest(validPathLocation, new Name[] {});
+        new RemovePropertiesRequest(validPathLocation, workspace1, new Name[] {});
     }
 
     @Test( expected = IllegalArgumentException.class )
     public void shouldNotAllowCreatingRequestWithNullPropertyNameIterator() {
-        new RemovePropertiesRequest(validPathLocation, (Iterator<Name>)null);
+        new RemovePropertiesRequest(validPathLocation, workspace1, (Iterator<Name>)null);
     }
 
     @Test( expected = IllegalArgumentException.class )
     public void shouldNotAllowCreatingRequestWithEmptyPropertyNameIterator() {
-        new RemovePropertiesRequest(validPathLocation, new ArrayList<Name>().iterator());
+        new RemovePropertiesRequest(validPathLocation, workspace1, new ArrayList<Name>().iterator());
     }
 
     @Test( expected = IllegalArgumentException.class )
     public void shouldNotAllowCreatingRequestWithNullPropertyNameIterable() {
-        new RemovePropertiesRequest(validPathLocation, (Iterable<Name>)null);
+        new RemovePropertiesRequest(validPathLocation, workspace1, (Iterable<Name>)null);
     }
 
     @Test( expected = IllegalArgumentException.class )
     public void shouldNotAllowCreatingRequestWithEmptyPropertyNameIterable() {
-        new RemovePropertiesRequest(validPathLocation, new ArrayList<Name>());
+        new RemovePropertiesRequest(validPathLocation, workspace1, new ArrayList<Name>());
     }
 
     @Test
     public void shouldCreateValidRequestWithValidLocationAndValidPropertyName() {
-        request = new RemovePropertiesRequest(validPathLocation1, validPropertyName1);
+        request = new RemovePropertiesRequest(validPathLocation1, workspace1, validPropertyName1);
         assertThat(request.from(), is(sameInstance(validPathLocation1)));
+        assertThat(request.inWorkspace(), is(sameInstance(workspace1)));
         assertThat(request.hasError(), is(false));
         assertThat(request.getError(), is(nullValue()));
         assertThat(request.propertyNames(), hasItems(validPropertyName1));
@@ -107,7 +111,7 @@ public class RemovePropertiesRequestTest extends AbstractRequestTest {
 
     @Test
     public void shouldCreateValidRequestWithValidLocationAndValidPropertyNames() {
-        request = new RemovePropertiesRequest(validPathLocation1, validPropertyName1, validPropertyName2);
+        request = new RemovePropertiesRequest(validPathLocation1, workspace1, validPropertyName1, validPropertyName2);
         assertThat(request.from(), is(sameInstance(validPathLocation1)));
         assertThat(request.hasError(), is(false));
         assertThat(request.getError(), is(nullValue()));
@@ -118,7 +122,7 @@ public class RemovePropertiesRequestTest extends AbstractRequestTest {
     public void shouldCreateValidRequestWithValidLocationAndIteratorOverValidPropertyName() {
         List<Name> names = new ArrayList<Name>();
         names.add(validPropertyName1);
-        request = new RemovePropertiesRequest(validPathLocation1, names);
+        request = new RemovePropertiesRequest(validPathLocation1, workspace1, names);
         assertThat(request.from(), is(sameInstance(validPathLocation1)));
         assertThat(request.hasError(), is(false));
         assertThat(request.getError(), is(nullValue()));
@@ -131,7 +135,7 @@ public class RemovePropertiesRequestTest extends AbstractRequestTest {
         names.add(validPropertyName1);
         names.add(validPropertyName2);
         names.add(validPropertyName3);
-        request = new RemovePropertiesRequest(validPathLocation1, names.iterator());
+        request = new RemovePropertiesRequest(validPathLocation1, workspace1, names.iterator());
         assertThat(request.from(), is(sameInstance(validPathLocation1)));
         assertThat(request.hasError(), is(false));
         assertThat(request.getError(), is(nullValue()));
@@ -144,7 +148,7 @@ public class RemovePropertiesRequestTest extends AbstractRequestTest {
         names.add(validPropertyName1);
         names.add(validPropertyName2);
         names.add(validPropertyName3);
-        request = new RemovePropertiesRequest(validPathLocation1, names);
+        request = new RemovePropertiesRequest(validPathLocation1, workspace1, names);
         assertThat(request.from(), is(sameInstance(validPathLocation1)));
         assertThat(request.hasError(), is(false));
         assertThat(request.getError(), is(nullValue()));
@@ -153,22 +157,33 @@ public class RemovePropertiesRequestTest extends AbstractRequestTest {
 
     @Test
     public void shouldConsiderEqualTwoRequestsWithSameLocationsAndSamePropertyNames() {
-        request = new RemovePropertiesRequest(validPathLocation1, validPropertyName1, validPropertyName2);
-        RemovePropertiesRequest request2 = new RemovePropertiesRequest(validPathLocation1, validPropertyName1, validPropertyName2);
+        request = new RemovePropertiesRequest(validPathLocation1, workspace1, validPropertyName1, validPropertyName2);
+        RemovePropertiesRequest request2 = new RemovePropertiesRequest(validPathLocation1, workspace1, validPropertyName1,
+                                                                       validPropertyName2);
         assertThat(request, is(request2));
     }
 
     @Test
     public void shouldConsiderNotEqualTwoRequestsWithDifferentLocations() {
-        request = new RemovePropertiesRequest(validPathLocation1, validPropertyName1, validPropertyName2);
-        RemovePropertiesRequest request2 = new RemovePropertiesRequest(validPathLocation2, validPropertyName1, validPropertyName2);
+        request = new RemovePropertiesRequest(validPathLocation1, workspace1, validPropertyName1, validPropertyName2);
+        RemovePropertiesRequest request2 = new RemovePropertiesRequest(validPathLocation2, workspace1, validPropertyName1,
+                                                                       validPropertyName2);
+        assertThat(request.equals(request2), is(false));
+    }
+
+    @Test
+    public void shouldConsiderNotEqualTwoRequestsWithDifferentWorkspaceNames() {
+        request = new RemovePropertiesRequest(validPathLocation1, workspace1, validPropertyName1, validPropertyName2);
+        RemovePropertiesRequest request2 = new RemovePropertiesRequest(validPathLocation1, workspace2, validPropertyName1,
+                                                                       validPropertyName2);
         assertThat(request.equals(request2), is(false));
     }
 
     @Test
     public void shouldConsiderNotEqualTwoRequestsWithSameLocationButDifferentPropertyNames() {
-        request = new RemovePropertiesRequest(validPathLocation1, validPropertyName1, validPropertyName2);
-        RemovePropertiesRequest request2 = new RemovePropertiesRequest(validPathLocation2, validPropertyName2, validPropertyName3);
+        request = new RemovePropertiesRequest(validPathLocation1, workspace1, validPropertyName1, validPropertyName2);
+        RemovePropertiesRequest request2 = new RemovePropertiesRequest(validPathLocation2, workspace1, validPropertyName2,
+                                                                       validPropertyName3);
         assertThat(request.equals(request2), is(false));
     }
 

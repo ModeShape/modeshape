@@ -49,6 +49,7 @@ public class OneChildContributionTest {
     public static final DateTime TOMORROW = new JodaDateTime(NOW.getMilliseconds() + TWENTY_FOUR_HOURS_IN_MILLISECONDS).toUtcTimeZone();
 
     private String sourceName;
+    private String workspaceName;
     private Path pathInSource;
     private OneChildContribution contribution;
     private DateTime expiration;
@@ -57,29 +58,30 @@ public class OneChildContributionTest {
     @Before
     public void beforeEach() throws Exception {
         sourceName = "some source";
+        workspaceName = "some workspace";
         pathInSource = RootPath.INSTANCE;
         expiration = TOMORROW;
         child1 = mock(Location.class);
-        contribution = new OneChildContribution(sourceName, new Location(pathInSource), expiration, child1);
+        contribution = new OneChildContribution(sourceName, workspaceName, new Location(pathInSource), expiration, child1);
     }
 
     @Test
     public void shouldAllowNullExpiration() {
         expiration = null;
-        contribution = new OneChildContribution(sourceName, new Location(pathInSource), expiration, child1);
+        contribution = new OneChildContribution(sourceName, workspaceName, new Location(pathInSource), expiration, child1);
         assertThat(contribution.getExpirationTimeInUtc(), is(nullValue()));
     }
 
     @Test( expected = IllegalArgumentException.class )
     public void shouldNotAllowExpirationTimeIfNotInUtcTime() {
         expiration = new JodaDateTime(System.currentTimeMillis(), "CST");
-        contribution = new OneChildContribution(sourceName, new Location(pathInSource), expiration, child1);
+        contribution = new OneChildContribution(sourceName, workspaceName, new Location(pathInSource), expiration, child1);
     }
 
     @Test( expected = AssertionError.class )
     public void shouldNotAllowNullChildren() {
         child1 = null;
-        contribution = new OneChildContribution(sourceName, new Location(pathInSource), expiration, child1);
+        contribution = new OneChildContribution(sourceName, workspaceName, new Location(pathInSource), expiration, child1);
     }
 
     @Test
@@ -94,7 +96,7 @@ public class OneChildContributionTest {
 
     @Test
     public void shouldNotBeExpiredIfExpirationIsInTheFuture() {
-        contribution = new OneChildContribution(sourceName, new Location(pathInSource), NOW, child1);
+        contribution = new OneChildContribution(sourceName, workspaceName, new Location(pathInSource), NOW, child1);
         assertThat(contribution.isExpired(YESTERDAY), is(false));
         assertThat(contribution.isExpired(TOMORROW), is(true));
     }

@@ -51,6 +51,7 @@ public class ThreePropertyContribution extends NonEmptyContribution {
      * Create a contribution of node properties from the source with the supplied name.
      * 
      * @param sourceName the name of the source, which may not be null or blank
+     * @param workspaceName the name of the workspace, which may not be null or blank
      * @param locationInSource the location in the source for this contributed information; may not be null
      * @param expirationTime the time (in UTC) after which this contribution should be considered expired, or null if there is no
      *        expiration time
@@ -59,12 +60,13 @@ public class ThreePropertyContribution extends NonEmptyContribution {
      * @param property3 the third property from the source; may not be null
      */
     public ThreePropertyContribution( String sourceName,
+                                      String workspaceName,
                                       Location locationInSource,
                                       DateTime expirationTime,
                                       Property property1,
                                       Property property2,
                                       Property property3 ) {
-        super(sourceName, locationInSource, expirationTime);
+        super(sourceName, workspaceName, locationInSource, expirationTime);
         assert property1 != null;
         assert property1.isEmpty() == false;
         assert property2 != null;

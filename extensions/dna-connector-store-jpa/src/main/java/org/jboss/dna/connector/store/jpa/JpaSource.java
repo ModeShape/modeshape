@@ -33,7 +33,6 @@ import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.atomic.AtomicBoolean;
 import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.naming.RefAddr;
@@ -44,11 +43,11 @@ import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.sql.DataSource;
 import net.jcip.annotations.Immutable;
-import net.jcip.annotations.ThreadSafe;
 import org.hibernate.ejb.Ejb3Configuration;
 import org.jboss.dna.common.i18n.I18n;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.common.util.Logger;
+import org.jboss.dna.common.util.StringUtil;
 import org.jboss.dna.connector.store.jpa.model.basic.BasicModel;
 import org.jboss.dna.connector.store.jpa.util.StoreOptionEntity;
 import org.jboss.dna.connector.store.jpa.util.StoreOptions;
@@ -120,6 +119,9 @@ public class JpaSource implements RepositorySource, ObjectFactory {
     protected static final String LARGE_VALUE_SIZE_IN_BYTES = "largeValueSizeInBytes";
     protected static final String COMPRESS_DATA = "compressData";
     protected static final String ENFORCE_REFERENTIAL_INTEGRITY = "enforceReferentialIntegrity";
+    protected static final String DEFAULT_WORKSPACE = "defaultWorkspace";
+    protected static final String PREDEFINED_WORKSPACE_NAMES = "predefinedWorkspaceNames";
+    protected static final String ALLOW_CREATING_WORKSPACES = "allowCreatingWorkspaces";
 
     /**
      * This source supports events.
@@ -134,11 +136,20 @@ public class JpaSource implements RepositorySource, ObjectFactory {
      * read-only or updateable}.
      */
     public static final boolean DEFAULT_SUPPORTS_UPDATES = true;
+    /**
+     * This source does support creating workspaces.
+     */
+    public static final boolean DEFAULT_SUPPORTS_CREATING_WORKSPACES = true;
 
     /**
      * The default UUID that is used for root nodes in a store.
      */
     public static final String DEFAULT_ROOT_NODE_UUID = "1497b6fe-8c7e-4bbb-aaa2-24f3d4942668";
+
+    /**
+     * The initial {@link #getNameOfDefaultWorkspace() name of the default workspace} is "{@value} ", unless otherwise specified.
+     */
+    public static final String DEFAULT_NAME_OF_DEFAULT_WORKSPACE = "default";
 
     private static final int DEFAULT_RETRY_LIMIT = 0;
     private static final int DEFAULT_CACHE_TIME_TO_LIVE_IN_SECONDS = 60 * 5; // 5 minutes
@@ -158,29 +169,34 @@ public class JpaSource implements RepositorySource, ObjectFactory {
      */
     private static final long serialVersionUID = 1L;
 
-    private String name;
-    private String dataSourceJndiName;
-    private String dialect;
-    private String username;
-    private String password;
-    private String url;
-    private String driverClassName;
-    private String driverClassloaderName;
-    private String rootNodeUuid = DEFAULT_ROOT_NODE_UUID;
-    private int maximumConnectionsInPool = DEFAULT_MAXIMUM_CONNECTIONS_IN_POOL;
-    private int minimumConnectionsInPool = DEFAULT_MINIMUM_CONNECTIONS_IN_POOL;
-    private int maximumConnectionIdleTimeInSeconds = DEFAULT_MAXIMUM_CONNECTION_IDLE_TIME_IN_SECONDS;
-    private int maximumSizeOfStatementCache = DEFAULT_MAXIMUM_NUMBER_OF_STATEMENTS_TO_CACHE;
-    private int numberOfConnectionsToAcquireAsNeeded = DEFAULT_NUMBER_OF_CONNECTIONS_TO_ACQUIRE_AS_NEEDED;
-    private int idleTimeInSecondsBeforeTestingConnections = DEFAULT_IDLE_TIME_IN_SECONDS_BEFORE_TESTING_CONNECTIONS;
-    private int retryLimit = DEFAULT_RETRY_LIMIT;
-    private int cacheTimeToLiveInMilliseconds = DEFAULT_CACHE_TIME_TO_LIVE_IN_SECONDS * 1000;
-    private long largeValueSizeInBytes = DEFAULT_LARGE_VALUE_SIZE_IN_BYTES;
-    private boolean compressData = DEFAULT_COMPRESS_DATA;
-    private boolean referentialIntegrityEnforced = DEFAULT_ENFORCE_REFERENTIAL_INTEGRITY;
-    private final Capabilities capabilities = new Capabilities();
+    private volatile String name;
+    private volatile String dataSourceJndiName;
+    private volatile String dialect;
+    private volatile String username;
+    private volatile String password;
+    private volatile String url;
+    private volatile String driverClassName;
+    private volatile String driverClassloaderName;
+    private volatile String rootNodeUuid = DEFAULT_ROOT_NODE_UUID;
+    private volatile int maximumConnectionsInPool = DEFAULT_MAXIMUM_CONNECTIONS_IN_POOL;
+    private volatile int minimumConnectionsInPool = DEFAULT_MINIMUM_CONNECTIONS_IN_POOL;
+    private volatile int maximumConnectionIdleTimeInSeconds = DEFAULT_MAXIMUM_CONNECTION_IDLE_TIME_IN_SECONDS;
+    private volatile int maximumSizeOfStatementCache = DEFAULT_MAXIMUM_NUMBER_OF_STATEMENTS_TO_CACHE;
+    private volatile int numberOfConnectionsToAcquireAsNeeded = DEFAULT_NUMBER_OF_CONNECTIONS_TO_ACQUIRE_AS_NEEDED;
+    private volatile int idleTimeInSecondsBeforeTestingConnections = DEFAULT_IDLE_TIME_IN_SECONDS_BEFORE_TESTING_CONNECTIONS;
+    private volatile int retryLimit = DEFAULT_RETRY_LIMIT;
+    private volatile int cacheTimeToLiveInMilliseconds = DEFAULT_CACHE_TIME_TO_LIVE_IN_SECONDS * 1000;
+    private volatile long largeValueSizeInBytes = DEFAULT_LARGE_VALUE_SIZE_IN_BYTES;
+    private volatile boolean compressData = DEFAULT_COMPRESS_DATA;
+    private volatile boolean referentialIntegrityEnforced = DEFAULT_ENFORCE_REFERENTIAL_INTEGRITY;
+    private volatile String defaultWorkspace = DEFAULT_NAME_OF_DEFAULT_WORKSPACE;
+    private volatile String[] predefinedWorkspaces = new String[] {};
+    private volatile RepositorySourceCapabilities capabilities = new RepositorySourceCapabilities(SUPPORTS_SAME_NAME_SIBLINGS,
+                                                                                                  DEFAULT_SUPPORTS_UPDATES,
+                                                                                                  SUPPORTS_EVENTS,
+                                                                                                  DEFAULT_SUPPORTS_CREATING_WORKSPACES);
+    private volatile String modelName;
     private transient Model model;
-    private String modelName;
     private transient DataSource dataSource;
     private transient EntityManagerFactory entityManagerFactory;
     private transient CachePolicy cachePolicy;
@@ -234,7 +250,8 @@ public class JpaSource implements RepositorySource, ObjectFactory {
      *        content.
      */
     public synchronized void setSupportsUpdates( boolean supportsUpdates ) {
-        capabilities.setSupportsUpdates(supportsUpdates);
+        capabilities = new RepositorySourceCapabilities(capabilities.supportsSameNameSiblings(), supportsUpdates,
+                                                        capabilities.supportsEvents(), capabilities.supportsCreatingWorkspaces());
     }
 
     /**
@@ -292,6 +309,77 @@ public class JpaSource implements RepositorySource, ObjectFactory {
         if (rootNodeUuid != null && rootNodeUuid.trim().length() == 0) rootNodeUuid = DEFAULT_ROOT_NODE_UUID;
         this.rootUuid = UUID.fromString(rootNodeUuid);
         this.rootNodeUuid = rootNodeUuid;
+    }
+
+    /**
+     * Get the name of the default workspace.
+     * 
+     * @return the name of the workspace that should be used by default, or null if there is no default workspace
+     */
+    public String getNameOfDefaultWorkspace() {
+        return defaultWorkspace;
+    }
+
+    /**
+     * Set the name of the workspace that should be used when clients don't specify a workspace.
+     * 
+     * @param nameOfDefaultWorkspace the name of the workspace that should be used by default, or null if the
+     *        {@link #DEFAULT_NAME_OF_DEFAULT_WORKSPACE default name} should be used
+     */
+    public synchronized void setNameOfDefaultWorkspace( String nameOfDefaultWorkspace ) {
+        this.defaultWorkspace = nameOfDefaultWorkspace != null ? nameOfDefaultWorkspace : DEFAULT_NAME_OF_DEFAULT_WORKSPACE;
+    }
+
+    /**
+     * Gets the names of the workspaces that are available when this source is created.
+     * 
+     * @return the names of the workspaces that this source starts with, or null if there are no such workspaces
+     * @see #setPredefinedWorkspaceNames(String[])
+     * @see #setCreatingWorkspacesAllowed(boolean)
+     */
+    public synchronized String[] getPredefinedWorkspaceNames() {
+        String[] copy = new String[predefinedWorkspaces.length];
+        System.arraycopy(predefinedWorkspaces, 0, copy, 0, predefinedWorkspaces.length);
+        return copy;
+    }
+
+    /**
+     * Sets the names of the workspaces that are available when this source is created.
+     * 
+     * @param predefinedWorkspaceNames the names of the workspaces that this source should start with, or null if there are no
+     *        such workspaces
+     * @see #setCreatingWorkspacesAllowed(boolean)
+     * @see #getPredefinedWorkspaceNames()
+     */
+    public synchronized void setPredefinedWorkspaceNames( String[] predefinedWorkspaceNames ) {
+        this.predefinedWorkspaces = predefinedWorkspaceNames != null ? predefinedWorkspaceNames : new String[] {};
+    }
+
+    /**
+     * Get whether this source allows workspaces to be created dynamically.
+     * 
+     * @return true if this source allows workspaces to be created by clients, or false if the
+     *         {@link #getPredefinedWorkspaceNames() set of workspaces} is fixed
+     * @see #setPredefinedWorkspaceNames(String[])
+     * @see #getPredefinedWorkspaceNames()
+     * @see #setCreatingWorkspacesAllowed(boolean)
+     */
+    public boolean isCreatingWorkspacesAllowed() {
+        return capabilities.supportsCreatingWorkspaces();
+    }
+
+    /**
+     * Set whether this source allows workspaces to be created dynamically.
+     * 
+     * @param allowWorkspaceCreation true if this source allows workspaces to be created by clients, or false if the
+     *        {@link #getPredefinedWorkspaceNames() set of workspaces} is fixed
+     * @see #setPredefinedWorkspaceNames(String[])
+     * @see #getPredefinedWorkspaceNames()
+     * @see #isCreatingWorkspacesAllowed()
+     */
+    public synchronized void setCreatingWorkspacesAllowed( boolean allowWorkspaceCreation ) {
+        capabilities = new RepositorySourceCapabilities(capabilities.supportsSameNameSiblings(), capabilities.supportsUpdates(),
+                                                        capabilities.supportsEvents(), allowWorkspaceCreation);
     }
 
     /**
@@ -614,33 +702,15 @@ public class JpaSource implements RepositorySource, ObjectFactory {
         String factoryClassName = this.getClass().getName();
         Reference ref = new Reference(className, factoryClassName, null);
 
-        if (getName() != null) {
-            ref.add(new StringRefAddr(SOURCE_NAME, getName()));
-        }
-        if (getRootNodeUuid() != null) {
-            ref.add(new StringRefAddr(ROOT_NODE_UUID, getRootNodeUuid()));
-        }
-        if (getDataSourceJndiName() != null) {
-            ref.add(new StringRefAddr(DATA_SOURCE_JNDI_NAME, getDataSourceJndiName()));
-        }
-        if (getDialect() != null) {
-            ref.add(new StringRefAddr(DIALECT, getDialect()));
-        }
-        if (getUsername() != null) {
-            ref.add(new StringRefAddr(USERNAME, getUsername()));
-        }
-        if (getPassword() != null) {
-            ref.add(new StringRefAddr(PASSWORD, getPassword()));
-        }
-        if (getUrl() != null) {
-            ref.add(new StringRefAddr(URL, getUrl()));
-        }
-        if (getDriverClassName() != null) {
-            ref.add(new StringRefAddr(DRIVER_CLASS_NAME, getDriverClassName()));
-        }
-        if (getDriverClassloaderName() != null) {
-            ref.add(new StringRefAddr(DRIVER_CLASSLOADER_NAME, getDriverClassloaderName()));
-        }
+        ref.add(new StringRefAddr(SOURCE_NAME, getName()));
+        ref.add(new StringRefAddr(ROOT_NODE_UUID, getRootNodeUuid()));
+        ref.add(new StringRefAddr(DATA_SOURCE_JNDI_NAME, getDataSourceJndiName()));
+        ref.add(new StringRefAddr(DIALECT, getDialect()));
+        ref.add(new StringRefAddr(USERNAME, getUsername()));
+        ref.add(new StringRefAddr(PASSWORD, getPassword()));
+        ref.add(new StringRefAddr(URL, getUrl()));
+        ref.add(new StringRefAddr(DRIVER_CLASS_NAME, getDriverClassName()));
+        ref.add(new StringRefAddr(DRIVER_CLASSLOADER_NAME, getDriverClassloaderName()));
         ref.add(new StringRefAddr(MAXIMUM_CONNECTIONS_IN_POOL, Integer.toString(getMaximumConnectionsInPool())));
         ref.add(new StringRefAddr(MINIMUM_CONNECTIONS_IN_POOL, Integer.toString(getMinimumConnectionsInPool())));
         ref.add(new StringRefAddr(MAXIMUM_CONNECTION_IDLE_TIME_IN_SECONDS,
@@ -654,6 +724,12 @@ public class JpaSource implements RepositorySource, ObjectFactory {
         ref.add(new StringRefAddr(LARGE_VALUE_SIZE_IN_BYTES, Long.toString(getLargeValueSizeInBytes())));
         ref.add(new StringRefAddr(COMPRESS_DATA, Boolean.toString(isCompressData())));
         ref.add(new StringRefAddr(ENFORCE_REFERENTIAL_INTEGRITY, Boolean.toString(isReferentialIntegrityEnforced())));
+        ref.add(new StringRefAddr(DEFAULT_WORKSPACE, getNameOfDefaultWorkspace()));
+        ref.add(new StringRefAddr(ALLOW_CREATING_WORKSPACES, Boolean.toString(isCreatingWorkspacesAllowed())));
+        String[] workspaceNames = getPredefinedWorkspaceNames();
+        if (workspaceNames != null && workspaceNames.length != 0) {
+            ref.add(new StringRefAddr(PREDEFINED_WORKSPACE_NAMES, StringUtil.combineLines(workspaceNames)));
+        }
         if (getModel() != null) {
             ref.add(new StringRefAddr(MODEL_NAME, getModel()));
         }
@@ -701,6 +777,15 @@ public class JpaSource implements RepositorySource, ObjectFactory {
             String largeModelSize = values.get(LARGE_VALUE_SIZE_IN_BYTES);
             String compressData = values.get(COMPRESS_DATA);
             String refIntegrity = values.get(ENFORCE_REFERENTIAL_INTEGRITY);
+            String defaultWorkspace = values.get(DEFAULT_WORKSPACE);
+            String createWorkspaces = values.get(ALLOW_CREATING_WORKSPACES);
+
+            String combinedWorkspaceNames = values.get(PREDEFINED_WORKSPACE_NAMES);
+            String[] workspaceNames = null;
+            if (combinedWorkspaceNames != null) {
+                List<String> paths = StringUtil.splitLines(combinedWorkspaceNames);
+                workspaceNames = paths.toArray(new String[paths.size()]);
+            }
 
             // Create the source instance ...
             JpaSource source = new JpaSource();
@@ -725,6 +810,9 @@ public class JpaSource implements RepositorySource, ObjectFactory {
             if (largeModelSize != null) source.setLargeValueSizeInBytes(Long.parseLong(largeModelSize));
             if (compressData != null) source.setCompressData(Boolean.parseBoolean(compressData));
             if (refIntegrity != null) source.setReferentialIntegrityEnforced(Boolean.parseBoolean(refIntegrity));
+            if (defaultWorkspace != null) source.setNameOfDefaultWorkspace(defaultWorkspace);
+            if (createWorkspaces != null) source.setCreatingWorkspacesAllowed(Boolean.parseBoolean(createWorkspaces));
+            if (workspaceNames != null && workspaceNames.length != 0) source.setPredefinedWorkspaceNames(workspaceNames);
             return source;
         }
         return null;
@@ -799,8 +887,11 @@ public class JpaSource implements RepositorySource, ObjectFactory {
             // Find and update/set the root node's UUID ...
             StoreOptions options = new StoreOptions(entityManager);
             UUID actualUuid = options.getRootNodeUuid();
-            if (actualUuid != null) this.setRootNodeUuid(actualUuid.toString());
-            else options.setRootNodeUuid(this.rootUuid);
+            if (actualUuid != null) {
+                this.setRootNodeUuid(actualUuid.toString());
+            } else {
+                options.setRootNodeUuid(this.rootUuid);
+            }
 
             // Find or set the type of model that will be used.
             String actualModelName = options.getModelName();
@@ -829,8 +920,9 @@ public class JpaSource implements RepositorySource, ObjectFactory {
         if (entityManager == null) {
             entityManager = entityManagerFactory.createEntityManager();
         }
-        return new JpaConnection(getName(), cachePolicy, entityManager, model, rootUuid, largeValueSizeInBytes, compressData,
-                                 referentialIntegrityEnforced);
+        return new JpaConnection(getName(), cachePolicy, entityManager, model, rootUuid, defaultWorkspace,
+                                 getPredefinedWorkspaceNames(), largeValueSizeInBytes, isCreatingWorkspacesAllowed(),
+                                 compressData, referentialIntegrityEnforced);
     }
 
     /**
@@ -895,24 +987,6 @@ public class JpaSource implements RepositorySource, ObjectFactory {
         assert propertyName != null;
         assert propertyName.trim().length() != 0;
         configurator.setProperty(propertyName, Integer.toString(propertyValue));
-    }
-
-    @ThreadSafe
-    protected class Capabilities extends RepositorySourceCapabilities {
-        private final AtomicBoolean supportsUpdates = new AtomicBoolean(DEFAULT_SUPPORTS_UPDATES);
-
-        /*package*/Capabilities() {
-            super(SUPPORTS_SAME_NAME_SIBLINGS, DEFAULT_SUPPORTS_UPDATES, SUPPORTS_EVENTS);
-        }
-
-        /*package*/void setSupportsUpdates( boolean supportsUpdates ) {
-            this.supportsUpdates.set(supportsUpdates);
-        }
-
-        @Override
-        public boolean supportsUpdates() {
-            return this.supportsUpdates.get();
-        }
     }
 
     @Immutable

@@ -27,8 +27,6 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.hamcrest.core.IsSame.sameInstance;
 import static org.junit.Assert.assertThat;
-import org.jboss.dna.graph.request.MoveBranchRequest;
-import org.jboss.dna.graph.request.Request;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -47,39 +45,45 @@ public class MoveBranchRequestTest extends AbstractRequestTest {
 
     @Override
     protected Request createRequest() {
-        return new MoveBranchRequest(validPathLocation1, validPathLocation2);
+        return new MoveBranchRequest(validPathLocation1, validPathLocation2, workspace2);
     }
 
     @Test( expected = IllegalArgumentException.class )
     public void shouldNotAllowCreatingRequestWithNullFromLocation() {
-        new MoveBranchRequest(null, validPathLocation);
+        new MoveBranchRequest(null, validPathLocation2, workspace2);
     }
 
     @Test( expected = IllegalArgumentException.class )
     public void shouldNotAllowCreatingRequestWithNullToLocation() {
-        new MoveBranchRequest(validPathLocation, null);
+        new MoveBranchRequest(validPathLocation1, null, workspace2);
+    }
+
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldNotAllowCreatingRequestWithNullWorkspaceName() {
+        new MoveBranchRequest(validPathLocation1, validPathLocation2, null);
     }
 
     @Test
     public void shouldCreateValidRequestWithValidFromLocationAndValidToLocation() {
-        request = new MoveBranchRequest(validPathLocation1, validPathLocation2);
+        request = new MoveBranchRequest(validPathLocation1, validPathLocation2, workspace1);
         assertThat(request.from(), is(sameInstance(validPathLocation1)));
         assertThat(request.into(), is(sameInstance(validPathLocation2)));
+        assertThat(request.inWorkspace(), is(sameInstance(workspace1)));
         assertThat(request.hasError(), is(false));
         assertThat(request.getError(), is(nullValue()));
     }
 
     @Test
     public void shouldConsiderEqualTwoRequestsWithSameLocations() {
-        request = new MoveBranchRequest(validPathLocation1, validPathLocation2);
-        MoveBranchRequest request2 = new MoveBranchRequest(validPathLocation1, validPathLocation2);
+        request = new MoveBranchRequest(validPathLocation1, validPathLocation2, workspace2);
+        MoveBranchRequest request2 = new MoveBranchRequest(validPathLocation1, validPathLocation2, workspace2);
         assertThat(request, is(request2));
     }
 
     @Test
     public void shouldConsiderNotEqualTwoRequestsWithDifferentLocations() {
-        request = new MoveBranchRequest(validPathLocation1, validPathLocation2);
-        MoveBranchRequest request2 = new MoveBranchRequest(validPathLocation1, validUuidLocation2);
+        request = new MoveBranchRequest(validPathLocation1, validPathLocation2, workspace2);
+        MoveBranchRequest request2 = new MoveBranchRequest(validPathLocation2, validPathLocation1, workspace2);
         assertThat(request.equals(request2), is(false));
     }
 }

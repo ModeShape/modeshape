@@ -32,7 +32,6 @@ import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import javax.naming.BinaryRefAddr;
 import javax.naming.Context;
@@ -42,7 +41,6 @@ import javax.naming.Reference;
 import javax.naming.Referenceable;
 import javax.naming.StringRefAddr;
 import javax.naming.spi.ObjectFactory;
-import net.jcip.annotations.ThreadSafe;
 import org.jboss.dna.common.i18n.I18n;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.graph.cache.CachePolicy;
@@ -66,8 +64,7 @@ import org.tmatesoft.svn.core.wc.SVNWCUtil;
  * {@link SVNRepository} instance or creating a new instance. This process is controlled entirely by the JavaBean properties of
  * the SVNRepositorySource instance. Like other {@link RepositorySource} classes, instances of SVNRepositorySource can be placed
  * into JNDI and do support the creation of {@link Referenceable JNDI referenceable} objects and resolution of references into
- * SVNRepositorySource.
- * </p>
+ * SVNRepositorySource. </p>
  * 
  * @author Serge Pagop
  */
@@ -88,13 +85,16 @@ public class SVNRepositorySource implements RepositorySource, ObjectFactory {
      */
     protected static final boolean SUPPORTS_SAME_NAME_SIBLINGS = false;
     /**
+     * This source supports creating workspaces.
+     */
+    protected static final boolean SUPPORTS_CREATING_WORKSPACES = false;
+    /**
      * This source supports udpates by default, but each instance may be configured to {@link #setSupportsUpdates(boolean) be
      * read-only or updateable}.
      */
     public static final boolean DEFAULT_SUPPORTS_UPDATES = true;
 
     public static final int DEFAULT_CACHE_TIME_TO_LIVE_IN_SECONDS = 60 * 5; // 5 minutes
-
 
     protected static final String SOURCE_NAME = "sourceName";
     protected static final String DEFAULT_CACHE_POLICY = "defaultCachePolicy";
@@ -112,7 +112,10 @@ public class SVNRepositorySource implements RepositorySource, ObjectFactory {
     private String svnPassword;
     private CachePolicy defaultCachePolicy;
 
-    private final Capabilities capabilities = new Capabilities();
+    private RepositorySourceCapabilities capabilities = new RepositorySourceCapabilities(SUPPORTS_SAME_NAME_SIBLINGS,
+                                                                                         DEFAULT_SUPPORTS_UPDATES,
+                                                                                         SUPPORTS_EVENTS,
+                                                                                         SUPPORTS_CREATING_WORKSPACES);
 
     private transient Context jndiContext;
     private transient RepositoryContext repositoryContext;
@@ -123,7 +126,7 @@ public class SVNRepositorySource implements RepositorySource, ObjectFactory {
      */
     public SVNRepositorySource() {
     }
-    
+
     /**
      * {@inheritDoc}
      * 
@@ -255,7 +258,8 @@ public class SVNRepositorySource implements RepositorySource, ObjectFactory {
      *        content.
      */
     public synchronized void setSupportsUpdates( boolean supportsUpdates ) {
-        capabilities.setSupportsUpdates(supportsUpdates);
+        capabilities = new RepositorySourceCapabilities(capabilities.supportsSameNameSiblings(), supportsUpdates,
+                                                        capabilities.supportsEvents(), capabilities.supportsCreatingWorkspaces());
     }
 
     /**
@@ -303,8 +307,7 @@ public class SVNRepositorySource implements RepositorySource, ObjectFactory {
             }
         }
         boolean supportsUpdates = getSupportsUpdates();
-        return new SVNRepositoryConnection(this.getName(), this.getDefaultCachePolicy(),
-                                           supportsUpdates, this.svnRepository);
+        return new SVNRepositoryConnection(this.getName(), this.getDefaultCachePolicy(), supportsUpdates, this.svnRepository);
     }
 
     protected Context getContext() {
@@ -423,24 +426,6 @@ public class SVNRepositorySource implements RepositorySource, ObjectFactory {
             return source;
         }
         return null;
-    }
-
-    @ThreadSafe
-    protected class Capabilities extends RepositorySourceCapabilities {
-        private final AtomicBoolean supportsUpdates = new AtomicBoolean(DEFAULT_SUPPORTS_UPDATES);
-
-        /*package*/Capabilities() {
-            super(SUPPORTS_SAME_NAME_SIBLINGS, DEFAULT_SUPPORTS_UPDATES, SUPPORTS_EVENTS);
-        }
-
-        /*package*/void setSupportsUpdates( boolean supportsUpdates ) {
-            this.supportsUpdates.set(supportsUpdates);
-        }
-
-        @Override
-        public boolean supportsUpdates() {
-            return this.supportsUpdates.get();
-        }
     }
 
 }

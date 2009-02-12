@@ -48,6 +48,7 @@ public class ReadBlockOfChildrenRequest extends CacheableRequest {
     private static final long serialVersionUID = 1L;
 
     private final Location of;
+    private final String workspaceName;
     private final List<Location> children = new LinkedList<Location>();
     private final int startingAtIndex;
     private final int count;
@@ -60,17 +61,21 @@ public class ReadBlockOfChildrenRequest extends CacheableRequest {
      * an array.
      * 
      * @param of the location of the node whose children are to be read
+     * @param workspaceName the name of the workspace containing the parent
      * @param startingIndex the zero-based index of the first child to be included in the block
      * @param count the maximum number of children that should be included in the block
-     * @throws IllegalArgumentException if the location is null, if <code>startingIndex</code> is negative, or if
-     *         <code>count</count> is less than 1.
+     * @throws IllegalArgumentException if the location or workspace name is null, if <code>startingIndex</code> is negative, or
+     *         if <code>count</count> is less than 1.
      */
     public ReadBlockOfChildrenRequest( Location of,
+                                       String workspaceName,
                                        int startingIndex,
                                        int count ) {
         CheckArg.isNotNull(of, "of");
         CheckArg.isNonNegative(startingIndex, "startingIndex");
         CheckArg.isPositive(count, "count");
+        CheckArg.isNotNull(workspaceName, "workspaceName");
+        this.workspaceName = workspaceName;
         this.of = of;
         this.startingAtIndex = startingIndex;
         this.count = count;
@@ -93,6 +98,15 @@ public class ReadBlockOfChildrenRequest extends CacheableRequest {
      */
     public Location of() {
         return of;
+    }
+
+    /**
+     * Get the name of the workspace in which the parent and children exist.
+     * 
+     * @return the name of the workspace; never null
+     */
+    public String inWorkspace() {
+        return workspaceName;
     }
 
     /**
@@ -225,11 +239,13 @@ public class ReadBlockOfChildrenRequest extends CacheableRequest {
      */
     @Override
     public boolean equals( Object obj ) {
+        if (obj == this) return true;
         if (this.getClass().isInstance(obj)) {
             ReadBlockOfChildrenRequest that = (ReadBlockOfChildrenRequest)obj;
             if (!this.of().equals(that.of())) return false;
             if (this.startingAtIndex() != that.startingAtIndex()) return false;
             if (this.count() != that.count()) return false;
+            if (!this.inWorkspace().equals(that.inWorkspace())) return false;
             return true;
         }
         return false;
@@ -245,9 +261,10 @@ public class ReadBlockOfChildrenRequest extends CacheableRequest {
         Inflector inflector = Inflector.getInstance();
         if (count() == 1) {
             return "read " + inflector.ordinalize(startingAtIndex()) + " thru " + inflector.ordinalize(endingBefore() - 1)
-                   + " children of " + of();
+                   + " children of " + of() + " in the \"" + workspaceName + "\" workspace";
         }
-        return "read " + inflector.ordinalize(startingAtIndex()) + " child of " + of();
+        return "read " + inflector.ordinalize(startingAtIndex()) + " child of " + of() + " in the \"" + workspaceName
+               + "\" workspace";
     }
 
 }

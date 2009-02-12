@@ -46,6 +46,7 @@ public class ReadAllPropertiesRequest extends CacheableRequest implements Iterab
     public static final int UNKNOWN_NUMBER_OF_CHILDREN = -1;
 
     private final Location at;
+    private final String workspaceName;
     private final Map<Name, Property> properties = new HashMap<Name, Property>();
     private int numberOfChildren = UNKNOWN_NUMBER_OF_CHILDREN;
     private Location actualLocation;
@@ -54,10 +55,14 @@ public class ReadAllPropertiesRequest extends CacheableRequest implements Iterab
      * Create a request to read the properties and number of children of a node at the supplied location.
      * 
      * @param at the location of the node to be read
-     * @throws IllegalArgumentException if the location is null
+     * @param workspaceName the name of the workspace containing the node
+     * @throws IllegalArgumentException if the location or workspace name is null
      */
-    public ReadAllPropertiesRequest( Location at ) {
+    public ReadAllPropertiesRequest( Location at,
+                                     String workspaceName ) {
         CheckArg.isNotNull(at, "at");
+        CheckArg.isNotNull(workspaceName, "workspaceName");
+        this.workspaceName = workspaceName;
         this.at = at;
     }
 
@@ -78,6 +83,15 @@ public class ReadAllPropertiesRequest extends CacheableRequest implements Iterab
      */
     public Location at() {
         return at;
+    }
+
+    /**
+     * Get the name of the workspace in which the node exists.
+     * 
+     * @return the name of the workspace; never null
+     */
+    public String inWorkspace() {
+        return workspaceName;
     }
 
     /**
@@ -186,9 +200,11 @@ public class ReadAllPropertiesRequest extends CacheableRequest implements Iterab
      */
     @Override
     public boolean equals( Object obj ) {
+        if (obj == this) return true;
         if (this.getClass().isInstance(obj)) {
             ReadAllPropertiesRequest that = (ReadAllPropertiesRequest)obj;
             if (!this.at().equals(that.at())) return false;
+            if (!this.inWorkspace().equals(that.inWorkspace())) return false;
             return true;
         }
         return false;
@@ -201,7 +217,7 @@ public class ReadAllPropertiesRequest extends CacheableRequest implements Iterab
      */
     @Override
     public String toString() {
-        return "read properties of " + at();
+        return "read properties of " + at() + " in the \"" + workspaceName + "\" workspace";
     }
 
 }

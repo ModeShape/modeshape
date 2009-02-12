@@ -104,7 +104,7 @@ public abstract class WritableConnectorTest extends AbstractConnectorTest {
     }
 
     @Test
-    public void shouldAddChildrenOnRootNode() {
+    public void shouldAddChildrenAndSettingProperties() {
         graph.batch().set("propA").to("valueA").on("/").and().create("/a").with("propB", "valueB").and("propC", "valueC").and().create("/b").with("propD",
                                                                                                                                                   "valueD").and("propE",
                                                                                                                                                                 "valueE").execute();

@@ -35,7 +35,6 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import org.hamcrest.Matcher;
 import org.jboss.dna.common.collection.IsIteratorContaining;
 import org.jboss.dna.connector.federation.contribution.Contribution;
@@ -62,6 +61,7 @@ public class SimpleMergeStrategyTest {
     private List<Contribution> contributions;
     private ExecutionContext context;
     private FederatedNode node;
+    private String workspaceName;
     protected Path parentPath;
 
     @Before
@@ -73,7 +73,8 @@ public class SimpleMergeStrategyTest {
         context.getNamespaceRegistry().register("dna", "http://www.jboss.org/dna/something");
         context.getNamespaceRegistry().register("jcr", "http://www.jcr.org");
         parentPath = context.getValueFactories().getPathFactory().create("/a/b/c");
-        node = new FederatedNode(new Location(parentPath), UUID.randomUUID());
+        workspaceName = "some workspace";
+        node = new FederatedNode(new Location(parentPath), workspaceName);
     }
 
     @Test

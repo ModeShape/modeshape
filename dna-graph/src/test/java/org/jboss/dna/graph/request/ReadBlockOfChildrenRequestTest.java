@@ -27,8 +27,6 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.hamcrest.core.IsSame.sameInstance;
 import static org.junit.Assert.assertThat;
-import org.jboss.dna.graph.request.ReadBlockOfChildrenRequest;
-import org.jboss.dna.graph.request.Request;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -47,27 +45,32 @@ public class ReadBlockOfChildrenRequestTest extends AbstractRequestTest {
 
     @Override
     protected Request createRequest() {
-        return new ReadBlockOfChildrenRequest(validPathLocation1, 2, 10);
+        return new ReadBlockOfChildrenRequest(validPathLocation1, workspace1, 2, 10);
     }
 
     @Test( expected = IllegalArgumentException.class )
     public void shouldNotAllowCreatingRequestWithNullFromLocation() {
-        new ReadBlockOfChildrenRequest(null, 0, 1);
+        new ReadBlockOfChildrenRequest(null, workspace1, 0, 1);
+    }
+
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldNotAllowCreatingRequestWithNullWorkspaceName() {
+        new ReadBlockOfChildrenRequest(validPathLocation1, null, 0, 1);
     }
 
     @Test( expected = IllegalArgumentException.class )
     public void shouldNotAllowCreatingRequestWithNegativeStartingIndex() {
-        new ReadBlockOfChildrenRequest(validPathLocation1, -1, 1);
+        new ReadBlockOfChildrenRequest(validPathLocation1, workspace1, -1, 1);
     }
 
     @Test( expected = IllegalArgumentException.class )
     public void shouldNotAllowCreatingRequestWithNegativeCount() {
-        new ReadBlockOfChildrenRequest(validPathLocation1, 1, -1);
+        new ReadBlockOfChildrenRequest(validPathLocation1, workspace1, 1, -1);
     }
 
     @Test
     public void shouldCreateValidRequestWithValidLocation() {
-        request = new ReadBlockOfChildrenRequest(validPathLocation1, 2, 10);
+        request = new ReadBlockOfChildrenRequest(validPathLocation1, workspace1, 2, 10);
         assertThat(request.of(), is(sameInstance(validPathLocation1)));
         assertThat(request.hasError(), is(false));
         assertThat(request.getError(), is(nullValue()));
@@ -75,29 +78,36 @@ public class ReadBlockOfChildrenRequestTest extends AbstractRequestTest {
 
     @Test
     public void shouldConsiderEqualTwoRequestsWithSameLocations() {
-        request = new ReadBlockOfChildrenRequest(validPathLocation1, 2, 20);
-        ReadBlockOfChildrenRequest request2 = new ReadBlockOfChildrenRequest(validPathLocation1, 2, 20);
+        request = new ReadBlockOfChildrenRequest(validPathLocation1, workspace1, 2, 20);
+        ReadBlockOfChildrenRequest request2 = new ReadBlockOfChildrenRequest(validPathLocation1, new String(workspace1), 2, 20);
         assertThat(request, is(request2));
     }
 
     @Test
     public void shouldConsiderNotEqualTwoRequestsWithDifferentLocations() {
-        request = new ReadBlockOfChildrenRequest(validPathLocation1, 20, 20);
-        ReadBlockOfChildrenRequest request2 = new ReadBlockOfChildrenRequest(validPathLocation2, 2, 20);
+        request = new ReadBlockOfChildrenRequest(validPathLocation1, workspace1, 20, 20);
+        ReadBlockOfChildrenRequest request2 = new ReadBlockOfChildrenRequest(validPathLocation2, workspace1, 2, 20);
+        assertThat(request.equals(request2), is(false));
+    }
+
+    @Test
+    public void shouldConsiderNotEqualTwoRequestsWithDifferentWorkspaceNames() {
+        request = new ReadBlockOfChildrenRequest(validPathLocation1, workspace1, 20, 20);
+        ReadBlockOfChildrenRequest request2 = new ReadBlockOfChildrenRequest(validPathLocation1, workspace2, 2, 20);
         assertThat(request.equals(request2), is(false));
     }
 
     @Test
     public void shouldConsiderNotEqualTwoRequestsWithSameLocationsButDifferentStartingIndexes() {
-        request = new ReadBlockOfChildrenRequest(validPathLocation1, 20, 20);
-        ReadBlockOfChildrenRequest request2 = new ReadBlockOfChildrenRequest(validPathLocation1, 2, 20);
+        request = new ReadBlockOfChildrenRequest(validPathLocation1, workspace1, 20, 20);
+        ReadBlockOfChildrenRequest request2 = new ReadBlockOfChildrenRequest(validPathLocation1, workspace1, 2, 20);
         assertThat(request.equals(request2), is(false));
     }
 
     @Test
     public void shouldConsiderNotEqualTwoRequestsWithSameLocationsButDifferentBlockSizes() {
-        request = new ReadBlockOfChildrenRequest(validPathLocation1, 2, 2);
-        ReadBlockOfChildrenRequest request2 = new ReadBlockOfChildrenRequest(validPathLocation1, 2, 20);
+        request = new ReadBlockOfChildrenRequest(validPathLocation1, workspace1, 2, 2);
+        ReadBlockOfChildrenRequest request2 = new ReadBlockOfChildrenRequest(validPathLocation1, workspace1, 2, 20);
         assertThat(request.equals(request2), is(false));
     }
 }

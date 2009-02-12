@@ -50,17 +50,19 @@ import org.jboss.dna.connector.store.jpa.model.common.NamespaceEntity;
 @Entity
 @Table( name = "DNA_BASIC_CHILDREN" )
 @org.hibernate.annotations.Table( appliesTo = "DNA_BASIC_CHILDREN", indexes = {
-    @Index( name = "CHILDINDEX_INX", columnNames = {"PARENT_UUID", "CHILD_INDEX"} ),
-    @Index( name = "CHILDUUID_INX", columnNames = {"CHILD_UUID"} ),
-    @Index( name = "CHILDNAME_INX", columnNames = {"PARENT_UUID", "CHILD_NAME_NS_ID", "CHILD_NAME_LOCAL", "SNS_INDEX"} )} )
+    @Index( name = "CHILDINDEX_INX", columnNames = {"WORKSPACE_ID", "PARENT_UUID", "CHILD_INDEX"} ),
+    @Index( name = "CHILDUUID_INX", columnNames = {"WORKSPACE_ID", "CHILD_UUID"} ),
+    @Index( name = "CHILDNAME_INX", columnNames = {"WORKSPACE_ID", "PARENT_UUID", "CHILD_NAME_NS_ID", "CHILD_NAME_LOCAL",
+        "SNS_INDEX"} )} )
 @NamedQueries( {
-    @NamedQuery( name = "ChildEntity.findByPathSegment", query = "select child from ChildEntity as child where child.id.parentUuidString = :parentUuidString AND child.childNamespace.id = :ns AND child.childName = :childName AND child.sameNameSiblingIndex = :sns" ),
-    @NamedQuery( name = "ChildEntity.findAllUnderParent", query = "select child from ChildEntity as child where child.id.parentUuidString = :parentUuidString order by child.indexInParent" ),
-    @NamedQuery( name = "ChildEntity.findRangeUnderParent", query = "select child from ChildEntity as child where child.id.parentUuidString = :parentUuidString and child.indexInParent >= :firstIndex and child.indexInParent < :afterIndex order by child.indexInParent" ),
-    @NamedQuery( name = "ChildEntity.findChildrenAfterIndexUnderParent", query = "select child from ChildEntity as child where child.id.parentUuidString = :parentUuidString and child.indexInParent >= :afterIndex order by child.indexInParent" ),
-    @NamedQuery( name = "ChildEntity.findByChildUuid", query = "select child from ChildEntity as child where child.id.childUuidString = :childUuidString" ),
-    @NamedQuery( name = "ChildEntity.findMaximumSnsIndex", query = "select max(child.sameNameSiblingIndex) from ChildEntity as child where child.id.parentUuidString = :parentUuid AND child.childNamespace.id = :ns AND child.childName = :childName" ),
-    @NamedQuery( name = "ChildEntity.findMaximumChildIndex", query = "select max(child.indexInParent) from ChildEntity as child where child.id.parentUuidString = :parentUuid" )} )
+    @NamedQuery( name = "ChildEntity.findByPathSegment", query = "select child from ChildEntity as child where child.id.workspaceId = :workspaceId and child.id.parentUuidString = :parentUuidString AND child.childNamespace.id = :ns AND child.childName = :childName AND child.sameNameSiblingIndex = :sns" ),
+    @NamedQuery( name = "ChildEntity.findAllUnderParent", query = "select child from ChildEntity as child where child.id.workspaceId = :workspaceId and child.id.parentUuidString = :parentUuidString order by child.indexInParent" ),
+    @NamedQuery( name = "ChildEntity.findRangeUnderParent", query = "select child from ChildEntity as child where child.id.workspaceId = :workspaceId and child.id.parentUuidString = :parentUuidString and child.indexInParent >= :firstIndex and child.indexInParent < :afterIndex order by child.indexInParent" ),
+    @NamedQuery( name = "ChildEntity.findChildrenAfterIndexUnderParent", query = "select child from ChildEntity as child where child.id.workspaceId = :workspaceId and child.id.parentUuidString = :parentUuidString and child.indexInParent >= :afterIndex order by child.indexInParent" ),
+    @NamedQuery( name = "ChildEntity.findByChildUuid", query = "select child from ChildEntity as child where child.id.workspaceId = :workspaceId and child.id.childUuidString = :childUuidString" ),
+    @NamedQuery( name = "ChildEntity.findMaximumSnsIndex", query = "select max(child.sameNameSiblingIndex) from ChildEntity as child where child.id.workspaceId = :workspaceId and child.id.parentUuidString = :parentUuid AND child.childNamespace.id = :ns AND child.childName = :childName" ),
+    @NamedQuery( name = "ChildEntity.findMaximumChildIndex", query = "select max(child.indexInParent) from ChildEntity as child where child.id.workspaceId = :workspaceId and child.id.parentUuidString = :parentUuid" ),
+    @NamedQuery( name = "ChildEntity.findInWorkspace", query = "select child from ChildEntity as child where child.id.workspaceId = :workspaceId" )} )
 public class ChildEntity {
 
     @Id
@@ -79,6 +81,13 @@ public class ChildEntity {
 
     @Column( name = "SNS_INDEX", nullable = false, unique = false )
     private int sameNameSiblingIndex;
+
+    /**
+     * Tracks whether this node allows or disallows its children to have the same names (to be same-name-siblings). The model uses
+     * this to know whether it can optimization the database operations when creating, inserting, or removing children.
+     */
+    @Column( name = "ALLOWS_SNS", nullable = false, unique = false )
+    private boolean allowsSameNameChildren;
 
     public ChildEntity() {
     }
@@ -179,6 +188,20 @@ public class ChildEntity {
     }
 
     /**
+     * @return allowsSameNameChildren
+     */
+    public boolean getAllowsSameNameChildren() {
+        return allowsSameNameChildren;
+    }
+
+    /**
+     * @param allowsSameNameChildren Sets allowsSameNameChildren to the specified value.
+     */
+    public void setAllowsSameNameChildren( boolean allowsSameNameChildren ) {
+        this.allowsSameNameChildren = allowsSameNameChildren;
+    }
+
+    /**
      * {@inheritDoc}
      * 
      * @see java.lang.Object#hashCode()
@@ -231,8 +254,11 @@ public class ChildEntity {
                 sb.append(Inflector.getInstance().ordinalize(indexInParent));
                 sb.append(" child of ");
                 sb.append(parentId);
+                sb.append(" in workspace ");
+                sb.append(id.getWorkspaceId());
             } else {
-                sb.append(" is root");
+                sb.append(" is root in workspace ");
+                sb.append(id.getWorkspaceId());
             }
         }
         return sb.toString();
@@ -240,12 +266,14 @@ public class ChildEntity {
 
     @SuppressWarnings( "unchecked" )
     public static void adjustSnsIndexesAndIndexesAfterRemoving( EntityManager entities,
+                                                                Long workspaceId,
                                                                 String uuidParent,
                                                                 String childName,
                                                                 long childNamespaceIndex,
                                                                 int childIndex ) {
         // Decrement the 'indexInParent' index values for all nodes above the previously removed sibling ...
         Query query = entities.createNamedQuery("ChildEntity.findChildrenAfterIndexUnderParent");
+        query.setParameter("workspaceId", workspaceId);
         query.setParameter("parentUuidString", uuidParent);
         query.setParameter("afterIndex", childIndex);
         for (ChildEntity entity : (List<ChildEntity>)query.getResultList()) {

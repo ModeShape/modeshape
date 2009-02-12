@@ -35,6 +35,7 @@ import static org.mockito.Mockito.stub;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -53,10 +54,14 @@ import org.jboss.dna.graph.property.InvalidPathException;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.Property;
+import org.jboss.dna.graph.request.CloneWorkspaceRequest;
 import org.jboss.dna.graph.request.CompositeRequest;
 import org.jboss.dna.graph.request.CopyBranchRequest;
 import org.jboss.dna.graph.request.CreateNodeRequest;
+import org.jboss.dna.graph.request.CreateWorkspaceRequest;
 import org.jboss.dna.graph.request.DeleteBranchRequest;
+import org.jboss.dna.graph.request.DestroyWorkspaceRequest;
+import org.jboss.dna.graph.request.GetWorkspacesRequest;
 import org.jboss.dna.graph.request.MoveBranchRequest;
 import org.jboss.dna.graph.request.ReadAllChildrenRequest;
 import org.jboss.dna.graph.request.ReadAllPropertiesRequest;
@@ -66,6 +71,10 @@ import org.jboss.dna.graph.request.ReadNodeRequest;
 import org.jboss.dna.graph.request.ReadPropertyRequest;
 import org.jboss.dna.graph.request.Request;
 import org.jboss.dna.graph.request.UpdatePropertiesRequest;
+import org.jboss.dna.graph.request.VerifyNodeExistsRequest;
+import org.jboss.dna.graph.request.VerifyWorkspaceRequest;
+import org.jboss.dna.graph.request.CloneWorkspaceRequest.CloneConflictBehavior;
+import org.jboss.dna.graph.request.CreateWorkspaceRequest.CreateConflictBehavior;
 import org.jboss.dna.graph.request.processor.RequestProcessor;
 import org.junit.Before;
 import org.junit.Test;
@@ -161,23 +170,39 @@ public class GraphTest {
 
     protected void assertNextRequestIsMove( Location from,
                                             Location to ) {
-        assertThat(executedRequests.poll(), is((Request)new MoveBranchRequest(from, to)));
+        Request request = executedRequests.poll();
+        assertThat(request, is(instanceOf(MoveBranchRequest.class)));
+        MoveBranchRequest move = (MoveBranchRequest)request;
+        assertThat(move.from(), is(from));
+        assertThat(move.into(), is(to));
     }
 
     protected void assertNextRequestIsCopy( Location from,
                                             Location to ) {
-        assertThat(executedRequests.poll(), is((Request)new CopyBranchRequest(from, to)));
+        Request request = executedRequests.poll();
+        assertThat(request, is(instanceOf(CopyBranchRequest.class)));
+        CopyBranchRequest copy = (CopyBranchRequest)request;
+        assertThat(copy.from(), is(from));
+        assertThat(copy.into(), is(to));
     }
 
     protected void assertNextRequestIsDelete( Location at ) {
-        assertThat(executedRequests.poll(), is((Request)new DeleteBranchRequest(at)));
+        Request request = executedRequests.poll();
+        assertThat(request, is(instanceOf(DeleteBranchRequest.class)));
+        DeleteBranchRequest delete = (DeleteBranchRequest)request;
+        assertThat(delete.at(), is(at));
     }
 
     protected void assertNextRequestIsCreate( Location parent,
                                               String child,
                                               Property... properties ) {
         Name name = context.getValueFactories().getNameFactory().create(child);
-        assertThat(executedRequests.poll(), is((Request)new CreateNodeRequest(parent, name, properties)));
+        Request request = executedRequests.poll();
+        assertThat(request, is(instanceOf(CreateNodeRequest.class)));
+        CreateNodeRequest create = (CreateNodeRequest)request;
+        assertThat(create.under(), is(parent));
+        assertThat(create.named(), is(name));
+        assertThat(create.properties(), hasItems(properties));
     }
 
     protected void assertNextRequestReadProperties( Location at,
@@ -241,6 +266,40 @@ public class GraphTest {
         assertThat(request, is(instanceOf(ReadNodeRequest.class)));
         ReadNodeRequest read = (ReadNodeRequest)request;
         assertThat(read.at(), is(at));
+    }
+
+    protected void assertNextRequestVerifyNodeExists( Location at ) {
+        Request request = executedRequests.poll();
+        assertThat(request, is(instanceOf(VerifyNodeExistsRequest.class)));
+        VerifyNodeExistsRequest read = (VerifyNodeExistsRequest)request;
+        assertThat(read.at(), is(at));
+    }
+
+    protected void assertNextRequestIsGetWorkspaces() {
+        Request request = executedRequests.poll();
+        assertThat(request, is(instanceOf(GetWorkspacesRequest.class)));
+    }
+
+    protected void assertNextRequestIsCreateWorkspace( String workspaceName,
+                                                       CreateConflictBehavior createConflictBehavior ) {
+        Request request = executedRequests.poll();
+        assertThat(request, is(instanceOf(CreateWorkspaceRequest.class)));
+        CreateWorkspaceRequest create = (CreateWorkspaceRequest)request;
+        assertThat(create.desiredNameOfNewWorkspace(), is(workspaceName));
+        assertThat(create.conflictBehavior(), is(createConflictBehavior));
+    }
+
+    protected void assertNextRequestIsCloneWorkspace( String originalWorkspaceName,
+                                                      String workspaceName,
+                                                      CreateConflictBehavior createConflictBehavior,
+                                                      CloneConflictBehavior cloneBehavior ) {
+        Request request = executedRequests.poll();
+        assertThat(request, is(instanceOf(CloneWorkspaceRequest.class)));
+        CloneWorkspaceRequest create = (CloneWorkspaceRequest)request;
+        assertThat(create.nameOfWorkspaceToBeCloned(), is(originalWorkspaceName));
+        assertThat(create.desiredNameOfTargetWorkspace(), is(workspaceName));
+        assertThat(create.targetConflictBehavior(), is(createConflictBehavior));
+        assertThat(create.cloneConflictBehavior(), is(cloneBehavior));
     }
 
     protected void assertNoMoreRequests() {
@@ -827,6 +886,45 @@ public class GraphTest {
     // }
 
     // ----------------------------------------------------------------------------------------------------------------
+    // Workspace-related tests
+    // ----------------------------------------------------------------------------------------------------------------
+
+    @Test
+    public void shouldCreateWorkspaceUsingSpecificName() {
+        graph.createWorkspace().named("something");
+        assertNextRequestIsCreateWorkspace("something", CreateConflictBehavior.DO_NOT_CREATE);
+    }
+
+    @Test
+    public void shouldCreateWorkspaceAlteringNameIfRequired() {
+        graph.createWorkspace().namedSomethingLike("something");
+        assertNextRequestIsCreateWorkspace("something", CreateConflictBehavior.CREATE_WITH_ADJUSTED_NAME);
+    }
+
+    @Test
+    public void shouldCreateWorkspaceByCloningExistingAndUsingSpecificName() {
+        graph.createWorkspace().clonedFrom("original").named("something");
+        assertNextRequestIsCloneWorkspace("original",
+                                          "something",
+                                          CreateConflictBehavior.DO_NOT_CREATE,
+                                          CloneConflictBehavior.DO_NOT_CLONE);
+    }
+
+    @Test
+    public void shouldCreateWorkspaceByCloningExistingAndAlteringNameIfRequired() {
+        graph.createWorkspace().clonedFrom("original").namedSomethingLike("something");
+        assertNextRequestIsCloneWorkspace("original",
+                                          "something",
+                                          CreateConflictBehavior.CREATE_WITH_ADJUSTED_NAME,
+                                          CloneConflictBehavior.DO_NOT_CLONE);
+    }
+
+    @Test
+    public void shouldUseExistingWorkspace() {
+        graph.useWorkspace("something");
+    }
+
+    // ----------------------------------------------------------------------------------------------------------------
     // Implementation of RepositoryConnection and RequestProcessor for tests
     // ----------------------------------------------------------------------------------------------------------------
 
@@ -908,6 +1006,42 @@ public class GraphTest {
             request.setActualLocationOfNode(actualLocationOf(request.on()));
         }
 
+        @Override
+        public void process( VerifyWorkspaceRequest request ) {
+            // Just update the actual location
+            String workspaceName = request.workspaceName();
+            if (workspaceName == null) workspaceName = "default";
+            request.setActualWorkspaceName(workspaceName);
+            request.setActualRootLocation(new Location(context.getValueFactories().getPathFactory().createRootPath()));
+        }
+
+        @Override
+        public void process( CreateWorkspaceRequest request ) {
+            // Just update the actual location
+            String workspaceName = request.desiredNameOfNewWorkspace();
+            if (workspaceName == null) workspaceName = "default";
+            request.setActualWorkspaceName(workspaceName);
+            request.setActualRootLocation(new Location(context.getValueFactories().getPathFactory().createRootPath()));
+        }
+
+        @Override
+        public void process( DestroyWorkspaceRequest request ) {
+        }
+
+        @Override
+        public void process( GetWorkspacesRequest request ) {
+            request.setAvailableWorkspaceNames(Collections.singleton("Test workspace"));
+        }
+
+        @Override
+        public void process( CloneWorkspaceRequest request ) {
+            // Just update the actual location
+            String workspaceName = request.desiredNameOfTargetWorkspace();
+            assert workspaceName != null;
+            request.setActualWorkspaceName(workspaceName);
+            request.setActualRootLocation(new Location(context.getValueFactories().getPathFactory().createRootPath()));
+        }
+
         private Location actualLocationOf( Location location ) {
             // If the location has a path, then use the location
             if (location.hasPath()) return location;
@@ -937,8 +1071,11 @@ public class GraphTest {
                 request.setError(error);
                 return;
             }
-            executedRequests.add(request);
-            ++numberOfExecutions;
+            if (request instanceof VerifyWorkspaceRequest == false) {
+                // We don't want to track the number of verify workspace requests ...
+                executedRequests.add(request);
+                ++numberOfExecutions;
+            }
             processor.process(request);
         }
 

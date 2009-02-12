@@ -33,13 +33,19 @@ import org.jboss.dna.common.i18n.I18n;
 public final class FileSystemI18n {
 
     public static I18n connectorName;
-    public static I18n fileSystemPathDoesNotExist;
-    public static I18n fileSystemPathsDoNotExist;
+    public static I18n workspaceDoesNotExist;
+    public static I18n pathForDefaultWorkspaceDoesNotExist;
+    public static I18n pathForDefaultWorkspaceIsNotDirectory;
+    public static I18n pathForDefaultWorkspaceCannotBeRead;
+    public static I18n pathForPredefinedWorkspaceDoesNotExist;
+    public static I18n pathForPredefinedWorkspaceIsNotDirectory;
+    public static I18n pathForPredefinedWorkspaceCannotBeRead;
     public static I18n propertyIsRequired;
     public static I18n locationInRequestMustHavePath;
     public static I18n sameNameSiblingsAreNotAllowed;
     public static I18n onlyTheDefaultNamespaceIsAllowed;
     public static I18n sourceIsReadOnly;
+    public static I18n unableToCreateWorkspaces;
 
     static {
         try {

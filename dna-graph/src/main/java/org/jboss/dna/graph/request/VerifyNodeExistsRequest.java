@@ -37,16 +37,21 @@ public class VerifyNodeExistsRequest extends CacheableRequest {
     private static final long serialVersionUID = 1L;
 
     private final Location at;
+    private final String workspaceName;
     private Location actualLocation;
 
     /**
      * Create a request to verify the existance and location of a node at the supplied location.
      * 
      * @param at the location of the node to be verified
-     * @throws IllegalArgumentException if the location is null
+     * @param workspaceName the name of the workspace containing the node
+     * @throws IllegalArgumentException if the location or workspace name is null
      */
-    public VerifyNodeExistsRequest( Location at ) {
+    public VerifyNodeExistsRequest( Location at,
+                                    String workspaceName ) {
         CheckArg.isNotNull(at, "at");
+        CheckArg.isNotNull(workspaceName, "workspaceName");
+        this.workspaceName = workspaceName;
         this.at = at;
     }
 
@@ -67,6 +72,15 @@ public class VerifyNodeExistsRequest extends CacheableRequest {
      */
     public Location at() {
         return at;
+    }
+
+    /**
+     * Get the name of the workspace in which the node exists.
+     * 
+     * @return the name of the workspace; never null
+     */
+    public String inWorkspace() {
+        return workspaceName;
     }
 
     /**
@@ -116,9 +130,11 @@ public class VerifyNodeExistsRequest extends CacheableRequest {
      */
     @Override
     public boolean equals( Object obj ) {
+        if (obj == this) return true;
         if (this.getClass().isInstance(obj)) {
             VerifyNodeExistsRequest that = (VerifyNodeExistsRequest)obj;
             if (!this.at().equals(that.at())) return false;
+            if (!this.inWorkspace().equals(that.inWorkspace())) return false;
             return true;
         }
         return false;
@@ -131,7 +147,6 @@ public class VerifyNodeExistsRequest extends CacheableRequest {
      */
     @Override
     public String toString() {
-        return "verify node exists at " + at();
+        return "verify node exists at " + at() + " in the \"" + workspaceName + "\" workspace";
     }
-
 }

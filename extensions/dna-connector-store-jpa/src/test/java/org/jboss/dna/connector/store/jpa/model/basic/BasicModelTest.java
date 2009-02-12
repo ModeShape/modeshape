@@ -40,13 +40,6 @@ import org.hibernate.ejb.Ejb3Configuration;
 import org.jboss.dna.common.util.SecureHash;
 import org.jboss.dna.common.util.StringUtil;
 import org.jboss.dna.connector.store.jpa.JpaConnectorI18n;
-import org.jboss.dna.connector.store.jpa.model.basic.BasicModel;
-import org.jboss.dna.connector.store.jpa.model.basic.ChildEntity;
-import org.jboss.dna.connector.store.jpa.model.basic.ChildId;
-import org.jboss.dna.connector.store.jpa.model.basic.LargeValueEntity;
-import org.jboss.dna.connector.store.jpa.model.basic.LargeValueId;
-import org.jboss.dna.connector.store.jpa.model.basic.NodeId;
-import org.jboss.dna.connector.store.jpa.model.basic.PropertiesEntity;
 import org.jboss.dna.connector.store.jpa.model.common.NamespaceEntity;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.property.PropertyType;
@@ -137,7 +130,10 @@ public class BasicModelTest {
                                                              context,
                                                              manager,
                                                              UUID.randomUUID(),
+                                                             "default workspace",
+                                                             new String[] {"default workspace", "workspace1"},
                                                              100,
+                                                             true,
                                                              false,
                                                              false);
         assertThat(proc, is(notNullValue()));
@@ -146,7 +142,8 @@ public class BasicModelTest {
     @Test
     public void shouldPersistPropertyEntityWithCompressedFlagAndNoChildren() {
         startEntityManager();
-        NodeId nodeId = new NodeId(UUID.randomUUID().toString());
+        Long workspaceId = 10L;
+        NodeId nodeId = new NodeId(workspaceId, UUID.randomUUID().toString());
         PropertiesEntity prop = new PropertiesEntity();
         prop.setCompressed(true);
         prop.setData("Hello, World".getBytes());
@@ -175,7 +172,8 @@ public class BasicModelTest {
     @Test
     public void shouldPersistPropertyEntityWithUncompressedFlagAndNoChildren() {
         startEntityManager();
-        NodeId nodeId = new NodeId(UUID.randomUUID().toString());
+        Long workspaceId = 10L;
+        NodeId nodeId = new NodeId(workspaceId, UUID.randomUUID().toString());
         PropertiesEntity prop = new PropertiesEntity();
         prop.setData("Hello, World".getBytes());
         prop.setId(nodeId);
@@ -307,12 +305,13 @@ public class BasicModelTest {
     @Test
     public void shouldPersistChildEntity() {
         startEntityManager();
+        Long workspaceId = 10L;
         UUID parentId = UUID.randomUUID();
 
         // Create UUIDs for several children ...
-        ChildId childId1 = new ChildId(parentId.toString(), UUID.randomUUID().toString());
-        ChildId childId2 = new ChildId(parentId.toString(), UUID.randomUUID().toString());
-        ChildId childId3 = new ChildId(parentId.toString(), UUID.randomUUID().toString());
+        ChildId childId1 = new ChildId(workspaceId, parentId.toString(), UUID.randomUUID().toString());
+        ChildId childId2 = new ChildId(workspaceId, parentId.toString(), UUID.randomUUID().toString());
+        ChildId childId3 = new ChildId(workspaceId, parentId.toString(), UUID.randomUUID().toString());
         assertThat(childId1, is(not(childId2)));
         assertThat(childId1, is(not(childId3)));
         assertThat(childId2, is(not(childId3)));

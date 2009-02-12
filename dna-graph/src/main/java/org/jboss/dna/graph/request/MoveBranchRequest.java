@@ -42,6 +42,7 @@ public class MoveBranchRequest extends Request {
 
     private final Location from;
     private final Location into;
+    private final String workspaceName;
     private final NodeConflictBehavior conflictBehavior;
     private Location actualOldLocation;
     private Location actualNewLocation;
@@ -51,11 +52,13 @@ public class MoveBranchRequest extends Request {
      * 
      * @param from the location of the top node in the existing branch that is to be moved
      * @param into the location of the existing node into which the branch should be moved
-     * @throws IllegalArgumentException if <code>from</code> or <code>into</code> are null
+     * @param workspaceName the name of the workspace
+     * @throws IllegalArgumentException if any of the parameters are null
      */
     public MoveBranchRequest( Location from,
-                              Location into ) {
-        this(from, into, DEFAULT_CONFLICT_BEHAVIOR);
+                              Location into,
+                              String workspaceName ) {
+        this(from, into, workspaceName, DEFAULT_CONFLICT_BEHAVIOR);
     }
 
     /**
@@ -63,18 +66,22 @@ public class MoveBranchRequest extends Request {
      * 
      * @param from the location of the top node in the existing branch that is to be moved
      * @param into the location of the existing node into which the branch should be moved
+     * @param workspaceName the name of the workspace
      * @param conflictBehavior the expected behavior if an equivalently-named child already exists at the <code>into</code>
      *        location
      * @throws IllegalArgumentException if any of the parameters are null
      */
     public MoveBranchRequest( Location from,
                               Location into,
+                              String workspaceName,
                               NodeConflictBehavior conflictBehavior ) {
         CheckArg.isNotNull(from, "from");
         CheckArg.isNotNull(into, "into");
+        CheckArg.isNotNull(workspaceName, "workspaceName");
         CheckArg.isNotNull(conflictBehavior, "conflictBehavior");
         this.from = from;
         this.into = into;
+        this.workspaceName = workspaceName;
         this.conflictBehavior = conflictBehavior;
     }
 
@@ -94,6 +101,15 @@ public class MoveBranchRequest extends Request {
      */
     public Location into() {
         return into;
+    }
+
+    /**
+     * Get the name of the workspace in which the branch exists.
+     * 
+     * @return the name of the workspace containing the branch; never null
+     */
+    public String inWorkspace() {
+        return workspaceName;
     }
 
     /**
@@ -145,7 +161,7 @@ public class MoveBranchRequest extends Request {
      * processing the request, and the actual location must have a {@link Location#getPath() path}.
      * 
      * @param oldLocation the actual location of the node before being renamed
-     * @param newLocation the actual location of the node after being renamed
+     * @param newLocation the actual location of the new copy of the node
      * @throws IllegalArgumentException if the either location is null, if the old location does not represent the
      *         {@link Location#isSame(Location) same location} as the {@link #from() from location}, if the new location does not
      *         represent the {@link Location#isSame(Location) same location} as the {@link #into() into location}, or if the
@@ -195,11 +211,13 @@ public class MoveBranchRequest extends Request {
      */
     @Override
     public boolean equals( Object obj ) {
+        if (obj == this) return true;
         if (this.getClass().isInstance(obj)) {
             MoveBranchRequest that = (MoveBranchRequest)obj;
             if (!this.from().equals(that.from())) return false;
             if (!this.into().equals(that.into())) return false;
             if (!this.conflictBehavior().equals(that.conflictBehavior())) return false;
+            if (!this.workspaceName.equals(that.workspaceName)) return false;
             return true;
         }
         return false;
@@ -212,6 +230,6 @@ public class MoveBranchRequest extends Request {
      */
     @Override
     public String toString() {
-        return "move branch " + from() + " into " + into();
+        return "move branch " + from() + " in the \"" + workspaceName + "\" workspace into " + into();
     }
 }

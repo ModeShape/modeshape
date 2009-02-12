@@ -21,31 +21,24 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.jboss.dna.connector.federation.executor;
+package org.jboss.dna.connector.federation;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import net.jcip.annotations.NotThreadSafe;
 import org.jboss.dna.common.i18n.I18n;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.common.util.Logger;
-import org.jboss.dna.connector.federation.FederationI18n;
-import org.jboss.dna.connector.federation.Projection;
 import org.jboss.dna.connector.federation.contribution.Contribution;
 import org.jboss.dna.connector.federation.merge.FederatedNode;
 import org.jboss.dna.connector.federation.merge.MergePlan;
-import org.jboss.dna.connector.federation.merge.strategy.MergeStrategy;
-import org.jboss.dna.connector.federation.merge.strategy.OneContributionMergeStrategy;
-import org.jboss.dna.connector.federation.merge.strategy.SimpleMergeStrategy;
 import org.jboss.dna.graph.DnaLexicon;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.Location;
@@ -61,125 +54,64 @@ import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.PathFactory;
 import org.jboss.dna.graph.property.PathNotFoundException;
 import org.jboss.dna.graph.property.Property;
+import org.jboss.dna.graph.request.CloneWorkspaceRequest;
 import org.jboss.dna.graph.request.CompositeRequest;
 import org.jboss.dna.graph.request.CopyBranchRequest;
 import org.jboss.dna.graph.request.CreateNodeRequest;
+import org.jboss.dna.graph.request.CreateWorkspaceRequest;
 import org.jboss.dna.graph.request.DeleteBranchRequest;
+import org.jboss.dna.graph.request.DestroyWorkspaceRequest;
+import org.jboss.dna.graph.request.GetWorkspacesRequest;
+import org.jboss.dna.graph.request.InvalidWorkspaceException;
 import org.jboss.dna.graph.request.MoveBranchRequest;
 import org.jboss.dna.graph.request.ReadAllChildrenRequest;
 import org.jboss.dna.graph.request.ReadAllPropertiesRequest;
 import org.jboss.dna.graph.request.ReadNodeRequest;
 import org.jboss.dna.graph.request.Request;
 import org.jboss.dna.graph.request.UpdatePropertiesRequest;
+import org.jboss.dna.graph.request.VerifyWorkspaceRequest;
 import org.jboss.dna.graph.request.processor.RequestProcessor;
 
 /**
  * @author Randall Hauch
  */
 @NotThreadSafe
-public class FederatingCommandExecutor extends RequestProcessor {
+public class FederatingRequestProcessor extends RequestProcessor {
 
-    private final CachePolicy defaultCachePolicy;
-    private final Projection cacheProjection;
-    private final List<Projection> sourceProjections;
-    private final Set<String> sourceNames;
+    private final Map<String, FederatedWorkspace> workspaces;
+    private final FederatedWorkspace defaultWorkspace;
     private final RepositoryConnectionFactory connectionFactory;
-    private MergeStrategy mergingStrategy;
     /** The set of all connections, including the cache connection */
     private final Map<String, RepositoryConnection> connectionsBySourceName;
-    /** A direct reference to the cache connection */
-    private RepositoryConnection cacheConnection;
     private Logger logger;
 
     /**
-     * Create a command executor that federates (merges) the information from multiple sources described by the source
-     * projections. The resulting command executor does not first consult a cache for the merged information; if a cache is
-     * desired, see
-     * {@link #FederatingCommandExecutor(ExecutionContext, String, Projection, CachePolicy, List, RepositoryConnectionFactory)
-     * constructor} that takes a {@link Projection cache projection}.
+     * Create a command executor that federates (merges) the information from multiple sources described by the source projections
+     * for the particular workspace specified by the request(s). The request processor will use the {@link Projection cache
+     * projection} of each {@link FederatedWorkspace workspace} to identify the {@link Projection#getSourceName() repository
+     * source} for the cache as well as the {@link Projection#getRules() rules} for how the paths are mapped in the cache. This
+     * cache will be consulted first for the requested information, and will be kept up to date as changes are made to the
+     * federated information.
      * 
      * @param context the execution context in which the executor will be run; may not be null
      * @param sourceName the name of the {@link RepositorySource} that is making use of this executor; may not be null or empty
-     * @param sourceProjections the source projections; may not be null
+     * @param workspaces the configuration for each workspace, keyed by workspace name; may not be null
+     * @param defaultWorkspace the default workspace; null if there is no default
      * @param connectionFactory the factory for {@link RepositoryConnection} instances
      */
-    public FederatingCommandExecutor( ExecutionContext context,
-                                      String sourceName,
-                                      List<Projection> sourceProjections,
-                                      RepositoryConnectionFactory connectionFactory ) {
-        this(context, sourceName, null, null, sourceProjections, connectionFactory);
-    }
-
-    /**
-     * Create a command executor that federates (merges) the information from multiple sources described by the source
-     * projections. The resulting command executor will use the supplied {@link Projection cache projection} to identify the
-     * {@link Projection#getSourceName() repository source} for the cache as well as the {@link Projection#getRules() rules} for
-     * how the paths are mapped in the cache. This cache will be consulted first for the requested information, and will be kept
-     * up to date as changes are made to the federated information.
-     * 
-     * @param context the execution context in which the executor will be run; may not be null
-     * @param sourceName the name of the {@link RepositorySource} that is making use of this executor; may not be null or empty
-     * @param cacheProjection the projection used for the cached information; may be null if there is no cache
-     * @param defaultCachePolicy the default caching policy that outlines the length of time that information should be cached, or
-     *        null if there is no cache or no specific cache policy
-     * @param sourceProjections the source projections; may not be null
-     * @param connectionFactory the factory for {@link RepositoryConnection} instances
-     */
-    public FederatingCommandExecutor( ExecutionContext context,
-                                      String sourceName,
-                                      Projection cacheProjection,
-                                      CachePolicy defaultCachePolicy,
-                                      List<Projection> sourceProjections,
-                                      RepositoryConnectionFactory connectionFactory ) {
+    public FederatingRequestProcessor( ExecutionContext context,
+                                       String sourceName,
+                                       Map<String, FederatedWorkspace> workspaces,
+                                       FederatedWorkspace defaultWorkspace,
+                                       RepositoryConnectionFactory connectionFactory ) {
         super(sourceName, context);
-        CheckArg.isNotNull(sourceProjections, "sourceProjections");
+        CheckArg.isNotEmpty(workspaces, "workspaces");
         CheckArg.isNotNull(connectionFactory, "connectionFactory");
-        assert cacheProjection != null ? defaultCachePolicy != null : defaultCachePolicy == null;
-        this.cacheProjection = cacheProjection;
-        this.defaultCachePolicy = defaultCachePolicy;
-        this.sourceProjections = sourceProjections;
+        this.workspaces = workspaces;
         this.connectionFactory = connectionFactory;
         this.logger = context.getLogger(getClass());
         this.connectionsBySourceName = new HashMap<String, RepositoryConnection>();
-        this.sourceNames = new HashSet<String>();
-        for (Projection projection : this.sourceProjections) {
-            this.sourceNames.add(projection.getSourceName());
-        }
-        setMergingStrategy(null);
-    }
-
-    /**
-     * @param mergingStrategy Sets mergingStrategy to the specified value.
-     */
-    public void setMergingStrategy( MergeStrategy mergingStrategy ) {
-        if (mergingStrategy != null) {
-            this.mergingStrategy = mergingStrategy;
-        } else {
-            if (this.sourceProjections.size() == 1 && this.sourceProjections.get(0).isSimple()) {
-                this.mergingStrategy = new OneContributionMergeStrategy();
-            } else {
-                this.mergingStrategy = new SimpleMergeStrategy();
-            }
-        }
-        assert this.mergingStrategy != null;
-    }
-
-    /**
-     * Get an unmodifiable list of the immutable source projections.
-     * 
-     * @return the set of projections used as sources; never null
-     */
-    public List<Projection> getSourceProjections() {
-        return Collections.unmodifiableList(sourceProjections);
-    }
-
-    /**
-     * Get the projection defining the cache.
-     * 
-     * @return the cache projection
-     */
-    public Projection getCacheProjection() {
-        return cacheProjection;
+        this.defaultWorkspace = defaultWorkspace; // may be null
     }
 
     protected DateTime getCurrentTimeInUtc() {
@@ -206,20 +138,11 @@ public class FederatingCommandExecutor extends RequestProcessor {
                 }
             }
             connectionsBySourceName.clear();
-            try {
-                if (this.cacheConnection != null) this.cacheConnection.close();
-            } finally {
-                this.cacheConnection = null;
-            }
         }
     }
 
-    protected RepositoryConnection getConnectionToCache() throws RepositorySourceException {
-        if (this.cacheConnection == null) {
-            this.cacheConnection = getConnection(this.cacheProjection);
-        }
-        assert this.cacheConnection != null;
-        return this.cacheConnection;
+    protected RepositoryConnection getConnectionToCacheFor( FederatedWorkspace workspace ) throws RepositorySourceException {
+        return getConnection(workspace.getCacheProjection());
     }
 
     protected RepositoryConnection getConnection( Projection projection ) throws RepositorySourceException {
@@ -237,13 +160,41 @@ public class FederatingCommandExecutor extends RequestProcessor {
     }
 
     /**
+     * Utility to obtain the federated workspace referenced by the request. This method supports using the default workspace if
+     * the workspace name is null. If no such workspace, the request is marked with an appropriate error.
+     * 
+     * @param request the request; may not be null
+     * @param workspaceName the name of the workspace; may be null if the default workspace should be used
+     * @return the federated workspace, or null if none was found
+     */
+    protected FederatedWorkspace getWorkspace( Request request,
+                                               String workspaceName ) {
+        FederatedWorkspace workspace = null;
+        if (workspaceName == null) {
+            if (defaultWorkspace != null) return defaultWorkspace;
+            // There is no default, so record the error ...
+            String msg = FederationI18n.noDefaultWorkspace.text(getSourceName());
+            request.setError(new InvalidWorkspaceException(msg));
+        }
+        workspace = workspaces.get(workspaceName);
+        if (workspace == null) {
+            // There is no workspace with this name, so record an error ...
+            String msg = FederationI18n.workspaceDoesNotExist.text(getSourceName(), workspaceName);
+            request.setError(new InvalidWorkspaceException(msg));
+        }
+        return workspace;
+    }
+
+    /**
      * {@inheritDoc}
      * 
      * @see org.jboss.dna.graph.request.processor.RequestProcessor#process(org.jboss.dna.graph.request.ReadAllChildrenRequest)
      */
     @Override
     public void process( ReadAllChildrenRequest request ) {
-        ReadNodeRequest nodeInfo = getNode(request.of());
+        FederatedWorkspace workspace = getWorkspace(request, request.inWorkspace());
+        if (workspace == null) return;
+        ReadNodeRequest nodeInfo = getNode(request.of(), workspace);
         if (nodeInfo.hasError()) return;
         for (Location child : nodeInfo.getChildren()) {
             request.addChild(child);
@@ -258,7 +209,9 @@ public class FederatingCommandExecutor extends RequestProcessor {
      */
     @Override
     public void process( ReadAllPropertiesRequest request ) {
-        ReadNodeRequest nodeInfo = getNode(request.at());
+        FederatedWorkspace workspace = getWorkspace(request, request.inWorkspace());
+        if (workspace == null) return;
+        ReadNodeRequest nodeInfo = getNode(request.at(), workspace);
         if (nodeInfo.hasError()) return;
         for (Property property : nodeInfo.getProperties()) {
             request.addProperty(property);
@@ -273,7 +226,9 @@ public class FederatingCommandExecutor extends RequestProcessor {
      */
     @Override
     public void process( ReadNodeRequest request ) {
-        ReadNodeRequest nodeInfo = getNode(request.at());
+        FederatedWorkspace workspace = getWorkspace(request, request.inWorkspace());
+        if (workspace == null) return;
+        ReadNodeRequest nodeInfo = getNode(request.at(), workspace);
         if (nodeInfo.hasError()) return;
         for (Property property : nodeInfo.getProperties()) {
             request.addProperty(property);
@@ -335,17 +290,77 @@ public class FederatingCommandExecutor extends RequestProcessor {
     }
 
     /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.request.processor.RequestProcessor#process(org.jboss.dna.graph.request.VerifyWorkspaceRequest)
+     */
+    @Override
+    public void process( VerifyWorkspaceRequest request ) {
+        FederatedWorkspace workspace = getWorkspace(request, request.workspaceName());
+        if (workspace != null) {
+            request.setActualWorkspaceName(workspace.getName());
+            Location root = new Location(getExecutionContext().getValueFactories().getPathFactory().createRootPath());
+            ReadNodeRequest nodeInfo = getNode(root, workspace);
+            if (nodeInfo.hasError()) return;
+            request.setActualRootLocation(nodeInfo.getActualLocationOfNode());
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.request.processor.RequestProcessor#process(org.jboss.dna.graph.request.GetWorkspacesRequest)
+     */
+    @Override
+    public void process( GetWorkspacesRequest request ) {
+        request.setAvailableWorkspaceNames(workspaces.keySet());
+        super.setCacheableInfo(request);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.request.processor.RequestProcessor#process(org.jboss.dna.graph.request.CreateWorkspaceRequest)
+     */
+    @Override
+    public void process( CreateWorkspaceRequest request ) {
+        throw new UnsupportedOperationException();
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.request.processor.RequestProcessor#process(org.jboss.dna.graph.request.CloneWorkspaceRequest)
+     */
+    @Override
+    public void process( CloneWorkspaceRequest request ) {
+        throw new UnsupportedOperationException();
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.request.processor.RequestProcessor#process(org.jboss.dna.graph.request.DestroyWorkspaceRequest)
+     */
+    @Override
+    public void process( DestroyWorkspaceRequest request ) {
+        throw new UnsupportedOperationException();
+    }
+
+    /**
      * Get the node information from the underlying sources or, if possible, from the cache.
      * 
      * @param location the location of the node to be returned
+     * @param workspace the federated workspace configuration; may be null
      * @return the node information
      * @throws RepositorySourceException
      */
-    protected ReadNodeRequest getNode( Location location ) throws RepositorySourceException {
+    protected ReadNodeRequest getNode( Location location,
+                                       FederatedWorkspace workspace ) throws RepositorySourceException {
         // Check the cache first ...
         final ExecutionContext context = getExecutionContext();
-        RepositoryConnection cacheConnection = getConnectionToCache();
-        ReadNodeRequest fromCache = new ReadNodeRequest(location);
+        RepositoryConnection cacheConnection = getConnectionToCacheFor(workspace);
+        ReadNodeRequest fromCache = new ReadNodeRequest(location, workspace.getCacheProjection().getWorkspaceName());
         cacheConnection.execute(context, fromCache);
 
         // Look at the cache results from the cache for problems, or if found a plan in the cache look
@@ -371,8 +386,9 @@ public class FederatingCommandExecutor extends RequestProcessor {
                     Path pathToLoad = ancestor;
                     while (!pathToLoad.equals(lowestExistingAncestor)) {
                         Location locationToLoad = new Location(pathToLoad);
-                        loadContributionsFromSources(locationToLoad, null, contributions); // sourceNames may be null or empty
-                        FederatedNode mergedNode = createFederatedNode(locationToLoad, contributions, true);
+                        loadContributionsFromSources(locationToLoad, workspace, null, contributions); // sourceNames may be
+                        // null or empty
+                        FederatedNode mergedNode = createFederatedNode(locationToLoad, workspace, contributions, true);
                         if (mergedNode == null) {
                             // No source had a contribution ...
                             I18n msg = FederationI18n.nodeDoesNotExistAtPath;
@@ -397,7 +413,7 @@ public class FederatingCommandExecutor extends RequestProcessor {
                 if (mergePlan.isExpired(now)) {
                     // It is still valid, so check whether any contribution is from a non-existant projection ...
                     for (Contribution contribution : mergePlan) {
-                        if (!this.sourceNames.contains(contribution.getSourceName())) {
+                        if (!workspace.contains(contribution.getSourceName(), contribution.getWorkspaceName())) {
                             // TODO: Record that the cached contribution is from a source that is no longer in this repository
                         }
                     }
@@ -422,8 +438,8 @@ public class FederatingCommandExecutor extends RequestProcessor {
         // Get the contributions from the sources given their names ...
         location = fromCache.getActualLocationOfNode();
         if (location == null) location = fromCache.at(); // not yet in the cache
-        loadContributionsFromSources(location, sourceNames, contributions); // sourceNames may be null or empty
-        FederatedNode mergedNode = createFederatedNode(location, contributions, true);
+        loadContributionsFromSources(location, workspace, sourceNames, contributions); // sourceNames may be null or empty
+        FederatedNode mergedNode = createFederatedNode(location, workspace, contributions, true);
         if (mergedNode == null) {
             // No source had a contribution ...
             if (location.hasPath()) {
@@ -440,6 +456,7 @@ public class FederatingCommandExecutor extends RequestProcessor {
     }
 
     protected FederatedNode createFederatedNode( Location location,
+                                                 FederatedWorkspace federatedWorkspace,
                                                  List<Contribution> contributions,
                                                  boolean updateCache ) throws RepositorySourceException {
         assert location != null;
@@ -465,30 +482,17 @@ public class FederatingCommandExecutor extends RequestProcessor {
         // Create the node, and use the existing UUID if one is found in the cache ...
         ExecutionContext context = getExecutionContext();
         assert context != null;
-        UUID uuid = null;
-        Property uuidProperty = location.getIdProperty(DnaLexicon.UUID);
-        // If the actual location has no UUID identification property ...
-        if (uuidProperty == null || uuidProperty.isEmpty()) {
-            uuid = context.getValueFactories().getUuidFactory().create();
-            uuidProperty = context.getPropertyFactory().create(DnaLexicon.UUID, uuid);
-            // Replace the actual location with one that includes the new UUID property ...
-            location = location.with(uuidProperty);
-        } else {
-            assert uuidProperty.isEmpty() == false;
-            uuid = context.getValueFactories().getUuidFactory().create(uuidProperty.getValues().next());
-        }
-        assert uuid != null;
-        FederatedNode mergedNode = new FederatedNode(location, uuid);
+        FederatedNode mergedNode = new FederatedNode(location, federatedWorkspace.getName());
 
         // Merge the results into a single set of results ...
         assert contributions.size() > 0;
-        mergingStrategy.merge(mergedNode, contributions, context);
+        federatedWorkspace.getMergingStrategy().merge(mergedNode, contributions, context);
         if (mergedNode.getCachePolicy() == null) {
-            mergedNode.setCachePolicy(defaultCachePolicy);
+            mergedNode.setCachePolicy(federatedWorkspace.getCachePolicy());
         }
         if (updateCache) {
             // Place the results into the cache ...
-            updateCache(mergedNode);
+            updateCache(federatedWorkspace, mergedNode);
         }
         // And return the results ...
         return mergedNode;
@@ -499,42 +503,60 @@ public class FederatingCommandExecutor extends RequestProcessor {
      * always obtains the information from the sources and does not use or update the cache.
      * 
      * @param location the location of the node that is to be loaded
+     * @param federatedWorkspace the federated workspace
      * @param sourceNames the names of the sources from which contributions are to be loaded; may be empty or null if all
      *        contributions from all sources are to be loaded
      * @param contributions the list into which the contributions are to be placed
      * @throws RepositorySourceException
      */
     protected void loadContributionsFromSources( Location location,
+                                                 FederatedWorkspace federatedWorkspace,
                                                  Set<String> sourceNames,
                                                  List<Contribution> contributions ) throws RepositorySourceException {
         // At this point, there is no merge plan, so read information from the sources ...
         final ExecutionContext context = getExecutionContext();
         final PathFactory pathFactory = context.getValueFactories().getPathFactory();
 
+        CachePolicy cachePolicy = federatedWorkspace.getCachePolicy();
         // If the location has no path, then we have to submit a request to ALL sources ...
         if (!location.hasPath()) {
-            for (Projection projection : this.sourceProjections) {
+            for (Projection projection : federatedWorkspace.getSourceProjections()) {
                 final String source = projection.getSourceName();
+                final String workspace = projection.getSourceName();
                 if (sourceNames != null && !sourceNames.contains(source)) continue;
                 final RepositoryConnection sourceConnection = getConnection(projection);
                 if (sourceConnection == null) continue; // No source exists by this name
-                // Get the cached information ...
-                CachePolicy cachePolicy = sourceConnection.getDefaultCachePolicy();
-                if (cachePolicy == null) cachePolicy = this.defaultCachePolicy;
-                DateTime expirationTime = null;
-                if (cachePolicy != null) {
-                    expirationTime = getCurrentTimeInUtc().plus(cachePolicy.getTimeToLive(), TimeUnit.MILLISECONDS);
-                }
                 // Submit the request ...
-                ReadNodeRequest request = new ReadNodeRequest(location);
+                ReadNodeRequest request = new ReadNodeRequest(location, federatedWorkspace.getName());
                 sourceConnection.execute(context, request);
                 if (request.hasError()) continue;
-                DateTime expTime = request.getCachePolicy() == null ? expirationTime : getCurrentTimeInUtc().plus(request.getCachePolicy().getTimeToLive(),
-                                                                                                                  TimeUnit.MILLISECONDS);
+
+                // Figure out how long we can cache this contribution ...
+                long minimumTimeToLive = Long.MAX_VALUE;
+                if (cachePolicy != null) {
+                    minimumTimeToLive = Math.min(minimumTimeToLive, cachePolicy.getTimeToLive());
+                }
+                CachePolicy requestCachePolicy = request.getCachePolicy();
+                if (requestCachePolicy != null) {
+                    minimumTimeToLive = Math.min(minimumTimeToLive, requestCachePolicy.getTimeToLive());
+                } else {
+                    // See if the source has a default policy ...
+                    CachePolicy sourceCachePolicy = sourceConnection.getDefaultCachePolicy();
+                    if (sourceCachePolicy != null) {
+                        minimumTimeToLive = Math.min(minimumTimeToLive, sourceCachePolicy.getTimeToLive());
+                    }
+                }
+                // The expiration time should be the smallest of the minimum TTL values ...
+                DateTime expirationTime = null;
+                if (minimumTimeToLive < Long.MAX_VALUE) {
+                    expirationTime = getCurrentTimeInUtc().plus(minimumTimeToLive, TimeUnit.MILLISECONDS);
+                }
+
                 // Convert the locations of the children (relative to the source) to be relative to this node
                 Contribution contribution = Contribution.create(source,
+                                                                workspace,
                                                                 request.getActualLocationOfNode(),
-                                                                expTime,
+                                                                expirationTime,
                                                                 request.getProperties(),
                                                                 request.getChildren());
                 contributions.add(contribution);
@@ -543,14 +565,13 @@ public class FederatingCommandExecutor extends RequestProcessor {
 
         // Otherwise, we can do it by path and projections ...
         Path path = location.getPath();
-        for (Projection projection : this.sourceProjections) {
+        for (Projection projection : federatedWorkspace.getSourceProjections()) {
             final String source = projection.getSourceName();
+            final String workspace = projection.getWorkspaceName();
             if (sourceNames != null && !sourceNames.contains(source)) continue;
             final RepositoryConnection sourceConnection = getConnection(projection);
             if (sourceConnection == null) continue; // No source exists by this name
             // Get the cached information ...
-            CachePolicy cachePolicy = sourceConnection.getDefaultCachePolicy();
-            if (cachePolicy == null) cachePolicy = this.defaultCachePolicy;
             DateTime expirationTime = null;
             if (cachePolicy != null) {
                 expirationTime = getCurrentTimeInUtc().plus(cachePolicy.getTimeToLive(), TimeUnit.MILLISECONDS);
@@ -571,7 +592,7 @@ public class FederatingCommandExecutor extends RequestProcessor {
                         Path topLevelPath = topLevelPaths.iterator().next();
                         if (path.isAncestorOf(topLevelPath)) {
                             Location child = new Location(topLevelPath);
-                            contribution = Contribution.createPlaceholder(source, input, expirationTime, child);
+                            contribution = Contribution.createPlaceholder(source, workspace, input, expirationTime, child);
                         }
                         break;
                     }
@@ -584,11 +605,11 @@ public class FederatingCommandExecutor extends RequestProcessor {
                             }
                         }
                         if (children.size() > 0) {
-                            contribution = Contribution.createPlaceholder(source, input, expirationTime, children);
+                            contribution = Contribution.createPlaceholder(source, workspace, input, expirationTime, children);
                         }
                     }
                 }
-                if (contribution == null) contribution = Contribution.create(source, expirationTime);
+                if (contribution == null) contribution = Contribution.create(source, workspace, expirationTime);
                 contributions.add(contribution);
             } else {
                 // There is at least one (real) contribution ...
@@ -597,32 +618,78 @@ public class FederatingCommandExecutor extends RequestProcessor {
                 final int numPaths = pathsInSource.size();
                 if (numPaths == 1) {
                     Path pathInSource = pathsInSource.iterator().next();
-                    ReadNodeRequest fromSource = new ReadNodeRequest(new Location(pathInSource));
+                    ReadNodeRequest fromSource = new ReadNodeRequest(new Location(pathInSource), workspace);
                     sourceConnection.execute(getExecutionContext(), fromSource);
                     if (!fromSource.hasError()) {
                         Collection<Property> properties = fromSource.getProperties();
                         List<Location> children = fromSource.getChildren();
-                        DateTime expTime = fromSource.getCachePolicy() == null ? expirationTime : getCurrentTimeInUtc().plus(fromSource.getCachePolicy().getTimeToLive(),
-                                                                                                                             TimeUnit.MILLISECONDS);
+
+                        // Figure out how long we can cache this contribution ...
+                        long minimumTimeToLive = Long.MAX_VALUE;
+                        if (cachePolicy != null) {
+                            minimumTimeToLive = Math.min(minimumTimeToLive, cachePolicy.getTimeToLive());
+                        }
+                        CachePolicy requestCachePolicy = fromSource.getCachePolicy();
+                        if (requestCachePolicy != null) {
+                            minimumTimeToLive = Math.min(minimumTimeToLive, requestCachePolicy.getTimeToLive());
+                        } else {
+                            // See if the source has a default policy ...
+                            CachePolicy sourceCachePolicy = sourceConnection.getDefaultCachePolicy();
+                            if (sourceCachePolicy != null) {
+                                minimumTimeToLive = Math.min(minimumTimeToLive, sourceCachePolicy.getTimeToLive());
+                            }
+                        }
+                        // The expiration time should be the smallest of the minimum TTL values ...
+                        expirationTime = null;
+                        if (minimumTimeToLive < Long.MAX_VALUE) {
+                            expirationTime = getCurrentTimeInUtc().plus(minimumTimeToLive, TimeUnit.MILLISECONDS);
+                        }
+
                         Location actualLocation = fromSource.getActualLocationOfNode();
-                        Contribution contribution = Contribution.create(source, actualLocation, expTime, properties, children);
+                        Contribution contribution = Contribution.create(source,
+                                                                        workspace,
+                                                                        actualLocation,
+                                                                        expirationTime,
+                                                                        properties,
+                                                                        children);
                         contributions.add(contribution);
                     }
                 } else {
                     List<ReadNodeRequest> fromSourceCommands = new ArrayList<ReadNodeRequest>(numPaths);
                     for (Path pathInSource : pathsInSource) {
-                        fromSourceCommands.add(new ReadNodeRequest(new Location(pathInSource)));
+                        fromSourceCommands.add(new ReadNodeRequest(new Location(pathInSource), workspace));
                     }
                     Request request = CompositeRequest.with(fromSourceCommands);
                     sourceConnection.execute(context, request);
                     for (ReadNodeRequest fromSource : fromSourceCommands) {
                         if (fromSource.hasError()) continue;
-                        DateTime expTime = fromSource.getCachePolicy() == null ? expirationTime : getCurrentTimeInUtc().plus(fromSource.getCachePolicy().getTimeToLive(),
-                                                                                                                             TimeUnit.MILLISECONDS);
+
+                        // Figure out how long we can cache this contribution ...
+                        long minimumTimeToLive = Long.MAX_VALUE;
+                        if (cachePolicy != null) {
+                            minimumTimeToLive = Math.min(minimumTimeToLive, cachePolicy.getTimeToLive());
+                        }
+                        CachePolicy requestCachePolicy = fromSource.getCachePolicy();
+                        if (requestCachePolicy != null) {
+                            minimumTimeToLive = Math.min(minimumTimeToLive, requestCachePolicy.getTimeToLive());
+                        } else {
+                            // See if the source has a default policy ...
+                            CachePolicy sourceCachePolicy = sourceConnection.getDefaultCachePolicy();
+                            if (sourceCachePolicy != null) {
+                                minimumTimeToLive = Math.min(minimumTimeToLive, sourceCachePolicy.getTimeToLive());
+                            }
+                        }
+                        // The expiration time should be the smallest of the minimum TTL values ...
+                        expirationTime = null;
+                        if (minimumTimeToLive < Long.MAX_VALUE) {
+                            expirationTime = getCurrentTimeInUtc().plus(minimumTimeToLive, TimeUnit.MILLISECONDS);
+                        }
+
                         List<Location> children = fromSource.getChildren();
                         Contribution contribution = Contribution.create(source,
+                                                                        workspace,
                                                                         fromSource.getActualLocationOfNode(),
-                                                                        expTime,
+                                                                        expirationTime,
                                                                         fromSource.getProperties(),
                                                                         children);
                         contributions.add(contribution);
@@ -641,11 +708,13 @@ public class FederatingCommandExecutor extends RequestProcessor {
         return value instanceof MergePlan ? (MergePlan)value : null;
     }
 
-    protected void updateCache( FederatedNode mergedNode ) throws RepositorySourceException {
+    protected void updateCache( FederatedWorkspace federatedWorkspace,
+                                FederatedNode mergedNode ) throws RepositorySourceException {
         final ExecutionContext context = getExecutionContext();
-        final RepositoryConnection cacheConnection = getConnectionToCache();
+        final RepositoryConnection cacheConnection = getConnectionToCacheFor(federatedWorkspace);
         final Location location = mergedNode.at();
         final Path path = location.getPath();
+        final String cacheWorkspace = federatedWorkspace.getCacheProjection().getWorkspaceName();
         assert path != null;
         List<Request> requests = new ArrayList<Request>();
         Name childName = null;
@@ -653,14 +722,14 @@ public class FederatingCommandExecutor extends RequestProcessor {
             // This is not the root node, so we need to create the node ...
             final Location parentLocation = new Location(path.getParent());
             childName = path.getLastSegment().getName();
-            requests.add(new CreateNodeRequest(parentLocation, childName, NodeConflictBehavior.REPLACE,
+            requests.add(new CreateNodeRequest(parentLocation, cacheWorkspace, childName, NodeConflictBehavior.REPLACE,
                                                mergedNode.getProperties()));
         }
 
         // Now create all of the children that this federated node knows of ...
         for (Location child : mergedNode.getChildren()) {
             childName = child.getPath().getLastSegment().getName();
-            requests.add(new CreateNodeRequest(location, childName, NodeConflictBehavior.APPEND));
+            requests.add(new CreateNodeRequest(location, cacheWorkspace, childName, NodeConflictBehavior.APPEND));
         }
         cacheConnection.execute(context, CompositeRequest.with(requests));
     }

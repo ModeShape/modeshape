@@ -40,6 +40,7 @@ public class ReadPropertyRequest extends CacheableRequest {
     private static final long serialVersionUID = 1L;
 
     private final Location on;
+    private final String workspaceName;
     private final Name propertyName;
     private Property property;
     private Location actualLocation;
@@ -48,13 +49,17 @@ public class ReadPropertyRequest extends CacheableRequest {
      * Create a request to read the properties and number of children of a node at the supplied location.
      * 
      * @param on the location of the node to be read
+     * @param workspaceName the name of the workspace containing the node
      * @param propertyName the name of the property to read
-     * @throws IllegalArgumentException if the location or property name are null
+     * @throws IllegalArgumentException if the location, workspace name, or property name are null
      */
     public ReadPropertyRequest( Location on,
+                                String workspaceName,
                                 Name propertyName ) {
         CheckArg.isNotNull(on, "on");
         CheckArg.isNotNull(propertyName, "propertyName");
+        CheckArg.isNotNull(workspaceName, "workspaceName");
+        this.workspaceName = workspaceName;
         this.on = on;
         this.propertyName = propertyName;
     }
@@ -76,6 +81,15 @@ public class ReadPropertyRequest extends CacheableRequest {
      */
     public Location on() {
         return on;
+    }
+
+    /**
+     * Get the name of the workspace in which the node exists.
+     * 
+     * @return the name of the workspace; never null
+     */
+    public String inWorkspace() {
+        return workspaceName;
     }
 
     /**
@@ -143,10 +157,12 @@ public class ReadPropertyRequest extends CacheableRequest {
      */
     @Override
     public boolean equals( Object obj ) {
+        if (obj == this) return true;
         if (this.getClass().isInstance(obj)) {
             ReadPropertyRequest that = (ReadPropertyRequest)obj;
             if (!this.on().equals(that.on())) return false;
             if (!this.named().equals(that.named())) return false;
+            if (!this.inWorkspace().equals(that.inWorkspace())) return false;
             return true;
         }
         return false;
@@ -159,7 +175,7 @@ public class ReadPropertyRequest extends CacheableRequest {
      */
     @Override
     public String toString() {
-        return "read " + named() + " property at " + on();
+        return "read " + named() + " property on " + on() + " in the \"" + workspaceName + "\" workspace";
     }
 
 }

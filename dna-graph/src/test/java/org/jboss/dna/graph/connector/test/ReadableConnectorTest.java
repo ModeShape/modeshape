@@ -29,7 +29,6 @@ import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.Assert.assertThat;
 import java.util.List;
 import java.util.UUID;
-import org.jboss.dna.graph.Graph;
 import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.Node;
 import org.jboss.dna.graph.Subgraph;
@@ -72,54 +71,6 @@ public abstract class ReadableConnectorTest extends AbstractConnectorTest {
     @After
     public void afterEach() throws Exception {
         // Don't shut down the repository
-    }
-
-    /**
-     * Read the node at the supplied location, using a variety of techniques to read the node and compare that each technique
-     * returned the same node. This method reads the entire node (via {@link Graph#getNodeAt(Location)}, which uses
-     * {@link ReadNodeRequest}), reads all of the properties on the node (via {@link Graph#getProperties()}, which uses
-     * {@link ReadAllPropertiesRequest}), and reads all of the children of the node (via {@link Graph#getChildren()}, which uses
-     * {@link ReadAllChildrenRequest}).
-     * 
-     * @param location the location; may not be null
-     * @return the node that was read
-     */
-    public Node readNodeThoroughly( Location location ) {
-        assertThat(location, is(notNullValue()));
-        Node result = null;
-        if (location.hasPath() && location.hasIdProperties()) {
-            // Read the node by the path ...
-            Node resultByPath = graph.getNodeAt(new Location(location.getPath()));
-
-            // Read the node by identification properties ...
-            Node resultByIdProps = graph.getNodeAt(new Location(location.getIdProperties()));
-
-            // Read the node by using the location with both a path and ID properties ...
-            result = graph.getNodeAt(location);
-
-            // Verify that the same node was returned by each ...
-            assertSameNode(resultByPath, result);
-            assertSameNode(resultByIdProps, result);
-
-            // Check the result has the correct location ...
-            assertThat("The node that was read doesn't have the expected location", result.getLocation(), is(location));
-        } else {
-            // Read the node by using the location (as is)
-            result = graph.getNodeAt(location);
-
-            // Check the result has the correct location ...
-            assertThat("The node that was read doesn't have the expected location",
-                       result.getLocation().isSame(location, true),
-                       is(true));
-        }
-
-        // Read all the properties of the node ...
-        assertSameProperties(result, graph.getProperties().on(location));
-
-        // Read all the children of the node ...
-        assertThat(graph.getChildren().of(location), is(result.getChildren()));
-
-        return result;
     }
 
     @Test
@@ -279,28 +230,36 @@ public abstract class ReadableConnectorTest extends AbstractConnectorTest {
 
     @Test
     public void shouldIncludeTimeLoadedInReadNodeRequests() {
-        CacheableRequest request = new ReadNodeRequest(location("/"));
+        String workspaceName = graph.getCurrentWorkspaceName();
+        // Don't use the graph so that we can obtain and interrogate the request ...
+        CacheableRequest request = new ReadNodeRequest(location("/"), workspaceName);
         execute(request);
         assertThat(request.getTimeLoaded(), is(notNullValue()));
     }
 
     @Test
     public void shouldIncludeTimeLoadedInReadAllPropertiesRequests() {
-        CacheableRequest request = new ReadAllPropertiesRequest(location("/"));
+        String workspaceName = graph.getCurrentWorkspaceName();
+        // Don't use the graph so that we can obtain and interrogate the request ...
+        CacheableRequest request = new ReadAllPropertiesRequest(location("/"), workspaceName);
         execute(request);
         assertThat(request.getTimeLoaded(), is(notNullValue()));
     }
 
     @Test
     public void shouldIncludeTimeLoadedInReadAllChildrenRequests() {
-        CacheableRequest request = new ReadAllChildrenRequest(location("/"));
+        String workspaceName = graph.getCurrentWorkspaceName();
+        // Don't use the graph so that we can obtain and interrogate the request ...
+        CacheableRequest request = new ReadAllChildrenRequest(location("/"), workspaceName);
         execute(request);
         assertThat(request.getTimeLoaded(), is(notNullValue()));
     }
 
     @Test
     public void shouldIncludeTimeLoadedInReadBlockOfChildrenRequests() {
-        CacheableRequest request = new ReadBlockOfChildrenRequest(location("/"), 0, 100);
+        String workspaceName = graph.getCurrentWorkspaceName();
+        // Don't use the graph so that we can obtain and interrogate the request ...
+        CacheableRequest request = new ReadBlockOfChildrenRequest(location("/"), workspaceName, 0, 100);
         execute(request);
         assertThat(request.getTimeLoaded(), is(notNullValue()));
     }
@@ -308,8 +267,10 @@ public abstract class ReadableConnectorTest extends AbstractConnectorTest {
     @Test
     public void shouldIncludeTimeLoadedInReadNextBlockOfChildrenRequests() {
         // Get the first child ...
+        String workspaceName = graph.getCurrentWorkspaceName();
         Location firstChild = graph.getChildren().of("/").get(0);
-        CacheableRequest request = new ReadNextBlockOfChildrenRequest(firstChild, 100);
+        // Don't use the graph so that we can obtain and interrogate the request ...
+        CacheableRequest request = new ReadNextBlockOfChildrenRequest(firstChild, workspaceName, 100);
         execute(request);
         assertThat(request.getTimeLoaded(), is(notNullValue()));
     }
@@ -317,10 +278,12 @@ public abstract class ReadableConnectorTest extends AbstractConnectorTest {
     @Test
     public void shouldIncludeTimeLoadedInReadPropertyRequests() {
         // Get each of the properties on the first child ...
+        String workspaceName = graph.getCurrentWorkspaceName();
         Location firstChildLocation = graph.getChildren().of("/").get(0);
         Node firstChild = graph.getNodeAt(firstChildLocation);
+        // Don't use the graph so that we can obtain and interrogate the request ...
         for (Property property : firstChild.getProperties()) {
-            CacheableRequest request = new ReadPropertyRequest(firstChildLocation, property.getName());
+            CacheableRequest request = new ReadPropertyRequest(firstChildLocation, workspaceName, property.getName());
             execute(request);
             assertThat(request.getTimeLoaded(), is(notNullValue()));
         }
@@ -328,9 +291,21 @@ public abstract class ReadableConnectorTest extends AbstractConnectorTest {
 
     @Test
     public void shouldIncludeTimeLoadedInReadBranchRequests() {
-        CacheableRequest request = new ReadBranchRequest(location("/"), 2);
+        String workspaceName = graph.getCurrentWorkspaceName();
+        // Don't use the graph so that we can obtain and interrogate the request ...
+        CacheableRequest request = new ReadBranchRequest(location("/"), workspaceName, 2);
         execute(request);
         assertThat(request.getTimeLoaded(), is(notNullValue()));
     }
 
+    @Test
+    public void shouldReturnSameStructureForRepeatedReadBranchRequests() {
+        // Verify that the content doesn't change
+        Location root = graph.getCurrentWorkspace().getRoot();
+        Subgraph subgraph1 = graph.getSubgraphOfDepth(10).at(root);
+        for (int i = 0; i != 4; ++i) {
+            Subgraph subgraph2 = graph.getSubgraphOfDepth(10).at(root);
+            assertEquivalentSubgraphs(subgraph1, subgraph2, true);
+        }
+    }
 }

@@ -65,7 +65,7 @@ public class OneContributionMergeStrategy implements MergeStrategy {
         Contribution contribution = contributions.get(0);
         assert contribution != null;
         final PathFactory pathFactory = context.getValueFactories().getPathFactory();
-        final Location location = federatedNode.getActualLocationOfNode();
+        Location location = federatedNode.getActualLocationOfNode();
 
         // Copy the children ...
         Iterator<Location> childIterator = contribution.getChildren();
@@ -93,26 +93,19 @@ public class OneContributionMergeStrategy implements MergeStrategy {
 
         // Look for the UUID property on the properties, and update the federated node ...
         if (uuidProperty != null && !uuidProperty.isEmpty()) {
-            UUID uuid = context.getValueFactories().getUuidFactory().create(uuidProperty.getValues().next());
-            federatedNode.setUuid(uuid);
-            if (dnaUuidProperty == null) {
-                uuidProperty = context.getPropertyFactory().create(DnaLexicon.UUID, uuid); // Use the "dna:uuid" name
-            }
-            federatedNode.setActualLocationOfNode(federatedNode.getActualLocationOfNode().with(uuidProperty));
+            UUID uuid = context.getValueFactories().getUuidFactory().create(uuidProperty.getFirstValue());
+            uuidProperty = context.getPropertyFactory().create(DnaLexicon.UUID, uuid); // Use the "dna:uuid" name
+            federatedNode.setActualLocationOfNode(federatedNode.at().with(uuidProperty));
         } else {
-            // See if there is a UUID property on the location and update the federated node with it...
-            uuidProperty = federatedNode.getActualLocationOfNode().getIdProperty(DnaLexicon.UUID);
-            if (uuidProperty == null || uuidProperty.isEmpty()) {
-                // Generate a new UUID property and add to the node ...
-                UUID uuid = federatedNode.getUuid();
-                if (uuid == null) {
-                    uuid = context.getValueFactories().getUuidFactory().create();
-                    federatedNode.setUuid(uuid);
-                }
-                uuidProperty = context.getPropertyFactory().create(DnaLexicon.UUID, uuid);
+            // Make sure there's a UUID for an identification property ...
+            if (location.getUuid() == null) {
+                location = location.with(UUID.randomUUID());
             }
-            // Set the UUID as a property ...
+            // Set the UUID as a property (it wasn't set already) ...
+            uuidProperty = location.getIdProperty(DnaLexicon.UUID);
+            assert uuidProperty != null; // there should be one!
             federatedNode.addProperty(uuidProperty);
+            federatedNode.setActualLocationOfNode(location);
         }
 
         // Assign the merge plan ...
@@ -122,9 +115,8 @@ public class OneContributionMergeStrategy implements MergeStrategy {
 
     private boolean hasUuidValue( ExecutionContext context,
                                   Property property ) {
-        assert property.isSingle();
         try {
-            context.getValueFactories().getUuidFactory().create(property.getValues().next());
+            context.getValueFactories().getUuidFactory().create(property.getFirstValue());
             return true;
         } catch (ValueFormatException e) {
             return false;

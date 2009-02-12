@@ -42,11 +42,16 @@ public class SubgraphQueryEntity {
     @Column( name = "ID", updatable = false )
     private Long id;
 
+    @Column( name = "WORKSPACE_ID", nullable = false )
+    private Long workspaceId;
+
     @Column( name = "ROOT_UUID", updatable = false, nullable = false, length = 36 )
     private String rootUuid;
 
-    public SubgraphQueryEntity( String rootUuid ) {
+    public SubgraphQueryEntity( Long workspaceId,
+                                String rootUuid ) {
         this.rootUuid = rootUuid;
+        this.workspaceId = workspaceId;
     }
 
     /**
@@ -61,5 +66,12 @@ public class SubgraphQueryEntity {
      */
     public String getRootUuid() {
         return rootUuid;
+    }
+
+    /**
+     * @return workspaceId
+     */
+    public Long getWorkspaceId() {
+        return workspaceId;
     }
 }

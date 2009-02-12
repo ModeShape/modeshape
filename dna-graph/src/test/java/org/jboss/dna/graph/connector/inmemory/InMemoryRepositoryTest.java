@@ -29,13 +29,9 @@ import static org.hamcrest.core.IsNull.nullValue;
 import static org.hamcrest.core.IsSame.sameInstance;
 import static org.junit.Assert.assertThat;
 import static org.junit.matchers.JUnitMatchers.hasItems;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.stub;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Set;
 import java.util.UUID;
 import org.jboss.dna.graph.ExecutionContext;
+import org.jboss.dna.graph.connector.inmemory.InMemoryRepository.Workspace;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.NameFactory;
 import org.jboss.dna.graph.property.PathFactory;
@@ -43,13 +39,10 @@ import org.jboss.dna.graph.property.Property;
 import org.jboss.dna.graph.property.PropertyFactory;
 import org.jboss.dna.graph.property.ValueFactories;
 import org.jboss.dna.graph.property.ValueFactory;
-import org.jboss.dna.graph.property.basic.BasicNamespaceRegistry;
 import org.jboss.dna.graph.property.basic.BasicPropertyFactory;
-import org.jboss.dna.graph.property.basic.StandardValueFactories;
+import org.jboss.dna.graph.request.CreateWorkspaceRequest.CreateConflictBehavior;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.MockitoAnnotations;
-import org.mockito.MockitoAnnotations.Mock;
 
 /**
  * @author Randall Hauch
@@ -57,27 +50,24 @@ import org.mockito.MockitoAnnotations.Mock;
 public class InMemoryRepositoryTest {
 
     private InMemoryRepository repository;
-    private String name;
+    private String repositoryName;
     private UUID rootUuid;
-    private ValueFactories valueFactories;
+
+    private ExecutionContext context;
     private PathFactory pathFactory;
     private NameFactory nameFactory;
     private PropertyFactory propertyFactory;
-    @Mock
-    private ExecutionContext context;
 
     @Before
     public void beforeEach() throws Exception {
-        MockitoAnnotations.initMocks(this);
-        valueFactories = new StandardValueFactories(new BasicNamespaceRegistry());
+        context = new ExecutionContext();
+        ValueFactories valueFactories = context.getValueFactories();
         pathFactory = valueFactories.getPathFactory();
         nameFactory = valueFactories.getNameFactory();
         propertyFactory = new BasicPropertyFactory(valueFactories);
-        name = "Test repository";
+        repositoryName = "Test repository";
         rootUuid = UUID.randomUUID();
-        repository = new InMemoryRepository(name, rootUuid);
-        stub(context.getValueFactories()).toReturn(valueFactories);
-        stub(context.getPropertyFactory()).toReturn(propertyFactory);
+        repository = new InMemoryRepository(repositoryName, rootUuid);
     }
 
     @Test( expected = IllegalArgumentException.class )
@@ -96,313 +86,152 @@ public class InMemoryRepositoryTest {
     }
 
     @Test
-    public void shouldHaveRootNodeAfterInstantiating() {
-        assertThat(repository.getRoot(), is(notNullValue()));
+    public void shouldNotCreateWorkspaceIfNameIsAlreadyUsedAndConflictOptionIsToNotCreate() {
+        String workspaceName = "New Workspace";
+        assertThat(repository.createWorkspace(context, workspaceName, CreateConflictBehavior.DO_NOT_CREATE), is(notNullValue()));
+        assertThat(repository.getWorkspaceNames(), hasItems(workspaceName));
+        assertThat(repository.createWorkspace(context, workspaceName, CreateConflictBehavior.DO_NOT_CREATE), is(nullValue()));
+        assertThat(repository.getWorkspaceNames(), hasItems(workspaceName));
     }
 
     @Test
-    public void shouldHaveNameAfterInstantiating() {
-        assertThat(repository.getName(), is(name));
+    public void shouldCreateWorkspaceWithUniqueNameIfSpecifiedNameIsAlreadyUsedAndConflictOptionIsToCreateWithAdjustedName() {
+        String workspaceName = "New Workspace";
+        assertThat(repository.createWorkspace(context, workspaceName, CreateConflictBehavior.DO_NOT_CREATE), is(notNullValue()));
+        assertThat(repository.getWorkspaceNames(), hasItems(workspaceName));
+        Workspace secondWorkspace = repository.createWorkspace(context,
+                                                               workspaceName,
+                                                               CreateConflictBehavior.CREATE_WITH_ADJUSTED_NAME);
+        assertThat(secondWorkspace, is(notNullValue()));
+        assertThat(repository.getWorkspaceNames(), hasItems(workspaceName, secondWorkspace.getName()));
     }
 
     @Test
-    public void shouldHaveRootNodeWithRootUuid() {
-        assertThat(repository.getRoot().getUuid(), is(rootUuid));
+    public void shouldNotDestroyWorkspaceIfNameDoesNotMatchExistingWorkspace() {
+        String workspaceName = "New Workspace";
+        assertThat(repository.getWorkspaceNames().contains(workspaceName), is(false));
+        assertThat(repository.destroyWorkspace(workspaceName), is(false));
     }
 
     @Test
-    public void shouldGenerateUuids() {
-        Set<UUID> uuids = new HashSet<UUID>();
-        for (int i = 0; i != 100; ++i) {
-            assertThat(uuids.add(repository.generateUuid()), is(true));
-        }
-    }
-
-    @Test( expected = AssertionError.class )
-    public void shouldNotAllowRootToBeRemoved() {
-        repository.removeNode(context, repository.getRoot());
-    }
-
-    @Test( expected = AssertionError.class )
-    public void shouldNotAllowRootToBeMoved() {
-        InMemoryNode node = mock(InMemoryNode.class);
-        repository.moveNode(context, repository.getRoot(), node);
-    }
-
-    @Test( expected = AssertionError.class )
-    public void shouldNotAllowNodeToBeMovedUsingNullEnvironment() {
-        InMemoryNode node = mock(InMemoryNode.class);
-        InMemoryNode newParent = mock(InMemoryNode.class);
-        repository.moveNode(null, node, newParent);
-    }
-
-    @Test( expected = AssertionError.class )
-    public void shouldNotAllowNullNodeToBeMoved() {
-        InMemoryNode newParent = mock(InMemoryNode.class);
-        repository.moveNode(context, null, newParent);
-    }
-
-    @Test( expected = AssertionError.class )
-    public void shouldNotAllowNodeToBeRemovedUsingNullEnvironment() {
-        InMemoryNode node = mock(InMemoryNode.class);
-        repository.removeNode(null, node);
-    }
-
-    @Test( expected = AssertionError.class )
-    public void shouldNotAllowNullNodeToBeRemoved() {
-        repository.removeNode(context, null);
+    public void shouldDestroyWorkspaceIfNameMatchesExistingWorkspace() {
+        String workspaceName = "New Workspace";
+        assertThat(repository.createWorkspace(context, workspaceName, CreateConflictBehavior.DO_NOT_CREATE), is(notNullValue()));
+        assertThat(repository.getWorkspaceNames().contains(workspaceName), is(true));
+        assertThat(repository.destroyWorkspace(workspaceName), is(true));
     }
 
     @Test
-    public void shouldCreateNodesByPath() {
-        Name name_a = nameFactory.create("a");
-        InMemoryNode node_a = repository.createNode(context, repository.getRoot(), name_a, null);
-        assertThat(node_a, is(notNullValue()));
-        assertThat(node_a.getParent(), is(repository.getRoot()));
-        assertThat(node_a.getName().getName(), is(name_a));
-        assertThat(node_a.getName().hasIndex(), is(false));
+    public void shouldCloneWorkspaceAndCopyContentsIfWorkspaceWithSpecifiedNameExists() {
+        String workspaceName = "Original Workspace";
+        Workspace workspace = repository.createWorkspace(context, workspaceName, CreateConflictBehavior.DO_NOT_CREATE);
+        assertThat(workspace, is(notNullValue()));
+        assertThat(repository.getWorkspaceNames(), hasItems(workspaceName));
 
-        Name name_b = nameFactory.create("b");
-        InMemoryNode node_b = repository.createNode(context, node_a, name_b, null);
-        assertThat(node_b, is(notNullValue()));
-        assertThat(node_b.getParent(), is(node_a));
-        assertThat(node_b.getName().getName(), is(name_b));
-        assertThat(node_b.getName().hasIndex(), is(false));
+        // Populate the workspace with a few nodes ...
+        InMemoryNode root = workspace.getRoot();
+        InMemoryNode node_a = workspace.createNode(context, root, nameFactory.create("a"), null);
+        InMemoryNode node_b = workspace.createNode(context, node_a, nameFactory.create("b"), null);
+        InMemoryNode node_c = workspace.createNode(context, node_b, nameFactory.create("c"), null);
+        InMemoryNode node_d = workspace.createNode(context, root, nameFactory.create("d"), null);
+        InMemoryNode node_e = workspace.createNode(context, node_d, nameFactory.create("e"), null);
+        InMemoryNode node_b2 = workspace.createNode(context, node_d, nameFactory.create("b"), null);
 
-        Name name_c = nameFactory.create("c");
-        InMemoryNode node_c = repository.createNode(context, node_b, name_c, null);
-        assertThat(node_c, is(notNullValue()));
-        assertThat(node_c.getParent(), is(node_b));
-        assertThat(node_c.getName().getName(), is(name_c));
-        assertThat(node_c.getName().hasIndex(), is(false));
-
-        assertThat(repository.getNodesByUuid().size(), is(4));
-        assertThat(repository.getNode(pathFactory.create("/")), is(sameInstance(repository.getRoot())));
-        assertThat(repository.getNode(pathFactory.create("/a")), is(sameInstance(node_a)));
-        assertThat(repository.getNode(pathFactory.create("/a/b")), is(sameInstance(node_b)));
-        assertThat(repository.getNode(pathFactory.create("/a/b/c")), is(sameInstance(node_c)));
-    }
-
-    @Test
-    public void shouldNotFindNodesThatDoNotExist() {
-        InMemoryNode node_a = repository.createNode(context, repository.getRoot(), nameFactory.create("a"), null);
-        InMemoryNode node_b = repository.createNode(context, node_a, nameFactory.create("b"), null);
-        /*Node node_c =*/repository.createNode(context, node_b, nameFactory.create("c"), null);
-
-        assertThat(repository.getNodesByUuid().size(), is(4));
-        assertThat(repository.getNode(pathFactory.create("/a")), is(node_a));
-        assertThat(repository.getNode(pathFactory.create("/a/b")), is(node_b));
-        assertThat(repository.getNode(pathFactory.create("/a[1]")), is(node_a));
-        assertThat(repository.getNode(pathFactory.create("/a/b[1]")), is(node_b));
-        assertThat(repository.getNode(pathFactory.create("/a[1]/b[1]")), is(node_b));
-        assertThat(repository.getNode(pathFactory.create("/a[2]")), is(nullValue()));
-        assertThat(repository.getNode(pathFactory.create("/b[2]")), is(nullValue()));
-        assertThat(repository.getNode(pathFactory.create("/d")), is(nullValue()));
-    }
-
-    @Test
-    public void shouldCorrectlyManageIndexesOfSiblingsWithSameNames() {
-        Name name_a1 = nameFactory.create("a");
-        InMemoryNode node_a1 = repository.createNode(context, repository.getRoot(), name_a1, null);
-        assertThat(node_a1, is(notNullValue()));
-        assertThat(node_a1.getParent(), is(repository.getRoot()));
-        assertThat(node_a1.getName().getName(), is(name_a1));
-        assertThat(node_a1.getName().hasIndex(), is(false));
-
-        Name name_a2 = nameFactory.create("a");
-        InMemoryNode node_a2 = repository.createNode(context, repository.getRoot(), name_a2, null);
-        assertThat(node_a2, is(notNullValue()));
-        assertThat(node_a2.getParent(), is(repository.getRoot()));
-        assertThat(node_a2.getName().getName(), is(name_a2));
-        assertThat(node_a2.getName().hasIndex(), is(true));
-        assertThat(node_a2.getName().getIndex(), is(2));
-
-        // node 1 should now have an index ...
-        assertThat(node_a1.getName().getIndex(), is(1));
-
-        // Add another node without the same name ...
-        Name name_b = nameFactory.create("b");
-        InMemoryNode node_b = repository.createNode(context, repository.getRoot(), name_b, null);
-        assertThat(node_b, is(notNullValue()));
-        assertThat(node_b.getParent(), is(repository.getRoot()));
-        assertThat(node_b.getName().getName(), is(name_b));
-        assertThat(node_b.getName().hasIndex(), is(false));
-
-        // Add a third node with the same name ...
-        Name name_a3 = nameFactory.create("a");
-        InMemoryNode node_a3 = repository.createNode(context, repository.getRoot(), name_a3, null);
-        assertThat(node_a3, is(notNullValue()));
-        assertThat(node_a3.getParent(), is(repository.getRoot()));
-        assertThat(node_a3.getName().getName(), is(name_a3));
-        assertThat(node_a3.getName().hasIndex(), is(true));
-        assertThat(node_a3.getName().getIndex(), is(3));
-
-        // Check the number of children ...
-        assertThat(repository.getRoot().getChildren().size(), is(4));
-        assertThat(repository.getRoot().getChildren(), hasItems(node_a1, node_a2, node_b, node_a3));
-        assertThat(repository.getNodesByUuid().size(), is(5));
-        assertThat(repository.getNode(pathFactory.create("/a[1]")), is(sameInstance(node_a1)));
-        assertThat(repository.getNode(pathFactory.create("/a[2]")), is(sameInstance(node_a2)));
-        assertThat(repository.getNode(pathFactory.create("/a[3]")), is(sameInstance(node_a3)));
-        assertThat(repository.getNode(pathFactory.create("/b")), is(sameInstance(node_b)));
-
-        // Removing a node with the same name will reduce the index ...
-        repository.removeNode(context, node_a2);
-        assertThat(repository.getRoot().getChildren().size(), is(3));
-        assertThat(repository.getRoot().getChildren(), hasItems(node_a1, node_b, node_a3));
-        assertThat(node_a1.getName().getIndex(), is(1));
-        assertThat(node_b.getName().hasIndex(), is(false));
-        assertThat(node_a3.getName().getIndex(), is(2));
-
-        // Removing a node with the same name will reduce the index ...
-        repository.removeNode(context, node_a1);
-        assertThat(repository.getRoot().getChildren().size(), is(2));
-        assertThat(repository.getRoot().getChildren(), hasItems(node_b, node_a3));
-        assertThat(node_b.getName().hasIndex(), is(false));
-        assertThat(node_a3.getName().hasIndex(), is(false));
-        assertThat(repository.getNodesByUuid().size(), is(3));
-    }
-
-    @Test
-    public void shouldMoveNodes() {
-        InMemoryNode root = repository.getRoot();
-        InMemoryNode node_a = repository.createNode(context, root, nameFactory.create("a"), null);
-        InMemoryNode node_b = repository.createNode(context, node_a, nameFactory.create("b"), null);
-        InMemoryNode node_c = repository.createNode(context, node_b, nameFactory.create("c"), null);
-        InMemoryNode node_d = repository.createNode(context, root, nameFactory.create("d"), null);
-        InMemoryNode node_e = repository.createNode(context, node_d, nameFactory.create("e"), null);
-        InMemoryNode node_b2 = repository.createNode(context, node_d, nameFactory.create("b"), null);
-
-        assertThat(repository.getNodesByUuid().size(), is(7));
-        assertThat(repository.getNode(pathFactory.create("/")), is(sameInstance(repository.getRoot())));
-        assertThat(repository.getNode(pathFactory.create("/a")), is(sameInstance(node_a)));
-        assertThat(repository.getNode(pathFactory.create("/a/b")), is(sameInstance(node_b)));
-        assertThat(repository.getNode(pathFactory.create("/a/b/c")), is(sameInstance(node_c)));
-        assertThat(repository.getNode(pathFactory.create("/d")), is(sameInstance(node_d)));
-        assertThat(repository.getNode(pathFactory.create("/d/e")), is(sameInstance(node_e)));
-        assertThat(repository.getNode(pathFactory.create("/d/b")), is(sameInstance(node_b2)));
-
-        repository.moveNode(context, node_b, node_d);
-
-        assertThat(repository.getNode(pathFactory.create("/")), is(sameInstance(repository.getRoot())));
-        assertThat(repository.getNode(pathFactory.create("/a")), is(sameInstance(node_a)));
-        assertThat(repository.getNode(pathFactory.create("/d")), is(sameInstance(node_d)));
-        assertThat(repository.getNode(pathFactory.create("/d/e")), is(sameInstance(node_e)));
-        assertThat(repository.getNode(pathFactory.create("/d/b[1]")), is(sameInstance(node_b2)));
-        assertThat(repository.getNode(pathFactory.create("/d/b[2]")), is(sameInstance(node_b)));
-        assertThat(repository.getNode(pathFactory.create("/d/b[2]/c")), is(sameInstance(node_c)));
-
-        repository.moveNode(context, node_b, node_e);
-
-        assertThat(repository.getNode(pathFactory.create("/")), is(sameInstance(repository.getRoot())));
-        assertThat(repository.getNode(pathFactory.create("/a")), is(sameInstance(node_a)));
-        assertThat(repository.getNode(pathFactory.create("/d")), is(sameInstance(node_d)));
-        assertThat(repository.getNode(pathFactory.create("/d/e")), is(sameInstance(node_e)));
-        assertThat(repository.getNode(pathFactory.create("/d/e/b")), is(sameInstance(node_b)));
-        assertThat(repository.getNode(pathFactory.create("/d/e/b/c")), is(sameInstance(node_c)));
-        assertThat(repository.getNode(pathFactory.create("/d/b")), is(sameInstance(node_b2)));
-    }
-
-    @Test
-    public void shouldCopyNodes() {
-        InMemoryNode root = repository.getRoot();
-        InMemoryNode node_a = repository.createNode(context, root, nameFactory.create("a"), null);
-        InMemoryNode node_b = repository.createNode(context, node_a, nameFactory.create("b"), null);
-        InMemoryNode node_c = repository.createNode(context, node_b, nameFactory.create("c"), null);
-        InMemoryNode node_d = repository.createNode(context, root, nameFactory.create("d"), null);
-        InMemoryNode node_e = repository.createNode(context, node_d, nameFactory.create("e"), null);
-        InMemoryNode node_b2 = repository.createNode(context, node_d, nameFactory.create("b"), null);
-
-        ValueFactory<String> stringFactory = valueFactories.getStringFactory();
+        ValueFactory<String> stringFactory = context.getValueFactories().getStringFactory();
         Name propertyName = nameFactory.create("something");
         Property property = propertyFactory.create(propertyName, stringFactory.create("Worth the wait"));
         node_b.getProperties().put(propertyName, property);
 
-        assertThat(repository.getNodesByUuid().size(), is(7));
-        assertThat(repository.getNode(pathFactory.create("/")), is(sameInstance(repository.getRoot())));
-        assertThat(repository.getNode(pathFactory.create("/a")), is(sameInstance(node_a)));
-        assertThat(repository.getNode(pathFactory.create("/a/b")), is(sameInstance(node_b)));
-        assertThat(repository.getNode(pathFactory.create("/a/b/c")), is(sameInstance(node_c)));
-        assertThat(repository.getNode(pathFactory.create("/d")), is(sameInstance(node_d)));
-        assertThat(repository.getNode(pathFactory.create("/d/e")), is(sameInstance(node_e)));
-        assertThat(repository.getNode(pathFactory.create("/d/b")), is(sameInstance(node_b2)));
+        assertThat(workspace.getNodesByUuid().size(), is(7));
+        assertThat(workspace.getNode(pathFactory.create("/")), is(sameInstance(workspace.getRoot())));
+        assertThat(workspace.getNode(pathFactory.create("/a")), is(sameInstance(node_a)));
+        assertThat(workspace.getNode(pathFactory.create("/a/b")), is(sameInstance(node_b)));
+        assertThat(workspace.getNode(pathFactory.create("/a/b/c")), is(sameInstance(node_c)));
+        assertThat(workspace.getNode(pathFactory.create("/d")), is(sameInstance(node_d)));
+        assertThat(workspace.getNode(pathFactory.create("/d/e")), is(sameInstance(node_e)));
+        assertThat(workspace.getNode(pathFactory.create("/d/b")), is(sameInstance(node_b2)));
+        assertThat(workspace.getNode(pathFactory.create("/a/b")).getProperties().get(propertyName), is(property));
 
-        assertThat(repository.getNode(pathFactory.create("/a/b")).getProperties().get(propertyName), is(property));
+        // Now clone the workspace ...
+        String newWorkspaceName = "New Workspace";
+        Workspace new_workspace = repository.createWorkspace(context,
+                                                             newWorkspaceName,
+                                                             CreateConflictBehavior.DO_NOT_CREATE,
+                                                             workspaceName);
+        assertThat(new_workspace, is(notNullValue()));
+        assertThat(repository.getWorkspaceNames(), hasItems(workspaceName, newWorkspaceName));
 
-        repository.copyNode(context, node_b, node_d, null, true, new HashMap<UUID, UUID>());
+        // Now check that the original workspace still has its content ...
+        assertThat(workspace.getNodesByUuid().size(), is(7));
+        assertThat(workspace.getNode(pathFactory.create("/")), is(sameInstance(workspace.getRoot())));
+        assertThat(workspace.getNode(pathFactory.create("/a")), is(sameInstance(node_a)));
+        assertThat(workspace.getNode(pathFactory.create("/a/b")), is(sameInstance(node_b)));
+        assertThat(workspace.getNode(pathFactory.create("/a/b/c")), is(sameInstance(node_c)));
+        assertThat(workspace.getNode(pathFactory.create("/d")), is(sameInstance(node_d)));
+        assertThat(workspace.getNode(pathFactory.create("/d/e")), is(sameInstance(node_e)));
+        assertThat(workspace.getNode(pathFactory.create("/d/b")), is(sameInstance(node_b2)));
+        assertThat(workspace.getNode(pathFactory.create("/a/b")).getProperties().get(propertyName), is(property));
 
-        assertThat(repository.getNodesByUuid().size(), is(9));
-        assertThat(repository.getNode(pathFactory.create("/")), is(sameInstance(repository.getRoot())));
-        assertThat(repository.getNode(pathFactory.create("/a")), is(sameInstance(node_a)));
-        assertThat(repository.getNode(pathFactory.create("/a/b")), is(sameInstance(node_b)));
-        assertThat(repository.getNode(pathFactory.create("/a/b/c")), is(sameInstance(node_c)));
-        assertThat(repository.getNode(pathFactory.create("/d")), is(sameInstance(node_d)));
-        assertThat(repository.getNode(pathFactory.create("/d/e")), is(sameInstance(node_e)));
-        assertThat(repository.getNode(pathFactory.create("/d/b[1]")), is(sameInstance(node_b2)));
-        assertThat(repository.getNode(pathFactory.create("/d/b[2]")), is(notNullValue()));
-        assertThat(repository.getNode(pathFactory.create("/d/b[2]/c")), is(notNullValue()));
+        // Now check that the new workspace has its content ...
+        assertThat(new_workspace.getNodesByUuid().size(), is(7));
 
-        assertThat(repository.getNode(pathFactory.create("/a/b")).getProperties().get(propertyName), is(property));
-        assertThat(repository.getNode(pathFactory.create("/d/b[2]")).getProperties().get(propertyName), is(property));
+        // Since we cloned workspaces, the UUIDs should be the same in each workspace ...
+        assertThat(workspace.getNode(pathFactory.create("/")).getUuid(),
+                   is(new_workspace.getNode(pathFactory.create("/")).getUuid()));
+        assertThat(workspace.getNode(pathFactory.create("/a")).getUuid(),
+                   is(new_workspace.getNode(pathFactory.create("/a")).getUuid()));
+        assertThat(workspace.getNode(pathFactory.create("/a/b")).getUuid(),
+                   is(new_workspace.getNode(pathFactory.create("/a/b")).getUuid()));
+        assertThat(workspace.getNode(pathFactory.create("/a/b/c")).getUuid(),
+                   is(new_workspace.getNode(pathFactory.create("/a/b/c")).getUuid()));
+        assertThat(workspace.getNode(pathFactory.create("/d")).getUuid(),
+                   is(new_workspace.getNode(pathFactory.create("/d")).getUuid()));
+        assertThat(workspace.getNode(pathFactory.create("/d/e")).getUuid(),
+                   is(new_workspace.getNode(pathFactory.create("/d/e")).getUuid()));
+        assertThat(workspace.getNode(pathFactory.create("/d/b")).getUuid(),
+                   is(new_workspace.getNode(pathFactory.create("/d/b")).getUuid()));
     }
 
     @Test
-    public void shouldCopyNodesWhenDesiredNameIsSpecified() {
-        InMemoryNode root = repository.getRoot();
-        InMemoryNode node_a = repository.createNode(context, root, nameFactory.create("a"), null);
-        InMemoryNode node_b = repository.createNode(context, node_a, nameFactory.create("b"), null);
-        InMemoryNode node_c = repository.createNode(context, node_b, nameFactory.create("c"), null);
-        InMemoryNode node_d = repository.createNode(context, root, nameFactory.create("d"), null);
-        InMemoryNode node_e = repository.createNode(context, node_d, nameFactory.create("e"), null);
-        InMemoryNode node_b2 = repository.createNode(context, node_d, nameFactory.create("b"), null);
+    public void shouldCloneWorkspaceButShouldNotCopyContentsIfWorkspaceWithSpecifiedNameDoesNotExist() {
+        String workspaceName = "Original Workspace";
+        Workspace workspace = repository.createWorkspace(context, workspaceName, CreateConflictBehavior.DO_NOT_CREATE);
+        assertThat(workspace, is(notNullValue()));
+        assertThat(repository.getWorkspaceNames(), hasItems(workspaceName));
 
-        ValueFactory<String> stringFactory = valueFactories.getStringFactory();
+        // Populate the workspace with a few nodes ...
+        InMemoryNode root = workspace.getRoot();
+        InMemoryNode node_a = workspace.createNode(context, root, nameFactory.create("a"), null);
+        InMemoryNode node_b = workspace.createNode(context, node_a, nameFactory.create("b"), null);
+        InMemoryNode node_c = workspace.createNode(context, node_b, nameFactory.create("c"), null);
+        InMemoryNode node_d = workspace.createNode(context, root, nameFactory.create("d"), null);
+        InMemoryNode node_e = workspace.createNode(context, node_d, nameFactory.create("e"), null);
+        InMemoryNode node_b2 = workspace.createNode(context, node_d, nameFactory.create("b"), null);
+
+        ValueFactory<String> stringFactory = context.getValueFactories().getStringFactory();
         Name propertyName = nameFactory.create("something");
         Property property = propertyFactory.create(propertyName, stringFactory.create("Worth the wait"));
         node_b.getProperties().put(propertyName, property);
 
-        assertThat(repository.getNodesByUuid().size(), is(7));
-        assertThat(repository.getNode(pathFactory.create("/")), is(sameInstance(repository.getRoot())));
-        assertThat(repository.getNode(pathFactory.create("/a")), is(sameInstance(node_a)));
-        assertThat(repository.getNode(pathFactory.create("/a/b")), is(sameInstance(node_b)));
-        assertThat(repository.getNode(pathFactory.create("/a/b/c")), is(sameInstance(node_c)));
-        assertThat(repository.getNode(pathFactory.create("/d")), is(sameInstance(node_d)));
-        assertThat(repository.getNode(pathFactory.create("/d/e")), is(sameInstance(node_e)));
-        assertThat(repository.getNode(pathFactory.create("/d/b")), is(sameInstance(node_b2)));
+        assertThat(workspace.getNodesByUuid().size(), is(7));
+        assertThat(workspace.getNode(pathFactory.create("/")), is(sameInstance(workspace.getRoot())));
+        assertThat(workspace.getNode(pathFactory.create("/a")), is(sameInstance(node_a)));
+        assertThat(workspace.getNode(pathFactory.create("/a/b")), is(sameInstance(node_b)));
+        assertThat(workspace.getNode(pathFactory.create("/a/b/c")), is(sameInstance(node_c)));
+        assertThat(workspace.getNode(pathFactory.create("/d")), is(sameInstance(node_d)));
+        assertThat(workspace.getNode(pathFactory.create("/d/e")), is(sameInstance(node_e)));
+        assertThat(workspace.getNode(pathFactory.create("/d/b")), is(sameInstance(node_b2)));
+        assertThat(workspace.getNode(pathFactory.create("/a/b")).getProperties().get(propertyName), is(property));
 
-        assertThat(repository.getNode(pathFactory.create("/a/b")).getProperties().get(propertyName), is(property));
-
-        repository.copyNode(context, node_b, node_d, nameFactory.create("x"), true, new HashMap<UUID, UUID>());
-
-        assertThat(repository.getNodesByUuid().size(), is(9));
-        assertThat(repository.getNode(pathFactory.create("/")), is(sameInstance(repository.getRoot())));
-        assertThat(repository.getNode(pathFactory.create("/a")), is(sameInstance(node_a)));
-        assertThat(repository.getNode(pathFactory.create("/a/b")), is(sameInstance(node_b)));
-        assertThat(repository.getNode(pathFactory.create("/a/b/c")), is(sameInstance(node_c)));
-        assertThat(repository.getNode(pathFactory.create("/d")), is(sameInstance(node_d)));
-        assertThat(repository.getNode(pathFactory.create("/d/e")), is(sameInstance(node_e)));
-        assertThat(repository.getNode(pathFactory.create("/d/b")), is(sameInstance(node_b2)));
-        assertThat(repository.getNode(pathFactory.create("/d/x")), is(notNullValue()));
-        assertThat(repository.getNode(pathFactory.create("/d/x/c")), is(notNullValue()));
-
-        assertThat(repository.getNode(pathFactory.create("/a/b")).getProperties().get(propertyName), is(property));
-        assertThat(repository.getNode(pathFactory.create("/d/x")).getProperties().get(propertyName), is(property));
+        // Now clone the workspace ...
+        String newWorkspaceName = "New Workspace";
+        Workspace new_workspace = repository.createWorkspace(context,
+                                                             newWorkspaceName,
+                                                             CreateConflictBehavior.DO_NOT_CREATE,
+                                                             "non-existant workspace");
+        assertThat(new_workspace.getRoot(), is(notNullValue()));
+        assertThat(new_workspace.getRoot().getUuid(), is(rootUuid));
+        assertThat(new_workspace.getRoot().getChildren().isEmpty(), is(true));
     }
 
-    @Test
-    public void shouldCreateRepositoryStructure() {
-        repository.createNode(context, "/a").setProperty(context, "name", "value").setProperty(context,
-                                                                                               "desc",
-                                                                                               "Some description");
-        repository.createNode(context, "/a/b").setProperty(context, "name", "value2").setProperty(context,
-                                                                                                  "desc",
-                                                                                                  "Some description 2");
-        assertThat(repository.getNode(context, "/a").getProperty(context, "name").getValuesAsArray(), is(new Object[] {"value"}));
-        assertThat(repository.getNode(context, "/a").getProperty(context, "desc").getValuesAsArray(),
-                   is(new Object[] {"Some description"}));
-        assertThat(repository.getNode(context, "/a/b").getProperty(context, "name").getValuesAsArray(),
-                   is(new Object[] {"value2"}));
-        assertThat(repository.getNode(context, "/a/b").getProperty(context, "desc").getValuesAsArray(),
-                   is(new Object[] {"Some description 2"}));
-    }
 }

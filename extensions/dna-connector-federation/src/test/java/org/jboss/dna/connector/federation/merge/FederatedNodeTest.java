@@ -28,7 +28,6 @@ import static org.hamcrest.core.IsNull.nullValue;
 import static org.hamcrest.core.IsSame.sameInstance;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.mock;
-import java.util.UUID;
 import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.property.Path;
 import org.junit.Before;
@@ -41,20 +40,13 @@ import org.mockito.MockitoAnnotations;
 public class FederatedNodeTest {
 
     private FederatedNode node;
-    private UUID uuid;
     private Location location;
 
     @Before
     public void beforeEach() {
         MockitoAnnotations.initMocks(this);
-        uuid = UUID.randomUUID();
         location = new Location(mock(Path.class));
-        node = new FederatedNode(location, uuid);
-    }
-
-    @Test
-    public void shouldHaveSameUuidSuppliedToConstructor() {
-        assertThat(node.getUuid(), is(sameInstance(uuid)));
+        node = new FederatedNode(location, "workspace");
     }
 
     @Test
@@ -104,7 +96,7 @@ public class FederatedNodeTest {
 
     @Test
     public void shouldHaveHashCodeThatIsTheHashCodeOfTheLocation() {
-        node = new FederatedNode(location, uuid);
+        node = new FederatedNode(location, "workspace");
         assertThat(node.hashCode(), is(location.hashCode()));
     }
 

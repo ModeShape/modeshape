@@ -47,16 +47,18 @@ public class OneChildContribution extends NonEmptyContribution {
      * Create a contribution of a single child from the source with the supplied name.
      * 
      * @param sourceName the name of the source, which may not be null or blank
+     * @param workspaceName the name of the workspace, which may not be null or blank
      * @param locationInSource the location in the source for this contributed information; may not be null
      * @param expirationTime the time (in UTC) after which this contribution should be considered expired, or null if there is no
      *        expiration time
      * @param child the child contributed from the source; may not be null
      */
     public OneChildContribution( String sourceName,
+                                 String workspaceName,
                                  Location locationInSource,
                                  DateTime expirationTime,
                                  Location child ) {
-        super(sourceName, locationInSource, expirationTime);
+        super(sourceName, workspaceName, locationInSource, expirationTime);
         assert child != null;
         this.child = child;
         if (ContributionStatistics.RECORD) ContributionStatistics.record(0, 1);

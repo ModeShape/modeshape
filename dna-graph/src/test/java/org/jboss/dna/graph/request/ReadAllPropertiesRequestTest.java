@@ -28,8 +28,6 @@ import static org.hamcrest.core.IsNull.nullValue;
 import static org.hamcrest.core.IsSame.sameInstance;
 import static org.junit.Assert.assertThat;
 import static org.junit.matchers.JUnitMatchers.hasItems;
-import org.jboss.dna.graph.request.ReadAllPropertiesRequest;
-import org.jboss.dna.graph.request.Request;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -48,39 +46,51 @@ public class ReadAllPropertiesRequestTest extends AbstractRequestTest {
 
     @Override
     protected Request createRequest() {
-        return new ReadAllPropertiesRequest(validPathLocation1);
+        return new ReadAllPropertiesRequest(validPathLocation1, workspace1);
     }
 
     @Test( expected = IllegalArgumentException.class )
     public void shouldNotAllowCreatingRequestWithNullFromLocation() {
-        new ReadAllPropertiesRequest(null);
+        new ReadAllPropertiesRequest(null, workspace1);
+    }
+
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldNotAllowCreatingRequestWithNullWorkspaceName() {
+        new ReadAllPropertiesRequest(validPathLocation1, null);
     }
 
     @Test
     public void shouldCreateValidRequestWithValidLocation() {
-        request = new ReadAllPropertiesRequest(validPathLocation1);
+        request = new ReadAllPropertiesRequest(validPathLocation1, workspace1);
         assertThat(request.at(), is(sameInstance(validPathLocation1)));
         assertThat(request.hasError(), is(false));
         assertThat(request.getError(), is(nullValue()));
     }
 
     @Test
-    public void shouldConsiderEqualTwoRequestsWithSameLocations() {
-        request = new ReadAllPropertiesRequest(validPathLocation1);
-        ReadAllPropertiesRequest request2 = new ReadAllPropertiesRequest(validPathLocation1);
+    public void shouldConsiderEqualTwoRequestsWithSameLocationsAndWorkspaceNames() {
+        request = new ReadAllPropertiesRequest(validPathLocation1, workspace1);
+        ReadAllPropertiesRequest request2 = new ReadAllPropertiesRequest(validPathLocation1, new String(workspace1));
         assertThat(request, is(request2));
     }
 
     @Test
     public void shouldConsiderNotEqualTwoRequestsWithDifferentLocations() {
-        request = new ReadAllPropertiesRequest(validPathLocation1);
-        ReadAllPropertiesRequest request2 = new ReadAllPropertiesRequest(validPathLocation2);
+        request = new ReadAllPropertiesRequest(validPathLocation1, workspace1);
+        ReadAllPropertiesRequest request2 = new ReadAllPropertiesRequest(validPathLocation2, workspace1);
+        assertThat(request.equals(request2), is(false));
+    }
+
+    @Test
+    public void shouldConsiderNotEqualTwoRequestsWithDifferentWorkspaceNames() {
+        request = new ReadAllPropertiesRequest(validPathLocation1, workspace1);
+        ReadAllPropertiesRequest request2 = new ReadAllPropertiesRequest(validPathLocation1, workspace2);
         assertThat(request.equals(request2), is(false));
     }
 
     @Test
     public void shouldAllowAddingProperties() {
-        request = new ReadAllPropertiesRequest(validPathLocation);
+        request = new ReadAllPropertiesRequest(validPathLocation, workspace1);
         request.addProperty(validProperty1);
         request.addProperty(validProperty2);
         assertThat(request.getProperties().size(), is(2));

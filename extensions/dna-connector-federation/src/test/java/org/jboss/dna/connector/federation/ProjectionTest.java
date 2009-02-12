@@ -45,6 +45,7 @@ public class ProjectionTest {
 
     private ExecutionContext context;
     private String sourceName;
+    private String workspaceName;
     private Projection.Rule[] rules;
     private Projection projection;
     private PathFactory pathFactory;
@@ -61,14 +62,16 @@ public class ProjectionTest {
         context = new ExecutionContext();
         pathFactory = context.getValueFactories().getPathFactory();
         sourceName = "Valid name";
+        workspaceName = "Valid workspace";
         rules = new Projection.Rule[] {mockRule1, mockRule2, mockRule3};
-        projection = new Projection(sourceName, rules);
+        projection = new Projection(sourceName, workspaceName, rules);
     }
 
     @Test
     public void shouldCreateInstanceWithValidNameAndValidRules() {
-        projection = new Projection(sourceName, rules);
+        projection = new Projection(sourceName, workspaceName, rules);
         assertThat(projection.getSourceName(), is(sourceName));
+        assertThat(projection.getWorkspaceName(), is(workspaceName));
         assertThat(projection.getRules().size(), is(rules.length));
         assertThat(projection.getRules(), hasItems(mockRule1, mockRule2, mockRule3));
     }
@@ -76,31 +79,37 @@ public class ProjectionTest {
     @Test( expected = IllegalArgumentException.class )
     public void shouldFailToCreateInstanceWithNullNameAndValidRules() {
         sourceName = null;
-        projection = new Projection(sourceName, rules);
+        projection = new Projection(sourceName, workspaceName, rules);
+    }
+
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldFailToCreateInstanceWithNullWorkspaceNameAndValidSourceNameAndRules() {
+        sourceName = null;
+        projection = new Projection(sourceName, workspaceName, rules);
     }
 
     @Test( expected = IllegalArgumentException.class )
     public void shouldFailToCreateInstanceWithEmptyNameAndValidRules() {
         sourceName = "";
-        projection = new Projection(sourceName, rules);
+        projection = new Projection(sourceName, workspaceName, rules);
     }
 
     @Test( expected = IllegalArgumentException.class )
     public void shouldFailToCreateInstanceWithBlankNameAndValidRules() {
         sourceName = "   \t ";
-        projection = new Projection(sourceName, rules);
+        projection = new Projection(sourceName, workspaceName, rules);
     }
 
     @Test( expected = IllegalArgumentException.class )
     public void shouldFailToCreateInstanceWithValidNameAndNullRules() {
         rules = null;
-        projection = new Projection(sourceName, rules);
+        projection = new Projection(sourceName, workspaceName, rules);
     }
 
     @Test( expected = IllegalArgumentException.class )
     public void shouldFailToCreateInstanceWithValidNameAndEmptyRules() {
         rules = new Projection.Rule[] {};
-        projection = new Projection(sourceName, rules);
+        projection = new Projection(sourceName, workspaceName, rules);
     }
 
     @Test( expected = IllegalArgumentException.class )
@@ -110,7 +119,7 @@ public class ProjectionTest {
 
     @Test
     public void shouldCreateInstanceWithValidNameAndRulesAndShouldPruneNullRuleReferences() {
-        projection = new Projection(sourceName, mockRule1, null, mockRule3);
+        projection = new Projection(sourceName, workspaceName, mockRule1, null, mockRule3);
         assertThat(projection.getRules().size(), is(2));
         assertThat(projection.getRules(), hasItems(mockRule1, mockRule3));
     }

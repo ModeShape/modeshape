@@ -26,13 +26,12 @@ package org.jboss.dna.connector.filesystem;
 
 import java.io.File;
 import java.io.FilenameFilter;
-import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.CopyOnWriteArraySet;
 import javax.naming.Context;
 import javax.naming.RefAddr;
 import javax.naming.Reference;
@@ -41,6 +40,7 @@ import javax.naming.spi.ObjectFactory;
 import net.jcip.annotations.Immutable;
 import net.jcip.annotations.ThreadSafe;
 import org.jboss.dna.common.i18n.I18n;
+import org.jboss.dna.common.util.Logger;
 import org.jboss.dna.common.util.StringUtil;
 import org.jboss.dna.graph.cache.CachePolicy;
 import org.jboss.dna.graph.connector.RepositoryConnection;
@@ -50,7 +50,9 @@ import org.jboss.dna.graph.connector.RepositorySourceCapabilities;
 import org.jboss.dna.graph.connector.RepositorySourceException;
 
 /**
- * The {@link RepositorySource} for the connector that exposes an area of the local file system as content in a repository.
+ * The {@link RepositorySource} for the connector that exposes an area of the local file system as content in a repository. This
+ * source considers a workspace name to be the path to the directory on the file system that represents the root of that
+ * workspace. New workspaces can be created, as long as the names represent valid paths to existing directories.
  * 
  * @author Randall Hauch
  */
@@ -65,7 +67,9 @@ public class FileSystemSource implements RepositorySource, ObjectFactory {
     protected static final String SOURCE_NAME = "sourceName";
     protected static final String CACHE_TIME_TO_LIVE_IN_MILLISECONDS = "cacheTimeToLiveInMilliseconds";
     protected static final String RETRY_LIMIT = "retryLimit";
-    protected static final String FILE_SYSTEM_PATHS = "fileSystemPaths";
+    protected static final String DEFAULT_WORKSPACE = "defaultWorkspace";
+    protected static final String PREDEFINED_WORKSPACE_NAMES = "predefinedWorkspaceNames";
+    protected static final String ALLOW_CREATING_WORKSPACES = "allowCreatingWorkspaces";
 
     /**
      * This source supports events.
@@ -76,6 +80,10 @@ public class FileSystemSource implements RepositorySource, ObjectFactory {
      */
     protected static final boolean SUPPORTS_SAME_NAME_SIBLINGS = true;
     /**
+     * This source does support creating workspaces.
+     */
+    protected static final boolean DEFAULT_SUPPORTS_CREATING_WORKSPACES = true;
+    /**
      * This source does not support udpates by default, but each instance may be configured to be read-only or updateable}.
      */
     public static final boolean DEFAULT_SUPPORTS_UPDATES = false;
@@ -83,12 +91,17 @@ public class FileSystemSource implements RepositorySource, ObjectFactory {
     public static final int DEFAULT_RETRY_LIMIT = 0;
     public static final int DEFAULT_CACHE_TIME_TO_LIVE_IN_SECONDS = 60 * 5; // 5 minutes
 
-    private String name;
-    private int retryLimit = DEFAULT_RETRY_LIMIT;
-    private int cacheTimeToLiveInMilliseconds = DEFAULT_CACHE_TIME_TO_LIVE_IN_SECONDS * 1000;
-    private String[] fileSystemPaths;
-    private final Capabilities capabilities = new Capabilities();
+    private volatile String name;
+    private volatile int retryLimit = DEFAULT_RETRY_LIMIT;
+    private volatile int cacheTimeToLiveInMilliseconds = DEFAULT_CACHE_TIME_TO_LIVE_IN_SECONDS * 1000;
+    private volatile String defaultWorkspace;
+    private volatile String[] predefinedWorkspaces;
+    private volatile RepositorySourceCapabilities capabilities = new RepositorySourceCapabilities(SUPPORTS_SAME_NAME_SIBLINGS,
+                                                                                                  DEFAULT_SUPPORTS_UPDATES,
+                                                                                                  SUPPORTS_EVENTS,
+                                                                                                  DEFAULT_SUPPORTS_CREATING_WORKSPACES);
     private transient CachePolicy cachePolicy;
+    private transient CopyOnWriteArraySet<String> availableWorkspaceNames;
 
     /**
      * 
@@ -128,28 +141,6 @@ public class FileSystemSource implements RepositorySource, ObjectFactory {
     }
 
     /**
-     * Get the file system paths to each directory or file that should be exposed immediately the root node nodes in this
-     * connector. If not specified, all of the file system's root will be used.
-     * 
-     * @return the paths in the file system path to the top-level files and/or directories, or null if not yet set and the file
-     *         system's roots should be used
-     */
-    public String[] getFileSystemPaths() {
-        return fileSystemPaths;
-    }
-
-    /**
-     * Set the file system paths to each directory or file that should be exposed immediately under the root node in this
-     * connector. If not specified, all of the file system's root will be used.
-     * 
-     * @param fileSystemPaths the paths in the file system path to the top-level files and/or directories, or null if not yet set
-     *        and the file system's roots should be used
-     */
-    public synchronized void setFileSystemPaths( String[] fileSystemPaths ) {
-        this.fileSystemPaths = fileSystemPaths;
-    }
-
-    /**
      * Get whether this source supports updates.
      * 
      * @return true if this source supports updates, or false if this source only supports reading content.
@@ -165,8 +156,88 @@ public class FileSystemSource implements RepositorySource, ObjectFactory {
     // * content.
     // */
     // public synchronized void setSupportsUpdates( boolean supportsUpdates ) {
-    // capabilities.setSupportsUpdates(supportsUpdates);
+    // capabilities = new RepositorySourceCapabilities(SUPPORTS_SAME_NAME_SIBLINGS,
+    // supportsUpdates,
+    // SUPPORTS_EVENTS,
+    // capabilities.supportsCreatingWorkspaces());
     // }
+
+    /**
+     * Get the file system path to the existing directory that should be used for the default workspace. If the default is
+     * specified as a null String or is not a valid and resolvable path, this source will consider the default to be the current
+     * working directory of this virtual machine, as defined by the <code>new File(".")</code>.
+     * 
+     * @return the file system path to the directory representing the default workspace, or null if the default should be the
+     *         current working directory
+     */
+    public String getDirectoryForDefaultWorkspace() {
+        return defaultWorkspace;
+    }
+
+    /**
+     * Set the file system path to the existing directory that should be used for the default workspace. If the default is
+     * specified as a null String or is not a valid and resolvable path, this source will consider the default to be the current
+     * working directory of this virtual machine, as defined by the <code>new File(".")</code>.
+     * 
+     * @param pathToDirectoryForDefaultWorkspace the valid and resolvable file system path to the directory representing the
+     *        default workspace, or null if the current working directory should be used as the default workspace
+     */
+    public synchronized void setDirectoryForDefaultWorkspace( String pathToDirectoryForDefaultWorkspace ) {
+        this.defaultWorkspace = pathToDirectoryForDefaultWorkspace;
+    }
+
+    /**
+     * Gets the names of the workspaces that are available when this source is created. Each workspace name corresponds to a path
+     * to a directory on the file system.
+     * 
+     * @return the names of the workspaces that this source starts with, or null if there are no such workspaces
+     * @see #setPredefinedWorkspaceNames(String[])
+     * @see #setCreatingWorkspacesAllowed(boolean)
+     */
+    public synchronized String[] getPredefinedWorkspaceNames() {
+        String[] copy = new String[predefinedWorkspaces.length];
+        System.arraycopy(predefinedWorkspaces, 0, copy, 0, predefinedWorkspaces.length);
+        return copy;
+    }
+
+    /**
+     * Sets the names of the workspaces that are available when this source is created. Each workspace name corresponds to a path
+     * to a directory on the file system.
+     * 
+     * @param predefinedWorkspaceNames the names of the workspaces that this source should start with, or null if there are no
+     *        such workspaces
+     * @see #setCreatingWorkspacesAllowed(boolean)
+     * @see #getPredefinedWorkspaceNames()
+     */
+    public synchronized void setPredefinedWorkspaceNames( String[] predefinedWorkspaceNames ) {
+        this.predefinedWorkspaces = predefinedWorkspaceNames;
+    }
+
+    /**
+     * Get whether this source allows workspaces to be created dynamically.
+     * 
+     * @return true if this source allows workspaces to be created by clients, or false if the set of workspaces is fixed
+     * @see #setPredefinedWorkspaceNames(String[])
+     * @see #getPredefinedWorkspaceNames()
+     * @see #setCreatingWorkspacesAllowed(boolean)
+     */
+    public boolean isCreatingWorkspacesAllowed() {
+        return capabilities.supportsCreatingWorkspaces();
+    }
+
+    /**
+     * Set whether this source allows workspaces to be created dynamically.
+     * 
+     * @param allowWorkspaceCreation true if this source allows workspaces to be created by clients, or false if the set of
+     *        workspaces is fixed
+     * @see #setPredefinedWorkspaceNames(String[])
+     * @see #getPredefinedWorkspaceNames()
+     * @see #isCreatingWorkspacesAllowed()
+     */
+    public synchronized void setCreatingWorkspacesAllowed( boolean allowWorkspaceCreation ) {
+        capabilities = new RepositorySourceCapabilities(capabilities.supportsSameNameSiblings(), capabilities.supportsUpdates(),
+                                                        capabilities.supportsEvents(), allowWorkspaceCreation);
+    }
 
     /**
      * {@inheritDoc}
@@ -183,8 +254,7 @@ public class FileSystemSource implements RepositorySource, ObjectFactory {
      * @see org.jboss.dna.graph.connector.RepositorySource#setRetryLimit(int)
      */
     public synchronized void setRetryLimit( int limit ) {
-        if (limit < 0) limit = 0;
-        this.retryLimit = limit;
+        this.retryLimit = limit < 0 ? 0 : limit;
     }
 
     /**
@@ -213,7 +283,7 @@ public class FileSystemSource implements RepositorySource, ObjectFactory {
      * 
      * @see org.jboss.dna.graph.connector.RepositorySource#initialize(org.jboss.dna.graph.connector.RepositoryContext)
      */
-    public void initialize( RepositoryContext context ) throws RepositorySourceException {
+    public synchronized void initialize( RepositoryContext context ) throws RepositorySourceException {
         // No need to do anything
     }
 
@@ -222,7 +292,7 @@ public class FileSystemSource implements RepositorySource, ObjectFactory {
      * 
      * @see javax.naming.Referenceable#getReference()
      */
-    public Reference getReference() {
+    public synchronized Reference getReference() {
         String className = getClass().getName();
         String factoryClassName = this.getClass().getName();
         Reference ref = new Reference(className, factoryClassName, null);
@@ -230,12 +300,14 @@ public class FileSystemSource implements RepositorySource, ObjectFactory {
         if (getName() != null) {
             ref.add(new StringRefAddr(SOURCE_NAME, getName()));
         }
-        String[] paths = getFileSystemPaths();
-        if (paths != null && paths.length != 0) {
-            ref.add(new StringRefAddr(FILE_SYSTEM_PATHS, StringUtil.combineLines(paths)));
-        }
         ref.add(new StringRefAddr(CACHE_TIME_TO_LIVE_IN_MILLISECONDS, Integer.toString(getCacheTimeToLiveInMilliseconds())));
         ref.add(new StringRefAddr(RETRY_LIMIT, Integer.toString(getRetryLimit())));
+        ref.add(new StringRefAddr(DEFAULT_WORKSPACE, getDirectoryForDefaultWorkspace()));
+        ref.add(new StringRefAddr(ALLOW_CREATING_WORKSPACES, Boolean.toString(isCreatingWorkspacesAllowed())));
+        String[] workspaceNames = getPredefinedWorkspaceNames();
+        if (workspaceNames != null && workspaceNames.length != 0) {
+            ref.add(new StringRefAddr(PREDEFINED_WORKSPACE_NAMES, StringUtil.combineLines(workspaceNames)));
+        }
         return ref;
     }
 
@@ -259,21 +331,26 @@ public class FileSystemSource implements RepositorySource, ObjectFactory {
                 }
             }
             String sourceName = values.get(SOURCE_NAME);
-            String combinedPaths = values.get(FILE_SYSTEM_PATHS);
-            String[] fileSystemPaths = null;
-            if (combinedPaths != null) {
-                List<String> paths = StringUtil.splitLines(combinedPaths);
-                fileSystemPaths = paths.toArray(new String[paths.size()]);
-            }
             String cacheTtlInMillis = values.get(CACHE_TIME_TO_LIVE_IN_MILLISECONDS);
             String retryLimit = values.get(RETRY_LIMIT);
+            String defaultWorkspace = values.get(DEFAULT_WORKSPACE);
+            String createWorkspaces = values.get(ALLOW_CREATING_WORKSPACES);
+
+            String combinedWorkspaceNames = values.get(PREDEFINED_WORKSPACE_NAMES);
+            String[] workspaceNames = null;
+            if (combinedWorkspaceNames != null) {
+                List<String> paths = StringUtil.splitLines(combinedWorkspaceNames);
+                workspaceNames = paths.toArray(new String[paths.size()]);
+            }
 
             // Create the source instance ...
             FileSystemSource source = new FileSystemSource();
             if (sourceName != null) source.setName(sourceName);
-            if (fileSystemPaths != null) source.setFileSystemPaths(fileSystemPaths);
             if (cacheTtlInMillis != null) source.setCacheTimeToLiveInMilliseconds(Integer.parseInt(cacheTtlInMillis));
             if (retryLimit != null) source.setRetryLimit(Integer.parseInt(retryLimit));
+            if (defaultWorkspace != null) source.setDirectoryForDefaultWorkspace(defaultWorkspace);
+            if (createWorkspaces != null) source.setCreatingWorkspacesAllowed(Boolean.parseBoolean(createWorkspaces));
+            if (workspaceNames != null && workspaceNames.length != 0) source.setPredefinedWorkspaceNames(workspaceNames);
             return source;
         }
         return null;
@@ -290,53 +367,54 @@ public class FileSystemSource implements RepositorySource, ObjectFactory {
             I18n msg = FileSystemI18n.propertyIsRequired;
             throw new RepositorySourceException(getName(), msg.text("name"));
         }
-        Map<String, File> rootsByName = new HashMap<String, File>();
-        String[] fileSystemPaths = getFileSystemPaths();
-        if (fileSystemPaths != null && fileSystemPaths.length != 0) {
-            // Find each of the paths ...
-            List<String> pathsThatDontExist = new ArrayList<String>();
-            for (String fileSystemPath : fileSystemPaths) {
-                File root = new File(fileSystemPath);
-                if (!root.exists()) {
-                    pathsThatDontExist.add(fileSystemPath);
-                } else {
-                    rootsByName.put(root.getName(), root);
+
+        boolean reportWarnings = false;
+        if (this.availableWorkspaceNames == null) {
+            // Set up the predefined workspace names ...
+            this.availableWorkspaceNames = new CopyOnWriteArraySet<String>();
+            for (String predefined : this.predefinedWorkspaces) {
+                this.availableWorkspaceNames.add(predefined);
+            }
+            // Report the warnings for non-existant predefined workspaces
+            reportWarnings = true;
+            for (String path : this.availableWorkspaceNames) {
+                // Look for the file at this path ...
+                File file = new File(path);
+                if (!file.exists()) {
+                    Logger.getLogger(getClass()).warn(FileSystemI18n.pathForPredefinedWorkspaceDoesNotExist, path, name);
+                } else if (!file.isDirectory()) {
+                    Logger.getLogger(getClass()).warn(FileSystemI18n.pathForPredefinedWorkspaceIsNotDirectory, path, name);
+                } else if (!file.canRead()) {
+                    Logger.getLogger(getClass()).warn(FileSystemI18n.pathForPredefinedWorkspaceCannotBeRead, path, name);
                 }
             }
-            if (!pathsThatDontExist.isEmpty()) {
-                int count = pathsThatDontExist.size();
-                String msg = null;
-                if (count == 1) msg = FileSystemI18n.fileSystemPathDoesNotExist.text(getName(), pathsThatDontExist);
-                else msg = FileSystemI18n.fileSystemPathsDoNotExist.text(getName(), pathsThatDontExist, count);
-                throw new RepositorySourceException(getName(), msg);
-            }
-        } else {
-            // No file system paths specified, so get all of the file system's roots ...
-            for (File root : File.listRoots()) {
-                rootsByName.put(root.getName(), root);
-            }
         }
+
         FilenameFilter filenameFilter = null;
         boolean supportsUpdates = getSupportsUpdates();
-        return new FileSystemConnection(name, rootsByName, cachePolicy, filenameFilter, supportsUpdates);
-    }
-
-    @ThreadSafe
-    protected class Capabilities extends RepositorySourceCapabilities {
-        private final AtomicBoolean supportsUpdates = new AtomicBoolean(DEFAULT_SUPPORTS_UPDATES);
-
-        /*package*/Capabilities() {
-            super(SUPPORTS_SAME_NAME_SIBLINGS, DEFAULT_SUPPORTS_UPDATES, SUPPORTS_EVENTS);
+        File defaultWorkspace = new File(".");
+        String path = getDirectoryForDefaultWorkspace();
+        if (path != null) {
+            // Look for the file at this path ...
+            File file = new File(path);
+            I18n warning = null;
+            if (!file.exists()) {
+                warning = FileSystemI18n.pathForDefaultWorkspaceDoesNotExist;
+            } else if (!file.isDirectory()) {
+                warning = FileSystemI18n.pathForDefaultWorkspaceIsNotDirectory;
+            } else if (!file.canRead()) {
+                warning = FileSystemI18n.pathForDefaultWorkspaceCannotBeRead;
+            } else {
+                // good to use!
+                defaultWorkspace = file;
+            }
+            if (reportWarnings && warning != null) {
+                Logger.getLogger(getClass()).warn(warning, path, name);
+            }
         }
-
-        /*package*/void setSupportsUpdates( boolean supportsUpdates ) {
-            this.supportsUpdates.set(supportsUpdates);
-        }
-
-        @Override
-        public boolean supportsUpdates() {
-            return this.supportsUpdates.get();
-        }
+        this.availableWorkspaceNames.add(defaultWorkspace.getPath());
+        return new FileSystemConnection(name, defaultWorkspace, availableWorkspaceNames, isCreatingWorkspacesAllowed(),
+                                        cachePolicy, filenameFilter, supportsUpdates);
     }
 
     @Immutable

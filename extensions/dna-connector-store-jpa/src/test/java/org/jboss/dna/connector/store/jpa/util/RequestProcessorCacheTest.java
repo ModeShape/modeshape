@@ -56,6 +56,7 @@ public class RequestProcessorCacheTest {
     private Location location2;
     private Location[] children2;
     private LinkedList<Location> childrenList2;
+    private Long workspaceId;
 
     @Before
     public void beforeEach() {
@@ -64,6 +65,7 @@ public class RequestProcessorCacheTest {
         nameFactory = context.getValueFactories().getNameFactory();
         namespaces = context.getNamespaceRegistry();
         cache = new RequestProcessorCache(pathFactory);
+        workspaceId = 10L;
 
         Path parent = pathFactory.create("/a/b/c");
         location = new Location(parent, UUID.randomUUID());
@@ -106,60 +108,60 @@ public class RequestProcessorCacheTest {
 
     @Test
     public void shouldNotFindLocationForPathWhenEmpty() {
-        assertThat(cache.getLocationFor(location.getPath()), is(nullValue()));
+        assertThat(cache.getLocationFor(workspaceId, location.getPath()), is(nullValue()));
     }
 
     @Test
     public void shouldNotFindLocationForNullPath() {
-        assertThat(cache.getLocationFor(null), is(nullValue()));
+        assertThat(cache.getLocationFor(workspaceId, null), is(nullValue()));
     }
 
     @Test
     public void shouldFindLocationForPathAfterAdding() {
-        assertThat(cache.getLocationFor(location.getPath()), is(nullValue()));
-        cache.addNewNode(location);
-        assertThat(cache.getLocationFor(location.getPath()), is(sameInstance(location)));
+        assertThat(cache.getLocationFor(workspaceId, location.getPath()), is(nullValue()));
+        cache.addNewNode(workspaceId, location);
+        assertThat(cache.getLocationFor(workspaceId, location.getPath()), is(sameInstance(location)));
     }
 
     @Test
     public void shouldNotFindChildrenForPathEvenAfterLocationForSamePathIsAdded() {
-        cache.addNewNode(location);
-        assertThat(cache.getLocationFor(location.getPath()), is(sameInstance(location)));
-        assertThat(cache.getAllChildren(location.getPath()), is(nullValue()));
+        cache.addNewNode(workspaceId, location);
+        assertThat(cache.getLocationFor(workspaceId, location.getPath()), is(sameInstance(location)));
+        assertThat(cache.getAllChildren(workspaceId, location.getPath()), is(nullValue()));
     }
 
     @Test
     public void shouldNotFindChildrenForPathWhenEmpty() {
-        assertThat(cache.getAllChildren(location.getPath()), is(nullValue()));
+        assertThat(cache.getAllChildren(workspaceId, location.getPath()), is(nullValue()));
     }
 
     @Test
     public void shouldNotFindChildrenForNullPath() {
-        assertThat(cache.getAllChildren(null), is(nullValue()));
+        assertThat(cache.getAllChildren(workspaceId, null), is(nullValue()));
     }
 
     @Test
     public void shouldFindChildrenForPathAfterChildrenAreSet() {
-        assertThat(cache.getAllChildren(location.getPath()), is(nullValue()));
-        cache.setAllChildren(location.getPath(), childrenList);
-        assertThat(cache.getAllChildren(location.getPath()), is(sameInstance(childrenList)));
+        assertThat(cache.getAllChildren(workspaceId, location.getPath()), is(nullValue()));
+        cache.setAllChildren(workspaceId, location.getPath(), childrenList);
+        assertThat(cache.getAllChildren(workspaceId, location.getPath()), is(sameInstance(childrenList)));
     }
 
     @Test
     public void shouldRemoveChildrenForPathIfSuppliedListIsNull() {
-        assertThat(cache.getAllChildren(location.getPath()), is(nullValue()));
-        cache.setAllChildren(location.getPath(), childrenList);
-        assertThat(cache.getAllChildren(location.getPath()), is(sameInstance(childrenList)));
-        cache.setAllChildren(location.getPath(), null);
-        assertThat(cache.getAllChildren(location.getPath()), is(nullValue()));
+        assertThat(cache.getAllChildren(workspaceId, location.getPath()), is(nullValue()));
+        cache.setAllChildren(workspaceId, location.getPath(), childrenList);
+        assertThat(cache.getAllChildren(workspaceId, location.getPath()), is(sameInstance(childrenList)));
+        cache.setAllChildren(workspaceId, location.getPath(), null);
+        assertThat(cache.getAllChildren(workspaceId, location.getPath()), is(nullValue()));
     }
 
     @Test
     public void shouldSetEmptyChildrenForPathIfSuppliedListIsEmpty() {
-        assertThat(cache.getAllChildren(location.getPath()), is(nullValue()));
+        assertThat(cache.getAllChildren(workspaceId, location.getPath()), is(nullValue()));
         LinkedList<Location> emptyList = new LinkedList<Location>();
-        cache.setAllChildren(location.getPath(), emptyList);
-        assertThat(cache.getAllChildren(location.getPath()), is(sameInstance(emptyList)));
+        cache.setAllChildren(workspaceId, location.getPath(), emptyList);
+        assertThat(cache.getAllChildren(workspaceId, location.getPath()), is(sameInstance(emptyList)));
     }
 
     @Test
@@ -170,71 +172,71 @@ public class RequestProcessorCacheTest {
         Location newLocation = new Location(pathFactory.create("/a/b/c/d3/e[1]"));
         assertThat(oldLocation.getPath().getString(namespaces), is("/a/b/c/e[2]"));
         assertThat(newLocation.getPath().getString(namespaces), is("/a/b/c/d3/e[1]"));
-        cache.addNewNode(location);
-        cache.addNewNode(location2);
+        cache.addNewNode(workspaceId, location);
+        cache.addNewNode(workspaceId, location2);
         for (Location loc : children)
-            cache.addNewNode(loc);
+            cache.addNewNode(workspaceId, loc);
         for (Location loc : children2)
-            cache.addNewNode(loc);
-        cache.addNewNode(location);
-        cache.addNewNode(location2);
-        cache.setAllChildren(location.getPath(), childrenList);
-        cache.setAllChildren(location2.getPath(), childrenList2);
+            cache.addNewNode(workspaceId, loc);
+        cache.addNewNode(workspaceId, location);
+        cache.addNewNode(workspaceId, location2);
+        cache.setAllChildren(workspaceId, location.getPath(), childrenList);
+        cache.setAllChildren(workspaceId, location2.getPath(), childrenList2);
 
         // Assert the information before the move ...
-        assertThat(cache.getAllChildren(location.getPath()), hasItems(children));
-        assertThat(cache.getAllChildren(location2.getPath()), hasItems(children2));
-        assertThat(cache.getAllChildren(oldLocation.getPath()), hasItems(children2));
-        assertThat(cache.getAllChildren(newLocation.getPath()), is(nullValue()));
-        assertThat(cache.getAllChildren(children[0].getPath()), is(nullValue()));
-        assertThat(cache.getAllChildren(children[1].getPath()), is(nullValue()));
-        assertThat(cache.getAllChildren(children[2].getPath()), is(nullValue()));
-        assertThat(cache.getAllChildren(children[3].getPath()), is(nullValue()));
-        assertThat(cache.getAllChildren(children[4].getPath()), is(nullValue()));
-        assertThat(cache.getAllChildren(children[5].getPath()), hasItems(children2));
-        assertThat(cache.getAllChildren(children[6].getPath()), is(nullValue()));
-        assertThat(cache.getAllChildren(children[7].getPath()), is(nullValue()));
-        assertThat(cache.getAllChildren(children2[0].getPath()), is(nullValue()));
-        assertThat(cache.getAllChildren(children2[1].getPath()), is(nullValue()));
-        assertThat(cache.getAllChildren(children2[2].getPath()), is(nullValue()));
-        assertThat(cache.getAllChildren(children2[3].getPath()), is(nullValue()));
-        assertThat(cache.getAllChildren(children2[4].getPath()), is(nullValue()));
-        assertThat(cache.getAllChildren(children2[5].getPath()), is(nullValue()));
-        assertThat(cache.getAllChildren(children2[6].getPath()), is(nullValue()));
-        assertThat(cache.getAllChildren(children2[7].getPath()), is(nullValue()));
-        assertThat(cache.getLocationFor(location.getPath()), is(location));
-        assertThat(cache.getLocationFor(location2.getPath()), is(location2));
-        assertThat(cache.getLocationFor(oldLocation.getPath()), is(oldLocation));
-        assertThat(cache.getLocationFor(newLocation.getPath()), is(nullValue()));
-        assertThat(cache.getLocationFor(children[0].getPath()), is(children[0]));
-        assertThat(cache.getLocationFor(children[1].getPath()), is(children[1]));
-        assertThat(cache.getLocationFor(children[2].getPath()), is(children[2]));
-        assertThat(cache.getLocationFor(children[3].getPath()), is(children[3]));
-        assertThat(cache.getLocationFor(children[4].getPath()), is(children[4]));
-        assertThat(cache.getLocationFor(children[5].getPath()), is(children[5]));
-        assertThat(cache.getLocationFor(children[6].getPath()), is(children[6]));
-        assertThat(cache.getLocationFor(children[7].getPath()), is(children[7]));
-        assertThat(cache.getLocationFor(children2[0].getPath()), is(children2[0]));
-        assertThat(cache.getLocationFor(children2[1].getPath()), is(children2[1]));
-        assertThat(cache.getLocationFor(children2[2].getPath()), is(children2[2]));
-        assertThat(cache.getLocationFor(children2[3].getPath()), is(children2[3]));
-        assertThat(cache.getLocationFor(children2[4].getPath()), is(children2[4]));
-        assertThat(cache.getLocationFor(children2[5].getPath()), is(children2[5]));
-        assertThat(cache.getLocationFor(children2[6].getPath()), is(children2[6]));
-        assertThat(cache.getLocationFor(children2[7].getPath()), is(children2[7]));
+        assertThat(cache.getAllChildren(workspaceId, location.getPath()), hasItems(children));
+        assertThat(cache.getAllChildren(workspaceId, location2.getPath()), hasItems(children2));
+        assertThat(cache.getAllChildren(workspaceId, oldLocation.getPath()), hasItems(children2));
+        assertThat(cache.getAllChildren(workspaceId, newLocation.getPath()), is(nullValue()));
+        assertThat(cache.getAllChildren(workspaceId, children[0].getPath()), is(nullValue()));
+        assertThat(cache.getAllChildren(workspaceId, children[1].getPath()), is(nullValue()));
+        assertThat(cache.getAllChildren(workspaceId, children[2].getPath()), is(nullValue()));
+        assertThat(cache.getAllChildren(workspaceId, children[3].getPath()), is(nullValue()));
+        assertThat(cache.getAllChildren(workspaceId, children[4].getPath()), is(nullValue()));
+        assertThat(cache.getAllChildren(workspaceId, children[5].getPath()), hasItems(children2));
+        assertThat(cache.getAllChildren(workspaceId, children[6].getPath()), is(nullValue()));
+        assertThat(cache.getAllChildren(workspaceId, children[7].getPath()), is(nullValue()));
+        assertThat(cache.getAllChildren(workspaceId, children2[0].getPath()), is(nullValue()));
+        assertThat(cache.getAllChildren(workspaceId, children2[1].getPath()), is(nullValue()));
+        assertThat(cache.getAllChildren(workspaceId, children2[2].getPath()), is(nullValue()));
+        assertThat(cache.getAllChildren(workspaceId, children2[3].getPath()), is(nullValue()));
+        assertThat(cache.getAllChildren(workspaceId, children2[4].getPath()), is(nullValue()));
+        assertThat(cache.getAllChildren(workspaceId, children2[5].getPath()), is(nullValue()));
+        assertThat(cache.getAllChildren(workspaceId, children2[6].getPath()), is(nullValue()));
+        assertThat(cache.getAllChildren(workspaceId, children2[7].getPath()), is(nullValue()));
+        assertThat(cache.getLocationFor(workspaceId, location.getPath()), is(location));
+        assertThat(cache.getLocationFor(workspaceId, location2.getPath()), is(location2));
+        assertThat(cache.getLocationFor(workspaceId, oldLocation.getPath()), is(oldLocation));
+        assertThat(cache.getLocationFor(workspaceId, newLocation.getPath()), is(nullValue()));
+        assertThat(cache.getLocationFor(workspaceId, children[0].getPath()), is(children[0]));
+        assertThat(cache.getLocationFor(workspaceId, children[1].getPath()), is(children[1]));
+        assertThat(cache.getLocationFor(workspaceId, children[2].getPath()), is(children[2]));
+        assertThat(cache.getLocationFor(workspaceId, children[3].getPath()), is(children[3]));
+        assertThat(cache.getLocationFor(workspaceId, children[4].getPath()), is(children[4]));
+        assertThat(cache.getLocationFor(workspaceId, children[5].getPath()), is(children[5]));
+        assertThat(cache.getLocationFor(workspaceId, children[6].getPath()), is(children[6]));
+        assertThat(cache.getLocationFor(workspaceId, children[7].getPath()), is(children[7]));
+        assertThat(cache.getLocationFor(workspaceId, children2[0].getPath()), is(children2[0]));
+        assertThat(cache.getLocationFor(workspaceId, children2[1].getPath()), is(children2[1]));
+        assertThat(cache.getLocationFor(workspaceId, children2[2].getPath()), is(children2[2]));
+        assertThat(cache.getLocationFor(workspaceId, children2[3].getPath()), is(children2[3]));
+        assertThat(cache.getLocationFor(workspaceId, children2[4].getPath()), is(children2[4]));
+        assertThat(cache.getLocationFor(workspaceId, children2[5].getPath()), is(children2[5]));
+        assertThat(cache.getLocationFor(workspaceId, children2[6].getPath()), is(children2[6]));
+        assertThat(cache.getLocationFor(workspaceId, children2[7].getPath()), is(children2[7]));
 
         // System.out.println("Before:");
         // System.out.println(cache.getString(namespaces));
 
         // Move the branch (without a known index) ...
-        assertThat(cache.moveNode(oldLocation, -1, newLocation), is(true));
+        assertThat(cache.moveNode(workspaceId, oldLocation, -1, newLocation), is(true));
 
         // System.out.println("After moving " + oldLocation.getPath().getString(namespaces) + " to "
         // + newLocation.getPath().getString(namespaces));
         // System.out.println(cache.getString(namespaces));
 
         // Check the cache content, which should no longer have any content below the old and new locations ...
-        LinkedList<Location> afterRemoval = cache.getAllChildren(location.getPath());
+        LinkedList<Location> afterRemoval = cache.getAllChildren(workspaceId, location.getPath());
         assertThat(afterRemoval.get(0), is(children[0]));
         assertThat(afterRemoval.get(1), is(children[1]));
         assertThat(afterRemoval.get(2), is(children[2]));
@@ -243,48 +245,48 @@ public class RequestProcessorCacheTest {
         assertThat(afterRemoval.get(5), is(children[6].with(path("/a/b/c/e[2]"))));
         assertThat(afterRemoval.get(6), is(children[7].with(path("/a/b/c/e[3]"))));
 
-        assertThat(cache.getAllChildren(location2.getPath()), is(nullValue())); // old location
-        assertThat(cache.getAllChildren(oldLocation.getPath()), is(nullValue())); // old location
-        assertThat(cache.getAllChildren(newLocation.getPath()), is(nullValue())); // all children removed
+        assertThat(cache.getAllChildren(workspaceId, location2.getPath()), is(nullValue())); // old location
+        assertThat(cache.getAllChildren(workspaceId, oldLocation.getPath()), is(nullValue())); // old location
+        assertThat(cache.getAllChildren(workspaceId, newLocation.getPath()), is(nullValue())); // all children removed
 
-        assertThat(cache.getAllChildren(children[0].getPath()), is(nullValue()));
-        assertThat(cache.getAllChildren(children[1].getPath()), is(nullValue()));
-        assertThat(cache.getAllChildren(children[2].getPath()), is(nullValue()));
-        assertThat(cache.getAllChildren(children[3].getPath()), is(nullValue()));
-        assertThat(cache.getAllChildren(children[4].getPath()), is(nullValue()));
-        assertThat(cache.getAllChildren(children[5].getPath()), is(nullValue()));
-        assertThat(cache.getAllChildren(children[6].getPath()), is(nullValue()));
-        assertThat(cache.getAllChildren(children2[1].getPath()), is(nullValue()));
-        assertThat(cache.getAllChildren(children2[2].getPath()), is(nullValue()));
-        assertThat(cache.getAllChildren(children2[3].getPath()), is(nullValue()));
-        assertThat(cache.getAllChildren(children2[4].getPath()), is(nullValue()));
-        assertThat(cache.getAllChildren(children2[5].getPath()), is(nullValue()));
-        assertThat(cache.getAllChildren(children2[6].getPath()), is(nullValue()));
-        assertThat(cache.getAllChildren(children2[7].getPath()), is(nullValue()));
-        assertThat(cache.getLocationFor(location.getPath()), is(location));
+        assertThat(cache.getAllChildren(workspaceId, children[0].getPath()), is(nullValue()));
+        assertThat(cache.getAllChildren(workspaceId, children[1].getPath()), is(nullValue()));
+        assertThat(cache.getAllChildren(workspaceId, children[2].getPath()), is(nullValue()));
+        assertThat(cache.getAllChildren(workspaceId, children[3].getPath()), is(nullValue()));
+        assertThat(cache.getAllChildren(workspaceId, children[4].getPath()), is(nullValue()));
+        assertThat(cache.getAllChildren(workspaceId, children[5].getPath()), is(nullValue()));
+        assertThat(cache.getAllChildren(workspaceId, children[6].getPath()), is(nullValue()));
+        assertThat(cache.getAllChildren(workspaceId, children2[1].getPath()), is(nullValue()));
+        assertThat(cache.getAllChildren(workspaceId, children2[2].getPath()), is(nullValue()));
+        assertThat(cache.getAllChildren(workspaceId, children2[3].getPath()), is(nullValue()));
+        assertThat(cache.getAllChildren(workspaceId, children2[4].getPath()), is(nullValue()));
+        assertThat(cache.getAllChildren(workspaceId, children2[5].getPath()), is(nullValue()));
+        assertThat(cache.getAllChildren(workspaceId, children2[6].getPath()), is(nullValue()));
+        assertThat(cache.getAllChildren(workspaceId, children2[7].getPath()), is(nullValue()));
+        assertThat(cache.getLocationFor(workspaceId, location.getPath()), is(location));
         // location 2 was moved, so it's been replaced by the next SNS (children 6 with SNS index of 2) ...
-        assertThat(cache.getLocationFor(location2.getPath()), is(children[6].with(path("/a/b/c/e[2]"))));
-        assertThat(cache.getLocationFor(oldLocation.getPath()), is(children[6].with(path("/a/b/c/e[2]"))));
-        assertThat(cache.getLocationFor(newLocation.getPath()), is(nullValue()));
-        assertThat(cache.getLocationFor(children[0].getPath()), is(children[0]));
-        assertThat(cache.getLocationFor(children[1].getPath()), is(children[1]));
-        assertThat(cache.getLocationFor(children[2].getPath()), is(children[2]));
-        assertThat(cache.getLocationFor(children[3].getPath()), is(children[3]));
-        assertThat(cache.getLocationFor(children[4].getPath()), is(children[4]));
+        assertThat(cache.getLocationFor(workspaceId, location2.getPath()), is(children[6].with(path("/a/b/c/e[2]"))));
+        assertThat(cache.getLocationFor(workspaceId, oldLocation.getPath()), is(children[6].with(path("/a/b/c/e[2]"))));
+        assertThat(cache.getLocationFor(workspaceId, newLocation.getPath()), is(nullValue()));
+        assertThat(cache.getLocationFor(workspaceId, children[0].getPath()), is(children[0]));
+        assertThat(cache.getLocationFor(workspaceId, children[1].getPath()), is(children[1]));
+        assertThat(cache.getLocationFor(workspaceId, children[2].getPath()), is(children[2]));
+        assertThat(cache.getLocationFor(workspaceId, children[3].getPath()), is(children[3]));
+        assertThat(cache.getLocationFor(workspaceId, children[4].getPath()), is(children[4]));
         // children[6] replaced children[5]'s path, and [7] replaced [6]
-        assertThat(cache.getLocationFor(children[5].getPath()), is(children[6].with(path("/a/b/c/e[2]"))));
-        assertThat(cache.getLocationFor(children[6].getPath()), is(children[7].with(path("/a/b/c/e[3]"))));
-        assertThat(cache.getLocationFor(children[7].getPath()), is(nullValue()));
+        assertThat(cache.getLocationFor(workspaceId, children[5].getPath()), is(children[6].with(path("/a/b/c/e[2]"))));
+        assertThat(cache.getLocationFor(workspaceId, children[6].getPath()), is(children[7].with(path("/a/b/c/e[3]"))));
+        assertThat(cache.getLocationFor(workspaceId, children[7].getPath()), is(nullValue()));
         // The following nodes were moved, but as children they were removed from the cache
         // rather than having a non-last-segment in their paths updated.
-        assertThat(cache.getLocationFor(children2[0].getPath()), is(nullValue()));
-        assertThat(cache.getLocationFor(children2[1].getPath()), is(nullValue()));
-        assertThat(cache.getLocationFor(children2[2].getPath()), is(nullValue()));
-        assertThat(cache.getLocationFor(children2[3].getPath()), is(nullValue()));
-        assertThat(cache.getLocationFor(children2[4].getPath()), is(nullValue()));
-        assertThat(cache.getLocationFor(children2[5].getPath()), is(nullValue()));
-        assertThat(cache.getLocationFor(children2[6].getPath()), is(nullValue()));
-        assertThat(cache.getLocationFor(children2[7].getPath()), is(nullValue()));
+        assertThat(cache.getLocationFor(workspaceId, children2[0].getPath()), is(nullValue()));
+        assertThat(cache.getLocationFor(workspaceId, children2[1].getPath()), is(nullValue()));
+        assertThat(cache.getLocationFor(workspaceId, children2[2].getPath()), is(nullValue()));
+        assertThat(cache.getLocationFor(workspaceId, children2[3].getPath()), is(nullValue()));
+        assertThat(cache.getLocationFor(workspaceId, children2[4].getPath()), is(nullValue()));
+        assertThat(cache.getLocationFor(workspaceId, children2[5].getPath()), is(nullValue()));
+        assertThat(cache.getLocationFor(workspaceId, children2[6].getPath()), is(nullValue()));
+        assertThat(cache.getLocationFor(workspaceId, children2[7].getPath()), is(nullValue()));
     }
 
     @Test
@@ -295,58 +297,58 @@ public class RequestProcessorCacheTest {
         Location newLocation = new Location(pathFactory.create("/a/b/c/d3/e[1]"));
         assertThat(oldLocation.getPath().getString(namespaces), is("/a/b/c/e[2]"));
         assertThat(newLocation.getPath().getString(namespaces), is("/a/b/c/d3/e[1]"));
-        cache.addNewNode(location);
-        cache.addNewNode(location2);
+        cache.addNewNode(workspaceId, location);
+        cache.addNewNode(workspaceId, location2);
         for (Location loc : children)
-            cache.addNewNode(loc);
+            cache.addNewNode(workspaceId, loc);
         for (Location loc : children2)
-            cache.addNewNode(loc);
-        cache.addNewNode(location);
-        cache.addNewNode(location2);
-        cache.setAllChildren(location.getPath(), childrenList);
-        cache.setAllChildren(location2.getPath(), childrenList2);
+            cache.addNewNode(workspaceId, loc);
+        cache.addNewNode(workspaceId, location);
+        cache.addNewNode(workspaceId, location2);
+        cache.setAllChildren(workspaceId, location.getPath(), childrenList);
+        cache.setAllChildren(workspaceId, location2.getPath(), childrenList2);
 
         // Assert the information before the move ...
-        assertThat(cache.getAllChildren(location.getPath()), hasItems(children));
-        assertThat(cache.getAllChildren(location2.getPath()), hasItems(children2));
-        assertThat(cache.getAllChildren(oldLocation.getPath()), hasItems(children2));
-        assertThat(cache.getAllChildren(newLocation.getPath()), is(nullValue()));
-        assertThat(cache.getAllChildren(children[0].getPath()), is(nullValue()));
-        assertThat(cache.getAllChildren(children[1].getPath()), is(nullValue()));
-        assertThat(cache.getAllChildren(children[2].getPath()), is(nullValue()));
-        assertThat(cache.getAllChildren(children[3].getPath()), is(nullValue()));
-        assertThat(cache.getAllChildren(children[4].getPath()), is(nullValue()));
-        assertThat(cache.getAllChildren(children[5].getPath()), hasItems(children2));
-        assertThat(cache.getAllChildren(children[6].getPath()), is(nullValue()));
-        assertThat(cache.getAllChildren(children[7].getPath()), is(nullValue()));
-        assertThat(cache.getAllChildren(children2[0].getPath()), is(nullValue()));
-        assertThat(cache.getAllChildren(children2[1].getPath()), is(nullValue()));
-        assertThat(cache.getAllChildren(children2[2].getPath()), is(nullValue()));
-        assertThat(cache.getAllChildren(children2[3].getPath()), is(nullValue()));
-        assertThat(cache.getAllChildren(children2[4].getPath()), is(nullValue()));
-        assertThat(cache.getAllChildren(children2[5].getPath()), is(nullValue()));
-        assertThat(cache.getAllChildren(children2[6].getPath()), is(nullValue()));
-        assertThat(cache.getAllChildren(children2[7].getPath()), is(nullValue()));
-        assertThat(cache.getLocationFor(location.getPath()), is(location));
-        assertThat(cache.getLocationFor(location2.getPath()), is(location2));
-        assertThat(cache.getLocationFor(oldLocation.getPath()), is(oldLocation));
-        assertThat(cache.getLocationFor(newLocation.getPath()), is(nullValue()));
-        assertThat(cache.getLocationFor(children[0].getPath()), is(children[0]));
-        assertThat(cache.getLocationFor(children[1].getPath()), is(children[1]));
-        assertThat(cache.getLocationFor(children[2].getPath()), is(children[2]));
-        assertThat(cache.getLocationFor(children[3].getPath()), is(children[3]));
-        assertThat(cache.getLocationFor(children[4].getPath()), is(children[4]));
-        assertThat(cache.getLocationFor(children[5].getPath()), is(children[5]));
-        assertThat(cache.getLocationFor(children[6].getPath()), is(children[6]));
-        assertThat(cache.getLocationFor(children[7].getPath()), is(children[7]));
-        assertThat(cache.getLocationFor(children2[0].getPath()), is(children2[0]));
-        assertThat(cache.getLocationFor(children2[1].getPath()), is(children2[1]));
-        assertThat(cache.getLocationFor(children2[2].getPath()), is(children2[2]));
-        assertThat(cache.getLocationFor(children2[3].getPath()), is(children2[3]));
-        assertThat(cache.getLocationFor(children2[4].getPath()), is(children2[4]));
-        assertThat(cache.getLocationFor(children2[5].getPath()), is(children2[5]));
-        assertThat(cache.getLocationFor(children2[6].getPath()), is(children2[6]));
-        assertThat(cache.getLocationFor(children2[7].getPath()), is(children2[7]));
+        assertThat(cache.getAllChildren(workspaceId, location.getPath()), hasItems(children));
+        assertThat(cache.getAllChildren(workspaceId, location2.getPath()), hasItems(children2));
+        assertThat(cache.getAllChildren(workspaceId, oldLocation.getPath()), hasItems(children2));
+        assertThat(cache.getAllChildren(workspaceId, newLocation.getPath()), is(nullValue()));
+        assertThat(cache.getAllChildren(workspaceId, children[0].getPath()), is(nullValue()));
+        assertThat(cache.getAllChildren(workspaceId, children[1].getPath()), is(nullValue()));
+        assertThat(cache.getAllChildren(workspaceId, children[2].getPath()), is(nullValue()));
+        assertThat(cache.getAllChildren(workspaceId, children[3].getPath()), is(nullValue()));
+        assertThat(cache.getAllChildren(workspaceId, children[4].getPath()), is(nullValue()));
+        assertThat(cache.getAllChildren(workspaceId, children[5].getPath()), hasItems(children2));
+        assertThat(cache.getAllChildren(workspaceId, children[6].getPath()), is(nullValue()));
+        assertThat(cache.getAllChildren(workspaceId, children[7].getPath()), is(nullValue()));
+        assertThat(cache.getAllChildren(workspaceId, children2[0].getPath()), is(nullValue()));
+        assertThat(cache.getAllChildren(workspaceId, children2[1].getPath()), is(nullValue()));
+        assertThat(cache.getAllChildren(workspaceId, children2[2].getPath()), is(nullValue()));
+        assertThat(cache.getAllChildren(workspaceId, children2[3].getPath()), is(nullValue()));
+        assertThat(cache.getAllChildren(workspaceId, children2[4].getPath()), is(nullValue()));
+        assertThat(cache.getAllChildren(workspaceId, children2[5].getPath()), is(nullValue()));
+        assertThat(cache.getAllChildren(workspaceId, children2[6].getPath()), is(nullValue()));
+        assertThat(cache.getAllChildren(workspaceId, children2[7].getPath()), is(nullValue()));
+        assertThat(cache.getLocationFor(workspaceId, location.getPath()), is(location));
+        assertThat(cache.getLocationFor(workspaceId, location2.getPath()), is(location2));
+        assertThat(cache.getLocationFor(workspaceId, oldLocation.getPath()), is(oldLocation));
+        assertThat(cache.getLocationFor(workspaceId, newLocation.getPath()), is(nullValue()));
+        assertThat(cache.getLocationFor(workspaceId, children[0].getPath()), is(children[0]));
+        assertThat(cache.getLocationFor(workspaceId, children[1].getPath()), is(children[1]));
+        assertThat(cache.getLocationFor(workspaceId, children[2].getPath()), is(children[2]));
+        assertThat(cache.getLocationFor(workspaceId, children[3].getPath()), is(children[3]));
+        assertThat(cache.getLocationFor(workspaceId, children[4].getPath()), is(children[4]));
+        assertThat(cache.getLocationFor(workspaceId, children[5].getPath()), is(children[5]));
+        assertThat(cache.getLocationFor(workspaceId, children[6].getPath()), is(children[6]));
+        assertThat(cache.getLocationFor(workspaceId, children[7].getPath()), is(children[7]));
+        assertThat(cache.getLocationFor(workspaceId, children2[0].getPath()), is(children2[0]));
+        assertThat(cache.getLocationFor(workspaceId, children2[1].getPath()), is(children2[1]));
+        assertThat(cache.getLocationFor(workspaceId, children2[2].getPath()), is(children2[2]));
+        assertThat(cache.getLocationFor(workspaceId, children2[3].getPath()), is(children2[3]));
+        assertThat(cache.getLocationFor(workspaceId, children2[4].getPath()), is(children2[4]));
+        assertThat(cache.getLocationFor(workspaceId, children2[5].getPath()), is(children2[5]));
+        assertThat(cache.getLocationFor(workspaceId, children2[6].getPath()), is(children2[6]));
+        assertThat(cache.getLocationFor(workspaceId, children2[7].getPath()), is(children2[7]));
 
         // System.out.println("Before:");
         // System.out.println(cache.getString(namespaces));
@@ -362,13 +364,13 @@ public class RequestProcessorCacheTest {
         locationsToRemove.add(new Location(pathFactory.create(children2[6].getPath(), "m3")));
 
         // Remove the branch ...
-        assertThat(cache.removeBranch(locationsToRemove), is(true));
+        assertThat(cache.removeBranch(workspaceId, locationsToRemove), is(true));
 
         // System.out.println("After removing " + locationsToRemove.get(0).getString(namespaces));
         // System.out.println(cache.getString(namespaces));
 
         // Check the cache content, which should no longer have any content below the old and new locations ...
-        LinkedList<Location> afterRemoval = cache.getAllChildren(location.getPath());
+        LinkedList<Location> afterRemoval = cache.getAllChildren(workspaceId, location.getPath());
         assertThat(afterRemoval.get(0), is(children[0]));
         assertThat(afterRemoval.get(1), is(children[1]));
         assertThat(afterRemoval.get(2), is(children[2]));
@@ -377,47 +379,47 @@ public class RequestProcessorCacheTest {
         assertThat(afterRemoval.get(5), is(children[6].with(path("/a/b/c/e[2]"))));
         assertThat(afterRemoval.get(6), is(children[7].with(path("/a/b/c/e[3]"))));
 
-        assertThat(cache.getAllChildren(location2.getPath()), is(nullValue())); // old location
-        assertThat(cache.getAllChildren(oldLocation.getPath()), is(nullValue())); // old location
-        assertThat(cache.getAllChildren(newLocation.getPath()), is(nullValue())); // all children removed
+        assertThat(cache.getAllChildren(workspaceId, location2.getPath()), is(nullValue())); // old location
+        assertThat(cache.getAllChildren(workspaceId, oldLocation.getPath()), is(nullValue())); // old location
+        assertThat(cache.getAllChildren(workspaceId, newLocation.getPath()), is(nullValue())); // all children removed
 
-        assertThat(cache.getAllChildren(children[0].getPath()), is(nullValue()));
-        assertThat(cache.getAllChildren(children[1].getPath()), is(nullValue()));
-        assertThat(cache.getAllChildren(children[2].getPath()), is(nullValue()));
-        assertThat(cache.getAllChildren(children[3].getPath()), is(nullValue()));
-        assertThat(cache.getAllChildren(children[4].getPath()), is(nullValue()));
-        assertThat(cache.getAllChildren(children[5].getPath()), is(nullValue()));
-        assertThat(cache.getAllChildren(children[6].getPath()), is(nullValue()));
-        assertThat(cache.getAllChildren(children2[1].getPath()), is(nullValue()));
-        assertThat(cache.getAllChildren(children2[2].getPath()), is(nullValue()));
-        assertThat(cache.getAllChildren(children2[3].getPath()), is(nullValue()));
-        assertThat(cache.getAllChildren(children2[4].getPath()), is(nullValue()));
-        assertThat(cache.getAllChildren(children2[5].getPath()), is(nullValue()));
-        assertThat(cache.getAllChildren(children2[6].getPath()), is(nullValue()));
-        assertThat(cache.getAllChildren(children2[7].getPath()), is(nullValue()));
-        assertThat(cache.getLocationFor(location.getPath()), is(location));
+        assertThat(cache.getAllChildren(workspaceId, children[0].getPath()), is(nullValue()));
+        assertThat(cache.getAllChildren(workspaceId, children[1].getPath()), is(nullValue()));
+        assertThat(cache.getAllChildren(workspaceId, children[2].getPath()), is(nullValue()));
+        assertThat(cache.getAllChildren(workspaceId, children[3].getPath()), is(nullValue()));
+        assertThat(cache.getAllChildren(workspaceId, children[4].getPath()), is(nullValue()));
+        assertThat(cache.getAllChildren(workspaceId, children[5].getPath()), is(nullValue()));
+        assertThat(cache.getAllChildren(workspaceId, children[6].getPath()), is(nullValue()));
+        assertThat(cache.getAllChildren(workspaceId, children2[1].getPath()), is(nullValue()));
+        assertThat(cache.getAllChildren(workspaceId, children2[2].getPath()), is(nullValue()));
+        assertThat(cache.getAllChildren(workspaceId, children2[3].getPath()), is(nullValue()));
+        assertThat(cache.getAllChildren(workspaceId, children2[4].getPath()), is(nullValue()));
+        assertThat(cache.getAllChildren(workspaceId, children2[5].getPath()), is(nullValue()));
+        assertThat(cache.getAllChildren(workspaceId, children2[6].getPath()), is(nullValue()));
+        assertThat(cache.getAllChildren(workspaceId, children2[7].getPath()), is(nullValue()));
+        assertThat(cache.getLocationFor(workspaceId, location.getPath()), is(location));
         // location 2 was moved, so it's been replaced by the next SNS (children 6 with SNS index of 2) ...
-        assertThat(cache.getLocationFor(location2.getPath()), is(children[6].with(path("/a/b/c/e[2]"))));
-        assertThat(cache.getLocationFor(oldLocation.getPath()), is(children[6].with(path("/a/b/c/e[2]"))));
-        assertThat(cache.getLocationFor(newLocation.getPath()), is(nullValue()));
-        assertThat(cache.getLocationFor(children[0].getPath()), is(children[0]));
-        assertThat(cache.getLocationFor(children[1].getPath()), is(children[1]));
-        assertThat(cache.getLocationFor(children[2].getPath()), is(children[2]));
-        assertThat(cache.getLocationFor(children[3].getPath()), is(children[3]));
-        assertThat(cache.getLocationFor(children[4].getPath()), is(children[4]));
+        assertThat(cache.getLocationFor(workspaceId, location2.getPath()), is(children[6].with(path("/a/b/c/e[2]"))));
+        assertThat(cache.getLocationFor(workspaceId, oldLocation.getPath()), is(children[6].with(path("/a/b/c/e[2]"))));
+        assertThat(cache.getLocationFor(workspaceId, newLocation.getPath()), is(nullValue()));
+        assertThat(cache.getLocationFor(workspaceId, children[0].getPath()), is(children[0]));
+        assertThat(cache.getLocationFor(workspaceId, children[1].getPath()), is(children[1]));
+        assertThat(cache.getLocationFor(workspaceId, children[2].getPath()), is(children[2]));
+        assertThat(cache.getLocationFor(workspaceId, children[3].getPath()), is(children[3]));
+        assertThat(cache.getLocationFor(workspaceId, children[4].getPath()), is(children[4]));
         // children[6] replaced children[5]'s path, and [7] replaced [6]
-        assertThat(cache.getLocationFor(children[5].getPath()), is(children[6].with(path("/a/b/c/e[2]"))));
-        assertThat(cache.getLocationFor(children[6].getPath()), is(children[7].with(path("/a/b/c/e[3]"))));
-        assertThat(cache.getLocationFor(children[7].getPath()), is(nullValue()));
+        assertThat(cache.getLocationFor(workspaceId, children[5].getPath()), is(children[6].with(path("/a/b/c/e[2]"))));
+        assertThat(cache.getLocationFor(workspaceId, children[6].getPath()), is(children[7].with(path("/a/b/c/e[3]"))));
+        assertThat(cache.getLocationFor(workspaceId, children[7].getPath()), is(nullValue()));
         // The following nodes were moved, but as children they were removed from the cache
         // rather than having a non-last-segment in their paths updated.
-        assertThat(cache.getLocationFor(children2[0].getPath()), is(nullValue()));
-        assertThat(cache.getLocationFor(children2[1].getPath()), is(nullValue()));
-        assertThat(cache.getLocationFor(children2[2].getPath()), is(nullValue()));
-        assertThat(cache.getLocationFor(children2[3].getPath()), is(nullValue()));
-        assertThat(cache.getLocationFor(children2[4].getPath()), is(nullValue()));
-        assertThat(cache.getLocationFor(children2[5].getPath()), is(nullValue()));
-        assertThat(cache.getLocationFor(children2[6].getPath()), is(nullValue()));
-        assertThat(cache.getLocationFor(children2[7].getPath()), is(nullValue()));
+        assertThat(cache.getLocationFor(workspaceId, children2[0].getPath()), is(nullValue()));
+        assertThat(cache.getLocationFor(workspaceId, children2[1].getPath()), is(nullValue()));
+        assertThat(cache.getLocationFor(workspaceId, children2[2].getPath()), is(nullValue()));
+        assertThat(cache.getLocationFor(workspaceId, children2[3].getPath()), is(nullValue()));
+        assertThat(cache.getLocationFor(workspaceId, children2[4].getPath()), is(nullValue()));
+        assertThat(cache.getLocationFor(workspaceId, children2[5].getPath()), is(nullValue()));
+        assertThat(cache.getLocationFor(workspaceId, children2[6].getPath()), is(nullValue()));
+        assertThat(cache.getLocationFor(workspaceId, children2[7].getPath()), is(nullValue()));
     }
 }

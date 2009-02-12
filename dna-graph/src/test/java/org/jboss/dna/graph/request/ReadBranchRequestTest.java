@@ -27,8 +27,6 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.hamcrest.core.IsSame.sameInstance;
 import static org.junit.Assert.assertThat;
-import org.jboss.dna.graph.request.ReadBranchRequest;
-import org.jboss.dna.graph.request.Request;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -47,18 +45,24 @@ public class ReadBranchRequestTest extends AbstractRequestTest {
 
     @Override
     protected Request createRequest() {
-        return new ReadBranchRequest(validPathLocation1);
+        return new ReadBranchRequest(validPathLocation1, workspace1);
     }
 
     @Test( expected = IllegalArgumentException.class )
     public void shouldNotAllowCreatingRequestWithNullFromLocation() {
-        new ReadBranchRequest(null);
+        new ReadBranchRequest(null, workspace1);
+    }
+
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldNotAllowCreatingRequestWithNullWorkspaceName() {
+        new ReadBranchRequest(validPathLocation1, null);
     }
 
     @Test
     public void shouldCreateValidRequestWithValidLocation() {
-        request = new ReadBranchRequest(validPathLocation1);
+        request = new ReadBranchRequest(validPathLocation1, workspace1);
         assertThat(request.at(), is(sameInstance(validPathLocation1)));
+        assertThat(request.inWorkspace(), is(sameInstance(workspace1)));
         assertThat(request.hasError(), is(false));
         assertThat(request.getError(), is(nullValue()));
         assertThat(request.maximumDepth(), is(ReadBranchRequest.DEFAULT_MAXIMUM_DEPTH));
@@ -66,7 +70,7 @@ public class ReadBranchRequestTest extends AbstractRequestTest {
 
     @Test
     public void shouldCreateValidRequestWithValidLocationAndMaximumDepth() {
-        request = new ReadBranchRequest(validPathLocation1, 10);
+        request = new ReadBranchRequest(validPathLocation1, workspace1, 10);
         assertThat(request.at(), is(sameInstance(validPathLocation1)));
         assertThat(request.hasError(), is(false));
         assertThat(request.getError(), is(nullValue()));
@@ -75,22 +79,29 @@ public class ReadBranchRequestTest extends AbstractRequestTest {
 
     @Test
     public void shouldConsiderEqualTwoRequestsWithSameLocations() {
-        request = new ReadBranchRequest(validPathLocation1);
-        ReadBranchRequest request2 = new ReadBranchRequest(validPathLocation1);
+        request = new ReadBranchRequest(validPathLocation1, workspace1);
+        ReadBranchRequest request2 = new ReadBranchRequest(validPathLocation1, new String(workspace1));
         assertThat(request, is(request2));
     }
 
     @Test
     public void shouldConsiderNotEqualTwoRequestsWithDifferentLocations() {
-        request = new ReadBranchRequest(validPathLocation1, 20);
-        ReadBranchRequest request2 = new ReadBranchRequest(validPathLocation2, 20);
+        request = new ReadBranchRequest(validPathLocation1, workspace1, 20);
+        ReadBranchRequest request2 = new ReadBranchRequest(validPathLocation2, workspace1, 20);
+        assertThat(request.equals(request2), is(false));
+    }
+
+    @Test
+    public void shouldConsiderNotEqualTwoRequestsWithDifferentWorkspaceNames() {
+        request = new ReadBranchRequest(validPathLocation1, workspace1, 20);
+        ReadBranchRequest request2 = new ReadBranchRequest(validPathLocation1, workspace2, 20);
         assertThat(request.equals(request2), is(false));
     }
 
     @Test
     public void shouldConsiderNotEqualTwoRequestsWithSameLocationsButDifferentMaximumDepths() {
-        request = new ReadBranchRequest(validPathLocation1, 20);
-        ReadBranchRequest request2 = new ReadBranchRequest(validPathLocation1, 2);
+        request = new ReadBranchRequest(validPathLocation1, workspace1, 20);
+        ReadBranchRequest request2 = new ReadBranchRequest(validPathLocation1, workspace1, 2);
         assertThat(request.equals(request2), is(false));
     }
 }

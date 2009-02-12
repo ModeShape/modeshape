@@ -53,6 +53,7 @@ public class OnePropertyContributionTest {
     public static final DateTime TOMORROW = new JodaDateTime(NOW.getMilliseconds() + TWENTY_FOUR_HOURS_IN_MILLISECONDS).toUtcTimeZone();
 
     private String sourceName;
+    private String workspaceName;
     private Path pathInSource;
     private OnePropertyContribution contribution;
     private DateTime expiration;
@@ -61,30 +62,31 @@ public class OnePropertyContributionTest {
     @Before
     public void beforeEach() throws Exception {
         sourceName = "some source";
+        workspaceName = "some workspace";
         pathInSource = RootPath.INSTANCE;
         expiration = TOMORROW;
         String nsUri = "http://www.jboss.org/default";
         property1 = new BasicSingleValueProperty(new BasicName(nsUri, "property1"), "value1");
-        contribution = new OnePropertyContribution(sourceName, new Location(pathInSource), expiration, property1);
+        contribution = new OnePropertyContribution(sourceName, workspaceName, new Location(pathInSource), expiration, property1);
     }
 
     @Test
     public void shouldAllowNullExpiration() {
         expiration = null;
-        contribution = new OnePropertyContribution(sourceName, new Location(pathInSource), expiration, property1);
+        contribution = new OnePropertyContribution(sourceName, workspaceName, new Location(pathInSource), expiration, property1);
         assertThat(contribution.getExpirationTimeInUtc(), is(nullValue()));
     }
 
     @Test( expected = IllegalArgumentException.class )
     public void shouldNotAllowExpirationTimeIfNotInUtcTime() {
         expiration = new JodaDateTime(System.currentTimeMillis(), "CST");
-        contribution = new OnePropertyContribution(sourceName, new Location(pathInSource), expiration, property1);
+        contribution = new OnePropertyContribution(sourceName, workspaceName, new Location(pathInSource), expiration, property1);
     }
 
     @Test( expected = AssertionError.class )
     public void shouldNotAllowNullFirstProperty() {
         property1 = null;
-        contribution = new OnePropertyContribution(sourceName, new Location(pathInSource), expiration, property1);
+        contribution = new OnePropertyContribution(sourceName, workspaceName, new Location(pathInSource), expiration, property1);
     }
 
     @Test
@@ -99,7 +101,7 @@ public class OnePropertyContributionTest {
 
     @Test
     public void shouldNotBeExpiredIfExpirationIsInTheFuture() {
-        contribution = new OnePropertyContribution(sourceName, new Location(pathInSource), NOW, property1);
+        contribution = new OnePropertyContribution(sourceName, workspaceName, new Location(pathInSource), NOW, property1);
         assertThat(contribution.isExpired(YESTERDAY), is(false));
         assertThat(contribution.isExpired(TOMORROW), is(true));
     }

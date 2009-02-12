@@ -44,6 +44,9 @@ public final class FederationI18n {
     public static I18n repositoryHasBeenShutDown;
     public static I18n errorAddingProjectionRuleParseMethod;
 
+    public static I18n workspaceDoesNotExist;
+    public static I18n noDefaultWorkspace;
+
     static {
         try {
             I18n.initialize(FederationI18n.class);

@@ -44,13 +44,13 @@ import javax.security.auth.callback.CallbackHandler;
 import javax.security.auth.login.LoginException;
 import org.jboss.dna.graph.DnaLexicon;
 import org.jboss.dna.graph.ExecutionContext;
+import org.jboss.dna.graph.Graph;
+import org.jboss.dna.graph.JcrLexicon;
 import org.jboss.dna.graph.connector.RepositoryConnection;
 import org.jboss.dna.graph.connector.RepositoryConnectionFactory;
 import org.jboss.dna.graph.connector.RepositoryContext;
 import org.jboss.dna.graph.connector.RepositorySourceException;
-import org.jboss.dna.graph.connector.SimpleRepository;
-import org.jboss.dna.graph.connector.SimpleRepositorySource;
-import org.junit.After;
+import org.jboss.dna.graph.connector.inmemory.InMemoryRepositorySource;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentMatcher;
@@ -69,8 +69,7 @@ public class FederatedRepositorySourceTest {
     private String credentials;
     private String configurationSourceName;
     private String securityDomain;
-    private SimpleRepository configRepository;
-    private SimpleRepositorySource configRepositorySource;
+    private InMemoryRepositorySource configRepositorySource;
     private RepositoryConnection configRepositoryConnection;
     private ExecutionContext context;
     @Mock
@@ -90,7 +89,8 @@ public class FederatedRepositorySourceTest {
         MockitoAnnotations.initMocks(this);
         context = new ExecutionContext();
         context.getNamespaceRegistry().register(DnaLexicon.Namespace.PREFIX, DnaLexicon.Namespace.URI);
-        configurationSourceName = "configuration source name";
+        context.getNamespaceRegistry().register(JcrLexicon.Namespace.PREFIX, JcrLexicon.Namespace.URI);
+        configurationSourceName = "configuration";
         repositoryName = "Test Repository";
         securityDomain = "security domain";
         source = new FederatedRepositorySource(repositoryName);
@@ -101,27 +101,40 @@ public class FederatedRepositorySourceTest {
         source.setUsername(username);
         source.setPassword(credentials);
         source.setConfigurationSourceName(configurationSourceName);
-        source.setConfigurationSourcePath("/dna:repositories/Test Repository");
+        source.setConfigurationWorkspaceName("configSpace");
+        source.setConfigurationSourcePath("/a/b/Test Repository");
         source.setSecurityDomain(securityDomain);
         source.initialize(repositoryContext);
-        configRepository = SimpleRepository.get("Configuration Repository");
-        configRepository.setProperty(context, "/dna:repositories/Test Repository/dna:federation/", "dna:timeToExpire", "100000");
-        configRepository.setProperty(context, "/dna:repositories/Test Repository/dna:federation/", "dna:timeToCache", "100000");
-        configRepository.setProperty(context,
-                                     "/dna:repositories/Test Repository/dna:federation/dna:cache/cache source",
-                                     "dna:projectionRules",
-                                     "/ => /");
-        configRepository.setProperty(context,
-                                     "/dna:repositories/Test Repository/dna:federation/dna:projections/source 1/",
-                                     "dna:projectionRules",
-                                     "/ => /s1");
-        configRepository.setProperty(context,
-                                     "/dna:repositories/Test Repository/dna:federation/dna:projections/source 2/",
-                                     "dna:projectionRules",
-                                     "/ => /s1");
-        configRepositorySource = new SimpleRepositorySource();
-        configRepositorySource.setRepositoryName(configRepository.getRepositoryName());
-        configRepositorySource.setName(configurationSourceName);
+        configRepositorySource = new InMemoryRepositorySource();
+        configRepositorySource.setName("Configuration Repository");
+
+        Graph configRepository = Graph.create(configRepositorySource, context);
+        configRepository.createWorkspace().named("configSpace");
+        Graph.Batch batch = configRepository.batch();
+        batch.create("/a").and();
+        batch.create("/a/b").and();
+        batch.create("/a/b/Test Repository").with(FederatedLexicon.DEFAULT_WORKSPACE_NAME, "fedSpace").and();
+        batch.create("/a/b/Test Repository/dna:workspaces").and();
+        batch.create("/a/b/Test Repository/dna:workspaces/fedSpace").and();
+        batch.create("/a/b/Test Repository/dna:workspaces/fedSpace/dna:cache")
+             .with(FederatedLexicon.PROJECTION_RULES, "/ => /")
+             .with(FederatedLexicon.SOURCE_NAME, "cache source")
+             .with(FederatedLexicon.WORKSPACE_NAME, "cacheSpace")
+             .with(FederatedLexicon.TIME_TO_EXPIRE, 100000)
+             .and();
+        batch.create("/a/b/Test Repository/dna:workspaces/fedSpace/dna:projections").and();
+        batch.create("/a/b/Test Repository/dna:workspaces/fedSpace/dna:projections/projection1")
+             .with(FederatedLexicon.PROJECTION_RULES, "/ => /s1")
+             .with(FederatedLexicon.SOURCE_NAME, "source 1")
+             .with(FederatedLexicon.WORKSPACE_NAME, "s1 workspace")
+             .and();
+        batch.create("/a/b/Test Repository/dna:workspaces/fedSpace/dna:projections/projection2")
+             .with(FederatedLexicon.PROJECTION_RULES, "/ => /s2")
+             .with(FederatedLexicon.SOURCE_NAME, "source 2")
+             .with(FederatedLexicon.WORKSPACE_NAME, "s2 worskspace")
+             .and();
+        batch.execute();
+
         configRepositoryConnection = configRepositorySource.getConnection();
         stub(repositoryContext.getExecutionContext()).toReturn(executionContextFactory);
         stub(repositoryContext.getRepositoryConnectionFactory()).toReturn(connectionFactory);
@@ -136,11 +149,6 @@ public class FederatedRepositorySourceTest {
                 return callback != null;
             }
         });
-    }
-
-    @After
-    public void afterEach() throws Exception {
-        SimpleRepository.shutdownAll();
     }
 
     @Test

@@ -51,19 +51,22 @@ public abstract class Contribution implements Serializable {
      * Create an empty contribution from the named source.
      * 
      * @param sourceName the name of the source, which may not be null or blank
+     * @param workspaceName the name of the workspace, which may not be null or blank
      * @param expirationTime the time (in UTC) after which this contribution should be considered expired, or null if there is no
      *        expiration time
      * @return the contribution
      */
     public static Contribution create( String sourceName,
+                                       String workspaceName,
                                        DateTime expirationTime ) {
-        return new EmptyContribution(sourceName, expirationTime);
+        return new EmptyContribution(sourceName, workspaceName, expirationTime);
     }
 
     /**
      * Create a contribution of a single property from the named source.
      * 
      * @param sourceName the name of the source, which may not be null or blank
+     * @param workspaceName the name of the workspace, which may not be null or blank
      * @param locationInSource the location in the source for this contributed information; may not be null
      * @param expirationTime the time (in UTC) after which this contribution should be considered expired, or null if there is no
      *        expiration time
@@ -71,19 +74,21 @@ public abstract class Contribution implements Serializable {
      * @return the contribution
      */
     public static Contribution create( String sourceName,
+                                       String workspaceName,
                                        Location locationInSource,
                                        DateTime expirationTime,
                                        Property property ) {
         if (property == null) {
-            return new EmptyContribution(sourceName, expirationTime);
+            return new EmptyContribution(sourceName, workspaceName, expirationTime);
         }
-        return new OnePropertyContribution(sourceName, locationInSource, expirationTime, property);
+        return new OnePropertyContribution(sourceName, workspaceName, locationInSource, expirationTime, property);
     }
 
     /**
      * Create a contribution of a single child from the named source.
      * 
      * @param sourceName the name of the source, which may not be null or blank
+     * @param workspaceName the name of the workspace, which may not be null or blank
      * @param locationInSource the path in the source for this contributed information; may not be null
      * @param expirationTime the time (in UTC) after which this contribution should be considered expired, or null if there is no
      *        expiration time
@@ -91,19 +96,21 @@ public abstract class Contribution implements Serializable {
      * @return the contribution
      */
     public static Contribution create( String sourceName,
+                                       String workspaceName,
                                        Location locationInSource,
                                        DateTime expirationTime,
                                        Location child ) {
         if (child == null) {
-            return new EmptyContribution(sourceName, expirationTime);
+            return new EmptyContribution(sourceName, workspaceName, expirationTime);
         }
-        return new OneChildContribution(sourceName, locationInSource, expirationTime, child);
+        return new OneChildContribution(sourceName, workspaceName, locationInSource, expirationTime, child);
     }
 
     /**
      * Create a contribution of a single child from the named source.
      * 
      * @param sourceName the name of the source, which may not be null or blank
+     * @param workspaceName the name of the workspace, which may not be null or blank
      * @param locationInSource the path in the source for this contributed information; may not be null
      * @param expirationTime the time (in UTC) after which this contribution should be considered expired, or null if there is no
      *        expiration time
@@ -112,26 +119,28 @@ public abstract class Contribution implements Serializable {
      * @return the contribution
      */
     public static Contribution create( String sourceName,
+                                       String workspaceName,
                                        Location locationInSource,
                                        DateTime expirationTime,
                                        Location child1,
                                        Location child2 ) {
         if (child1 != null) {
             if (child2 != null) {
-                return new TwoChildContribution(sourceName, locationInSource, expirationTime, child1, child2);
+                return new TwoChildContribution(sourceName, workspaceName, locationInSource, expirationTime, child1, child2);
             }
-            return new OneChildContribution(sourceName, locationInSource, expirationTime, child1);
+            return new OneChildContribution(sourceName, workspaceName, locationInSource, expirationTime, child1);
         }
         if (child2 != null) {
-            return new OneChildContribution(sourceName, locationInSource, expirationTime, child2);
+            return new OneChildContribution(sourceName, workspaceName, locationInSource, expirationTime, child2);
         }
-        return new EmptyContribution(sourceName, expirationTime);
+        return new EmptyContribution(sourceName, workspaceName, expirationTime);
     }
 
     /**
      * Create a contribution of the supplied properties and children from the named source.
      * 
      * @param sourceName the name of the source, which may not be null or blank
+     * @param workspaceName the name of the workspace, which may not be null or blank
      * @param locationInSource the path in the source for this contributed information; may not be null
      * @param expirationTime the time (in UTC) after which this contribution should be considered expired, or null if there is no
      *        expiration time
@@ -140,6 +149,7 @@ public abstract class Contribution implements Serializable {
      * @return the contribution
      */
     public static Contribution create( String sourceName,
+                                       String workspaceName,
                                        Location locationInSource,
                                        DateTime expirationTime,
                                        Collection<Property> properties,
@@ -147,42 +157,47 @@ public abstract class Contribution implements Serializable {
         if (properties == null || properties.isEmpty()) {
             // There are no properties ...
             if (children == null || children.isEmpty()) {
-                return new EmptyContribution(sourceName, expirationTime);
+                return new EmptyContribution(sourceName, workspaceName, expirationTime);
             }
             if (children.size() == 1) {
-                return new OneChildContribution(sourceName, locationInSource, expirationTime, children.iterator().next());
+                return new OneChildContribution(sourceName, workspaceName, locationInSource, expirationTime, children.iterator()
+                                                                                                                     .next());
             }
             if (children.size() == 2) {
                 Iterator<Location> iter = children.iterator();
-                return new TwoChildContribution(sourceName, locationInSource, expirationTime, iter.next(), iter.next());
+                return new TwoChildContribution(sourceName, workspaceName, locationInSource, expirationTime, iter.next(),
+                                                iter.next());
             }
-            return new MultiChildContribution(sourceName, locationInSource, expirationTime, children);
+            return new MultiChildContribution(sourceName, workspaceName, locationInSource, expirationTime, children);
         }
         // There are some properties ...
         if (children == null || children.isEmpty()) {
             // There are no children ...
             if (properties.size() == 1) {
-                return new OnePropertyContribution(sourceName, locationInSource, expirationTime, properties.iterator().next());
+                return new OnePropertyContribution(sourceName, workspaceName, locationInSource, expirationTime,
+                                                   properties.iterator().next());
             }
             if (properties.size() == 2) {
                 Iterator<Property> iter = properties.iterator();
-                return new TwoPropertyContribution(sourceName, locationInSource, expirationTime, iter.next(), iter.next());
+                return new TwoPropertyContribution(sourceName, workspaceName, locationInSource, expirationTime, iter.next(),
+                                                   iter.next());
             }
             if (properties.size() == 3) {
                 Iterator<Property> iter = properties.iterator();
-                return new ThreePropertyContribution(sourceName, locationInSource, expirationTime, iter.next(), iter.next(),
-                                                     iter.next());
+                return new ThreePropertyContribution(sourceName, workspaceName, locationInSource, expirationTime, iter.next(),
+                                                     iter.next(), iter.next());
             }
-            return new MultiPropertyContribution(sourceName, locationInSource, expirationTime, properties);
+            return new MultiPropertyContribution(sourceName, workspaceName, locationInSource, expirationTime, properties);
         }
         // There are some properties AND some children ...
-        return new NodeContribution(sourceName, locationInSource, expirationTime, properties, children);
+        return new NodeContribution(sourceName, workspaceName, locationInSource, expirationTime, properties, children);
     }
 
     /**
      * Create a placeholder contribution of a single child from the named source.
      * 
      * @param sourceName the name of the source, which may not be null or blank
+     * @param workspaceName the name of the workspace, which may not be null or blank
      * @param locationInSource the path in the source for this contributed information; may not be null
      * @param expirationTime the time (in UTC) after which this contribution should be considered expired, or null if there is no
      *        expiration time
@@ -190,19 +205,22 @@ public abstract class Contribution implements Serializable {
      * @return the contribution
      */
     public static Contribution createPlaceholder( String sourceName,
+                                                  String workspaceName,
                                                   Location locationInSource,
                                                   DateTime expirationTime,
                                                   Location child ) {
         if (child == null) {
-            return new EmptyContribution(sourceName, expirationTime);
+            return new EmptyContribution(sourceName, workspaceName, expirationTime);
         }
-        return new PlaceholderContribution(sourceName, locationInSource, expirationTime, Collections.singletonList(child));
+        return new PlaceholderContribution(sourceName, workspaceName, locationInSource, expirationTime,
+                                           Collections.singletonList(child));
     }
 
     /**
      * Create a placeholder contribution of the supplied properties and children from the named source.
      * 
      * @param sourceName the name of the source, which may not be null or blank
+     * @param workspaceName the name of the workspace, which may not be null or blank
      * @param locationInSource the path in the source for this contributed information; may not be null
      * @param expirationTime the time (in UTC) after which this contribution should be considered expired, or null if there is no
      *        expiration time
@@ -210,13 +228,14 @@ public abstract class Contribution implements Serializable {
      * @return the contribution
      */
     public static Contribution createPlaceholder( String sourceName,
+                                                  String workspaceName,
                                                   Location locationInSource,
                                                   DateTime expirationTime,
                                                   List<Location> children ) {
         if (children == null || children.isEmpty()) {
-            return new EmptyContribution(sourceName, expirationTime);
+            return new EmptyContribution(sourceName, workspaceName, expirationTime);
         }
-        return new PlaceholderContribution(sourceName, locationInSource, expirationTime, children);
+        return new PlaceholderContribution(sourceName, workspaceName, locationInSource, expirationTime, children);
     }
 
     /**
@@ -228,20 +247,25 @@ public abstract class Contribution implements Serializable {
     protected static final Iterator<Location> EMPTY_CHILDREN_ITERATOR = new EmptyIterator<Location>();
 
     private final String sourceName;
+    private final String workspaceName;
     private DateTime expirationTimeInUtc;
 
     /**
      * Create a contribution for the source with the supplied name and path.
      * 
      * @param sourceName the name of the source, which may not be null or blank
+     * @param workspaceName the name of the workspace, which may not be null or blank
      * @param expirationTime the time (in UTC) after which this contribution should be considered expired, or null if there is no
      *        expiration time
      */
     protected Contribution( String sourceName,
+                            String workspaceName,
                             DateTime expirationTime ) {
         assert sourceName != null && sourceName.trim().length() != 0;
+        assert workspaceName != null && workspaceName.trim().length() != 0;
         assert expirationTime == null || expirationTime.equals(expirationTime.toUtcTimeZone());
         this.sourceName = sourceName;
+        this.workspaceName = workspaceName;
         this.expirationTimeInUtc = expirationTime;
     }
 
@@ -252,6 +276,15 @@ public abstract class Contribution implements Serializable {
      */
     public String getSourceName() {
         return this.sourceName;
+    }
+
+    /**
+     * Get the name of the workspace in the {@link #getSourceName() source} from which this contribution came.
+     * 
+     * @return the name of the workspace
+     */
+    public String getWorkspaceName() {
+        return this.workspaceName;
     }
 
     /**

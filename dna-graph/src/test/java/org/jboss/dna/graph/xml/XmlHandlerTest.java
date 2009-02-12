@@ -434,13 +434,14 @@ public class XmlHandlerTest {
 
     protected class RecordingDestination implements XmlHandler.Destination {
         private final LinkedList<CreateNodeRequest> requests = new LinkedList<CreateNodeRequest>();
+        private final String workspace = "Recording Workspace";
 
         public void create( Path path,
                             List<Property> properties ) {
             assert path != null;
             Path parent = path.getParent();
             Name child = path.getLastSegment().getName();
-            requests.add(new CreateNodeRequest(new Location(parent), child, properties));
+            requests.add(new CreateNodeRequest(new Location(parent), workspace, child, properties));
         }
 
         public void create( final Path path,
@@ -450,10 +451,10 @@ public class XmlHandlerTest {
             Name child = path.getLastSegment().getName();
             Location location = new Location(parent);
             if (firstProperty == null) {
-                requests.add(new CreateNodeRequest(location, child));
+                requests.add(new CreateNodeRequest(location, workspace, child));
             } else {
                 if (additionalProperties == null || additionalProperties.length == 0) {
-                    requests.add(new CreateNodeRequest(location, child, firstProperty));
+                    requests.add(new CreateNodeRequest(location, workspace, child, firstProperty));
                 } else {
                     Iterator<Property> iter = new Iterator<Property>() {
                         private int index = -1;
@@ -474,7 +475,7 @@ public class XmlHandlerTest {
                             throw new UnsupportedOperationException();
                         }
                     };
-                    requests.add(new CreateNodeRequest(location, child, iter));
+                    requests.add(new CreateNodeRequest(location, workspace, child, iter));
                 }
             }
         }

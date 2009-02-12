@@ -55,6 +55,7 @@ public class MultiPropertyContributionTest {
     public static final DateTime TOMORROW = new JodaDateTime(NOW.getMilliseconds() + TWENTY_FOUR_HOURS_IN_MILLISECONDS).toUtcTimeZone();
 
     private String sourceName;
+    private String workspaceName;
     private Path pathInSource;
     private MultiPropertyContribution contribution;
     private DateTime expiration;
@@ -66,6 +67,7 @@ public class MultiPropertyContributionTest {
     @Before
     public void beforeEach() throws Exception {
         sourceName = "some source";
+        workspaceName = "some workspace";
         pathInSource = RootPath.INSTANCE;
         expiration = TOMORROW;
         String nsUri = "http://www.jboss.org/default";
@@ -73,32 +75,37 @@ public class MultiPropertyContributionTest {
         property2 = new BasicSingleValueProperty(new BasicName(nsUri, "property2"), "value2");
         property3 = new BasicSingleValueProperty(new BasicName(nsUri, "property3"), "value3");
         properties = Arrays.asList(property1, property2, property3);
-        contribution = new MultiPropertyContribution(sourceName, new Location(pathInSource), expiration, properties);
+        contribution = new MultiPropertyContribution(sourceName, workspaceName, new Location(pathInSource), expiration,
+                                                     properties);
     }
 
     @Test
     public void shouldAllowNullExpiration() {
         expiration = null;
-        contribution = new MultiPropertyContribution(sourceName, new Location(pathInSource), expiration, properties);
+        contribution = new MultiPropertyContribution(sourceName, workspaceName, new Location(pathInSource), expiration,
+                                                     properties);
         assertThat(contribution.getExpirationTimeInUtc(), is(nullValue()));
     }
 
     @Test( expected = IllegalArgumentException.class )
     public void shouldNotAllowExpirationTimeIfNotInUtcTime() {
         expiration = new JodaDateTime(System.currentTimeMillis(), "CST");
-        contribution = new MultiPropertyContribution(sourceName, new Location(pathInSource), expiration, properties);
+        contribution = new MultiPropertyContribution(sourceName, workspaceName, new Location(pathInSource), expiration,
+                                                     properties);
     }
 
     @Test( expected = AssertionError.class )
     public void shouldNotAllowNullProperties() {
         properties = null;
-        contribution = new MultiPropertyContribution(sourceName, new Location(pathInSource), expiration, properties);
+        contribution = new MultiPropertyContribution(sourceName, workspaceName, new Location(pathInSource), expiration,
+                                                     properties);
     }
 
     @Test( expected = AssertionError.class )
     public void shouldNotAllowEmptyProperties() {
         properties = Collections.emptyList();
-        contribution = new MultiPropertyContribution(sourceName, new Location(pathInSource), expiration, properties);
+        contribution = new MultiPropertyContribution(sourceName, workspaceName, new Location(pathInSource), expiration,
+                                                     properties);
     }
 
     @Test
@@ -113,7 +120,7 @@ public class MultiPropertyContributionTest {
 
     @Test
     public void shouldNotBeExpiredIfExpirationIsInTheFuture() {
-        contribution = new MultiPropertyContribution(sourceName, new Location(pathInSource), NOW, properties);
+        contribution = new MultiPropertyContribution(sourceName, workspaceName, new Location(pathInSource), NOW, properties);
         assertThat(contribution.isExpired(YESTERDAY), is(false));
         assertThat(contribution.isExpired(TOMORROW), is(true));
     }

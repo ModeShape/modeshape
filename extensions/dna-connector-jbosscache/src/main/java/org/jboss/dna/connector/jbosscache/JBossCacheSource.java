@@ -30,13 +30,16 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Hashtable;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.atomic.AtomicInteger;
 import javax.naming.BinaryRefAddr;
 import javax.naming.Context;
 import javax.naming.InitialContext;
+import javax.naming.NamingException;
 import javax.naming.RefAddr;
 import javax.naming.Reference;
 import javax.naming.Referenceable;
@@ -47,6 +50,7 @@ import org.jboss.cache.Cache;
 import org.jboss.cache.CacheFactory;
 import org.jboss.cache.DefaultCacheFactory;
 import org.jboss.dna.common.i18n.I18n;
+import org.jboss.dna.common.util.StringUtil;
 import org.jboss.dna.graph.DnaLexicon;
 import org.jboss.dna.graph.cache.CachePolicy;
 import org.jboss.dna.graph.connector.RepositoryConnection;
@@ -55,7 +59,6 @@ import org.jboss.dna.graph.connector.RepositorySource;
 import org.jboss.dna.graph.connector.RepositorySourceCapabilities;
 import org.jboss.dna.graph.connector.RepositorySourceException;
 import org.jboss.dna.graph.property.Name;
-import org.jboss.dna.graph.property.Property;
 
 /**
  * A repository source that uses a JBoss Cache instance to manage the content. This source is capable of using an existing
@@ -77,14 +80,17 @@ import org.jboss.dna.graph.property.Property;
 @ThreadSafe
 public class JBossCacheSource implements RepositorySource, ObjectFactory {
 
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 2L;
     /**
      * The default limit is {@value} for retrying {@link RepositoryConnection connection} calls to the underlying source.
      */
     public static final int DEFAULT_RETRY_LIMIT = 0;
     public static final String DEFAULT_UUID_PROPERTY_NAME = DnaLexicon.UUID.getString();
 
-    protected static final RepositorySourceCapabilities CAPABILITIES = new RepositorySourceCapabilities(true, true);
+    /**
+     * The initial {@link #getNameOfDefaultWorkspace() name of the default workspace} is "{@value} ", unless otherwise specified.
+     */
+    public static final String DEFAULT_NAME_OF_DEFAULT_WORKSPACE = "default";
 
     protected static final String ROOT_NODE_UUID = "rootNodeUuid";
     protected static final String SOURCE_NAME = "sourceName";
@@ -92,20 +98,23 @@ public class JBossCacheSource implements RepositorySource, ObjectFactory {
     protected static final String CACHE_CONFIGURATION_NAME = "cacheConfigurationName";
     protected static final String CACHE_FACTORY_JNDI_NAME = "cacheFactoryJndiName";
     protected static final String CACHE_JNDI_NAME = "cacheJndiName";
-    protected static final String UUID_PROPERTY_NAME = "uuidPropertyName";
     protected static final String RETRY_LIMIT = "retryLimit";
+    protected static final String DEFAULT_WORKSPACE = "defaultWorkspace";
+    protected static final String PREDEFINED_WORKSPACE_NAMES = "predefinedWorkspaceNames";
+    protected static final String ALLOW_CREATING_WORKSPACES = "allowCreatingWorkspaces";
 
-    private String name;
-    private UUID rootNodeUuid = UUID.randomUUID();
-    private CachePolicy defaultCachePolicy;
-    private String cacheConfigurationName;
-    private String cacheFactoryJndiName;
-    private String cacheJndiName;
-    private String uuidPropertyName = DEFAULT_UUID_PROPERTY_NAME;
-    private final AtomicInteger retryLimit = new AtomicInteger(DEFAULT_RETRY_LIMIT);
-    private transient Cache<Name, Object> cache;
+    private volatile String name;
+    private volatile UUID rootNodeUuid = UUID.randomUUID();
+    private volatile CachePolicy defaultCachePolicy;
+    private volatile String cacheConfigurationName;
+    private volatile String cacheFactoryJndiName;
+    private volatile String cacheJndiName;
+    private volatile int retryLimit = DEFAULT_RETRY_LIMIT;
+    private volatile String defaultWorkspace;
+    private volatile String[] predefinedWorkspaces = new String[] {};
+    private volatile RepositorySourceCapabilities capabilities = new RepositorySourceCapabilities(true, true, false, true);
+    private transient JBossCacheWorkspaces workspaces;
     private transient Context jndiContext;
-    private transient RepositoryContext repositoryContext;
 
     /**
      * Create a repository source instance.
@@ -119,14 +128,6 @@ public class JBossCacheSource implements RepositorySource, ObjectFactory {
      * @see org.jboss.dna.graph.connector.RepositorySource#initialize(org.jboss.dna.graph.connector.RepositoryContext)
      */
     public void initialize( RepositoryContext context ) throws RepositorySourceException {
-        this.repositoryContext = context;
-    }
-
-    /**
-     * @return repositoryContext
-     */
-    public RepositoryContext getRepositoryContext() {
-        return repositoryContext;
     }
 
     /**
@@ -139,10 +140,19 @@ public class JBossCacheSource implements RepositorySource, ObjectFactory {
     /**
      * {@inheritDoc}
      * 
+     * @see org.jboss.dna.graph.connector.RepositorySource#getCapabilities()
+     */
+    public RepositorySourceCapabilities getCapabilities() {
+        return capabilities;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
      * @see org.jboss.dna.graph.connector.RepositorySource#getRetryLimit()
      */
     public int getRetryLimit() {
-        return retryLimit.get();
+        return retryLimit;
     }
 
     /**
@@ -150,8 +160,8 @@ public class JBossCacheSource implements RepositorySource, ObjectFactory {
      * 
      * @see org.jboss.dna.graph.connector.RepositorySource#setRetryLimit(int)
      */
-    public void setRetryLimit( int limit ) {
-        retryLimit.set(limit < 0 ? 0 : limit);
+    public synchronized void setRetryLimit( int limit ) {
+        retryLimit = limit < 0 ? 0 : limit;
     }
 
     /**
@@ -341,24 +351,73 @@ public class JBossCacheSource implements RepositorySource, ObjectFactory {
     }
 
     /**
-     * Get the {@link Property#getName() property name} where the UUID is stored for each node.
+     * Get the name of the default workspace.
      * 
-     * @return the name of the UUID property; never null
+     * @return the name of the workspace that should be used by default; never null
      */
-    public String getUuidPropertyName() {
-        return this.uuidPropertyName;
+    public String getNameOfDefaultWorkspace() {
+        return defaultWorkspace;
     }
 
     /**
-     * Set the {@link Property#getName() property name} where the UUID is stored for each node.
+     * Set the name of the workspace that should be used when clients don't specify a workspace.
      * 
-     * @param uuidPropertyName the name of the UUID property, or null if the {@link #DEFAULT_UUID_PROPERTY_NAME default name}
-     *        should be used
+     * @param nameOfDefaultWorkspace the name of the workspace that should be used by default, or null if the
+     *        {@link #DEFAULT_NAME_OF_DEFAULT_WORKSPACE default name} should be used
      */
-    public synchronized void setUuidPropertyName( String uuidPropertyName ) {
-        if (uuidPropertyName == null || uuidPropertyName.trim().length() == 0) uuidPropertyName = DEFAULT_UUID_PROPERTY_NAME;
-        if (this.uuidPropertyName.equals(uuidPropertyName)) return; // unchanged
-        this.uuidPropertyName = uuidPropertyName;
+    public synchronized void setNameOfDefaultWorkspace( String nameOfDefaultWorkspace ) {
+        this.defaultWorkspace = nameOfDefaultWorkspace != null ? nameOfDefaultWorkspace : DEFAULT_NAME_OF_DEFAULT_WORKSPACE;
+    }
+
+    /**
+     * Gets the names of the workspaces that are available when this source is created.
+     * 
+     * @return the names of the workspaces that this source starts with, or null if there are no such workspaces
+     * @see #setPredefinedWorkspaceNames(String[])
+     * @see #setCreatingWorkspacesAllowed(boolean)
+     */
+    public synchronized String[] getPredefinedWorkspaceNames() {
+        String[] copy = new String[predefinedWorkspaces.length];
+        System.arraycopy(predefinedWorkspaces, 0, copy, 0, predefinedWorkspaces.length);
+        return copy;
+    }
+
+    /**
+     * Sets the names of the workspaces that are available when this source is created.
+     * 
+     * @param predefinedWorkspaceNames the names of the workspaces that this source should start with, or null if there are no
+     *        such workspaces
+     * @see #setCreatingWorkspacesAllowed(boolean)
+     * @see #getPredefinedWorkspaceNames()
+     */
+    public synchronized void setPredefinedWorkspaceNames( String[] predefinedWorkspaceNames ) {
+        this.predefinedWorkspaces = predefinedWorkspaceNames;
+    }
+
+    /**
+     * Get whether this source allows workspaces to be created dynamically.
+     * 
+     * @return true if this source allows workspaces to be created by clients, or false if the
+     *         {@link #getPredefinedWorkspaceNames() set of workspaces} is fixed
+     * @see #setPredefinedWorkspaceNames(String[])
+     * @see #getPredefinedWorkspaceNames()
+     * @see #setCreatingWorkspacesAllowed(boolean)
+     */
+    public boolean isCreatingWorkspacesAllowed() {
+        return capabilities.supportsCreatingWorkspaces();
+    }
+
+    /**
+     * Set whether this source allows workspaces to be created dynamically.
+     * 
+     * @param allowWorkspaceCreation true if this source allows workspaces to be created by clients, or false if the
+     *        {@link #getPredefinedWorkspaceNames() set of workspaces} is fixed
+     * @see #setPredefinedWorkspaceNames(String[])
+     * @see #getPredefinedWorkspaceNames()
+     * @see #isCreatingWorkspacesAllowed()
+     */
+    public synchronized void setCreatingWorkspacesAllowed( boolean allowWorkspaceCreation ) {
+        capabilities = new RepositorySourceCapabilities(true, capabilities.supportsUpdates(), false, allowWorkspaceCreation);
     }
 
     /**
@@ -367,63 +426,53 @@ public class JBossCacheSource implements RepositorySource, ObjectFactory {
      * @see org.jboss.dna.graph.connector.RepositorySource#getConnection()
      */
     @SuppressWarnings( "unchecked" )
-    public RepositoryConnection getConnection() throws RepositorySourceException {
+    public synchronized RepositoryConnection getConnection() throws RepositorySourceException {
         if (getName() == null) {
             I18n msg = JBossCacheConnectorI18n.propertyIsRequired;
             throw new RepositorySourceException(getName(), msg.text("name"));
         }
-        if (getUuidPropertyName() == null) {
-            I18n msg = JBossCacheConnectorI18n.propertyIsRequired;
-            throw new RepositorySourceException(getName(), msg.text("uuidPropertyName"));
-        }
-        if (this.cache == null) {
-            // First look for an existing cache instance in JNDI ...
+        if (this.workspaces == null) {
             Context context = getContext();
-            String jndiName = this.getCacheJndiName();
+            if (context == null) {
+                try {
+                    context = new InitialContext();
+                } catch (NamingException err) {
+                    throw new RepositorySourceException(name, err);
+                }
+            }
+
+            // Look for a cache factory in JNDI ...
+            CacheFactory<Name, Object> cacheFactory = null;
+            String jndiName = getCacheFactoryJndiName();
             if (jndiName != null && jndiName.trim().length() != 0) {
                 Object object = null;
                 try {
-                    if (context == null) context = new InitialContext();
                     object = context.lookup(jndiName);
-                    if (object != null) cache = (Cache<Name, Object>)object;
+                    if (object != null) cacheFactory = (CacheFactory<Name, Object>)object;
                 } catch (ClassCastException err) {
-                    I18n msg = JBossCacheConnectorI18n.objectFoundInJndiWasNotCache;
+                    I18n msg = JBossCacheConnectorI18n.objectFoundInJndiWasNotCacheFactory;
                     String className = object != null ? object.getClass().getName() : "null";
                     throw new RepositorySourceException(getName(), msg.text(jndiName, this.getName(), className), err);
                 } catch (Throwable err) {
-                    // try loading
+                    if (err instanceof RuntimeException) throw (RuntimeException)err;
+                    throw new RepositorySourceException(getName(), err);
                 }
             }
-            if (cache == null) {
-                // Then look for a cache factory in JNDI ...
-                CacheFactory<Name, Object> cacheFactory = null;
-                jndiName = getCacheFactoryJndiName();
-                if (jndiName != null && jndiName.trim().length() != 0) {
-                    Object object = null;
-                    try {
-                        if (context == null) context = new InitialContext();
-                        object = context.lookup(jndiName);
-                        if (object != null) cacheFactory = (CacheFactory<Name, Object>)object;
-                    } catch (ClassCastException err) {
-                        I18n msg = JBossCacheConnectorI18n.objectFoundInJndiWasNotCacheFactory;
-                        String className = object != null ? object.getClass().getName() : "null";
-                        throw new RepositorySourceException(getName(), msg.text(jndiName, this.getName(), className), err);
-                    } catch (Throwable err) {
-                        // try loading
-                    }
-                }
-                if (cacheFactory == null) cacheFactory = new DefaultCacheFactory<Name, Object>();
+            if (cacheFactory == null) cacheFactory = new DefaultCacheFactory<Name, Object>();
 
-                // Now, get the configuration name ...
-                String configName = this.getCacheConfigurationName();
-                if (configName != null) {
-                    cache = cacheFactory.createCache(configName);
-                } else {
-                    cache = cacheFactory.createCache();
-                }
-            }
+            // Get the default cache configuration name
+            String configName = this.getCacheConfigurationName();
+
+            // Create the set of initial names ...
+            Set<String> initialNames = new HashSet<String>();
+            for (String initialName : getPredefinedWorkspaceNames())
+                initialNames.add(initialName);
+
+            // Now create the workspace manager ...
+            this.workspaces = new JBossCacheWorkspaces(getName(), cacheFactory, configName, initialNames, context);
         }
-        return new JBossCacheConnection(this, this.cache);
+
+        return new JBossCacheConnection(this, this.workspaces);
     }
 
     protected Context getContext() {
@@ -460,23 +509,17 @@ public class JBossCacheSource implements RepositorySource, ObjectFactory {
         String factoryClassName = this.getClass().getName();
         Reference ref = new Reference(className, factoryClassName, null);
 
-        if (getName() != null) {
-            ref.add(new StringRefAddr(SOURCE_NAME, getName()));
-        }
-        if (getRootNodeUuid() != null) {
-            ref.add(new StringRefAddr(ROOT_NODE_UUID, getRootNodeUuid().toString()));
-        }
-        if (getUuidPropertyName() != null) {
-            ref.add(new StringRefAddr(UUID_PROPERTY_NAME, getUuidPropertyName()));
-        }
-        if (getCacheJndiName() != null) {
-            ref.add(new StringRefAddr(CACHE_JNDI_NAME, getCacheJndiName()));
-        }
-        if (getCacheFactoryJndiName() != null) {
-            ref.add(new StringRefAddr(CACHE_FACTORY_JNDI_NAME, getCacheFactoryJndiName()));
-        }
-        if (getCacheConfigurationName() != null) {
-            ref.add(new StringRefAddr(CACHE_CONFIGURATION_NAME, getCacheConfigurationName()));
+        ref.add(new StringRefAddr(SOURCE_NAME, getName()));
+        ref.add(new StringRefAddr(ROOT_NODE_UUID, getRootNodeUuid().toString()));
+        ref.add(new StringRefAddr(CACHE_JNDI_NAME, getCacheJndiName()));
+        ref.add(new StringRefAddr(CACHE_FACTORY_JNDI_NAME, getCacheFactoryJndiName()));
+        ref.add(new StringRefAddr(CACHE_CONFIGURATION_NAME, getCacheConfigurationName()));
+        ref.add(new StringRefAddr(RETRY_LIMIT, Integer.toString(getRetryLimit())));
+        ref.add(new StringRefAddr(DEFAULT_WORKSPACE, getNameOfDefaultWorkspace()));
+        ref.add(new StringRefAddr(ALLOW_CREATING_WORKSPACES, Boolean.toString(isCreatingWorkspacesAllowed())));
+        String[] workspaceNames = getPredefinedWorkspaceNames();
+        if (workspaceNames != null && workspaceNames.length != 0) {
+            ref.add(new StringRefAddr(PREDEFINED_WORKSPACE_NAMES, StringUtil.combineLines(workspaceNames)));
         }
         if (getDefaultCachePolicy() != null) {
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -490,7 +533,6 @@ public class JBossCacheSource implements RepositorySource, ObjectFactory {
                 throw new RepositorySourceException(getName(), msg.text(policy.getClass().getName(), getName()), e);
             }
         }
-        ref.add(new StringRefAddr(RETRY_LIMIT, Integer.toString(getRetryLimit())));
         return ref;
     }
 
@@ -525,18 +567,25 @@ public class JBossCacheSource implements RepositorySource, ObjectFactory {
             }
             String sourceName = (String)values.get(SOURCE_NAME);
             String rootNodeUuidString = (String)values.get(ROOT_NODE_UUID);
-            String uuidPropertyName = (String)values.get(UUID_PROPERTY_NAME);
             String cacheJndiName = (String)values.get(CACHE_JNDI_NAME);
             String cacheFactoryJndiName = (String)values.get(CACHE_FACTORY_JNDI_NAME);
             String cacheConfigurationName = (String)values.get(CACHE_CONFIGURATION_NAME);
             Object defaultCachePolicy = values.get(DEFAULT_CACHE_POLICY);
             String retryLimit = (String)values.get(RETRY_LIMIT);
+            String defaultWorkspace = (String)values.get(DEFAULT_WORKSPACE);
+            String createWorkspaces = (String)values.get(ALLOW_CREATING_WORKSPACES);
+
+            String combinedWorkspaceNames = (String)values.get(PREDEFINED_WORKSPACE_NAMES);
+            String[] workspaceNames = null;
+            if (combinedWorkspaceNames != null) {
+                List<String> paths = StringUtil.splitLines(combinedWorkspaceNames);
+                workspaceNames = paths.toArray(new String[paths.size()]);
+            }
 
             // Create the source instance ...
             JBossCacheSource source = new JBossCacheSource();
             if (sourceName != null) source.setName(sourceName);
             if (rootNodeUuidString != null) source.setRootNodeUuid(rootNodeUuidString);
-            if (uuidPropertyName != null) source.setUuidPropertyName(uuidPropertyName);
             if (cacheJndiName != null) source.setCacheJndiName(cacheJndiName);
             if (cacheFactoryJndiName != null) source.setCacheFactoryJndiName(cacheFactoryJndiName);
             if (cacheConfigurationName != null) source.setCacheConfigurationName(cacheConfigurationName);
@@ -544,17 +593,11 @@ public class JBossCacheSource implements RepositorySource, ObjectFactory {
                 source.setDefaultCachePolicy((CachePolicy)defaultCachePolicy);
             }
             if (retryLimit != null) source.setRetryLimit(Integer.parseInt(retryLimit));
+            if (defaultWorkspace != null) source.setNameOfDefaultWorkspace(defaultWorkspace);
+            if (createWorkspaces != null) source.setCreatingWorkspacesAllowed(Boolean.parseBoolean(createWorkspaces));
+            if (workspaceNames != null && workspaceNames.length != 0) source.setPredefinedWorkspaceNames(workspaceNames);
             return source;
         }
         return null;
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.jboss.dna.graph.connector.RepositorySource#getCapabilities()
-     */
-    public RepositorySourceCapabilities getCapabilities() {
-        return CAPABILITIES;
     }
 }

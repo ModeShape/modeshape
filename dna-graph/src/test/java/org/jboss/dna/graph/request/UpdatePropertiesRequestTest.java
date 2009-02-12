@@ -32,8 +32,6 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import org.jboss.dna.graph.property.Property;
-import org.jboss.dna.graph.request.Request;
-import org.jboss.dna.graph.request.UpdatePropertiesRequest;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -52,48 +50,54 @@ public class UpdatePropertiesRequestTest extends AbstractRequestTest {
 
     @Override
     protected Request createRequest() {
-        return new UpdatePropertiesRequest(validPathLocation1, validProperty1);
+        return new UpdatePropertiesRequest(validPathLocation1, workspace1, validProperty1);
     }
 
     @Test( expected = IllegalArgumentException.class )
     public void shouldNotAllowCreatingRequestWithNullFromLocation() {
-        new UpdatePropertiesRequest(null, validProperty1);
+        new UpdatePropertiesRequest(null, workspace1, validProperty1);
+    }
+
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldNotAllowCreatingRequestWithNullWorkspaceName() {
+        new UpdatePropertiesRequest(validPathLocation1, null, validProperty1);
     }
 
     @Test( expected = IllegalArgumentException.class )
     public void shouldNotAllowCreatingRequestWithNullPropertyName() {
-        new UpdatePropertiesRequest(validPathLocation, (Property[])null);
+        new UpdatePropertiesRequest(validPathLocation, workspace1, (Property[])null);
     }
 
     @Test( expected = IllegalArgumentException.class )
     public void shouldNotAllowCreatingRequestWithEmptyPropertyNameArray() {
-        new UpdatePropertiesRequest(validPathLocation, new Property[] {});
+        new UpdatePropertiesRequest(validPathLocation, workspace1, new Property[] {});
     }
 
     @Test( expected = IllegalArgumentException.class )
     public void shouldNotAllowCreatingRequestWithNullPropertyNameIterator() {
-        new UpdatePropertiesRequest(validPathLocation, (Iterator<Property>)null);
+        new UpdatePropertiesRequest(validPathLocation, workspace1, (Iterator<Property>)null);
     }
 
     @Test( expected = IllegalArgumentException.class )
     public void shouldNotAllowCreatingRequestWithEmptyPropertyNameIterator() {
-        new UpdatePropertiesRequest(validPathLocation, new ArrayList<Property>().iterator());
+        new UpdatePropertiesRequest(validPathLocation, workspace1, new ArrayList<Property>().iterator());
     }
 
     @Test( expected = IllegalArgumentException.class )
     public void shouldNotAllowCreatingRequestWithNullPropertyNameIterable() {
-        new UpdatePropertiesRequest(validPathLocation, (Iterable<Property>)null);
+        new UpdatePropertiesRequest(validPathLocation, workspace1, (Iterable<Property>)null);
     }
 
     @Test( expected = IllegalArgumentException.class )
     public void shouldNotAllowCreatingRequestWithEmptyPropertyNameIterable() {
-        new UpdatePropertiesRequest(validPathLocation, new ArrayList<Property>());
+        new UpdatePropertiesRequest(validPathLocation, workspace1, new ArrayList<Property>());
     }
 
     @Test
     public void shouldCreateValidRequestWithValidLocationAndValidProperty() {
-        request = new UpdatePropertiesRequest(validPathLocation1, validProperty1);
+        request = new UpdatePropertiesRequest(validPathLocation1, workspace1, validProperty1);
         assertThat(request.on(), is(sameInstance(validPathLocation1)));
+        assertThat(request.inWorkspace(), is(sameInstance(workspace1)));
         assertThat(request.hasError(), is(false));
         assertThat(request.getError(), is(nullValue()));
         assertThat(request.properties(), hasItems(validProperty1));
@@ -101,7 +105,7 @@ public class UpdatePropertiesRequestTest extends AbstractRequestTest {
 
     @Test
     public void shouldCreateValidRequestWithValidLocationAndValidPropertyNames() {
-        request = new UpdatePropertiesRequest(validPathLocation1, validProperty1, validProperty2);
+        request = new UpdatePropertiesRequest(validPathLocation1, workspace1, validProperty1, validProperty2);
         assertThat(request.on(), is(sameInstance(validPathLocation1)));
         assertThat(request.hasError(), is(false));
         assertThat(request.getError(), is(nullValue()));
@@ -112,7 +116,7 @@ public class UpdatePropertiesRequestTest extends AbstractRequestTest {
     public void shouldCreateValidRequestWithValidLocationAndIteratorOverValidPropertyName() {
         List<Property> properties = new ArrayList<Property>();
         properties.add(validProperty1);
-        request = new UpdatePropertiesRequest(validPathLocation1, properties.iterator());
+        request = new UpdatePropertiesRequest(validPathLocation1, workspace1, properties.iterator());
         assertThat(request.on(), is(sameInstance(validPathLocation1)));
         assertThat(request.hasError(), is(false));
         assertThat(request.getError(), is(nullValue()));
@@ -124,7 +128,7 @@ public class UpdatePropertiesRequestTest extends AbstractRequestTest {
         List<Property> properties = new ArrayList<Property>();
         properties.add(validProperty1);
         properties.add(validProperty2);
-        request = new UpdatePropertiesRequest(validPathLocation1, properties.iterator());
+        request = new UpdatePropertiesRequest(validPathLocation1, workspace1, properties.iterator());
         assertThat(request.on(), is(sameInstance(validPathLocation1)));
         assertThat(request.hasError(), is(false));
         assertThat(request.getError(), is(nullValue()));
@@ -135,7 +139,7 @@ public class UpdatePropertiesRequestTest extends AbstractRequestTest {
     public void shouldCreateValidRequestWithValidLocationAndIterableWithValidPropertyName() {
         List<Property> properties = new ArrayList<Property>();
         properties.add(validProperty1);
-        request = new UpdatePropertiesRequest(validPathLocation1, properties);
+        request = new UpdatePropertiesRequest(validPathLocation1, workspace1, properties);
         assertThat(request.on(), is(sameInstance(validPathLocation1)));
         assertThat(request.hasError(), is(false));
         assertThat(request.getError(), is(nullValue()));
@@ -147,7 +151,7 @@ public class UpdatePropertiesRequestTest extends AbstractRequestTest {
         List<Property> properties = new ArrayList<Property>();
         properties.add(validProperty1);
         properties.add(validProperty2);
-        request = new UpdatePropertiesRequest(validPathLocation1, properties);
+        request = new UpdatePropertiesRequest(validPathLocation1, workspace1, properties);
         assertThat(request.on(), is(sameInstance(validPathLocation1)));
         assertThat(request.hasError(), is(false));
         assertThat(request.getError(), is(nullValue()));
@@ -156,22 +160,32 @@ public class UpdatePropertiesRequestTest extends AbstractRequestTest {
 
     @Test
     public void shouldConsiderEqualTwoRequestsWithSameLocationsAndSamePropertyNames() {
-        request = new UpdatePropertiesRequest(validPathLocation1, validProperty1, validProperty2);
-        UpdatePropertiesRequest request2 = new UpdatePropertiesRequest(validPathLocation1, validProperty1, validProperty2);
+        request = new UpdatePropertiesRequest(validPathLocation1, new String(workspace1), validProperty1, validProperty2);
+        UpdatePropertiesRequest request2 = new UpdatePropertiesRequest(validPathLocation1, workspace1, validProperty1,
+                                                                       validProperty2);
         assertThat(request, is(request2));
     }
 
     @Test
     public void shouldConsiderNotEqualTwoRequestsWithDifferentLocations() {
-        request = new UpdatePropertiesRequest(validPathLocation1, validProperty1, validProperty2);
-        UpdatePropertiesRequest request2 = new UpdatePropertiesRequest(validPathLocation2, validProperty1, validProperty2);
+        request = new UpdatePropertiesRequest(validPathLocation1, workspace1, validProperty1, validProperty2);
+        UpdatePropertiesRequest request2 = new UpdatePropertiesRequest(validPathLocation2, workspace1, validProperty1,
+                                                                       validProperty2);
+        assertThat(request.equals(request2), is(false));
+    }
+
+    @Test
+    public void shouldConsiderNotEqualTwoRequestsWithDifferentWorkspaceNames() {
+        request = new UpdatePropertiesRequest(validPathLocation1, workspace1, validProperty1, validProperty2);
+        UpdatePropertiesRequest request2 = new UpdatePropertiesRequest(validPathLocation1, workspace2, validProperty1,
+                                                                       validProperty2);
         assertThat(request.equals(request2), is(false));
     }
 
     @Test
     public void shouldConsiderNotEqualTwoRequestsWithSameLocationButDifferentPropertyNames() {
-        request = new UpdatePropertiesRequest(validPathLocation1, validProperty1, validProperty2);
-        UpdatePropertiesRequest request2 = new UpdatePropertiesRequest(validPathLocation2, validProperty1);
+        request = new UpdatePropertiesRequest(validPathLocation1, workspace1, validProperty1, validProperty2);
+        UpdatePropertiesRequest request2 = new UpdatePropertiesRequest(validPathLocation2, workspace1, validProperty1);
         assertThat(request.equals(request2), is(false));
     }
 

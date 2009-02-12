@@ -25,10 +25,8 @@ package org.jboss.dna.connector.filesystem;
 
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
-import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.Assert.assertThat;
 import java.io.File;
-import java.io.IOException;
 import java.util.List;
 import org.jboss.dna.graph.Graph;
 import org.jboss.dna.graph.JcrLexicon;
@@ -37,15 +35,12 @@ import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.Node;
 import org.jboss.dna.graph.connector.RepositorySource;
 import org.jboss.dna.graph.connector.test.ReadableConnectorTest;
-import org.jboss.dna.graph.property.PathNotFoundException;
 import org.junit.Test;
 
 /**
  * @author Randall Hauch
  */
-public class FileSystemConnectorReadingTest extends ReadableConnectorTest {
-
-    private String[] pathsInFileSystemToTopLevelNodes;
+public class FileSystemConnectorReadableTest extends ReadableConnectorTest {
 
     /**
      * {@inheritDoc}
@@ -53,19 +48,15 @@ public class FileSystemConnectorReadingTest extends ReadableConnectorTest {
      * @see org.jboss.dna.graph.connector.test.AbstractConnectorTest#setUpSource()
      */
     @Override
-    protected RepositorySource setUpSource() throws IOException {
-        // Find the current location of the project ...
-        File project = new File(".");
-        String absolutePathToProject = project.getCanonicalPath();
-
-        // Set the connection properties to be use the folders in the "./src/test/resources/repositories" as a repository ...
+    protected RepositorySource setUpSource() {
+        // Set the connection properties to be use the content of "./src/test/resources/repositories" as a repository ...
+        String path = new File(".").getAbsolutePath() + "/src/test/resources/repositories/";
+        String[] predefinedWorkspaceNames = new String[] {path + "airplanes", path + "cars"};
         FileSystemSource source = new FileSystemSource();
         source.setName("Test Repository");
-
-        pathsInFileSystemToTopLevelNodes = new String[] {absolutePathToProject + "/src/test/resources/repositories/airplanes",
-            absolutePathToProject + "/src/test/resources/repositories/cars",
-            absolutePathToProject + "/src/test/resources/repositories/readme.txt"};
-        source.setFileSystemPaths(pathsInFileSystemToTopLevelNodes);
+        source.setPredefinedWorkspaceNames(predefinedWorkspaceNames);
+        source.setDirectoryForDefaultWorkspace(predefinedWorkspaceNames[0]);
+        source.setCreatingWorkspacesAllowed(false);
 
         return source;
     }
@@ -108,25 +99,10 @@ public class FileSystemConnectorReadingTest extends ReadableConnectorTest {
 
     @Test
     public void shouldFindFolderSpecifiedInPathsAsNodesBelowRoot() {
-        Node readme = graph.getNodeAt("/readme.txt");
-        assertThatNodeIsFile(readme, "text/plain", "This directory contains files and folders that are used in test cases.");
-
-        Node airplanes = graph.getNodeAt("/airplanes");
-        assertThatNodeIsFolder(airplanes);
-
-        Node commercial = graph.getNodeAt("/airplanes/commercial");
+        Node commercial = graph.getNodeAt("/commercial");
         assertThatNodeIsFolder(commercial);
-    }
 
-    @Test( expected = PathNotFoundException.class )
-    public void shouldNotFindOtherFileThatIsSiblingOfFileOrFoldersSpecifiedToBeTopLevelNodes() {
-        // Should not find these, since they're not included in the paths to top-level nodes ...
-        assertThat(graph.getNodeAt("/trains"), is(nullValue()));
-    }
-
-    @Test( expected = PathNotFoundException.class )
-    public void shouldNotFindOtherFolderThatIsSiblingOfFileOrFoldersSpecifiedToBeTopLevelNodes() {
-        // Should not find these, since they're not included in the paths to top-level nodes ...
-        assertThat(graph.getNodeAt("/DNA icon"), is(nullValue()));
+        Node readme = graph.getNodeAt("/commercial/Boeing_777.jpg");
+        assertThatNodeIsFile(readme, "image/jpeg", null);
     }
 }

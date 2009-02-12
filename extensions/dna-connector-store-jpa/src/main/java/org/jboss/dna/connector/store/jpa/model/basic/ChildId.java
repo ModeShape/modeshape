@@ -44,6 +44,9 @@ public class ChildId implements Serializable {
      */
     private static final long serialVersionUID = 1L;
 
+    @Column( name = "WORKSPACE_ID", nullable = false )
+    private Long workspaceId;
+
     @Column( name = "PARENT_UUID", nullable = false, length = 36 )
     private String parentUuidString;
 
@@ -53,14 +56,18 @@ public class ChildId implements Serializable {
     public ChildId() {
     }
 
-    public ChildId( NodeId parentId,
+    public ChildId( Long workspaceId,
+                    NodeId parentId,
                     NodeId childId ) {
+        this.workspaceId = workspaceId;
         if (parentId != null) this.parentUuidString = parentId.getUuidString();
         if (childId != null) this.childUuidString = childId.getUuidString();
     }
 
-    public ChildId( String parentUuid,
+    public ChildId( Long workspaceId,
+                    String parentUuid,
                     String childUuid ) {
+        this.workspaceId = workspaceId;
         this.parentUuidString = parentUuid;
         this.childUuidString = childUuid;
     }
@@ -77,6 +84,13 @@ public class ChildId implements Serializable {
      */
     public String getChildUuidString() {
         return childUuidString;
+    }
+
+    /**
+     * @return workspaceId
+     */
+    public Long getWorkspaceId() {
+        return workspaceId;
     }
 
     /**
@@ -99,6 +113,11 @@ public class ChildId implements Serializable {
         if (obj == this) return true;
         if (obj instanceof ChildId) {
             ChildId that = (ChildId)obj;
+            if (this.workspaceId == null) {
+                if (that.workspaceId != null) return false;
+            } else {
+                if (!this.workspaceId.equals(that.workspaceId)) return false;
+            }
             if (this.parentUuidString == null) {
                 if (that.parentUuidString != null) return false;
             } else {
@@ -121,7 +140,7 @@ public class ChildId implements Serializable {
      */
     @Override
     public String toString() {
-        return "Child " + childUuidString + " of " + parentUuidString;
+        return "Child " + childUuidString + " of " + parentUuidString + " in workspace " + workspaceId;
     }
 
 }

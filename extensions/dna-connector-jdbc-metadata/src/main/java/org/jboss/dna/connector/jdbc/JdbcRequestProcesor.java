@@ -28,25 +28,29 @@ import java.util.UUID;
 import org.jboss.dna.common.util.Logger;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.property.DateTime;
+import org.jboss.dna.graph.request.CloneWorkspaceRequest;
 import org.jboss.dna.graph.request.CopyBranchRequest;
 import org.jboss.dna.graph.request.CreateNodeRequest;
+import org.jboss.dna.graph.request.CreateWorkspaceRequest;
 import org.jboss.dna.graph.request.DeleteBranchRequest;
+import org.jboss.dna.graph.request.DestroyWorkspaceRequest;
+import org.jboss.dna.graph.request.GetWorkspacesRequest;
 import org.jboss.dna.graph.request.MoveBranchRequest;
 import org.jboss.dna.graph.request.ReadAllChildrenRequest;
 import org.jboss.dna.graph.request.ReadAllPropertiesRequest;
 import org.jboss.dna.graph.request.UpdatePropertiesRequest;
+import org.jboss.dna.graph.request.VerifyWorkspaceRequest;
 import org.jboss.dna.graph.request.processor.RequestProcessor;
 
 /**
  * JDBC request processor
  * 
  * @author <a href="mailto:litsenko_sergey@yahoo.com">Sergiy Litsenko</a>
- *
  */
 public class JdbcRequestProcesor extends RequestProcessor {
     protected Connection connection;
     protected UUID rootNodeUuid;
-    
+
     /**
      * Logging for this instance
      */
@@ -55,13 +59,13 @@ public class JdbcRequestProcesor extends RequestProcessor {
     /**
      * @param sourceName
      * @param context
-     * @param connection 
-     * @param rootNodeUuid 
+     * @param connection
+     * @param rootNodeUuid
      */
     public JdbcRequestProcesor( String sourceName,
                                 ExecutionContext context,
                                 Connection connection,
-                                UUID rootNodeUuid) {
+                                UUID rootNodeUuid ) {
         super(sourceName, context);
         this.connection = connection;
         this.rootNodeUuid = rootNodeUuid;
@@ -70,8 +74,8 @@ public class JdbcRequestProcesor extends RequestProcessor {
     /**
      * @param sourceName
      * @param context
-     * @param connection 
-     * @param rootNodeUuid 
+     * @param connection
+     * @param rootNodeUuid
      * @param now
      */
     public JdbcRequestProcesor( String sourceName,
@@ -86,7 +90,7 @@ public class JdbcRequestProcesor extends RequestProcessor {
 
     /**
      * {@inheritDoc}
-     *
+     * 
      * @see org.jboss.dna.graph.request.processor.RequestProcessor#process(org.jboss.dna.graph.request.CopyBranchRequest)
      */
     @Override
@@ -95,7 +99,7 @@ public class JdbcRequestProcesor extends RequestProcessor {
 
     /**
      * {@inheritDoc}
-     *
+     * 
      * @see org.jboss.dna.graph.request.processor.RequestProcessor#process(org.jboss.dna.graph.request.CreateNodeRequest)
      */
     @Override
@@ -104,7 +108,7 @@ public class JdbcRequestProcesor extends RequestProcessor {
 
     /**
      * {@inheritDoc}
-     *
+     * 
      * @see org.jboss.dna.graph.request.processor.RequestProcessor#process(org.jboss.dna.graph.request.DeleteBranchRequest)
      */
     @Override
@@ -113,7 +117,7 @@ public class JdbcRequestProcesor extends RequestProcessor {
 
     /**
      * {@inheritDoc}
-     *
+     * 
      * @see org.jboss.dna.graph.request.processor.RequestProcessor#process(org.jboss.dna.graph.request.MoveBranchRequest)
      */
     @Override
@@ -122,7 +126,7 @@ public class JdbcRequestProcesor extends RequestProcessor {
 
     /**
      * {@inheritDoc}
-     *
+     * 
      * @see org.jboss.dna.graph.request.processor.RequestProcessor#process(org.jboss.dna.graph.request.ReadAllChildrenRequest)
      */
     @Override
@@ -131,7 +135,7 @@ public class JdbcRequestProcesor extends RequestProcessor {
 
     /**
      * {@inheritDoc}
-     *
+     * 
      * @see org.jboss.dna.graph.request.processor.RequestProcessor#process(org.jboss.dna.graph.request.ReadAllPropertiesRequest)
      */
     @Override
@@ -140,10 +144,55 @@ public class JdbcRequestProcesor extends RequestProcessor {
 
     /**
      * {@inheritDoc}
-     *
+     * 
      * @see org.jboss.dna.graph.request.processor.RequestProcessor#process(org.jboss.dna.graph.request.UpdatePropertiesRequest)
      */
     @Override
     public void process( UpdatePropertiesRequest request ) {
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.request.processor.RequestProcessor#process(org.jboss.dna.graph.request.VerifyWorkspaceRequest)
+     */
+    @Override
+    public void process( VerifyWorkspaceRequest request ) {
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.request.processor.RequestProcessor#process(org.jboss.dna.graph.request.GetWorkspacesRequest)
+     */
+    @Override
+    public void process( GetWorkspacesRequest request ) {
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.request.processor.RequestProcessor#process(org.jboss.dna.graph.request.CreateWorkspaceRequest)
+     */
+    @Override
+    public void process( CreateWorkspaceRequest request ) {
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.request.processor.RequestProcessor#process(org.jboss.dna.graph.request.CloneWorkspaceRequest)
+     */
+    @Override
+    public void process( CloneWorkspaceRequest request ) {
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.request.processor.RequestProcessor#process(org.jboss.dna.graph.request.DestroyWorkspaceRequest)
+     */
+    @Override
+    public void process( DestroyWorkspaceRequest request ) {
     }
 }

@@ -29,9 +29,6 @@ import static org.hamcrest.core.IsSame.sameInstance;
 import static org.junit.Assert.assertThat;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.Property;
-import org.jboss.dna.graph.request.CopyBranchRequest;
-import org.jboss.dna.graph.request.ReadPropertyRequest;
-import org.jboss.dna.graph.request.Request;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -54,57 +51,70 @@ public class ReadPropertyRequestTest extends AbstractRequestTest {
 
     @Override
     protected Request createRequest() {
-        return new ReadPropertyRequest(validPathLocation1, validPropertyName);
+        return new ReadPropertyRequest(validPathLocation1, workspace1, validPropertyName);
     }
 
     @Test( expected = IllegalArgumentException.class )
     public void shouldNotAllowCreatingRequestWithNullLocation() {
-        new ReadPropertyRequest(null, validPropertyName);
+        new ReadPropertyRequest(null, workspace1, validPropertyName);
+    }
+
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldNotAllowCreatingRequestWithNullWorkspaceName() {
+        new ReadPropertyRequest(validPathLocation, null, validPropertyName);
     }
 
     @Test( expected = IllegalArgumentException.class )
     public void shouldNotAllowCreatingRequestWithNullPropertyName() {
-        new CopyBranchRequest(validPathLocation, null);
+        new ReadPropertyRequest(validPathLocation, workspace1, null);
     }
 
     @Test
     public void shouldCreateValidRequestWithValidLocation() {
-        request = new ReadPropertyRequest(validPathLocation1, validPropertyName);
+        request = new ReadPropertyRequest(validPathLocation1, workspace1, validPropertyName);
         assertThat(request.on(), is(sameInstance(validPathLocation1)));
+        assertThat(request.inWorkspace(), is(sameInstance(workspace1)));
         assertThat(request.hasError(), is(false));
         assertThat(request.getError(), is(nullValue()));
     }
 
     @Test
     public void shouldConsiderEqualTwoRequestsWithSameLocationsAndSamePropertyName() {
-        request = new ReadPropertyRequest(validPathLocation1, validPropertyName);
-        ReadPropertyRequest request2 = new ReadPropertyRequest(validPathLocation1, validPropertyName);
+        request = new ReadPropertyRequest(validPathLocation1, new String(workspace1), validPropertyName);
+        ReadPropertyRequest request2 = new ReadPropertyRequest(validPathLocation1, workspace1, validPropertyName);
         assertThat(request, is(request2));
     }
 
     @Test
     public void shouldConsiderNotEqualTwoRequestsWithDifferentLocations() {
-        request = new ReadPropertyRequest(validPathLocation1, validPropertyName);
-        ReadPropertyRequest request2 = new ReadPropertyRequest(validPathLocation2, validPropertyName);
+        request = new ReadPropertyRequest(validPathLocation1, workspace1, validPropertyName);
+        ReadPropertyRequest request2 = new ReadPropertyRequest(validPathLocation2, workspace1, validPropertyName);
+        assertThat(request.equals(request2), is(false));
+    }
+
+    @Test
+    public void shouldConsiderNotEqualTwoRequestsWithDifferentWorkspaceNames() {
+        request = new ReadPropertyRequest(validPathLocation1, workspace1, validPropertyName);
+        ReadPropertyRequest request2 = new ReadPropertyRequest(validPathLocation1, workspace2, validPropertyName);
         assertThat(request.equals(request2), is(false));
     }
 
     @Test
     public void shouldConsiderNotEqualTwoRequestsWithSameLocationButDifferentPropertyNames() {
-        request = new ReadPropertyRequest(validPathLocation1, validProperty2.getName());
-        ReadPropertyRequest request2 = new ReadPropertyRequest(validPathLocation2, validPropertyName);
+        request = new ReadPropertyRequest(validPathLocation1, workspace1, validProperty2.getName());
+        ReadPropertyRequest request2 = new ReadPropertyRequest(validPathLocation2, workspace1, validPropertyName);
         assertThat(request.equals(request2), is(false));
     }
 
     @Test
     public void shouldAllowSettingProperties() {
-        request = new ReadPropertyRequest(validPathLocation, validPropertyName);
+        request = new ReadPropertyRequest(validPathLocation, workspace1, validPropertyName);
         request.setProperty(validProperty1);
     }
 
     @Test( expected = IllegalArgumentException.class )
     public void shouldNotAllowSettingPropertyIfNameDoeNotMatch() {
-        request = new ReadPropertyRequest(validPathLocation, validPropertyName);
+        request = new ReadPropertyRequest(validPathLocation, workspace1, validPropertyName);
         request.setProperty(validProperty2);
     }
 }

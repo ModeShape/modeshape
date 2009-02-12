@@ -53,6 +53,7 @@ public class JpaConnectorReadingTest extends ReadableConnectorTest {
         source.setNumberOfConnectionsToAcquireAsNeeded(1);
         source.setMaximumSizeOfStatementCache(100);
         source.setMaximumConnectionIdleTimeInSeconds(0);
+        source.setLargeValueSizeInBytes(150);
 
         return source;
     }
@@ -70,6 +71,10 @@ public class JpaConnectorReadingTest extends ReadableConnectorTest {
         int numPropertiesPerNode = 7;
         Stopwatch sw = new Stopwatch();
         boolean batch = true;
+        graph.createWorkspace().named("default");
         createSubgraph(graph, initialPath, depth, numChildrenPerNode, numPropertiesPerNode, batch, sw, System.out, null);
+        graph.createWorkspace().named("other workspace");
+        createSubgraph(graph, initialPath, depth, numChildrenPerNode, numPropertiesPerNode, batch, sw, System.out, null);
+        graph.useWorkspace("default");
     }
 }

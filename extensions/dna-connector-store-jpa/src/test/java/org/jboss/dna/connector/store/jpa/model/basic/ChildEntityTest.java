@@ -32,9 +32,6 @@ import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.Query;
 import org.hibernate.ejb.Ejb3Configuration;
-import org.jboss.dna.connector.store.jpa.model.basic.BasicModel;
-import org.jboss.dna.connector.store.jpa.model.basic.ChildEntity;
-import org.jboss.dna.connector.store.jpa.model.basic.ChildId;
 import org.jboss.dna.connector.store.jpa.model.common.NamespaceEntity;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.property.Path;
@@ -70,6 +67,14 @@ public class ChildEntityTest {
         configurator.setProperty("hibernate.hbm2ddl.auto", "create");
         factory = configurator.buildEntityManagerFactory();
         manager = factory.createEntityManager();
+
+        // Always create a bunch of nodes in a workspace that is not used, so we're sure that these
+        // tests work only on the workspace used in the test
+        NamespaceEntity ns = NamespaceEntity.findByUri(manager, "http://www.example.com");
+        Long workspaceId = 1202L;
+        for (int i = 0; i != 10; ++i) {
+            createChildren(workspaceId, UUID.randomUUID(), ns, 1, 10, "child", false);
+        }
     }
 
     @After
@@ -88,7 +93,8 @@ public class ChildEntityTest {
         }
     }
 
-    protected ChildId[] createChildren( UUID parentUuid,
+    protected ChildId[] createChildren( Long workspaceId,
+                                        UUID parentUuid,
                                         NamespaceEntity ns,
                                         int startingIndex,
                                         int numChildren,
@@ -101,7 +107,7 @@ public class ChildEntityTest {
             // Create the child entities ...
             for (int i = 0; i != numChildren; ++i) {
                 int indexInParent = i + startingIndex;
-                ChildId id = new ChildId(parentUuid.toString(), UUID.randomUUID().toString());
+                ChildId id = new ChildId(workspaceId, parentUuid.toString(), UUID.randomUUID().toString());
                 ChildEntity child = null;
                 if (useSns) {
                     child = new ChildEntity(id, indexInParent, ns, localName, i + 1);
@@ -120,13 +126,14 @@ public class ChildEntityTest {
         return result;
     }
 
-    protected ChildId[] createMixtureOfChildren( UUID parentUuid,
+    protected ChildId[] createMixtureOfChildren( Long workspaceId,
+                                                 UUID parentUuid,
                                                  NamespaceEntity ns ) {
-        ChildId[] ids1 = createChildren(parentUuid, ns, 1, 10, "child", false);
-        ChildId[] ids2 = createChildren(parentUuid, ns, 11, 10, "childWithSameName", true);
-        ChildId[] ids3 = createChildren(parentUuid, ns, 21, 1, "anotherChild", false);
-        ChildId[] ids4 = createChildren(parentUuid, ns, 22, 1, "nextToLastChild", false);
-        ChildId[] ids5 = createChildren(parentUuid, ns, 23, 1, "lastChild", false);
+        ChildId[] ids1 = createChildren(workspaceId, parentUuid, ns, 1, 10, "child", false);
+        ChildId[] ids2 = createChildren(workspaceId, parentUuid, ns, 11, 10, "childWithSameName", true);
+        ChildId[] ids3 = createChildren(workspaceId, parentUuid, ns, 21, 1, "anotherChild", false);
+        ChildId[] ids4 = createChildren(workspaceId, parentUuid, ns, 22, 1, "nextToLastChild", false);
+        ChildId[] ids5 = createChildren(workspaceId, parentUuid, ns, 23, 1, "lastChild", false);
         ChildId[][] ids = new ChildId[][] {ids1, ids2, ids3, ids4, ids5};
         ChildId[] results = new ChildId[ids1.length + ids2.length + ids3.length + ids4.length + ids5.length];
         int i = 0;
@@ -137,17 +144,20 @@ public class ChildEntityTest {
         return results;
     }
 
-    protected ChildEntity getChild( String childUuid ) {
+    protected ChildEntity getChild( Long workspaceId,
+                                    String childUuid ) {
         Query query = manager.createNamedQuery("ChildEntity.findByChildUuid");
+        query.setParameter("workspaceId", workspaceId);
         query.setParameter("childUuidString", childUuid);
         return (ChildEntity)query.getSingleResult();
     }
 
     @Test
     public void shouldCreateChildrenWithDifferentNames() {
+        Long workspaceId = 1L;
         UUID parentUuid = UUID.randomUUID();
         NamespaceEntity ns = NamespaceEntity.findByUri(manager, "http://www.example.com");
-        ChildId[] ids = createChildren(parentUuid, ns, 1, 10, "child", false);
+        ChildId[] ids = createChildren(workspaceId, parentUuid, ns, 1, 10, "child", false);
 
         // Look up the object ...
         manager.getTransaction().begin();
@@ -169,9 +179,10 @@ public class ChildEntityTest {
 
     @Test
     public void shouldCreateChildrenWithSameNameSiblingIndex() {
+        Long workspaceId = 1L;
         UUID parentUuid = UUID.randomUUID();
         NamespaceEntity ns = NamespaceEntity.findByUri(manager, "http://www.example.com");
-        ChildId[] ids = createChildren(parentUuid, ns, 1, 10, "child", true);
+        ChildId[] ids = createChildren(workspaceId, parentUuid, ns, 1, 10, "child", true);
 
         // Look up the object ...
         manager.getTransaction().begin();
@@ -194,18 +205,20 @@ public class ChildEntityTest {
     @SuppressWarnings( "unchecked" )
     @Test
     public void shouldCreateMixtureOfChildrenWithDifferentNamesAndSameNameSiblingIndexes() {
+        Long workspaceId = 1L;
         UUID parentUuid = UUID.randomUUID();
         NamespaceEntity ns = NamespaceEntity.findByUri(manager, "http://www.example.com");
-        createChildren(parentUuid, ns, 1, 10, "child", false);
-        createChildren(parentUuid, ns, 11, 10, "childWithSameName", true);
-        createChildren(parentUuid, ns, 21, 1, "anotherChild", false);
-        createChildren(parentUuid, ns, 22, 1, "nextToLastChild", false);
-        createChildren(parentUuid, ns, 23, 1, "lastChild", false);
+        createChildren(workspaceId, parentUuid, ns, 1, 10, "child", false);
+        createChildren(workspaceId, parentUuid, ns, 11, 10, "childWithSameName", true);
+        createChildren(workspaceId, parentUuid, ns, 21, 1, "anotherChild", false);
+        createChildren(workspaceId, parentUuid, ns, 22, 1, "nextToLastChild", false);
+        createChildren(workspaceId, parentUuid, ns, 23, 1, "lastChild", false);
 
         // Look up the object ...
         manager.getTransaction().begin();
         try {
             Query query = manager.createNamedQuery("ChildEntity.findAllUnderParent");
+            query.setParameter("workspaceId", workspaceId);
             query.setParameter("parentUuidString", parentUuid.toString());
             List<ChildEntity> children = query.getResultList();
             int index = 1;
@@ -221,15 +234,17 @@ public class ChildEntityTest {
     @SuppressWarnings( "unchecked" )
     @Test
     public void shouldCreateMixtureOfChildrenWithDifferentNamesAndSameNameSiblingIndexesMethod2() {
+        Long workspaceId = 1L;
         UUID parentUuid = UUID.randomUUID();
         NamespaceEntity ns = NamespaceEntity.findByUri(manager, "http://www.example.com");
-        ChildId[] ids = createMixtureOfChildren(parentUuid, ns);
+        ChildId[] ids = createMixtureOfChildren(workspaceId, parentUuid, ns);
         assertThat(ids.length, is(23));
 
         // Look up the object ...
         manager.getTransaction().begin();
         try {
             Query query = manager.createNamedQuery("ChildEntity.findAllUnderParent");
+            query.setParameter("workspaceId", workspaceId);
             query.setParameter("parentUuidString", parentUuid.toString());
             List<ChildEntity> children = query.getResultList();
             int index = 1;
@@ -240,7 +255,7 @@ public class ChildEntityTest {
 
             index = 1;
             for (ChildId id : ids) {
-                ChildEntity entity = getChild(id.getChildUuidString());
+                ChildEntity entity = getChild(workspaceId, id.getChildUuidString());
                 assertThat(entity.getIndexInParent(), is(index++));
             }
         } finally {
@@ -251,15 +266,17 @@ public class ChildEntityTest {
     @SuppressWarnings( "unchecked" )
     @Test
     public void shouldFindEntitiesInIndexRange() {
+        Long workspaceId = 1L;
         UUID parentUuid = UUID.randomUUID();
         NamespaceEntity ns = NamespaceEntity.findByUri(manager, "http://www.example.com");
-        ChildId[] ids = createMixtureOfChildren(parentUuid, ns);
+        ChildId[] ids = createMixtureOfChildren(workspaceId, parentUuid, ns);
         assertThat(ids.length, is(23));
 
         // Look up the objects ...
         manager.getTransaction().begin();
         try {
             Query query = manager.createNamedQuery("ChildEntity.findAllUnderParent");
+            query.setParameter("workspaceId", workspaceId);
             query.setParameter("parentUuidString", parentUuid.toString());
             List<ChildEntity> children = query.getResultList();
             int index = 1;
@@ -269,6 +286,7 @@ public class ChildEntityTest {
             }
 
             query = manager.createNamedQuery("ChildEntity.findRangeUnderParent");
+            query.setParameter("workspaceId", workspaceId);
             query.setParameter("parentUuidString", parentUuid.toString());
             query.setParameter("firstIndex", 3);
             query.setParameter("afterIndex", 6);
@@ -286,9 +304,10 @@ public class ChildEntityTest {
     @SuppressWarnings( "unchecked" )
     @Test
     public void shouldFindEntitiesAfterIndex() {
+        Long workspaceId = 1L;
         UUID parentUuid = UUID.randomUUID();
         NamespaceEntity ns = NamespaceEntity.findByUri(manager, "http://www.example.com");
-        ChildId[] ids = createMixtureOfChildren(parentUuid, ns);
+        ChildId[] ids = createMixtureOfChildren(workspaceId, parentUuid, ns);
         assertThat(ids.length, is(23));
 
         // Look up the objects ...
@@ -296,6 +315,7 @@ public class ChildEntityTest {
         try {
             Query query = manager.createNamedQuery("ChildEntity.findAllUnderParent");
             query.setParameter("parentUuidString", parentUuid.toString());
+            query.setParameter("workspaceId", workspaceId);
             List<ChildEntity> children = query.getResultList();
             int index = 1;
             assertThat(children.size(), is(23));
@@ -306,6 +326,7 @@ public class ChildEntityTest {
             query = manager.createNamedQuery("ChildEntity.findChildrenAfterIndexUnderParent");
             query.setParameter("parentUuidString", parentUuid.toString());
             query.setParameter("afterIndex", 18);
+            query.setParameter("workspaceId", workspaceId);
             children = query.getResultList();
             assertThat(children.size(), is(6));
             assertThat(children.get(0).getIndexInParent(), is(18));
@@ -323,9 +344,10 @@ public class ChildEntityTest {
     @SuppressWarnings( "unchecked" )
     @Test
     public void shouldFindAdjustChildIndexesAfterRemovalOfFirstSibling() {
+        Long workspaceId = 1L;
         UUID parentUuid = UUID.randomUUID();
         NamespaceEntity ns = NamespaceEntity.findByUri(manager, "http://www.example.com");
-        ChildId[] ids = createMixtureOfChildren(parentUuid, ns);
+        ChildId[] ids = createMixtureOfChildren(workspaceId, parentUuid, ns);
         assertThat(ids.length, is(23));
 
         // Look up the objects ...
@@ -333,6 +355,7 @@ public class ChildEntityTest {
         try {
             Query query = manager.createNamedQuery("ChildEntity.findAllUnderParent");
             query.setParameter("parentUuidString", parentUuid.toString());
+            query.setParameter("workspaceId", workspaceId);
             List<ChildEntity> children = query.getResultList();
             int index = 1;
             assertThat(children.size(), is(23));
@@ -341,14 +364,19 @@ public class ChildEntityTest {
             }
 
             // Remove the first child ...
-            ChildEntity child = getChild(ids[0].getChildUuidString());
+            ChildEntity child = getChild(workspaceId, ids[0].getChildUuidString());
             assertThat(child, is(notNullValue()));
             String childName = child.getChildName();
             manager.remove(child);
 
-            ChildEntity.adjustSnsIndexesAndIndexesAfterRemoving(manager, parentUuid.toString(), childName, ns.getId(), 0);
+            ChildEntity.adjustSnsIndexesAndIndexesAfterRemoving(manager,
+                                                                workspaceId,
+                                                                parentUuid.toString(),
+                                                                childName,
+                                                                ns.getId(),
+                                                                0);
 
-            assertChildren(parentUuid.toString(),
+            assertChildren(workspaceId, parentUuid.toString(),
             // "child1",
                            "child2",
                            "child3",
@@ -379,10 +407,12 @@ public class ChildEntityTest {
     }
 
     @SuppressWarnings( "unchecked" )
-    protected void assertChildren( String parentUuid,
+    protected void assertChildren( Long workspaceId,
+                                   String parentUuid,
                                    String... childNames ) {
         Query query = manager.createNamedQuery("ChildEntity.findAllUnderParent");
         query.setParameter("parentUuidString", parentUuid.toString());
+        query.setParameter("workspaceId", workspaceId);
         List<ChildEntity> children = query.getResultList();
         int index = 0;
         for (ChildEntity child : children) {
@@ -396,8 +426,10 @@ public class ChildEntityTest {
     }
 
     @SuppressWarnings( "unchecked" )
-    protected void printChildren( String parentUuid ) {
+    protected void printChildren( Long workspaceId,
+                                  String parentUuid ) {
         Query query = manager.createNamedQuery("ChildEntity.findAllUnderParent");
+        query.setParameter("workspaceId", workspaceId);
         query.setParameter("parentUuidString", parentUuid.toString());
         List<ChildEntity> children = query.getResultList();
         for (ChildEntity child : children) {

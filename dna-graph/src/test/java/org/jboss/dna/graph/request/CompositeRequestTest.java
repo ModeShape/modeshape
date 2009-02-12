@@ -32,10 +32,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
-import org.jboss.dna.graph.request.CompositeRequest;
-import org.jboss.dna.graph.request.ReadAllChildrenRequest;
-import org.jboss.dna.graph.request.ReadPropertyRequest;
-import org.jboss.dna.graph.request.Request;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -52,9 +48,9 @@ public class CompositeRequestTest extends AbstractRequestTest {
     @Before
     public void beforeEach() {
         super.beforeEach();
-        Request request1 = new ReadPropertyRequest(validPathLocation1, createName("property"));
-        Request request2 = new ReadPropertyRequest(validPathLocation2, createName("property"));
-        Request request3 = new ReadAllChildrenRequest(validPathLocation);
+        Request request1 = new ReadPropertyRequest(validPathLocation1, "workspace1", createName("property"));
+        Request request2 = new ReadPropertyRequest(validPathLocation2, "workspace1", createName("property"));
+        Request request3 = new ReadAllChildrenRequest(validPathLocation, "workspace1");
         requests = new Request[] {request1, request2, request3};
         requestList = Arrays.asList(requests);
     }

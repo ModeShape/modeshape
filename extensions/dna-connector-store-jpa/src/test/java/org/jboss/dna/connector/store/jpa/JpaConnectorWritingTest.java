@@ -53,6 +53,7 @@ public class JpaConnectorWritingTest extends WritableConnectorTest {
         source.setMaximumSizeOfStatementCache(100);
         source.setMaximumConnectionIdleTimeInSeconds(0);
         source.setReferentialIntegrityEnforced(true);
+        source.setLargeValueSizeInBytes(150);
 
         return source;
     }
@@ -64,6 +65,43 @@ public class JpaConnectorWritingTest extends WritableConnectorTest {
      */
     @Override
     protected void initializeContent( Graph graph ) {
+        graph.createWorkspace().named("default");
     }
 
+    // @Test
+    // public void shouldCreateFlatAndReallyWideTreeUsingOneBatch() {
+    // String initialPath = "";
+    // int depth = 1;
+    // int numChildren = 10000;
+    // int numBatches = 100;
+    // int numChildrenPerNodePerBatch = numChildren / numBatches;
+    // int numPropertiesPerNode = 7;
+    // int total = 0;
+    // Stopwatch sw = new Stopwatch();
+    // System.out.println("" + numChildren + " children under a node");
+    // for (int i = 0; i != numBatches; ++i) {
+    // Graph.Batch batch = graph.batch();
+    // total += createChildren(batch, initialPath, "node", numChildrenPerNodePerBatch, numPropertiesPerNode, depth, null);
+    // Stopwatch sw2 = new Stopwatch();
+    // sw.start();
+    // sw2.start();
+    // batch.execute();
+    // sw.stop();
+    // sw2.stop();
+    // System.out.println(" ... created " + (total - numChildrenPerNodePerBatch + 1) + "-" + total + " in "
+    // + sw2.getTotalDuration().getDuration(TimeUnit.MILLISECONDS) + " milliseconds");
+    // }
+    // System.out.println("  " + getTotalAndAverageDuration(sw));
+    // assert total == numChildren;
+    //
+    // // Create 10 more ...
+    // System.out.println(" Extra nodes (" + (total + 1) + "-" + (total + 10) + "):");
+    // sw = new Stopwatch();
+    // Graph.Batch batch = graph.batch();
+    // createChildren(batch, initialPath, "added node", 10, numPropertiesPerNode, 1, null);
+    // sw.start();
+    // batch.execute();
+    // sw.stop();
+    // System.out.println("  " + getTotalAndAverageDuration(sw));
+    // }
 }

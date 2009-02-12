@@ -43,16 +43,6 @@ import org.hibernate.ejb.Ejb3Configuration;
 import org.jboss.dna.common.util.IoUtil;
 import org.jboss.dna.common.util.SecureHash;
 import org.jboss.dna.common.util.StringUtil;
-import org.jboss.dna.connector.store.jpa.model.basic.BasicModel;
-import org.jboss.dna.connector.store.jpa.model.basic.ChildEntity;
-import org.jboss.dna.connector.store.jpa.model.basic.ChildId;
-import org.jboss.dna.connector.store.jpa.model.basic.LargeValueEntity;
-import org.jboss.dna.connector.store.jpa.model.basic.LargeValueId;
-import org.jboss.dna.connector.store.jpa.model.basic.NodeId;
-import org.jboss.dna.connector.store.jpa.model.basic.PropertiesEntity;
-import org.jboss.dna.connector.store.jpa.model.basic.ReferenceEntity;
-import org.jboss.dna.connector.store.jpa.model.basic.ReferenceId;
-import org.jboss.dna.connector.store.jpa.model.basic.SubgraphQuery;
 import org.jboss.dna.connector.store.jpa.model.common.NamespaceEntity;
 import org.jboss.dna.connector.store.jpa.util.Namespaces;
 import org.jboss.dna.graph.ExecutionContext;
@@ -74,7 +64,8 @@ public class SubgraphQueryTest {
     private EntityManager manager;
     private BasicModel model;
     private ExecutionContext context;
-    private Map<Path, UUID> uuidByPath;
+    private Long workspaceId;
+    private Map<Long, Map<Path, UUID>> uuidByPathByWorkspace;
     private Namespaces namespaces;
     private List<Location> locations;
     private String[] validLargeValues;
@@ -110,31 +101,59 @@ public class SubgraphQueryTest {
         manager = factory.createEntityManager();
         namespaces = new Namespaces(manager);
 
+        uuidByPathByWorkspace = new HashMap<Long, Map<Path, UUID>>();
+
         manager.getTransaction().begin();
 
+        // Determine the UUID for all root nodes ...
+        UUID rootUuid = UUID.randomUUID();
+
         // Now populate a graph of nodes ...
-        uuidByPath = new HashMap<Path, UUID>();
-        uuidByPath.put(path("/"), UUID.randomUUID());
-        create("/a");
-        create("/a/a1");
-        create("/a/a1/a1");
-        create("/a/a1/a2");
-        create("/a/a1/a3");
-        create("/a/a2");
-        create("/a/a2/a1");
-        create("/a/a2/a1/a1");
-        create("/a/a2/a1/a1/a1");
-        create("/a/a2/a1/a1/a2");
-        create("/a/a2/a1/a2");
-        create("/a/a2/a2");
-        create("/a/a2/a3");
-        create("/a/a2/a4");
-        setLargeValue("/a/a1", "prop1", validLargeValues[0]);
-        setLargeValue("/a/a1", "prop1", validLargeValues[1]); // the only node that uses #1
-        setLargeValue("/a/a2", "prop1", validLargeValues[0]);
-        setLargeValue("/a/a2", "prop2", validLargeValues[2]);
-        setLargeValue("/a/a2/a1", "prop2", validLargeValues[0]);
-        setLargeValue("/a/a2/a1", "prop3", validLargeValues[2]);
+        workspaceId = 10L;
+        uuidByPath(workspaceId).put(path("/"), rootUuid);
+        create(workspaceId, "/a");
+        create(workspaceId, "/a/a1");
+        create(workspaceId, "/a/a1/a1");
+        create(workspaceId, "/a/a1/a2");
+        create(workspaceId, "/a/a1/a3");
+        create(workspaceId, "/a/a2");
+        create(workspaceId, "/a/a2/a1");
+        create(workspaceId, "/a/a2/a1/a1");
+        create(workspaceId, "/a/a2/a1/a1/a1");
+        create(workspaceId, "/a/a2/a1/a1/a2");
+        create(workspaceId, "/a/a2/a1/a2");
+        create(workspaceId, "/a/a2/a2");
+        create(workspaceId, "/a/a2/a3");
+        create(workspaceId, "/a/a2/a4");
+        setLargeValue(workspaceId, "/a/a1", "prop1", validLargeValues[0]);
+        setLargeValue(workspaceId, "/a/a1", "prop1", validLargeValues[1]); // the only node that uses #1
+        setLargeValue(workspaceId, "/a/a2", "prop1", validLargeValues[0]);
+        setLargeValue(workspaceId, "/a/a2", "prop2", validLargeValues[2]);
+        setLargeValue(workspaceId, "/a/a2/a1", "prop2", validLargeValues[0]);
+        setLargeValue(workspaceId, "/a/a2/a1", "prop3", validLargeValues[2]);
+        manager.getTransaction().commit();
+        manager.getTransaction().begin();
+
+        // Create some content in other workspaces ...
+        Long otherWorkspace = 3254L;
+        uuidByPath(otherWorkspace).put(path("/"), rootUuid);
+        create(otherWorkspace, "/a");
+        create(otherWorkspace, "/a/a1");
+        create(otherWorkspace, "/a/a1/a1");
+        create(otherWorkspace, "/a/a1/a2");
+        create(otherWorkspace, "/a/a1/a3");
+        create(otherWorkspace, "/a/a2");
+        create(otherWorkspace, "/a/a2/a1");
+        create(otherWorkspace, "/a/a2/a1/a1");
+        create(otherWorkspace, "/a/a2/a1/a1/a1");
+        create(otherWorkspace, "/a/a2/a1/a1/a2");
+        create(otherWorkspace, "/a/a2/a1/a2");
+        create(otherWorkspace, "/a/a2/a2");
+        create(otherWorkspace, "/a/a2/a3");
+        create(otherWorkspace, "/a/a2/a4");
+        // Add some large values that were already used in the other workspace
+        setLargeValue(workspaceId, "/a/a2/a1", "prop2", validLargeValues[0]);
+        setLargeValue(workspaceId, "/a/a2/a1", "prop2", validLargeValues[2]);
         manager.getTransaction().commit();
         manager.getTransaction().begin();
     }
@@ -155,21 +174,31 @@ public class SubgraphQueryTest {
         }
     }
 
+    protected Map<Path, UUID> uuidByPath( Long workspaceId ) {
+        Map<Path, UUID> map = uuidByPathByWorkspace.get(workspaceId);
+        if (map == null) {
+            map = new HashMap<Path, UUID>();
+            uuidByPathByWorkspace.put(workspaceId, map);
+        }
+        return map;
+    }
+
     protected Path path( String path ) {
         return context.getValueFactories().getPathFactory().create(path);
     }
 
-    protected void create( String pathStr ) {
+    protected void create( Long workspaceId,
+                           String pathStr ) {
         Path path = path(pathStr);
-        if (uuidByPath.containsKey(path)) return;
+        if (uuidByPath(workspaceId).containsKey(path)) return;
         if (path.isRoot()) return;
         Path parent = path.getParent();
         // Look up the parent ...
-        UUID parentUuid = uuidByPath.get(parent);
+        UUID parentUuid = uuidByPath(workspaceId).get(parent);
         assert parentUuid != null;
         // Calculate the child index by walking the existing nodes ...
         int numChildren = 0;
-        for (Path existing : uuidByPath.keySet()) {
+        for (Path existing : uuidByPath(workspaceId).keySet()) {
             if (parent.equals(existing.getParent())) {
                 ++numChildren;
             }
@@ -180,48 +209,51 @@ public class SubgraphQueryTest {
         int snsIndex = path.getLastSegment().getIndex();
         NamespaceEntity namespace = namespaces.get(childName.getNamespaceUri(), true);
         UUID childUuid = UUID.randomUUID();
-        ChildId id = new ChildId(parentUuid.toString(), childUuid.toString());
+        ChildId id = new ChildId(workspaceId, parentUuid.toString(), childUuid.toString());
         ChildEntity entity = new ChildEntity(id, ++numChildren, namespace, childName.getLocalName(), snsIndex);
         manager.persist(entity);
 
         // Create the properties ...
-        NodeId nodeId = new NodeId(childUuid.toString());
+        NodeId nodeId = new NodeId(workspaceId, childUuid.toString());
         PropertiesEntity props = new PropertiesEntity(nodeId);
         props.setData("bogus data".getBytes());
         props.setPropertyCount(1);
         props.setCompressed(false);
         manager.persist(props);
 
-        uuidByPath.put(path, childUuid);
+        uuidByPath(workspaceId).put(path, childUuid);
     }
 
-    protected ReferenceEntity createReferenceBetween( String fromPathStr,
+    protected ReferenceEntity createReferenceBetween( Long workspaceId,
+                                                      String fromPathStr,
                                                       String toPathStr ) {
         Path fromPath = path(fromPathStr);
         Path toPath = path(toPathStr);
 
         // Look up the UUIDs ...
-        UUID fromUuid = uuidByPath.get(fromPath);
-        UUID toUuid = uuidByPath.get(toPath);
+        UUID fromUuid = uuidByPath(workspaceId).get(fromPath);
+        UUID toUuid = uuidByPath(workspaceId).get(toPath);
         assert fromUuid != null;
         assert toUuid != null;
 
         // Now create a reference entity ...
-        ReferenceEntity entity = new ReferenceEntity(new ReferenceId(fromUuid.toString(), toUuid.toString()));
+        ReferenceEntity entity = new ReferenceEntity(new ReferenceId(workspaceId, fromUuid.toString(), toUuid.toString()));
         manager.persist(entity);
         return entity;
     }
 
-    protected UUID uuidForPath( String pathStr ) {
+    protected UUID uuidForPath( Long workspaceId,
+                                String pathStr ) {
         Path path = path(pathStr);
-        return uuidByPath.get(path);
+        return uuidByPath(workspaceId).get(path);
     }
 
-    protected void setLargeValue( String pathStr,
+    protected void setLargeValue( Long workspaceId,
+                                  String pathStr,
                                   String propertyName,
                                   String largeValue ) throws UnsupportedEncodingException, NoSuchAlgorithmException {
         Path path = path(pathStr);
-        UUID nodeUuid = uuidByPath.get(path);
+        UUID nodeUuid = uuidByPath(workspaceId).get(path);
         assertThat(nodeUuid, is(notNullValue()));
 
         // Find or create the large value object ...
@@ -238,7 +270,7 @@ public class SubgraphQueryTest {
         }
 
         // Load the PropertiesEntity ...
-        NodeId nodeId = new NodeId(nodeUuid.toString());
+        NodeId nodeId = new NodeId(workspaceId, nodeUuid.toString());
         PropertiesEntity props = manager.find(PropertiesEntity.class, nodeId);
         assertThat(props, is(notNullValue()));
 
@@ -250,18 +282,20 @@ public class SubgraphQueryTest {
         return new LargeValueId(StringUtil.getHexString(SecureHash.getHash(SecureHash.Algorithm.SHA_1, value.getBytes())));
     }
 
-    protected PropertiesEntity getProperties( String pathStr ) {
+    protected PropertiesEntity getProperties( Long workspaceId,
+                                              String pathStr ) {
         Path path = path(pathStr);
-        UUID nodeUuid = uuidByPath.get(path);
+        UUID nodeUuid = uuidByPath(workspaceId).get(path);
         assertThat(nodeUuid, is(notNullValue()));
 
-        NodeId nodeId = new NodeId(nodeUuid.toString());
+        NodeId nodeId = new NodeId(workspaceId, nodeUuid.toString());
         return manager.find(PropertiesEntity.class, nodeId);
     }
 
-    protected void verifyNextLocationIs( String path ) {
+    protected void verifyNextLocationIs( Long workspaceId,
+                                         String path ) {
         Path pathObj = path(path);
-        UUID uuid = uuidByPath.get(pathObj);
+        UUID uuid = uuidByPath(workspaceId).get(pathObj);
         Location next = locations.remove(0);
         assertThat(next, is(notNullValue()));
         assertThat(next.getPath(), is(pathObj));
@@ -279,7 +313,7 @@ public class SubgraphQueryTest {
         String[] expectedNodeUuids = new String[paths.length];
         for (int i = 0; i != paths.length; ++i) {
             String pathStr = paths[i];
-            expectedNodeUuids[i] = uuidForPath(pathStr).toString();
+            expectedNodeUuids[i] = uuidForPath(workspaceId, pathStr).toString();
         }
         // Load the PropertiesEntity for the nodes that have large properties ...
         Query queryProps = manager.createQuery("select prop from PropertiesEntity as prop where size(prop.largeValues) > 0");
@@ -292,6 +326,25 @@ public class SubgraphQueryTest {
         assertThat(actualNodeUuids, hasItems(expectedNodeUuids));
     }
 
+    protected void assertNumberOfLargeValueEntities( long count ) throws Exception {
+        Query query = manager.createQuery("select count(*) from LargeValueEntity");
+        assertThat((Long)query.getSingleResult(), is(count));
+    }
+
+    protected void assertNumberOfPropertyEntitiesInWorkspace( Long workspaceId,
+                                                              long count ) throws Exception {
+        Query query = manager.createQuery("select count(*) from PropertiesEntity as prop where prop.id.workspaceId = :workspaceId");
+        query.setParameter("workspaceId", workspaceId);
+        assertThat((Long)query.getSingleResult(), is(count));
+    }
+
+    protected void assertNumberOfChildEntitiesInWorkspace( Long workspaceId,
+                                                           long count ) throws Exception {
+        Query query = manager.createQuery("select count(*) from ChildEntity as child where child.id.workspaceId = :workspaceId");
+        query.setParameter("workspaceId", workspaceId);
+        assertThat((Long)query.getSingleResult(), is(count));
+    }
+
     @Test
     public void shouldFindLargeValueContentFromFile() {
         for (int i = 0; i != validLargeValues.length; ++i) {
@@ -302,13 +355,13 @@ public class SubgraphQueryTest {
     @Test
     public void shouldPerformSubgraphQueryOfNodeWithChildrenAndNoGrandchildren() {
         Path path = path("/a/a1");
-        UUID uuid = uuidByPath.get(path);
-        query = SubgraphQuery.create(context, manager, uuid, path, Integer.MAX_VALUE);
+        UUID uuid = uuidByPath(workspaceId).get(path);
+        query = SubgraphQuery.create(context, manager, workspaceId, uuid, path, Integer.MAX_VALUE);
         locations = query.getNodeLocations(true, true);
-        verifyNextLocationIs("/a/a1");
-        verifyNextLocationIs("/a/a1/a1");
-        verifyNextLocationIs("/a/a1/a2");
-        verifyNextLocationIs("/a/a1/a3");
+        verifyNextLocationIs(workspaceId, "/a/a1");
+        verifyNextLocationIs(workspaceId, "/a/a1/a1");
+        verifyNextLocationIs(workspaceId, "/a/a1/a2");
+        verifyNextLocationIs(workspaceId, "/a/a1/a3");
         verifyNoMoreLocations();
         query.close();
     }
@@ -316,18 +369,18 @@ public class SubgraphQueryTest {
     @Test
     public void shouldPerformSubgraphQueryOfNodeWithChildrenAndGrandchildren() {
         Path path = path("/a/a2");
-        UUID uuid = uuidByPath.get(path);
-        query = SubgraphQuery.create(context, manager, uuid, path, Integer.MAX_VALUE);
+        UUID uuid = uuidByPath(workspaceId).get(path);
+        query = SubgraphQuery.create(context, manager, workspaceId, uuid, path, Integer.MAX_VALUE);
         locations = query.getNodeLocations(true, true);
-        verifyNextLocationIs("/a/a2");
-        verifyNextLocationIs("/a/a2/a1");
-        verifyNextLocationIs("/a/a2/a2");
-        verifyNextLocationIs("/a/a2/a3");
-        verifyNextLocationIs("/a/a2/a4");
-        verifyNextLocationIs("/a/a2/a1/a1");
-        verifyNextLocationIs("/a/a2/a1/a2");
-        verifyNextLocationIs("/a/a2/a1/a1/a1");
-        verifyNextLocationIs("/a/a2/a1/a1/a2");
+        verifyNextLocationIs(workspaceId, "/a/a2");
+        verifyNextLocationIs(workspaceId, "/a/a2/a1");
+        verifyNextLocationIs(workspaceId, "/a/a2/a2");
+        verifyNextLocationIs(workspaceId, "/a/a2/a3");
+        verifyNextLocationIs(workspaceId, "/a/a2/a4");
+        verifyNextLocationIs(workspaceId, "/a/a2/a1/a1");
+        verifyNextLocationIs(workspaceId, "/a/a2/a1/a2");
+        verifyNextLocationIs(workspaceId, "/a/a2/a1/a1/a1");
+        verifyNextLocationIs(workspaceId, "/a/a2/a1/a1/a2");
         verifyNoMoreLocations();
         query.close();
     }
@@ -335,23 +388,23 @@ public class SubgraphQueryTest {
     @Test
     public void shouldPerformSubgraphQueryOfNodeWithChildrenAndGrandchildrenAndGreatGranchildren() {
         Path path = path("/a");
-        UUID uuid = uuidByPath.get(path);
-        query = SubgraphQuery.create(context, manager, uuid, path, Integer.MAX_VALUE);
+        UUID uuid = uuidByPath(workspaceId).get(path);
+        query = SubgraphQuery.create(context, manager, workspaceId, uuid, path, Integer.MAX_VALUE);
         locations = query.getNodeLocations(true, true);
-        verifyNextLocationIs("/a");
-        verifyNextLocationIs("/a/a1");
-        verifyNextLocationIs("/a/a2");
-        verifyNextLocationIs("/a/a1/a1");
-        verifyNextLocationIs("/a/a1/a2");
-        verifyNextLocationIs("/a/a1/a3");
-        verifyNextLocationIs("/a/a2/a1");
-        verifyNextLocationIs("/a/a2/a2");
-        verifyNextLocationIs("/a/a2/a3");
-        verifyNextLocationIs("/a/a2/a4");
-        verifyNextLocationIs("/a/a2/a1/a1");
-        verifyNextLocationIs("/a/a2/a1/a2");
-        verifyNextLocationIs("/a/a2/a1/a1/a1");
-        verifyNextLocationIs("/a/a2/a1/a1/a2");
+        verifyNextLocationIs(workspaceId, "/a");
+        verifyNextLocationIs(workspaceId, "/a/a1");
+        verifyNextLocationIs(workspaceId, "/a/a2");
+        verifyNextLocationIs(workspaceId, "/a/a1/a1");
+        verifyNextLocationIs(workspaceId, "/a/a1/a2");
+        verifyNextLocationIs(workspaceId, "/a/a1/a3");
+        verifyNextLocationIs(workspaceId, "/a/a2/a1");
+        verifyNextLocationIs(workspaceId, "/a/a2/a2");
+        verifyNextLocationIs(workspaceId, "/a/a2/a3");
+        verifyNextLocationIs(workspaceId, "/a/a2/a4");
+        verifyNextLocationIs(workspaceId, "/a/a2/a1/a1");
+        verifyNextLocationIs(workspaceId, "/a/a2/a1/a2");
+        verifyNextLocationIs(workspaceId, "/a/a2/a1/a1/a1");
+        verifyNextLocationIs(workspaceId, "/a/a2/a1/a1/a2");
         verifyNoMoreLocations();
         query.close();
     }
@@ -359,90 +412,90 @@ public class SubgraphQueryTest {
     @Test
     public void shouldPerformMaxDepthSubgraphQueryOfNodeWithChildrenAndGrandchildrenAndGreatGranchildren() {
         Path path = path("/a");
-        UUID uuid = uuidByPath.get(path);
-        query = SubgraphQuery.create(context, manager, uuid, path, 4);
+        UUID uuid = uuidByPath(workspaceId).get(path);
+        query = SubgraphQuery.create(context, manager, workspaceId, uuid, path, 4);
         locations = query.getNodeLocations(true, true);
-        verifyNextLocationIs("/a");
-        verifyNextLocationIs("/a/a1");
-        verifyNextLocationIs("/a/a2");
-        verifyNextLocationIs("/a/a1/a1");
-        verifyNextLocationIs("/a/a1/a2");
-        verifyNextLocationIs("/a/a1/a3");
-        verifyNextLocationIs("/a/a2/a1");
-        verifyNextLocationIs("/a/a2/a2");
-        verifyNextLocationIs("/a/a2/a3");
-        verifyNextLocationIs("/a/a2/a4");
-        verifyNextLocationIs("/a/a2/a1/a1");
-        verifyNextLocationIs("/a/a2/a1/a2");
-        verifyNextLocationIs("/a/a2/a1/a1/a1");
-        verifyNextLocationIs("/a/a2/a1/a1/a2");
+        verifyNextLocationIs(workspaceId, "/a");
+        verifyNextLocationIs(workspaceId, "/a/a1");
+        verifyNextLocationIs(workspaceId, "/a/a2");
+        verifyNextLocationIs(workspaceId, "/a/a1/a1");
+        verifyNextLocationIs(workspaceId, "/a/a1/a2");
+        verifyNextLocationIs(workspaceId, "/a/a1/a3");
+        verifyNextLocationIs(workspaceId, "/a/a2/a1");
+        verifyNextLocationIs(workspaceId, "/a/a2/a2");
+        verifyNextLocationIs(workspaceId, "/a/a2/a3");
+        verifyNextLocationIs(workspaceId, "/a/a2/a4");
+        verifyNextLocationIs(workspaceId, "/a/a2/a1/a1");
+        verifyNextLocationIs(workspaceId, "/a/a2/a1/a2");
+        verifyNextLocationIs(workspaceId, "/a/a2/a1/a1/a1");
+        verifyNextLocationIs(workspaceId, "/a/a2/a1/a1/a2");
         verifyNoMoreLocations();
 
         locations = query.getNodeLocations(true, false);
-        verifyNextLocationIs("/a");
-        verifyNextLocationIs("/a/a1");
-        verifyNextLocationIs("/a/a2");
-        verifyNextLocationIs("/a/a1/a1");
-        verifyNextLocationIs("/a/a1/a2");
-        verifyNextLocationIs("/a/a1/a3");
-        verifyNextLocationIs("/a/a2/a1");
-        verifyNextLocationIs("/a/a2/a2");
-        verifyNextLocationIs("/a/a2/a3");
-        verifyNextLocationIs("/a/a2/a4");
-        verifyNextLocationIs("/a/a2/a1/a1");
-        verifyNextLocationIs("/a/a2/a1/a2");
+        verifyNextLocationIs(workspaceId, "/a");
+        verifyNextLocationIs(workspaceId, "/a/a1");
+        verifyNextLocationIs(workspaceId, "/a/a2");
+        verifyNextLocationIs(workspaceId, "/a/a1/a1");
+        verifyNextLocationIs(workspaceId, "/a/a1/a2");
+        verifyNextLocationIs(workspaceId, "/a/a1/a3");
+        verifyNextLocationIs(workspaceId, "/a/a2/a1");
+        verifyNextLocationIs(workspaceId, "/a/a2/a2");
+        verifyNextLocationIs(workspaceId, "/a/a2/a3");
+        verifyNextLocationIs(workspaceId, "/a/a2/a4");
+        verifyNextLocationIs(workspaceId, "/a/a2/a1/a1");
+        verifyNextLocationIs(workspaceId, "/a/a2/a1/a2");
         verifyNoMoreLocations();
         query.close();
 
-        query = SubgraphQuery.create(context, manager, uuid, path, 2);
+        query = SubgraphQuery.create(context, manager, workspaceId, uuid, path, 2);
         locations = query.getNodeLocations(true, true);
-        verifyNextLocationIs("/a");
-        verifyNextLocationIs("/a/a1");
-        verifyNextLocationIs("/a/a2");
-        verifyNextLocationIs("/a/a1/a1");
-        verifyNextLocationIs("/a/a1/a2");
-        verifyNextLocationIs("/a/a1/a3");
-        verifyNextLocationIs("/a/a2/a1");
-        verifyNextLocationIs("/a/a2/a2");
-        verifyNextLocationIs("/a/a2/a3");
-        verifyNextLocationIs("/a/a2/a4");
+        verifyNextLocationIs(workspaceId, "/a");
+        verifyNextLocationIs(workspaceId, "/a/a1");
+        verifyNextLocationIs(workspaceId, "/a/a2");
+        verifyNextLocationIs(workspaceId, "/a/a1/a1");
+        verifyNextLocationIs(workspaceId, "/a/a1/a2");
+        verifyNextLocationIs(workspaceId, "/a/a1/a3");
+        verifyNextLocationIs(workspaceId, "/a/a2/a1");
+        verifyNextLocationIs(workspaceId, "/a/a2/a2");
+        verifyNextLocationIs(workspaceId, "/a/a2/a3");
+        verifyNextLocationIs(workspaceId, "/a/a2/a4");
         verifyNoMoreLocations();
 
         locations = query.getNodeLocations(true, false);
-        verifyNextLocationIs("/a");
-        verifyNextLocationIs("/a/a1");
-        verifyNextLocationIs("/a/a2");
+        verifyNextLocationIs(workspaceId, "/a");
+        verifyNextLocationIs(workspaceId, "/a/a1");
+        verifyNextLocationIs(workspaceId, "/a/a2");
         verifyNoMoreLocations();
 
         query.close();
 
-        query = SubgraphQuery.create(context, manager, uuid, path, 3);
+        query = SubgraphQuery.create(context, manager, workspaceId, uuid, path, 3);
         locations = query.getNodeLocations(true, false);
-        verifyNextLocationIs("/a");
-        verifyNextLocationIs("/a/a1");
-        verifyNextLocationIs("/a/a2");
-        verifyNextLocationIs("/a/a1/a1");
-        verifyNextLocationIs("/a/a1/a2");
-        verifyNextLocationIs("/a/a1/a3");
-        verifyNextLocationIs("/a/a2/a1");
-        verifyNextLocationIs("/a/a2/a2");
-        verifyNextLocationIs("/a/a2/a3");
-        verifyNextLocationIs("/a/a2/a4");
+        verifyNextLocationIs(workspaceId, "/a");
+        verifyNextLocationIs(workspaceId, "/a/a1");
+        verifyNextLocationIs(workspaceId, "/a/a2");
+        verifyNextLocationIs(workspaceId, "/a/a1/a1");
+        verifyNextLocationIs(workspaceId, "/a/a1/a2");
+        verifyNextLocationIs(workspaceId, "/a/a1/a3");
+        verifyNextLocationIs(workspaceId, "/a/a2/a1");
+        verifyNextLocationIs(workspaceId, "/a/a2/a2");
+        verifyNextLocationIs(workspaceId, "/a/a2/a3");
+        verifyNextLocationIs(workspaceId, "/a/a2/a4");
         verifyNoMoreLocations();
 
         locations = query.getNodeLocations(true, true);
-        verifyNextLocationIs("/a");
-        verifyNextLocationIs("/a/a1");
-        verifyNextLocationIs("/a/a2");
-        verifyNextLocationIs("/a/a1/a1");
-        verifyNextLocationIs("/a/a1/a2");
-        verifyNextLocationIs("/a/a1/a3");
-        verifyNextLocationIs("/a/a2/a1");
-        verifyNextLocationIs("/a/a2/a2");
-        verifyNextLocationIs("/a/a2/a3");
-        verifyNextLocationIs("/a/a2/a4");
-        verifyNextLocationIs("/a/a2/a1/a1");
-        verifyNextLocationIs("/a/a2/a1/a2");
+        verifyNextLocationIs(workspaceId, "/a");
+        verifyNextLocationIs(workspaceId, "/a/a1");
+        verifyNextLocationIs(workspaceId, "/a/a2");
+        verifyNextLocationIs(workspaceId, "/a/a1/a1");
+        verifyNextLocationIs(workspaceId, "/a/a1/a2");
+        verifyNextLocationIs(workspaceId, "/a/a1/a3");
+        verifyNextLocationIs(workspaceId, "/a/a2/a1");
+        verifyNextLocationIs(workspaceId, "/a/a2/a2");
+        verifyNextLocationIs(workspaceId, "/a/a2/a3");
+        verifyNextLocationIs(workspaceId, "/a/a2/a4");
+        verifyNextLocationIs(workspaceId, "/a/a2/a1/a1");
+        verifyNextLocationIs(workspaceId, "/a/a2/a1/a2");
         verifyNoMoreLocations();
         query.close();
     }
@@ -453,21 +506,21 @@ public class SubgraphQueryTest {
         verifyNodesHaveLargeValues("/a/a1", "/a/a2", "/a/a2/a1");
 
         // Count the number of objects ...
-        assertThat((Long)manager.createQuery("select count(*) from LargeValueEntity").getSingleResult(), is(3L));
-        assertThat((Long)manager.createQuery("select count(*) from PropertiesEntity").getSingleResult(), is(14L));
-        assertThat((Long)manager.createQuery("select count(*) from ChildEntity").getSingleResult(), is(14L));
+        assertNumberOfLargeValueEntities(3L);
+        assertNumberOfPropertyEntitiesInWorkspace(workspaceId, 14L);
+        assertNumberOfChildEntitiesInWorkspace(workspaceId, 14L);
 
         // Delete "/a/a1". Note that "/a/a1" has a large value that is shared by "/a/a2", but it's also the only
         // user of large value #1.
         Path path = path("/a/a1");
-        UUID uuid = uuidByPath.get(path);
+        UUID uuid = uuidByPath(workspaceId).get(path);
 
-        query = SubgraphQuery.create(context, manager, uuid, path, Integer.MAX_VALUE);
+        query = SubgraphQuery.create(context, manager, workspaceId, uuid, path, Integer.MAX_VALUE);
         locations = query.getNodeLocations(true, true);
-        verifyNextLocationIs("/a/a1");
-        verifyNextLocationIs("/a/a1/a1");
-        verifyNextLocationIs("/a/a1/a2");
-        verifyNextLocationIs("/a/a1/a3");
+        verifyNextLocationIs(workspaceId, "/a/a1");
+        verifyNextLocationIs(workspaceId, "/a/a1/a1");
+        verifyNextLocationIs(workspaceId, "/a/a1/a2");
+        verifyNextLocationIs(workspaceId, "/a/a1/a3");
         verifyNoMoreLocations();
         query.deleteSubgraph(true);
         assertThat(query.getInwardReferences().isEmpty(), is(true));
@@ -479,36 +532,36 @@ public class SubgraphQueryTest {
         manager.flush();
 
         // Count the number of objects ...
-        assertThat((Long)manager.createQuery("select count(*) from LargeValueEntity").getSingleResult(), is(2L));
-        assertThat((Long)manager.createQuery("select count(*) from PropertiesEntity").getSingleResult(), is(10L));
-        assertThat((Long)manager.createQuery("select count(*) from ChildEntity").getSingleResult(), is(10L));
+        assertNumberOfLargeValueEntities(2L);
+        assertNumberOfPropertyEntitiesInWorkspace(workspaceId, 10L);
+        assertNumberOfChildEntitiesInWorkspace(workspaceId, 10L);
 
         // Verify the graph structure is correct ...
         path = path("/a");
-        uuid = uuidByPath.get(path);
-        query = SubgraphQuery.create(context, manager, uuid, path, 4);
+        uuid = uuidByPath(workspaceId).get(path);
+        query = SubgraphQuery.create(context, manager, workspaceId, uuid, path, 4);
         locations = query.getNodeLocations(true, true);
-        verifyNextLocationIs("/a");
-        verifyNextLocationIs("/a/a2");
-        verifyNextLocationIs("/a/a2/a1");
-        verifyNextLocationIs("/a/a2/a2");
-        verifyNextLocationIs("/a/a2/a3");
-        verifyNextLocationIs("/a/a2/a4");
-        verifyNextLocationIs("/a/a2/a1/a1");
-        verifyNextLocationIs("/a/a2/a1/a2");
-        verifyNextLocationIs("/a/a2/a1/a1/a1");
-        verifyNextLocationIs("/a/a2/a1/a1/a2");
+        verifyNextLocationIs(workspaceId, "/a");
+        verifyNextLocationIs(workspaceId, "/a/a2");
+        verifyNextLocationIs(workspaceId, "/a/a2/a1");
+        verifyNextLocationIs(workspaceId, "/a/a2/a2");
+        verifyNextLocationIs(workspaceId, "/a/a2/a3");
+        verifyNextLocationIs(workspaceId, "/a/a2/a4");
+        verifyNextLocationIs(workspaceId, "/a/a2/a1/a1");
+        verifyNextLocationIs(workspaceId, "/a/a2/a1/a2");
+        verifyNextLocationIs(workspaceId, "/a/a2/a1/a1/a1");
+        verifyNextLocationIs(workspaceId, "/a/a2/a1/a1/a2");
         verifyNoMoreLocations();
 
         locations = query.getNodeLocations(true, false);
-        verifyNextLocationIs("/a");
-        verifyNextLocationIs("/a/a2");
-        verifyNextLocationIs("/a/a2/a1");
-        verifyNextLocationIs("/a/a2/a2");
-        verifyNextLocationIs("/a/a2/a3");
-        verifyNextLocationIs("/a/a2/a4");
-        verifyNextLocationIs("/a/a2/a1/a1");
-        verifyNextLocationIs("/a/a2/a1/a2");
+        verifyNextLocationIs(workspaceId, "/a");
+        verifyNextLocationIs(workspaceId, "/a/a2");
+        verifyNextLocationIs(workspaceId, "/a/a2/a1");
+        verifyNextLocationIs(workspaceId, "/a/a2/a2");
+        verifyNextLocationIs(workspaceId, "/a/a2/a3");
+        verifyNextLocationIs(workspaceId, "/a/a2/a4");
+        verifyNextLocationIs(workspaceId, "/a/a2/a1/a1");
+        verifyNextLocationIs(workspaceId, "/a/a2/a1/a2");
         verifyNoMoreLocations();
         query.close();
 
@@ -524,31 +577,31 @@ public class SubgraphQueryTest {
         verifyNodesHaveLargeValues("/a/a1", "/a/a2", "/a/a2/a1");
 
         // Count the number of objects ...
-        assertThat((Long)manager.createQuery("select count(*) from LargeValueEntity").getSingleResult(), is(3L));
-        assertThat((Long)manager.createQuery("select count(*) from PropertiesEntity").getSingleResult(), is(14L));
-        assertThat((Long)manager.createQuery("select count(*) from ChildEntity").getSingleResult(), is(14L));
+        assertNumberOfLargeValueEntities(3L);
+        assertNumberOfPropertyEntitiesInWorkspace(workspaceId, 14L);
+        assertNumberOfChildEntitiesInWorkspace(workspaceId, 14L);
 
         // Create references from the "/a/a2" (not being deleted) branch, to the branch being deleted...
         List<ReferenceEntity> expectedInvalidRefs = new ArrayList<ReferenceEntity>();
-        expectedInvalidRefs.add(createReferenceBetween("/a/a2", "/a/a1"));
-        expectedInvalidRefs.add(createReferenceBetween("/a/a2/a1", "/a/a1/a1"));
-        expectedInvalidRefs.add(createReferenceBetween("/a/a2/a2", "/a/a1/a2"));
+        expectedInvalidRefs.add(createReferenceBetween(workspaceId, "/a/a2", "/a/a1"));
+        expectedInvalidRefs.add(createReferenceBetween(workspaceId, "/a/a2/a1", "/a/a1/a1"));
+        expectedInvalidRefs.add(createReferenceBetween(workspaceId, "/a/a2/a2", "/a/a1/a2"));
 
         // Create references between nodes in the branch being deleted (these shouldn't matter) ...
-        createReferenceBetween("/a/a1", "/a/a1/a1");
-        createReferenceBetween("/a/a1/a2", "/a/a1/a3");
+        createReferenceBetween(workspaceId, "/a/a1", "/a/a1/a1");
+        createReferenceBetween(workspaceId, "/a/a1/a2", "/a/a1/a3");
 
         // Delete "/a/a1". Note that "/a/a1" has a large value that is shared by "/a/a2", but it's also the only
         // user of large value #1.
         Path path = path("/a/a1");
-        UUID uuid = uuidByPath.get(path);
+        UUID uuid = uuidByPath(workspaceId).get(path);
 
-        query = SubgraphQuery.create(context, manager, uuid, path, Integer.MAX_VALUE);
+        query = SubgraphQuery.create(context, manager, workspaceId, uuid, path, Integer.MAX_VALUE);
         locations = query.getNodeLocations(true, true);
-        verifyNextLocationIs("/a/a1");
-        verifyNextLocationIs("/a/a1/a1");
-        verifyNextLocationIs("/a/a1/a2");
-        verifyNextLocationIs("/a/a1/a3");
+        verifyNextLocationIs(workspaceId, "/a/a1");
+        verifyNextLocationIs(workspaceId, "/a/a1/a1");
+        verifyNextLocationIs(workspaceId, "/a/a1/a2");
+        verifyNextLocationIs(workspaceId, "/a/a1/a3");
         verifyNoMoreLocations();
         query.deleteSubgraph(true);
 
@@ -567,29 +620,29 @@ public class SubgraphQueryTest {
         verifyNodesHaveLargeValues("/a/a1", "/a/a2", "/a/a2/a1");
 
         // Count the number of objects ...
-        assertThat((Long)manager.createQuery("select count(*) from LargeValueEntity").getSingleResult(), is(3L));
-        assertThat((Long)manager.createQuery("select count(*) from PropertiesEntity").getSingleResult(), is(14L));
-        assertThat((Long)manager.createQuery("select count(*) from ChildEntity").getSingleResult(), is(14L));
+        assertNumberOfLargeValueEntities(3L);
+        assertNumberOfPropertyEntitiesInWorkspace(workspaceId, 14L);
+        assertNumberOfChildEntitiesInWorkspace(workspaceId, 14L);
 
         // Create references from the nodes that aren't being deleted (these won't matter, but will remain)...
         List<ReferenceEntity> expectedValidRefs = new ArrayList<ReferenceEntity>();
-        expectedValidRefs.add(createReferenceBetween("/a/a2", "/a/a2/a1"));
+        expectedValidRefs.add(createReferenceBetween(workspaceId, "/a/a2", "/a/a2/a1"));
 
         // Create references between nodes in the branch being deleted (these shouldn't matter) ...
-        createReferenceBetween("/a/a1", "/a/a1/a1");
-        createReferenceBetween("/a/a1/a2", "/a/a1/a3");
+        createReferenceBetween(workspaceId, "/a/a1", "/a/a1/a1");
+        createReferenceBetween(workspaceId, "/a/a1/a2", "/a/a1/a3");
 
         // Delete "/a/a1". Note that "/a/a1" has a large value that is shared by "/a/a2", but it's also the only
         // user of large value #1.
         Path path = path("/a/a1");
-        UUID uuid = uuidByPath.get(path);
+        UUID uuid = uuidByPath(workspaceId).get(path);
 
-        query = SubgraphQuery.create(context, manager, uuid, path, Integer.MAX_VALUE);
+        query = SubgraphQuery.create(context, manager, workspaceId, uuid, path, Integer.MAX_VALUE);
         locations = query.getNodeLocations(true, true);
-        verifyNextLocationIs("/a/a1");
-        verifyNextLocationIs("/a/a1/a1");
-        verifyNextLocationIs("/a/a1/a2");
-        verifyNextLocationIs("/a/a1/a3");
+        verifyNextLocationIs(workspaceId, "/a/a1");
+        verifyNextLocationIs(workspaceId, "/a/a1/a1");
+        verifyNextLocationIs(workspaceId, "/a/a1/a2");
+        verifyNextLocationIs(workspaceId, "/a/a1/a3");
         verifyNoMoreLocations();
         query.deleteSubgraph(true);
 
@@ -612,34 +665,34 @@ public class SubgraphQueryTest {
         verifyNodesHaveLargeValues("/a/a1", "/a/a2", "/a/a2/a1");
 
         // Count the number of objects ...
-        assertThat((Long)manager.createQuery("select count(*) from LargeValueEntity").getSingleResult(), is(3L));
-        assertThat((Long)manager.createQuery("select count(*) from PropertiesEntity").getSingleResult(), is(14L));
-        assertThat((Long)manager.createQuery("select count(*) from ChildEntity").getSingleResult(), is(14L));
+        assertNumberOfLargeValueEntities(3L);
+        assertNumberOfPropertyEntitiesInWorkspace(workspaceId, 14L);
+        assertNumberOfChildEntitiesInWorkspace(workspaceId, 14L);
 
         // Create references from the nodes that aren't even part of the subgraph ...
         List<ReferenceEntity> otherRefs = new ArrayList<ReferenceEntity>();
-        otherRefs.add(createReferenceBetween("/a/a2", "/a/a2/a1"));
-        otherRefs.add(createReferenceBetween("/a/a2/a1", "/a/a2/a2"));
+        otherRefs.add(createReferenceBetween(workspaceId, "/a/a2", "/a/a2/a1"));
+        otherRefs.add(createReferenceBetween(workspaceId, "/a/a2/a1", "/a/a2/a2"));
 
         // Create references between nodes in the subgraph ...
         List<ReferenceEntity> internalRefs = new ArrayList<ReferenceEntity>();
-        internalRefs.add(createReferenceBetween("/a/a1", "/a/a1/a1"));
-        internalRefs.add(createReferenceBetween("/a/a1/a2", "/a/a1/a3"));
+        internalRefs.add(createReferenceBetween(workspaceId, "/a/a1", "/a/a1/a1"));
+        internalRefs.add(createReferenceBetween(workspaceId, "/a/a1/a2", "/a/a1/a3"));
 
         // Create references from nodes outside of the subgraph to nodes inside of the subgraph ...
         List<ReferenceEntity> inwardRefs = new ArrayList<ReferenceEntity>();
-        inwardRefs.add(createReferenceBetween("/a/a2", "/a/a1/a1"));
-        inwardRefs.add(createReferenceBetween("/a/a2/a1", "/a/a1/a3"));
+        inwardRefs.add(createReferenceBetween(workspaceId, "/a/a2", "/a/a1/a1"));
+        inwardRefs.add(createReferenceBetween(workspaceId, "/a/a2/a1", "/a/a1/a3"));
 
         // Create references from nodes inside of the subgraph to nodes outside of the subgraph ...
         List<ReferenceEntity> outwardRefs = new ArrayList<ReferenceEntity>();
-        outwardRefs.add(createReferenceBetween("/a/a1", "/a/a2"));
-        outwardRefs.add(createReferenceBetween("/a/a1/a1", "/a/a2/a1"));
+        outwardRefs.add(createReferenceBetween(workspaceId, "/a/a1", "/a/a2"));
+        outwardRefs.add(createReferenceBetween(workspaceId, "/a/a1/a1", "/a/a2/a1"));
 
         // Create the query ...
         Path path = path("/a/a1");
-        UUID uuid = uuidByPath.get(path);
-        query = SubgraphQuery.create(context, manager, uuid, path, Integer.MAX_VALUE);
+        UUID uuid = uuidByPath(workspaceId).get(path);
+        query = SubgraphQuery.create(context, manager, workspaceId, uuid, path, Integer.MAX_VALUE);
 
         // Check the various kinds of references ...
         List<ReferenceEntity> actualInternal = query.getInternalReferences();

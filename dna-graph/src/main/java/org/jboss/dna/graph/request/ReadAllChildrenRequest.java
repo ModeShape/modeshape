@@ -43,18 +43,23 @@ public class ReadAllChildrenRequest extends CacheableRequest implements Iterable
     private static final long serialVersionUID = 1L;
 
     private final Location of;
+    private final String workspaceName;
     private final List<Location> children = new LinkedList<Location>();
     private Location actualOf;
 
     /**
-     * Create a request to read the children of a node at the supplied location.
+     * Create a request to read the children of a node at the supplied location in the designated workspace.
      * 
      * @param of the location of the node whose children are to be read
-     * @throws IllegalArgumentException if the location is null
+     * @param workspaceName the name of the workspace
+     * @throws IllegalArgumentException if the location or workspace name is null
      */
-    public ReadAllChildrenRequest( Location of ) {
+    public ReadAllChildrenRequest( Location of,
+                                   String workspaceName ) {
         CheckArg.isNotNull(of, "of");
+        CheckArg.isNotNull(workspaceName, "workspaceName");
         this.of = of;
+        this.workspaceName = workspaceName;
     }
 
     /**
@@ -74,6 +79,15 @@ public class ReadAllChildrenRequest extends CacheableRequest implements Iterable
      */
     public Location of() {
         return of;
+    }
+
+    /**
+     * Get the name of the workspace in which the parent and children exist.
+     * 
+     * @return the name of the workspace; never null
+     */
+    public String inWorkspace() {
+        return workspaceName;
     }
 
     /**
@@ -147,19 +161,21 @@ public class ReadAllChildrenRequest extends CacheableRequest implements Iterable
      * Sets the actual and complete location of the node whose children have been read. This method must be called when processing
      * the request, and the actual location must have a {@link Location#getPath() path}.
      * 
-     * @param actual the actual location of the node being read, or null if the {@link #of() current location} should be used
+     * @param actualLocation the actual location of the node being read, or null if the {@link #of() current location} should be
+     *        used
      * @throws IllegalArgumentException if the actual location does not represent the {@link Location#isSame(Location) same
-     *         location} as the {@link #of() current location}, or if the actual location does not have a path.
+     *         location} as the {@link #of() current location}; if the actual location does not have a path; or if the actual
+     *         workspace name is null
      */
-    public void setActualLocationOfNode( Location actual ) {
-        if (!this.of.isSame(actual)) { // not same if actual is null
-            throw new IllegalArgumentException(GraphI18n.actualLocationIsNotSameAsInputLocation.text(actual, of));
+    public void setActualLocationOfNode( Location actualLocation ) {
+        if (!this.of.isSame(actualLocation)) { // not same if actualLocation is null
+            throw new IllegalArgumentException(GraphI18n.actualLocationIsNotSameAsInputLocation.text(actualLocation, of));
         }
-        assert actual != null;
-        if (!actual.hasPath()) {
-            throw new IllegalArgumentException(GraphI18n.actualLocationMustHavePath.text(actual));
+        assert actualLocation != null;
+        if (!actualLocation.hasPath()) {
+            throw new IllegalArgumentException(GraphI18n.actualLocationMustHavePath.text(actualLocation));
         }
-        this.actualOf = actual;
+        this.actualOf = actualLocation;
     }
 
     /**
@@ -178,9 +194,11 @@ public class ReadAllChildrenRequest extends CacheableRequest implements Iterable
      */
     @Override
     public boolean equals( Object obj ) {
+        if (obj == this) return true;
         if (this.getClass().isInstance(obj)) {
             ReadAllChildrenRequest that = (ReadAllChildrenRequest)obj;
             if (!this.of().equals(that.of())) return false;
+            if (!this.inWorkspace().equals(that.inWorkspace())) return false;
             return true;
         }
         return false;
@@ -193,7 +211,7 @@ public class ReadAllChildrenRequest extends CacheableRequest implements Iterable
      */
     @Override
     public String toString() {
-        return "read children of " + of();
+        String workspaceName = this.workspaceName != null ? "\"" + this.workspaceName + "\"" : "default";
+        return "read children of " + of() + " in the \"" + workspaceName + "\" workspace";
     }
-
 }

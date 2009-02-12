@@ -48,9 +48,8 @@ import javax.security.auth.Subject;
 import javax.security.auth.login.LoginContext;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.Graph;
-import org.jboss.dna.graph.connector.RepositoryConnection;
 import org.jboss.dna.graph.connector.RepositoryConnectionFactory;
-import org.jboss.dna.graph.connector.SimpleRepository;
+import org.jboss.dna.graph.connector.inmemory.InMemoryRepositorySource;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -66,27 +65,30 @@ import com.google.common.collect.ReferenceMap;
  */
 public class JcrSessionTest {
 
+    static final String REPOSITORY_NAME = "Test repository";
     static final String WORKSPACE_NAME = JcrI18n.defaultWorkspaceName.text();
 
     static ExecutionContext executionContext;
-    static SimpleRepository simpleRepository;
+    static InMemoryRepositorySource repositorySource;
+    static Graph graph;
     static RepositoryConnectionFactory connectionFactory;
-    static RepositoryConnection connection;
     static Repository repository;
 
     @BeforeClass
     public static void beforeClass() throws Exception {
         executionContext = TestUtil.getExecutionContext();
-        simpleRepository = SimpleRepository.get(WORKSPACE_NAME);
-        simpleRepository.setProperty(executionContext, "/a/b", "booleanProperty", true);
-        simpleRepository.setProperty(executionContext, "/a/b/c", "stringProperty", "value");
-        connectionFactory = TestUtil.createJackRabbitConnectionFactory(simpleRepository, executionContext);
+        repositorySource = new InMemoryRepositorySource();
+        repositorySource.setName(REPOSITORY_NAME);
+        graph = Graph.create(repositorySource, executionContext);
+        graph.create("/a").and().create("/a/b").and().create("/a/b/c");
+        graph.set("booleanProperty").on("/a/b").to(true);
+        graph.set("stringProperty").on("/a/b/c").to("value");
+        connectionFactory = TestUtil.createJackRabbitConnectionFactory(repositorySource, executionContext);
         repository = new JcrRepository(executionContext, connectionFactory);
     }
 
     @AfterClass
     public static void afterClass() {
-        SimpleRepository.shutdownAll();
     }
 
     private Session session;

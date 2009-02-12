@@ -45,26 +45,28 @@ public class EmptyContributionTest {
     public static final DateTime TOMORROW = new JodaDateTime(NOW.getMilliseconds() + TWENTY_FOUR_HOURS_IN_MILLISECONDS).toUtcTimeZone();
 
     private String sourceName;
+    private String workspaceName;
     private EmptyContribution contribution;
     private DateTime expiration;
 
     @Before
     public void beforeEach() throws Exception {
         sourceName = "some source";
+        workspaceName = "some workspace";
         expiration = TOMORROW;
-        contribution = new EmptyContribution(sourceName, expiration);
+        contribution = new EmptyContribution(sourceName, workspaceName, expiration);
     }
 
     @Test
     public void shouldAllowNullExpiration() {
         expiration = null;
-        contribution = new EmptyContribution(sourceName, expiration);
+        contribution = new EmptyContribution(sourceName, workspaceName, expiration);
         assertThat(contribution.getExpirationTimeInUtc(), is(nullValue()));
     }
 
     @Test( expected = IllegalArgumentException.class )
     public void shouldNotAllowExpirationTimeIfNotInUtcTime() {
-        new EmptyContribution(sourceName, new JodaDateTime(System.currentTimeMillis(), "CST"));
+        new EmptyContribution(sourceName, workspaceName, new JodaDateTime(System.currentTimeMillis(), "CST"));
     }
 
     @Test
@@ -79,7 +81,7 @@ public class EmptyContributionTest {
 
     @Test
     public void shouldNotBeExpiredIfExpirationIsInTheFuture() {
-        contribution = new EmptyContribution(sourceName, NOW);
+        contribution = new EmptyContribution(sourceName, workspaceName, NOW);
         assertThat(contribution.isExpired(YESTERDAY), is(false));
         assertThat(contribution.isExpired(TOMORROW), is(true));
     }

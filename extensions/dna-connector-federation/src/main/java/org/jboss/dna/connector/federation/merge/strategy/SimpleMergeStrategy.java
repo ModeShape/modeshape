@@ -163,30 +163,20 @@ public class SimpleMergeStrategy implements MergeStrategy {
 
         if (idProperties.size() != 0) {
             // Update the location based upon the merged ID properties ...
-            Location newLocation = new Location(location.getPath(), idProperties.values());
+            Location newLocation = location;
+            for (Property idProperty : idProperties.values()) {
+                newLocation = newLocation.with(idProperty);
+            }
             federatedNode.setActualLocationOfNode(newLocation);
-
-            // Look for the UUID property on the location, and update the federated node ...
-            Property uuidProperty = idProperties.get(DnaLexicon.UUID);
-            if (uuidProperty != null && !uuidProperty.isEmpty()) {
-                UUID uuid = context.getValueFactories().getUuidFactory().create(uuidProperty.getValues().next());
-                federatedNode.setUuid(uuid);
-
-                // Set the UUID as a property ...
-                properties.put(uuidProperty.getName(), uuidProperty);
-            }
         } else {
-            // Generate a new UUID property and add to the node ...
-            UUID uuid = federatedNode.getUuid();
-            if (uuid == null) {
-                uuid = context.getValueFactories().getUuidFactory().create();
-                federatedNode.setUuid(uuid);
-            }
-
-            // Set the UUID as a property ...
-            Property uuidProperty = context.getPropertyFactory().create(DnaLexicon.UUID, uuid);
-            properties.put(uuidProperty.getName(), uuidProperty);
+            Location newLocation = location.with(UUID.randomUUID());
+            federatedNode.setActualLocationOfNode(newLocation);
         }
+
+        // Look for the UUID property on the location, and update the federated node ...
+        Property uuidProperty = federatedNode.getActualLocationOfNode().getIdProperty(DnaLexicon.UUID);
+        assert uuidProperty != null;
+        properties.put(uuidProperty.getName(), uuidProperty);
 
         // Assign the merge plan ...
         MergePlan mergePlan = MergePlan.create(contributions);
@@ -332,7 +322,10 @@ public class SimpleMergeStrategy implements MergeStrategy {
          */
         @Override
         public int hashCode() {
-            return location.hasIdProperties() ? location.getIdProperties().hashCode() : location.getPath().getLastSegment().getName().hashCode();
+            return location.hasIdProperties() ? location.getIdProperties().hashCode() : location.getPath()
+                                                                                                .getLastSegment()
+                                                                                                .getName()
+                                                                                                .hashCode();
         }
 
         /**

@@ -32,6 +32,7 @@
         <dna:source jcr:name="SourceC" dna:name="Vehicles" dna:classname="org.jboss.dna.connector.federation.FederatedRepositorySource" 
                     dna:repositoryName="Configuration Repository"
                     dna:configurationSourceName="Configuration" 
+                    dna:configurationWorkspaceName="default"
                     dna:configurationSourcePath="/dna:system/dna:federatedRepositories/Vehicles" 
                     dna:repositoryConnectionFactoryJndiName="/dna/connectionFactory"
                     dna:executionContextFactoryJndiName="/dna/contextFactory"/>
@@ -41,21 +42,21 @@
         <!-- This section defines from where the content of the 'Vehicles' federated repository is obtained.
              The name of this node must match the 'name' of the source listed above. -->
         <dna:federatedRepository jcr:name="Vehicles">
-            <!-- Define the federation configuration. -->
-            <dna:federation dna:timeToCache="100000">
-                <!-- Define how the content in the 'Cache' source is to map to the federated cache -->
-                <dna:cache>
-                    <dna:projection jcr:name="Cache" dna:projectionRules="/ => /" />
-                </dna:cache>
-                <!-- Define how the content in the difference sources maps to the federated/unified repository.
-                     This example puts the 'Cars' and 'Aircraft' content underneath '/vehicles', but the
-                     'Configuration' content (which is defined by this file) will appear under '/'. -->
-                <dna:projections>
-                    <dna:projection jcr:name="Cars" dna:projectionRules="/Vehicles => /" />
-                    <dna:projection jcr:name="Aircraft" dna:projectionRules="/Vehicles => /" />
-                    <dna:projection jcr:name="Configuration" dna:projectionRules="/ => /" />
-                </dna:projections>
-            </dna:federation>
+            <!-- Define the workspace(s) for this repository -->
+            <dna:workspaces>
+                <dna:workspace jcr:name="default">
+                    <!-- Define how the content in the 'Cache' source is to map to the federated cache -->
+                    <dna:cache dna:sourceName="Cache" dna:workspaceName="default" dna:projectionRules="/ => /" />
+                    <!-- Define how the content in the difference sources maps to the federated/unified repository.
+                         This example puts the 'Cars' and 'Aircraft' content underneath '/vehicles', but the
+                         'Configuration' content (which is defined by this file) will appear under '/'. -->
+                    <dna:projections>
+                        <dna:projection jcr:name="Cars" dna:workspaceName="default"  dna:projectionRules="/Vehicles => /" />
+                        <dna:projection jcr:name="Aircraft" dna:workspaceName="default"  dna:projectionRules="/Vehicles => /" />
+                        <dna:projection jcr:name="Configuration" dna:workspaceName="default"  dna:projectionRules="/ => /" />
+                    </dna:projections>
+                </dna:workspace>
+            </dna:workspaces>
         </dna:federatedRepository>
     </dna:federatedRepositories>
 </dna:system>

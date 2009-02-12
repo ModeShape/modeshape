@@ -48,8 +48,10 @@ import org.jboss.dna.connector.store.jpa.util.Serializer;
 @Entity
 @Table( name = "DNA_BASIC_NODEPROPS" )
 @NamedQueries( {
-    @NamedQuery( name = "PropertiesEntity.findByUuid", query = "select prop from PropertiesEntity as prop where prop.id.uuidString = :uuid" ),
-    @NamedQuery( name = "PropertiesEntity.deleteByUuid", query = "delete PropertiesEntity prop where prop.id.uuidString = :uuid" )} )
+    @NamedQuery( name = "PropertiesEntity.findByUuid", query = "select prop from PropertiesEntity as prop where prop.id.workspaceId = :workspaceId and prop.id.uuidString = :uuid" ),
+    @NamedQuery( name = "PropertiesEntity.deleteByUuid", query = "delete PropertiesEntity prop where prop.id.workspaceId = :workspaceId and prop.id.uuidString = :uuid" ),
+    @NamedQuery( name = "PropertiesEntity.findInWorkspace", query = "select prop from PropertiesEntity as prop where prop.id.workspaceId = :workspaceId" ),
+    @NamedQuery( name = "PropertiesEntity.withLargeValues", query = "select prop from PropertiesEntity as prop where prop.id.workspaceId = :workspaceId and size(prop.largeValues) > 0" )} )
 public class PropertiesEntity {
     @Id
     private NodeId id;
@@ -68,13 +70,14 @@ public class PropertiesEntity {
     private Boolean compressed;
 
     /**
-     * Flag specifying whether the binary data is stored in a compressed format.
+     * Flag specifying whether this node should be included in referential integrity enforcement.
      */
     @Column( name = "ENFORCEREFINTEG", nullable = false )
     private boolean referentialIntegrityEnforced = true;
 
     @org.hibernate.annotations.CollectionOfElements( fetch = FetchType.LAZY )
-    @JoinTable( name = "DNA_LARGEVALUE_USAGES", joinColumns = @JoinColumn( name = "NODE_UUID" ) )
+    @JoinTable( name = "DNA_LARGEVALUE_USAGES", joinColumns = {@JoinColumn( name = "WORKSPACE_ID" ),
+        @JoinColumn( name = "NODE_UUID" )} )
     private Collection<LargeValueId> largeValues = new HashSet<LargeValueId>();
 
     public PropertiesEntity() {

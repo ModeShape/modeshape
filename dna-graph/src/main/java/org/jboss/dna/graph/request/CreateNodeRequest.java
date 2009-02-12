@@ -48,6 +48,7 @@ public class CreateNodeRequest extends Request implements Iterable<Property> {
     public static final NodeConflictBehavior DEFAULT_CONFLICT_BEHAVIOR = NodeConflictBehavior.APPEND;
 
     private final Location under;
+    private final String workspaceName;
     private final Name childName;
     private final List<Property> properties;
     private final NodeConflictBehavior conflictBehavior;
@@ -57,66 +58,76 @@ public class CreateNodeRequest extends Request implements Iterable<Property> {
      * Create a request to create a node with the given properties under the supplied location.
      * 
      * @param parentLocation the location of the existing parent node, under which the new child should be created
+     * @param workspaceName the name of the workspace containing the parent
      * @param childName the name of the new child to create under the existing parent
      * @param properties the properties of the new node, which should include any {@link Location#getIdProperties() identification
      *        properties} for the new node
-     * @throws IllegalArgumentException if the location or the child name is null
+     * @throws IllegalArgumentException if the location, workspace name, or child name is null
      */
     public CreateNodeRequest( Location parentLocation,
+                              String workspaceName,
                               Name childName,
                               Property... properties ) {
-        this(parentLocation, childName, DEFAULT_CONFLICT_BEHAVIOR, properties);
+        this(parentLocation, workspaceName, childName, DEFAULT_CONFLICT_BEHAVIOR, properties);
     }
 
     /**
      * Create a request to create a node with the given properties under the supplied location.
      * 
      * @param parentLocation the location of the existing parent node, under which the new child should be created
+     * @param workspaceName the name of the workspace containing the parent
      * @param childName the name of the new child to create under the existing parent
      * @param properties the properties of the new node, which should include any {@link Location#getIdProperties() identification
      *        properties} for the new node
-     * @throws IllegalArgumentException if the location or the child name is null
+     * @throws IllegalArgumentException if the location, workspace name, or child name is null
      */
     public CreateNodeRequest( Location parentLocation,
+                              String workspaceName,
                               Name childName,
                               Iterable<Property> properties ) {
-        this(parentLocation, childName, DEFAULT_CONFLICT_BEHAVIOR, properties);
+        this(parentLocation, workspaceName, childName, DEFAULT_CONFLICT_BEHAVIOR, properties);
     }
 
     /**
      * Create a request to create a node with the given properties under the supplied location.
      * 
      * @param parentLocation the location of the existing parent node, under which the new child should be created
+     * @param workspaceName the name of the workspace containing the parent
      * @param childName the name of the new child to create under the existing parent
      * @param properties the properties of the new node, which should include any {@link Location#getIdProperties() identification
      *        properties} for the new node
-     * @throws IllegalArgumentException if the location or the child name is null
+     * @throws IllegalArgumentException if the location, workspace name, or child name is null
      */
     public CreateNodeRequest( Location parentLocation,
+                              String workspaceName,
                               Name childName,
                               Iterator<Property> properties ) {
-        this(parentLocation, childName, DEFAULT_CONFLICT_BEHAVIOR, properties);
+        this(parentLocation, workspaceName, childName, DEFAULT_CONFLICT_BEHAVIOR, properties);
     }
 
     /**
      * Create a request to create a node with the given properties under the supplied location.
      * 
      * @param parentLocation the location of the existing parent node, under which the new child should be created
+     * @param workspaceName the name of the workspace containing the parent
      * @param childName the name of the new child to create under the existing parent
      * @param properties the properties of the new node, which should include any {@link Location#getIdProperties() identification
      *        properties} for the new node
      * @param conflictBehavior the expected behavior if an equivalently-named child already exists under the <code>into</code>
      *        location
-     * @throws IllegalArgumentException if the location, the child name, or the conflict behavior is null
+     * @throws IllegalArgumentException if the location, workspace name, child name, or the conflict behavior is null
      */
     public CreateNodeRequest( Location parentLocation,
+                              String workspaceName,
                               Name childName,
                               NodeConflictBehavior conflictBehavior,
                               Property... properties ) {
         CheckArg.isNotNull(parentLocation, "parentLocation");
+        CheckArg.isNotNull(workspaceName, "workspaceName");
         CheckArg.isNotNull(conflictBehavior, "conflictBehavior");
         CheckArg.isNotNull(childName, "childName");
         this.under = parentLocation;
+        this.workspaceName = workspaceName;
         this.childName = childName;
         this.conflictBehavior = conflictBehavior;
         int number = properties.length + (under.hasIdProperties() ? under.getIdProperties().size() : 0);
@@ -131,21 +142,25 @@ public class CreateNodeRequest extends Request implements Iterable<Property> {
      * Create a request to create a node with the given properties under the supplied location.
      * 
      * @param parentLocation the location of the existing parent node, under which the new child should be created
+     * @param workspaceName the name of the workspace containing the parent
      * @param childName the name of the new child to create under the existing parent
      * @param properties the properties of the new node, which should include any {@link Location#getIdProperties() identification
      *        properties} for the new node
      * @param conflictBehavior the expected behavior if an equivalently-named child already exists under the <code>into</code>
      *        location
-     * @throws IllegalArgumentException if the location, the child name, or the conflict behavior is null
+     * @throws IllegalArgumentException if the location, workspace name, child name, or the conflict behavior is null
      */
     public CreateNodeRequest( Location parentLocation,
+                              String workspaceName,
                               Name childName,
                               NodeConflictBehavior conflictBehavior,
                               Iterable<Property> properties ) {
         CheckArg.isNotNull(parentLocation, "parentLocation");
+        CheckArg.isNotNull(workspaceName, "workspaceName");
         CheckArg.isNotNull(conflictBehavior, "conflictBehavior");
         CheckArg.isNotNull(childName, "childName");
         this.under = parentLocation;
+        this.workspaceName = workspaceName;
         this.childName = childName;
         this.conflictBehavior = conflictBehavior;
         List<Property> props = new LinkedList<Property>();
@@ -165,21 +180,25 @@ public class CreateNodeRequest extends Request implements Iterable<Property> {
      * Create a request to create a node with the given properties under the supplied location.
      * 
      * @param parentLocation the location of the existing parent node, under which the new child should be created
+     * @param workspaceName the name of the workspace containing the parent
      * @param childName the name of the new child to create under the existing parent
      * @param properties the properties of the new node, which should include any {@link Location#getIdProperties() identification
      *        properties} for the new node
      * @param conflictBehavior the expected behavior if an equivalently-named child already exists under the <code>into</code>
      *        location
-     * @throws IllegalArgumentException if the location, the child name, or the conflict behavior is null
+     * @throws IllegalArgumentException if the location, workspace name, child name, or the conflict behavior is null
      */
     public CreateNodeRequest( Location parentLocation,
+                              String workspaceName,
                               Name childName,
                               NodeConflictBehavior conflictBehavior,
                               Iterator<Property> properties ) {
         CheckArg.isNotNull(parentLocation, "parentLocation");
+        CheckArg.isNotNull(workspaceName, "workspaceName");
         CheckArg.isNotNull(conflictBehavior, "conflictBehavior");
         CheckArg.isNotNull(childName, "childName");
         this.under = parentLocation;
+        this.workspaceName = workspaceName;
         this.childName = childName;
         this.conflictBehavior = conflictBehavior;
         List<Property> props = new LinkedList<Property>();
@@ -203,6 +222,15 @@ public class CreateNodeRequest extends Request implements Iterable<Property> {
      */
     public Location under() {
         return under;
+    }
+
+    /**
+     * Get the name of the workspace in which the node is to be createde
+     * 
+     * @return the name of the workspace; never null
+     */
+    public String inWorkspace() {
+        return workspaceName;
     }
 
     /**
@@ -293,10 +321,12 @@ public class CreateNodeRequest extends Request implements Iterable<Property> {
      */
     @Override
     public boolean equals( Object obj ) {
+        if (obj == this) return true;
         if (this.getClass().isInstance(obj)) {
             CreateNodeRequest that = (CreateNodeRequest)obj;
             if (!this.under().equals(that.under())) return false;
             if (!this.conflictBehavior().equals(that.conflictBehavior())) return false;
+            if (!this.inWorkspace().equals(that.conflictBehavior())) return false;
             if (!this.properties().equals(that.properties())) return false;
             return true;
         }
@@ -312,7 +342,8 @@ public class CreateNodeRequest extends Request implements Iterable<Property> {
     public String toString() {
         String parent = under() + "/";
         if (under.hasPath() && under.getPath().isRoot()) parent = "/";
-        return "create node \"" + parent + childName + "\" with properties " + properties();
+        return "create in the \"" + workspaceName + "\" workspace the node \"" + parent + childName + "\" with properties "
+               + properties();
     }
 
 }

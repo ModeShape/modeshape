@@ -497,7 +497,8 @@ public final class CheckArg {
     }
 
     /**
-     * Asserts that the specified first object is {@link Object#equals(Object) equal to} the specified second object.
+     * Asserts that the specified first object is {@link Object#equals(Object) equal to} the specified second object. This method
+     * does take null references into consideration.
      * 
      * @param <T>
      * @param argument The argument to assert equal to <code>object</code>.
@@ -512,14 +513,20 @@ public final class CheckArg {
                                      String argumentName,
                                      final T object,
                                      String objectName ) {
-        if (!argument.equals(object)) {
-            if (objectName == null) objectName = getObjectName(object);
-            throw new IllegalArgumentException(CommonI18n.argumentMustBeEquals.text(argumentName, objectName));
+        if (argument == null) {
+            if (object == null) return;
+            // fall through ... one is null
+        } else {
+            if (argument.equals(object)) return;
+            // fall through ... they are not equal
         }
+        if (objectName == null) objectName = getObjectName(object);
+        throw new IllegalArgumentException(CommonI18n.argumentMustBeEquals.text(argumentName, objectName));
     }
 
     /**
-     * Asserts that the specified first object is not {@link Object#equals(Object) equal to} the specified second object.
+     * Asserts that the specified first object is not {@link Object#equals(Object) equal to} the specified second object. This
+     * method does take null references into consideration.
      * 
      * @param <T>
      * @param argument The argument to assert equal to <code>object</code>.
@@ -534,10 +541,15 @@ public final class CheckArg {
                                         String argumentName,
                                         final T object,
                                         String objectName ) {
-        if (argument.equals(object)) {
-            if (objectName == null) objectName = getObjectName(object);
-            throw new IllegalArgumentException(CommonI18n.argumentMustNotBeEquals.text(argumentName, objectName));
+        if (argument == null) {
+            if (object != null) return;
+            // fall through ... both are null
+        } else {
+            if (!argument.equals(object)) return; // handles object==null
+            // fall through ... they are equal
         }
+        if (objectName == null) objectName = getObjectName(object);
+        throw new IllegalArgumentException(CommonI18n.argumentMustNotBeEquals.text(argumentName, objectName));
     }
 
     // ########################## ITERATOR METHODS ###################################

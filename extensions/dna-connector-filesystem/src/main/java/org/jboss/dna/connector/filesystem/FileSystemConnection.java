@@ -25,7 +25,7 @@ package org.jboss.dna.connector.filesystem;
 
 import java.io.File;
 import java.io.FilenameFilter;
-import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 import javax.transaction.xa.XAResource;
@@ -46,23 +46,28 @@ import org.jboss.dna.graph.request.processor.RequestProcessor;
 public class FileSystemConnection implements RepositoryConnection {
 
     private final String sourceName;
-    private final Map<String, File> rootsByName;
+    private final File defaultWorkspace;
     private final CachePolicy cachePolicy;
+    private final Set<String> availableWorkspaceNames;
+    private final boolean creatingWorkspacesAllowed;
     private final CopyOnWriteArrayList<RepositorySourceListener> listeners = new CopyOnWriteArrayList<RepositorySourceListener>();
     private final FilenameFilter filenameFilter;
     private final boolean updatesAllowed;
 
     FileSystemConnection( String sourceName,
-                          Map<String, File> rootsByName,
+                          File defaultWorkspace,
+                          Set<String> availableWorkspaceNames,
+                          boolean creatingWorkspacesAllowed,
                           CachePolicy cachePolicy,
                           FilenameFilter filenameFilter,
                           boolean updatesAllowed ) {
         assert sourceName != null;
         assert sourceName.trim().length() != 0;
-        assert rootsByName != null;
-        assert rootsByName.size() >= 1;
+        assert availableWorkspaceNames != null;
         this.sourceName = sourceName;
-        this.rootsByName = rootsByName;
+        this.defaultWorkspace = defaultWorkspace;
+        this.availableWorkspaceNames = availableWorkspaceNames;
+        this.creatingWorkspacesAllowed = creatingWorkspacesAllowed;
         this.cachePolicy = cachePolicy;
         this.filenameFilter = filenameFilter;
         this.updatesAllowed = updatesAllowed;
@@ -124,7 +129,8 @@ public class FileSystemConnection implements RepositoryConnection {
      */
     public void execute( ExecutionContext context,
                          Request request ) throws RepositorySourceException {
-        RequestProcessor proc = new FileSystemRequestProcessor(sourceName, context, rootsByName, filenameFilter, updatesAllowed);
+        RequestProcessor proc = new FileSystemRequestProcessor(sourceName, defaultWorkspace, availableWorkspaceNames,
+                                                               creatingWorkspacesAllowed, context, filenameFilter, updatesAllowed);
         try {
             proc.process(request);
         } finally {

@@ -57,6 +57,7 @@ public class SubgraphQuery {
      * 
      * @param context the execution context; may not be null
      * @param entities the entity manager; may not be null
+     * @param workspaceId the ID of the workspace; may not be null
      * @param subgraphRootUuid the UUID (in string form) of the root node in the subgraph
      * @param subgraphRootPath the path of the root node in the subgraph
      * @param maxDepth the maximum depth of the subgraph, or 0 if there is no maximum depth
@@ -64,16 +65,18 @@ public class SubgraphQuery {
      */
     public static SubgraphQuery create( ExecutionContext context,
                                         EntityManager entities,
+                                        Long workspaceId,
                                         UUID subgraphRootUuid,
                                         Path subgraphRootPath,
                                         int maxDepth ) {
         assert entities != null;
         assert subgraphRootUuid != null;
+        assert workspaceId != null;
         assert maxDepth >= 0;
         if (maxDepth == 0) maxDepth = Integer.MAX_VALUE;
         final String subgraphRootUuidString = subgraphRootUuid.toString();
         // Create a new subgraph query, and add a child for the root ...
-        SubgraphQueryEntity query = new SubgraphQueryEntity(subgraphRootUuidString);
+        SubgraphQueryEntity query = new SubgraphQueryEntity(workspaceId, subgraphRootUuidString);
         entities.persist(query);
         Long queryId = query.getId();
 
@@ -92,6 +95,7 @@ public class SubgraphQuery {
             while (parentLevel <= maxDepth) {
                 // Insert the children of the next level by inserting via a select (join) of the children
                 statement.setParameter("queryId", queryId);
+                statement.setParameter("workspaceId", workspaceId);
                 statement.setParameter("parentDepth", parentLevel);
                 numChildrenInserted = statement.executeUpdate();
                 if (numChildrenInserted == 0) break;
@@ -108,17 +112,19 @@ public class SubgraphQuery {
             }
             throw t;
         }
-        return new SubgraphQuery(context, entities, query, subgraphRootPath, maxDepth);
+        return new SubgraphQuery(context, entities, workspaceId, query, subgraphRootPath, maxDepth);
     }
 
     private final ExecutionContext context;
     private final EntityManager manager;
+    private final Long workspaceId;
     private SubgraphQueryEntity query;
     private final int maxDepth;
     private final Path subgraphRootPath;
 
     protected SubgraphQuery( ExecutionContext context,
                              EntityManager manager,
+                             Long workspaceId,
                              SubgraphQueryEntity query,
                              Path subgraphRootPath,
                              int maxDepth ) {
@@ -126,8 +132,10 @@ public class SubgraphQuery {
         assert query != null;
         assert context != null;
         assert subgraphRootPath != null;
+        assert workspaceId != null;
         this.context = context;
         this.manager = manager;
+        this.workspaceId = workspaceId;
         this.query = query;
         this.maxDepth = maxDepth;
         this.subgraphRootPath = subgraphRootPath;
@@ -185,6 +193,7 @@ public class SubgraphQuery {
         // Now query for all the nodes and put into a list ...
         Query search = manager.createNamedQuery("SubgraphNodeEntity.getChildEntities");
         search.setParameter("queryId", query.getId());
+        search.setParameter("workspaceId", workspaceId);
         search.setParameter("depth", 0);
         search.setParameter("maxDepth", 0);
 
@@ -207,6 +216,7 @@ public class SubgraphQuery {
         // Now query for all the nodes and put into a list ...
         Query search = manager.createNamedQuery("SubgraphNodeEntity.getChildEntities");
         search.setParameter("queryId", query.getId());
+        search.setParameter("workspaceId", workspaceId);
         search.setParameter("depth", includeRoot ? 0 : 1);
         search.setParameter("maxDepth", includeChildrenOfMaxDepthNodes ? maxDepth : maxDepth - 1);
 
@@ -230,6 +240,7 @@ public class SubgraphQuery {
         // Now query for all the nodes and put into a list ...
         Query search = manager.createNamedQuery("SubgraphNodeEntity.getPropertiesEntities");
         search.setParameter("queryId", query.getId());
+        search.setParameter("workspaceId", workspaceId);
         search.setParameter("depth", includeRoot ? 0 : 1);
         search.setParameter("maxDepth", includeChildrenOfMaxDepthNodes ? maxDepth : maxDepth - 1);
 
@@ -296,6 +307,7 @@ public class SubgraphQuery {
     public List<ReferenceEntity> getInternalReferences() {
         Query references = manager.createNamedQuery("SubgraphNodeEntity.getInternalReferences");
         references.setParameter("queryId", query.getId());
+        references.setParameter("workspaceId", workspaceId);
         return references.getResultList();
     }
 
@@ -309,6 +321,7 @@ public class SubgraphQuery {
     public List<ReferenceEntity> getOutwardReferences() {
         Query references = manager.createNamedQuery("SubgraphNodeEntity.getOutwardReferences");
         references.setParameter("queryId", query.getId());
+        references.setParameter("workspaceId", workspaceId);
         return references.getResultList();
     }
 
@@ -324,6 +337,7 @@ public class SubgraphQuery {
         // Verify referential integrity: that none of the deleted nodes are referenced by nodes not being deleted.
         Query references = manager.createNamedQuery("SubgraphNodeEntity.getInwardReferences");
         references.setParameter("queryId", query.getId());
+        references.setParameter("workspaceId", workspaceId);
         return references.getResultList();
     }
 
@@ -348,6 +362,7 @@ public class SubgraphQuery {
         Query withLargeValues = manager.createNamedQuery("SubgraphNodeEntity.getPropertiesEntitiesWithLargeValues");
         withLargeValues.setParameter("queryId", query.getId());
         withLargeValues.setParameter("depth", includeRoot ? 0 : 1);
+        withLargeValues.setParameter("workspaceId", workspaceId);
         List<PropertiesEntity> propertiesWithLargeValues = withLargeValues.getResultList();
         if (propertiesWithLargeValues.size() != 0) {
             for (PropertiesEntity props : propertiesWithLargeValues) {
@@ -359,16 +374,19 @@ public class SubgraphQuery {
         // Delete the PropertiesEntities, none of which will have large values ...
         Query delete = manager.createNamedQuery("SubgraphNodeEntity.deletePropertiesEntities");
         delete.setParameter("queryId", query.getId());
+        delete.setParameter("workspaceId", workspaceId);
         delete.executeUpdate();
 
         // Delete the ChildEntities ...
         delete = manager.createNamedQuery("SubgraphNodeEntity.deleteChildEntities");
         delete.setParameter("queryId", query.getId());
+        delete.setParameter("workspaceId", workspaceId);
         delete.executeUpdate();
 
         // Delete references ...
         delete = manager.createNamedQuery("SubgraphNodeEntity.deleteReferences");
         delete.setParameter("queryId", query.getId());
+        delete.setParameter("workspaceId", workspaceId);
         delete.executeUpdate();
 
         // Delete unused large values ...

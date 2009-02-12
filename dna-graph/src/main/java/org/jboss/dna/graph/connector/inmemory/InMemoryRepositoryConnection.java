@@ -53,15 +53,15 @@ public class InMemoryRepositoryConnection implements RepositoryConnection {
     };
 
     private final InMemoryRepositorySource source;
-    private final InMemoryRepository content;
+    private final InMemoryRepository repository;
     private RepositorySourceListener listener = NO_OP_LISTENER;
 
     InMemoryRepositoryConnection( InMemoryRepositorySource source,
-                                  InMemoryRepository content ) {
+                                  InMemoryRepository repository ) {
         assert source != null;
-        assert content != null;
+        assert repository != null;
         this.source = source;
-        this.content = content;
+        this.repository = repository;
     }
 
     /**
@@ -90,7 +90,6 @@ public class InMemoryRepositoryConnection implements RepositoryConnection {
      */
     public boolean ping( long time,
                          TimeUnit unit ) {
-        this.content.getRoot();
         return true;
     }
 
@@ -123,9 +122,9 @@ public class InMemoryRepositoryConnection implements RepositoryConnection {
             sw.start();
         }
         // Do any commands update/write?
-        RequestProcessor processor = this.content.getRequestProcessor(context, this.getSourceName());
+        RequestProcessor processor = new InMemoryRequestProcessor(context, this.repository);
 
-        Lock lock = request.isReadOnly() ? content.getLock().readLock() : content.getLock().writeLock();
+        Lock lock = request.isReadOnly() ? repository.getLock().readLock() : repository.getLock().writeLock();
         lock.lock();
         try {
             // Obtain the lock and execute the commands ...
@@ -144,10 +143,6 @@ public class InMemoryRepositoryConnection implements RepositoryConnection {
         }
     }
 
-    protected InMemoryRepository getContent() {
-        return content;
-    }
-
     /**
      * @return listener
      */
@@ -155,4 +150,13 @@ public class InMemoryRepositoryConnection implements RepositoryConnection {
         return this.listener;
     }
 
+    /**
+     * {@inheritDoc}
+     * 
+     * @see java.lang.Object#toString()
+     */
+    @Override
+    public String toString() {
+        return "Connection to the \"" + getSourceName() + "\" in-memory repository";
+    }
 }

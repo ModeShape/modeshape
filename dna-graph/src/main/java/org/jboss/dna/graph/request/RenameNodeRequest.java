@@ -40,6 +40,7 @@ public class RenameNodeRequest extends Request {
     private static final long serialVersionUID = 1L;
 
     private final Location at;
+    private final String workspaceName;
     private final Name newName;
     private Location actualOldLocation;
     private Location actualNewLocation;
@@ -48,13 +49,17 @@ public class RenameNodeRequest extends Request {
      * Create a request to rename the node at the supplied location.
      * 
      * @param at the location of the node to be read
+     * @param workspaceName the name of the workspace containing the node
      * @param newName the new name for the node
-     * @throws IllegalArgumentException if the location is null
+     * @throws IllegalArgumentException if the location or workspace name is null
      */
     public RenameNodeRequest( Location at,
+                              String workspaceName,
                               Name newName ) {
         CheckArg.isNotNull(at, "at");
         CheckArg.isNotNull(newName, "newName");
+        CheckArg.isNotNull(workspaceName, "workspaceName");
+        this.workspaceName = workspaceName;
         this.at = at;
         this.newName = newName;
     }
@@ -76,6 +81,15 @@ public class RenameNodeRequest extends Request {
      */
     public Location at() {
         return at;
+    }
+
+    /**
+     * Get the name of the workspace in which the node exists.
+     * 
+     * @return the name of the workspace; never null
+     */
+    public String inWorkspace() {
+        return workspaceName;
     }
 
     /**
@@ -151,10 +165,12 @@ public class RenameNodeRequest extends Request {
      */
     @Override
     public boolean equals( Object obj ) {
+        if (obj == this) return true;
         if (this.getClass().isInstance(obj)) {
             RenameNodeRequest that = (RenameNodeRequest)obj;
             if (!this.at().equals(that.at())) return false;
             if (!this.toName().equals(that.toName())) return false;
+            if (!this.inWorkspace().equals(that.inWorkspace())) return false;
             return true;
         }
         return false;
@@ -167,7 +183,7 @@ public class RenameNodeRequest extends Request {
      */
     @Override
     public String toString() {
-        return "rename node at " + at() + " to " + toName();
+        return "rename node at " + at() + " in the \"" + workspaceName + "\" workspace to " + toName();
     }
 
 }

@@ -25,10 +25,12 @@ package org.jboss.dna.connector.federation;
 
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
-import static org.hamcrest.core.IsNull.nullValue;
 import static org.hamcrest.core.IsSame.sameInstance;
 import static org.junit.Assert.assertThat;
 import static org.junit.matchers.JUnitMatchers.hasItems;
+import static org.mockito.Mockito.stub;
+import java.util.ArrayList;
+import java.util.Collection;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.connector.RepositoryConnectionFactory;
 import org.jboss.dna.graph.connector.RepositorySourceListener;
@@ -42,10 +44,11 @@ import org.mockito.MockitoAnnotations.Mock;
  */
 public class FederatedRepositoryTest {
 
+    private String name;
     private ExecutionContext context;
     private FederatedRepository repository;
     @Mock
-    private FederatedRepositoryConfig config;
+    private FederatedWorkspace config;
     @Mock
     private RepositorySourceListener listener1;
     @Mock
@@ -56,13 +59,17 @@ public class FederatedRepositoryTest {
     @Before
     public void beforeEach() {
         MockitoAnnotations.initMocks(this);
+        name = "Repository";
         context = new ExecutionContext();
-        repository = new FederatedRepository(context, connectionFactory, config);
+        stub(config.getName()).toReturn("workspace");
+        Collection<FederatedWorkspace> configs = new ArrayList<FederatedWorkspace>();
+        configs.add(config);
+        repository = new FederatedRepository(name, context, connectionFactory, configs);
     }
 
     @Test
-    public void shouldHaveNoNameUponCreation() {
-        assertThat(repository.getName(), is(nullValue()));
+    public void shouldHaveNameUponCreation() {
+        assertThat(repository.getName(), is(name));
     }
 
     @Test
@@ -133,13 +140,8 @@ public class FederatedRepositoryTest {
 
     @Test
     public void shouldHaveConfigurationAfterInitialization() {
-        assertThat(repository.getConfiguration(), is(notNullValue()));
-        assertThat(repository.getConfiguration(), is(sameInstance(config)));
-    }
-
-    @Test( expected = IllegalArgumentException.class )
-    public void shouldNotAllowSettingConfigurationToNull() {
-        repository.setConfiguration(null);
+        assertThat(repository.getWorkspaceConfigurations(), is(notNullValue()));
+        assertThat(repository.getWorkspaceConfigurations().get("workspace"), is(sameInstance(config)));
     }
 
 }

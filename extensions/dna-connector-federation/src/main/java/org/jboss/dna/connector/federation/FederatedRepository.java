@@ -23,7 +23,10 @@
  */
 package org.jboss.dna.connector.federation;
 
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -31,7 +34,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import net.jcip.annotations.ThreadSafe;
 import org.jboss.dna.common.util.CheckArg;
-import org.jboss.dna.connector.federation.executor.FederatingCommandExecutor;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.connector.RepositoryConnection;
 import org.jboss.dna.graph.connector.RepositoryConnectionFactory;
@@ -41,17 +43,19 @@ import org.jboss.dna.graph.request.processor.RequestProcessor;
 
 /**
  * The component that represents a single federated repository. The federated repository uses a set of {@link RepositorySource
- * federated connectionFactory} as designated by name through the {@link #getConfiguration() configuration}, and provides the
- * logic of interacting with those connectionFactory and presenting a single unified graph.
+ * federated connectionFactory} as designated by name through the {@link #getWorkspaceConfigurations() configurations}, and
+ * provides the logic of interacting with those connectionFactory and presenting a single unified graph.
  * 
  * @author Randall Hauch
  */
 @ThreadSafe
 public class FederatedRepository {
 
+    private final String name;
     private final ExecutionContext context;
     private final RepositoryConnectionFactory connectionFactory;
-    private FederatedRepositoryConfig config;
+    private final Map<String, FederatedWorkspace> workspaceConfigsByName;
+    private final FederatedWorkspace defaultWorkspace;
     private final AtomicInteger openExecutors = new AtomicInteger(0);
     private final CountDownLatch shutdownLatch = new CountDownLatch(1);
     private final AtomicBoolean shutdownRequested = new AtomicBoolean(false);
@@ -60,20 +64,31 @@ public class FederatedRepository {
     /**
      * Create a federated repository instance.
      * 
+     * @param repositoryName the name of the repository
      * @param context the execution context
      * @param connectionFactory the factory for {@link RepositoryConnection} instances that should be used
-     * @param config the configuration for this repository
+     * @param workspaces the workspace configurations for this repository, with the default workspace being first; may not be null
      * @throws IllegalArgumentException if any of the parameters are null, or if the name is blank
      */
-    public FederatedRepository( ExecutionContext context,
+    public FederatedRepository( String repositoryName,
+                                ExecutionContext context,
                                 RepositoryConnectionFactory connectionFactory,
-                                FederatedRepositoryConfig config ) {
+                                Iterable<FederatedWorkspace> workspaces ) {
+        CheckArg.isNotEmpty(repositoryName, "repositoryName");
         CheckArg.isNotNull(connectionFactory, "connectionFactory");
         CheckArg.isNotNull(context, "context");
-        CheckArg.isNotNull(config, "config");
+        CheckArg.isNotNull(workspaces, "workspaces");
+        this.name = repositoryName;
         this.context = context;
         this.connectionFactory = connectionFactory;
-        this.config = config;
+        FederatedWorkspace defaultWorkspace = null;
+        Map<String, FederatedWorkspace> configsByName = new HashMap<String, FederatedWorkspace>();
+        for (FederatedWorkspace workspace : workspaces) {
+            if (defaultWorkspace == null) defaultWorkspace = workspace;
+            configsByName.put(workspace.getName(), workspace);
+        }
+        this.workspaceConfigsByName = Collections.unmodifiableMap(configsByName);
+        this.defaultWorkspace = defaultWorkspace;
     }
 
     /**
@@ -82,7 +97,7 @@ public class FederatedRepository {
      * @return name
      */
     public String getName() {
-        return this.config.getName();
+        return name;
     }
 
     /**
@@ -198,28 +213,14 @@ public class FederatedRepository {
     }
 
     /**
-     * Get the configuration of this repository. This configuration is immutable and may be
-     * {@link #setConfiguration(FederatedRepositoryConfig) changed} as needed. Therefore, when using a configuration and needing a
-     * consistent configuration, maintain a reference to the configuration during that time (as the actual configuration may be
-     * replaced at any time).
+     * Get the configuration of this repository's workspaces. This set of configurations (as well as each configuration) is
+     * immutable. Therefore, when using a configuration and needing a consistent configuration, maintain a reference to the
+     * configuration during that time (as the actual configuration may be replaced at any time).
      * 
-     * @return the repository's configuration at the time this method is called.
+     * @return the repository's worksapce configuration at the time this method is called.
      */
-    public FederatedRepositoryConfig getConfiguration() {
-        return config;
-    }
-
-    /**
-     * Set the configuration for this repository. The configuration is immutable and therefore may be replaced using this method.
-     * All interaction with the configuration is done in a thread-safe and concurrent manner, and as such only valid
-     * configurations should be used.
-     * 
-     * @param config the new configuration
-     * @throws IllegalArgumentException if the configuration is null
-     */
-    public void setConfiguration( FederatedRepositoryConfig config ) {
-        CheckArg.isNotNull(config, "config");
-        this.config = config;
+    public Map<String, FederatedWorkspace> getWorkspaceConfigurations() {
+        return workspaceConfigsByName;
     }
 
     /**
@@ -231,9 +232,8 @@ public class FederatedRepository {
      */
     protected RequestProcessor getProcessor( ExecutionContext context,
                                              String sourceName ) {
-        FederatedRepositoryConfig config = this.getConfiguration();
-        return new FederatingCommandExecutor(context, sourceName, config.getCacheProjection(), config.getDefaultCachePolicy(),
-                                             config.getSourceProjections(), getConnectionFactory());
+        Map<String, FederatedWorkspace> workspaces = this.getWorkspaceConfigurations();
+        return new FederatingRequestProcessor(context, sourceName, workspaces, defaultWorkspace, getConnectionFactory());
     }
 
     /**

@@ -25,49 +25,76 @@ package org.jboss.dna.connector.federation;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.collection.Problems;
 import org.jboss.dna.common.collection.ThreadSafeProblems;
 import org.jboss.dna.common.util.CheckArg;
+import org.jboss.dna.connector.federation.merge.strategy.MergeStrategy;
+import org.jboss.dna.connector.federation.merge.strategy.OneContributionMergeStrategy;
+import org.jboss.dna.connector.federation.merge.strategy.SimpleMergeStrategy;
 import org.jboss.dna.graph.cache.CachePolicy;
 import org.jboss.dna.graph.connector.RepositorySource;
 
 /**
- * The configuration of a federated repository. The configuration defines, among other things, the set of
- * {@link #getSourceProjections() source projections} in the federated repository that each specify how and where content from a
- * {@link RepositorySource source} is federated into the unified repository.
+ * The configuration of a federated repository. workspace The configuration defines, among other things, the set of
+ * {@link #getSourceProjections() source projections} in the federated workspace that each specify how and where content from a
+ * {@link RepositorySource source} is federated into the unified workspace.
  * 
  * @author Randall Hauch
  */
 @Immutable
-public class FederatedRepositoryConfig implements Comparable<FederatedRepositoryConfig> {
+public class FederatedWorkspace implements Comparable<FederatedWorkspace> {
 
     private final Projection cacheProjection;
+    private final CachePolicy cachePolicy;
     private final List<Projection> sourceProjections;
+    private final Map<String, List<Projection>> projectionsBySourceName;
     private final Problems problems;
     private final String name;
-    private final CachePolicy defaultCachePolicy;
+    private final MergeStrategy mergingStrategy;
 
     /**
-     * Create a federated repository instance.
+     * Create a configuration for a federated workspace.
      * 
-     * @param repositoryName the name of the repository
+     * @param workspaceName the name of the federated workspace; may not be null
      * @param cacheProjection the projection used for the cache; may not be null
      * @param sourceProjections the source projections; may not be null
-     * @param defaultCachePolicy the default cache policy for this repository; may be null
+     * @param cachePolicy the cache policy for this workspace; may be null if there is no policy
      * @throws IllegalArgumentException if the name is null or is blank
      */
-    public FederatedRepositoryConfig( String repositoryName,
-                                      Projection cacheProjection,
-                                      Iterable<Projection> sourceProjections,
-                                      CachePolicy defaultCachePolicy ) {
-        CheckArg.isNotEmpty(repositoryName, "repositoryName");
+    public FederatedWorkspace( String workspaceName,
+                               Projection cacheProjection,
+                               Iterable<Projection> sourceProjections,
+                               CachePolicy cachePolicy ) {
+        this(workspaceName, cacheProjection, sourceProjections, cachePolicy, null);
+    }
+
+    /**
+     * Create a configuration for a federated workspace.
+     * 
+     * @param workspaceName the name of the federated workspace; may not be null
+     * @param cacheProjection the projection used for the cache; may not be null
+     * @param sourceProjections the source projections; may not be null
+     * @param cachePolicy the cache policy for this workspace; may be null if there is no policy
+     * @param mergeStrategy the strategy that should be used to merge nodes, or null if the strategy should be chosen based
+     *        automatically based upon the number of sources used by the projections
+     * @throws IllegalArgumentException if the name is null or is blank
+     */
+    public FederatedWorkspace( String workspaceName,
+                               Projection cacheProjection,
+                               Iterable<Projection> sourceProjections,
+                               CachePolicy cachePolicy,
+                               MergeStrategy mergeStrategy ) {
+        CheckArg.isNotNull(workspaceName, "workspaceName");
         CheckArg.isNotNull(cacheProjection, "cacheProjection");
-        this.name = repositoryName;
+        this.name = workspaceName;
+        this.cachePolicy = cachePolicy;
         this.problems = new ThreadSafeProblems();
-        this.defaultCachePolicy = defaultCachePolicy;
         this.cacheProjection = cacheProjection;
         List<Projection> projectionList = new ArrayList<Projection>();
         for (Projection projection : sourceProjections) {
@@ -78,6 +105,26 @@ public class FederatedRepositoryConfig implements Comparable<FederatedRepository
         }
         this.sourceProjections = Collections.unmodifiableList(projectionList);
         CheckArg.isNotEmpty(this.sourceProjections, "sourceProjections");
+        this.projectionsBySourceName = new HashMap<String, List<Projection>>();
+        for (Projection projection : this.sourceProjections) {
+            String sourceName = projection.getSourceName();
+            List<Projection> projectionsForSource = projectionsBySourceName.get(sourceName);
+            if (projectionsForSource == null) {
+                projectionsForSource = new LinkedList<Projection>();
+                projectionsBySourceName.put(sourceName, projectionsForSource);
+            }
+            projectionsForSource.add(projection);
+        }
+        if (mergeStrategy != null) {
+            this.mergingStrategy = mergeStrategy;
+        } else {
+            if (this.sourceProjections.size() == 1 && this.sourceProjections.get(0).isSimple()) {
+                this.mergingStrategy = new OneContributionMergeStrategy();
+            } else {
+                this.mergingStrategy = new SimpleMergeStrategy();
+            }
+        }
+        assert this.mergingStrategy != null;
     }
 
     /**
@@ -87,6 +134,24 @@ public class FederatedRepositoryConfig implements Comparable<FederatedRepository
      */
     public String getName() {
         return this.name;
+    }
+
+    /**
+     * Get the cache policy for this workspace
+     * 
+     * @return the workspace's cache policy; may be null
+     */
+    public CachePolicy getCachePolicy() {
+        return cachePolicy;
+    }
+
+    /**
+     * Get the merging strategy used for this workspace
+     * 
+     * @return the workspace's merging strategy; never null
+     */
+    public MergeStrategy getMergingStrategy() {
+        return mergingStrategy;
     }
 
     /**
@@ -119,12 +184,21 @@ public class FederatedRepositoryConfig implements Comparable<FederatedRepository
     }
 
     /**
-     * Get the default cache policy for the repository with the supplied name
+     * Determine whether this workspace has a projection supplied contribution
      * 
-     * @return the default cache policy
+     * @param sourceName the name of the source
+     * @param workspaceName the name of the workspace
+     * @return true if this workspace contains a projection that uses the supplied source and workspace
      */
-    public CachePolicy getDefaultCachePolicy() {
-        return defaultCachePolicy;
+    public boolean contains( String sourceName,
+                             String workspaceName ) {
+        List<Projection> projections = this.projectionsBySourceName.get(sourceName);
+        if (projections != null) {
+            for (Projection projection : sourceProjections) {
+                if (projection.getWorkspaceName().equals(workspaceName)) return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -145,8 +219,8 @@ public class FederatedRepositoryConfig implements Comparable<FederatedRepository
     @Override
     public boolean equals( Object obj ) {
         if (obj == this) return true;
-        if (obj instanceof FederatedRepositoryConfig) {
-            FederatedRepositoryConfig that = (FederatedRepositoryConfig)obj;
+        if (obj instanceof FederatedWorkspace) {
+            FederatedWorkspace that = (FederatedWorkspace)obj;
             if (!this.getName().equals(that.getName())) return false;
             if (!this.getCacheProjection().equals(that.getCacheProjection())) return false;
             if (!this.getSourceProjections().equals(that.getSourceProjections())) return false;
@@ -160,7 +234,7 @@ public class FederatedRepositoryConfig implements Comparable<FederatedRepository
      * 
      * @see java.lang.Comparable#compareTo(java.lang.Object)
      */
-    public int compareTo( FederatedRepositoryConfig that ) {
+    public int compareTo( FederatedWorkspace that ) {
         if (that == this) return 0;
         int diff = this.getName().compareTo(that.getName());
         if (diff != 0) return diff;

@@ -109,7 +109,10 @@ public class ModelTest {
                                                         ExecutionContext context,
                                                         EntityManager entityManager,
                                                         UUID rootNodeUuid,
+                                                        String nameOfDefaultWorkspace,
+                                                        String[] predefinedWorkspaceNames,
                                                         long largeValueMinimumSizeInBytes,
+                                                        boolean createWorkspacesAllowed,
                                                         boolean compressData,
                                                         boolean enforceReferentialIntegrity ) {
             return requestProcessor;

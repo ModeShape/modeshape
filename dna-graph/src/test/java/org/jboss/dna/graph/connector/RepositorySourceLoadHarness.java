@@ -37,9 +37,6 @@ import org.jboss.dna.common.i18n.MockI18n;
 import org.jboss.dna.common.util.Logger;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.Location;
-import org.jboss.dna.graph.connector.RepositoryConnection;
-import org.jboss.dna.graph.connector.RepositoryConnectionPool;
-import org.jboss.dna.graph.connector.RepositorySourceException;
 import org.jboss.dna.graph.property.basic.RootPath;
 import org.jboss.dna.graph.request.ReadNodeRequest;
 
@@ -220,7 +217,7 @@ public class RepositorySourceLoadHarness {
                 if (i % 2 == 0) {
                     Thread.yield();
                 }
-                connection.execute(context, new ReadNodeRequest(new Location(RootPath.INSTANCE)));
+                connection.execute(context, new ReadNodeRequest(new Location(RootPath.INSTANCE), "workspace1"));
                 int int2 = random(this.hashCode() ^ (int)System.nanoTime() + i);
                 total += Math.min(Math.abs(Math.max(int1, int2) + int1 * int2 / 3), count);
             }

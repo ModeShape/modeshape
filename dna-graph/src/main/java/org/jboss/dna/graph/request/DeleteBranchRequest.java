@@ -37,16 +37,21 @@ public class DeleteBranchRequest extends Request {
     private static final long serialVersionUID = 1L;
 
     private final Location at;
+    private final String workspaceName;
     private Location actualLocation;
 
     /**
      * Create a request to delete a branch.
      * 
      * @param at the location of the top node in the existing branch that is to be deleted
+     * @param workspaceName the name of the workspace containing the parent
      * @throws IllegalArgumentException if the location is null
      */
-    public DeleteBranchRequest( Location at ) {
+    public DeleteBranchRequest( Location at,
+                                String workspaceName ) {
         CheckArg.isNotNull(at, "at");
+        CheckArg.isNotNull(workspaceName, "workspaceName");
+        this.workspaceName = workspaceName;
         this.at = at;
     }
 
@@ -57,6 +62,15 @@ public class DeleteBranchRequest extends Request {
      */
     public Location at() {
         return at;
+    }
+
+    /**
+     * Get the name of the workspace in which the branch exists.
+     * 
+     * @return the name of the workspace; never null
+     */
+    public String inWorkspace() {
+        return workspaceName;
     }
 
     /**
@@ -104,9 +118,11 @@ public class DeleteBranchRequest extends Request {
      */
     @Override
     public boolean equals( Object obj ) {
+        if (obj == this) return true;
         if (this.getClass().isInstance(obj)) {
             DeleteBranchRequest that = (DeleteBranchRequest)obj;
             if (!this.at().equals(that.at())) return false;
+            if (!this.inWorkspace().equals(that.inWorkspace())) return false;
             return true;
         }
         return false;
@@ -119,6 +135,6 @@ public class DeleteBranchRequest extends Request {
      */
     @Override
     public String toString() {
-        return "delete branch " + at();
+        return "delete branch " + at() + " in the \"" + workspaceName + "\" workspace";
     }
 }

@@ -29,7 +29,9 @@ import static org.junit.Assert.assertThat;
 import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -40,6 +42,8 @@ import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.Graph;
 import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.Node;
+import org.jboss.dna.graph.Subgraph;
+import org.jboss.dna.graph.SubgraphNode;
 import org.jboss.dna.graph.connector.RepositoryConnection;
 import org.jboss.dna.graph.connector.RepositoryConnectionFactory;
 import org.jboss.dna.graph.connector.RepositoryContext;
@@ -50,6 +54,9 @@ import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.Property;
 import org.jboss.dna.graph.property.ValueFormatException;
+import org.jboss.dna.graph.request.ReadAllChildrenRequest;
+import org.jboss.dna.graph.request.ReadAllPropertiesRequest;
+import org.jboss.dna.graph.request.ReadNodeRequest;
 import org.jboss.dna.graph.request.Request;
 import org.junit.After;
 import org.junit.AfterClass;
@@ -322,16 +329,75 @@ public abstract class AbstractConnectorTest {
      * @param request the request to be processed
      * @return the request after processing (for method chaining purposes)
      * @param <T> the type of request
+     * @throws RuntimeException if the request generated a runtime error
+     * @throws RepositorySourceException if the request generated an error that was not a {@link RuntimeException}
      */
     protected <T extends Request> T execute( T request ) {
         // Get a connection ...
         RepositoryConnection connection = connectionFactory.createConnection(source.getName());
         try {
             connection.execute(context, request);
-            return request;
         } finally {
             connection.close();
         }
+        if (request.hasError()) {
+            Throwable error = request.getError();
+            if (error instanceof RuntimeException) throw (RuntimeException)error;
+            throw new RepositorySourceException(source.getName(), error);
+        }
+        return request;
+    }
+
+    // ----------------------------------------------------------------------------------------------
+    // Utility method for reading a node in all (or most) possible ways and comparing the results ...
+    // ----------------------------------------------------------------------------------------------
+
+    /**
+     * Read the node at the supplied location, using a variety of techniques to read the node and compare that each technique
+     * returned the same node. This method reads the entire node (via {@link Graph#getNodeAt(Location)}, which uses
+     * {@link ReadNodeRequest}), reads all of the properties on the node (via {@link Graph#getProperties()}, which uses
+     * {@link ReadAllPropertiesRequest}), and reads all of the children of the node (via {@link Graph#getChildren()}, which uses
+     * {@link ReadAllChildrenRequest}).
+     * 
+     * @param location the location; may not be null
+     * @return the node that was read
+     */
+    public Node readNodeThoroughly( Location location ) {
+        assertThat(location, is(notNullValue()));
+        Node result = null;
+        if (location.hasPath() && location.hasIdProperties()) {
+            // Read the node by the full location ...
+            result = graph.getNodeAt(location);
+
+            // Read the node by the path ...
+            Node resultByPath = graph.getNodeAt(location.getPath());
+            assertSameNode(resultByPath, result);
+
+            // Read the node by identification properties ...
+            if (location.hasIdProperties()) {
+                Node resultByIdProps = graph.getNodeAt(location.getIdProperties());
+                assertSameNode(resultByIdProps, result);
+            }
+
+            // Check the result has the correct location ...
+            assertThat("The node that was read doesn't have the expected location", result.getLocation(), is(location));
+        } else {
+            // Read the node by using the location (as is)
+            result = graph.getNodeAt(location);
+
+            // Check the result has the correct location ...
+            assertThat("The node that was read doesn't have the expected location",
+                       result.getLocation().isSame(location, true),
+                       is(true));
+        }
+
+        // Read all the properties of the node ...
+        assertSameProperties(result, graph.getProperties().on(location));
+
+        // Read all the children of the node ...
+        assertThat(graph.getChildren().of(location), is(result.getChildren()));
+
+        return result;
     }
 
     // ----------------------------------------------------------------------------------------------------------------
@@ -428,14 +494,7 @@ public abstract class AbstractConnectorTest {
         if (stopwatch != null) {
             stopwatch.stop();
             if (output != null) {
-                long totalDurationInMicroseconds = TimeUnit.NANOSECONDS.toMicros(stopwatch.getTotalDuration().longValue());
-                long avgDuration = totalDurationInMicroseconds / totalNumber / 1000L;
-                String units = " millisecond(s)";
-                if (avgDuration == 0L) {
-                    avgDuration = totalDurationInMicroseconds / totalNumber;
-                    units = " microsecond(s)";
-                }
-                output.println("     Total = " + stopwatch.getTotalDuration() + "; avg = " + avgDuration + units);
+                output.println("    " + getTotalAndAverageDuration(stopwatch));
             }
 
             // Perform second batch ...
@@ -445,34 +504,51 @@ public abstract class AbstractConnectorTest {
             sw.start();
             batch.execute();
             sw.stop();
-            long totalDurationInMicroseconds = TimeUnit.NANOSECONDS.toMicros(sw.getTotalDuration().longValue());
-            long avgDuration = totalDurationInMicroseconds / totalNumber / 1000L;
-            String units = " millisecond(s)";
-            if (avgDuration == 0L) {
-                avgDuration = totalDurationInMicroseconds / totalNumber;
-                units = " microsecond(s)";
-            }
-            System.out.println("     Final total = " + sw.getTotalDuration() + "; avg = " + avgDuration + units);
+            System.out.println("     final " + getTotalAndAverageDuration(stopwatch));
             assertThat(totalNumberCreated, is(totalNumber + calculateTotalNumberOfNodesInTree(2, 2, false)));
         }
         return (int)totalNumberCreated;
 
     }
 
-    private int createChildren( Graph.Batch useBatch,
-                                String parentPath,
-                                String nodePrefix,
-                                int number,
-                                int numProps,
-                                int depthRemaining,
-                                PrintWriter output ) {
+    protected String getTotalAndAverageDuration( Stopwatch stopwatch ) {
+        long totalDurationInMicroseconds = TimeUnit.NANOSECONDS.toMicros(stopwatch.getTotalDuration().longValue());
+        long totalNumber = stopwatch.getCount();
+        long avgDuration = totalDurationInMicroseconds / totalNumber / 1000L;
+        String units = " millisecond(s)";
+        if (avgDuration == 0L) {
+            avgDuration = totalDurationInMicroseconds / totalNumber;
+            units = " microsecond(s)";
+        }
+        return "total = " + stopwatch.getTotalDuration() + "; avg = " + avgDuration + units;
+    }
+
+    /**
+     * Utility to create a number of children.
+     * 
+     * @param useBatch
+     * @param parentPath
+     * @param nodePrefix
+     * @param number
+     * @param numProps
+     * @param depthRemaining
+     * @param output
+     * @return the number of children created
+     */
+    protected int createChildren( Graph.Batch useBatch,
+                                  String parentPath,
+                                  String nodePrefix,
+                                  int number,
+                                  int numProps,
+                                  int depthRemaining,
+                                  PrintWriter output ) {
         int numberCreated = 0;
         Graph.Batch batch = useBatch;
+        String originalValue = "The quick brown fox jumped over the moon. What? ";
         if (batch == null) batch = graph.batch();
         for (int i = 0; i != number; ++i) {
             String path = parentPath + "/" + nodePrefix + (i + 1);
             Graph.Create<Graph.Batch> create = batch.create(path);
-            String originalValue = "The quick brown fox jumped over the moon. What? ";
             String value = originalValue;
             for (int j = 0; j != numProps; ++j) {
                 // value = value + originalValue;
@@ -510,6 +586,67 @@ public abstract class AbstractConnectorTest {
     // ----------------------------------------------------------------------------------------------------------------
     // Utility methods to work with nodes
     // ----------------------------------------------------------------------------------------------------------------
+
+    /**
+     * Assert that the two supplied subgraphs have the same structure, and that corresponding nodes in the subgraphs have the same
+     * properties and children.
+     * 
+     * @param subgraph1 the first subgraph; may not be null
+     * @param subgraph2 the second subgraph; may not be null
+     * @param idPropertiesShouldMatch true if the identification properties of each corresponding node should match, or false if
+     *        the identification properties should be ignored
+     */
+    public void assertEquivalentSubgraphs( Subgraph subgraph1,
+                                           Subgraph subgraph2,
+                                           boolean idPropertiesShouldMatch ) {
+        assertThat(subgraph1, is(notNullValue()));
+        assertThat(subgraph2, is(notNullValue()));
+
+        // Shortcut ...
+        if (subgraph1.getLocation().equals(subgraph2.getLocation())) return;
+
+        // Iterate over each subgraph. Note that because each location should have a path, the path can be used
+        // to ensure the structure matches.
+        Iterator<SubgraphNode> iter1 = subgraph1.iterator();
+        Iterator<SubgraphNode> iter2 = subgraph2.iterator();
+        while (iter1.hasNext() && iter2.hasNext()) {
+            Node node1 = iter1.next();
+            Node node2 = iter2.next();
+
+            // Each node should have equivalent paths ..
+            assertThat(node1.getLocation().hasPath(), is(true));
+            assertThat(node2.getLocation().hasPath(), is(true));
+            assertThat(node1.getLocation().getPath(), is(node2.getLocation().getPath()));
+
+            // Each node should have the same Identification properties ...
+            if (idPropertiesShouldMatch) {
+                assertThat(node1.getLocation().getIdProperties(), is(node2.getLocation().getIdProperties()));
+            }
+
+            // Do not compare the workspace name.
+
+            // Each node should have the same properties (excluding any identification properties) ...
+            Map<Name, Property> properties1 = new HashMap<Name, Property>(node1.getPropertiesByName());
+            Map<Name, Property> properties2 = new HashMap<Name, Property>(node2.getPropertiesByName());
+            if (!idPropertiesShouldMatch) {
+                for (Property idProperty : node1.getLocation().getIdProperties()) {
+                    properties1.remove(idProperty.getName());
+                }
+                for (Property idProperty : node2.getLocation().getIdProperties()) {
+                    properties2.remove(idProperty.getName());
+                }
+            }
+            assertThat(properties1.values(), is(properties2.values()));
+
+            // Each node should have the same children. We can check this, tho this will be enforced when comparing paths ...
+            assertThat(node1.getChildrenSegments(), is(node2.getChildrenSegments()));
+        }
+
+        // There should be no more nodes in either iterator ...
+        assertThat(iter1.hasNext(), is(false));
+        assertThat(iter2.hasNext(), is(false));
+    }
+
     /**
      * Assert that the two supplied nodes represent the exact same node with the same path, same ID properties, same properties,
      * and same children.

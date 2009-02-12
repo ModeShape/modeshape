@@ -120,9 +120,8 @@ public class CompositeRequest extends Request implements Iterable<Request> {
         }
         boolean readOnly = true;
         for (Request request : requests) {
-            if (request.isReadOnly()) continue;
-            readOnly = false;
-            break;
+            readOnly = request.isReadOnly();
+            if (!readOnly) break;
         }
         return new CompositeRequest(requests, readOnly);
     }
@@ -251,6 +250,7 @@ public class CompositeRequest extends Request implements Iterable<Request> {
      */
     @Override
     public boolean equals( Object obj ) {
+        if (obj == this) return true;
         if (obj instanceof CompositeRequest) {
             CompositeRequest that = (CompositeRequest)obj;
             if (this.size() != that.size()) return false;

@@ -31,7 +31,6 @@ import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.Property;
-import org.jboss.dna.graph.request.Request;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -41,6 +40,8 @@ import org.junit.Test;
 public abstract class AbstractRequestTest {
 
     protected ExecutionContext context;
+    protected String workspace1;
+    protected String workspace2;
     protected Location validPathLocation;
     protected Location validUuidLocation;
     protected Location validPropsLocation;
@@ -56,6 +57,8 @@ public abstract class AbstractRequestTest {
     @Before
     public void beforeEach() {
         context = new ExecutionContext();
+        workspace1 = "workspace1";
+        workspace2 = "workspace2";
         Path validPath = createPath("/a/b/c");
         UUID validUuid = UUID.randomUUID();
         Name idProperty1Name = createName("id1");

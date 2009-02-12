@@ -233,21 +233,26 @@ public class Projection implements Comparable<Projection>, Serializable {
     }
 
     private final String sourceName;
+    private final String workspaceName;
     private final List<Rule> rules;
     private final boolean simple;
+    private final int hc;
 
     /**
      * Create a new federated projection for the supplied source, using the supplied rules.
      * 
      * @param sourceName the name of the source
+     * @param workspaceName the name of the workspace in the source; may be null if the default workspace is to be used
      * @param rules the projection rules
      * @throws IllegalArgumentException if the source name or rule array is null, empty, or contains all nulls
      */
     public Projection( String sourceName,
+                       String workspaceName,
                        Rule... rules ) {
         CheckArg.isNotEmpty(sourceName, "sourceName");
         CheckArg.isNotEmpty(rules, "rules");
         this.sourceName = sourceName;
+        this.workspaceName = workspaceName;
         List<Rule> rulesList = new ArrayList<Rule>();
         for (Rule rule : rules) {
             if (rule != null) rulesList.add(rule);
@@ -255,6 +260,7 @@ public class Projection implements Comparable<Projection>, Serializable {
         this.rules = Collections.unmodifiableList(rulesList);
         CheckArg.isNotEmpty(this.rules, "rules");
         this.simple = computeSimpleProjection(this.rules);
+        this.hc = HashCode.compute(this.sourceName, this.workspaceName);
     }
 
     /**
@@ -265,6 +271,15 @@ public class Projection implements Comparable<Projection>, Serializable {
      */
     public String getSourceName() {
         return sourceName;
+    }
+
+    /**
+     * Get the name of the workspace in the source to which this projection applies.
+     * 
+     * @return the workspace name, or null if the default workspace of the {@link #getSourceName() source} is to be used
+     */
+    public String getWorkspaceName() {
+        return workspaceName;
     }
 
     /**
@@ -382,7 +397,7 @@ public class Projection implements Comparable<Projection>, Serializable {
      */
     @Override
     public int hashCode() {
-        return this.sourceName.hashCode();
+        return this.hc;
     }
 
     /**
@@ -395,7 +410,9 @@ public class Projection implements Comparable<Projection>, Serializable {
         if (obj == this) return true;
         if (obj instanceof Projection) {
             Projection that = (Projection)obj;
+            if (this.hashCode() != that.hashCode()) return false;
             if (!this.getSourceName().equals(that.getSourceName())) return false;
+            if (!this.getWorkspaceName().equals(that.getWorkspaceName())) return false;
             if (!this.getRules().equals(that.getRules())) return false;
             return true;
         }
@@ -410,6 +427,8 @@ public class Projection implements Comparable<Projection>, Serializable {
     public int compareTo( Projection that ) {
         if (this == that) return 0;
         int diff = this.getSourceName().compareTo(that.getSourceName());
+        if (diff != 0) return diff;
+        diff = this.getWorkspaceName().compareTo(that.getWorkspaceName());
         if (diff != 0) return diff;
         Iterator<Rule> thisIter = this.getRules().iterator();
         Iterator<Rule> thatIter = that.getRules().iterator();
@@ -431,6 +450,8 @@ public class Projection implements Comparable<Projection>, Serializable {
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append(this.sourceName);
+        sb.append("::");
+        sb.append(this.workspaceName);
         sb.append(" { ");
         boolean first = true;
         for (Rule rule : this.getRules()) {

@@ -24,6 +24,7 @@
 package org.jboss.dna.graph;
 
 import net.jcip.annotations.Immutable;
+import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.Path;
 
 /**
@@ -43,7 +44,7 @@ import org.jboss.dna.graph.property.Path;
  * @author Randall Hauch
  */
 @Immutable
-public interface Subgraph extends Results {
+public interface Subgraph extends Graph.BaseResults<SubgraphNode> {
 
     /**
      * Get the location of the subgraph, which is the location of the node at the top of the subgraph.
@@ -61,9 +62,19 @@ public interface Subgraph extends Results {
     int getMaximumDepth();
 
     /**
+     * Get the node at the supplied location.
+     * 
+     * @param relativePath the name that makes up a relative path to the node that is an immediate child of the {@link #getRoot()
+     *        root}
+     * @return the node, or null if the node is not {@link #includes(Path) included} in these results
+     */
+    SubgraphNode getNode( Name relativePath );
+
+    /**
      * Get the node that is at the {@link #getLocation() root} of the subgraph.
      * 
      * @return the root node in the subgraph
      */
-    Node getRoot();
+    SubgraphNode getRoot();
+
 }

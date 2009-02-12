@@ -47,6 +47,7 @@ import org.jboss.dna.graph.property.Property;
 import org.jboss.dna.graph.request.CompositeRequest;
 import org.jboss.dna.graph.request.CreateNodeRequest;
 import org.jboss.dna.graph.request.Request;
+import org.jboss.dna.graph.request.VerifyWorkspaceRequest;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.MockitoAnnotations;
@@ -153,6 +154,11 @@ public class GraphImporterTest {
         public void execute( ExecutionContext context,
                              Request request ) throws RepositorySourceException {
             lastExecutedRequest = request;
+            if (request instanceof VerifyWorkspaceRequest) {
+                VerifyWorkspaceRequest workspaceRequest = (VerifyWorkspaceRequest)request;
+                workspaceRequest.setActualRootLocation(new Location(context.getValueFactories().getPathFactory().createRootPath()));
+                workspaceRequest.setActualWorkspaceName("default");
+            }
         }
 
         public CachePolicy getDefaultCachePolicy() {
