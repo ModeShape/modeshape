@@ -95,7 +95,7 @@ public class FileSystemSource implements RepositorySource, ObjectFactory {
     private volatile int retryLimit = DEFAULT_RETRY_LIMIT;
     private volatile int cacheTimeToLiveInMilliseconds = DEFAULT_CACHE_TIME_TO_LIVE_IN_SECONDS * 1000;
     private volatile String defaultWorkspace;
-    private volatile String[] predefinedWorkspaces;
+    private volatile String[] predefinedWorkspaces = new String[] {};
     private volatile RepositorySourceCapabilities capabilities = new RepositorySourceCapabilities(SUPPORTS_SAME_NAME_SIBLINGS,
                                                                                                   DEFAULT_SUPPORTS_UPDATES,
                                                                                                   SUPPORTS_EVENTS,
@@ -375,6 +375,7 @@ public class FileSystemSource implements RepositorySource, ObjectFactory {
             for (String predefined : this.predefinedWorkspaces) {
                 this.availableWorkspaceNames.add(predefined);
             }
+
             // Report the warnings for non-existant predefined workspaces
             reportWarnings = true;
             for (String path : this.availableWorkspaceNames) {

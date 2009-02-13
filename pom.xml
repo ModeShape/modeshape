@@ -126,6 +126,7 @@
 		<module>extensions/dna-sequencer-xml</module>
 		<module>extensions/dna-sequencer-zip</module>
 		<module>extensions/dna-connector-federation</module>
+		<module>extensions/dna-connector-filesystem</module>
 		<module>extensions/dna-connector-jbosscache</module>
 		<module>extensions/dna-connector-svn</module>
 		<module>extensions/dna-connector-store-jpa</module>
