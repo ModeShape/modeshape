@@ -197,6 +197,7 @@ public class RepositoryServiceTest {
     @Test
     public void shouldStartUpAndCreateRepositoryUsingConfigurationRepositoryThatContainsNoSources() {
         // Set up the configuration repository ...
+        configRepository.useWorkspace("default");
         configRepository.create("/dna:sources");
         configRepository.create("/dna:sources/source A");
 
@@ -249,6 +250,51 @@ public class RepositoryServiceTest {
         // for (int i = 0; i != 10; ++i) {
         // assertThat(service.getRepository("fed repos"), is(sameInstance(repository)));
         // }
+    }
+
+    @Test
+    public void shouldConfigureRepositorySourceWithSetterThatTakesArrayButWithSingleValues() {
+        RepositoryLibrary sources = new RepositoryLibrary(context);
+        sources.addSource(configRepositorySource);
+        service = new RepositoryService(sources, configSourceName, configWorkspaceName, context);
+
+        // Set up the configuration repository ...
+        configRepository.useWorkspace("default");
+        configRepository.create("/dna:system");
+        configRepository.create("/dna:system/dna:sources");
+        configRepository.create("/dna:system/dna:sources/source A");
+
+        final String className = FakeRepositorySource.class.getName();
+        configRepository.set(DnaLexicon.CLASSNAME).on("/dna:system/dna:sources/source A").to(className);
+        configRepository.set(DnaLexicon.CLASSPATH).on("/dna:system/dna:sources/source A").to("");
+        configRepository.set("retryLimit").on("/dna:system/dna:sources/source A").to(3);
+        configRepository.set("intParam").on("/dna:system/dna:sources/source A").to("3");
+        configRepository.set("shortParam").on("/dna:system/dna:sources/source A").to("32");
+        configRepository.set("booleanParam").on("/dna:system/dna:sources/source A").to("true");
+        configRepository.set("stringParam").on("/dna:system/dna:sources/source A").to("string value");
+        configRepository.set("intArrayParam").on("/dna:system/dna:sources/source A").to("3");
+        configRepository.set("booleanArrayParam").on("/dna:system/dna:sources/source A").to("true");
+        configRepository.set("longObjectArrayParam").on("/dna:system/dna:sources/source A").to("987654321");
+        configRepository.set("booleanObjectArrayParam").on("/dna:system/dna:sources/source A").to("true");
+        configRepository.set("stringArrayParam").on("/dna:system/dna:sources/source A").to("string value");
+
+        // Now, start up the service ...
+        service.getAdministrator().start();
+
+        // Get the source, which should be configured ...
+        RepositorySource repositorySourceA = service.getRepositorySourceManager().getSource("source A");
+        assertThat(repositorySourceA, is(instanceOf(FakeRepositorySource.class)));
+        FakeRepositorySource sourceA = (FakeRepositorySource)repositorySourceA;
+
+        assertThat(sourceA.getIntParam(), is(3));
+        assertThat(sourceA.getShortParam(), is((short)32));
+        assertThat(sourceA.isBooleanParam(), is(true));
+        assertThat(sourceA.getStringParam(), is("string value"));
+        assertThat(sourceA.getIntArrayParam(), is(new int[] {3}));
+        assertThat(sourceA.getBooleanArrayParam(), is(new boolean[] {true}));
+        assertThat(sourceA.getLongObjectArrayParam(), is(new Long[] {987654321L}));
+        assertThat(sourceA.getBooleanObjectArrayParam(), is(new Boolean[] {Boolean.TRUE}));
+        assertThat(sourceA.getStringArrayParam(), is(new String[] {"string value"}));
     }
 
 }

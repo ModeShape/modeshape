@@ -32,6 +32,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.UUID;
 import net.jcip.annotations.Immutable;
+import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.graph.GraphI18n;
 
 /**
@@ -116,6 +117,50 @@ public enum PropertyType {
             if (type.isTypeFor(value)) return type;
         }
         return OBJECT;
+    }
+
+    /**
+     * Discover the most appropriate {@link PropertyType} whose values can be assigned to variables or parameters of the supplied
+     * type. This method does check whether the supplied {@link Class} is an array, in which case it just evalutes the
+     * {@link Class#getComponentType() component type} of the array.
+     * 
+     * @param clazz the class representing the type of a value or parameter; may not be null
+     * @return the PropertyType that best represents the type whose values can be used as a value in the supplied class, or null
+     *         if no matching PropertyType could be found
+     */
+    public static PropertyType discoverType( Class<?> clazz ) {
+        CheckArg.isNotNull(clazz, "clazz");
+        // Is the supplied class an array (or an array of arrays)?
+        while (clazz.isArray()) {
+            // Then just call extract the component type that of which we have an array ...
+            clazz = clazz.getComponentType();
+        }
+        // Try each property type, and see if its value type is an exact match ...
+        for (PropertyType type : PropertyType.values()) {
+            if (type.valueClass.equals(clazz)) return type;
+            // If the property type is capable of handling a primitive ...
+            switch (type) {
+                case LONG:
+                    if (Long.TYPE.equals(clazz) || Integer.TYPE.equals(clazz) || Short.TYPE.equals(clazz)) return type;
+                    if (Integer.class.equals(clazz) || Short.class.equals(clazz)) return type;
+                    break;
+                case DOUBLE:
+                    if (Double.TYPE.equals(clazz) || Float.TYPE.equals(clazz)) return type;
+                    if (Float.class.equals(clazz)) return type;
+                    break;
+                case BOOLEAN:
+                    if (Boolean.TYPE.equals(clazz)) return type;
+                    break;
+                default:
+                    break;
+            }
+        }
+        // No value class of the property type matched exactly, so now see if any property type is assignable to 'clazz' ...
+        for (PropertyType type : PropertyType.values()) {
+            if (clazz.isAssignableFrom(type.valueClass)) return type;
+        }
+        // Nothing works, ...
+        return null;
     }
 
     /**

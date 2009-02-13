@@ -24,6 +24,7 @@
 package org.jboss.dna.repository;
 
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -31,6 +32,7 @@ import net.jcip.annotations.ThreadSafe;
 import org.jboss.dna.common.collection.Problems;
 import org.jboss.dna.common.collection.SimpleProblems;
 import org.jboss.dna.common.util.CheckArg;
+import org.jboss.dna.common.util.Logger;
 import org.jboss.dna.common.util.Reflection;
 import org.jboss.dna.connector.federation.FederationException;
 import org.jboss.dna.graph.DnaLexicon;
@@ -44,6 +46,7 @@ import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.PathNotFoundException;
 import org.jboss.dna.graph.property.Property;
+import org.jboss.dna.graph.property.PropertyType;
 import org.jboss.dna.graph.property.ValueFactories;
 import org.jboss.dna.graph.property.ValueFactory;
 import org.jboss.dna.repository.service.AbstractServiceAdministrator;
@@ -263,46 +266,123 @@ public class RepositoryService implements AdministeredService {
             problems.addError(err, RepositoryI18n.unableToInstantiateClassUsingClasspath, classname, classpath);
         }
 
-        // Try to set the name property to the local name of the node...
-        Reflection reflection = new Reflection(source.getClass());
-        try {
-            reflection.invokeSetterMethodOnTarget("name", source, path.getLastSegment().getName().getLocalName());
-        } catch (SecurityException err) {
-            // Do nothing ... assume not a JavaBean property
-        } catch (NoSuchMethodException err) {
-            // Do nothing ... assume not a JavaBean property
-        } catch (IllegalArgumentException err) {
-            // Do nothing ... assume not a JavaBean property
-        } catch (IllegalAccessException err) {
-            // Do nothing ... assume not a JavaBean property
-        } catch (InvocationTargetException err) {
-            // Do nothing ... assume not a JavaBean property
-        }
+        // We need to set the name using the local name of the node, so hack this by putting another name property
+        // into the map of properties. Since only the local name is used, we don't care what the namespace of the
+        // fake property name is, so create something bogus. However, it really won't hurt if this happens to override an existing
+        // property.
+        String fakeUri = DnaLexicon.Namespace.URI + "/300939b9dg93kd9gb";
+        Name nameName = context.getValueFactories().getNameFactory().create(fakeUri, "name");
+        Property nameProperty = context.getPropertyFactory().create(nameName, path.getLastSegment().getName().getLocalName());
+        properties.put(nameName, nameProperty);
 
-        // Now set all the properties that we can, ignoring any property that doesn't fit pattern ...
+        // Now set all the properties that we can, ignoring any property that doesn't fit the pattern ...
+        Reflection reflection = new Reflection(source.getClass());
         for (Map.Entry<Name, Property> entry : properties.entrySet()) {
             Name propertyName = entry.getKey();
             Property property = entry.getValue();
             String javaPropertyName = propertyName.getLocalName();
             if (property.isEmpty()) continue;
+
             Object value = null;
-            if (property.isSingle()) {
-                value = property.getValues().next();
-            } else if (property.isMultiple()) {
-                value = property.getValuesAsArray();
-            }
+            Method setter = null;
             try {
-                reflection.invokeSetterMethodOnTarget(javaPropertyName, source, value);
+                setter = reflection.findFirstMethod("set" + javaPropertyName, false);
+                if (setter == null) continue;
+                // Determine the type of the one parameter ...
+                Class<?>[] parameterTypes = setter.getParameterTypes();
+                if (parameterTypes.length != 1) continue; // not a valid JavaBean property
+                Class<?> paramType = parameterTypes[0];
+                PropertyType allowedType = PropertyType.discoverType(paramType);
+                if (allowedType == null) continue; // assume not a JavaBean property with usable type
+                ValueFactory<?> factory = context.getValueFactories().getValueFactory(allowedType);
+                if (paramType.isArray()) {
+                    if (paramType.getComponentType().isArray()) continue; // array of array, which we don't do
+                    Object[] values = factory.create(property.getValuesAsArray());
+                    // Convert to an array of primitives if that's what the signature requires ...
+                    Class<?> componentType = paramType.getComponentType();
+                    if (Integer.TYPE.equals(componentType)) {
+                        int[] primitiveValues = new int[values.length];
+                        for (int i = 0; i != values.length; ++i) {
+                            primitiveValues[i] = ((Long)values[i]).intValue();
+                        }
+                        value = primitiveValues;
+                    } else if (Short.TYPE.equals(componentType)) {
+                        short[] primitiveValues = new short[values.length];
+                        for (int i = 0; i != values.length; ++i) {
+                            primitiveValues[i] = ((Long)values[i]).shortValue();
+                        }
+                        value = primitiveValues;
+                    } else if (Long.TYPE.equals(componentType)) {
+                        long[] primitiveValues = new long[values.length];
+                        for (int i = 0; i != values.length; ++i) {
+                            primitiveValues[i] = ((Long)values[i]).longValue();
+                        }
+                        value = primitiveValues;
+                    } else if (Double.TYPE.equals(componentType)) {
+                        double[] primitiveValues = new double[values.length];
+                        for (int i = 0; i != values.length; ++i) {
+                            primitiveValues[i] = ((Double)values[i]).doubleValue();
+                        }
+                        value = primitiveValues;
+                    } else if (Float.TYPE.equals(componentType)) {
+                        float[] primitiveValues = new float[values.length];
+                        for (int i = 0; i != values.length; ++i) {
+                            primitiveValues[i] = ((Double)values[i]).floatValue();
+                        }
+                        value = primitiveValues;
+                    } else if (Boolean.TYPE.equals(componentType)) {
+                        boolean[] primitiveValues = new boolean[values.length];
+                        for (int i = 0; i != values.length; ++i) {
+                            primitiveValues[i] = ((Boolean)values[i]).booleanValue();
+                        }
+                        value = primitiveValues;
+                    } else {
+                        value = values;
+                    }
+                } else {
+                    value = factory.create(property.getFirstValue());
+                    // Convert to the correct primitive, if needed ...
+                    if (Integer.TYPE.equals(paramType)) {
+                        value = new Integer(((Long)value).intValue());
+                    } else if (Short.TYPE.equals(paramType)) {
+                        value = new Short(((Long)value).shortValue());
+                    } else if (Float.TYPE.equals(paramType)) {
+                        value = new Float(((Double)value).floatValue());
+                    }
+                }
+                // Invoke the method ...
+                String msg = "Setting property {0} to {1} on source at {2} in configuration repository {3} in workspace {4}";
+                Logger.getLogger(getClass()).trace(msg,
+                                                   javaPropertyName,
+                                                   value,
+                                                   path,
+                                                   configurationSourceName,
+                                                   configurationWorkspaceName);
+                setter.invoke(source, value);
             } catch (SecurityException err) {
-                // Do nothing ... assume not a JavaBean property
-            } catch (NoSuchMethodException err) {
-                // Do nothing ... assume not a JavaBean property
+                Logger.getLogger(getClass()).debug(err, "Error invoking {0}.{1}", source.getClass(), setter);
             } catch (IllegalArgumentException err) {
-                // Do nothing ... assume not a JavaBean property
+                // Do nothing ... assume not a JavaBean property (but log)
+                String msg = "Invalid argument invoking {0} with parameter {1} on source at {2} in configuration repository {3} in workspace {4}";
+                Logger.getLogger(getClass()).debug(err,
+                                                   msg,
+                                                   setter,
+                                                   value,
+                                                   path,
+                                                   configurationSourceName,
+                                                   configurationWorkspaceName);
             } catch (IllegalAccessException err) {
-                // Do nothing ... assume not a JavaBean property
+                Logger.getLogger(getClass()).debug(err, "Error invoking {0}.{1}", source.getClass(), setter);
             } catch (InvocationTargetException err) {
-                // Do nothing ... assume not a JavaBean property
+                // Do nothing ... assume not a JavaBean property (but log)
+                String msg = "Error invoking {0} with parameter {1} on source at {2} in configuration repository {3} in workspace {4}";
+                Logger.getLogger(getClass()).debug(err.getTargetException(),
+                                                   msg,
+                                                   setter,
+                                                   value,
+                                                   path,
+                                                   configurationSourceName,
+                                                   configurationWorkspaceName);
             }
         }
         return source;
