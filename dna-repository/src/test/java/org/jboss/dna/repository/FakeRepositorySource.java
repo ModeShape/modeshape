@@ -24,7 +24,6 @@
 package org.jboss.dna.repository;
 
 import javax.naming.Reference;
-import org.apache.jackrabbit.spi.RepositoryService;
 import org.jboss.dna.graph.connector.RepositoryConnection;
 import org.jboss.dna.graph.connector.RepositoryContext;
 import org.jboss.dna.graph.connector.RepositorySource;
