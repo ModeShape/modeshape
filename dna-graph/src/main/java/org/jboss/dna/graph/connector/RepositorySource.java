@@ -24,8 +24,17 @@
 package org.jboss.dna.graph.connector;
 
 import java.io.Serializable;
+import java.math.BigDecimal;
+import java.net.URI;
+import java.util.UUID;
 import javax.naming.Referenceable;
 import org.jboss.dna.graph.ExecutionContext;
+import org.jboss.dna.graph.property.Binary;
+import org.jboss.dna.graph.property.DateTime;
+import org.jboss.dna.graph.property.Name;
+import org.jboss.dna.graph.property.Path;
+import org.jboss.dna.graph.property.PropertyType;
+import org.jboss.dna.graph.property.Reference;
 import org.jboss.dna.graph.request.CacheableRequest;
 
 /**
@@ -34,7 +43,11 @@ import org.jboss.dna.graph.request.CacheableRequest;
  * <p>
  * Typically this interface is implemented by classes that provide standard-style getters and setters for the various properties
  * necessary for proper configuration via reflection or introspection. This interface expects nor defines any such properties,
- * leaving that entirely to the implementation classes.
+ * leaving that entirely to the implementation classes. Although any types can be used for these setters, other DNA components use
+ * reflection to set these properties and work best when the setters accept a single parameter that is a primitive, an array of
+ * primitives, a value compatible with {@link PropertyType} (e.g., {@link Path}, {@link Name}, {@link URI}, {@link UUID},
+ * {@link Reference}, {@link Binary}, {@link Long}, {@link Double}, {@link BigDecimal}, {@link DateTime}, etc.), or an array of
+ * values that are compatible with {@link PropertyType}.
  * </p>
  * <p>
  * Implementations should also provide a no-arg constructor so that it is possible to easily create instances and initialize using
