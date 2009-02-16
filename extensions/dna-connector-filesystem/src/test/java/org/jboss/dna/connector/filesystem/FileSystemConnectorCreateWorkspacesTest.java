@@ -101,7 +101,11 @@ public class FileSystemConnectorCreateWorkspacesTest extends WorkspaceConnectorT
             workspaceNames.add(workspace.getName());
         }
         // The actual names should be the absolute paths to the directories representing the root ...
-        String absolutePathToRepositories = new File(".").getCanonicalPath() + "/src/test/resources/repositories/";
+        String absolutePathToRepositories = new File("./src/test/resources/repositories/").getCanonicalPath();
+        
+        // getCanonicalPath strips the trailing separator character, so we need to re-added it for each case
+        absolutePathToRepositories += File.separatorChar;	
+        
         assertThat(workspaceNames.remove(absolutePathToRepositories + "airplanes"), is(true));
         assertThat(workspaceNames.remove(absolutePathToRepositories + "cars"), is(true));
         assertThat(workspaceNames.isEmpty(), is(true));
