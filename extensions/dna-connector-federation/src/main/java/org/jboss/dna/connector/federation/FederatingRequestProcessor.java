@@ -655,13 +655,14 @@ public class FederatingRequestProcessor extends RequestProcessor {
                         contributions.add(contribution);
                     }
                 } else {
-                    List<ReadNodeRequest> fromSourceCommands = new ArrayList<ReadNodeRequest>(numPaths);
+                    List<Request> fromSourceCommands = new ArrayList<Request>(numPaths);
                     for (Path pathInSource : pathsInSource) {
                         fromSourceCommands.add(new ReadNodeRequest(new Location(pathInSource), workspace));
                     }
                     Request request = CompositeRequest.with(fromSourceCommands);
                     sourceConnection.execute(context, request);
-                    for (ReadNodeRequest fromSource : fromSourceCommands) {
+                    for (Request requestObj : fromSourceCommands) {
+                        ReadNodeRequest fromSource = (ReadNodeRequest)requestObj;
                         if (fromSource.hasError()) continue;
 
                         // Figure out how long we can cache this contribution ...
