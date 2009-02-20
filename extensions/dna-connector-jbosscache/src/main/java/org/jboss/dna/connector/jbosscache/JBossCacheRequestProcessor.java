@@ -116,10 +116,10 @@ public class JBossCacheRequestProcessor extends RequestProcessor {
         Path.Segment[] childList = (Path.Segment[])node.get(JBossCacheLexicon.CHILD_PATH_SEGMENT_LIST);
         if (childList != null) {
             for (Path.Segment child : childList) {
-                request.addChild(new Location(pathFactory.create(nodePath, child)));
+                request.addChild(Location.create(pathFactory.create(nodePath, child)));
             }
         }
-        request.setActualLocationOfNode(new Location(nodePath));
+        request.setActualLocationOfNode(Location.create(nodePath));
         setCacheableInfo(request);
     }
 
@@ -142,7 +142,7 @@ public class JBossCacheRequestProcessor extends RequestProcessor {
             Property property = propertyFactory.create(propertyName, values);
             request.addProperty(property);
         }
-        request.setActualLocationOfNode(new Location(nodePath));
+        request.setActualLocationOfNode(Location.create(nodePath));
         setCacheableInfo(request);
     }
 
@@ -177,7 +177,7 @@ public class JBossCacheRequestProcessor extends RequestProcessor {
             node.put(propName, value);
         }
         Path nodePath = pathFactory.create(parent, newSegment);
-        request.setActualLocationOfNode(new Location(nodePath));
+        request.setActualLocationOfNode(Location.create(nodePath));
     }
 
     @Override
@@ -206,7 +206,7 @@ public class JBossCacheRequestProcessor extends RequestProcessor {
             }
             node.put(propName, value);
         }
-        request.setActualLocationOfNode(new Location(nodePath));
+        request.setActualLocationOfNode(Location.create(nodePath));
     }
 
     @Override
@@ -242,7 +242,7 @@ public class JBossCacheRequestProcessor extends RequestProcessor {
                                            getExecutionContext());
 
         Path newPath = pathFactory.create(newParentPath, newSegment);
-        request.setActualLocations(new Location(nodePath), new Location(newPath));
+        request.setActualLocations(Location.create(nodePath), Location.create(newPath));
     }
 
     @Override
@@ -255,7 +255,7 @@ public class JBossCacheRequestProcessor extends RequestProcessor {
         if (node == null) return;
 
         node.getParent().removeChild(node.getFqn().getLastElement());
-        request.setActualLocationOfNode(new Location(nodePath));
+        request.setActualLocationOfNode(Location.create(nodePath));
     }
 
     @Override
@@ -281,7 +281,7 @@ public class JBossCacheRequestProcessor extends RequestProcessor {
         assert removed;
 
         Path newPath = pathFactory.create(newParentPath, newSegment);
-        request.setActualLocations(new Location(nodePath), new Location(newPath));
+        request.setActualLocations(Location.create(nodePath), Location.create(newPath));
     }
 
     /**
@@ -305,7 +305,7 @@ public class JBossCacheRequestProcessor extends RequestProcessor {
                 uuid = uuidFactory.create();
                 cache.put(rootName, DnaLexicon.UUID, uuid);
             }
-            request.setActualRootLocation(new Location(pathFactory.createRootPath()));
+            request.setActualRootLocation(Location.create(pathFactory.createRootPath()));
             request.setActualWorkspaceName(workspaceName);
         }
     }
@@ -347,7 +347,7 @@ public class JBossCacheRequestProcessor extends RequestProcessor {
             uuid = uuidFactory.create();
             cache.put(rootName, DnaLexicon.UUID, uuid);
         }
-        request.setActualRootLocation(new Location(pathFactory.createRootPath()));
+        request.setActualRootLocation(Location.create(pathFactory.createRootPath()));
         request.setActualWorkspaceName(workspaceName);
     }
 
@@ -482,7 +482,7 @@ public class JBossCacheRequestProcessor extends RequestProcessor {
                     fqn = null;
                 }
             }
-            request.setError(new PathNotFoundException(new Location(path), lowestExisting,
+            request.setError(new PathNotFoundException(Location.create(path), lowestExisting,
                                                        JBossCacheConnectorI18n.nodeDoesNotExist.text(nodePath)));
             node = null;
         }

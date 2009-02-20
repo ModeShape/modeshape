@@ -88,7 +88,7 @@ public class GraphImporterTest {
     @Test
     public void shouldImportXmlContentAndGenerateTheCorrectCommands() throws Exception {
         System.out.println(xmlContent);
-        Graph.Batch batch = importer.importXml(xmlContent, new Location(destinationPath));
+        Graph.Batch batch = importer.importXml(xmlContent, Location.create(destinationPath));
         batch.execute();
         // 'lastExecutedCommand'
         assertThat(lastExecutedRequest, is(instanceOf(CompositeRequest.class)));
@@ -156,7 +156,7 @@ public class GraphImporterTest {
             lastExecutedRequest = request;
             if (request instanceof VerifyWorkspaceRequest) {
                 VerifyWorkspaceRequest workspaceRequest = (VerifyWorkspaceRequest)request;
-                workspaceRequest.setActualRootLocation(new Location(context.getValueFactories().getPathFactory().createRootPath()));
+                workspaceRequest.setActualRootLocation(Location.create(context.getValueFactories().getPathFactory().createRootPath()));
                 workspaceRequest.setActualWorkspaceName("default");
             }
         }

@@ -110,7 +110,7 @@ public class SimpleMergeStrategy implements MergeStrategy {
                     if (!childNames.containsKey(childName)) {
                         childNames.put(childName, 1);
                         Path pathToChild = pathFactory.create(location.getPath(), childName);
-                        federatedNode.addChild(new Location(pathToChild));
+                        federatedNode.addChild(Location.create(pathToChild));
                     }
                 }
             } else {
@@ -140,7 +140,7 @@ public class SimpleMergeStrategy implements MergeStrategy {
                         index = previousValue;
                     }
                     Path pathToChild = pathFactory.create(location.getPath(), childName, index);
-                    federatedNode.addChild(new Location(pathToChild));
+                    federatedNode.addChild(Location.create(pathToChild));
                 }
 
                 // Add in the properties ...

@@ -71,32 +71,32 @@ public class MultiChildContributionTest {
         child2 = mock(Location.class);
         child3 = mock(Location.class);
         children = Arrays.asList(child1, child2, child3);
-        contribution = new MultiChildContribution(sourceName, workspaceName, new Location(pathInSource), expiration, children);
+        contribution = new MultiChildContribution(sourceName, workspaceName, Location.create(pathInSource), expiration, children);
     }
 
     @Test
     public void shouldAllowNullExpiration() {
         expiration = null;
-        contribution = new MultiChildContribution(sourceName, workspaceName, new Location(pathInSource), expiration, children);
+        contribution = new MultiChildContribution(sourceName, workspaceName, Location.create(pathInSource), expiration, children);
         assertThat(contribution.getExpirationTimeInUtc(), is(nullValue()));
     }
 
     @Test( expected = IllegalArgumentException.class )
     public void shouldNotAllowExpirationTimeIfNotInUtcTime() {
         expiration = new JodaDateTime(System.currentTimeMillis(), "CST");
-        contribution = new MultiChildContribution(sourceName, workspaceName, new Location(pathInSource), expiration, children);
+        contribution = new MultiChildContribution(sourceName, workspaceName, Location.create(pathInSource), expiration, children);
     }
 
     @Test( expected = AssertionError.class )
     public void shouldNotAllowNullChildren() {
         children = null;
-        contribution = new MultiChildContribution(sourceName, workspaceName, new Location(pathInSource), expiration, children);
+        contribution = new MultiChildContribution(sourceName, workspaceName, Location.create(pathInSource), expiration, children);
     }
 
     @Test( expected = AssertionError.class )
     public void shouldNotAllowEmptyChildren() {
         children = Collections.emptyList();
-        contribution = new MultiChildContribution(sourceName, workspaceName, new Location(pathInSource), expiration, children);
+        contribution = new MultiChildContribution(sourceName, workspaceName, Location.create(pathInSource), expiration, children);
     }
 
     @Test
@@ -111,7 +111,7 @@ public class MultiChildContributionTest {
 
     @Test
     public void shouldNotBeExpiredIfExpirationIsInTheFuture() {
-        contribution = new MultiChildContribution(sourceName, workspaceName, new Location(pathInSource), NOW, children);
+        contribution = new MultiChildContribution(sourceName, workspaceName, Location.create(pathInSource), NOW, children);
         assertThat(contribution.isExpired(YESTERDAY), is(false));
         assertThat(contribution.isExpired(TOMORROW), is(true));
     }

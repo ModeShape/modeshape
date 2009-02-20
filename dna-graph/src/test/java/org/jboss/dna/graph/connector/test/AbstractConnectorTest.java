@@ -278,7 +278,7 @@ public abstract class AbstractConnectorTest {
      * @return the location
      */
     protected Location location( String path ) {
-        return new Location(path(path));
+        return Location.create(path(path));
     }
 
     /**
@@ -288,7 +288,7 @@ public abstract class AbstractConnectorTest {
      * @return the location
      */
     protected Location location( UUID uuid ) {
-        return new Location(uuid);
+        return Location.create(uuid);
     }
 
     protected UUID getRootNodeUuid() {

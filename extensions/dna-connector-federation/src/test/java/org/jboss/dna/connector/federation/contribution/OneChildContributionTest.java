@@ -62,26 +62,26 @@ public class OneChildContributionTest {
         pathInSource = RootPath.INSTANCE;
         expiration = TOMORROW;
         child1 = mock(Location.class);
-        contribution = new OneChildContribution(sourceName, workspaceName, new Location(pathInSource), expiration, child1);
+        contribution = new OneChildContribution(sourceName, workspaceName, Location.create(pathInSource), expiration, child1);
     }
 
     @Test
     public void shouldAllowNullExpiration() {
         expiration = null;
-        contribution = new OneChildContribution(sourceName, workspaceName, new Location(pathInSource), expiration, child1);
+        contribution = new OneChildContribution(sourceName, workspaceName, Location.create(pathInSource), expiration, child1);
         assertThat(contribution.getExpirationTimeInUtc(), is(nullValue()));
     }
 
     @Test( expected = IllegalArgumentException.class )
     public void shouldNotAllowExpirationTimeIfNotInUtcTime() {
         expiration = new JodaDateTime(System.currentTimeMillis(), "CST");
-        contribution = new OneChildContribution(sourceName, workspaceName, new Location(pathInSource), expiration, child1);
+        contribution = new OneChildContribution(sourceName, workspaceName, Location.create(pathInSource), expiration, child1);
     }
 
     @Test( expected = AssertionError.class )
     public void shouldNotAllowNullChildren() {
         child1 = null;
-        contribution = new OneChildContribution(sourceName, workspaceName, new Location(pathInSource), expiration, child1);
+        contribution = new OneChildContribution(sourceName, workspaceName, Location.create(pathInSource), expiration, child1);
     }
 
     @Test
@@ -96,7 +96,7 @@ public class OneChildContributionTest {
 
     @Test
     public void shouldNotBeExpiredIfExpirationIsInTheFuture() {
-        contribution = new OneChildContribution(sourceName, workspaceName, new Location(pathInSource), NOW, child1);
+        contribution = new OneChildContribution(sourceName, workspaceName, Location.create(pathInSource), NOW, child1);
         assertThat(contribution.isExpired(YESTERDAY), is(false));
         assertThat(contribution.isExpired(TOMORROW), is(true));
     }

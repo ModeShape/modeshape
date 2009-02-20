@@ -130,7 +130,7 @@ public class InMemoryRequestProcessor extends RequestProcessor {
                                                   copyMap);
         Path newPath = getExecutionContext().getValueFactories().getPathFactory().create(newParentPath, newNode.getName());
         Location oldLocation = getActualLocation(request.from().getPath(), node);
-        Location newLocation = new Location(newPath, newNode.getUuid());
+        Location newLocation = Location.create(newPath, newNode.getUuid());
         request.setActualLocations(oldLocation, newLocation);
     }
 
@@ -198,7 +198,7 @@ public class InMemoryRequestProcessor extends RequestProcessor {
         node.setParent(newParent);
         newPath = getExecutionContext().getValueFactories().getPathFactory().create(newParentPath, node.getName());
         Location oldLocation = getActualLocation(request.from().getPath(), node);
-        Location newLocation = new Location(newPath, node.getUuid());
+        Location newLocation = Location.create(newPath, node.getUuid());
         request.setActualLocations(oldLocation, newLocation);
     }
 
@@ -238,7 +238,7 @@ public class InMemoryRequestProcessor extends RequestProcessor {
             request.setError(new InvalidWorkspaceException(msg));
         } else {
             InMemoryNode root = workspace.getRoot();
-            request.setActualRootLocation(new Location(pathFactory.createRootPath(), root.getUuid()));
+            request.setActualRootLocation(Location.create(pathFactory.createRootPath(), root.getUuid()));
             request.setActualWorkspaceName(workspace.getName());
         }
     }
@@ -278,7 +278,7 @@ public class InMemoryRequestProcessor extends RequestProcessor {
         InMemoryRepository.Workspace original = getWorkspace(request, request.workspaceName());
         if (original != null) {
             Path path = getExecutionContext().getValueFactories().getPathFactory().createRootPath();
-            request.setActualRootLocation(new Location(path, original.getRoot().getUuid()));
+            request.setActualRootLocation(Location.create(path, original.getRoot().getUuid()));
             request.setActualWorkspaceName(original.getName());
         }
     }
@@ -310,7 +310,7 @@ public class InMemoryRequestProcessor extends RequestProcessor {
                         request.setError(new InvalidWorkspaceException(msg));
                     } else {
                         InMemoryNode root = target.getRoot();
-                        request.setActualRootLocation(new Location(pathFactory.createRootPath(), root.getUuid()));
+                        request.setActualRootLocation(Location.create(pathFactory.createRootPath(), root.getUuid()));
                         request.setActualWorkspaceName(target.getName());
                     }
                     return;
@@ -328,7 +328,7 @@ public class InMemoryRequestProcessor extends RequestProcessor {
             request.setError(new InvalidWorkspaceException(msg));
         } else {
             InMemoryNode root = target.getRoot();
-            request.setActualRootLocation(new Location(pathFactory.createRootPath(), root.getUuid()));
+            request.setActualRootLocation(Location.create(pathFactory.createRootPath(), root.getUuid()));
             request.setActualWorkspaceName(target.getName());
         }
     }
@@ -346,7 +346,7 @@ public class InMemoryRequestProcessor extends RequestProcessor {
             }
             path = pathFactory.createAbsolutePath(segments);
         }
-        return new Location(path, node.getUuid());
+        return Location.create(path, node.getUuid());
     }
 
     protected InMemoryRepository.Workspace getWorkspace( Request request,

@@ -187,7 +187,7 @@ public class FederatedRepositorySourceIntegrationTest {
             // locations may have more than just paths. So, create a list of actual locations that just have paths ...
             List<Location> actualPathOnlyChildren = new ArrayList<Location>(childLocations.size());
             for (Location actualChild : childLocations) {
-                actualPathOnlyChildren.add(new Location(actualChild.getPath()));
+                actualPathOnlyChildren.add(Location.create(actualChild.getPath()));
             }
             // Now create the array of expected locations (that each contain only a path) ...
             Location[] expectedChildren = new Location[children.length];
@@ -196,7 +196,7 @@ public class FederatedRepositorySourceIntegrationTest {
             for (String child : children) {
                 Path.Segment segment = context.getValueFactories().getPathFactory().createSegment(child);
                 Path childPath = context.getValueFactories().getPathFactory().create(parentPath, segment);
-                expectedChildren[i++] = new Location(childPath);
+                expectedChildren[i++] = Location.create(childPath);
             }
             assertThat(actualPathOnlyChildren, hasItems(expectedChildren));
         }

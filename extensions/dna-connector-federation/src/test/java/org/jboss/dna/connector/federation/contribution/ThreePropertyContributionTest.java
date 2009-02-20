@@ -71,14 +71,14 @@ public class ThreePropertyContributionTest {
         property1 = new BasicSingleValueProperty(new BasicName(nsUri, "property1"), "value1");
         property2 = new BasicSingleValueProperty(new BasicName(nsUri, "property2"), "value2");
         property3 = new BasicSingleValueProperty(new BasicName(nsUri, "property3"), "value3");
-        contribution = new ThreePropertyContribution(sourceName, workspaceName, new Location(pathInSource), expiration,
+        contribution = new ThreePropertyContribution(sourceName, workspaceName, Location.create(pathInSource), expiration,
                                                      property1, property2, property3);
     }
 
     @Test
     public void shouldAllowNullExpiration() {
         expiration = null;
-        contribution = new ThreePropertyContribution(sourceName, workspaceName, new Location(pathInSource), expiration,
+        contribution = new ThreePropertyContribution(sourceName, workspaceName, Location.create(pathInSource), expiration,
                                                      property1, property2, property3);
         assertThat(contribution.getExpirationTimeInUtc(), is(nullValue()));
     }
@@ -86,28 +86,28 @@ public class ThreePropertyContributionTest {
     @Test( expected = IllegalArgumentException.class )
     public void shouldNotAllowExpirationTimeIfNotInUtcTime() {
         expiration = new JodaDateTime(System.currentTimeMillis(), "CST");
-        contribution = new ThreePropertyContribution(sourceName, workspaceName, new Location(pathInSource), expiration,
+        contribution = new ThreePropertyContribution(sourceName, workspaceName, Location.create(pathInSource), expiration,
                                                      property1, property2, property3);
     }
 
     @Test( expected = AssertionError.class )
     public void shouldNotAllowNullFirstProperty() {
         property1 = null;
-        contribution = new ThreePropertyContribution(sourceName, workspaceName, new Location(pathInSource), expiration,
+        contribution = new ThreePropertyContribution(sourceName, workspaceName, Location.create(pathInSource), expiration,
                                                      property1, property2, property3);
     }
 
     @Test( expected = AssertionError.class )
     public void shouldNotAllowNullSecondProperty() {
         property2 = null;
-        contribution = new ThreePropertyContribution(sourceName, workspaceName, new Location(pathInSource), expiration,
+        contribution = new ThreePropertyContribution(sourceName, workspaceName, Location.create(pathInSource), expiration,
                                                      property1, property2, property3);
     }
 
     @Test( expected = AssertionError.class )
     public void shouldNotAllowNullThirdProperty() {
         property3 = null;
-        contribution = new ThreePropertyContribution(sourceName, workspaceName, new Location(pathInSource), expiration,
+        contribution = new ThreePropertyContribution(sourceName, workspaceName, Location.create(pathInSource), expiration,
                                                      property1, property2, property3);
     }
 
@@ -123,7 +123,7 @@ public class ThreePropertyContributionTest {
 
     @Test
     public void shouldNotBeExpiredIfExpirationIsInTheFuture() {
-        contribution = new ThreePropertyContribution(sourceName, workspaceName, new Location(pathInSource), NOW, property1,
+        contribution = new ThreePropertyContribution(sourceName, workspaceName, Location.create(pathInSource), NOW, property1,
                                                      property2, property3);
         assertThat(contribution.isExpired(YESTERDAY), is(false));
         assertThat(contribution.isExpired(TOMORROW), is(true));

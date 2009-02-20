@@ -299,7 +299,7 @@ public class FederatingRequestProcessor extends RequestProcessor {
         FederatedWorkspace workspace = getWorkspace(request, request.workspaceName());
         if (workspace != null) {
             request.setActualWorkspaceName(workspace.getName());
-            Location root = new Location(getExecutionContext().getValueFactories().getPathFactory().createRootPath());
+            Location root = Location.create(getExecutionContext().getValueFactories().getPathFactory().createRootPath());
             ReadNodeRequest nodeInfo = getNode(root, workspace);
             if (nodeInfo.hasError()) return;
             request.setActualRootLocation(nodeInfo.getActualLocationOfNode());
@@ -385,7 +385,7 @@ public class FederatingRequestProcessor extends RequestProcessor {
                     // Load the nodes along the path below the existing ancestor, down to (but excluding) the desired path
                     Path pathToLoad = ancestor;
                     while (!pathToLoad.equals(lowestExistingAncestor)) {
-                        Location locationToLoad = new Location(pathToLoad);
+                        Location locationToLoad = Location.create(pathToLoad);
                         loadContributionsFromSources(locationToLoad, workspace, null, contributions); // sourceNames may be
                         // null or empty
                         FederatedNode mergedNode = createFederatedNode(locationToLoad, workspace, contributions, true);
@@ -584,14 +584,14 @@ public class FederatingRequestProcessor extends RequestProcessor {
                 // use those to figure out the children of the nodes.
                 Contribution contribution = null;
                 List<Path> topLevelPaths = projection.getTopLevelPathsInRepository(pathFactory);
-                Location input = new Location(path);
+                Location input = Location.create(path);
                 switch (topLevelPaths.size()) {
                     case 0:
                         break;
                     case 1: {
                         Path topLevelPath = topLevelPaths.iterator().next();
                         if (path.isAncestorOf(topLevelPath)) {
-                            Location child = new Location(topLevelPath);
+                            Location child = Location.create(topLevelPath);
                             contribution = Contribution.createPlaceholder(source, workspace, input, expirationTime, child);
                         }
                         break;
@@ -601,7 +601,7 @@ public class FederatingRequestProcessor extends RequestProcessor {
                         List<Location> children = new ArrayList<Location>(topLevelPaths.size());
                         for (Path topLevelPath : topLevelPaths) {
                             if (path.isAncestorOf(topLevelPath)) {
-                                children.add(new Location(topLevelPath));
+                                children.add(Location.create(topLevelPath));
                             }
                         }
                         if (children.size() > 0) {
@@ -618,7 +618,7 @@ public class FederatingRequestProcessor extends RequestProcessor {
                 final int numPaths = pathsInSource.size();
                 if (numPaths == 1) {
                     Path pathInSource = pathsInSource.iterator().next();
-                    ReadNodeRequest fromSource = new ReadNodeRequest(new Location(pathInSource), workspace);
+                    ReadNodeRequest fromSource = new ReadNodeRequest(Location.create(pathInSource), workspace);
                     sourceConnection.execute(getExecutionContext(), fromSource);
                     if (!fromSource.hasError()) {
                         Collection<Property> properties = fromSource.getProperties();
@@ -657,7 +657,7 @@ public class FederatingRequestProcessor extends RequestProcessor {
                 } else {
                     List<Request> fromSourceCommands = new ArrayList<Request>(numPaths);
                     for (Path pathInSource : pathsInSource) {
-                        fromSourceCommands.add(new ReadNodeRequest(new Location(pathInSource), workspace));
+                        fromSourceCommands.add(new ReadNodeRequest(Location.create(pathInSource), workspace));
                     }
                     Request request = CompositeRequest.with(fromSourceCommands);
                     sourceConnection.execute(context, request);
@@ -721,7 +721,7 @@ public class FederatingRequestProcessor extends RequestProcessor {
         Name childName = null;
         if (!path.isRoot()) {
             // This is not the root node, so we need to create the node ...
-            final Location parentLocation = new Location(path.getParent());
+            final Location parentLocation = Location.create(path.getParent());
             childName = path.getLastSegment().getName();
             requests.add(new CreateNodeRequest(parentLocation, cacheWorkspace, childName, NodeConflictBehavior.REPLACE,
                                                mergedNode.getProperties()));

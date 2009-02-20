@@ -265,7 +265,7 @@ public class BasicRequestProcessor extends RequestProcessor {
         String parentUuid = null;
         ChildEntity parentEntity = null;
         if (parent == null) {
-            return new Location(pathFactory.createRootPath(), UUID.fromString(childUuid));
+            return Location.create(pathFactory.createRootPath(), UUID.fromString(childUuid));
         }
         parentPath = parent.location.getPath();
         parentUuid = parent.uuid;
@@ -357,7 +357,7 @@ public class BasicRequestProcessor extends RequestProcessor {
 
         // Set the actual path, regardless of the supplied path...
         Path path = pathFactory.create(parentPath, childName, nextSnsIndex);
-        Location actualLocation = new Location(path, UUID.fromString(childUuid));
+        Location actualLocation = Location.create(path, UUID.fromString(childUuid));
 
         // Finally, update the cache with the information we know ...
         if (childrenOfParent != null) {
@@ -515,7 +515,7 @@ public class BasicRequestProcessor extends RequestProcessor {
             int sns = child.getSameNameSiblingIndex();
             Path childPath = pathFactory.create(parentPath, childName, sns);
             String childUuidString = child.getId().getChildUuidString();
-            Location childLocation = new Location(childPath, UUID.fromString(childUuidString));
+            Location childLocation = Location.create(childPath, UUID.fromString(childUuidString));
             childLocations.add(childLocation);
         }
         // Update the cache ...
@@ -572,7 +572,7 @@ public class BasicRequestProcessor extends RequestProcessor {
                     int sns = child.getSameNameSiblingIndex();
                     Path childPath = pathFactory.create(parentPath, childName, sns);
                     String childUuidString = child.getId().getChildUuidString();
-                    Location childLocation = new Location(childPath, UUID.fromString(childUuidString));
+                    Location childLocation = Location.create(childPath, UUID.fromString(childUuidString));
                     request.addChild(childLocation);
                 }
                 // Do not update the cache, since we don't know all of the children.
@@ -668,7 +668,7 @@ public class BasicRequestProcessor extends RequestProcessor {
                         int sns = child.getSameNameSiblingIndex();
                         Path childPath = pathFactory.create(parentPath, childName, sns);
                         String childUuidString = child.getId().getChildUuidString();
-                        Location childLocation = new Location(childPath, UUID.fromString(childUuidString));
+                        Location childLocation = Location.create(childPath, UUID.fromString(childUuidString));
                         request.addChild(childLocation);
                         if (allChildren != null) {
                             // We're going to cache the results, so add this child ...
@@ -1015,7 +1015,7 @@ public class BasicRequestProcessor extends RequestProcessor {
                     assert children != null;
                     Path childPath = pathFactory.create(parent, childName, sns);
                     String childUuidString = child.getId().getChildUuidString();
-                    Location childLocation = new Location(childPath, UUID.fromString(childUuidString));
+                    Location childLocation = Location.create(childPath, UUID.fromString(childUuidString));
                     locationsByUuid.put(childUuidString, childLocation);
                     children.add(childLocation);
                 }
@@ -1285,7 +1285,7 @@ public class BasicRequestProcessor extends RequestProcessor {
                     Map<Location, List<Reference>> invalidRefs = new HashMap<Location, List<Reference>>();
                     for (ReferenceEntity entity : invalidReferences) {
                         UUID fromUuid = UUID.fromString(entity.getId().getFromUuidString());
-                        ActualLocation actualFromLocation = getActualLocation(workspaceId, new Location(fromUuid));
+                        ActualLocation actualFromLocation = getActualLocation(workspaceId, Location.create(fromUuid));
                         Location fromLocation = actualFromLocation.location;
                         List<Reference> refs = invalidRefs.get(fromLocation);
                         if (refs == null) {
@@ -1441,7 +1441,7 @@ public class BasicRequestProcessor extends RequestProcessor {
         if (workspace != null) {
             Long workspaceId = workspace.getId();
             assert workspaceId != null;
-            ActualLocation actual = getActualLocation(workspaceId, new Location(pathFactory.createRootPath()));
+            ActualLocation actual = getActualLocation(workspaceId, Location.create(pathFactory.createRootPath()));
             request.setActualRootLocation(actual.location);
             request.setActualWorkspaceName(workspace.getName());
         }
@@ -1494,7 +1494,7 @@ public class BasicRequestProcessor extends RequestProcessor {
         WorkspaceEntity entity = workspaces.create(name);
         request.setActualWorkspaceName(entity.getName());
         // Create the root node ...
-        Location root = new Location(pathFactory.createRootPath());
+        Location root = Location.create(pathFactory.createRootPath());
         request.setActualRootLocation(getActualLocation(entity.getId(), root).location);
     }
 
@@ -1592,7 +1592,7 @@ public class BasicRequestProcessor extends RequestProcessor {
         }
 
         // Finish up the request ...
-        Location root = new Location(pathFactory.createRootPath(), rootNodeUuid);
+        Location root = Location.create(pathFactory.createRootPath(), rootNodeUuid);
         request.setActualRootLocation(getActualLocation(intoWorkspace.getId(), root).location);
     }
 
@@ -1688,7 +1688,7 @@ public class BasicRequestProcessor extends RequestProcessor {
                     for (ReferenceEntity entity : references) {
                         ReferenceId id = entity.getId();
                         UUID fromUuid = UUID.fromString(id.getFromUuidString());
-                        Location location = new Location(fromUuid);
+                        Location location = Location.create(fromUuid);
                         location = getActualLocation(id.getWorkspaceId(), location).location;
                         List<Reference> refs = invalidRefs.get(location);
                         if (refs == null) {
@@ -1778,7 +1778,7 @@ public class BasicRequestProcessor extends RequestProcessor {
         // See if the reference is by UUID ...
         try {
             UUID uuid = uuidFactory.create(reference);
-            ActualLocation actualLocation = getActualLocation(workspaceId, new Location(uuid));
+            ActualLocation actualLocation = getActualLocation(workspaceId, Location.create(uuid));
             return actualLocation.uuid;
         } catch (ValueFormatException e) {
             // Unknown kind of reference, which we don't track
@@ -1860,7 +1860,7 @@ public class BasicRequestProcessor extends RequestProcessor {
                 }
             }
             Path fullPath = pathFactory.createAbsolutePath(segments);
-            Location newLocation = new Location(fullPath, uuidProperty);
+            Location newLocation = Location.create(fullPath, uuidProperty);
             cache.addNewNode(workspaceId, newLocation);
             return new ActualLocation(newLocation, nodeUuidString, originalEntity);
         }

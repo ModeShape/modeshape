@@ -442,7 +442,7 @@ public class Graph {
      *         be moved
      */
     public Move<Conjunction<Graph>> move( String fromPath ) {
-        return new MoveAction<Conjunction<Graph>>(this.nextGraph, this.requestQueue, new Location(createPath(fromPath)));
+        return new MoveAction<Conjunction<Graph>>(this.nextGraph, this.requestQueue, Location.create(createPath(fromPath)));
     }
 
     /**
@@ -458,7 +458,7 @@ public class Graph {
      *         be moved
      */
     public Move<Conjunction<Graph>> move( Path from ) {
-        return new MoveAction<Conjunction<Graph>>(this.nextGraph, this.requestQueue, new Location(from));
+        return new MoveAction<Conjunction<Graph>>(this.nextGraph, this.requestQueue, Location.create(from));
     }
 
     /**
@@ -474,7 +474,7 @@ public class Graph {
      *         be moved
      */
     public Move<Conjunction<Graph>> move( UUID from ) {
-        return new MoveAction<Conjunction<Graph>>(this.nextGraph, this.requestQueue, new Location(from));
+        return new MoveAction<Conjunction<Graph>>(this.nextGraph, this.requestQueue, Location.create(from));
     }
 
     /**
@@ -491,7 +491,7 @@ public class Graph {
      *         be moved
      */
     public Move<Conjunction<Graph>> move( Property idProperty ) {
-        return new MoveAction<Conjunction<Graph>>(this.nextGraph, this.requestQueue, new Location(idProperty));
+        return new MoveAction<Conjunction<Graph>>(this.nextGraph, this.requestQueue, Location.create(idProperty));
     }
 
     /**
@@ -510,7 +510,7 @@ public class Graph {
      */
     public Move<Conjunction<Graph>> move( Property firstIdProperty,
                                           Property... additionalIdProperties ) {
-        return new MoveAction<Conjunction<Graph>>(this.nextGraph, this.requestQueue, new Location(firstIdProperty,
+        return new MoveAction<Conjunction<Graph>>(this.nextGraph, this.requestQueue, Location.create(firstIdProperty,
                                                                                                   additionalIdProperties));
     }
 
@@ -559,7 +559,7 @@ public class Graph {
      *         be copied
      */
     public Copy<Graph> copy( String fromPath ) {
-        return new CopyAction<Graph>(this, this.requestQueue, new Location(createPath(fromPath)));
+        return new CopyAction<Graph>(this, this.requestQueue, Location.create(createPath(fromPath)));
     }
 
     /**
@@ -575,7 +575,7 @@ public class Graph {
      *         be copied
      */
     public Copy<Graph> copy( Path from ) {
-        return new CopyAction<Graph>(this, this.requestQueue, new Location(from));
+        return new CopyAction<Graph>(this, this.requestQueue, Location.create(from));
     }
 
     /**
@@ -591,7 +591,7 @@ public class Graph {
      *         be copied
      */
     public Copy<Graph> copy( UUID from ) {
-        return new CopyAction<Graph>(this, this.requestQueue, new Location(from));
+        return new CopyAction<Graph>(this, this.requestQueue, Location.create(from));
     }
 
     /**
@@ -608,7 +608,7 @@ public class Graph {
      *         be copied
      */
     public Copy<Graph> copy( Property idProperty ) {
-        return new CopyAction<Graph>(this, this.requestQueue, new Location(idProperty));
+        return new CopyAction<Graph>(this, this.requestQueue, Location.create(idProperty));
     }
 
     /**
@@ -627,7 +627,7 @@ public class Graph {
      */
     public Copy<Graph> copy( Property firstIdProperty,
                              Property... additionalIdProperties ) {
-        return new CopyAction<Graph>(this, this.requestQueue, new Location(firstIdProperty, additionalIdProperties));
+        return new CopyAction<Graph>(this, this.requestQueue, Location.create(firstIdProperty, additionalIdProperties));
     }
 
     /**
@@ -659,7 +659,7 @@ public class Graph {
      * @return an object that may be used to start another request
      */
     public Conjunction<Graph> delete( String atPath ) {
-        this.requestQueue.submit(new DeleteBranchRequest(new Location(createPath(atPath)), getCurrentWorkspaceName()));
+        this.requestQueue.submit(new DeleteBranchRequest(Location.create(createPath(atPath)), getCurrentWorkspaceName()));
         return nextGraph;
     }
 
@@ -670,7 +670,7 @@ public class Graph {
      * @return an object that may be used to start another request
      */
     public Conjunction<Graph> delete( Path at ) {
-        this.requestQueue.submit(new DeleteBranchRequest(new Location(at), getCurrentWorkspaceName()));
+        this.requestQueue.submit(new DeleteBranchRequest(Location.create(at), getCurrentWorkspaceName()));
         return nextGraph;
     }
 
@@ -681,7 +681,7 @@ public class Graph {
      * @return an object that may be used to start another request
      */
     public Conjunction<Graph> delete( UUID at ) {
-        this.requestQueue.submit(new DeleteBranchRequest(new Location(at), getCurrentWorkspaceName()));
+        this.requestQueue.submit(new DeleteBranchRequest(Location.create(at), getCurrentWorkspaceName()));
         return nextGraph;
     }
 
@@ -693,7 +693,7 @@ public class Graph {
      * @return an object that may be used to start another request
      */
     public Conjunction<Graph> delete( Property idProperty ) {
-        this.requestQueue.submit(new DeleteBranchRequest(new Location(idProperty), getCurrentWorkspaceName()));
+        this.requestQueue.submit(new DeleteBranchRequest(Location.create(idProperty), getCurrentWorkspaceName()));
         return nextGraph;
     }
 
@@ -707,7 +707,7 @@ public class Graph {
      */
     public Conjunction<Graph> delete( Property firstIdProperty,
                                       Property... additionalIdProperties ) {
-        this.requestQueue.submit(new DeleteBranchRequest(new Location(firstIdProperty, additionalIdProperties),
+        this.requestQueue.submit(new DeleteBranchRequest(Location.create(firstIdProperty, additionalIdProperties),
                                                          getCurrentWorkspaceName()));
         return nextGraph;
     }
@@ -727,7 +727,7 @@ public class Graph {
         Path at = createPath(atPath);
         Path parent = at.getParent();
         Name child = at.getLastSegment().getName();
-        this.requestQueue.submit(new CreateNodeRequest(new Location(parent), getCurrentWorkspaceName(), child));
+        this.requestQueue.submit(new CreateNodeRequest(Location.create(parent), getCurrentWorkspaceName(), child));
         return nextGraph;
     }
 
@@ -748,7 +748,7 @@ public class Graph {
         Path at = createPath(atPath);
         Path parent = at.getParent();
         Name child = at.getLastSegment().getName();
-        this.requestQueue.submit(new CreateNodeRequest(new Location(parent), getCurrentWorkspaceName(), child, properties));
+        this.requestQueue.submit(new CreateNodeRequest(Location.create(parent), getCurrentWorkspaceName(), child, properties));
         return nextGraph;
     }
 
@@ -767,7 +767,7 @@ public class Graph {
         CheckArg.isNotNull(at, "at");
         Path parent = at.getParent();
         Name child = at.getLastSegment().getName();
-        this.requestQueue.submit(new CreateNodeRequest(new Location(parent), getCurrentWorkspaceName(), child));
+        this.requestQueue.submit(new CreateNodeRequest(Location.create(parent), getCurrentWorkspaceName(), child));
         return nextGraph;
     }
 
@@ -788,7 +788,7 @@ public class Graph {
         CheckArg.isNotNull(at, "at");
         Path parent = at.getParent();
         Name child = at.getLastSegment().getName();
-        this.requestQueue.submit(new CreateNodeRequest(new Location(parent), getCurrentWorkspaceName(), child, properties));
+        this.requestQueue.submit(new CreateNodeRequest(Location.create(parent), getCurrentWorkspaceName(), child, properties));
         return nextGraph;
     }
 
@@ -809,7 +809,7 @@ public class Graph {
         CheckArg.isNotNull(at, "at");
         Path parent = at.getParent();
         Name child = at.getLastSegment().getName();
-        this.requestQueue.submit(new CreateNodeRequest(new Location(parent), getCurrentWorkspaceName(), child, properties));
+        this.requestQueue.submit(new CreateNodeRequest(Location.create(parent), getCurrentWorkspaceName(), child, properties));
         return nextGraph;
     }
 
@@ -870,28 +870,28 @@ public class Graph {
             }
 
             public Conjunction<Graph> on( String path ) {
-                return on(new Location(createPath(path)));
+                return on(Location.create(createPath(path)));
             }
 
             public Conjunction<Graph> on( Path path ) {
-                return on(new Location(path));
+                return on(Location.create(path));
             }
 
             public Conjunction<Graph> on( Property idProperty ) {
-                return on(new Location(idProperty));
+                return on(Location.create(idProperty));
             }
 
             public Conjunction<Graph> on( Property firstIdProperty,
                                           Property... additionalIdProperties ) {
-                return on(new Location(firstIdProperty, additionalIdProperties));
+                return on(Location.create(firstIdProperty, additionalIdProperties));
             }
 
             public Conjunction<Graph> on( Iterable<Property> idProperties ) {
-                return on(new Location(idProperties));
+                return on(Location.create(idProperties));
             }
 
             public Conjunction<Graph> on( UUID uuid ) {
-                return on(new Location(uuid));
+                return on(Location.create(uuid));
             }
         };
     }
@@ -1072,28 +1072,28 @@ public class Graph {
             }
 
             public SetValuesTo<Conjunction<Graph>> on( String path ) {
-                return on(new Location(createPath(path)));
+                return on(Location.create(createPath(path)));
             }
 
             public SetValuesTo<Conjunction<Graph>> on( Path path ) {
-                return on(new Location(path));
+                return on(Location.create(path));
             }
 
             public SetValuesTo<Conjunction<Graph>> on( Property idProperty ) {
-                return on(new Location(idProperty));
+                return on(Location.create(idProperty));
             }
 
             public SetValuesTo<Conjunction<Graph>> on( Property firstIdProperty,
                                                        Property... additionalIdProperties ) {
-                return on(new Location(firstIdProperty, additionalIdProperties));
+                return on(Location.create(firstIdProperty, additionalIdProperties));
             }
 
             public SetValuesTo<Conjunction<Graph>> on( Iterable<Property> idProperties ) {
-                return on(new Location(idProperties));
+                return on(Location.create(idProperties));
             }
 
             public SetValuesTo<Conjunction<Graph>> on( UUID uuid ) {
-                return on(new Location(uuid));
+                return on(Location.create(uuid));
             }
 
             public On<Conjunction<Graph>> to( Node node ) {
@@ -1240,28 +1240,28 @@ public class Graph {
             }
 
             public Conjunction<Graph> on( String path ) {
-                return on(new Location(createPath(path)));
+                return on(Location.create(createPath(path)));
             }
 
             public Conjunction<Graph> on( Path path ) {
-                return on(new Location(path));
+                return on(Location.create(path));
             }
 
             public Conjunction<Graph> on( Property idProperty ) {
-                return on(new Location(idProperty));
+                return on(Location.create(idProperty));
             }
 
             public Conjunction<Graph> on( Property firstIdProperty,
                                           Property... additionalIdProperties ) {
-                return on(new Location(firstIdProperty, additionalIdProperties));
+                return on(Location.create(firstIdProperty, additionalIdProperties));
             }
 
             public Conjunction<Graph> on( Iterable<Property> idProperties ) {
-                return on(new Location(idProperties));
+                return on(Location.create(idProperties));
             }
 
             public Conjunction<Graph> on( UUID uuid ) {
-                return on(new Location(uuid));
+                return on(Location.create(uuid));
             }
         };
     }
@@ -1287,28 +1287,28 @@ public class Graph {
             }
 
             public Conjunction<Graph> on( String path ) {
-                return on(new Location(createPath(path)));
+                return on(Location.create(createPath(path)));
             }
 
             public Conjunction<Graph> on( Path path ) {
-                return on(new Location(path));
+                return on(Location.create(path));
             }
 
             public Conjunction<Graph> on( Property idProperty ) {
-                return on(new Location(idProperty));
+                return on(Location.create(idProperty));
             }
 
             public Conjunction<Graph> on( Property firstIdProperty,
                                           Property... additionalIdProperties ) {
-                return on(new Location(firstIdProperty, additionalIdProperties));
+                return on(Location.create(firstIdProperty, additionalIdProperties));
             }
 
             public Conjunction<Graph> on( Iterable<Property> idProperties ) {
-                return on(new Location(idProperties));
+                return on(Location.create(idProperties));
             }
 
             public Conjunction<Graph> on( UUID uuid ) {
-                return on(new Location(uuid));
+                return on(Location.create(uuid));
             }
         };
     }
@@ -1328,28 +1328,28 @@ public class Graph {
             }
 
             public Collection<Property> on( String path ) {
-                return on(new Location(createPath(path)));
+                return on(Location.create(createPath(path)));
             }
 
             public Collection<Property> on( Path path ) {
-                return on(new Location(path));
+                return on(Location.create(path));
             }
 
             public Collection<Property> on( Property idProperty ) {
-                return on(new Location(idProperty));
+                return on(Location.create(idProperty));
             }
 
             public Collection<Property> on( Property firstIdProperty,
                                             Property... additionalIdProperties ) {
-                return on(new Location(firstIdProperty, additionalIdProperties));
+                return on(Location.create(firstIdProperty, additionalIdProperties));
             }
 
             public Collection<Property> on( Iterable<Property> idProperties ) {
-                return on(new Location(idProperties));
+                return on(Location.create(idProperties));
             }
 
             public Collection<Property> on( UUID uuid ) {
-                return on(new Location(uuid));
+                return on(Location.create(uuid));
             }
         };
     }
@@ -1370,28 +1370,28 @@ public class Graph {
             }
 
             public Map<Name, Property> on( String path ) {
-                return on(new Location(createPath(path)));
+                return on(Location.create(createPath(path)));
             }
 
             public Map<Name, Property> on( Path path ) {
-                return on(new Location(path));
+                return on(Location.create(path));
             }
 
             public Map<Name, Property> on( Property idProperty ) {
-                return on(new Location(idProperty));
+                return on(Location.create(idProperty));
             }
 
             public Map<Name, Property> on( Property firstIdProperty,
                                            Property... additionalIdProperties ) {
-                return on(new Location(firstIdProperty, additionalIdProperties));
+                return on(Location.create(firstIdProperty, additionalIdProperties));
             }
 
             public Map<Name, Property> on( Iterable<Property> idProperties ) {
-                return on(new Location(idProperties));
+                return on(Location.create(idProperties));
             }
 
             public Map<Name, Property> on( UUID uuid ) {
-                return on(new Location(uuid));
+                return on(Location.create(uuid));
             }
         };
     }
@@ -1406,28 +1406,28 @@ public class Graph {
     public Children<List<Location>> getChildren() {
         return new Children<List<Location>>() {
             public List<Location> of( String path ) {
-                return of(new Location(createPath(path)));
+                return of(Location.create(createPath(path)));
             }
 
             public List<Location> of( Path path ) {
-                return of(new Location(path));
+                return of(Location.create(path));
             }
 
             public List<Location> of( Property idProperty ) {
-                return of(new Location(idProperty));
+                return of(Location.create(idProperty));
             }
 
             public List<Location> of( Property firstIdProperty,
                                       Property... additionalIdProperties ) {
-                return of(new Location(firstIdProperty, additionalIdProperties));
+                return of(Location.create(firstIdProperty, additionalIdProperties));
             }
 
             public List<Location> of( Iterable<Property> idProperties ) {
-                return of(new Location(idProperties));
+                return of(Location.create(idProperties));
             }
 
             public List<Location> of( UUID uuid ) {
-                return of(new Location(uuid));
+                return of(Location.create(uuid));
             }
 
             public List<Location> of( Location at ) {
@@ -1441,24 +1441,24 @@ public class Graph {
                     public Under<List<Location>> startingAt( final int startingIndex ) {
                         return new Under<List<Location>>() {
                             public List<Location> under( String path ) {
-                                return under(new Location(createPath(path)));
+                                return under(Location.create(createPath(path)));
                             }
 
                             public List<Location> under( Path path ) {
-                                return under(new Location(path));
+                                return under(Location.create(path));
                             }
 
                             public List<Location> under( Property idProperty ) {
-                                return under(new Location(idProperty));
+                                return under(Location.create(idProperty));
                             }
 
                             public List<Location> under( Property firstIdProperty,
                                                          Property... additionalIdProperties ) {
-                                return under(new Location(firstIdProperty, additionalIdProperties));
+                                return under(Location.create(firstIdProperty, additionalIdProperties));
                             }
 
                             public List<Location> under( UUID uuid ) {
-                                return under(new Location(uuid));
+                                return under(Location.create(uuid));
                             }
 
                             public List<Location> under( Location at ) {
@@ -1480,24 +1480,24 @@ public class Graph {
                     }
 
                     public List<Location> startingAfter( String pathOfPreviousSibling ) {
-                        return startingAfter(new Location(createPath(pathOfPreviousSibling)));
+                        return startingAfter(Location.create(createPath(pathOfPreviousSibling)));
                     }
 
                     public List<Location> startingAfter( Path pathOfPreviousSibling ) {
-                        return startingAfter(new Location(pathOfPreviousSibling));
+                        return startingAfter(Location.create(pathOfPreviousSibling));
                     }
 
                     public List<Location> startingAfter( UUID uuidOfPreviousSibling ) {
-                        return startingAfter(new Location(uuidOfPreviousSibling));
+                        return startingAfter(Location.create(uuidOfPreviousSibling));
                     }
 
                     public List<Location> startingAfter( Property idPropertyOfPreviousSibling ) {
-                        return startingAfter(new Location(idPropertyOfPreviousSibling));
+                        return startingAfter(Location.create(idPropertyOfPreviousSibling));
                     }
 
                     public List<Location> startingAfter( Property firstIdProperyOfPreviousSibling,
                                                          Property... additionalIdPropertiesOfPreviousSibling ) {
-                        return startingAfter(new Location(firstIdProperyOfPreviousSibling,
+                        return startingAfter(Location.create(firstIdProperyOfPreviousSibling,
                                                           additionalIdPropertiesOfPreviousSibling));
                     }
                 };
@@ -1527,28 +1527,28 @@ public class Graph {
     public On<Property> getProperty( final Name name ) {
         return new On<Property>() {
             public Property on( String path ) {
-                return on(new Location(createPath(path)));
+                return on(Location.create(createPath(path)));
             }
 
             public Property on( Path path ) {
-                return on(new Location(path));
+                return on(Location.create(path));
             }
 
             public Property on( Property idProperty ) {
-                return on(new Location(idProperty));
+                return on(Location.create(idProperty));
             }
 
             public Property on( Property firstIdProperty,
                                 Property... additionalIdProperties ) {
-                return on(new Location(firstIdProperty, additionalIdProperties));
+                return on(Location.create(firstIdProperty, additionalIdProperties));
             }
 
             public Property on( Iterable<Property> idProperties ) {
-                return on(new Location(idProperties));
+                return on(Location.create(idProperties));
             }
 
             public Property on( UUID uuid ) {
-                return on(new Location(uuid));
+                return on(Location.create(uuid));
             }
 
             public Property on( Location at ) {
@@ -1566,7 +1566,7 @@ public class Graph {
      * @return the node that is read from the repository
      */
     public Node getNodeAt( UUID uuid ) {
-        return getNodeAt(new Location(uuid));
+        return getNodeAt(Location.create(uuid));
     }
 
     /**
@@ -1588,7 +1588,7 @@ public class Graph {
      * @return the node that is read from the repository
      */
     public Node getNodeAt( String path ) {
-        return getNodeAt(new Location(createPath(path)));
+        return getNodeAt(Location.create(createPath(path)));
     }
 
     /**
@@ -1598,7 +1598,7 @@ public class Graph {
      * @return the node that is read from the repository
      */
     public Node getNodeAt( Path path ) {
-        return getNodeAt(new Location(path));
+        return getNodeAt(Location.create(path));
     }
 
     /**
@@ -1608,7 +1608,7 @@ public class Graph {
      * @return the node that is read from the repository
      */
     public Node getNodeAt( Property idProperty ) {
-        return getNodeAt(new Location(idProperty));
+        return getNodeAt(Location.create(idProperty));
     }
 
     /**
@@ -1620,7 +1620,7 @@ public class Graph {
      */
     public Node getNodeAt( Property firstIdProperty,
                            Property... additionalIdProperties ) {
-        return getNodeAt(new Location(firstIdProperty, additionalIdProperties));
+        return getNodeAt(Location.create(firstIdProperty, additionalIdProperties));
     }
 
     /**
@@ -1630,7 +1630,7 @@ public class Graph {
      * @return the node that is read from the repository
      */
     public Node getNodeAt( Iterable<Property> idProperties ) {
-        return getNodeAt(new Location(idProperties));
+        return getNodeAt(Location.create(idProperties));
     }
 
     /**
@@ -1664,28 +1664,28 @@ public class Graph {
             }
 
             public Subgraph at( String path ) {
-                return at(new Location(createPath(path)));
+                return at(Location.create(createPath(path)));
             }
 
             public Subgraph at( Path path ) {
-                return at(new Location(path));
+                return at(Location.create(path));
             }
 
             public Subgraph at( UUID uuid ) {
-                return at(new Location(uuid));
+                return at(Location.create(uuid));
             }
 
             public Subgraph at( Property idProperty ) {
-                return at(new Location(idProperty));
+                return at(Location.create(idProperty));
             }
 
             public Subgraph at( Property firstIdProperty,
                                 Property... additionalIdProperties ) {
-                return at(new Location(firstIdProperty, additionalIdProperties));
+                return at(Location.create(firstIdProperty, additionalIdProperties));
             }
 
             public Subgraph at( Iterable<Property> idProperties ) {
-                return at(new Location(idProperties));
+                return at(Location.create(idProperties));
             }
         };
     }
@@ -1708,28 +1708,28 @@ public class Graph {
             }
 
             public Conjunction<Graph> into( String path ) throws IOException, SAXException {
-                return into(new Location(createPath(path)));
+                return into(Location.create(createPath(path)));
             }
 
             public Conjunction<Graph> into( Path path ) throws IOException, SAXException {
-                return into(new Location(path));
+                return into(Location.create(path));
             }
 
             public Conjunction<Graph> into( Property idProperty ) throws IOException, SAXException {
-                return into(new Location(idProperty));
+                return into(Location.create(idProperty));
             }
 
             public Conjunction<Graph> into( Property firstIdProperty,
                                             Property... additionalIdProperties ) throws IOException, SAXException {
-                return into(new Location(firstIdProperty, additionalIdProperties));
+                return into(Location.create(firstIdProperty, additionalIdProperties));
             }
 
             public Conjunction<Graph> into( Iterable<Property> idProperties ) throws IOException, SAXException {
-                return into(new Location(idProperties));
+                return into(Location.create(idProperties));
             }
 
             public Conjunction<Graph> into( UUID uuid ) throws IOException, SAXException {
-                return into(new Location(uuid));
+                return into(Location.create(uuid));
             }
 
             @SuppressWarnings( "synthetic-access" )
@@ -1892,7 +1892,7 @@ public class Graph {
          */
         public Move<BatchConjunction> move( String fromPath ) {
             assertNotExecuted();
-            return new MoveAction<BatchConjunction>(this.nextRequests, this.requestQueue, new Location(createPath(fromPath)));
+            return new MoveAction<BatchConjunction>(this.nextRequests, this.requestQueue, Location.create(createPath(fromPath)));
         }
 
         /**
@@ -1909,7 +1909,7 @@ public class Graph {
          */
         public Move<BatchConjunction> move( Path from ) {
             assertNotExecuted();
-            return new MoveAction<BatchConjunction>(this.nextRequests, this.requestQueue, new Location(from));
+            return new MoveAction<BatchConjunction>(this.nextRequests, this.requestQueue, Location.create(from));
         }
 
         /**
@@ -1926,7 +1926,7 @@ public class Graph {
          */
         public Move<BatchConjunction> move( UUID from ) {
             assertNotExecuted();
-            return new MoveAction<BatchConjunction>(this.nextRequests, this.requestQueue, new Location(from));
+            return new MoveAction<BatchConjunction>(this.nextRequests, this.requestQueue, Location.create(from));
         }
 
         /**
@@ -1944,7 +1944,7 @@ public class Graph {
          */
         public Move<BatchConjunction> move( Property idProperty ) {
             assertNotExecuted();
-            return new MoveAction<BatchConjunction>(this.nextRequests, this.requestQueue, new Location(idProperty));
+            return new MoveAction<BatchConjunction>(this.nextRequests, this.requestQueue, Location.create(idProperty));
         }
 
         /**
@@ -1964,7 +1964,7 @@ public class Graph {
         public Move<BatchConjunction> move( Property firstIdProperty,
                                             Property... additionalIdProperties ) {
             assertNotExecuted();
-            return new MoveAction<BatchConjunction>(this.nextRequests, this.requestQueue, new Location(firstIdProperty,
+            return new MoveAction<BatchConjunction>(this.nextRequests, this.requestQueue, Location.create(firstIdProperty,
                                                                                                        additionalIdProperties));
         }
 
@@ -1983,7 +1983,7 @@ public class Graph {
          */
         public Move<BatchConjunction> move( Iterable<Property> idProperties ) {
             assertNotExecuted();
-            return new MoveAction<BatchConjunction>(this.nextRequests, this.requestQueue, new Location(idProperties));
+            return new MoveAction<BatchConjunction>(this.nextRequests, this.requestQueue, Location.create(idProperties));
         }
 
         /**
@@ -2034,7 +2034,7 @@ public class Graph {
          */
         public Copy<BatchConjunction> copy( String fromPath ) {
             assertNotExecuted();
-            return new CopyAction<BatchConjunction>(nextRequests, this.requestQueue, new Location(createPath(fromPath)));
+            return new CopyAction<BatchConjunction>(nextRequests, this.requestQueue, Location.create(createPath(fromPath)));
         }
 
         /**
@@ -2051,7 +2051,7 @@ public class Graph {
          */
         public Copy<BatchConjunction> copy( Path from ) {
             assertNotExecuted();
-            return new CopyAction<BatchConjunction>(nextRequests, this.requestQueue, new Location(from));
+            return new CopyAction<BatchConjunction>(nextRequests, this.requestQueue, Location.create(from));
         }
 
         /**
@@ -2068,7 +2068,7 @@ public class Graph {
          */
         public Copy<BatchConjunction> copy( UUID from ) {
             assertNotExecuted();
-            return new CopyAction<BatchConjunction>(nextRequests, this.requestQueue, new Location(from));
+            return new CopyAction<BatchConjunction>(nextRequests, this.requestQueue, Location.create(from));
         }
 
         /**
@@ -2086,7 +2086,7 @@ public class Graph {
          */
         public Copy<BatchConjunction> copy( Property idProperty ) {
             assertNotExecuted();
-            return new CopyAction<BatchConjunction>(nextRequests, this.requestQueue, new Location(idProperty));
+            return new CopyAction<BatchConjunction>(nextRequests, this.requestQueue, Location.create(idProperty));
         }
 
         /**
@@ -2106,7 +2106,7 @@ public class Graph {
         public Copy<BatchConjunction> copy( Property firstIdProperty,
                                             Property... additionalIdProperties ) {
             assertNotExecuted();
-            return new CopyAction<BatchConjunction>(nextRequests, this.requestQueue, new Location(firstIdProperty,
+            return new CopyAction<BatchConjunction>(nextRequests, this.requestQueue, Location.create(firstIdProperty,
                                                                                                   additionalIdProperties));
         }
 
@@ -2125,7 +2125,7 @@ public class Graph {
          */
         public Copy<BatchConjunction> copy( Iterable<Property> idProperties ) {
             assertNotExecuted();
-            return new CopyAction<BatchConjunction>(nextRequests, this.requestQueue, new Location(idProperties));
+            return new CopyAction<BatchConjunction>(nextRequests, this.requestQueue, Location.create(idProperties));
         }
 
         /**
@@ -2172,7 +2172,7 @@ public class Graph {
          */
         public BatchConjunction delete( String atPath ) {
             assertNotExecuted();
-            this.requestQueue.submit(new DeleteBranchRequest(new Location(createPath(atPath)), getCurrentWorkspaceName()));
+            this.requestQueue.submit(new DeleteBranchRequest(Location.create(createPath(atPath)), getCurrentWorkspaceName()));
             return nextRequests;
         }
 
@@ -2188,7 +2188,7 @@ public class Graph {
          */
         public BatchConjunction delete( Path at ) {
             assertNotExecuted();
-            this.requestQueue.submit(new DeleteBranchRequest(new Location(at), getCurrentWorkspaceName()));
+            this.requestQueue.submit(new DeleteBranchRequest(Location.create(at), getCurrentWorkspaceName()));
             return nextRequests;
         }
 
@@ -2204,7 +2204,7 @@ public class Graph {
          */
         public BatchConjunction delete( UUID at ) {
             assertNotExecuted();
-            this.requestQueue.submit(new DeleteBranchRequest(new Location(at), getCurrentWorkspaceName()));
+            this.requestQueue.submit(new DeleteBranchRequest(Location.create(at), getCurrentWorkspaceName()));
             return nextRequests;
         }
 
@@ -2220,7 +2220,7 @@ public class Graph {
          */
         public BatchConjunction delete( Property idProperty ) {
             assertNotExecuted();
-            this.requestQueue.submit(new DeleteBranchRequest(new Location(idProperty), getCurrentWorkspaceName()));
+            this.requestQueue.submit(new DeleteBranchRequest(Location.create(idProperty), getCurrentWorkspaceName()));
             return nextRequests;
         }
 
@@ -2239,7 +2239,7 @@ public class Graph {
         public BatchConjunction delete( Property firstIdProperty,
                                         Property... additionalIdProperties ) {
             assertNotExecuted();
-            this.requestQueue.submit(new DeleteBranchRequest(new Location(firstIdProperty, additionalIdProperties),
+            this.requestQueue.submit(new DeleteBranchRequest(Location.create(firstIdProperty, additionalIdProperties),
                                                              getCurrentWorkspaceName()));
             return nextRequests;
         }
@@ -2257,7 +2257,7 @@ public class Graph {
          */
         public BatchConjunction delete( Iterable<Property> idProperties ) {
             assertNotExecuted();
-            this.requestQueue.submit(new DeleteBranchRequest(new Location(idProperties), getCurrentWorkspaceName()));
+            this.requestQueue.submit(new DeleteBranchRequest(Location.create(idProperties), getCurrentWorkspaceName()));
             return nextRequests;
         }
 
@@ -2277,7 +2277,7 @@ public class Graph {
             Path at = createPath(atPath);
             Path parent = at.getParent();
             Name name = at.getLastSegment().getName();
-            return new CreateAction<Batch>(this, requestQueue, new Location(parent), getCurrentWorkspaceName(), name);
+            return new CreateAction<Batch>(this, requestQueue, Location.create(parent), getCurrentWorkspaceName(), name);
         }
 
         /**
@@ -2298,7 +2298,7 @@ public class Graph {
             Path at = createPath(atPath);
             Path parent = at.getParent();
             Name name = at.getLastSegment().getName();
-            return new CreateAction<Batch>(this, requestQueue, new Location(parent), getCurrentWorkspaceName(), name).with(property);
+            return new CreateAction<Batch>(this, requestQueue, Location.create(parent), getCurrentWorkspaceName(), name).with(property);
         }
 
         /**
@@ -2321,7 +2321,7 @@ public class Graph {
             Path at = createPath(atPath);
             Path parent = at.getParent();
             Name name = at.getLastSegment().getName();
-            return new CreateAction<Batch>(this, requestQueue, new Location(parent), getCurrentWorkspaceName(), name).with(firstProperty,
+            return new CreateAction<Batch>(this, requestQueue, Location.create(parent), getCurrentWorkspaceName(), name).with(firstProperty,
                                                                                                                            additionalProperties);
         }
 
@@ -2341,7 +2341,7 @@ public class Graph {
             CheckArg.isNotNull(at, "at");
             Path parent = at.getParent();
             Name name = at.getLastSegment().getName();
-            return new CreateAction<Batch>(this, requestQueue, new Location(parent), getCurrentWorkspaceName(), name);
+            return new CreateAction<Batch>(this, requestQueue, Location.create(parent), getCurrentWorkspaceName(), name);
         }
 
         /**
@@ -2362,7 +2362,7 @@ public class Graph {
             CheckArg.isNotNull(at, "at");
             Path parent = at.getParent();
             Name name = at.getLastSegment().getName();
-            CreateAction<Batch> action = new CreateAction<Batch>(this, requestQueue, new Location(parent),
+            CreateAction<Batch> action = new CreateAction<Batch>(this, requestQueue, Location.create(parent),
                                                                  getCurrentWorkspaceName(), name);
             for (Property property : properties) {
                 action.and(property);
@@ -2388,7 +2388,7 @@ public class Graph {
             CheckArg.isNotNull(at, "at");
             Path parent = at.getParent();
             Name name = at.getLastSegment().getName();
-            return new CreateAction<Batch>(this, requestQueue, new Location(parent), getCurrentWorkspaceName(), name).with(property);
+            return new CreateAction<Batch>(this, requestQueue, Location.create(parent), getCurrentWorkspaceName(), name).with(property);
         }
 
         /**
@@ -2411,7 +2411,7 @@ public class Graph {
             CheckArg.isNotNull(at, "at");
             Path parent = at.getParent();
             Name name = at.getLastSegment().getName();
-            return new CreateAction<Batch>(this, requestQueue, new Location(parent), getCurrentWorkspaceName(), name).with(firstProperty,
+            return new CreateAction<Batch>(this, requestQueue, Location.create(parent), getCurrentWorkspaceName(), name).with(firstProperty,
                                                                                                                            additionalProperties);
         }
 
@@ -2442,28 +2442,28 @@ public class Graph {
                 }
 
                 public BatchConjunction on( String path ) {
-                    return on(new Location(createPath(path)));
+                    return on(Location.create(createPath(path)));
                 }
 
                 public BatchConjunction on( Path path ) {
-                    return on(new Location(path));
+                    return on(Location.create(path));
                 }
 
                 public BatchConjunction on( Property idProperty ) {
-                    return on(new Location(idProperty));
+                    return on(Location.create(idProperty));
                 }
 
                 public BatchConjunction on( Property firstIdProperty,
                                             Property... additionalIdProperties ) {
-                    return on(new Location(firstIdProperty, additionalIdProperties));
+                    return on(Location.create(firstIdProperty, additionalIdProperties));
                 }
 
                 public BatchConjunction on( Iterable<Property> idProperties ) {
-                    return on(new Location(idProperties));
+                    return on(Location.create(idProperties));
                 }
 
                 public BatchConjunction on( UUID uuid ) {
-                    return on(new Location(uuid));
+                    return on(Location.create(uuid));
                 }
             };
         }
@@ -2644,28 +2644,28 @@ public class Graph {
                 }
 
                 public SetValuesTo<BatchConjunction> on( String path ) {
-                    return on(new Location(createPath(path)));
+                    return on(Location.create(createPath(path)));
                 }
 
                 public SetValuesTo<BatchConjunction> on( Path path ) {
-                    return on(new Location(path));
+                    return on(Location.create(path));
                 }
 
                 public SetValuesTo<BatchConjunction> on( Property idProperty ) {
-                    return on(new Location(idProperty));
+                    return on(Location.create(idProperty));
                 }
 
                 public SetValuesTo<BatchConjunction> on( Property firstIdProperty,
                                                          Property... additionalIdProperties ) {
-                    return on(new Location(firstIdProperty, additionalIdProperties));
+                    return on(Location.create(firstIdProperty, additionalIdProperties));
                 }
 
                 public SetValuesTo<BatchConjunction> on( Iterable<Property> idProperties ) {
-                    return on(new Location(idProperties));
+                    return on(Location.create(idProperties));
                 }
 
                 public SetValuesTo<BatchConjunction> on( UUID uuid ) {
-                    return on(new Location(uuid));
+                    return on(Location.create(uuid));
                 }
 
                 public On<BatchConjunction> to( Node value ) {
@@ -2812,28 +2812,28 @@ public class Graph {
                 }
 
                 public BatchConjunction on( String path ) {
-                    return on(new Location(createPath(path)));
+                    return on(Location.create(createPath(path)));
                 }
 
                 public BatchConjunction on( Path path ) {
-                    return on(new Location(path));
+                    return on(Location.create(path));
                 }
 
                 public BatchConjunction on( Property idProperty ) {
-                    return on(new Location(idProperty));
+                    return on(Location.create(idProperty));
                 }
 
                 public BatchConjunction on( Property firstIdProperty,
                                             Property... additionalIdProperties ) {
-                    return on(new Location(firstIdProperty, additionalIdProperties));
+                    return on(Location.create(firstIdProperty, additionalIdProperties));
                 }
 
                 public BatchConjunction on( Iterable<Property> idProperties ) {
-                    return on(new Location(idProperties));
+                    return on(Location.create(idProperties));
                 }
 
                 public BatchConjunction on( UUID uuid ) {
-                    return on(new Location(uuid));
+                    return on(Location.create(uuid));
                 }
             };
         }
@@ -2858,28 +2858,28 @@ public class Graph {
                 }
 
                 public BatchConjunction on( String path ) {
-                    return on(new Location(createPath(path)));
+                    return on(Location.create(createPath(path)));
                 }
 
                 public BatchConjunction on( Path path ) {
-                    return on(new Location(path));
+                    return on(Location.create(path));
                 }
 
                 public BatchConjunction on( Property idProperty ) {
-                    return on(new Location(idProperty));
+                    return on(Location.create(idProperty));
                 }
 
                 public BatchConjunction on( Property firstIdProperty,
                                             Property... additionalIdProperties ) {
-                    return on(new Location(firstIdProperty, additionalIdProperties));
+                    return on(Location.create(firstIdProperty, additionalIdProperties));
                 }
 
                 public BatchConjunction on( Iterable<Property> idProperties ) {
-                    return on(new Location(idProperties));
+                    return on(Location.create(idProperties));
                 }
 
                 public BatchConjunction on( UUID uuid ) {
-                    return on(new Location(uuid));
+                    return on(Location.create(uuid));
                 }
             };
         }
@@ -2895,7 +2895,7 @@ public class Graph {
          * @return the interface that can either execute the batched requests or continue to add additional requests to the batch
          */
         public BatchConjunction read( UUID uuid ) {
-            return read(new Location(uuid));
+            return read(Location.create(uuid));
         }
 
         /**
@@ -2926,7 +2926,7 @@ public class Graph {
          * @return the interface that can either execute the batched requests or continue to add additional requests to the batch
          */
         public BatchConjunction read( String path ) {
-            return read(new Location(createPath(path)));
+            return read(Location.create(createPath(path)));
         }
 
         /**
@@ -2940,7 +2940,7 @@ public class Graph {
          * @return the interface that can either execute the batched requests or continue to add additional requests to the batch
          */
         public BatchConjunction read( Path path ) {
-            return read(new Location(path));
+            return read(Location.create(path));
         }
 
         /**
@@ -2954,7 +2954,7 @@ public class Graph {
          * @return the interface that can either execute the batched requests or continue to add additional requests to the batch
          */
         public BatchConjunction read( Property idProperty ) {
-            return read(new Location(idProperty));
+            return read(Location.create(idProperty));
         }
 
         /**
@@ -2971,7 +2971,7 @@ public class Graph {
          */
         public BatchConjunction read( Property firstIdProperty,
                                       Property... additionalIdProperties ) {
-            return read(new Location(firstIdProperty, additionalIdProperties));
+            return read(Location.create(firstIdProperty, additionalIdProperties));
         }
 
         /**
@@ -2985,7 +2985,7 @@ public class Graph {
          * @return the interface that can either execute the batched requests or continue to add additional requests to the batch
          */
         public BatchConjunction read( Iterable<Property> idProperties ) {
-            return read(new Location(idProperties));
+            return read(Location.create(idProperties));
         }
 
         /**
@@ -3020,28 +3020,28 @@ public class Graph {
             assertNotExecuted();
             return new On<BatchConjunction>() {
                 public BatchConjunction on( String path ) {
-                    return on(new Location(createPath(path)));
+                    return on(Location.create(createPath(path)));
                 }
 
                 public BatchConjunction on( Path path ) {
-                    return on(new Location(path));
+                    return on(Location.create(path));
                 }
 
                 public BatchConjunction on( Property idProperty ) {
-                    return on(new Location(idProperty));
+                    return on(Location.create(idProperty));
                 }
 
                 public BatchConjunction on( Property firstIdProperty,
                                             Property... additionalIdProperties ) {
-                    return on(new Location(firstIdProperty, additionalIdProperties));
+                    return on(Location.create(firstIdProperty, additionalIdProperties));
                 }
 
                 public BatchConjunction on( Iterable<Property> idProperties ) {
-                    return on(new Location(idProperties));
+                    return on(Location.create(idProperties));
                 }
 
                 public BatchConjunction on( UUID uuid ) {
-                    return on(new Location(uuid));
+                    return on(Location.create(uuid));
                 }
 
                 public BatchConjunction on( Location at ) {
@@ -3072,28 +3072,28 @@ public class Graph {
                 }
 
                 public BatchConjunction on( String path ) {
-                    return on(new Location(createPath(path)));
+                    return on(Location.create(createPath(path)));
                 }
 
                 public BatchConjunction on( Path path ) {
-                    return on(new Location(path));
+                    return on(Location.create(path));
                 }
 
                 public BatchConjunction on( Property idProperty ) {
-                    return on(new Location(idProperty));
+                    return on(Location.create(idProperty));
                 }
 
                 public BatchConjunction on( Property firstIdProperty,
                                             Property... additionalIdProperties ) {
-                    return on(new Location(firstIdProperty, additionalIdProperties));
+                    return on(Location.create(firstIdProperty, additionalIdProperties));
                 }
 
                 public BatchConjunction on( Iterable<Property> idProperties ) {
-                    return on(new Location(idProperties));
+                    return on(Location.create(idProperties));
                 }
 
                 public BatchConjunction on( UUID uuid ) {
-                    return on(new Location(uuid));
+                    return on(Location.create(uuid));
                 }
             };
         }
@@ -3112,28 +3112,28 @@ public class Graph {
             assertNotExecuted();
             return new Of<BatchConjunction>() {
                 public BatchConjunction of( String path ) {
-                    return of(new Location(createPath(path)));
+                    return of(Location.create(createPath(path)));
                 }
 
                 public BatchConjunction of( Path path ) {
-                    return of(new Location(path));
+                    return of(Location.create(path));
                 }
 
                 public BatchConjunction of( Property idProperty ) {
-                    return of(new Location(idProperty));
+                    return of(Location.create(idProperty));
                 }
 
                 public BatchConjunction of( Property firstIdProperty,
                                             Property... additionalIdProperties ) {
-                    return of(new Location(firstIdProperty, additionalIdProperties));
+                    return of(Location.create(firstIdProperty, additionalIdProperties));
                 }
 
                 public BatchConjunction of( Iterable<Property> idProperties ) {
-                    return of(new Location(idProperties));
+                    return of(Location.create(idProperties));
                 }
 
                 public BatchConjunction of( UUID uuid ) {
-                    return of(new Location(uuid));
+                    return of(Location.create(uuid));
                 }
 
                 public BatchConjunction of( Location at ) {
@@ -3165,28 +3165,28 @@ public class Graph {
                 }
 
                 public BatchConjunction at( String path ) {
-                    return at(new Location(createPath(path)));
+                    return at(Location.create(createPath(path)));
                 }
 
                 public BatchConjunction at( Path path ) {
-                    return at(new Location(path));
+                    return at(Location.create(path));
                 }
 
                 public BatchConjunction at( UUID uuid ) {
-                    return at(new Location(uuid));
+                    return at(Location.create(uuid));
                 }
 
                 public BatchConjunction at( Property idProperty ) {
-                    return at(new Location(idProperty));
+                    return at(Location.create(idProperty));
                 }
 
                 public BatchConjunction at( Property firstIdProperty,
                                             Property... additionalIdProperties ) {
-                    return at(new Location(firstIdProperty, additionalIdProperties));
+                    return at(Location.create(firstIdProperty, additionalIdProperties));
                 }
 
                 public BatchConjunction at( Iterable<Property> idProperties ) {
-                    return at(new Location(idProperties));
+                    return at(Location.create(idProperties));
                 }
             };
         }
@@ -3384,7 +3384,7 @@ public class Graph {
      */
     public interface To<Next> {
         /**
-         * Finish the request by specifying the new location where the node should be copied/moved. Unlike
+         * Finish the request by specifying the Location.create where the node should be copied/moved. Unlike
          * {@link Into#into(Location)}, which specifies the location of the parent and which assumes the new node should have the
          * same name as the original, this method allows the caller to specify a new name for the new node.
          * 
@@ -3395,7 +3395,7 @@ public class Graph {
         Next to( Location desiredLocation );
 
         /**
-         * Finish the request by specifying the new location where the node should be copied/moved. Unlike
+         * Finish the request by specifying the Location.create where the node should be copied/moved. Unlike
          * {@link Into#into(String)}, which specifies the location of the parent and which assumes the new node should have the
          * same name as the original, this method allows the caller to specify a new name for the new node.
          * 
@@ -3406,7 +3406,7 @@ public class Graph {
         Next to( String desiredPath );
 
         /**
-         * Finish the request by specifying the new location where the node should be copied/moved. Unlike {@link Into#into(Path)}
+         * Finish the request by specifying the Location.create where the node should be copied/moved. Unlike {@link Into#into(Path)}
          * , which specifies the location of the parent and which assumes the new node should have the same name as the original,
          * this method allows the caller to specify a new name for the new node.
          * 
@@ -4284,7 +4284,7 @@ public class Graph {
         ImportInto<Next> skippingRootElement( boolean skip );
 
         /**
-         * Finish the import by specifying the new location into which the node should be copied/moved.
+         * Finish the import by specifying the Location.create into which the node should be copied/moved.
          * 
          * @param to the location of the new parent
          * @return the interface for additional requests or actions
@@ -4294,7 +4294,7 @@ public class Graph {
         Next into( Location to ) throws IOException, SAXException;
 
         /**
-         * Finish the import by specifying the new location into which the node should be copied/moved.
+         * Finish the import by specifying the Location.create into which the node should be copied/moved.
          * 
          * @param toPath the path of the new parent
          * @return the interface for additional requests or actions
@@ -4304,7 +4304,7 @@ public class Graph {
         Next into( String toPath ) throws IOException, SAXException;
 
         /**
-         * Finish the import by specifying the new location into which the node should be copied/moved.
+         * Finish the import by specifying the Location.create into which the node should be copied/moved.
          * 
          * @param to the path of the new parent
          * @return the interface for additional requests or actions
@@ -4314,7 +4314,7 @@ public class Graph {
         Next into( Path to ) throws IOException, SAXException;
 
         /**
-         * Finish the import by specifying the new location into which the node should be copied/moved.
+         * Finish the import by specifying the Location.create into which the node should be copied/moved.
          * 
          * @param to the UUID of the new parent
          * @return the interface for additional requests or actions
@@ -4324,7 +4324,7 @@ public class Graph {
         Next into( UUID to ) throws IOException, SAXException;
 
         /**
-         * Finish the import by specifying the new location into which the node should be copied/moved.
+         * Finish the import by specifying the Location.create into which the node should be copied/moved.
          * 
          * @param idProperty the property that uniquely identifies the new parent
          * @return the interface for additional requests or actions
@@ -4334,7 +4334,7 @@ public class Graph {
         Next into( Property idProperty ) throws IOException, SAXException;
 
         /**
-         * Finish the import by specifying the new location into which the node should be copied/moved.
+         * Finish the import by specifying the Location.create into which the node should be copied/moved.
          * 
          * @param firstIdProperty the first property that, with the <code>additionalIdProperties</code>, uniquely identifies the
          *        new parent
@@ -4348,7 +4348,7 @@ public class Graph {
                    Property... additionalIdProperties ) throws IOException, SAXException;
 
         /**
-         * Finish the import by specifying the new location into which the node should be copied/moved.
+         * Finish the import by specifying the Location.create into which the node should be copied/moved.
          * 
          * @param idProperties the properties that uniquely identifies the new parent
          * @return the interface for additional requests or actions
@@ -4985,33 +4985,33 @@ public class Graph {
         }
 
         public Move<T> and( String from ) {
-            this.from.add(new Location(createPath(from)));
+            this.from.add(Location.create(createPath(from)));
             return this;
         }
 
         public Move<T> and( Path from ) {
-            this.from.add(new Location(from));
+            this.from.add(Location.create(from));
             return this;
         }
 
         public Move<T> and( Property firstFrom,
                             Property... additionalFroms ) {
-            this.from.add(new Location(firstFrom, additionalFroms));
+            this.from.add(Location.create(firstFrom, additionalFroms));
             return this;
         }
 
         public Move<T> and( Iterable<Property> idPropertiesFrom ) {
-            this.from.add(new Location(idPropertiesFrom));
+            this.from.add(Location.create(idPropertiesFrom));
             return this;
         }
 
         public Move<T> and( Property from ) {
-            this.from.add(new Location(from));
+            this.from.add(Location.create(from));
             return this;
         }
 
         public Move<T> and( UUID from ) {
-            this.from.add(new Location(from));
+            this.from.add(Location.create(from));
             return this;
         }
 
@@ -5043,24 +5043,24 @@ public class Graph {
         }
 
         public T into( Path into ) {
-            return submit(new Location(into));
+            return submit(Location.create(into));
         }
 
         public T into( UUID into ) {
-            return submit(new Location(into));
+            return submit(Location.create(into));
         }
 
         public T into( Property firstIdProperty,
                        Property... additionalIdProperties ) {
-            return submit(new Location(firstIdProperty, additionalIdProperties));
+            return submit(Location.create(firstIdProperty, additionalIdProperties));
         }
 
         public T into( Property into ) {
-            return submit(new Location(into));
+            return submit(Location.create(into));
         }
 
         public T into( String into ) {
-            return submit(new Location(createPath(into)));
+            return submit(Location.create(createPath(into)));
         }
 
         @Override
@@ -5086,33 +5086,33 @@ public class Graph {
         }
 
         public Copy<T> and( String from ) {
-            this.from.add(new Location(createPath(from)));
+            this.from.add(Location.create(createPath(from)));
             return this;
         }
 
         public Copy<T> and( Path from ) {
-            this.from.add(new Location(from));
+            this.from.add(Location.create(from));
             return this;
         }
 
         public Copy<T> and( Property firstFrom,
                             Property... additionalFroms ) {
-            this.from.add(new Location(firstFrom, additionalFroms));
+            this.from.add(Location.create(firstFrom, additionalFroms));
             return this;
         }
 
         public Copy<T> and( Iterable<Property> idProperties ) {
-            this.from.add(new Location(idProperties));
+            this.from.add(Location.create(idProperties));
             return this;
         }
 
         public Copy<T> and( Property from ) {
-            this.from.add(new Location(from));
+            this.from.add(Location.create(from));
             return this;
         }
 
         public Copy<T> and( UUID from ) {
-            this.from.add(new Location(from));
+            this.from.add(Location.create(from));
             return this;
         }
 
@@ -5146,24 +5146,24 @@ public class Graph {
         }
 
         public T into( Path into ) {
-            return submit(new Location(into), null);
+            return submit(Location.create(into), null);
         }
 
         public T into( UUID into ) {
-            return submit(new Location(into), null);
+            return submit(Location.create(into), null);
         }
 
         public T into( Property firstIdProperty,
                        Property... additionalIdProperties ) {
-            return submit(new Location(firstIdProperty, additionalIdProperties), null);
+            return submit(Location.create(firstIdProperty, additionalIdProperties), null);
         }
 
         public T into( Property into ) {
-            return submit(new Location(into), null);
+            return submit(Location.create(into), null);
         }
 
         public T into( String into ) {
-            return submit(new Location(createPath(into)), null);
+            return submit(Location.create(createPath(into)), null);
         }
 
         public T to( Location desiredLocation ) {
@@ -5175,7 +5175,7 @@ public class Graph {
                 throw new IllegalArgumentException(GraphI18n.unableToCopyToTheRoot.text(this.from, desiredLocation));
             }
             Path parent = desiredPath.getParent();
-            return submit(new Location(parent), desiredPath.getLastSegment().getName());
+            return submit(Location.create(parent), desiredPath.getLastSegment().getName());
         }
 
         public T to( Path desiredPath ) {
@@ -5183,7 +5183,7 @@ public class Graph {
                 throw new IllegalArgumentException(GraphI18n.unableToCopyToTheRoot.text(this.from, desiredPath));
             }
             Path parent = desiredPath.getParent();
-            return submit(new Location(parent), desiredPath.getLastSegment().getName());
+            return submit(Location.create(parent), desiredPath.getLastSegment().getName());
         }
 
         public T to( String desiredPath ) {

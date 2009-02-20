@@ -272,7 +272,7 @@ public class SubgraphQuery {
         pathByUuid.put(subgraphRootUuid, subgraphRootPath);
         UUID uuid = UUID.fromString(subgraphRootUuid);
         if (includeRoot) {
-            locations.add(new Location(subgraphRootPath, uuid));
+            locations.add(Location.create(subgraphRootPath, uuid));
         }
 
         // Now iterate over the child nodes in the subgraph (we've already included the root) ...
@@ -290,7 +290,7 @@ public class SubgraphQuery {
             String childUuid = entity.getId().getChildUuidString();
             pathByUuid.put(childUuid, childPath);
             uuid = UUID.fromString(childUuid);
-            locations.add(new Location(childPath, uuid));
+            locations.add(Location.create(childPath, uuid));
 
         }
         return locations;

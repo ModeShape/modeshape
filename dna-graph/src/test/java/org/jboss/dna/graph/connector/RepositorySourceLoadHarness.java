@@ -217,7 +217,7 @@ public class RepositorySourceLoadHarness {
                 if (i % 2 == 0) {
                     Thread.yield();
                 }
-                connection.execute(context, new ReadNodeRequest(new Location(RootPath.INSTANCE), "workspace1"));
+                connection.execute(context, new ReadNodeRequest(Location.create(RootPath.INSTANCE), "workspace1"));
                 int int2 = random(this.hashCode() ^ (int)System.nanoTime() + i);
                 total += Math.min(Math.abs(Math.max(int1, int2) + int1 * int2 / 3), count);
             }

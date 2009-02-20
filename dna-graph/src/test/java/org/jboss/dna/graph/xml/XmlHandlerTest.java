@@ -441,7 +441,7 @@ public class XmlHandlerTest {
             assert path != null;
             Path parent = path.getParent();
             Name child = path.getLastSegment().getName();
-            requests.add(new CreateNodeRequest(new Location(parent), workspace, child, properties));
+            requests.add(new CreateNodeRequest(Location.create(parent), workspace, child, properties));
         }
 
         public void create( final Path path,
@@ -449,7 +449,7 @@ public class XmlHandlerTest {
                             final Property... additionalProperties ) {
             Path parent = path.getParent();
             Name child = path.getLastSegment().getName();
-            Location location = new Location(parent);
+            Location location = Location.create(parent);
             if (firstProperty == null) {
                 requests.add(new CreateNodeRequest(location, workspace, child));
             } else {

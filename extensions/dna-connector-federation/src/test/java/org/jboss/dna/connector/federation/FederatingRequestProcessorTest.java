@@ -263,15 +263,15 @@ public class FederatingRequestProcessorTest {
 
         Path path = pathFactory.createRootPath();
         List<Contribution> contributions = new LinkedList<Contribution>();
-        executor.loadContributionsFromSources(new Location(path), defaultWorkspace, null, contributions);
+        executor.loadContributionsFromSources(Location.create(path), defaultWorkspace, null, contributions);
 
         assertThat(contributions.size(), is(3)); // order is based upon order of projections
         assertThat(contributions.get(0).getSourceName(), is(source1.getName()));
         assertThat(contributions.get(1).getSourceName(), is(source2.getName()));
         assertThat(contributions.get(2).getSourceName(), is(source3.getName()));
 
-        Location childA = new Location(pathFactory.create(path, "a"));
-        Location childB = new Location(pathFactory.create(path, "b"));
+        Location childA = Location.create(pathFactory.create(path, "a"));
+        Location childB = Location.create(pathFactory.create(path, "b"));
         assertThat(contributions.get(0).getChildren(), hasItems(childA, childB));
         assertThat(contributions.get(1).getChildren(), hasItems(childA));
         assertThat(contributions.get(2).getChildren(), hasItems(nodeX, nodeB));
@@ -283,7 +283,7 @@ public class FederatingRequestProcessorTest {
         Iterator<Location> iter = contribution.getChildren();
         for (String childName : childNames) {
             Path expectedChildPath = context.getValueFactories().getPathFactory().create(location.getPath(), childName);
-            Location expectedChild = new Location(expectedChildPath);
+            Location expectedChild = Location.create(expectedChildPath);
             Location next = iter.next();
             if (!next.isSame(expectedChild)) {
                 assertThat(next, is(expectedChild));
@@ -311,7 +311,7 @@ public class FederatingRequestProcessorTest {
 
         Path path = pathFactory.create("/x/y"); // from source 3
         List<Contribution> contributions = new LinkedList<Contribution>();
-        executor.loadContributionsFromSources(new Location(path), defaultWorkspace, null, contributions);
+        executor.loadContributionsFromSources(Location.create(path), defaultWorkspace, null, contributions);
 
         assertThat(contributions.size(), is(3)); // order is based upon order of projections
         assertThat(contributions.get(0).getSourceName(), is(source1.getName()));
@@ -324,7 +324,7 @@ public class FederatingRequestProcessorTest {
 
         path = pathFactory.create("/x"); // from source 3
         contributions.clear();
-        executor.loadContributionsFromSources(new Location(path), defaultWorkspace, null, contributions);
+        executor.loadContributionsFromSources(Location.create(path), defaultWorkspace, null, contributions);
 
         assertThat(contributions.size(), is(3)); // order is based upon order of projections
         assertThat(contributions.get(0).getSourceName(), is(source1.getName()));
@@ -383,7 +383,7 @@ public class FederatingRequestProcessorTest {
 
         Path path = pathFactory.create("/b"); // from source 2 and source 3
         List<Contribution> contributions = new LinkedList<Contribution>();
-        executor.loadContributionsFromSources(new Location(path), defaultWorkspace, null, contributions);
+        executor.loadContributionsFromSources(Location.create(path), defaultWorkspace, null, contributions);
 
         assertThat(contributions.size(), is(3)); // order is based upon order of projections
         assertThat(contributions.get(0).getSourceName(), is(source1.getName()));
@@ -396,7 +396,7 @@ public class FederatingRequestProcessorTest {
 
         path = pathFactory.create("/b/by"); // from source 3
         contributions.clear();
-        executor.loadContributionsFromSources(new Location(path), defaultWorkspace, null, contributions);
+        executor.loadContributionsFromSources(Location.create(path), defaultWorkspace, null, contributions);
 
         assertThat(contributions.size(), is(2)); // order is based upon order of projections
         assertThat(contributions.get(0).getSourceName(), is(source2.getName()));
@@ -457,7 +457,7 @@ public class FederatingRequestProcessorTest {
 
         Path path = pathFactory.create("/a"); // from sources 1, 2 and 3
         List<Contribution> contributions = new LinkedList<Contribution>();
-        executor.loadContributionsFromSources(new Location(path), defaultWorkspace, null, contributions);
+        executor.loadContributionsFromSources(Location.create(path), defaultWorkspace, null, contributions);
 
         assertThat(contributions.size(), is(3)); // order is based upon order of projections
         assertThat(contributions.get(0).getSourceName(), is(source1.getName()));
@@ -470,7 +470,7 @@ public class FederatingRequestProcessorTest {
 
         path = pathFactory.create("/a/ay"); // from source 3
         contributions.clear();
-        executor.loadContributionsFromSources(new Location(path), defaultWorkspace, null, contributions);
+        executor.loadContributionsFromSources(Location.create(path), defaultWorkspace, null, contributions);
 
         assertThat(contributions.size(), is(1)); // order is based upon order of projections
         assertThat(contributions.get(0).getSourceName(), is(source3.getName()));
@@ -481,7 +481,7 @@ public class FederatingRequestProcessorTest {
     public void shouldFailToLoadNodeFromSourcesWhenTheNodeDoesNotAppearInAnyOfTheSources() throws Exception {
         Path nonExistant = pathFactory.create("/nonExistant/Node/In/AnySource");
         List<Contribution> contributions = new LinkedList<Contribution>();
-        executor.loadContributionsFromSources(new Location(nonExistant), defaultWorkspace, null, contributions);
+        executor.loadContributionsFromSources(Location.create(nonExistant), defaultWorkspace, null, contributions);
         // All of the contributions should be empty ...
         for (Contribution contribution : contributions) {
             assertThat(contribution.isEmpty(), is(true));
@@ -539,7 +539,7 @@ public class FederatingRequestProcessorTest {
 
         Path path = pathFactory.create("/a"); // from sources 1, 2 and 3
         List<Contribution> contributions = new LinkedList<Contribution>();
-        executor.loadContributionsFromSources(new Location(path), defaultWorkspace, null, contributions);
+        executor.loadContributionsFromSources(Location.create(path), defaultWorkspace, null, contributions);
 
         // Check when the contributions expire ...
         DateTime nowInUtc = executor.getCurrentTimeInUtc();

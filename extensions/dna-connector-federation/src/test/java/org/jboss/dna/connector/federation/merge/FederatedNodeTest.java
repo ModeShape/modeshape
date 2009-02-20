@@ -45,7 +45,7 @@ public class FederatedNodeTest {
     @Before
     public void beforeEach() {
         MockitoAnnotations.initMocks(this);
-        location = new Location(mock(Path.class));
+        location = Location.create(mock(Path.class));
         node = new FederatedNode(location, "workspace");
     }
 

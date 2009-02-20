@@ -433,7 +433,7 @@ public abstract class RequestProcessor {
         assert parentPath != null;
 
         // Convert the request to a ReadAllChildrenRequest and execute it ...
-        ReadAllChildrenRequest readAll = new ReadAllChildrenRequest(new Location(parentPath), request.inWorkspace());
+        ReadAllChildrenRequest readAll = new ReadAllChildrenRequest(Location.create(parentPath), request.inWorkspace());
         process(readAll);
         if (readAll.hasError()) {
             request.setError(readAll.getError());
@@ -649,7 +649,7 @@ public abstract class RequestProcessor {
      * This method does nothing if the request is null. Unless overridden, this method converts the rename into a
      * {@link MoveBranchRequest move}. However, this only works if the <code>request</code> has a {@link Location#hasPath() path}
      * for its {@link RenameNodeRequest#at() location}. (If not, this method throws an {@link UnsupportedOperationException} and
-     * must be overriddent.)
+     * must be overridden.)
      * </p>
      * 
      * @param request the rename request
@@ -661,7 +661,7 @@ public abstract class RequestProcessor {
             throw new UnsupportedOperationException();
         }
         Path newPath = getExecutionContext().getValueFactories().getPathFactory().create(from.getPath(), request.toName());
-        Location to = new Location(newPath);
+        Location to = Location.create(newPath);
         MoveBranchRequest move = new MoveBranchRequest(from, to, request.inWorkspace());
         process(move);
         // Set the actual locations ...

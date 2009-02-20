@@ -222,7 +222,7 @@ public class SVNRepositoryConnectionTest {
     @Test
     public void shouldNotHaveProperties() {
         // Root location does not need properties.
-        Location root = new Location(pathFactory.create("/"));
+        Location root = Location.create(pathFactory.create("/"));
         Collection<Property> nilProperties = graph.getProperties().on(root);
         assertThat(nilProperties, is(notNullValue()));
         assertThat(nilProperties.isEmpty(), is(true));
@@ -231,7 +231,7 @@ public class SVNRepositoryConnectionTest {
     @Test
     public void shouldJustCatchThePropertiesOnLocation() {
         // directory nodeA has "jcr:primaryType" with value "nt:folder" and also "jcr:created" with value folder created date
-        Location nodeA = new Location(pathFactory.create("/nodeA"));
+        Location nodeA = Location.create(pathFactory.create("/nodeA"));
         Collection<Property> nodeAProperties = graph.getProperties().on(nodeA);
         assertThat(nodeAProperties, is(notNullValue()));
         assertThat(nodeAProperties.isEmpty(), is(false));
@@ -239,7 +239,7 @@ public class SVNRepositoryConnectionTest {
 
         // file itemA.txt has "jcr:primaryType" property whose value is "nt:file" and also "jcr:created" with value folder created
         // date
-        Location itemA1 = new Location(pathFactory.create("/nodeA/itemA1.txt"));
+        Location itemA1 = Location.create(pathFactory.create("/nodeA/itemA1.txt"));
         Collection<Property> itemA1Properties = graph.getProperties().on(itemA1);
         assertThat(itemA1Properties, is(notNullValue()));
         assertThat(itemA1Properties.isEmpty(), is(false));
@@ -250,7 +250,7 @@ public class SVNRepositoryConnectionTest {
         // "jcr:data" property whose value are the contents of the file
         // and a few other properties, like "jcr:encoding", "jcr:mimeType" and "jcr:lastModified" and
         // also "jcr:created" property
-        Location content = new Location(pathFactory.create("/nodeA/itemA2.txt/jcr:content"));
+        Location content = Location.create(pathFactory.create("/nodeA/itemA2.txt/jcr:content"));
         Collection<Property> itemA2ContentProperties = graph.getProperties().on(content);
         assertThat(itemA2ContentProperties, is(notNullValue()));
         assertThat(itemA2ContentProperties.isEmpty(), is(false));

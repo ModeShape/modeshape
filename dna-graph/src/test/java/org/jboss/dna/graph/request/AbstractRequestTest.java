@@ -65,21 +65,21 @@ public abstract class AbstractRequestTest {
         Name idProperty2Name = createName("id2");
         Property idProperty1 = context.getPropertyFactory().create(idProperty1Name, "1");
         Property idProperty2 = context.getPropertyFactory().create(idProperty2Name, "2");
-        validPathLocation = new Location(validPath);
-        validUuidLocation = new Location(validUuid);
-        validPropsLocation = new Location(idProperty1, idProperty2);
+        validPathLocation = Location.create(validPath);
+        validUuidLocation = Location.create(validUuid);
+        validPropsLocation = Location.create(idProperty1, idProperty2);
 
-        validPathLocation1 = new Location(validPath);
-        validUuidLocation1 = new Location(validUuid);
-        validPropsLocation1 = new Location(idProperty1, idProperty2);
+        validPathLocation1 = Location.create(validPath);
+        validUuidLocation1 = Location.create(validUuid);
+        validPropsLocation1 = Location.create(idProperty1, idProperty2);
 
         validPath = createPath("/a/c/d");
         validUuid = UUID.randomUUID();
         idProperty1 = context.getPropertyFactory().create(idProperty1Name, "3");
         idProperty2 = context.getPropertyFactory().create(idProperty2Name, "4");
-        validPathLocation2 = new Location(validPath);
-        validUuidLocation2 = new Location(validUuid);
-        validPropsLocation2 = new Location(idProperty1, idProperty2);
+        validPathLocation2 = Location.create(validPath);
+        validUuidLocation2 = Location.create(validUuid);
+        validPropsLocation2 = Location.create(idProperty1, idProperty2);
 
         validProperty1 = context.getPropertyFactory().create(createName("fooProperty"), "foo");
         validProperty2 = context.getPropertyFactory().create(createName("barProperty"), "bar");

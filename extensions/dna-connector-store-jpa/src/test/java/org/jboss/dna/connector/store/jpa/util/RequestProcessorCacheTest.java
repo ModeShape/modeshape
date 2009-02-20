@@ -68,30 +68,30 @@ public class RequestProcessorCacheTest {
         workspaceId = 10L;
 
         Path parent = pathFactory.create("/a/b/c");
-        location = new Location(parent, UUID.randomUUID());
-        children = new Location[] {new Location(pathFactory.create(parent, "d1"), UUID.randomUUID()),
-            new Location(pathFactory.create(parent, "d2"), UUID.randomUUID()),
-            new Location(pathFactory.create(parent, "d3"), UUID.randomUUID()),
-            new Location(pathFactory.create(parent, "d4"), UUID.randomUUID()),
-            new Location(pathFactory.create(parent, name("e"), 1), UUID.randomUUID()),
-            new Location(pathFactory.create(parent, name("e"), 2), UUID.randomUUID()),
-            new Location(pathFactory.create(parent, name("e"), 3), UUID.randomUUID()),
-            new Location(pathFactory.create(parent, name("e"), 4), UUID.randomUUID())};
+        location = Location.create(parent, UUID.randomUUID());
+        children = new Location[] {Location.create(pathFactory.create(parent, "d1"), UUID.randomUUID()),
+            Location.create(pathFactory.create(parent, "d2"), UUID.randomUUID()),
+            Location.create(pathFactory.create(parent, "d3"), UUID.randomUUID()),
+            Location.create(pathFactory.create(parent, "d4"), UUID.randomUUID()),
+            Location.create(pathFactory.create(parent, name("e"), 1), UUID.randomUUID()),
+            Location.create(pathFactory.create(parent, name("e"), 2), UUID.randomUUID()),
+            Location.create(pathFactory.create(parent, name("e"), 3), UUID.randomUUID()),
+            Location.create(pathFactory.create(parent, name("e"), 4), UUID.randomUUID())};
         childrenList = new LinkedList<Location>();
         for (Location loc : children) {
             childrenList.add(loc);
         }
 
         parent = pathFactory.create("/a/b/c/e[2]");
-        location2 = new Location(parent, children[5].getUuid());
-        children2 = new Location[] {new Location(pathFactory.create(parent, "f1"), UUID.randomUUID()),
-            new Location(pathFactory.create(parent, "f2"), UUID.randomUUID()),
-            new Location(pathFactory.create(parent, "f3"), UUID.randomUUID()),
-            new Location(pathFactory.create(parent, "f4"), UUID.randomUUID()),
-            new Location(pathFactory.create(parent, name("g"), 1), UUID.randomUUID()),
-            new Location(pathFactory.create(parent, name("g"), 2), UUID.randomUUID()),
-            new Location(pathFactory.create(parent, name("g"), 3), UUID.randomUUID()),
-            new Location(pathFactory.create(parent, name("g"), 4), UUID.randomUUID())};
+        location2 = Location.create(parent, children[5].getUuid());
+        children2 = new Location[] {Location.create(pathFactory.create(parent, "f1"), UUID.randomUUID()),
+            Location.create(pathFactory.create(parent, "f2"), UUID.randomUUID()),
+            Location.create(pathFactory.create(parent, "f3"), UUID.randomUUID()),
+            Location.create(pathFactory.create(parent, "f4"), UUID.randomUUID()),
+            Location.create(pathFactory.create(parent, name("g"), 1), UUID.randomUUID()),
+            Location.create(pathFactory.create(parent, name("g"), 2), UUID.randomUUID()),
+            Location.create(pathFactory.create(parent, name("g"), 3), UUID.randomUUID()),
+            Location.create(pathFactory.create(parent, name("g"), 4), UUID.randomUUID())};
         childrenList2 = new LinkedList<Location>();
         for (Location loc : children2) {
             childrenList2.add(loc);
@@ -169,7 +169,7 @@ public class RequestProcessorCacheTest {
         // The cache knows about the children of "/a/b/c" and "/a/b/c/e[2]".
         // This test moves "/a/b/c/e[2]" into "/a/b/c/d3"
         Location oldLocation = location2;
-        Location newLocation = new Location(pathFactory.create("/a/b/c/d3/e[1]"));
+        Location newLocation = Location.create(pathFactory.create("/a/b/c/d3/e[1]"));
         assertThat(oldLocation.getPath().getString(namespaces), is("/a/b/c/e[2]"));
         assertThat(newLocation.getPath().getString(namespaces), is("/a/b/c/d3/e[1]"));
         cache.addNewNode(workspaceId, location);
@@ -294,7 +294,7 @@ public class RequestProcessorCacheTest {
         // The cache knows about the children of "/a/b/c" and "/a/b/c/e[2]".
         // This test removes "/a/b/c/e[2]"
         Location oldLocation = location2;
-        Location newLocation = new Location(pathFactory.create("/a/b/c/d3/e[1]"));
+        Location newLocation = Location.create(pathFactory.create("/a/b/c/d3/e[1]"));
         assertThat(oldLocation.getPath().getString(namespaces), is("/a/b/c/e[2]"));
         assertThat(newLocation.getPath().getString(namespaces), is("/a/b/c/d3/e[1]"));
         cache.addNewNode(workspaceId, location);
@@ -359,9 +359,9 @@ public class RequestProcessorCacheTest {
         for (Location childLocation : children2) {
             locationsToRemove.add(childLocation);
         }
-        locationsToRemove.add(new Location(pathFactory.create(children2[6].getPath(), "m1")));
-        locationsToRemove.add(new Location(pathFactory.create(children2[6].getPath(), "m2")));
-        locationsToRemove.add(new Location(pathFactory.create(children2[6].getPath(), "m3")));
+        locationsToRemove.add(Location.create(pathFactory.create(children2[6].getPath(), "m1")));
+        locationsToRemove.add(Location.create(pathFactory.create(children2[6].getPath(), "m2")));
+        locationsToRemove.add(Location.create(pathFactory.create(children2[6].getPath(), "m3")));
 
         // Remove the branch ...
         assertThat(cache.removeBranch(workspaceId, locationsToRemove), is(true));

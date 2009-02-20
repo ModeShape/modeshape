@@ -152,7 +152,7 @@ public class ReadNextBlockOfChildrenRequest extends CacheableRequest {
     public void addChild( Path pathToChild,
                           Property firstIdProperty,
                           Property... remainingIdProperties ) {
-        Location child = new Location(pathToChild, firstIdProperty, remainingIdProperties);
+        Location child = Location.create(pathToChild, firstIdProperty, remainingIdProperties);
         this.children.add(child);
     }
 
@@ -168,7 +168,7 @@ public class ReadNextBlockOfChildrenRequest extends CacheableRequest {
      */
     public void addChild( Path pathToChild,
                           Property idProperty ) {
-        Location child = new Location(pathToChild, idProperty);
+        Location child = Location.create(pathToChild, idProperty);
         this.children.add(child);
     }
 

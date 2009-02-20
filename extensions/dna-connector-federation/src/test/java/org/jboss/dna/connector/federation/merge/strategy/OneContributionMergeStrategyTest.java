@@ -75,12 +75,12 @@ public class OneContributionMergeStrategyTest {
         context.getNamespaceRegistry().register(DnaLexicon.Namespace.PREFIX, DnaLexicon.Namespace.URI);
         context.getNamespaceRegistry().register(JcrLexicon.Namespace.PREFIX, JcrLexicon.Namespace.URI);
         parentPath = context.getValueFactories().getPathFactory().create("/a/b/c");
-        node = new FederatedNode(new Location(parentPath), "some workspace");
+        node = new FederatedNode(Location.create(parentPath), "some workspace");
         stub(contribution.getSourceName()).toReturn("source name");
         children = new LinkedList<Location>();
         for (int i = 0; i != 10; ++i) {
             Path childPath = context.getValueFactories().getPathFactory().create(parentPath, "a" + i);
-            children.add(new Location(childPath));
+            children.add(Location.create(childPath));
         }
         properties = new HashMap<Name, Property>();
         for (int i = 0; i != 10; ++i) {

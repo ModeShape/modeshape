@@ -148,7 +148,7 @@ public class FileSystemRequestProcessor extends RequestProcessor {
             for (String localName : parent.list(filenameFilter)) {
                 Name childName = nameFactory.create(defaultNamespaceUri, localName);
                 Path childPath = pathFactory.create(parentPath, childName);
-                request.addChild(new Location(childPath));
+                request.addChild(Location.create(childPath));
             }
         } else {
             // The parent is a java.io.File, and the path may refer to the node that is either the "nt:file" parent
@@ -156,7 +156,7 @@ public class FileSystemRequestProcessor extends RequestProcessor {
             if (!parentPath.getLastSegment().getName().equals(JcrLexicon.CONTENT)) {
                 // This node represents the "nt:file" parent node, so the only child is the "jcr:content" node ...
                 Path contentPath = pathFactory().create(parentPath, JcrLexicon.CONTENT);
-                Location content = new Location(contentPath);
+                Location content = Location.create(contentPath);
                 request.addChild(content);
             }
             // otherwise, the path ends in "jcr:content", and there are no children
@@ -357,7 +357,7 @@ public class FileSystemRequestProcessor extends RequestProcessor {
         File directory = new File(workspaceName);
         if (directory.exists() && directory.isDirectory() && directory.canRead()) {
             request.setActualWorkspaceName(getCanonicalWorkspaceName(directory));
-            request.setActualRootLocation(new Location(pathFactory().createRootPath()));
+            request.setActualRootLocation(Location.create(pathFactory().createRootPath()));
         } else {
             request.setError(new InvalidWorkspaceException(FileSystemI18n.workspaceDoesNotExist.text(workspaceName)));
         }
@@ -425,7 +425,7 @@ public class FileSystemRequestProcessor extends RequestProcessor {
         File directory = new File(workspaceName);
         if (directory.exists() && directory.isDirectory() && directory.canRead()) {
             request.setActualWorkspaceName(getCanonicalWorkspaceName(directory));
-            request.setActualRootLocation(new Location(pathFactory().createRootPath()));
+            request.setActualRootLocation(Location.create(pathFactory().createRootPath()));
             availableWorkspaceNames.add(workspaceName);
         } else {
             request.setError(new InvalidWorkspaceException(FileSystemI18n.workspaceDoesNotExist.text(workspaceName)));

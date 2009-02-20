@@ -74,7 +74,7 @@ public class SimpleMergeStrategyTest {
         context.getNamespaceRegistry().register("jcr", "http://www.jcr.org");
         parentPath = context.getValueFactories().getPathFactory().create("/a/b/c");
         workspaceName = "some workspace";
-        node = new FederatedNode(new Location(parentPath), workspaceName);
+        node = new FederatedNode(Location.create(parentPath), workspaceName);
     }
 
     @Test
@@ -202,7 +202,7 @@ public class SimpleMergeStrategyTest {
     protected Matcher<List<Location>> hasChildLocations( String... childNames ) {
         List<Location> locations = new ArrayList<Location>();
         for (String childName : childNames) {
-            locations.add(new Location(context.getValueFactories().getPathFactory().create(parentPath, childName)));
+            locations.add(Location.create(context.getValueFactories().getPathFactory().create(parentPath, childName)));
         }
         return equalTo(locations);
     }
@@ -211,7 +211,7 @@ public class SimpleMergeStrategyTest {
         Location[] locations = new Location[childNames.length];
         int index = 0;
         for (String childName : childNames) {
-            locations[index++] = new Location(context.getValueFactories().getPathFactory().create(parentPath, childName));
+            locations[index++] = Location.create(context.getValueFactories().getPathFactory().create(parentPath, childName));
         }
         return IsIteratorContaining.hasItems(locations);
     }
@@ -242,7 +242,7 @@ public class SimpleMergeStrategyTest {
                                        List<Contribution> contributions ) {
             this.context = context;
             this.mockContribution = Mockito.mock(Contribution.class);
-            stub(mockContribution.getLocationInSource()).toReturn(new Location(parentPath));
+            stub(mockContribution.getLocationInSource()).toReturn(Location.create(parentPath));
             stub(mockContribution.getSourceName()).toReturn(name);
             stub(mockContribution.getChildren()).toAnswer(new Answer<Iterator<Location>>() {
                 public Iterator<Location> answer( InvocationOnMock invocation ) throws Throwable {
@@ -273,7 +273,7 @@ public class SimpleMergeStrategyTest {
         public ContributionBuilder addChildren( String... pathsForChildren ) {
             for (String childPath : pathsForChildren) {
                 Path path = context.getValueFactories().getPathFactory().create(parentPath, childPath);
-                children.add(new Location(path));
+                children.add(Location.create(path));
             }
             return this;
         }

@@ -216,7 +216,7 @@ public class SVNRepositoryRequestProcessor extends RequestProcessor implements S
                     Name childName = nameFactory().create(defaultNamespaceUri, localName);
                     String url = entry.getURL().toString();
                     Property idProperty = propertyFactory().create(childName, url);
-                    request.addChild(new Location(pathFactory().create(nodePath, JcrLexicon.CONTENT), idProperty));
+                    request.addChild(Location.create(pathFactory().create(nodePath, JcrLexicon.CONTENT), idProperty));
                 }
             } else if (kind == SVNNodeKind.DIR) { // the requested node is a directory.
                 final Collection<SVNDirEntry> dirEntries = getRepository().getDir(requestedNodePath,
@@ -231,7 +231,7 @@ public class SVNRepositoryRequestProcessor extends RequestProcessor implements S
                             Name childName = nameFactory().create(defaultNamespaceUri, localName);
                             String url = dirEntry.getURL().toString();
                             Property idProperty = propertyFactory().create(childName, url);
-                            Location location = new Location(pathFactory().create(newPath, JcrLexicon.CONTENT), idProperty);
+                            Location location = Location.create(pathFactory().create(newPath, JcrLexicon.CONTENT), idProperty);
                             request.addChild(location);
                         }
                     } else if (dirEntry.getKind() == SVNNodeKind.DIR) {
@@ -373,7 +373,7 @@ public class SVNRepositoryRequestProcessor extends RequestProcessor implements S
         // This does the job of converting a null workspace name to a valid workspace
         String workspaceName = request.workspaceName();
         if (workspaceName == null) workspaceName = "default";
-        request.setActualRootLocation(new Location(pathFactory().createRootPath()));
+        request.setActualRootLocation(Location.create(pathFactory().createRootPath()));
         request.setActualWorkspaceName(workspaceName);
     }
 
@@ -531,11 +531,11 @@ public class SVNRepositoryRequestProcessor extends RequestProcessor implements S
             kind = getRepository().checkPath(myPath, -1);
             if (kind == SVNNodeKind.NONE) {
                 // node does not exist or requested node is not correct.
-                throw new PathNotFoundException(new Location(requestedPath), null,
+                throw new PathNotFoundException(Location.create(requestedPath), null,
                                                 SVNRepositoryConnectorI18n.nodeDoesNotExist.text(myPath));
             } else if (kind == SVNNodeKind.UNKNOWN) {
                 // node is unknown
-                throw new PathNotFoundException(new Location(requestedPath), null,
+                throw new PathNotFoundException(Location.create(requestedPath), null,
                                                 SVNRepositoryConnectorI18n.nodeIsActuallyUnknow.text(myPath));
             }
         } catch (SVNException e) {

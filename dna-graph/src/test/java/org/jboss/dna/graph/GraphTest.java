@@ -123,7 +123,7 @@ public class GraphTest {
         Name idProperty2Name = createName("id2");
         validIdProperty1 = context.getPropertyFactory().create(idProperty1Name, "1");
         validIdProperty2 = context.getPropertyFactory().create(idProperty2Name, "2");
-        validLocation = new Location(validPath);
+        validLocation = Location.create(validPath);
 
         properties = new HashMap<Location, Collection<Property>>();
         children = new HashMap<Location, List<Location>>();
@@ -330,17 +330,17 @@ public class GraphTest {
     public void shouldMoveNode() {
         graph.move(validPath).into(validIdProperty1, validIdProperty2);
         assertThat(numberOfExecutions, is(1));
-        assertNextRequestIsMove(new Location(validPath), new Location(validIdProperty1, validIdProperty2));
+        assertNextRequestIsMove(Location.create(validPath), Location.create(validIdProperty1, validIdProperty2));
         assertNoMoreRequests();
 
         graph.move(validPathString).into(validIdProperty1, validIdProperty2);
         assertThat(numberOfExecutions, is(1));
-        assertNextRequestIsMove(new Location(validPath), new Location(validIdProperty1, validIdProperty2));
+        assertNextRequestIsMove(Location.create(validPath), Location.create(validIdProperty1, validIdProperty2));
         assertNoMoreRequests();
 
         graph.move(validUuid).into(validPath);
         assertThat(numberOfExecutions, is(1));
-        assertNextRequestIsMove(new Location(validUuid), new Location(validPath));
+        assertNextRequestIsMove(Location.create(validUuid), Location.create(validPath));
         assertNoMoreRequests();
     }
 
@@ -348,17 +348,17 @@ public class GraphTest {
     public void shouldCopyNode() {
         graph.copy(validPath).into(validIdProperty1, validIdProperty2);
         assertThat(numberOfExecutions, is(1));
-        assertNextRequestIsCopy(new Location(validPath), new Location(validIdProperty1, validIdProperty2));
+        assertNextRequestIsCopy(Location.create(validPath), Location.create(validIdProperty1, validIdProperty2));
         assertNoMoreRequests();
 
         graph.copy(validPathString).into(validIdProperty1, validIdProperty2);
         assertThat(numberOfExecutions, is(1));
-        assertNextRequestIsCopy(new Location(validPath), new Location(validIdProperty1, validIdProperty2));
+        assertNextRequestIsCopy(Location.create(validPath), Location.create(validIdProperty1, validIdProperty2));
         assertNoMoreRequests();
 
         graph.copy(validUuid).into(validPath);
         assertThat(numberOfExecutions, is(1));
-        assertNextRequestIsCopy(new Location(validUuid), new Location(validPath));
+        assertNextRequestIsCopy(Location.create(validUuid), Location.create(validPath));
         assertNoMoreRequests();
     }
 
@@ -366,27 +366,27 @@ public class GraphTest {
     public void shouldDeleteNode() {
         graph.delete(validPath);
         assertThat(numberOfExecutions, is(1));
-        assertNextRequestIsDelete(new Location(validPath));
+        assertNextRequestIsDelete(Location.create(validPath));
         assertNoMoreRequests();
 
         graph.delete(validPathString);
         assertThat(numberOfExecutions, is(1));
-        assertNextRequestIsDelete(new Location(validPath));
+        assertNextRequestIsDelete(Location.create(validPath));
         assertNoMoreRequests();
 
         graph.delete(validUuid);
         assertThat(numberOfExecutions, is(1));
-        assertNextRequestIsDelete(new Location(validUuid));
+        assertNextRequestIsDelete(Location.create(validUuid));
         assertNoMoreRequests();
 
         graph.delete(validIdProperty1);
         assertThat(numberOfExecutions, is(1));
-        assertNextRequestIsDelete(new Location(validIdProperty1));
+        assertNextRequestIsDelete(Location.create(validIdProperty1));
         assertNoMoreRequests();
 
         graph.delete(validIdProperty1, validIdProperty2);
         assertThat(numberOfExecutions, is(1));
-        assertNextRequestIsDelete(new Location(validIdProperty1, validIdProperty2));
+        assertNextRequestIsDelete(Location.create(validIdProperty1, validIdProperty2));
         assertNoMoreRequests();
     }
 
@@ -394,32 +394,32 @@ public class GraphTest {
     public void shouldCreateNode() {
         graph.create(validPath);
         assertThat(numberOfExecutions, is(1));
-        assertNextRequestIsCreate(new Location(validPath.getParent()), "c");
+        assertNextRequestIsCreate(Location.create(validPath.getParent()), "c");
         assertNoMoreRequests();
 
         graph.create(validPath, validIdProperty1);
         assertThat(numberOfExecutions, is(1));
-        assertNextRequestIsCreate(new Location(validPath.getParent()), "c", validIdProperty1);
+        assertNextRequestIsCreate(Location.create(validPath.getParent()), "c", validIdProperty1);
         assertNoMoreRequests();
 
         graph.create(validPath, validIdProperty1, validIdProperty2);
         assertThat(numberOfExecutions, is(1));
-        assertNextRequestIsCreate(new Location(validPath.getParent()), "c", validIdProperty1, validIdProperty2);
+        assertNextRequestIsCreate(Location.create(validPath.getParent()), "c", validIdProperty1, validIdProperty2);
         assertNoMoreRequests();
 
         graph.create(validPathString);
         assertThat(numberOfExecutions, is(1));
-        assertNextRequestIsCreate(new Location(validPath.getParent()), "c");
+        assertNextRequestIsCreate(Location.create(validPath.getParent()), "c");
         assertNoMoreRequests();
 
         graph.create(validPathString, validIdProperty1);
         assertThat(numberOfExecutions, is(1));
-        assertNextRequestIsCreate(new Location(validPath.getParent()), "c", validIdProperty1);
+        assertNextRequestIsCreate(Location.create(validPath.getParent()), "c", validIdProperty1);
         assertNoMoreRequests();
 
         graph.create(validPathString, validIdProperty1, validIdProperty2);
         assertThat(numberOfExecutions, is(1));
-        assertNextRequestIsCreate(new Location(validPath.getParent()), "c", validIdProperty1, validIdProperty2);
+        assertNextRequestIsCreate(Location.create(validPath.getParent()), "c", validIdProperty1, validIdProperty2);
         assertNoMoreRequests();
     }
 
@@ -432,107 +432,107 @@ public class GraphTest {
 
     @Test
     public void shouldGetPropertiesOnNode() {
-        setPropertiesToReadOn(new Location(validPath), validIdProperty1, validIdProperty2);
+        setPropertiesToReadOn(Location.create(validPath), validIdProperty1, validIdProperty2);
         Collection<Property> props = graph.getProperties().on(validPath);
         assertThat(numberOfExecutions, is(1));
-        assertNextRequestReadProperties(new Location(validPath), validIdProperty1, validIdProperty2);
+        assertNextRequestReadProperties(Location.create(validPath), validIdProperty1, validIdProperty2);
         assertNoMoreRequests();
         assertThat(props, hasItems(validIdProperty1, validIdProperty2));
 
-        setPropertiesToReadOn(new Location(validPath));
+        setPropertiesToReadOn(Location.create(validPath));
         props = graph.getProperties().on(validPath);
         assertThat(numberOfExecutions, is(1));
-        assertNextRequestReadProperties(new Location(validPath));
+        assertNextRequestReadProperties(Location.create(validPath));
         assertNoMoreRequests();
         assertThat(props.size(), is(0));
     }
 
     @Test
     public void shouldGetPropertiesByNameOnNode() {
-        setPropertiesToReadOn(new Location(validPath), validIdProperty1, validIdProperty2);
+        setPropertiesToReadOn(Location.create(validPath), validIdProperty1, validIdProperty2);
         Map<Name, Property> propsByName = graph.getPropertiesByName().on(validPath);
         assertThat(numberOfExecutions, is(1));
-        assertNextRequestReadProperties(new Location(validPath), validIdProperty1, validIdProperty2);
+        assertNextRequestReadProperties(Location.create(validPath), validIdProperty1, validIdProperty2);
         assertNoMoreRequests();
         assertThat(propsByName.get(validIdProperty1.getName()), is(validIdProperty1));
         assertThat(propsByName.get(validIdProperty2.getName()), is(validIdProperty2));
 
-        setPropertiesToReadOn(new Location(validPath));
+        setPropertiesToReadOn(Location.create(validPath));
         propsByName = graph.getPropertiesByName().on(validPath);
         assertThat(numberOfExecutions, is(1));
-        assertNextRequestReadProperties(new Location(validPath));
+        assertNextRequestReadProperties(Location.create(validPath));
         assertNoMoreRequests();
         assertThat(propsByName.isEmpty(), is(true));
     }
 
     @Test
     public void shouldGetPropertyOnNode() {
-        setPropertiesToReadOn(new Location(validPath), validIdProperty1, validIdProperty2);
+        setPropertiesToReadOn(Location.create(validPath), validIdProperty1, validIdProperty2);
         graph.getProperty(validIdProperty2.getName()).on(validPath);
         assertThat(numberOfExecutions, is(1));
-        assertNextRequestReadProperty(new Location(validPath), validIdProperty2);
+        assertNextRequestReadProperty(Location.create(validPath), validIdProperty2);
         assertNoMoreRequests();
 
-        setPropertiesToReadOn(new Location(validPath), validIdProperty1, validIdProperty2);
+        setPropertiesToReadOn(Location.create(validPath), validIdProperty1, validIdProperty2);
         graph.getProperty(validIdProperty2.getName().getString(context.getNamespaceRegistry())).on(validPath);
         assertThat(numberOfExecutions, is(1));
-        assertNextRequestReadProperty(new Location(validPath), validIdProperty2);
+        assertNextRequestReadProperty(Location.create(validPath), validIdProperty2);
         assertNoMoreRequests();
     }
 
     @Test
     public void shouldGetChildrenOnNode() {
-        Location child1 = new Location(createPath(validPath, "x"));
-        Location child2 = new Location(createPath(validPath, "y"));
-        Location child3 = new Location(createPath(validPath, "z"));
-        setChildrenToReadOn(new Location(validPath), child1, child2, child3);
+        Location child1 = Location.create(createPath(validPath, "x"));
+        Location child2 = Location.create(createPath(validPath, "y"));
+        Location child3 = Location.create(createPath(validPath, "z"));
+        setChildrenToReadOn(Location.create(validPath), child1, child2, child3);
         List<Location> children = graph.getChildren().of(validPath);
         assertThat(numberOfExecutions, is(1));
-        assertNextRequestReadChildren(new Location(validPath), child1, child2, child3);
+        assertNextRequestReadChildren(Location.create(validPath), child1, child2, child3);
         assertNoMoreRequests();
         assertThat(children, hasItems(child1, child2, child3));
 
-        setChildrenToReadOn(new Location(validPath));
+        setChildrenToReadOn(Location.create(validPath));
         children = graph.getChildren().of(validPath);
         assertThat(numberOfExecutions, is(1));
-        assertNextRequestReadChildren(new Location(validPath));
+        assertNextRequestReadChildren(Location.create(validPath));
         assertNoMoreRequests();
         assertThat(children.isEmpty(), is(true));
     }
 
     @Test
     public void shouldGetChildrenInBlockAtStartingIndex() {
-        Location child1 = new Location(createPath(validPath, "x"));
-        Location child2 = new Location(createPath(validPath, "y"));
-        Location child3 = new Location(createPath(validPath, "z"));
-        setChildrenToReadOn(new Location(validPath), child1, child2, child3);
+        Location child1 = Location.create(createPath(validPath, "x"));
+        Location child2 = Location.create(createPath(validPath, "y"));
+        Location child3 = Location.create(createPath(validPath, "z"));
+        setChildrenToReadOn(Location.create(validPath), child1, child2, child3);
         List<Location> children = graph.getChildren().inBlockOf(2).startingAt(0).under(validPath);
         assertThat(numberOfExecutions, is(1));
-        assertNextRequestReadBlockOfChildren(new Location(validPath), 0, 2, child1, child2);
+        assertNextRequestReadBlockOfChildren(Location.create(validPath), 0, 2, child1, child2);
         assertNoMoreRequests();
         assertThat(children, hasItems(child1, child2));
 
         children = graph.getChildren().inBlockOf(2).startingAt(1).under(validPath);
         assertThat(numberOfExecutions, is(1));
-        assertNextRequestReadBlockOfChildren(new Location(validPath), 1, 2, child2, child3);
+        assertNextRequestReadBlockOfChildren(Location.create(validPath), 1, 2, child2, child3);
         assertNoMoreRequests();
         assertThat(children, hasItems(child2, child3));
 
         children = graph.getChildren().inBlockOf(2).startingAt(2).under(validPath);
         assertThat(numberOfExecutions, is(1));
-        assertNextRequestReadBlockOfChildren(new Location(validPath), 2, 2, child3);
+        assertNextRequestReadBlockOfChildren(Location.create(validPath), 2, 2, child3);
         assertNoMoreRequests();
         assertThat(children, hasItems(child3));
 
         children = graph.getChildren().inBlockOf(2).startingAt(20).under(validPath);
         assertThat(numberOfExecutions, is(1));
-        assertNextRequestReadBlockOfChildren(new Location(validPath), 20, 2);
+        assertNextRequestReadBlockOfChildren(Location.create(validPath), 20, 2);
         assertNoMoreRequests();
         assertThat(children.isEmpty(), is(true));
 
         children = graph.getChildren().inBlockOf(20).startingAt(0).under(validPath);
         assertThat(numberOfExecutions, is(1));
-        assertNextRequestReadBlockOfChildren(new Location(validPath), 0, 20, child1, child2, child3);
+        assertNextRequestReadBlockOfChildren(Location.create(validPath), 0, 20, child1, child2, child3);
         assertNoMoreRequests();
         assertThat(children, hasItems(child1, child2, child3));
     }
@@ -542,26 +542,26 @@ public class GraphTest {
         Path pathX = createPath(validPath, "x");
         Path pathY = createPath(validPath, "y");
         Path pathZ = createPath(validPath, "z");
-        Location child1 = new Location(pathX);
-        Location child2 = new Location(pathY);
-        Location child3 = new Location(pathZ);
-        setChildrenToReadOn(new Location(validPath), child1, child2, child3);
+        Location child1 = Location.create(pathX);
+        Location child2 = Location.create(pathY);
+        Location child3 = Location.create(pathZ);
+        setChildrenToReadOn(Location.create(validPath), child1, child2, child3);
 
         List<Location> children = graph.getChildren().inBlockOf(2).startingAfter(pathX);
         assertThat(numberOfExecutions, is(1));
-        assertNextRequestReadNextBlockOfChildren(new Location(pathX), 2, child2, child3);
+        assertNextRequestReadNextBlockOfChildren(Location.create(pathX), 2, child2, child3);
         assertNoMoreRequests();
         assertThat(children, hasItems(child2, child3));
 
         children = graph.getChildren().inBlockOf(3).startingAfter(pathX);
         assertThat(numberOfExecutions, is(1));
-        assertNextRequestReadNextBlockOfChildren(new Location(pathX), 3, child2, child3);
+        assertNextRequestReadNextBlockOfChildren(Location.create(pathX), 3, child2, child3);
         assertNoMoreRequests();
         assertThat(children, hasItems(child2, child3));
 
         children = graph.getChildren().inBlockOf(2).startingAfter(pathY);
         assertThat(numberOfExecutions, is(1));
-        assertNextRequestReadNextBlockOfChildren(new Location(pathY), 2, child3);
+        assertNextRequestReadNextBlockOfChildren(Location.create(pathY), 2, child3);
         assertNoMoreRequests();
         assertThat(children, hasItems(child3));
     }
@@ -569,86 +569,86 @@ public class GraphTest {
     @Test
     public void shouldSetPropertiesWithEitherOnOrToMethodsCalledFirst() {
         graph.set("propName").on(validPath).to(3.0f);
-        assertNextRequestUpdateProperties(new Location(validPath), createProperty("propName", 3.0f));
+        assertNextRequestUpdateProperties(Location.create(validPath), createProperty("propName", 3.0f));
 
         graph.set("propName").to(3.0f).on(validPath);
-        assertNextRequestUpdateProperties(new Location(validPath), createProperty("propName", 3.0f));
+        assertNextRequestUpdateProperties(Location.create(validPath), createProperty("propName", 3.0f));
     }
 
     @Test
     public void shouldSetPropertyValueToPrimitiveTypes() {
         graph.set("propName").on(validPath).to(3.0F);
-        assertNextRequestUpdateProperties(new Location(validPath), createProperty("propName", new Float(3.0f)));
+        assertNextRequestUpdateProperties(Location.create(validPath), createProperty("propName", new Float(3.0f)));
 
         graph.set("propName").on(validPath).to(1.0D);
-        assertNextRequestUpdateProperties(new Location(validPath), createProperty("propName", new Double(1.0)));
+        assertNextRequestUpdateProperties(Location.create(validPath), createProperty("propName", new Double(1.0)));
 
         graph.set("propName").on(validPath).to(false);
-        assertNextRequestUpdateProperties(new Location(validPath), createProperty("propName", Boolean.FALSE));
+        assertNextRequestUpdateProperties(Location.create(validPath), createProperty("propName", Boolean.FALSE));
 
         graph.set("propName").on(validPath).to(3);
-        assertNextRequestUpdateProperties(new Location(validPath), createProperty("propName", new Integer(3)));
+        assertNextRequestUpdateProperties(Location.create(validPath), createProperty("propName", new Integer(3)));
 
         graph.set("propName").on(validPath).to(5L);
-        assertNextRequestUpdateProperties(new Location(validPath), createProperty("propName", new Long(5)));
+        assertNextRequestUpdateProperties(Location.create(validPath), createProperty("propName", new Long(5)));
 
         graph.set("propName").on(validPath).to(validPath);
-        assertNextRequestUpdateProperties(new Location(validPath), createProperty("propName", validPath));
+        assertNextRequestUpdateProperties(Location.create(validPath), createProperty("propName", validPath));
 
         graph.set("propName").on(validPath).to(validPath.getLastSegment().getName());
-        assertNextRequestUpdateProperties(new Location(validPath), createProperty("propName",
+        assertNextRequestUpdateProperties(Location.create(validPath), createProperty("propName",
                                                                                   validPath.getLastSegment().getName()));
         Date now = new Date();
         graph.set("propName").on(validPath).to(now);
-        assertNextRequestUpdateProperties(new Location(validPath), createProperty("propName", now));
+        assertNextRequestUpdateProperties(Location.create(validPath), createProperty("propName", now));
 
         DateTime dtNow = context.getValueFactories().getDateFactory().create(now);
         graph.set("propName").on(validPath).to(dtNow);
-        assertNextRequestUpdateProperties(new Location(validPath), createProperty("propName", dtNow));
+        assertNextRequestUpdateProperties(Location.create(validPath), createProperty("propName", dtNow));
 
         Calendar calNow = Calendar.getInstance();
         calNow.setTime(now);
         graph.set("propName").on(validPath).to(calNow);
-        assertNextRequestUpdateProperties(new Location(validPath), createProperty("propName", dtNow));
+        assertNextRequestUpdateProperties(Location.create(validPath), createProperty("propName", dtNow));
 
     }
 
     @Test
     public void shouldReadNode() {
-        Location child1 = new Location(createPath(validPath, "x"));
-        Location child2 = new Location(createPath(validPath, "y"));
-        Location child3 = new Location(createPath(validPath, "z"));
-        setChildrenToReadOn(new Location(validPath), child1, child2, child3);
-        setPropertiesToReadOn(new Location(validPath), validIdProperty1, validIdProperty2);
+        Location child1 = Location.create(createPath(validPath, "x"));
+        Location child2 = Location.create(createPath(validPath, "y"));
+        Location child3 = Location.create(createPath(validPath, "z"));
+        setChildrenToReadOn(Location.create(validPath), child1, child2, child3);
+        setPropertiesToReadOn(Location.create(validPath), validIdProperty1, validIdProperty2);
         Node node = graph.getNodeAt(validPath);
         assertThat(node, is(notNullValue()));
         assertThat(node.getChildren(), hasItems(child1, child2));
         assertThat(node.getProperties(), hasItems(validIdProperty1, validIdProperty2));
-        assertThat(node.getLocation(), is(new Location(validPath)));
+        assertThat(node.getLocation(), is(Location.create(validPath)));
         assertThat(node.getGraph(), is(sameInstance(graph)));
         assertThat(node.getPropertiesByName().get(validIdProperty1.getName()), is(validIdProperty1));
         assertThat(node.getPropertiesByName().get(validIdProperty2.getName()), is(validIdProperty2));
         assertThat(numberOfExecutions, is(1));
-        assertNextRequestReadNode(new Location(validPath));
+        assertNextRequestReadNode(Location.create(validPath));
         assertNoMoreRequests();
     }
 
     @Test
     public void shouldReadSubgraph() {
-        Location child1 = new Location(createPath(validPath, "x"));
-        Location child2 = new Location(createPath(validPath, "y"));
-        Location child3 = new Location(createPath(validPath, "z"));
-        setChildrenToReadOn(new Location(validPath), child1, child2, child3);
-        Location child11 = new Location(createPath(child1.getPath(), "h"));
-        Location child12 = new Location(createPath(child1.getPath(), "i"));
-        Location child13 = new Location(createPath(child1.getPath(), "j"));
+        Location child1 = Location.create(createPath(validPath, "x"));
+        Location child2 = Location.create(createPath(validPath, "y"));
+        Location child3 = Location.create(createPath(validPath, "z"));
+        setChildrenToReadOn(Location.create(validPath), child1, child2, child3);
+        Location child11 = Location.create(createPath(child1.getPath(), "h"));
+        Location child12 = Location.create(createPath(child1.getPath(), "i"));
+        Location child13 = Location.create(createPath(child1.getPath(), "j"));
         setChildrenToReadOn(child1, child11, child12, child13);
-        Location child121 = new Location(createPath(child12.getPath(), "m"));
-        Location child122 = new Location(createPath(child12.getPath(), "n"));
-        Location child123 = new Location(createPath(child12.getPath(), "o"));
+        Location child121 = Location.create(createPath(child12.getPath(), "m"));
+        Location child122 = Location.create(createPath(child12.getPath(), "n"));
+        Location child123 = Location.create(createPath(child12.getPath(), "o"));
         setChildrenToReadOn(child12, child121, child122, child123);
 
-        setPropertiesToReadOn(new Location(validPath), validIdProperty1, validIdProperty2);
+        setPropertiesToReadOn(Location.create(validPath), validIdProperty1, validIdProperty2);
         setPropertiesToReadOn(child1, validIdProperty1);
         setPropertiesToReadOn(child2, validIdProperty2);
         setPropertiesToReadOn(child11, validIdProperty1);
@@ -659,10 +659,10 @@ public class GraphTest {
         Subgraph subgraph = graph.getSubgraphOfDepth(2).at(validPath);
         assertThat(subgraph, is(notNullValue()));
         assertThat(subgraph.getMaximumDepth(), is(2));
-        assertThat(subgraph.getLocation(), is(new Location(validPath)));
+        assertThat(subgraph.getLocation(), is(Location.create(validPath)));
 
         // Get nodes by absolute path
-        Node root = subgraph.getNode(new Location(validPath));
+        Node root = subgraph.getNode(Location.create(validPath));
         assertThat(root.getChildren(), hasItems(child1, child2, child3));
         assertThat(root.getProperties(), hasItems(validIdProperty1, validIdProperty2));
 
@@ -707,26 +707,26 @@ public class GraphTest {
     public void shouldMoveNodeInBatches() {
         graph.batch().move(validPath).into(validIdProperty1, validIdProperty2).execute();
         assertThat(numberOfExecutions, is(1));
-        assertNextRequestIsMove(new Location(validPath), new Location(validIdProperty1, validIdProperty2));
+        assertNextRequestIsMove(Location.create(validPath), Location.create(validIdProperty1, validIdProperty2));
         assertNoMoreRequests();
 
         graph.batch().move(validPathString).into(validIdProperty1, validIdProperty2).execute();
         assertThat(numberOfExecutions, is(1));
-        assertNextRequestIsMove(new Location(validPath), new Location(validIdProperty1, validIdProperty2));
+        assertNextRequestIsMove(Location.create(validPath), Location.create(validIdProperty1, validIdProperty2));
         assertNoMoreRequests();
 
         graph.batch().move(validUuid).into(validPath).execute();
         assertThat(numberOfExecutions, is(1));
-        assertNextRequestIsMove(new Location(validUuid), new Location(validPath));
+        assertNextRequestIsMove(Location.create(validUuid), Location.create(validPath));
         assertNoMoreRequests();
 
         graph.batch().move(validPath).into(validIdProperty1, validIdProperty2).and().move(validPathString).into(validIdProperty1,
                                                                                                                 validIdProperty2).and().move(validUuid).into(validPath).execute();
         assertThat(numberOfExecutions, is(1));
         extractRequestsFromComposite();
-        assertNextRequestIsMove(new Location(validPath), new Location(validIdProperty1, validIdProperty2));
-        assertNextRequestIsMove(new Location(validPath), new Location(validIdProperty1, validIdProperty2));
-        assertNextRequestIsMove(new Location(validUuid), new Location(validPath));
+        assertNextRequestIsMove(Location.create(validPath), Location.create(validIdProperty1, validIdProperty2));
+        assertNextRequestIsMove(Location.create(validPath), Location.create(validIdProperty1, validIdProperty2));
+        assertNextRequestIsMove(Location.create(validUuid), Location.create(validPath));
         assertNoMoreRequests();
     }
 
@@ -734,45 +734,45 @@ public class GraphTest {
     public void shouldCopyNodeInBatches() {
         graph.batch().copy(validPath).into(validIdProperty1, validIdProperty2).execute();
         assertThat(numberOfExecutions, is(1));
-        assertNextRequestIsCopy(new Location(validPath), new Location(validIdProperty1, validIdProperty2));
+        assertNextRequestIsCopy(Location.create(validPath), Location.create(validIdProperty1, validIdProperty2));
         assertNoMoreRequests();
 
         graph.batch().copy(validPathString).into(validIdProperty1, validIdProperty2).execute();
         assertThat(numberOfExecutions, is(1));
-        assertNextRequestIsCopy(new Location(validPath), new Location(validIdProperty1, validIdProperty2));
+        assertNextRequestIsCopy(Location.create(validPath), Location.create(validIdProperty1, validIdProperty2));
         assertNoMoreRequests();
 
         graph.batch().copy(validUuid).into(validPath).execute();
         assertThat(numberOfExecutions, is(1));
-        assertNextRequestIsCopy(new Location(validUuid), new Location(validPath));
+        assertNextRequestIsCopy(Location.create(validUuid), Location.create(validPath));
         assertNoMoreRequests();
 
         graph.batch().copy(validPath).into(validIdProperty1, validIdProperty2).and().copy(validPathString).into(validIdProperty1,
                                                                                                                 validIdProperty2).and().copy(validUuid).into(validPath).execute();
         assertThat(numberOfExecutions, is(1));
         extractRequestsFromComposite();
-        assertNextRequestIsCopy(new Location(validPath), new Location(validIdProperty1, validIdProperty2));
-        assertNextRequestIsCopy(new Location(validPath), new Location(validIdProperty1, validIdProperty2));
-        assertNextRequestIsCopy(new Location(validUuid), new Location(validPath));
+        assertNextRequestIsCopy(Location.create(validPath), Location.create(validIdProperty1, validIdProperty2));
+        assertNextRequestIsCopy(Location.create(validPath), Location.create(validIdProperty1, validIdProperty2));
+        assertNextRequestIsCopy(Location.create(validUuid), Location.create(validPath));
         assertNoMoreRequests();
     }
 
     @Test
     public void shouldReadNodesInBatches() {
-        Location child1 = new Location(createPath(validPath, "x"));
-        Location child2 = new Location(createPath(validPath, "y"));
-        Location child3 = new Location(createPath(validPath, "z"));
-        setChildrenToReadOn(new Location(validPath), child1, child2, child3);
-        Location child11 = new Location(createPath(child1.getPath(), "h"));
-        Location child12 = new Location(createPath(child1.getPath(), "i"));
-        Location child13 = new Location(createPath(child1.getPath(), "j"));
+        Location child1 = Location.create(createPath(validPath, "x"));
+        Location child2 = Location.create(createPath(validPath, "y"));
+        Location child3 = Location.create(createPath(validPath, "z"));
+        setChildrenToReadOn(Location.create(validPath), child1, child2, child3);
+        Location child11 = Location.create(createPath(child1.getPath(), "h"));
+        Location child12 = Location.create(createPath(child1.getPath(), "i"));
+        Location child13 = Location.create(createPath(child1.getPath(), "j"));
         setChildrenToReadOn(child1, child11, child12, child13);
-        Location child121 = new Location(createPath(child12.getPath(), "m"));
-        Location child122 = new Location(createPath(child12.getPath(), "n"));
-        Location child123 = new Location(createPath(child12.getPath(), "o"));
+        Location child121 = Location.create(createPath(child12.getPath(), "m"));
+        Location child122 = Location.create(createPath(child12.getPath(), "n"));
+        Location child123 = Location.create(createPath(child12.getPath(), "o"));
         setChildrenToReadOn(child12, child121, child122, child123);
 
-        setPropertiesToReadOn(new Location(validPath), validIdProperty1, validIdProperty2);
+        setPropertiesToReadOn(Location.create(validPath), validIdProperty1, validIdProperty2);
         setPropertiesToReadOn(child1, validIdProperty1);
         setPropertiesToReadOn(child2, validIdProperty2);
         setPropertiesToReadOn(child11, validIdProperty1);
@@ -783,7 +783,7 @@ public class GraphTest {
         results = graph.batch().read(validPath).and().read(child11).and().read(child12).execute();
         assertThat(numberOfExecutions, is(1));
         extractRequestsFromComposite();
-        assertNextRequestReadNode(new Location(validPath));
+        assertNextRequestReadNode(Location.create(validPath));
         assertNextRequestReadNode(child11);
         assertNextRequestReadNode(child12);
         assertNoMoreRequests();
@@ -793,7 +793,7 @@ public class GraphTest {
         assertThat(node, is(notNullValue()));
         assertThat(node.getChildren(), hasItems(child1, child2, child3));
         assertThat(node.getProperties(), hasItems(validIdProperty1, validIdProperty2));
-        assertThat(node.getLocation(), is(new Location(validPath)));
+        assertThat(node.getLocation(), is(Location.create(validPath)));
         assertThat(node.getGraph(), is(sameInstance(graph)));
         assertThat(node.getPropertiesByName().get(validIdProperty1.getName()), is(validIdProperty1));
         assertThat(node.getPropertiesByName().get(validIdProperty2.getName()), is(validIdProperty2));
@@ -820,17 +820,17 @@ public class GraphTest {
     // ----------------------------------------------------------------------------------------------------------------
     @Test( expected = AssertionError.class )
     public void shouldPropertyCheckReadPropertiesUsingTestHarness1() {
-        setPropertiesToReadOn(new Location(validPath), validIdProperty1);
+        setPropertiesToReadOn(Location.create(validPath), validIdProperty1);
         graph.getProperties().on(validPath);
         assertThat(numberOfExecutions, is(1));
-        assertNextRequestReadProperties(new Location(validPath), validIdProperty1, validIdProperty2); // wrong!
+        assertNextRequestReadProperties(Location.create(validPath), validIdProperty1, validIdProperty2); // wrong!
     }
 
     @Test( expected = AssertionError.class )
     public void shouldPropertyCheckReadPropertiesUsingTestHarness2() {
         graph.getProperties().on(validPath);
         assertThat(numberOfExecutions, is(1));
-        assertNextRequestReadProperties(new Location(validPath), validIdProperty1, validIdProperty2); // wrong!
+        assertNextRequestReadProperties(Location.create(validPath), validIdProperty1, validIdProperty2); // wrong!
     }
 
     // ----------------------------------------------------------------------------------------------------------------
@@ -863,8 +863,8 @@ public class GraphTest {
     public void shouldMoveNodesThroughMultipleMoveRequests() {
         graph.move(validPath).into(validIdProperty1, validIdProperty2).and().move(validUuid).into(validPathString);
         assertThat(numberOfExecutions, is(2));
-        assertNextRequestIsMove(new Location(validPath), new Location(validIdProperty1, validIdProperty2));
-        assertNextRequestIsMove(new Location(validUuid), new Location(createPath(validPathString)));
+        assertNextRequestIsMove(Location.create(validPath), Location.create(validIdProperty1, validIdProperty2));
+        assertNextRequestIsMove(Location.create(validUuid), Location.create(createPath(validPathString)));
         assertNoMoreRequests();
     }
 
@@ -875,7 +875,7 @@ public class GraphTest {
 
         graph.move(validPath).into(validUuid);
         assertThat(numberOfExecutions, is(1));
-        assertNextRequestIsMove(new Location(validPath), new Location(validUuid));
+        assertNextRequestIsMove(Location.create(validPath), Location.create(validUuid));
         assertNoMoreRequests();
     }
 
@@ -946,7 +946,7 @@ public class GraphTest {
                 Name childName = request.desiredName();
                 if (childName == null) childName = createName("child");
                 Path childPath = context.getValueFactories().getPathFactory().create(request.into().getPath(), childName);
-                Location newChild = actualLocationOf(new Location(childPath));
+                Location newChild = actualLocationOf(Location.create(childPath));
                 // Just update the actual location
                 request.setActualLocations(actualLocationOf(request.from()), newChild);
             } else {
@@ -961,7 +961,7 @@ public class GraphTest {
             Location parent = actualLocationOf(request.under()); // just make sure it has a path ...
             Name name = request.named();
             Path childPath = context.getValueFactories().getPathFactory().create(parent.getPath(), name);
-            request.setActualLocationOfNode(new Location(childPath));
+            request.setActualLocationOfNode(Location.create(childPath));
         }
 
         @Override
@@ -1012,7 +1012,7 @@ public class GraphTest {
             String workspaceName = request.workspaceName();
             if (workspaceName == null) workspaceName = "default";
             request.setActualWorkspaceName(workspaceName);
-            request.setActualRootLocation(new Location(context.getValueFactories().getPathFactory().createRootPath()));
+            request.setActualRootLocation(Location.create(context.getValueFactories().getPathFactory().createRootPath()));
         }
 
         @Override
@@ -1021,7 +1021,7 @@ public class GraphTest {
             String workspaceName = request.desiredNameOfNewWorkspace();
             if (workspaceName == null) workspaceName = "default";
             request.setActualWorkspaceName(workspaceName);
-            request.setActualRootLocation(new Location(context.getValueFactories().getPathFactory().createRootPath()));
+            request.setActualRootLocation(Location.create(context.getValueFactories().getPathFactory().createRootPath()));
         }
 
         @Override
@@ -1039,7 +1039,7 @@ public class GraphTest {
             String workspaceName = request.desiredNameOfTargetWorkspace();
             assert workspaceName != null;
             request.setActualWorkspaceName(workspaceName);
-            request.setActualRootLocation(new Location(context.getValueFactories().getPathFactory().createRootPath()));
+            request.setActualRootLocation(Location.create(context.getValueFactories().getPathFactory().createRootPath()));
         }
 
         private Location actualLocationOf( Location location ) {
@@ -1047,7 +1047,7 @@ public class GraphTest {
             if (location.hasPath()) return location;
             // Otherwise, create a new location with an artificial path ...
             Path path = context.getValueFactories().getPathFactory().create("/a/b/c/d");
-            return new Location(path, location.getIdProperties());
+            return Location.create(path, location.getIdProperties());
         }
     }
 
