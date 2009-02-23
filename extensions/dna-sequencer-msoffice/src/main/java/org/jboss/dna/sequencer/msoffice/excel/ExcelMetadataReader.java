@@ -27,7 +27,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
-import org.apache.poi.hssf.extractor.ExcelExtractor;
+
+import org.apache.poi.hssf.usermodel.HSSFCell;
+import org.apache.poi.hssf.usermodel.HSSFComment;
+import org.apache.poi.hssf.usermodel.HSSFRow;
+import org.apache.poi.hssf.usermodel.HSSFSheet;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
 
@@ -37,18 +41,78 @@ import org.apache.poi.poifs.filesystem.POIFSFileSystem;
  */
 public class ExcelMetadataReader {
 
+	/** The character to output after each row. */
+	private static final char ROW_DELIMITER_CHAR = '\n';
+	/** The character to output after each cell (column). */
+	private static final char CELL_DELIMITER_CHAR = '\t';
+	
     public static ExcelMetadata instance( InputStream stream ) throws IOException {
         ExcelMetadata metadata = new ExcelMetadata();
         HSSFWorkbook wb = new HSSFWorkbook(new POIFSFileSystem(stream));
-        ExcelExtractor extractor = new ExcelExtractor(wb);
 
-        extractor.setFormulasNotResults(true);
-        extractor.setIncludeSheetNames(false);
-        metadata.setText(extractor.getText());
+        StringBuffer buff = new StringBuffer();
         List<String> sheets = new ArrayList<String>();
-        for (int i = 0; i < wb.getNumberOfSheets(); i++) {
-            sheets.add(wb.getSheetName(i));
+        
+        for (int sheetInd = 0; sheetInd < wb.getNumberOfSheets(); sheetInd++) {
+            sheets.add(wb.getSheetName(sheetInd));
+
+            HSSFSheet worksheet = wb.getSheetAt(sheetInd);
+            int lastRowNum = worksheet.getLastRowNum();
+            
+            for (int rowNum = worksheet.getFirstRowNum(); rowNum <= lastRowNum; rowNum++) {
+            	HSSFRow row = worksheet.getRow(rowNum);
+            	
+            	// Empty rows are returned as null
+            	if (row == null) {
+            		continue;
+            	}
+            	
+            	int lastCellNum = row.getLastCellNum();
+            	for (int cellNum = row.getFirstCellNum(); cellNum < lastCellNum; cellNum++) {
+            		HSSFCell cell = row.getCell(cellNum);
+            		
+            		/*
+            		 * Builds a string of body content from all string, numeric,
+            		 * and formula values in the body of each worksheet.
+            		 * 
+            		 *  This code currently duplicates the POI 3.1 ExcelExtractor behavior of
+            		 *  combining the body text from all worksheets into a single string.
+            		 */
+            		switch (cell.getCellType()) {
+	            		case HSSFCell.CELL_TYPE_STRING:
+	            			buff.append(cell.getRichStringCellValue().getString());
+	            			break;
+	            		case HSSFCell.CELL_TYPE_NUMERIC:
+	            			buff.append(cell.getNumericCellValue());
+	            			break;
+	            		case HSSFCell.CELL_TYPE_FORMULA:
+	            			buff.append(cell.getCellFormula());
+	            			break;
+            		}
+
+            		HSSFComment comment = cell.getCellComment();
+            		if (comment != null) {
+            			// Filter out row delimiter characters from comment
+            			String commentText = comment.getString().getString().replace(ROW_DELIMITER_CHAR, ' ');
+            			
+            			buff.append(" [");
+            			buff.append(commentText);
+            			buff.append(" by ");
+            			buff.append(comment.getAuthor());
+            			buff.append(']');
+            		}
+            		
+            		if (cellNum < lastCellNum - 1) {
+            			buff.append(CELL_DELIMITER_CHAR);
+            		}
+            		else {
+            			buff.append(ROW_DELIMITER_CHAR);
+            		}
+            	}
+            }
         }
+        
+        metadata.setText(buff.toString());
         metadata.setSheets(sheets);
         return metadata;
     }
