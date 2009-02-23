@@ -24,13 +24,13 @@
 package org.jboss.dna.graph;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Set;
 import java.util.UUID;
-
 import net.jcip.annotations.Immutable;
-
 import org.jboss.dna.common.text.TextEncoder;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.common.util.HashCode;
@@ -75,7 +75,7 @@ public abstract class Location implements Iterable<Property> {
     public static Location create( Path path ) {
         CheckArg.isNotNull(path, "path");
 
-        return new PathLocation(path);
+        return new LocationWithPath(path);
     }
 
     /**
@@ -88,8 +88,7 @@ public abstract class Location implements Iterable<Property> {
      */
     public static Location create( UUID uuid ) {
         CheckArg.isNotNull(uuid, "uuid");
-        Property idProperty = new BasicSingleValueProperty(DnaLexicon.UUID, uuid);
-        return new PathPropertyLocation(null, idProperty);
+        return new LocationWithUuid(uuid);
     }
 
     /**
@@ -104,7 +103,7 @@ public abstract class Location implements Iterable<Property> {
     public static Location create( Path path,
                                    UUID uuid ) {
         CheckArg.isNotNull(uuid, "uuid");
-        return new PathPropertyLocation(path, new BasicSingleValueProperty(DnaLexicon.UUID, uuid));
+        return new LocationWithPathAndProperty(path, new BasicSingleValueProperty(DnaLexicon.UUID, uuid));
     }
 
     /**
@@ -119,7 +118,7 @@ public abstract class Location implements Iterable<Property> {
                                    Property idProperty ) {
         CheckArg.isNotNull(path, "path");
         CheckArg.isNotNull(idProperty, "idProperty");
-        return new PathPropertyLocation(path, idProperty);
+        return new LocationWithPathAndProperty(path, idProperty);
     }
 
     /**
@@ -138,11 +137,13 @@ public abstract class Location implements Iterable<Property> {
         CheckArg.isNotNull(firstIdProperty, "firstIdProperty");
         CheckArg.isNotNull(remainingIdProperties, "remainingIdProperties");
         List<Property> idProperties = new ArrayList<Property>(1 + remainingIdProperties.length);
+        Set<Name> names = new HashSet<Name>();
+        names.add(firstIdProperty.getName());
         idProperties.add(firstIdProperty);
         for (Property property : remainingIdProperties) {
-            idProperties.add(property);
+            if (names.add(property.getName())) idProperties.add(property);
         }
-        return new PathPropertiesLocation(path, idProperties);
+        return new LocationWithPathAndProperties(path, idProperties);
     }
 
     /**
@@ -158,10 +159,18 @@ public abstract class Location implements Iterable<Property> {
         CheckArg.isNotNull(path, "path");
         CheckArg.isNotNull(idProperties, "idProperties");
         List<Property> idPropertiesList = new ArrayList<Property>();
+        Set<Name> names = new HashSet<Name>();
         for (Property property : idProperties) {
-            idPropertiesList.add(property);
+            if (names.add(property.getName())) idPropertiesList.add(property);
         }
-        return new PathPropertiesLocation(path, idPropertiesList);
+        switch (idPropertiesList.size()) {
+            case 0:
+                return new LocationWithPath(path);
+            case 1:
+                return new LocationWithPathAndProperty(path, idPropertiesList.get(0));
+            default:
+                return new LocationWithPathAndProperties(path, idPropertiesList);
+        }
     }
 
     /**
@@ -173,7 +182,7 @@ public abstract class Location implements Iterable<Property> {
      */
     public static Location create( Property idProperty ) {
         CheckArg.isNotNull(idProperty, "idProperty");
-        return new PathPropertyLocation(null, idProperty);
+        return new LocationWithPathAndProperty(null, idProperty);
     }
 
     /**
@@ -189,11 +198,13 @@ public abstract class Location implements Iterable<Property> {
         CheckArg.isNotNull(firstIdProperty, "firstIdProperty");
         CheckArg.isNotNull(remainingIdProperties, "remainingIdProperties");
         List<Property> idProperties = new ArrayList<Property>(1 + remainingIdProperties.length);
+        Set<Name> names = new HashSet<Name>();
+        names.add(firstIdProperty.getName());
         idProperties.add(firstIdProperty);
         for (Property property : remainingIdProperties) {
-            idProperties.add(property);
+            if (names.add(property.getName())) idProperties.add(property);
         }
-        return new PathPropertiesLocation(null, idProperties);
+        return new LocationWithPathAndProperties(null, idProperties);
     }
 
     /**
@@ -206,14 +217,25 @@ public abstract class Location implements Iterable<Property> {
     public static Location create( Iterable<Property> idProperties ) {
         CheckArg.isNotNull(idProperties, "idProperties");
         List<Property> idPropertiesList = new ArrayList<Property>();
+        Set<Name> names = new HashSet<Name>();
         for (Property property : idProperties) {
-            idPropertiesList.add(property);
+            if (names.add(property.getName())) idPropertiesList.add(property);
         }
-        return new PathPropertiesLocation(null, idPropertiesList);
+        switch (idPropertiesList.size()) {
+            case 0:
+                CheckArg.isNotEmpty(idPropertiesList, "idProperties");
+                assert false;
+                return null; // never get here
+            case 1:
+                return new LocationWithPathAndProperty(null, idPropertiesList.get(0));
+            default:
+                return new LocationWithPathAndProperties(null, idPropertiesList);
+        }
     }
 
     /**
-     * Create a location defined by multiple identification properties.
+     * Create a location defined by multiple identification properties. This method does not check whether the identification
+     * properties are duplicated.
      * 
      * @param idProperties the identification properties
      * @return a new <code>Location</code> with no path and the given identification properties.
@@ -221,7 +243,7 @@ public abstract class Location implements Iterable<Property> {
      */
     public static Location create( List<Property> idProperties ) {
         CheckArg.isNotEmpty(idProperties, "idProperties");
-        return new PathPropertiesLocation(null, idProperties);
+        return new LocationWithPathAndProperties(null, idProperties);
     }
 
     /**
@@ -544,6 +566,7 @@ public abstract class Location implements Iterable<Property> {
      * @return the new location, or this location if the new identification property is null or empty
      */
     public abstract Location with( Property newIdProperty );
+
     /**
      * Create a copy of this location that uses the supplied path.
      * 

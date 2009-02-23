@@ -23,13 +23,10 @@
  */
 package org.jboss.dna.graph;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
-
 import net.jcip.annotations.Immutable;
-
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.common.util.HashCode;
 import org.jboss.dna.graph.property.Name;
@@ -38,160 +35,148 @@ import org.jboss.dna.graph.property.Property;
 import org.jboss.dna.graph.property.basic.BasicSingleValueProperty;
 
 /**
- * General purpose location type that supports a path and a property.
- * This class should never be directly instantiated by users of the DNA framework.
- * Instead, use @{link Location#create} to create the correct location.
- *
+ * General purpose location type that supports a path and a property. This class should never be directly instantiated by users of
+ * the DNA framework. Instead, use @{link Location#create} to create the correct location.
+ * 
  * @see Location
  */
 @Immutable
-class PathPropertyLocation extends Location {
+class LocationWithPathAndProperty extends Location {
 
     private final Path path;
-    private final Property idProperty;
     private final List<Property> idProperties;
 
     private final int hashCode;
-    
+
     /**
      * Create a new location with a given path and identification property.
      * 
      * @param path the path
      * @param idProperty the identification property
      */
-    PathPropertyLocation( Path path, Property idProperty ) {
-		// The path could be null
-		// CheckArg.isNotNull(path, "path");
-		// If the properties are a null, a PathLocation should be used instead.
-		CheckArg.isNotNull(idProperty, "idProperty");
-		
-	    this.path = path;
-	    this.idProperty = idProperty;
-	    this.idProperties = Collections.singletonList(idProperty);
-	    
-	    // Paths are immutable, Properties are immutable, the idProperties list 
-	    // is wrapped in an unmodifiableList by the Location factory methods...
-	    // ... so we can cache the hash code.
-	    
-	    hashCode = HashCode.compute(path, idProperties);
-	}
-	
+    LocationWithPathAndProperty( Path path,
+                                 Property idProperty ) {
+        assert idProperty != null;
+        assert !idProperty.isEmpty();
+        // The path could be null
+        this.path = path;
+        this.idProperties = Collections.singletonList(idProperty);
+
+        // Paths are immutable, Properties are immutable, the idProperties list
+        // is wrapped in an unmodifiableList by the Location factory methods...
+        // ... so we can cache the hash code.
+        hashCode = HashCode.compute(path, idProperties);
+    }
+
     /**
      * {@inheritDoc}
      * 
      * @see Location#getPath()
      */
-	@Override
-	public final Path getPath() {
-		return path;
-	}
+    @Override
+    public final Path getPath() {
+        return path;
+    }
 
     /**
      * {@inheritDoc}
      * 
      * @see Location#getIdProperties()
-     */	
-	@Override
-	public final List<Property> getIdProperties() {
-		return idProperties;
-	}
+     */
+    @Override
+    public final List<Property> getIdProperties() {
+        return idProperties;
+    }
 
     /**
      * {@inheritDoc}
      * 
      * @see Location#hasIdProperties()
-     */	
-	@Override
-	public final boolean hasIdProperties() {
-		return true;
-	}
+     */
+    @Override
+    public final boolean hasIdProperties() {
+        return true;
+    }
 
     /**
      * {@inheritDoc}
      * 
      * @see Location#getIdProperty(Name)
-     */	
-	@Override
+     */
+    @Override
     public final Property getIdProperty( Name name ) {
         CheckArg.isNotNull(name, "name");
-	    if (idProperty.getName().equals(name)) return idProperty;
-
-	    return null;
+        Property property = idProperties.get(0); // this is fast
+        return property.getName().equals(name) ? property : null;
     }
 
     /**
      * {@inheritDoc}
      * 
      * @see Location#getUuid()
-     */	
-	@Override
+     */
+    @Override
     public UUID getUuid() {
-		if (DnaLexicon.UUID.equals(idProperty.getName())) {
-            Object value = idProperty.getFirstValue();
+        Property property = idProperties.get(0); // this is fast
+        if (DnaLexicon.UUID.equals(property.getName())) {
+            Object value = property.getFirstValue();
             if (value instanceof UUID) return (UUID)value;
+            if (value instanceof String) return UUID.fromString((String)value);
         }
         return null;
     }
 
-    
     /**
      * {@inheritDoc}
      * 
      * @see Location#hashCode()
-     */	
-	@Override
-	public int hashCode() {
-		return hashCode;
-	}	
-	
+     */
+    @Override
+    public int hashCode() {
+        return hashCode;
+    }
+
     /**
      * {@inheritDoc}
      * 
      * @see Location#with(Property)
-     */	
-	@Override
+     */
+    @Override
     public Location with( Property newIdProperty ) {
         if (newIdProperty == null || newIdProperty.isEmpty()) return this;
-        
-        // A new property with same name overrides the old property with the same name
-        if (newIdProperty.getName().equals(idProperty.getName())) return Location.create(path, newIdProperty);
-        
-        List<Property> newIdProperties = new ArrayList<Property>(2);
-        newIdProperties.add(idProperty);
-        newIdProperties.add(newIdProperty);
-                
-        return Location.create(path, newIdProperties);
-    }    
-	
+        Property idProperty = idProperties.get(0); // fast
+        if (newIdProperty.getName().equals(idProperty.getName())) {
+            return path == null ? Location.create(newIdProperty) : Location.create(path, newIdProperty);
+        }
+        return path == null ? Location.create(idProperty, newIdProperty) : Location.create(path, idProperty, newIdProperty);
+    }
+
     /**
      * {@inheritDoc}
      * 
      * @see Location#with(Path)
-     */	
-	@Override
+     */
+    @Override
     public Location with( Path newPath ) {
         if (newPath == null && path == null) return this;
         if (path != null && (path.equals(newPath))) return this;
-        
+        Property idProperty = idProperties.get(0); // fast
         return Location.create(newPath, idProperty);
-    }	
-	
+    }
+
     /**
      * {@inheritDoc}
      * 
      * @see Location#with(UUID)
      */
-	@Override
+    @Override
     public Location with( UUID uuid ) {
         if (uuid == null) return this;
-        
-        // A new property with same name overrides the old property with the same name
-        if (idProperty.getName().equals(DnaLexicon.UUID)) return Location.create(path, uuid);
-        
-        List<Property> newIdProperties = new ArrayList<Property>(2);
-        newIdProperties.add(idProperty);
-        newIdProperties.add(new BasicSingleValueProperty(DnaLexicon.UUID, uuid));
-        
-        return Location.create(path, newIdProperties);
-    }	
+        Property idProperty = idProperties.get(0); // fast
+        if (DnaLexicon.UUID.equals(idProperty.getName())) {
+            return path == null ? Location.create(uuid) : Location.create(path, uuid);
+        }
+        Property newUuidProperty = new BasicSingleValueProperty(DnaLexicon.UUID, uuid);
+        return path == null ? Location.create(idProperty, newUuidProperty) : Location.create(path, idProperty, newUuidProperty);
+    }
 }

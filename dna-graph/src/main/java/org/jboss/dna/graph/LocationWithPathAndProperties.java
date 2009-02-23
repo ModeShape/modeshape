@@ -27,135 +27,124 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
-
 import net.jcip.annotations.Immutable;
-
-import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.common.util.HashCode;
 import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.Property;
 import org.jboss.dna.graph.property.basic.BasicSingleValueProperty;
 
 /**
- * General purpose location type that supports a path and zero or more properties.
- * This class should never be directly instantiated by users of the DNA framework.
- * Instead, use @{link Location#create} to create the correct location.
- *
+ * General purpose location type that supports a path and zero or more properties. This class should never be directly
+ * instantiated by users of the DNA framework. Instead, use @{link Location#create} to create the correct location.
+ * 
  * @see Location
  */
 @Immutable
-class PathPropertiesLocation extends Location {
+class LocationWithPathAndProperties extends Location {
 
     private final Path path;
     private final List<Property> idProperties;
 
     private final int hashCode;
-    
+
     /**
      * Create a new location with a given path and set of identification properties.
      * 
      * @param path the path
      * @param idProperties the identification properties
      */
-	PathPropertiesLocation( Path path, List<Property> idProperties ) {
-		// The path could be null
-		// CheckArg.isNotNull(path, "path");
-		// If the properties are a null, a PathLocation should be used instead.
-		CheckArg.isNotNull(idProperties, "idProperties");
-		
-	    this.path = path;
-	    this.idProperties = Collections.unmodifiableList(idProperties);
-	    
-	    // Paths are immutable, Properties are immutable, the idProperties list 
-	    // is wrapped in an unmodifiableList by the Location factory methods...
-	    // ... so we can cache the hash code.
-	    
-	    hashCode = HashCode.compute(path, idProperties);
-	}
-	
+    LocationWithPathAndProperties( Path path,
+                            List<Property> idProperties ) {
+        assert idProperties != null;
+        assert !idProperties.isEmpty();
+        this.path = path;
+        this.idProperties = Collections.unmodifiableList(idProperties);
+        // Paths are immutable, Properties are immutable, the idProperties list
+        // is wrapped in an unmodifiableList by the Location factory methods...
+        // ... so we can cache the hash code.
+        hashCode = HashCode.compute(path, idProperties);
+    }
+
     /**
      * {@inheritDoc}
      * 
      * @see Location#getPath()
      */
-	@Override
-	public final Path getPath() {
-		return path;
-	}
+    @Override
+    public final Path getPath() {
+        return path;
+    }
 
     /**
      * {@inheritDoc}
      * 
      * @see Location#getIdProperties()
-     */	
-	@Override
-	public final List<Property> getIdProperties() {
-		return idProperties;
-	}
+     */
+    @Override
+    public final List<Property> getIdProperties() {
+        return idProperties;
+    }
 
     /**
      * {@inheritDoc}
      * 
      * @see Location#hasIdProperties()
-     */	
-	@Override
-	public final boolean hasIdProperties() {
-		return idProperties.size() > 0;
-	}
+     */
+    @Override
+    public final boolean hasIdProperties() {
+        return idProperties.size() > 0;
+    }
 
     /**
      * {@inheritDoc}
      * 
      * @see Location#hashCode()
-     */	
-	@Override
-	public int hashCode() {
-		return hashCode;
-	}	
-	
+     */
+    @Override
+    public int hashCode() {
+        return hashCode;
+    }
+
     /**
      * {@inheritDoc}
      * 
      * @see Location#with(Property)
-     */	
-	@Override
+     */
+    @Override
     public Location with( Property newIdProperty ) {
         if (newIdProperty == null || newIdProperty.isEmpty()) return this;
 
-	    List<Property> newIdProperties;
-	    
-	    if (hasIdProperties()) {
-        	newIdProperties = new ArrayList<Property>(idProperties.size() + 1);
+        List<Property> newIdProperties;
+
+        if (hasIdProperties()) {
+            newIdProperties = new ArrayList<Property>(idProperties.size() + 1);
             for (Property property : idProperties) {
                 if (!newIdProperty.getName().equals(property.getName())) newIdProperties.add(property);
             }
             newIdProperties.add(newIdProperty);
             newIdProperties = Collections.unmodifiableList(newIdProperties);
-	    } else {
-	    	return Location.create(path, newIdProperty);
-	    }
-	    
-	    return new PathPropertiesLocation(path, newIdProperties);        
-    }    
-	
+            return new LocationWithPathAndProperties(path, newIdProperties);
+        }
+        return Location.create(path, newIdProperty);
+    }
+
     /**
      * {@inheritDoc}
      * 
      * @see Location#with(Path)
-     */	
-	@Override
+     */
+    @Override
     public Location with( Path newPath ) {
-        if (newPath == null) return this;
-        if (!this.getPath().equals(newPath)) return Location.create(newPath, idProperties);
-        return this;
-    }	
-	
+        if (newPath == null || this.getPath().equals(newPath)) return this;
+        return Location.create(newPath, idProperties);
+    }
+
     /**
      * {@inheritDoc}
      * 
      * @see Location#with(UUID)
      */
-	@Override
+    @Override
     public Location with( UUID uuid ) {
         if (uuid == null) return this;
         Property newProperty = new BasicSingleValueProperty(DnaLexicon.UUID, uuid);
@@ -163,11 +152,10 @@ class PathPropertiesLocation extends Location {
             Property existing = this.getIdProperty(DnaLexicon.UUID);
             if (existing != null && existing.equals(newProperty)) return this;
         }
-        
+
         List<Property> newIdProperties = new ArrayList<Property>(idProperties.size() + 1);
         newIdProperties.addAll(idProperties);
         newIdProperties.add(newProperty);
-        
         return Location.create(path, newIdProperties);
-    }	
+    }
 }

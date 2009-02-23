@@ -25,154 +25,140 @@ package org.jboss.dna.graph;
 
 import java.util.List;
 import java.util.UUID;
-
 import net.jcip.annotations.Immutable;
-
 import org.jboss.dna.common.text.TextEncoder;
-import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.common.util.HashCode;
 import org.jboss.dna.graph.property.NamespaceRegistry;
 import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.Property;
-import org.jboss.dna.graph.property.basic.BasicSingleValueProperty;
 
 /**
- * Special location type optimized for use when only a path is specified.
- * This class should never be directly instantiated by users of the DNA framework.
- * Instead, use @{link Location#create} to create the correct location.
- *
+ * Special location type optimized for use when only a path is specified. This class should never be directly instantiated by
+ * users of the DNA framework. Instead, use @{link Location#create} to create the correct location.
+ * 
  * @see Location
  */
 @Immutable
-class PathLocation extends Location {
+class LocationWithPath extends Location {
 
-	private final Path path;
-	private final int hashCode;
+    private final Path path;
+    private final int hashCode;
 
-	PathLocation(Path path) {
-		CheckArg.isNotNull(path, "path");
+    LocationWithPath( Path path ) {
+        assert path != null;
+        this.path = path;
 
-		this.path = path;
-		
-		// Paths are immutable, so PathLocations are immutable...
-		// ... so we can cache the hash code.
-		hashCode = HashCode.compute(path);
-	}
+        // Paths are immutable, so PathLocations are immutable...
+        // ... so we can cache the hash code.
+        hashCode = HashCode.compute(path);
+    }
 
     /**
      * {@inheritDoc}
      * 
      * @see Location#getPath()
      */
-	@Override
-	public final Path getPath() {
-		return path;
-	}
-
+    @Override
+    public final Path getPath() {
+        return path;
+    }
 
     /**
      * {@inheritDoc}
      * 
      * @see Location#hasPath()
-     */	
-	@Override
-	public final boolean hasPath() {
-		return true;
-	}
+     */
+    @Override
+    public final boolean hasPath() {
+        return true;
+    }
 
     /**
      * {@inheritDoc}
      * 
      * @see Location#getIdProperties()
-     */	
-	@Override
-	public final List<Property> getIdProperties() {
-		return null;
-	}
+     */
+    @Override
+    public final List<Property> getIdProperties() {
+        return null;
+    }
 
     /**
      * {@inheritDoc}
      * 
      * @see Location#hasIdProperties()
-     */	
-	@Override
-	public final boolean hasIdProperties() {
-		return false;
-	}
-
+     */
+    @Override
+    public final boolean hasIdProperties() {
+        return false;
+    }
 
     /**
      * {@inheritDoc}
      * 
      * @see Location#getUuid()
-     */	
-	@Override
-	public final UUID getUuid() {
-		return null;
-	}
+     */
+    @Override
+    public final UUID getUuid() {
+        return null;
+    }
 
     /**
      * {@inheritDoc}
      * 
      * @see Location#hashCode()
-     */	
-	@Override
-	public int hashCode() {
-		return hashCode;
-	}
-		
+     */
+    @Override
+    public int hashCode() {
+        return hashCode;
+    }
+
     /**
      * {@inheritDoc}
      * 
      * @see Location#getString(NamespaceRegistry, TextEncoder, TextEncoder)
-     */	
-	@Override
-	public String getString(NamespaceRegistry namespaceRegistry, TextEncoder encoder, TextEncoder delimiterEncoder) {
-		StringBuilder sb = new StringBuilder();
-		sb.append("{ ");
-		sb.append(path.getString(namespaceRegistry, encoder, delimiterEncoder));
-		sb.append(" }");
-		return sb.toString();
-	}
+     */
+    @Override
+    public String getString( NamespaceRegistry namespaceRegistry,
+                             TextEncoder encoder,
+                             TextEncoder delimiterEncoder ) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("{ ");
+        sb.append(path.getString(namespaceRegistry, encoder, delimiterEncoder));
+        sb.append(" }");
+        return sb.toString();
+    }
 
-	
     /**
      * {@inheritDoc}
      * 
      * @see Location#with(Property)
-     */	
-	@Override
+     */
+    @Override
     public Location with( Property newIdProperty ) {
         if (newIdProperty == null || newIdProperty.isEmpty()) return this;
         return Location.create(path, newIdProperty);
     }
-	
+
     /**
      * {@inheritDoc}
      * 
      * @see Location#with(Path)
-     */	
-	@Override
+     */
+    @Override
     public Location with( Path newPath ) {
-        if (newPath == null) return this;
-        if (!this.getPath().equals(newPath)) return Location.create(newPath);
-        return this;
-    }	
-	
-	
+        if (newPath == null || path.equals(newPath)) return this;
+        return Location.create(newPath);
+    }
+
     /**
      * {@inheritDoc}
      * 
      * @see Location#with(UUID)
      */
-	@Override
+    @Override
     public Location with( UUID uuid ) {
         if (uuid == null) return this;
-        Property newProperty = new BasicSingleValueProperty(DnaLexicon.UUID, uuid);
-        if (this.hasIdProperties()) {
-            Property existing = this.getIdProperty(DnaLexicon.UUID);
-            if (existing != null && existing.equals(newProperty)) return this;
-        }
         return Location.create(path, uuid);
-    }	
+    }
 }
