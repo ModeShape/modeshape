@@ -24,12 +24,13 @@
 package org.jboss.dna.graph;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.UUID;
+
 import net.jcip.annotations.Immutable;
+
 import org.jboss.dna.common.text.TextEncoder;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.common.util.HashCode;
@@ -45,12 +46,12 @@ import org.jboss.dna.graph.property.basic.BasicSingleValueProperty;
  * @author Randall Hauch
  */
 @Immutable
-public class Location implements Iterable<Property> {
+public abstract class Location implements Iterable<Property> {
 
     /**
      * Simple shared iterator instance that is used when there are no properties.
      */
-    private static final Iterator<Property> NO_ID_PROPERTIES_ITERATOR = new Iterator<Property>() {
+    protected static final Iterator<Property> NO_ID_PROPERTIES_ITERATOR = new Iterator<Property>() {
         public boolean hasNext() {
             return false;
         }
@@ -74,7 +75,7 @@ public class Location implements Iterable<Property> {
     public static Location create( Path path ) {
         CheckArg.isNotNull(path, "path");
 
-        return new Location(path, null);
+        return new PathLocation(path);
     }
 
     /**
@@ -88,7 +89,7 @@ public class Location implements Iterable<Property> {
     public static Location create( UUID uuid ) {
         CheckArg.isNotNull(uuid, "uuid");
         Property idProperty = new BasicSingleValueProperty(DnaLexicon.UUID, uuid);
-        return new Location(null, Collections.singletonList(idProperty));
+        return new PathPropertyLocation(null, idProperty);
     }
 
     /**
@@ -103,13 +104,7 @@ public class Location implements Iterable<Property> {
     public static Location create( Path path,
                                    UUID uuid ) {
         CheckArg.isNotNull(uuid, "uuid");
-        List<Property> idProperties = null;
-        if (uuid != null) {
-            Property idProperty = new BasicSingleValueProperty(DnaLexicon.UUID, uuid);
-            idProperties = Collections.singletonList(idProperty);
-        }
-
-        return new Location(path, idProperties);
+        return new PathPropertyLocation(path, new BasicSingleValueProperty(DnaLexicon.UUID, uuid));
     }
 
     /**
@@ -124,7 +119,7 @@ public class Location implements Iterable<Property> {
                                    Property idProperty ) {
         CheckArg.isNotNull(path, "path");
         CheckArg.isNotNull(idProperty, "idProperty");
-        return new Location(path, idProperty != null ? Collections.singletonList(idProperty) : null);
+        return new PathPropertyLocation(path, idProperty);
     }
 
     /**
@@ -147,7 +142,7 @@ public class Location implements Iterable<Property> {
         for (Property property : remainingIdProperties) {
             idProperties.add(property);
         }
-        return new Location(path, Collections.unmodifiableList(idProperties));
+        return new PathPropertiesLocation(path, idProperties);
     }
 
     /**
@@ -166,7 +161,7 @@ public class Location implements Iterable<Property> {
         for (Property property : idProperties) {
             idPropertiesList.add(property);
         }
-        return new Location(path, Collections.unmodifiableList(idPropertiesList));
+        return new PathPropertiesLocation(path, idPropertiesList);
     }
 
     /**
@@ -178,7 +173,7 @@ public class Location implements Iterable<Property> {
      */
     public static Location create( Property idProperty ) {
         CheckArg.isNotNull(idProperty, "idProperty");
-        return new Location(null, Collections.singletonList(idProperty));
+        return new PathPropertyLocation(null, idProperty);
     }
 
     /**
@@ -198,7 +193,7 @@ public class Location implements Iterable<Property> {
         for (Property property : remainingIdProperties) {
             idProperties.add(property);
         }
-        return new Location(null, Collections.unmodifiableList(idProperties));
+        return new PathPropertiesLocation(null, idProperties);
     }
 
     /**
@@ -214,7 +209,7 @@ public class Location implements Iterable<Property> {
         for (Property property : idProperties) {
             idPropertiesList.add(property);
         }
-        return new Location(null, Collections.unmodifiableList(idPropertiesList));
+        return new PathPropertiesLocation(null, idPropertiesList);
     }
 
     /**
@@ -226,79 +221,7 @@ public class Location implements Iterable<Property> {
      */
     public static Location create( List<Property> idProperties ) {
         CheckArg.isNotEmpty(idProperties, "idProperties");
-        return new Location(null, idProperties);
-    }
-
-    /**
-     * Create a location defined by a path and multiple identification properties.
-     * 
-     * @param path the path
-     * @param idProperties the identification properties
-     * @return a new <code>Location</code> with the given path and identification properties
-     * @throws IllegalArgumentException if <code>path</code> is null, or if <code>idProperties</code> is empty
-     */
-    protected static Location create( Path path,
-                                      List<Property> idProperties ) {
-        CheckArg.isNotNull(path, "path");
-        CheckArg.isNotEmpty(idProperties, "idProperties");
-        return new Location(path, idProperties);
-    }
-
-    private final Path path;
-    private final List<Property> idProperties;
-
-    /**
-     * Create a new location with a given path and set of identification properties.
-     * 
-     * @param path the path
-     * @param idProperties the identification properties
-     */
-    protected Location( Path path,
-                        List<Property> idProperties ) {
-        this.path = path;
-        this.idProperties = idProperties;
-    }
-
-    /**
-     * Create a location from another but adding the supplied identification property. The new identification property will
-     * replace any existing identification property with the same name on the original.
-     * 
-     * @param original the original location
-     * @param newIdProperty the new identification property
-     * @throws IllegalArgumentException if <code>original</code> is null
-     */
-    protected Location( Location original,
-                        Property newIdProperty ) {
-        this.path = original.getPath();
-        if (original.hasIdProperties()) {
-            List<Property> originalIdProperties = original.getIdProperties();
-            if (newIdProperty == null) {
-                this.idProperties = original.idProperties;
-            } else {
-                List<Property> idProperties = new ArrayList<Property>(originalIdProperties.size() + 1);
-                for (Property property : originalIdProperties) {
-                    if (!newIdProperty.getName().equals(property.getName())) idProperties.add(property);
-                }
-                idProperties.add(newIdProperty);
-                this.idProperties = Collections.unmodifiableList(idProperties);
-            }
-        } else {
-            this.idProperties = Collections.singletonList(newIdProperty);
-        }
-    }
-
-    /**
-     * Create a location from another but adding the supplied identification property. The new identification property will
-     * replace any existing identification property with the same name on the original.
-     * 
-     * @param original the original location
-     * @param newPath the new path for the location
-     * @throws IllegalArgumentException if <code>original</code> is null
-     */
-    protected Location( Location original,
-                        Path newPath ) {
-        this.path = newPath != null ? newPath : original.getPath();
-        this.idProperties = original.idProperties;
+        return new PathPropertiesLocation(null, idProperties);
     }
 
     /**
@@ -306,9 +229,7 @@ public class Location implements Iterable<Property> {
      * 
      * @return the path, or null if this location is not defined with a path
      */
-    public Path getPath() {
-        return path;
-    }
+    public abstract Path getPath();
 
     /**
      * Return whether this location is defined (at least in part) by a path.
@@ -316,7 +237,7 @@ public class Location implements Iterable<Property> {
      * @return true if a {@link #getPath() path} helps define this location
      */
     public boolean hasPath() {
-        return path != null;
+        return getPath() != null;
     }
 
     /**
@@ -324,9 +245,7 @@ public class Location implements Iterable<Property> {
      * 
      * @return the identification properties, or null if this location is not defined with identification properties
      */
-    public List<Property> getIdProperties() {
-        return idProperties;
-    }
+    public abstract List<Property> getIdProperties();
 
     /**
      * Return whether this location is defined (at least in part) with identification properties.
@@ -334,7 +253,7 @@ public class Location implements Iterable<Property> {
      * @return true if a {@link #getIdProperties() identification properties} help define this location
      */
     public boolean hasIdProperties() {
-        return idProperties != null && idProperties.size() != 0;
+        return getIdProperties() != null && getIdProperties().size() != 0;
     }
 
     /**
@@ -346,8 +265,8 @@ public class Location implements Iterable<Property> {
      */
     public Property getIdProperty( Name name ) {
         CheckArg.isNotNull(name, "name");
-        if (idProperties != null) {
-            for (Property property : idProperties) {
+        if (getIdProperties() != null) {
+            for (Property property : getIdProperties()) {
                 if (property.getName().equals(name)) return property;
             }
         }
@@ -449,7 +368,7 @@ public class Location implements Iterable<Property> {
      * @see java.lang.Iterable#iterator()
      */
     public Iterator<Property> iterator() {
-        return idProperties != null ? idProperties.iterator() : NO_ID_PROPERTIES_ITERATOR;
+        return getIdProperties() != null ? getIdProperties().iterator() : NO_ID_PROPERTIES_ITERATOR;
     }
 
     /**
@@ -459,7 +378,7 @@ public class Location implements Iterable<Property> {
      */
     @Override
     public int hashCode() {
-        return HashCode.compute(path, idProperties);
+        return HashCode.compute(getPath(), getIdProperties());
     }
 
     /**
@@ -624,22 +543,14 @@ public class Location implements Iterable<Property> {
      * @param newIdProperty the new identification property, which may be null
      * @return the new location, or this location if the new identification property is null or empty
      */
-    public Location with( Property newIdProperty ) {
-        if (newIdProperty == null || newIdProperty.isEmpty()) return this;
-        return new Location(this, newIdProperty);
-    }
-
+    public abstract Location with( Property newIdProperty );
     /**
      * Create a copy of this location that uses the supplied path.
      * 
      * @param newPath the new path for the location
      * @return the new location, or this location if the path is equal to this location's path
      */
-    public Location with( Path newPath ) {
-        if (newPath == null) return this;
-        if (!this.path.equals(newPath)) return new Location(this, newPath);
-        return this;
-    }
+    public abstract Location with( Path newPath );
 
     /**
      * Create a copy of this location that adds the supplied UUID as an identification property. The new identification property
@@ -648,14 +559,6 @@ public class Location implements Iterable<Property> {
      * @param uuid the new UUID, which may be null
      * @return the new location, or this location if the new identification property is null or empty
      */
-    public Location with( UUID uuid ) {
-        if (uuid == null) return this;
-        Property newProperty = new BasicSingleValueProperty(DnaLexicon.UUID, uuid);
-        if (this.hasIdProperties()) {
-            Property existing = this.getIdProperty(DnaLexicon.UUID);
-            if (existing != null && existing.equals(newProperty)) return this;
-        }
-        return new Location(this, newProperty);
-    }
+    public abstract Location with( UUID uuid );
 
 }
