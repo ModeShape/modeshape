@@ -43,9 +43,30 @@ public final class JcrI18n {
     public static I18n repositoryMustBeConfigured;
     public static I18n sourceInUse;
 
+    public static I18n noNamespaceWithPrefix;
+    public static I18n noNamespaceWithUri;
+    public static I18n unableToChangeTheDefaultNamespace;
+    public static I18n unableToRegisterReservedNamespacePrefix;
+    public static I18n unableToRegisterReservedNamespaceUri;
+    public static I18n unableToRegisterNamespaceUsingXmlPrefix;
+    public static I18n unableToRegisterNamespaceWithInvalidPrefix;
+    public static I18n errorRegisteringPersistentNamespace;
+    public static I18n unableToUnregisterReservedNamespacePrefix;
+    public static I18n unableToUnregisterReservedNamespaceUri;
+    public static I18n unableToUnregisterPrefixForNamespaceThatIsNotRegistered;
+
+    public static I18n errorWhileInitializingTheNamespaceRegistry;
+    public static I18n invalidPathParameter;
+
     public static I18n REP_NAME_DESC;
     public static I18n REP_VENDOR_DESC;
     public static I18n SPEC_NAME_DESC;
+
+    // New implementation
+    public static I18n errorObtainingWorkspaceNames;
+    public static I18n errorObtainingDefaultWorkspaceName;
+    public static I18n workspaceNameIsInvalid;
+    public static I18n errorVerifyingWorkspaceName;
 
     static {
         try {

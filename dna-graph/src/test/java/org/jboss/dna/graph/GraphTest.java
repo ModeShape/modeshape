@@ -424,6 +424,62 @@ public class GraphTest {
     }
 
     @Test
+    public void shouldCreateNodeAndReturnGraph() {
+        graph.create(validPath).and().getNodeAt(validPath);
+        assertThat(numberOfExecutions, is(2));
+        assertNextRequestIsCreate(Location.create(validPath.getParent()), "c");
+        assertNextRequestReadNode(Location.create(validPath));
+        assertNoMoreRequests();
+    }
+
+    @Test
+    public void shouldCreateNodeAtPathWithPropertiesAndReturnLocation() {
+        Location actual = graph.createAt(validPath).with(validIdProperty1).getLocation();
+        assertThat(actual, is(notNullValue()));
+        assertThat(numberOfExecutions, is(1));
+        assertNextRequestIsCreate(Location.create(validPath.getParent()), "c", validIdProperty1);
+        assertNoMoreRequests();
+
+        actual = graph.createAt(validPath).with(validIdProperty1).and(validIdProperty2).getLocation();
+        assertThat(actual, is(notNullValue()));
+        assertThat(numberOfExecutions, is(1));
+        assertNextRequestIsCreate(Location.create(validPath.getParent()), "c", validIdProperty1, validIdProperty2);
+        assertNoMoreRequests();
+    }
+
+    @Test
+    public void shouldCreateNodeAtPathWithPropertiesAndReturnNode() {
+        Node node = graph.createAt(validPath).with(validIdProperty1).getNode();
+        assertThat(node, is(notNullValue()));
+        assertThat(numberOfExecutions, is(2));
+        assertNextRequestIsCreate(Location.create(validPath.getParent()), "c", validIdProperty1);
+        assertNextRequestReadNode(Location.create(validPath));
+        assertNoMoreRequests();
+
+        node = graph.createAt(validPath).with(validIdProperty1).and(validIdProperty2).getNode();
+        assertThat(node, is(notNullValue()));
+        assertThat(numberOfExecutions, is(2));
+        assertNextRequestIsCreate(Location.create(validPath.getParent()), "c", validIdProperty1, validIdProperty2);
+        assertNextRequestReadNode(Location.create(validPath));
+        assertNoMoreRequests();
+    }
+
+    @Test
+    public void shouldCreateNodeAtPathWithPropertiesAndReturnGraph() {
+        graph.createAt(validPath).with(validIdProperty1).and().getNodeAt(validPath);
+        assertThat(numberOfExecutions, is(2));
+        assertNextRequestIsCreate(Location.create(validPath.getParent()), "c", validIdProperty1);
+        assertNextRequestReadNode(Location.create(validPath));
+        assertNoMoreRequests();
+
+        graph.createAt(validPath).with(validIdProperty1).and(validIdProperty2).and().getNodeAt(validPath);
+        assertThat(numberOfExecutions, is(2));
+        assertNextRequestIsCreate(Location.create(validPath.getParent()), "c", validIdProperty1, validIdProperty2);
+        assertNextRequestReadNode(Location.create(validPath));
+        assertNoMoreRequests();
+    }
+
+    @Test
     public void shouldCreateNodesWithBatch() {
         graph.batch().create(validPath, validIdProperty1).and().remove("prop").on(validPathString).execute();
         graph.batch().move(validPath).and(validPath).into(validPathString).and().create(validPath).execute();
@@ -596,8 +652,8 @@ public class GraphTest {
         assertNextRequestUpdateProperties(Location.create(validPath), createProperty("propName", validPath));
 
         graph.set("propName").on(validPath).to(validPath.getLastSegment().getName());
-        assertNextRequestUpdateProperties(Location.create(validPath), createProperty("propName",
-                                                                                  validPath.getLastSegment().getName()));
+        assertNextRequestUpdateProperties(Location.create(validPath), createProperty("propName", validPath.getLastSegment()
+                                                                                                          .getName()));
         Date now = new Date();
         graph.set("propName").on(validPath).to(now);
         assertNextRequestUpdateProperties(Location.create(validPath), createProperty("propName", now));
@@ -720,8 +776,16 @@ public class GraphTest {
         assertNextRequestIsMove(Location.create(validUuid), Location.create(validPath));
         assertNoMoreRequests();
 
-        graph.batch().move(validPath).into(validIdProperty1, validIdProperty2).and().move(validPathString).into(validIdProperty1,
-                                                                                                                validIdProperty2).and().move(validUuid).into(validPath).execute();
+        graph.batch()
+             .move(validPath)
+             .into(validIdProperty1, validIdProperty2)
+             .and()
+             .move(validPathString)
+             .into(validIdProperty1, validIdProperty2)
+             .and()
+             .move(validUuid)
+             .into(validPath)
+             .execute();
         assertThat(numberOfExecutions, is(1));
         extractRequestsFromComposite();
         assertNextRequestIsMove(Location.create(validPath), Location.create(validIdProperty1, validIdProperty2));
@@ -747,8 +811,16 @@ public class GraphTest {
         assertNextRequestIsCopy(Location.create(validUuid), Location.create(validPath));
         assertNoMoreRequests();
 
-        graph.batch().copy(validPath).into(validIdProperty1, validIdProperty2).and().copy(validPathString).into(validIdProperty1,
-                                                                                                                validIdProperty2).and().copy(validUuid).into(validPath).execute();
+        graph.batch()
+             .copy(validPath)
+             .into(validIdProperty1, validIdProperty2)
+             .and()
+             .copy(validPathString)
+             .into(validIdProperty1, validIdProperty2)
+             .and()
+             .copy(validUuid)
+             .into(validPath)
+             .execute();
         assertThat(numberOfExecutions, is(1));
         extractRequestsFromComposite();
         assertNextRequestIsCopy(Location.create(validPath), Location.create(validIdProperty1, validIdProperty2));

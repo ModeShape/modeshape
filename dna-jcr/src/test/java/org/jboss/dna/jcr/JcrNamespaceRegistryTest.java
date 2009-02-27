@@ -23,15 +23,13 @@
  */
 package org.jboss.dna.jcr;
 
-import static org.hamcrest.collection.IsArrayContaining.hasItemInArray;
 import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsNull.notNullValue;
+import static org.hamcrest.core.IsNot.not;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
 import javax.jcr.NamespaceException;
-import javax.jcr.UnsupportedRepositoryOperationException;
 import org.jboss.dna.graph.ExecutionContext;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 
 /**
@@ -39,81 +37,274 @@ import org.junit.Test;
  */
 public class JcrNamespaceRegistryTest {
 
-    static ExecutionContext executionContext;
+    private ExecutionContext executionContext;
     private JcrNamespaceRegistry registry;
-
-    @BeforeClass
-    public static void beforeClass() throws Exception {
-        executionContext = TestUtil.getExecutionContext();
-    }
 
     @Before
     public void before() {
+        executionContext = new ExecutionContext();
         registry = new JcrNamespaceRegistry(executionContext.getNamespaceRegistry());
     }
 
-    @Test
-    public void shouldProvidePrefixes() {
-        String[] prefixes = registry.getPrefixes();
-        assertThat(prefixes, notNullValue());
-        assertThat(prefixes, hasItemInArray(""));
-        assertThat(prefixes, hasItemInArray("dna"));
-        assertThat(prefixes, hasItemInArray("jcr"));
-        assertThat(prefixes, hasItemInArray("mix"));
-        assertThat(prefixes, hasItemInArray("nt"));
-        // assertThat(prefixes, hasItemInArray("xml"));
+    protected void assertThatNamespaceIsRegistered( String prefix,
+                                                    String uri ) throws Exception {
+        assertThat(registry.getURI(prefix), is(uri));
+        assertThat(registry.getPrefix(uri), is(prefix));
+
+        boolean foundPrefix = false;
+        for (String existingPrefix : registry.getPrefixes()) {
+            if (existingPrefix.equals(prefix)) foundPrefix = true;
+        }
+        assertThat(foundPrefix, is(true));
+
+        boolean foundUri = false;
+        for (String existingUri : registry.getURIs()) {
+            if (existingUri.equals(uri)) foundUri = true;
+        }
+        assertThat(foundUri, is(true));
+    }
+
+    protected void assertThatNamespacePrefixIsNotRegistered( String prefix ) throws Exception {
+        try {
+            registry.getURI(prefix);
+            fail("Should not have found namespace mapping with prefix \"" + prefix + "\"");
+        } catch (NamespaceException e) {
+            // good
+        }
+        for (String existingPrefix : registry.getPrefixes()) {
+            assertThat(existingPrefix, is(not(prefix)));
+        }
+    }
+
+    protected void assertThatNamespaceUriIsNotRegistered( String uri ) throws Exception {
+        try {
+            registry.getPrefix(uri);
+            fail("Should not have found namespace mapping with URI \"" + uri + "\"");
+        } catch (NamespaceException e) {
+            // good
+        }
+        for (String existingUri : registry.getURIs()) {
+            assertThat(existingUri, is(not(uri)));
+        }
     }
 
     @Test
-    public void shouldProvideUris() {
-        String[] uris = registry.getURIs();
-        assertThat(uris, notNullValue());
-        assertThat(uris, hasItemInArray(""));
-        assertThat(uris, hasItemInArray("http://www.jboss.org/dna/1.0"));
-        assertThat(uris, hasItemInArray("http://www.jcp.org/jcr/1.0"));
-        assertThat(uris, hasItemInArray("http://www.jcp.org/jcr/mix/1.0"));
-        assertThat(uris, hasItemInArray("http://www.jcp.org/jcr/nt/1.0"));
-        // assertThat(uris, hasItemInArray("http://www.w3.org/XML/1998/namespace"));
+    public void shouldBeInitializedWithNamespacesDefinedByTheJcrSpecification() throws Exception {
+        // Don't use the constants, since this needs to check that the actual values are correct
+        assertThatNamespaceIsRegistered("jcr", "http://www.jcp.org/jcr/1.0");
+        assertThatNamespaceIsRegistered("nt", "http://www.jcp.org/jcr/nt/1.0");
+        assertThatNamespaceIsRegistered("mix", "http://www.jcp.org/jcr/mix/1.0");
+        assertThatNamespaceIsRegistered("xml", "http://www.w3.org/XML/1998/namespace");
+        assertThatNamespaceIsRegistered("", "");
     }
 
-    @Test( expected = UnsupportedRepositoryOperationException.class )
-    public void shouldNotAllowRegisterNamespace() throws Exception {
-        registry.registerNamespace(null, null);
+    @Test
+    public void shouldBeInitializedWithNamespacesDefinedByTheJcrApiJavaDoc() throws Exception {
+        // Don't use the constants, since this needs to check that the actual values are correct
+        assertThatNamespaceIsRegistered("sv", "http://www.jcp.org/jcr/sv/1.0");
+        assertThatNamespaceIsRegistered("xmlns", "http://www.w3.org/2000/xmlns/");
     }
 
-    @Test( expected = UnsupportedRepositoryOperationException.class )
-    public void shouldNotAllowUnregisterNamespace() throws Exception {
+    @Test
+    public void shouldBeInitializedWithNamespacesSpecificToDna() throws Exception {
+        // Don't use the constants, since this needs to check that the actual values are correct
+        assertThatNamespaceIsRegistered("dna", "http://www.jboss.org/dna/1.0");
+    }
+
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldNotAllowRegisteringNullPrefix() throws Exception {
+        registry.registerNamespace("foo", null);
+    }
+
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldNotAllowRegisteringNullUri() throws Exception {
+        registry.registerNamespace(null, "http://example.com");
+    }
+
+    @Test( expected = NamespaceException.class )
+    public void shouldNotAllowRegisteringPrefixThatStartsWithLowercaseXml() throws Exception {
+        registry.registerNamespace("xmlw", "http://example.com");
+    }
+
+    @Test( expected = NamespaceException.class )
+    public void shouldNotAllowRegisteringPrefixThatStartsWithUppercaseXml() throws Exception {
+        registry.registerNamespace("XMLw", "http://example.com");
+    }
+
+    @Test( expected = NamespaceException.class )
+    public void shouldNotAllowRegisteringPrefixThatStartsWithMixedcaseXml() throws Exception {
+        registry.registerNamespace("XmLw", "http://example.com");
+    }
+
+    @Test( expected = NamespaceException.class )
+    public void shouldNotAllowRegisteringEmptyPrefix() throws Exception {
+        registry.registerNamespace("", "http://www.jcp.org/jcr/1.0");
+    }
+
+    @Test( expected = NamespaceException.class )
+    public void shouldNotAllowRegisteringEmptyUri() throws Exception {
+        registry.registerNamespace("foo", "");
+    }
+
+    @Test( expected = NamespaceException.class )
+    public void shouldNotAllowRegisteringUsingJcrPrefix() throws Exception {
+        registry.registerNamespace("jcr", "http://example.com");
+    }
+
+    @Test( expected = NamespaceException.class )
+    public void shouldNotAllowRegisteringUsingNtPrefix() throws Exception {
+        registry.registerNamespace("nt", "http://example.com");
+    }
+
+    @Test( expected = NamespaceException.class )
+    public void shouldNotAllowRegisteringUsingMixPrefix() throws Exception {
+        registry.registerNamespace("mix", "http://example.com");
+    }
+
+    @Test( expected = NamespaceException.class )
+    public void shouldNotAllowRegisteringUsingSvPrefix() throws Exception {
+        registry.registerNamespace("sv", "http://example.com");
+    }
+
+    @Test( expected = NamespaceException.class )
+    public void shouldNotAllowRegisteringUsingXmlPrefix() throws Exception {
+        registry.registerNamespace("xml", "http://example.com");
+    }
+
+    @Test( expected = NamespaceException.class )
+    public void shouldNotAllowRegisteringUsingDnaPrefix() throws Exception {
+        registry.registerNamespace("dna", "http://example.com");
+    }
+
+    @Test( expected = NamespaceException.class )
+    public void shouldNotAllowRegisteringUsingJcrUri() throws Exception {
+        registry.registerNamespace("foo", "http://www.jcp.org/jcr/1.0");
+    }
+
+    @Test( expected = NamespaceException.class )
+    public void shouldNotAllowRegisteringUsingNtUri() throws Exception {
+        registry.registerNamespace("foo", "http://www.jcp.org/jcr/nt/1.0");
+    }
+
+    @Test( expected = NamespaceException.class )
+    public void shouldNotAllowRegisteringUsingMixUri() throws Exception {
+        registry.registerNamespace("foo", "http://www.jcp.org/jcr/mix/1.0");
+    }
+
+    @Test( expected = NamespaceException.class )
+    public void shouldNotAllowRegisteringUsingSvUri() throws Exception {
+        registry.registerNamespace("foo", "http://www.jcp.org/jcr/sv/1.0");
+    }
+
+    @Test( expected = NamespaceException.class )
+    public void shouldNotAllowRegisteringUsingXmlUri() throws Exception {
+        registry.registerNamespace("foo", "http://www.w3.org/XML/1998/namespace");
+    }
+
+    @Test( expected = NamespaceException.class )
+    public void shouldNotAllowRegisteringUsingXmlnsUri() throws Exception {
+        registry.registerNamespace("foo", "http://www.w3.org/2000/xmlns/");
+    }
+
+    @Test( expected = NamespaceException.class )
+    public void shouldNotAllowRegisteringUsingDnaUri() throws Exception {
+        registry.registerNamespace("foo", "http://www.jboss.org/dna/1.0");
+    }
+
+    @Test( expected = NamespaceException.class )
+    public void shouldNotAllowRegisteringPrefixThatIsNotValidXmlNCName() throws Exception {
+        registry.registerNamespace("1foot&in<door", "http://example.com");
+    }
+
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldNotAllowUnregisteringNullPrefix() throws Exception {
         registry.unregisterNamespace(null);
     }
 
-    @Test( expected = IllegalArgumentException.class )
-    public void shouldNotAllowNullPrefix() throws Exception {
-        registry.getURI(null);
+    @Test( expected = NamespaceException.class )
+    public void shouldNotAllowUnregisteringBlankPrefix() throws Exception {
+        registry.unregisterNamespace("");
     }
 
-    @Test( expected = IllegalArgumentException.class )
-    public void shouldNotAllowNullUri() throws Exception {
-        registry.getPrefix(null);
+    @Test( expected = NamespaceException.class )
+    public void shouldNotAllowUnregisteringJcrPrefix() throws Exception {
+        registry.unregisterNamespace("jcr");
+    }
+
+    @Test( expected = NamespaceException.class )
+    public void shouldNotAllowUnregisteringNtPrefix() throws Exception {
+        registry.unregisterNamespace("nt");
+    }
+
+    @Test( expected = NamespaceException.class )
+    public void shouldNotAllowUnregisteringMixPrefix() throws Exception {
+        registry.unregisterNamespace("mix");
+    }
+
+    @Test( expected = NamespaceException.class )
+    public void shouldNotAllowUnregisteringSvPrefix() throws Exception {
+        registry.unregisterNamespace("sv");
+    }
+
+    @Test( expected = NamespaceException.class )
+    public void shouldNotAllowUnregisteringXmlPrefix() throws Exception {
+        registry.unregisterNamespace("xml");
+    }
+
+    @Test( expected = NamespaceException.class )
+    public void shouldNotAllowUnregisteringDnaPrefix() throws Exception {
+        registry.unregisterNamespace("dna");
+    }
+
+    @Test( expected = NamespaceException.class )
+    public void shouldNotAllowUnregisteringPrefixThatIsNotUsed() throws Exception {
+        String prefix = "bar";
+        assertThatNamespacePrefixIsNotRegistered(prefix);
+        registry.unregisterNamespace(prefix);
     }
 
     @Test
-    public void shouldProvideUriForRegisteredPrefix() throws Exception {
-        assertThat(registry.getPrefix(""), is(""));
-        assertThat(registry.getPrefix("http://www.jboss.org/dna/1.0"), is("dna"));
-        assertThat(registry.getPrefix("http://www.jcp.org/jcr/1.0"), is("jcr"));
-        assertThat(registry.getPrefix("http://www.jcp.org/jcr/mix/1.0"), is("mix"));
-        assertThat(registry.getPrefix("http://www.jcp.org/jcr/nt/1.0"), is("nt"));
-        // assertThat(registry.getPrefix("http://www.w3.org/XML/1998/namespace"), is("xml"));
+    public void shouldRegisterNewPrefixWithNewUri() throws Exception {
+        String prefix = "foo";
+        String uri = "http://example.com";
+        assertThatNamespacePrefixIsNotRegistered(prefix);
+        assertThatNamespaceUriIsNotRegistered(uri);
+        registry.registerNamespace(prefix, uri);
+        assertThatNamespaceIsRegistered(prefix, uri);
     }
 
     @Test
-    public void shouldProvidePrefixForRegisteredUri() throws Exception {
-        assertThat(registry.getURI(""), is(""));
-        assertThat(registry.getURI("dna"), is("http://www.jboss.org/dna/1.0"));
-        assertThat(registry.getURI("jcr"), is("http://www.jcp.org/jcr/1.0"));
-        assertThat(registry.getURI("mix"), is("http://www.jcp.org/jcr/mix/1.0"));
-        assertThat(registry.getURI("nt"), is("http://www.jcp.org/jcr/nt/1.0"));
-        // assertThat(registry.getURI("xml"), is("http://www.w3.org/XML/1998/namespace"));
+    public void shouldRegisterRemoveExistingMappingWhenUsingNewPrefixWithPreviouslyUsedUri() throws Exception {
+        String prefix1 = "foo1";
+        String prefix2 = "foo2";
+        String uri = "http://example.com";
+        assertThatNamespacePrefixIsNotRegistered(prefix1);
+        assertThatNamespacePrefixIsNotRegistered(prefix2);
+        assertThatNamespaceUriIsNotRegistered(uri);
+        // Register the URI with the first prefix.
+        registry.registerNamespace(prefix1, uri);
+        assertThatNamespaceIsRegistered(prefix1, uri);
+        // Register the same URI with a different prefix. This should remove the mapping with 'prefix1'
+        registry.registerNamespace(prefix2, uri);
+        assertThatNamespaceIsRegistered(prefix2, uri);
+        assertThatNamespacePrefixIsNotRegistered(prefix1);
+    }
+
+    @Test
+    public void shouldRegisterOverwriteExistingMappingWhenUsingPreviouslyUsedPrefixWithNewUri() throws Exception {
+        String prefix = "foo1";
+        String uri1 = "http://example.com";
+        String uri2 = "http://acme.com";
+        assertThatNamespacePrefixIsNotRegistered(prefix);
+        assertThatNamespaceUriIsNotRegistered(uri1);
+        assertThatNamespaceUriIsNotRegistered(uri2);
+        // Register the first URI with the prefix.
+        registry.registerNamespace(prefix, uri1);
+        assertThatNamespaceIsRegistered(prefix, uri1);
+        // Register the second URI with the same prefix. 'uri1' should no longer be used
+        registry.registerNamespace(prefix, uri2);
+        assertThatNamespaceIsRegistered(prefix, uri2);
+        assertThatNamespaceUriIsNotRegistered(uri1);
     }
 
     @Test( expected = NamespaceException.class )

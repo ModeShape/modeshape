@@ -23,8 +23,8 @@
  */
 package org.jboss.dna.graph.property.basic;
 
-import static org.jboss.dna.graph.property.basic.BinaryContains.hasContent;
 import static org.hamcrest.core.Is.is;
+import static org.jboss.dna.graph.property.basic.BinaryContains.hasContent;
 import static org.junit.Assert.assertThat;
 import java.io.ByteArrayInputStream;
 import java.io.StringReader;
@@ -40,15 +40,9 @@ import java.util.UUID;
 import org.jboss.dna.common.text.TextEncoder;
 import org.jboss.dna.graph.property.Binary;
 import org.jboss.dna.graph.property.Name;
+import org.jboss.dna.graph.property.NamespaceRegistry;
 import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.Reference;
-import org.jboss.dna.graph.property.basic.BasicNamespaceRegistry;
-import org.jboss.dna.graph.property.basic.InMemoryBinaryValueFactory;
-import org.jboss.dna.graph.property.basic.JodaDateTime;
-import org.jboss.dna.graph.property.basic.NameValueFactory;
-import org.jboss.dna.graph.property.basic.PathValueFactory;
-import org.jboss.dna.graph.property.basic.StringValueFactory;
-import org.jboss.dna.graph.property.basic.UuidReference;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -60,7 +54,7 @@ public class InMemoryBinaryValueFactoryTest {
     private InMemoryBinaryValueFactory factory;
     private StringValueFactory stringFactory;
     private NameValueFactory nameFactory;
-    private BasicNamespaceRegistry namespaceRegistry;
+    private NamespaceRegistry namespaceRegistry;
     private PathValueFactory pathFactory;
     private TextEncoder encoder;
 
@@ -72,7 +66,7 @@ public class InMemoryBinaryValueFactoryTest {
         encoder = Path.URL_ENCODER;
         stringFactory = new StringValueFactory(Path.URL_DECODER, encoder);
         factory = new InMemoryBinaryValueFactory(Path.URL_DECODER, stringFactory);
-        namespaceRegistry = new BasicNamespaceRegistry();
+        namespaceRegistry = new SimpleNamespaceRegistry();
         namespaceRegistry.register("jboss", "http://www.jboss.org");
         namespaceRegistry.register("dna", "http://www.jboss.org/dna");
         nameFactory = new NameValueFactory(namespaceRegistry, Path.URL_DECODER, stringFactory);

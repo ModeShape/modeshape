@@ -31,25 +31,22 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
-import net.jcip.annotations.GuardedBy;
-import net.jcip.annotations.ThreadSafe;
+import net.jcip.annotations.NotThreadSafe;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.graph.property.NamespaceRegistry;
 
 /**
+ * A simple {@link NamespaceRegistry} implementation that is not thread-safe, but that provides all the basic functionality.
+ * 
  * @author Randall Hauch
  */
-@ThreadSafe
-public class BasicNamespaceRegistry implements NamespaceRegistry {
+@NotThreadSafe
+public class SimpleNamespaceRegistry implements NamespaceRegistry {
 
     public static final String DEFAULT_NAMESPACE_URI = "";
     public static final String DEFAULT_PREFIX_TEMPLATE = "ns##000";
     public static final String DEFAULT_PREFIX_NUMBER_FORMAT = "##000";
 
-    private final ReadWriteLock registryLock = new ReentrantReadWriteLock();
     private final Map<String, String> namespacesByPrefix = new HashMap<String, String>();
     private final Map<String, String> prefixesByNamespace = new HashMap<String, String>();
     private String generatedPrefixTemplate = DEFAULT_PREFIX_TEMPLATE;
@@ -58,14 +55,14 @@ public class BasicNamespaceRegistry implements NamespaceRegistry {
     /**
      * 
      */
-    public BasicNamespaceRegistry() {
+    public SimpleNamespaceRegistry() {
         this(DEFAULT_NAMESPACE_URI);
     }
 
     /**
      * @param defaultNamespaceUri the namespace URI to use for the default prefix
      */
-    public BasicNamespaceRegistry( final String defaultNamespaceUri ) {
+    public SimpleNamespaceRegistry( final String defaultNamespaceUri ) {
         register("", defaultNamespaceUri);
     }
 
@@ -73,13 +70,7 @@ public class BasicNamespaceRegistry implements NamespaceRegistry {
      * @return prefixTemplate
      */
     public String getGeneratedPrefixTemplate() {
-        Lock lock = this.registryLock.readLock();
-        try {
-            lock.lock();
-            return this.generatedPrefixTemplate;
-        } finally {
-            lock.unlock();
-        }
+        return this.generatedPrefixTemplate;
     }
 
     /**
@@ -87,13 +78,7 @@ public class BasicNamespaceRegistry implements NamespaceRegistry {
      */
     public void setGeneratedPrefixTemplate( String prefixTemplate ) {
         if (prefixTemplate == null) prefixTemplate = DEFAULT_PREFIX_TEMPLATE;
-        Lock lock = this.registryLock.writeLock();
-        try {
-            lock.lock();
-            this.generatedPrefixTemplate = prefixTemplate;
-        } finally {
-            lock.unlock();
-        }
+        this.generatedPrefixTemplate = prefixTemplate;
     }
 
     /**
@@ -101,13 +86,7 @@ public class BasicNamespaceRegistry implements NamespaceRegistry {
      */
     public String getNamespaceForPrefix( String prefix ) {
         CheckArg.isNotNull(prefix, "prefix");
-        Lock lock = this.registryLock.readLock();
-        try {
-            lock.lock();
-            return this.namespacesByPrefix.get(prefix);
-        } finally {
-            lock.unlock();
-        }
+        return this.namespacesByPrefix.get(prefix);
     }
 
     /**
@@ -117,29 +96,12 @@ public class BasicNamespaceRegistry implements NamespaceRegistry {
                                             boolean generateIfMissing ) {
         CheckArg.isNotNull(namespaceUri, "namespaceUri");
         String prefix = null;
-        Lock lock = this.registryLock.readLock();
-        try {
-            lock.lock();
-            prefix = this.prefixesByNamespace.get(namespaceUri);
-        } finally {
-            lock.unlock();
-        }
+        prefix = this.prefixesByNamespace.get(namespaceUri);
         if (prefix == null && generateIfMissing) {
-            // Get a write lock ...
-            lock = this.registryLock.writeLock();
-            try {
-                lock.lock();
-                // Since we got a new lock, we need to check again ...
-                prefix = this.prefixesByNamespace.get(namespaceUri);
-                if (prefix == null) {
-                    // Now we can genereate a prefix and register it ...
-                    prefix = this.generatePrefix();
-                    this.register(prefix, namespaceUri);
-                }
-                return prefix;
-            } finally {
-                lock.unlock();
-            }
+            // Now we can genereate a prefix and register it ...
+            prefix = this.generatePrefix();
+            this.register(prefix, namespaceUri);
+            return prefix;
         }
         return prefix;
     }
@@ -149,26 +111,14 @@ public class BasicNamespaceRegistry implements NamespaceRegistry {
      */
     public boolean isRegisteredNamespaceUri( String namespaceUri ) {
         CheckArg.isNotNull(namespaceUri, "namespaceUri");
-        Lock lock = this.registryLock.readLock();
-        try {
-            lock.lock();
-            return this.prefixesByNamespace.containsKey(namespaceUri);
-        } finally {
-            lock.unlock();
-        }
+        return this.prefixesByNamespace.containsKey(namespaceUri);
     }
 
     /**
      * {@inheritDoc}
      */
     public String getDefaultNamespaceUri() {
-        Lock lock = this.registryLock.readLock();
-        try {
-            lock.lock();
-            return this.namespacesByPrefix.get("");
-        } finally {
-            lock.unlock();
-        }
+        return this.namespacesByPrefix.get("");
     }
 
     /**
@@ -179,23 +129,17 @@ public class BasicNamespaceRegistry implements NamespaceRegistry {
         CheckArg.isNotNull(namespaceUri, "namespaceUri");
         String previousNamespaceForPrefix = null;
         namespaceUri = namespaceUri.trim();
-        Lock lock = this.registryLock.writeLock();
-        try {
-            lock.lock();
-            if (prefix == null) prefix = generatePrefix();
-            prefix = prefix.trim();
-            prefix = prefix.replaceFirst("^:+", "");
-            prefix = prefix.replaceFirst(":+$", "");
-            previousNamespaceForPrefix = this.namespacesByPrefix.put(prefix, namespaceUri);
-            String previousPrefix = this.prefixesByNamespace.put(namespaceUri, prefix);
-            if (previousPrefix != null && !previousPrefix.equals(prefix)) {
-                this.namespacesByPrefix.remove(previousPrefix);
-            }
-            if (previousNamespaceForPrefix != null && !previousNamespaceForPrefix.equals(namespaceUri)) {
-                this.prefixesByNamespace.remove(previousNamespaceForPrefix);
-            }
-        } finally {
-            lock.unlock();
+        if (prefix == null) prefix = generatePrefix();
+        prefix = prefix.trim();
+        prefix = prefix.replaceFirst("^:+", "");
+        prefix = prefix.replaceFirst(":+$", "");
+        previousNamespaceForPrefix = this.namespacesByPrefix.put(prefix, namespaceUri);
+        String previousPrefix = this.prefixesByNamespace.put(namespaceUri, prefix);
+        if (previousPrefix != null && !previousPrefix.equals(prefix)) {
+            this.namespacesByPrefix.remove(previousPrefix);
+        }
+        if (previousNamespaceForPrefix != null && !previousNamespaceForPrefix.equals(namespaceUri)) {
+            this.prefixesByNamespace.remove(previousNamespaceForPrefix);
         }
         return previousNamespaceForPrefix;
     }
@@ -208,15 +152,9 @@ public class BasicNamespaceRegistry implements NamespaceRegistry {
     public boolean unregister( String namespaceUri ) {
         CheckArg.isNotNull(namespaceUri, "namespaceUri");
         namespaceUri = namespaceUri.trim();
-        Lock lock = this.registryLock.writeLock();
-        try {
-            lock.lock();
-            String prefix = this.prefixesByNamespace.remove(namespaceUri);
-            if (prefix == null) return false;
-            this.namespacesByPrefix.remove(prefix);
-        } finally {
-            lock.unlock();
-        }
+        String prefix = this.prefixesByNamespace.remove(namespaceUri);
+        if (prefix == null) return false;
+        this.namespacesByPrefix.remove(prefix);
         return true;
     }
 
@@ -225,13 +163,7 @@ public class BasicNamespaceRegistry implements NamespaceRegistry {
      */
     public Set<String> getRegisteredNamespaceUris() {
         Set<String> result = new HashSet<String>();
-        Lock lock = this.registryLock.readLock();
-        try {
-            lock.lock();
-            result.addAll(this.prefixesByNamespace.keySet());
-        } finally {
-            lock.unlock();
-        }
+        result.addAll(this.prefixesByNamespace.keySet());
         return Collections.unmodifiableSet(result);
     }
 
@@ -242,14 +174,8 @@ public class BasicNamespaceRegistry implements NamespaceRegistry {
      */
     public Set<Namespace> getNamespaces() {
         Set<Namespace> result = new HashSet<Namespace>();
-        Lock lock = this.registryLock.readLock();
-        try {
-            lock.lock();
-            for (Map.Entry<String, String> entry : this.namespacesByPrefix.entrySet()) {
-                result.add(new BasicNamespace(entry.getKey(), entry.getValue()));
-            }
-        } finally {
-            lock.unlock();
+        for (Map.Entry<String, String> entry : this.namespacesByPrefix.entrySet()) {
+            result.add(new BasicNamespace(entry.getKey(), entry.getValue()));
         }
         return Collections.unmodifiableSet(result);
     }
@@ -266,7 +192,6 @@ public class BasicNamespaceRegistry implements NamespaceRegistry {
         return namespaces.toString();
     }
 
-    @GuardedBy( "registryLock" )
     protected String generatePrefix() {
         DecimalFormat formatter = new DecimalFormat(this.generatedPrefixTemplate);
         return formatter.format(nextGeneratedPrefixNumber++);

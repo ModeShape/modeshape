@@ -28,31 +28,30 @@ import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.Assert.assertThat;
 import static org.junit.matchers.JUnitMatchers.hasItem;
-import org.jboss.dna.graph.property.basic.BasicNamespaceRegistry;
+import org.jboss.dna.graph.property.NamespaceRegistry;
 import org.junit.Before;
 import org.junit.Test;
 
-/**
- * @author Randall Hauch
- */
-public class BasicNamespaceRegistryTest {
+public abstract class AbstractNamespaceRegistryTest<NamespaceRegistryType extends NamespaceRegistry> {
 
-    private String validNamespaceUri1;
-    private String validNamespaceUri2;
-    private String validNamespaceUri3;
-    private String validPrefix1;
-    private String validPrefix2;
-    private BasicNamespaceRegistry namespaceRegistry;
+    protected String validNamespaceUri1;
+    protected String validNamespaceUri2;
+    protected String validNamespaceUri3;
+    protected String validPrefix1;
+    protected String validPrefix2;
+    protected NamespaceRegistryType namespaceRegistry;
 
     @Before
     public void setUp() {
-        namespaceRegistry = new BasicNamespaceRegistry();
-        validNamespaceUri1 = "http://www.jboss.org/dna/2";
+        validNamespaceUri1 = "http://example.com/foo";
         validNamespaceUri2 = "http://acme.com/something";
         validNamespaceUri3 = "http://www.redhat.com";
-        validPrefix1 = "dna";
+        validPrefix1 = "foo";
         validPrefix2 = "acme";
+        namespaceRegistry = createNamespaceRegistry();
     }
+
+    protected abstract NamespaceRegistryType createNamespaceRegistry();
 
     @Test
     public void shouldReturnNullForNamespaceUriIfPrefixIsNotRegistered() {
@@ -83,21 +82,6 @@ public class BasicNamespaceRegistryTest {
         namespaceRegistry.register(validPrefix1, validNamespaceUri1);
         namespaceRegistry.register(validPrefix2, validNamespaceUri2);
         assertThat(namespaceRegistry.getPrefixForNamespaceUri(validNamespaceUri3, false), is(nullValue()));
-    }
-
-    @Test
-    public void shouldGeneratePrefixIfNamespaceUriIsNotRegistered() {
-        assertThat(namespaceRegistry.getPrefixForNamespaceUri(validNamespaceUri3, false), is(nullValue()));
-        // Now get the generated prefix ...
-        assertThat(namespaceRegistry.getPrefixForNamespaceUri(validNamespaceUri3, true), is("ns001"));
-        // Change the template ...
-        namespaceRegistry.setGeneratedPrefixTemplate("xyz0000abc");
-        assertThat(namespaceRegistry.getPrefixForNamespaceUri(validNamespaceUri2, true), is("xyz0002abc"));
-        assertThat(namespaceRegistry.getPrefixForNamespaceUri(validNamespaceUri2, true), is("xyz0002abc"));
-        // Change the template again ...
-        namespaceRegistry.setGeneratedPrefixTemplate("xyz####abc");
-        assertThat(namespaceRegistry.getPrefixForNamespaceUri(validNamespaceUri1, true), is("xyz3abc"));
-        assertThat(namespaceRegistry.getPrefixForNamespaceUri(validNamespaceUri1, true), is("xyz3abc"));
     }
 
     @Test
@@ -166,7 +150,7 @@ public class BasicNamespaceRegistryTest {
         assertThat(namespaceRegistry.getNamespaceForPrefix(validPrefix2), is(validNamespaceUri2));
         assertThat(namespaceRegistry.getNamespaceForPrefix(""), is(validNamespaceUri3));
 
-        BasicNamespaceRegistry newRegistry = new BasicNamespaceRegistry();
+        NamespaceRegistry newRegistry = new SimpleNamespaceRegistry();
         for (String uri : this.namespaceRegistry.getRegisteredNamespaceUris()) {
             String prefix = this.namespaceRegistry.getPrefixForNamespaceUri(uri, false);
             newRegistry.register(prefix, uri);

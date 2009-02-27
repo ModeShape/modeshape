@@ -28,11 +28,14 @@ import java.io.OutputStream;
 import java.security.AccessControlException;
 import java.security.Principal;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import javax.jcr.Credentials;
 import javax.jcr.Item;
+import javax.jcr.NamespaceException;
 import javax.jcr.Node;
 import javax.jcr.PathNotFoundException;
 import javax.jcr.Property;
@@ -40,6 +43,7 @@ import javax.jcr.PropertyType;
 import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
+import javax.jcr.SimpleCredentials;
 import javax.jcr.Value;
 import javax.jcr.ValueFactory;
 import javax.jcr.Workspace;
@@ -48,14 +52,15 @@ import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
 import net.jcip.annotations.NotThreadSafe;
 import org.jboss.dna.common.util.CheckArg;
-import org.jboss.dna.common.util.StringUtil;
 import org.jboss.dna.graph.DnaLexicon;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.Graph;
 import org.jboss.dna.graph.property.Name;
+import org.jboss.dna.graph.property.NamespaceRegistry;
 import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.UuidFactory;
 import org.jboss.dna.graph.property.ValueFactories;
+import org.jboss.dna.graph.property.basic.LocalNamespaceRegistry;
 import org.xml.sax.ContentHandler;
 import com.google.common.base.ReferenceType;
 import com.google.common.collect.ReferenceMap;
@@ -67,36 +72,166 @@ import com.google.common.collect.ReferenceMap;
 @NotThreadSafe
 class JcrSession implements Session {
 
-    private final Repository repository;
-    private final Graph graph;
+    private static final String[] NO_ATTRIBUTES_NAMES = new String[] {};
+
+    /**
+     * The repository that created this session.
+     */
+    private final JcrRepository repository;
+
+    /**
+     * The workspace that corresponds to this session.
+     */
+    private final JcrWorkspace workspace;
+
+    /**
+     * A JCR namespace registry that is specific to this session, with any locally-defined namespaces defined in this session.
+     * This is backed by the workspace's namespace registry.
+     */
+    private final JcrNamespaceRegistry sessionRegistry;
+
+    /**
+     * The execution context for this session, which uses the {@link #sessionRegistry session's namespace registry}
+     */
     private final ExecutionContext executionContext;
+
+    /**
+     * The graph representing this session, which uses the {@link #graph session's graph}.
+     */
+    private final Graph graph;
+
+    /**
+     * The session-specific attributes that came from the {@link SimpleCredentials}' {@link SimpleCredentials#getAttributeNames()}
+     */
+    private final Map<String, Object> sessionAttributes;
+
     private final ReferenceMap<UUID, Node> nodesByUuid;
     private final ReferenceMap<String, Node> nodesByJcrUuid;
     private boolean isLive;
-    private Workspace workspace;
     private JcrRootNode rootNode;
 
-    JcrSession( Repository repository,
-                String workspaceName,
-                Graph graph,
-                ReferenceMap<UUID, Node> nodesByUuid ) throws RepositoryException {
+    JcrSession( JcrRepository repository,
+                JcrWorkspace workspace,
+                ExecutionContext workspaceContext,
+                Map<String, Object> sessionAttributes ) {
         assert repository != null;
-        assert graph != null;
-        assert workspaceName != null;
-        assert nodesByUuid != null;
+        assert workspace != null;
+        assert sessionAttributes != null;
+        assert workspaceContext != null;
         this.repository = repository;
-        this.graph = graph;
-        this.executionContext = graph.getContext();
-        assert this.executionContext != null;
-        this.nodesByUuid = nodesByUuid;
+        this.sessionAttributes = sessionAttributes;
+        this.workspace = workspace;
+
+        // Create an execution context for this session, which should use the local namespace registry ...
+        NamespaceRegistry local = new LocalNamespaceRegistry(workspaceContext.getNamespaceRegistry());
+        this.executionContext = workspaceContext.with(local);
+        this.sessionRegistry = new JcrNamespaceRegistry(local);
+
+        // Set up the graph to use for this session (which uses the session's namespace registry and context) ...
+        this.graph = Graph.create(this.repository.getRepositorySourceName(),
+                                  this.repository.getConnectionFactory(),
+                                  this.executionContext);
+
+        this.nodesByUuid = new ReferenceMap<UUID, Node>(ReferenceType.STRONG, ReferenceType.SOFT);
         this.nodesByJcrUuid = new ReferenceMap<String, Node>(ReferenceType.STRONG, ReferenceType.SOFT);
         this.isLive = true;
-        // Following must be initialized after session's state is initialized
-        this.workspace = new JcrWorkspace(this, workspaceName);
+
+        assert this.repository != null;
+        assert this.sessionAttributes != null;
+        assert this.workspace != null;
+        assert this.executionContext != null;
+        assert this.sessionRegistry != null;
+        assert this.graph != null;
     }
 
     ExecutionContext getExecutionContext() {
         return this.executionContext;
+    }
+
+    /**
+     * Return an unmodifiable map of nodes given then UUID.
+     * 
+     * @return nodesByUuid
+     */
+    Map<UUID, Node> getNodesByUuid() {
+        return Collections.unmodifiableMap(nodesByUuid);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see javax.jcr.Session#getWorkspace()
+     */
+    public Workspace getWorkspace() {
+        return this.workspace;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see javax.jcr.Session#getRepository()
+     */
+    public Repository getRepository() {
+        return this.repository;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @return <code>null</code>
+     * @see javax.jcr.Session#getAttribute(java.lang.String)
+     */
+    public Object getAttribute( String name ) {
+        return sessionAttributes.get(name);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @return An empty array
+     * @see javax.jcr.Session#getAttributeNames()
+     */
+    public String[] getAttributeNames() {
+        Set<String> names = sessionAttributes.keySet();
+        if (names.isEmpty()) return NO_ATTRIBUTES_NAMES;
+        return names.toArray(new String[names.size()]);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see javax.jcr.Session#getNamespacePrefix(java.lang.String)
+     */
+    public String getNamespacePrefix( String uri ) throws RepositoryException {
+        return sessionRegistry.getPrefix(uri);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see javax.jcr.Session#getNamespacePrefixes()
+     */
+    public String[] getNamespacePrefixes() {
+        return sessionRegistry.getPrefixes();
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see javax.jcr.Session#getNamespaceURI(java.lang.String)
+     */
+    public String getNamespaceURI( String prefix ) throws RepositoryException {
+        return sessionRegistry.getURI(prefix);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see javax.jcr.Session#setNamespacePrefix(java.lang.String, java.lang.String)
+     */
+    public void setNamespacePrefix( String newPrefix,
+                                    String existingUri ) throws NamespaceException, RepositoryException {
+        sessionRegistry.registerNamespace(newPrefix, existingUri);
     }
 
     /**
@@ -179,26 +314,6 @@ class JcrSession implements Session {
     /**
      * {@inheritDoc}
      * 
-     * @return <code>null</code>
-     * @see javax.jcr.Session#getAttribute(java.lang.String)
-     */
-    public Object getAttribute( String name ) {
-        return null;
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @return An empty array
-     * @see javax.jcr.Session#getAttributeNames()
-     */
-    public String[] getAttributeNames() {
-        return StringUtil.EMPTY_STRING_ARRAY;
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
      * @throws UnsupportedOperationException always
      * @see javax.jcr.Session#getImportContentHandler(java.lang.String, int)
      */
@@ -255,33 +370,6 @@ class JcrSession implements Session {
         throw new UnsupportedOperationException();
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.Session#getNamespacePrefix(java.lang.String)
-     */
-    public String getNamespacePrefix( String uri ) throws RepositoryException {
-        return workspace.getNamespaceRegistry().getPrefix(uri);
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.Session#getNamespacePrefixes()
-     */
-    public String[] getNamespacePrefixes() throws RepositoryException {
-        return workspace.getNamespaceRegistry().getPrefixes();
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.Session#getNamespaceURI(java.lang.String)
-     */
-    public String getNamespaceURI( String prefix ) throws RepositoryException {
-        return workspace.getNamespaceRegistry().getURI(prefix);
-    }
-
     private Node getNode( Path path ) throws RepositoryException {
         // Get node from source
         org.jboss.dna.graph.Node graphNode = graph.getNodeAt(path);
@@ -317,15 +405,6 @@ class JcrSession implements Session {
     public Node getNodeByUUID( String uuid ) {
         // TODO: Need DNA command to get node by UUID before implementing
         throw new UnsupportedOperationException();
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.Session#getRepository()
-     */
-    public Repository getRepository() {
-        return this.repository;
     }
 
     /**
@@ -407,15 +486,6 @@ class JcrSession implements Session {
     /**
      * {@inheritDoc}
      * 
-     * @see javax.jcr.Session#getWorkspace()
-     */
-    public Workspace getWorkspace() {
-        return this.workspace;
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
      * @return false
      * @see javax.jcr.Session#hasPendingChanges()
      */
@@ -428,8 +498,11 @@ class JcrSession implements Session {
      * 
      * @see javax.jcr.Session#impersonate(javax.jcr.Credentials)
      */
+    @SuppressWarnings( "unused" )
     public Session impersonate( Credentials credentials ) throws RepositoryException {
-        return repository.login(credentials);
+        // this is not right:
+        // return repository.login(credentials);
+        throw new UnsupportedOperationException();
     }
 
     /**
@@ -521,7 +594,8 @@ class JcrSession implements Session {
                 if (uuid == null && DnaLexicon.UUID.equals(name)) uuid = uuidFactory.create(dnaProp.getValues()).next();
                 else if (jcrUuidName.equals(name)) dnaUuidProp = dnaProp;
                 else if (jcrMixinTypesName.equals(name)) {
-                    org.jboss.dna.graph.property.ValueFactory<String> stringFactory = executionContext.getValueFactories().getStringFactory();
+                    org.jboss.dna.graph.property.ValueFactory<String> stringFactory = executionContext.getValueFactories()
+                                                                                                      .getStringFactory();
                     for (String mixin : stringFactory.create(dnaProp)) {
                         if ("mix:referenceable".equals(mixin)) referenceable = true;
                     }
@@ -571,17 +645,6 @@ class JcrSession implements Session {
      * @see javax.jcr.Session#save()
      */
     public void save() {
-        throw new UnsupportedOperationException();
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @throws UnsupportedOperationException always
-     * @see javax.jcr.Session#setNamespacePrefix(java.lang.String, java.lang.String)
-     */
-    public void setNamespacePrefix( String newPrefix,
-                                    String existingUri ) {
         throw new UnsupportedOperationException();
     }
 }

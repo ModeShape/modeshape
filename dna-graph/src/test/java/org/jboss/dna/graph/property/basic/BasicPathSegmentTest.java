@@ -30,14 +30,9 @@ import org.jboss.dna.common.text.Jsr283Encoder;
 import org.jboss.dna.common.text.TextEncoder;
 import org.jboss.dna.graph.DnaLexicon;
 import org.jboss.dna.graph.property.Name;
+import org.jboss.dna.graph.property.NamespaceRegistry;
 import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.ValueFactory;
-import org.jboss.dna.graph.property.basic.BasicName;
-import org.jboss.dna.graph.property.basic.BasicNamespaceRegistry;
-import org.jboss.dna.graph.property.basic.BasicPathSegment;
-import org.jboss.dna.graph.property.basic.NameValueFactory;
-import org.jboss.dna.graph.property.basic.PathValueFactory;
-import org.jboss.dna.graph.property.basic.StringValueFactory;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -48,7 +43,7 @@ public class BasicPathSegmentTest {
 
     public static final TextEncoder NO_OP_ENCODER = Path.NO_OP_ENCODER;
 
-    private BasicNamespaceRegistry registry;
+    private NamespaceRegistry registry;
     private ValueFactory<String> stringValueFactory;
     private NameValueFactory nameFactory;
     private PathValueFactory factory;
@@ -58,7 +53,7 @@ public class BasicPathSegmentTest {
 
     @Before
     public void beforeEach() {
-        this.registry = new BasicNamespaceRegistry();
+        this.registry = new SimpleNamespaceRegistry();
         this.registry.register(DnaLexicon.Namespace.PREFIX, DnaLexicon.Namespace.URI);
         this.stringValueFactory = new StringValueFactory(Path.DEFAULT_DECODER, Path.DEFAULT_ENCODER);
         this.nameFactory = new NameValueFactory(registry, Path.DEFAULT_DECODER, stringValueFactory);

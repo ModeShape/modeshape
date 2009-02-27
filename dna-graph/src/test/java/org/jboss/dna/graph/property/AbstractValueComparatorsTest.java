@@ -32,8 +32,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import org.jboss.dna.common.util.CheckArg;
-import org.jboss.dna.graph.property.ValueFactories;
-import org.jboss.dna.graph.property.basic.BasicNamespaceRegistry;
+import org.jboss.dna.graph.property.basic.SimpleNamespaceRegistry;
 import org.jboss.dna.graph.property.basic.StandardValueFactories;
 import org.junit.Test;
 
@@ -43,13 +42,14 @@ import org.junit.Test;
  */
 public abstract class AbstractValueComparatorsTest<T> {
 
-    public static final BasicNamespaceRegistry NAMESPACE_REGISTRY = new BasicNamespaceRegistry();
+    public static final NamespaceRegistry NAMESPACE_REGISTRY = new SimpleNamespaceRegistry();
     public static final ValueFactories VALUE_FACTORIES = new StandardValueFactories(NAMESPACE_REGISTRY);
 
     protected final Comparator<T> comparator;
     protected final T[] validNonNullValues;
 
-    protected AbstractValueComparatorsTest( Comparator<T> comparator, T... validNonNullValues ) {
+    protected AbstractValueComparatorsTest( Comparator<T> comparator,
+                                            T... validNonNullValues ) {
         CheckArg.isNotNull(comparator, "comparator");
         CheckArg.isNotEmpty(validNonNullValues, "validNonNullValues");
         this.comparator = comparator;
@@ -125,7 +125,8 @@ public abstract class AbstractValueComparatorsTest<T> {
         }
     }
 
-    protected void assertValuesCompareUsing( T value1, T value2 ) {
+    protected void assertValuesCompareUsing( T value1,
+                                             T value2 ) {
         int value1ToValue2 = comparator.compare(value1, value2);
         int value2ToValue1 = comparator.compare(value2, value1);
         if (value1ToValue2 == 0) {

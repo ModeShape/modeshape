@@ -245,7 +245,7 @@ public class RepositoryClient {
         LoginContext loginContext = getLoginContext(); // will ask user to authenticate if needed
         switch (api) {
             case JCR: {
-                JcrRepository jcrRepository = new JcrRepository(context, sources);
+                JcrRepository jcrRepository = new JcrRepository(context, sources, sourceName);
                 Session session = null;
                 if (loginContext != null) {
                     Credentials credentials = new JaasCredentials(loginContext);

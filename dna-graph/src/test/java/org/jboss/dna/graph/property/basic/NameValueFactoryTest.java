@@ -34,9 +34,6 @@ import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.NamespaceRegistry;
 import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.ValueFactory;
-import org.jboss.dna.graph.property.basic.BasicNamespaceRegistry;
-import org.jboss.dna.graph.property.basic.NameValueFactory;
-import org.jboss.dna.graph.property.basic.StringValueFactory;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -57,7 +54,7 @@ public class NameValueFactoryTest {
 
     @Before
     public void beforeEach() {
-        this.registry = new BasicNamespaceRegistry();
+        this.registry = new SimpleNamespaceRegistry();
         this.registry.register("dna", "http://www.jboss.org/dna/namespace");
         this.encoder = Path.DEFAULT_ENCODER;
         this.decoder = Path.DEFAULT_DECODER;

@@ -29,12 +29,15 @@ import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.Assert.assertThat;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.stub;
 import java.io.InputStream;
 import java.security.AccessControlException;
 import java.security.Principal;
 import java.util.Calendar;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 import javax.jcr.Item;
 import javax.jcr.NamespaceException;
@@ -48,57 +51,82 @@ import javax.security.auth.Subject;
 import javax.security.auth.login.LoginContext;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.Graph;
+import org.jboss.dna.graph.connector.RepositoryConnection;
 import org.jboss.dna.graph.connector.RepositoryConnectionFactory;
+import org.jboss.dna.graph.connector.RepositorySourceException;
 import org.jboss.dna.graph.connector.inmemory.InMemoryRepositorySource;
 import org.junit.After;
-import org.junit.AfterClass;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
-import com.google.common.base.ReferenceType;
-import com.google.common.collect.ReferenceMap;
+import org.mockito.MockitoAnnotations.Mock;
 
 /**
  * @author jverhaeg
  */
 public class JcrSessionTest {
 
-    static final String REPOSITORY_NAME = "Test repository";
-    static final String WORKSPACE_NAME = JcrI18n.defaultWorkspaceName.text();
+    private String workspaceName;
+    private ExecutionContext context;
+    private InMemoryRepositorySource source;
+    private JcrWorkspace workspace;
+    private JcrSession session;
+    private Graph graph;
+    private RepositoryConnectionFactory connectionFactory;
+    private Map<String, Object> sessionAttributes;
+    @Mock
+    private JcrRepository repository;
 
-    static ExecutionContext executionContext;
-    static InMemoryRepositorySource repositorySource;
-    static Graph graph;
-    static RepositoryConnectionFactory connectionFactory;
-    static Repository repository;
+    @Before
+    public void beforeEach() throws Exception {
+        workspaceName = "workspace1";
+        final String repositorySourceName = "repository";
 
-    @BeforeClass
-    public static void beforeClass() throws Exception {
-        executionContext = TestUtil.getExecutionContext();
-        repositorySource = new InMemoryRepositorySource();
-        repositorySource.setName(REPOSITORY_NAME);
-        graph = Graph.create(repositorySource, executionContext);
+        // Set up the source ...
+        source = new InMemoryRepositorySource();
+        source.setName(workspaceName);
+        source.setDefaultWorkspaceName(workspaceName);
+
+        // Set up the execution context ...
+        context = new ExecutionContext();
+
+        // Set up the initial content ...
+        graph = Graph.create(source, context);
         graph.create("/a").and().create("/a/b").and().create("/a/b/c");
         graph.set("booleanProperty").on("/a/b").to(true);
         graph.set("stringProperty").on("/a/b/c").to("value");
-        connectionFactory = TestUtil.createJackRabbitConnectionFactory(repositorySource, executionContext);
-        repository = new JcrRepository(executionContext, connectionFactory);
-    }
 
-    @AfterClass
-    public static void afterClass() {
-    }
+        // Make sure the path to the namespaces exists ...
+        graph.create("/jcr:system").and().create("/jcr:system/dna:namespaces");
 
-    private Session session;
-    private ReferenceMap<UUID, Node> nodesByUuid;
+        // Stub out the connection factory ...
+        connectionFactory = new RepositoryConnectionFactory() {
+            /**
+             * {@inheritDoc}
+             * 
+             * @see org.jboss.dna.graph.connector.RepositoryConnectionFactory#createConnection(java.lang.String)
+             */
+            @SuppressWarnings( "synthetic-access" )
+            public RepositoryConnection createConnection( String sourceName ) throws RepositorySourceException {
+                return repositorySourceName.equals(sourceName) ? source.getConnection() : null;
+            }
+        };
 
-    @Before
-    public void before() throws Exception {
+        // Stub out the repository, since we only need a few methods ...
         MockitoAnnotations.initMocks(this);
-        nodesByUuid = new ReferenceMap<UUID, Node>(ReferenceType.STRONG, ReferenceType.SOFT);
-        session = repository.login();
+        stub(repository.getRepositorySourceName()).toReturn(repositorySourceName);
+        stub(repository.getConnectionFactory()).toReturn(connectionFactory);
+
+        // Set up the session attributes ...
+        sessionAttributes = new HashMap<String, Object>();
+        sessionAttributes.put("attribute1", "value1");
+
+        // Now create the workspace ...
+        workspace = new JcrWorkspace(repository, workspaceName, context, sessionAttributes);
+
+        // Create the session and log in ...
+        session = (JcrSession)workspace.getSession();
     }
 
     @After
@@ -109,26 +137,23 @@ public class JcrSessionTest {
     }
 
     @Test( expected = AssertionError.class )
-    public void shouldNotAllowNoRepository() throws Exception {
-        Graph graph = Graph.create(WORKSPACE_NAME, connectionFactory, executionContext);
-        new JcrSession(null, WORKSPACE_NAME, graph, nodesByUuid);
+    public void shouldNotAllowNullRepository() throws Exception {
+        new JcrSession(null, workspace, context, sessionAttributes);
     }
 
     @Test( expected = AssertionError.class )
-    public void shouldNotAllowNoWorkspaceName() throws Exception {
-        Graph graph = Graph.create(WORKSPACE_NAME, connectionFactory, executionContext);
-        new JcrSession(repository, null, graph, nodesByUuid);
+    public void shouldNotAllowNullWorkspace() throws Exception {
+        new JcrSession(repository, null, context, sessionAttributes);
     }
 
     @Test( expected = AssertionError.class )
-    public void shouldNotAllowNoGraph() throws Exception {
-        new JcrSession(repository, WORKSPACE_NAME, null, nodesByUuid);
+    public void shouldNotAllowNullExecutionContext() throws Exception {
+        new JcrSession(repository, workspace, null, sessionAttributes);
     }
 
     @Test( expected = AssertionError.class )
-    public void shouldNotAllowNoUuid2NodeMap() throws Exception {
-        Graph graph = Graph.create(WORKSPACE_NAME, connectionFactory, executionContext);
-        new JcrSession(repository, WORKSPACE_NAME, graph, null);
+    public void shouldNotAllowNullSessionAttributesMap() throws Exception {
+        new JcrSession(repository, workspace, context, null);
     }
 
     @Test( expected = UnsupportedOperationException.class )
@@ -167,12 +192,46 @@ public class JcrSessionTest {
     }
 
     @Test
-    public void shouldProvideNoAttributes() throws Exception {
+    public void shouldReturnNullValueForNullAttributeName() throws Exception {
         assertThat(session.getAttribute(null), nullValue());
     }
 
     @Test
+    public void shouldReturnNullValueForEmptyOrBlankAttributeName() throws Exception {
+        assertThat(session.getAttribute(""), nullValue());
+        assertThat(session.getAttribute("  "), nullValue());
+    }
+
+    @Test
+    public void shouldReturnNullValueForNonExistantAttributeName() throws Exception {
+        assertThat(session.getAttribute("something else entirely"), nullValue());
+    }
+
+    @Test
+    public void shouldReturnPropertyAttributeValueGivenNameOfExistingAttribute() throws Exception {
+        assertThat(session.getAttribute("attribute1"), is((Object)"value1"));
+    }
+
+    @Test
+    public void shouldProvideAttributeNames() throws Exception {
+        String[] names = session.getAttributeNames();
+        assertThat(names, notNullValue());
+        assertThat(names.length, is(1));
+        assertThat(names[0], is("attribute1"));
+    }
+
+    @Test
     public void shouldProvideEmptyAttributeNames() throws Exception {
+        // Set up the session attributes ...
+        sessionAttributes = new HashMap<String, Object>();
+
+        // Now create the workspace ...
+        workspace = new JcrWorkspace(repository, workspaceName, context, sessionAttributes);
+
+        // Create the session and log in ...
+        session = (JcrSession)workspace.getSession();
+
+        // Get get the attribute names (there should be none) ...
         String[] names = session.getAttributeNames();
         assertThat(names, notNullValue());
         assertThat(names.length, is(0));
@@ -180,7 +239,7 @@ public class JcrSessionTest {
 
     @Test
     public void shouldProvideAccessToRepository() throws Exception {
-        assertThat(session.getRepository(), is(repository));
+        assertThat(session.getRepository(), is((Repository)repository));
     }
 
     @Test
@@ -210,12 +269,9 @@ public class JcrSessionTest {
         Principal principal = Mockito.mock(Principal.class);
         stub(principal.getName()).toReturn("name");
         Subject subject = new Subject(false, Collections.singleton(principal), Collections.EMPTY_SET, Collections.EMPTY_SET);
-        ExecutionContext executionContext = Mockito.mock(ExecutionContext.class);
-        stub(executionContext.getSubject()).toReturn(subject);
-        stub(executionContext.getLoginContext()).toReturn(Mockito.mock(LoginContext.class));
-        Graph graph = Mockito.mock(Graph.class);
-        stub(graph.getContext()).toReturn(executionContext);
-        Session session = new JcrSession(repository, WORKSPACE_NAME, graph, nodesByUuid);
+        LoginContext loginContext = mock(LoginContext.class);
+        stub(loginContext.getSubject()).toReturn(subject);
+        Session session = new JcrSession(repository, workspace, context.create(loginContext), sessionAttributes);
         try {
             assertThat(session.getUserID(), is("name"));
         } finally {
@@ -225,9 +281,7 @@ public class JcrSessionTest {
 
     @Test
     public void shouldProvideRootNode() throws Exception {
-        ReferenceMap<UUID, Node> nodesByUuid = new ReferenceMap<UUID, Node>(ReferenceType.STRONG, ReferenceType.SOFT);
-        Graph graph = Graph.create(WORKSPACE_NAME, connectionFactory, executionContext);
-        Session session = new JcrSession(repository, WORKSPACE_NAME, graph, nodesByUuid);
+        Map<UUID, Node> nodesByUuid = session.getNodesByUuid();
         assertThat(nodesByUuid.isEmpty(), is(true));
         Node root = session.getRootNode();
         assertThat(root, notNullValue());
@@ -267,7 +321,7 @@ public class JcrSessionTest {
         assertThat(session.hasPendingChanges(), is(false));
     }
 
-    @Test
+    @Test( expected = UnsupportedOperationException.class )
     public void shouldAllowImpersonation() throws Exception {
         assertThat(session.impersonate(null), notNullValue());
     }

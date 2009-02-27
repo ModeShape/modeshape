@@ -28,8 +28,6 @@ import static org.junit.Assert.assertThat;
 import java.util.HashMap;
 import java.util.Map;
 import org.jboss.dna.graph.property.NamespaceRegistry;
-import org.jboss.dna.graph.property.basic.BasicNamespaceRegistry;
-import org.jboss.dna.graph.property.basic.LocalNamespaceRegistry;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -44,7 +42,7 @@ public class LocalNamespaceRegistryTest {
 
     @Before
     public void beforeEach() {
-        delegate = new BasicNamespaceRegistry();
+        delegate = new SimpleNamespaceRegistry();
         local = new LocalNamespaceRegistry(delegate);
         uri = "http://www.example.com";
     }

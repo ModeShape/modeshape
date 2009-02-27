@@ -37,6 +37,7 @@ import org.jboss.dna.common.text.TextEncoder;
 import org.jboss.dna.graph.DnaLexicon;
 import org.jboss.dna.graph.property.InvalidPathException;
 import org.jboss.dna.graph.property.Name;
+import org.jboss.dna.graph.property.NamespaceRegistry;
 import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.ValueFormatException;
 import org.junit.Before;
@@ -51,7 +52,7 @@ public class BasicPathTest extends AbstractPathTest {
     public static final TextEncoder NO_OP_ENCODER = Path.NO_OP_ENCODER;
     public static final Path ROOT = RootPath.INSTANCE;
 
-    private BasicNamespaceRegistry namespaceRegistry;
+    private NamespaceRegistry namespaceRegistry;
     private String validNamespaceUri;
     private Path path2;
     private Path.Segment[] validSegments;
@@ -74,7 +75,7 @@ public class BasicPathTest extends AbstractPathTest {
             validSegmentsList.add(segment);
         }
         super.path = new BasicPath(validSegmentsList, true);
-        namespaceRegistry = new BasicNamespaceRegistry();
+        namespaceRegistry = new SimpleNamespaceRegistry();
         namespaceRegistry.register(validNamespacePrefix, validNamespaceUri);
         StringValueFactory stringValueFactory = new StringValueFactory(Path.DEFAULT_DECODER, Path.DEFAULT_ENCODER);
         NameValueFactory nameValueFactory = new NameValueFactory(namespaceRegistry, Path.DEFAULT_DECODER, stringValueFactory);

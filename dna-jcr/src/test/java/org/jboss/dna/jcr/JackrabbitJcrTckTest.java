@@ -161,7 +161,11 @@ public class JackrabbitJcrTckTest {
             // Wrap a connection to the in-memory (DNA) repository in a (JCR) repository
             connection = source.getConnection();
             repository = new JcrRepository(Collections.<String, String>emptyMap(), executionContext.create(accessControlContext),
-                                           connectionFactory);
+                                           connectionFactory, source.getName());
+
+            // Make sure the path to the namespaces exists ...
+            Graph graph = Graph.create(source.getName(), connectionFactory, executionContext);
+            graph.create("/jcr:system").and().create("/jcr:system/dna:namespaces");
 
             // Set up some sample nodes in the graph to match the expected test configuration
             try {
@@ -173,7 +177,6 @@ public class JackrabbitJcrTckTest {
                 executionContext.getNamespaceRegistry().register("sv", "http://www.jcp.org/jcr/sv/1.0");
 
                 Path destinationPath = executionContext.getValueFactories().getPathFactory().create("/");
-                Graph graph = Graph.create(source.getName(), connectionFactory, executionContext);
                 GraphImporter importer = new GraphImporter(graph);
 
                 URI xmlContent = new File("src/test/resources/repositoryJackrabbitTck.xml").toURI();

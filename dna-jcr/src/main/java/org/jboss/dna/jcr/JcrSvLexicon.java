@@ -23,14 +23,15 @@
  */
 package org.jboss.dna.jcr;
 
-import org.jboss.dna.graph.property.Name;
-import org.jboss.dna.graph.property.basic.BasicName;
 
 /**
  * @author Randall Hauch
  */
-class JcrLexicon extends org.jboss.dna.graph.JcrLexicon {
+public class JcrSvLexicon {
 
-    public static final Name SYSTEM = new BasicName(Namespace.URI, "system");
+    public static class Namespace {
+        public static final String URI = "http://www.jcp.org/jcr/sv/1.0";
+        public static final String PREFIX = "sv";
+    }
 
 }

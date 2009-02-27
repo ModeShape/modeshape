@@ -42,9 +42,10 @@ import org.jboss.dna.graph.property.NamespaceRegistry;
 import org.jboss.dna.graph.property.Property;
 import org.jboss.dna.graph.property.PropertyFactory;
 import org.jboss.dna.graph.property.ValueFactories;
-import org.jboss.dna.graph.property.basic.BasicNamespaceRegistry;
 import org.jboss.dna.graph.property.basic.BasicPropertyFactory;
+import org.jboss.dna.graph.property.basic.SimpleNamespaceRegistry;
 import org.jboss.dna.graph.property.basic.StandardValueFactories;
+import org.jboss.dna.graph.property.basic.ThreadSafeNamespaceRegistry;
 
 /**
  * An ExecutionContext is a representation of the environment or context in which a component or operation is operating. Some
@@ -150,8 +151,8 @@ public class ExecutionContext implements ClassLoaderFactory, Cloneable {
      *        {@link AccessController#getContext() current calling context}.
      * @param accessControlContext the access control context, or null if a {@link LoginContext} is provided or if the
      *        {@link AccessController#getContext() current calling context} should be used
-     * @param namespaceRegistry the namespace registry implementation, or null if a {@link BasicNamespaceRegistry} instance should
-     *        be used
+     * @param namespaceRegistry the namespace registry implementation, or null if a thread-safe version of
+     *        {@link SimpleNamespaceRegistry} instance should be used
      * @param valueFactories the {@link ValueFactories} implementation, or null if a {@link StandardValueFactories} instance
      *        should be used
      * @param propertyFactory the {@link PropertyFactory} implementation, or null if a {@link BasicPropertyFactory} instance
@@ -175,7 +176,8 @@ public class ExecutionContext implements ClassLoaderFactory, Cloneable {
         } else {
             this.subject = loginContext.getSubject();
         }
-        this.namespaceRegistry = namespaceRegistry == null ? new BasicNamespaceRegistry() : namespaceRegistry;
+        this.namespaceRegistry = namespaceRegistry != null ? namespaceRegistry : new ThreadSafeNamespaceRegistry(
+                                                                                                                 new SimpleNamespaceRegistry());
         this.valueFactories = valueFactories == null ? new StandardValueFactories(this.namespaceRegistry) : valueFactories;
         this.propertyFactory = propertyFactory == null ? new BasicPropertyFactory(this.valueFactories) : propertyFactory;
         this.classLoaderFactory = classLoaderFactory == null ? new StandardClassLoaderFactory() : classLoaderFactory;

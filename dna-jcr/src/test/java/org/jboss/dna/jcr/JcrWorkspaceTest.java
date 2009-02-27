@@ -26,61 +26,79 @@ package org.jboss.dna.jcr;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
-import javax.jcr.Session;
-import javax.jcr.Workspace;
+import static org.mockito.Mockito.stub;
+import java.util.HashMap;
+import java.util.Map;
+import javax.jcr.NamespaceRegistry;
+import org.jboss.dna.graph.ExecutionContext;
+import org.jboss.dna.graph.Graph;
+import org.jboss.dna.graph.JcrLexicon;
+import org.jboss.dna.graph.connector.RepositoryConnection;
+import org.jboss.dna.graph.connector.RepositoryConnectionFactory;
+import org.jboss.dna.graph.connector.RepositorySourceException;
 import org.jboss.dna.graph.connector.inmemory.InMemoryRepositorySource;
-import org.junit.After;
-import org.junit.AfterClass;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mockito.MockitoAnnotations;
+import org.mockito.MockitoAnnotations.Mock;
 
 /**
  * @author jverhaeg
  */
 public class JcrWorkspaceTest {
 
-    @BeforeClass
-    public static void beforeClass() throws Exception {
-        JcrSessionTest.executionContext = TestUtil.getExecutionContext();
-        InMemoryRepositorySource source = new InMemoryRepositorySource();
-        source.setName(JcrSessionTest.REPOSITORY_NAME);
-        JcrSessionTest.repositorySource = source;
-        JcrSessionTest.connectionFactory = TestUtil.createJackRabbitConnectionFactory(JcrSessionTest.repositorySource,
-                                                                                      JcrSessionTest.executionContext);
-        JcrSessionTest.repository = new JcrRepository(JcrSessionTest.executionContext, JcrSessionTest.connectionFactory);
-    }
-
-    @AfterClass
-    public static void afterClass() {
-    }
-
-    private Session session;
-    private Workspace workspace;
+    private String workspaceName;
+    private ExecutionContext context;
+    private InMemoryRepositorySource source;
+    private JcrWorkspace workspace;
+    private RepositoryConnectionFactory connectionFactory;
+    private Map<String, Object> sessionAttributes;
+    @Mock
+    private JcrRepository repository;
 
     @Before
-    public void before() throws Exception {
+    public void beforeEach() throws Exception {
+        final String repositorySourceName = "repository";
+        workspaceName = "workspace1";
+
+        // Set up the source ...
+        source = new InMemoryRepositorySource();
+        source.setName(repositorySourceName);
+        source.setDefaultWorkspaceName(workspaceName);
+
+        // Set up the execution context ...
+        context = new ExecutionContext();
+
+        // Set up the initial content ...
+        Graph graph = Graph.create(source, context);
+        graph.create("/a").and().create("/a/b").and().create("/a/b/c").and().create("/b");
+        graph.set("booleanProperty").on("/a/b").to(true);
+        graph.set("stringProperty").on("/a/b/c").to("value");
+
+        // Make sure the path to the namespaces exists ...
+        graph.create("/jcr:system").and().create("/jcr:system/dna:namespaces");
+
+        // Stub out the connection factory ...
+        connectionFactory = new RepositoryConnectionFactory() {
+            /**
+             * {@inheritDoc}
+             * 
+             * @see org.jboss.dna.graph.connector.RepositoryConnectionFactory#createConnection(java.lang.String)
+             */
+            @SuppressWarnings( "synthetic-access" )
+            public RepositoryConnection createConnection( String sourceName ) throws RepositorySourceException {
+                return repositorySourceName.equals(sourceName) ? source.getConnection() : null;
+            }
+        };
+
+        // Stub out the repository, since we only need a few methods ...
         MockitoAnnotations.initMocks(this);
-        session = JcrSessionTest.repository.login();
-        workspace = session.getWorkspace();
-    }
+        stub(repository.getRepositorySourceName()).toReturn(repositorySourceName);
+        stub(repository.getConnectionFactory()).toReturn(connectionFactory);
 
-    @After
-    public void after() throws Exception {
-        if (session.isLive()) {
-            session.logout();
-        }
-    }
-
-    @Test( expected = AssertionError.class )
-    public void shouldNotAllowNoSession() throws Exception {
-        new JcrWorkspace(null, JcrSessionTest.WORKSPACE_NAME);
-    }
-
-    @Test( expected = AssertionError.class )
-    public void shouldNotAllowNoWorkspaceName() throws Exception {
-        new JcrWorkspace((JcrSession)session, null);
+        // Now create the workspace ...
+        sessionAttributes = new HashMap<String, Object>();
+        workspace = new JcrWorkspace(repository, workspaceName, context, sessionAttributes);
     }
 
     @Test( expected = UnsupportedOperationException.class )
@@ -88,9 +106,14 @@ public class JcrWorkspaceTest {
         workspace.clone(null, null, null, false);
     }
 
-    @Test( expected = UnsupportedOperationException.class )
-    public void shouldNotAllowCopy() throws Exception {
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldNotAllowCopyFromNullPathToNullPath() throws Exception {
         workspace.copy(null, null);
+    }
+
+    @Test
+    public void shouldCopyFromPathToAnotherPathInSameWorkspace() throws Exception {
+        workspace.copy("/a/b", "/b/b-copy");
     }
 
     @Test( expected = UnsupportedOperationException.class )
@@ -98,24 +121,33 @@ public class JcrWorkspaceTest {
         workspace.copy(null, null, null);
     }
 
-    @Test( expected = UnsupportedOperationException.class )
+    @Test
     public void shouldNotAllowGetAccessibleWorkspaceNames() throws Exception {
-        workspace.getAccessibleWorkspaceNames();
+        String[] names = workspace.getAccessibleWorkspaceNames();
+        assertThat(names.length, is(1));
+        assertThat(names[0], is(workspaceName));
     }
 
-    @Test( expected = UnsupportedOperationException.class )
-    public void shouldNotAllowImportContentHandler() throws Exception {
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldNotAllowImportContentHandlerWithNullPath() throws Exception {
         workspace.getImportContentHandler(null, 0);
     }
 
     @Test
+    public void shouldGetImportContentHandlerWithValidPath() throws Exception {
+        assertThat(workspace.getImportContentHandler("/b", 0), is(notNullValue()));
+    }
+
+    @Test
     public void shouldProvideName() throws Exception {
-        assertThat(workspace.getName(), is(JcrSessionTest.WORKSPACE_NAME));
+        assertThat(workspace.getName(), is(workspaceName));
     }
 
     @Test
     public void shouldProvideNamespaceRegistry() throws Exception {
-        assertThat(workspace.getNamespaceRegistry(), notNullValue());
+        NamespaceRegistry registry = workspace.getNamespaceRegistry();
+        assertThat(registry, is(notNullValue()));
+        assertThat(registry.getURI(JcrLexicon.Namespace.PREFIX), is(JcrLexicon.Namespace.URI));
     }
 
     @Test( expected = UnsupportedOperationException.class )
@@ -135,7 +167,7 @@ public class JcrWorkspaceTest {
 
     @Test
     public void shouldProvideSession() throws Exception {
-        assertThat(workspace.getSession(), is(session));
+        assertThat(workspace.getSession(), is(notNullValue()));
     }
 
     @Test( expected = UnsupportedOperationException.class )
@@ -143,9 +175,14 @@ public class JcrWorkspaceTest {
         workspace.importXML(null, null, 0);
     }
 
-    @Test( expected = UnsupportedOperationException.class )
-    public void shouldNotAllowMove() throws Exception {
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldNotAllowMoveFromNullPath() throws Exception {
         workspace.move(null, null);
+    }
+
+    @Test( expected = UnsupportedOperationException.class )
+    public void shouldNotAllowMoveFromPathToAnotherPathInSameWorkspace() throws Exception {
+        workspace.move("/a/b", "/b/b-copy");
     }
 
     @Test( expected = UnsupportedOperationException.class )

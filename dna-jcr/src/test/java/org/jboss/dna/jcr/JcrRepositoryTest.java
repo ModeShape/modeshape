@@ -27,7 +27,6 @@ import static org.hamcrest.collection.IsArrayContaining.hasItemInArray;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
-import static org.mockito.Mockito.stub;
 import java.security.AccessControlContext;
 import java.security.AccessController;
 import java.util.HashMap;
@@ -38,8 +37,11 @@ import javax.jcr.Session;
 import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
 import org.jboss.dna.graph.ExecutionContext;
+import org.jboss.dna.graph.Graph;
 import org.jboss.dna.graph.connector.RepositoryConnection;
 import org.jboss.dna.graph.connector.RepositoryConnectionFactory;
+import org.jboss.dna.graph.connector.RepositorySourceException;
+import org.jboss.dna.graph.connector.inmemory.InMemoryRepositorySource;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
@@ -51,18 +53,15 @@ import org.mockito.MockitoAnnotations.Mock;
  */
 public class JcrRepositoryTest {
 
-    private Repository repository;
-    @Mock
+    private String sourceName;
+    private ExecutionContext context;
+    private JcrRepository repository;
+    private InMemoryRepositorySource source;
     private Map<String, String> descriptors;
-    @Mock
     private RepositoryConnectionFactory connectionFactory;
-    @Mock
-    private ExecutionContext executionContext;
+    protected AccessControlContext accessControlContext = AccessController.getContext();
     @Mock
     LoginContext loginContext;
-    @Mock
-    private RepositoryConnection connection;
-    AccessControlContext accessControlContext = AccessController.getContext();
     private Credentials credentials = new Credentials() {
 
         private static final long serialVersionUID = 1L;
@@ -76,24 +75,55 @@ public class JcrRepositoryTest {
     @Before
     public void before() throws Exception {
         MockitoAnnotations.initMocks(this);
-        stub(executionContext.create(accessControlContext)).toReturn(executionContext);
-        stub(connectionFactory.createConnection(JcrI18n.defaultWorkspaceName.text())).toReturn(connection);
-        repository = new JcrRepository(descriptors, executionContext, connectionFactory);
+        sourceName = "repository";
+
+        // Set up the source ...
+        source = new InMemoryRepositorySource();
+        source.setName(sourceName);
+
+        // Set up the execution context ...
+        context = new ExecutionContext();
+
+        // Stub out the connection factory ...
+        connectionFactory = new RepositoryConnectionFactory() {
+            /**
+             * {@inheritDoc}
+             * 
+             * @see org.jboss.dna.graph.connector.RepositoryConnectionFactory#createConnection(java.lang.String)
+             */
+            @SuppressWarnings( "synthetic-access" )
+            public RepositoryConnection createConnection( String sourceName ) throws RepositorySourceException {
+                return sourceName.equals(sourceName) ? source.getConnection() : null;
+            }
+        };
+
+        // Make sure the path to the namespaces exists ...
+        Graph graph = Graph.create(source, context);
+        graph.create("/jcr:system").and().create("/jcr:system/dna:namespaces");
+
+        // Set up the repository ...
+        descriptors = new HashMap<String, String>();
+        repository = new JcrRepository(descriptors, context, connectionFactory, sourceName);
     }
 
     @Test
-    public void shouldAllowNoDescriptors() {
-        new JcrRepository(descriptors, executionContext, connectionFactory);
+    public void shouldAllowNullDescriptors() {
+        new JcrRepository(null, context, connectionFactory, sourceName);
     }
 
     @Test( expected = IllegalArgumentException.class )
-    public void shouldNotAllowNoExecutionContextFactory() throws Exception {
-        new JcrRepository(null, connectionFactory);
+    public void shouldNotAllowNullExecutionContext() throws Exception {
+        new JcrRepository(descriptors, null, connectionFactory, sourceName);
     }
 
     @Test( expected = IllegalArgumentException.class )
-    public void shouldNotAllowNoConnectionFactories() throws Exception {
-        new JcrRepository(executionContext, null);
+    public void shouldNotAllowNullConnectionFactories() throws Exception {
+        new JcrRepository(descriptors, context, null, sourceName);
+    }
+
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldNotAllowNullSourceName() throws Exception {
+        new JcrRepository(descriptors, context, connectionFactory, null);
     }
 
     @Test( expected = IllegalArgumentException.class )
@@ -118,7 +148,7 @@ public class JcrRepositoryTest {
 
     @Test
     public void shouldProvideBuiltInDescriptorsWhenNotSuppliedDescriptors() {
-        Repository repository = new JcrRepository(descriptors, executionContext, connectionFactory);
+        Repository repository = new JcrRepository(descriptors, context, connectionFactory, sourceName);
         testDescriptorKeys(repository);
         testDescriptorValues(repository);
     }
@@ -127,7 +157,7 @@ public class JcrRepositoryTest {
     public void shouldProvideUserSuppliedDescriptors() {
         Map<String, String> descriptors = new HashMap<String, String>();
         descriptors.put("property", "value");
-        Repository repository = new JcrRepository(descriptors, executionContext, connectionFactory);
+        Repository repository = new JcrRepository(descriptors, context, connectionFactory, sourceName);
         testDescriptorKeys(repository);
         testDescriptorValues(repository);
         assertThat(repository.getDescriptor("property"), is("value"));
@@ -148,7 +178,6 @@ public class JcrRepositoryTest {
     @Test
     public void shouldAllowLoginWithProperCredentials() throws Exception {
         repository.login(credentials);
-        stub(executionContext.create(loginContext)).toReturn(executionContext);
         repository.login(new Credentials() {
 
             private static final long serialVersionUID = 1L;
@@ -235,7 +264,7 @@ public class JcrRepositoryTest {
         assertThat(repository.getDescriptor(Repository.REP_NAME_DESC), is(JcrI18n.REP_NAME_DESC.text()));
         assertThat(repository.getDescriptor(Repository.REP_VENDOR_DESC), is(JcrI18n.REP_VENDOR_DESC.text()));
         assertThat(repository.getDescriptor(Repository.REP_VENDOR_URL_DESC), is("http://www.jboss.org/dna"));
-        assertThat(repository.getDescriptor(Repository.REP_VERSION_DESC), is("0.2"));
+        assertThat(repository.getDescriptor(Repository.REP_VERSION_DESC), is("0.4"));
         assertThat(repository.getDescriptor(Repository.SPEC_NAME_DESC), is(JcrI18n.SPEC_NAME_DESC.text()));
         assertThat(repository.getDescriptor(Repository.SPEC_VERSION_DESC), is("1.0"));
     }

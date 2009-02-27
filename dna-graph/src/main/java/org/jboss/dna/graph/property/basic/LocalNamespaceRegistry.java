@@ -36,7 +36,7 @@ import org.jboss.dna.graph.property.NamespaceRegistry;
  * @author Randall Hauch
  */
 @ThreadSafe
-public class LocalNamespaceRegistry extends BasicNamespaceRegistry {
+public class LocalNamespaceRegistry extends SimpleNamespaceRegistry {
 
     private final NamespaceRegistry delegate;
 
@@ -65,7 +65,7 @@ public class LocalNamespaceRegistry extends BasicNamespaceRegistry {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.graph.property.basic.BasicNamespaceRegistry#getDefaultNamespaceUri()
+     * @see org.jboss.dna.graph.property.basic.SimpleNamespaceRegistry#getDefaultNamespaceUri()
      */
     @Override
     public String getDefaultNamespaceUri() {
@@ -77,7 +77,7 @@ public class LocalNamespaceRegistry extends BasicNamespaceRegistry {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.graph.property.basic.BasicNamespaceRegistry#getNamespaceForPrefix(java.lang.String)
+     * @see org.jboss.dna.graph.property.basic.SimpleNamespaceRegistry#getNamespaceForPrefix(java.lang.String)
      */
     @Override
     public String getNamespaceForPrefix( String prefix ) {
@@ -89,7 +89,7 @@ public class LocalNamespaceRegistry extends BasicNamespaceRegistry {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.graph.property.basic.BasicNamespaceRegistry#getNamespaces()
+     * @see org.jboss.dna.graph.property.basic.SimpleNamespaceRegistry#getNamespaces()
      */
     @Override
     public Set<Namespace> getNamespaces() {
@@ -116,7 +116,7 @@ public class LocalNamespaceRegistry extends BasicNamespaceRegistry {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.graph.property.basic.BasicNamespaceRegistry#getPrefixForNamespaceUri(java.lang.String, boolean)
+     * @see org.jboss.dna.graph.property.basic.SimpleNamespaceRegistry#getPrefixForNamespaceUri(java.lang.String, boolean)
      */
     @Override
     public String getPrefixForNamespaceUri( String namespaceUri,
@@ -130,7 +130,7 @@ public class LocalNamespaceRegistry extends BasicNamespaceRegistry {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.graph.property.basic.BasicNamespaceRegistry#getRegisteredNamespaceUris()
+     * @see org.jboss.dna.graph.property.basic.SimpleNamespaceRegistry#getRegisteredNamespaceUris()
      */
     @Override
     public Set<String> getRegisteredNamespaceUris() {
@@ -142,7 +142,7 @@ public class LocalNamespaceRegistry extends BasicNamespaceRegistry {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.graph.property.basic.BasicNamespaceRegistry#isRegisteredNamespaceUri(java.lang.String)
+     * @see org.jboss.dna.graph.property.basic.SimpleNamespaceRegistry#isRegisteredNamespaceUri(java.lang.String)
      */
     @Override
     public boolean isRegisteredNamespaceUri( String namespaceUri ) {
@@ -152,7 +152,7 @@ public class LocalNamespaceRegistry extends BasicNamespaceRegistry {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.graph.property.basic.BasicNamespaceRegistry#register(java.lang.String, java.lang.String)
+     * @see org.jboss.dna.graph.property.basic.SimpleNamespaceRegistry#register(java.lang.String, java.lang.String)
      */
     @Override
     public String register( String prefix,
@@ -167,7 +167,7 @@ public class LocalNamespaceRegistry extends BasicNamespaceRegistry {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.graph.property.basic.BasicNamespaceRegistry#unregister(java.lang.String)
+     * @see org.jboss.dna.graph.property.basic.SimpleNamespaceRegistry#unregister(java.lang.String)
      */
     @Override
     public boolean unregister( String namespaceUri ) {

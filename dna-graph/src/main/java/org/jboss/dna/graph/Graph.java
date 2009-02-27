@@ -511,7 +511,7 @@ public class Graph {
     public Move<Conjunction<Graph>> move( Property firstIdProperty,
                                           Property... additionalIdProperties ) {
         return new MoveAction<Conjunction<Graph>>(this.nextGraph, this.requestQueue, Location.create(firstIdProperty,
-                                                                                                  additionalIdProperties));
+                                                                                                     additionalIdProperties));
     }
 
     /**
@@ -713,6 +713,134 @@ public class Graph {
     }
 
     /**
+     * Begin the request to create a node located at the supplied path, and return an interface used to either add properties for
+     * the new node, or complete/submit the request and return the location, node, or graph.
+     * <p>
+     * If you have the {@link Location} of the parent (for the new node) from a previous request, it is better and more efficient
+     * to use {@link #createUnder(Location)}. However, this method work just as well if all you have is the {@link Path} to the
+     * parent or new node.
+     * </p>
+     * 
+     * @param atPath the path to the node that is to be created.
+     * @return an object that may be used to start another request
+     */
+    public CreateAt<Graph> createAt( String atPath ) {
+        return createAt(createPath(atPath));
+    }
+
+    /**
+     * Begin the request to create a node located at the supplied path, and return an interface used to either add properties for
+     * the new node, or complete/submit the request and return the location, node, or graph.
+     * <p>
+     * If you have the {@link Location} of the parent (for the new node) from a previous request, it is better and more efficient
+     * to use {@link #createUnder(Location)}. However, this method work just as well if all you have is the {@link Path} to the
+     * parent or new node.
+     * </p>
+     * 
+     * @param at the path to the node that is to be created.
+     * @return an object that may be used to start another request
+     */
+    public CreateAt<Graph> createAt( final Path at ) {
+        CheckArg.isNotNull(at, "at");
+        final Path parent = at.getParent();
+        final Name childName = at.getLastSegment().getName();
+        final String workspaceName = getCurrentWorkspaceName();
+        return new CreateAt<Graph>() {
+            private final List<Property> properties = new LinkedList<Property>();
+
+            public CreateAt<Graph> and( UUID uuid ) {
+                PropertyFactory factory = queue().getGraph().getContext().getPropertyFactory();
+                properties.add(factory.create(DnaLexicon.UUID, uuid));
+                return this;
+            }
+
+            public CreateAt<Graph> and( Property property ) {
+                properties.add(property);
+                return this;
+            }
+
+            public CreateAt<Graph> and( Iterable<Property> properties ) {
+                for (Property property : properties) {
+                    this.properties.add(property);
+                }
+                return this;
+            }
+
+            public CreateAt<Graph> and( String name,
+                                        Object... values ) {
+                ExecutionContext context = queue().getGraph().getContext();
+                PropertyFactory factory = context.getPropertyFactory();
+                NameFactory nameFactory = context.getValueFactories().getNameFactory();
+                properties.add(factory.create(nameFactory.create(name), values));
+                return this;
+            }
+
+            public CreateAt<Graph> and( Name name,
+                                        Object... values ) {
+                ExecutionContext context = queue().getGraph().getContext();
+                PropertyFactory factory = context.getPropertyFactory();
+                properties.add(factory.create(name, values));
+                return this;
+            }
+
+            public CreateAt<Graph> and( Property property,
+                                        Property... additionalProperties ) {
+                properties.add(property);
+                for (Property additionalProperty : additionalProperties) {
+                    properties.add(additionalProperty);
+                }
+                return this;
+            }
+
+            public CreateAt<Graph> with( UUID uuid ) {
+                return and(uuid);
+            }
+
+            public CreateAt<Graph> with( Property property ) {
+                return and(property);
+            }
+
+            public CreateAt<Graph> with( Iterable<Property> properties ) {
+                return and(properties);
+            }
+
+            public CreateAt<Graph> with( Property property,
+                                         Property... additionalProperties ) {
+                return and(property, additionalProperties);
+            }
+
+            public CreateAt<Graph> with( String name,
+                                         Object... values ) {
+                return and(name, values);
+            }
+
+            public CreateAt<Graph> with( Name name,
+                                         Object... values ) {
+                return and(name, values);
+            }
+
+            public Location getLocation() {
+                Location parentLoc = Location.create(parent);
+                CreateNodeRequest request = new CreateNodeRequest(parentLoc, workspaceName, childName, this.properties);
+                queue().submit(request); // immediate
+                return request.getActualLocationOfNode();
+            }
+
+            public Node getNode() {
+                Location parentLoc = Location.create(parent);
+                CreateNodeRequest request = new CreateNodeRequest(parentLoc, workspaceName, childName, this.properties);
+                queue().submit(request); // immediate
+                return getNodeAt(request.getActualLocationOfNode());
+            }
+
+            public Graph and() {
+                queue().submit(new CreateNodeRequest(Location.create(parent), workspaceName, childName, this.properties));
+                return Graph.this;
+            }
+        };
+    }
+
+    /**
      * Begin the request to create a node located at the supplied path. This request is submitted to the repository immediately.
      * <p>
      * If you have the {@link Location} of the parent (for the new node) from a previous request, it is better and more efficient
@@ -739,16 +867,13 @@ public class Graph {
      * parent or new node.
      * </p>
      * 
-     * @param atPath the path to the node that is to be created.
-     * @param properties the properties for the new node
+     * @param at the path to the node that is to be created.
      * @return an object that may be used to start another request
      */
-    public Conjunction<Graph> create( String atPath,
-                                      Property... properties ) {
-        Path at = createPath(atPath);
+    public Conjunction<Graph> create( final Path at ) {
         Path parent = at.getParent();
         Name child = at.getLastSegment().getName();
-        this.requestQueue.submit(new CreateNodeRequest(Location.create(parent), getCurrentWorkspaceName(), child, properties));
+        this.requestQueue.submit(new CreateNodeRequest(Location.create(parent), getCurrentWorkspaceName(), child));
         return nextGraph;
     }
 
@@ -760,14 +885,16 @@ public class Graph {
      * parent or new node.
      * </p>
      * 
-     * @param at the path to the node that is to be created.
+     * @param atPath the path to the node that is to be created.
+     * @param properties the properties for the new node
      * @return an object that may be used to start another request
      */
-    public Conjunction<Graph> create( Path at ) {
-        CheckArg.isNotNull(at, "at");
+    public Conjunction<Graph> create( String atPath,
+                                      Property... properties ) {
+        Path at = createPath(atPath);
         Path parent = at.getParent();
         Name child = at.getLastSegment().getName();
-        this.requestQueue.submit(new CreateNodeRequest(Location.create(parent), getCurrentWorkspaceName(), child));
+        this.requestQueue.submit(new CreateNodeRequest(Location.create(parent), getCurrentWorkspaceName(), child, properties));
         return nextGraph;
     }
 
@@ -1498,7 +1625,7 @@ public class Graph {
                     public List<Location> startingAfter( Property firstIdProperyOfPreviousSibling,
                                                          Property... additionalIdPropertiesOfPreviousSibling ) {
                         return startingAfter(Location.create(firstIdProperyOfPreviousSibling,
-                                                          additionalIdPropertiesOfPreviousSibling));
+                                                             additionalIdPropertiesOfPreviousSibling));
                     }
                 };
             }
@@ -1965,7 +2092,7 @@ public class Graph {
                                             Property... additionalIdProperties ) {
             assertNotExecuted();
             return new MoveAction<BatchConjunction>(this.nextRequests, this.requestQueue, Location.create(firstIdProperty,
-                                                                                                       additionalIdProperties));
+                                                                                                          additionalIdProperties));
         }
 
         /**
@@ -2107,7 +2234,7 @@ public class Graph {
                                             Property... additionalIdProperties ) {
             assertNotExecuted();
             return new CopyAction<BatchConjunction>(nextRequests, this.requestQueue, Location.create(firstIdProperty,
-                                                                                                  additionalIdProperties));
+                                                                                                     additionalIdProperties));
         }
 
         /**
@@ -2322,7 +2449,7 @@ public class Graph {
             Path parent = at.getParent();
             Name name = at.getLastSegment().getName();
             return new CreateAction<Batch>(this, requestQueue, Location.create(parent), getCurrentWorkspaceName(), name).with(firstProperty,
-                                                                                                                           additionalProperties);
+                                                                                                                              additionalProperties);
         }
 
         /**
@@ -2412,7 +2539,7 @@ public class Graph {
             Path parent = at.getParent();
             Name name = at.getLastSegment().getName();
             return new CreateAction<Batch>(this, requestQueue, Location.create(parent), getCurrentWorkspaceName(), name).with(firstProperty,
-                                                                                                                           additionalProperties);
+                                                                                                                              additionalProperties);
         }
 
         /**
@@ -3406,9 +3533,9 @@ public class Graph {
         Next to( String desiredPath );
 
         /**
-         * Finish the request by specifying the Location.create where the node should be copied/moved. Unlike {@link Into#into(Path)}
-         * , which specifies the location of the parent and which assumes the new node should have the same name as the original,
-         * this method allows the caller to specify a new name for the new node.
+         * Finish the request by specifying the Location.create where the node should be copied/moved. Unlike
+         * {@link Into#into(Path)} , which specifies the location of the parent and which assumes the new node should have the
+         * same name as the original, this method allows the caller to specify a new name for the new node.
          * 
          * @param desiredPath the path for the new node
          * @return the interface for additional requests or actions
@@ -3530,6 +3657,14 @@ public class Graph {
         Create<Next> with( Property property );
 
         /**
+         * Specify property that should the new node should have. This is an alias for {@link #and(Iterable)}.
+         * 
+         * @param properties the properties that should be added
+         * @return this same interface so additional properties may be added
+         */
+        Create<Next> with( Iterable<Property> properties );
+
+        /**
          * Specify a property that should the new node should have. This is an alias for {@link #and(String, Object...)}.
          * 
          * @param propertyName the name of the property
@@ -3576,6 +3711,15 @@ public class Graph {
         Create<Next> and( Property property );
 
         /**
+         * Specify property that should the new node should have. This is equivalent to calling {@link #and(Property)} for each of
+         * the properties in the supplied {@link Iterable}.
+         * 
+         * @param properties the properties that should be added
+         * @return this same interface so additional properties may be added
+         */
+        Create<Next> and( Iterable<Property> properties );
+
+        /**
          * Specify a property that should the new node should have.
          * 
          * @param propertyName the name of the property
@@ -3604,6 +3748,137 @@ public class Graph {
          */
         Create<Next> and( Property firstProperty,
                           Property... additionalProperties );
+    }
+
+    /**
+     * The interface for defining additional properties on a new node.
+     * 
+     * @param <Next> The interface that is to be returned when this create request is completed
+     * @author Randall Hauch
+     */
+    public interface CreateAt<Next> extends Conjunction<Next> {
+        /**
+         * Specify the UUID that should the new node should have. This is an alias for {@link #and(UUID)}.
+         * 
+         * @param uuid the UUID
+         * @return this same interface so additional properties may be added
+         */
+        CreateAt<Next> with( UUID uuid );
+
+        /**
+         * Specify a property that should the new node should have. This is an alias for {@link #and(Property)}.
+         * 
+         * @param property the property
+         * @return this same interface so additional properties may be added
+         */
+        CreateAt<Next> with( Property property );
+
+        /**
+         * Specify property that should the new node should have. This is an alias for {@link #and(Iterable)}.
+         * 
+         * @param properties the properties that should be added
+         * @return this same interface so additional properties may be added
+         */
+        CreateAt<Next> with( Iterable<Property> properties );
+
+        /**
+         * Specify a property that should the new node should have. This is an alias for {@link #and(String, Object...)}.
+         * 
+         * @param propertyName the name of the property
+         * @param values the property values
+         * @return this same interface so additional properties may be added
+         */
+        CreateAt<Next> with( String propertyName,
+                             Object... values );
+
+        /**
+         * Specify a property that should the new node should have. This is an alias for {@link #and(Name, Object...)}.
+         * 
+         * @param propertyName the name of the property
+         * @param values the property values
+         * @return this same interface so additional properties may be added
+         */
+        CreateAt<Next> with( Name propertyName,
+                             Object... values );
+
+        /**
+         * Specify properties that should the new node should have. This is an alias for {@link #and(Property, Property...)}.
+         * 
+         * @param firstProperty the first property
+         * @param additionalProperties the additional property
+         * @return this same interface so additional properties may be added
+         */
+        CreateAt<Next> with( Property firstProperty,
+                             Property... additionalProperties );
+
+        /**
+         * Specify the UUID that should the new node should have.
+         * 
+         * @param uuid the UUID
+         * @return this same interface so additional properties may be added
+         */
+        CreateAt<Next> and( UUID uuid );
+
+        /**
+         * Specify a property that should the new node should have.
+         * 
+         * @param property the property
+         * @return this same interface so additional properties may be added
+         */
+        CreateAt<Next> and( Property property );
+
+        /**
+         * Specify property that should the new node should have. This is equivalent to calling {@link #and(Property)} for each of
+         * the properties in the supplied {@link Iterable}.
+         * 
+         * @param properties the properties that should be added
+         * @return this same interface so additional properties may be added
+         */
+        CreateAt<Next> and( Iterable<Property> properties );
+
+        /**
+         * Specify a property that should the new node should have.
+         * 
+         * @param propertyName the name of the property
+         * @param values the property values
+         * @return this same interface so additional properties may be added
+         */
+        CreateAt<Next> and( String propertyName,
+                            Object... values );
+
+        /**
+         * Specify a property that should the new node should have.
+         * 
+         * @param propertyName the name of the property
+         * @param values the property values
+         * @return this same interface so additional properties may be added
+         */
+        CreateAt<Next> and( Name propertyName,
+                            Object... values );
+
+        /**
+         * Specify properties that should the new node should have.
+         * 
+         * @param firstProperty the first property
+         * @param additionalProperties the additional property
+         * @return this same interface so additional properties may be added
+         */
+        CreateAt<Next> and( Property firstProperty,
+                            Property... additionalProperties );
+
+        /**
+         * Complete this request, submit it, and return the actual location of the created node.
+         * 
+         * @return the actual location of the just-created node; never null
+         */
+        Location getLocation();
+
+        /**
+         * Complete this request, submit it, and return the actual node that was created.
+         * 
+         * @return the actual node that was just created; never null
+         */
+        Node getNode();
     }
 
     /**
@@ -5225,6 +5500,13 @@ public class Graph {
             return this;
         }
 
+        public Create<T> and( Iterable<Property> properties ) {
+            for (Property property : properties) {
+                this.properties.add(property);
+            }
+            return this;
+        }
+
         public Create<T> and( String name,
                               Object... values ) {
             ExecutionContext context = queue().getGraph().getContext();
@@ -5257,6 +5539,10 @@ public class Graph {
 
         public Create<T> with( Property property ) {
             return and(property);
+        }
+
+        public Create<T> with( Iterable<Property> properties ) {
+            return and(properties);
         }
 
         public Create<T> with( Property property,

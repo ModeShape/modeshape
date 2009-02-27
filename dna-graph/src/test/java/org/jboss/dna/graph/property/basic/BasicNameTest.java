@@ -30,6 +30,7 @@ import org.jboss.dna.common.text.Jsr283Encoder;
 import org.jboss.dna.common.text.TextEncoder;
 import org.jboss.dna.graph.DnaLexicon;
 import org.jboss.dna.graph.property.Name;
+import org.jboss.dna.graph.property.NamespaceRegistry;
 import org.jboss.dna.graph.property.Path;
 import org.junit.Before;
 import org.junit.Test;
@@ -40,7 +41,7 @@ import org.junit.Test;
  */
 public class BasicNameTest {
 
-    private BasicNamespaceRegistry namespaceRegistry;
+    private NamespaceRegistry namespaceRegistry;
     private Name name;
     private String validNamespaceUri;
     private String validLocalName;
@@ -55,7 +56,7 @@ public class BasicNameTest {
         this.validLocalName = "localPart";
         this.name = new BasicName(validNamespaceUri, validLocalName);
         this.encoder = Path.URL_ENCODER;
-        this.namespaceRegistry = new BasicNamespaceRegistry();
+        this.namespaceRegistry = new SimpleNamespaceRegistry();
         this.namespaceRegistry.register(validNamespacePrefix, validNamespaceUri);
         this.delimiterEncoder = new TextEncoder() {
             public String encode( String text ) {

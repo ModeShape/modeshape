@@ -29,8 +29,9 @@ import org.jboss.dna.graph.property.basic.BasicName;
 /**
  * @author Randall Hauch
  */
-class JcrLexicon extends org.jboss.dna.graph.JcrLexicon {
+public class DnaLexicon extends org.jboss.dna.graph.DnaLexicon {
 
-    public static final Name SYSTEM = new BasicName(Namespace.URI, "system");
+    public static final Name NAMESPACES = new BasicName(Namespace.URI, "namespaces");
+    public static final Name NAMESPACE = new BasicName(Namespace.URI, "namespace");
 
 }

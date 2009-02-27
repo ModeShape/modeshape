@@ -23,15 +23,41 @@
  */
 package org.jboss.dna.jcr;
 
+import java.io.IOException;
 import java.io.InputStream;
+import java.util.Map;
+import java.util.Set;
+import javax.jcr.AccessDeniedException;
+import javax.jcr.InvalidSerializedDataException;
+import javax.jcr.ItemExistsException;
 import javax.jcr.NamespaceRegistry;
+import javax.jcr.PathNotFoundException;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.Workspace;
+import javax.jcr.lock.LockException;
+import javax.jcr.nodetype.ConstraintViolationException;
 import javax.jcr.nodetype.NodeTypeManager;
 import javax.jcr.observation.ObservationManager;
 import javax.jcr.query.QueryManager;
 import javax.jcr.version.Version;
+import javax.jcr.version.VersionException;
+import org.jboss.dna.common.util.CheckArg;
+import org.jboss.dna.graph.ExecutionContext;
+import org.jboss.dna.graph.Graph;
+import org.jboss.dna.graph.GraphImporter;
+import org.jboss.dna.graph.Location;
+import org.jboss.dna.graph.connector.RepositoryConnectionFactory;
+import org.jboss.dna.graph.connector.RepositorySource;
+import org.jboss.dna.graph.connector.RepositorySourceException;
+import org.jboss.dna.graph.property.Name;
+import org.jboss.dna.graph.property.Path;
+import org.jboss.dna.graph.property.PathFactory;
+import org.jboss.dna.graph.property.Property;
+import org.jboss.dna.graph.property.PropertyFactory;
+import org.jboss.dna.graph.property.ValueFormatException;
+import org.jboss.dna.graph.property.basic.GraphNamespaceRegistry;
+import org.jboss.dna.graph.property.basic.ThreadSafeNamespaceRegistry;
 import org.xml.sax.ContentHandler;
 
 /**
@@ -40,98 +66,85 @@ import org.xml.sax.ContentHandler;
  */
 final class JcrWorkspace implements Workspace {
 
+    /**
+     * The name of this workspace. This name is used as the name of the source when
+     * {@link RepositoryConnectionFactory#createConnection(String) creating connections} to the underlying
+     * {@link RepositorySource} that stores the content for this workspace.
+     */
     private final String name;
+
+    /**
+     * The context in which this workspace is executing/operating. This context already has been authenticated.
+     */
+    private final ExecutionContext context;
+
+    /**
+     * The reference to the {@link JcrRepository} instance that owns this {@link Workspace} instance. Very few methods on this
+     * repository object are used; mainly {@link JcrRepository#getConnectionFactory()} and
+     * {@link JcrRepository#getRepositorySourceName()}.
+     */
+    private final JcrRepository repository;
+
+    /**
+     * The graph used by this workspace to access persistent content. This graph is not thread-safe, but since this workspace is
+     * not thread-safe, it is okay for any method in this workspace to use the same graph. It is also okay for other objects that
+     * have the same thread context as this workspace (e.g., the session, namespace registry, etc.) to also reuse this same graph
+     * instance (though it's not very expensive at all for each to have their own instance, too).
+     */
+    private final Graph graph;
+
+    /**
+     * Reference to the namespace registry for this workspace. Per the JCR specification, this registry instance is persistent
+     * (unlike the namespace-related methods in the {@link Session}, like {@link Session#getNamespacePrefix(String)},
+     * {@link Session#setNamespacePrefix(String, String)}, etc.).
+     */
+    private final JcrNamespaceRegistry workspaceRegistry;
+
+    /**
+     * The {@link Session} instance that this corresponds with this workspace.
+     */
     private final JcrSession session;
-    private final NamespaceRegistry namespaceRegistry;
 
-    /**
-     * @param session the session that owns this workspace; may not be null
-     * @param name the name of the workspace; may not be null
-     * @throws RepositoryException
-     */
-    JcrWorkspace( JcrSession session,
-                  String name ) throws RepositoryException {
-        assert session != null;
-        assert name != null;
-        this.session = session;
-        this.name = name;
-        this.namespaceRegistry = new JcrNamespaceRegistry(session.getExecutionContext().getNamespaceRegistry());
-        // Ensure workspace with supplied name is accessible
-        // if (name == null) name = session.getDnaRepository().getSource(session.getSubject()).getName();
-        // String matchedName = null;
-        // for (String accessibleName : getAccessibleWorkspaceNames()) {
-        // if (name.equalsIgnoreCase(accessibleName)) {
-        // matchedName = name;
-        // break;
-        // }
-        // }
-        // if (matchedName == null) {
-        // throw new LoginException();
-        // }
+    JcrWorkspace( JcrRepository repository,
+                  String workspaceName,
+                  ExecutionContext context,
+                  Map<String, Object> sessionAttributes ) {
+        assert workspaceName != null;
+        assert context != null;
+        assert repository != null;
+        this.name = workspaceName;
+        this.repository = repository;
+
+        // Set up the execution context for this workspace, which should use the namespace registry that persists
+        // the namespaces in the graph ...
+        Graph namespaceGraph = Graph.create(this.repository.getRepositorySourceName(),
+                                            this.repository.getConnectionFactory(),
+                                            context);
+        Name uriProperty = DnaLexicon.NAMESPACE_URI;
+        PathFactory pathFactory = context.getValueFactories().getPathFactory();
+        Path root = pathFactory.createRootPath();
+        Path namespacesPath = context.getValueFactories().getPathFactory().create(root, JcrLexicon.SYSTEM, DnaLexicon.NAMESPACES);
+        PropertyFactory propertyFactory = context.getPropertyFactory();
+        Property namespaceType = propertyFactory.create(JcrLexicon.PRIMARY_TYPE, DnaLexicon.NAMESPACE);
+        org.jboss.dna.graph.property.NamespaceRegistry persistentRegistry = new GraphNamespaceRegistry(namespaceGraph,
+                                                                                                       namespacesPath,
+                                                                                                       uriProperty, namespaceType);
+        persistentRegistry = new ThreadSafeNamespaceRegistry(persistentRegistry);
+        this.context = context.with(persistentRegistry);
+
+        // Set up and initialize the persistent (and thread-safe) JCR namespace registry ...
+        this.workspaceRegistry = new JcrNamespaceRegistry(persistentRegistry);
+
+        // Now create a graph with this new execution context ...
+        this.graph = Graph.create(this.repository.getRepositorySourceName(), this.repository.getConnectionFactory(), this.context);
+        this.graph.useWorkspace(workspaceName);
+
+        // Set up the session for this workspace ...
+        this.session = new JcrSession(this.repository, this, this.context, sessionAttributes);
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.Workspace#clone(java.lang.String, java.lang.String, java.lang.String, boolean)
-     */
-    public void clone( String srcWorkspace,
-                       String srcAbsPath,
-                       String destAbsPath,
-                       boolean removeExisting ) {
-        throw new UnsupportedOperationException();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public void copy( String srcAbsPath,
-                      String destAbsPath ) {
-        throw new UnsupportedOperationException();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public void copy( String srcWorkspace,
-                      String srcAbsPath,
-                      String destAbsPath ) {
-        throw new UnsupportedOperationException();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String[] getAccessibleWorkspaceNames() {
-        // try {
-        // Node node = session.getRootNode().getNode("dna:jcr");
-        // if (node != null) {
-        // Property property = node.getProperty("dna:workspaceNames");
-        // if (property != null) {
-        // Value[] values = property.getValues();
-        // if (values.length > 0) {
-        // String[] names = new String[values.length];
-        // for (int ndx = values.length; --ndx >= 0;) {
-        // names[ndx] = values[ndx].getString();
-        // }
-        // return names;
-        // }
-        // }
-        // }
-        // } catch (PathNotFoundException meansOnlyDefaultWorkspaceNameAvailable) {
-        // // TODO: Check permissions and, if writable, create node & property and, if allowed, set to include this source's name
-        // }
-        // // Repository is read-only, so just return this source's name
-        // return new String[] {session.getDnaRepository().getSource(session.getSubject()).getName()};
-        throw new UnsupportedOperationException();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public ContentHandler getImportContentHandler( String parentAbsPath,
-                                                   int uuidBehavior ) {
-        throw new UnsupportedOperationException();
+    String getSourceName() {
+        return this.repository.getRepositorySourceName();
     }
 
     /**
@@ -143,11 +156,30 @@ final class JcrWorkspace implements Workspace {
 
     /**
      * {@inheritDoc}
+     */
+    public Session getSession() {
+        return this.session;
+    }
+
+    /**
+     * {@inheritDoc}
      * 
      * @see javax.jcr.Workspace#getNamespaceRegistry()
      */
     public NamespaceRegistry getNamespaceRegistry() {
-        return namespaceRegistry;
+        return workspaceRegistry;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public String[] getAccessibleWorkspaceNames() throws RepositoryException {
+        try {
+            Set<String> workspaces = graph.getWorkspaces();
+            return workspaces.toArray(new String[workspaces.size()]);
+        } catch (RepositorySourceException e) {
+            throw new RepositoryException(JcrI18n.errorObtainingWorkspaceNames.text(getSourceName(), e.getMessage()), e);
+        }
     }
 
     /**
@@ -173,25 +205,122 @@ final class JcrWorkspace implements Workspace {
 
     /**
      * {@inheritDoc}
+     * 
+     * @see javax.jcr.Workspace#clone(java.lang.String, java.lang.String, java.lang.String, boolean)
      */
-    public Session getSession() {
-        return this.session;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public void importXML( String parentAbsPath,
-                           InputStream in,
-                           int uuidBehavior ) {
+    public void clone( String srcWorkspace,
+                       String srcAbsPath,
+                       String destAbsPath,
+                       boolean removeExisting ) {
         throw new UnsupportedOperationException();
     }
 
     /**
      * {@inheritDoc}
+     * 
+     * @see javax.jcr.Workspace#copy(java.lang.String, java.lang.String)
      */
-    public void move( String srcAbsPath,
+    public void copy( String srcAbsPath,
+                      String destAbsPath )
+        throws ConstraintViolationException, VersionException, AccessDeniedException, PathNotFoundException, ItemExistsException,
+        LockException, RepositoryException {
+        CheckArg.isNotEmpty(srcAbsPath, "srcAbsPath");
+        CheckArg.isNotEmpty(destAbsPath, "destAbsPath");
+
+        // Create the paths ...
+        PathFactory factory = context.getValueFactories().getPathFactory();
+        Path srcPath = null;
+        Path destPath = null;
+        try {
+            srcPath = factory.create(srcAbsPath);
+        } catch (ValueFormatException e) {
+            throw new RepositoryException(JcrI18n.invalidPathParameter.text(srcAbsPath, "srcAbsPath"), e);
+        }
+        try {
+            destPath = factory.create(destAbsPath);
+        } catch (ValueFormatException e) {
+            throw new RepositoryException(JcrI18n.invalidPathParameter.text(destAbsPath, "destAbsPath"), e);
+        }
+
+        // Perform the copy operation, but use the "to" form (not the "into", which takes the parent) ...
+        graph.copy(srcPath).to(destPath);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public void copy( String srcWorkspace,
+                      String srcAbsPath,
                       String destAbsPath ) {
+        throw new UnsupportedOperationException();
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see javax.jcr.Workspace#getImportContentHandler(java.lang.String, int)
+     */
+    @SuppressWarnings( "unused" )
+    public ContentHandler getImportContentHandler( String parentAbsPath,
+                                                   int uuidBehavior )
+        throws PathNotFoundException, ConstraintViolationException, VersionException, LockException, AccessDeniedException,
+        RepositoryException {
+        CheckArg.isNotEmpty(parentAbsPath, "parentAbsPath");
+        // Create a graph importer, which can return the content handler that can be used by the caller
+        // to call the handler's event methods to create content...
+        GraphImporter importer = new GraphImporter(graph);
+        Path parentPath = context.getValueFactories().getPathFactory().create(parentAbsPath);
+        return importer.getHandlerForImportingXml(Location.create(parentPath), false);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see javax.jcr.Workspace#importXML(java.lang.String, java.io.InputStream, int)
+     */
+    @SuppressWarnings( "unused" )
+    public void importXML( String parentAbsPath,
+                           InputStream in,
+                           int uuidBehavior )
+        throws IOException, PathNotFoundException, ItemExistsException, ConstraintViolationException,
+        InvalidSerializedDataException, LockException, AccessDeniedException, RepositoryException {
+        // try {
+        // graph.importXmlFrom(in).into(parentAbsPath);
+        // } catch (org.jboss.dna.graph.property.PathNotFoundException e) {
+        // throw new PathNotFoundException(e.getMessage(), e);
+        // } catch (SAXException err) {
+        // }
+        throw new UnsupportedOperationException();
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see javax.jcr.Workspace#move(java.lang.String, java.lang.String)
+     */
+    @SuppressWarnings( "unused" )
+    public void move( String srcAbsPath,
+                      String destAbsPath ) throws PathNotFoundException, RepositoryException {
+        CheckArg.isNotEmpty(srcAbsPath, "srcAbsPath");
+        CheckArg.isNotEmpty(destAbsPath, "destAbsPath");
+
+        // Create the paths ...
+        PathFactory factory = context.getValueFactories().getPathFactory();
+        Path srcPath = null;
+        Path destPath = null;
+        try {
+            srcPath = factory.create(srcAbsPath);
+        } catch (ValueFormatException e) {
+            throw new RepositoryException(JcrI18n.invalidPathParameter.text(srcAbsPath, "srcAbsPath"), e);
+        }
+        try {
+            destPath = factory.create(destAbsPath);
+        } catch (ValueFormatException e) {
+            throw new RepositoryException(JcrI18n.invalidPathParameter.text(destAbsPath, "destAbsPath"), e);
+        }
+
+        // Perform the copy operation, but use the "to" form (not the "into", which takes the parent) ...
+        // graph.move(srcPath).to(destPath);
         throw new UnsupportedOperationException();
     }
 

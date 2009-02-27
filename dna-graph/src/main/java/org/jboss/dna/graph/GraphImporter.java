@@ -112,6 +112,55 @@ public class GraphImporter {
         CheckArg.isNotNull(uri, "uri");
         CheckArg.isNotNull(location, "location");
         CheckArg.isNotNull(location.getPath(), "location.getPath()");
+        InputStream stream = null;
+        try {
+            stream = uri.toURL().openStream();
+            return importXml(stream, location, skip);
+        } finally {
+            if (stream != null) stream.close();
+        }
+    }
+
+    /**
+     * Read the content from the supplied URI and import into the repository at the supplied location. This method does <i>not</i>
+     * close the stream.
+     * 
+     * @param stream the stream containing the content to be imported
+     * @param location the location in the {@link RepositorySource repository source} where the content is to be written; may not
+     *        be null
+     * @return the batch of requests for creating the graph content that represents the imported content
+     * @throws IllegalArgumentException if the <code>stream</code> or destination path are null
+     * @throws IOException if there is a problem reading the content
+     * @throws SAXException if there is a problem with the SAX Parser
+     * @throws RepositorySourceException if there is a problem while writing the content to the {@link RepositorySource repository
+     *         source}
+     */
+    public Graph.Batch importXml( InputStream stream,
+                                  Location location ) throws IOException, SAXException, RepositorySourceException {
+        return importXml(stream, location, false);
+    }
+
+    /**
+     * Read the content from the supplied URI and import into the repository at the supplied location. This method does <i>not</i>
+     * close the stream.
+     * 
+     * @param stream the stream containing the content to be imported
+     * @param location the location in the {@link RepositorySource repository source} where the content is to be written; may not
+     *        be null
+     * @param skip true if the root element should be skipped, or false if a node should be created for the root XML element
+     * @return the batch of requests for creating the graph content that represents the imported content
+     * @throws IllegalArgumentException if the <code>stream</code> or destination path are null
+     * @throws IOException if there is a problem reading the content
+     * @throws SAXException if there is a problem with the SAX Parser
+     * @throws RepositorySourceException if there is a problem while writing the content to the {@link RepositorySource repository
+     *         source}
+     */
+    public Graph.Batch importXml( InputStream stream,
+                                  Location location,
+                                  boolean skip ) throws IOException, SAXException, RepositorySourceException {
+        CheckArg.isNotNull(stream, "uri");
+        CheckArg.isNotNull(location, "location");
+        CheckArg.isNotNull(location.getPath(), "location.getPath()");
 
         // Create the destination for the XmlHandler ...
         Graph.Batch batch = graph.batch();
@@ -119,7 +168,6 @@ public class GraphImporter {
 
         // Determine where the content is to be placed ...
         Path parentPath = location.getPath();
-        InputStream stream = null;
         Name nameAttribute = JcrLexicon.NAME;
         Name typeAttribute = JcrLexicon.PRIMARY_TYPE;
         Name typeAttributeValue = null;
@@ -132,21 +180,54 @@ public class GraphImporter {
         XmlHandler.AttributeScoping scoping = XmlHandler.AttributeScoping.USE_DEFAULT_NAMESPACE;
         XmlHandler handler = new XmlHandler(destination, skip, parentPath, decoder, nameAttribute, typeAttribute,
                                             typeAttributeValue, scoping);
-        try {
-            stream = uri.toURL().openStream();
-            XMLReader reader = XMLReaderFactory.createXMLReader();
-            reader.setContentHandler(handler);
-            reader.setErrorHandler(handler);
-            reader.parse(new InputSource(stream));
-        } finally {
-            if (stream != null) stream.close();
-        }
+        XMLReader reader = XMLReaderFactory.createXMLReader();
+        reader.setContentHandler(handler);
+        reader.setErrorHandler(handler);
+        reader.parse(new InputSource(stream));
+        if (stream != null) stream.close();
         return batch;
     }
 
+    /**
+     * Return an {@link XmlHandler} that can be used to import content directly into the supplied location. The operations
+     * resulting from the {@link XmlHandler} operations are batched until the {@link XmlHandler#endDocument()} is called, at which
+     * point all enqueued operations are submitted to the graph.
+     * 
+     * @param location the location in the {@link RepositorySource repository source} where the content is to be written; may not
+     *        be null
+     * @param skip true if the root element should be skipped, or false if a node should be created for the root XML element
+     * @return the {@link XmlHandler} that can be used to import content
+     * @throws IllegalArgumentException if the <code>stream</code> or destination path are null
+     */
+    public XmlHandler getHandlerForImportingXml( Location location,
+                                                 boolean skip ) {
+        CheckArg.isNotNull(location, "location");
+        CheckArg.isNotNull(location.getPath(), "location.getPath()");
+
+        // Create the destination for the XmlHandler ...
+        Graph.Batch batch = graph.batch();
+        XmlHandler.Destination destination = new SubmitToGraphInBatch(batch);
+
+        // Determine where the content is to be placed ...
+        Path parentPath = location.getPath();
+        Name nameAttribute = JcrLexicon.NAME;
+        Name typeAttribute = JcrLexicon.PRIMARY_TYPE;
+        Name typeAttributeValue = null;
+        NamespaceRegistry reg = graph.getContext().getNamespaceRegistry();
+        if (reg.isRegisteredNamespaceUri(JcrNtLexicon.Namespace.URI)) {
+            typeAttributeValue = JcrNtLexicon.UNSTRUCTURED;
+        }
+
+        TextDecoder decoder = null;
+        XmlHandler.AttributeScoping scoping = XmlHandler.AttributeScoping.USE_DEFAULT_NAMESPACE;
+        XmlHandler handler = new XmlHandler(destination, skip, parentPath, decoder, nameAttribute, typeAttribute,
+                                            typeAttributeValue, scoping);
+        return handler;
+    }
+
     @NotThreadSafe
-    protected final static class CreateOnGraphInBatch implements Destination {
-        private final Graph.Batch batch;
+    protected static class CreateOnGraphInBatch implements Destination {
+        protected final Graph.Batch batch;
 
         protected CreateOnGraphInBatch( Graph.Batch batch ) {
             assert batch != null;
@@ -178,6 +259,19 @@ public class GraphImporter {
         }
 
         public void submit() {
+        }
+    }
+
+    @NotThreadSafe
+    protected final static class SubmitToGraphInBatch extends CreateOnGraphInBatch {
+        protected SubmitToGraphInBatch( Graph.Batch batch ) {
+            super(batch);
+        }
+
+        @Override
+        public void submit() {
+            super.submit();
+            batch.execute();
         }
     }
 

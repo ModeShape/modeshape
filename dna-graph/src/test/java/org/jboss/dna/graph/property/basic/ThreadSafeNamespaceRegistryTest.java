@@ -21,16 +21,22 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.jboss.dna.jcr;
+package org.jboss.dna.graph.property.basic;
 
-import org.jboss.dna.graph.property.Name;
-import org.jboss.dna.graph.property.basic.BasicName;
 
 /**
  * @author Randall Hauch
  */
-class JcrLexicon extends org.jboss.dna.graph.JcrLexicon {
+public class ThreadSafeNamespaceRegistryTest extends AbstractNamespaceRegistryTest<ThreadSafeNamespaceRegistry> {
 
-    public static final Name SYSTEM = new BasicName(Namespace.URI, "system");
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.property.basic.AbstractNamespaceRegistryTest#createNamespaceRegistry()
+     */
+    @Override
+    protected ThreadSafeNamespaceRegistry createNamespaceRegistry() {
+        return new ThreadSafeNamespaceRegistry(new SimpleNamespaceRegistry());
+    }
 
 }

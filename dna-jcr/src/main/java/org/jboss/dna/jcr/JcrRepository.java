@@ -28,10 +28,9 @@ import java.security.AccessControlContext;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.UUID;
+import java.util.Set;
 import javax.jcr.Credentials;
-import javax.jcr.LoginException;
-import javax.jcr.Node;
+import javax.jcr.NoSuchWorkspaceException;
 import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
@@ -42,8 +41,8 @@ import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.Graph;
 import org.jboss.dna.graph.connector.RepositoryConnectionFactory;
-import com.google.common.base.ReferenceType;
-import com.google.common.collect.ReferenceMap;
+import org.jboss.dna.graph.connector.RepositorySourceException;
+import org.jboss.dna.graph.request.InvalidWorkspaceException;
 
 /**
  * Creates JCR {@link Session sessions} to an underlying repository (which may be a federated repository).
@@ -72,6 +71,7 @@ import com.google.common.collect.ReferenceMap;
 @ThreadSafe
 public class JcrRepository implements Repository {
 
+    private final String sourceName;
     private final Map<String, String> descriptors;
     private final ExecutionContext executionContext;
     private final RepositoryConnectionFactory connectionFactory;
@@ -82,12 +82,14 @@ public class JcrRepository implements Repository {
      * 
      * @param executionContext An execution context.
      * @param connectionFactory A repository connection factory.
+     * @param repositorySourceName the name of the repository source (in the connection factory) that should be used
      * @throws IllegalArgumentException If <code>executionContextFactory</code> or <code>connectionFactory</code> is
      *         <code>null</code>.
      */
     public JcrRepository( ExecutionContext executionContext,
-                          RepositoryConnectionFactory connectionFactory ) {
-        this(null, executionContext, connectionFactory);
+                          RepositoryConnectionFactory connectionFactory,
+                          String repositorySourceName ) {
+        this(null, executionContext, connectionFactory, repositorySourceName);
     }
 
     /**
@@ -95,18 +97,22 @@ public class JcrRepository implements Repository {
      * establish {@link Session sessions} to the underlying repository source upon {@link #login() login}.
      * 
      * @param descriptors The {@link #getDescriptorKeys() descriptors} for this repository; may be <code>null</code>.
-     * @param executionContext An execution context.
-     * @param connectionFactory A repository connection factory.
+     * @param executionContext the execution context in which this repository is to operate
+     * @param connectionFactory the factory for repository connections
+     * @param repositorySourceName the name of the repository source (in the connection factory) that should be used
      * @throws IllegalArgumentException If <code>executionContextFactory</code> or <code>connectionFactory</code> is
      *         <code>null</code>.
      */
     public JcrRepository( Map<String, String> descriptors,
                           ExecutionContext executionContext,
-                          RepositoryConnectionFactory connectionFactory ) {
+                          RepositoryConnectionFactory connectionFactory,
+                          String repositorySourceName ) {
         CheckArg.isNotNull(executionContext, "executionContext");
         CheckArg.isNotNull(connectionFactory, "connectionFactory");
+        CheckArg.isNotNull(repositorySourceName, "repositorySourceName");
         this.executionContext = executionContext;
         this.connectionFactory = connectionFactory;
+        this.sourceName = repositorySourceName;
         Map<String, String> modifiableDescriptors;
         if (descriptors == null) {
             modifiableDescriptors = new HashMap<String, String>();
@@ -134,11 +140,30 @@ public class JcrRepository implements Repository {
             modifiableDescriptors.put(Repository.REP_VENDOR_URL_DESC, "http://www.jboss.org/dna");
         }
         if (!modifiableDescriptors.containsKey(Repository.REP_VERSION_DESC)) {
-            modifiableDescriptors.put(Repository.REP_VERSION_DESC, "0.2");
+            modifiableDescriptors.put(Repository.REP_VERSION_DESC, "0.4");
         }
         modifiableDescriptors.put(Repository.SPEC_NAME_DESC, JcrI18n.SPEC_NAME_DESC.text());
         modifiableDescriptors.put(Repository.SPEC_VERSION_DESC, "1.0");
         this.descriptors = Collections.unmodifiableMap(modifiableDescriptors);
+    }
+
+    /**
+     * Get the name of the repository source that this repository is using.
+     * 
+     * @return the name of the RepositorySource
+     * @see #getConnectionFactory()
+     */
+    String getRepositorySourceName() {
+        return sourceName;
+    }
+
+    /**
+     * Get the connection factory that this repository is using.
+     * 
+     * @return the connection factory; never null
+     */
+    RepositoryConnectionFactory getConnectionFactory() {
+        return this.connectionFactory;
     }
 
     /**
@@ -206,6 +231,7 @@ public class JcrRepository implements Repository {
     public synchronized Session login( Credentials credentials,
                                        String workspaceName ) throws RepositoryException {
         // Ensure credentials are either null or provide a JAAS method
+        Map<String, Object> sessionAttributes = new HashMap<String, Object>();
         ExecutionContext execContext;
         if (credentials == null) {
             execContext = executionContext;
@@ -246,21 +272,44 @@ public class JcrRepository implements Repository {
             } catch (Exception error) {
                 throw new RepositoryException(error);
             }
-        }
-        // Authenticate if possible
-        assert execContext != null;
-        LoginContext loginContext = execContext.getLoginContext();
-        if (loginContext != null) {
-            try {
-                loginContext.login();
-            } catch (javax.security.auth.login.LoginException error) {
-                throw new LoginException(error);
+            if (credentials instanceof SimpleCredentials) {
+                SimpleCredentials simple = (SimpleCredentials)credentials;
+                for (String attributeName : simple.getAttributeNames()) {
+                    Object attributeValue = simple.getAttribute(attributeName);
+                    sessionAttributes.put(attributeName, attributeValue);
+                }
             }
         }
+
         // Ensure valid workspace name
-        if (workspaceName == null) workspaceName = JcrI18n.defaultWorkspaceName.text();
-        // Create session
-        Graph graph = Graph.create(workspaceName, connectionFactory, execContext);
-        return new JcrSession(this, workspaceName, graph, new ReferenceMap<UUID, Node>(ReferenceType.STRONG, ReferenceType.SOFT));
+        Graph graph = Graph.create(sourceName, connectionFactory, executionContext);
+        if (workspaceName == null) {
+            try {
+                // Get the correct workspace name given the desired workspace name (which may be null) ...
+                workspaceName = graph.getCurrentWorkspace().getName();
+            } catch (RepositorySourceException e) {
+                throw new RepositoryException(JcrI18n.errorObtainingDefaultWorkspaceName.text(sourceName, e.getMessage()), e);
+            }
+        } else {
+            try {
+                // Verify that the workspace exists (or can be created) ...
+                Set<String> workspaces = graph.getWorkspaces();
+                if (!workspaces.contains(workspaceName)) {
+                    // Try to create it ...
+                    graph.createWorkspace().namedSomethingLike(workspaceName).getName();
+                }
+                workspaceName = graph.getCurrentWorkspace().getName();
+            } catch (InvalidWorkspaceException e) {
+                throw new NoSuchWorkspaceException(JcrI18n.workspaceNameIsInvalid.text(sourceName, workspaceName), e);
+            } catch (RepositorySourceException e) {
+                String msg = JcrI18n.errorVerifyingWorkspaceName.text(sourceName, workspaceName, e.getMessage());
+                throw new NoSuchWorkspaceException(msg, e);
+            }
+        }
+
+        // Create the workspace, which will create its own session ...
+        sessionAttributes = Collections.unmodifiableMap(sessionAttributes);
+        JcrWorkspace workspace = new JcrWorkspace(this, workspaceName, execContext, sessionAttributes);
+        return workspace.getSession();
     }
 }
