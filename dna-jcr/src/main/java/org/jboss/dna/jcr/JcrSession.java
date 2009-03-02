@@ -423,6 +423,15 @@ class JcrSession implements Session {
         rootNode = new JcrRootNode(this);
         // Get root node from source
         populateNode(rootNode, graph.getNodeAt(executionContext.getValueFactories().getPathFactory().createRootPath()));
+
+        // Root nodes need to have a type in JCR land
+        // JcrProperty primaryType = new JcrProperty(rootNode, getExecutionContext(), JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.BASE);
+        String typeValue = JcrNtLexicon.BASE.getString(executionContext.getNamespaceRegistry());
+        JcrProperty primaryType = new JcrProperty(rootNode, executionContext, JcrLexicon.PRIMARY_TYPE, typeValue);
+
+        // TODO: Not liking the hard-code
+        rootNode.properties.add(primaryType);
+
         return rootNode;
     }
 
@@ -594,8 +603,7 @@ class JcrSession implements Session {
                 if (uuid == null && DnaLexicon.UUID.equals(name)) uuid = uuidFactory.create(dnaProp.getValues()).next();
                 else if (jcrUuidName.equals(name)) dnaUuidProp = dnaProp;
                 else if (jcrMixinTypesName.equals(name)) {
-                    org.jboss.dna.graph.property.ValueFactory<String> stringFactory = executionContext.getValueFactories()
-                                                                                                      .getStringFactory();
+                    org.jboss.dna.graph.property.ValueFactory<String> stringFactory = executionContext.getValueFactories().getStringFactory();
                     for (String mixin : stringFactory.create(dnaProp)) {
                         if ("mix:referenceable".equals(mixin)) referenceable = true;
                     }

@@ -24,9 +24,11 @@
   ~ 51 Franklin Street, Fifth Floor
   ~ Boston, MA  02110-1301  USA
   -->
-<testroot xmlns:jcr="http://www.jcp.org/jcr/1.0">
-	<node jcr:name="node1" prop1="foo" />
-	<node jcr:name="node2" prop2="bar" />
-	<node jcr:name="node3" />
-	<node jcr:name="node4" />
+<testroot xmlns:jcr="http://www.jcp.org/jcr/1.0" 
+            xmlns:nt="http://www.jcp.org/jcr/nt/1.0"
+    jcr:primaryType="nt:unstructured">
+	<nt:unstructured jcr:name="node1" jcr:primaryType="nt:unstructured" prop1="foo" />
+	<nt:unstructured jcr:name="node2" jcr:primaryType="nt:unstructured" prop2="bar" />
+	<nt:unstructured jcr:name="node3" jcr:primaryType="nt:unstructured" />
+	<nt:unstructured jcr:name="node4" jcr:primaryType="nt:unstructured" />
 </testroot>

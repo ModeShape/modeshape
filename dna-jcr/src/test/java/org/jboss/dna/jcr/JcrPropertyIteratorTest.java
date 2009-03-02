@@ -63,7 +63,7 @@ public class JcrPropertyIteratorTest {
         properties.add(Mockito.mock(Property.class));
         PropertyIterator iter = node.getProperties();
         assertThat(iter, notNullValue());
-        assertThat(iter.getSize(), is(-1L));
+        assertThat(iter.getSize(), is(4L));
         assertThat(iter.getPosition(), is(0L));
         assertThat(iter.hasNext(), is(true));
         assertThat(iter.next(), notNullValue());

@@ -31,6 +31,48 @@ import org.jboss.dna.graph.property.basic.BasicName;
  */
 class JcrLexicon extends org.jboss.dna.graph.JcrLexicon {
 
+    public static final Name AUTO_CREATED = new BasicName(Namespace.URI, "autoCreated");
+    public static final Name BASE_VERSION = new BasicName(Namespace.URI, "baseVersion");
+    public static final Name CHILD_NODE_DEFINITION = new BasicName(Namespace.URI, "childNodeDefinition");
+    public static final Name CONTENT = new BasicName(Namespace.URI, "content");
+    public static final Name CREATED = new BasicName(Namespace.URI, "created");
+    public static final Name DATA = new BasicName(Namespace.URI, "data");
+    public static final Name DEFAULT_PRIMARY_TYPE = new BasicName(Namespace.URI, "defaultPrimaryType");
+    public static final Name DEFAULT_VALUES = new BasicName(Namespace.URI, "defaultValues");
+    public static final Name ENCODING = new BasicName(Namespace.URI, "encoding");
+    public static final Name FROZEN_MIXIN_TYPES = new BasicName(Namespace.URI, "frozenMixinTypes");
+    public static final Name FROZEN_NODE = new BasicName(Namespace.URI, "frozenNode");
+    public static final Name FROZEN_PRIMARY_TYPE = new BasicName(Namespace.URI, "frozenPrimaryType");
+    public static final Name FROZEN_UUID = new BasicName(Namespace.URI, "frozenUuid");
+    public static final Name HAS_ORDERABLE_CHILD_NODES = new BasicName(Namespace.URI, "hasOrderableChildNodes");
+    public static final Name IS_CHECKED_OUT = new BasicName(Namespace.URI, "isCheckedOut");
+    public static final Name IS_MIXIN = new BasicName(Namespace.URI, "isMixin");
+    public static final Name LANGUAGE = new BasicName(Namespace.URI, "language");
+    public static final Name LAST_MODIFIED = new BasicName(Namespace.URI, "lastModified");
+    public static final Name LOCK_IS_DEEP = new BasicName(Namespace.URI, "lockIsDeep");
+    public static final Name LOCK_OWNER = new BasicName(Namespace.URI, "lockOwner");
+    public static final Name MANDATORY = new BasicName(Namespace.URI, "mandatory");
+    public static final Name MERGE_FAILED = new BasicName(Namespace.URI, "mergeFailed");
+    public static final Name MIME_TYPE = new BasicName(Namespace.URI, "mimeType");
+    public static final Name MULTIPLE = new BasicName(Namespace.URI, "multiple");
+    public static final Name NAME = new BasicName(Namespace.URI, "name");
+    public static final Name NODE_TYPE_NAME = new BasicName(Namespace.URI, "nodeTypeName");
+    public static final Name ON_PARENT_VERSION = new BasicName(Namespace.URI, "onParentVersion");
+    public static final Name PREDECESSORS = new BasicName(Namespace.URI, "predecessors");
+    public static final Name PRIMARY_ITEM_NAME = new BasicName(Namespace.URI, "primaryItemName");
+    public static final Name PROPERTY_DEFINITION = new BasicName(Namespace.URI, "propertyDefinition");
+    public static final Name PROTECTED = new BasicName(Namespace.URI, "protected");
+    public static final Name REQUIRED_PRIMARY_TYPES = new BasicName(Namespace.URI, "requiredPrimaryTypes");
+    public static final Name REQUIRED_TYPE = new BasicName(Namespace.URI, "requiredType");
+    public static final Name ROOT_VERSION = new BasicName(Namespace.URI, "rootVersion");
+    public static final Name SAME_NAME_SIBLINGS = new BasicName(Namespace.URI, "sameNameSiblings");
+    public static final Name STATEMENT = new BasicName(Namespace.URI, "statement");
+    public static final Name SUCCESSORS = new BasicName(Namespace.URI, "successors");
+    public static final Name SUPERTYPES = new BasicName(Namespace.URI, "supertypes");
     public static final Name SYSTEM = new BasicName(Namespace.URI, "system");
+    public static final Name VALUE_CONSTRAINTS = new BasicName(Namespace.URI, "valueConstraints");
+    public static final Name VERSIONABLE_UUID = new BasicName(Namespace.URI, "versionableUuid");
+    public static final Name VERSION_HISTORY = new BasicName(Namespace.URI, "versionHistory");
+    public static final Name VERSION_LABELS = new BasicName(Namespace.URI, "versionLabels");
 
 }

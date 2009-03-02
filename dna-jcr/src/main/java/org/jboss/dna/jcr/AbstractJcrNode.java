@@ -26,6 +26,7 @@ package org.jboss.dna.jcr;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -48,6 +49,7 @@ import javax.jcr.version.Version;
 import javax.jcr.version.VersionHistory;
 import net.jcip.annotations.NotThreadSafe;
 import org.jboss.dna.common.util.CheckArg;
+import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.Path.Segment;
 
@@ -225,8 +227,20 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
      * @throws UnsupportedOperationException always
      * @see javax.jcr.Node#getMixinNodeTypes()
      */
-    public NodeType[] getMixinNodeTypes() {
-        throw new UnsupportedOperationException();
+    public NodeType[] getMixinNodeTypes() throws RepositoryException {
+        PropertyIterator mixinProperties = getProperties(JcrLexicon.MIXIN_TYPES.getString(session.getExecutionContext().getNamespaceRegistry()));
+        List<NodeType> mixinNodeTypes = new ArrayList<NodeType>((int)mixinProperties.getSize());
+
+        while (mixinProperties.hasNext()) {
+            Property property = mixinProperties.nextProperty();
+
+            String nodeTypeName = property.getValue().getString();
+            NodeType nodeType = session.getWorkspace().getNodeTypeManager().getNodeType(nodeTypeName);
+
+            mixinNodeTypes.add(nodeType);
+        }
+
+        return mixinNodeTypes.toArray(new NodeType[mixinNodeTypes.size()]);
     }
 
     /**
@@ -308,8 +322,16 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
      * @throws UnsupportedOperationException always
      * @see javax.jcr.Node#getPrimaryNodeType()
      */
-    public NodeType getPrimaryNodeType() {
-        throw new UnsupportedOperationException();
+    public NodeType getPrimaryNodeType() throws RepositoryException {
+        String primaryTypeName = JcrLexicon.PRIMARY_TYPE.getString(session.getExecutionContext().getNamespaceRegistry());
+        Property primaryNodeTypeProperty = getProperty(primaryTypeName);
+        Value nodeValue = primaryNodeTypeProperty.getValue();
+
+        ExecutionContext context = session.getExecutionContext();
+        Name nodeValueAsName = context.getValueFactories().getNameFactory().create(nodeValue.getString());
+
+        String nodeTypeName = nodeValueAsName.getString(context.getNamespaceRegistry());
+        return session.getWorkspace().getNodeTypeManager().getNodeType(nodeTypeName);
     }
 
     /**
@@ -324,12 +346,19 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
     /**
      * {@inheritDoc}
      * 
-     * @throws UnsupportedOperationException always
      * @see javax.jcr.Node#getProperties(java.lang.String)
      */
-    public PropertyIterator getProperties( String namePattern ) {
+    public PropertyIterator getProperties( String namePattern ) throws RepositoryException {
         // TODO: Implement after changing impl to delegate to Graph API
-        throw new UnsupportedOperationException();
+
+        // Implementing exact-matching only for now to prototype types as properties
+        Set<Property> matchingProps = new HashSet<Property>();
+        for (Property prop : properties) {
+            String propName = prop.getName();
+            if (propName.equals(namePattern)) matchingProps.add(prop);
+        }
+
+        return new JcrPropertyIterator(matchingProps);
     }
 
     /**
@@ -522,7 +551,20 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
      * @return <code>false</code>
      * @see javax.jcr.Node#isNodeType(java.lang.String)
      */
-    public boolean isNodeType( String nodeTypeName ) {
+    public boolean isNodeType( String nodeTypeName ) throws RepositoryException {
+        NodeType nodeType = getPrimaryNodeType();
+
+        if (nodeType.isNodeType(nodeTypeName)) {
+            return true;
+        }
+
+        NodeType[] mixinNodeTypes = getMixinNodeTypes();
+        for (int i = 0; i < mixinNodeTypes.length; i++) {
+            if (mixinNodeTypes[i].isNodeType(nodeTypeName)) {
+                return true;
+            }
+        }
+
         return false;
     }
 

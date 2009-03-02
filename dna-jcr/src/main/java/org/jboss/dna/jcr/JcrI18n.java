@@ -57,7 +57,9 @@ public final class JcrI18n {
 
     public static I18n errorWhileInitializingTheNamespaceRegistry;
     public static I18n invalidPathParameter;
-
+    
+    public static I18n typeNotFound;
+    
     public static I18n REP_NAME_DESC;
     public static I18n REP_VENDOR_DESC;
     public static I18n SPEC_NAME_DESC;

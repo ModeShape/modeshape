@@ -26,19 +26,18 @@ package org.jboss.dna.jcr;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.basic.BasicName;
 
-/**
- *
- */
-public class JcrSvLexicon {
+public class JcrNtLexicon extends org.jboss.dna.graph.JcrNtLexicon {
 
-    public static class Namespace {
-        public static final String URI = "http://www.jcp.org/jcr/sv/1.0";
-        public static final String PREFIX = "sv";
-    }
+    public static final Name CHILD_NODE_DEFINITION = new BasicName(Namespace.URI, "childNodeDefinition");
+    public static final Name FROZEN_NODE = new BasicName(Namespace.URI, "frozenNode");
+    public static final Name HIERARCHY_NODE = new BasicName(Namespace.URI, "hierarchyNode");
+    public static final Name LINKED_FILE = new BasicName(Namespace.URI, "linkedFile");
+    public static final Name NODE_TYPE = new BasicName(Namespace.URI, "nodeType");
+    public static final Name PROPERTY_DEFINITION = new BasicName(Namespace.URI, "propertyDefinition");
+    public static final Name QUERY = new BasicName(Namespace.URI, "query");
+    public static final Name VERSION = new BasicName(Namespace.URI, "version");
+    public static final Name VERSIONED_CHILD = new BasicName(Namespace.URI, "versionedChild");
+    public static final Name VERSION_HISTORY = new BasicName(Namespace.URI, "versionHistory");
+    public static final Name VERSION_LABELS = new BasicName(Namespace.URI, "versionLabels");
 
-    public static final Name NODE = new BasicName(Namespace.URI, "node");
-    public static final Name PROPERTY = new BasicName(Namespace.URI, "property");
-    public static final Name NAME = new BasicName(Namespace.URI, "name");
-    public static final Name TYPE = new BasicName(Namespace.URI, "type");
-    public static final Name VALUE = new BasicName(Namespace.URI, "value");
 }
