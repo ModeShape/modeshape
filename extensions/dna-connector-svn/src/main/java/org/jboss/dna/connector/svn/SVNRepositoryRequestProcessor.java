@@ -158,7 +158,7 @@ public class SVNRepositoryRequestProcessor extends RequestProcessor implements S
                 request.setError(ex);
             } else if (rootKind == SVNNodeKind.DIR) {
                 Collection<Property> childNodeProperties = request.properties();
-                Object[] objs = organizeThings(childNodeProperties);
+                Object[] objs = values(childNodeProperties);
                 for (Object object : objs) {
                     if (object instanceof Name && ((Name)object).compareTo(JcrNtLexicon.FOLDER) == 0) {
                         // process folder creation
@@ -880,7 +880,7 @@ public class SVNRepositoryRequestProcessor extends RequestProcessor implements S
         return content;
     }
 
-    private Object[] organizeThings( Collection<Property> childNodeProperties ) {
+    private Object[] values( Collection<Property> childNodeProperties ) {
         Set<Object> result = new HashSet<Object>();
         for (Property property : childNodeProperties) {
             result.add(property.getFirstValue());
