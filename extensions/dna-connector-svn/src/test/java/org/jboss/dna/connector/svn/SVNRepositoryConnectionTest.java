@@ -284,6 +284,18 @@ public class SVNRepositoryConnectionTest {
         SVNNodeKind nodeC1Kind = repository.checkPath("nodeC/nodeC_1", -1);
         assertThat(nodeC1Kind, is(SVNNodeKind.DIR));
 
+        byte[] content1 = "My content".getBytes();
+        Property jcrDataProperty = propertyFactory().create(JcrLexicon.DATA, binaryFactory().create(content1));
+        graph.batch().create("/nodeC/nodeC_1/file1.txt").with(propertyFactory().create(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FILE)).and(propertyFactory().create(JcrLexicon.CREATED,
+                                                                                                                                                                 new Date())).and(jcrDataProperty).execute();
+
+        // Look up the file
+        Node nodeC1 = graph.getNodeAt("/nodeC/nodeC_1");
+        assertThat(nodeC1, is(notNullValue()));
+        assertThat(nodeC1.getChildren().size(), is(1));
+        SVNNodeKind fileKind = repository.checkPath("/nodeC/nodeC_1/file1.txt", -1);
+        assertThat(fileKind, is(SVNNodeKind.FILE));
+
     }
 
     protected Collection<String> containsPaths( Collection<Location> locations ) {
