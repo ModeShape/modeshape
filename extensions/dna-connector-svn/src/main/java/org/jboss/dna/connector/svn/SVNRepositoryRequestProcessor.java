@@ -23,11 +23,14 @@
  */
 package org.jboss.dna.connector.svn;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.OutputStream;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashSet;
+import java.util.Set;
 import org.jboss.dna.common.i18n.I18n;
 import org.jboss.dna.common.util.Logger;
 import org.jboss.dna.connector.scm.ScmAction;
@@ -73,6 +76,7 @@ import org.tmatesoft.svn.core.SVNProperties;
 import org.tmatesoft.svn.core.SVNProperty;
 import org.tmatesoft.svn.core.io.ISVNEditor;
 import org.tmatesoft.svn.core.io.SVNRepository;
+import org.tmatesoft.svn.core.io.diff.SVNDeltaGenerator;
 
 /**
  * The {@link RequestProcessor} implementation for the file subversion repository connector. This is the class that does the bulk
@@ -128,6 +132,7 @@ public class SVNRepositoryRequestProcessor extends RequestProcessor implements S
     public void process( CreateNodeRequest request ) {
         logger.trace(request.toString());
         verifyUpdatesAllowed();
+        // get the parent location of the new node
         Location myLocation = request.under();
         Path parent = getPathFor(myLocation, request);
         try {
@@ -152,18 +157,29 @@ public class SVNRepositoryRequestProcessor extends RequestProcessor implements S
                 SVNException ex = new SVNException(err);
                 request.setError(ex);
             } else if (rootKind == SVNNodeKind.DIR) {
-
-                // TODO if node is a file
-
-                // if the node is a directory
-                String childName = request.named().getString(getExecutionContext().getNamespaceRegistry());
-                if (root.length() == 1 && root.charAt(0) == '/') {
-                    // test if so a directory does not exist.
-                    mkdir("", childName, request.toString());
-                } else {
-                    if (root.length() > 1 && root.charAt(0) == '/') {
-                        // test if so a directory does not exist.
-                        mkdir(root.substring(1), childName, request.toString());
+                Collection<Property> childNodeProperties = request.properties();
+                Object[] objs = organizeThings(childNodeProperties);
+                for (Object object : objs) {
+                    if (object instanceof Name && ((Name)object).compareTo(JcrNtLexicon.FOLDER) == 0) {
+                        // process folder creation
+                        // if the node is a directory
+                        String folderName = request.named().getString(getExecutionContext().getNamespaceRegistry());
+                        if (root.length() == 1 && root.charAt(0) == '/') {
+                            // test if so a directory does not exist.
+                            mkdir("", folderName, request.toString());
+                        } else {
+                            if (root.length() > 1 && root.charAt(0) == '/') {
+                                // test if so a directory does not exist.
+                                mkdir(root.substring(1), folderName, request.toString());
+                            }
+                        }
+                    } else if (object instanceof Name && ((Name)object).compareTo(JcrNtLexicon.FILE) == 0) {
+                        String fileName = request.named().getString(getExecutionContext().getNamespaceRegistry());
+                        byte[] content = getContent(objs);
+                        // TODO: what is with the created on
+                        // Date createdOn = getCreatedOn(objs);
+                        // commit in to the repository
+                        newFile(root, fileName, content, request.toString());
                     }
                 }
             }
@@ -710,6 +726,28 @@ public class SVNRepositoryRequestProcessor extends RequestProcessor implements S
     }
 
     /**
+     * Create a file.
+     * @param path
+     * @param file
+     * @param content
+     * @param message
+     * @throws SVNException
+     */
+    private void newFile( String path,
+                          String file,
+                          byte[] content, String message ) throws SVNException {
+        SVNNodeKind childKind = repository.checkPath(file, -1);
+        if (childKind == SVNNodeKind.NONE) {
+            ScmAction addFileNodeAction = addFile(path, file, content);
+            SVNActionExecutor executor = new SVNActionExecutor(repository);
+            executor.execute(addFileNodeAction,message);
+        } else {
+            SVNErrorMessage err = SVNErrorMessage.create(SVNErrorCode.UNKNOWN, "Item with name '{0}' can't be created (already exist)", file);
+            throw new SVNException(err);
+        }
+    }
+
+    /**
      * {@inheritDoc}
      * 
      * @see org.jboss.dna.connector.scm.ScmActionFactory#addDirectory(java.lang.String, java.lang.String)
@@ -726,8 +764,8 @@ public class SVNRepositoryRequestProcessor extends RequestProcessor implements S
      */
     public ScmAction addFile( String path,
                               String file,
-                              byte[] content ) {
-        return null;
+                              byte[] content) {
+        return new AddFile(path, file, content);
     }
 
     /**
@@ -789,5 +827,64 @@ public class SVNRepositoryRequestProcessor extends RequestProcessor implements S
             closeDirectories(editor, path);
             closeDirectories(editor, this.root);
         }
+    }
+
+    public static class AddFile implements ScmAction {
+        private String path;
+        private String file;
+        private byte[] content;
+
+        public AddFile( String path,
+                        String file,
+                        byte[] content ) {
+            this.path = path;
+            this.file = file;
+            this.content = content;
+        }
+
+        public void applyAction( Object context ) throws Exception {
+            ISVNEditor editor = (ISVNEditor)context;
+            openDirectories(editor, path);
+
+            editor.addFile(path + "/" + file, null, -1);
+            editor.applyTextDelta(path + "/" + file, null);
+            SVNDeltaGenerator deltaGenerator = new SVNDeltaGenerator();
+            String checksum = deltaGenerator.sendDelta(path + "/" + file, new ByteArrayInputStream(this.content), editor, true);
+            editor.closeFile(path + "/" + file, checksum);
+
+            closeDirectories(editor, path);
+
+        }
+
+    }
+
+//    private Date getCreatedOn( Object[] objs ) {
+//        Date createdOn = null;
+//        for (Object object : objs) {
+//            if (object instanceof Date) {
+//                createdOn = (Date)object;
+//
+//            }
+//        }
+//        return createdOn;
+//    }
+
+    private byte[] getContent( Object[] objs ) {
+        byte[] content = null;
+        for (Object object : objs) {
+            if (object != null && object instanceof Binary) {
+                Binary buf = (Binary)object;
+                content = buf.getBytes();
+            }
+        }
+        return content;
+    }
+
+    private Object[] organizeThings( Collection<Property> childNodeProperties ) {
+        Set<Object> result = new HashSet<Object>();
+        for (Property property : childNodeProperties) {
+            result.add(property.getFirstValue());
+        }
+        return result.toArray();
     }
 }
