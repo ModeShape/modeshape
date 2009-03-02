@@ -65,7 +65,6 @@ import org.jboss.dna.graph.property.Property;
 import org.jboss.dna.graph.property.PropertyFactory;
 import org.jboss.dna.graph.property.ValueFormatException;
 import org.jboss.dna.graph.property.basic.GraphNamespaceRegistry;
-import org.jboss.dna.graph.property.basic.ThreadSafeNamespaceRegistry;
 import org.xml.sax.ContentHandler;
 
 /**
@@ -144,10 +143,9 @@ final class JcrWorkspace implements Workspace {
         org.jboss.dna.graph.property.NamespaceRegistry persistentRegistry = new GraphNamespaceRegistry(namespaceGraph,
                                                                                                        namespacesPath,
                                                                                                        uriProperty, namespaceType);
-        persistentRegistry = new ThreadSafeNamespaceRegistry(persistentRegistry);
         this.context = context.with(persistentRegistry);
 
-        // Set up and initialize the persistent (and thread-safe) JCR namespace registry ...
+        // Set up and initialize the persistent JCR namespace registry ...
         this.workspaceRegistry = new JcrNamespaceRegistry(persistentRegistry);
 
         // Now create a graph with this new execution context ...

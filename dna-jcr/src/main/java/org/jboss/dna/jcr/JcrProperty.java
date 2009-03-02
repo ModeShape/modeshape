@@ -131,7 +131,7 @@ final class JcrProperty extends AbstractJcrProperty {
 
     /**
      * {@inheritDoc}
-     *  
+     * 
      * @see javax.jcr.Property#getString()
      */
     public String getString() throws RepositoryException {
@@ -163,8 +163,7 @@ final class JcrProperty extends AbstractJcrProperty {
      * @see javax.jcr.Property#getValues()
      */
     public Value[] getValues() throws ValueFormatException {
-
-        return new Value[] {jcrValue};
+        throw new ValueFormatException();
     }
 
     /*

@@ -54,7 +54,7 @@ public class PathValueFactoryTest {
     public void beforeEach() {
         this.registry = new SimpleNamespaceRegistry();
         this.registry.register("dna", "http://www.jboss.org/dna/namespace");
-        this.stringValueFactory = new StringValueFactory(Path.DEFAULT_DECODER, Path.DEFAULT_ENCODER);
+        this.stringValueFactory = new StringValueFactory(registry, Path.DEFAULT_DECODER, Path.DEFAULT_ENCODER);
         this.nameFactory = new NameValueFactory(registry, Path.DEFAULT_DECODER, stringValueFactory);
         this.factory = new PathValueFactory(Path.DEFAULT_DECODER, stringValueFactory, nameFactory);
     }

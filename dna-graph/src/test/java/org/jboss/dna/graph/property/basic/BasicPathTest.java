@@ -77,7 +77,8 @@ public class BasicPathTest extends AbstractPathTest {
         super.path = new BasicPath(validSegmentsList, true);
         namespaceRegistry = new SimpleNamespaceRegistry();
         namespaceRegistry.register(validNamespacePrefix, validNamespaceUri);
-        StringValueFactory stringValueFactory = new StringValueFactory(Path.DEFAULT_DECODER, Path.DEFAULT_ENCODER);
+        StringValueFactory stringValueFactory = new StringValueFactory(namespaceRegistry, Path.DEFAULT_DECODER,
+                                                                       Path.DEFAULT_ENCODER);
         NameValueFactory nameValueFactory = new NameValueFactory(namespaceRegistry, Path.DEFAULT_DECODER, stringValueFactory);
         pathFactory = new PathValueFactory(Path.DEFAULT_DECODER, stringValueFactory, nameValueFactory);
     }

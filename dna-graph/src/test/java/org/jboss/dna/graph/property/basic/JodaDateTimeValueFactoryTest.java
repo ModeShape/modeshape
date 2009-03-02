@@ -39,9 +39,6 @@ import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.Reference;
 import org.jboss.dna.graph.property.ValueFormatException;
-import org.jboss.dna.graph.property.basic.JodaDateTime;
-import org.jboss.dna.graph.property.basic.JodaDateTimeValueFactory;
-import org.jboss.dna.graph.property.basic.StringValueFactory;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -68,7 +65,7 @@ public class JodaDateTimeValueFactoryTest {
      */
     @Before
     public void setUp() throws Exception {
-        stringFactory = new StringValueFactory(Path.URL_DECODER, Path.URL_ENCODER);
+        stringFactory = new StringValueFactory(new SimpleNamespaceRegistry(), Path.URL_DECODER, Path.URL_ENCODER);
         factory = new JodaDateTimeValueFactory(Path.URL_DECODER, stringFactory);
     }
 

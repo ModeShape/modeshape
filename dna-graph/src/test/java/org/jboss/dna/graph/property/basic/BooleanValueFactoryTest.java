@@ -35,11 +35,10 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import org.jboss.dna.graph.property.Name;
+import org.jboss.dna.graph.property.NamespaceRegistry;
 import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.Reference;
 import org.jboss.dna.graph.property.ValueFormatException;
-import org.jboss.dna.graph.property.basic.BooleanValueFactory;
-import org.jboss.dna.graph.property.basic.StringValueFactory;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -49,6 +48,7 @@ import org.junit.Test;
  */
 public class BooleanValueFactoryTest {
 
+    private NamespaceRegistry registry;
     private BooleanValueFactory factory;
     private StringValueFactory stringFactory;
 
@@ -57,7 +57,8 @@ public class BooleanValueFactoryTest {
      */
     @Before
     public void setUp() throws Exception {
-        stringFactory = new StringValueFactory(Path.URL_DECODER, Path.DEFAULT_ENCODER);
+        registry = new SimpleNamespaceRegistry();
+        stringFactory = new StringValueFactory(registry, Path.URL_DECODER, Path.DEFAULT_ENCODER);
         factory = new BooleanValueFactory(Path.URL_DECODER, stringFactory);
     }
 

@@ -39,9 +39,6 @@ import java.util.UUID;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.ValueFormatException;
-import org.jboss.dna.graph.property.basic.StringValueFactory;
-import org.jboss.dna.graph.property.basic.UuidReference;
-import org.jboss.dna.graph.property.basic.UuidValueFactory;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -60,7 +57,7 @@ public class UuidValueFactoryTest {
      */
     @Before
     public void setUp() throws Exception {
-        stringFactory = new StringValueFactory(Path.URL_DECODER, Path.URL_ENCODER);
+        stringFactory = new StringValueFactory(new SimpleNamespaceRegistry(), Path.URL_DECODER, Path.URL_ENCODER);
         factory = new UuidValueFactory(Path.URL_DECODER, stringFactory);
         uuid = UUID.randomUUID();
     }

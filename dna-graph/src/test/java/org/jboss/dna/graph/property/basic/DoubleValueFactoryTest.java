@@ -36,11 +36,10 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import org.jboss.dna.graph.property.Name;
+import org.jboss.dna.graph.property.NamespaceRegistry;
 import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.Reference;
 import org.jboss.dna.graph.property.ValueFormatException;
-import org.jboss.dna.graph.property.basic.DoubleValueFactory;
-import org.jboss.dna.graph.property.basic.StringValueFactory;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -50,6 +49,7 @@ import org.junit.Test;
  */
 public class DoubleValueFactoryTest {
 
+    private NamespaceRegistry registry;
     private DoubleValueFactory factory;
     private StringValueFactory stringFactory;
 
@@ -58,7 +58,8 @@ public class DoubleValueFactoryTest {
      */
     @Before
     public void setUp() throws Exception {
-        stringFactory = new StringValueFactory(Path.URL_DECODER, Path.URL_ENCODER);
+        registry = new SimpleNamespaceRegistry();
+        stringFactory = new StringValueFactory(registry, Path.URL_DECODER, Path.URL_ENCODER);
         factory = new DoubleValueFactory(Path.URL_DECODER, stringFactory);
     }
 

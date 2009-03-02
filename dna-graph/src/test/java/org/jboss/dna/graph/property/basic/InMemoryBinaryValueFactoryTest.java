@@ -64,13 +64,16 @@ public class InMemoryBinaryValueFactoryTest {
     @Before
     public void setUp() throws Exception {
         encoder = Path.URL_ENCODER;
-        stringFactory = new StringValueFactory(Path.URL_DECODER, encoder);
-        factory = new InMemoryBinaryValueFactory(Path.URL_DECODER, stringFactory);
         namespaceRegistry = new SimpleNamespaceRegistry();
         namespaceRegistry.register("jboss", "http://www.jboss.org");
         namespaceRegistry.register("dna", "http://www.jboss.org/dna");
+        stringFactory = new StringValueFactory(namespaceRegistry, Path.URL_DECODER, encoder);
         nameFactory = new NameValueFactory(namespaceRegistry, Path.URL_DECODER, stringFactory);
         pathFactory = new PathValueFactory(Path.URL_DECODER, stringFactory, nameFactory);
+
+        // The binary factory should convert between names and paths without using prefixes ...
+        StringValueFactory noNamespaceStringFactory = new StringValueFactory(Path.URL_DECODER, encoder);
+        factory = new InMemoryBinaryValueFactory(Path.URL_DECODER, noNamespaceStringFactory);
     }
 
     @Test

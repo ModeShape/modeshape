@@ -58,7 +58,7 @@ public class NameValueFactoryTest {
         this.registry.register("dna", "http://www.jboss.org/dna/namespace");
         this.encoder = Path.DEFAULT_ENCODER;
         this.decoder = Path.DEFAULT_DECODER;
-        this.stringValueFactory = new StringValueFactory(decoder, encoder);
+        this.stringValueFactory = new StringValueFactory(registry, decoder, encoder);
         this.factory = new NameValueFactory(registry, decoder, stringValueFactory);
     }
 

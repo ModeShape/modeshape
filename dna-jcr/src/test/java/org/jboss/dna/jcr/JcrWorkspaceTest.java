@@ -150,9 +150,9 @@ public class JcrWorkspaceTest {
         assertThat(registry.getURI(JcrLexicon.Namespace.PREFIX), is(JcrLexicon.Namespace.URI));
     }
 
-    @Test( expected = UnsupportedOperationException.class )
-    public void shouldNotAllowGetNodeTypeManager() throws Exception {
-        workspace.getNodeTypeManager();
+    @Test
+    public void shouldGetNodeTypeManager() throws Exception {
+        assertThat(workspace.getNodeTypeManager(), is(notNullValue()));
     }
 
     @Test( expected = UnsupportedOperationException.class )

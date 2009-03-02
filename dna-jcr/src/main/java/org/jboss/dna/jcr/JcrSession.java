@@ -61,6 +61,7 @@ import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.UuidFactory;
 import org.jboss.dna.graph.property.ValueFactories;
 import org.jboss.dna.graph.property.basic.LocalNamespaceRegistry;
+import org.jboss.dna.jcr.JcrNamespaceRegistry.Behavior;
 import org.xml.sax.ContentHandler;
 import com.google.common.base.ReferenceType;
 import com.google.common.collect.ReferenceMap;
@@ -93,7 +94,7 @@ class JcrSession implements Session {
     /**
      * The execution context for this session, which uses the {@link #sessionRegistry session's namespace registry}
      */
-    private final ExecutionContext executionContext;
+    protected final ExecutionContext executionContext;
 
     /**
      * The graph representing this session, which uses the {@link #graph session's graph}.
@@ -123,9 +124,10 @@ class JcrSession implements Session {
         this.workspace = workspace;
 
         // Create an execution context for this session, which should use the local namespace registry ...
-        NamespaceRegistry local = new LocalNamespaceRegistry(workspaceContext.getNamespaceRegistry());
+        NamespaceRegistry workspaceRegistry = workspaceContext.getNamespaceRegistry();
+        NamespaceRegistry local = new LocalNamespaceRegistry(workspaceRegistry);
         this.executionContext = workspaceContext.with(local);
-        this.sessionRegistry = new JcrNamespaceRegistry(local);
+        this.sessionRegistry = new JcrNamespaceRegistry(Behavior.JSR170_SESSION, local, workspaceRegistry);
 
         // Set up the graph to use for this session (which uses the session's namespace registry and context) ...
         this.graph = Graph.create(this.repository.getRepositorySourceName(),
@@ -425,10 +427,7 @@ class JcrSession implements Session {
         populateNode(rootNode, graph.getNodeAt(executionContext.getValueFactories().getPathFactory().createRootPath()));
 
         // Root nodes need to have a type in JCR land
-        // JcrProperty primaryType = new JcrProperty(rootNode, getExecutionContext(), JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.BASE);
-        String typeValue = JcrNtLexicon.BASE.getString(executionContext.getNamespaceRegistry());
-        JcrProperty primaryType = new JcrProperty(rootNode, executionContext, JcrLexicon.PRIMARY_TYPE, typeValue);
-
+        JcrProperty primaryType = new JcrProperty(rootNode, executionContext, JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.BASE);
         // TODO: Not liking the hard-code
         rootNode.properties.add(primaryType);
 
@@ -603,7 +602,8 @@ class JcrSession implements Session {
                 if (uuid == null && DnaLexicon.UUID.equals(name)) uuid = uuidFactory.create(dnaProp.getValues()).next();
                 else if (jcrUuidName.equals(name)) dnaUuidProp = dnaProp;
                 else if (jcrMixinTypesName.equals(name)) {
-                    org.jboss.dna.graph.property.ValueFactory<String> stringFactory = executionContext.getValueFactories().getStringFactory();
+                    org.jboss.dna.graph.property.ValueFactory<String> stringFactory = executionContext.getValueFactories()
+                                                                                                      .getStringFactory();
                     for (String mixin : stringFactory.create(dnaProp)) {
                         if ("mix:referenceable".equals(mixin)) referenceable = true;
                     }

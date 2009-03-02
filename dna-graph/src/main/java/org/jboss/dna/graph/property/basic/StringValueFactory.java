@@ -43,6 +43,7 @@ import org.jboss.dna.graph.property.Binary;
 import org.jboss.dna.graph.property.DateTime;
 import org.jboss.dna.graph.property.IoException;
 import org.jboss.dna.graph.property.Name;
+import org.jboss.dna.graph.property.NamespaceRegistry;
 import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.PropertyType;
 import org.jboss.dna.graph.property.Reference;
@@ -59,12 +60,24 @@ import org.jboss.dna.graph.property.ValueFormatException;
 public class StringValueFactory extends AbstractValueFactory<String> {
 
     private final TextEncoder encoder;
+    private final NamespaceRegistry namespaceRegistry;
 
     public StringValueFactory( TextDecoder decoder,
                                TextEncoder encoder ) {
         super(PropertyType.STRING, decoder, null);
         CheckArg.isNotNull(encoder, "encoder");
         this.encoder = encoder;
+        this.namespaceRegistry = null;
+    }
+
+    public StringValueFactory( NamespaceRegistry namespaceRegistry,
+                               TextDecoder decoder,
+                               TextEncoder encoder ) {
+        super(PropertyType.STRING, decoder, null);
+        CheckArg.isNotNull(encoder, "encoder");
+        CheckArg.isNotNull(namespaceRegistry, "namespaceRegistry");
+        this.encoder = encoder;
+        this.namespaceRegistry = namespaceRegistry;
     }
 
     /**
@@ -173,6 +186,9 @@ public class StringValueFactory extends AbstractValueFactory<String> {
      */
     public String create( Name value ) {
         if (value == null) return null;
+        if (this.namespaceRegistry != null) {
+            return value.getString(this.namespaceRegistry, getEncoder());
+        }
         return value.getString(getEncoder());
     }
 
@@ -181,6 +197,9 @@ public class StringValueFactory extends AbstractValueFactory<String> {
      */
     public String create( Path value ) {
         if (value == null) return null;
+        if (this.namespaceRegistry != null) {
+            return value.getString(this.namespaceRegistry, getEncoder());
+        }
         return value.getString(getEncoder());
     }
 
@@ -220,8 +239,8 @@ public class StringValueFactory extends AbstractValueFactory<String> {
         } catch (UnsupportedEncodingException err) {
             throw new ValueFormatException(value, getPropertyType(),
                                            GraphI18n.errorConvertingType.text(byte[].class.getSimpleName(),
-                                                                            String.class.getSimpleName(),
-                                                                            value), err);
+                                                                              String.class.getSimpleName(),
+                                                                              value), err);
         }
     }
 
@@ -262,12 +281,11 @@ public class StringValueFactory extends AbstractValueFactory<String> {
         } catch (UnsupportedEncodingException err) {
             throw new ValueFormatException(value, getPropertyType(),
                                            GraphI18n.errorConvertingType.text(InputStream.class.getSimpleName(),
-                                                                            String.class.getSimpleName(),
-                                                                            value), err);
+                                                                              String.class.getSimpleName(),
+                                                                              value), err);
         } catch (IOException err) {
-            throw new IoException(
-                                  GraphI18n.errorConvertingIo.text(InputStream.class.getSimpleName(), String.class.getSimpleName()),
-                                  err);
+            throw new IoException(GraphI18n.errorConvertingIo.text(InputStream.class.getSimpleName(),
+                                                                   String.class.getSimpleName()), err);
         }
     }
 
@@ -280,7 +298,8 @@ public class StringValueFactory extends AbstractValueFactory<String> {
         try {
             return IoUtil.read(reader);
         } catch (IOException err) {
-            throw new IoException(GraphI18n.errorConvertingIo.text(Reader.class.getSimpleName(), String.class.getSimpleName()), err);
+            throw new IoException(GraphI18n.errorConvertingIo.text(Reader.class.getSimpleName(), String.class.getSimpleName()),
+                                  err);
         }
     }
 

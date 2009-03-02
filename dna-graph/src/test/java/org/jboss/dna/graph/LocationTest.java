@@ -30,6 +30,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import org.jboss.dna.common.text.NoOpEncoder;
+import org.jboss.dna.graph.property.NamespaceRegistry;
 import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.PathFactory;
 import org.jboss.dna.graph.property.Property;
@@ -47,11 +48,11 @@ import org.junit.Test;
 public class LocationTest {
 
     private static final NoOpEncoder NO_OP_ENCODER = new NoOpEncoder();
-    private static final StringValueFactory STRING_VALUE_FACTORY = new StringValueFactory(NO_OP_ENCODER, NO_OP_ENCODER);
-    private static final NameValueFactory NAME_VALUE_FACTORY = new NameValueFactory(
-                                                                                    new SimpleNamespaceRegistry(
-                                                                                                                "http://www.jboss.org/dna/1.0"),
-                                                                                    NO_OP_ENCODER, STRING_VALUE_FACTORY);
+    private static final NamespaceRegistry NAMESPACE_REGISTRY = new SimpleNamespaceRegistry("http://www.jboss.org/dna/1.0");
+    private static final StringValueFactory STRING_VALUE_FACTORY = new StringValueFactory(NAMESPACE_REGISTRY, NO_OP_ENCODER,
+                                                                                          NO_OP_ENCODER);
+    private static final NameValueFactory NAME_VALUE_FACTORY = new NameValueFactory(NAMESPACE_REGISTRY, NO_OP_ENCODER,
+                                                                                    STRING_VALUE_FACTORY);
 
     private PathFactory pathFactory = new PathValueFactory(NO_OP_ENCODER, STRING_VALUE_FACTORY, NAME_VALUE_FACTORY);
 

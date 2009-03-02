@@ -87,7 +87,7 @@ public class JackrabbitJcrTckTest {
             // addTestSuite(org.apache.jackrabbit.test.api.StringPropertyTest.class);
             addTestSuite(org.apache.jackrabbit.test.api.UndefinedPropertyTest.class);
             addTestSuite(org.apache.jackrabbit.test.api.NamespaceRegistryReadMethodsTest.class);
-            // addTestSuite(org.apache.jackrabbit.test.api.NamespaceRemappingTest.class);
+            addTestSuite(org.apache.jackrabbit.test.api.NamespaceRemappingTest.class);
             addTestSuite(org.apache.jackrabbit.test.api.NodeIteratorTest.class);
             // addTestSuite(org.apache.jackrabbit.test.api.PropertyReadMethodsTest.class);
             addTestSuite(org.apache.jackrabbit.test.api.RepositoryDescriptorTest.class);

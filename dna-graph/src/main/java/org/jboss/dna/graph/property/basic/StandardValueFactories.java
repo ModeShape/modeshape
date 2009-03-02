@@ -105,9 +105,12 @@ public class StandardValueFactories extends AbstractValueFactories {
         }
 
         // Now assign the members, using the factories in the map or (if null) the supplied default ...
-        this.stringFactory = getFactory(factories, new StringValueFactory(this.decoder, this.encoder));
-        this.binaryFactory = (BinaryFactory)getFactory(factories,
-                                                       new InMemoryBinaryValueFactory(this.decoder, this.stringFactory));
+        this.stringFactory = getFactory(factories, new StringValueFactory(this.namespaceRegistry, this.decoder, this.encoder));
+
+        // The binary factory should NOT use the string factory that converts namespaces to prefixes ...
+        StringValueFactory stringFactoryWithoutNamespaces = new StringValueFactory(this.decoder, this.encoder);
+        this.binaryFactory = (BinaryFactory)getFactory(factories, new InMemoryBinaryValueFactory(this.decoder,
+                                                                                                 stringFactoryWithoutNamespaces));
         this.booleanFactory = getFactory(factories, new BooleanValueFactory(this.decoder, this.stringFactory));
         this.dateFactory = (DateTimeFactory)getFactory(factories, new JodaDateTimeValueFactory(this.decoder, this.stringFactory));
         this.decimalFactory = getFactory(factories, new DecimalValueFactory(this.decoder, this.stringFactory));
