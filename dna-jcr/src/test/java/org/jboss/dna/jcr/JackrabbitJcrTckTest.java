@@ -75,7 +75,7 @@ public class JackrabbitJcrTckTest {
             addTestSuite(org.apache.jackrabbit.test.api.RootNodeTest.class);
             // addTestSuite(org.apache.jackrabbit.test.api.NodeReadMethodsTest.class);
             // addTestSuite(org.apache.jackrabbit.test.api.PropertyTypeTest.class);
-            // addTestSuite(org.apache.jackrabbit.test.api.NodeDiscoveringNodeTypesTest.class);
+            addTestSuite(org.apache.jackrabbit.test.api.NodeDiscoveringNodeTypesTest.class);
             addTestSuite(org.apache.jackrabbit.test.api.BinaryPropertyTest.class);
             addTestSuite(org.apache.jackrabbit.test.api.BooleanPropertyTest.class);
             addTestSuite(org.apache.jackrabbit.test.api.DatePropertyTest.class);
@@ -96,7 +96,7 @@ public class JackrabbitJcrTckTest {
             addTestSuite(org.apache.jackrabbit.test.api.ReferenceableRootNodesTest.class);
             // addTestSuite(org.apache.jackrabbit.test.api.ExportSysViewTest.class);
             // addTestSuite(org.apache.jackrabbit.test.api.ExportDocViewTest.class);
-            // addTestSuite(org.apache.jackrabbit.test.api.RepositoryLoginTest.class);
+            addTestSuite(org.apache.jackrabbit.test.api.RepositoryLoginTest.class);
 
             // These might not all be level one tests
             // addTestSuite(org.apache.jackrabbit.test.api.query.XPathPosIndexTest.class);

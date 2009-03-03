@@ -295,8 +295,8 @@ public class JcrRepository implements Repository {
                 // Verify that the workspace exists (or can be created) ...
                 Set<String> workspaces = graph.getWorkspaces();
                 if (!workspaces.contains(workspaceName)) {
-                    // Try to create it ...
-                    graph.createWorkspace().namedSomethingLike(workspaceName).getName();
+                    // Per JCR 1.0 6.1.1, if the workspaceName is not recognized, a NoSuchWorkspaceException is thrown
+                    throw new NoSuchWorkspaceException(JcrI18n.workspaceNameIsInvalid.text(sourceName, workspaceName));
                 }
                 workspaceName = graph.getCurrentWorkspace().getName();
             } catch (InvalidWorkspaceException e) {
