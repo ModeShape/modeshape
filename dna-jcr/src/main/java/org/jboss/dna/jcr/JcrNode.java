@@ -52,15 +52,6 @@ final class JcrNode extends AbstractJcrNode {
     /**
      * {@inheritDoc}
      * 
-     * @see javax.jcr.Item#getDepth()
-     */
-    public int getDepth() throws RepositoryException {
-        return getParent().getDepth() + 1;
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
      * @see javax.jcr.Node#getIndex()
      */
     public int getIndex() {

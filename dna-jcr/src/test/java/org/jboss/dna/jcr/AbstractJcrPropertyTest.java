@@ -98,7 +98,7 @@ public class AbstractJcrPropertyTest {
         new MockAbstractJcrProperty(node, executionContext, null);
     }
 
-    @Test( expected = IllegalArgumentException.class )
+    @Test( expected = ItemNotFoundException.class )
     public void shouldNotAllowNegativeAncestorDepth() throws Exception {
         stub(node.getAncestor(-2)).toThrow(new IllegalArgumentException());
         prop.getAncestor(-1);
@@ -106,9 +106,9 @@ public class AbstractJcrPropertyTest {
 
     @Test
     public void shouldProvideAncestor() throws Exception {
-        assertThat(prop.getAncestor(0), is((Item)prop));
-        stub(node.getAncestor(0)).toReturn(node);
-        assertThat(prop.getAncestor(1), is((Item)node));
+        assertThat(prop.getAncestor(prop.getDepth()), is((Item)prop));
+        stub(node.getAncestor(node.getDepth())).toReturn(node);
+        assertThat(prop.getAncestor(prop.getDepth() - 1), is((Item)node));
     }
 
     @Test( expected = ItemNotFoundException.class )

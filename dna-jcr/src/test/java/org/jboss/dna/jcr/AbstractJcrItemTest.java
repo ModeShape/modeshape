@@ -25,7 +25,6 @@ package org.jboss.dna.jcr;
 
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
-import javax.jcr.Item;
 import javax.jcr.ItemVisitor;
 import javax.jcr.Node;
 import javax.jcr.Session;
@@ -44,14 +43,6 @@ public class AbstractJcrItemTest {
         item = new AbstractJcrItem() {
 
             public void accept( ItemVisitor visitor ) {
-            }
-
-            public Item getAncestor( int depth ) {
-                return null;
-            }
-
-            public int getDepth() {
-                return 0;
             }
 
             public String getName() {

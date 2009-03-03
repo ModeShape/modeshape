@@ -165,21 +165,6 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
     /**
      * {@inheritDoc}
      * 
-     * @throws IllegalArgumentException if <code>depth</code> is negative.
-     * @see javax.jcr.Item#getAncestor(int)
-     */
-    public final Item getAncestor( int depth ) throws RepositoryException {
-        CheckArg.isNonNegative(depth, "depth");
-        Node ancestor = this;
-        while (--depth >= 0) {
-            ancestor = ancestor.getParent();
-        }
-        return ancestor;
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
      * @throws UnsupportedRepositoryOperationException always
      * @see javax.jcr.Node#getBaseVersion()
      */

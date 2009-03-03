@@ -88,25 +88,6 @@ abstract class AbstractJcrProperty extends AbstractJcrItem implements Property {
         return new JcrValue<T>(valueFactories, propertyType, valueClass.cast(value));
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @throws IllegalArgumentException if <code>depth</code> is negative.
-     * @see javax.jcr.Item#getAncestor(int)
-     */
-    public final Item getAncestor( int depth ) throws RepositoryException {
-        return (depth == 0 ? this : node.getAncestor(depth - 1));
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.Item#getDepth()
-     */
-    public int getDepth() throws RepositoryException {
-        return getParent().getDepth() + 1;
-    }
-
     final ExecutionContext getExecutionContext() {
         return executionContext;
     }

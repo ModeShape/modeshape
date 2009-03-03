@@ -24,6 +24,7 @@
 package org.jboss.dna.jcr;
 
 import javax.jcr.Item;
+import javax.jcr.ItemNotFoundException;
 import javax.jcr.RepositoryException;
 
 /**
@@ -69,6 +70,45 @@ abstract class AbstractJcrItem implements Item {
      */
     public boolean isSame( Item otherItem ) throws RepositoryException {
         return (getSession().getWorkspace() == otherItem.getSession().getWorkspace());
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see javax.jcr.Item#getAncestor(int)
+     */
+    public final Item getAncestor( int depth ) throws RepositoryException {
+        if (depth < 0) {
+            throw new ItemNotFoundException(JcrI18n.noNegativeDepth.text(depth));
+        }
+
+        /*
+         * depth argument is absolute depth from root of content graph, not relative depth from current node.
+         * That is, if current node is at path /foo/bar/baz, getAncestor(1) returns node at /foo, getAncestor(2)
+         * returns node at /foo/bar, getAncestor(3) returns node at /foo/bar/baz, getAncestor(0) returns root node,
+         * and any other argument results in ItemNotFoundException.
+         * Next statement converts depth parameter from a relative depth to an absolute depth.
+         */
+        depth = getDepth() - depth;
+
+        if (depth < 0) {
+            throw new ItemNotFoundException(JcrI18n.tooDeep.text(depth));
+        }
+
+        Item ancestor = this;
+        while (--depth >= 0) {
+            ancestor = ancestor.getParent();
+        }
+        return ancestor;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see javax.jcr.Item#getDepth()
+     */
+    public int getDepth() throws RepositoryException {
+        return getParent().getDepth() + 1;
     }
 
     /**

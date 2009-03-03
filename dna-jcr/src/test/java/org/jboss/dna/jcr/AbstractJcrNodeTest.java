@@ -86,6 +86,7 @@ public class AbstractJcrNodeTest {
             this.parent = parent;
         }
 
+        @Override
         public int getDepth() {
             return 0;
         }
@@ -143,7 +144,7 @@ public class AbstractJcrNodeTest {
         new MockAbstractJcrNode(null, null, null);
     }
 
-    @Test( expected = IllegalArgumentException.class )
+    @Test( expected = ItemNotFoundException.class )
     public void shouldNotAllowNegativeAncestorDepth() throws Exception {
         node.getAncestor(-1);
     }

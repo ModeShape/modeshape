@@ -43,6 +43,7 @@ final class JcrRootNode extends AbstractJcrNode {
      * @return 0;
      * @see javax.jcr.Item#getDepth()
      */
+    @Override
     public int getDepth() {
         return 0;
     }
