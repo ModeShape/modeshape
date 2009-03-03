@@ -29,9 +29,11 @@ import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Matchers.isNull;
 import static org.mockito.Mockito.mock;
+import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Hashtable;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
@@ -66,22 +68,9 @@ public class SVNRepositorySourceTest {
         MockitoAnnotations.initMocks(this);
         validName = "svn source";
         validUuidPropertyName = "dna:uuid";
-
-        // For file protocol access
-        url = "file:///dummy_svn_repos";
-
-        // For http protocol access
-        // url = "http://anonsvn.jboss.org/repos/dna/trunk/extensions/dna-connector-svn/src/test/resources";
-        username = "anonymous";
-        password = "anonymous";
-
-        // For https protocol access
-        // For svn protocol access
-        // For svn-ssh protocol access
-
+        url = SVNConnectorTestUtil.createURL("src/test/resources/dummy_svn_repos", "target/copy_of dummy_svn_repos");
         validRootNodeUuid = UUID.randomUUID();
         source = new SVNRepositorySource();
-
     }
 
     @After
@@ -244,12 +233,36 @@ public class SVNRepositorySourceTest {
     }
 
     // Only with local file protocol
-
-//    @Test
-//    public void shouldCreateFSRepositoryIfProtocolIsOfTypeFile() throws Exception {
-//        this.source.setName(validName);
-//        this.source.setSVNURL(url);
-//        this.connection = source.getConnection();
-//        assertThat(this.connection, is(notNullValue()));
-//    }
+    @Test
+    public void shouldCreateFSRepositoryIfProtocolIsOfTypeFile() throws Exception {
+        this.source.setName(validName);
+        this.source.setSVNURL(url);
+        this.connection = source.getConnection();
+        assertThat(this.connection, is(notNullValue()));
+    }
+    
+    @Test
+    public void shouldAllowMultipleConnectionsToBeOpenAtTheSameTime() throws Exception {
+        List<RepositoryConnection> connections = new ArrayList<RepositoryConnection>();
+        try {
+            for (int i = 0; i != 10; ++i) {
+                this.source.setName(validName);
+                this.source.setSVNURL(url);
+                RepositoryConnection conn = source.getConnection();
+                assertThat(conn, is(notNullValue()));
+                connections.add(conn);
+            }
+        } finally {
+            // Close all open connections ...
+            for (RepositoryConnection conn : connections) {
+                if (conn != null) {
+                    try {
+                        conn.close();
+                    } catch (Throwable t) {
+                        t.printStackTrace();
+                    }
+                }
+            }
+        }
+    }
 }

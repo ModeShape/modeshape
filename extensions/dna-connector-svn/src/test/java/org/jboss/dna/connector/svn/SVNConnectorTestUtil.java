@@ -23,6 +23,9 @@
  */
 package org.jboss.dna.connector.svn;
 
+import java.io.File;
+import java.io.IOException;
+import org.jboss.dna.common.util.FileUtil;
 import org.tmatesoft.svn.core.SVNException;
 import org.tmatesoft.svn.core.SVNURL;
 import org.tmatesoft.svn.core.auth.ISVNAuthenticationManager;
@@ -38,16 +41,19 @@ import org.tmatesoft.svn.core.wc.SVNWCUtil;
  */
 public class SVNConnectorTestUtil {
 
-//    public static void main( String[] args ) {
-//        try {
-//            System.out.println("hello ......");
-//            SVNRepository repos = createRepository("file:////Users/sp/innoq-dev/innoq-jboss/jboss-dna/extensions/dna-connector-svn/src/test/resources/dummy_svn_repos", "sp", "p530020");
-//            System.out.println("Repository Root: " + repos.getRepositoryRoot(true));
-//            System.out.println("Repository UUID: " + repos.getRepositoryUUID(true));
-//            System.out.println("hello ......");
-//        } catch (SVNException e) {
-//        }
-//    }
+    public static void main( String[] args ) throws Exception {
+        try {
+            System.out.println("hello ......");
+            String svnUrl = SVNConnectorTestUtil.createURL("src/test/resources/dummy_svn_repos", "target/copy_of dummy_svn_repos");
+            String username = "sp";
+            String password = "";
+            SVNRepository repos = createRepository(svnUrl, username, password);
+            System.out.println("Repository Root: " + repos.getRepositoryRoot(true));
+            System.out.println("Repository UUID: " + repos.getRepositoryUUID(true));
+            System.out.println("hello ......");
+        } catch (SVNException e) {
+        }
+    }
 
     /**
      * Create a {@link SVNRepository} from a http protocol.
@@ -74,7 +80,21 @@ public class SVNConnectorTestUtil {
         repository.setAuthenticationManager(authManager);
         return repository;
     }
+    
+    public static String createURL(String src, String dst) throws IOException {
+        // First we need to find the absolute path. Note that Maven always runs the tests from the project's directory,
+        // so use new File to create an instance at the current location ...
+        File mySrc = new File(src);
+        File myDst = new File(dst);
 
+        // make sure the destination is empty before we copy
+        FileUtil.delete(myDst);
+        FileUtil.copy(mySrc, myDst);
+
+        // Now set the two path roots
+        String url = myDst.getCanonicalFile().toURL().toString();
+        return url.replaceFirst("file:/", "file://localhost/");
+    }
     private SVNConnectorTestUtil() {
         // prevent constructor
     }

@@ -23,17 +23,19 @@
 */
 package org.jboss.dna.connector.svn;
 
+import static org.mockito.Mockito.stub;
+import static org.mockito.Mockito.verify;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsSame.sameInstance;
 import static org.jboss.dna.graph.IsNodeWithChildren.hasChild;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.mock;
-import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import org.jboss.dna.common.text.UrlEncoder;
 import org.jboss.dna.common.util.FileUtil;
 import org.jboss.dna.graph.DnaLexicon;
@@ -78,6 +80,7 @@ public class SVNRepositoryConnectionTest {
     private String uuidPropertyName;
     private String sourceName;
     private Graph graph;
+    private String svnUrl;
 
     @Mock
     private CachePolicy policy;
@@ -95,24 +98,9 @@ public class SVNRepositoryConnectionTest {
         pathFactory = context.getValueFactories().getPathFactory();
         propertyFactory = context.getPropertyFactory();
         nameFactory = context.getValueFactories().getNameFactory();
-
-        // First we need to find the absolute path. Note that Maven always runs the tests from the project's directory,
-        // so use new File to create an instance at the current location ...
-        File src = new File("src/test/resources/dummy_svn_repos");
-        File dst = new File("target/copy_of dummy_svn_repos");
-
-        // make sure the destination is empty before we copy
-        FileUtil.delete(dst);
-        FileUtil.copy(src, dst);
-
-        // Now set the two path roots
-        String svnUrl = dst.getCanonicalFile().toURL().toString();
-        svnUrl = svnUrl.replaceFirst("file:/", "file://localhost/");
+        svnUrl = SVNConnectorTestUtil.createURL("src/test/resources/dummy_svn_repos", "target/copy_of dummy_svn_repos");
         String username = "sp";
         String password = "";
-        // Create a Repository instance from the http-protocol, that use a anonymous credential.
-        // String url = "http://anonsvn.jboss.org/repos/dna/trunk/extensions/dna-connector-svn/src/test/resources";
-
         // Set up the appropriate factory for a particular protocol
         repository = SVNConnectorTestUtil.createRepository(svnUrl, username, password);
         sourceName = "the source name";
@@ -157,15 +145,13 @@ public class SVNRepositoryConnectionTest {
         assertThat(connection.getDefaultCachePolicy(), is(sameInstance(policy)));
     }
 
-    // @Test
-    // public void shouldGetTheSVNRepositoryRootFromTheSVNRepositoryWhenPinged() throws Exception {
-    // CachePolicy policy = mock(CachePolicy.class);
-    // repository = mock(SVNRepository.class);
-    // connection = new SVNRepositoryConnection("the source name", policy, false, repository);
-    // // stub(repository.getRepositoryRoot(true)).toReturn(null);
-    // assertThat(connection.ping(1, TimeUnit.SECONDS), is(true));
-    // verify(repository).getRepositoryRoot(true);
-    // }
+    @Test
+    public void shouldGetTheSVNRepositoryRootFromTheSVNRepositoryWhenPinged() throws Exception {
+        CachePolicy policy = mock(CachePolicy.class);
+        repository  = SVNConnectorTestUtil.createRepository(svnUrl, "sp", "");
+        connection = new SVNRepositoryConnection("the source name", policy, false, repository);
+        assertThat(connection.ping(1, TimeUnit.SECONDS), is(true));
+    }
 
     @Test
     public void shouldHaveNoOpListenerWhenCreated() {
