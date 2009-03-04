@@ -25,34 +25,36 @@ package org.jboss.dna.jcr;
 
 import java.util.Iterator;
 import java.util.List;
-import java.util.NoSuchElementException;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import javax.jcr.RepositoryException;
+import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.util.CheckArg;
-import org.jboss.dna.graph.property.Name;
+import org.jboss.dna.graph.property.NamespaceRegistry;
+import org.jboss.dna.graph.property.Path;
 
 /**
  * @author jverhaeg
  */
-final class JcrNodeIterator implements NodeIterator {
+@Immutable
+final class JcrChildNodeIterator implements NodeIterator {
 
+    private final NamespaceRegistry registry;
     private final Node parent;
-    private final Iterator<Name> childIterator;
-    private final Iterator<Integer> childNameCountIterator;
-    private transient Name child;
-    private transient int childNameCount;
-    private transient int childNdx = 1;
-    private transient int ndx;
-    private transient Node node;
+    private final Iterator<Path.Segment> iterator;
+    private int ndx;
+    private int size;
 
-    JcrNodeIterator( Node parent,
-                     List<Name> children,
-                     List<Integer> childNameCounts ) {
+    JcrChildNodeIterator( Node parent,
+                          NamespaceRegistry registry,
+                          List<Path.Segment> children ) {
         assert parent != null;
+        assert registry != null;
+        assert children != null;
+        this.registry = registry;
         this.parent = parent;
-        childIterator = (children == null ? null : children.iterator());
-        childNameCountIterator = (childNameCounts == null ? null : childNameCounts.iterator());
+        iterator = children.iterator();
+        size = children.size();
     }
 
     /**
@@ -67,11 +69,10 @@ final class JcrNodeIterator implements NodeIterator {
     /**
      * {@inheritDoc}
      * 
-     * @return -1L
      * @see javax.jcr.RangeIterator#getSize()
      */
     public long getSize() {
-        return -1L;
+        return size;
     }
 
     /**
@@ -80,7 +81,7 @@ final class JcrNodeIterator implements NodeIterator {
      * @see java.util.Iterator#hasNext()
      */
     public boolean hasNext() {
-        return ((childIterator != null && childIterator.hasNext()) || (child != null && childNdx <= childNameCount));
+        return iterator.hasNext();
     }
 
     /**
@@ -98,22 +99,12 @@ final class JcrNodeIterator implements NodeIterator {
      * @see javax.jcr.NodeIterator#nextNode()
      */
     public Node nextNode() {
-        if (childIterator == null) {
-            throw new NoSuchElementException();
-        }
-        if (child == null || childNdx > childNameCount) {
-            child = childIterator.next();
-            childNameCount = childNameCountIterator.next();
-            childNdx = 1;
-        }
+        Path.Segment childSegment = iterator.next();
+        ndx++;
+        String childName = childSegment.getString(registry);
         try {
-            node = parent.getNode(child.getString(((JcrSession)parent.getSession()).getExecutionContext().getNamespaceRegistry())
-                                  + '[' + childNdx + ']');
-            childNdx++;
-            ndx++;
-            return node;
+            return parent.getNode(childName);
         } catch (RepositoryException error) {
-            // TODO: Change to DnaException once DNA-180 is addressed
             throw new RuntimeException(error);
         }
     }

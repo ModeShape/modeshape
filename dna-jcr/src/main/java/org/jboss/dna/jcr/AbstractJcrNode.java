@@ -27,9 +27,11 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import java.util.regex.Pattern;
 import javax.jcr.Item;
 import javax.jcr.ItemNotFoundException;
 import javax.jcr.ItemVisitor;
@@ -51,6 +53,9 @@ import net.jcip.annotations.NotThreadSafe;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.property.Name;
+import org.jboss.dna.graph.property.NamespaceRegistry;
+import org.jboss.dna.graph.property.Path;
+import org.jboss.dna.graph.property.ValueFormatException;
 import org.jboss.dna.graph.property.Path.Segment;
 
 /**
@@ -61,8 +66,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
 
     private final JcrSession session;
     Set<Property> properties;
-    List<Name> children;
-    List<Integer> childNameCounts;
+    List<Path.Segment> children;
     private UUID uuid;
 
     AbstractJcrNode( JcrSession session ) {
@@ -213,7 +217,8 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
      * @see javax.jcr.Node#getMixinNodeTypes()
      */
     public NodeType[] getMixinNodeTypes() throws RepositoryException {
-        PropertyIterator mixinProperties = getProperties(JcrLexicon.MIXIN_TYPES.getString(session.getExecutionContext().getNamespaceRegistry()));
+        PropertyIterator mixinProperties = getProperties(JcrLexicon.MIXIN_TYPES.getString(session.getExecutionContext()
+                                                                                                 .getNamespaceRegistry()));
         List<NodeType> mixinNodeTypes = new ArrayList<NodeType>((int)mixinProperties.getSize());
 
         while (mixinProperties.hasNext()) {
@@ -236,7 +241,8 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
      */
     public final Node getNode( String relativePath ) throws RepositoryException {
         CheckArg.isNotEmpty(relativePath, "relativePath");
-        Item item = getSession().getItem(getPath(getPath(), relativePath));
+        String path = getPath(getPath(), relativePath);
+        Item item = getSession().getItem(path);
         if (item instanceof Node) {
             return (Node)item;
         }
@@ -249,7 +255,10 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
      * @see javax.jcr.Node#getNodes()
      */
     public final NodeIterator getNodes() {
-        return new JcrNodeIterator(this, children, childNameCounts);
+        if (children == null) {
+            return new JcrEmptyNodeIterator();
+        }
+        return new JcrChildNodeIterator(this, this.session.getExecutionContext().getNamespaceRegistry(), children);
     }
 
     /**
@@ -258,32 +267,35 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
      * @throws UnsupportedOperationException always
      * @see javax.jcr.Node#getNodes(java.lang.String)
      */
-    public NodeIterator getNodes( String namePattern ) {
-        // TODO: Implement after changing impl to delegate to Graph API
-        throw new UnsupportedOperationException();
-        /*
-        CheckArg.isNotEmpty(namePattern, "namePattern");
-        String[] disjuncts = namePattern.split("\\|");
-        List<Segment> nodes = new ArrayList<Segment>();
-        for (String disjunct : disjuncts) {
-            String pattern = disjunct.trim();
-            CheckArg.isNotEmpty(pattern, "namePattern");
-            String ndxPattern;
-            int endNdx = pattern.length() - 1;
-            if (pattern.charAt(endNdx) == ']') {
-                int ndx = pattern.indexOf('[');
-                ndxPattern = pattern.substring(ndx + 1, endNdx);
-                pattern = pattern.substring(0, ndx);
-            } else ndxPattern = null;
-            for (Entry<Name, Integer> child : getChildCountsByName().entrySet()) {
-                if (child.getKey().getLocalName().matches(pattern)) {
-                    if (ndxPattern != null && !child.getValue().toString().matches(ndxPattern)) continue;
-                    if (child.getValue() > 1) nodes.add(new BasicPathSegment(child.getKey(), child.getValue()));
-                    else nodes.add(new BasicPathSegment(child.getKey()));
+    public NodeIterator getNodes( String namePattern ) throws RepositoryException {
+        CheckArg.isNotNull(namePattern, "namePattern");
+        namePattern = namePattern.trim();
+        if (namePattern.length() == 0) return new JcrEmptyNodeIterator();
+        if ("*".equals(namePattern)) return getNodes();
+        List<Object> patterns = createPatternsFor(namePattern);
+
+        // Implementing exact-matching only for now to prototype types as properties
+        List<Path.Segment> matchingChildren = new LinkedList<Path.Segment>();
+        NamespaceRegistry registry = session.executionContext.getNamespaceRegistry();
+        boolean foundMatch = false;
+        for (Path.Segment child : children) {
+            String childName = child.getName().getString(registry);
+            for (Object patternOrMatch : patterns) {
+                if (patternOrMatch instanceof Pattern) {
+                    Pattern pattern = (Pattern)patternOrMatch;
+                    if (pattern.matcher(childName).matches()) foundMatch = true;
+                } else {
+                    String match = (String)patternOrMatch;
+                    if (childName.equals(match)) foundMatch = true;
+                }
+                if (foundMatch) {
+                    foundMatch = false;
+                    matchingChildren.add(child);
+                    break;
                 }
             }
         }
-        */
+        return new JcrChildNodeIterator(this, this.session.executionContext.getNamespaceRegistry(), matchingChildren);
     }
 
     /**
@@ -334,16 +346,87 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
      * @see javax.jcr.Node#getProperties(java.lang.String)
      */
     public PropertyIterator getProperties( String namePattern ) throws RepositoryException {
-        // TODO: Implement after changing impl to delegate to Graph API
+        CheckArg.isNotNull(namePattern, "namePattern");
+        namePattern = namePattern.trim();
+        if (namePattern.length() == 0) return new JcrEmptyPropertyIterator();
+        if ("*".equals(namePattern)) return new JcrPropertyIterator(properties);
+        List<Object> patterns = createPatternsFor(namePattern);
 
         // Implementing exact-matching only for now to prototype types as properties
         Set<Property> matchingProps = new HashSet<Property>();
-        for (Property prop : properties) {
-            String propName = prop.getName();
-            if (propName.equals(namePattern)) matchingProps.add(prop);
+        for (Object patternOrMatch : patterns) {
+            if (patternOrMatch instanceof Pattern) {
+                Pattern pattern = (Pattern)patternOrMatch;
+                for (Property prop : properties) {
+                    String propName = prop.getName();
+                    if (pattern.matcher(propName).matches()) matchingProps.add(prop);
+                }
+            } else {
+                String match = (String)patternOrMatch;
+                for (Property prop : properties) {
+                    String propName = prop.getName();
+                    if (propName.equals(match)) matchingProps.add(prop);
+                }
+            }
         }
-
         return new JcrPropertyIterator(matchingProps);
+    }
+
+    protected static List<Object> createPatternsFor( String namePattern ) throws RepositoryException {
+        List<Object> patterns = new LinkedList<Object>();
+        for (String stringPattern : namePattern.split("[|]")) {
+            stringPattern = stringPattern.trim();
+            int length = stringPattern.length();
+            if (length == 0) continue;
+            if (stringPattern.indexOf("*") == -1) {
+                // Doesn't use wildcard, so use String not Pattern
+                patterns.add(stringPattern);
+            } else {
+                // We need to escape the regular expression characters ...
+                StringBuilder sb = new StringBuilder(length);
+                for (int i = 0; i != length; i++) {
+                    char c = stringPattern.charAt(i);
+                    switch (c) {
+                        // Per the spec, the the following characters are not allowed in patterns:
+                        case '/':
+                        case '[':
+                        case ']':
+                        case '\'':
+                        case '"':
+                        case '|':
+                        case '\t':
+                        case '\n':
+                        case '\r':
+                            String msg = JcrI18n.invalidNamePattern.text(c, namePattern);
+                            throw new RepositoryException(msg);
+                            // The following characters must be escaped when used in regular expressions ...
+                        case '?':
+                        case '(':
+                        case ')':
+                        case '$':
+                        case '^':
+                        case '.':
+                        case '{':
+                        case '}':
+                        case '\\':
+                            sb.append("\\");
+                            sb.append(c);
+                            break;
+                        case '*':
+                            // replace with the regular expression wildcard
+                            sb.append(".*");
+                            break;
+                        default:
+                            sb.append(c);
+                            break;
+                    }
+                }
+                String escapedString = sb.toString();
+                Pattern pattern = Pattern.compile(escapedString);
+                patterns.add(pattern);
+            }
+        }
+        return patterns;
     }
 
     /**
@@ -433,19 +516,17 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         if (relativePath.indexOf('/') >= 0) {
             return (getNode(relativePath) != null);
         }
-        int ndxNdx = relativePath.indexOf('[');
-        String name = (ndxNdx < 0 ? relativePath : relativePath.substring(0, ndxNdx));
-        CheckArg.isNotEmpty(name, "relativePath");
-        int childNdx = 0;
         if (children != null) {
-            for (Name child : children) {
-                if (name.equals(child.getString(session.getExecutionContext().getNamespaceRegistry()))) {
-                    if (ndxNdx >= 0) {
-                        return (Integer.parseInt(relativePath.substring(ndxNdx + 1, relativePath.length() - 1)) <= childNameCounts.get(childNdx));
-                    }
-                    return true;
+            try {
+                Path.Segment segment = session.getExecutionContext()
+                                              .getValueFactories()
+                                              .getPathFactory()
+                                              .createSegment(relativePath);
+                for (Path.Segment child : children) {
+                    if (child.equals(segment)) return true;
                 }
-                childNdx++;
+            } catch (ValueFormatException e) {
+                throw new RepositoryException(JcrI18n.invalidRelativePath.text(relativePath));
             }
         }
         return false;
@@ -662,21 +743,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
 
     final void setChildren( List<Segment> children ) {
         assert children != null;
-        if (this.children == null) {
-            this.children = new ArrayList<Name>(children.size());
-            childNameCounts = new ArrayList<Integer>(children.size());
-        }
-        for (Segment seg : children) {
-            Name name = seg.getName();
-            int ndx = this.children.indexOf(name);
-            if (ndx >= 0) {
-                childNameCounts.set(ndx, childNameCounts.get(ndx) + 1);
-            } else {
-                this.children.add(name);
-                childNameCounts.add(1);
-            }
-        }
-        assert this.children.size() == childNameCounts.size();
+        this.children = children;
     }
 
     final void setInternalUuid( UUID uuid ) {

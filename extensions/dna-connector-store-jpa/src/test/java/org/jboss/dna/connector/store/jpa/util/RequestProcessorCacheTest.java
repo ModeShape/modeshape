@@ -171,7 +171,7 @@ public class RequestProcessorCacheTest {
         Location oldLocation = location2;
         Location newLocation = Location.create(pathFactory.create("/a/b/c/d3/e[1]"));
         assertThat(oldLocation.getPath().getString(namespaces), is("/a/b/c/e[2]"));
-        assertThat(newLocation.getPath().getString(namespaces), is("/a/b/c/d3/e[1]"));
+        assertThat(newLocation.getPath().getString(namespaces), is("/a/b/c/d3/e")); // no SNS index
         cache.addNewNode(workspaceId, location);
         cache.addNewNode(workspaceId, location2);
         for (Location loc : children)
@@ -296,7 +296,7 @@ public class RequestProcessorCacheTest {
         Location oldLocation = location2;
         Location newLocation = Location.create(pathFactory.create("/a/b/c/d3/e[1]"));
         assertThat(oldLocation.getPath().getString(namespaces), is("/a/b/c/e[2]"));
-        assertThat(newLocation.getPath().getString(namespaces), is("/a/b/c/d3/e[1]"));
+        assertThat(newLocation.getPath().getString(namespaces), is("/a/b/c/d3/e")); // no SNS index
         cache.addNewNode(workspaceId, location);
         cache.addNewNode(workspaceId, location2);
         for (Location loc : children)

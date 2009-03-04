@@ -84,7 +84,7 @@ public class BasicPathSegmentTest {
     @Test
     public void shouldNotHaveIndexByDefault() {
         segment = new BasicPathSegment(validName);
-        assertThat(segment.getIndex(), is(Path.NO_INDEX));
+        assertThat(segment.getIndex(), is(Path.DEFAULT_INDEX));
         assertThat(segment.hasIndex(), is(false));
         assertThat(segment.isSelfReference(), is(false));
         assertThat(segment.isParentReference(), is(false));
@@ -94,7 +94,7 @@ public class BasicPathSegmentTest {
     @Test
     public void shouldCreateSelfReferenceSegmentIfPassedSelfReferenceStringRegardlessOfIndex() {
         segment = factory.createSegment(Path.SELF);
-        assertThat(segment.getIndex(), is(Path.NO_INDEX));
+        assertThat(segment.getIndex(), is(Path.DEFAULT_INDEX));
         assertThat(segment.hasIndex(), is(false));
         assertThat(segment.isSelfReference(), is(true));
         assertThat(segment.isParentReference(), is(false));
@@ -102,7 +102,7 @@ public class BasicPathSegmentTest {
         assertThat(segment.getName().getNamespaceUri().length(), is(0));
 
         segment = factory.createSegment(Path.SELF, 1);
-        assertThat(segment.getIndex(), is(Path.NO_INDEX));
+        assertThat(segment.getIndex(), is(Path.DEFAULT_INDEX));
         assertThat(segment.hasIndex(), is(false));
         assertThat(segment.isSelfReference(), is(true));
         assertThat(segment.isParentReference(), is(false));
@@ -113,7 +113,7 @@ public class BasicPathSegmentTest {
     @Test
     public void shouldCreateParentReferenceSegmentIfPassedParentReferenceStringRegardlessOfIndex() {
         segment = factory.createSegment(Path.PARENT);
-        assertThat(segment.getIndex(), is(Path.NO_INDEX));
+        assertThat(segment.getIndex(), is(Path.DEFAULT_INDEX));
         assertThat(segment.hasIndex(), is(false));
         assertThat(segment.isSelfReference(), is(false));
         assertThat(segment.isParentReference(), is(true));
@@ -121,7 +121,7 @@ public class BasicPathSegmentTest {
         assertThat(segment.getName().getNamespaceUri().length(), is(0));
 
         segment = factory.createSegment(Path.PARENT, 1);
-        assertThat(segment.getIndex(), is(Path.NO_INDEX));
+        assertThat(segment.getIndex(), is(Path.DEFAULT_INDEX));
         assertThat(segment.hasIndex(), is(false));
         assertThat(segment.isSelfReference(), is(false));
         assertThat(segment.isParentReference(), is(true));
@@ -143,14 +143,14 @@ public class BasicPathSegmentTest {
 
     @Test
     public void shouldConsiderSegmentWithSameNameSiblingIndexOfOneToBeEqualToSegmentWithSameNameButNoIndex() {
-        segment = new BasicPathSegment(validName, Path.NO_INDEX);
+        segment = new BasicPathSegment(validName, Path.DEFAULT_INDEX);
         Path.Segment segment2 = new BasicPathSegment(validName, 1);
         assertThat(segment, is(segment2));
     }
 
     @Test
     public void shouldConsiderSegmentWithSameNameSiblingIndexOfTwoOrMoreToNotBeEqualToSegmentWithSameNameButNoIndex() {
-        segment = new BasicPathSegment(validName, Path.NO_INDEX);
+        segment = new BasicPathSegment(validName, Path.DEFAULT_INDEX);
         Path.Segment segment2 = new BasicPathSegment(validName, 2);
         assertThat(segment, is(not(segment2)));
         segment2 = new BasicPathSegment(validName, 3);
@@ -161,7 +161,7 @@ public class BasicPathSegmentTest {
     public void shouldUseDelimiterEncoderToEncodeDelimiterBetweenPrefixAndLocalPart() {
         TextEncoder encoder = new Jsr283Encoder();
         validName = new BasicName(DnaLexicon.Namespace.URI, "some:name:with:colons");
-        segment = new BasicPathSegment(validName, Path.NO_INDEX);
+        segment = new BasicPathSegment(validName, Path.DEFAULT_INDEX);
         TextEncoder delimiterEncoder = new TextEncoder() {
             public String encode( String text ) {
                 if (":".equals(text)) return "\\:";

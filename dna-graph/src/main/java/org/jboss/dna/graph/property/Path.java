@@ -139,9 +139,9 @@ public interface Path extends Comparable<Path>, Iterable<Path.Segment>, Serializ
     public static final String SELF = ".";
 
     /**
-     * The index that will be returned for a {@link Segment} that {@link Segment#hasIndex() has no index}.
+     * The default index for a {@link Segment}.
      */
-    public static final int NO_INDEX = -1;
+    public static final int DEFAULT_INDEX = 1;
 
     /**
      * Representation of the segments that occur within a path.
@@ -159,7 +159,7 @@ public interface Path extends Comparable<Path>, Iterable<Path.Segment>, Serializ
         public Name getName();
 
         /**
-         * Get the index for this segment, which will be {@link Path#NO_INDEX -1} if this segment has no specific index.
+         * Get the index for this segment, which will be 1 by default.
          * 
          * @return the index
          */

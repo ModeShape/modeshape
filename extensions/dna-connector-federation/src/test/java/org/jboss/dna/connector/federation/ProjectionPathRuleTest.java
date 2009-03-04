@@ -172,8 +172,8 @@ public class ProjectionPathRuleTest {
         assertThat(rule.getPathInRepository(sourcePath, pathFactory), is(repositoryPath));
         assertThatGetPathInRepositoryReturnsCorrectPathInSource("");
         assertThatGetPathInRepositoryReturnsCorrectPathInSource("m/n");
-        assertThatGetPathInRepositoryReturnsCorrectPathInSource("m[0]");
-        assertThatGetPathInRepositoryReturnsCorrectPathInSource("m[0]/n/o/p");
+        assertThatGetPathInRepositoryReturnsCorrectPathInSource("m[1]");
+        assertThatGetPathInRepositoryReturnsCorrectPathInSource("m[1]/n/o/p");
     }
 
     protected void assertThatGetPathInRepositoryReturnsCorrectPathInSource( String subpath ) {
@@ -199,8 +199,8 @@ public class ProjectionPathRuleTest {
         assertThat(rule.getPathInSource(repositoryPath, pathFactory), is(sourcePath));
         assertThatGetPathInSourceReturnsCorrectPathInRepository("");
         assertThatGetPathInSourceReturnsCorrectPathInRepository("m/n");
-        assertThatGetPathInSourceReturnsCorrectPathInRepository("m[0]");
-        assertThatGetPathInSourceReturnsCorrectPathInRepository("m[0]/n/o/p");
+        assertThatGetPathInSourceReturnsCorrectPathInRepository("m[1]");
+        assertThatGetPathInSourceReturnsCorrectPathInRepository("m[1]/n/o/p");
 
     }
 

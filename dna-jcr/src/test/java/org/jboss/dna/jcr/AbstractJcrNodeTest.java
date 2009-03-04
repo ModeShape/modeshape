@@ -46,9 +46,7 @@ import javax.jcr.Value;
 import javax.jcr.Workspace;
 import javax.jcr.version.Version;
 import org.jboss.dna.graph.ExecutionContext;
-import org.jboss.dna.graph.property.NamespaceRegistry;
 import org.jboss.dna.graph.property.Path.Segment;
-import org.jboss.dna.graph.property.basic.BasicName;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
@@ -66,10 +64,11 @@ public class AbstractJcrNodeTest {
                                             List<Segment> children,
                                             Node parent ) throws Exception {
         MockAbstractJcrNode child = new MockAbstractJcrNode(session, name, parent);
-        Segment seg = Mockito.mock(Segment.class);
-        stub(seg.getName()).toReturn(new BasicName(null, name));
+        Segment seg = session.getExecutionContext().getValueFactories().getPathFactory().createSegment(name, index);
         children.add(seg);
-        stub(session.getItem(parent.getPath() + "/" + name + '[' + index + ']')).toReturn(child);
+        // Stub the session to return this node ...
+        String absolutePath = parent.getPath() + "/" + seg.getString(session.getExecutionContext().getNamespaceRegistry());
+        stub(session.getItem(absolutePath)).toReturn(child);
         return child;
     }
 
@@ -117,9 +116,7 @@ public class AbstractJcrNodeTest {
     @Before
     public void before() throws Exception {
         MockitoAnnotations.initMocks(this);
-        NamespaceRegistry registry = Mockito.mock(NamespaceRegistry.class);
-        ExecutionContext context = Mockito.mock(ExecutionContext.class);
-        stub(context.getNamespaceRegistry()).toReturn(registry);
+        ExecutionContext context = new ExecutionContext();
         stub(session.getExecutionContext()).toReturn(context);
         children = new ArrayList<Segment>();
         properties = new HashSet<Property>();

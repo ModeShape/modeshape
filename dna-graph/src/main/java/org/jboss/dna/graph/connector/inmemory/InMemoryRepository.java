@@ -474,7 +474,7 @@ public class InMemoryRepository {
             if (childrenWithSameNames.size() == 0) return;
             if (childrenWithSameNames.size() == 1) {
                 InMemoryNode childWithSameName = childrenWithSameNames.get(0);
-                Path.Segment newName = context.getValueFactories().getPathFactory().createSegment(name, Path.NO_INDEX);
+                Path.Segment newName = context.getValueFactories().getPathFactory().createSegment(name, Path.DEFAULT_INDEX);
                 childWithSameName.setName(newName);
                 return;
             }

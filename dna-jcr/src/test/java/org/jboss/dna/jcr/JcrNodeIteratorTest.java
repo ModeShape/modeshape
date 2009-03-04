@@ -32,12 +32,10 @@ import java.util.List;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import org.jboss.dna.graph.ExecutionContext;
-import org.jboss.dna.graph.property.NamespaceRegistry;
 import org.jboss.dna.graph.property.Path.Segment;
 import org.jboss.dna.jcr.AbstractJcrNodeTest.MockAbstractJcrNode;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.mockito.MockitoAnnotations.Mock;
 
@@ -54,9 +52,7 @@ public class JcrNodeIteratorTest {
     @Before
     public void before() throws Exception {
         MockitoAnnotations.initMocks(this);
-        NamespaceRegistry registry = Mockito.mock(NamespaceRegistry.class);
-        ExecutionContext context = Mockito.mock(ExecutionContext.class);
-        stub(context.getNamespaceRegistry()).toReturn(registry);
+        ExecutionContext context = new ExecutionContext();
         stub(session.getExecutionContext()).toReturn(context);
         children = new ArrayList<Segment>();
         node = new MockAbstractJcrNode(session, "node", null);
@@ -73,7 +69,7 @@ public class JcrNodeIteratorTest {
         node.setChildren(children);
         NodeIterator iter = node.getNodes();
         assertThat(iter, notNullValue());
-        assertThat(iter.getSize(), is(-1L));
+        assertThat(iter.getSize(), is(6L));
         assertThat(iter.getPosition(), is(0L));
         assertThat(iter.hasNext(), is(true));
         assertThat((Node)iter.next(), is(child1));

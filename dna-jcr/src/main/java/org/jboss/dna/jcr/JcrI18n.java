@@ -58,14 +58,16 @@ public final class JcrI18n {
     public static I18n unableToRemapUriUsingPrefixUsedInNamespaceRegistry;
 
     public static I18n errorWhileInitializingTheNamespaceRegistry;
+    public static I18n invalidRelativePath;
     public static I18n invalidPathParameter;
+    public static I18n invalidNamePattern;
 
     public static I18n typeNotFound;
-    
+
     // Used in AbstractJcrNode#getAncestor
     public static I18n noNegativeDepth;
     public static I18n tooDeep;
-    
+
     public static I18n REP_NAME_DESC;
     public static I18n REP_VENDOR_DESC;
     public static I18n SPEC_NAME_DESC;

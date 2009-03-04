@@ -131,7 +131,7 @@ public class SimpleMergeStrategy implements MergeStrategy {
                 while (childIterator.hasNext()) {
                     Location child = childIterator.next();
                     Name childName = child.getPath().getLastSegment().getName();
-                    int index = Path.NO_INDEX;
+                    int index = Path.DEFAULT_INDEX;
                     Integer previous = childNames.put(childName, 1);
                     if (previous != null) {
                         int previousValue = previous.intValue();

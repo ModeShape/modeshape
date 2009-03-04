@@ -48,7 +48,9 @@ public class BasicPathSegment implements Path.Segment {
      * @throws IllegalArgumentException if the name is null or if the index is invalid
      */
     public BasicPathSegment( Name name ) {
-        this(name, Path.NO_INDEX);
+        assert name != null;
+        this.name = name;
+        this.index = Path.DEFAULT_INDEX;
     }
 
     /**
@@ -59,9 +61,9 @@ public class BasicPathSegment implements Path.Segment {
     public BasicPathSegment( Name name,
                              int index ) {
         assert name != null;
-        assert index >= Path.NO_INDEX;
+        assert index >= Path.DEFAULT_INDEX;
         this.name = name;
-        this.index = (this.isSelfReference() || this.isParentReference()) ? Path.NO_INDEX : index;
+        this.index = (this.isSelfReference() || this.isParentReference()) ? Path.DEFAULT_INDEX : index;
     }
 
     /**
@@ -82,7 +84,7 @@ public class BasicPathSegment implements Path.Segment {
      * {@inheritDoc}
      */
     public boolean hasIndex() {
-        return this.index != Path.NO_INDEX;
+        return this.index != Path.DEFAULT_INDEX;
     }
 
     /**
