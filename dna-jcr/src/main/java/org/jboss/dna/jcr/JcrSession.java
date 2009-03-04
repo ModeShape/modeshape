@@ -31,6 +31,9 @@ import java.util.Calendar;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -78,6 +81,12 @@ import com.google.common.collect.ReferenceMap;
  */
 @NotThreadSafe
 class JcrSession implements Session {
+
+    /**
+     * Hidden flag that controls whether properties that appear on DNA nodes but not allowed by the node type or mixins should be
+     * included anyway. This is currently {@value} .
+     */
+    private static final boolean INCLUDE_PROPERTIES_NOT_ALLOWED_BY_NODE_TYPE_OR_MIXINS = true;
 
     private static final String[] NO_ATTRIBUTES_NAMES = new String[] {};
 
@@ -659,14 +668,21 @@ class JcrSession implements Session {
         ValueFactories factories = executionContext.getValueFactories();
         NameFactory nameFactory = factories.getNameFactory();
         NodeTypeManager nodeTypeManager = getWorkspace().getNodeTypeManager();
+        List<PropertyDefinition> anyPropertyDefinitions = new LinkedList<PropertyDefinition>();
         org.jboss.dna.graph.property.Property primaryTypeProperty = graphNode.getProperty(JcrLexicon.PRIMARY_TYPE);
         if (primaryTypeProperty != null && !primaryTypeProperty.isEmpty()) {
             Name primaryTypeName = nameFactory.create(primaryTypeProperty.getFirstValue());
             String primaryTypeNameString = primaryTypeName.getString(registry);
             NodeType primaryType = nodeTypeManager.getNodeType(primaryTypeNameString);
             for (PropertyDefinition propertyDefn : primaryType.getPropertyDefinitions()) {
-                Name name = nameFactory.create(propertyDefn.getName());
-                propertyDefinitionsByPropertyName.put(name, propertyDefn);
+                String nameString = propertyDefn.getName();
+                if ("*".equals(nameString)) {
+                    anyPropertyDefinitions.add(propertyDefn);
+                    continue;
+                }
+                Name name = nameFactory.create(nameString);
+                PropertyDefinition prev = propertyDefinitionsByPropertyName.put(name, propertyDefn);
+                if (prev != null) propertyDefinitionsByPropertyName.put(name, prev); // put the first one back ...
             }
         }
         org.jboss.dna.graph.property.Property mixinTypesProperty = graphNode.getProperty(JcrLexicon.MIXIN_TYPES);
@@ -677,8 +693,14 @@ class JcrSession implements Session {
                 String mixinTypeNameString = mixinTypeName.getString(registry);
                 NodeType primaryType = nodeTypeManager.getNodeType(mixinTypeNameString);
                 for (PropertyDefinition propertyDefn : primaryType.getPropertyDefinitions()) {
-                    Name name = nameFactory.create(propertyDefn.getName());
-                    propertyDefinitionsByPropertyName.put(name, propertyDefn);
+                    String nameString = propertyDefn.getName();
+                    if ("*".equals(nameString)) {
+                        anyPropertyDefinitions.add(propertyDefn);
+                        continue;
+                    }
+                    Name name = nameFactory.create(nameString);
+                    PropertyDefinition prev = propertyDefinitionsByPropertyName.put(name, propertyDefn);
+                    if (prev != null) propertyDefinitionsByPropertyName.put(name, prev); // put the first one back ...
                 }
             }
         }
@@ -736,21 +758,45 @@ class JcrSession implements Session {
             // Figure out the JCR property type for this property ...
             PropertyDefinition propertyDefinition = propertyDefinitionsByPropertyName.get(name);
 
-            // If no property type was specified, then use "nt:unstructured" property definitions for any property
-            if (propertyDefinition == null) {
-                if (anyMultiplePropertyDefinition == null) {
-                    String unstructuredName = JcrNtLexicon.UNSTRUCTURED.getString(registry);
-                    NodeType unstructured = nodeTypeManager.getNodeType(unstructuredName);
-                    for (PropertyDefinition definition : unstructured.getDeclaredPropertyDefinitions()) {
-                        if (definition.isMultiple()) {
-                            anyMultiplePropertyDefinition = definition;
+            // If no property type was found for this property, see if there is a wildcard property ...
+            if (propertyDefinition == null && !anyPropertyDefinitions.isEmpty()) {
+                Iterator<PropertyDefinition> iter = anyPropertyDefinitions.iterator();
+                propertyDefinition = iter.next(); // use the first one by default ...
+                if (iter.hasNext()) {
+                    // Look for a better one if not multiple but the property has multiple values ...
+                    if (!propertyDefinition.isMultiple() && dnaProp.isMultiple()) {
+                        while (iter.hasNext()) {
+                            PropertyDefinition next = iter.next();
+                            if (next.isMultiple()) {
+                                propertyDefinition = next;
+                                break;
+                            }
                         }
                     }
                 }
-                assert anyMultiplePropertyDefinition != null;
-                propertyDefinition = anyMultiplePropertyDefinition;
             }
-            assert propertyDefinition != null;
+
+            // If there still is no property type defined ...
+            if (propertyDefinition == null) {
+                assert anyPropertyDefinitions.isEmpty();
+                if (INCLUDE_PROPERTIES_NOT_ALLOWED_BY_NODE_TYPE_OR_MIXINS) {
+                    // We can use the "nt:unstructured" property definitions for any property ...
+                    if (anyMultiplePropertyDefinition == null) {
+                        String unstructuredName = JcrNtLexicon.UNSTRUCTURED.getString(registry);
+                        NodeType unstructured = nodeTypeManager.getNodeType(unstructuredName);
+                        for (PropertyDefinition definition : unstructured.getDeclaredPropertyDefinitions()) {
+                            if (definition.isMultiple()) {
+                                anyMultiplePropertyDefinition = definition;
+                            }
+                        }
+                    }
+                    propertyDefinition = anyMultiplePropertyDefinition;
+                }
+            }
+            if (propertyDefinition == null) {
+                // We're supposed to skip this property (since we don't have a definition for it) ...
+                continue;
+            }
 
             // Figure out if this is a multi-valued property ...
             boolean isMultiple = propertyDefinition.isMultiple();
