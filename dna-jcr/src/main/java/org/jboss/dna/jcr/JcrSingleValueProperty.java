@@ -40,9 +40,9 @@ import org.jboss.dna.graph.property.ValueFactories;
 /**
  * @author jverhaeg
  */
-final class JcrProperty extends AbstractJcrProperty {
+final class JcrSingleValueProperty extends AbstractJcrProperty {
 
-    JcrProperty( Node node,
+    JcrSingleValueProperty( Node node,
                  ExecutionContext executionContext,
                  PropertyDefinition definition,
                  Property dnaProperty ) {

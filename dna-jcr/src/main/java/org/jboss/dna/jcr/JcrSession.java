@@ -723,7 +723,7 @@ class JcrSession implements Session {
         if (referenceable) {
             if (uuidProperty == null) uuidProperty = executionContext.getPropertyFactory().create(JcrLexicon.UUID, uuid);
             PropertyDefinition propertyDefinition = propertyDefinitionsByPropertyName.get(JcrLexicon.UUID);
-            properties.add(new JcrProperty(node, executionContext, propertyDefinition, uuidProperty));
+            properties.add(new JcrSingleValueProperty(node, executionContext, propertyDefinition, uuidProperty));
         }
 
         // Now create the JCR property object wrappers around the other properties ...
@@ -763,7 +763,7 @@ class JcrSession implements Session {
             if (isMultiple) {
                 properties.add(new JcrMultiValueProperty(node, executionContext, propertyDefinition, dnaProp));
             } else {
-                properties.add(new JcrProperty(node, executionContext, propertyDefinition, dnaProp));
+                properties.add(new JcrSingleValueProperty(node, executionContext, propertyDefinition, dnaProp));
             }
         }
 
