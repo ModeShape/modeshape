@@ -33,6 +33,7 @@ import javax.jcr.ItemNotFoundException;
 import javax.jcr.ItemVisitor;
 import javax.jcr.Node;
 import javax.jcr.Property;
+import javax.jcr.PropertyType;
 import javax.jcr.Repository;
 import javax.jcr.Session;
 import javax.jcr.Value;
@@ -40,8 +41,6 @@ import javax.jcr.Workspace;
 import javax.jcr.nodetype.PropertyDefinition;
 import org.jboss.dna.common.util.StringUtil;
 import org.jboss.dna.graph.ExecutionContext;
-import org.jboss.dna.graph.property.Name;
-import org.jboss.dna.graph.property.NamespaceRegistry;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
@@ -63,20 +62,20 @@ public class AbstractJcrPropertyTest {
     @Mock
     private Node node;
     @Mock
-    private NamespaceRegistry namespaceRegistry;
-    @Mock
+    private PropertyDefinition propertyDefinition;
     private ExecutionContext executionContext;
-    @Mock
-    private Name name;
+    private org.jboss.dna.graph.property.Property dnaProperty;
 
     @Before
     public void before() throws Exception {
         MockitoAnnotations.initMocks(this);
+        executionContext = new ExecutionContext();
+        dnaProperty = executionContext.getPropertyFactory().create(JcrLexicon.MIMETYPE, "text/plain");
+        stub(propertyDefinition.getRequiredType()).toReturn(PropertyType.STRING);
         stub(session.getWorkspace()).toReturn(workspace);
         stub(session.getRepository()).toReturn(repository);
         stub(node.getSession()).toReturn(session);
-        stub(executionContext.getNamespaceRegistry()).toReturn(namespaceRegistry);
-        prop = new MockAbstractJcrProperty(node, executionContext, name);
+        prop = new MockAbstractJcrProperty(node, executionContext, propertyDefinition, dnaProperty);
     }
 
     @Test
@@ -89,21 +88,6 @@ public class AbstractJcrPropertyTest {
     @Test( expected = IllegalArgumentException.class )
     public void shouldNotAllowVisitationIfNoVisitor() throws Exception {
         prop.accept(null);
-    }
-
-    @Test( expected = AssertionError.class )
-    public void shouldNotAllowNoSession() throws Exception {
-        new MockAbstractJcrProperty(null, executionContext, name);
-    }
-
-    @Test( expected = AssertionError.class )
-    public void shouldNotAllowNoExecutionContext() throws Exception {
-        new MockAbstractJcrProperty(node, null, name);
-    }
-
-    @Test( expected = AssertionError.class )
-    public void shouldNotAllowNoName() throws Exception {
-        new MockAbstractJcrProperty(node, executionContext, null);
     }
 
     @Test( expected = ItemNotFoundException.class )
@@ -136,14 +120,8 @@ public class AbstractJcrPropertyTest {
     }
 
     @Test
-    public void shouldProvideNode() throws Exception {
-        assertThat(prop.getNode(), is(node));
-    }
-
-    @Test
     public void shouldProvideName() throws Exception {
-        stub(name.getString(namespaceRegistry)).toReturn("name");
-        assertThat(prop.getName(), is("name"));
+        assertThat(prop.getName(), is("jcr:mimeType"));
     }
 
     @Test
@@ -154,8 +132,7 @@ public class AbstractJcrPropertyTest {
     @Test
     public void shouldProvidePath() throws Exception {
         stub(node.getPath()).toReturn("/nodeName");
-        stub(name.getString(namespaceRegistry)).toReturn("propertyName");
-        assertThat(prop.getPath(), is("/nodeName/propertyName"));
+        assertThat(prop.getPath(), is("/nodeName/jcr:mimeType"));
     }
 
     @Test
@@ -171,38 +148,33 @@ public class AbstractJcrPropertyTest {
     }
 
     @Test
-    public void shouldIndicateSameAsNodeWithSameParentAndName() throws Exception {
-        stub(name.getString(namespaceRegistry)).toReturn("propertyName");
+    public void shouldIndicateSameAsNodeWithSameParentAndSamePropertyName() throws Exception {
+        org.jboss.dna.graph.property.Property otherDnaProperty = executionContext.getPropertyFactory()
+                                                                                 .create(dnaProperty.getName());
         Node otherNode = Mockito.mock(Node.class);
         stub(otherNode.getSession()).toReturn(session);
-        Name otherName = Mockito.mock(Name.class);
-        stub(otherName.getString(namespaceRegistry)).toReturn("propertyName");
         stub(node.isSame(otherNode)).toReturn(true);
-        Property otherProp = new MockAbstractJcrProperty(otherNode, executionContext, otherName);
+        Property otherProp = new MockAbstractJcrProperty(otherNode, executionContext, propertyDefinition, otherDnaProperty);
         assertThat(prop.isSame(otherProp), is(true));
     }
 
     @Test
     public void shouldIndicateDifferentThanNodeWithDifferentParent() throws Exception {
-        stub(name.getString(namespaceRegistry)).toReturn("propertyName");
+        org.jboss.dna.graph.property.Property otherDnaProperty = executionContext.getPropertyFactory().create(JcrLexicon.NAME);
         Node otherNode = Mockito.mock(Node.class);
         stub(otherNode.getSession()).toReturn(session);
-        Name otherName = Mockito.mock(Name.class);
-        stub(otherName.getString(namespaceRegistry)).toReturn("propertyName");
         stub(node.isSame(otherNode)).toReturn(false);
-        Property otherProp = new MockAbstractJcrProperty(otherNode, executionContext, otherName);
+        Property otherProp = new MockAbstractJcrProperty(otherNode, executionContext, propertyDefinition, otherDnaProperty);
         assertThat(prop.isSame(otherProp), is(false));
     }
 
     @Test
-    public void shouldIndicateDifferentThanNodeWithDifferentName() throws Exception {
-        stub(name.getString(namespaceRegistry)).toReturn("propertyName");
+    public void shouldIndicateDifferentThanPropertyWithSameNodeWithDifferentPropertyName() throws Exception {
+        org.jboss.dna.graph.property.Property otherDnaProperty = executionContext.getPropertyFactory().create(JcrLexicon.NAME);
         Node otherNode = Mockito.mock(Node.class);
         stub(otherNode.getSession()).toReturn(session);
-        Name otherName = Mockito.mock(Name.class);
-        stub(otherName.getString(namespaceRegistry)).toReturn("propertyName2");
         stub(node.isSame(otherNode)).toReturn(true);
-        Property otherProp = new MockAbstractJcrProperty(otherNode, executionContext, otherName);
+        Property otherProp = new MockAbstractJcrProperty(otherNode, executionContext, propertyDefinition, otherDnaProperty);
         assertThat(prop.isSame(otherProp), is(false));
     }
 
@@ -260,8 +232,18 @@ public class AbstractJcrPropertyTest {
 
         MockAbstractJcrProperty( Node node,
                                  ExecutionContext executionContext,
-                                 Name name ) {
-            super(node, executionContext, name);
+                                 PropertyDefinition propertyDefinition,
+                                 org.jboss.dna.graph.property.Property dnaProperty ) {
+            super(node, executionContext, propertyDefinition, dnaProperty);
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see javax.jcr.Property#getNode()
+         */
+        public Node getNode() {
+            throw new UnsupportedOperationException(); // shouldn't be called
         }
 
         /**
@@ -279,15 +261,6 @@ public class AbstractJcrPropertyTest {
          * @see javax.jcr.Property#getDate()
          */
         public Calendar getDate() {
-            return null;
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see javax.jcr.Property#getDefinition()
-         */
-        public PropertyDefinition getDefinition() {
             return null;
         }
 
@@ -343,15 +316,6 @@ public class AbstractJcrPropertyTest {
          */
         public String getString() {
             return null;
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see javax.jcr.Property#getType()
-         */
-        public int getType() {
-            return 0;
         }
 
         /**

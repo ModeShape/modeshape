@@ -69,10 +69,8 @@ class JcrBuiltinNodeTypeSource implements JcrNodeTypeSource {
     JcrBuiltinNodeTypeSource( JcrSession session ) {
         primaryNodeTypes = new ArrayList<JcrNodeType>();
 
-        Value trueValue = new JcrValue<Boolean>(session.getExecutionContext().getValueFactories(), PropertyType.BOOLEAN,
-                                                Boolean.TRUE);
-        Value ntBaseValue = new JcrValue<Name>(session.getExecutionContext().getValueFactories(), PropertyType.NAME,
-                                               JcrNtLexicon.BASE);
+        Value trueValue = new JcrValue(session.getExecutionContext().getValueFactories(), PropertyType.BOOLEAN, Boolean.TRUE);
+        Value ntBaseValue = new JcrValue(session.getExecutionContext().getValueFactories(), PropertyType.NAME, JcrNtLexicon.BASE);
 
         // Stubbing in child node and property definitions for now
         JcrNodeType base = new JcrNodeType(session, JcrNtLexicon.BASE, NO_SUPERTYPES, NO_PRIMARY_ITEM_NAME, NO_CHILD_NODES,
@@ -429,7 +427,7 @@ class JcrBuiltinNodeTypeSource implements JcrNodeTypeSource {
                                                                              OnParentVersionBehavior.IGNORE.getJcrValue(), false,
                                                                              true, false, NO_DEFAULT_VALUES, PropertyType.DATE,
                                                                              NO_CONSTRAINTS, false),
-                                                   new JcrPropertyDefinition(session, null, JcrLexicon.MIME_TYPE,
+                                                   new JcrPropertyDefinition(session, null, JcrLexicon.MIMETYPE,
                                                                              OnParentVersionBehavior.COPY.getJcrValue(), false,
                                                                              true, false, NO_DEFAULT_VALUES, PropertyType.STRING,
                                                                              NO_CONSTRAINTS, false),}), NOT_MIXIN,

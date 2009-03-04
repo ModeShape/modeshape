@@ -25,13 +25,16 @@ package org.jboss.dna.jcr;
 
 import java.io.InputStream;
 import java.util.Calendar;
+import java.util.UUID;
 import javax.jcr.Node;
 import javax.jcr.RepositoryException;
 import javax.jcr.Value;
 import javax.jcr.ValueFormatException;
 import javax.jcr.nodetype.PropertyDefinition;
 import org.jboss.dna.graph.ExecutionContext;
-import org.jboss.dna.graph.property.Name;
+import org.jboss.dna.graph.property.Binary;
+import org.jboss.dna.graph.property.Property;
+import org.jboss.dna.graph.property.Reference;
 import org.jboss.dna.graph.property.ValueFactories;
 
 /**
@@ -39,16 +42,11 @@ import org.jboss.dna.graph.property.ValueFactories;
  */
 final class JcrProperty extends AbstractJcrProperty {
 
-    private JcrValue<?> jcrValue;
-
     JcrProperty( Node node,
                  ExecutionContext executionContext,
-                 Name name,
-                 Object value ) {
-        super(node, executionContext, name);
-        assert value != null;
-        ValueFactories valueFactories = executionContext.getValueFactories();
-        jcrValue = createValue(valueFactories, new ValueInfo(value), value);
+                 PropertyDefinition definition,
+                 Property dnaProperty ) {
+        super(node, executionContext, definition, dnaProperty);
     }
 
     /**
@@ -57,7 +55,11 @@ final class JcrProperty extends AbstractJcrProperty {
      * @see javax.jcr.Property#getBoolean()
      */
     public boolean getBoolean() throws RepositoryException {
-        return jcrValue.getBoolean();
+        try {
+            return getExecutionContext().getValueFactories().getBooleanFactory().create(getDnaProperty().getFirstValue());
+        } catch (org.jboss.dna.graph.property.ValueFormatException e) {
+            throw new ValueFormatException(e.getMessage(), e);
+        }
     }
 
     /**
@@ -66,21 +68,14 @@ final class JcrProperty extends AbstractJcrProperty {
      * @see javax.jcr.Property#getDate()
      */
     public Calendar getDate() throws RepositoryException {
-        return jcrValue.getDate();
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.Property#getDefinition()
-     */
-    public PropertyDefinition getDefinition() {
-        return new AbstractJcrPropertyDefinition() {
-
-            public boolean isMultiple() {
-                return false;
-            }
-        };
+        try {
+            return getExecutionContext().getValueFactories()
+                                        .getDateFactory()
+                                        .create(getDnaProperty().getFirstValue())
+                                        .toCalendar();
+        } catch (org.jboss.dna.graph.property.ValueFormatException e) {
+            throw new ValueFormatException(e.getMessage(), e);
+        }
     }
 
     /**
@@ -89,7 +84,11 @@ final class JcrProperty extends AbstractJcrProperty {
      * @see javax.jcr.Property#getDouble()
      */
     public double getDouble() throws RepositoryException {
-        return jcrValue.getDouble();
+        try {
+            return getExecutionContext().getValueFactories().getDoubleFactory().create(getDnaProperty().getFirstValue());
+        } catch (org.jboss.dna.graph.property.ValueFormatException e) {
+            throw new ValueFormatException(e.getMessage(), e);
+        }
     }
 
     /**
@@ -98,7 +97,7 @@ final class JcrProperty extends AbstractJcrProperty {
      * @see javax.jcr.Property#getLength()
      */
     public long getLength() throws RepositoryException {
-        return jcrValue.getLength();
+        return createValue(getDnaProperty().getFirstValue()).getLength();
     }
 
     /**
@@ -117,7 +116,27 @@ final class JcrProperty extends AbstractJcrProperty {
      * @see javax.jcr.Property#getLong()
      */
     public long getLong() throws RepositoryException {
-        return jcrValue.getLong();
+        try {
+            return getExecutionContext().getValueFactories().getLongFactory().create(getDnaProperty().getFirstValue());
+        } catch (org.jboss.dna.graph.property.ValueFormatException e) {
+            throw new ValueFormatException(e.getMessage(), e);
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see javax.jcr.Property#getNode()
+     */
+    public final Node getNode() throws RepositoryException {
+        try {
+            ValueFactories factories = getExecutionContext().getValueFactories();
+            Reference dnaReference = factories.getReferenceFactory().create(getDnaProperty().getFirstValue());
+            UUID uuid = factories.getUuidFactory().create(dnaReference);
+            return ((JcrSession)getSession()).getNode(uuid);
+        } catch (org.jboss.dna.graph.property.ValueFormatException e) {
+            throw new ValueFormatException(e.getMessage(), e);
+        }
     }
 
     /**
@@ -126,7 +145,12 @@ final class JcrProperty extends AbstractJcrProperty {
      * @see javax.jcr.Property#getStream()
      */
     public InputStream getStream() throws RepositoryException {
-        return jcrValue.getStream();
+        try {
+            Binary binary = getExecutionContext().getValueFactories().getBinaryFactory().create(getDnaProperty().getFirstValue());
+            return new SelfClosingInputStream(binary);
+        } catch (org.jboss.dna.graph.property.ValueFormatException e) {
+            throw new ValueFormatException(e.getMessage(), e);
+        }
     }
 
     /**
@@ -135,16 +159,11 @@ final class JcrProperty extends AbstractJcrProperty {
      * @see javax.jcr.Property#getString()
      */
     public String getString() throws RepositoryException {
-        return jcrValue.getString();
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.Property#getType()
-     */
-    public int getType() {
-        return jcrValue.getType();
+        try {
+            return getExecutionContext().getValueFactories().getStringFactory().create(getDnaProperty().getFirstValue());
+        } catch (org.jboss.dna.graph.property.ValueFormatException e) {
+            throw new ValueFormatException(e.getMessage(), e);
+        }
     }
 
     /**
@@ -153,7 +172,7 @@ final class JcrProperty extends AbstractJcrProperty {
      * @see javax.jcr.Property#getValue()
      */
     public Value getValue() {
-        return jcrValue;
+        return createValue(getDnaProperty().getFirstValue());
     }
 
     /**

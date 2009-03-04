@@ -24,24 +24,18 @@
 package org.jboss.dna.jcr;
 
 import java.io.InputStream;
-import java.io.Reader;
 import java.util.Calendar;
-import java.util.Date;
-import java.util.UUID;
 import javax.jcr.Item;
 import javax.jcr.ItemVisitor;
 import javax.jcr.Node;
 import javax.jcr.Property;
-import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.Value;
+import javax.jcr.nodetype.PropertyDefinition;
 import net.jcip.annotations.NotThreadSafe;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.graph.ExecutionContext;
-import org.jboss.dna.graph.property.Name;
-import org.jboss.dna.graph.property.Path;
-import org.jboss.dna.graph.property.ValueFactories;
 
 /**
  * @author jverhaeg
@@ -51,17 +45,21 @@ abstract class AbstractJcrProperty extends AbstractJcrItem implements Property {
 
     private final Node node;
     private final ExecutionContext executionContext;
-    private final Name name;
+    private final org.jboss.dna.graph.property.Property dnaProperty;
+    private final PropertyDefinition jcrPropertyDefinition;
 
     AbstractJcrProperty( Node node,
                          ExecutionContext executionContext,
-                         Name name ) {
+                         PropertyDefinition definition,
+                         org.jboss.dna.graph.property.Property dnaProperty ) {
         assert node != null;
         assert executionContext != null;
-        assert name != null;
+        assert dnaProperty != null;
+        assert definition != null;
         this.node = node;
         this.executionContext = executionContext;
-        this.name = name;
+        this.dnaProperty = dnaProperty;
+        this.jcrPropertyDefinition = definition;
     }
 
     /**
@@ -75,39 +73,47 @@ abstract class AbstractJcrProperty extends AbstractJcrItem implements Property {
         visitor.visit(this);
     }
 
-    JcrValue<?> createValue( ValueFactories valueFactories,
-                             ValueInfo valueInfo,
-                             Object value ) {
-        return createValue(valueFactories, valueInfo.valueClass, valueInfo.propertyType, value);
-    }
-
-    private <T> JcrValue<T> createValue( ValueFactories valueFactories,
-                                         Class<T> valueClass,
-                                         int propertyType,
-                                         Object value ) {
-        return new JcrValue<T>(valueFactories, propertyType, valueClass.cast(value));
+    JcrValue createValue( Object value ) {
+        return new JcrValue(executionContext.getValueFactories(), getType(), value);
     }
 
     final ExecutionContext getExecutionContext() {
         return executionContext;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.Property#getNode()
-     */
-    public final Node getNode() {
-        return node;
+    final org.jboss.dna.graph.property.Property getDnaProperty() {
+        return dnaProperty;
     }
 
     /**
      * {@inheritDoc}
      * 
+     * @see javax.jcr.Property#getType()
+     */
+    public final int getType() {
+        return jcrPropertyDefinition.getRequiredType();
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see javax.jcr.Property#getDefinition()
+     */
+    public final PropertyDefinition getDefinition() {
+        return jcrPropertyDefinition;
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * This method returns the string form of the {@link org.jboss.dna.graph.property.Property#getName()}, computed dynamically
+     * each time this method is called to ensure that the property namespace prefix is used.
+     * </p>
+     * 
      * @see javax.jcr.Item#getName()
      */
     public final String getName() {
-        return name.getString(executionContext.getNamespaceRegistry());
+        return dnaProperty.getName().getString(executionContext.getNamespaceRegistry());
     }
 
     /**
@@ -154,9 +160,12 @@ abstract class AbstractJcrProperty extends AbstractJcrItem implements Property {
      */
     @Override
     public final boolean isSame( Item otherItem ) throws RepositoryException {
-        if (super.isSame(otherItem) && otherItem instanceof Property) {
-            Property otherProp = (Property)otherItem;
-            return (getName().equals(otherProp.getName()) && getNode().isSame(otherProp.getNode()));
+        if (otherItem instanceof Property) {
+            Property otherProperty = (Property)otherItem;
+            // The nodes that own the properties must be the same ...
+            if (!getParent().isSame(otherProperty.getParent())) return false;
+            // The properties must have the same name ...
+            return getName().equals(otherProperty.getName());
         }
         return false;
     }
@@ -259,57 +268,5 @@ abstract class AbstractJcrProperty extends AbstractJcrItem implements Property {
      */
     public final void setValue( Node value ) {
         throw new UnsupportedOperationException();
-    }
-
-    final class ValueInfo {
-
-        final Class<?> valueClass;
-        final int propertyType;
-
-        ValueInfo( Object value ) {
-            if (value instanceof Boolean) {
-                valueClass = Boolean.class;
-                propertyType = PropertyType.BOOLEAN;
-            } else if (value instanceof Date) {
-                valueClass = Date.class;
-                propertyType = PropertyType.DATE;
-            } else if (value instanceof Calendar) {
-                valueClass = Calendar.class;
-                propertyType = PropertyType.DATE;
-            } else if (value instanceof Double) {
-                valueClass = Double.class;
-                propertyType = PropertyType.DOUBLE;
-            } else if (value instanceof Float) {
-                valueClass = Float.class;
-                propertyType = PropertyType.DOUBLE;
-            } else if (value instanceof Integer) {
-                valueClass = Integer.class;
-                propertyType = PropertyType.LONG;
-            } else if (value instanceof Long) {
-                valueClass = Long.class;
-                propertyType = PropertyType.LONG;
-            } else if (value instanceof UUID) {
-                valueClass = UUID.class;
-                propertyType = PropertyType.REFERENCE;
-            } else if (value instanceof String) {
-                valueClass = String.class;
-                propertyType = PropertyType.STRING;
-            } else if (value instanceof Name) {
-                valueClass = Name.class;
-                propertyType = PropertyType.NAME;
-            } else if (value instanceof Path) {
-                valueClass = Path.class;
-                propertyType = PropertyType.PATH;
-            } else if (value instanceof InputStream) {
-                valueClass = InputStream.class;
-                propertyType = PropertyType.BINARY;
-            } else if (value instanceof Reader) {
-                valueClass = Reader.class;
-                propertyType = PropertyType.BINARY;
-            } else {
-                valueClass = Object.class;
-                propertyType = PropertyType.BINARY;
-            }
-        }
     }
 }

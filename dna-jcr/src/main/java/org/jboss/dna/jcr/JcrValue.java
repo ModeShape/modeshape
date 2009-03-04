@@ -30,26 +30,27 @@ import javax.jcr.RepositoryException;
 import javax.jcr.Value;
 import javax.jcr.ValueFormatException;
 import net.jcip.annotations.NotThreadSafe;
+import org.jboss.dna.graph.property.Binary;
 import org.jboss.dna.graph.property.ValueFactories;
 
 /**
- * @param <T> the type of value to create.
  * @author jverhaeg
  */
 @NotThreadSafe
-final class JcrValue<T> implements Value {
+final class JcrValue implements Value {
 
     private final ValueFactories valueFactories;
     private final int type;
-    private final T value;
+    private final Object value;
 
     JcrValue( ValueFactories valueFactories,
               int type,
-              T value ) {
+              Object value ) {
         assert valueFactories != null;
         assert type == PropertyType.BINARY || type == PropertyType.BOOLEAN || type == PropertyType.DATE
                || type == PropertyType.DOUBLE || type == PropertyType.LONG || type == PropertyType.NAME
-               || type == PropertyType.PATH || type == PropertyType.REFERENCE || type == PropertyType.STRING;
+               || type == PropertyType.PATH || type == PropertyType.REFERENCE || type == PropertyType.STRING
+               || type == PropertyType.UNDEFINED;
         assert value != null;
         this.valueFactories = valueFactories;
         this.type = type;
@@ -143,7 +144,8 @@ final class JcrValue<T> implements Value {
             throw new IllegalStateException(JcrI18n.nonInputStreamConsumed.text());
         }
         try {
-            InputStream convertedValue = valueFactories.getBinaryFactory().create(value).getStream();
+            Binary binary = valueFactories.getBinaryFactory().create(value);
+            InputStream convertedValue = new SelfClosingInputStream(binary);
             state = State.INPUT_STREAM_CONSUMED;
             return convertedValue;
         } catch (RuntimeException error) {

@@ -112,6 +112,7 @@ public abstract class AbstractValueFactory<T> implements ValueFactory<T> {
         if (value instanceof Float) return create(((Float)value).floatValue());
         if (value instanceof Boolean) return create(((Boolean)value).booleanValue());
         if (value instanceof BigDecimal) return create((BigDecimal)value);
+        if (value instanceof DateTime) return create((DateTime)value);
         if (value instanceof Calendar) return create((Calendar)value);
         if (value instanceof Date) return create((Date)value);
         if (value instanceof Name) return create((Name)value);

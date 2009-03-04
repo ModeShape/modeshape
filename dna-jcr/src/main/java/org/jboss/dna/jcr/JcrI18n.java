@@ -61,6 +61,8 @@ public final class JcrI18n {
     public static I18n invalidRelativePath;
     public static I18n invalidPathParameter;
     public static I18n invalidNamePattern;
+    public static I18n itemNotFoundWithUuid;
+    public static I18n errorWhileFindingNodeWithUuid;
 
     public static I18n typeNotFound;
 

@@ -24,10 +24,8 @@
 package org.jboss.dna.jcr;
 
 import java.io.InputStream;
-import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Iterator;
-import java.util.List;
 import javax.jcr.Node;
 import javax.jcr.RepositoryException;
 import javax.jcr.Value;
@@ -35,8 +33,7 @@ import javax.jcr.ValueFormatException;
 import javax.jcr.nodetype.PropertyDefinition;
 import net.jcip.annotations.NotThreadSafe;
 import org.jboss.dna.graph.ExecutionContext;
-import org.jboss.dna.graph.property.Name;
-import org.jboss.dna.graph.property.ValueFactories;
+import org.jboss.dna.graph.property.Property;
 
 /**
  * @author jverhaeg
@@ -44,22 +41,11 @@ import org.jboss.dna.graph.property.ValueFactories;
 @NotThreadSafe
 final class JcrMultiValueProperty extends AbstractJcrProperty {
 
-    private List<JcrValue<?>> jcrValues = new ArrayList<JcrValue<?>>();
-
     JcrMultiValueProperty( Node node,
                            ExecutionContext executionContext,
-                           Name name,
-                           Iterable<?> values ) {
-        super(node, executionContext, name);
-        assert values != null;
-        ValueFactories valueFactories = executionContext.getValueFactories();
-        ValueInfo valueInfo = null;
-        for (Object value : values) {
-            if (valueInfo == null) {
-                valueInfo = new ValueInfo(value);
-            }
-            jcrValues.add(createValue(valueFactories, valueInfo, value));
-        }
+                           PropertyDefinition definition,
+                           Property dnaProperty ) {
+        super(node, executionContext, definition, dnaProperty);
     }
 
     /**
@@ -85,24 +71,19 @@ final class JcrMultiValueProperty extends AbstractJcrProperty {
     /**
      * {@inheritDoc}
      * 
-     * @see javax.jcr.Property#getDefinition()
+     * @throws ValueFormatException always
+     * @see javax.jcr.Property#getDouble()
      */
-    public PropertyDefinition getDefinition() {
-        return new AbstractJcrPropertyDefinition() {
-
-            public boolean isMultiple() {
-                return true;
-            }
-        };
+    public double getDouble() throws ValueFormatException {
+        throw new ValueFormatException();
     }
 
     /**
      * {@inheritDoc}
      * 
-     * @throws ValueFormatException always
-     * @see javax.jcr.Property#getDouble()
+     * @see javax.jcr.Property#getNode()
      */
-    public double getDouble() throws ValueFormatException {
+    public Node getNode() throws ValueFormatException, RepositoryException {
         throw new ValueFormatException();
     }
 
@@ -122,10 +103,11 @@ final class JcrMultiValueProperty extends AbstractJcrProperty {
      * @see javax.jcr.Property#getLengths()
      */
     public long[] getLengths() throws RepositoryException {
-        long[] lengths = new long[jcrValues.size()];
-        Iterator<JcrValue<?>> iter = jcrValues.iterator();
+        Property dnaProperty = getDnaProperty();
+        long[] lengths = new long[dnaProperty.size()];
+        Iterator<?> iter = dnaProperty.iterator();
         for (int ndx = 0; iter.hasNext(); ndx++) {
-            lengths[ndx] = iter.next().getLength();
+            lengths[ndx] = createValue(iter.next()).getLength();
         }
         return lengths;
     }
@@ -163,15 +145,6 @@ final class JcrMultiValueProperty extends AbstractJcrProperty {
     /**
      * {@inheritDoc}
      * 
-     * @see javax.jcr.Property#getType()
-     */
-    public int getType() {
-        return jcrValues.get(0).getType();
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
      * @throws ValueFormatException always
      * @see javax.jcr.Property#getValue()
      */
@@ -181,10 +154,21 @@ final class JcrMultiValueProperty extends AbstractJcrProperty {
 
     /**
      * {@inheritDoc}
+     * <p>
+     * Per the JCR specification, these values need to be created each time this method is called, since the Value cannot be used
+     * after {@link Value#getStream()} is called/processed. The spec says that the client simply needs to obtain a new Value (or
+     * {@link #getValues()} for {@link JcrMultiValueProperty multi-valued properites}).
+     * </p>
      * 
      * @see javax.jcr.Property#getValues()
      */
     public Value[] getValues() {
-        return jcrValues.toArray(new Value[jcrValues.size()]);
+        Property dnaProperty = getDnaProperty();
+        Value[] values = new JcrValue[dnaProperty.size()];
+        Iterator<?> iter = dnaProperty.iterator();
+        for (int ndx = 0; iter.hasNext(); ndx++) {
+            values[ndx] = createValue(iter.next());
+        }
+        return values;
     }
 }

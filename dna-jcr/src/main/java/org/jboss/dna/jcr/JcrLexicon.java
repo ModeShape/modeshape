@@ -53,7 +53,6 @@ class JcrLexicon extends org.jboss.dna.graph.JcrLexicon {
     public static final Name LOCK_OWNER = new BasicName(Namespace.URI, "lockOwner");
     public static final Name MANDATORY = new BasicName(Namespace.URI, "mandatory");
     public static final Name MERGE_FAILED = new BasicName(Namespace.URI, "mergeFailed");
-    public static final Name MIME_TYPE = new BasicName(Namespace.URI, "mimeType");
     public static final Name MULTIPLE = new BasicName(Namespace.URI, "multiple");
     public static final Name NAME = new BasicName(Namespace.URI, "name");
     public static final Name NODE_TYPE_NAME = new BasicName(Namespace.URI, "nodeTypeName");

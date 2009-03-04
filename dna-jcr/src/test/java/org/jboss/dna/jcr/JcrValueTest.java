@@ -45,27 +45,12 @@ import org.mockito.Mockito;
 public class JcrValueTest {
 
     private ValueFactories factories;
-    private JcrValue<Boolean> value;
+    private JcrValue value;
 
     @Before
     public void before() {
         factories = new StandardValueFactories(Mockito.mock(NamespaceRegistry.class));
-        value = new JcrValue<Boolean>(factories, PropertyType.BOOLEAN, true);
-    }
-
-    @Test( expected = AssertionError.class )
-    public void shouldNotAllowNoValueFactories() throws Exception {
-        new JcrValue<Object>(null, PropertyType.BINARY, true);
-    }
-
-    @Test( expected = AssertionError.class )
-    public void shouldNotAllowInvalidType() throws Exception {
-        new JcrValue<Object>(factories, 0, true);
-    }
-
-    @Test( expected = AssertionError.class )
-    public void shouldNotAllowNoValue() throws Exception {
-        new JcrValue<Object>(factories, PropertyType.BINARY, null);
+        value = new JcrValue(factories, PropertyType.BOOLEAN, true);
     }
 
     @Test
@@ -117,30 +102,30 @@ public class JcrValueTest {
 
     @Test( expected = ValueFormatException.class )
     public void shouldNotProvideBooleanForDate() throws Exception {
-        new JcrValue<Date>(factories, PropertyType.DATE, new Date()).getBoolean();
+        new JcrValue(factories, PropertyType.DATE, new Date()).getBoolean();
     }
 
     @Test
     public void shouldProvideDateForDate() throws Exception {
         Date date = new Date();
-        assertThat(new JcrValue<Date>(factories, PropertyType.DATE, date).getDate().getTime(), is(date));
+        assertThat(new JcrValue(factories, PropertyType.DATE, date).getDate().getTime(), is(date));
     }
 
     @Test
     public void shouldProvideDoubleForDate() throws Exception {
         Date date = new Date();
-        assertThat(new JcrValue<Date>(factories, PropertyType.DATE, date).getDouble(), is((double)date.getTime()));
+        assertThat(new JcrValue(factories, PropertyType.DATE, date).getDouble(), is((double)date.getTime()));
     }
 
     @Test
     public void shouldProvideLongForDate() throws Exception {
         Date date = new Date();
-        assertThat(new JcrValue<Date>(factories, PropertyType.DATE, date).getLong(), is(date.getTime()));
+        assertThat(new JcrValue(factories, PropertyType.DATE, date).getLong(), is(date.getTime()));
     }
 
     @Test
     public void shouldProvideStreamForDate() throws Exception {
-        testProvidesStream(new JcrValue<Date>(factories, PropertyType.DATE, new Date()));
+        testProvidesStream(new JcrValue(factories, PropertyType.DATE, new Date()));
     }
 
     @Test
@@ -149,163 +134,161 @@ public class JcrValueTest {
         date.set(2008, 7, 18, 12, 0, 0);
         date.set(Calendar.MILLISECOND, 0);
         String expectedValue = "2008-08-18T12:00:00.000";
-        assertThat(new JcrValue<Calendar>(factories, PropertyType.DATE, date).getString().substring(0, expectedValue.length()),
+        assertThat(new JcrValue(factories, PropertyType.DATE, date).getString().substring(0, expectedValue.length()),
                    is(expectedValue));
-        assertThat(new JcrValue<Date>(factories, PropertyType.DATE, date.getTime()).getString().substring(0,
-                                                                                                          expectedValue.length()),
+        assertThat(new JcrValue(factories, PropertyType.DATE, date.getTime()).getString().substring(0, expectedValue.length()),
                    is(expectedValue));
     }
 
     @Test( expected = ValueFormatException.class )
     public void shouldNotProvideBooleanForDouble() throws Exception {
-        new JcrValue<Double>(factories, PropertyType.DOUBLE, 0.0).getBoolean();
+        new JcrValue(factories, PropertyType.DOUBLE, 0.0).getBoolean();
     }
 
     @Test
     public void shouldProvideDateForDouble() throws Exception {
         Calendar expectedValue = Calendar.getInstance();
         expectedValue.setTime(new Date(0L));
-        assertThat(new JcrValue<Double>(factories, PropertyType.DOUBLE, 0.0).getDate(), is(expectedValue));
+        assertThat(new JcrValue(factories, PropertyType.DOUBLE, 0.0).getDate(), is(expectedValue));
     }
 
     @Test
     public void shouldProvideDoubleForDouble() throws Exception {
-        assertThat(new JcrValue<Double>(factories, PropertyType.DOUBLE, 1.2).getDouble(), is(1.2));
+        assertThat(new JcrValue(factories, PropertyType.DOUBLE, 1.2).getDouble(), is(1.2));
     }
 
     @Test
     public void shouldProvideLongForDouble() throws Exception {
-        assertThat(new JcrValue<Double>(factories, PropertyType.DOUBLE, 1.0).getLong(), is(1L));
-        assertThat(new JcrValue<Double>(factories, PropertyType.DOUBLE, Double.MAX_VALUE).getLong(), is(Long.MAX_VALUE));
+        assertThat(new JcrValue(factories, PropertyType.DOUBLE, 1.0).getLong(), is(1L));
+        assertThat(new JcrValue(factories, PropertyType.DOUBLE, Double.MAX_VALUE).getLong(), is(Long.MAX_VALUE));
     }
 
     @Test
     public void shouldProvideStreamForDouble() throws Exception {
-        testProvidesStream(new JcrValue<Double>(factories, PropertyType.DOUBLE, 1.0));
+        testProvidesStream(new JcrValue(factories, PropertyType.DOUBLE, 1.0));
     }
 
     @Test
     public void shouldProvideStringForDouble() throws Exception {
-        assertThat(new JcrValue<Double>(factories, PropertyType.DOUBLE, 1.0).getString(), is("1.0"));
+        assertThat(new JcrValue(factories, PropertyType.DOUBLE, 1.0).getString(), is("1.0"));
     }
 
     @Test( expected = ValueFormatException.class )
     public void shouldNotProvideBooleanForLong() throws Exception {
-        new JcrValue<Long>(factories, PropertyType.LONG, 0L).getBoolean();
+        new JcrValue(factories, PropertyType.LONG, 0L).getBoolean();
     }
 
     @Test
     public void shouldProvideDateForLong() throws Exception {
         Calendar expectedValue = Calendar.getInstance();
         expectedValue.setTime(new Date(0L));
-        assertThat(new JcrValue<Long>(factories, PropertyType.LONG, 0L).getDate(), is(expectedValue));
+        assertThat(new JcrValue(factories, PropertyType.LONG, 0L).getDate(), is(expectedValue));
     }
 
     @Test
     public void shouldProvideDoubleForLong() throws Exception {
-        assertThat(new JcrValue<Long>(factories, PropertyType.LONG, 1L).getDouble(), is(1.0));
+        assertThat(new JcrValue(factories, PropertyType.LONG, 1L).getDouble(), is(1.0));
     }
 
     @Test
     public void shouldProvideLongForLong() throws Exception {
-        assertThat(new JcrValue<Long>(factories, PropertyType.LONG, 1L).getLong(), is(1L));
+        assertThat(new JcrValue(factories, PropertyType.LONG, 1L).getLong(), is(1L));
     }
 
     @Test
     public void shouldProvideStreamForLong() throws Exception {
-        testProvidesStream(new JcrValue<Long>(factories, PropertyType.LONG, 1L));
+        testProvidesStream(new JcrValue(factories, PropertyType.LONG, 1L));
     }
 
     @Test
     public void shouldProvideStringForLong() throws Exception {
-        assertThat(new JcrValue<Long>(factories, PropertyType.LONG, 1L).getString(), is("1"));
+        assertThat(new JcrValue(factories, PropertyType.LONG, 1L).getString(), is("1"));
     }
 
     @Test
     public void shouldProvideBooleanForString() throws Exception {
-        assertThat(new JcrValue<String>(factories, PropertyType.STRING, "true").getBoolean(), is(true));
-        assertThat(new JcrValue<String>(factories, PropertyType.STRING, "yes").getBoolean(), is(false));
+        assertThat(new JcrValue(factories, PropertyType.STRING, "true").getBoolean(), is(true));
+        assertThat(new JcrValue(factories, PropertyType.STRING, "yes").getBoolean(), is(false));
     }
 
     @Test
     public void shouldProvideDateForString() throws Exception {
-        assertThat(new JcrValue<String>(factories, PropertyType.STRING, "2008").getDate(), notNullValue());
+        assertThat(new JcrValue(factories, PropertyType.STRING, "2008").getDate(), notNullValue());
     }
 
     @Test( expected = ValueFormatException.class )
     public void shouldNotProvideDateForInvalidString() throws Exception {
-        new JcrValue<String>(factories, PropertyType.STRING, "true").getDate();
+        new JcrValue(factories, PropertyType.STRING, "true").getDate();
     }
 
     @Test
     public void shouldProvideDoubleForString() throws Exception {
-        assertThat(new JcrValue<String>(factories, PropertyType.STRING, "1").getDouble(), is(1.0));
+        assertThat(new JcrValue(factories, PropertyType.STRING, "1").getDouble(), is(1.0));
     }
 
     @Test( expected = ValueFormatException.class )
     public void shouldNotProvideDoubleForInvalidString() throws Exception {
-        new JcrValue<String>(factories, PropertyType.STRING, "true").getDouble();
+        new JcrValue(factories, PropertyType.STRING, "true").getDouble();
     }
 
     @Test
     public void shouldProvideLongForString() throws Exception {
-        assertThat(new JcrValue<String>(factories, PropertyType.STRING, "1").getLong(), is(1L));
+        assertThat(new JcrValue(factories, PropertyType.STRING, "1").getLong(), is(1L));
     }
 
     @Test( expected = ValueFormatException.class )
     public void shouldNotProvideLongForInvalidString() throws Exception {
-        new JcrValue<String>(factories, PropertyType.STRING, "true").getLong();
+        new JcrValue(factories, PropertyType.STRING, "true").getLong();
     }
 
     @Test
     public void shouldProvideStreamForString() throws Exception {
-        testProvidesStream(new JcrValue<String>(factories, PropertyType.STRING, "true"));
+        testProvidesStream(new JcrValue(factories, PropertyType.STRING, "true"));
     }
 
     @Test
     public void shouldProvideStringForString() throws Exception {
-        assertThat(new JcrValue<String>(factories, PropertyType.STRING, "true").getString(), is("true"));
+        assertThat(new JcrValue(factories, PropertyType.STRING, "true").getString(), is("true"));
     }
 
     @Test
     public void shouldProvideBooleanForUuid() throws Exception {
-        assertThat(new JcrValue<UUID>(factories, PropertyType.STRING, UUID.randomUUID()).getBoolean(), is(false));
+        assertThat(new JcrValue(factories, PropertyType.STRING, UUID.randomUUID()).getBoolean(), is(false));
     }
 
     @Test( expected = ValueFormatException.class )
     public void shouldNotProvideDateForUuid() throws Exception {
-        new JcrValue<UUID>(factories, PropertyType.STRING, UUID.randomUUID()).getDate();
+        new JcrValue(factories, PropertyType.STRING, UUID.randomUUID()).getDate();
     }
 
     @Test( expected = ValueFormatException.class )
     public void shouldNotProvideDoubleForUuid() throws Exception {
-        new JcrValue<UUID>(factories, PropertyType.STRING, UUID.randomUUID()).getDouble();
+        new JcrValue(factories, PropertyType.STRING, UUID.randomUUID()).getDouble();
     }
 
     @Test( expected = ValueFormatException.class )
     public void shouldNotProvideLongForUuid() throws Exception {
-        new JcrValue<UUID>(factories, PropertyType.STRING, UUID.randomUUID()).getLong();
+        new JcrValue(factories, PropertyType.STRING, UUID.randomUUID()).getLong();
     }
 
     @Test
     public void shouldProvideStreamForUuid() throws Exception {
-        testProvidesStream(new JcrValue<UUID>(factories, PropertyType.STRING, UUID.randomUUID()));
+        testProvidesStream(new JcrValue(factories, PropertyType.STRING, UUID.randomUUID()));
     }
 
     @Test
     public void shouldProvideStringForUuid() throws Exception {
         String expectedValue = "40d373f7-75ad-4d84-900e-c72ebd98abb9";
-        assertThat(new JcrValue<UUID>(factories, PropertyType.STRING, UUID.fromString(expectedValue)).getString(),
-                   is(expectedValue));
+        assertThat(new JcrValue(factories, PropertyType.STRING, UUID.fromString(expectedValue)).getString(), is(expectedValue));
     }
 
     @Test
     public void shouldProvideLength() throws Exception {
-        assertThat(new JcrValue<String>(factories, PropertyType.STRING, "test").getLength(), is(4L));
-        assertThat(new JcrValue<Object>(factories, PropertyType.BINARY, "test").getLength(), is(4L));
+        assertThat(new JcrValue(factories, PropertyType.STRING, "test").getLength(), is(4L));
+        assertThat(new JcrValue(factories, PropertyType.BINARY, "test").getLength(), is(4L));
     }
 
-    private void testProvidesStream( JcrValue<?> value ) throws Exception {
+    private void testProvidesStream( JcrValue value ) throws Exception {
         InputStream stream = value.getStream();
         assertThat(stream, notNullValue());
         stream.close();
