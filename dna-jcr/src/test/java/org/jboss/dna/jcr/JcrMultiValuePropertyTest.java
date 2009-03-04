@@ -59,7 +59,7 @@ public class JcrMultiValuePropertyTest {
         dnaProperty = executionContext.getPropertyFactory().create(JcrLexicon.MIMETYPE, true);
         stub(definition.getRequiredType()).toReturn(PropertyType.BOOLEAN);
         stub(definition.isMultiple()).toReturn(true);
-        prop = new JcrMultiValueProperty(node, executionContext, definition, dnaProperty);
+        prop = new JcrMultiValueProperty(node, executionContext, definition, definition.getRequiredType(), dnaProperty);
     }
 
     @Test
@@ -138,7 +138,7 @@ public class JcrMultiValuePropertyTest {
         dnaProperty = executionContext.getPropertyFactory().create(JcrLexicon.MIMETYPE, value);
         stub(definition.getRequiredType()).toReturn(PropertyType.STRING);
         stub(definition.isMultiple()).toReturn(true);
-        prop = new JcrMultiValueProperty(node, executionContext, definition, dnaProperty);
+        prop = new JcrMultiValueProperty(node, executionContext, definition, definition.getRequiredType(), dnaProperty);
         lengths = prop.getLengths();
         assertThat(lengths, notNullValue());
         assertThat(lengths.length, is(1));
@@ -149,7 +149,7 @@ public class JcrMultiValuePropertyTest {
         dnaProperty = executionContext.getPropertyFactory().create(JcrLexicon.MIMETYPE, value);
         stub(definition.getRequiredType()).toReturn(PropertyType.STRING);
         stub(definition.isMultiple()).toReturn(true);
-        prop = new JcrMultiValueProperty(node, executionContext, definition, dnaProperty);
+        prop = new JcrMultiValueProperty(node, executionContext, definition, definition.getRequiredType(), dnaProperty);
         lengths = prop.getLengths();
         assertThat(lengths, notNullValue());
         assertThat(lengths.length, is(1));
@@ -159,7 +159,7 @@ public class JcrMultiValuePropertyTest {
         dnaProperty = executionContext.getPropertyFactory().create(JcrLexicon.MIMETYPE, (Object[])values);
         stub(definition.getRequiredType()).toReturn(PropertyType.STRING);
         stub(definition.isMultiple()).toReturn(true);
-        prop = new JcrMultiValueProperty(node, executionContext, definition, dnaProperty);
+        prop = new JcrMultiValueProperty(node, executionContext, definition, definition.getRequiredType(), dnaProperty);
         lengths = prop.getLengths();
         assertThat(lengths, notNullValue());
         assertThat(lengths.length, is(values.length));

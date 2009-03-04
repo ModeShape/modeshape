@@ -47,10 +47,12 @@ abstract class AbstractJcrProperty extends AbstractJcrItem implements Property {
     private final ExecutionContext executionContext;
     private final org.jboss.dna.graph.property.Property dnaProperty;
     private final PropertyDefinition jcrPropertyDefinition;
+    private final int propertyType;
 
     AbstractJcrProperty( Node node,
                          ExecutionContext executionContext,
                          PropertyDefinition definition,
+                         int propertyType,
                          org.jboss.dna.graph.property.Property dnaProperty ) {
         assert node != null;
         assert executionContext != null;
@@ -60,6 +62,7 @@ abstract class AbstractJcrProperty extends AbstractJcrItem implements Property {
         this.executionContext = executionContext;
         this.dnaProperty = dnaProperty;
         this.jcrPropertyDefinition = definition;
+        this.propertyType = propertyType;
     }
 
     /**
@@ -91,7 +94,7 @@ abstract class AbstractJcrProperty extends AbstractJcrItem implements Property {
      * @see javax.jcr.Property#getType()
      */
     public final int getType() {
-        return jcrPropertyDefinition.getRequiredType();
+        return propertyType;
     }
 
     /**

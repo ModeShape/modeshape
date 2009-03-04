@@ -44,8 +44,9 @@ final class JcrMultiValueProperty extends AbstractJcrProperty {
     JcrMultiValueProperty( Node node,
                            ExecutionContext executionContext,
                            PropertyDefinition definition,
+                           int propertyType,
                            Property dnaProperty ) {
-        super(node, executionContext, definition, dnaProperty);
+        super(node, executionContext, definition, propertyType, dnaProperty);
     }
 
     /**

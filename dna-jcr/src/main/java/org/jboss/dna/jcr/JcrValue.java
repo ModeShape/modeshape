@@ -49,8 +49,7 @@ final class JcrValue implements Value {
         assert valueFactories != null;
         assert type == PropertyType.BINARY || type == PropertyType.BOOLEAN || type == PropertyType.DATE
                || type == PropertyType.DOUBLE || type == PropertyType.LONG || type == PropertyType.NAME
-               || type == PropertyType.PATH || type == PropertyType.REFERENCE || type == PropertyType.STRING
-               || type == PropertyType.UNDEFINED;
+               || type == PropertyType.PATH || type == PropertyType.REFERENCE || type == PropertyType.STRING;
         assert value != null;
         this.valueFactories = valueFactories;
         this.type = type;

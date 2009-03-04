@@ -633,7 +633,7 @@ class JcrSession implements Session {
             case DATE:
                 return PropertyType.DATE;
             case DECIMAL:
-                return PropertyType.UNDEFINED;
+                return PropertyType.STRING; // better than losing information
             case DOUBLE:
                 return PropertyType.DOUBLE;
             case BINARY:
@@ -745,7 +745,8 @@ class JcrSession implements Session {
         if (referenceable) {
             if (uuidProperty == null) uuidProperty = executionContext.getPropertyFactory().create(JcrLexicon.UUID, uuid);
             PropertyDefinition propertyDefinition = propertyDefinitionsByPropertyName.get(JcrLexicon.UUID);
-            properties.add(new JcrSingleValueProperty(node, executionContext, propertyDefinition, uuidProperty));
+            properties.add(new JcrSingleValueProperty(node, executionContext, propertyDefinition, PropertyType.STRING,
+                                                      uuidProperty));
         }
 
         // Now create the JCR property object wrappers around the other properties ...
@@ -805,11 +806,26 @@ class JcrSession implements Session {
                 continue;
             }
 
+            // Figure out the property type ...
+            int propertyType = propertyDefinition.getRequiredType();
+            if (propertyType == PropertyType.UNDEFINED) {
+                // See DNA-293 for discussion. Best option is to use PropertyType.STRING, since values can always
+                // be converted to Strings (and because clients might use Property.getType() to decide how to
+                // manipulate or set values).
+                propertyType = PropertyType.STRING;
+
+                // // Or, we can choose the property type for the first value (or the default value, if there is one) ...
+                // Object value = dnaProp.getFirstValue();
+                // org.jboss.dna.graph.property.PropertyType dnaType =
+                // org.jboss.dna.graph.property.PropertyType.discoverType(value);
+                // propertyType = jcrPropertyTypeFor(dnaType);
+            }
+
             // Create the appropriate JCR property wrapper ...
             if (isMultiple) {
-                properties.add(new JcrMultiValueProperty(node, executionContext, propertyDefinition, dnaProp));
+                properties.add(new JcrMultiValueProperty(node, executionContext, propertyDefinition, propertyType, dnaProp));
             } else {
-                properties.add(new JcrSingleValueProperty(node, executionContext, propertyDefinition, dnaProp));
+                properties.add(new JcrSingleValueProperty(node, executionContext, propertyDefinition, propertyType, dnaProp));
             }
         }
 

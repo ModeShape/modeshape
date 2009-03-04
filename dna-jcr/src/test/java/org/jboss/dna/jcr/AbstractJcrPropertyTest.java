@@ -234,7 +234,7 @@ public class AbstractJcrPropertyTest {
                                  ExecutionContext executionContext,
                                  PropertyDefinition propertyDefinition,
                                  org.jboss.dna.graph.property.Property dnaProperty ) {
-            super(node, executionContext, propertyDefinition, dnaProperty);
+            super(node, executionContext, propertyDefinition, propertyDefinition.getRequiredType(), dnaProperty);
         }
 
         /**
