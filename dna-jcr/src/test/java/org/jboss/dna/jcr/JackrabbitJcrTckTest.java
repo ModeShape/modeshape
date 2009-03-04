@@ -73,7 +73,7 @@ public class JackrabbitJcrTckTest {
             // See https://jira.jboss.org/jira/browse/DNA-285
 
             addTestSuite(org.apache.jackrabbit.test.api.RootNodeTest.class);
-            // addTestSuite(org.apache.jackrabbit.test.api.NodeReadMethodsTest.class);
+            addTestSuite(org.apache.jackrabbit.test.api.NodeReadMethodsTest.class);
             // addTestSuite(org.apache.jackrabbit.test.api.PropertyTypeTest.class);
             addTestSuite(org.apache.jackrabbit.test.api.NodeDiscoveringNodeTypesTest.class);
             addTestSuite(org.apache.jackrabbit.test.api.BinaryPropertyTest.class);

@@ -33,8 +33,10 @@ import javax.jcr.ItemNotFoundException;
 import javax.jcr.ItemVisitor;
 import javax.jcr.Node;
 import javax.jcr.Property;
+import javax.jcr.Repository;
 import javax.jcr.Session;
 import javax.jcr.Value;
+import javax.jcr.Workspace;
 import javax.jcr.nodetype.PropertyDefinition;
 import org.jboss.dna.common.util.StringUtil;
 import org.jboss.dna.graph.ExecutionContext;
@@ -53,6 +55,10 @@ public class AbstractJcrPropertyTest {
 
     private AbstractJcrProperty prop;
     @Mock
+    private Workspace workspace;
+    @Mock
+    private Repository repository;
+    @Mock
     private Session session;
     @Mock
     private Node node;
@@ -66,6 +72,8 @@ public class AbstractJcrPropertyTest {
     @Before
     public void before() throws Exception {
         MockitoAnnotations.initMocks(this);
+        stub(session.getWorkspace()).toReturn(workspace);
+        stub(session.getRepository()).toReturn(repository);
         stub(node.getSession()).toReturn(session);
         stub(executionContext.getNamespaceRegistry()).toReturn(namespaceRegistry);
         prop = new MockAbstractJcrProperty(node, executionContext, name);

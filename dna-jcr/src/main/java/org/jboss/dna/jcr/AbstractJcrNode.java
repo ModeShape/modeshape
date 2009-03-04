@@ -40,6 +40,7 @@ import javax.jcr.NodeIterator;
 import javax.jcr.PathNotFoundException;
 import javax.jcr.Property;
 import javax.jcr.PropertyIterator;
+import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.UnsupportedRepositoryOperationException;
@@ -461,9 +462,14 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
      * @throws UnsupportedOperationException always
      * @see javax.jcr.Node#getReferences()
      */
-    public final PropertyIterator getReferences() {
-        // TODO: Need to provide this at the DNA layer first (probably via a connector query)
-        throw new UnsupportedOperationException();
+    public final PropertyIterator getReferences() throws RepositoryException {
+        // Iterate through the properties to see which ones have a REFERENCE type ...
+        Set<Property> references = new HashSet<Property>();
+        for (Property property : properties) {
+            if (property.getType() == PropertyType.REFERENCE) references.add(property);
+        }
+        if (references.isEmpty()) return new JcrEmptyPropertyIterator();
+        return new JcrPropertyIterator(references);
     }
 
     /**

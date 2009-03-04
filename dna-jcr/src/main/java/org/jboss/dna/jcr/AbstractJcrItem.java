@@ -69,7 +69,26 @@ abstract class AbstractJcrItem implements Item {
      * @see javax.jcr.Item#isSame(javax.jcr.Item)
      */
     public boolean isSame( Item otherItem ) throws RepositoryException {
-        return (getSession().getWorkspace() == otherItem.getSession().getWorkspace());
+        assert getSession() != null;
+        assert otherItem.getSession() != null;
+        assert getSession().getRepository() != null;
+        assert otherItem.getSession().getRepository() != null;
+
+        if (getSession().getRepository() != otherItem.getSession().getRepository()) {
+            return false;
+        }
+
+        assert getSession().getWorkspace() != null;
+        assert otherItem.getSession().getWorkspace() != null;
+
+        String workspaceName = getSession().getWorkspace().getName();
+        String otherWorkspaceName = otherItem.getSession().getWorkspace().getName();
+
+        if (workspaceName == null) {
+            return otherWorkspaceName == null;
+        }
+
+        return workspaceName.equals(otherWorkspaceName);
     }
 
     /**

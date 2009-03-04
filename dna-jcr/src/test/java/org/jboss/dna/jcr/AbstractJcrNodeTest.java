@@ -40,6 +40,8 @@ import javax.jcr.ItemVisitor;
 import javax.jcr.Node;
 import javax.jcr.PathNotFoundException;
 import javax.jcr.Property;
+import javax.jcr.PropertyIterator;
+import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
 import javax.jcr.UnsupportedRepositoryOperationException;
 import javax.jcr.Value;
@@ -110,6 +112,10 @@ public class AbstractJcrNodeTest {
     private AbstractJcrNode node;
     @Mock
     private JcrSession session;
+    @Mock
+    private Workspace workspace;
+    @Mock
+    private Repository repository;
     private List<Segment> children;
     private Set<Property> properties;
 
@@ -317,9 +323,11 @@ public class AbstractJcrNodeTest {
         node.getProperty("child/prop");
     }
 
-    @Test( expected = UnsupportedOperationException.class )
+    @Test
     public void shouldNotAllowGetReferences() throws Exception {
-        node.getReferences();
+        PropertyIterator iter = node.getReferences();
+        assertThat(iter, is(notNullValue()));
+        assertThat(iter.getSize(), is(0L));
     }
 
     @Test
@@ -465,9 +473,15 @@ public class AbstractJcrNodeTest {
     @Test
     public void shouldProvideIsSame() throws Exception {
         stub(session.getWorkspace()).toReturn(Mockito.mock(Workspace.class));
+        stub(session.getRepository()).toReturn(repository);
         JcrSession session2 = Mockito.mock(JcrSession.class);
+        JcrRepository repository2 = Mockito.mock(JcrRepository.class);
+
+        stub(session2.getRepository()).toReturn(repository2);
+        stub(session2.getWorkspace()).toReturn(workspace);
         Node node2 = new MockAbstractJcrNode(session2, node.getName(), node.getParent());
         assertThat(node.isSame(node2), is(false));
+
         Property prop = Mockito.mock(Property.class);
         stub(prop.getSession()).toReturn(session);
         assertThat(node.isSame(prop), is(false));
