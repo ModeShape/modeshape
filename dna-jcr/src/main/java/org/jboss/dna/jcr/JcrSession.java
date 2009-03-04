@@ -609,13 +609,20 @@ class JcrSession implements Session {
 
     /**
      * Compute the JCR {@link PropertyType} for the given DNA {@link org.jboss.dna.graph.property.PropertyType}.
+     * <p>
+     * See DNA-293 for complete discussion on why this method works the way it does. The best option appears to be basing the
+     * PropertyType on the first value, since that should be compatible with the PropertyType that was used when the values were
+     * set on the property in the first place.
+     * </p>
      * 
-     * @param dnaPropertyType the DNA property type; never null
-     * @return the JCR property type
+     * @param property the DNA property for which the {@link PropertyType} is to be determined; never null
+     * @return the JCR property type; always a valid value and never {@link PropertyType#UNDEFINED}.
      */
-    static final int jcrPropertyTypeFor( org.jboss.dna.graph.property.PropertyType dnaPropertyType ) {
+    static final int jcrPropertyTypeFor( org.jboss.dna.graph.property.Property property ) {
+        Object value = property.getFirstValue();
+
         // Get the DNA property type for this ...
-        switch (dnaPropertyType) {
+        switch (org.jboss.dna.graph.property.PropertyType.discoverType(value)) {
             case STRING:
                 return PropertyType.STRING;
             case NAME:
@@ -809,16 +816,7 @@ class JcrSession implements Session {
             // Figure out the property type ...
             int propertyType = propertyDefinition.getRequiredType();
             if (propertyType == PropertyType.UNDEFINED) {
-                // See DNA-293 for discussion. Best option is to use PropertyType.STRING, since values can always
-                // be converted to Strings (and because clients might use Property.getType() to decide how to
-                // manipulate or set values).
-                propertyType = PropertyType.STRING;
-
-                // // Or, we can choose the property type for the first value (or the default value, if there is one) ...
-                // Object value = dnaProp.getFirstValue();
-                // org.jboss.dna.graph.property.PropertyType dnaType =
-                // org.jboss.dna.graph.property.PropertyType.discoverType(value);
-                // propertyType = jcrPropertyTypeFor(dnaType);
+                propertyType = jcrPropertyTypeFor(dnaProp);
             }
 
             // Create the appropriate JCR property wrapper ...
