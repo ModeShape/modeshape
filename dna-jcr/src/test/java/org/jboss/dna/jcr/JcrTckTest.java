@@ -127,7 +127,7 @@ public class JcrTckTest {
             // addTestSuite(org.apache.jackrabbit.test.api.query.SimpleSelectionTest.class);
 
             // The tests in this suite are level one
-            // addTest(org.apache.jackrabbit.test.api.nodetype.TestAll.suite());
+            addTest(org.apache.jackrabbit.test.api.nodetype.TestAll.suite());
         }
     }
 

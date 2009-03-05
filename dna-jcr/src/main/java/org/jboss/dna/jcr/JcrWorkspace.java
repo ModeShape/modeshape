@@ -156,7 +156,8 @@ final class JcrWorkspace implements Workspace {
         this.session = new JcrSession(this.repository, this, this.context, sessionAttributes);
 
         // This must be initialized after the session
-        this.nodeTypeManager = new JcrNodeTypeManager(new JcrBuiltinNodeTypeSource(this.session));
+        this.nodeTypeManager = new JcrNodeTypeManager(new DnaBuiltinNodeTypeSource(this.session,
+                                                                                   new JcrBuiltinNodeTypeSource(this.session)));
 
     }
 

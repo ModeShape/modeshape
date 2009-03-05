@@ -26,7 +26,6 @@ package org.jboss.dna.jcr;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import javax.jcr.PropertyType;
 import javax.jcr.Value;
@@ -39,27 +38,7 @@ import org.jboss.dna.graph.property.basic.BasicName;
  * {@link JcrNodeTypeSource} that provides built-in node types per the 1.0 specification.
  */
 @Immutable
-class JcrBuiltinNodeTypeSource implements JcrNodeTypeSource {
-
-    // Convenience constants to help improve readability
-    private static final Value[] NO_DEFAULT_VALUES = new Value[0];
-    private static final String[] NO_CONSTRAINTS = new String[0];
-    private static final List<NodeType> NO_SUPERTYPES = Collections.<NodeType>emptyList();
-    private static final List<JcrNodeDefinition> NO_CHILD_NODES = Collections.<JcrNodeDefinition>emptyList();
-    private static final List<JcrPropertyDefinition> NO_PROPERTIES = Collections.<JcrPropertyDefinition>emptyList();
-
-    // Indicates that the node type has no primary item name - added for readability
-    private static final Name NO_PRIMARY_ITEM_NAME = null;
-    // Indicates that the definition should apply to all property definition or child node definitions - added for readability
-    private static final Name ALL_NODES = null;
-
-    // Indicates whether or not the node type is a mixin - added for readability
-    private static final boolean IS_A_MIXIN = true;
-    private static final boolean NOT_MIXIN = false;
-
-    // Indicates whether or not the node type has orderable children - added for readability
-    private static final boolean ORDERABLE_CHILD_NODES = true;
-    private static final boolean UNORDERABLE_CHILD_NODES = false;
+class JcrBuiltinNodeTypeSource extends AbstractJcrNodeTypeSource {
 
     /** The list of primary node types. */
     private final List<JcrNodeType> primaryNodeTypes;
@@ -67,6 +46,13 @@ class JcrBuiltinNodeTypeSource implements JcrNodeTypeSource {
     private final List<JcrNodeType> mixinNodeTypes;
 
     JcrBuiltinNodeTypeSource( JcrSession session ) {
+        this(session, null);
+    }
+
+    JcrBuiltinNodeTypeSource( JcrSession session,
+                              JcrNodeTypeSource predecessor ) {
+        super(predecessor);
+
         primaryNodeTypes = new ArrayList<JcrNodeType>();
 
         Value trueValue = new JcrValue(session.getExecutionContext().getValueFactories(), PropertyType.BOOLEAN, Boolean.TRUE);
@@ -620,7 +606,8 @@ class JcrBuiltinNodeTypeSource implements JcrNodeTypeSource {
      * 
      * @see org.jboss.dna.jcr.JcrNodeTypeSource#getMixinNodeTypes()
      */
-    public Collection<JcrNodeType> getMixinNodeTypes() {
+    @Override
+    public Collection<JcrNodeType> getDeclaredMixinNodeTypes() {
         return mixinNodeTypes;
     }
 
@@ -629,7 +616,8 @@ class JcrBuiltinNodeTypeSource implements JcrNodeTypeSource {
      * 
      * @see org.jboss.dna.jcr.JcrNodeTypeSource#getPrimaryNodeTypes()
      */
-    public Collection<JcrNodeType> getPrimaryNodeTypes() {
+    @Override
+    public Collection<JcrNodeType> getDeclaredPrimaryNodeTypes() {
         return primaryNodeTypes;
     }
 

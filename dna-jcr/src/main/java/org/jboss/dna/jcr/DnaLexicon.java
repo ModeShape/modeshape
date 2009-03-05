@@ -33,5 +33,6 @@ public class DnaLexicon extends org.jboss.dna.graph.DnaLexicon {
 
     public static final Name NAMESPACES = new BasicName(Namespace.URI, "namespaces");
     public static final Name NAMESPACE = new BasicName(Namespace.URI, "namespace");
+    public static final Name URI = new BasicName(Namespace.URI, "uri");
 
 }

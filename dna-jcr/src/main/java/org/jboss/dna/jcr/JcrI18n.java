@@ -65,6 +65,7 @@ public final class JcrI18n {
     public static I18n errorWhileFindingNodeWithUuid;
 
     public static I18n typeNotFound;
+    public static I18n supertypeNotFound;
 
     // Used in AbstractJcrNode#getAncestor
     public static I18n noNegativeDepth;
