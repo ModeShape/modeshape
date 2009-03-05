@@ -28,7 +28,7 @@ import static org.junit.Assert.assertThat;
 import static org.mockito.Matchers.anyObject;
 import static org.mockito.Mockito.stub;
 import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.HashMap;
 import java.util.UUID;
 import javax.jcr.ItemNotFoundException;
 import javax.jcr.Node;
@@ -67,7 +67,7 @@ public class JcrNodeTest {
         ExecutionContext context = Mockito.mock(ExecutionContext.class);
         stub(session.getExecutionContext()).toReturn(context);
         stub(session.getNode(uuid)).toReturn(root);
-        node.setProperties(new HashSet<Property>());
+        node.setProperties(new HashMap<Name, Property>());
         node.setChildren(new ArrayList<Segment>());
     }
 

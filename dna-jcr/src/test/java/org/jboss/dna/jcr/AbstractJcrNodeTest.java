@@ -30,9 +30,9 @@ import static org.mockito.Mockito.stub;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.HashSet;
+import java.util.HashMap;
 import java.util.List;
-import java.util.Set;
+import java.util.Map;
 import java.util.UUID;
 import javax.jcr.Item;
 import javax.jcr.ItemNotFoundException;
@@ -48,6 +48,7 @@ import javax.jcr.Value;
 import javax.jcr.Workspace;
 import javax.jcr.version.Version;
 import org.jboss.dna.graph.ExecutionContext;
+import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.Path.Segment;
 import org.junit.Before;
 import org.junit.Test;
@@ -117,17 +118,22 @@ public class AbstractJcrNodeTest {
     @Mock
     private Repository repository;
     private List<Segment> children;
-    private Set<Property> properties;
+    private Map<Name, Property> properties;
+    private ExecutionContext context;
 
     @Before
     public void before() throws Exception {
         MockitoAnnotations.initMocks(this);
-        ExecutionContext context = new ExecutionContext();
+        context = new ExecutionContext();
         stub(session.getExecutionContext()).toReturn(context);
         children = new ArrayList<Segment>();
-        properties = new HashSet<Property>();
+        properties = new HashMap<Name, Property>();
         node = new MockAbstractJcrNode(session, "node", null);
         node.setProperties(properties);
+    }
+
+    protected Name name( String name ) {
+        return context.getValueFactories().getNameFactory().create(name);
     }
 
     @Test
@@ -161,14 +167,14 @@ public class AbstractJcrNodeTest {
     public void shouldProvideInternalUuid() throws Exception {
         UUID uuid = UUID.randomUUID();
         node.setInternalUuid(uuid);
-        assertThat(node.getInternalUuid(), is(uuid));
+        assertThat(node.internalUuid(), is(uuid));
     }
 
     @Test
     public void shouldProvideNamedProperty() throws Exception {
         Property property = Mockito.mock(Property.class);
         stub(property.getName()).toReturn("test");
-        properties.add(property);
+        properties.put(name(property.getName()), property);
         assertThat(node.getProperty("test"), is(property));
     }
 
@@ -262,7 +268,7 @@ public class AbstractJcrNodeTest {
         Property property = Mockito.mock(Property.class);
         stub(property.getName()).toReturn("jcr:primaryItemName");
         stub(property.getString()).toReturn("primaryItem");
-        properties.add(property);
+        properties.put(name(property.getName()), property);
         Item primaryItem = Mockito.mock(Item.class);
         stub(session.getItem("/node/primaryItem")).toReturn(primaryItem);
         assertThat(node.getPrimaryItem(), is(primaryItem));
@@ -277,29 +283,29 @@ public class AbstractJcrNodeTest {
     public void shouldProvideProperty() throws Exception {
         Property prop1 = Mockito.mock(Property.class);
         stub(prop1.getName()).toReturn("prop1");
-        properties.add(prop1);
+        properties.put(name(prop1.getName()), prop1);
         assertThat(node.getProperty("prop1"), is(prop1));
         MockAbstractJcrNode child = createChild(session, "child", 1, children, node);
-        Set<Property> properties = new HashSet<Property>();
+        Map<Name, Property> properties = new HashMap<Name, Property>();
         child.setProperties(properties);
         Property prop2 = Mockito.mock(Property.class);
         stub(prop2.getName()).toReturn("prop2");
         stub(session.getItem("/node/child/prop2")).toReturn(prop2);
-        properties.add(prop2);
+        properties.put(name(prop2.getName()), prop2);
         MockAbstractJcrNode prop3Node = createChild(session, "prop3", 1, children, child);
         node.setChildren(children);
         assertThat(node.getProperty("child/prop2"), is(prop2));
         // Ensure we return a property even when a child exists with the same name
         Property prop3 = Mockito.mock(Property.class);
         stub(prop3.getName()).toReturn("prop3");
-        properties.add(prop3);
+        properties.put(name(prop3.getName()), prop3);
         stub(session.getItem("/node/child/prop3")).toReturn(prop3Node);
         assertThat(node.getProperty("child/prop3"), is(prop3));
     }
 
     @Test( expected = IllegalArgumentException.class )
     public void shouldNotAllowGetPropertyWithNullPath() throws Exception {
-        node.getProperty(null);
+        node.getProperty((String)null);
     }
 
     @Test( expected = IllegalArgumentException.class )
@@ -315,7 +321,7 @@ public class AbstractJcrNodeTest {
     @Test( expected = PathNotFoundException.class )
     public void shouldNotProvideDescendentPropertyIfNotAvailable() throws Exception {
         MockAbstractJcrNode child = createChild(session, "child", 1, children, node);
-        Set<Property> properties = new HashSet<Property>();
+        Map<Name, Property> properties = new HashMap<Name, Property>();
         child.setProperties(properties);
         MockAbstractJcrNode propNode = createChild(session, "prop", 1, children, child);
         node.setChildren(children);
@@ -343,11 +349,11 @@ public class AbstractJcrNodeTest {
         Value value = Mockito.mock(Value.class);
         stub(value.getString()).toReturn("mix:referenceable");
         stub(mixinProp.getValues()).toReturn(new Value[] {value});
-        properties.add(mixinProp);
+        properties.put(name(mixinProp.getName()), mixinProp);
         Property uuidProp = Mockito.mock(Property.class);
         stub(uuidProp.getName()).toReturn("jcr:uuid");
         stub(uuidProp.getString()).toReturn(uuid);
-        properties.add(uuidProp);
+        properties.put(name(uuidProp.getName()), uuidProp);
         assertThat(node.getUUID(), is(uuid));
     }
 
@@ -358,11 +364,11 @@ public class AbstractJcrNodeTest {
         stub(mixinProp.getName()).toReturn("jcr:mixinTypes");
         Value value = Mockito.mock(Value.class);
         stub(mixinProp.getValues()).toReturn(new Value[] {value});
-        properties.add(mixinProp);
+        properties.put(name(mixinProp.getName()), mixinProp);
         Property uuidProp = Mockito.mock(Property.class);
         stub(uuidProp.getName()).toReturn("jcr:uuid");
         stub(uuidProp.getString()).toReturn(uuid);
-        properties.add(uuidProp);
+        properties.put(name(uuidProp.getName()), uuidProp);
         node.getUUID();
     }
 
@@ -372,7 +378,7 @@ public class AbstractJcrNodeTest {
         Property uuidProp = Mockito.mock(Property.class);
         stub(uuidProp.getName()).toReturn("jcr:uuid");
         stub(uuidProp.getString()).toReturn(uuid);
-        properties.add(uuidProp);
+        properties.put(name(uuidProp.getName()), uuidProp);
         node.getUUID();
     }
 
@@ -386,7 +392,7 @@ public class AbstractJcrNodeTest {
         assertThat(node.hasNode("{}child"), is(false));
         Property prop = Mockito.mock(Property.class);
         stub(prop.getName()).toReturn("prop");
-        properties.add(prop);
+        properties.put(name(prop.getName()), prop);
         assertThat(node.hasNode("prop"), is(false));
         Node child = createChild(session, "child", 1, children, node);
         Node child2 = createChild(session, "child2", 1, children, child);
@@ -417,7 +423,7 @@ public class AbstractJcrNodeTest {
     @Test
     public void shouldProvideHasProperties() throws Exception {
         assertThat(node.hasProperties(), is(false));
-        properties.add(Mockito.mock(Property.class));
+        properties.put(name("something"), Mockito.mock(Property.class));
         assertThat(node.hasProperties(), is(true));
     }
 
@@ -429,13 +435,13 @@ public class AbstractJcrNodeTest {
         assertThat(node.hasProperty("child"), is(false));
         Property prop = Mockito.mock(Property.class);
         stub(prop.getName()).toReturn("prop");
-        properties.add(prop);
+        properties.put(name(prop.getName()), prop);
         assertThat(node.hasProperty("prop"), is(true));
-        Set<Property> properties = new HashSet<Property>();
+        Map<Name, Property> properties = new HashMap<Name, Property>();
         child.setProperties(properties);
         Property prop2 = Mockito.mock(Property.class);
         stub(prop2.getName()).toReturn("prop2");
-        properties.add(prop2);
+        properties.put(name(prop2.getName()), prop2);
         stub(session.getItem("/node/child/prop2")).toReturn(prop2);
         assertThat(node.hasProperty("child/prop2"), is(true));
     }

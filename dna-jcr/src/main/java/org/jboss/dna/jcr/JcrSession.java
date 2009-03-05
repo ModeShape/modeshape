@@ -30,7 +30,6 @@ import java.security.Principal;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -404,8 +403,8 @@ class JcrSession implements Session {
         // If not create a new one & populate it
         JcrNode node;
         Path parentPath = path.getParent();
-        if (parentPath.isRoot()) node = new JcrNode(this, ((JcrRootNode)getRootNode()).getInternalUuid(), path.getLastSegment());
-        else node = new JcrNode(this, ((JcrNode)getNode(parentPath)).getInternalUuid(), path.getLastSegment());
+        if (parentPath.isRoot()) node = new JcrNode(this, ((JcrRootNode)getRootNode()).internalUuid(), path.getLastSegment());
+        else node = new JcrNode(this, ((JcrNode)getNode(parentPath)).internalUuid(), path.getLastSegment());
         populateNode(node, graphNode);
         return node;
     }
@@ -747,13 +746,13 @@ class JcrSession implements Session {
         }
 
         // Now create the JCR property object wrapper around the "jcr:uuid" property ...
-        Set<Property> properties = new HashSet<Property>();
+        Map<Name, Property> properties = new HashMap<Name, Property>();
         if (uuid == null) uuid = UUID.randomUUID();
         if (referenceable) {
             if (uuidProperty == null) uuidProperty = executionContext.getPropertyFactory().create(JcrLexicon.UUID, uuid);
             PropertyDefinition propertyDefinition = propertyDefinitionsByPropertyName.get(JcrLexicon.UUID);
-            properties.add(new JcrSingleValueProperty(node, executionContext, propertyDefinition, PropertyType.STRING,
-                                                      uuidProperty));
+            properties.put(JcrLexicon.UUID, new JcrSingleValueProperty(node, executionContext, propertyDefinition,
+                                                                       PropertyType.STRING, uuidProperty));
         }
 
         // Now create the JCR property object wrappers around the other properties ...
@@ -814,16 +813,16 @@ class JcrSession implements Session {
             }
 
             // Figure out the property type ...
-            int propertyType = propertyDefinition.getRequiredType();
-            if (propertyType == PropertyType.UNDEFINED) {
-                propertyType = jcrPropertyTypeFor(dnaProp);
+            int type = propertyDefinition.getRequiredType();
+            if (type == PropertyType.UNDEFINED) {
+                type = jcrPropertyTypeFor(dnaProp);
             }
 
             // Create the appropriate JCR property wrapper ...
             if (isMultiple) {
-                properties.add(new JcrMultiValueProperty(node, executionContext, propertyDefinition, propertyType, dnaProp));
+                properties.put(name, new JcrMultiValueProperty(node, executionContext, propertyDefinition, type, dnaProp));
             } else {
-                properties.add(new JcrSingleValueProperty(node, executionContext, propertyDefinition, propertyType, dnaProp));
+                properties.put(name, new JcrSingleValueProperty(node, executionContext, propertyDefinition, type, dnaProp));
             }
         }
 
@@ -844,11 +843,9 @@ class JcrSession implements Session {
     /**
      * {@inheritDoc}
      * 
-     * @throws UnsupportedOperationException always
      * @see javax.jcr.Session#refresh(boolean)
      */
     public void refresh( boolean keepChanges ) {
-        throw new UnsupportedOperationException();
     }
 
     /**

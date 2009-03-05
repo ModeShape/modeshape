@@ -285,7 +285,7 @@ public class JcrSessionTest {
         assertThat(nodesByUuid.isEmpty(), is(true));
         Node root = session.getRootNode();
         assertThat(root, notNullValue());
-        UUID uuid = ((JcrRootNode)root).getInternalUuid();
+        UUID uuid = ((JcrRootNode)root).internalUuid();
         assertThat(uuid, notNullValue());
         assertThat(nodesByUuid.get(uuid), is(root));
     }

@@ -26,10 +26,12 @@ package org.jboss.dna.jcr;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.HashMap;
+import java.util.Map;
 import javax.jcr.Property;
 import javax.jcr.PropertyIterator;
+import org.jboss.dna.graph.ExecutionContext;
+import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.jcr.AbstractJcrNodeTest.MockAbstractJcrNode;
 import org.junit.Before;
 import org.junit.Test;
@@ -45,22 +47,28 @@ public class JcrPropertyIteratorTest {
     private AbstractJcrNode node;
     @Mock
     private JcrSession session;
-    private Set<Property> properties;
+    private Map<Name, Property> properties;
+    private ExecutionContext context;
 
     @Before
     public void before() throws Exception {
         MockitoAnnotations.initMocks(this);
-        properties = new HashSet<Property>();
+        context = new ExecutionContext();
+        properties = new HashMap<Name, Property>();
         node = new MockAbstractJcrNode(session, "node", null);
         node.setProperties(properties);
     }
 
+    protected Name name( String name ) {
+        return context.getValueFactories().getNameFactory().create(name);
+    }
+
     @Test
     public void shouldProvidePropertyIterator() throws Exception {
-        properties.add(Mockito.mock(Property.class));
-        properties.add(Mockito.mock(Property.class));
-        properties.add(Mockito.mock(Property.class));
-        properties.add(Mockito.mock(Property.class));
+        properties.put(name("prop1"), Mockito.mock(Property.class));
+        properties.put(name("prop2"), Mockito.mock(Property.class));
+        properties.put(name("prop3"), Mockito.mock(Property.class));
+        properties.put(name("prop4"), Mockito.mock(Property.class));
         PropertyIterator iter = node.getProperties();
         assertThat(iter, notNullValue());
         assertThat(iter.getSize(), is(4L));

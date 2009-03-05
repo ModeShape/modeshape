@@ -121,7 +121,7 @@ public class JcrRepository implements Repository {
         }
         // Initialize required JCR descriptors.
         modifiableDescriptors.put(Repository.LEVEL_1_SUPPORTED, "true");
-        modifiableDescriptors.put(Repository.LEVEL_2_SUPPORTED, "false");
+        modifiableDescriptors.put(Repository.LEVEL_2_SUPPORTED, "true");
         modifiableDescriptors.put(Repository.OPTION_LOCKING_SUPPORTED, "false");
         modifiableDescriptors.put(Repository.OPTION_OBSERVATION_SUPPORTED, "false");
         modifiableDescriptors.put(Repository.OPTION_QUERY_SQL_SUPPORTED, "false");

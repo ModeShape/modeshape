@@ -26,10 +26,11 @@ package org.jboss.dna.jcr;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.HashMap;
+import java.util.Map;
 import javax.jcr.ItemNotFoundException;
 import javax.jcr.Property;
+import org.jboss.dna.graph.property.Name;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.MockitoAnnotations;
@@ -43,12 +44,12 @@ public class JcrRootNodeTest {
     private JcrRootNode root;
     @Mock
     private JcrSession session;
-    private Set<Property> properties;
+    private Map<Name, Property> properties;
 
     @Before
     public void before() throws Exception {
         MockitoAnnotations.initMocks(this);
-        properties = new HashSet<Property>();
+        properties = new HashMap<Name, Property>();
         root = new JcrRootNode(session);
         root.setProperties(properties);
     }

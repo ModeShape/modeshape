@@ -23,8 +23,8 @@
  */
 package org.jboss.dna.jcr;
 
+import java.util.Collection;
 import java.util.Iterator;
-import java.util.Set;
 import javax.jcr.Property;
 import javax.jcr.PropertyIterator;
 import net.jcip.annotations.Immutable;
@@ -40,7 +40,7 @@ final class JcrPropertyIterator implements PropertyIterator {
     private int ndx;
     private int size;
 
-    JcrPropertyIterator( Set<Property> properties ) {
+    JcrPropertyIterator( Collection<Property> properties ) {
         assert properties != null;
         iterator = properties.iterator();
         size = properties.size();
