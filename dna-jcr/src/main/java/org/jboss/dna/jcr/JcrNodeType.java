@@ -39,6 +39,7 @@ import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.Path;
+import org.jboss.dna.graph.property.ValueFactories;
 import org.jboss.dna.graph.property.ValueFormatException;
 import org.jboss.dna.graph.property.Path.Segment;
 
@@ -47,6 +48,8 @@ import org.jboss.dna.graph.property.Path.Segment;
  */
 @Immutable
 class JcrNodeType implements NodeType {
+
+    public static final String RESIDUAL_ITEM_NAME = "*";
 
     /** The name of the node type (e.g., <code>{http://www.jcp.org/jcr/nt/1.0}base</code>) */
     private final Name name;
@@ -97,6 +100,56 @@ class JcrNodeType implements NodeType {
     }
 
     /**
+     * Returns the property definition with the given name. This method first checks the property definitions declared within this
+     * type to see if any property definitions have the given name. If no matches are found, this method initiates a recursive
+     * depth first search up the type hierarchy to attempt to find a definition in one of the supertypes (or one the supertypes of
+     * the supertypes).
+     * 
+     * @param propertyName the name of the property for which the definition should be retrieved. Use
+     *        {@link JcrNodeType#RESIDUAL_ITEM_NAME} to retrieve the residual property definition (if any).
+     * @return the property definition for the given name or <code>null</code> if no such definition exists.
+     * @see JcrNodeType#RESIDUAL_ITEM_NAME
+     */
+    JcrPropertyDefinition getPropertyDefinition( String propertyName ) {
+        for (JcrPropertyDefinition property : propertyDefinitions) {
+            if (propertyName.equals(property.getName())) {
+                return property;
+            }
+        }
+
+        for (NodeType nodeType : declaredSupertypes) {
+            JcrPropertyDefinition definition = ((JcrNodeType)nodeType).getPropertyDefinition(propertyName);
+            if (definition != null) return definition;
+        }
+        return null;
+    }
+
+    /**
+     * Returns the node definition for the child node with the given name. This method first checks the child node definitions
+     * declared within this type to see if any child node definitions have the given name. If no matches are found, this method
+     * initiates a recursive depth first search up the type hierarchy to attempt to find a definition in one of the supertypes (or
+     * one the supertypes of the supertypes).
+     * 
+     * @param childNodeName the name of the child node for which the definition should be retrieved. Use
+     *        {@link JcrNodeType#RESIDUAL_ITEM_NAME} to retrieve the residual child node definition (if any).
+     * @return the child node definition with the given name or <code>null</code> if no such definition exists.
+     * @see JcrNodeType#RESIDUAL_ITEM_NAME
+     */
+    JcrNodeDefinition getChildNodeDefinition( String childNodeName ) {
+        for (JcrNodeDefinition childNode : childNodeDefinitions) {
+            if (childNodeName.equals(childNode.getName())) {
+                return childNode;
+            }
+        }
+
+        for (NodeType nodeType : declaredSupertypes) {
+            JcrNodeDefinition definition = ((JcrNodeType)nodeType).getChildNodeDefinition(childNodeName);
+            if (definition != null) return definition;
+        }
+        return null;
+    }
+
+    /**
      * {@inheritDoc}
      * 
      * @see javax.jcr.nodetype.NodeType#canAddChildNode(java.lang.String)
@@ -105,39 +158,25 @@ class JcrNodeType implements NodeType {
 
         CheckArg.isNotNull(childNodeName, "childNodeName");
 
-        JcrNodeDefinition residual = null;
-
         // First, try to find a child node definition with the given name
-        for (JcrNodeDefinition childNode : childNodeDefinitions) {
-            if (childNodeName.equals(childNode.getName())) {
-                NodeType defaultType = childNode.getDefaultPrimaryType();
-                // If there's no default type, the child node can't be created
-                if (defaultType == null) {
-                    return false;
-                }
+        JcrNodeDefinition childNode = getChildNodeDefinition(childNodeName);
 
-                // Check if the node can be added with the named child node definition
-                return checkTypeAgainstDefinition(defaultType, childNode);
-                // If we run into a residual (*) definition, save it just in case
-            } else if (childNode.name == null) {
-                residual = childNode;
+        // If there are no named definitions in the type hierarchy, try to find a residual node definition
+        if (childNode == null) {
+            childNode = getChildNodeDefinition(RESIDUAL_ITEM_NAME);
+        }
+
+        if (childNode != null) {
+            NodeType defaultType = childNode.getDefaultPrimaryType();
+            // If there's no default type, the child node can't be created
+            if (defaultType == null) {
+                return false;
             }
-        }
 
-        // If there's no matching child node definition for the name and no residual definition, the node cannot be added
-        if (residual == null) {
-            return false;
+            // Check if the node can be added with the named child node definition
+            return checkTypeAgainstDefinition(defaultType, childNode);
         }
-
-        NodeType defaultType = residual.getDefaultPrimaryType();
-
-        // If there's no default type, the child node can't be created
-        if (defaultType == null) {
-            return false;
-        }
-        
-        // Check if the node can be added with the default type of the residual child node definition
-        return checkTypeAgainstDefinition(defaultType, residual);
+        return false;
     }
 
     /**
@@ -159,24 +198,20 @@ class JcrNodeType implements NodeType {
             return false;
         }
 
-        JcrNodeDefinition residual = null;
-
         // First, try to find a child node definition with the given name
-        for (JcrNodeDefinition childNode : childNodeDefinitions) {
-            if (childNodeName.equals(childNode.getName())) {
-                return checkTypeAgainstDefinition(primaryNodeType, childNode);
-                // If we run into a residual (*) definition, save it just in case
-            } else if (childNode.name == null) {
-                residual = childNode;
-            }
+        JcrNodeDefinition childNode = getChildNodeDefinition(childNodeName);
+
+        // If there are no named definitions in the type hierarchy, try to find a residual node definition
+        if (childNode == null) {
+            childNode = getChildNodeDefinition(RESIDUAL_ITEM_NAME);
         }
 
-        // If there's no matching child node definition for the name and no residual definition, the node cannot be added
-        if (residual == null) {
-            return false;
+        // Check if the node can be added with the named child node definition
+        if (childNode != null) {
+            return checkTypeAgainstDefinition(primaryNodeType, childNode);
         }
 
-        return checkTypeAgainstDefinition(primaryNodeType, residual);
+        return false;
     }
 
     /**
@@ -209,6 +244,7 @@ class JcrNodeType implements NodeType {
     public boolean canRemoveItem( String itemName ) {
         CheckArg.isNotNull(itemName, "itemName");
 
+        // Don't know if item is a property or a node, so check both locally before moving up the type hierarchy
         for (PropertyDefinition item : propertyDefinitions) {
             if (itemName.equals(item.getName())) {
                 return !item.isMandatory() && !item.isProtected();
@@ -218,6 +254,13 @@ class JcrNodeType implements NodeType {
         for (NodeDefinition item : childNodeDefinitions) {
             if (itemName.equals(item.getName())) {
                 return !item.isMandatory() && !item.isProtected();
+            }
+        }
+
+        // Check if any supertypes prevent the removal of this item
+        for (NodeType type : declaredSupertypes) {
+            if (!type.canRemoveItem(itemName)) {
+                return false;
             }
         }
 
@@ -233,127 +276,117 @@ class JcrNodeType implements NodeType {
                                    Value value ) {
         CheckArg.isNotNull(propertyName, "propertyName");
 
-        JcrPropertyDefinition residual = null;
-
-        for (JcrPropertyDefinition property : propertyDefinitions) {
-            if (propertyName.equals(property.getName())) {
-                if (property.isMultiple()) {
-                    return false;
-                }
-
-                return canSetProperty(property, value);
-            } else if (property.name == null && !property.isMultiple()) {
-                residual = property;
-            }
+        JcrPropertyDefinition property = getPropertyDefinition(propertyName);
+        if (property == null) {
+            property = getPropertyDefinition(RESIDUAL_ITEM_NAME);
         }
 
-        return canSetProperty(residual, value);
+        if (property == null) {
+            return false;
+        }
+
+        // Can't modify a multi-property with a single value. Can't modify a protected property at all.
+        if (property.isMultiple() || property.isProtected()) {
+            return false;
+        }
+
+        // Null values indicates an attempt to unset property
+        if (value == null) {
+            return !property.isMandatory();
+        }
+
+        return canCastValueToType(value, property.getRequiredType());
     }
 
     /**
-     * Internal method to validate that a value can be set on a given property. The values are set according to the following
-     * rules:
+     * Internal method to validate that a value can be cast to a given JCR property type. The values are set according to the
+     * following rules:
      * <ol>
-     * <li>If <code>value</code> is <code>null</code>, return the value of {@link JcrNodeType#canRemoveItem(String)}</li>
-     * <li>If <code>property.isProtected()</code> is <code>true</code>, return <code>false</code></li>
      * <li>If <code>property.getRequiredType()</code> is {@link PropertyType#UNDEFINED}, return <code>true</code></li>
      * <li>Compare the type of the given value to the required type and see if they are compatible based on the rules in the JCR
      * 1.0 spec.</li>
      * </ol>
      * 
-     * @param property the property to be set
-     * @param value the value to set (may be <code>null</code>)
-     * @return whether the property can be set to the value based on the described rules
+     * @param jcrPropertyType a value from the {@link PropertyType} constants to which this value MAY be able to be casted.
+     * @param value the value to set (may not be <code>null</code>)
+     * @return whether the value can be cast to the given property type
      */
-    private boolean canSetProperty( JcrPropertyDefinition property,
-                                    Value value ) {
-        assert property != null;
-
-        if (value == null) {
-            return !property.isProtected() && !property.isMandatory();
-        }
-
-        if (property.isProtected()) {
-            return false;
-        }
+    private boolean canCastValueToType( Value value,
+                                        int jcrPropertyType ) {
+        assert value != null;
 
         int valueType = value.getType();
 
-        switch (property.getRequiredType()) {
-            case PropertyType.BINARY:
-                return true;
-            case PropertyType.BOOLEAN:
-                if (valueType == PropertyType.BOOLEAN || valueType == PropertyType.STRING) {
-                    return true;
-                }
+        // Trivial case - no cast required
+        if (valueType == jcrPropertyType) {
+            return true;
+        }
 
-                // If the binary can be converted to a UTF-8 string, it can be set onto a boolean property
-                if (valueType == PropertyType.BINARY) {
-                    try {
+        try {
+            switch (jcrPropertyType) {
+                case PropertyType.BOOLEAN:
+                    if (valueType == PropertyType.STRING) {
+                        return true;
+                    }
+
+                    if (valueType == PropertyType.BINARY) {
+                        // If the binary can be converted to a UTF-8 string, it can be set onto a boolean property
                         value.getString();
                         return true;
-                    } catch (RepositoryException re) {
-                        return false;
                     }
-                }
-                return false;
+                    return false;
 
-            case PropertyType.DATE:
-                if (valueType == PropertyType.DATE || valueType == PropertyType.DOUBLE || valueType == PropertyType.LONG) {
-                    return true;
-                }
+                case PropertyType.DATE:
+                    if (valueType == PropertyType.DOUBLE || valueType == PropertyType.LONG) {
+                        return true;
+                    }
 
-                if (valueType == PropertyType.STRING || valueType == PropertyType.BINARY) {
-                    try {
+                    if (valueType == PropertyType.STRING || valueType == PropertyType.BINARY) {
+                        // If the binary can be converted to a date, it can be set onto a date property
                         value.getDate();
                         return true;
-                    } catch (RepositoryException re) {
-                        return false;
                     }
-                }
-                return false;
+                    return false;
 
-            case PropertyType.DOUBLE:
-                return value.getType() == PropertyType.DOUBLE;
-            case PropertyType.LONG:
-                return value.getType() == PropertyType.LONG;
-            case PropertyType.NAME:
-                if (value.getType() == PropertyType.NAME) {
-                    return true;
-                }
-
-                try {
+                case PropertyType.NAME:
+                    ValueFactories valueFactories = session.getExecutionContext().getValueFactories();
                     if (valueType == PropertyType.STRING || valueType == PropertyType.BINARY) {
-                        session.getExecutionContext().getValueFactories().getNameFactory().create(value.getString());
+                        valueFactories.getNameFactory().create(value.getString());
                         return true;
                     }
 
                     if (valueType == PropertyType.PATH) {
-                        Path path = session.getExecutionContext().getValueFactories().getPathFactory().create(value.getString());
+                        Path path = valueFactories.getPathFactory().create(value.getString());
 
                         Segment[] segments = path.getSegmentsArray();
                         return !path.isAbsolute() && segments.length == 1 && !segments[0].hasIndex();
                     }
-                } catch (ValueFormatException re) {
+
                     return false;
-                } catch (RepositoryException re) {
+
+                case PropertyType.PATH:
+                    return value.getType() == PropertyType.STRING;
+
+                    // Nothing can be converted to these types (except themselves)
+                case PropertyType.REFERENCE:
+                case PropertyType.DOUBLE:
+                case PropertyType.LONG:
                     return false;
-                }
 
-                return false;
-
-            case PropertyType.PATH:
-                return value.getType() == PropertyType.PATH || value.getType() == PropertyType.STRING;
-            case PropertyType.REFERENCE:
-                return value.getType() == PropertyType.REFERENCE;
-
-                // Anything can be converted to these types
-            case PropertyType.STRING:
-            case PropertyType.UNDEFINED:
-                return true;
-            default:
-                throw new IllegalStateException("Invalid required property type " + property.getRequiredType() + " for property "
-                                                + property.getName());
+                    // Anything can be converted to these types
+                case PropertyType.BINARY:
+                case PropertyType.STRING:
+                case PropertyType.UNDEFINED:
+                    return true;
+                default:
+                    assert false : "Unexpected JCR property type " + jcrPropertyType;
+                    // This should still throw an exception even if assertions are turned off
+                    throw new IllegalStateException("Invalid property type " + jcrPropertyType);
+            }
+        } catch (RepositoryException re) {
+            return false;
+        } catch (ValueFormatException vfe) {
+            return false;
         }
     }
 
@@ -366,49 +399,33 @@ class JcrNodeType implements NodeType {
                                    Value[] values ) {
         CheckArg.isNotNull(propertyName, "propertyName");
 
-        JcrPropertyDefinition residual = null;
+        JcrPropertyDefinition property = getPropertyDefinition(propertyName);
+        if (property == null) {
+            property = getPropertyDefinition(RESIDUAL_ITEM_NAME);
+        }
 
-        for (JcrPropertyDefinition property : propertyDefinitions) {
-            if (propertyName.equals(property.getName())) {
-                if (!property.isMultiple()) {
+        if (property == null) {
+            return false;
+        }
+
+        // Can't modify a single valued property with a multiple values. Can't modify a protected property at all.
+        if (!property.isMultiple() || property.isProtected()) {
+            return false;
+        }
+
+        // Null values indicates an attempt to unset property
+        if (values == null) {
+            return !property.isMandatory();
+        }
+
+        for (int i = 0; i < values.length; i++) {
+            if (values[i] != null) {
+                if (!canCastValueToType(values[i], property.getRequiredType())) {
                     return false;
                 }
-
-                return canSetProperty(property, values);
-            } else if (property.name == null && property.isMultiple()) {
-                residual = property;
             }
         }
-
-        return canSetProperty(residual, values);
-    }
-
-    /**
-     * Internal method to validate that an array of values can be set on a given property. This method returns <code>true</code>
-     * if the following algorithm would return <code>true</code> when applied to each non-null value in <code>values</code>:
-     * <ol>
-     * <li>If the value is null, return the value of {@link JcrNodeType#canRemoveItem(String)}</li>
-     * <li>If the property definition has a no required type ({@link PropertyType#UNDEFINED}), return <code>true</code></li>
-     * <li>Compare the type of the given value to the required type and see if they are compatible</li>
-     * </ol>
-     * 
-     * @param property the property to be set
-     * @param values the array of values to set (may be <code>null</code>)
-     * @return whether the property can be set to the value based on the described rules
-     */
-    private boolean canSetProperty( JcrPropertyDefinition property,
-                                    Value[] values ) {
-        if (values != null) {
-            for (int i = 0; i < values.length; i++) {
-                if (values[i] != null) {
-                    if (!canSetProperty(property, values[i])) {
-                        return false;
-                    }
-                }
-            }
-        }
-
-        return !property.isProtected();
+        return true;
     }
 
     /**
