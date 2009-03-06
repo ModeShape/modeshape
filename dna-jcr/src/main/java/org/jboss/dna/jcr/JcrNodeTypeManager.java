@@ -134,8 +134,7 @@ class JcrNodeTypeManager implements NodeTypeManager {
      * @throws NoSuchNodeTypeException
      */
     JcrNodeDefinition getRootNodeDefinition() throws NoSuchNodeTypeException, RepositoryException {
-        // TODO: Fix this
-        for (NodeDefinition definition : getNodeType("nt:unstructured").getChildNodeDefinitions()) {
+        for (NodeDefinition definition : getNodeType(DnaLexicon.ROOT).getChildNodeDefinitions()) {
             if (definition.getName().equals(JcrNodeType.RESIDUAL_ITEM_NAME)) return (JcrNodeDefinition)definition;
         }
         assert false; // should not get here

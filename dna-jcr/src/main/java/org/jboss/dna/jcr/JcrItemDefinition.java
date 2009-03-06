@@ -29,8 +29,8 @@ import net.jcip.annotations.Immutable;
 import org.jboss.dna.graph.property.Name;
 
 /**
- * DNA implementation of the {@link ItemDefinition} interface.  This implementation is immutable and has all fields initialized
- * through its constructor. 
+ * DNA implementation of the {@link ItemDefinition} interface. This implementation is immutable and has all fields initialized
+ * through its constructor.
  */
 @Immutable
 class JcrItemDefinition implements ItemDefinition {
@@ -77,7 +77,7 @@ class JcrItemDefinition implements ItemDefinition {
      */
     public String getName() {
         if (name == null) {
-            return "*";
+            return JcrNodeType.RESIDUAL_ITEM_NAME;
         }
 
         return name.getString(session.getExecutionContext().getNamespaceRegistry());

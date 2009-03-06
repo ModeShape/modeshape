@@ -63,6 +63,7 @@ class JcrLexicon extends org.jboss.dna.graph.JcrLexicon {
     public static final Name PROTECTED = new BasicName(Namespace.URI, "protected");
     public static final Name REQUIRED_PRIMARY_TYPES = new BasicName(Namespace.URI, "requiredPrimaryTypes");
     public static final Name REQUIRED_TYPE = new BasicName(Namespace.URI, "requiredType");
+    public static final Name ROOT = new BasicName(Namespace.URI, "root");
     public static final Name ROOT_VERSION = new BasicName(Namespace.URI, "rootVersion");
     public static final Name SAME_NAME_SIBLINGS = new BasicName(Namespace.URI, "sameNameSiblings");
     public static final Name STATEMENT = new BasicName(Namespace.URI, "statement");
@@ -73,5 +74,7 @@ class JcrLexicon extends org.jboss.dna.graph.JcrLexicon {
     public static final Name VERSIONABLE_UUID = new BasicName(Namespace.URI, "versionableUuid");
     public static final Name VERSION_HISTORY = new BasicName(Namespace.URI, "versionHistory");
     public static final Name VERSION_LABELS = new BasicName(Namespace.URI, "versionLabels");
+    public static final Name XMLTEXT = new BasicName(Namespace.URI, "xmltext");
+    public static final Name XMLCHARACTERS = new BasicName(Namespace.URI, "xmlcharacters");
 
 }
