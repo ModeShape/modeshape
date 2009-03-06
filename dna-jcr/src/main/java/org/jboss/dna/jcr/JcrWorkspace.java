@@ -25,10 +25,6 @@ package org.jboss.dna.jcr;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import javax.jcr.AccessDeniedException;
@@ -41,9 +37,6 @@ import javax.jcr.Session;
 import javax.jcr.Workspace;
 import javax.jcr.lock.LockException;
 import javax.jcr.nodetype.ConstraintViolationException;
-import javax.jcr.nodetype.NoSuchNodeTypeException;
-import javax.jcr.nodetype.NodeType;
-import javax.jcr.nodetype.NodeTypeIterator;
 import javax.jcr.nodetype.NodeTypeManager;
 import javax.jcr.observation.ObservationManager;
 import javax.jcr.query.QueryManager;
@@ -111,14 +104,13 @@ final class JcrWorkspace implements Workspace {
     /**
      * Reference to the JCR type manager for this workspace.
      */
-    private final NodeTypeManager nodeTypeManager;
+    private final JcrNodeTypeManager nodeTypeManager;
 
     /**
      * The {@link Session} instance that this corresponds with this workspace.
      */
     private final JcrSession session;
 
-    @SuppressWarnings( "synthetic-access" )
     JcrWorkspace( JcrRepository repository,
                   String workspaceName,
                   ExecutionContext context,
@@ -156,26 +148,31 @@ final class JcrWorkspace implements Workspace {
         this.session = new JcrSession(this.repository, this, this.context, sessionAttributes);
 
         // This must be initialized after the session
-        this.nodeTypeManager = new JcrNodeTypeManager(new DnaBuiltinNodeTypeSource(this.session,
+        this.nodeTypeManager = new JcrNodeTypeManager(this.session,
+                                                      new DnaBuiltinNodeTypeSource(this.session,
                                                                                    new JcrBuiltinNodeTypeSource(this.session)));
 
     }
 
-    String getSourceName() {
+    final String getSourceName() {
         return this.repository.getRepositorySourceName();
+    }
+
+    final JcrNodeTypeManager nodeTypeManager() {
+        return this.nodeTypeManager;
     }
 
     /**
      * {@inheritDoc}
      */
-    public String getName() {
+    public final String getName() {
         return name;
     }
 
     /**
      * {@inheritDoc}
      */
-    public Session getSession() {
+    public final Session getSession() {
         return this.session;
     }
 
@@ -184,7 +181,7 @@ final class JcrWorkspace implements Workspace {
      * 
      * @see javax.jcr.Workspace#getNamespaceRegistry()
      */
-    public NamespaceRegistry getNamespaceRegistry() {
+    public final NamespaceRegistry getNamespaceRegistry() {
         return workspaceRegistry;
     }
 
@@ -203,21 +200,21 @@ final class JcrWorkspace implements Workspace {
     /**
      * {@inheritDoc}
      */
-    public NodeTypeManager getNodeTypeManager() {
+    public final NodeTypeManager getNodeTypeManager() {
         return nodeTypeManager;
     }
 
     /**
      * {@inheritDoc}
      */
-    public ObservationManager getObservationManager() {
+    public final ObservationManager getObservationManager() {
         throw new UnsupportedOperationException();
     }
 
     /**
      * {@inheritDoc}
      */
-    public QueryManager getQueryManager() {
+    public final QueryManager getQueryManager() {
         throw new UnsupportedOperationException();
     }
 
@@ -348,97 +345,6 @@ final class JcrWorkspace implements Workspace {
     public void restore( Version[] versions,
                          boolean removeExisting ) {
         throw new UnsupportedOperationException();
-    }
-
-    /**
-     * Local implementation of @{link NodeTypeManager}. Initialized with {@link NodeType} source data when it is created (in the
-     * {@link JcrWorkspace} constructor.
-     */
-    @NotThreadSafe
-    private class JcrNodeTypeManager implements NodeTypeManager {
-
-        private final Map<Name, JcrNodeType> primaryNodeTypes;
-        private final Map<Name, JcrNodeType> mixinNodeTypes;
-
-        private JcrNodeTypeManager( JcrNodeTypeSource source ) {
-            Collection<JcrNodeType> primary = source.getPrimaryNodeTypes();
-            Collection<JcrNodeType> mixins = source.getMixinNodeTypes();
-
-            primaryNodeTypes = new HashMap<Name, JcrNodeType>(primary.size());
-            for (JcrNodeType nodeType : primary) {
-                primaryNodeTypes.put(nodeType.getInternalName(), nodeType);
-            }
-
-            mixinNodeTypes = new HashMap<Name, JcrNodeType>(mixins.size());
-            for (JcrNodeType nodeType : mixins) {
-                mixinNodeTypes.put(nodeType.getInternalName(), nodeType);
-            }
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see javax.jcr.nodetype.NodeTypeManager#getAllNodeTypes()
-         */
-        public NodeTypeIterator getAllNodeTypes() {
-
-            // TODO: Can revisit this approach later if it becomes a performance issue
-            /*
-             * Note also that this creates a subtle difference in behavior for concurrent modification
-             * between this method and the specific get*NodeTypes methods.  That is, if a type is added
-             * while an iterator from the corresponding specific get*NodeType method is being traversed,
-             * a ConcurrentModificationException will be thrown.  Because this iterator is based on a copy
-             * of the underlying maps, no exception would be thrown in the same case.
-             */
-
-            List<NodeType> allTypes = new ArrayList<NodeType>(primaryNodeTypes.size() + mixinNodeTypes.size());
-            allTypes.addAll(primaryNodeTypes.values());
-            allTypes.addAll(mixinNodeTypes.values());
-            return new JcrNodeTypeIterator(allTypes);
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see javax.jcr.nodetype.NodeTypeManager#getMixinNodeTypes()
-         */
-        public NodeTypeIterator getMixinNodeTypes() {
-            return new JcrNodeTypeIterator(mixinNodeTypes.values());
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see javax.jcr.nodetype.NodeTypeManager#getNodeType(java.lang.String)
-         */
-        @SuppressWarnings( "synthetic-access" )
-        public NodeType getNodeType( String nodeTypeName ) throws NoSuchNodeTypeException, RepositoryException {
-            Name ntName = session.getExecutionContext().getValueFactories().getNameFactory().create(nodeTypeName);
-
-            NodeType nodeType = primaryNodeTypes.get(ntName);
-
-            if (nodeType != null) {
-                return nodeType;
-            }
-
-            nodeType = mixinNodeTypes.get(ntName);
-
-            if (nodeType != null) {
-                return nodeType;
-            }
-
-            throw new NoSuchNodeTypeException(JcrI18n.typeNotFound.text(nodeTypeName));
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see javax.jcr.nodetype.NodeTypeManager#getPrimaryNodeTypes()
-         */
-        public NodeTypeIterator getPrimaryNodeTypes() {
-            return new JcrNodeTypeIterator(primaryNodeTypes.values());
-        }
-
     }
 
 }

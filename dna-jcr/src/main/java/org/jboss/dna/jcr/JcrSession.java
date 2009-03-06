@@ -51,6 +51,7 @@ import javax.jcr.SimpleCredentials;
 import javax.jcr.Value;
 import javax.jcr.ValueFactory;
 import javax.jcr.Workspace;
+import javax.jcr.nodetype.NodeDefinition;
 import javax.jcr.nodetype.NodeType;
 import javax.jcr.nodetype.NodeTypeManager;
 import javax.jcr.nodetype.PropertyDefinition;
@@ -59,9 +60,10 @@ import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
 import net.jcip.annotations.NotThreadSafe;
 import org.jboss.dna.common.util.CheckArg;
-import org.jboss.dna.graph.DnaLexicon;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.Graph;
+import org.jboss.dna.graph.Location;
+import org.jboss.dna.graph.connector.RepositorySourceException;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.NameFactory;
 import org.jboss.dna.graph.property.NamespaceRegistry;
@@ -123,8 +125,9 @@ class JcrSession implements Session {
     private final ReferenceMap<UUID, Node> nodesByUuid;
     private final ReferenceMap<String, Node> nodesByJcrUuid;
     private boolean isLive;
-    private JcrRootNode rootNode;
+    private AbstractJcrNode rootNode;
     private PropertyDefinition anyMultiplePropertyDefinition;
+    private transient org.jboss.dna.graph.property.Property defaultPrimaryType;
 
     JcrSession( JcrRepository repository,
                 JcrWorkspace workspace,
@@ -163,6 +166,14 @@ class JcrSession implements Session {
 
     ExecutionContext getExecutionContext() {
         return this.executionContext;
+    }
+
+    final JcrNodeTypeManager nodeTypeManager() {
+        return this.workspace.nodeTypeManager();
+    }
+
+    final NamespaceRegistry namespaces() {
+        return this.executionContext.getNamespaceRegistry();
     }
 
     /**
@@ -369,7 +380,7 @@ class JcrSession implements Session {
             Path parentPath = path.getParent();
             Name propertyName = path.getLastSegment().getName();
             try {
-                return getNode(parentPath).getProperty(propertyName.getString(executionContext.getNamespaceRegistry()));
+                return getNode(parentPath).getProperty(propertyName.getString(namespaces()));
             } catch (org.jboss.dna.graph.property.PathNotFoundException e2) {
                 // If the node isn't found, throw a PathNotFoundException
                 throw new PathNotFoundException(JcrI18n.pathNotFound.text(path));
@@ -387,25 +398,138 @@ class JcrSession implements Session {
         throw new UnsupportedOperationException();
     }
 
+    /**
+     * Find or create a JCR Node for the given path. This method works for the root node, too.
+     * 
+     * @param path the path; may not be null
+     * @return the JCR node instance for the given path; never null
+     * @throws RepositoryException if there is a problem
+     */
     private Node getNode( Path path ) throws RepositoryException {
-        // Get node from source
+        boolean isRoot = path.isRoot();
+        if (isRoot && rootNode != null) return rootNode;
+
+        // Get node from source and get it's UUID ...
         org.jboss.dna.graph.Node graphNode = graph.getNodeAt(path);
-        // First check if node already exists. We don't need to check for changes since that will be handled by an observer
-        org.jboss.dna.graph.property.Property dnaUuidProp = graphNode.getPropertiesByName().get(JcrLexicon.UUID);
-        if (dnaUuidProp == null) dnaUuidProp = graphNode.getPropertiesByName().get(DnaLexicon.UUID);
-        if (dnaUuidProp != null) {
-            UUID uuid = executionContext.getValueFactories().getUuidFactory().create(dnaUuidProp.getValues()).next();
-            Node node = getNode(uuid);
-            if (node != null) {
-                return node;
+
+        // Now get the DNA node's UUID ...
+        Location location = graphNode.getLocation();
+        ValueFactories factories = executionContext.getValueFactories();
+        UUID uuid = location.getUuid();
+        org.jboss.dna.graph.property.Property uuidProperty = null;
+        if (uuid != null) {
+            // Considered an identification property ...
+            uuidProperty = location.getIdProperty(JcrLexicon.UUID);
+            if (uuidProperty == null) uuidProperty = location.getIdProperty(DnaLexicon.UUID);
+        }
+        if (uuidProperty == null) {
+            uuidProperty = graphNode.getProperty(JcrLexicon.UUID);
+            if (uuidProperty != null) {
+                // Grab the first 'good' UUID value ...
+                for (Object uuidValue : uuidProperty) {
+                    try {
+                        uuid = factories.getUuidFactory().create(uuidValue);
+                        break;
+                    } catch (ValueFormatException e) {
+                        // Ignore; just continue with the next property value
+                    }
+                }
+            }
+            if (uuid == null) {
+                // Look for the DNA UUID property ...
+                org.jboss.dna.graph.property.Property dnaUuidProperty = graphNode.getProperty(DnaLexicon.UUID);
+                if (dnaUuidProperty != null) {
+                    // Grab the first 'good' UUID value ...
+                    for (Object uuidValue : dnaUuidProperty) {
+                        try {
+                            uuid = factories.getUuidFactory().create(uuidValue);
+                            break;
+                        } catch (ValueFormatException e) {
+                            // Ignore; just continue with the next property value
+                        }
+                    }
+                }
             }
         }
-        // If not create a new one & populate it
-        JcrNode node;
-        Path parentPath = path.getParent();
-        if (parentPath.isRoot()) node = new JcrNode(this, ((JcrRootNode)getRootNode()).internalUuid(), path.getLastSegment());
-        else node = new JcrNode(this, ((JcrNode)getNode(parentPath)).internalUuid(), path.getLastSegment());
-        populateNode(node, graphNode);
+        if (uuid == null) uuid = UUID.randomUUID();
+        if (uuidProperty == null) uuidProperty = executionContext.getPropertyFactory().create(JcrLexicon.UUID, uuid);
+
+        // See if there is already a JCR node object for this UUID ...
+        if (uuid != null && !isRoot) {
+            Node node = getNode(uuid);
+            if (node != null) return node;
+        }
+
+        // Either the UUID is not known, or there was no node. Either way, we have to create the node ...
+        if (uuid == null) uuid = UUID.randomUUID();
+
+        // Look for the primary type of the node ...
+        String primaryTypeNameString = null;
+        NamespaceRegistry namespaces = namespaces();
+        org.jboss.dna.graph.property.Property primaryTypeProperty = graphNode.getProperty(JcrLexicon.PRIMARY_TYPE);
+        if (primaryTypeProperty != null && !primaryTypeProperty.isEmpty()) {
+            Name primaryTypeName = factories.getNameFactory().create(primaryTypeProperty.getFirstValue());
+            primaryTypeNameString = primaryTypeName.getString(namespaces);
+        } else {
+            // We have to have a primary type, so use the default ...
+            if (defaultPrimaryType == null) {
+                defaultPrimaryType = executionContext.getPropertyFactory().create(JcrLexicon.PRIMARY_TYPE,
+                                                                                  JcrNtLexicon.UNSTRUCTURED);
+            }
+            primaryTypeProperty = defaultPrimaryType;
+            // We have to add this property to the graph node...
+            graphNode.getPropertiesByName().put(primaryTypeProperty.getName(), primaryTypeProperty);
+        }
+        assert primaryTypeProperty.isEmpty() == false;
+
+        // Look for a node definition stored on the node ...
+        NodeDefinition definition = null;
+        org.jboss.dna.graph.property.Property nodeDefnProperty = graphNode.getProperty(DnaLexicon.NODE_DEFINITON);
+        if (nodeDefnProperty != null && !nodeDefnProperty.isEmpty()) {
+            Path nodeDefnPath = factories.getPathFactory().create(nodeDefnProperty.getFirstValue());
+            // Look up the node definition ...
+            Name nodeTypeName = nodeDefnPath.getSegment(0).getName();
+            JcrNodeType nodeType = nodeTypeManager().getNodeType(nodeTypeName);
+            if (nodeType != null && nodeDefnPath.size() > 1) {
+                // Look up the definition for the child name rule (in the second segment of the relative path) ...
+                String childNameRule = nodeDefnPath.getSegment(1).getString(namespaces);
+                definition = nodeType.findBestNodeDefinitionForChild(childNameRule, primaryTypeNameString);
+            }
+        }
+
+        AbstractJcrNode node = null;
+        if (isRoot) {
+            // The node definition should be set ...
+            if (definition == null) {
+                definition = nodeTypeManager().getRootNodeDefinition();
+                assert definition != null;
+            }
+
+            // Create the new node ...
+            node = new JcrRootNode(this, definition);
+        } else {
+            // Find the parent ...
+            AbstractJcrNode parent = (AbstractJcrNode)getNode(path.getParent());
+
+            // Find the node definition for this node ...
+            if (definition == null) {
+                // Look for the parent's node type, and look for a node definition based upon the name ...
+                JcrNodeType nodeType = (JcrNodeType)parent.getPrimaryNodeType();
+                String childName = path.getLastSegment().getName().getString(namespaces);
+                definition = nodeType.findBestNodeDefinitionForChild(childName, primaryTypeNameString);
+                if (definition == null) {
+                    String msg = JcrI18n.nodeDefinitionCouldBeDeterminedForNode.text(path, workspace.getName());
+                    throw new RepositorySourceException(msg);
+                }
+            }
+
+            // Now create the node object ...
+            node = new JcrNode(this, parent.internalUuid(), path.getLastSegment(), definition);
+        }
+
+        // Now populate the node and add to the cache ...
+        populateNode(node, graphNode, uuid, uuidProperty, primaryTypeProperty);
+        if (isRoot) rootNode = node;
         return node;
     }
 
@@ -443,21 +567,7 @@ class JcrSession implements Session {
         if (rootNode != null) {
             return rootNode;
         }
-        // Get root node from source
-        assert executionContext.getValueFactories() != null;
-        assert executionContext.getValueFactories().getPathFactory() != null;
-        rootNode = new JcrRootNode(this);
-
-        // Get root node from source
-        Path rootPath = executionContext.getValueFactories().getPathFactory().createRootPath();
-        org.jboss.dna.graph.Node dnaRootNode = graph.getNodeAt(rootPath);
-        if (dnaRootNode.getProperty(JcrLexicon.PRIMARY_TYPE) == null) {
-            // Add the primary type and update the source ...
-            graph.set(JcrLexicon.PRIMARY_TYPE).to(JcrNtLexicon.BASE).on(rootPath);
-            dnaRootNode = graph.getNodeAt(rootPath);
-        }
-        populateNode(rootNode, dnaRootNode);
-        return rootNode;
+        return getNode(executionContext.getValueFactories().getPathFactory().createRootPath());
     }
 
     /**
@@ -653,10 +763,16 @@ class JcrSession implements Session {
         return PropertyType.UNDEFINED;
     }
 
-    private void populateNode( AbstractJcrNode node,
-                               org.jboss.dna.graph.Node graphNode ) throws RepositoryException {
+    final void populateNode( AbstractJcrNode node,
+                             org.jboss.dna.graph.Node graphNode,
+                             UUID uuid,
+                             org.jboss.dna.graph.property.Property uuidProperty,
+                             org.jboss.dna.graph.property.Property primaryTypeProperty ) throws RepositoryException {
         assert node != null;
         assert graphNode != null;
+        assert uuid != null;
+        assert uuidProperty != null;
+        assert primaryTypeProperty != null;
 
         // --------------------------------------------------
         // Create JCR children for corresponding DNA children
@@ -670,35 +786,34 @@ class JcrSession implements Session {
         Map<Name, PropertyDefinition> propertyDefinitionsByPropertyName = new HashMap<Name, PropertyDefinition>();
         boolean referenceable = false;
 
-        NamespaceRegistry registry = executionContext.getNamespaceRegistry();
+        NamespaceRegistry registry = namespaces();
         ValueFactories factories = executionContext.getValueFactories();
         NameFactory nameFactory = factories.getNameFactory();
         NodeTypeManager nodeTypeManager = getWorkspace().getNodeTypeManager();
         List<PropertyDefinition> anyPropertyDefinitions = new LinkedList<PropertyDefinition>();
-        org.jboss.dna.graph.property.Property primaryTypeProperty = graphNode.getProperty(JcrLexicon.PRIMARY_TYPE);
-        if (primaryTypeProperty != null && !primaryTypeProperty.isEmpty()) {
-            Name primaryTypeName = nameFactory.create(primaryTypeProperty.getFirstValue());
-            String primaryTypeNameString = primaryTypeName.getString(registry);
-            NodeType primaryType = nodeTypeManager.getNodeType(primaryTypeNameString);
-            for (PropertyDefinition propertyDefn : primaryType.getPropertyDefinitions()) {
-                String nameString = propertyDefn.getName();
-                if ("*".equals(nameString)) {
-                    anyPropertyDefinitions.add(propertyDefn);
-                    continue;
-                }
-                Name name = nameFactory.create(nameString);
-                PropertyDefinition prev = propertyDefinitionsByPropertyName.put(name, propertyDefn);
-                if (prev != null) propertyDefinitionsByPropertyName.put(name, prev); // put the first one back ...
+        // Start with the primary type ...
+        Name primaryTypeName = nameFactory.create(primaryTypeProperty.getFirstValue());
+        String primaryTypeNameString = primaryTypeName.getString(registry);
+        NodeType primaryType = nodeTypeManager.getNodeType(primaryTypeNameString);
+        for (PropertyDefinition propertyDefn : primaryType.getPropertyDefinitions()) {
+            String nameString = propertyDefn.getName();
+            if ("*".equals(nameString)) {
+                anyPropertyDefinitions.add(propertyDefn);
+                continue;
             }
+            Name name = nameFactory.create(nameString);
+            PropertyDefinition prev = propertyDefinitionsByPropertyName.put(name, propertyDefn);
+            if (prev != null) propertyDefinitionsByPropertyName.put(name, prev); // put the first one back ...
         }
+        // The process the mixin types ...
         org.jboss.dna.graph.property.Property mixinTypesProperty = graphNode.getProperty(JcrLexicon.MIXIN_TYPES);
         if (mixinTypesProperty != null && !mixinTypesProperty.isEmpty()) {
             for (Object mixinTypeValue : mixinTypesProperty) {
                 Name mixinTypeName = nameFactory.create(mixinTypeValue);
                 if (!referenceable && JcrMixLexicon.REFERENCEABLE.equals(mixinTypeName)) referenceable = true;
                 String mixinTypeNameString = mixinTypeName.getString(registry);
-                NodeType primaryType = nodeTypeManager.getNodeType(mixinTypeNameString);
-                for (PropertyDefinition propertyDefn : primaryType.getPropertyDefinitions()) {
+                NodeType mixinType = nodeTypeManager.getNodeType(mixinTypeNameString);
+                for (PropertyDefinition propertyDefn : mixinType.getPropertyDefinitions()) {
                     String nameString = propertyDefn.getName();
                     if ("*".equals(nameString)) {
                         anyPropertyDefinitions.add(propertyDefn);
@@ -711,45 +826,9 @@ class JcrSession implements Session {
             }
         }
 
-        // Look for the UUID property ...
-        UUID uuid = null;
-        org.jboss.dna.graph.property.Property uuidProperty = graphNode.getProperty(JcrLexicon.UUID);
-        Name jcrUuidPropertyName = null;
-        Name dnaUuidPropertyName = null;
-        if (uuidProperty != null) {
-            jcrUuidPropertyName = uuidProperty.getName();
-            // Grab the first 'good' UUID value ...
-            for (Object uuidValue : uuidProperty) {
-                try {
-                    uuid = factories.getUuidFactory().create(uuidValue);
-                    break;
-                } catch (ValueFormatException e) {
-                    // Ignore; just continue with the next property value
-                }
-            }
-        }
-        if (uuid == null) {
-            // Look for the DNA UUID property ...
-            org.jboss.dna.graph.property.Property dnaUuidProperty = graphNode.getProperty(DnaLexicon.UUID);
-            if (dnaUuidProperty != null) {
-                dnaUuidPropertyName = dnaUuidProperty.getName();
-                // Grab the first 'good' UUID value ...
-                for (Object uuidValue : dnaUuidProperty) {
-                    try {
-                        uuid = factories.getUuidFactory().create(uuidValue);
-                        break;
-                    } catch (ValueFormatException e) {
-                        // Ignore; just continue with the next property value
-                    }
-                }
-            }
-        }
-
         // Now create the JCR property object wrapper around the "jcr:uuid" property ...
         Map<Name, Property> properties = new HashMap<Name, Property>();
-        if (uuid == null) uuid = UUID.randomUUID();
         if (referenceable) {
-            if (uuidProperty == null) uuidProperty = executionContext.getPropertyFactory().create(JcrLexicon.UUID, uuid);
             PropertyDefinition propertyDefinition = propertyDefinitionsByPropertyName.get(JcrLexicon.UUID);
             properties.put(JcrLexicon.UUID, new JcrSingleValueProperty(node, executionContext, propertyDefinition,
                                                                        PropertyType.STRING, uuidProperty));
@@ -760,7 +839,7 @@ class JcrSession implements Session {
             Name name = dnaProp.getName();
 
             // Skip the JCR and DNA UUID properties (using the EXACT Name instances on the Property) ...
-            if (name == jcrUuidPropertyName || name == dnaUuidPropertyName) continue;
+            if (JcrLexicon.UUID.equals(name) || DnaLexicon.UUID.equals(name)) continue;
 
             // Figure out the JCR property type for this property ...
             PropertyDefinition propertyDefinition = propertyDefinitionsByPropertyName.get(name);
@@ -824,10 +903,6 @@ class JcrSession implements Session {
             } else {
                 properties.put(name, new JcrSingleValueProperty(node, executionContext, propertyDefinition, type, dnaProp));
             }
-        }
-
-        if (referenceable) {
-            assert uuidProperty != null;
         }
 
         // Now set the properties on the node ...

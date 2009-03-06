@@ -150,6 +150,33 @@ class JcrNodeType implements NodeType {
     }
 
     /**
+     * Determine the best (most specific) {@link NodeDefinition} for a child with the supplied name and primary type. If the
+     * primary type is not supplied, then only the name is considered when finding a best match.
+     * 
+     * @param childName the name of the child
+     * @param primaryNodeTypeName the name of the primary node type for the child
+     * @return the {@link NodeDefinition} that best matches the child, or null if a child with the supplied name and primary type
+     *         are not allowed given this node type
+     */
+    JcrNodeDefinition findBestNodeDefinitionForChild( String childName,
+                                                      String primaryNodeTypeName ) {
+        // First, try to find a child node definition with the given name
+        JcrNodeDefinition childNode = getChildNodeDefinition(childName);
+
+        // If there are no named definitions in the type hierarchy, try to find a residual node definition
+        if (childNode == null) {
+            childNode = getChildNodeDefinition(RESIDUAL_ITEM_NAME);
+        }
+
+        // Check if the node can be added with the named child node definition
+        if (childNode != null && primaryNodeTypeName != null) {
+            NodeType primaryNodeType = getPrimaryNodeType(primaryNodeTypeName);
+            if (!checkTypeAgainstDefinition(primaryNodeType, childNode)) return null;
+        }
+        return childNode;
+    }
+
+    /**
      * {@inheritDoc}
      * 
      * @see javax.jcr.nodetype.NodeType#canAddChildNode(java.lang.String)
@@ -179,6 +206,15 @@ class JcrNodeType implements NodeType {
         return false;
     }
 
+    protected final NodeType getPrimaryNodeType( String primaryNodeTypeName ) {
+        try {
+            return session.getWorkspace().getNodeTypeManager().getNodeType(primaryNodeTypeName);
+        } catch (RepositoryException re) {
+            // If the node type doesn't exist, you can't add a child node with that type
+            return null;
+        }
+    }
+
     /**
      * {@inheritDoc}
      * 
@@ -190,11 +226,9 @@ class JcrNodeType implements NodeType {
         CheckArg.isNotNull(childNodeName, "childNodeName");
         CheckArg.isNotNull(primaryNodeTypeName, "primaryNodeTypeName");
 
-        NodeType primaryNodeType;
-        try {
-            primaryNodeType = session.getWorkspace().getNodeTypeManager().getNodeType(primaryNodeTypeName);
-        } catch (RepositoryException re) {
-            // If the node type doesn't exist, you can't add a child node with that type
+        NodeType primaryNodeType = getPrimaryNodeType(primaryNodeTypeName);
+        if (primaryNodeType == null) {
+            // The node type doesn't exist, so you can't add a child node with that type
             return false;
         }
 

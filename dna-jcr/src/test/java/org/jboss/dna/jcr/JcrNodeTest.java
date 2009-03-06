@@ -33,6 +33,7 @@ import java.util.UUID;
 import javax.jcr.ItemNotFoundException;
 import javax.jcr.Node;
 import javax.jcr.Property;
+import javax.jcr.nodetype.NodeDefinition;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.NamespaceRegistry;
@@ -52,18 +53,22 @@ public class JcrNodeTest {
     private Node root;
     @Mock
     private JcrSession session;
+    @Mock
+    private NodeDefinition rootNodeDefinition;
+    @Mock
+    private NodeDefinition nodeDefinition;
 
     @Before
     public void before() throws Exception {
         MockitoAnnotations.initMocks(this);
-        root = new JcrRootNode(session);
+        root = new JcrRootNode(session, rootNodeDefinition);
         Segment segment = Mockito.mock(Segment.class);
         Name name = Mockito.mock(Name.class);
         stub(name.getString((NamespaceRegistry)anyObject())).toReturn("name");
         stub(segment.getName()).toReturn(name);
         stub(segment.getIndex()).toReturn(2);
         UUID uuid = UUID.randomUUID();
-        node = new JcrNode(session, uuid, segment);
+        node = new JcrNode(session, uuid, segment, nodeDefinition);
         ExecutionContext context = Mockito.mock(ExecutionContext.class);
         stub(session.getExecutionContext()).toReturn(context);
         stub(session.getNode(uuid)).toReturn(root);

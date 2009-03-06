@@ -71,10 +71,14 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
     Map<Name, Property> properties;
     List<Path.Segment> children;
     private UUID uuid;
+    private final NodeDefinition definition;
 
-    AbstractJcrNode( JcrSession session ) {
+    AbstractJcrNode( JcrSession session,
+                     NodeDefinition definition ) {
         assert session != null;
+        assert definition != null;
         this.session = session;
+        this.definition = definition;
     }
 
     /**
@@ -112,8 +116,18 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         this.properties = properties;
     }
 
+    /**
+     * Utility mehtod to create a {@link Name} from the supplied string.
+     * 
+     * @param name the string
+     * @return the name, or null if the supplied string is null
+     */
     final Name nameFrom( String name ) {
         return session.getExecutionContext().getValueFactories().getNameFactory().create(name);
+    }
+
+    final NamespaceRegistry namespaces() {
+        return session.getExecutionContext().getNamespaceRegistry();
     }
 
     /**
@@ -122,16 +136,13 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
      * @see javax.jcr.Node#getUUID()
      */
     public final String getUUID() throws RepositoryException {
-        // Return JCR UUID only if node is referenceable
-        try {
-            Property mixinsProp = getProperty("jcr:mixinTypes");
-            if (mixinsProp != null) {
-                for (Value value : mixinsProp.getValues()) {
-                    if ("mix:referenceable".equals(value.getString())) return getProperty("jcr:uuid").getString();
-                }
+        // Return "jcr:uuid" only if node is referenceable
+        Property mixinsProp = getProperty(JcrLexicon.MIXIN_TYPES);
+        if (mixinsProp != null) {
+            String referenceableMixinName = JcrMixLexicon.REFERENCEABLE.getString(namespaces());
+            for (Value value : mixinsProp.getValues()) {
+                if (referenceableMixinName.equals(value.getString())) return getProperty(JcrLexicon.UUID).getString();
             }
-        } catch (PathNotFoundException error) {
-            throw new UnsupportedRepositoryOperationException(error);
         }
         throw new UnsupportedRepositoryOperationException();
     }
@@ -175,7 +186,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
      * @see javax.jcr.Node#getDefinition()
      */
     public NodeDefinition getDefinition() {
-        return null;
+        return definition;
     }
 
     /**
@@ -443,7 +454,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         if (children == null) {
             return new JcrEmptyNodeIterator();
         }
-        return new JcrChildNodeIterator(this, this.session.getExecutionContext().getNamespaceRegistry(), children);
+        return new JcrChildNodeIterator(this, namespaces(), children);
     }
 
     /**
@@ -461,7 +472,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
 
         // Implementing exact-matching only for now to prototype types as properties
         List<Path.Segment> matchingChildren = new LinkedList<Path.Segment>();
-        NamespaceRegistry registry = session.executionContext.getNamespaceRegistry();
+        NamespaceRegistry registry = namespaces();
         boolean foundMatch = false;
         for (Path.Segment child : children) {
             String childName = child.getName().getString(registry);
@@ -480,7 +491,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
                 }
             }
         }
-        return new JcrChildNodeIterator(this, this.session.executionContext.getNamespaceRegistry(), matchingChildren);
+        return new JcrChildNodeIterator(this, registry, matchingChildren);
     }
 
     /**

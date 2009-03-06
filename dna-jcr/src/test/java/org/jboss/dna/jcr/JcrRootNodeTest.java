@@ -30,6 +30,7 @@ import java.util.HashMap;
 import java.util.Map;
 import javax.jcr.ItemNotFoundException;
 import javax.jcr.Property;
+import javax.jcr.nodetype.NodeDefinition;
 import org.jboss.dna.graph.property.Name;
 import org.junit.Before;
 import org.junit.Test;
@@ -44,13 +45,15 @@ public class JcrRootNodeTest {
     private JcrRootNode root;
     @Mock
     private JcrSession session;
+    @Mock
+    private NodeDefinition nodeDefinition;
     private Map<Name, Property> properties;
 
     @Before
     public void before() throws Exception {
         MockitoAnnotations.initMocks(this);
         properties = new HashMap<Name, Property>();
-        root = new JcrRootNode(session);
+        root = new JcrRootNode(session, nodeDefinition);
         root.setProperties(properties);
     }
 

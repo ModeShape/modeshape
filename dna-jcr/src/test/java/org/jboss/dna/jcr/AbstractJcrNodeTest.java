@@ -26,6 +26,7 @@ package org.jboss.dna.jcr;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.stub;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -46,6 +47,7 @@ import javax.jcr.RepositoryException;
 import javax.jcr.UnsupportedRepositoryOperationException;
 import javax.jcr.Value;
 import javax.jcr.Workspace;
+import javax.jcr.nodetype.NodeDefinition;
 import javax.jcr.version.Version;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.property.Name;
@@ -83,7 +85,7 @@ public class AbstractJcrNodeTest {
         MockAbstractJcrNode( JcrSession session,
                              String name,
                              Node parent ) {
-            super(session);
+            super(session, mock(NodeDefinition.class));
             this.name = name;
             this.parent = parent;
         }

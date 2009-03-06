@@ -27,6 +27,7 @@ import java.util.UUID;
 import javax.jcr.ItemNotFoundException;
 import javax.jcr.Node;
 import javax.jcr.RepositoryException;
+import javax.jcr.nodetype.NodeDefinition;
 import net.jcip.annotations.NotThreadSafe;
 import org.jboss.dna.graph.property.Path.Segment;
 
@@ -41,8 +42,9 @@ final class JcrNode extends AbstractJcrNode {
 
     JcrNode( JcrSession session,
              UUID parentUuid,
-             Segment segment ) {
-        super(session);
+             Segment segment,
+             NodeDefinition nodeDefinition ) {
+        super(session, nodeDefinition);
         assert parentUuid != null;
         assert segment != null;
         this.parentUuid = parentUuid;
