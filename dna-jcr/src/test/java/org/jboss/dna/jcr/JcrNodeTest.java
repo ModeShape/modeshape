@@ -25,7 +25,6 @@ package org.jboss.dna.jcr;
 
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
-import static org.mockito.Matchers.anyObject;
 import static org.mockito.Mockito.stub;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -35,12 +34,12 @@ import javax.jcr.Node;
 import javax.jcr.Property;
 import javax.jcr.nodetype.NodeDefinition;
 import org.jboss.dna.graph.ExecutionContext;
+import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.property.Name;
-import org.jboss.dna.graph.property.NamespaceRegistry;
+import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.Path.Segment;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.mockito.MockitoAnnotations.Mock;
 
@@ -61,17 +60,18 @@ public class JcrNodeTest {
     @Before
     public void before() throws Exception {
         MockitoAnnotations.initMocks(this);
-        root = new JcrRootNode(session, rootNodeDefinition);
-        Segment segment = Mockito.mock(Segment.class);
-        Name name = Mockito.mock(Name.class);
-        stub(name.getString((NamespaceRegistry)anyObject())).toReturn("name");
-        stub(segment.getName()).toReturn(name);
-        stub(segment.getIndex()).toReturn(2);
+        ExecutionContext context = new ExecutionContext();
+        UUID rootUuid = UUID.randomUUID();
+        Path rootPath = context.getValueFactories().getPathFactory().createRootPath();
+        Location rootLocation = Location.create(rootPath, rootUuid);
+        root = new JcrRootNode(session, rootLocation, rootNodeDefinition);
         UUID uuid = UUID.randomUUID();
-        node = new JcrNode(session, uuid, segment, nodeDefinition);
-        ExecutionContext context = Mockito.mock(ExecutionContext.class);
+        Path path = context.getValueFactories().getPathFactory().create("/name[2]");
+        Location location = Location.create(path, uuid);
+        node = new JcrNode(session, rootUuid, location, nodeDefinition);
         stub(session.getExecutionContext()).toReturn(context);
-        stub(session.getNode(uuid)).toReturn(root);
+        stub(session.getNode(rootUuid)).toReturn(root);
+        stub(session.getNode(uuid)).toReturn(node);
         node.setProperties(new HashMap<Name, Property>());
         node.setChildren(new ArrayList<Segment>());
     }

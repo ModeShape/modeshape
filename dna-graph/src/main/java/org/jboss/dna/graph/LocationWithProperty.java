@@ -23,6 +23,7 @@
  */
 package org.jboss.dna.graph;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
@@ -41,31 +42,27 @@ import org.jboss.dna.graph.property.basic.BasicSingleValueProperty;
  * @see Location
  */
 @Immutable
-final class LocationWithPathAndProperty extends Location {
+final class LocationWithProperty extends Location {
 
-    private final Path path;
-    private final List<Property> idProperties;
+    protected final List<Property> idProperties;
 
     private final int hashCode;
 
     /**
      * Create a new location with a given path and identification property.
      * 
-     * @param path the path
      * @param idProperty the identification property
      */
-    LocationWithPathAndProperty( Path path,
-                                 Property idProperty ) {
-        assert path != null;
+    LocationWithProperty( Property idProperty ) {
         assert idProperty != null;
         assert !idProperty.isEmpty();
-        this.path = path;
+        // The path could be null
         this.idProperties = Collections.singletonList(idProperty);
 
         // Paths are immutable, Properties are immutable, the idProperties list
         // is wrapped in an unmodifiableList by the Location factory methods...
         // ... so we can cache the hash code.
-        hashCode = HashCode.compute(this.path, idProperties);
+        hashCode = HashCode.compute(null, idProperties);
     }
 
     /**
@@ -75,7 +72,7 @@ final class LocationWithPathAndProperty extends Location {
      */
     @Override
     public final Path getPath() {
-        return path;
+        return null;
     }
 
     /**
@@ -84,8 +81,8 @@ final class LocationWithPathAndProperty extends Location {
      * @see org.jboss.dna.graph.Location#hasPath()
      */
     @Override
-    public final boolean hasPath() {
-        return true;
+    public boolean hasPath() {
+        return false;
     }
 
     /**
@@ -156,9 +153,12 @@ final class LocationWithPathAndProperty extends Location {
         if (newIdProperty == null || newIdProperty.isEmpty()) return this;
         Property idProperty = idProperties.get(0); // fast
         if (newIdProperty.getName().equals(idProperty.getName())) {
-            return new LocationWithPathAndProperty(path, newIdProperty);
+            return Location.create(newIdProperty);
         }
-        return Location.create(path, idProperty, newIdProperty);
+        List<Property> newIdProperties = new ArrayList<Property>(idProperties.size() + 1);
+        newIdProperties.add(newIdProperty);
+        newIdProperties.addAll(idProperties);
+        return new LocationWithProperties(newIdProperties);
     }
 
     /**
@@ -168,8 +168,7 @@ final class LocationWithPathAndProperty extends Location {
      */
     @Override
     public Location with( Path newPath ) {
-        if (newPath == null) return Location.create(idProperties);
-        if (path.equals(newPath)) return this;
+        if (newPath == null) return this;
         Property idProperty = idProperties.get(0); // fast
         return new LocationWithPathAndProperty(newPath, idProperty);
     }
@@ -181,10 +180,14 @@ final class LocationWithPathAndProperty extends Location {
      */
     @Override
     public Location with( UUID uuid ) {
+        if (uuid == null) return this;
         Property idProperty = idProperties.get(0); // fast
-        assert !DnaLexicon.UUID.equals(idProperty.getName());
-        if (uuid == null) return Location.create(path);
-        Property newUuidProperty = new BasicSingleValueProperty(DnaLexicon.UUID, uuid);
-        return Location.create(path, idProperty, newUuidProperty);
+        if (DnaLexicon.UUID.equals(idProperty.getName())) {
+            return new LocationWithUuid(uuid);
+        }
+        List<Property> newIdProperties = new ArrayList<Property>(idProperties.size() + 1);
+        newIdProperties.add(new BasicSingleValueProperty(DnaLexicon.UUID, uuid));
+        newIdProperties.addAll(idProperties);
+        return new LocationWithProperties(newIdProperties);
     }
 }

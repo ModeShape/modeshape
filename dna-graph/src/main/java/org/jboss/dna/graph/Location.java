@@ -38,7 +38,6 @@ import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.NamespaceRegistry;
 import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.Property;
-import org.jboss.dna.graph.property.basic.BasicSingleValueProperty;
 
 /**
  * The location of a node, as specified by either its path, UUID, and/or identification properties.
@@ -102,8 +101,12 @@ public abstract class Location implements Iterable<Property> {
      */
     public static Location create( Path path,
                                    UUID uuid ) {
-        CheckArg.isNotNull(uuid, "uuid");
-        return new LocationWithPathAndProperty(path, new BasicSingleValueProperty(DnaLexicon.UUID, uuid));
+        if (path == null) {
+            CheckArg.isNotNull(uuid, "uuid");
+            return new LocationWithUuid(uuid);
+        }
+        if (uuid == null) return new LocationWithPath(path);
+        return new LocationWithPathAndUuid(path, uuid);
     }
 
     /**
@@ -182,7 +185,7 @@ public abstract class Location implements Iterable<Property> {
      */
     public static Location create( Property idProperty ) {
         CheckArg.isNotNull(idProperty, "idProperty");
-        return new LocationWithPathAndProperty(null, idProperty);
+        return new LocationWithProperty(idProperty);
     }
 
     /**
@@ -197,6 +200,7 @@ public abstract class Location implements Iterable<Property> {
                                    Property... remainingIdProperties ) {
         CheckArg.isNotNull(firstIdProperty, "firstIdProperty");
         CheckArg.isNotNull(remainingIdProperties, "remainingIdProperties");
+        if (remainingIdProperties.length == 0) return new LocationWithProperty(firstIdProperty);
         List<Property> idProperties = new ArrayList<Property>(1 + remainingIdProperties.length);
         Set<Name> names = new HashSet<Name>();
         names.add(firstIdProperty.getName());
@@ -227,9 +231,9 @@ public abstract class Location implements Iterable<Property> {
                 assert false;
                 return null; // never get here
             case 1:
-                return new LocationWithPathAndProperty(null, idPropertiesList.get(0));
+                return new LocationWithProperty(idPropertiesList.get(0));
             default:
-                return new LocationWithPathAndProperties(null, idPropertiesList);
+                return new LocationWithProperties(idPropertiesList);
         }
     }
 

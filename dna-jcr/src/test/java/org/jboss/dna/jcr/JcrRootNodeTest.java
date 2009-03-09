@@ -28,10 +28,14 @@ import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 import javax.jcr.ItemNotFoundException;
 import javax.jcr.Property;
 import javax.jcr.nodetype.NodeDefinition;
+import org.jboss.dna.graph.ExecutionContext;
+import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.property.Name;
+import org.jboss.dna.graph.property.Path;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.MockitoAnnotations;
@@ -53,7 +57,11 @@ public class JcrRootNodeTest {
     public void before() throws Exception {
         MockitoAnnotations.initMocks(this);
         properties = new HashMap<Name, Property>();
-        root = new JcrRootNode(session, nodeDefinition);
+        ExecutionContext context = new ExecutionContext();
+        UUID rootUuid = UUID.randomUUID();
+        Path rootPath = context.getValueFactories().getPathFactory().createRootPath();
+        Location rootLocation = Location.create(rootPath, rootUuid);
+        root = new JcrRootNode(session, rootLocation, nodeDefinition);
         root.setProperties(properties);
     }
 

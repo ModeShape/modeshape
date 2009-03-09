@@ -506,7 +506,7 @@ class JcrSession implements Session {
             }
 
             // Create the new node ...
-            node = new JcrRootNode(this, definition);
+            node = new JcrRootNode(this, location, definition);
         } else {
             // Find the parent ...
             AbstractJcrNode parent = (AbstractJcrNode)getNode(path.getParent());
@@ -524,7 +524,7 @@ class JcrSession implements Session {
             }
 
             // Now create the node object ...
-            node = new JcrNode(this, parent.internalUuid(), path.getLastSegment(), definition);
+            node = new JcrNode(this, parent.internalUuid(), location, definition);
         }
 
         // Now populate the node and add to the cache ...
@@ -830,8 +830,8 @@ class JcrSession implements Session {
         Map<Name, Property> properties = new HashMap<Name, Property>();
         if (referenceable) {
             PropertyDefinition propertyDefinition = propertyDefinitionsByPropertyName.get(JcrLexicon.UUID);
-            properties.put(JcrLexicon.UUID, new JcrSingleValueProperty(node, executionContext, propertyDefinition,
-                                                                       PropertyType.STRING, uuidProperty));
+            properties.put(JcrLexicon.UUID, new JcrSingleValueProperty(node, propertyDefinition, PropertyType.STRING,
+                                                                       uuidProperty));
         }
 
         // Now create the JCR property object wrappers around the other properties ...
@@ -892,16 +892,16 @@ class JcrSession implements Session {
             }
 
             // Figure out the property type ...
-            int type = propertyDefinition.getRequiredType();
-            if (type == PropertyType.UNDEFINED) {
-                type = jcrPropertyTypeFor(dnaProp);
+            int propertyType = propertyDefinition.getRequiredType();
+            if (propertyType == PropertyType.UNDEFINED) {
+                propertyType = jcrPropertyTypeFor(dnaProp);
             }
 
             // Create the appropriate JCR property wrapper ...
             if (isMultiple) {
-                properties.put(name, new JcrMultiValueProperty(node, executionContext, propertyDefinition, type, dnaProp));
+                properties.put(name, new JcrMultiValueProperty(node, propertyDefinition, propertyType, dnaProp));
             } else {
-                properties.put(name, new JcrSingleValueProperty(node, executionContext, propertyDefinition, type, dnaProp));
+                properties.put(name, new JcrSingleValueProperty(node, propertyDefinition, propertyType, dnaProp));
             }
         }
 

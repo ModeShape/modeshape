@@ -35,13 +35,13 @@ import org.jboss.dna.graph.property.Property;
 import org.jboss.dna.graph.property.basic.BasicSingleValueProperty;
 
 /**
- * General purpose location type that supports a path and a property. This class should never be directly instantiated by users of
- * the DNA framework. Instead, use @{link Location#create} to create the correct location.
+ * General purpose location type that supports a path and a UUID property. This class should never be directly instantiated by
+ * users of the DNA framework. Instead, use @{link Location#create} to create the correct location.
  * 
  * @see Location
  */
 @Immutable
-final class LocationWithPathAndProperty extends Location {
+final class LocationWithPathAndUuid extends Location {
 
     private final Path path;
     private final List<Property> idProperties;
@@ -52,15 +52,14 @@ final class LocationWithPathAndProperty extends Location {
      * Create a new location with a given path and identification property.
      * 
      * @param path the path
-     * @param idProperty the identification property
+     * @param uuid the UUID
      */
-    LocationWithPathAndProperty( Path path,
-                                 Property idProperty ) {
+    LocationWithPathAndUuid( Path path,
+                             UUID uuid ) {
         assert path != null;
-        assert idProperty != null;
-        assert !idProperty.isEmpty();
+        assert uuid != null;
         this.path = path;
-        this.idProperties = Collections.singletonList(idProperty);
+        this.idProperties = Collections.singletonList((Property)new BasicSingleValueProperty(DnaLexicon.UUID, uuid));
 
         // Paths are immutable, Properties are immutable, the idProperties list
         // is wrapped in an unmodifiableList by the Location factory methods...
@@ -126,14 +125,8 @@ final class LocationWithPathAndProperty extends Location {
      * @see Location#getUuid()
      */
     @Override
-    public UUID getUuid() {
-        Property property = idProperties.get(0); // this is fast
-        if (DnaLexicon.UUID.equals(property.getName())) {
-            Object value = property.getFirstValue();
-            if (value instanceof UUID) return (UUID)value;
-            if (value instanceof String) return UUID.fromString((String)value);
-        }
-        return null;
+    public final UUID getUuid() {
+        return (UUID)idProperties.get(0).getFirstValue(); // this is fast, and we know this is a UUID object
     }
 
     /**
@@ -181,10 +174,8 @@ final class LocationWithPathAndProperty extends Location {
      */
     @Override
     public Location with( UUID uuid ) {
-        Property idProperty = idProperties.get(0); // fast
-        assert !DnaLexicon.UUID.equals(idProperty.getName());
         if (uuid == null) return Location.create(path);
-        Property newUuidProperty = new BasicSingleValueProperty(DnaLexicon.UUID, uuid);
-        return Location.create(path, idProperty, newUuidProperty);
+        if (uuid.equals(getUuid())) return this;
+        return new LocationWithPathAndUuid(path, uuid);
     }
 }

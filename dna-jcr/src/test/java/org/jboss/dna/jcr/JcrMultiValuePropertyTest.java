@@ -27,13 +27,16 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.stub;
-import javax.jcr.Node;
+import java.util.UUID;
 import javax.jcr.Property;
 import javax.jcr.PropertyType;
 import javax.jcr.Value;
 import javax.jcr.ValueFormatException;
+import javax.jcr.nodetype.NodeDefinition;
 import javax.jcr.nodetype.PropertyDefinition;
 import org.jboss.dna.graph.ExecutionContext;
+import org.jboss.dna.graph.Location;
+import org.jboss.dna.graph.property.Path;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.MockitoAnnotations;
@@ -45,9 +48,12 @@ import org.mockito.MockitoAnnotations.Mock;
 public class JcrMultiValuePropertyTest {
 
     private Property prop;
-    @Mock
-    private Node node;
+    private AbstractJcrNode node;
     private ExecutionContext executionContext;
+    @Mock
+    private JcrSession session;
+    @Mock
+    private NodeDefinition nodeDefinition;
     @Mock
     private PropertyDefinition definition;
     private org.jboss.dna.graph.property.Property dnaProperty;
@@ -56,10 +62,17 @@ public class JcrMultiValuePropertyTest {
     public void before() {
         MockitoAnnotations.initMocks(this);
         executionContext = new ExecutionContext();
+
+        UUID rootUuid = UUID.randomUUID();
+        Path rootPath = executionContext.getValueFactories().getPathFactory().createRootPath();
+        Location rootLocation = Location.create(rootPath, rootUuid);
+        node = new JcrRootNode(session, rootLocation, nodeDefinition);
+        stub(session.getExecutionContext()).toReturn(executionContext);
+
         dnaProperty = executionContext.getPropertyFactory().create(JcrLexicon.MIMETYPE, true);
         stub(definition.getRequiredType()).toReturn(PropertyType.BOOLEAN);
         stub(definition.isMultiple()).toReturn(true);
-        prop = new JcrMultiValueProperty(node, executionContext, definition, definition.getRequiredType(), dnaProperty);
+        prop = new JcrMultiValueProperty(node, definition, definition.getRequiredType(), dnaProperty);
     }
 
     @Test
@@ -138,7 +151,7 @@ public class JcrMultiValuePropertyTest {
         dnaProperty = executionContext.getPropertyFactory().create(JcrLexicon.MIMETYPE, value);
         stub(definition.getRequiredType()).toReturn(PropertyType.STRING);
         stub(definition.isMultiple()).toReturn(true);
-        prop = new JcrMultiValueProperty(node, executionContext, definition, definition.getRequiredType(), dnaProperty);
+        prop = new JcrMultiValueProperty(node, definition, definition.getRequiredType(), dnaProperty);
         lengths = prop.getLengths();
         assertThat(lengths, notNullValue());
         assertThat(lengths.length, is(1));
@@ -149,7 +162,7 @@ public class JcrMultiValuePropertyTest {
         dnaProperty = executionContext.getPropertyFactory().create(JcrLexicon.MIMETYPE, value);
         stub(definition.getRequiredType()).toReturn(PropertyType.STRING);
         stub(definition.isMultiple()).toReturn(true);
-        prop = new JcrMultiValueProperty(node, executionContext, definition, definition.getRequiredType(), dnaProperty);
+        prop = new JcrMultiValueProperty(node, definition, definition.getRequiredType(), dnaProperty);
         lengths = prop.getLengths();
         assertThat(lengths, notNullValue());
         assertThat(lengths.length, is(1));
@@ -159,7 +172,7 @@ public class JcrMultiValuePropertyTest {
         dnaProperty = executionContext.getPropertyFactory().create(JcrLexicon.MIMETYPE, (Object[])values);
         stub(definition.getRequiredType()).toReturn(PropertyType.STRING);
         stub(definition.isMultiple()).toReturn(true);
-        prop = new JcrMultiValueProperty(node, executionContext, definition, definition.getRequiredType(), dnaProperty);
+        prop = new JcrMultiValueProperty(node, definition, definition.getRequiredType(), dnaProperty);
         lengths = prop.getLengths();
         assertThat(lengths, notNullValue());
         assertThat(lengths.length, is(values.length));

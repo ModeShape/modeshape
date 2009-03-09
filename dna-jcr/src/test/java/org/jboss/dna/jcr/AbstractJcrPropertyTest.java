@@ -28,6 +28,7 @@ import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.stub;
 import java.io.InputStream;
 import java.util.Calendar;
+import java.util.UUID;
 import javax.jcr.Item;
 import javax.jcr.ItemNotFoundException;
 import javax.jcr.ItemVisitor;
@@ -38,9 +39,12 @@ import javax.jcr.Repository;
 import javax.jcr.Session;
 import javax.jcr.Value;
 import javax.jcr.Workspace;
+import javax.jcr.nodetype.NodeDefinition;
 import javax.jcr.nodetype.PropertyDefinition;
 import org.jboss.dna.common.util.StringUtil;
 import org.jboss.dna.graph.ExecutionContext;
+import org.jboss.dna.graph.Location;
+import org.jboss.dna.graph.property.Path;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
@@ -58,13 +62,16 @@ public class AbstractJcrPropertyTest {
     @Mock
     private Repository repository;
     @Mock
-    private Session session;
+    private JcrSession session;
+    private AbstractJcrNode node;
     @Mock
-    private Node node;
+    private NodeDefinition nodeDefinition;
     @Mock
     private PropertyDefinition propertyDefinition;
     private ExecutionContext executionContext;
     private org.jboss.dna.graph.property.Property dnaProperty;
+    private Location rootLocation;
+    private Location nodeLocation;
 
     @Before
     public void before() throws Exception {
@@ -74,8 +81,21 @@ public class AbstractJcrPropertyTest {
         stub(propertyDefinition.getRequiredType()).toReturn(PropertyType.STRING);
         stub(session.getWorkspace()).toReturn(workspace);
         stub(session.getRepository()).toReturn(repository);
-        stub(node.getSession()).toReturn(session);
-        prop = new MockAbstractJcrProperty(node, executionContext, propertyDefinition, dnaProperty);
+        stub(session.getExecutionContext()).toReturn(executionContext);
+
+        UUID rootUuid = UUID.randomUUID();
+        Path rootPath = executionContext.getValueFactories().getPathFactory().createRootPath();
+        rootLocation = Location.create(rootPath, rootUuid);
+        JcrRootNode rootNode = new JcrRootNode(session, rootLocation, nodeDefinition);
+        stub(session.getNode(rootUuid)).toReturn(rootNode);
+
+        UUID uuid = UUID.randomUUID();
+        Path path = executionContext.getValueFactories().getPathFactory().create("/nodeName");
+        nodeLocation = Location.create(path, uuid);
+        node = new JcrNode(session, rootUuid, nodeLocation, nodeDefinition);
+        stub(session.getNode(uuid)).toReturn(node);
+
+        prop = new MockAbstractJcrProperty(node, propertyDefinition, dnaProperty);
     }
 
     @Test
@@ -99,19 +119,17 @@ public class AbstractJcrPropertyTest {
     @Test
     public void shouldProvideAncestor() throws Exception {
         assertThat(prop.getAncestor(prop.getDepth()), is((Item)prop));
-        stub(node.getAncestor(node.getDepth())).toReturn(node);
         assertThat(prop.getAncestor(prop.getDepth() - 1), is((Item)node));
     }
 
     @Test( expected = ItemNotFoundException.class )
     public void shouldNotAllowAncestorDepthGreaterThanNodeDepth() throws Exception {
-        stub(node.getAncestor(1)).toThrow(new ItemNotFoundException());
-        prop.getAncestor(2);
+        prop.getAncestor(3);
     }
 
     @Test
     public void shouldProvideDepth() throws Exception {
-        assertThat(prop.getDepth(), is(1));
+        assertThat(prop.getDepth(), is(2));
     }
 
     @Test
@@ -126,20 +144,17 @@ public class AbstractJcrPropertyTest {
 
     @Test
     public void shouldProvideParent() throws Exception {
-        assertThat(prop.getParent(), is(node));
+        assertThat(prop.getParent(), is((Node)node));
     }
 
     @Test
     public void shouldProvidePath() throws Exception {
-        stub(node.getPath()).toReturn("/nodeName");
         assertThat(prop.getPath(), is("/nodeName/jcr:mimeType"));
     }
 
     @Test
     public void shouldProvideSession() throws Exception {
-        Session session = Mockito.mock(Session.class);
-        stub(node.getSession()).toReturn(session);
-        assertThat(prop.getSession(), is(session));
+        assertThat(prop.getSession(), is((Session)session));
     }
 
     @Test
@@ -151,30 +166,40 @@ public class AbstractJcrPropertyTest {
     public void shouldIndicateSameAsNodeWithSameParentAndSamePropertyName() throws Exception {
         org.jboss.dna.graph.property.Property otherDnaProperty = executionContext.getPropertyFactory()
                                                                                  .create(dnaProperty.getName());
-        Node otherNode = Mockito.mock(Node.class);
-        stub(otherNode.getSession()).toReturn(session);
-        stub(node.isSame(otherNode)).toReturn(true);
-        Property otherProp = new MockAbstractJcrProperty(otherNode, executionContext, propertyDefinition, otherDnaProperty);
+        // Make the other node have the same UUID ...
+        JcrNode otherNode = new JcrNode(session, rootLocation.getUuid(), nodeLocation, nodeDefinition);
+
+        assertThat(node.isSame(otherNode), is(true));
+        Property prop = new MockAbstractJcrProperty(node, propertyDefinition, otherDnaProperty);
+        Property otherProp = new MockAbstractJcrProperty(otherNode, propertyDefinition, otherDnaProperty);
         assertThat(prop.isSame(otherProp), is(true));
     }
 
     @Test
     public void shouldIndicateDifferentThanNodeWithDifferentParent() throws Exception {
-        org.jboss.dna.graph.property.Property otherDnaProperty = executionContext.getPropertyFactory().create(JcrLexicon.NAME);
-        Node otherNode = Mockito.mock(Node.class);
-        stub(otherNode.getSession()).toReturn(session);
-        stub(node.isSame(otherNode)).toReturn(false);
-        Property otherProp = new MockAbstractJcrProperty(otherNode, executionContext, propertyDefinition, otherDnaProperty);
+        org.jboss.dna.graph.property.Property otherDnaProperty = executionContext.getPropertyFactory()
+                                                                                 .create(dnaProperty.getName());
+        UUID otherUuid = UUID.randomUUID();
+        Path otherPath = executionContext.getValueFactories().getPathFactory().create("/nodeName");
+        Location location = Location.create(otherPath, otherUuid);
+        JcrNode otherNode = new JcrNode(session, rootLocation.getUuid(), location, nodeDefinition);
+        stub(session.getNode(otherUuid)).toReturn(otherNode);
+
+        assertThat(node.isSame(otherNode), is(false));
+        Property prop = new MockAbstractJcrProperty(node, propertyDefinition, otherDnaProperty);
+        Property otherProp = new MockAbstractJcrProperty(otherNode, propertyDefinition, otherDnaProperty);
         assertThat(prop.isSame(otherProp), is(false));
     }
 
     @Test
     public void shouldIndicateDifferentThanPropertyWithSameNodeWithDifferentPropertyName() throws Exception {
         org.jboss.dna.graph.property.Property otherDnaProperty = executionContext.getPropertyFactory().create(JcrLexicon.NAME);
-        Node otherNode = Mockito.mock(Node.class);
-        stub(otherNode.getSession()).toReturn(session);
-        stub(node.isSame(otherNode)).toReturn(true);
-        Property otherProp = new MockAbstractJcrProperty(otherNode, executionContext, propertyDefinition, otherDnaProperty);
+        // Make the other node have the same UUID ...
+        JcrNode otherNode = new JcrNode(session, rootLocation.getUuid(), nodeLocation, nodeDefinition);
+
+        assertThat(node.isSame(otherNode), is(true));
+        Property prop = new MockAbstractJcrProperty(node, propertyDefinition, dnaProperty);
+        Property otherProp = new MockAbstractJcrProperty(otherNode, propertyDefinition, otherDnaProperty);
         assertThat(prop.isSame(otherProp), is(false));
     }
 
@@ -230,11 +255,10 @@ public class AbstractJcrPropertyTest {
 
     private class MockAbstractJcrProperty extends AbstractJcrProperty {
 
-        MockAbstractJcrProperty( Node node,
-                                 ExecutionContext executionContext,
+        MockAbstractJcrProperty( AbstractJcrNode node,
                                  PropertyDefinition propertyDefinition,
                                  org.jboss.dna.graph.property.Property dnaProperty ) {
-            super(node, executionContext, propertyDefinition, propertyDefinition.getRequiredType(), dnaProperty);
+            super(node, propertyDefinition, propertyDefinition.getRequiredType(), dnaProperty);
         }
 
         /**

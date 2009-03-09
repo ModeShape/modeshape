@@ -32,7 +32,6 @@ import javax.jcr.Value;
 import javax.jcr.ValueFormatException;
 import javax.jcr.nodetype.PropertyDefinition;
 import net.jcip.annotations.NotThreadSafe;
-import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.property.Property;
 
 /**
@@ -41,12 +40,11 @@ import org.jboss.dna.graph.property.Property;
 @NotThreadSafe
 final class JcrMultiValueProperty extends AbstractJcrProperty {
 
-    JcrMultiValueProperty( Node node,
-                           ExecutionContext executionContext,
+    JcrMultiValueProperty( AbstractJcrNode node,
                            PropertyDefinition definition,
                            int propertyType,
                            Property dnaProperty ) {
-        super(node, executionContext, definition, propertyType, dnaProperty);
+        super(node, definition, propertyType, dnaProperty);
     }
 
     /**

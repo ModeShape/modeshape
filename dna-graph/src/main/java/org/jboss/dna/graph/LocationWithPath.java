@@ -39,7 +39,7 @@ import org.jboss.dna.graph.property.Property;
  * @see Location
  */
 @Immutable
-class LocationWithPath extends Location {
+final class LocationWithPath extends Location {
 
     private final Path path;
     private final int hashCode;

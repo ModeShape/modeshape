@@ -43,23 +43,19 @@ import org.jboss.dna.graph.ExecutionContext;
 @NotThreadSafe
 abstract class AbstractJcrProperty extends AbstractJcrItem implements Property {
 
-    private final Node node;
-    private final ExecutionContext executionContext;
+    private final AbstractJcrNode node;
     private final org.jboss.dna.graph.property.Property dnaProperty;
     private final PropertyDefinition jcrPropertyDefinition;
     private final int propertyType;
 
-    AbstractJcrProperty( Node node,
-                         ExecutionContext executionContext,
+    AbstractJcrProperty( AbstractJcrNode node,
                          PropertyDefinition definition,
                          int propertyType,
                          org.jboss.dna.graph.property.Property dnaProperty ) {
         assert node != null;
-        assert executionContext != null;
         assert dnaProperty != null;
         assert definition != null;
         this.node = node;
-        this.executionContext = executionContext;
         this.dnaProperty = dnaProperty;
         this.jcrPropertyDefinition = definition;
         this.propertyType = propertyType;
@@ -77,11 +73,11 @@ abstract class AbstractJcrProperty extends AbstractJcrItem implements Property {
     }
 
     JcrValue createValue( Object value ) {
-        return new JcrValue(executionContext.getValueFactories(), getType(), value);
+        return new JcrValue(getExecutionContext().getValueFactories(), getType(), value);
     }
 
     final ExecutionContext getExecutionContext() {
-        return executionContext;
+        return node.session().getExecutionContext();
     }
 
     final org.jboss.dna.graph.property.Property getDnaProperty() {
@@ -116,7 +112,7 @@ abstract class AbstractJcrProperty extends AbstractJcrItem implements Property {
      * @see javax.jcr.Item#getName()
      */
     public final String getName() {
-        return dnaProperty.getName().getString(executionContext.getNamespaceRegistry());
+        return dnaProperty.getName().getString(node.namespaces());
     }
 
     /**
@@ -142,7 +138,7 @@ abstract class AbstractJcrProperty extends AbstractJcrItem implements Property {
      * 
      * @see javax.jcr.Item#getSession()
      */
-    public final Session getSession() throws RepositoryException {
+    public final Session getSession() {
         return node.getSession();
     }
 

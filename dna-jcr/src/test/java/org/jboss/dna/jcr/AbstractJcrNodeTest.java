@@ -50,6 +50,7 @@ import javax.jcr.Workspace;
 import javax.jcr.nodetype.NodeDefinition;
 import javax.jcr.version.Version;
 import org.jboss.dna.graph.ExecutionContext;
+import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.Path.Segment;
 import org.junit.Before;
@@ -85,7 +86,7 @@ public class AbstractJcrNodeTest {
         MockAbstractJcrNode( JcrSession session,
                              String name,
                              Node parent ) {
-            super(session, mock(NodeDefinition.class));
+            super(session, Location.create(UUID.randomUUID()), mock(NodeDefinition.class));
             this.name = name;
             this.parent = parent;
         }

@@ -29,7 +29,8 @@ import javax.jcr.Node;
 import javax.jcr.RepositoryException;
 import javax.jcr.nodetype.NodeDefinition;
 import net.jcip.annotations.NotThreadSafe;
-import org.jboss.dna.graph.property.Path.Segment;
+import org.jboss.dna.graph.Location;
+import org.jboss.dna.graph.property.Path;
 
 /**
  * @author jverhaeg
@@ -38,17 +39,18 @@ import org.jboss.dna.graph.property.Path.Segment;
 final class JcrNode extends AbstractJcrNode {
 
     private final UUID parentUuid;
-    private final Segment segment;
 
     JcrNode( JcrSession session,
              UUID parentUuid,
-             Segment segment,
+             Location location,
              NodeDefinition nodeDefinition ) {
-        super(session, nodeDefinition);
+        super(session, location, nodeDefinition);
         assert parentUuid != null;
-        assert segment != null;
         this.parentUuid = parentUuid;
-        this.segment = segment;
+    }
+
+    final Path.Segment segment() {
+        return location.getPath().getLastSegment();
     }
 
     /**
@@ -57,7 +59,7 @@ final class JcrNode extends AbstractJcrNode {
      * @see javax.jcr.Node#getIndex()
      */
     public int getIndex() {
-        return segment.getIndex();
+        return segment().getIndex();
     }
 
     /**
@@ -66,7 +68,7 @@ final class JcrNode extends AbstractJcrNode {
      * @see javax.jcr.Item#getName()
      */
     public String getName() {
-        return segment.getName().getString(((JcrSession)getSession()).getExecutionContext().getNamespaceRegistry());
+        return segment().getName().getString(((JcrSession)getSession()).getExecutionContext().getNamespaceRegistry());
     }
 
     /**
@@ -75,7 +77,7 @@ final class JcrNode extends AbstractJcrNode {
      * @see javax.jcr.Item#getParent()
      */
     public Node getParent() throws ItemNotFoundException {
-        Node node = ((JcrSession)getSession()).getNode(parentUuid);
+        Node node = session().getNode(parentUuid);
         if (node == null) {
             throw new ItemNotFoundException();
         }

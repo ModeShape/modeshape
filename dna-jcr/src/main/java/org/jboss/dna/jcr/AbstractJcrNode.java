@@ -53,6 +53,7 @@ import javax.jcr.version.Version;
 import javax.jcr.version.VersionHistory;
 import net.jcip.annotations.NotThreadSafe;
 import org.jboss.dna.common.util.CheckArg;
+import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.NamespaceRegistry;
 import org.jboss.dna.graph.property.Path;
@@ -68,15 +69,18 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
     private static final NodeType[] EMPTY_NODE_TYPES = new NodeType[] {};
 
     private final JcrSession session;
-    Map<Name, Property> properties;
-    List<Path.Segment> children;
-    private UUID uuid;
     private final NodeDefinition definition;
+    protected Location location;
+    private Map<Name, Property> properties;
+    private List<Path.Segment> children;
 
     AbstractJcrNode( JcrSession session,
+                     Location location,
                      NodeDefinition definition ) {
         assert session != null;
         assert definition != null;
+        assert location != null;
+        this.location = location;
         this.session = session;
         this.definition = definition;
     }
@@ -86,12 +90,16 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
      * 
      * @see javax.jcr.Item#getSession()
      */
-    public final Session getSession() {
+    public Session getSession() {
+        return session;
+    }
+
+    final JcrSession session() {
         return session;
     }
 
     final UUID internalUuid() {
-        return uuid;
+        return location.getUuid();
     }
 
     /**
@@ -103,7 +111,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
      */
     final void setInternalUuid( UUID uuid ) {
         assert uuid != null;
-        this.uuid = uuid;
+        location = location.with(uuid);
     }
 
     final void setChildren( List<Segment> children ) {

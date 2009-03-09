@@ -31,7 +31,6 @@ import javax.jcr.RepositoryException;
 import javax.jcr.Value;
 import javax.jcr.ValueFormatException;
 import javax.jcr.nodetype.PropertyDefinition;
-import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.property.Binary;
 import org.jboss.dna.graph.property.Property;
 import org.jboss.dna.graph.property.Reference;
@@ -42,12 +41,11 @@ import org.jboss.dna.graph.property.ValueFactories;
  */
 final class JcrSingleValueProperty extends AbstractJcrProperty {
 
-    JcrSingleValueProperty( Node node,
-                            ExecutionContext executionContext,
+    JcrSingleValueProperty( AbstractJcrNode node,
                             PropertyDefinition definition,
                             int propertyType,
                             Property dnaProperty ) {
-        super(node, executionContext, definition, propertyType, dnaProperty);
+        super(node, definition, propertyType, dnaProperty);
     }
 
     /**

@@ -40,7 +40,7 @@ import org.jboss.dna.graph.property.basic.BasicSingleValueProperty;
  * @see Location
  */
 @Immutable
-class LocationWithPathAndProperties extends Location {
+final class LocationWithPathAndProperties extends Location {
 
     private final Path path;
     private final List<Property> idProperties;
@@ -54,7 +54,7 @@ class LocationWithPathAndProperties extends Location {
      * @param idProperties the identification properties
      */
     LocationWithPathAndProperties( Path path,
-                            List<Property> idProperties ) {
+                                   List<Property> idProperties ) {
         assert idProperties != null;
         assert !idProperties.isEmpty();
         this.path = path;
@@ -125,7 +125,7 @@ class LocationWithPathAndProperties extends Location {
             newIdProperties = Collections.unmodifiableList(newIdProperties);
             return new LocationWithPathAndProperties(path, newIdProperties);
         }
-        return Location.create(path, newIdProperty);
+        return new LocationWithPathAndProperty(path, newIdProperty);
     }
 
     /**
@@ -136,7 +136,7 @@ class LocationWithPathAndProperties extends Location {
     @Override
     public Location with( Path newPath ) {
         if (newPath == null || this.getPath().equals(newPath)) return this;
-        return Location.create(newPath, idProperties);
+        return new LocationWithPathAndProperties(newPath, idProperties);
     }
 
     /**
@@ -156,6 +156,6 @@ class LocationWithPathAndProperties extends Location {
         List<Property> newIdProperties = new ArrayList<Property>(idProperties.size() + 1);
         newIdProperties.addAll(idProperties);
         newIdProperties.add(newProperty);
-        return Location.create(path, newIdProperties);
+        return new LocationWithPathAndProperties(path, newIdProperties);
     }
 }

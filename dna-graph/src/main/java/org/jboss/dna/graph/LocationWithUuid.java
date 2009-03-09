@@ -39,7 +39,7 @@ import org.jboss.dna.graph.property.basic.BasicSingleValueProperty;
  * @see Location
  */
 @Immutable
-public class LocationWithUuid extends Location {
+final class LocationWithUuid extends Location {
 
     private final UUID uuid;
     private final int hashCode;
