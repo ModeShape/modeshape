@@ -30,14 +30,12 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.UUID;
 import javax.jcr.ItemNotFoundException;
-import javax.jcr.Node;
 import javax.jcr.Property;
 import javax.jcr.nodetype.NodeDefinition;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.Path;
-import org.jboss.dna.graph.property.Path.Segment;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.MockitoAnnotations;
@@ -49,7 +47,7 @@ import org.mockito.MockitoAnnotations.Mock;
 public class JcrNodeTest {
 
     private JcrNode node;
-    private Node root;
+    private AbstractJcrNode root;
     @Mock
     private JcrSession session;
     @Mock
@@ -73,7 +71,7 @@ public class JcrNodeTest {
         stub(session.getNode(rootUuid)).toReturn(root);
         stub(session.getNode(uuid)).toReturn(node);
         node.setProperties(new HashMap<Name, Property>());
-        node.setChildren(new ArrayList<Segment>());
+        node.setChildren(new ArrayList<Location>());
     }
 
     @Test( expected = ItemNotFoundException.class )

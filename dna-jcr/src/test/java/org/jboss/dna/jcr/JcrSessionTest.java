@@ -281,7 +281,7 @@ public class JcrSessionTest {
 
     @Test
     public void shouldProvideRootNode() throws Exception {
-        Map<UUID, Node> nodesByUuid = session.getNodesByUuid();
+        Map<UUID, AbstractJcrNode> nodesByUuid = session.getNodesByUuid();
         assertThat(nodesByUuid.isEmpty(), is(true));
         Node root = session.getRootNode();
         assertThat(root, notNullValue());

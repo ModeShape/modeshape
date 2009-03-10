@@ -29,6 +29,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.NoSuchElementException;
+import net.jcip.annotations.NotThreadSafe;
 import org.jboss.dna.common.CommonI18n;
 import org.jboss.dna.common.text.TextEncoder;
 import org.jboss.dna.common.util.CheckArg;
@@ -82,6 +83,45 @@ public abstract class AbstractPath implements Path {
             throw new UnsupportedOperationException();
         }
     };
+
+    @NotThreadSafe
+    protected static class SingleIterator<T> implements Iterator<T> {
+        private T value;
+
+        protected SingleIterator( T value ) {
+            this.value = value;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see java.util.Iterator#hasNext()
+         */
+        public boolean hasNext() {
+            return value != null;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see java.util.Iterator#next()
+         */
+        public T next() {
+            if (value == null) throw new NoSuchElementException();
+            T next = value;
+            value = null;
+            return next;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see java.util.Iterator#remove()
+         */
+        public void remove() {
+            throw new UnsupportedOperationException();
+        }
+    }
 
     private transient int hc = 0;
 
@@ -364,6 +404,22 @@ public abstract class AbstractPath implements Path {
      */
     public Iterator<Segment> iterator() {
         return getSegmentsList().iterator();
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.property.Path#pathsFromRoot()
+     */
+    public Iterator<Path> pathsFromRoot() {
+        LinkedList<Path> paths = new LinkedList<Path>();
+        Path path = this;
+        while (path != null) {
+            paths.addFirst(path);
+            if (path.isRoot()) break;
+            path = path.getParent();
+        }
+        return paths.iterator();
     }
 
     /**

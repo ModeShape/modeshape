@@ -32,7 +32,7 @@ import java.util.List;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import org.jboss.dna.graph.ExecutionContext;
-import org.jboss.dna.graph.property.Path.Segment;
+import org.jboss.dna.graph.Location;
 import org.jboss.dna.jcr.AbstractJcrNodeTest.MockAbstractJcrNode;
 import org.junit.Before;
 import org.junit.Test;
@@ -47,14 +47,14 @@ public class JcrNodeIteratorTest {
     private AbstractJcrNode node;
     @Mock
     private JcrSession session;
-    private List<Segment> children;
+    private List<Location> children;
 
     @Before
     public void before() throws Exception {
         MockitoAnnotations.initMocks(this);
         ExecutionContext context = new ExecutionContext();
         stub(session.getExecutionContext()).toReturn(context);
-        children = new ArrayList<Segment>();
+        children = new ArrayList<Location>();
         node = new MockAbstractJcrNode(session, "node", null);
     }
 

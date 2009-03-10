@@ -133,6 +133,19 @@ public interface PathFactory extends ValueFactory<Path> {
                  int index );
 
     /**
+     * Create a path by appending the supplied names to the parent path.
+     * 
+     * @param parentPath the path that is to provide the basis for the new path
+     * @param segmentName the name of the segment to be appended to the parent path
+     * @param index the index for the new segment
+     * @return the new path
+     * @throws IllegalArgumentException if the parent path reference or the segment name is null, or if the index is invalid
+     */
+    Path create( Path parentPath,
+                 String segmentName,
+                 int index );
+
+    /**
      * Create a path by appending the supplied names to the parent path. If no names are appended, the parent path is returned.
      * 
      * @param parentPath the path that is to provide the basis for the new path

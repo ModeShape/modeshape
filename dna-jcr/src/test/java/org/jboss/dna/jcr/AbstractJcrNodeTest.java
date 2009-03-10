@@ -52,7 +52,7 @@ import javax.jcr.version.Version;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.property.Name;
-import org.jboss.dna.graph.property.Path.Segment;
+import org.jboss.dna.graph.property.Path;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
@@ -67,13 +67,18 @@ public class AbstractJcrNodeTest {
     static MockAbstractJcrNode createChild( JcrSession session,
                                             String name,
                                             int index,
-                                            List<Segment> children,
-                                            Node parent ) throws Exception {
+                                            List<Location> children,
+                                            AbstractJcrNode parent ) throws Exception {
         MockAbstractJcrNode child = new MockAbstractJcrNode(session, name, parent);
-        Segment seg = session.getExecutionContext().getValueFactories().getPathFactory().createSegment(name, index);
-        children.add(seg);
+        String parentPath = parent.getPath();
+        String childPath = parentPath + "/" + name + "[" + index + "]";
+        Path path = session.getExecutionContext().getValueFactories().getPathFactory().create(childPath);
+        Location location = Location.create(path, UUID.randomUUID());
+        children.add(location);
         // Stub the session to return this node ...
-        String absolutePath = parent.getPath() + "/" + seg.getString(session.getExecutionContext().getNamespaceRegistry());
+        String absolutePath = path.getString(session.getExecutionContext().getNamespaceRegistry());
+        stub(session.getChild(parent, location)).toReturn(child);
+        stub(session.getNode(location.getUuid())).toReturn(child);
         stub(session.getItem(absolutePath)).toReturn(child);
         return child;
     }
@@ -120,7 +125,7 @@ public class AbstractJcrNodeTest {
     private Workspace workspace;
     @Mock
     private Repository repository;
-    private List<Segment> children;
+    private List<Location> children;
     private Map<Name, Property> properties;
     private ExecutionContext context;
 
@@ -129,7 +134,7 @@ public class AbstractJcrNodeTest {
         MockitoAnnotations.initMocks(this);
         context = new ExecutionContext();
         stub(session.getExecutionContext()).toReturn(context);
-        children = new ArrayList<Segment>();
+        children = new ArrayList<Location>();
         properties = new HashMap<Name, Property>();
         node = new MockAbstractJcrNode(session, "node", null);
         node.setProperties(properties);
@@ -397,8 +402,8 @@ public class AbstractJcrNodeTest {
         stub(prop.getName()).toReturn("prop");
         properties.put(name(prop.getName()), prop);
         assertThat(node.hasNode("prop"), is(false));
-        Node child = createChild(session, "child", 1, children, node);
-        Node child2 = createChild(session, "child2", 1, children, child);
+        AbstractJcrNode child = createChild(session, "child", 1, children, node);
+        AbstractJcrNode child2 = createChild(session, "child2", 1, children, child);
         node.setChildren(children);
         assertThat(node.hasNode("child"), is(true));
         stub(session.getItem("/node/child/{}child2")).toReturn(child2);

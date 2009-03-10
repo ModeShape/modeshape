@@ -111,10 +111,10 @@ public class JcrSingleValuePropertyTest {
     public void shouldProvideNode() throws Exception {
         UUID referencedUuid = UUID.randomUUID();
         dnaProperty = executionContext.getPropertyFactory().create(JcrLexicon.MIMETYPE, referencedUuid);
-        Node referencedNode = mock(Node.class);
+        AbstractJcrNode referencedNode = mock(AbstractJcrNode.class);
         stub(session.getNode(referencedUuid)).toReturn(referencedNode);
         prop = new JcrSingleValueProperty(node, definition, PropertyType.REFERENCE, dnaProperty);
-        assertThat(prop.getNode(), is(referencedNode));
+        assertThat(prop.getNode(), is((Node)referencedNode));
         assertThat(prop.getType(), is(PropertyType.REFERENCE));
         assertThat(prop.getName(), is(dnaProperty.getName().getString(executionContext.getNamespaceRegistry())));
     }

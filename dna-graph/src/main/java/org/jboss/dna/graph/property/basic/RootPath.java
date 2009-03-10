@@ -342,6 +342,16 @@ public class RootPath extends AbstractPath {
     /**
      * {@inheritDoc}
      * 
+     * @see org.jboss.dna.graph.property.Path#pathsFromRoot()
+     */
+    @Override
+    public Iterator<Path> pathsFromRoot() {
+        return new SingleIterator<Path>(this);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
      * @see org.jboss.dna.graph.property.Path#size()
      */
     public int size() {

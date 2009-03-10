@@ -58,7 +58,6 @@ import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.NamespaceRegistry;
 import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.ValueFormatException;
-import org.jboss.dna.graph.property.Path.Segment;
 
 /**
  * @author jverhaeg
@@ -72,7 +71,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
     private final NodeDefinition definition;
     protected Location location;
     private Map<Name, Property> properties;
-    private List<Path.Segment> children;
+    private List<Location> children;
 
     AbstractJcrNode( JcrSession session,
                      Location location,
@@ -114,7 +113,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         location = location.with(uuid);
     }
 
-    final void setChildren( List<Segment> children ) {
+    final void setChildren( List<Location> children ) {
         assert children != null;
         this.children = children;
     }
@@ -418,8 +417,9 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
                                               .getValueFactories()
                                               .getPathFactory()
                                               .createSegment(relativePath);
-                for (Path.Segment child : children) {
-                    if (child.equals(segment)) return true;
+                for (Location child : children) {
+                    Path.Segment childSegment = child.getPath().getLastSegment();
+                    if (childSegment.equals(segment)) return true;
                 }
             } catch (ValueFormatException e) {
                 throw new RepositoryException(JcrI18n.invalidRelativePath.text(relativePath));
@@ -462,7 +462,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         if (children == null) {
             return new JcrEmptyNodeIterator();
         }
-        return new JcrChildNodeIterator(this, namespaces(), children);
+        return new JcrChildNodeIterator(this, children);
     }
 
     /**
@@ -479,11 +479,11 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         List<Object> patterns = createPatternsFor(namePattern);
 
         // Implementing exact-matching only for now to prototype types as properties
-        List<Path.Segment> matchingChildren = new LinkedList<Path.Segment>();
+        List<Location> matchingChildren = new LinkedList<Location>();
         NamespaceRegistry registry = namespaces();
         boolean foundMatch = false;
-        for (Path.Segment child : children) {
-            String childName = child.getName().getString(registry);
+        for (Location child : children) {
+            String childName = child.getPath().getLastSegment().getName().getString(registry);
             for (Object patternOrMatch : patterns) {
                 if (patternOrMatch instanceof Pattern) {
                     Pattern pattern = (Pattern)patternOrMatch;
@@ -499,7 +499,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
                 }
             }
         }
-        return new JcrChildNodeIterator(this, registry, matchingChildren);
+        return new JcrChildNodeIterator(this, matchingChildren);
     }
 
     /**

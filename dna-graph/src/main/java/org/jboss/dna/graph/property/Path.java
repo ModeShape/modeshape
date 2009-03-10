@@ -495,6 +495,14 @@ public interface Path extends Comparable<Path>, Iterable<Path.Segment>, Serializ
     public Iterator<Segment> iterator();
 
     /**
+     * Return an iterator that walks the paths from the root path down to this path. This method always returns at least one path
+     * (the root returns an iterator containing itself).
+     * 
+     * @return the path iterator; never null
+     */
+    public Iterator<Path> pathsFromRoot();
+
+    /**
      * Obtain a copy of the segments in this path. None of the segments are encoded.
      * 
      * @return the array of segments as a copy

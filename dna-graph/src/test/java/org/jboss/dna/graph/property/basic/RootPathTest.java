@@ -30,15 +30,12 @@ import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.stub;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import org.jboss.dna.common.text.TextEncoder;
 import org.jboss.dna.graph.property.InvalidPathException;
 import org.jboss.dna.graph.property.NamespaceRegistry;
 import org.jboss.dna.graph.property.Path;
-import org.jboss.dna.graph.property.basic.BasicName;
-import org.jboss.dna.graph.property.basic.BasicPath;
-import org.jboss.dna.graph.property.basic.BasicPathSegment;
-import org.jboss.dna.graph.property.basic.RootPath;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -251,6 +248,14 @@ public class RootPathTest extends AbstractPathTest {
         assertThat(root.compareTo(other), is(0));
         assertThat(root.equals(other), is(true));
         assertThat(root.equals(root), is(true));
+    }
+
+    @Test
+    public void shouldReturnIteratorWithRootPathFromPathsFromRoot() {
+        Iterator<Path> iter = root.pathsFromRoot();
+        assertThat(iter.hasNext(), is(true));
+        assertThat(iter.next(), is(root));
+        assertThat(iter.hasNext(), is(false));
     }
 
 }

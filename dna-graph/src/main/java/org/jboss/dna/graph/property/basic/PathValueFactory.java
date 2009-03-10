@@ -401,8 +401,7 @@ public class PathValueFactory extends AbstractValueFactory<Path> implements Path
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.graph.property.PathFactory#create(org.jboss.dna.graph.property.Path,
-     *      org.jboss.dna.graph.property.Path)
+     * @see org.jboss.dna.graph.property.PathFactory#create(org.jboss.dna.graph.property.Path, org.jboss.dna.graph.property.Path)
      */
     public Path create( Path parentPath,
                         Path childPath ) {
@@ -434,6 +433,17 @@ public class PathValueFactory extends AbstractValueFactory<Path> implements Path
         CheckArg.isNotNull(parentPath, "parent path");
         CheckArg.isNotNull(segmentName, "segment name");
         return new ChildPath(parentPath, new BasicPathSegment(segmentName, index));
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.property.PathFactory#create(org.jboss.dna.graph.property.Path, java.lang.String, int)
+     */
+    public Path create( Path parentPath,
+                        String segmentName,
+                        int index ) {
+        return create(parentPath, nameValueFactory.create(segmentName), index);
     }
 
     /**

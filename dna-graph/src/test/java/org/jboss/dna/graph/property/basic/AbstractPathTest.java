@@ -30,7 +30,9 @@ import static org.hamcrest.core.IsSame.sameInstance;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.stub;
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 import org.jboss.dna.common.text.TextEncoder;
 import org.jboss.dna.graph.property.InvalidPathException;
 import org.jboss.dna.graph.property.NamespaceRegistry;
@@ -229,6 +231,20 @@ public abstract class AbstractPathTest {
     @Test
     public void shouldAlwaysReturnNonNullToString() {
         assertThat(path.toString(), is(notNullValue()));
+    }
+
+    @Test
+    public void shouldGetPathsFromRoot() {
+        Iterator<Path> iter = path.pathsFromRoot();
+        List<Path.Segment> segments = path.getSegmentsList();
+        List<Path.Segment> lastSegments = new ArrayList<Path.Segment>();
+        while (iter.hasNext()) {
+            Path next = iter.next();
+            assertThat(next, is(notNullValue()));
+            if (!next.isRoot()) lastSegments.add(next.getLastSegment());
+        }
+        assertThat(lastSegments.size(), is(path.size()));
+        assertThat(lastSegments, is(segments));
     }
 
 }

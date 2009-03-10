@@ -123,10 +123,10 @@ class JcrSession implements Session {
      */
     private final Map<String, Object> sessionAttributes;
 
-    private final ReferenceMap<UUID, Node> nodesByUuid;
-    private final ReferenceMap<String, Node> nodesByJcrUuid;
+    private final ReferenceMap<UUID, AbstractJcrNode> nodesByUuid;
+    private final ReferenceMap<String, AbstractJcrNode> nodesByJcrUuid;
     private boolean isLive;
-    private AbstractJcrNode rootNode;
+    private JcrRootNode rootNode;
     private PropertyDefinition anyMultiplePropertyDefinition;
     private transient org.jboss.dna.graph.property.Property defaultPrimaryType;
 
@@ -153,8 +153,8 @@ class JcrSession implements Session {
                                   this.repository.getConnectionFactory(),
                                   this.executionContext);
 
-        this.nodesByUuid = new ReferenceMap<UUID, Node>(ReferenceType.STRONG, ReferenceType.SOFT);
-        this.nodesByJcrUuid = new ReferenceMap<String, Node>(ReferenceType.STRONG, ReferenceType.SOFT);
+        this.nodesByUuid = new ReferenceMap<UUID, AbstractJcrNode>(ReferenceType.STRONG, ReferenceType.SOFT);
+        this.nodesByJcrUuid = new ReferenceMap<String, AbstractJcrNode>(ReferenceType.STRONG, ReferenceType.SOFT);
         this.isLive = true;
 
         assert this.repository != null;
@@ -182,7 +182,7 @@ class JcrSession implements Session {
      * 
      * @return nodesByUuid
      */
-    Map<UUID, Node> getNodesByUuid() {
+    Map<UUID, AbstractJcrNode> getNodesByUuid() {
         return Collections.unmodifiableMap(nodesByUuid);
     }
 
@@ -394,26 +394,16 @@ class JcrSession implements Session {
         }
         // Since we don't know whether path refers to a node or a property, look to see if we can tell it's a node ...
         if (path.getLastSegment().hasIndex()) {
-            try {
-                return getNode(path);
-            } catch (org.jboss.dna.graph.property.PathNotFoundException e) {
-                // If the node isn't found, throw a PathNotFoundException
-                throw new PathNotFoundException(JcrI18n.pathNotFound.text(path));
-            }
+            return getNode(path);
         }
         // We can't tell from the name, so try a node first ...
         try {
             return getNode(path);
-        } catch (org.jboss.dna.graph.property.PathNotFoundException e) {
-            // A node was not found, so treat look for a node using the parent as the node's path ...
+        } catch (PathNotFoundException e) {
+            // A node was not found, so look for a node using the parent as the node's path ...
             Path parentPath = path.getParent();
             Name propertyName = path.getLastSegment().getName();
-            try {
-                return getNode(parentPath).getProperty(propertyName.getString(namespaces()));
-            } catch (org.jboss.dna.graph.property.PathNotFoundException e2) {
-                // If the node isn't found, throw a PathNotFoundException
-                throw new PathNotFoundException(JcrI18n.pathNotFound.text(path));
-            }
+            return getNode(parentPath).getProperty(propertyName.getString(namespaces()));
         }
     }
 
@@ -427,19 +417,65 @@ class JcrSession implements Session {
         throw new UnsupportedOperationException();
     }
 
+    Node getChild( AbstractJcrNode parent,
+                   Location location ) throws RepositoryException {
+        Node child = null;
+        UUID uuid = location.getUuid();
+        if (uuid != null) {
+            // The location has a UUID, so look up the node by this UUID in the session ...
+            child = getNode(uuid);
+        }
+        if (child == null) {
+            // The child was not found in the session's cache, so create the node using its path ...
+            child = loadNode(parent, location.getPath());
+        }
+        return child;
+    }
+
     /**
      * Find or create a JCR Node for the given path. This method works for the root node, too.
      * 
      * @param path the path; may not be null
      * @return the JCR node instance for the given path; never null
+     * @throws PathNotFoundException if the path could not be found
      * @throws RepositoryException if there is a problem
      */
-    private Node getNode( Path path ) throws RepositoryException {
+    Node getNode( Path path ) throws RepositoryException, PathNotFoundException {
+        if (path.isRoot()) return rootNode();
+
+        // Start at the root and walk down the path ...
+        AbstractJcrNode parent = rootNode();
+        AbstractJcrNode node = null;
+        Iterator<Path> pathIter = path.pathsFromRoot();
+        while (pathIter.hasNext()) {
+            node = loadNode(parent, pathIter.next()); // should throw PathNotFoundException if not there
+            parent = node;
+        }
+        return node;
+    }
+
+    /**
+     * Find or create a JCR Node for the given path. This method works for the root node, too.
+     * 
+     * @param parent the parent of the node, if known; null if the parent is not known
+     * @param path the path; may not be null
+     * @return the JCR node instance for the given path; never null
+     * @throws PathNotFoundException if the path could not be found
+     * @throws RepositoryException if there is a problem
+     */
+    private AbstractJcrNode loadNode( AbstractJcrNode parent,
+                                      Path path ) throws RepositoryException, PathNotFoundException {
         boolean isRoot = path.isRoot();
         if (isRoot && rootNode != null) return rootNode;
 
         // Get node from source and get it's UUID ...
-        org.jboss.dna.graph.Node graphNode = graph.getNodeAt(path);
+        org.jboss.dna.graph.Node graphNode = null;
+        try {
+            graphNode = graph.getNodeAt(path);
+        } catch (org.jboss.dna.graph.property.PathNotFoundException e) {
+            // If the node isn't found, throw a PathNotFoundException
+            throw new PathNotFoundException(JcrI18n.pathNotFound.text(path));
+        }
 
         // Now get the DNA node's UUID ...
         Location location = graphNode.getLocation();
@@ -447,6 +483,10 @@ class JcrSession implements Session {
         UUID uuid = location.getUuid();
         org.jboss.dna.graph.property.Property uuidProperty = null;
         if (uuid != null) {
+            // Check for an existing node at this UUID ...
+            AbstractJcrNode existing = nodesByUuid.get(uuid);
+            if (existing != null) return existing;
+
             // Considered an identification property ...
             uuidProperty = location.getIdProperty(JcrLexicon.UUID);
             if (uuidProperty == null) uuidProperty = location.getIdProperty(DnaLexicon.UUID);
@@ -485,7 +525,7 @@ class JcrSession implements Session {
 
         // See if there is already a JCR node object for this UUID ...
         if (uuid != null && !isRoot) {
-            Node node = getNode(uuid);
+            AbstractJcrNode node = getNode(uuid);
             if (node != null) return node;
         }
 
@@ -538,7 +578,10 @@ class JcrSession implements Session {
             node = new JcrRootNode(this, location, definition);
         } else {
             // Find the parent ...
-            AbstractJcrNode parent = (AbstractJcrNode)getNode(path.getParent());
+            if (parent == null) {
+                parent = (AbstractJcrNode)getNode(path.getParent());
+            }
+            assert parent != null;
 
             // Find the node definition for this node ...
             if (definition == null) {
@@ -558,11 +601,11 @@ class JcrSession implements Session {
 
         // Now populate the node and add to the cache ...
         populateNode(node, graphNode, uuid, uuidProperty, primaryTypeProperty);
-        if (isRoot) rootNode = node;
+        if (isRoot) rootNode = (JcrRootNode)node;
         return node;
     }
 
-    Node getNode( UUID uuid ) {
+    AbstractJcrNode getNode( UUID uuid ) {
         return nodesByUuid.get(uuid);
     }
 
@@ -586,17 +629,24 @@ class JcrSession implements Session {
         return result;
     }
 
+    JcrRootNode rootNode() throws RepositoryException {
+        // Return cached root node if available
+        if (rootNode != null) {
+            return rootNode;
+        }
+        Path rootPath = executionContext.getValueFactories().getPathFactory().createRootPath();
+        loadNode(null, rootPath); // sets the root node
+        assert rootNode != null;
+        return rootNode;
+    }
+
     /**
      * {@inheritDoc}
      * 
      * @see javax.jcr.Session#getRootNode()
      */
     public Node getRootNode() throws RepositoryException {
-        // Return cached root node if available
-        if (rootNode != null) {
-            return rootNode;
-        }
-        return getNode(executionContext.getValueFactories().getPathFactory().createRootPath());
+        return rootNode();
     }
 
     /**
@@ -806,7 +856,7 @@ class JcrSession implements Session {
         // --------------------------------------------------
         // Create JCR children for corresponding DNA children
         // --------------------------------------------------
-        node.setChildren(graphNode.getChildrenSegments());
+        node.setChildren(graphNode.getChildren());
 
         // ------------------------------------------------------
         // Create JCR properties for corresponding DNA properties

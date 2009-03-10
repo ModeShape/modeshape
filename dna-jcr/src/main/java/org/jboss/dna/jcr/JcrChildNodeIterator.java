@@ -30,8 +30,7 @@ import javax.jcr.NodeIterator;
 import javax.jcr.RepositoryException;
 import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.util.CheckArg;
-import org.jboss.dna.graph.property.NamespaceRegistry;
-import org.jboss.dna.graph.property.Path;
+import org.jboss.dna.graph.Location;
 
 /**
  * @author jverhaeg
@@ -39,20 +38,18 @@ import org.jboss.dna.graph.property.Path;
 @Immutable
 final class JcrChildNodeIterator implements NodeIterator {
 
-    private final NamespaceRegistry registry;
-    private final Node parent;
-    private final Iterator<Path.Segment> iterator;
+    private final AbstractJcrNode parent;
+    private final Iterator<Location> iterator;
+    private final JcrSession session;
     private int ndx;
     private int size;
 
-    JcrChildNodeIterator( Node parent,
-                          NamespaceRegistry registry,
-                          List<Path.Segment> children ) {
+    JcrChildNodeIterator( AbstractJcrNode parent,
+                          List<Location> children ) {
         assert parent != null;
-        assert registry != null;
         assert children != null;
-        this.registry = registry;
         this.parent = parent;
+        this.session = parent.session();
         iterator = children.iterator();
         size = children.size();
     }
@@ -99,11 +96,10 @@ final class JcrChildNodeIterator implements NodeIterator {
      * @see javax.jcr.NodeIterator#nextNode()
      */
     public Node nextNode() {
-        Path.Segment childSegment = iterator.next();
+        Location location = iterator.next();
         ndx++;
-        String childName = childSegment.getString(registry);
         try {
-            return parent.getNode(childName);
+            return session.getChild(parent, location);
         } catch (RepositoryException error) {
             throw new RuntimeException(error);
         }
