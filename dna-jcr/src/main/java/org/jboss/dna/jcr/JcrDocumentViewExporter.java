@@ -97,7 +97,7 @@ class JcrDocumentViewExporter extends AbstractJcrExporter {
 
             Name propName = ((AbstractJcrProperty)prop).getDnaProperty().getName();
 
-            String localPropName = propName.getString(executionContext.getNamespaceRegistry());
+            String localPropName = getPrefixedName(propName);
 
             Value value;
             if (prop instanceof JcrSingleValueProperty) {
@@ -151,8 +151,7 @@ class JcrDocumentViewExporter extends AbstractJcrExporter {
     private boolean isXmlTextNode( Node node ) throws RepositoryException {
         // ./xmltext/xmlcharacters exception (see JSR-170 Spec 6.4.2.3)
 
-        ExecutionContext executionContext = session.getExecutionContext();
-        if (JcrLexicon.XMLTEXT.getString(executionContext.getNamespaceRegistry()).equals(node.getName())) {
+        if (getPrefixedName(JcrLexicon.XMLTEXT).equals(node.getName())) {
             if (node.getNodes().getSize() == 0) {
 
                 PropertyIterator properties = node.getProperties();
@@ -161,11 +160,11 @@ class JcrDocumentViewExporter extends AbstractJcrExporter {
                 while (properties.hasNext()) {
                     Property property = properties.nextProperty();
 
-                    if (JcrLexicon.PRIMARY_TYPE.getString(executionContext.getNamespaceRegistry()).equals(property.getName())) {
+                    if (getPrefixedName(JcrLexicon.PRIMARY_TYPE).equals(property.getName())) {
                         continue;
                     }
 
-                    if (JcrLexicon.XMLCHARACTERS.getString(executionContext.getNamespaceRegistry()).equals(property.getName())) {
+                    if (getPrefixedName(JcrLexicon.XMLCHARACTERS).equals(property.getName())) {
                         xmlCharactersFound = true;
                         continue;
                     }
@@ -195,8 +194,7 @@ class JcrDocumentViewExporter extends AbstractJcrExporter {
 
         assert isXmlTextNode(node);
         
-        ExecutionContext executionContext = session.getExecutionContext();
-        Property xmlCharacters = node.getProperty(JcrLexicon.XMLCHARACTERS.getString(executionContext.getNamespaceRegistry()));
+        Property xmlCharacters = node.getProperty(getPrefixedName(JcrLexicon.XMLCHARACTERS));
 
         assert xmlCharacters != null;
 

@@ -74,6 +74,11 @@ abstract class AbstractJcrExporter {
     private final Collection<String> restrictedPrefixes;
 
     /**
+     * Cache from {@link Name}s to their rewritten version based on session uri mappings.
+     */
+    private final Map<Name, String> prefixedNames;
+
+    /**
      * Creates the exporter
      * 
      * @param session the session in which the exporter is created
@@ -83,6 +88,34 @@ abstract class AbstractJcrExporter {
                          Collection<String> restrictedPrefixes ) {
         this.session = session;
         this.restrictedPrefixes = restrictedPrefixes;
+        this.prefixedNames = new HashMap<Name, String>();
+    }
+
+    /**
+     * Returns the &quot;prefixed&quot; or rewritten version of <code>baseName</code> based on the URI mappings in the current
+     * session. For example:</p> If the namespace &quot;http://www.example.com/JCR/example/1.0&quot; is mapped to the prefix
+     * &quot;foo&quot; in the current session (or as a persistent mapping that has not been re-mapped in the current session),
+     * this method will return the string &quot;foo:bar&quot; when passed a {@link Name} with uri
+     * &quot;http://www.example.com/JCR/example/1.0&quot; and local name &quot;bar&quot;.</p> This method does manage and utilize
+     * a {@link Name} to {@link String} cache at the instance scope.
+     * 
+     * @param baseName the name to be re-mapped into its prefixed version
+     * @return the prefixed version of <code>baseName</code> based on the current session URI mappings (which include all
+     *         persistent URI mappings by default).
+     * @see #prefixedNames
+     * @see javax.jcr.Session#setNamespacePrefix(String, String)
+     * @see javax.jcr.Session#getNamespacePrefix(String)
+     */
+    protected String getPrefixedName( Name baseName ) {
+        String prefixedName = prefixedNames.get(baseName);
+
+        if (prefixedName == null) {
+            prefixedName = baseName.getString(session.getExecutionContext().getNamespaceRegistry());
+
+            prefixedNames.put(baseName, prefixedName);
+        }
+
+        return prefixedName;
     }
 
     /**
@@ -188,7 +221,7 @@ abstract class AbstractJcrExporter {
                                  Attributes atts ) throws SAXException {
         contentHandler.startElement(name.getNamespaceUri(),
                                     NAME_ENCODER.encode(name.getLocalName()),
-                                    NAME_ENCODER.encode(name.getString(session.getExecutionContext().getNamespaceRegistry())),
+                                    NAME_ENCODER.encode(getPrefixedName(name)),
                                     atts);
     }
 
@@ -204,7 +237,7 @@ abstract class AbstractJcrExporter {
                                Name name ) throws SAXException {
         contentHandler.endElement(name.getNamespaceUri(),
                                   NAME_ENCODER.encode(name.getLocalName()),
-                                  NAME_ENCODER.encode(name.getString(session.getExecutionContext().getNamespaceRegistry())));
+                                  NAME_ENCODER.encode(getPrefixedName(name)));
     }
 
     /**

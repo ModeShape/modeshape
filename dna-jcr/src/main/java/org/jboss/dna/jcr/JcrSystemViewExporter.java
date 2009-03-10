@@ -15,7 +15,6 @@ import javax.jcr.Value;
 import net.jcip.annotations.NotThreadSafe;
 import org.jboss.dna.common.util.Base64;
 import org.jboss.dna.common.xml.XmlCharacters;
-import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.property.Name;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -65,13 +64,12 @@ class JcrSystemViewExporter extends AbstractJcrExporter {
                             ContentHandler contentHandler,
                             boolean skipBinary,
                             boolean noRecurse ) throws RepositoryException, SAXException {
-        ExecutionContext executionContext = session.getExecutionContext();
 
         // start the sv:node element for this JCR node
         AttributesImpl atts = new AttributesImpl();
         atts.addAttribute(JcrSvLexicon.NAME.getNamespaceUri(),
                           JcrSvLexicon.NAME.getLocalName(),
-                          JcrSvLexicon.NAME.getString(executionContext.getNamespaceRegistry()),
+                          getPrefixedName(JcrSvLexicon.NAME),
                           PropertyType.nameFromValue(PropertyType.STRING),
                           node.getName());
 
@@ -141,21 +139,20 @@ class JcrSystemViewExporter extends AbstractJcrExporter {
         assert property instanceof AbstractJcrProperty : "Illegal attempt to use " + getClass().getName()
                                                          + " on non-DNA property";
 
-        ExecutionContext executionContext = session.getExecutionContext();
         AbstractJcrProperty prop = (AbstractJcrProperty)property;
 
         // first set the property sv:name attribute
         AttributesImpl propAtts = new AttributesImpl();
         propAtts.addAttribute(JcrSvLexicon.NAME.getNamespaceUri(),
                               JcrSvLexicon.NAME.getLocalName(),
-                              JcrSvLexicon.NAME.getString(executionContext.getNamespaceRegistry()),
+                              getPrefixedName(JcrSvLexicon.NAME),
                               PropertyType.nameFromValue(PropertyType.STRING),
                               prop.getName());
 
         // and it's sv:type attribute
         propAtts.addAttribute(JcrSvLexicon.TYPE.getNamespaceUri(),
                               JcrSvLexicon.TYPE.getLocalName(),
-                              JcrSvLexicon.TYPE.getString(executionContext.getNamespaceRegistry()),
+                              getPrefixedName(JcrSvLexicon.TYPE),
                               PropertyType.nameFromValue(PropertyType.STRING),
                               PropertyType.nameFromValue(prop.getType()));
 
@@ -224,7 +221,7 @@ class JcrSystemViewExporter extends AbstractJcrExporter {
             }
 
             if (allCharsAreValidXml) {
-                
+
                 startElement(contentHandler, JcrSvLexicon.VALUE, null);
                 contentHandler.characters(chars, 0, chars.length);
                 endElement(contentHandler, JcrSvLexicon.VALUE);

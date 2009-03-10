@@ -139,7 +139,7 @@ class DnaBuiltinNodeTypeSource extends AbstractJcrNodeTypeSource {
         /* Name of node type that holds xmltext from document view import (see JCR 1.0 spec section 7.3.2) */
         JcrNodeType xmlText = new JcrNodeType(
                                               session,
-                                              DnaLexicon.XML_TEXT_TYPE,
+                                              DnaLexicon.XML_TEXT,
                                               Arrays.asList(new NodeType[] {base}),
                                               NO_PRIMARY_ITEM_NAME,
                                               NO_CHILD_NODES,
@@ -166,13 +166,13 @@ class DnaBuiltinNodeTypeSource extends AbstractJcrNodeTypeSource {
                                                  Arrays.asList(new JcrNodeDefinition[] {new JcrNodeDefinition(
                                                                                                               session,
                                                                                                               null,
-                                                                                                              DnaLexicon.XML_TEXT,
+                                                                                                              JcrLexicon.XMLTEXT,
                                                                                                               OnParentVersionBehavior.VERSION.getJcrValue(),
                                                                                                               false,
                                                                                                               true,
                                                                                                               false,
                                                                                                               false,
-                                                                                                              DnaLexicon.XML_TEXT_TYPE,
+                                                                                                              DnaLexicon.XML_TEXT,
                                                                                                               new NodeType[] {xmlText})}),
                                                  NO_PROPERTIES, IS_A_MIXIN, UNORDERABLE_CHILD_NODES);
 
