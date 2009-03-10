@@ -48,7 +48,8 @@ import org.jboss.dna.graph.connector.inmemory.InMemoryRepositorySource;
 import org.jboss.dna.graph.property.Path;
 
 /**
- * Test suite to wrap Apache Jackrabbit JCR technology compatibility kit (TCK) unit tests.
+ * Test suite to wrap Apache Jackrabbit JCR technology compatibility kit (TCK) unit tests. Note that technically these are not the
+ * actual TCK, but these are unit tests that happen to be similar to (or provided the basis for) a subset of the TCK.
  */
 public class JcrTckTest {
 
@@ -287,7 +288,7 @@ public class JcrTckTest {
                 Path destinationPath = executionContext.getValueFactories().getPathFactory().create("/");
                 GraphImporter importer = new GraphImporter(graph);
 
-                URI xmlContent = new File("src/test/resources/repositoryJackrabbitTck.xml").toURI();
+                URI xmlContent = new File("src/test/resources/repositoryForTckTests.xml").toURI();
                 Graph.Batch batch = importer.importXml(xmlContent, Location.create(destinationPath));
                 batch.execute();
 
