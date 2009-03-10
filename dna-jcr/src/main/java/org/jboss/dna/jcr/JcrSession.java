@@ -73,6 +73,7 @@ import org.jboss.dna.graph.property.ValueFormatException;
 import org.jboss.dna.graph.property.basic.LocalNamespaceRegistry;
 import org.jboss.dna.jcr.JcrNamespaceRegistry.Behavior;
 import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 import com.google.common.base.ReferenceType;
 import com.google.common.collect.ReferenceMap;
 
@@ -290,53 +291,81 @@ class JcrSession implements Session {
     /**
      * {@inheritDoc}
      * 
-     * @throws UnsupportedOperationException always
      * @see javax.jcr.Session#exportDocumentView(java.lang.String, org.xml.sax.ContentHandler, boolean, boolean)
      */
     public void exportDocumentView( String absPath,
                                     ContentHandler contentHandler,
                                     boolean skipBinary,
-                                    boolean noRecurse ) {
-        throw new UnsupportedOperationException();
+                                    boolean noRecurse ) throws RepositoryException, SAXException {
+        CheckArg.isNotNull(absPath, "absPath");
+        CheckArg.isNotNull(contentHandler, "contentHandler");
+
+        Path exportRootPath = executionContext.getValueFactories().getPathFactory().create(absPath);
+        Node exportRootNode = getNode(exportRootPath);
+
+        AbstractJcrExporter exporter = new JcrDocumentViewExporter(this);
+
+        exporter.exportView(exportRootNode, contentHandler, skipBinary, noRecurse);
     }
 
     /**
      * {@inheritDoc}
      * 
-     * @throws UnsupportedOperationException always
      * @see javax.jcr.Session#exportDocumentView(java.lang.String, java.io.OutputStream, boolean, boolean)
      */
     public void exportDocumentView( String absPath,
                                     OutputStream out,
                                     boolean skipBinary,
-                                    boolean noRecurse ) {
-        throw new UnsupportedOperationException();
+                                    boolean noRecurse ) throws RepositoryException {
+        CheckArg.isNotNull(absPath, "absPath");
+        CheckArg.isNotNull(out, "out");
+
+        Path exportRootPath = executionContext.getValueFactories().getPathFactory().create(absPath);
+        Node exportRootNode = getNode(exportRootPath);
+
+        AbstractJcrExporter exporter = new JcrDocumentViewExporter(this);
+
+        exporter.exportView(exportRootNode, out, skipBinary, noRecurse);
     }
 
     /**
      * {@inheritDoc}
      * 
-     * @throws UnsupportedOperationException always
      * @see javax.jcr.Session#exportSystemView(java.lang.String, org.xml.sax.ContentHandler, boolean, boolean)
      */
     public void exportSystemView( String absPath,
                                   ContentHandler contentHandler,
                                   boolean skipBinary,
-                                  boolean noRecurse ) {
-        throw new UnsupportedOperationException();
+                                  boolean noRecurse ) throws RepositoryException, SAXException {
+        CheckArg.isNotNull(absPath, "absPath");
+        CheckArg.isNotNull(contentHandler, "contentHandler");
+
+        Path exportRootPath = executionContext.getValueFactories().getPathFactory().create(absPath);
+        Node exportRootNode = getNode(exportRootPath);
+
+        AbstractJcrExporter exporter = new JcrSystemViewExporter(this);
+
+        exporter.exportView(exportRootNode, contentHandler, skipBinary, noRecurse);
     }
 
     /**
      * {@inheritDoc}
      * 
-     * @throws UnsupportedOperationException always
      * @see javax.jcr.Session#exportSystemView(java.lang.String, java.io.OutputStream, boolean, boolean)
      */
     public void exportSystemView( String absPath,
                                   OutputStream out,
                                   boolean skipBinary,
-                                  boolean noRecurse ) {
-        throw new UnsupportedOperationException();
+                                  boolean noRecurse ) throws RepositoryException {
+        CheckArg.isNotNull(absPath, "absPath");
+        CheckArg.isNotNull(out, "out");
+
+        Path exportRootPath = executionContext.getValueFactories().getPathFactory().create(absPath);
+        Node exportRootNode = getNode(exportRootPath);
+
+        AbstractJcrExporter exporter = new JcrSystemViewExporter(this);
+
+        exporter.exportView(exportRootNode, out, skipBinary, noRecurse);
     }
 
     /**
@@ -518,7 +547,7 @@ class JcrSession implements Session {
                 String childName = path.getLastSegment().getName().getString(namespaces);
                 definition = nodeType.findBestNodeDefinitionForChild(childName, primaryTypeNameString);
                 if (definition == null) {
-                    String msg = JcrI18n.nodeDefinitionCouldBeDeterminedForNode.text(path, workspace.getName());
+                    String msg = JcrI18n.nodeDefinitionCouldNotBeDeterminedForNode.text(path, workspace.getName());
                     throw new RepositorySourceException(msg);
                 }
             }

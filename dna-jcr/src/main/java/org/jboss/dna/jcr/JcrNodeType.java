@@ -171,6 +171,7 @@ class JcrNodeType implements NodeType {
         // Check if the node can be added with the named child node definition
         if (childNode != null && primaryNodeTypeName != null) {
             NodeType primaryNodeType = getPrimaryNodeType(primaryNodeTypeName);
+            if (primaryNodeType == null) return null;
             if (!checkTypeAgainstDefinition(primaryNodeType, childNode)) return null;
         }
         return childNode;

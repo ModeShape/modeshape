@@ -63,7 +63,7 @@ public final class JcrI18n {
     public static I18n invalidNamePattern;
     public static I18n itemNotFoundWithUuid;
     public static I18n errorWhileFindingNodeWithUuid;
-    public static I18n nodeDefinitionCouldBeDeterminedForNode;
+    public static I18n nodeDefinitionCouldNotBeDeterminedForNode;
 
     public static I18n typeNotFound;
     public static I18n supertypeNotFound;

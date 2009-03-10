@@ -67,6 +67,11 @@ class JcrNamespaceRegistry implements javax.jcr.NamespaceRegistry {
     static final String XMLNS_NAMESPACE_PREFIX = XMLConstants.XMLNS_ATTRIBUTE;
     static final String XMLNS_NAMESPACE_URI = XMLConstants.XMLNS_ATTRIBUTE_NS_URI;
 
+    static final String XML_SCHEMA_NAMESPACE_PREFIX = "xsd";
+    static final String XML_SCHEMA_NAMESPACE_URI = "http://www.w3.org/2001/XMLSchema";
+    static final String XML_SCHEMA_INSTANCE_NAMESPACE_PREFIX = "xsi";
+    static final String XML_SCHEMA_INSTANCE_NAMESPACE_URI = "http://www.w3.org/2001/XMLSchema-instance";
+    
     static final Set<String> STANDARD_BUILT_IN_PREFIXES;
     static final Set<String> STANDARD_BUILT_IN_URIS;
     static final Map<String, String> STANDARD_BUILT_IN_NAMESPACES_BY_PREFIX;
@@ -82,6 +87,8 @@ class JcrNamespaceRegistry implements javax.jcr.NamespaceRegistry {
         namespaces.put(JcrSvLexicon.Namespace.PREFIX, JcrSvLexicon.Namespace.URI);
         namespaces.put(XML_NAMESPACE_PREFIX, XML_NAMESPACE_URI);
         namespaces.put(XMLNS_NAMESPACE_PREFIX, XMLNS_NAMESPACE_URI);
+        namespaces.put(XML_SCHEMA_NAMESPACE_PREFIX, XML_SCHEMA_NAMESPACE_URI);
+        namespaces.put(XML_SCHEMA_INSTANCE_NAMESPACE_PREFIX, XML_SCHEMA_INSTANCE_NAMESPACE_URI);
         namespaces.put(DnaLexicon.Namespace.PREFIX, DnaLexicon.Namespace.URI);
         // Set up the reverse map for the standard namespaces ...
         Map<String, String> prefixes = new HashMap<String, String>();

@@ -108,8 +108,8 @@ public class JcrTckTest {
             addTestSuite(org.apache.jackrabbit.test.api.SessionReadMethodsTest.class);
             // addTestSuite(org.apache.jackrabbit.test.api.WorkspaceReadMethodsTest.class);
             addTestSuite(org.apache.jackrabbit.test.api.ReferenceableRootNodesTest.class);
-            // addTestSuite(org.apache.jackrabbit.test.api.ExportSysViewTest.class);
-            // addTestSuite(org.apache.jackrabbit.test.api.ExportDocViewTest.class);
+            addTestSuite(org.apache.jackrabbit.test.api.ExportSysViewTest.class);
+            addTestSuite(org.apache.jackrabbit.test.api.ExportDocViewTest.class);
             addTestSuite(org.apache.jackrabbit.test.api.RepositoryLoginTest.class);
 
             // These might not all be level one tests
