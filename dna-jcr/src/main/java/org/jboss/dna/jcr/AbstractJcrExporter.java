@@ -47,10 +47,8 @@ import org.xml.sax.helpers.DefaultHandler;
 /**
  * Superclass of DNA JCR exporters, provides basic support for traversing through the nodes recursively (if needed), exception
  * wrapping (since {@link ItemVisitor} does not allow checked exceptions to be thrown from its visit* methods, and the ability to
- * wrap an {@link OutputStream} with a {@link ContentHandler}.
- * <p />
- * Each exporter is only intended to be used once (by calling <code>exportView</code>) and discarded. This class is <b>NOT</b>
- * thread-safe.
+ * wrap an {@link OutputStream} with a {@link ContentHandler}. <p /> Each exporter is only intended to be used once (by calling
+ * <code>exportView</code>) and discarded. This class is <b>NOT</b> thread-safe.
  * 
  * @see JcrSystemViewExporter
  * @see JcrDocumentViewExporter
@@ -318,7 +316,7 @@ abstract class AbstractJcrExporter {
             emit("</");
             emit(name);
             emit(">");
-            System.out.println();
+            if (LOG_TO_CONSOLE) System.out.println();
 
         }
 
