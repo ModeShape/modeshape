@@ -25,13 +25,17 @@ package org.jboss.dna.jcr;
 
 import java.io.InputStream;
 import java.util.Calendar;
+import javax.jcr.Node;
 import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
 import javax.jcr.Value;
 import javax.jcr.ValueFormatException;
 import net.jcip.annotations.NotThreadSafe;
 import org.jboss.dna.graph.property.Binary;
+import org.jboss.dna.graph.property.Name;
+import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.ValueFactories;
+import org.jboss.dna.graph.property.Path.Segment;
 
 /**
  * @author jverhaeg
@@ -58,8 +62,12 @@ final class JcrValue implements Value {
 
     private State state = State.NEVER_CONSUMED;
 
-    ValueFormatException createValueFormatException( Class<?> type ) {
+    private ValueFormatException createValueFormatException( Class<?> type ) {
         return new ValueFormatException(JcrI18n.cannotConvertValue.text(value.getClass().getSimpleName(), type.getSimpleName()));
+    }
+
+    private ValueFormatException createValueFormatException( org.jboss.dna.graph.property.ValueFormatException vfe ) {
+        return new ValueFormatException(vfe);
     }
 
     /**
@@ -175,6 +183,112 @@ final class JcrValue implements Value {
      */
     public int getType() {
         return type;
+    }
+
+    /**
+     * Returns a copy of the current {@link JcrValue} cast to the JCR type specified by the <code>type</code> argument. If the
+     * value cannot be converted base don the JCR type conversion rules, a {@link ValueFormatException} will be thrown.
+     * 
+     * @param type the JCR type from {@link PropertyType} that the new {@link JcrValue} should have.
+     * @return a new {@link JcrValue} with the given JCR type and an equivalent value.
+     * @throws ValueFormatException if the value contained by this {@link JcrValue} cannot be converted to the desired type.
+     * @see PropertyType
+     */
+    JcrValue asType( int type ) throws ValueFormatException {
+
+        if (type == this.type) {
+            return new JcrValue(this.valueFactories, this.type, this.value);
+        }
+
+        switch (type) {
+            case PropertyType.BOOLEAN:
+                try {
+                    if (this.type == PropertyType.STRING || this.type == PropertyType.BINARY) {
+                        return new JcrValue(this.valueFactories, type, valueFactories.getBooleanFactory().create(value));
+                    }
+                } catch (org.jboss.dna.graph.property.ValueFormatException vfe) {
+                    throw createValueFormatException(vfe);
+                }
+                throw createValueFormatException(boolean.class);
+
+            case PropertyType.DATE:
+                try {
+                    if (this.type == PropertyType.DOUBLE || this.type == PropertyType.LONG || this.type == PropertyType.STRING
+                        || this.type == PropertyType.BINARY) {
+                        return new JcrValue(this.valueFactories, type, valueFactories.getDateFactory().create(value));
+                    }
+                } catch (org.jboss.dna.graph.property.ValueFormatException vfe) {
+                    throw createValueFormatException(vfe);
+                }
+
+                throw createValueFormatException(Calendar.class);
+
+            case PropertyType.NAME:
+                try {
+                    if (this.type == PropertyType.STRING) {
+                        return new JcrValue(this.valueFactories, type, this.valueFactories.getNameFactory().create(value));
+                    }
+
+                    String valueAsString = this.valueFactories.getStringFactory().create(value);
+                    if (this.type == PropertyType.BINARY) {
+                        return new JcrValue(this.valueFactories, type, this.valueFactories.getNameFactory().create(valueAsString));
+
+                    }
+
+                    if (this.type == PropertyType.PATH) {
+                        Path path = valueFactories.getPathFactory().create(valueAsString);
+
+                        Segment[] segments = path.getSegmentsArray();
+                        if (!path.isAbsolute() && segments.length == 1 && !segments[0].hasIndex()) {
+                            return new JcrValue(this.valueFactories, type, this.valueFactories.getNameFactory()
+                                                                                              .create(valueAsString));
+
+                        }
+                    }
+                } catch (org.jboss.dna.graph.property.ValueFormatException vfe) {
+                    throw createValueFormatException(vfe);
+                }
+
+                throw createValueFormatException(Name.class);
+
+            case PropertyType.PATH:
+                try {
+                    if (this.type == PropertyType.STRING) {
+                        return new JcrValue(this.valueFactories, type, this.valueFactories.getPathFactory().create(value));
+                    }
+                } catch (org.jboss.dna.graph.property.ValueFormatException vfe) {
+                    throw createValueFormatException(vfe);
+                }
+                throw createValueFormatException(Path.class);
+
+                // Nothing can be converted to these types (except themselves)
+            case PropertyType.REFERENCE:
+                throw createValueFormatException(Node.class);
+            case PropertyType.DOUBLE:
+                throw createValueFormatException(double.class);
+            case PropertyType.LONG:
+                throw createValueFormatException(long.class);
+
+                // Anything can be converted to these types
+            case PropertyType.BINARY:
+                try {
+                    return new JcrValue(this.valueFactories, type, valueFactories.getBinaryFactory().create(value));
+                } catch (org.jboss.dna.graph.property.ValueFormatException vfe) {
+                    throw createValueFormatException(vfe);
+                }
+            case PropertyType.STRING:
+                try {
+                    return new JcrValue(this.valueFactories, type, valueFactories.getStringFactory().create(value));
+                } catch (org.jboss.dna.graph.property.ValueFormatException vfe) {
+                    throw createValueFormatException(vfe);
+                }
+            case PropertyType.UNDEFINED:
+                return new JcrValue(this.valueFactories, this.type, this.value);
+            default:
+                assert false : "Unexpected JCR property type " + type;
+                // This should still throw an exception even if assertions are turned off
+                throw new IllegalStateException("Invalid property type " + type);
+        }
     }
 
     void nonInputStreamConsumed() {

@@ -29,7 +29,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.Stack;
-import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
 import javax.jcr.Value;
 import javax.jcr.nodetype.NodeDefinition;
@@ -38,10 +37,6 @@ import javax.jcr.nodetype.PropertyDefinition;
 import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.graph.property.Name;
-import org.jboss.dna.graph.property.Path;
-import org.jboss.dna.graph.property.ValueFactories;
-import org.jboss.dna.graph.property.ValueFormatException;
-import org.jboss.dna.graph.property.Path.Segment;
 
 /**
  * DNA implementation of JCR {@link NodeType}s.
@@ -329,100 +324,16 @@ class JcrNodeType implements NodeType {
         if (value == null) {
             return !property.isMandatory();
         }
-
-        return canCastValueToType(value, property.getRequiredType());
-    }
-
-    /**
-     * Internal method to validate that a value can be cast to a given JCR property type. The values are set according to the
-     * following rules:
-     * <ol>
-     * <li>If <code>property.getRequiredType()</code> is {@link PropertyType#UNDEFINED}, return <code>true</code></li>
-     * <li>Compare the type of the given value to the required type and see if they are compatible based on the rules in the JCR
-     * 1.0 spec.</li>
-     * </ol>
-     * 
-     * @param jcrPropertyType a value from the {@link PropertyType} constants to which this value MAY be able to be casted.
-     * @param value the value to set (may not be <code>null</code>)
-     * @return whether the value can be cast to the given property type
-     */
-    private boolean canCastValueToType( Value value,
-                                        int jcrPropertyType ) {
-        assert value != null;
-
-        int valueType = value.getType();
-
-        // Trivial case - no cast required
-        if (valueType == jcrPropertyType) {
-            return true;
-        }
-
+        
         try {
-            switch (jcrPropertyType) {
-                case PropertyType.BOOLEAN:
-                    if (valueType == PropertyType.STRING) {
-                        return true;
-                    }
-
-                    if (valueType == PropertyType.BINARY) {
-                        // If the binary can be converted to a UTF-8 string, it can be set onto a boolean property
-                        value.getString();
-                        return true;
-                    }
-                    return false;
-
-                case PropertyType.DATE:
-                    if (valueType == PropertyType.DOUBLE || valueType == PropertyType.LONG) {
-                        return true;
-                    }
-
-                    if (valueType == PropertyType.STRING || valueType == PropertyType.BINARY) {
-                        // If the binary can be converted to a date, it can be set onto a date property
-                        value.getDate();
-                        return true;
-                    }
-                    return false;
-
-                case PropertyType.NAME:
-                    ValueFactories valueFactories = session.getExecutionContext().getValueFactories();
-                    if (valueType == PropertyType.STRING || valueType == PropertyType.BINARY) {
-                        valueFactories.getNameFactory().create(value.getString());
-                        return true;
-                    }
-
-                    if (valueType == PropertyType.PATH) {
-                        Path path = valueFactories.getPathFactory().create(value.getString());
-
-                        Segment[] segments = path.getSegmentsArray();
-                        return !path.isAbsolute() && segments.length == 1 && !segments[0].hasIndex();
-                    }
-
-                    return false;
-
-                case PropertyType.PATH:
-                    return value.getType() == PropertyType.STRING;
-
-                    // Nothing can be converted to these types (except themselves)
-                case PropertyType.REFERENCE:
-                case PropertyType.DOUBLE:
-                case PropertyType.LONG:
-                    return false;
-
-                    // Anything can be converted to these types
-                case PropertyType.BINARY:
-                case PropertyType.STRING:
-                case PropertyType.UNDEFINED:
-                    return true;
-                default:
-                    assert false : "Unexpected JCR property type " + jcrPropertyType;
-                    // This should still throw an exception even if assertions are turned off
-                    throw new IllegalStateException("Invalid property type " + jcrPropertyType);
-            }
-        } catch (RepositoryException re) {
-            return false;
-        } catch (ValueFormatException vfe) {
+            assert value instanceof JcrValue : "Illegal implementation of Value interface";
+            ((JcrValue) value).asType(property.getRequiredType());
+        }
+        catch (javax.jcr.ValueFormatException vfe) {
+            // Cast failed
             return false;
         }
+        return true;
     }
 
     /**
@@ -455,7 +366,12 @@ class JcrNodeType implements NodeType {
 
         for (int i = 0; i < values.length; i++) {
             if (values[i] != null) {
-                if (!canCastValueToType(values[i], property.getRequiredType())) {
+                try {
+                    assert values[i] instanceof JcrValue : "Illegal implementation of Value interface";
+                    ((JcrValue) values[i]).asType(property.getRequiredType());
+                }
+                catch (javax.jcr.ValueFormatException vfe) {
+                    // Cast failed
                     return false;
                 }
             }
