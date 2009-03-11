@@ -136,48 +136,9 @@ class DnaBuiltinNodeTypeSource extends AbstractJcrNodeTypeSource {
 
                                            }), NO_PROPERTIES, NOT_MIXIN, UNORDERABLE_CHILD_NODES);
 
-        /* Name of node type that holds xmltext from document view import (see JCR 1.0 spec section 7.3.2) */
-        JcrNodeType xmlText = new JcrNodeType(
-                                              session,
-                                              DnaLexicon.XML_TEXT,
-                                              Arrays.asList(new NodeType[] {base}),
-                                              NO_PRIMARY_ITEM_NAME,
-                                              NO_CHILD_NODES,
-                                              Arrays.asList(new JcrPropertyDefinition[] {new JcrPropertyDefinition(
-                                                                                                                   session,
-                                                                                                                   null,
-                                                                                                                   JcrLexicon.XMLCHARACTERS,
-                                                                                                                   OnParentVersionBehavior.VERSION.getJcrValue(),
-                                                                                                                   true,
-                                                                                                                   true,
-                                                                                                                   true,
-                                                                                                                   NO_DEFAULT_VALUES,
-                                                                                                                   PropertyType.STRING,
-                                                                                                                   NO_CONSTRAINTS,
-                                                                                                                   false)}),
-                                              NOT_MIXIN, UNORDERABLE_CHILD_NODES);
-
-        /* Mixin type that indicates the node contains an xmltext node which holds xmltext from document view import (see JCR 1.0 spec section 7.3.2) */
-        JcrNodeType xmlContent = new JcrNodeType(
-                                                 session,
-                                                 DnaLexicon.XML_CONTENT,
-                                                 Arrays.asList(new NodeType[] {base}),
-                                                 NO_PRIMARY_ITEM_NAME,
-                                                 Arrays.asList(new JcrNodeDefinition[] {new JcrNodeDefinition(
-                                                                                                              session,
-                                                                                                              null,
-                                                                                                              JcrLexicon.XMLTEXT,
-                                                                                                              OnParentVersionBehavior.VERSION.getJcrValue(),
-                                                                                                              false,
-                                                                                                              true,
-                                                                                                              false,
-                                                                                                              false,
-                                                                                                              DnaLexicon.XML_TEXT,
-                                                                                                              new NodeType[] {xmlText})}),
-                                                 NO_PROPERTIES, IS_A_MIXIN, UNORDERABLE_CHILD_NODES);
-
-        primaryNodeTypes.addAll(Arrays.asList(new JcrNodeType[] {root, system, namespaces, namespace, xmlText,}));
-        mixinNodeTypes.addAll(Arrays.asList(new JcrNodeType[] {xmlContent}));
+ 
+        primaryNodeTypes.addAll(Arrays.asList(new JcrNodeType[] {root, system, namespaces, namespace, }));
+        mixinNodeTypes.addAll(Arrays.asList(new JcrNodeType[] { }));
 
     }
 

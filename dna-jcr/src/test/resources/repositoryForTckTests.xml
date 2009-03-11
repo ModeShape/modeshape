@@ -30,7 +30,7 @@
     jcr:primaryType="nt:unstructured">
 	<nt:unstructured jcr:name="node1" prop1="&lt;foo&amp;foo&gt;" >
 	<!--  This stanza checks for the jcr:xmltext special case for document export.  DO NOT change this element. -->
-	   <dna:xmlText jcr:name="jcr:xmltext" jcr:xmlcharacters="This is my &quot;XML&quot; text!" />
+	   <nt:unstructured jcr:name="jcr:xmltext" jcr:xmlcharacters="This is my &quot;XML&quot; text!" />
 	</nt:unstructured>
 	<nt:unstructured jcr:name="node2 has a multi-word name" prop2="bar" />
 	<nt:unstructured jcr:name="node3" />

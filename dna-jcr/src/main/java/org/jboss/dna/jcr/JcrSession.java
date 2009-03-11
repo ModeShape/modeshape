@@ -862,7 +862,12 @@ class JcrSession implements Session {
         // Create JCR properties for corresponding DNA properties
         // ------------------------------------------------------
         // First get the property type for each property, based upon the primary type and mixins ...
-        Map<Name, PropertyDefinition> propertyDefinitionsByPropertyName = new HashMap<Name, PropertyDefinition>();
+        // The map with single-valued properties...
+        Map<Name, PropertyDefinition> svPropertyDefinitionsByPropertyName = new HashMap<Name, PropertyDefinition>();
+        // ... and the map with multi-valued properties
+        Map<Name, PropertyDefinition> mvPropertyDefinitionsByPropertyName = new HashMap<Name, PropertyDefinition>();
+        
+        
         boolean referenceable = false;
 
         NamespaceRegistry registry = namespaces();
@@ -881,8 +886,15 @@ class JcrSession implements Session {
                 continue;
             }
             Name name = nameFactory.create(nameString);
-            PropertyDefinition prev = propertyDefinitionsByPropertyName.put(name, propertyDefn);
-            if (prev != null) propertyDefinitionsByPropertyName.put(name, prev); // put the first one back ...
+            
+            if (propertyDefn.isMultiple()) {
+                PropertyDefinition prev = mvPropertyDefinitionsByPropertyName.put(name, propertyDefn);
+                if (prev != null) mvPropertyDefinitionsByPropertyName.put(name, prev); // put the first one back ...
+            }
+            else {
+                PropertyDefinition prev = svPropertyDefinitionsByPropertyName.put(name, propertyDefn);
+                if (prev != null) svPropertyDefinitionsByPropertyName.put(name, prev); // put the first one back ...
+            }
         }
         // The process the mixin types ...
         org.jboss.dna.graph.property.Property mixinTypesProperty = graphNode.getProperty(JcrLexicon.MIXIN_TYPES);
@@ -899,8 +911,14 @@ class JcrSession implements Session {
                         continue;
                     }
                     Name name = nameFactory.create(nameString);
-                    PropertyDefinition prev = propertyDefinitionsByPropertyName.put(name, propertyDefn);
-                    if (prev != null) propertyDefinitionsByPropertyName.put(name, prev); // put the first one back ...
+                    if (propertyDefn.isMultiple()) {
+                        PropertyDefinition prev = mvPropertyDefinitionsByPropertyName.put(name, propertyDefn);
+                        if (prev != null) mvPropertyDefinitionsByPropertyName.put(name, prev); // put the first one back ...
+                    }
+                    else {
+                        PropertyDefinition prev = svPropertyDefinitionsByPropertyName.put(name, propertyDefn);
+                        if (prev != null) svPropertyDefinitionsByPropertyName.put(name, prev); // put the first one back ...
+                    }
                 }
             }
         }
@@ -908,7 +926,8 @@ class JcrSession implements Session {
         // Now create the JCR property object wrapper around the "jcr:uuid" property ...
         Map<Name, Property> properties = new HashMap<Name, Property>();
         if (referenceable) {
-            PropertyDefinition propertyDefinition = propertyDefinitionsByPropertyName.get(JcrLexicon.UUID);
+            // We know that this property is single-valued
+            PropertyDefinition propertyDefinition = svPropertyDefinitionsByPropertyName.get(JcrLexicon.UUID);
             properties.put(JcrLexicon.UUID, new JcrSingleValueProperty(node, propertyDefinition, PropertyType.STRING,
                                                                        uuidProperty));
         }
@@ -921,25 +940,35 @@ class JcrSession implements Session {
             if (JcrLexicon.UUID.equals(name) || DnaLexicon.UUID.equals(name)) continue;
 
             // Figure out the JCR property type for this property ...
-            PropertyDefinition propertyDefinition = propertyDefinitionsByPropertyName.get(name);
+            PropertyDefinition propertyDefinition;
+            
+            if (dnaProp.isMultiple()) {
+                propertyDefinition = mvPropertyDefinitionsByPropertyName.get(name);
+            }
+            else {
+                propertyDefinition = svPropertyDefinitionsByPropertyName.get(name);       
+                
+                // If the property has only one value, dnaProp.isMultiple() will return false, but the
+                // property may actually be a multi-valued property that happens to have one property set.
+                if (propertyDefinition == null) {
+                    propertyDefinition = mvPropertyDefinitionsByPropertyName.get(name);
+                }
+            }
 
             // If no property type was found for this property, see if there is a wildcard property ...
-            if (propertyDefinition == null && !anyPropertyDefinitions.isEmpty()) {
-                Iterator<PropertyDefinition> iter = anyPropertyDefinitions.iterator();
-                propertyDefinition = iter.next(); // use the first one by default ...
-                if (iter.hasNext()) {
-                    // Look for a better one if not multiple but the property has multiple values ...
-                    if (!propertyDefinition.isMultiple() && dnaProp.isMultiple()) {
-                        while (iter.hasNext()) {
-                            PropertyDefinition next = iter.next();
-                            if (next.isMultiple()) {
-                                propertyDefinition = next;
-                                break;
-                            }
-                        }
+            if (propertyDefinition == null) {
+                for (Iterator<PropertyDefinition> iter = anyPropertyDefinitions.iterator(); iter.hasNext(); ) {
+                    PropertyDefinition nextDef = iter.next();
+                    
+                    // Grab the first residual definition that matches on cardinality (single-valued vs. multi-valued)
+                    if ((nextDef.isMultiple() && dnaProp.isMultiple())
+                        || (!nextDef.isMultiple() && !dnaProp.isMultiple())) {
+                        propertyDefinition = nextDef;
+                        break;
                     }
                 }
             }
+            
 
             // If there still is no property type defined ...
             if (propertyDefinition == null) {

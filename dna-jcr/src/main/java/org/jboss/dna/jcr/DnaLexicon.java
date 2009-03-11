@@ -38,17 +38,5 @@ public class DnaLexicon extends org.jboss.dna.graph.DnaLexicon {
     public static final Name SYSTEM = new BasicName(Namespace.URI, "system");
     public static final Name URI = new BasicName(Namespace.URI, "uri");
 
-    /**
-     * Mixin type that indicates the node contains an xmltext node which holds xmltext from document view import (see JCR 1.0
-     * specification section 7.3.2). This node has a child node named {@link JcrLexicon#XMLTEXT} of type
-     * {@link DnaLexicon#XML_TEXT}.
-     */
-    public static final Name XML_CONTENT = new BasicName(Namespace.URI, "xmlContent");
-
-    /**
-     * Name of node type that holds xmltext from document view import (see JCR 1.0 specification section 7.3.2). It is defined in
-     * the node type named {@link DnaLexicon#XML_CONTENT}.
-     */
-    public static final Name XML_TEXT = new BasicName(Namespace.URI, "xmlText");
 
 }
