@@ -62,6 +62,7 @@ public final class GraphI18n {
     public static I18n pathExpressionHasInvalidMatch;
     public static I18n messageDigestNotFound;
     public static I18n unableToAccessResourceFileFromClassLoader;
+    public static I18n pathNotFoundExceptionLowestExistingLocationFound;
 
     public static I18n executingRequest;
     public static I18n executedRequest;

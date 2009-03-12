@@ -23,6 +23,7 @@
  */
 package org.jboss.dna.graph.property;
 
+import org.jboss.dna.graph.GraphI18n;
 import org.jboss.dna.graph.Location;
 
 /**
@@ -94,6 +95,20 @@ public class PathNotFoundException extends RuntimeException {
     @Override
     public String toString() {
         return super.toString();
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see java.lang.Throwable#getMessage()
+     */
+    @Override
+    public String getMessage() {
+        if (this.lowestAncestorThatDoesExist != null) {
+            return GraphI18n.pathNotFoundExceptionLowestExistingLocationFound.text(super.getMessage(),
+                                                                                   this.lowestAncestorThatDoesExist);
+        }
+        return super.getMessage();
     }
 
     /**
