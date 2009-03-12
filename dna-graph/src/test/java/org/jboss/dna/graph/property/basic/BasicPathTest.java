@@ -102,7 +102,7 @@ public class BasicPathTest extends AbstractPathTest {
     }
 
     @Test
-    public void shouldCreateAbsolutePathWithParentSegment() {
+    public void shouldConsiderAsNotNormalizedAnAbsolutePathWithParentSegmentAtEnd() {
         validSegmentsList.add(Path.PARENT_SEGMENT);
         path = new BasicPath(validSegmentsList, true);
         assertThat(path.isAbsolute(), is(true));
@@ -112,13 +112,89 @@ public class BasicPathTest extends AbstractPathTest {
     }
 
     @Test
-    public void shouldCreateRelativePathWithParentSegment() {
+    public void shouldConsiderAsNotNormalizedARelativePathWithParentSegmentAtEnd() {
         validSegmentsList.add(Path.PARENT_SEGMENT);
         path = new BasicPath(validSegmentsList, false);
         assertThat(path.isAbsolute(), is(false));
         assertThat(path.isNormalized(), is(false));
         assertThat(path.getSegmentsList(), is(validSegmentsList));
         assertThat(path.size(), is(validSegmentsList.size()));
+    }
+
+    @Test
+    public void shouldConsiderAsNotNormalizedAnAbsolutePathWithParentSegmentAtFront() {
+        List<Path.Segment> segments = new ArrayList<Path.Segment>();
+        segments.add(Path.PARENT_SEGMENT);
+        segments.addAll(validSegmentsList);
+        path = new BasicPath(segments, true);
+        assertThat(path.isAbsolute(), is(true));
+        assertThat(path.isNormalized(), is(false));
+        assertThat(path.getSegmentsList(), is(segments));
+        assertThat(path.size(), is(segments.size()));
+    }
+
+    @Test
+    public void shouldConsiderAsNormalizedARelativePathWithParentSegmentAtFront() {
+        List<Path.Segment> segments = new ArrayList<Path.Segment>();
+        segments.add(Path.PARENT_SEGMENT);
+        segments.addAll(validSegmentsList);
+        path = new BasicPath(segments, false);
+        assertThat(path.isAbsolute(), is(false));
+        assertThat(path.isNormalized(), is(true));
+        assertThat(path.getSegmentsList(), is(segments));
+        assertThat(path.size(), is(segments.size()));
+    }
+
+    @Test
+    public void shouldConsiderAsNotNormalizedAnAbsolutePathWithAllParentReferences() {
+        List<Path.Segment> segments = new ArrayList<Path.Segment>();
+        for (int i = 0; i != 10; ++i) {
+            segments.add(Path.PARENT_SEGMENT);
+        }
+        path = new BasicPath(segments, true);
+        assertThat(path.isAbsolute(), is(true));
+        assertThat(path.isNormalized(), is(false));
+        assertThat(path.getSegmentsList(), is(segments));
+        assertThat(path.size(), is(segments.size()));
+    }
+
+    @Test
+    public void shouldConsiderAsNormalizedARelativePathWithAllParentReferences() {
+        List<Path.Segment> segments = new ArrayList<Path.Segment>();
+        for (int i = 0; i != 10; ++i) {
+            segments.add(Path.PARENT_SEGMENT);
+        }
+        path = new BasicPath(segments, false);
+        assertThat(path.isAbsolute(), is(false));
+        assertThat(path.isNormalized(), is(true));
+        assertThat(path.getSegmentsList(), is(segments));
+        assertThat(path.size(), is(segments.size()));
+    }
+
+    @Test
+    public void shouldConsiderAsNotNormalizedPathWithMostParentReferencesAndOneNonParentReferenceInMiddle() {
+        List<Path.Segment> segments = new ArrayList<Path.Segment>();
+        segments.add(Path.PARENT_SEGMENT);
+        segments.add(Path.PARENT_SEGMENT);
+        segments.add(pathFactory.createSegment("nonParentSegment"));
+        segments.add(Path.PARENT_SEGMENT);
+        segments.add(Path.PARENT_SEGMENT);
+        path = new BasicPath(segments, true);
+        assertThat(path.isAbsolute(), is(true));
+        assertThat(path.isNormalized(), is(false));
+        assertThat(path.getSegmentsList(), is(segments));
+        assertThat(path.size(), is(segments.size()));
+    }
+
+    @Test
+    public void shouldConsiderAsNotNormalizedAnAbsolutePathThatBeginsWithParentReference() {
+        List<Path.Segment> segments = new ArrayList<Path.Segment>();
+        segments.add(Path.PARENT_SEGMENT);
+        segments.add(pathFactory.createSegment("nonParentSegment"));
+        segments.add(pathFactory.createSegment("nonParentSegment2"));
+        path = new BasicPath(segments, true);
+        assertThat(path.isAbsolute(), is(true));
+        assertThat(path.isNormalized(), is(false));
     }
 
     @Test

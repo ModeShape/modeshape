@@ -187,8 +187,15 @@ public class ChildPath extends AbstractPath {
      * @see org.jboss.dna.graph.property.Path#isNormalized()
      */
     public boolean isNormalized() {
-        if (child.isParentReference() || child.isSelfReference()) return false;
-        return parent.isNormalized();
+        if (child.isSelfReference()) return false;
+        if (!parent.isNormalized()) return false;
+        // Otherwise, the parent is normalized, so this child will be normalized if this child is not a parent reference ...
+        if (!child.isParentReference()) return true;
+        // The path ends with a parent reference. It is normalized only if all other path segments are parent references ...
+        for (Path.Segment segment : parent) {
+            if (!segment.isParentReference()) return false;
+        }
+        return true;
     }
 
     /**

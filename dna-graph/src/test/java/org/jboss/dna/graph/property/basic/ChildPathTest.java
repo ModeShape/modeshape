@@ -35,11 +35,6 @@ import java.util.ArrayList;
 import java.util.List;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.Path;
-import org.jboss.dna.graph.property.basic.BasicName;
-import org.jboss.dna.graph.property.basic.BasicPath;
-import org.jboss.dna.graph.property.basic.BasicPathSegment;
-import org.jboss.dna.graph.property.basic.ChildPath;
-import org.jboss.dna.graph.property.basic.RootPath;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -161,6 +156,41 @@ public class ChildPathTest extends AbstractPathTest {
     @Test
     public void shouldReturnParentInstanceFromGetParent() {
         assertThat(path.getParent(), is(sameInstance(parent)));
+    }
+
+    @Test
+    public void shouldConsiderAsNotNormalizedAPathWithParentSegmentAtEnd() {
+        path = new ChildPath(parent, Path.PARENT_SEGMENT);
+        assertThat(path.isAbsolute(), is(parent.isAbsolute()));
+        assertThat(path.isNormalized(), is(false));
+    }
+
+    @Test
+    public void shouldConsiderAsNormalizedARelativePathWithParentSegmentAtFront() {
+        parent = path("../../a/b/c/d");
+        path = new ChildPath(parent, segment("e"));
+        assertThat(path.isNormalized(), is(true));
+    }
+
+    @Test
+    public void shouldConsiderAsNormalizedAnAbsolutePathWithParentSegmentAtFront() {
+        parent = path("/../a/b");
+        path = new ChildPath(parent, segment("c"));
+        assertThat(path.isNormalized(), is(false));
+    }
+
+    @Test
+    public void shouldConsiderAsNormalizedPathWithAllParentReferences() {
+        parent = path("../../../../..");
+        path = new ChildPath(parent, Path.PARENT_SEGMENT);
+        assertThat(path.isNormalized(), is(true));
+    }
+
+    @Test
+    public void shouldConsiderAsNotNormalizedPathWithMostParentReferencesAndOneNonParentReferenceInMiddle() {
+        parent = path("../../a/b/../..");
+        path = new ChildPath(parent, Path.PARENT_SEGMENT);
+        assertThat(path.isNormalized(), is(false));
     }
 
     // @Test

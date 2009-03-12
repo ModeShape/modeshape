@@ -126,8 +126,16 @@ public abstract class AbstractPath implements Path {
     private transient int hc = 0;
 
     protected boolean isNormalized( List<Segment> segments ) {
+        boolean nonParentReference = false;
+        boolean first = isAbsolute(); // only care about first one when it's absolute
         for (Segment segment : segments) {
-            if (segment.isSelfReference() || segment.isParentReference()) return false;
+            if (segment.isSelfReference()) return false;
+            if (segment.isParentReference()) {
+                if (nonParentReference || first) return false;
+            } else {
+                nonParentReference = true;
+            }
+            first = false;
         }
         return true;
     }
