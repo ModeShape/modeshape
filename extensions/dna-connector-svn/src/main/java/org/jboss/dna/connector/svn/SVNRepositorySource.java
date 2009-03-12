@@ -276,7 +276,7 @@ public class SVNRepositorySource implements RepositorySource, ObjectFactory {
         if (this.svnRepository == null) {
             try {
                 svnURL = SVNURL.parseURIDecoded(getSVNURL());
-                String usedProtocol = this.getSVNURL().substring(0, this.getSVNURL().lastIndexOf(":"));
+                String usedProtocol = this.getSVNURL().substring(0, this.getSVNURL().indexOf(":"));
                 if (usedProtocol.equals(SVNProtocol.SVN.value()) || usedProtocol.equals(SVNProtocol.SVN_SSH.value())) {
                     SVNRepositoryFactoryImpl.setup();
                     this.svnRepository = SVNRepositoryFactory.create(svnURL);
