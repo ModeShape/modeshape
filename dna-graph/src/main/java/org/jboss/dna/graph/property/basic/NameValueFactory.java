@@ -66,6 +66,9 @@ public class NameValueFactory extends AbstractValueFactory<Name> implements Name
     private static final String PREFIXED_NAME_PATTERN_STRING = "(([^:/]*):)?(.*)";
     private static final Pattern PREFIXED_NAME_PATTERN = Pattern.compile(PREFIXED_NAME_PATTERN_STRING);
 
+    private static Name BLANK_NAME;
+    private static Name ANY_NAME;
+
     private final NamespaceRegistry namespaceRegistry;
 
     public NameValueFactory( NamespaceRegistry namespaceRegistry,
@@ -92,9 +95,15 @@ public class NameValueFactory extends AbstractValueFactory<Name> implements Name
         if (decoder == null) decoder = getDecoder();
         try {
             if (value.length() == 0) {
-                return new BasicName("", "");
+                if (BLANK_NAME == null) BLANK_NAME = new BasicName("", "");
+                return BLANK_NAME;
             }
-            if (value.charAt(0) != '{') {
+            char firstChar = value.charAt(0);
+            if (value.length() == 1 && firstChar == '*') {
+                if (ANY_NAME == null) ANY_NAME = new BasicName("", "*");
+                return ANY_NAME;
+            }
+            if (firstChar != '{') {
                 // First, see whether the value fits the prefixed name pattern ...
                 Matcher matcher = PREFIXED_NAME_PATTERN.matcher(value);
                 if (matcher.matches()) {
