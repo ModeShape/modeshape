@@ -24,7 +24,11 @@
 package org.jboss.dna.jcr;
 
 import java.io.OutputStream;
+import java.text.CharacterIterator;
+import java.text.StringCharacterIterator;
 import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import javax.jcr.Property;
@@ -33,6 +37,8 @@ import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
 import javax.jcr.Value;
 import net.jcip.annotations.NotThreadSafe;
+import org.jboss.dna.common.text.TextEncoder;
+import org.jboss.dna.common.text.XmlNameEncoder;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.ValueFactories;
@@ -50,6 +56,8 @@ import org.xml.sax.helpers.AttributesImpl;
 @NotThreadSafe
 class JcrDocumentViewExporter extends AbstractJcrExporter {
 
+    private static final TextEncoder VALUE_ENCODER = new JcrDocumentViewExporter.JcrDocumentViewPropertyEncoder();
+    
     JcrDocumentViewExporter( JcrSession session ) {
         super(session, Collections.<String>emptyList());
     }
@@ -111,7 +119,7 @@ class JcrDocumentViewExporter extends AbstractJcrExporter {
                               propName.getLocalName(),
                               localPropName,
                               PropertyType.nameFromValue(prop.getType()),
-                              value.getString());
+                              VALUE_ENCODER.encode(value.getString()));
         }
 
         Name name;
@@ -211,4 +219,74 @@ class JcrDocumentViewExporter extends AbstractJcrExporter {
         return xmlCharacters.getValue().getString();
     }
 
+    /**
+     * Special {@link TextEncoder} that implements the subset of XML name encoding suggested by section 6.4.4 of the JCR 1.0.1
+     * specification.  This encoder only encodes space (0x20), carriage return (0x0D), new line (0x0A), tab (0x09), and any
+     * underscore characters that might otherwise suggest an encoding, as defined in {@link XmlNameEncoder}.
+     *
+     */
+    protected static class JcrDocumentViewPropertyEncoder extends XmlNameEncoder {
+        private static final Set<Character> MAPPED_CHARACTERS;
+        
+        static {
+            MAPPED_CHARACTERS = new HashSet<Character>();
+            MAPPED_CHARACTERS.add(' ');
+            MAPPED_CHARACTERS.add('\r');
+            MAPPED_CHARACTERS.add('\n');
+            MAPPED_CHARACTERS.add('\t');
+            
+        }
+        
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.common.text.TextEncoder#encode(java.lang.String)
+         */
+        // See section 6.4.4 of the JCR 1.0.1 spec for why these hoops must be jumped through
+        @Override
+        public String encode( String text ) {
+            if (text == null) return null;
+            if (text.length() == 0) return text;
+            StringBuilder sb = new StringBuilder();
+            String hex = null;
+            CharacterIterator iter = new StringCharacterIterator(text);
+            for (char c = iter.first(); c != CharacterIterator.DONE; c = iter.next()) {
+                if (c == '_') {
+                    // Read the next character (if there is one) ...
+                    char next = iter.next();
+                    if (next == CharacterIterator.DONE) {
+                        sb.append(c);
+                        break;
+                    }
+                    // If the next character is not 'x', then these are just regular characters ...
+                    if (next != 'x') {
+                        sb.append(c).append(next);
+                        continue;
+                    }
+                    // The next character is 'x', so write out the '_' character in encoded form ...
+                    sb.append("_x005f_");
+                    // And then write out the next character ...
+                    sb.append(next);
+                } else if (!MAPPED_CHARACTERS.contains(c)) {
+                    // Legal characters for an XML Name ...
+                    sb.append(c);
+                } else {
+                    // All other characters must be escaped with '_xHHHH_' where 'HHHH' is the hex string for the code point
+                    hex = Integer.toHexString(c);
+                    // The hex string excludes the leading '0's, so check the character values so we know how many to prepend
+                    if (c >= '\u0000' && c <= '\u000f') {
+                        sb.append("_x000").append(hex);
+                    } else if (c >= '\u0010' && c <= '\u00ff') {
+                        sb.append("_x00").append(hex);
+                    } else if (c >= '\u0100' && c <= '\u0fff') {
+                        sb.append("_x0").append(hex);
+                    } else {
+                        sb.append("_x").append(hex);
+                    }
+                    sb.append('_');
+                }
+            }
+            return sb.toString();
+        }
+    }
 }

@@ -25,14 +25,27 @@
   ~ Boston, MA  02110-1301  USA
   -->
 <testroot xmlns:jcr="http://www.jcp.org/jcr/1.0" 
-            xmlns:nt="http://www.jcp.org/jcr/nt/1.0"
-            xmlns:dna="http://www.jboss.org/dna/1.0"
-    jcr:primaryType="nt:unstructured">
-	<nt:unstructured jcr:name="node1" prop1="&lt;foo&amp;foo&gt;" >
-	<!--  This stanza checks for the jcr:xmltext special case for document export.  DO NOT change this element. -->
-	   <nt:unstructured jcr:name="jcr:xmltext" jcr:xmlcharacters="This is my &quot;XML&quot; text!" />
-	</nt:unstructured>
-	<nt:unstructured jcr:name="node2 has a multi-word name" prop2="bar" />
-	<nt:unstructured jcr:name="node3" />
-	<nt:unstructured jcr:name="node4" />
+          xmlns:nt="http://www.jcp.org/jcr/nt/1.0"
+          xmlns:dna="http://www.jboss.org/dna/1.0"
+          jcr:primaryType="nt:unstructured">
+    <nt:unstructured jcr:name="node1" prop1="&lt;foo&amp;foo&gt;" >
+       <!--  
+           This stanza checks for the jcr:xmltext special case for export as per JCR 1.0.1 section 6.4.2.3
+         -->
+       <nt:unstructured jcr:name="jcr:xmltext" jcr:xmlcharacters="This is my &quot;XML&quot; text!" />
+    </nt:unstructured>
+    <nt:unstructured jcr:name="node2 has a multi-word name" multi-valued-property="bar baz blah">
+       <!--  
+           This stanza checks that consecutive jcr:xmltext elements will be merged in the export as 
+           per JCR 1.0.1 section 6.4.2.3
+         -->
+       <nt:unstructured jcr:name="jcr:xmltext" jcr:xmlcharacters="This is my &quot;XML&quot; text!" />
+       <nt:unstructured jcr:name="jcr:xmltext" jcr:xmlcharacters="This is my &quot;other&quot; text!" />
+    </nt:unstructured>
+    <nt:unstructured jcr:name="node3" />
+    <!--  
+       Test of unprintable character exports.
+       Cannot test \r character here on Windows as TCK XML Parser will replace it with \n and fail the comparison 
+      -->
+    <nt:unstructured jcr:name="node4" multi-line-property="Line&#009;1&#010;Line 2"/>
 </testroot>
