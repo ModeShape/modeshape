@@ -26,22 +26,58 @@ package org.jboss.dna.jcr;
 import javax.jcr.Item;
 import javax.jcr.ItemNotFoundException;
 import javax.jcr.RepositoryException;
+import javax.jcr.Session;
+import org.jboss.dna.graph.ExecutionContext;
+import org.jboss.dna.graph.property.Name;
+import org.jboss.dna.graph.property.NamespaceRegistry;
+import org.jboss.dna.graph.property.Path;
 
 /**
  * @author jverhaeg
  */
 abstract class AbstractJcrItem implements Item {
 
-    protected final String getPath( String absolutePath,
-                                    String relativePath ) {
-        assert absolutePath != null;
-        assert absolutePath.length() > 0;
-        assert relativePath != null;
-        if (absolutePath.charAt(absolutePath.length() - 1) == '/') {
-            return absolutePath + relativePath;
-        }
-        return absolutePath + '/' + relativePath;
+    protected final SessionCache cache;
+
+    protected AbstractJcrItem( SessionCache cache ) {
+        assert cache != null;
+        this.cache = cache;
     }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see javax.jcr.Item#getSession()
+     */
+    public Session getSession() {
+        return cache.session();
+    }
+
+    final JcrSession session() {
+        return cache.session();
+    }
+
+    final ExecutionContext context() {
+        return cache.context();
+    }
+
+    final Name nameFrom( String name ) {
+        return context().getValueFactories().getNameFactory().create(name);
+    }
+
+    final Path pathFrom( String path ) {
+        return context().getValueFactories().getPathFactory().create(path);
+    }
+
+    final Path.Segment segmentFrom( String segment ) {
+        return context().getValueFactories().getPathFactory().createSegment(segment);
+    }
+
+    final NamespaceRegistry namespaces() {
+        return context().getNamespaceRegistry();
+    }
+
+    abstract Path path() throws RepositoryException;
 
     /**
      * {@inheritDoc}
@@ -96,7 +132,7 @@ abstract class AbstractJcrItem implements Item {
      * 
      * @see javax.jcr.Item#getAncestor(int)
      */
-    public final Item getAncestor( int depth ) throws RepositoryException {
+    public Item getAncestor( int depth ) throws RepositoryException {
         if (depth < 0) {
             throw new ItemNotFoundException(JcrI18n.noNegativeDepth.text(depth));
         }
@@ -127,7 +163,7 @@ abstract class AbstractJcrItem implements Item {
      * @see javax.jcr.Item#getDepth()
      */
     public int getDepth() throws RepositoryException {
-        return getParent().getDepth() + 1;
+        return path().size();
     }
 
     /**

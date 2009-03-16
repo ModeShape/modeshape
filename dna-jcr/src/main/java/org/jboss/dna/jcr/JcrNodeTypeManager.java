@@ -96,7 +96,7 @@ class JcrNodeTypeManager implements NodeTypeManager {
         return new JcrNodeTypeIterator(mixinNodeTypes.values());
     }
 
-    final JcrNodeType getNodeType( Name nodeTypeName ) {
+    JcrNodeType getNodeType( Name nodeTypeName ) {
 
         JcrNodeType nodeType = primaryNodeTypes.get(nodeTypeName);
         if (nodeType == null) {
@@ -139,6 +139,34 @@ class JcrNodeTypeManager implements NodeTypeManager {
         }
         assert false; // should not get here
         return null;
+    }
+
+    /**
+     * Get the node definition given the supplied identifier.
+     * 
+     * @param definitionId the identifier of the node definition
+     * @return the node definition, or null if there is no such definition (or if the ID was null)
+     */
+    JcrNodeDefinition getNodeDefinition( NodeDefinitionId definitionId ) {
+        if (definitionId == null) return null;
+        Name nodeTypeName = definitionId.getNodeTypeName();
+        JcrNodeType nodeType = getNodeType(nodeTypeName);
+        return nodeType.getChildNodeDefinition(definitionId.getChildDefinitionName());
+    }
+
+    /**
+     * Get the property definition given the supplied identifier.
+     * 
+     * @param definitionId the identifier of the node definition
+     * @param prefersMultiValued true if the property should be a multi-valued, or false if it should be single-valued
+     * @return the node definition, or null if there is no such definition (or if the ID was null)
+     */
+    JcrPropertyDefinition getPropertyDefinition( PropertyDefinitionId definitionId,
+                                                 boolean prefersMultiValued ) {
+        if (definitionId == null) return null;
+        Name nodeTypeName = definitionId.getNodeTypeName();
+        JcrNodeType nodeType = getNodeType(nodeTypeName);
+        return nodeType.getPropertyDefinition(definitionId.getPropertyDefinitionName(), prefersMultiValued);
     }
 
 }

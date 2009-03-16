@@ -32,31 +32,30 @@ import javax.jcr.Property;
 import javax.jcr.PropertyIterator;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.property.Name;
-import org.jboss.dna.jcr.AbstractJcrNodeTest.MockAbstractJcrNode;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
-import org.mockito.MockitoAnnotations.Mock;
 
 /**
  * @author jverhaeg
  */
 public class JcrPropertyIteratorTest {
 
-    private AbstractJcrNode node;
-    @Mock
-    private JcrSession session;
     private Map<Name, Property> properties;
     private ExecutionContext context;
+    private PropertyIterator iter;
 
     @Before
     public void before() throws Exception {
         MockitoAnnotations.initMocks(this);
         context = new ExecutionContext();
         properties = new HashMap<Name, Property>();
-        node = new MockAbstractJcrNode(session, "node", null);
-        node.setProperties(properties);
+        properties.put(name("prop1"), Mockito.mock(Property.class));
+        properties.put(name("prop2"), Mockito.mock(Property.class));
+        properties.put(name("prop3"), Mockito.mock(Property.class));
+        properties.put(name("prop4"), Mockito.mock(Property.class));
+        iter = new JcrPropertyIterator(properties.values());
     }
 
     protected Name name( String name ) {
@@ -65,11 +64,6 @@ public class JcrPropertyIteratorTest {
 
     @Test
     public void shouldProvidePropertyIterator() throws Exception {
-        properties.put(name("prop1"), Mockito.mock(Property.class));
-        properties.put(name("prop2"), Mockito.mock(Property.class));
-        properties.put(name("prop3"), Mockito.mock(Property.class));
-        properties.put(name("prop4"), Mockito.mock(Property.class));
-        PropertyIterator iter = node.getProperties();
         assertThat(iter, notNullValue());
         assertThat(iter.getSize(), is(4L));
         assertThat(iter.getPosition(), is(0L));
@@ -87,11 +81,11 @@ public class JcrPropertyIteratorTest {
 
     @Test( expected = UnsupportedOperationException.class )
     public void shouldNotAllowPropertyIteratorRemove() throws Exception {
-        node.getProperties().remove();
+        new JcrPropertyIterator(properties.values()).remove();
     }
 
     @Test( expected = IllegalArgumentException.class )
     public void shouldNotAllowPropertyIteratorNegativeSkip() throws Exception {
-        node.getProperties().skip(-1);
+        new JcrPropertyIterator(properties.values()).skip(-1);
     }
 }

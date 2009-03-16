@@ -102,43 +102,113 @@ class JcrNodeType implements NodeType {
      * 
      * @param propertyName the name of the property for which the definition should be retrieved. Use
      *        {@link JcrNodeType#RESIDUAL_ITEM_NAME} to retrieve the residual property definition (if any).
+     * @param preferMultiValued true if the property definition would prefer multiple values, or false if single-valued definition
+     *        is preferred
      * @return the property definition for the given name or <code>null</code> if no such definition exists.
      * @see JcrNodeType#RESIDUAL_ITEM_NAME
      */
-    JcrPropertyDefinition getPropertyDefinition( String propertyName ) {
+    JcrPropertyDefinition getPropertyDefinition( String propertyName,
+                                                 boolean preferMultiValued ) {
+        JcrPropertyDefinition result = null;
         for (JcrPropertyDefinition property : propertyDefinitions) {
             if (propertyName.equals(property.getName())) {
-                return property;
+                result = property;
+                if (property.isMultiple() == preferMultiValued) return result;
+                // Otherwise, keep looking for a better match ...
             }
         }
 
         for (NodeType nodeType : declaredSupertypes) {
-            JcrPropertyDefinition definition = ((JcrNodeType)nodeType).getPropertyDefinition(propertyName);
+            JcrPropertyDefinition definition = ((JcrNodeType)nodeType).getPropertyDefinition(propertyName, preferMultiValued);
+            if (definition != null) {
+                if (definition.isMultiple() == preferMultiValued) return definition;
+                if (result == null) result = definition;
+            }
+        }
+        return result; // may be null
+    }
+
+    /**
+     * Returns the property definition with the given name. This method first checks the property definitions declared within this
+     * type to see if any property definitions have the given name. If no matches are found, this method initiates a recursive
+     * depth first search up the type hierarchy to attempt to find a definition in one of the supertypes (or one the supertypes of
+     * the supertypes).
+     * 
+     * @param propertyName the name of the property for which the definition should be retrieved. Use
+     *        {@link JcrNodeType#RESIDUAL_ITEM_NAME} to retrieve the residual property definition (if any).
+     * @param preferMultiValued true if the property definition would prefer multiple values, or false if single-valued definition
+     *        is preferred
+     * @return the property definition for the given name or <code>null</code> if no such definition exists.
+     * @see JcrNodeType#RESIDUAL_ITEM_NAME
+     */
+    JcrPropertyDefinition getPropertyDefinition( Name propertyName,
+                                                 boolean preferMultiValued ) {
+        JcrPropertyDefinition result = null;
+        for (JcrPropertyDefinition property : propertyDefinitions) {
+            if (propertyName.equals(property.getInternalName())) {
+                result = property;
+                if (property.isMultiple() == preferMultiValued) return result;
+                // Otherwise, keep looking for a better match ...
+            }
+        }
+
+        for (NodeType nodeType : declaredSupertypes) {
+            JcrPropertyDefinition definition = ((JcrNodeType)nodeType).getPropertyDefinition(propertyName, preferMultiValued);
+            if (definition != null) {
+                if (definition.isMultiple() == preferMultiValued) return definition;
+                if (result == null) result = definition;
+            }
+        }
+        return result; // may be null
+    }
+
+    /**
+     * Returns the child node definition with the given name. This method first checks the child node definitions declared within
+     * this type to see if any child node definitions have the given name. If no matches are found, this method initiates a
+     * recursive depth first search up the type hierarchy to attempt to find a definition in one of the supertypes (or one the
+     * supertypes of the supertypes).
+     * 
+     * @param childDefinitionName the name of the child node definition to be retrieved, or a name containing
+     *        {@link JcrNodeType#RESIDUAL_ITEM_NAME '*'} to retrieve the residual child node definition (if any).
+     * @return the child node definition with the given name or <code>null</code> if no such definition exists.
+     * @see JcrNodeType#RESIDUAL_ITEM_NAME
+     * @see #getChildNodeDefinition(Name)
+     */
+    JcrNodeDefinition getChildNodeDefinition( String childDefinitionName ) {
+        for (JcrNodeDefinition childNode : childNodeDefinitions) {
+            if (childDefinitionName.equals(childNode.getName())) {
+                return childNode;
+            }
+        }
+
+        for (NodeType nodeType : declaredSupertypes) {
+            JcrNodeDefinition definition = ((JcrNodeType)nodeType).getChildNodeDefinition(childDefinitionName);
             if (definition != null) return definition;
         }
         return null;
     }
 
     /**
-     * Returns the node definition for the child node with the given name. This method first checks the child node definitions
-     * declared within this type to see if any child node definitions have the given name. If no matches are found, this method
-     * initiates a recursive depth first search up the type hierarchy to attempt to find a definition in one of the supertypes (or
-     * one the supertypes of the supertypes).
+     * Returns the child node definition with the given name. This method first checks the child node definitions declared within
+     * this type to see if any child node definitions have the given name. If no matches are found, this method initiates a
+     * recursive depth first search up the type hierarchy to attempt to find a definition in one of the supertypes (or one the
+     * supertypes of the supertypes).
      * 
-     * @param childNodeName the name of the child node for which the definition should be retrieved. Use
-     *        {@link JcrNodeType#RESIDUAL_ITEM_NAME} to retrieve the residual child node definition (if any).
+     * @param childDefinitionName the name of the child node definition to be retrieved, or a name containing
+     *        {@link JcrNodeType#RESIDUAL_ITEM_NAME '*'} to retrieve the residual child node definition (if any).
      * @return the child node definition with the given name or <code>null</code> if no such definition exists.
      * @see JcrNodeType#RESIDUAL_ITEM_NAME
+     * @see #getChildNodeDefinition(String)
      */
-    JcrNodeDefinition getChildNodeDefinition( String childNodeName ) {
+    JcrNodeDefinition getChildNodeDefinition( Name childDefinitionName ) {
         for (JcrNodeDefinition childNode : childNodeDefinitions) {
-            if (childNodeName.equals(childNode.getName())) {
+            if (childDefinitionName.equals(childNode.name)) {
                 return childNode;
             }
         }
 
         for (NodeType nodeType : declaredSupertypes) {
-            JcrNodeDefinition definition = ((JcrNodeType)nodeType).getChildNodeDefinition(childNodeName);
+            JcrNodeDefinition definition = ((JcrNodeType)nodeType).getChildNodeDefinition(childDefinitionName);
             if (definition != null) return definition;
         }
         return null;
@@ -153,6 +223,7 @@ class JcrNodeType implements NodeType {
      * @return the {@link NodeDefinition} that best matches the child, or null if a child with the supplied name and primary type
      *         are not allowed given this node type
      */
+    @Deprecated
     JcrNodeDefinition findBestNodeDefinitionForChild( String childName,
                                                       String primaryNodeTypeName ) {
         // First, try to find a child node definition with the given name
@@ -168,6 +239,46 @@ class JcrNodeType implements NodeType {
             NodeType primaryNodeType = getPrimaryNodeType(primaryNodeTypeName);
             if (primaryNodeType == null) return null;
             if (!checkTypeAgainstDefinition(primaryNodeType, childNode)) return null;
+        }
+        return childNode;
+    }
+
+    /**
+     * Determine the best (most specific) {@link NodeDefinition} for a child with the supplied name and primary type. If the
+     * primary type is not supplied, then only the name is considered when finding a best match.
+     * 
+     * @param childName the name of the child
+     * @param primaryNodeTypeName the name of the primary node type for the child
+     * @return the {@link NodeDefinition} that best matches the child, or null if a child with the supplied name and primary type
+     *         are not allowed given this node type
+     */
+    JcrNodeDefinition findBestNodeDefinitionForChild( Name childName,
+                                                      Name primaryNodeTypeName ) {
+        // First, try to find a child node definition with the given name
+        JcrNodeDefinition childNode = getChildNodeDefinition(childName);
+
+        // If there are no named definitions in the type hierarchy, try to find a residual node definition
+        boolean checkResidual = true;
+        if (childNode == null) {
+            childNode = getChildNodeDefinition(RESIDUAL_ITEM_NAME);
+            checkResidual = false;
+        }
+
+        // Check if the node can be added with the named child node definition
+        if (childNode != null && primaryNodeTypeName != null) {
+            NodeType primaryNodeType = getPrimaryNodeType(primaryNodeTypeName);
+            if (primaryNodeType == null) return null;
+            if (!checkTypeAgainstDefinition(primaryNodeType, childNode)) {
+                if (checkResidual) {
+                    // Find a residual child definition ...
+                    childNode = getChildNodeDefinition(RESIDUAL_ITEM_NAME);
+                    if (childNode != null) {
+                        // Check the residual child definition ...
+                        if (checkTypeAgainstDefinition(primaryNodeType, childNode)) return childNode;
+                    }
+                }
+                return null;
+            }
         }
         return childNode;
     }
@@ -209,6 +320,10 @@ class JcrNodeType implements NodeType {
             // If the node type doesn't exist, you can't add a child node with that type
             return null;
         }
+    }
+
+    protected final NodeType getPrimaryNodeType( Name primaryNodeTypeName ) {
+        return session.nodeTypeManager().getNodeType(primaryNodeTypeName);
     }
 
     /**
@@ -306,9 +421,9 @@ class JcrNodeType implements NodeType {
                                    Value value ) {
         CheckArg.isNotNull(propertyName, "propertyName");
 
-        JcrPropertyDefinition property = getPropertyDefinition(propertyName);
+        JcrPropertyDefinition property = getPropertyDefinition(propertyName, false);
         if (property == null) {
-            property = getPropertyDefinition(RESIDUAL_ITEM_NAME);
+            property = getPropertyDefinition(RESIDUAL_ITEM_NAME, false);
         }
 
         if (property == null) {
@@ -324,12 +439,11 @@ class JcrNodeType implements NodeType {
         if (value == null) {
             return !property.isMandatory();
         }
-        
+
         try {
             assert value instanceof JcrValue : "Illegal implementation of Value interface";
-            ((JcrValue) value).asType(property.getRequiredType());
-        }
-        catch (javax.jcr.ValueFormatException vfe) {
+            ((JcrValue)value).asType(property.getRequiredType());
+        } catch (javax.jcr.ValueFormatException vfe) {
             // Cast failed
             return false;
         }
@@ -345,9 +459,9 @@ class JcrNodeType implements NodeType {
                                    Value[] values ) {
         CheckArg.isNotNull(propertyName, "propertyName");
 
-        JcrPropertyDefinition property = getPropertyDefinition(propertyName);
+        JcrPropertyDefinition property = getPropertyDefinition(propertyName, true);
         if (property == null) {
-            property = getPropertyDefinition(RESIDUAL_ITEM_NAME);
+            property = getPropertyDefinition(RESIDUAL_ITEM_NAME, true);
         }
 
         if (property == null) {
@@ -368,9 +482,8 @@ class JcrNodeType implements NodeType {
             if (values[i] != null) {
                 try {
                     assert values[i] instanceof JcrValue : "Illegal implementation of Value interface";
-                    ((JcrValue) values[i]).asType(property.getRequiredType());
-                }
-                catch (javax.jcr.ValueFormatException vfe) {
+                    ((JcrValue)values[i]).asType(property.getRequiredType());
+                } catch (javax.jcr.ValueFormatException vfe) {
                     // Cast failed
                     return false;
                 }

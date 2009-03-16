@@ -114,7 +114,7 @@ class JcrSystemViewExporter extends AbstractJcrExporter {
 
         AbstractJcrProperty prop = (AbstractJcrProperty)property;
 
-        Name propertyName = prop.getDnaProperty().getName();
+        Name propertyName = prop.name();
         if (SPECIAL_PROPERTY_NAMES.contains(propertyName)) {
             return;
         }

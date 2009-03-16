@@ -45,4 +45,4 @@
         <car jcr:name="Hummer H3" maker="Hummer" model="H3" year="2008" msrp="$30,595" userRating="3.5" valueRating="4" mpgCity="13" mpgHighway="16" />
         <car jcr:name="Ford F-150" maker="Ford" model="F-150" year="2008" msrp="$23,910" userRating="4" valueRating="1" mpgCity="14" mpgHighway="20" />
     </Utility>
-</Cars>\ No newline at end of file
+</Cars>

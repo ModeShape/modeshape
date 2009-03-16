@@ -57,7 +57,7 @@ import org.xml.sax.helpers.AttributesImpl;
 class JcrDocumentViewExporter extends AbstractJcrExporter {
 
     private static final TextEncoder VALUE_ENCODER = new JcrDocumentViewExporter.JcrDocumentViewPropertyEncoder();
-    
+
     JcrDocumentViewExporter( JcrSession session ) {
         super(session, Collections.<String>emptyList());
     }
@@ -103,7 +103,7 @@ class JcrDocumentViewExporter extends AbstractJcrExporter {
                 continue;
             }
 
-            Name propName = ((AbstractJcrProperty)prop).getDnaProperty().getName();
+            Name propName = ((AbstractJcrProperty)prop).name();
 
             String localPropName = getPrefixedName(propName);
 
@@ -141,16 +141,15 @@ class JcrDocumentViewExporter extends AbstractJcrExporter {
         }
 
         endElement(contentHandler, name);
-    
+
     }
 
     /**
-     * Indicates whether the current node is an XML text node as per section 6.4.2.3 of the JCR 1.0 specification.
-     * XML text nodes are nodes that have the name &quot;jcr:xmltext&quot; and only one property (besides the mandatory
-     * &quot;jcr:primaryType&quot;).  The property must have a property name of &quot;jcr:xmlcharacters&quot;, a type of <code>String</code>,
-     * and does not have multiple values.<p/>
-     * In practice, this is handled in DNA by making XML text nodes have a type of &quot;dna:xmltext&quot;, which
-     * enforces these property characteristics.
+     * Indicates whether the current node is an XML text node as per section 6.4.2.3 of the JCR 1.0 specification. XML text nodes
+     * are nodes that have the name &quot;jcr:xmltext&quot; and only one property (besides the mandatory
+     * &quot;jcr:primaryType&quot;). The property must have a property name of &quot;jcr:xmlcharacters&quot;, a type of
+     * <code>String</code>, and does not have multiple values.<p/> In practice, this is handled in DNA by making XML text nodes
+     * have a type of &quot;dna:xmltext&quot;, which enforces these property characteristics.
      * 
      * @param node the node to test
      * @return whether this node is a special xml text node
@@ -190,8 +189,8 @@ class JcrDocumentViewExporter extends AbstractJcrExporter {
     }
 
     /**
-     * Returns the XML characters for the given node. 
-     * The node must be an XML text node, as defined in {@link #isXmlTextNode(Node)}.
+     * Returns the XML characters for the given node. The node must be an XML text node, as defined in
+     * {@link #isXmlTextNode(Node)}.
      * 
      * @param node the node for which XML characters will be retrieved.
      * @return the xml characters for this node
@@ -201,7 +200,7 @@ class JcrDocumentViewExporter extends AbstractJcrExporter {
         // ./xmltext/xmlcharacters exception (see JSR-170 Spec 6.4.2.3)
 
         assert isXmlTextNode(node);
-        
+
         Property xmlCharacters = node.getProperty(getPrefixedName(JcrLexicon.XMLCHARACTERS));
 
         assert xmlCharacters != null;
@@ -221,22 +220,21 @@ class JcrDocumentViewExporter extends AbstractJcrExporter {
 
     /**
      * Special {@link TextEncoder} that implements the subset of XML name encoding suggested by section 6.4.4 of the JCR 1.0.1
-     * specification.  This encoder only encodes space (0x20), carriage return (0x0D), new line (0x0A), tab (0x09), and any
+     * specification. This encoder only encodes space (0x20), carriage return (0x0D), new line (0x0A), tab (0x09), and any
      * underscore characters that might otherwise suggest an encoding, as defined in {@link XmlNameEncoder}.
-     *
      */
     protected static class JcrDocumentViewPropertyEncoder extends XmlNameEncoder {
         private static final Set<Character> MAPPED_CHARACTERS;
-        
+
         static {
             MAPPED_CHARACTERS = new HashSet<Character>();
             MAPPED_CHARACTERS.add(' ');
             MAPPED_CHARACTERS.add('\r');
             MAPPED_CHARACTERS.add('\n');
             MAPPED_CHARACTERS.add('\t');
-            
+
         }
-        
+
         /**
          * {@inheritDoc}
          * 

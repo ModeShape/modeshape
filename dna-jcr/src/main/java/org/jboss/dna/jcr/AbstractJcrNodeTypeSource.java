@@ -44,9 +44,9 @@ abstract class AbstractJcrNodeTypeSource implements JcrNodeTypeSource {
     protected static final List<JcrNodeDefinition> NO_CHILD_NODES = Collections.<JcrNodeDefinition>emptyList();
     protected static final List<JcrPropertyDefinition> NO_PROPERTIES = Collections.<JcrPropertyDefinition>emptyList();
 
-    // Indicates that the node type has no primary item name - added for readability
+    /** Indicates that the node type has no primary item name - added for readability */
     protected static final Name NO_PRIMARY_ITEM_NAME = null;
-    // Indicates that the definition should apply to all property definition or child node definitions - added for readability
+    /** Indicates that the definition should apply to all property definition or child node definitions - added for readability */
     protected static final Name ALL_NODES = null;
 
     // Indicates whether or not the node type is a mixin - added for readability

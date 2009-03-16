@@ -30,9 +30,7 @@ import javax.jcr.Node;
 import javax.jcr.RepositoryException;
 import javax.jcr.Value;
 import javax.jcr.ValueFormatException;
-import javax.jcr.nodetype.PropertyDefinition;
 import org.jboss.dna.graph.property.Binary;
-import org.jboss.dna.graph.property.Property;
 import org.jboss.dna.graph.property.Reference;
 import org.jboss.dna.graph.property.ValueFactories;
 
@@ -41,11 +39,9 @@ import org.jboss.dna.graph.property.ValueFactories;
  */
 final class JcrSingleValueProperty extends AbstractJcrProperty {
 
-    JcrSingleValueProperty( AbstractJcrNode node,
-                            PropertyDefinition definition,
-                            int propertyType,
-                            Property dnaProperty ) {
-        super(node, definition, propertyType, dnaProperty);
+    JcrSingleValueProperty( SessionCache cache,
+                            PropertyId propertyId ) {
+        super(cache, propertyId);
     }
 
     /**
@@ -55,7 +51,7 @@ final class JcrSingleValueProperty extends AbstractJcrProperty {
      */
     public boolean getBoolean() throws RepositoryException {
         try {
-            return getExecutionContext().getValueFactories().getBooleanFactory().create(getDnaProperty().getFirstValue());
+            return context().getValueFactories().getBooleanFactory().create(property().getFirstValue());
         } catch (org.jboss.dna.graph.property.ValueFormatException e) {
             throw new ValueFormatException(e.getMessage(), e);
         }
@@ -68,10 +64,7 @@ final class JcrSingleValueProperty extends AbstractJcrProperty {
      */
     public Calendar getDate() throws RepositoryException {
         try {
-            return getExecutionContext().getValueFactories()
-                                        .getDateFactory()
-                                        .create(getDnaProperty().getFirstValue())
-                                        .toCalendar();
+            return context().getValueFactories().getDateFactory().create(property().getFirstValue()).toCalendar();
         } catch (org.jboss.dna.graph.property.ValueFormatException e) {
             throw new ValueFormatException(e.getMessage(), e);
         }
@@ -84,7 +77,7 @@ final class JcrSingleValueProperty extends AbstractJcrProperty {
      */
     public double getDouble() throws RepositoryException {
         try {
-            return getExecutionContext().getValueFactories().getDoubleFactory().create(getDnaProperty().getFirstValue());
+            return context().getValueFactories().getDoubleFactory().create(property().getFirstValue());
         } catch (org.jboss.dna.graph.property.ValueFormatException e) {
             throw new ValueFormatException(e.getMessage(), e);
         }
@@ -96,7 +89,7 @@ final class JcrSingleValueProperty extends AbstractJcrProperty {
      * @see javax.jcr.Property#getLength()
      */
     public long getLength() throws RepositoryException {
-        return createValue(getDnaProperty().getFirstValue()).getLength();
+        return createValue(property().getFirstValue()).getLength();
     }
 
     /**
@@ -116,7 +109,7 @@ final class JcrSingleValueProperty extends AbstractJcrProperty {
      */
     public long getLong() throws RepositoryException {
         try {
-            return getExecutionContext().getValueFactories().getLongFactory().create(getDnaProperty().getFirstValue());
+            return context().getValueFactories().getLongFactory().create(property().getFirstValue());
         } catch (org.jboss.dna.graph.property.ValueFormatException e) {
             throw new ValueFormatException(e.getMessage(), e);
         }
@@ -129,10 +122,10 @@ final class JcrSingleValueProperty extends AbstractJcrProperty {
      */
     public final Node getNode() throws RepositoryException {
         try {
-            ValueFactories factories = getExecutionContext().getValueFactories();
-            Reference dnaReference = factories.getReferenceFactory().create(getDnaProperty().getFirstValue());
+            ValueFactories factories = context().getValueFactories();
+            Reference dnaReference = factories.getReferenceFactory().create(property().getFirstValue());
             UUID uuid = factories.getUuidFactory().create(dnaReference);
-            return ((JcrSession)getSession()).getNode(uuid);
+            return cache.findJcrNode(uuid);
         } catch (org.jboss.dna.graph.property.ValueFormatException e) {
             throw new ValueFormatException(e.getMessage(), e);
         }
@@ -145,7 +138,7 @@ final class JcrSingleValueProperty extends AbstractJcrProperty {
      */
     public InputStream getStream() throws RepositoryException {
         try {
-            Binary binary = getExecutionContext().getValueFactories().getBinaryFactory().create(getDnaProperty().getFirstValue());
+            Binary binary = context().getValueFactories().getBinaryFactory().create(property().getFirstValue());
             return new SelfClosingInputStream(binary);
         } catch (org.jboss.dna.graph.property.ValueFormatException e) {
             throw new ValueFormatException(e.getMessage(), e);
@@ -159,7 +152,7 @@ final class JcrSingleValueProperty extends AbstractJcrProperty {
      */
     public String getString() throws RepositoryException {
         try {
-            return getExecutionContext().getValueFactories().getStringFactory().create(getDnaProperty().getFirstValue());
+            return context().getValueFactories().getStringFactory().create(property().getFirstValue());
         } catch (org.jboss.dna.graph.property.ValueFormatException e) {
             throw new ValueFormatException(e.getMessage(), e);
         }
@@ -170,8 +163,8 @@ final class JcrSingleValueProperty extends AbstractJcrProperty {
      * 
      * @see javax.jcr.Property#getValue()
      */
-    public Value getValue() {
-        return createValue(getDnaProperty().getFirstValue());
+    public Value getValue() throws RepositoryException {
+        return createValue(property().getFirstValue());
     }
 
     /**

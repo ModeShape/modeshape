@@ -127,18 +127,25 @@ class DnaBuiltinNodeTypeSource extends AbstractJcrNodeTypeSource {
                                            NO_PRIMARY_ITEM_NAME, Arrays.asList(new JcrNodeDefinition[] {
                                                new JcrNodeDefinition(session, null, JcrLexicon.SYSTEM,
                                                                      OnParentVersionBehavior.IGNORE.getJcrValue(), true, true,
-                                                                     true, false, DnaLexicon.NAMESPACES,
-                                                                     new NodeType[] {namespaces}),
-                                               new JcrNodeDefinition(session, null, null,
+                                                                     true, false, DnaLexicon.SYSTEM, new NodeType[] {system}),
+                                               new JcrNodeDefinition(session, null, ALL_NODES,
                                                                      OnParentVersionBehavior.VERSION.getJcrValue(), false, false,
-                                                                     false, true, DnaLexicon.NAMESPACES,
-                                                                     new NodeType[] {namespaces}),
+                                                                     false, true, JcrNtLexicon.UNSTRUCTURED,
+                                                                     new NodeType[] {base}),
 
-                                           }), NO_PROPERTIES, NOT_MIXIN, UNORDERABLE_CHILD_NODES);
+                                           }), Arrays.asList(new JcrPropertyDefinition[] {
+                                               new JcrPropertyDefinition(session, null, ALL_NODES,
+                                                                         OnParentVersionBehavior.COPY.getJcrValue(), false,
+                                                                         false, false, NO_DEFAULT_VALUES, PropertyType.UNDEFINED,
+                                                                         NO_CONSTRAINTS, false),
+                                               new JcrPropertyDefinition(session, null, ALL_NODES,
+                                                                         OnParentVersionBehavior.COPY.getJcrValue(), false,
+                                                                         false, false, NO_DEFAULT_VALUES, PropertyType.UNDEFINED,
+                                                                         NO_CONSTRAINTS, true),}), NOT_MIXIN,
+                                           ORDERABLE_CHILD_NODES);
 
- 
-        primaryNodeTypes.addAll(Arrays.asList(new JcrNodeType[] {root, system, namespaces, namespace, }));
-        mixinNodeTypes.addAll(Arrays.asList(new JcrNodeType[] { }));
+        primaryNodeTypes.addAll(Arrays.asList(new JcrNodeType[] {root, system, namespaces, namespace,}));
+        mixinNodeTypes.addAll(Arrays.asList(new JcrNodeType[] {}));
 
     }
 

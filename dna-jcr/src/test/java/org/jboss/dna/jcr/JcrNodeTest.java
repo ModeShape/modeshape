@@ -25,17 +25,14 @@ package org.jboss.dna.jcr;
 
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.stub;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.UUID;
 import javax.jcr.ItemNotFoundException;
-import javax.jcr.Property;
-import javax.jcr.nodetype.NodeDefinition;
 import org.jboss.dna.graph.ExecutionContext;
-import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.Path;
+import org.jboss.dna.jcr.SessionCache.NodeInfo;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.MockitoAnnotations;
@@ -46,56 +43,62 @@ import org.mockito.MockitoAnnotations.Mock;
  */
 public class JcrNodeTest {
 
+    private UUID uuid;
     private JcrNode node;
-    private AbstractJcrNode root;
+    private ExecutionContext context;
     @Mock
-    private JcrSession session;
-    @Mock
-    private NodeDefinition rootNodeDefinition;
-    @Mock
-    private NodeDefinition nodeDefinition;
+    private SessionCache cache;
 
     @Before
     public void before() throws Exception {
         MockitoAnnotations.initMocks(this);
-        ExecutionContext context = new ExecutionContext();
-        UUID rootUuid = UUID.randomUUID();
-        Path rootPath = context.getValueFactories().getPathFactory().createRootPath();
-        Location rootLocation = Location.create(rootPath, rootUuid);
-        root = new JcrRootNode(session, rootLocation, rootNodeDefinition);
-        UUID uuid = UUID.randomUUID();
-        Path path = context.getValueFactories().getPathFactory().create("/name[2]");
-        Location location = Location.create(path, uuid);
-        node = new JcrNode(session, rootUuid, location, nodeDefinition);
-        stub(session.getExecutionContext()).toReturn(context);
-        stub(session.getNode(rootUuid)).toReturn(root);
-        stub(session.getNode(uuid)).toReturn(node);
-        node.setProperties(new HashMap<Name, Property>());
-        node.setChildren(new ArrayList<Location>());
+
+        uuid = UUID.randomUUID();
+        node = new JcrNode(cache, uuid);
+
+        context = new ExecutionContext();
+        stub(cache.context()).toReturn(context);
+    }
+
+    protected Name name( String name ) {
+        return context.getValueFactories().getNameFactory().create(name);
+    }
+
+    protected Path path( String path ) {
+        return context.getValueFactories().getPathFactory().create(path);
     }
 
     @Test( expected = ItemNotFoundException.class )
     public void shouldNotAllowAncestorDepthGreaterThanNodeDepth() throws Exception {
-        node.getAncestor(2);
+        NodeInfo info = mock(NodeInfo.class);
+        stub(cache.findNodeInfo(uuid)).toReturn(info);
+        stub(cache.getPathFor(info)).toReturn(path("/a/b/c/name[2]"));
+        node.getAncestor(6);
     }
 
     @Test
     public void shouldProvideDepth() throws Exception {
-        assertThat(node.getDepth(), is(1));
+        NodeInfo info = mock(NodeInfo.class);
+        stub(cache.findNodeInfo(uuid)).toReturn(info);
+        stub(cache.getPathFor(info)).toReturn(path("/a/b/c/name[2]"));
+        assertThat(node.getDepth(), is(4));
     }
 
     @Test
     public void shouldProvideIndex() throws Exception {
-        assertThat(node.getIndex(), is(2));
+        stub(cache.getSnsIndexOf(uuid)).toReturn(1);
+        assertThat(node.getIndex(), is(1));
     }
 
     @Test
     public void shouldProvideName() throws Exception {
+        stub(cache.getNameOf(uuid)).toReturn(name("name"));
         assertThat(node.getName(), is("name"));
     }
 
     @Test
     public void shouldProvidePath() throws Exception {
-        assertThat(node.getPath(), is("/name[2]"));
+        stub(cache.getPathFor(uuid)).toReturn(path("/a/b/c/name[2]"));
+        assertThat(node.getPath(), is("/a/b/c/name[2]"));
     }
 }

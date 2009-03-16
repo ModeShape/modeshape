@@ -24,34 +24,31 @@
 package org.jboss.dna.jcr;
 
 import java.util.Iterator;
-import java.util.List;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import javax.jcr.RepositoryException;
 import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.util.CheckArg;
-import org.jboss.dna.graph.Location;
+import org.jboss.dna.jcr.SessionCache.ChildNode;
 
 /**
- * @author jverhaeg
  */
 @Immutable
 final class JcrChildNodeIterator implements NodeIterator {
 
-    private final AbstractJcrNode parent;
-    private final Iterator<Location> iterator;
-    private final JcrSession session;
+    private final SessionCache cache;
+    private final Iterator<ChildNode> iterator;
     private int ndx;
     private int size;
 
-    JcrChildNodeIterator( AbstractJcrNode parent,
-                          List<Location> children ) {
-        assert parent != null;
+    JcrChildNodeIterator( SessionCache cache,
+                          Iterable<ChildNode> children,
+                          int size ) {
+        assert cache != null;
         assert children != null;
-        this.parent = parent;
-        this.session = parent.session();
+        this.cache = cache;
         iterator = children.iterator();
-        size = children.size();
+        this.size = size;
     }
 
     /**
@@ -96,10 +93,10 @@ final class JcrChildNodeIterator implements NodeIterator {
      * @see javax.jcr.NodeIterator#nextNode()
      */
     public Node nextNode() {
-        Location location = iterator.next();
+        ChildNode child = iterator.next();
         ndx++;
         try {
-            return session.getChild(parent, location);
+            return cache.findJcrNode(child.getUuid());
         } catch (RepositoryException error) {
             throw new RuntimeException(error);
         }

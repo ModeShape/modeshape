@@ -23,11 +23,12 @@
  */
 package org.jboss.dna.jcr;
 
+import java.util.UUID;
+import javax.jcr.Item;
 import javax.jcr.ItemNotFoundException;
 import javax.jcr.Node;
-import javax.jcr.nodetype.NodeDefinition;
+import javax.jcr.RepositoryException;
 import net.jcip.annotations.NotThreadSafe;
-import org.jboss.dna.graph.Location;
 
 /**
  * @author jverhaeg
@@ -35,10 +36,19 @@ import org.jboss.dna.graph.Location;
 @NotThreadSafe
 final class JcrRootNode extends AbstractJcrNode {
 
-    JcrRootNode( JcrSession session,
-                 Location location,
-                 NodeDefinition nodeDefinition ) {
-        super(session, location, nodeDefinition);
+    JcrRootNode( SessionCache cache,
+                 UUID nodeUuid ) {
+        super(cache, nodeUuid);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.jcr.AbstractJcrNode#isRoot()
+     */
+    @Override
+    boolean isRoot() {
+        return true;
     }
 
     /**
@@ -90,5 +100,19 @@ final class JcrRootNode extends AbstractJcrNode {
      */
     public String getPath() {
         return "/";
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.jcr.AbstractJcrItem#getAncestor(int)
+     */
+    @Override
+    public final Item getAncestor( int depth ) throws RepositoryException {
+        if (depth == 0) return this;
+        if (depth < 0) {
+            throw new ItemNotFoundException(JcrI18n.noNegativeDepth.text(depth));
+        }
+        throw new ItemNotFoundException(JcrI18n.tooDeep.text(depth));
     }
 }

@@ -30,7 +30,6 @@ import javax.jcr.Node;
 import javax.jcr.RepositoryException;
 import javax.jcr.Value;
 import javax.jcr.ValueFormatException;
-import javax.jcr.nodetype.PropertyDefinition;
 import net.jcip.annotations.NotThreadSafe;
 import org.jboss.dna.graph.property.Property;
 
@@ -40,11 +39,9 @@ import org.jboss.dna.graph.property.Property;
 @NotThreadSafe
 final class JcrMultiValueProperty extends AbstractJcrProperty {
 
-    JcrMultiValueProperty( AbstractJcrNode node,
-                           PropertyDefinition definition,
-                           int propertyType,
-                           Property dnaProperty ) {
-        super(node, definition, propertyType, dnaProperty);
+    JcrMultiValueProperty( SessionCache cache,
+                           PropertyId propertyId ) {
+        super(cache, propertyId);
     }
 
     /**
@@ -102,7 +99,7 @@ final class JcrMultiValueProperty extends AbstractJcrProperty {
      * @see javax.jcr.Property#getLengths()
      */
     public long[] getLengths() throws RepositoryException {
-        Property dnaProperty = getDnaProperty();
+        Property dnaProperty = propertyInfo().getProperty();
         long[] lengths = new long[dnaProperty.size()];
         Iterator<?> iter = dnaProperty.iterator();
         for (int ndx = 0; iter.hasNext(); ndx++) {
@@ -161,8 +158,8 @@ final class JcrMultiValueProperty extends AbstractJcrProperty {
      * 
      * @see javax.jcr.Property#getValues()
      */
-    public Value[] getValues() {
-        Property dnaProperty = getDnaProperty();
+    public Value[] getValues() throws RepositoryException {
+        Property dnaProperty = propertyInfo().getProperty();
         Value[] values = new JcrValue[dnaProperty.size()];
         Iterator<?> iter = dnaProperty.iterator();
         for (int ndx = 0; iter.hasNext(); ndx++) {

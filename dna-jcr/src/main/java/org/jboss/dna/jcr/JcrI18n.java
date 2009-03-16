@@ -39,6 +39,7 @@ public final class JcrI18n {
     public static I18n inputStreamConsumed;
     public static I18n nonInputStreamConsumed;
     public static I18n pathNotFound;
+    public static I18n pathNotFoundRelativeTo;
     public static I18n permissionDenied;
     public static I18n repositoryMustBeConfigured;
     public static I18n sourceInUse;
@@ -61,9 +62,19 @@ public final class JcrI18n {
     public static I18n invalidRelativePath;
     public static I18n invalidPathParameter;
     public static I18n invalidNamePattern;
+    public static I18n noPrimaryItemNameDefinedOnPrimaryType;
+    public static I18n primaryItemNameForPrimaryTypeIsNotValid;
+    public static I18n primaryItemDoesNotExist;
     public static I18n itemNotFoundWithUuid;
+    public static I18n itemNotFoundAtPath;
+    public static I18n itemNotFoundAtPathRelativeToReferenceNode;
+    public static I18n propertyNotFoundAtPathRelativeToReferenceNode;
+    public static I18n nodeNotFoundAtPathRelativeToReferenceNode;
+    public static I18n childNotFoundUnderNode;
     public static I18n errorWhileFindingNodeWithUuid;
+    public static I18n errorWhileFindingNodeWithPath;
     public static I18n nodeDefinitionCouldNotBeDeterminedForNode;
+    public static I18n missingNodeTypeForExistingNode;
 
     public static I18n typeNotFound;
     public static I18n supertypeNotFound;

@@ -25,11 +25,10 @@ package org.jboss.dna.jcr;
 
 import java.io.InputStream;
 import java.util.Calendar;
-import java.util.HashSet;
+import java.util.Collection;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 import java.util.regex.Pattern;
 import javax.jcr.Item;
@@ -42,7 +41,6 @@ import javax.jcr.Property;
 import javax.jcr.PropertyIterator;
 import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
-import javax.jcr.Session;
 import javax.jcr.UnsupportedRepositoryOperationException;
 import javax.jcr.Value;
 import javax.jcr.lock.Lock;
@@ -51,90 +49,48 @@ import javax.jcr.nodetype.NodeType;
 import javax.jcr.nodetype.NodeTypeManager;
 import javax.jcr.version.Version;
 import javax.jcr.version.VersionHistory;
-import net.jcip.annotations.NotThreadSafe;
+import net.jcip.annotations.Immutable;
+import org.jboss.dna.common.i18n.I18n;
 import org.jboss.dna.common.util.CheckArg;
-import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.NamespaceRegistry;
 import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.ValueFormatException;
+import org.jboss.dna.jcr.SessionCache.ChildNode;
+import org.jboss.dna.jcr.SessionCache.Children;
+import org.jboss.dna.jcr.SessionCache.NodeInfo;
 
 /**
- * @author jverhaeg
+ * An abstract implementation of the JCR {@link Node} interface. Instances of this class are created and managed by the
+ * {@link SessionCache}. Each instance references the {@link SessionCache.NodeInfo node information} also managed by the
+ * SessionCache, and finds and operates against this information with each method call.
  */
-@NotThreadSafe
+@Immutable
 abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
 
     private static final NodeType[] EMPTY_NODE_TYPES = new NodeType[] {};
 
-    private final JcrSession session;
-    private final NodeDefinition definition;
-    protected Location location;
-    private Map<Name, Property> properties;
-    private List<Location> children;
+    protected final UUID nodeUuid;
 
-    AbstractJcrNode( JcrSession session,
-                     Location location,
-                     NodeDefinition definition ) {
-        assert session != null;
-        assert definition != null;
-        assert location != null;
-        this.location = location;
-        this.session = session;
-        this.definition = definition;
+    AbstractJcrNode( SessionCache cache,
+                     UUID nodeUuid ) {
+        super(cache);
+        this.nodeUuid = nodeUuid;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.Item#getSession()
-     */
-    public Session getSession() {
-        return session;
-    }
-
-    final JcrSession session() {
-        return session;
-    }
+    abstract boolean isRoot();
 
     final UUID internalUuid() {
-        return location.getUuid();
+        return nodeUuid;
     }
 
-    /**
-     * Change the internal UUID. Technically, it is possible for this to change, but only because a new node may be assigned a
-     * UUID when it is created within the session and (according to the spec) this UUID can change when the new node is persisted
-     * upon {@link #save()}.
-     * 
-     * @param uuid the new UUID; may not be null
-     */
-    final void setInternalUuid( UUID uuid ) {
-        assert uuid != null;
-        location = location.with(uuid);
+    final NodeInfo nodeInfo() throws ItemNotFoundException, RepositoryException {
+        return cache.findNodeInfo(nodeUuid);
     }
 
-    final void setChildren( List<Location> children ) {
-        assert children != null;
-        this.children = children;
-    }
-
-    final void setProperties( Map<Name, Property> properties ) {
-        assert properties != null;
-        this.properties = properties;
-    }
-
-    /**
-     * Utility mehtod to create a {@link Name} from the supplied string.
-     * 
-     * @param name the string
-     * @return the name, or null if the supplied string is null
-     */
-    final Name nameFrom( String name ) {
-        return session.getExecutionContext().getValueFactories().getNameFactory().create(name);
-    }
-
-    final NamespaceRegistry namespaces() {
-        return session.getExecutionContext().getNamespaceRegistry();
+    @Override
+    Path path() throws RepositoryException {
+        return cache.getPathFor(nodeInfo());
     }
 
     /**
@@ -148,7 +104,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         if (mixinsProp != null) {
             String referenceableMixinName = JcrMixLexicon.REFERENCEABLE.getString(namespaces());
             for (Value value : mixinsProp.getValues()) {
-                if (referenceableMixinName.equals(value.getString())) return getProperty(JcrLexicon.UUID).getString();
+                if (referenceableMixinName.equals(value.getString())) return nodeUuid.toString();
             }
         }
         throw new UnsupportedRepositoryOperationException();
@@ -192,8 +148,9 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
      * 
      * @see javax.jcr.Node#getDefinition()
      */
-    public NodeDefinition getDefinition() {
-        return definition;
+    public NodeDefinition getDefinition() throws RepositoryException {
+        NodeDefinitionId definitionId = nodeInfo().getDefinitionId();
+        return session().nodeTypeManager().getNodeDefinition(definitionId);
     }
 
     /**
@@ -203,8 +160,8 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
      * @see javax.jcr.Node#getPrimaryNodeType()
      */
     public NodeType getPrimaryNodeType() throws RepositoryException {
-        String nodeTypeName = getProperty(JcrLexicon.PRIMARY_TYPE).getString();
-        return session.getWorkspace().getNodeTypeManager().getNodeType(nodeTypeName);
+        Name primaryTypeName = nodeInfo().getPrimaryTypeName();
+        return session().nodeTypeManager().getNodeType(primaryTypeName);
     }
 
     /**
@@ -214,7 +171,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
      * @see javax.jcr.Node#getMixinNodeTypes()
      */
     public NodeType[] getMixinNodeTypes() throws RepositoryException {
-        NodeTypeManager nodeTypeManager = session.getWorkspace().getNodeTypeManager();
+        NodeTypeManager nodeTypeManager = session().getWorkspace().getNodeTypeManager();
         Property mixinTypesProperty = getProperty(JcrLexicon.MIXIN_TYPES);
         if (mixinTypesProperty == null) return EMPTY_NODE_TYPES;
         List<NodeType> mixinNodeTypes = new LinkedList<NodeType>();
@@ -252,12 +209,35 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
      * @see javax.jcr.Node#getPrimaryItem()
      */
     public final Item getPrimaryItem() throws RepositoryException {
-        // TODO: Check if declared in the node type first
+        // Get the primary item name from this node's type ...
+        NodeType primaryType = getPrimaryNodeType();
+        String primaryItemNameString = primaryType.getPrimaryItemName();
+        if (primaryItemNameString == null) {
+            I18n msg = JcrI18n.noPrimaryItemNameDefinedOnPrimaryType;
+            throw new ItemNotFoundException(msg.text(primaryType.getName(), getPath(), cache.workspaceName()));
+        }
         try {
-            Property primaryItemProp = getProperty("jcr:primaryItemName");
-            return session.getItem(getPath(getPath(), primaryItemProp.getString()));
+            Path primaryItemPath = context().getValueFactories().getPathFactory().create(primaryItemNameString);
+            if (primaryItemPath.size() != 1 || primaryItemPath.isAbsolute()) {
+                I18n msg = JcrI18n.primaryItemNameForPrimaryTypeIsNotValid;
+                throw new ItemNotFoundException(msg.text(primaryType.getName(),
+                                                         primaryItemNameString,
+                                                         getPath(),
+                                                         cache.workspaceName()));
+            }
+            return cache.findJcrItem(nodeUuid, primaryItemPath);
+        } catch (ValueFormatException error) {
+            I18n msg = JcrI18n.primaryItemNameForPrimaryTypeIsNotValid;
+            throw new ItemNotFoundException(msg.text(primaryType.getName(),
+                                                     primaryItemNameString,
+                                                     getPath(),
+                                                     cache.workspaceName()));
         } catch (PathNotFoundException error) {
-            throw new ItemNotFoundException(error);
+            I18n msg = JcrI18n.primaryItemDoesNotExist;
+            throw new ItemNotFoundException(msg.text(primaryType.getName(),
+                                                     primaryItemNameString,
+                                                     getPath(),
+                                                     cache.workspaceName()));
         }
     }
 
@@ -268,7 +248,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
      * @see javax.jcr.Item#isSame(javax.jcr.Item)
      */
     @Override
-    public final boolean isSame( Item otherItem ) throws RepositoryException {
+    public boolean isSame( Item otherItem ) throws RepositoryException {
         CheckArg.isNotNull(otherItem, "otherItem");
         if (super.isSame(otherItem) && otherItem instanceof Node) {
             if (otherItem instanceof AbstractJcrNode) {
@@ -285,9 +265,8 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
      * 
      * @see javax.jcr.Node#hasProperties()
      */
-    public final boolean hasProperties() {
-        assert properties != null;
-        return !properties.isEmpty();
+    public final boolean hasProperties() throws RepositoryException {
+        return nodeInfo().getProperties().size() > 0;
     }
 
     /**
@@ -299,10 +278,17 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
     public final boolean hasProperty( String relativePath ) throws RepositoryException {
         CheckArg.isNotEmpty(relativePath, "relativePath");
         if (relativePath.indexOf('/') >= 0) {
-            return (getProperty(relativePath) != null);
+            try {
+                getProperty(relativePath);
+                return true;
+            } catch (PathNotFoundException e) {
+                return false;
+            }
         }
-        assert properties != null;
-        return properties.containsKey(nameFrom(relativePath));
+        if (relativePath.equals(".")) return false;
+        if (relativePath.equals("..")) return false;
+        // Otherwise it should be a property on this node ...
+        return cache.findPropertyInfo(new PropertyId(nodeUuid, nameFrom(relativePath))) != null;
     }
 
     /**
@@ -310,8 +296,8 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
      * 
      * @see javax.jcr.Node#getProperties()
      */
-    public final PropertyIterator getProperties() {
-        return new JcrPropertyIterator(properties.values());
+    public final PropertyIterator getProperties() throws RepositoryException {
+        return new JcrPropertyIterator(cache.findJcrPropertiesFor(nodeUuid));
     }
 
     /**
@@ -323,65 +309,37 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         CheckArg.isNotNull(namePattern, "namePattern");
         namePattern = namePattern.trim();
         if (namePattern.length() == 0) return new JcrEmptyPropertyIterator();
-        if ("*".equals(namePattern)) return new JcrPropertyIterator(properties.values());
+        Collection<AbstractJcrProperty> properties = cache.findJcrPropertiesFor(nodeUuid);
+        if ("*".equals(namePattern)) return new JcrPropertyIterator(properties);
+
+        // Figure out the patterns for each of the different disjunctions in the supplied pattern ...
         List<Object> patterns = createPatternsFor(namePattern);
 
-        // Implementing exact-matching only for now to prototype types as properties
-        Set<Property> matchingProps = new HashSet<Property>();
-        boolean foundMatch = false;
-        for (Property property : properties.values()) {
+        // Go through the properties and remove any property that doesn't match a pattern ...
+        boolean foundMatch = true;
+        Collection<AbstractJcrProperty> matchingProperties = new LinkedList<AbstractJcrProperty>();
+        Iterator<AbstractJcrProperty> iter = properties.iterator();
+        while (iter.hasNext()) {
+            AbstractJcrProperty property = iter.next();
             String propName = property.getName();
+            assert foundMatch == true;
             for (Object patternOrMatch : patterns) {
                 if (patternOrMatch instanceof Pattern) {
                     Pattern pattern = (Pattern)patternOrMatch;
-                    if (pattern.matcher(propName).matches()) foundMatch = true;
+                    if (pattern.matcher(propName).matches()) break;
                 } else {
                     String match = (String)patternOrMatch;
-                    if (propName.equals(match)) foundMatch = true;
+                    if (propName.equals(match)) break;
                 }
-                if (foundMatch) {
-                    foundMatch = false;
-                    matchingProps.add(property);
-                    break;
-                }
+                // No pattern matched ...
+                foundMatch = false;
+            }
+            if (foundMatch) {
+                matchingProperties.add(property);
+                foundMatch = true; // for the next iteration ..
             }
         }
-        return new JcrPropertyIterator(matchingProps);
-    }
-
-    /**
-     * A non-standard method to obtain a property given the {@link Name DNA Name} object. This method is faster
-     * 
-     * @param propertyName the property name
-     * @return the JCR property with the supplied name, or null if the property doesn't exist
-     */
-    public final Property getProperty( Name propertyName ) {
-        return properties.get(propertyName);
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @throws IllegalArgumentException if <code>relativePath</code> is empty or <code>null</code>.
-     * @see javax.jcr.Node#getProperty(java.lang.String)
-     */
-    public final Property getProperty( String relativePath ) throws RepositoryException {
-        CheckArg.isNotEmpty(relativePath, "relativePath");
-        if (relativePath.indexOf('/') >= 0) {
-            Item item = session.getItem(getPath(getPath(), relativePath));
-            if (item instanceof Property) {
-                return (Property)item;
-            }
-            // The item must be a node.
-            assert item instanceof Node;
-            // Since session.getItem() gives precedence to nodes over properties, try explicitly looking for the property with the
-            // same name as the found node using the returned node's parent.
-            return ((Node)item).getParent().getProperty(item.getName());
-        }
-        assert properties != null;
-        Property property = properties.get(nameFrom(relativePath));
-        if (property != null) return property;
-        throw new PathNotFoundException();
+        return new JcrPropertyIterator(matchingProperties);
     }
 
     /**
@@ -392,12 +350,55 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
      */
     public final PropertyIterator getReferences() throws RepositoryException {
         // Iterate through the properties to see which ones have a REFERENCE type ...
-        Set<Property> references = new HashSet<Property>();
-        for (Property property : properties.values()) {
+        Collection<AbstractJcrProperty> properties = cache.findJcrPropertiesFor(nodeUuid);
+        Collection<AbstractJcrProperty> references = new LinkedList<AbstractJcrProperty>();
+        Iterator<AbstractJcrProperty> iter = properties.iterator();
+        while (iter.hasNext()) {
+            AbstractJcrProperty property = iter.next();
             if (property.getType() == PropertyType.REFERENCE) references.add(property);
         }
         if (references.isEmpty()) return new JcrEmptyPropertyIterator();
         return new JcrPropertyIterator(references);
+    }
+
+    /**
+     * A non-standard method to obtain a property given the {@link Name DNA Name} object. This method is faster
+     * 
+     * @param propertyName the property name
+     * @return the JCR property with the supplied name, or null if the property doesn't exist
+     * @throws RepositoryException if there is an error finding the property with the supplied name
+     */
+    public final Property getProperty( Name propertyName ) throws RepositoryException {
+        return cache.findJcrProperty(new PropertyId(nodeUuid, propertyName));
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @throws IllegalArgumentException if <code>relativePath</code> is empty or <code>null</code>.
+     * @see javax.jcr.Node#getProperty(java.lang.String)
+     */
+    public final Property getProperty( String relativePath ) throws RepositoryException {
+        CheckArg.isNotEmpty(relativePath, "relativePath");
+        int indexOfFirstSlash = relativePath.indexOf('/');
+        if (indexOfFirstSlash == 0) {
+            // Not a relative path ...
+            throw new IllegalArgumentException(JcrI18n.invalidPathParameter.text(relativePath));
+        }
+        if (indexOfFirstSlash != -1) {
+            // We know it's a relative path with more than one segment ...
+            Path path = pathFrom(relativePath).getNormalizedPath();
+            AbstractJcrItem item = cache.findJcrItem(nodeUuid, path);
+            if (item instanceof Property) {
+                return (Property)item;
+            }
+            I18n msg = JcrI18n.propertyNotFoundAtPathRelativeToReferenceNode;
+            throw new PathNotFoundException(msg.text(relativePath, getPath(), cache.workspaceName()));
+        }
+        // It's just a name, so look for it directly ...
+        Property property = getProperty(nameFrom(relativePath));
+        if (property != null) return property;
+        throw new PathNotFoundException();
     }
 
     /**
@@ -408,24 +409,26 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
      */
     public final boolean hasNode( String relativePath ) throws RepositoryException {
         CheckArg.isNotEmpty(relativePath, "relativePath");
-        if (relativePath.indexOf('/') >= 0) {
-            return (getNode(relativePath) != null);
+        if (relativePath.equals(".")) return true;
+        if (relativePath.equals("..")) return isRoot() ? false : true;
+        int indexOfFirstSlash = relativePath.indexOf('/');
+        if (indexOfFirstSlash == 0) {
+            // Not a relative path ...
+            throw new IllegalArgumentException(JcrI18n.invalidPathParameter.text(relativePath));
         }
-        if (children != null) {
+        if (indexOfFirstSlash != -1) {
+            Path path = pathFrom(relativePath).getNormalizedPath();
             try {
-                Path.Segment segment = session.getExecutionContext()
-                                              .getValueFactories()
-                                              .getPathFactory()
-                                              .createSegment(relativePath);
-                for (Location child : children) {
-                    Path.Segment childSegment = child.getPath().getLastSegment();
-                    if (childSegment.equals(segment)) return true;
-                }
-            } catch (ValueFormatException e) {
-                throw new RepositoryException(JcrI18n.invalidRelativePath.text(relativePath));
+                AbstractJcrNode item = cache.findJcrNode(nodeUuid, path);
+                return item != null;
+            } catch (PathNotFoundException e) {
+                return false;
             }
         }
-        return false;
+        // It's just a name, so look for a child ...
+        Path.Segment segment = segmentFrom(relativePath);
+        ChildNode child = nodeInfo().getChildren().getChild(segment);
+        return child != null;
     }
 
     /**
@@ -433,8 +436,8 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
      * 
      * @see javax.jcr.Node#hasNodes()
      */
-    public final boolean hasNodes() {
-        return (children != null && !children.isEmpty());
+    public final boolean hasNodes() throws RepositoryException {
+        return nodeInfo().getChildren().size() > 0;
     }
 
     /**
@@ -445,12 +448,31 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
      */
     public final Node getNode( String relativePath ) throws RepositoryException {
         CheckArg.isNotEmpty(relativePath, "relativePath");
-        String path = getPath(getPath(), relativePath);
-        Item item = getSession().getItem(path);
-        if (item instanceof Node) {
-            return (Node)item;
+        if (relativePath.equals(".")) return this;
+        if (relativePath.equals("..")) return this.getParent();
+        int indexOfFirstSlash = relativePath.indexOf('/');
+        if (indexOfFirstSlash == 0) {
+            // Not a relative path ...
+            throw new IllegalArgumentException(JcrI18n.invalidPathParameter.text(relativePath));
         }
-        throw new PathNotFoundException();
+        if (indexOfFirstSlash != -1) {
+            // We know it's a relative path with more than one segment ...
+            Path path = pathFrom(relativePath).getNormalizedPath();
+            AbstractJcrItem item = cache.findJcrItem(nodeUuid, path);
+            if (item instanceof Node) {
+                return (Node)item;
+            }
+            I18n msg = JcrI18n.nodeNotFoundAtPathRelativeToReferenceNode;
+            throw new PathNotFoundException(msg.text(relativePath, getPath(), cache.workspaceName()));
+        }
+        // It's just a name, so look for a child ...
+        Path.Segment segment = segmentFrom(relativePath);
+        ChildNode child = nodeInfo().getChildren().getChild(segment);
+        if (child != null) {
+            return cache.findJcrNode(child.getUuid());
+        }
+        String msg = JcrI18n.childNotFoundUnderNode.text(segment, getPath(), cache.workspaceName());
+        throw new PathNotFoundException(msg);
     }
 
     /**
@@ -458,11 +480,12 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
      * 
      * @see javax.jcr.Node#getNodes()
      */
-    public final NodeIterator getNodes() {
-        if (children == null) {
+    public final NodeIterator getNodes() throws RepositoryException {
+        Children children = nodeInfo().getChildren();
+        if (children.size() == 0) {
             return new JcrEmptyNodeIterator();
         }
-        return new JcrChildNodeIterator(this, children);
+        return new JcrChildNodeIterator(cache, children, children.size());
     }
 
     /**
@@ -479,11 +502,12 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         List<Object> patterns = createPatternsFor(namePattern);
 
         // Implementing exact-matching only for now to prototype types as properties
-        List<Location> matchingChildren = new LinkedList<Location>();
+        Children children = nodeInfo().getChildren();
+        List<ChildNode> matchingChildren = new LinkedList<ChildNode>();
         NamespaceRegistry registry = namespaces();
         boolean foundMatch = false;
-        for (Location child : children) {
-            String childName = child.getPath().getLastSegment().getName().getString(registry);
+        for (ChildNode child : children) {
+            String childName = child.getName().getString(registry);
             for (Object patternOrMatch : patterns) {
                 if (patternOrMatch instanceof Pattern) {
                     Pattern pattern = (Pattern)patternOrMatch;
@@ -499,7 +523,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
                 }
             }
         }
-        return new JcrChildNodeIterator(this, matchingChildren);
+        return new JcrChildNodeIterator(cache, matchingChildren, matchingChildren.size());
     }
 
     /**

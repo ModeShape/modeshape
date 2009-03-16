@@ -37,7 +37,7 @@ class JcrItemDefinition implements ItemDefinition {
 
     protected final JcrSession session;
 
-    private final NodeType declaringNodeType;
+    protected final JcrNodeType declaringNodeType;
     protected final Name name;
     private final int onParentVersion;
     private final boolean autoCreated;
@@ -45,7 +45,7 @@ class JcrItemDefinition implements ItemDefinition {
     private final boolean protectedItem;
 
     JcrItemDefinition( JcrSession session,
-                       NodeType declaringNodeType,
+                       JcrNodeType declaringNodeType,
                        Name name,
                        int onParentVersion,
                        boolean autoCreated,
@@ -54,11 +54,18 @@ class JcrItemDefinition implements ItemDefinition {
         super();
         this.session = session;
         this.declaringNodeType = declaringNodeType;
-        this.name = name;
+        this.name = name != null ? name : session.getExecutionContext()
+                                                 .getValueFactories()
+                                                 .getNameFactory()
+                                                 .create(JcrNodeType.RESIDUAL_ITEM_NAME);
         this.onParentVersion = onParentVersion;
         this.autoCreated = autoCreated;
         this.mandatory = mandatory;
         this.protectedItem = protectedItem;
+    }
+
+    final Name getInternalName() {
+        return name;
     }
 
     /**

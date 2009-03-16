@@ -28,15 +28,13 @@ import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.stub;
 import java.util.UUID;
-import javax.jcr.Property;
 import javax.jcr.PropertyType;
 import javax.jcr.Value;
 import javax.jcr.ValueFormatException;
-import javax.jcr.nodetype.NodeDefinition;
 import javax.jcr.nodetype.PropertyDefinition;
 import org.jboss.dna.graph.ExecutionContext;
-import org.jboss.dna.graph.Location;
-import org.jboss.dna.graph.property.Path;
+import org.jboss.dna.graph.property.Name;
+import org.jboss.dna.jcr.SessionCache.PropertyInfo;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.MockitoAnnotations;
@@ -47,32 +45,48 @@ import org.mockito.MockitoAnnotations.Mock;
  */
 public class JcrMultiValuePropertyTest {
 
-    private Property prop;
-    private AbstractJcrNode node;
+    private PropertyId propertyId;
+    private JcrMultiValueProperty prop;
     private ExecutionContext executionContext;
+    private org.jboss.dna.graph.property.Property dnaProperty;
+    @Mock
+    private SessionCache cache;
     @Mock
     private JcrSession session;
     @Mock
-    private NodeDefinition nodeDefinition;
+    private PropertyInfo propertyInfo;
     @Mock
-    private PropertyDefinition definition;
-    private org.jboss.dna.graph.property.Property dnaProperty;
+    private JcrPropertyDefinition definition;
+    @Mock
+    private JcrNodeTypeManager nodeTypes;
 
     @Before
-    public void before() {
+    public void before() throws Exception {
         MockitoAnnotations.initMocks(this);
         executionContext = new ExecutionContext();
-
-        UUID rootUuid = UUID.randomUUID();
-        Path rootPath = executionContext.getValueFactories().getPathFactory().createRootPath();
-        Location rootLocation = Location.create(rootPath, rootUuid);
-        node = new JcrRootNode(session, rootLocation, nodeDefinition);
-        stub(session.getExecutionContext()).toReturn(executionContext);
+        stub(cache.session()).toReturn(session);
+        stub(cache.context()).toReturn(executionContext);
+        stub(session.nodeTypeManager()).toReturn(nodeTypes);
 
         dnaProperty = executionContext.getPropertyFactory().create(JcrLexicon.MIMETYPE, true);
         stub(definition.getRequiredType()).toReturn(PropertyType.BOOLEAN);
         stub(definition.isMultiple()).toReturn(true);
-        prop = new JcrMultiValueProperty(node, definition, definition.getRequiredType(), dnaProperty);
+        PropertyDefinitionId definitionId = new PropertyDefinitionId(name("nodeTypeName"), name("propDefnName"));
+        stub(nodeTypes.getPropertyDefinition(definitionId, true)).toReturn(definition);
+
+        UUID uuid = UUID.randomUUID();
+        propertyId = new PropertyId(uuid, JcrLexicon.MIMETYPE);
+        prop = new JcrMultiValueProperty(cache, propertyId);
+
+        stub(cache.findPropertyInfo(propertyId)).toReturn(propertyInfo);
+        stub(propertyInfo.getDefinitionId()).toReturn(definitionId);
+        stub(propertyInfo.getPropertyType()).toReturn(PropertyType.BOOLEAN);
+        stub(propertyInfo.isMultiValued()).toReturn(true);
+        stub(propertyInfo.getProperty()).toReturn(dnaProperty);
+    }
+
+    protected Name name( String name ) {
+        return executionContext.getValueFactories().getNameFactory().create(name);
     }
 
     @Test
@@ -82,7 +96,7 @@ public class JcrMultiValuePropertyTest {
 
     @Test
     public void shouldProvidePropertyDefinition() throws Exception {
-        assertThat(prop.getDefinition(), notNullValue());
+        assertThat(prop.getDefinition(), is((PropertyDefinition)definition));
     }
 
     @Test
@@ -149,9 +163,10 @@ public class JcrMultiValuePropertyTest {
 
         Object value = "value";
         dnaProperty = executionContext.getPropertyFactory().create(JcrLexicon.MIMETYPE, value);
+        stub(propertyInfo.getProperty()).toReturn(dnaProperty);
         stub(definition.getRequiredType()).toReturn(PropertyType.STRING);
         stub(definition.isMultiple()).toReturn(true);
-        prop = new JcrMultiValueProperty(node, definition, definition.getRequiredType(), dnaProperty);
+        prop = new JcrMultiValueProperty(cache, propertyId);
         lengths = prop.getLengths();
         assertThat(lengths, notNullValue());
         assertThat(lengths.length, is(1));
@@ -160,9 +175,10 @@ public class JcrMultiValuePropertyTest {
         value = new Object();
         long expectedLength = executionContext.getValueFactories().getBinaryFactory().create(value).getSize();
         dnaProperty = executionContext.getPropertyFactory().create(JcrLexicon.MIMETYPE, value);
+        stub(propertyInfo.getProperty()).toReturn(dnaProperty);
         stub(definition.getRequiredType()).toReturn(PropertyType.STRING);
         stub(definition.isMultiple()).toReturn(true);
-        prop = new JcrMultiValueProperty(node, definition, definition.getRequiredType(), dnaProperty);
+        prop = new JcrMultiValueProperty(cache, propertyId);
         lengths = prop.getLengths();
         assertThat(lengths, notNullValue());
         assertThat(lengths.length, is(1));
@@ -170,9 +186,10 @@ public class JcrMultiValuePropertyTest {
 
         String[] values = new String[] {"value1", "value2", "value 3 is longer"};
         dnaProperty = executionContext.getPropertyFactory().create(JcrLexicon.MIMETYPE, (Object[])values);
+        stub(propertyInfo.getProperty()).toReturn(dnaProperty);
         stub(definition.getRequiredType()).toReturn(PropertyType.STRING);
         stub(definition.isMultiple()).toReturn(true);
-        prop = new JcrMultiValueProperty(node, definition, definition.getRequiredType(), dnaProperty);
+        prop = new JcrMultiValueProperty(cache, propertyId);
         lengths = prop.getLengths();
         assertThat(lengths, notNullValue());
         assertThat(lengths.length, is(values.length));

@@ -27,10 +27,7 @@ import java.util.UUID;
 import javax.jcr.ItemNotFoundException;
 import javax.jcr.Node;
 import javax.jcr.RepositoryException;
-import javax.jcr.nodetype.NodeDefinition;
 import net.jcip.annotations.NotThreadSafe;
-import org.jboss.dna.graph.Location;
-import org.jboss.dna.graph.property.Path;
 
 /**
  * @author jverhaeg
@@ -38,19 +35,19 @@ import org.jboss.dna.graph.property.Path;
 @NotThreadSafe
 final class JcrNode extends AbstractJcrNode {
 
-    private final UUID parentUuid;
-
-    JcrNode( JcrSession session,
-             UUID parentUuid,
-             Location location,
-             NodeDefinition nodeDefinition ) {
-        super(session, location, nodeDefinition);
-        assert parentUuid != null;
-        this.parentUuid = parentUuid;
+    JcrNode( SessionCache cache,
+             UUID nodeUuid ) {
+        super(cache, nodeUuid);
     }
 
-    final Path.Segment segment() {
-        return location.getPath().getLastSegment();
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.jcr.AbstractJcrNode#isRoot()
+     */
+    @Override
+    boolean isRoot() {
+        return false;
     }
 
     /**
@@ -58,8 +55,8 @@ final class JcrNode extends AbstractJcrNode {
      * 
      * @see javax.jcr.Node#getIndex()
      */
-    public int getIndex() {
-        return segment().getIndex();
+    public int getIndex() throws RepositoryException {
+        return cache.getSnsIndexOf(nodeUuid);
     }
 
     /**
@@ -67,8 +64,8 @@ final class JcrNode extends AbstractJcrNode {
      * 
      * @see javax.jcr.Item#getName()
      */
-    public String getName() {
-        return segment().getName().getString(((JcrSession)getSession()).getExecutionContext().getNamespaceRegistry());
+    public String getName() throws RepositoryException {
+        return cache.getNameOf(nodeUuid).getString(namespaces());
     }
 
     /**
@@ -76,12 +73,8 @@ final class JcrNode extends AbstractJcrNode {
      * 
      * @see javax.jcr.Item#getParent()
      */
-    public Node getParent() throws ItemNotFoundException {
-        Node node = session().getNode(parentUuid);
-        if (node == null) {
-            throw new ItemNotFoundException();
-        }
-        return node;
+    public Node getParent() throws ItemNotFoundException, RepositoryException {
+        return cache.findJcrNode(nodeInfo().getParent());
     }
 
     /**
@@ -90,20 +83,6 @@ final class JcrNode extends AbstractJcrNode {
      * @see javax.jcr.Item#getPath()
      */
     public String getPath() throws RepositoryException {
-        Node parent = getParent();
-        StringBuilder builder = new StringBuilder(parent.getPath());
-        assert builder.length() > 0;
-        if (builder.charAt(builder.length() - 1) != '/') {
-            builder.append('/');
-        }
-        String name = getName();
-        builder.append(name);
-        int ndx = getIndex();
-        if (ndx > 1) {
-            builder.append('[');
-            builder.append(ndx);
-            builder.append(']');
-        }
-        return builder.toString();
+        return cache.getPathFor(nodeUuid).getString(namespaces());
     }
 }

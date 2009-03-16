@@ -47,8 +47,11 @@ class JcrNodeDefinition extends JcrItemDefinition implements NodeDefinition {
     /** @see NodeDefinition#getRequiredPrimaryTypes() */
     private final NodeType[] requiredPrimaryTypes;
 
+    /** A durable identifier for this node definition. */
+    private NodeDefinitionId id;
+
     JcrNodeDefinition( JcrSession session,
-                       NodeType declaringNodeType,
+                       JcrNodeType declaringNodeType,
                        Name name,
                        int onParentVersion,
                        boolean autoCreated,
@@ -61,6 +64,18 @@ class JcrNodeDefinition extends JcrItemDefinition implements NodeDefinition {
         this.allowsSameNameSiblings = allowsSameNameSiblings;
         this.defaultPrimaryTypeName = defaultPrimaryTypeName;
         this.requiredPrimaryTypes = requiredPrimaryTypes;
+    }
+
+    /**
+     * Get the durable identifier for this node definition.
+     * 
+     * @return the node definition ID; never null
+     */
+    public NodeDefinitionId getId() {
+        if (id == null) {
+            id = new NodeDefinitionId(declaringNodeType.getInternalName(), name);
+        }
+        return id;
     }
 
     /**
@@ -117,7 +132,7 @@ class JcrNodeDefinition extends JcrItemDefinition implements NodeDefinition {
      * @return a new <code>JcrNodeDefinition</code> that is identical to the current object, but with the given
      *         <code>declaringNodeType</code>.
      */
-    JcrNodeDefinition with( NodeType declaringNodeType ) {
+    JcrNodeDefinition with( JcrNodeType declaringNodeType ) {
         return new JcrNodeDefinition(session, declaringNodeType, name, getOnParentVersion(), isAutoCreated(), isMandatory(),
                                      isProtected(), allowsSameNameSiblings(), defaultPrimaryTypeName, requiredPrimaryTypes);
     }

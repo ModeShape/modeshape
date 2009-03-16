@@ -28,14 +28,16 @@ import java.util.Calendar;
 import javax.jcr.Item;
 import javax.jcr.ItemVisitor;
 import javax.jcr.Node;
+import javax.jcr.PathNotFoundException;
 import javax.jcr.Property;
 import javax.jcr.RepositoryException;
-import javax.jcr.Session;
 import javax.jcr.Value;
 import javax.jcr.nodetype.PropertyDefinition;
 import net.jcip.annotations.NotThreadSafe;
 import org.jboss.dna.common.util.CheckArg;
-import org.jboss.dna.graph.ExecutionContext;
+import org.jboss.dna.graph.property.Name;
+import org.jboss.dna.graph.property.Path;
+import org.jboss.dna.jcr.SessionCache.PropertyInfo;
 
 /**
  * @author jverhaeg
@@ -43,22 +45,13 @@ import org.jboss.dna.graph.ExecutionContext;
 @NotThreadSafe
 abstract class AbstractJcrProperty extends AbstractJcrItem implements Property {
 
-    private final AbstractJcrNode node;
-    private final org.jboss.dna.graph.property.Property dnaProperty;
-    private final PropertyDefinition jcrPropertyDefinition;
-    private final int propertyType;
+    private final PropertyId propertyId;
 
-    AbstractJcrProperty( AbstractJcrNode node,
-                         PropertyDefinition definition,
-                         int propertyType,
-                         org.jboss.dna.graph.property.Property dnaProperty ) {
-        assert node != null;
-        assert dnaProperty != null;
-        assert definition != null;
-        this.node = node;
-        this.dnaProperty = dnaProperty;
-        this.jcrPropertyDefinition = definition;
-        this.propertyType = propertyType;
+    AbstractJcrProperty( SessionCache cache,
+                         PropertyId propertyId ) {
+        super(cache);
+        assert propertyId != null;
+        this.propertyId = propertyId;
     }
 
     /**
@@ -72,16 +65,25 @@ abstract class AbstractJcrProperty extends AbstractJcrItem implements Property {
         visitor.visit(this);
     }
 
-    JcrValue createValue( Object value ) {
-        return new JcrValue(getExecutionContext().getValueFactories(), getType(), value);
+    final PropertyInfo propertyInfo() throws PathNotFoundException, RepositoryException {
+        return cache.findPropertyInfo(propertyId);
     }
 
-    final ExecutionContext getExecutionContext() {
-        return node.session().getExecutionContext();
+    final Name name() throws RepositoryException {
+        return propertyInfo().getPropertyName();
     }
 
-    final org.jboss.dna.graph.property.Property getDnaProperty() {
-        return dnaProperty;
+    final org.jboss.dna.graph.property.Property property() throws RepositoryException {
+        return propertyInfo().getProperty();
+    }
+
+    JcrValue createValue( Object value ) throws RepositoryException {
+        return new JcrValue(context().getValueFactories(), propertyInfo().getPropertyType(), value);
+    }
+
+    @Override
+    Path path() throws RepositoryException {
+        return cache.getPathFor(propertyInfo());
     }
 
     /**
@@ -89,8 +91,8 @@ abstract class AbstractJcrProperty extends AbstractJcrItem implements Property {
      * 
      * @see javax.jcr.Property#getType()
      */
-    public final int getType() {
-        return propertyType;
+    public int getType() throws RepositoryException {
+        return propertyInfo().getPropertyType();
     }
 
     /**
@@ -98,8 +100,11 @@ abstract class AbstractJcrProperty extends AbstractJcrItem implements Property {
      * 
      * @see javax.jcr.Property#getDefinition()
      */
-    public final PropertyDefinition getDefinition() {
-        return jcrPropertyDefinition;
+    public final PropertyDefinition getDefinition() throws RepositoryException {
+        PropertyInfo info = propertyInfo();
+        PropertyDefinitionId definitionId = info.getDefinitionId();
+        boolean multiValued = info.isMultiValued();
+        return cache.session().nodeTypeManager().getPropertyDefinition(definitionId, multiValued);
     }
 
     /**
@@ -111,8 +116,8 @@ abstract class AbstractJcrProperty extends AbstractJcrItem implements Property {
      * 
      * @see javax.jcr.Item#getName()
      */
-    public final String getName() {
-        return dnaProperty.getName().getString(node.namespaces());
+    public final String getName() throws RepositoryException {
+        return propertyInfo().getPropertyName().getString(namespaces());
     }
 
     /**
@@ -120,8 +125,8 @@ abstract class AbstractJcrProperty extends AbstractJcrItem implements Property {
      * 
      * @see javax.jcr.Item#getParent()
      */
-    public final Node getParent() {
-        return node;
+    public final Node getParent() throws RepositoryException {
+        return cache.findJcrNode(propertyId.getNodeId());
     }
 
     /**
@@ -130,16 +135,7 @@ abstract class AbstractJcrProperty extends AbstractJcrItem implements Property {
      * @see javax.jcr.Item#getPath()
      */
     public final String getPath() throws RepositoryException {
-        return getPath(node.getPath(), getName());
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.Item#getSession()
-     */
-    public final Session getSession() {
-        return node.getSession();
+        return cache.getPathFor(propertyInfo()).getString(namespaces());
     }
 
     /**

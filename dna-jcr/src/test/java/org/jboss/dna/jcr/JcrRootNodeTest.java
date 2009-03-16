@@ -26,14 +26,10 @@ package org.jboss.dna.jcr;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
-import java.util.HashMap;
-import java.util.Map;
+import static org.mockito.Mockito.stub;
 import java.util.UUID;
 import javax.jcr.ItemNotFoundException;
-import javax.jcr.Property;
-import javax.jcr.nodetype.NodeDefinition;
 import org.jboss.dna.graph.ExecutionContext;
-import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.Path;
 import org.junit.Before;
@@ -46,23 +42,29 @@ import org.mockito.MockitoAnnotations.Mock;
  */
 public class JcrRootNodeTest {
 
+    private UUID uuid;
     private JcrRootNode root;
+    private ExecutionContext context;
     @Mock
-    private JcrSession session;
-    @Mock
-    private NodeDefinition nodeDefinition;
-    private Map<Name, Property> properties;
+    private SessionCache cache;
 
     @Before
     public void before() throws Exception {
         MockitoAnnotations.initMocks(this);
-        properties = new HashMap<Name, Property>();
-        ExecutionContext context = new ExecutionContext();
-        UUID rootUuid = UUID.randomUUID();
-        Path rootPath = context.getValueFactories().getPathFactory().createRootPath();
-        Location rootLocation = Location.create(rootPath, rootUuid);
-        root = new JcrRootNode(session, rootLocation, nodeDefinition);
-        root.setProperties(properties);
+
+        uuid = UUID.randomUUID();
+        root = new JcrRootNode(cache, uuid);
+
+        context = new ExecutionContext();
+        stub(cache.context()).toReturn(context);
+    }
+
+    protected Name name( String name ) {
+        return context.getValueFactories().getNameFactory().create(name);
+    }
+
+    protected Path path( String path ) {
+        return context.getValueFactories().getPathFactory().create(path);
     }
 
     @Test( expected = ItemNotFoundException.class )

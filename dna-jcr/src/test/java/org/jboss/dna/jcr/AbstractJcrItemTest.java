@@ -27,22 +27,34 @@ import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
 import javax.jcr.ItemVisitor;
 import javax.jcr.Node;
-import javax.jcr.Session;
+import org.jboss.dna.graph.property.Path;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.MockitoAnnotations;
+import org.mockito.MockitoAnnotations.Mock;
 
-/**
- * @author jverhaeg
- */
 public class AbstractJcrItemTest {
 
     private AbstractJcrItem item;
+    @Mock
+    private SessionCache cache;
 
     @Before
     public void before() {
-        item = new AbstractJcrItem() {
+        MockitoAnnotations.initMocks(this);
+        item = new AbstractJcrItem(cache) {
 
             public void accept( ItemVisitor visitor ) {
+            }
+
+            /**
+             * {@inheritDoc}
+             * 
+             * @see org.jboss.dna.jcr.AbstractJcrItem#path()
+             */
+            @Override
+            Path path() {
+                throw new UnsupportedOperationException();
             }
 
             public String getName() {
@@ -54,10 +66,6 @@ public class AbstractJcrItemTest {
             }
 
             public String getPath() {
-                return null;
-            }
-
-            public Session getSession() {
                 return null;
             }
 

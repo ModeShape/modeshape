@@ -25,13 +25,13 @@ package org.jboss.dna.jcr;
 
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
+import static org.hamcrest.core.IsSame.sameInstance;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.stub;
 import java.io.InputStream;
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -39,20 +39,23 @@ import javax.jcr.Item;
 import javax.jcr.ItemNotFoundException;
 import javax.jcr.ItemVisitor;
 import javax.jcr.Node;
+import javax.jcr.NodeIterator;
 import javax.jcr.PathNotFoundException;
 import javax.jcr.Property;
 import javax.jcr.PropertyIterator;
+import javax.jcr.PropertyType;
 import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
 import javax.jcr.UnsupportedRepositoryOperationException;
 import javax.jcr.Value;
 import javax.jcr.Workspace;
-import javax.jcr.nodetype.NodeDefinition;
 import javax.jcr.version.Version;
 import org.jboss.dna.graph.ExecutionContext;
-import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.Path;
+import org.jboss.dna.jcr.SessionCache.Children;
+import org.jboss.dna.jcr.SessionCache.NodeInfo;
+import org.jboss.dna.jcr.SessionCache.PropertyInfo;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
@@ -64,36 +67,16 @@ import org.mockito.MockitoAnnotations.Mock;
  */
 public class AbstractJcrNodeTest {
 
-    static MockAbstractJcrNode createChild( JcrSession session,
-                                            String name,
-                                            int index,
-                                            List<Location> children,
-                                            AbstractJcrNode parent ) throws Exception {
-        MockAbstractJcrNode child = new MockAbstractJcrNode(session, name, parent);
-        String parentPath = parent.getPath();
-        String childPath = parentPath + "/" + name + "[" + index + "]";
-        Path path = session.getExecutionContext().getValueFactories().getPathFactory().create(childPath);
-        Location location = Location.create(path, UUID.randomUUID());
-        children.add(location);
-        // Stub the session to return this node ...
-        String absolutePath = path.getString(session.getExecutionContext().getNamespaceRegistry());
-        stub(session.getChild(parent, location)).toReturn(child);
-        stub(session.getNode(location.getUuid())).toReturn(child);
-        stub(session.getItem(absolutePath)).toReturn(child);
-        return child;
-    }
-
     static class MockAbstractJcrNode extends AbstractJcrNode {
 
-        String name;
-        Node parent;
+        MockAbstractJcrNode( SessionCache cache,
+                             UUID uuid ) {
+            super(cache, uuid);
+        }
 
-        MockAbstractJcrNode( JcrSession session,
-                             String name,
-                             Node parent ) {
-            super(session, Location.create(UUID.randomUUID()), mock(NodeDefinition.class));
-            this.name = name;
-            this.parent = parent;
+        @Override
+        boolean isRoot() {
+            return false;
         }
 
         @Override
@@ -105,43 +88,65 @@ public class AbstractJcrNodeTest {
             return 0;
         }
 
-        public String getName() {
-            return name;
+        public String getName() throws RepositoryException {
+            return cache.getPathFor(nodeInfo()).getLastSegment().getString(namespaces());
         }
 
-        public Node getParent() {
-            return parent;
+        public Node getParent() throws RepositoryException {
+            return cache.findJcrNode(nodeInfo().getParent());
         }
 
         public String getPath() throws RepositoryException {
-            return (parent == null ? '/' + getName() : parent.getPath() + '/' + getName());
+            return cache.getPathFor(nodeInfo()).getString(namespaces());
         }
     }
 
+    private ExecutionContext context;
+    private UUID uuid;
     private AbstractJcrNode node;
+    private Children children;
+    @Mock
+    private SessionCache cache;
     @Mock
     private JcrSession session;
     @Mock
-    private Workspace workspace;
+    private JcrNodeTypeManager nodeTypes;
     @Mock
-    private Repository repository;
-    private List<Location> children;
-    private Map<Name, Property> properties;
-    private ExecutionContext context;
+    private NodeInfo info;
 
     @Before
     public void before() throws Exception {
         MockitoAnnotations.initMocks(this);
         context = new ExecutionContext();
-        stub(session.getExecutionContext()).toReturn(context);
-        children = new ArrayList<Location>();
-        properties = new HashMap<Name, Property>();
-        node = new MockAbstractJcrNode(session, "node", null);
-        node.setProperties(properties);
+        context.getNamespaceRegistry().register("acme", "http://www.example.com");
+        uuid = UUID.randomUUID();
+        stub(cache.session()).toReturn(session);
+        stub(cache.context()).toReturn(context);
+        stub(cache.workspaceName()).toReturn("my workspace");
+        stub(cache.findNodeInfo(uuid)).toReturn(info);
+        stub(cache.getPathFor(info)).toReturn(path("/a/b/c/d"));
+        stub(session.nodeTypeManager()).toReturn(nodeTypes);
+        node = new MockAbstractJcrNode(cache, uuid);
+
+        // Create the children container for the node ...
+        children = new Children(uuid);
+        stub(info.getChildren()).toReturn(children);
     }
 
     protected Name name( String name ) {
         return context.getValueFactories().getNameFactory().create(name);
+    }
+
+    protected Path relativePath( String relativePath ) {
+        return context.getValueFactories().getPathFactory().create(relativePath);
+    }
+
+    protected Path path( String absolutePath ) {
+        return context.getValueFactories().getPathFactory().create(absolutePath);
+    }
+
+    protected Value stringValueFor( Object value ) {
+        return new JcrValue(context.getValueFactories(), PropertyType.STRING, value);
     }
 
     @Test
@@ -156,11 +161,6 @@ public class AbstractJcrNodeTest {
         node.accept(null);
     }
 
-    @Test( expected = AssertionError.class )
-    public void shouldNotAllowNoSession() throws Exception {
-        new MockAbstractJcrNode(null, null, null);
-    }
-
     @Test( expected = ItemNotFoundException.class )
     public void shouldNotAllowNegativeAncestorDepth() throws Exception {
         node.getAncestor(-1);
@@ -172,18 +172,48 @@ public class AbstractJcrNodeTest {
     }
 
     @Test
-    public void shouldProvideInternalUuid() throws Exception {
-        UUID uuid = UUID.randomUUID();
-        node.setInternalUuid(uuid);
-        assertThat(node.internalUuid(), is(uuid));
+    public void shouldReturnPropertyFromGetPropertyWithValidName() throws Exception {
+        PropertyId propertyId = new PropertyId(uuid, name("test"));
+        AbstractJcrProperty property = mock(AbstractJcrProperty.class);
+        stub(cache.findJcrProperty(propertyId)).toReturn(property);
+        assertThat(node.getProperty("test"), is((Property)property));
     }
 
     @Test
-    public void shouldProvideNamedProperty() throws Exception {
-        Property property = Mockito.mock(Property.class);
-        stub(property.getName()).toReturn("test");
-        properties.put(name(property.getName()), property);
-        assertThat(node.getProperty("test"), is(property));
+    public void shouldReturnPropertyFromGetPropertyWithValidRelativePath() throws Exception {
+        PropertyId propertyId = new PropertyId(uuid, name("test"));
+        AbstractJcrProperty property = mock(AbstractJcrProperty.class);
+        stub(cache.findJcrProperty(propertyId)).toReturn(property);
+        assertThat(node.getProperty("test"), is((Property)property));
+    }
+
+    @Test( expected = PathNotFoundException.class )
+    public void shouldFailToReturnPropertyFromGetPropertyWithNameOfPropertyThatDoesNotExist() throws Exception {
+        node.getProperty("nonExistantProperty");
+    }
+
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldFailToReturnPropertyFromGetPropertyWithAbsolutePath() throws Exception {
+        node.getProperty("/test");
+    }
+
+    @Test( expected = PathNotFoundException.class )
+    public void shouldFailToReturnPropertyFromGetPropertyWithRelativePathToNonExistantItem() throws Exception {
+        node.getProperty("../bogus/path");
+    }
+
+    @Test
+    public void shouldReturnPropertyFromGetPropertyWithRelativePathToPropertyOnOtherNode() throws Exception {
+        AbstractJcrProperty property = mock(AbstractJcrProperty.class);
+        stub(cache.findJcrItem(uuid, relativePath("../good/path"))).toReturn(property);
+        assertThat(node.getProperty("../good/path"), is((Property)property));
+    }
+
+    @Test( expected = PathNotFoundException.class )
+    public void shouldReturnPropertyFromGetPropertyWithRelativePathToOtherNode() throws Exception {
+        AbstractJcrNode otherNode = mock(AbstractJcrNode.class);
+        stub(cache.findJcrItem(uuid, relativePath("../good/path"))).toReturn(otherNode);
+        node.getProperty("../good/path");
     }
 
     @Test( expected = UnsupportedOperationException.class )
@@ -241,76 +271,6 @@ public class AbstractJcrNodeTest {
         node.getLock();
     }
 
-    @Test
-    public void shouldProvideNode() throws Exception {
-        Node child = createChild(session, "child", 1, children, node);
-        node.setChildren(children);
-        stub(session.getItem("/node/child")).toReturn(child);
-        assertThat(node.getNode("child"), is(child));
-    }
-
-    @Test( expected = IllegalArgumentException.class )
-    public void shouldNotAllowGetNodeWithNoPath() throws Exception {
-        node.getNode(null);
-    }
-
-    @Test( expected = PathNotFoundException.class )
-    public void shouldNotProvideNodeIfPathNotFound() throws Exception {
-        node.getNode("bogus");
-    }
-
-    @Test( expected = PathNotFoundException.class )
-    public void shouldNotProvideNodeIfPathIsProperty() throws Exception {
-        Property property = Mockito.mock(Property.class);
-        stub(session.getItem("/property")).toReturn(property);
-        node.getNode("property");
-    }
-
-    @Test
-    public void shouldProvideNodeIterator() throws Exception {
-        assertThat(node.getNodes(), notNullValue());
-    }
-
-    @Test
-    public void shoudProvidePrimaryItem() throws Exception {
-        Property property = Mockito.mock(Property.class);
-        stub(property.getName()).toReturn("jcr:primaryItemName");
-        stub(property.getString()).toReturn("primaryItem");
-        properties.put(name(property.getName()), property);
-        Item primaryItem = Mockito.mock(Item.class);
-        stub(session.getItem("/node/primaryItem")).toReturn(primaryItem);
-        assertThat(node.getPrimaryItem(), is(primaryItem));
-    }
-
-    @Test( expected = ItemNotFoundException.class )
-    public void shoudNotProvidePrimaryItemIfUnavailable() throws Exception {
-        node.getPrimaryItem();
-    }
-
-    @Test
-    public void shouldProvideProperty() throws Exception {
-        Property prop1 = Mockito.mock(Property.class);
-        stub(prop1.getName()).toReturn("prop1");
-        properties.put(name(prop1.getName()), prop1);
-        assertThat(node.getProperty("prop1"), is(prop1));
-        MockAbstractJcrNode child = createChild(session, "child", 1, children, node);
-        Map<Name, Property> properties = new HashMap<Name, Property>();
-        child.setProperties(properties);
-        Property prop2 = Mockito.mock(Property.class);
-        stub(prop2.getName()).toReturn("prop2");
-        stub(session.getItem("/node/child/prop2")).toReturn(prop2);
-        properties.put(name(prop2.getName()), prop2);
-        MockAbstractJcrNode prop3Node = createChild(session, "prop3", 1, children, child);
-        node.setChildren(children);
-        assertThat(node.getProperty("child/prop2"), is(prop2));
-        // Ensure we return a property even when a child exists with the same name
-        Property prop3 = Mockito.mock(Property.class);
-        stub(prop3.getName()).toReturn("prop3");
-        properties.put(name(prop3.getName()), prop3);
-        stub(session.getItem("/node/child/prop3")).toReturn(prop3Node);
-        assertThat(node.getProperty("child/prop3"), is(prop3));
-    }
-
     @Test( expected = IllegalArgumentException.class )
     public void shouldNotAllowGetPropertyWithNullPath() throws Exception {
         node.getProperty((String)null);
@@ -321,27 +281,166 @@ public class AbstractJcrNodeTest {
         node.getProperty("");
     }
 
-    @Test( expected = PathNotFoundException.class )
-    public void shouldNotProvideChildPropertyIfNotAvailable() throws Exception {
-        node.getProperty("prop1");
-    }
-
-    @Test( expected = PathNotFoundException.class )
-    public void shouldNotProvideDescendentPropertyIfNotAvailable() throws Exception {
-        MockAbstractJcrNode child = createChild(session, "child", 1, children, node);
-        Map<Name, Property> properties = new HashMap<Name, Property>();
-        child.setProperties(properties);
-        MockAbstractJcrNode propNode = createChild(session, "prop", 1, children, child);
-        node.setChildren(children);
-        stub(session.getItem("/node/child/prop")).toReturn(propNode);
-        node.getProperty("child/prop");
+    @Test
+    public void shouldReturnChildNodeFromGetNodeWithValidName() throws Exception {
+        AbstractJcrNode child = mock(AbstractJcrNode.class);
+        UUID childUuid = UUID.randomUUID();
+        children.append(cache, name("child"), childUuid);
+        stub(cache.findJcrNode(childUuid)).toReturn(child);
+        assertThat(node.getNode("child"), is((Node)child));
     }
 
     @Test
-    public void shouldNotAllowGetReferences() throws Exception {
+    public void shouldReturnNonChildNodeFromGetNodeWithValidRelativePath() throws Exception {
+        AbstractJcrNode otherNode = mock(AbstractJcrNode.class);
+        stub(cache.findJcrItem(uuid, path("../other/node"))).toReturn(otherNode);
+        assertThat(node.getNode("../other/node"), is((Node)otherNode));
+    }
+
+    @Test( expected = PathNotFoundException.class )
+    public void shouldFailToReturnNodeFromGetNodeWithValidRelativePathToProperty() throws Exception {
+        AbstractJcrProperty property = mock(AbstractJcrProperty.class);
+        stub(cache.findJcrItem(uuid, path("../other/node"))).toReturn(property);
+        node.getNode("../other/node");
+    }
+
+    @Test( expected = PathNotFoundException.class )
+    public void shouldFailToReturnNodeFromGetNodeWithValidRelativePathToNoNodeOrProperty() throws Exception {
+        node.getNode("../other/node");
+    }
+
+    @Test
+    public void shouldReturnSelfFromGetNodeWithRelativePathContainingOnlySelfReference() throws Exception {
+        assertThat(node.getNode("."), is((Node)node));
+    }
+
+    @Test
+    public void shouldReturnParentFromGetNodeWithRelativePathContainingOnlyParentReference() throws Exception {
+        AbstractJcrNode parent = mock(AbstractJcrNode.class);
+        UUID parentUuid = UUID.randomUUID();
+        stub(info.getParent()).toReturn(parentUuid);
+        stub(cache.findJcrNode(parentUuid)).toReturn(parent);
+        assertThat(node.getNode(".."), is((Node)parent));
+    }
+
+    @Test( expected = PathNotFoundException.class )
+    public void shouldFailToReturnChildNodeFromGetNodeWithNameOfChildThatDoesNotExist() throws Exception {
+        node.getNode("something");
+    }
+
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldNotAllowGetNodeWithNoPath() throws Exception {
+        node.getNode(null);
+    }
+
+    @Test
+    public void shouldProvideNodeIterator() throws Exception {
+        AbstractJcrNode child = mock(AbstractJcrNode.class);
+        UUID childUuid = UUID.randomUUID();
+        children.append(cache, name("child"), childUuid);
+        stub(cache.findJcrNode(childUuid)).toReturn(child);
+        NodeIterator iter = node.getNodes();
+        assertThat(iter, notNullValue());
+        assertThat(iter.getSize(), is(1L));
+        assertThat(iter.next(), is((Object)child));
+    }
+
+    @Test
+    public void shoudReturnItemFromGetPrimaryItemIfItExists() throws Exception {
+        // Define the node type ...
+        Name primaryTypeName = name("thePrimaryType");
+        JcrNodeType primaryType = mock(JcrNodeType.class);
+        stub(nodeTypes.getNodeType(primaryTypeName)).toReturn(primaryType);
+        stub(primaryType.getPrimaryItemName()).toReturn("thePrimaryItemName");
+        // Define the node info to use this primary type ...
+        stub(info.getPrimaryTypeName()).toReturn(primaryTypeName);
+        // Now make an item with the appropriate name ...
+        AbstractJcrNode child = mock(AbstractJcrNode.class);
+        stub(cache.findJcrItem(uuid, path("thePrimaryItemName"))).toReturn(child);
+        // Now call the method ...
+        assertThat(node.getPrimaryItem(), is((Item)child));
+    }
+
+    @Test( expected = ItemNotFoundException.class )
+    public void shoudFailToReturnItemFromGetPrimaryItemIfPrimaryTypeDoesNotHavePrimaryItemName() throws Exception {
+        // Define the node type ...
+        Name primaryTypeName = name("thePrimaryType");
+        JcrNodeType primaryType = mock(JcrNodeType.class);
+        stub(nodeTypes.getNodeType(primaryTypeName)).toReturn(primaryType);
+        stub(primaryType.getPrimaryItemName()).toReturn(null);
+        // Define the node info to use this primary type ...
+        stub(info.getPrimaryTypeName()).toReturn(primaryTypeName);
+        // Now call the method ...
+        node.getPrimaryItem();
+    }
+
+    @Test( expected = ItemNotFoundException.class )
+    public void shoudFailToReturnItemFromGetPrimaryItemIfThePrimaryTypeAsInvalidPrimaryItemName() throws Exception {
+        // Define the node type ...
+        Name primaryTypeName = name("thePrimaryType");
+        JcrNodeType primaryType = mock(JcrNodeType.class);
+        stub(nodeTypes.getNodeType(primaryTypeName)).toReturn(primaryType);
+        stub(primaryType.getPrimaryItemName()).toReturn("/this/is/not/valid");
+        // Define the node info to use this primary type ...
+        stub(info.getPrimaryTypeName()).toReturn(primaryTypeName);
+        // Now call the method ...
+        node.getPrimaryItem();
+    }
+
+    @Test( expected = ItemNotFoundException.class )
+    public void shoudFailToReturnItemFromGetPrimaryItemIfTheNodeHasNoItemMatchingThatSpecifiedByThePrimaryType() throws Exception {
+        // Define the node type ...
+        Name primaryTypeName = name("thePrimaryType");
+        JcrNodeType primaryType = mock(JcrNodeType.class);
+        stub(nodeTypes.getNodeType(primaryTypeName)).toReturn(primaryType);
+        stub(primaryType.getPrimaryItemName()).toReturn("thePrimaryItemName");
+        // Define the node info to use this primary type ...
+        stub(info.getPrimaryTypeName()).toReturn(primaryTypeName);
+        // Now call the method ...
+        stub(cache.findJcrItem(uuid, path("thePrimaryItemName"))).toThrow(new ItemNotFoundException());
+        node.getPrimaryItem();
+    }
+
+    @Test
+    public void shouldReturnEmptyIteratorFromGetReferencesWhenThereAreNoProperties() throws Exception {
+        // Set up two properties (one containing references, the other not) ...
+        List<AbstractJcrProperty> props = Arrays.asList(new AbstractJcrProperty[] {});
+        stub(cache.findJcrPropertiesFor(uuid)).toReturn(props);
+        // Now call the method ...
         PropertyIterator iter = node.getReferences();
-        assertThat(iter, is(notNullValue()));
         assertThat(iter.getSize(), is(0L));
+        assertThat(iter.hasNext(), is(false));
+    }
+
+    @Test
+    public void shouldReturnEmptyIteratorFromGetReferencesWhenThereAreNoReferenceProperties() throws Exception {
+        // Set up two properties (one containing references, the other not) ...
+        AbstractJcrProperty propertyA = mock(AbstractJcrProperty.class);
+        AbstractJcrProperty propertyB = mock(AbstractJcrProperty.class);
+        List<AbstractJcrProperty> props = Arrays.asList(new AbstractJcrProperty[] {propertyA, propertyB});
+        stub(cache.findJcrPropertiesFor(uuid)).toReturn(props);
+        stub(propertyA.getType()).toReturn(PropertyType.LONG);
+        stub(propertyB.getType()).toReturn(PropertyType.BOOLEAN);
+        // Now call the method ...
+        PropertyIterator iter = node.getReferences();
+        assertThat(iter.getSize(), is(0L));
+        assertThat(iter.hasNext(), is(false));
+    }
+
+    @Test
+    public void shouldReturnIteratorFromGetReferencesWhenThereIsAtLeastOneReferenceProperty() throws Exception {
+        // Set up two properties (one containing references, the other not) ...
+        AbstractJcrProperty propertyA = mock(AbstractJcrProperty.class);
+        AbstractJcrProperty propertyB = mock(AbstractJcrProperty.class);
+        List<AbstractJcrProperty> props = Arrays.asList(new AbstractJcrProperty[] {propertyA, propertyB});
+        stub(cache.findJcrPropertiesFor(uuid)).toReturn(props);
+        stub(propertyA.getType()).toReturn(PropertyType.LONG);
+        stub(propertyB.getType()).toReturn(PropertyType.REFERENCE);
+        // Now call the method ...
+        PropertyIterator iter = node.getReferences();
+        assertThat(iter.getSize(), is(1L));
+        assertThat(iter.next(), is(sameInstance((Object)propertyB)));
+        assertThat(iter.hasNext(), is(false));
     }
 
     @Test
@@ -351,42 +450,31 @@ public class AbstractJcrNodeTest {
 
     @Test
     public void shouldProvideUuidIfReferenceable() throws Exception {
-        String uuid = "uuid";
-        Property mixinProp = Mockito.mock(Property.class);
-        stub(mixinProp.getName()).toReturn("jcr:mixinTypes");
-        Value value = Mockito.mock(Value.class);
-        stub(value.getString()).toReturn("mix:referenceable");
-        stub(mixinProp.getValues()).toReturn(new Value[] {value});
-        properties.put(name(mixinProp.getName()), mixinProp);
-        Property uuidProp = Mockito.mock(Property.class);
-        stub(uuidProp.getName()).toReturn("jcr:uuid");
-        stub(uuidProp.getString()).toReturn(uuid);
-        properties.put(name(uuidProp.getName()), uuidProp);
-        assertThat(node.getUUID(), is(uuid));
+        // Create the property ...
+        PropertyId propertyId = new PropertyId(uuid, name("jcr:mixinTypes"));
+        AbstractJcrProperty property = mock(AbstractJcrProperty.class);
+        stub(cache.findJcrProperty(propertyId)).toReturn(property);
+        stub(property.getValues()).toReturn(new Value[] {stringValueFor("acme:someMixin"), stringValueFor("mix:referenceable")});
+        // Call the method ...
+        assertThat(node.getUUID(), is(uuid.toString()));
     }
 
     @Test( expected = UnsupportedRepositoryOperationException.class )
     public void shouldNotProvideUuidIfNotReferenceable() throws Exception {
-        String uuid = "uuid";
-        Property mixinProp = Mockito.mock(Property.class);
-        stub(mixinProp.getName()).toReturn("jcr:mixinTypes");
-        Value value = Mockito.mock(Value.class);
-        stub(mixinProp.getValues()).toReturn(new Value[] {value});
-        properties.put(name(mixinProp.getName()), mixinProp);
-        Property uuidProp = Mockito.mock(Property.class);
-        stub(uuidProp.getName()).toReturn("jcr:uuid");
-        stub(uuidProp.getString()).toReturn(uuid);
-        properties.put(name(uuidProp.getName()), uuidProp);
+        // Create the property ...
+        PropertyId propertyId = new PropertyId(uuid, name("jcr:mixinTypes"));
+        AbstractJcrProperty property = mock(AbstractJcrProperty.class);
+        stub(cache.findJcrProperty(propertyId)).toReturn(property);
+        stub(property.getValues()).toReturn(new Value[] {stringValueFor("acme:someMixin"), stringValueFor("mix:notReferenceable")});
+        // Call the method ...
         node.getUUID();
     }
 
     @Test( expected = UnsupportedRepositoryOperationException.class )
     public void shouldNotProvideUuidIfNoMixinTypes() throws Exception {
-        String uuid = "uuid";
-        Property uuidProp = Mockito.mock(Property.class);
-        stub(uuidProp.getName()).toReturn("jcr:uuid");
-        stub(uuidProp.getString()).toReturn(uuid);
-        properties.put(name(uuidProp.getName()), uuidProp);
+        PropertyId propertyId = new PropertyId(uuid, name("jcr:mixinTypes"));
+        stub(cache.findJcrProperty(propertyId)).toReturn(null);
+        // Call the method ...
         node.getUUID();
     }
 
@@ -395,73 +483,131 @@ public class AbstractJcrNodeTest {
         node.getVersionHistory();
     }
 
-    @Test
-    public void shouldProvideHasNode() throws Exception {
-        assertThat(node.hasNode("{}child"), is(false));
-        Property prop = Mockito.mock(Property.class);
-        stub(prop.getName()).toReturn("prop");
-        properties.put(name(prop.getName()), prop);
-        assertThat(node.hasNode("prop"), is(false));
-        AbstractJcrNode child = createChild(session, "child", 1, children, node);
-        AbstractJcrNode child2 = createChild(session, "child2", 1, children, child);
-        node.setChildren(children);
-        assertThat(node.hasNode("child"), is(true));
-        stub(session.getItem("/node/child/{}child2")).toReturn(child2);
-        assertThat(node.hasNode("child/{}child2"), is(true));
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldNotAllowNullPathInHasNode() throws Exception {
+        node.hasNode((String)null);
     }
 
     @Test( expected = IllegalArgumentException.class )
-    public void shouldNotAllowHasNodeWithNoPath() throws Exception {
-        node.hasNode(null);
-    }
-
-    @Test( expected = IllegalArgumentException.class )
-    public void shouldNotAllowHasNodeWithEmptyPath() throws Exception {
+    public void shouldNotAllowEmptyPathInHasNode() throws Exception {
         node.hasNode("");
     }
 
-    @Test
-    public void shouldProvideHasNodes() throws Exception {
-        assertThat(node.hasNodes(), is(false));
-        createChild(session, "child", 1, children, node);
-        node.setChildren(children);
-        assertThat(node.hasNodes(), is(true));
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldNotAbsolutePathInHasNode() throws Exception {
+        node.hasNode("/a/b/c");
     }
 
     @Test
-    public void shouldProvideHasProperties() throws Exception {
-        assertThat(node.hasProperties(), is(false));
-        properties.put(name("something"), Mockito.mock(Property.class));
+    public void shouldReturnTrueFromHasNodeWithSelfReference() throws Exception {
+        assertThat(node.hasNode("."), is(true));
+    }
+
+    @Test
+    public void shouldReturnTrueFromHasNodeWithParentReferenceIfNotRootNode() throws Exception {
+        assertThat(node.hasNode(".."), is(!node.isRoot()));
+    }
+
+    @Test
+    public void shouldReturnTrueFromHasNodeIfRelativePathIdentifiesExistingNode() throws Exception {
+        AbstractJcrNode otherNode = mock(AbstractJcrNode.class);
+        stub(cache.findJcrNode(uuid, path("../other/node"))).toReturn(otherNode);
+        assertThat(node.hasNode("../other/node"), is(true));
+    }
+
+    @Test
+    public void shouldReturnTrueFromHasNodeIfChildWithNameExists() throws Exception {
+        children.append(cache, name("child"), UUID.randomUUID());
+        assertThat(node.hasNode("child[1]"), is(true));
+        assertThat(node.hasNode("child[2]"), is(false));
+        children.append(cache, name("child"), UUID.randomUUID());
+        assertThat(node.hasNode("child[2]"), is(true));
+        assertThat(node.hasNode("child[3]"), is(false));
+    }
+
+    @Test
+    public void shouldReturnFalseFromHasNodeWithNameOfChildThatDoesNotExist() throws Exception {
+        assertThat(node.hasNode("something"), is(false));
+    }
+
+    @Test
+    public void shouldReturnFalseFromHasNodesIfThereAreNoChildren() throws Exception {
+        assertThat(node.hasNodes(), is(false));
+    }
+
+    @Test
+    public void shouldReturnTrueFromHasNodesIfThereIsAtLeastOneChild() throws Exception {
+        children.append(cache, name("child"), UUID.randomUUID());
+        assertThat(node.hasNodes(), is(true));
+    }
+
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldNotAllowNullPathInHasProperty() throws Exception {
+        node.hasProperty((String)null);
+    }
+
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldNotAllowEmptyPathInHasProperty() throws Exception {
+        node.hasProperty("");
+    }
+
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldNotAbsolutePathInHasProperty() throws Exception {
+        node.hasProperty("/a/b/c");
+    }
+
+    @Test
+    public void shouldReturnTrueFromHasPropertyIfPathIsRelativePathToOtherNodeWithNamedProperty() throws Exception {
+        AbstractJcrProperty property = mock(AbstractJcrProperty.class);
+        stub(cache.findJcrItem(uuid, relativePath("../good/path"))).toReturn(property);
+        assertThat(node.hasProperty("../good/path"), is(true));
+    }
+
+    @Test
+    public void shouldReturnFalseFromHasPropertyIfPathIsRelativePathToOtherNodeWithoutNamedProperty() throws Exception {
+        stub(cache.findJcrItem(uuid, relativePath("../good/path"))).toThrow(new PathNotFoundException());
+        assertThat(node.hasProperty("../good/path"), is(false));
+    }
+
+    @Test
+    public void shouldReturnFalseFromHasPropertyIfPathIsParentPath() throws Exception {
+        assertThat(node.hasProperty(".."), is(false));
+    }
+
+    @Test
+    public void shouldReturnFalseFromHasPropertyIfPathIsSelfPath() throws Exception {
+        assertThat(node.hasProperty("."), is(false));
+    }
+
+    @Test
+    public void shouldReturnTrueFromHasPropertyIfPathIsNameAndNodeHasProperty() throws Exception {
+        PropertyInfo propertyInfo = mock(PropertyInfo.class);
+        stub(cache.findPropertyInfo(new PropertyId(uuid, name("prop")))).toReturn(propertyInfo);
+        assertThat(node.hasProperty("prop"), is(true));
+    }
+
+    @Test
+    public void shouldReturnFalseFromHasPropertyIfPathIsNameAndNodeDoesNotHaveProperty() throws Exception {
+        stub(cache.findPropertyInfo(new PropertyId(uuid, name("prop")))).toReturn(null);
+        assertThat(node.hasProperty("prop"), is(false));
+    }
+
+    @Test
+    @SuppressWarnings( "unchecked" )
+    public void shouldReturnTrueFromHasPropertiesIfNodeHasAtLeastOneProperty() throws Exception {
+        Map<Name, PropertyInfo> properties = mock(Map.class);
+        stub(properties.size()).toReturn(5);
+        stub(info.getProperties()).toReturn(properties);
         assertThat(node.hasProperties(), is(true));
     }
 
     @Test
-    public void shouldIndicateHasProperty() throws Exception {
-        assertThat(node.hasProperty("prop"), is(false));
-        MockAbstractJcrNode child = createChild(session, "child", 1, children, node);
-        node.setChildren(children);
-        assertThat(node.hasProperty("child"), is(false));
-        Property prop = Mockito.mock(Property.class);
-        stub(prop.getName()).toReturn("prop");
-        properties.put(name(prop.getName()), prop);
-        assertThat(node.hasProperty("prop"), is(true));
-        Map<Name, Property> properties = new HashMap<Name, Property>();
-        child.setProperties(properties);
-        Property prop2 = Mockito.mock(Property.class);
-        stub(prop2.getName()).toReturn("prop2");
-        properties.put(name(prop2.getName()), prop2);
-        stub(session.getItem("/node/child/prop2")).toReturn(prop2);
-        assertThat(node.hasProperty("child/prop2"), is(true));
-    }
-
-    @Test( expected = IllegalArgumentException.class )
-    public void shouldNotAllowHasPropertyWithNoPath() throws Exception {
-        node.hasProperty(null);
-    }
-
-    @Test( expected = IllegalArgumentException.class )
-    public void shouldNotAllowHasPropertyWithEmptyPath() throws Exception {
-        node.hasProperty("");
+    @SuppressWarnings( "unchecked" )
+    public void shouldReturnFalseFromHasPropertiesIfNodeHasNoProperties() throws Exception {
+        Map<Name, PropertyInfo> properties = mock(Map.class);
+        stub(properties.size()).toReturn(0);
+        stub(info.getProperties()).toReturn(properties);
+        assertThat(node.hasProperties(), is(false));
     }
 
     @Test
@@ -485,29 +631,87 @@ public class AbstractJcrNodeTest {
     }
 
     @Test
-    public void shouldProvideIsSame() throws Exception {
-        stub(session.getWorkspace()).toReturn(Mockito.mock(Workspace.class));
-        stub(session.getRepository()).toReturn(repository);
+    public void shouldReturnFalseFromIsSameIfTheRepositoryInstanceIsDifferent() throws Exception {
+        Workspace workspace1 = mock(Workspace.class);
+        Repository repository1 = mock(Repository.class);
+        stub(session.getWorkspace()).toReturn(workspace1);
+        stub(session.getRepository()).toReturn(repository1);
+        stub(workspace1.getName()).toReturn("workspace1");
+
+        Workspace workspace2 = mock(Workspace.class);
         JcrSession session2 = Mockito.mock(JcrSession.class);
-        JcrRepository repository2 = Mockito.mock(JcrRepository.class);
-
+        Repository repository2 = mock(Repository.class);
+        SessionCache cache2 = mock(SessionCache.class);
+        stub(session2.getWorkspace()).toReturn(workspace2);
         stub(session2.getRepository()).toReturn(repository2);
-        stub(session2.getWorkspace()).toReturn(workspace);
-        Node node2 = new MockAbstractJcrNode(session2, node.getName(), node.getParent());
-        assertThat(node.isSame(node2), is(false));
+        stub(workspace2.getName()).toReturn("workspace1");
+        stub(cache2.session()).toReturn(session2);
 
-        Property prop = Mockito.mock(Property.class);
-        stub(prop.getSession()).toReturn(session);
-        assertThat(node.isSame(prop), is(false));
-        node2 = Mockito.mock(Node.class);
-        stub(node2.getSession()).toReturn(session);
+        UUID uuid2 = uuid;
+        Node node2 = new MockAbstractJcrNode(cache2, uuid2);
         assertThat(node.isSame(node2), is(false));
-        node2 = new MockAbstractJcrNode(session, node.getName(), node.getParent());
-        UUID uuid = UUID.randomUUID();
-        node.setInternalUuid(uuid);
-        ((MockAbstractJcrNode)node2).setInternalUuid(UUID.randomUUID());
+    }
+
+    @Test
+    public void shouldReturnFalseFromIsSameIfTheWorkspaceNameIsDifferent() throws Exception {
+        Workspace workspace1 = mock(Workspace.class);
+        Repository repository1 = mock(Repository.class);
+        stub(session.getWorkspace()).toReturn(workspace1);
+        stub(session.getRepository()).toReturn(repository1);
+        stub(workspace1.getName()).toReturn("workspace1");
+
+        Workspace workspace2 = mock(Workspace.class);
+        JcrSession session2 = Mockito.mock(JcrSession.class);
+        SessionCache cache2 = mock(SessionCache.class);
+        stub(session2.getWorkspace()).toReturn(workspace2);
+        stub(session2.getRepository()).toReturn(repository1);
+        stub(workspace2.getName()).toReturn("workspace2");
+        stub(cache2.session()).toReturn(session2);
+
+        UUID uuid2 = uuid;
+        Node node2 = new MockAbstractJcrNode(cache2, uuid2);
         assertThat(node.isSame(node2), is(false));
-        ((MockAbstractJcrNode)node2).setInternalUuid(uuid);
+    }
+
+    @Test
+    public void shouldReturnFalseFromIsSameIfTheNodeUuidIsDifferent() throws Exception {
+        Workspace workspace1 = mock(Workspace.class);
+        Repository repository1 = mock(Repository.class);
+        stub(session.getWorkspace()).toReturn(workspace1);
+        stub(session.getRepository()).toReturn(repository1);
+        stub(workspace1.getName()).toReturn("workspace1");
+
+        Workspace workspace2 = mock(Workspace.class);
+        JcrSession session2 = Mockito.mock(JcrSession.class);
+        SessionCache cache2 = mock(SessionCache.class);
+        stub(session2.getWorkspace()).toReturn(workspace2);
+        stub(session2.getRepository()).toReturn(repository1);
+        stub(workspace2.getName()).toReturn("workspace1");
+        stub(cache2.session()).toReturn(session2);
+
+        UUID uuid2 = UUID.randomUUID();
+        Node node2 = new MockAbstractJcrNode(cache2, uuid2);
+        assertThat(node.isSame(node2), is(false));
+    }
+
+    @Test
+    public void shouldReturnTrueFromIsSameIfTheNodeUuidAndWorkspaceNameAndRepositoryInstanceAreSame() throws Exception {
+        Workspace workspace1 = mock(Workspace.class);
+        Repository repository1 = mock(Repository.class);
+        stub(session.getWorkspace()).toReturn(workspace1);
+        stub(session.getRepository()).toReturn(repository1);
+        stub(workspace1.getName()).toReturn("workspace1");
+
+        Workspace workspace2 = mock(Workspace.class);
+        JcrSession session2 = Mockito.mock(JcrSession.class);
+        SessionCache cache2 = mock(SessionCache.class);
+        stub(session2.getWorkspace()).toReturn(workspace2);
+        stub(session2.getRepository()).toReturn(repository1);
+        stub(workspace2.getName()).toReturn("workspace1");
+        stub(cache2.session()).toReturn(session2);
+
+        UUID uuid2 = uuid;
+        Node node2 = new MockAbstractJcrNode(cache2, uuid2);
         assertThat(node.isSame(node2), is(true));
     }
 

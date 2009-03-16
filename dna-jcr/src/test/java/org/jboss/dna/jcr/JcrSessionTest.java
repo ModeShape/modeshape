@@ -23,13 +23,13 @@
  */
 package org.jboss.dna.jcr;
 
-import static org.junit.Assert.assertTrue;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsInstanceOf.instanceOf;
 import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.stub;
 import java.io.ByteArrayOutputStream;
@@ -71,7 +71,7 @@ import org.mockito.MockitoAnnotations.Mock;
 public class JcrSessionTest {
 
     private static final String MULTI_LINE_VALUE = "Line\t1\nLine 2\rLine 3\r\nLine 4";
-    
+
     private String workspaceName;
     private ExecutionContext context;
     private InMemoryRepositorySource source;
@@ -102,7 +102,7 @@ public class JcrSessionTest {
         graph.set("booleanProperty").on("/a/b").to(true);
         graph.set("stringProperty").on("/a/b/c").to("value");
         graph.set("multiLineProperty").on("/a/b/c").to(MULTI_LINE_VALUE);
-        
+
         // Make sure the path to the namespaces exists ...
         graph.create("/jcr:system").and().create("/jcr:system/dna:namespaces");
 
@@ -287,13 +287,10 @@ public class JcrSessionTest {
 
     @Test
     public void shouldProvideRootNode() throws Exception {
-        Map<UUID, AbstractJcrNode> nodesByUuid = session.getNodesByUuid();
-        assertThat(nodesByUuid.isEmpty(), is(true));
         Node root = session.getRootNode();
         assertThat(root, notNullValue());
         UUID uuid = ((JcrRootNode)root).internalUuid();
         assertThat(uuid, notNullValue());
-        assertThat(nodesByUuid.get(uuid), is(root));
     }
 
     @Test
@@ -394,14 +391,14 @@ public class JcrSessionTest {
         assertThat(session.getNamespaceURI("sv"), is("http://www.jcp.org/jcr/sv/1.0"));
         // assertThat(session.getNamespaceURI("xml"), is("http://www.w3.org/XML/1998/namespace"));
     }
-    
+
     @Test
     public void shouldExportMultiLinePropertiesInSystemView() throws Exception {
         OutputStream os = new ByteArrayOutputStream();
-        
+
         session.exportSystemView("/a/b/c", os, false, true);
-        
+
         String fileContents = os.toString();
-        assertTrue(fileContents.contains(MULTI_LINE_VALUE)); 
+        assertTrue(fileContents.contains(MULTI_LINE_VALUE));
     }
 }

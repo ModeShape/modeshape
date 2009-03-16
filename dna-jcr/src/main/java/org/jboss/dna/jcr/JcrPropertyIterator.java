@@ -31,16 +31,15 @@ import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.util.CheckArg;
 
 /**
- * @author jverhaeg
  */
 @Immutable
 final class JcrPropertyIterator implements PropertyIterator {
 
-    private final Iterator<Property> iterator;
+    private final Iterator<? extends Property> iterator;
     private int ndx;
     private int size;
 
-    JcrPropertyIterator( Collection<Property> properties ) {
+    JcrPropertyIterator( Collection<? extends Property> properties ) {
         assert properties != null;
         iterator = properties.iterator();
         size = properties.size();
@@ -88,9 +87,9 @@ final class JcrPropertyIterator implements PropertyIterator {
      * @see javax.jcr.PropertyIterator#nextProperty()
      */
     public Property nextProperty() {
-        Property property = iterator.next();
+        Property next = iterator.next();
         ndx++;
-        return property;
+        return next;
     }
 
     /**

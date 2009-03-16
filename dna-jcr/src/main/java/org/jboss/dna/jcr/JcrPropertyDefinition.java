@@ -24,15 +24,13 @@
 package org.jboss.dna.jcr;
 
 import javax.jcr.Value;
-import javax.jcr.nodetype.NodeType;
 import javax.jcr.nodetype.PropertyDefinition;
 import net.jcip.annotations.Immutable;
 import org.jboss.dna.graph.property.Name;
 
-
 /**
- * DNA implementation of the {@link PropertyDefinition} interface.  This implementation is immutable and has all fields initialized
- * through its constructor. 
+ * DNA implementation of the {@link PropertyDefinition} interface. This implementation is immutable and has all fields initialized
+ * through its constructor.
  */
 @Immutable
 class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinition {
@@ -41,9 +39,10 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
     private final int requiredType;
     private final String[] valueConstraints;
     private final boolean multiple;
+    private PropertyDefinitionId id;
 
     JcrPropertyDefinition( JcrSession session,
-                           NodeType declaringNodeType,
+                           JcrNodeType declaringNodeType,
                            Name name,
                            int onParentVersion,
                            boolean autoCreated,
@@ -58,6 +57,18 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
         this.requiredType = requiredType;
         this.valueConstraints = valueConstraints;
         this.multiple = multiple;
+    }
+
+    /**
+     * Get the durable identifier for this property definition.
+     * 
+     * @return the property definition ID; never null
+     */
+    public PropertyDefinitionId getId() {
+        if (id == null) {
+            id = new PropertyDefinitionId(declaringNodeType.getInternalName(), name);
+        }
+        return id;
     }
 
     /**
@@ -104,7 +115,7 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
      * @return a new <code>JcrPropertyDefinition</code> that is identical to the current object, but with the given
      *         <code>declaringNodeType</code>.
      */
-    JcrPropertyDefinition with( NodeType declaringNodeType ) {
+    JcrPropertyDefinition with( JcrNodeType declaringNodeType ) {
         return new JcrPropertyDefinition(this.session, declaringNodeType, this.name, this.getOnParentVersion(),
                                          this.isAutoCreated(), this.isMandatory(), this.isProtected(), this.getDefaultValues(),
                                          this.getRequiredType(), this.getValueConstraints(), this.isMultiple());
