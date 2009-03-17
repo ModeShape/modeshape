@@ -369,7 +369,7 @@ public class SessionCache {
      * @return the <i>new</i> instance of the {@link Property}; never null
      */
     private AbstractJcrProperty createAndCacheJcrPropertyFor( PropertyInfo info ) {
-        boolean multiValued = info.getProperty().isMultiple();
+        boolean multiValued = info.isMultiValued();
         JcrPropertyDefinition definition = nodeTypes().getPropertyDefinition(info.getDefinitionId(), multiValued);
         assert definition != null;
         if (multiValued) {
