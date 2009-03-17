@@ -29,7 +29,7 @@ import javax.jcr.NodeIterator;
 import javax.jcr.RepositoryException;
 import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.util.CheckArg;
-import org.jboss.dna.jcr.SessionCache.ChildNode;
+import org.jboss.dna.jcr.cache.ChildNode;
 
 /**
  */

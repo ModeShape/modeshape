@@ -25,15 +25,14 @@ package org.jboss.dna.jcr;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 import javax.jcr.Item;
 import javax.jcr.ItemNotFoundException;
 import javax.jcr.Node;
@@ -45,8 +44,6 @@ import javax.jcr.nodetype.NodeDefinition;
 import javax.jcr.nodetype.NodeType;
 import javax.jcr.nodetype.NodeTypeManager;
 import javax.jcr.nodetype.PropertyDefinition;
-import net.jcip.annotations.Immutable;
-import net.jcip.annotations.NotThreadSafe;
 import net.jcip.annotations.ThreadSafe;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.Graph;
@@ -63,9 +60,13 @@ import org.jboss.dna.graph.property.PropertyFactory;
 import org.jboss.dna.graph.property.ValueFactories;
 import org.jboss.dna.graph.property.ValueFactory;
 import org.jboss.dna.graph.property.ValueFormatException;
+import org.jboss.dna.jcr.cache.ChildNode;
+import org.jboss.dna.jcr.cache.Children;
+import org.jboss.dna.jcr.cache.ImmutableChildren;
+import org.jboss.dna.jcr.cache.ImmutableNodeInfo;
+import org.jboss.dna.jcr.cache.NodeInfo;
+import org.jboss.dna.jcr.cache.PropertyInfo;
 import com.google.common.base.ReferenceType;
-import com.google.common.collect.LinkedListMultimap;
-import com.google.common.collect.ListMultimap;
 import com.google.common.collect.ReferenceMap;
 
 /**
@@ -247,10 +248,10 @@ public class SessionCache {
     public Collection<AbstractJcrProperty> findJcrPropertiesFor( UUID nodeUuid )
         throws ItemNotFoundException, RepositoryException {
         NodeInfo info = findNodeInfo(nodeUuid);
-        Map<Name, PropertyInfo> properties = info.getProperties();
-        Collection<AbstractJcrProperty> result = new ArrayList<AbstractJcrProperty>(properties.size());
-        for (PropertyInfo propertyInfo : properties.values()) {
-            result.add(findJcrProperty(propertyInfo.getPropertyId()));
+        Set<Name> propertyNames = info.getPropertyNames();
+        Collection<AbstractJcrProperty> result = new ArrayList<AbstractJcrProperty>(propertyNames.size());
+        for (Name propertyName : propertyNames) {
+            result.add(findJcrProperty(new PropertyId(nodeUuid, propertyName)));
         }
         return result;
     }
@@ -376,22 +377,6 @@ public class SessionCache {
         }
         return new JcrSingleValueProperty(this, info.getPropertyId());
     }
-
-    // public AbstractJcrProperty findJcrProperty( Path propertyPath ) throws PathNotFoundException, RepositoryException {
-    // if (propertyPath.isRoot()) return null;
-    // Path nodePath = propertyPath.getParent();
-    // NodeInfo nodeInfo = findNodeInfo(nodePath);
-    // Name propertyName = propertyPath.getLastSegment().getName();
-    // PropertyInfo info = nodeInfo.getProperty(propertyName);
-    //
-    // // Look for an existing JCR Property object ...
-    // PropertyId propertyId = info.getPropertyId();
-    // AbstractJcrProperty property = jcrProperties.get(propertyId);
-    // if (property != null) return property;
-    //
-    // // Now create the appropriate JCR Property object ...
-    // return createAndCacheJcrPropertyFor(info);
-    // }
 
     /**
      * Find the information for the node given by the UUID of the node. This is often the fastest way to find information,
@@ -617,9 +602,7 @@ public class SessionCache {
             NodeInfo parentInfo = findNodeInfo(parent);
             ChildNode child = parentInfo.getChildren().getChild(info.getUuid());
             if (child == null) break;
-            Path.Segment segment = pathFactory.createSegment(child.getName(), child.getSnsIndex());
-
-            segments.addFirst(segment);
+            segments.addFirst(child.getSegment());
             info = parentInfo;
         }
         return pathFactory.createAbsolutePath(segments);
@@ -826,17 +809,6 @@ public class SessionCache {
             }
         }
 
-        // Create the node information ...
-        NodeInfo info = new NodeInfo(location, primaryTypeName, definition.getId());
-        if (parentInfo != null) {
-            info.setParent(parentInfo.getUuid());
-        }
-
-        // --------------------------------------------------
-        // Set the node's children ...
-        // --------------------------------------------------
-        info.setChildren(graphNode.getChildren());
-
         // ------------------------------------------------------
         // Set the node's properties ...
         // ------------------------------------------------------
@@ -894,6 +866,7 @@ public class SessionCache {
         }
 
         // Now create the JCR property object wrappers around the other properties ...
+        Map<Name, PropertyInfo> props = new HashMap<Name, PropertyInfo>();
         for (org.jboss.dna.graph.property.Property dnaProp : graphProperties.values()) {
             Name name = dnaProp.getName();
 
@@ -958,7 +931,9 @@ public class SessionCache {
 
             // Record the property in the node information ...
             PropertyId propId = new PropertyId(uuid, name);
-            info.setProperty(propId, (JcrPropertyDefinition)propertyDefinition, propertyType, dnaProp);
+            JcrPropertyDefinition defn = (JcrPropertyDefinition)propertyDefinition;
+            PropertyInfo propInfo = new PropertyInfo(propId, defn.getId(), propertyType, dnaProp, defn.isMultiple());
+            props.put(name, propInfo);
         }
 
         // Now add the "jcr:uuid" property if and only if referenceable ...
@@ -966,15 +941,21 @@ public class SessionCache {
             // We know that this property is single-valued
             PropertyDefinition propertyDefinition = svPropertyDefinitionsByPropertyName.get(JcrLexicon.UUID);
             PropertyId propId = new PropertyId(uuid, JcrLexicon.UUID);
-            info.setProperty(propId, (JcrPropertyDefinition)propertyDefinition, PropertyType.STRING, uuidProperty);
+            JcrPropertyDefinition defn = (JcrPropertyDefinition)propertyDefinition;
+            PropertyInfo propInfo = new PropertyInfo(propId, defn.getId(), PropertyType.STRING, uuidProperty, defn.isMultiple());
+            props.put(JcrLexicon.UUID, propInfo);
         } else {
             // Make sure there is NOT a "jcr:uuid" property ...
-            info.removeProperty(JcrLexicon.UUID);
+            props.remove(JcrLexicon.UUID);
         }
         // Make sure the "dna:uuid" property did not get in there ...
-        info.removeProperty(DnaLexicon.UUID);
+        props.remove(DnaLexicon.UUID);
 
-        return info;
+        // Create the node information ...
+        UUID parentUuid = parentInfo != null ? parentInfo.getUuid() : null;
+        Children children = new ImmutableChildren(parentUuid, graphNode.getChildren());
+        props = Collections.unmodifiableMap(props);
+        return new ImmutableNodeInfo(location, primaryTypeName, definition.getId(), parentUuid, children, props);
     }
 
     /**
@@ -1001,583 +982,4 @@ public class SessionCache {
         // TODO: should this also check the mixins?
         return primaryType.findBestNodeDefinitionForChild(childName, primaryTypeOfChild);
     }
-
-    /**
-     * The information that describes a node. This is the information that is kept in the {@link SessionCache#cachedNodes cache}
-     * and in the record of {@link SessionCache#changedNodes changes} made by the session but not yet commited/saved.
-     */
-    @NotThreadSafe
-    protected class NodeInfo {
-        private final Location originalLocation;
-        private final UUID uuid;
-        private UUID parent;
-        private final Name primaryTypeName;
-        private final NodeDefinitionId definition;
-        private final Children children;
-        private final Map<Name, PropertyInfo> properties;
-
-        protected NodeInfo( Location originalLocation,
-                            Name primaryTypeName,
-                            NodeDefinitionId definition ) {
-            this.originalLocation = originalLocation;
-            this.primaryTypeName = primaryTypeName;
-            this.definition = definition;
-            this.uuid = this.originalLocation.getUuid();
-            this.children = new Children(this.uuid);
-            this.properties = new HashMap<Name, PropertyInfo>();
-            assert this.uuid != null;
-            assert this.definition != null;
-            assert this.primaryTypeName != null;
-        }
-
-        /**
-         * @return location
-         */
-        public Location getOriginalLocation() {
-            return originalLocation;
-        }
-
-        /**
-         * @return uuid
-         */
-        public UUID getUuid() {
-            return uuid;
-        }
-
-        /**
-         * @return parent
-         */
-        public UUID getParent() {
-            return parent;
-        }
-
-        /**
-         * @param parent Sets parent to the specified value.
-         */
-        protected void setParent( UUID parent ) {
-            this.parent = parent;
-        }
-
-        /**
-         * @return primaryTypeName
-         */
-        public Name getPrimaryTypeName() {
-            return primaryTypeName;
-        }
-
-        /**
-         * @return definition
-         */
-        public NodeDefinitionId getDefinitionId() {
-            return definition;
-        }
-
-        /**
-         * Get the children for this node.
-         * 
-         * @return the children; never null but possibly empty
-         */
-        public Children getChildren() {
-            return children;
-        }
-
-        /**
-         * @param children Sets children to the specified value.
-         * @return the children information; never null
-         */
-        public Children setChildren( List<Location> children ) {
-            this.children.append(SessionCache.this, children, true);
-            return this.children;
-        }
-
-        /**
-         * Get the map of information for each property.
-         * 
-         * @return the information for each property; never null but possibly (though unlikely) empty
-         */
-        public Map<Name, PropertyInfo> getProperties() {
-            return this.properties; // never null
-        }
-
-        public PropertyInfo getProperty( Name name ) {
-            return this.properties.get(name);
-        }
-
-        public PropertyInfo setProperty( PropertyId id,
-                                         JcrPropertyDefinition definition,
-                                         int propertyType,
-                                         Property dnaProperty ) {
-            // Initialize the map if required (this never replaces it, though) ...
-            PropertyInfo info = new PropertyInfo(id, definition.getId(), propertyType, dnaProperty, definition.isMultiple());
-            return this.properties.put(id.getPropertyName(), info);
-        }
-
-        public PropertyInfo removeProperty( Name name ) {
-            return this.properties.remove(name);
-        }
-    }
-
-    /**
-     * An immutable representation of the name and current value(s) for a property, along with the JCR metadata for the property,
-     * including the {@link PropertyInfo#getDefinitionId() property definition} and {@link PropertyInfo#getPropertyType() property
-     * type}.
-     * <p>
-     * This class is immutable, which means that clients should never hold onto an instance. Instead, clients can obtain an
-     * instance by using a {@link PropertyId}, quickly use the information in the instance, and then immediately discard their
-     * reference. This is because these instances are replaced and discarded whenever anything about the property changes.
-     * </p>
-     */
-    @Immutable
-    public static class PropertyInfo {
-        private final PropertyId propertyId;
-        private final PropertyDefinitionId definitionId;
-        private final Property dnaProperty;
-        private final int propertyType;
-        private final boolean multiValued;
-
-        protected PropertyInfo( PropertyId propertyId,
-                                PropertyDefinitionId definitionId,
-                                int propertyType,
-                                Property dnaProperty,
-                                boolean multiValued ) {
-            this.propertyId = propertyId;
-            this.definitionId = definitionId;
-            this.propertyType = propertyType;
-            this.dnaProperty = dnaProperty;
-            this.multiValued = multiValued;
-        }
-
-        /**
-         * Get the durable identifier for this property.
-         * 
-         * @return propertyId
-         */
-        public PropertyId getPropertyId() {
-            return propertyId;
-        }
-
-        /**
-         * Get the UUID of the node to which this property belongs.
-         * 
-         * @return the owner node's UUID; never null
-         */
-        public UUID getNodeUuid() {
-            return propertyId.getNodeId();
-        }
-
-        /**
-         * The identifier for the property definition.
-         * 
-         * @return the property definition ID; never null
-         */
-        public PropertyDefinitionId getDefinitionId() {
-            return definitionId;
-        }
-
-        /**
-         * Get the DNA Property, which contains the name and value(s)
-         * 
-         * @return the property; never null
-         */
-        public Property getProperty() {
-            return dnaProperty;
-        }
-
-        /**
-         * Get the property name.
-         * 
-         * @return the property name; never null
-         */
-        public Name getPropertyName() {
-            return dnaProperty.getName();
-        }
-
-        /**
-         * Get the JCR {@link PropertyType} for this property.
-         * 
-         * @return the property type
-         */
-        public int getPropertyType() {
-            return propertyType;
-        }
-
-        /**
-         * @return multiValued
-         */
-        public boolean isMultiValued() {
-            return multiValued;
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see java.lang.Object#hashCode()
-         */
-        @Override
-        public int hashCode() {
-            return propertyId.hashCode();
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see java.lang.Object#equals(java.lang.Object)
-         */
-        @Override
-        public boolean equals( Object obj ) {
-            if (obj == this) return true;
-            if (obj instanceof PropertyInfo) {
-                return propertyId.equals(((PropertyInfo)obj).getPropertyId());
-            }
-            return false;
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see java.lang.Object#toString()
-         */
-        @Override
-        public String toString() {
-            StringBuilder sb = new StringBuilder();
-            sb.append(propertyId);
-            sb.append(" defined by ").append(definitionId);
-            sb.append(" of type ").append(PropertyType.nameFromValue(propertyType));
-            if (dnaProperty.isSingle()) {
-                sb.append(" with value ");
-            } else {
-                sb.append(" with values ");
-            }
-            sb.append(dnaProperty.getValuesAsArray());
-            return sb.toString();
-        }
-    }
-
-    /**
-     * Class that maintains the ordered list of {@link ChildNode} instances. This class uses a {@link ListMultimap} to maintain
-     * insertion order of the child nodes, and to allow fast access to the children with a specified name.
-     */
-    @ThreadSafe
-    public final static class Children implements Iterable<ChildNode> {
-        private final UUID parentUuid;
-        private final Map<UUID, ChildNode> childrenByUuid;
-        private final ListMultimap<Name, ChildNode> childrenByName;
-        private final ReadWriteLock lock = new ReentrantReadWriteLock();
-
-        Children( UUID parentUuid ) {
-            this.parentUuid = parentUuid;
-            this.childrenByUuid = new HashMap<UUID, ChildNode>();
-            this.childrenByName = new LinkedListMultimap<Name, ChildNode>();
-        }
-
-        /**
-         * Get the number of children.
-         * 
-         * @return the number of children
-         */
-        public int size() {
-            try {
-                lock.readLock().lock();
-                return childrenByName.size();
-            } finally {
-                lock.readLock().unlock();
-            }
-        }
-
-        /**
-         * Get the children.
-         * 
-         * @return a copy of the list of children
-         */
-        public List<ChildNode> asList() {
-            try {
-                lock.readLock().lock();
-                return new ArrayList<ChildNode>(childrenByName.values());
-            } finally {
-                lock.readLock().unlock();
-            }
-        }
-
-        /**
-         * Get the children.
-         * 
-         * @return a copy of the list of children
-         */
-        public Iterator<ChildNode> iterator() {
-            return asList().iterator();
-        }
-
-        /**
-         * The UUID of the parent node.
-         * 
-         * @return the parent node's UUID
-         */
-        public UUID getParentUuid() {
-            return parentUuid;
-        }
-
-        /**
-         * Get the child with the given UUID.
-         * 
-         * @param uuid the UUID of the child node
-         * @return the child node, or null if there is no child with the supplied UUID
-         */
-        public ChildNode getChild( UUID uuid ) {
-            try {
-                lock.readLock().lock();
-                return this.childrenByUuid.get(uuid);
-            } finally {
-                lock.readLock().unlock();
-            }
-        }
-
-        /**
-         * Get the child given the path segment.
-         * 
-         * @param segment the path segment for the child, which includes the {@link Path.Segment#getName() name} and
-         *        {@link Path.Segment#getIndex() one-based same-name-sibling index}; may not be null
-         * @return the information for the child node, or null if no such child existed
-         */
-        public ChildNode getChild( Path.Segment segment ) {
-            try {
-                lock.readLock().lock();
-                List<ChildNode> childrenWithName = this.childrenByName.get(segment.getName());
-                int snsIndex = segment.getIndex();
-                if (childrenWithName.size() < snsIndex) return null;
-                return childrenWithName.get(snsIndex - 1);
-            } finally {
-                lock.readLock().unlock();
-            }
-        }
-
-        /**
-         * Get the same-name-sibling children that all share the supplied name.
-         * 
-         * @param name the name for the children; may not be null
-         * @return the children with the supplied name; never null
-         */
-        public List<ChildNode> getChildren( Name name ) {
-            try {
-                lock.readLock().lock();
-                return new ArrayList<ChildNode>(this.childrenByName.get(name));
-            } finally {
-                lock.readLock().unlock();
-            }
-        }
-
-        /**
-         * Remove the child with the given path segment.
-         * 
-         * @param segment the path segment for the child, which includes the {@link Path.Segment#getName() name} and
-         *        {@link Path.Segment#getIndex() one-based same-name-sibling index}; may not be null
-         * @return the information for the child node that was removed, or null if no such child existed
-         */
-        public ChildNode remove( Path.Segment segment ) {
-            try {
-                lock.writeLock().lock();
-                List<ChildNode> childrenWithName = this.childrenByName.get(segment.getName());
-                int snsIndex = segment.getIndex();
-                int numChildrenWithName = childrenWithName.size();
-                if (numChildrenWithName < snsIndex) return null;
-                ChildNode result = childrenWithName.remove(snsIndex);
-                this.childrenByUuid.remove(result.getUuid());
-                --numChildrenWithName;
-                if (numChildrenWithName > snsIndex) {
-                    // We need to reduce the SNS index of every child after the one that was just removed ...
-                    ListIterator<ChildNode> siblingIter = childrenWithName.listIterator(snsIndex);
-                    while (siblingIter.hasNext()) {
-                        // Remove the next child and replace with one having the correct SNS index ...
-                        ChildNode next = siblingIter.next();
-                        siblingIter.remove();
-                        siblingIter.set(next.withChangedSnsIndex(-1));
-                    }
-                }
-                return result;
-            } finally {
-                lock.writeLock().unlock();
-            }
-        }
-
-        /**
-         * Add a new child to the end of the list of existing children a new child with the supplied name and UUID. The
-         * same-name-sibling will be determined to be one more than the number of existing children with the same name.
-         * 
-         * @param cache the cache; may not be null
-         * @param name the name for the child to be appended; may not be null
-         * @param childUuid the UUID of the child; may not be null
-         * @return the information for the newly-added child; never null
-         */
-        public ChildNode append( SessionCache cache,
-                                 Name name,
-                                 UUID childUuid ) {
-            try {
-                lock.writeLock().lock();
-                List<ChildNode> childrenWithName = this.childrenByName.get(name);
-                ChildNode child = new ChildNode(childUuid, name, childrenWithName.size() + 1);
-                childrenWithName.add(child);
-                this.childrenByUuid.put(childUuid, child);
-                // Look for the child in the cache/changed nodes ...
-                NodeInfo childInfo = cache.findNodeInfoInCache(childUuid);
-                if (childInfo != null) childInfo.setParent(parentUuid);
-                return child;
-            } finally {
-                lock.writeLock().unlock();
-            }
-        }
-
-        /**
-         * Append the children described by the supplied Location objects, optionally removing all existing children first.
-         * 
-         * @param cache the cache; may not be null
-         * @param children a list containing a Location object for each child
-         * @param removeExistingFirst true if the existing children should be removed before these children are added, or false if
-         *        these children should be appended to the existing children
-         */
-        public void append( SessionCache cache,
-                            List<Location> children,
-                            boolean removeExistingFirst ) {
-            try {
-                lock.writeLock().lock();
-                if (removeExistingFirst && !this.childrenByName.isEmpty()) {
-                    for (ChildNode child : this.childrenByName.values()) {
-                        // Look for the child in the cache/changed nodes ...
-                        NodeInfo childInfo = cache.findNodeInfoInCache(child.getUuid());
-                        if (childInfo != null) childInfo.setParent(null);
-                        // TODO: These nodes are deleted and should be handled as deletes ...
-                    }
-                    this.childrenByUuid.clear();
-                    this.childrenByName.clear();
-                }
-                for (Location childLocation : children) {
-                    UUID childUuid = childLocation.getUuid();
-                    Path.Segment segment = childLocation.getPath().getLastSegment();
-                    Name name = segment.getName();
-                    ChildNode child = new ChildNode(childUuid, name, segment.getIndex());
-                    this.childrenByName.put(name, child);
-                    this.childrenByUuid.put(childUuid, child);
-                    // Look for the child in the cache/changed nodes ...
-                    NodeInfo childInfo = cache.findNodeInfoInCache(childUuid);
-                    if (childInfo != null) childInfo.setParent(parentUuid);
-                }
-            } finally {
-                lock.writeLock().unlock();
-            }
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see java.lang.Object#toString()
-         */
-        @Override
-        public String toString() {
-            StringBuilder sb = new StringBuilder();
-            try {
-                lock.readLock().lock();
-                boolean first = true;
-                for (ChildNode child : childrenByName.values()) {
-                    if (!first) sb.append(", ");
-                    else first = false;
-                    sb.append(child.getName()).append('[').append(child.getSnsIndex()).append(']');
-                }
-            } finally {
-                lock.readLock().unlock();
-            }
-            return sb.toString();
-        }
-    }
-
-    /**
-     * The information about a child node. This is designed to be found in the {@link Children}, used quickly, and discarded.
-     * Clients should not hold on to these objects, since any changes to the children involve discarding the old ChildNode objects
-     * and replacing them with new instances.
-     */
-    @Immutable
-    public final static class ChildNode {
-        private final UUID uuid;
-        private final Name name;
-        private final int snsIndex;
-
-        protected ChildNode( UUID uuid,
-                             Name name,
-                             int snsIndex ) {
-            this.uuid = uuid;
-            this.name = name;
-            this.snsIndex = snsIndex;
-            assert this.snsIndex > 0;
-        }
-
-        /**
-         * Get the UUID of the node.
-         * 
-         * @return the node's UUID; never null
-         */
-        public UUID getUuid() {
-            return uuid;
-        }
-
-        /**
-         * Get the name of the node.
-         * 
-         * @return the node's current name; never null
-         */
-        public Name getName() {
-            return name;
-        }
-
-        /**
-         * Get the same-name-sibling index of the node.
-         * 
-         * @return the node's SNS index; always positive
-         */
-        public int getSnsIndex() {
-            return snsIndex;
-        }
-
-        /**
-         * Return a new child node that has a changed SNS index.
-         * 
-         * @param delta the amount the change the SNS index, either positive to increase the value or negative to decrease the
-         *        value
-         * @return the copy of this, with a changed SNS index; never null
-         */
-        public ChildNode withChangedSnsIndex( int delta ) {
-            return new ChildNode(uuid, name, snsIndex + delta);
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see java.lang.Object#hashCode()
-         */
-        @Override
-        public int hashCode() {
-            return uuid.hashCode();
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see java.lang.Object#equals(java.lang.Object)
-         */
-        @Override
-        public boolean equals( Object obj ) {
-            if (obj == this) return true;
-            if (obj instanceof ChildNode) {
-                return this.uuid.equals(((ChildNode)obj).uuid);
-            }
-            return false;
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see java.lang.Object#toString()
-         */
-        @Override
-        public String toString() {
-            return uuid.toString() + " ( " + name + "[" + snsIndex + "] )";
-        }
-    }
-
 }

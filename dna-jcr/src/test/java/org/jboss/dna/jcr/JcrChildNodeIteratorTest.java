@@ -36,7 +36,8 @@ import java.util.UUID;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import org.jboss.dna.graph.property.basic.BasicName;
-import org.jboss.dna.jcr.SessionCache.ChildNode;
+import org.jboss.dna.graph.property.basic.BasicPathSegment;
+import org.jboss.dna.jcr.cache.ChildNode;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.MockitoAnnotations;
@@ -60,7 +61,7 @@ public class JcrChildNodeIteratorTest {
         childNodes = new ArrayList<Node>();
         for (int i = 0; i != 10; ++i) {
             UUID uuid = UUID.randomUUID();
-            ChildNode child = new ChildNode(uuid, new BasicName("", "name"), i + 1);
+            ChildNode child = new ChildNode(uuid, new BasicPathSegment(new BasicName("", "name"), i + 1));
             AbstractJcrNode node = mock(AbstractJcrNode.class);
             stub(cache.findJcrNode(uuid)).toReturn(node);
             children.add(child);

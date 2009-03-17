@@ -39,7 +39,7 @@ import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.property.DateTime;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.Path;
-import org.jboss.dna.jcr.SessionCache.PropertyInfo;
+import org.jboss.dna.jcr.cache.PropertyInfo;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.MockitoAnnotations;

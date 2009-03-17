@@ -33,7 +33,6 @@ import java.io.InputStream;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 import javax.jcr.Item;
 import javax.jcr.ItemNotFoundException;
@@ -53,9 +52,10 @@ import javax.jcr.version.Version;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.Path;
-import org.jboss.dna.jcr.SessionCache.Children;
-import org.jboss.dna.jcr.SessionCache.NodeInfo;
-import org.jboss.dna.jcr.SessionCache.PropertyInfo;
+import org.jboss.dna.jcr.cache.Children;
+import org.jboss.dna.jcr.cache.EmptyChildren;
+import org.jboss.dna.jcr.cache.NodeInfo;
+import org.jboss.dna.jcr.cache.PropertyInfo;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
@@ -129,7 +129,7 @@ public class AbstractJcrNodeTest {
         node = new MockAbstractJcrNode(cache, uuid);
 
         // Create the children container for the node ...
-        children = new Children(uuid);
+        children = new EmptyChildren(uuid);
         stub(info.getChildren()).toReturn(children);
     }
 
@@ -147,6 +147,12 @@ public class AbstractJcrNodeTest {
 
     protected Value stringValueFor( Object value ) {
         return new JcrValue(context.getValueFactories(), PropertyType.STRING, value);
+    }
+
+    protected void addChild( Name childName,
+                             UUID childUuid ) {
+        children = children.with(childName, childUuid, context.getValueFactories().getPathFactory());
+        stub(info.getChildren()).toReturn(children);
     }
 
     @Test
@@ -285,7 +291,7 @@ public class AbstractJcrNodeTest {
     public void shouldReturnChildNodeFromGetNodeWithValidName() throws Exception {
         AbstractJcrNode child = mock(AbstractJcrNode.class);
         UUID childUuid = UUID.randomUUID();
-        children.append(cache, name("child"), childUuid);
+        addChild(name("child"), childUuid);
         stub(cache.findJcrNode(childUuid)).toReturn(child);
         assertThat(node.getNode("child"), is((Node)child));
     }
@@ -337,7 +343,7 @@ public class AbstractJcrNodeTest {
     public void shouldProvideNodeIterator() throws Exception {
         AbstractJcrNode child = mock(AbstractJcrNode.class);
         UUID childUuid = UUID.randomUUID();
-        children.append(cache, name("child"), childUuid);
+        addChild(name("child"), childUuid);
         stub(cache.findJcrNode(childUuid)).toReturn(child);
         NodeIterator iter = node.getNodes();
         assertThat(iter, notNullValue());
@@ -517,10 +523,10 @@ public class AbstractJcrNodeTest {
 
     @Test
     public void shouldReturnTrueFromHasNodeIfChildWithNameExists() throws Exception {
-        children.append(cache, name("child"), UUID.randomUUID());
+        addChild(name("child"), UUID.randomUUID());
         assertThat(node.hasNode("child[1]"), is(true));
         assertThat(node.hasNode("child[2]"), is(false));
-        children.append(cache, name("child"), UUID.randomUUID());
+        addChild(name("child"), UUID.randomUUID());
         assertThat(node.hasNode("child[2]"), is(true));
         assertThat(node.hasNode("child[3]"), is(false));
     }
@@ -537,7 +543,7 @@ public class AbstractJcrNodeTest {
 
     @Test
     public void shouldReturnTrueFromHasNodesIfThereIsAtLeastOneChild() throws Exception {
-        children.append(cache, name("child"), UUID.randomUUID());
+        addChild(name("child"), UUID.randomUUID());
         assertThat(node.hasNodes(), is(true));
     }
 
@@ -593,20 +599,14 @@ public class AbstractJcrNodeTest {
     }
 
     @Test
-    @SuppressWarnings( "unchecked" )
     public void shouldReturnTrueFromHasPropertiesIfNodeHasAtLeastOneProperty() throws Exception {
-        Map<Name, PropertyInfo> properties = mock(Map.class);
-        stub(properties.size()).toReturn(5);
-        stub(info.getProperties()).toReturn(properties);
+        stub(info.hasProperties()).toReturn(true);
         assertThat(node.hasProperties(), is(true));
     }
 
     @Test
-    @SuppressWarnings( "unchecked" )
     public void shouldReturnFalseFromHasPropertiesIfNodeHasNoProperties() throws Exception {
-        Map<Name, PropertyInfo> properties = mock(Map.class);
-        stub(properties.size()).toReturn(0);
-        stub(info.getProperties()).toReturn(properties);
+        stub(info.hasProperties()).toReturn(false);
         assertThat(node.hasProperties(), is(false));
     }
 

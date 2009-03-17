@@ -49,9 +49,9 @@ import org.jboss.dna.graph.connector.inmemory.InMemoryRepositorySource;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.Property;
-import org.jboss.dna.jcr.SessionCache.Children;
-import org.jboss.dna.jcr.SessionCache.NodeInfo;
-import org.jboss.dna.jcr.SessionCache.PropertyInfo;
+import org.jboss.dna.jcr.cache.Children;
+import org.jboss.dna.jcr.cache.NodeInfo;
+import org.jboss.dna.jcr.cache.PropertyInfo;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.MockitoAnnotations;
@@ -212,7 +212,7 @@ public class SessionCacheTest {
         UUID uuid = dnaNode.getLocation().getUuid();
         assertThat(nodeInfo.getUuid(), is(uuid));
         assertThat(nodeInfo.getOriginalLocation().getUuid(), is(uuid));
-        Set<Name> propertyNames = nodeInfo.getProperties().keySet();
+        Set<Name> propertyNames = nodeInfo.getPropertyNames();
         for (Name propertyName : propertyNames) {
             PropertyInfo info = nodeInfo.getProperty(propertyName);
             assertThat(info.getNodeUuid(), is(uuid));
@@ -246,7 +246,7 @@ public class SessionCacheTest {
         assertThat(rootInfo.getPrimaryTypeName(), is(name("dna:root")));
         assertThat(rootInfo.getOriginalLocation().getPath().isRoot(), is(true));
         assertThat(rootInfo.getOriginalLocation().getUuid(), is(rootUuid));
-        Set<Name> rootProperties = rootInfo.getProperties().keySet();
+        Set<Name> rootProperties = rootInfo.getPropertyNames();
         assertThat(rootProperties, hasItems(name("jcr:primaryType")));
         assertSameProperties(rootInfo, root);
 

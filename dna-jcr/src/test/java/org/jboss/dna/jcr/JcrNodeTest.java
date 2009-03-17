@@ -32,7 +32,7 @@ import javax.jcr.ItemNotFoundException;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.Path;
-import org.jboss.dna.jcr.SessionCache.NodeInfo;
+import org.jboss.dna.jcr.cache.NodeInfo;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.MockitoAnnotations;

@@ -56,14 +56,14 @@ import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.NamespaceRegistry;
 import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.ValueFormatException;
-import org.jboss.dna.jcr.SessionCache.ChildNode;
-import org.jboss.dna.jcr.SessionCache.Children;
-import org.jboss.dna.jcr.SessionCache.NodeInfo;
+import org.jboss.dna.jcr.cache.ChildNode;
+import org.jboss.dna.jcr.cache.Children;
+import org.jboss.dna.jcr.cache.NodeInfo;
 
 /**
  * An abstract implementation of the JCR {@link Node} interface. Instances of this class are created and managed by the
- * {@link SessionCache}. Each instance references the {@link SessionCache.NodeInfo node information} also managed by the
- * SessionCache, and finds and operates against this information with each method call.
+ * {@link SessionCache}. Each instance references the {@link NodeInfo node information} also managed by the SessionCache, and
+ * finds and operates against this information with each method call.
  */
 @Immutable
 abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
@@ -266,7 +266,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
      * @see javax.jcr.Node#hasProperties()
      */
     public final boolean hasProperties() throws RepositoryException {
-        return nodeInfo().getProperties().size() > 0;
+        return nodeInfo().hasProperties();
     }
 
     /**

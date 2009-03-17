@@ -37,7 +37,7 @@ import net.jcip.annotations.NotThreadSafe;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.Path;
-import org.jboss.dna.jcr.SessionCache.PropertyInfo;
+import org.jboss.dna.jcr.cache.PropertyInfo;
 
 /**
  * @author jverhaeg
