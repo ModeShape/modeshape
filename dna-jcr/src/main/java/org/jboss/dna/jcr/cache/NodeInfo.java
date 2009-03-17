@@ -62,7 +62,7 @@ public interface NodeInfo {
     /**
      * Get the children for this node.
      * 
-     * @return the children; never null but possibly empty
+     * @return the immutable children; never null but possibly empty
      */
     public Children getChildren();
 

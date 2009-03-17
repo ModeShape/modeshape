@@ -42,16 +42,14 @@ import com.google.common.collect.ListMultimap;
  * An immutable implementation of {@link Children}.
  */
 @Immutable
-public final class ImmutableChildren implements Children {
-    private final UUID parentUuid;
-    private final Map<UUID, ChildNode> childrenByUuid;
-    private final ListMultimap<Name, ChildNode> childrenByName;
+public class ImmutableChildren implements Children {
+    protected final UUID parentUuid;
+    protected final Map<UUID, ChildNode> childrenByUuid;
+    protected final ListMultimap<Name, ChildNode> childrenByName;
 
     public ImmutableChildren( UUID parentUuid,
                               Iterable<Location> children ) {
-        this.parentUuid = parentUuid;
-        this.childrenByUuid = new HashMap<UUID, ChildNode>();
-        this.childrenByName = new LinkedListMultimap<Name, ChildNode>();
+        this(parentUuid);
         for (Location childLocation : children) {
             UUID childUuid = childLocation.getUuid();
             Path.Segment segment = childLocation.getPath().getLastSegment();
@@ -62,10 +60,13 @@ public final class ImmutableChildren implements Children {
         }
     }
 
-    protected ImmutableChildren( Children original,
-                                 Name additionalChildName,
-                                 UUID childUuid,
-                                 PathFactory pathFactory ) {
+    public ImmutableChildren( UUID parentUuid ) {
+        this.parentUuid = parentUuid;
+        this.childrenByUuid = new HashMap<UUID, ChildNode>();
+        this.childrenByName = new LinkedListMultimap<Name, ChildNode>();
+    }
+
+    protected ImmutableChildren( Children original ) {
         this.parentUuid = original.getParentUuid();
         this.childrenByUuid = new HashMap<UUID, ChildNode>();
         this.childrenByName = new LinkedListMultimap<Name, ChildNode>();
@@ -75,11 +76,38 @@ public final class ImmutableChildren implements Children {
             this.childrenByName.put(child.getName(), child);
             this.childrenByUuid.put(child.getUuid(), child);
         }
+    }
+
+    protected ImmutableChildren( Children original,
+                                 Name additionalChildName,
+                                 UUID childUuid,
+                                 PathFactory pathFactory ) {
+        this(original);
+        add(additionalChildName, childUuid, pathFactory);
+    }
+
+    /**
+     * Utility method that adds a child with the supplied name. This method is not exposed publicly, ensuring that this class
+     * remains publicly immutable. Subclasses that use this method (in places other than constructors) will no longer be
+     * {@link Immutable immutable}.
+     * 
+     * @param additionalChildName
+     * @param childUuid
+     * @param pathFactory
+     * @return the child node that was just added; never null
+     */
+    protected ChildNode add( Name additionalChildName,
+                             UUID childUuid,
+                             PathFactory pathFactory ) {
+        ChildNode existing = this.childrenByUuid.get(childUuid);
+        if (existing != null) return existing;
+
         List<ChildNode> childrenWithName = this.childrenByName.get(additionalChildName);
         Path.Segment segment = pathFactory.createSegment(additionalChildName, childrenWithName.size() + 1);
         ChildNode additionalChild = new ChildNode(childUuid, segment);
         this.childrenByName.put(additionalChildName, additionalChild);
         this.childrenByUuid.put(childUuid, additionalChild);
+        return additionalChild;
     }
 
     /**
@@ -139,10 +167,36 @@ public final class ImmutableChildren implements Children {
         return new ReadOnlyIterator<ChildNode>(this.childrenByName.get(name).iterator());
     }
 
-    public ImmutableChildren with( Name newChildName,
-                                   UUID newChildUuid,
-                                   PathFactory pathFactory ) {
-        return new ImmutableChildren(this, newChildName, newChildUuid, pathFactory);
+    /**
+     * Create another Children object that is equivalent to this node but with the supplied child added.
+     * 
+     * @param newChildName the name of the new child; may not be null
+     * @param newChildUuid the UUID of the new child; may not be null
+     * @param pathFactory the factory that can be used to create Path and/or Path.Segment instances.
+     * @return the new Children object; never null
+     */
+    public ChangedChildren with( Name newChildName,
+                                 UUID newChildUuid,
+                                 PathFactory pathFactory ) {
+        // Create a mutable version ...
+        ChangedChildren newChildren = new ChangedChildren(this);
+        return newChildren.with(newChildName, newChildUuid, pathFactory);
+    }
+
+    /**
+     * Create another Children object that is equivalent to this node but without the supplied child.
+     * 
+     * @param child the child to be removed; may not be null
+     * @param pathFactory the factory that can be used to create Path and/or Path.Segment instances.
+     * @return the new Children object; never null
+     */
+    public ChangedChildren without( ChildNode child,
+                                    PathFactory pathFactory ) {
+        if (this.childrenByUuid.containsKey(child.getUuid()) && this.size() == 1) {
+            return new ChangedChildren(this.parentUuid);
+        }
+        ChangedChildren newChildren = new ChangedChildren(this);
+        return newChildren.without(child, pathFactory);
     }
 
     /**

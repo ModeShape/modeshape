@@ -27,7 +27,6 @@ import java.util.Iterator;
 import java.util.UUID;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.Path;
-import org.jboss.dna.graph.property.PathFactory;
 
 /**
  * Class that maintains the ordered list of {@link ChildNode} instances yet allows fast access to the children with a specified
@@ -74,15 +73,4 @@ public interface Children extends Iterable<ChildNode> {
      */
     Iterator<ChildNode> getChildren( Name name );
 
-    /**
-     * Create another Children object that is equivalent to this node but with the supplied child added.
-     * 
-     * @param newChildName the name of the new child; may not be null
-     * @param newChildUuid the UUID of the new child; may not be null
-     * @param pathFactory the factory that can be used to create Path and/or Path.Segment instances.
-     * @return the new Children object; never null
-     */
-    Children with( Name newChildName,
-                   UUID newChildUuid,
-                   PathFactory pathFactory );
 }

@@ -52,6 +52,7 @@ import javax.jcr.version.Version;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.Path;
+import org.jboss.dna.jcr.cache.ChangedChildren;
 import org.jboss.dna.jcr.cache.Children;
 import org.jboss.dna.jcr.cache.EmptyChildren;
 import org.jboss.dna.jcr.cache.NodeInfo;
@@ -151,7 +152,11 @@ public class AbstractJcrNodeTest {
 
     protected void addChild( Name childName,
                              UUID childUuid ) {
-        children = children.with(childName, childUuid, context.getValueFactories().getPathFactory());
+        if (children instanceof EmptyChildren) {
+            children = ((EmptyChildren)children).with(childName, childUuid, context.getValueFactories().getPathFactory());
+        } else if (children instanceof ChangedChildren) {
+            children = ((ChangedChildren)children).with(childName, childUuid, context.getValueFactories().getPathFactory());
+        }
         stub(info.getChildren()).toReturn(children);
     }
 

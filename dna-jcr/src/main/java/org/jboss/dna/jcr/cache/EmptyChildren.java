@@ -37,7 +37,7 @@ import org.jboss.dna.graph.property.Path.Segment;
 @Immutable
 public final class EmptyChildren implements Children {
 
-    private static final Iterator<ChildNode> EMPTY_ITERATOR = new EmptyIterator<ChildNode>();
+    static final Iterator<ChildNode> EMPTY_ITERATOR = new EmptyIterator<ChildNode>();
 
     private final UUID parentUuid;
 
@@ -99,10 +99,33 @@ public final class EmptyChildren implements Children {
         return EMPTY_ITERATOR;
     }
 
-    public ImmutableChildren with( Name newChildName,
-                                   UUID newChildUuid,
-                                   PathFactory pathFactory ) {
-        return new ImmutableChildren(this, newChildName, newChildUuid, pathFactory);
+    /**
+     * Create another Children object that is equivalent to this node but with the supplied child added.
+     * 
+     * @param newChildName the name of the new child; may not be null
+     * @param newChildUuid the UUID of the new child; may not be null
+     * @param pathFactory the factory that can be used to create Path and/or Path.Segment instances.
+     * @return the new Children object; never null
+     */
+    public ChangedChildren with( Name newChildName,
+                                 UUID newChildUuid,
+                                 PathFactory pathFactory ) {
+        ChangedChildren result = new ChangedChildren(this);
+        result.add(newChildName, newChildUuid, pathFactory);
+        return result;
+    }
+
+    /**
+     * Create another Children object that is equivalent to this node but without the supplied child. If the supplied child is not
+     * a current child, this method silently returns this same instance (since it has not changed).
+     * 
+     * @param child the child to be removed; may not be null
+     * @param pathFactory the factory that can be used to create Path and/or Path.Segment instances.
+     * @return the new Children object; never null
+     */
+    public ChangedChildren without( ChildNode child,
+                                    PathFactory pathFactory ) {
+        return new ChangedChildren(this.parentUuid);
     }
 
     /**

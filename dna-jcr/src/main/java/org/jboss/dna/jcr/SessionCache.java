@@ -62,6 +62,7 @@ import org.jboss.dna.graph.property.ValueFactory;
 import org.jboss.dna.graph.property.ValueFormatException;
 import org.jboss.dna.jcr.cache.ChildNode;
 import org.jboss.dna.jcr.cache.Children;
+import org.jboss.dna.jcr.cache.EmptyChildren;
 import org.jboss.dna.jcr.cache.ImmutableChildren;
 import org.jboss.dna.jcr.cache.ImmutableNodeInfo;
 import org.jboss.dna.jcr.cache.NodeInfo;
@@ -131,7 +132,7 @@ public class SessionCache {
     private final ReferenceMap<UUID, AbstractJcrNode> jcrNodes;
     private final ReferenceMap<PropertyId, AbstractJcrProperty> jcrProperties;
 
-    private final HashMap<UUID, NodeInfo> cachedNodes;
+    private final HashMap<UUID, ImmutableNodeInfo> cachedNodes;
     private final HashMap<UUID, NodeInfo> changedNodes;
 
     public SessionCache( JcrSession session,
@@ -159,7 +160,7 @@ public class SessionCache {
         this.jcrNodes = new ReferenceMap<UUID, AbstractJcrNode>(ReferenceType.STRONG, ReferenceType.SOFT);
         this.jcrProperties = new ReferenceMap<PropertyId, AbstractJcrProperty>(ReferenceType.STRONG, ReferenceType.SOFT);
 
-        this.cachedNodes = new HashMap<UUID, NodeInfo>();
+        this.cachedNodes = new HashMap<UUID, ImmutableNodeInfo>();
         this.changedNodes = new HashMap<UUID, NodeInfo>();
     }
 
@@ -554,9 +555,10 @@ public class SessionCache {
                             // Now process all of the nodes that we loaded, again starting at the top and going down ...
                             for (Path batchPath : pathsInBatch) {
                                 org.jboss.dna.graph.Node dnaNode = batchResults.getNode(batchPath);
-                                childInfo = createNodeInfoFrom(dnaNode, info);
-                                this.cachedNodes.put(childInfo.getUuid(), childInfo);
-                                info = childInfo;
+                                ImmutableNodeInfo originalChildInfo = createNodeInfoFrom(dnaNode, info);
+                                this.cachedNodes.put(originalChildInfo.getUuid(), originalChildInfo);
+                                childInfo = originalChildInfo;
+                                info = originalChildInfo;
                             }
                         } else {
                             // This is the last path, so do it a little more efficiently than above ...
@@ -651,12 +653,12 @@ public class SessionCache {
      * @throws ItemNotFoundException if the node does not exist in the repository
      * @throws RepositoryException if there was an error obtaining this information from the repository
      */
-    protected NodeInfo loadFromGraph( UUID uuid,
-                                      NodeInfo parentInfo ) throws ItemNotFoundException, RepositoryException {
+    protected ImmutableNodeInfo loadFromGraph( UUID uuid,
+                                               NodeInfo parentInfo ) throws ItemNotFoundException, RepositoryException {
         // Load the node information from the store ...
         try {
             org.jboss.dna.graph.Node node = store.getNodeAt(uuid);
-            NodeInfo info = createNodeInfoFrom(node, parentInfo);
+            ImmutableNodeInfo info = createNodeInfoFrom(node, parentInfo);
             this.cachedNodes.put(info.getUuid(), info);
             return info;
         } catch (org.jboss.dna.graph.property.PathNotFoundException e) {
@@ -681,12 +683,12 @@ public class SessionCache {
      * @throws PathNotFoundException if the node does not exist in the repository
      * @throws RepositoryException if there was an error obtaining this information from the repository
      */
-    protected NodeInfo loadFromGraph( Path path,
-                                      NodeInfo parentInfo ) throws PathNotFoundException, RepositoryException {
+    protected ImmutableNodeInfo loadFromGraph( Path path,
+                                               NodeInfo parentInfo ) throws PathNotFoundException, RepositoryException {
         // Load the node information from the store ...
         try {
             org.jboss.dna.graph.Node node = store.getNodeAt(path);
-            NodeInfo info = createNodeInfoFrom(node, parentInfo);
+            ImmutableNodeInfo info = createNodeInfoFrom(node, parentInfo);
             this.cachedNodes.put(info.getUuid(), info);
             return info;
         } catch (org.jboss.dna.graph.property.PathNotFoundException e) {
@@ -706,8 +708,8 @@ public class SessionCache {
      * @throws RepositoryException if there is an error determining the child {@link NodeDefinition} for the supplied node,
      *         preventing the node information from being constructed
      */
-    private NodeInfo createNodeInfoFrom( org.jboss.dna.graph.Node graphNode,
-                                         NodeInfo parentInfo ) throws RepositoryException {
+    private ImmutableNodeInfo createNodeInfoFrom( org.jboss.dna.graph.Node graphNode,
+                                                  NodeInfo parentInfo ) throws RepositoryException {
         // Now get the DNA node's UUID and find the DNA property containing the UUID ...
         Location location = graphNode.getLocation();
         ValueFactories factories = context.getValueFactories();
@@ -953,7 +955,8 @@ public class SessionCache {
 
         // Create the node information ...
         UUID parentUuid = parentInfo != null ? parentInfo.getUuid() : null;
-        Children children = new ImmutableChildren(parentUuid, graphNode.getChildren());
+        List<Location> locations = graphNode.getChildren();
+        Children children = locations.isEmpty() ? new EmptyChildren(parentUuid) : new ImmutableChildren(parentUuid, locations);
         props = Collections.unmodifiableMap(props);
         return new ImmutableNodeInfo(location, primaryTypeName, definition.getId(), parentUuid, children, props);
     }
