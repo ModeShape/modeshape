@@ -42,7 +42,7 @@ import com.google.common.collect.ListMultimap;
  * An immutable implementation of {@link Children}.
  */
 @Immutable
-public class ImmutableChildren implements Children {
+public class ImmutableChildren implements Children, InternalChildren {
     protected final UUID parentUuid;
     protected final Map<UUID, ChildNode> childrenByUuid;
     protected final ListMultimap<Name, ChildNode> childrenByName;
@@ -168,12 +168,10 @@ public class ImmutableChildren implements Children {
     }
 
     /**
-     * Create another Children object that is equivalent to this node but with the supplied child added.
+     * {@inheritDoc}
      * 
-     * @param newChildName the name of the new child; may not be null
-     * @param newChildUuid the UUID of the new child; may not be null
-     * @param pathFactory the factory that can be used to create Path and/or Path.Segment instances.
-     * @return the new Children object; never null
+     * @see org.jboss.dna.jcr.cache.InternalChildren#with(org.jboss.dna.graph.property.Name, java.util.UUID,
+     *      org.jboss.dna.graph.property.PathFactory)
      */
     public ChangedChildren with( Name newChildName,
                                  UUID newChildUuid,
@@ -184,19 +182,17 @@ public class ImmutableChildren implements Children {
     }
 
     /**
-     * Create another Children object that is equivalent to this node but without the supplied child.
+     * {@inheritDoc}
      * 
-     * @param child the child to be removed; may not be null
-     * @param pathFactory the factory that can be used to create Path and/or Path.Segment instances.
-     * @return the new Children object; never null
+     * @see org.jboss.dna.jcr.cache.InternalChildren#without(java.util.UUID, org.jboss.dna.graph.property.PathFactory)
      */
-    public ChangedChildren without( ChildNode child,
+    public ChangedChildren without( UUID childUuid,
                                     PathFactory pathFactory ) {
-        if (this.childrenByUuid.containsKey(child.getUuid()) && this.size() == 1) {
+        if (this.childrenByUuid.containsKey(childUuid) && this.size() == 1) {
             return new ChangedChildren(this.parentUuid);
         }
         ChangedChildren newChildren = new ChangedChildren(this);
-        return newChildren.without(child, pathFactory);
+        return newChildren.without(childUuid, pathFactory);
     }
 
     /**

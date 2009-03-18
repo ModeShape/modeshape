@@ -35,7 +35,7 @@ import org.jboss.dna.graph.property.Path.Segment;
  * An immutable implementation of {@link Children}.
  */
 @Immutable
-public final class EmptyChildren implements Children {
+public final class EmptyChildren implements Children, InternalChildren {
 
     static final Iterator<ChildNode> EMPTY_ITERATOR = new EmptyIterator<ChildNode>();
 
@@ -100,12 +100,10 @@ public final class EmptyChildren implements Children {
     }
 
     /**
-     * Create another Children object that is equivalent to this node but with the supplied child added.
+     * {@inheritDoc}
      * 
-     * @param newChildName the name of the new child; may not be null
-     * @param newChildUuid the UUID of the new child; may not be null
-     * @param pathFactory the factory that can be used to create Path and/or Path.Segment instances.
-     * @return the new Children object; never null
+     * @see org.jboss.dna.jcr.cache.InternalChildren#with(org.jboss.dna.graph.property.Name, java.util.UUID,
+     *      org.jboss.dna.graph.property.PathFactory)
      */
     public ChangedChildren with( Name newChildName,
                                  UUID newChildUuid,
@@ -116,14 +114,11 @@ public final class EmptyChildren implements Children {
     }
 
     /**
-     * Create another Children object that is equivalent to this node but without the supplied child. If the supplied child is not
-     * a current child, this method silently returns this same instance (since it has not changed).
+     * {@inheritDoc}
      * 
-     * @param child the child to be removed; may not be null
-     * @param pathFactory the factory that can be used to create Path and/or Path.Segment instances.
-     * @return the new Children object; never null
+     * @see org.jboss.dna.jcr.cache.InternalChildren#without(java.util.UUID, org.jboss.dna.graph.property.PathFactory)
      */
-    public ChangedChildren without( ChildNode child,
+    public ChangedChildren without( UUID childUuid,
                                     PathFactory pathFactory ) {
         return new ChangedChildren(this.parentUuid);
     }

@@ -78,12 +78,12 @@ public class ChangedChildrenTest extends AbstractChildrenTest<ChangedChildren> {
     @Test
     public void shouldReturnSameInstanceFromWithoutIfSuppliedChildIsNotFound() {
         ChildNode nonExistant = new ChildNode(UUID.randomUUID(), pathFactory.createSegment("some segment"));
-        assertThat(children.without(nonExistant, pathFactory), is(sameInstance((Children)children)));
+        assertThat(children.without(nonExistant.getUuid(), pathFactory), is(sameInstance((Children)children)));
     }
 
     @Test
     public void shouldReturnEmptyChildrenFromWithoutIfOnlyChildIsRemoved() {
-        Children newChildren = children.without(firstChild, pathFactory);
+        Children newChildren = children.without(firstChild.getUuid(), pathFactory);
         assertThat(newChildren.size(), is(0));
     }
 
@@ -113,7 +113,7 @@ public class ChangedChildrenTest extends AbstractChildrenTest<ChangedChildren> {
         assertChildNodesWithName(children, "childA", firstChild, child4, child5);
 
         // Remove 'child4' ...
-        Children result = children.without(child4, pathFactory);
+        Children result = children.without(child4.getUuid(), pathFactory);
 
         // but the result should not have child4 ...
         assertChildNodesWithName(result, "childA", firstChild, "childA");

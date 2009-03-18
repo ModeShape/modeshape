@@ -30,7 +30,7 @@ import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.jcr.NodeDefinitionId;
 
 /**
- * The information that describes a node. This is the information that is kept in the cache.
+ * A representation of a node. This is the information that is kept in the cache.
  */
 public interface NodeInfo {
 
@@ -60,7 +60,9 @@ public interface NodeInfo {
     public NodeDefinitionId getDefinitionId();
 
     /**
-     * Get the children for this node.
+     * Get the children for this node. Generally, clients should not hold onto the returned object but instead should simply use
+     * it and discard the reference. This is because implementations are not required to return the same instance with each call
+     * (although immutable implementations are expected to always return the same instance).
      * 
      * @return the immutable children; never null but possibly empty
      */
@@ -72,6 +74,13 @@ public interface NodeInfo {
      * @return true if there is at least one property, or false if there are none
      */
     public boolean hasProperties();
+
+    /**
+     * Return the number of properties on this node.
+     * 
+     * @return the number of properties; never negative
+     */
+    public int getPropertyCount();
 
     /**
      * Get the names of the properties that are owned by this node.

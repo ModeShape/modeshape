@@ -138,6 +138,15 @@ public class ImmutableNodeInfo implements NodeInfo {
     /**
      * {@inheritDoc}
      * 
+     * @see org.jboss.dna.jcr.cache.NodeInfo#getPropertyCount()
+     */
+    public int getPropertyCount() {
+        return this.properties.size();
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
      * @see org.jboss.dna.jcr.cache.NodeInfo#getPropertyNames()
      */
     public Set<Name> getPropertyNames() {

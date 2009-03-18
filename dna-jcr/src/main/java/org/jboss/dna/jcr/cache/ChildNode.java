@@ -29,12 +29,18 @@ import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.Path;
 
 /**
- * 
- */
-/**
- * The information about a child node. This is designed to be found in the {@link Children}, used quickly, and discarded. Clients
- * should not hold on to these objects, since any changes to the children involve discarding the old ChildNode objects and
- * replacing them with new instances.
+ * The representation of a child node. This is an immutable representation of a child node within the collection of its siblings
+ * as the collection appeared at some point in time. This should be used as a guide to determine how long to hold onto references.
+ * <p>
+ * For example, adding and removing children may affect the {@link #getSnsIndex() same-name-sibling index} of the children, so
+ * these kinds of operations will result in the replacement of old ChildObject instances. Therefore, clients should generally find
+ * the ChildNode instances in a {@link Children} container, use the ChildNode objects quickly, then discard their references.
+ * </p>
+ * <p>
+ * There may be times when a client does wish to keep a representation of a ChildNode as it appeared at some moment in time, and
+ * so it may want to hold onto references to ChildNode objects for longer durations. This is fine, as long as it is understood
+ * that at some point the referenced ChildNode may no longer represent the current state.
+ * </p>
  */
 @Immutable
 public final class ChildNode {

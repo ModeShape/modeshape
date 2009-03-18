@@ -76,7 +76,7 @@ public class ImmutableChildrenTest extends AbstractChildrenTest<ImmutableChildre
 
     @Test
     public void shouldReturnEmptyChildrenFromWithoutIfOnlyChildIsRemoved() {
-        Children newChildren = children.without(firstChild, pathFactory);
+        Children newChildren = children.without(firstChild.getUuid(), pathFactory);
         assertThat(newChildren.size(), is(0));
     }
 
@@ -93,7 +93,7 @@ public class ImmutableChildrenTest extends AbstractChildrenTest<ImmutableChildre
         assertChildNodesWithName(children, "childA", firstChild, child4, child5);
 
         // Remove 'child4' ...
-        Children result = children.without(child4, pathFactory);
+        Children result = children.without(child4.getUuid(), pathFactory);
 
         // the original should not have been changed ...
         assertChildNodesWithName(children, "childA", firstChild, child4, child5);

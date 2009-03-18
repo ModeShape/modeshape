@@ -68,31 +68,34 @@ public class ChangedChildren extends ImmutableChildren {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.jcr.cache.ImmutableChildren#without(org.jboss.dna.jcr.cache.ChildNode,
-     *      org.jboss.dna.graph.property.PathFactory)
+     * @see org.jboss.dna.jcr.cache.ImmutableChildren#without(java.util.UUID, org.jboss.dna.graph.property.PathFactory)
      */
     @Override
-    public ChangedChildren without( ChildNode child,
+    public ChangedChildren without( UUID childUuid,
                                     PathFactory pathFactory ) {
-        // Make sure this object contains the child ...
-        if (!childrenByUuid.containsKey(child.getUuid())) {
+        // Remove the object that has the same UUID (regardless of the current SNS index) ...
+        ChildNode toBeRemoved = childrenByUuid.get(childUuid);
+        if (toBeRemoved == null) {
             return this;
         }
-        // Remove the child fro this object, then adjust the remaining child node instances that follow it ...
-        Name childName = child.getName();
+        // Remove the child from this object, then adjust the remaining child node instances that follow it ...
+        Name childName = toBeRemoved.getName();
         List<ChildNode> childrenWithSameName = childrenByName.get(childName);
-        int snsIndex = child.getSnsIndex();
+        int snsIndex = toBeRemoved.getSnsIndex();
         if (snsIndex > childrenWithSameName.size()) {
             // The child node (with that SNS index) is no longer here) ...
             return this;
         }
         ListIterator<ChildNode> iter = childrenWithSameName.listIterator(--snsIndex);
         assert iter.hasNext();
-        iter.next(); // start ...
+        ChildNode willBeRemoved = iter.next();
+        assert willBeRemoved == toBeRemoved;
+        childrenByUuid.remove(toBeRemoved.getUuid());
         iter.remove(); // removes the item that was last returned from 'next()'
         while (iter.hasNext()) {
             ChildNode next = iter.next();
             ChildNode newNext = next.with(pathFactory.createSegment(childName, ++snsIndex));
+            childrenByUuid.put(newNext.getUuid(), newNext);
             iter.set(newNext);
         }
         return this;
