@@ -48,6 +48,7 @@ import javax.jcr.Node;
 import javax.jcr.Property;
 import javax.jcr.PropertyType;
 import javax.jcr.Repository;
+import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.ValueFactory;
 import javax.security.auth.Subject;
@@ -58,6 +59,7 @@ import org.jboss.dna.graph.connector.RepositoryConnection;
 import org.jboss.dna.graph.connector.RepositoryConnectionFactory;
 import org.jboss.dna.graph.connector.RepositorySourceException;
 import org.jboss.dna.graph.connector.inmemory.InMemoryRepositorySource;
+import org.jboss.dna.graph.property.Path;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -101,6 +103,7 @@ public class JcrSessionTest {
         graph.create("/a").and().create("/a/b").and().create("/a/b/c");
         graph.set("booleanProperty").on("/a/b").to(true);
         graph.set("stringProperty").on("/a/b/c").to("value");
+        graph.set("jcr:mixinTypes").on("/a/b").to("mix:referenceable");
         graph.set("multiLineProperty").on("/a/b/c").to(MULTI_LINE_VALUE);
 
         // Make sure the path to the namespaces exists ...
@@ -392,6 +395,31 @@ public class JcrSessionTest {
         // assertThat(session.getNamespaceURI("xml"), is("http://www.w3.org/XML/1998/namespace"));
     }
 
+    /**
+     * DNA JCR implementation is supposed to have root type named {@link DnaLexicon#ROOT}.
+     * 
+     * @throws Exception if an error occurs during the test
+     */
+    @Test
+    public void rootNodeShouldHaveProperType() throws Exception {
+        Node rootNode = session.getRootNode();
+
+        assertTrue(rootNode.getPrimaryNodeType().equals(session.nodeTypeManager().getNodeType(DnaLexicon.ROOT)));
+
+    }
+
+    /**
+     * DNA JCR implementation is supposed to have a referenceable root.
+     * 
+     * @throws RepositoryException if an error occurs during the test
+     */
+    @Test
+    public void rootNodeShouldBeReferenceable() throws RepositoryException {
+        Node rootNode = session.getRootNode();
+
+        assertTrue(rootNode.getPrimaryNodeType().isNodeType(JcrMixLexicon.REFERENCEABLE.getString(context.getNamespaceRegistry())));
+    }
+
     @Test
     public void shouldExportMultiLinePropertiesInSystemView() throws Exception {
         OutputStream os = new ByteArrayOutputStream();
@@ -401,4 +429,22 @@ public class JcrSessionTest {
         String fileContents = os.toString();
         assertTrue(fileContents.contains(MULTI_LINE_VALUE));
     }
+
+    @Test
+    public void shouldUseJcrCardinalityPerPropertyDefinition() throws Exception {
+
+        // Verify that the node does exist in the source ...
+        Path pathToNode = context.getValueFactories().getPathFactory().create("/a/b");
+        Node carsNode = session.getNode(pathToNode);
+
+        String mixinTypesName = JcrLexicon.MIXIN_TYPES.getString(session.getExecutionContext().getNamespaceRegistry());
+        Property mixinTypes = carsNode.getProperty(mixinTypesName);
+
+        // Check that the underlying DNA property has one value - this is a test of the testing data
+        assertThat(((AbstractJcrProperty)mixinTypes).property().isMultiple(), is(false));
+        // Check that the JCR property is a MultiProperty - this call will throw an exception if the property is not.
+        mixinTypes.getValues();
+
+    }
+
 }
