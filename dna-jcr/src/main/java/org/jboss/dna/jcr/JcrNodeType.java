@@ -29,6 +29,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.Stack;
+import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
 import javax.jcr.Value;
 import javax.jcr.nodetype.NodeDefinition;
@@ -413,6 +414,35 @@ class JcrNodeType implements NodeType {
     }
 
     /**
+     * Returns <code>true</code> if <code>value</code> can be cast to <code>property.getRequiredType()</code> per the type
+     * conversion rules in section 6.2.6 of the JCR 1.0 specification AND <code>value</code> satisfies the constraints (if any)
+     * for the property definition. If the property definition has a required type of {@link PropertyType#UNDEFINED}, the cast
+     * will be considered to have succeeded and the value constraints (if any) will be interpreted using the semantics for the
+     * type specified in <code>value.getType()</code>.
+     * 
+     * @param propertyDefinition the property definition to validate against
+     * @param value the value to be validated
+     * @return <code>true</code> if the value can be cast to the required type for the property definition (if it exists) and
+     *         satisfies the constraints for the property (if any exist).
+     * @see PropertyDefinition#getValueConstraints()
+     * @see JcrPropertyDefinition#satisfiesConstraints(Value)
+     */
+    private boolean canCastToTypeAndMatchesConstraints( JcrPropertyDefinition propertyDefinition,
+                                                        Value value ) {
+        try {
+            assert value instanceof JcrValue : "Illegal implementation of Value interface";
+            ((JcrValue)value).asType(propertyDefinition.getRequiredType());
+
+            return propertyDefinition.satisfiesConstraints(value);
+
+        } catch (javax.jcr.ValueFormatException vfe) {
+            // Cast failed
+            return false;
+        }
+
+    }
+
+    /**
      * {@inheritDoc}
      * 
      * @see javax.jcr.nodetype.NodeType#canSetProperty(java.lang.String, javax.jcr.Value)
@@ -440,14 +470,7 @@ class JcrNodeType implements NodeType {
             return !property.isMandatory();
         }
 
-        try {
-            assert value instanceof JcrValue : "Illegal implementation of Value interface";
-            ((JcrValue)value).asType(property.getRequiredType());
-        } catch (javax.jcr.ValueFormatException vfe) {
-            // Cast failed
-            return false;
-        }
-        return true;
+        return canCastToTypeAndMatchesConstraints(property, value);
     }
 
     /**
@@ -480,11 +503,7 @@ class JcrNodeType implements NodeType {
 
         for (int i = 0; i < values.length; i++) {
             if (values[i] != null) {
-                try {
-                    assert values[i] instanceof JcrValue : "Illegal implementation of Value interface";
-                    ((JcrValue)values[i]).asType(property.getRequiredType());
-                } catch (javax.jcr.ValueFormatException vfe) {
-                    // Cast failed
+                if (!canCastToTypeAndMatchesConstraints(property, values[i])) {
                     return false;
                 }
             }

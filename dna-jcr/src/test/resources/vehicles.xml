@@ -27,7 +27,7 @@
 <Vehicles xmlns:jcr="http://www.jcp.org/jcr/1.0" xmlns="http://example.com/vehicles">
     <Cars>
         <Hybrid>
-            <car jcr:name="Toyota Prius" maker="Toyota" model="Prius" year="2008" msrp="$21,500" userRating="4.2" valueRating="5" mpgCity="48" mpgHighway="45"/>
+            <car jcr:name="Toyota Prius" jcr:mixinTypes="mix:referenceable" maker="Toyota" model="Prius" year="2008" msrp="$21,500" userRating="4.2" valueRating="5" mpgCity="48" mpgHighway="45"/>
             <car jcr:name="Toyota Highlander" maker="Toyota" model="Highlander" year="2008" msrp="$34,200" userRating="4" valueRating="5" mpgCity="27" mpgHighway="25"/>
             <car jcr:name="Nissan Altima" maker="Nissan" model="Altima" year="2008" msrp="$18,260" mpgCity="23" mpgHighway="32"/>
         </Hybrid>

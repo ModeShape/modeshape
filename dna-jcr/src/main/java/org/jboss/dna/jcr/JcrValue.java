@@ -71,6 +71,16 @@ final class JcrValue implements Value {
     }
 
     /**
+     * Returns a direct reference to the internal value object wrapped by this {@link JcrValue}. Useful to avoid the expense of
+     * {@link #asType(int)} if the caller already knows the type of the value.
+     * 
+     * @return a reference to the {@link #value} field.
+     */
+    final Object value() {
+        return value;
+    }
+
+    /**
      * {@inheritDoc}
      * 
      * @see javax.jcr.Value#getBoolean()
@@ -240,8 +250,8 @@ final class JcrValue implements Value {
 
                         Segment[] segments = path.getSegmentsArray();
                         if (!path.isAbsolute() && segments.length == 1 && !segments[0].hasIndex()) {
-                            return new JcrValue(this.valueFactories, type, this.valueFactories.getNameFactory()
-                                                                                              .create(valueAsString));
+                            return new JcrValue(this.valueFactories, type,
+                                                this.valueFactories.getNameFactory().create(valueAsString));
 
                         }
                     }
