@@ -50,7 +50,9 @@ import javax.jcr.PropertyType;
 import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
+import javax.jcr.UnsupportedRepositoryOperationException;
 import javax.jcr.ValueFactory;
+import javax.jcr.nodetype.NodeType;
 import javax.security.auth.Subject;
 import javax.security.auth.login.LoginContext;
 import org.jboss.dna.graph.ExecutionContext;
@@ -81,6 +83,7 @@ public class JcrSessionTest {
     private JcrSession session;
     private Graph graph;
     private RepositoryConnectionFactory connectionFactory;
+    private RepositoryNodeTypeManager repoTypeManager;
     private Map<String, Object> sessionAttributes;
     @Mock
     private JcrRepository repository;
@@ -103,6 +106,7 @@ public class JcrSessionTest {
         graph.create("/a").and().create("/a/b").and().create("/a/b/c");
         graph.set("booleanProperty").on("/a/b").to(true);
         graph.set("stringProperty").on("/a/b/c").to("value");
+        graph.set("jcr:mixinTypes").on("/a").to("mix:lockable");
         graph.set("jcr:mixinTypes").on("/a/b").to("mix:referenceable");
         graph.set("multiLineProperty").on("/a/b/c").to(MULTI_LINE_VALUE);
 
@@ -122,11 +126,18 @@ public class JcrSessionTest {
             }
         };
 
+        // Set up the repo type manager
+        JcrNodeTypeSource nodeTypes = null;
+        nodeTypes = new JcrBuiltinNodeTypeSource(context, nodeTypes);
+        nodeTypes = new DnaBuiltinNodeTypeSource(context, nodeTypes);
+        repoTypeManager = new RepositoryNodeTypeManager(context, nodeTypes);
+        
         // Stub out the repository, since we only need a few methods ...
         MockitoAnnotations.initMocks(this);
         stub(repository.getRepositorySourceName()).toReturn(repositorySourceName);
         stub(repository.getConnectionFactory()).toReturn(connectionFactory);
-
+        stub(repository.getRepositoryTypeManager()).toReturn(repoTypeManager);
+        
         // Set up the session attributes ...
         sessionAttributes = new HashMap<String, Object>();
         sessionAttributes.put("attribute1", "value1");
@@ -404,7 +415,10 @@ public class JcrSessionTest {
     public void rootNodeShouldHaveProperType() throws Exception {
         Node rootNode = session.getRootNode();
 
-        assertTrue(rootNode.getPrimaryNodeType().equals(session.nodeTypeManager().getNodeType(DnaLexicon.ROOT)));
+        NodeType rootNodePrimaryType = rootNode.getPrimaryNodeType();
+        NodeType dnaRootType = session.nodeTypeManager().getNodeType(DnaLexicon.ROOT);
+        
+        assertThat(rootNodePrimaryType.getName(), is(dnaRootType.getName()));
 
     }
 
@@ -445,6 +459,36 @@ public class JcrSessionTest {
         // Check that the JCR property is a MultiProperty - this call will throw an exception if the property is not.
         mixinTypes.getValues();
 
+    }
+
+    /*
+     * Moved these three tests over from AbstractJcrNode as they require more extensive scaffolding that is already implemented in
+     * this test.
+     */
+
+    @Test
+    public void shouldProvideUuidIfReferenceable() throws Exception {
+        // The root node is referenceable in DNA
+        Node rootNode = session.getRootNode();
+
+        UUID uuid = ((AbstractJcrNode)rootNode).internalUuid();
+        assertThat(rootNode.getUUID(), is(uuid.toString()));
+    }
+
+    @Test( expected = UnsupportedRepositoryOperationException.class )
+    public void shouldNotProvideUuidIfNotReferenceable() throws Exception {
+        // The b node was not set up to be referenceable in this test, but does have a mixin type
+        Node node = session.getRootNode().getNode("a");
+
+        node.getUUID();
+    }
+
+    @Test( expected = UnsupportedRepositoryOperationException.class )
+    public void shouldNotProvideUuidIfNoMixinTypes() throws Exception {
+        // The c node was not set up to be referenceable in this test and has no mixin types
+        Node node = session.getRootNode().getNode("a").getNode("b").getNode("c");
+
+        node.getUUID();
     }
 
 }

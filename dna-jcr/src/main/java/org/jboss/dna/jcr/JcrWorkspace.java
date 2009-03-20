@@ -148,10 +148,7 @@ final class JcrWorkspace implements Workspace {
         this.session = new JcrSession(this.repository, this, this.context, sessionAttributes);
 
         // This must be initialized after the session
-        JcrNodeTypeSource source = null;
-        source = new JcrBuiltinNodeTypeSource(this.session);
-        source = new DnaBuiltinNodeTypeSource(this.session, source);
-        this.nodeTypeManager = new JcrNodeTypeManager(this.session, source);
+        this.nodeTypeManager = new JcrNodeTypeManager(session.getExecutionContext(), repository.getRepositoryTypeManager());
     }
 
     final String getSourceName() {

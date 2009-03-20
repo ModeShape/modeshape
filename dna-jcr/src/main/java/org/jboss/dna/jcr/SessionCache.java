@@ -1441,7 +1441,7 @@ public class SessionCache {
      * @param primaryTypeOfChild the name of the child's primary type
      * @return the node definition for this child, as best as can be determined, or null if the node definition could not be
      *         determined
-     * @throws RepositoryException if the parent's pimary node type cannot be found in the {@link NodeTypeManager}
+     * @throws RepositoryException if the parent's primary node type cannot be found in the {@link NodeTypeManager}
      */
     protected JcrNodeDefinition findNodeDefinitionForChild( NodeInfo parentInfo,
                                                             Name childName,

@@ -25,44 +25,35 @@ package org.jboss.dna.jcr;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import javax.jcr.RepositoryException;
 import javax.jcr.nodetype.NoSuchNodeTypeException;
 import javax.jcr.nodetype.NodeDefinition;
 import javax.jcr.nodetype.NodeType;
 import javax.jcr.nodetype.NodeTypeIterator;
 import javax.jcr.nodetype.NodeTypeManager;
-import net.jcip.annotations.NotThreadSafe;
+import net.jcip.annotations.Immutable;
+import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.property.Name;
 
 /**
- * Local implementation of @{link NodeTypeManager}. Initialized with {@link NodeType} source data when it is created (in the
- * {@link JcrWorkspace} constructor.
+ * Local implementation of @{link NodeTypeManager}. This class handles translation between {@link Name}s and {@link String}s based
+ * on the namespace registry from the session's execution context in order to support transient namespace remappings. All
+ * {@link NodeType}s returned by this implementation are wrapped with the execution context of the session to allow proper ongoing
+ * handling of names. This implies that reference equality is not a safe test for node type equivalence.
+ * 
+ * @see RepositoryNodeTypeManager
  */
-@NotThreadSafe
+@Immutable
 class JcrNodeTypeManager implements NodeTypeManager {
 
-    private final Map<Name, JcrNodeType> primaryNodeTypes;
-    private final Map<Name, JcrNodeType> mixinNodeTypes;
-    private final JcrSession session;
+    private final ExecutionContext context;
+    private final RepositoryNodeTypeManager repositoryTypeManager;
 
-    JcrNodeTypeManager( JcrSession session,
-                        JcrNodeTypeSource source ) {
-        this.session = session;
-        Collection<JcrNodeType> primary = source.getPrimaryNodeTypes();
-        Collection<JcrNodeType> mixins = source.getMixinNodeTypes();
-
-        primaryNodeTypes = new HashMap<Name, JcrNodeType>(primary.size());
-        for (JcrNodeType nodeType : primary) {
-            primaryNodeTypes.put(nodeType.getInternalName(), nodeType);
-        }
-
-        mixinNodeTypes = new HashMap<Name, JcrNodeType>(mixins.size());
-        for (JcrNodeType nodeType : mixins) {
-            mixinNodeTypes.put(nodeType.getInternalName(), nodeType);
-        }
+    JcrNodeTypeManager( ExecutionContext context,
+                        RepositoryNodeTypeManager repositoryTypeManager ) {
+        this.context = context;
+        this.repositoryTypeManager = repositoryTypeManager;
     }
 
     /**
@@ -71,6 +62,9 @@ class JcrNodeTypeManager implements NodeTypeManager {
      * @see javax.jcr.nodetype.NodeTypeManager#getAllNodeTypes()
      */
     public NodeTypeIterator getAllNodeTypes() {
+
+        Collection<JcrNodeType> mixinNodeTypes = repositoryTypeManager.getMixinNodeTypes();
+        Collection<JcrNodeType> primaryNodeTypes = repositoryTypeManager.getPrimaryNodeTypes();
 
         // TODO: Can revisit this approach later if it becomes a performance issue
         /*
@@ -82,8 +76,16 @@ class JcrNodeTypeManager implements NodeTypeManager {
          */
 
         List<NodeType> allTypes = new ArrayList<NodeType>(primaryNodeTypes.size() + mixinNodeTypes.size());
-        allTypes.addAll(primaryNodeTypes.values());
-        allTypes.addAll(mixinNodeTypes.values());
+
+        // Need to return a version of the node type with the current context
+        for (JcrNodeType type : primaryNodeTypes) {
+            allTypes.add(type.with(context));
+        }
+
+        for (JcrNodeType type : mixinNodeTypes) {
+            allTypes.add(type.with(context));
+        }
+
         return new JcrNodeTypeIterator(allTypes);
     }
 
@@ -93,16 +95,15 @@ class JcrNodeTypeManager implements NodeTypeManager {
      * @see javax.jcr.nodetype.NodeTypeManager#getMixinNodeTypes()
      */
     public NodeTypeIterator getMixinNodeTypes() {
-        return new JcrNodeTypeIterator(mixinNodeTypes.values());
-    }
+        Collection<JcrNodeType> rawTypes = repositoryTypeManager.getMixinNodeTypes();
+        List<JcrNodeType> types = new ArrayList<JcrNodeType>(rawTypes.size());
 
-    JcrNodeType getNodeType( Name nodeTypeName ) {
-
-        JcrNodeType nodeType = primaryNodeTypes.get(nodeTypeName);
-        if (nodeType == null) {
-            nodeType = mixinNodeTypes.get(nodeTypeName);
+        // Need to return a version of the node type with the current context
+        for (JcrNodeType type : rawTypes) {
+            types.add(type.with(context));
         }
-        return nodeType;
+
+        return new JcrNodeTypeIterator(types);
     }
 
     /**
@@ -111,10 +112,30 @@ class JcrNodeTypeManager implements NodeTypeManager {
      * @see javax.jcr.nodetype.NodeTypeManager#getNodeType(java.lang.String)
      */
     public NodeType getNodeType( String nodeTypeName ) throws NoSuchNodeTypeException, RepositoryException {
-        Name ntName = session.getExecutionContext().getValueFactories().getNameFactory().create(nodeTypeName);
-        NodeType type = getNodeType(ntName);
-        if (type != null) return type;
+        Name ntName = context.getValueFactories().getNameFactory().create(nodeTypeName);
+        JcrNodeType type = repositoryTypeManager.getNodeType(ntName);
+        if (type != null) {
+            type = type.with(context);
+            return type;
+        }
         throw new NoSuchNodeTypeException(JcrI18n.typeNotFound.text(nodeTypeName));
+    }
+
+    /**
+     * Returns the node type with the given name (if one exists)
+     * 
+     * @param nodeTypeName the name of the node type to be returned
+     * @return the node type with the given name (if one exists)
+     * @see RepositoryNodeTypeManager#getNodeType(Name)
+     */
+    JcrNodeType getNodeType( Name nodeTypeName ) {
+        JcrNodeType nodeType = repositoryTypeManager.getNodeType(nodeTypeName);
+
+        if (nodeType != null) {
+            nodeType = nodeType.with(context);
+        }
+
+        return nodeType;
     }
 
     /**
@@ -123,7 +144,15 @@ class JcrNodeTypeManager implements NodeTypeManager {
      * @see javax.jcr.nodetype.NodeTypeManager#getPrimaryNodeTypes()
      */
     public NodeTypeIterator getPrimaryNodeTypes() {
-        return new JcrNodeTypeIterator(primaryNodeTypes.values());
+        Collection<JcrNodeType> rawTypes = repositoryTypeManager.getPrimaryNodeTypes();
+        List<JcrNodeType> types = new ArrayList<JcrNodeType>(rawTypes.size());
+
+        // Need to return a version of the node type with the current context
+        for (JcrNodeType type : rawTypes) {
+            types.add(type.with(context));
+        }
+
+        return new JcrNodeTypeIterator(types);
     }
 
     /**
@@ -134,7 +163,7 @@ class JcrNodeTypeManager implements NodeTypeManager {
      * @throws NoSuchNodeTypeException
      */
     JcrNodeDefinition getRootNodeDefinition() throws NoSuchNodeTypeException, RepositoryException {
-        for (NodeDefinition definition : getNodeType(DnaLexicon.ROOT).getChildNodeDefinitions()) {
+        for (NodeDefinition definition : repositoryTypeManager.getNodeType(DnaLexicon.ROOT).getChildNodeDefinitions()) {
             if (definition.getName().equals(JcrNodeType.RESIDUAL_ITEM_NAME)) return (JcrNodeDefinition)definition;
         }
         assert false; // should not get here
@@ -150,7 +179,7 @@ class JcrNodeTypeManager implements NodeTypeManager {
     JcrNodeDefinition getNodeDefinition( NodeDefinitionId definitionId ) {
         if (definitionId == null) return null;
         Name nodeTypeName = definitionId.getNodeTypeName();
-        JcrNodeType nodeType = getNodeType(nodeTypeName);
+        JcrNodeType nodeType = repositoryTypeManager.getNodeType(nodeTypeName);
         return nodeType.getChildNodeDefinition(definitionId.getChildDefinitionName());
     }
 
@@ -165,7 +194,7 @@ class JcrNodeTypeManager implements NodeTypeManager {
                                                  boolean prefersMultiValued ) {
         if (definitionId == null) return null;
         Name nodeTypeName = definitionId.getNodeTypeName();
-        JcrNodeType nodeType = getNodeType(nodeTypeName);
+        JcrNodeType nodeType = repositoryTypeManager.getNodeType(nodeTypeName);
         return nodeType.getPropertyDefinition(definitionId.getPropertyDefinitionName(), prefersMultiValued);
     }
 

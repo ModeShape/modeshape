@@ -30,13 +30,13 @@ import java.util.List;
 import java.util.Set;
 import java.util.Stack;
 import javax.jcr.PropertyType;
-import javax.jcr.RepositoryException;
 import javax.jcr.Value;
 import javax.jcr.nodetype.NodeDefinition;
 import javax.jcr.nodetype.NodeType;
 import javax.jcr.nodetype.PropertyDefinition;
 import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.util.CheckArg;
+import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.property.Name;
 
 /**
@@ -65,12 +65,16 @@ class JcrNodeType implements NodeType {
     private boolean orderableChildNodes;
 
     /**
-     * A reference to the session in which this node type exists, used to remap the internal names to their appropriate prefixed
-     * version (e.g., <code>{http://www.jcp.org/jcr/nt/1.0}base</code> to <code>&quot;nt:base&quot;</code>.).
+     * A reference to the execution context in which this node type exists, used to remap the internal names to their appropriate
+     * prefixed version (e.g., <code>{http://www.jcp.org/jcr/nt/1.0}base</code> to <code>&quot;nt:base&quot;</code>.).
      */
-    private JcrSession session;
+    private ExecutionContext context;
 
-    JcrNodeType( JcrSession session,
+    /** Link to the repository node type manager for the repository to which this node type belongs. */
+    private RepositoryNodeTypeManager nodeTypeManager;
+
+    JcrNodeType( ExecutionContext context,
+                 RepositoryNodeTypeManager nodeTypeManager,
                  Name name,
                  List<NodeType> declaredSupertypes,
                  Name primaryItemName,
@@ -78,7 +82,8 @@ class JcrNodeType implements NodeType {
                  Collection<JcrPropertyDefinition> propertyDefinitions,
                  boolean mixin,
                  boolean orderableChildNodes ) {
-        this.session = session;
+        this.context = context;
+        this.nodeTypeManager = nodeTypeManager;
         this.name = name;
         this.primaryItemName = primaryItemName;
         this.declaredSupertypes = declaredSupertypes != null ? declaredSupertypes : Collections.<NodeType>emptyList();
@@ -224,35 +229,6 @@ class JcrNodeType implements NodeType {
      * @return the {@link NodeDefinition} that best matches the child, or null if a child with the supplied name and primary type
      *         are not allowed given this node type
      */
-    @Deprecated
-    JcrNodeDefinition findBestNodeDefinitionForChild( String childName,
-                                                      String primaryNodeTypeName ) {
-        // First, try to find a child node definition with the given name
-        JcrNodeDefinition childNode = getChildNodeDefinition(childName);
-
-        // If there are no named definitions in the type hierarchy, try to find a residual node definition
-        if (childNode == null) {
-            childNode = getChildNodeDefinition(RESIDUAL_ITEM_NAME);
-        }
-
-        // Check if the node can be added with the named child node definition
-        if (childNode != null && primaryNodeTypeName != null) {
-            NodeType primaryNodeType = getPrimaryNodeType(primaryNodeTypeName);
-            if (primaryNodeType == null) return null;
-            if (!checkTypeAgainstDefinition(primaryNodeType, childNode)) return null;
-        }
-        return childNode;
-    }
-
-    /**
-     * Determine the best (most specific) {@link NodeDefinition} for a child with the supplied name and primary type. If the
-     * primary type is not supplied, then only the name is considered when finding a best match.
-     * 
-     * @param childName the name of the child
-     * @param primaryNodeTypeName the name of the primary node type for the child
-     * @return the {@link NodeDefinition} that best matches the child, or null if a child with the supplied name and primary type
-     *         are not allowed given this node type
-     */
     JcrNodeDefinition findBestNodeDefinitionForChild( Name childName,
                                                       Name primaryNodeTypeName ) {
         // First, try to find a child node definition with the given name
@@ -314,17 +290,8 @@ class JcrNodeType implements NodeType {
         return false;
     }
 
-    protected final NodeType getPrimaryNodeType( String primaryNodeTypeName ) {
-        try {
-            return session.getWorkspace().getNodeTypeManager().getNodeType(primaryNodeTypeName);
-        } catch (RepositoryException re) {
-            // If the node type doesn't exist, you can't add a child node with that type
-            return null;
-        }
-    }
-
     protected final NodeType getPrimaryNodeType( Name primaryNodeTypeName ) {
-        return session.nodeTypeManager().getNodeType(primaryNodeTypeName);
+        return nodeTypeManager.getNodeType(primaryNodeTypeName);
     }
 
     /**
@@ -338,7 +305,8 @@ class JcrNodeType implements NodeType {
         CheckArg.isNotNull(childNodeName, "childNodeName");
         CheckArg.isNotNull(primaryNodeTypeName, "primaryNodeTypeName");
 
-        NodeType primaryNodeType = getPrimaryNodeType(primaryNodeTypeName);
+        Name nodeTypeName = context.getValueFactories().getNameFactory().create(primaryNodeTypeName);
+        NodeType primaryNodeType = getPrimaryNodeType(nodeTypeName);
         if (primaryNodeType == null) {
             // The node type doesn't exist, so you can't add a child node with that type
             return false;
@@ -585,7 +553,7 @@ class JcrNodeType implements NodeType {
      */
     public String getName() {
         // Translate the name to the correct prefix. Need to check the session to support url-remapping.
-        return name.getString(session.getExecutionContext().getNamespaceRegistry());
+        return name.getString(context.getNamespaceRegistry());
     }
 
     /**
@@ -609,7 +577,7 @@ class JcrNodeType implements NodeType {
         }
 
         // Translate the name to the correct prefix. Need to check the session to support url-remapping.
-        return primaryItemName.getString(session.getExecutionContext().getNamespaceRegistry());
+        return primaryItemName.getString(context.getNamespaceRegistry());
     }
 
     /**
@@ -694,5 +662,34 @@ class JcrNodeType implements NodeType {
     @Override
     public String toString() {
         return getName();
+    }
+
+    /**
+     * Returns a {@link JcrNodeType} that is equivalent to this {@link JcrNodeType}, except with a different repository node type
+     * manager. This method should only be called during the initialization of the repository node type manager, unless some kind
+     * of cross-repository type shipping is implemented.
+     * 
+     * @param nodeTypeManager the new repository node type manager
+     * @return a new {@link JcrNodeType} that has the same state as this node type, but with the given node type manager.
+     */
+    final JcrNodeType with( RepositoryNodeTypeManager nodeTypeManager ) {
+        return new JcrNodeType(this.context, nodeTypeManager, this.name, this.declaredSupertypes, this.primaryItemName,
+                               this.childNodeDefinitions, this.propertyDefinitions, this.mixin, this.orderableChildNodes);
+    }
+
+    /**
+     * Returns a {@link JcrNodeType} that is equivalent to this {@link JcrNodeType}, except with a different execution context.
+     * 
+     * @param context the new execution context
+     * @return a new {@link JcrNodeType} that has the same state as this node type, but with the given node type manager.
+     * @see JcrNodeTypeManager
+     */
+    final JcrNodeType with( ExecutionContext context ) {
+        return new JcrNodeType(context, this.nodeTypeManager, this.name, this.declaredSupertypes, this.primaryItemName,
+                               this.childNodeDefinitions, this.propertyDefinitions, this.mixin, this.orderableChildNodes);
+    }
+
+    final RepositoryNodeTypeManager nodeTypeManager() {
+        return nodeTypeManager;
     }
 }

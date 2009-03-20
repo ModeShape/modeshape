@@ -29,6 +29,7 @@ import java.util.Collection;
 import java.util.List;
 import javax.jcr.PropertyType;
 import javax.jcr.nodetype.NodeType;
+import org.jboss.dna.graph.ExecutionContext;
 
 /**
  * Node type source with additional node types that can be used for testing. This class defines its own namespace for its types.
@@ -40,7 +41,7 @@ public class TestNodeTypeSource extends AbstractJcrNodeTypeSource {
     /** The list of mixin node types. */
     private final List<JcrNodeType> mixinNodeTypes;
 
-    TestNodeTypeSource( JcrSession session,
+    TestNodeTypeSource( ExecutionContext context,
                         JcrNodeTypeSource predecessor ) {
         super(predecessor);
 
@@ -50,32 +51,35 @@ public class TestNodeTypeSource extends AbstractJcrNodeTypeSource {
         JcrNodeType base = findType(JcrNtLexicon.BASE);
 
         if (base == null) {
-            String baseTypeName = JcrNtLexicon.BASE.getString(session.getExecutionContext().getNamespaceRegistry());
-            String namespaceTypeName = DnaLexicon.NAMESPACE.getString(session.getExecutionContext().getNamespaceRegistry());
+            String baseTypeName = JcrNtLexicon.BASE.getString(context.getNamespaceRegistry());
+            String namespaceTypeName = DnaLexicon.NAMESPACE.getString(context.getNamespaceRegistry());
             throw new IllegalStateException(JcrI18n.supertypeNotFound.text(baseTypeName, namespaceTypeName));
         }
 
+        
+        
         // Stubbing in child node and property definitions for now
         JcrNodeType constrainedType = new JcrNodeType(
-                                                      session,
+                                                      context,
+                                                      NO_NODE_TYPE_MANAGER,
                                                       TestLexicon.CONSTRAINED_TYPE,
                                                       Arrays.asList(new NodeType[] {base}),
                                                       NO_PRIMARY_ITEM_NAME,
                                                       NO_CHILD_NODES,
                                                       Arrays.asList(new JcrPropertyDefinition[] {
-                                                          new JcrPropertyDefinition(session, null,
+                                                          new JcrPropertyDefinition(context, null,
                                                                                     TestLexicon.CONSTRAINED_BINARY,
                                                                                     OnParentVersionBehavior.IGNORE.getJcrValue(),
                                                                                     false, false, false, NO_DEFAULT_VALUES,
                                                                                     PropertyType.BINARY, new String[] {"[,5)",
                                                                                         "[10, 20)", "(30,40]", "[50,]"}, false),
-                                                          new JcrPropertyDefinition(session, null, TestLexicon.CONSTRAINED_DATE,
+                                                          new JcrPropertyDefinition(context, null, TestLexicon.CONSTRAINED_DATE,
                                                                                     OnParentVersionBehavior.IGNORE.getJcrValue(),
                                                                                     false, false, false, NO_DEFAULT_VALUES,
                                                                                     PropertyType.DATE, new String[] {
                                                                                         "[,+1945-08-01T01:30:00.000Z]",
                                                                                         "[+1975-08-01T01:30:00.000Z,)"}, false),
-                                                          new JcrPropertyDefinition(session, null,
+                                                          new JcrPropertyDefinition(context, null,
                                                                                     TestLexicon.CONSTRAINED_DOUBLE,
                                                                                     OnParentVersionBehavior.IGNORE.getJcrValue(),
                                                                                     false, false, false, NO_DEFAULT_VALUES,
@@ -83,33 +87,33 @@ public class TestNodeTypeSource extends AbstractJcrNodeTypeSource {
                                                                                     new String[] {"[,5.0)", "[10.1, 20.2)",
                                                                                         "(30.3,40.4]", "[50.5,]"}, false),
 
-                                                          new JcrPropertyDefinition(session, null, TestLexicon.CONSTRAINED_LONG,
+                                                          new JcrPropertyDefinition(context, null, TestLexicon.CONSTRAINED_LONG,
                                                                                     OnParentVersionBehavior.IGNORE.getJcrValue(),
                                                                                     false, false, false, NO_DEFAULT_VALUES,
                                                                                     PropertyType.LONG, new String[] {"[,5)",
                                                                                         "[10, 20)", "(30,40]", "[50,]"}, false),
 
-                                                          new JcrPropertyDefinition(session, null, TestLexicon.CONSTRAINED_NAME,
+                                                          new JcrPropertyDefinition(context, null, TestLexicon.CONSTRAINED_NAME,
                                                                                     OnParentVersionBehavior.IGNORE.getJcrValue(),
                                                                                     false, false, false, NO_DEFAULT_VALUES,
                                                                                     PropertyType.NAME, new String[] {
                                                                                         "jcr:system", "dnatest:constrainedType"},
                                                                                     false),
 
-                                                          new JcrPropertyDefinition(session, null, TestLexicon.CONSTRAINED_PATH,
+                                                          new JcrPropertyDefinition(context, null, TestLexicon.CONSTRAINED_PATH,
                                                                                     OnParentVersionBehavior.IGNORE.getJcrValue(),
                                                                                     false, false, false, NO_DEFAULT_VALUES,
                                                                                     PropertyType.PATH, new String[] {
                                                               // "/" + JcrLexicon.Namespace.URI + ":system/*", "b", "/a/b/c"}, false),
                                                               "/jcr:system/*", "b", "/a/b/c"}, false),
-                                                          new JcrPropertyDefinition(session, null,
+                                                          new JcrPropertyDefinition(context, null,
                                                                                     TestLexicon.CONSTRAINED_REFERENCE,
                                                                                     OnParentVersionBehavior.IGNORE.getJcrValue(),
                                                                                     false, false, false, NO_DEFAULT_VALUES,
                                                                                     PropertyType.REFERENCE,
                                                                                     new String[] {"dna:root",}, false),
 
-                                                          new JcrPropertyDefinition(session, null,
+                                                          new JcrPropertyDefinition(context, null,
                                                                                     TestLexicon.CONSTRAINED_STRING,
                                                                                     OnParentVersionBehavior.IGNORE.getJcrValue(),
                                                                                     false, false, false, NO_DEFAULT_VALUES,

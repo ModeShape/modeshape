@@ -71,6 +71,7 @@ import org.xml.sax.SAXException;
 public class SessionCacheTest {
 
     private ExecutionContext context;
+    private RepositoryNodeTypeManager repoTypes;
     private JcrNodeTypeManager nodeTypes;
     private Stopwatch sw;
     private Graph store;
@@ -95,10 +96,12 @@ public class SessionCacheTest {
         stub(session.namespaces()).toReturn(context.getNamespaceRegistry());
 
         // Load up all the node types ...
-        JcrNodeTypeSource nodeTypeSource = new JcrBuiltinNodeTypeSource(session);
-        nodeTypeSource = new DnaBuiltinNodeTypeSource(session, nodeTypeSource);
-        nodeTypeSource = new VehixNodeTypeSource(session, nodeTypeSource);
-        nodeTypes = new JcrNodeTypeManager(session, nodeTypeSource);
+        JcrNodeTypeSource nodeTypeSource = null;
+        nodeTypeSource = new JcrBuiltinNodeTypeSource(this.context, nodeTypeSource);
+        nodeTypeSource = new DnaBuiltinNodeTypeSource(this.context, nodeTypeSource);
+        nodeTypeSource = new VehixNodeTypeSource(context, nodeTypeSource);
+        repoTypes = new RepositoryNodeTypeManager(context, nodeTypeSource);
+        nodeTypes = new JcrNodeTypeManager(this.context, repoTypes);
         stub(session.nodeTypeManager()).toReturn(nodeTypes);
 
         // Now set up the graph and session cache ...
@@ -113,24 +116,24 @@ public class SessionCacheTest {
         private final List<JcrNodeType> primaryNodeTypes;
         private final List<JcrNodeType> mixinNodeTypes;
 
-        public VehixNodeTypeSource( JcrSession session,
+        public VehixNodeTypeSource( ExecutionContext context,
                                     JcrNodeTypeSource predecessor ) {
             super(predecessor);
             this.primaryNodeTypes = new ArrayList<JcrNodeType>();
             this.mixinNodeTypes = new ArrayList<JcrNodeType>();
-            Name carName = session.getExecutionContext().getValueFactories().getNameFactory().create("vehix:car");
-            Name aircraftName = session.getExecutionContext().getValueFactories().getNameFactory().create("vehix:aircraft");
+            Name carName = context.getValueFactories().getNameFactory().create("vehix:car");
+            Name aircraftName = context.getValueFactories().getNameFactory().create("vehix:aircraft");
             JcrNodeType unstructured = findType(JcrNtLexicon.UNSTRUCTURED);
 
             // Add in the "vehix:car" node type (which extends "nt:unstructured") ...
-            JcrNodeType car = new JcrNodeType(session, carName, Arrays.asList(new NodeType[] {unstructured}),
-                                              NO_PRIMARY_ITEM_NAME, NO_CHILD_NODES, NO_PROPERTIES, NOT_MIXIN,
-                                              ORDERABLE_CHILD_NODES);
+            JcrNodeType car = new JcrNodeType(context, (RepositoryNodeTypeManager)null, carName,
+                                              Arrays.asList(new NodeType[] {unstructured}), NO_PRIMARY_ITEM_NAME, NO_CHILD_NODES,
+                                              NO_PROPERTIES, NOT_MIXIN, ORDERABLE_CHILD_NODES);
 
             // Add in the "vehix:aircraft" node type (which extends "nt:unstructured") ...
-            JcrNodeType aircraft = new JcrNodeType(session, aircraftName, Arrays.asList(new NodeType[] {unstructured}),
-                                                   NO_PRIMARY_ITEM_NAME, NO_CHILD_NODES, NO_PROPERTIES, NOT_MIXIN,
-                                                   ORDERABLE_CHILD_NODES);
+            JcrNodeType aircraft = new JcrNodeType(context, (RepositoryNodeTypeManager)null, aircraftName,
+                                                   Arrays.asList(new NodeType[] {unstructured}), NO_PRIMARY_ITEM_NAME,
+                                                   NO_CHILD_NODES, NO_PROPERTIES, NOT_MIXIN, ORDERABLE_CHILD_NODES);
 
             primaryNodeTypes.addAll(Arrays.asList(new JcrNodeType[] {car, aircraft,}));
         }

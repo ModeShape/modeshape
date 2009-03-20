@@ -75,6 +75,7 @@ public class JcrRepository implements Repository {
     private final Map<String, String> descriptors;
     private final ExecutionContext executionContext;
     private final RepositoryConnectionFactory connectionFactory;
+    private final RepositoryNodeTypeManager repositoryTypeManager;
 
     /**
      * Creates a JCR repository that uses the supplied {@link RepositoryConnectionFactory repository connection factory} to
@@ -145,8 +146,21 @@ public class JcrRepository implements Repository {
         modifiableDescriptors.put(Repository.SPEC_NAME_DESC, JcrI18n.SPEC_NAME_DESC.text());
         modifiableDescriptors.put(Repository.SPEC_VERSION_DESC, "1.0");
         this.descriptors = Collections.unmodifiableMap(modifiableDescriptors);
+        
+        JcrNodeTypeSource source = null;
+        source = new JcrBuiltinNodeTypeSource(this.executionContext);
+        source = new DnaBuiltinNodeTypeSource(this.executionContext, source);
+        this.repositoryTypeManager = new RepositoryNodeTypeManager(this.executionContext, source);
     }
 
+    /**
+     * Returns the repository-level node type manager
+     * @return the repository-level node type manager
+     */
+    RepositoryNodeTypeManager getRepositoryTypeManager() {
+        return repositoryTypeManager;
+    }
+    
     /**
      * Get the name of the repository source that this repository is using.
      * 

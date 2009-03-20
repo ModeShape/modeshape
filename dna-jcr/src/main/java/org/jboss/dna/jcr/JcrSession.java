@@ -146,6 +146,11 @@ class JcrSession implements Session {
         assert this.graph != null;
     }
 
+    // Added to facilitate mock testing of items without necessarily requiring an entire repository structure to be built
+    final SessionCache cache() {
+        return this.cache;
+    }
+
     ExecutionContext getExecutionContext() {
         return this.executionContext;
     }
@@ -439,39 +444,41 @@ class JcrSession implements Session {
      */
     public ValueFactory getValueFactory() {
         final ValueFactories valueFactories = executionContext.getValueFactories();
+        final SessionCache sessionCache = this.cache;
+
         return new ValueFactory() {
 
             public Value createValue( String value,
                                       int propertyType ) {
-                return new JcrValue(valueFactories, propertyType, value);
+                return new JcrValue(valueFactories, sessionCache, propertyType, value);
             }
 
             public Value createValue( Node value ) throws RepositoryException {
-                return new JcrValue(valueFactories, PropertyType.REFERENCE, UUID.fromString(value.getUUID()));
+                return new JcrValue(valueFactories, sessionCache, PropertyType.REFERENCE, UUID.fromString(value.getUUID()));
             }
 
             public Value createValue( InputStream value ) {
-                return new JcrValue(valueFactories, PropertyType.BINARY, value);
+                return new JcrValue(valueFactories, sessionCache, PropertyType.BINARY, value);
             }
 
             public Value createValue( Calendar value ) {
-                return new JcrValue(valueFactories, PropertyType.DATE, value);
+                return new JcrValue(valueFactories, sessionCache, PropertyType.DATE, value);
             }
 
             public Value createValue( boolean value ) {
-                return new JcrValue(valueFactories, PropertyType.BOOLEAN, value);
+                return new JcrValue(valueFactories, sessionCache, PropertyType.BOOLEAN, value);
             }
 
             public Value createValue( double value ) {
-                return new JcrValue(valueFactories, PropertyType.DOUBLE, value);
+                return new JcrValue(valueFactories, sessionCache, PropertyType.DOUBLE, value);
             }
 
             public Value createValue( long value ) {
-                return new JcrValue(valueFactories, PropertyType.LONG, value);
+                return new JcrValue(valueFactories, sessionCache, PropertyType.LONG, value);
             }
 
             public Value createValue( String value ) {
-                return new JcrValue(valueFactories, PropertyType.STRING, value);
+                return new JcrValue(valueFactories, sessionCache, PropertyType.STRING, value);
             }
         };
     }

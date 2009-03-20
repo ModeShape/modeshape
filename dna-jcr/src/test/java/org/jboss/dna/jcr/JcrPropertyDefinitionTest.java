@@ -30,8 +30,6 @@ import static org.mockito.Mockito.stub;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.UUID;
-import javax.jcr.Node;
 import javax.jcr.PropertyType;
 import javax.jcr.Value;
 import javax.jcr.nodetype.NodeType;
@@ -52,21 +50,22 @@ import org.mockito.MockitoAnnotations;
 import org.mockito.MockitoAnnotations.Mock;
 
 /**
- * Indirectly tests the JcrConstaintCheckerFactory through {@link JcrPropertyDefinition#satisfiesConstraints(Value)},
- * which provides the wrapper around the factory that the rest of the API is expected to utilize.
- *
+ * Indirectly tests the JcrConstaintCheckerFactory through {@link JcrPropertyDefinition#satisfiesConstraints(Value)}, which
+ * provides the wrapper around the factory that the rest of the API is expected to utilize.
  */
 public class JcrPropertyDefinitionTest {
 
-    private final String[] EXPECTED_BINARY_CONSTRAINTS = new String[] { "[,5)", "[10, 20)", "(30,40]", "[50,]" };
-    private final String[] EXPECTED_DATE_CONSTRAINTS = new String[] { "[,+1945-08-01T01:30:00.000Z]", "[+1975-08-01T01:30:00.000Z,)"};
-    private final String[] EXPECTED_DOUBLE_CONSTRAINTS = new String[] { "[,5.0)", "[10.1, 20.2)", "(30.3,40.4]", "[50.5,]" };
-    private final String[] EXPECTED_LONG_CONSTRAINTS = new String[] { "[,5)", "[10, 20)", "(30,40]", "[50,]" };
-    private final String[] EXPECTED_NAME_CONSTRAINTS = new String[] { "jcr:system", "dnatest:constrainedType" };
-    //private final String[] EXPECTED_PATH_CONSTRAINTS = new String[] {"/" + JcrLexicon.Namespace.URI + ":system/*", "b", "/a/b/c" };
-    private final String[] EXPECTED_PATH_CONSTRAINTS = new String[] {"/jcr:system/*", "b", "/a/b/c" };
-    private final String[] EXPECTED_REFERENCE_CONSTRAINTS = new String[] { "dna:root" };
-    private final String[] EXPECTED_STRING_CONSTRAINTS = new String[] { "foo", "bar*", ".*baz" };
+    private final String[] EXPECTED_BINARY_CONSTRAINTS = new String[] {"[,5)", "[10, 20)", "(30,40]", "[50,]"};
+    private final String[] EXPECTED_DATE_CONSTRAINTS = new String[] {"[,+1945-08-01T01:30:00.000Z]",
+        "[+1975-08-01T01:30:00.000Z,)"};
+    private final String[] EXPECTED_DOUBLE_CONSTRAINTS = new String[] {"[,5.0)", "[10.1, 20.2)", "(30.3,40.4]", "[50.5,]"};
+    private final String[] EXPECTED_LONG_CONSTRAINTS = new String[] {"[,5)", "[10, 20)", "(30,40]", "[50,]"};
+    private final String[] EXPECTED_NAME_CONSTRAINTS = new String[] {"jcr:system", "dnatest:constrainedType"};
+    // private final String[] EXPECTED_PATH_CONSTRAINTS = new String[] {"/" + JcrLexicon.Namespace.URI + ":system/*", "b",
+    // "/a/b/c" };
+    private final String[] EXPECTED_PATH_CONSTRAINTS = new String[] {"/jcr:system/*", "b", "/a/b/c"};
+    private final String[] EXPECTED_REFERENCE_CONSTRAINTS = new String[] {"dna:root"};
+    private final String[] EXPECTED_STRING_CONSTRAINTS = new String[] {"foo", "bar*", ".*baz"};
 
     private String workspaceName;
     private ExecutionContext context;
@@ -75,6 +74,7 @@ public class JcrPropertyDefinitionTest {
     private JcrSession session;
     private Graph graph;
     private RepositoryConnectionFactory connectionFactory;
+    private RepositoryNodeTypeManager repoTypeManager;
     private NodeTypeManager nodeTypeManager;
     private Map<String, Object> sessionAttributes;
     @Mock
@@ -82,6 +82,8 @@ public class JcrPropertyDefinitionTest {
 
     @Before
     public void beforeEach() throws Exception {
+        MockitoAnnotations.initMocks(this);
+
         workspaceName = "workspace1";
         final String repositorySourceName = "repository";
 
@@ -97,7 +99,7 @@ public class JcrPropertyDefinitionTest {
 
         // Set up the initial content ...
         graph = Graph.create(source, context);
-        
+
         // Make sure the path to the namespaces exists ...
         graph.create("/jcr:system").and().create("/jcr:system/dna:namespaces");
         graph.create("/a").and().create("/a/b").and().create("/a/b/c");
@@ -118,7 +120,12 @@ public class JcrPropertyDefinitionTest {
         };
 
         // Stub out the repository, since we only need a few methods ...
-        MockitoAnnotations.initMocks(this);
+        JcrNodeTypeSource source = null;
+        source = new JcrBuiltinNodeTypeSource(this.context, source);
+        source = new DnaBuiltinNodeTypeSource(this.context, source);
+        source = new TestNodeTypeSource(this.context, source);
+        repoTypeManager = new RepositoryNodeTypeManager(context, source);
+        stub(repository.getRepositoryTypeManager()).toReturn(repoTypeManager);
         stub(repository.getRepositorySourceName()).toReturn(repositorySourceName);
         stub(repository.getConnectionFactory()).toReturn(connectionFactory);
 
@@ -132,39 +139,37 @@ public class JcrPropertyDefinitionTest {
         // Create the session and log in ...
         session = (JcrSession)workspace.getSession();
 
-        nodeTypeManager = new JcrNodeTypeManager(this.session,
-                               new TestNodeTypeSource(this.session,
-                               new DnaBuiltinNodeTypeSource(this.session,
-                                                            new JcrBuiltinNodeTypeSource(this.session))));
-        stub(workspace.getNodeTypeManager()).toReturn(nodeTypeManager);
-        
+        nodeTypeManager = workspace.getNodeTypeManager();
     }
 
     @After
     public void after() throws Exception {
-        if (session.isLive()) {
+        if (session != null && session.isLive()) {
             session.logout();
         }
     }
 
-    private JcrPropertyDefinition propertyDefinitionFor(NodeType nodeType, Name propertyName) {
+    private JcrPropertyDefinition propertyDefinitionFor( NodeType nodeType,
+                                                         Name propertyName ) {
         PropertyDefinition propertyDefs[] = nodeType.getPropertyDefinitions();
         String property = propertyName.getString(context.getNamespaceRegistry());
-        
+
         for (int i = 0; i < propertyDefs.length; i++) {
             if (propertyDefs[i].getName().equals(property)) {
-                return (JcrPropertyDefinition) propertyDefs[i];
+                return (JcrPropertyDefinition)propertyDefs[i];
             }
         }
-        throw new IllegalStateException("Could not find property definition name " + property + " for type " 
-                                        + nodeType.getName() + ".  Test setup is invalid.");
+        throw new IllegalStateException("Could not find property definition name " + property + " for type " + nodeType.getName()
+                                        + ".  Test setup is invalid.");
     }
 
-    private void checkConstraints(NodeType nodeType, Name propertyName, String[] expectedConstraints) {
+    private void checkConstraints( NodeType nodeType,
+                                   Name propertyName,
+                                   String[] expectedConstraints ) {
         PropertyDefinition propertyDefs[] = nodeType.getPropertyDefinitions();
         String property = propertyName.getString(context.getNamespaceRegistry());
         String[] constraints = null;
-        
+
         for (int i = 0; i < propertyDefs.length; i++) {
             if (propertyDefs[i].getName().equals(property)) {
                 constraints = propertyDefs[i].getValueConstraints();
@@ -176,10 +181,10 @@ public class JcrPropertyDefinitionTest {
             throw new IllegalStateException("Unexpected constraints for property: " + property);
         }
     }
-    
+
     private NodeType validateTypeDefinition() throws Exception {
         NamespaceRegistry nsr = context.getNamespaceRegistry();
-        
+
         NodeType constrainedType = nodeTypeManager.getNodeType(TestLexicon.CONSTRAINED_TYPE.getString(nsr));
         assertThat(constrainedType, notNullValue());
         assertThat(propertyDefinitionFor(constrainedType, TestLexicon.CONSTRAINED_BINARY), notNullValue());
@@ -190,7 +195,7 @@ public class JcrPropertyDefinitionTest {
         assertThat(propertyDefinitionFor(constrainedType, TestLexicon.CONSTRAINED_PATH), notNullValue());
         assertThat(propertyDefinitionFor(constrainedType, TestLexicon.CONSTRAINED_REFERENCE), notNullValue());
         assertThat(propertyDefinitionFor(constrainedType, TestLexicon.CONSTRAINED_STRING), notNullValue());
-        
+
         checkConstraints(constrainedType, TestLexicon.CONSTRAINED_BINARY, EXPECTED_BINARY_CONSTRAINTS);
         checkConstraints(constrainedType, TestLexicon.CONSTRAINED_DATE, EXPECTED_DATE_CONSTRAINTS);
         checkConstraints(constrainedType, TestLexicon.CONSTRAINED_DOUBLE, EXPECTED_DOUBLE_CONSTRAINTS);
@@ -199,24 +204,26 @@ public class JcrPropertyDefinitionTest {
         checkConstraints(constrainedType, TestLexicon.CONSTRAINED_PATH, EXPECTED_PATH_CONSTRAINTS);
         checkConstraints(constrainedType, TestLexicon.CONSTRAINED_REFERENCE, EXPECTED_REFERENCE_CONSTRAINTS);
         checkConstraints(constrainedType, TestLexicon.CONSTRAINED_STRING, EXPECTED_STRING_CONSTRAINTS);
-        
+
         return constrainedType;
     }
-    
-    private Value valueFor(Object value, int jcrType) {
-        return new JcrValue(context.getValueFactories(), jcrType, value);
+
+    private Value valueFor( Object value,
+                            int jcrType ) {
+        return new JcrValue(context.getValueFactories(), session.cache(), jcrType, value);
     }
-    
-    private String stringOfLength(int length) {
+
+    private String stringOfLength( int length ) {
         StringBuffer buff = new StringBuffer(length);
         for (int i = 0; i < length; i++) {
             buff.append(i % 10);
         }
-        
+
         return buff.toString();
     }
 
-    private boolean satisfiesConstraints(JcrPropertyDefinition property, Value[] values) {
+    private boolean satisfiesConstraints( JcrPropertyDefinition property,
+                                          Value[] values ) {
         for (int i = 0; i < values.length; i++) {
             if (!property.satisfiesConstraints(values[i])) {
                 return false;
@@ -224,8 +231,8 @@ public class JcrPropertyDefinitionTest {
         }
         return true;
     }
-    
-     @Test( expected = AssertionError.class )
+
+    @Test( expected = AssertionError.class )
     public void shouldNotAllowNullValue() throws Exception {
         NodeType constrainedType = validateTypeDefinition();
         JcrPropertyDefinition prop = propertyDefinitionFor(constrainedType, TestLexicon.CONSTRAINED_BINARY);
@@ -585,45 +592,41 @@ public class JcrPropertyDefinitionTest {
     public void shouldAllowValidReferenceValue() throws Exception {
         NodeType constrainedType = validateTypeDefinition();
         JcrPropertyDefinition prop = propertyDefinitionFor(constrainedType, TestLexicon.CONSTRAINED_REFERENCE);
-        
-        UUID uuid = ((AbstractJcrNode) session.getRootNode()).nodeUuid;
 
-        assertThat(prop.satisfiesConstraints(valueFor(uuid, PropertyType.REFERENCE)), is(true));
+        Value value = session.getValueFactory().createValue(session.getRootNode());
+
+        assertThat(prop.satisfiesConstraints(value), is(true));
     }
 
     @Test
     public void shouldAllowValidReferenceValues() throws Exception {
         NodeType constrainedType = validateTypeDefinition();
         JcrPropertyDefinition prop = propertyDefinitionFor(constrainedType, TestLexicon.CONSTRAINED_REFERENCE);
-        
-        UUID uuid = ((AbstractJcrNode) session.getRootNode()).nodeUuid;
 
-        assertThat(satisfiesConstraints(prop, new Value[] { }), is(true));
-        assertThat(satisfiesConstraints(prop, new Value[] { valueFor(uuid, PropertyType.REFERENCE) }), is(true));
+        Value value = session.getValueFactory().createValue(session.getRootNode());
+
+        assertThat(satisfiesConstraints(prop, new Value[] {}), is(true));
+        assertThat(satisfiesConstraints(prop, new Value[] {value}), is(true));
     }
-    
 
     @Test
     public void shouldNotAllowInvalidReferenceValue() throws Exception {
         NodeType constrainedType = validateTypeDefinition();
         JcrPropertyDefinition prop = propertyDefinitionFor(constrainedType, TestLexicon.CONSTRAINED_REFERENCE);
 
-        Node aNode = session.getRootNode().getNode("a");
-        UUID uuid = ((JcrNode) aNode).nodeUuid;
+        Value value = session.getValueFactory().createValue(session.getRootNode().getNode("a"));
 
-        
-        assertThat(prop.satisfiesConstraints(valueFor(uuid, PropertyType.REFERENCE)), is(false));
+        assertThat(prop.satisfiesConstraints(value), is(false));
     }
 
     @Test
     public void shouldNotAllowInvalidReferenceValues() throws Exception {
         NodeType constrainedType = validateTypeDefinition();
         JcrPropertyDefinition prop = propertyDefinitionFor(constrainedType, TestLexicon.CONSTRAINED_REFERENCE);
-        
-        Node aNode = session.getRootNode().getNode("a");
-        UUID uuid = ((JcrNode) aNode).nodeUuid;
-        
-        assertThat(satisfiesConstraints(prop, new Value[] { valueFor(uuid, PropertyType.REFERENCE) }), is(false));
+
+        Value value = session.getValueFactory().createValue(session.getRootNode().getNode("a"));
+
+        assertThat(satisfiesConstraints(prop, new Value[] {value}), is(false));
     }
 
 }

@@ -26,6 +26,7 @@ package org.jboss.dna.jcr;
 import javax.jcr.nodetype.ItemDefinition;
 import javax.jcr.nodetype.NodeType;
 import net.jcip.annotations.Immutable;
+import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.property.Name;
 
 /**
@@ -35,7 +36,7 @@ import org.jboss.dna.graph.property.Name;
 @Immutable
 class JcrItemDefinition implements ItemDefinition {
 
-    protected final JcrSession session;
+    protected final ExecutionContext context;
 
     protected final JcrNodeType declaringNodeType;
     protected final Name name;
@@ -44,7 +45,7 @@ class JcrItemDefinition implements ItemDefinition {
     private final boolean mandatory;
     private final boolean protectedItem;
 
-    JcrItemDefinition( JcrSession session,
+    JcrItemDefinition( ExecutionContext context,
                        JcrNodeType declaringNodeType,
                        Name name,
                        int onParentVersion,
@@ -52,12 +53,9 @@ class JcrItemDefinition implements ItemDefinition {
                        boolean mandatory,
                        boolean protectedItem ) {
         super();
-        this.session = session;
+        this.context = context;
         this.declaringNodeType = declaringNodeType;
-        this.name = name != null ? name : session.getExecutionContext()
-                                                 .getValueFactories()
-                                                 .getNameFactory()
-                                                 .create(JcrNodeType.RESIDUAL_ITEM_NAME);
+        this.name = name != null ? name : context.getValueFactories().getNameFactory().create(JcrNodeType.RESIDUAL_ITEM_NAME) ;
         this.onParentVersion = onParentVersion;
         this.autoCreated = autoCreated;
         this.mandatory = mandatory;
@@ -87,7 +85,7 @@ class JcrItemDefinition implements ItemDefinition {
             return JcrNodeType.RESIDUAL_ITEM_NAME;
         }
 
-        return name.getString(session.getExecutionContext().getNamespaceRegistry());
+        return name.getString(context.getNamespaceRegistry());
     }
 
     /**

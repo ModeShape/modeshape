@@ -31,6 +31,7 @@ import javax.jcr.PropertyType;
 import javax.jcr.Value;
 import javax.jcr.nodetype.NodeType;
 import net.jcip.annotations.Immutable;
+import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.basic.BasicName;
 
@@ -45,27 +46,30 @@ class JcrBuiltinNodeTypeSource extends AbstractJcrNodeTypeSource {
     /** The list of mixin node types. */
     private final List<JcrNodeType> mixinNodeTypes;
 
-    JcrBuiltinNodeTypeSource( JcrSession session ) {
-        this(session, null);
+    JcrBuiltinNodeTypeSource( ExecutionContext context ) {
+        this(context, null);
     }
 
-    JcrBuiltinNodeTypeSource( JcrSession session,
+    JcrBuiltinNodeTypeSource( ExecutionContext context,
                               JcrNodeTypeSource predecessor ) {
         super(predecessor);
 
         primaryNodeTypes = new ArrayList<JcrNodeType>();
 
-        Value trueValue = new JcrValue(session.getExecutionContext().getValueFactories(), PropertyType.BOOLEAN, Boolean.TRUE);
-        Value ntBaseValue = new JcrValue(session.getExecutionContext().getValueFactories(), PropertyType.NAME, JcrNtLexicon.BASE);
+        /*
+         * These values get created without a session cache, as they aren't tied to any particular session.
+         */
+        Value trueValue = new JcrValue(context.getValueFactories(), null, PropertyType.BOOLEAN, Boolean.TRUE);
+        Value ntBaseValue = new JcrValue(context.getValueFactories(), null, PropertyType.NAME, JcrNtLexicon.BASE);
 
         // Stubbing in child node and property definitions for now
-        JcrNodeType base = new JcrNodeType(session, JcrNtLexicon.BASE, NO_SUPERTYPES, NO_PRIMARY_ITEM_NAME, NO_CHILD_NODES,
-                                           Arrays.asList(new JcrPropertyDefinition[] {
-                                               new JcrPropertyDefinition(session, null, JcrLexicon.PRIMARY_TYPE,
+        JcrNodeType base = new JcrNodeType(context, NO_NODE_TYPE_MANAGER, JcrNtLexicon.BASE, NO_SUPERTYPES, NO_PRIMARY_ITEM_NAME,
+                                           NO_CHILD_NODES, Arrays.asList(new JcrPropertyDefinition[] {
+                                               new JcrPropertyDefinition(context, null, JcrLexicon.PRIMARY_TYPE,
                                                                          OnParentVersionBehavior.COMPUTE.getJcrValue(), true,
                                                                          true, true, NO_DEFAULT_VALUES, PropertyType.NAME,
                                                                          NO_CONSTRAINTS, false),
-                                               new JcrPropertyDefinition(session, null, JcrLexicon.MIXIN_TYPES,
+                                               new JcrPropertyDefinition(context, null, JcrLexicon.MIXIN_TYPES,
                                                                          OnParentVersionBehavior.COMPUTE.getJcrValue(), false,
                                                                          false, true, NO_DEFAULT_VALUES, PropertyType.NAME,
                                                                          NO_CONSTRAINTS, true)}), NOT_MIXIN,
@@ -73,13 +77,14 @@ class JcrBuiltinNodeTypeSource extends AbstractJcrNodeTypeSource {
 
         // This needs to be declared early, as some of the primary types reference it
         JcrNodeType referenceable = new JcrNodeType(
-                                                    session,
+                                                    context,
+                                                    NO_NODE_TYPE_MANAGER,
                                                     JcrMixLexicon.REFERENCEABLE,
                                                     NO_SUPERTYPES,
                                                     NO_PRIMARY_ITEM_NAME,
                                                     NO_CHILD_NODES,
                                                     Arrays.asList(new JcrPropertyDefinition[] {new JcrPropertyDefinition(
-                                                                                                                         session,
+                                                                                                                         context,
                                                                                                                          null,
                                                                                                                          JcrLexicon.UUID,
                                                                                                                          OnParentVersionBehavior.INITIALIZE.getJcrValue(),
@@ -93,14 +98,15 @@ class JcrBuiltinNodeTypeSource extends AbstractJcrNodeTypeSource {
                                                     IS_A_MIXIN, UNORDERABLE_CHILD_NODES);
 
         JcrNodeType childNodeDefinition = new JcrNodeType(
-                                                          session,
+                                                          context,
+                                                          NO_NODE_TYPE_MANAGER,
                                                           JcrNtLexicon.CHILD_NODE_DEFINITION,
                                                           Arrays.asList(new NodeType[] {base}),
                                                           NO_PRIMARY_ITEM_NAME,
                                                           NO_CHILD_NODES,
                                                           Arrays.asList(new JcrPropertyDefinition[] {
                                                               new JcrPropertyDefinition(
-                                                                                        session,
+                                                                                        context,
                                                                                         null,
                                                                                         JcrLexicon.AUTO_CREATED,
                                                                                         OnParentVersionBehavior.COPY.getJcrValue(),
@@ -108,14 +114,14 @@ class JcrBuiltinNodeTypeSource extends AbstractJcrNodeTypeSource {
                                                                                         PropertyType.BOOLEAN, NO_CONSTRAINTS,
                                                                                         false),
                                                               new JcrPropertyDefinition(
-                                                                                        session,
+                                                                                        context,
                                                                                         null,
                                                                                         JcrLexicon.DEFAULT_PRIMARY_TYPE,
                                                                                         OnParentVersionBehavior.COPY.getJcrValue(),
                                                                                         false, false, false, NO_DEFAULT_VALUES,
                                                                                         PropertyType.NAME, NO_CONSTRAINTS, false),
                                                               new JcrPropertyDefinition(
-                                                                                        session,
+                                                                                        context,
                                                                                         null,
                                                                                         JcrLexicon.MANDATORY,
                                                                                         OnParentVersionBehavior.COPY.getJcrValue(),
@@ -123,14 +129,14 @@ class JcrBuiltinNodeTypeSource extends AbstractJcrNodeTypeSource {
                                                                                         PropertyType.BOOLEAN, NO_CONSTRAINTS,
                                                                                         false),
                                                               new JcrPropertyDefinition(
-                                                                                        session,
+                                                                                        context,
                                                                                         null,
                                                                                         JcrLexicon.NAME,
                                                                                         OnParentVersionBehavior.COPY.getJcrValue(),
                                                                                         false, false, false, NO_DEFAULT_VALUES,
                                                                                         PropertyType.NAME, NO_CONSTRAINTS, false),
                                                               new JcrPropertyDefinition(
-                                                                                        session,
+                                                                                        context,
                                                                                         null,
                                                                                         JcrLexicon.ON_PARENT_VERSION,
                                                                                         OnParentVersionBehavior.COPY.getJcrValue(),
@@ -138,7 +144,7 @@ class JcrBuiltinNodeTypeSource extends AbstractJcrNodeTypeSource {
                                                                                         PropertyType.STRING, NO_CONSTRAINTS,
                                                                                         false),
                                                               new JcrPropertyDefinition(
-                                                                                        session,
+                                                                                        context,
                                                                                         null,
                                                                                         JcrLexicon.PROTECTED,
                                                                                         OnParentVersionBehavior.COPY.getJcrValue(),
@@ -146,7 +152,7 @@ class JcrBuiltinNodeTypeSource extends AbstractJcrNodeTypeSource {
                                                                                         PropertyType.BOOLEAN, NO_CONSTRAINTS,
                                                                                         false),
                                                               new JcrPropertyDefinition(
-                                                                                        session,
+                                                                                        context,
                                                                                         null,
                                                                                         JcrLexicon.REQUIRED_PRIMARY_TYPES,
                                                                                         OnParentVersionBehavior.COPY.getJcrValue(),
@@ -154,7 +160,7 @@ class JcrBuiltinNodeTypeSource extends AbstractJcrNodeTypeSource {
                                                                                         new Value[] {ntBaseValue},
                                                                                         PropertyType.NAME, NO_CONSTRAINTS, true),
                                                               new JcrPropertyDefinition(
-                                                                                        session,
+                                                                                        context,
                                                                                         null,
                                                                                         JcrLexicon.SAME_NAME_SIBLINGS,
                                                                                         OnParentVersionBehavior.COPY.getJcrValue(),
@@ -164,13 +170,14 @@ class JcrBuiltinNodeTypeSource extends AbstractJcrNodeTypeSource {
                                                           UNORDERABLE_CHILD_NODES);
 
         JcrNodeType hierarchyNode = new JcrNodeType(
-                                                    session,
+                                                    context,
+                                                    NO_NODE_TYPE_MANAGER,
                                                     JcrNtLexicon.HIERARCHY_NODE,
                                                     Arrays.asList(new NodeType[] {base}),
                                                     NO_PRIMARY_ITEM_NAME,
                                                     NO_CHILD_NODES,
                                                     Arrays.asList(new JcrPropertyDefinition[] {new JcrPropertyDefinition(
-                                                                                                                         session,
+                                                                                                                         context,
                                                                                                                          null,
                                                                                                                          JcrLexicon.CREATED,
                                                                                                                          OnParentVersionBehavior.INITIALIZE.getJcrValue(),
@@ -184,12 +191,13 @@ class JcrBuiltinNodeTypeSource extends AbstractJcrNodeTypeSource {
                                                     NOT_MIXIN, UNORDERABLE_CHILD_NODES);
 
         JcrNodeType file = new JcrNodeType(
-                                           session,
+                                           context,
+                                           NO_NODE_TYPE_MANAGER,
                                            JcrNtLexicon.FILE,
                                            Arrays.asList(new NodeType[] {hierarchyNode}),
                                            JcrLexicon.CONTENT,
                                            Arrays.asList(new JcrNodeDefinition[] {new JcrNodeDefinition(
-                                                                                                        session,
+                                                                                                        context,
                                                                                                         null,
                                                                                                         JcrLexicon.CONTENT,
                                                                                                         OnParentVersionBehavior.COPY.getJcrValue(),
@@ -199,12 +207,13 @@ class JcrBuiltinNodeTypeSource extends AbstractJcrNodeTypeSource {
                                            NO_PROPERTIES, NOT_MIXIN, UNORDERABLE_CHILD_NODES);
 
         JcrNodeType folder = new JcrNodeType(
-                                             session,
+                                             context,
+                                             NO_NODE_TYPE_MANAGER,
                                              JcrNtLexicon.FOLDER,
                                              Arrays.asList(new NodeType[] {hierarchyNode}),
                                              NO_PRIMARY_ITEM_NAME,
                                              Arrays.asList(new JcrNodeDefinition[] {new JcrNodeDefinition(
-                                                                                                          session,
+                                                                                                          context,
                                                                                                           null,
                                                                                                           null,
                                                                                                           OnParentVersionBehavior.VERSION.getJcrValue(),
@@ -217,12 +226,13 @@ class JcrBuiltinNodeTypeSource extends AbstractJcrNodeTypeSource {
                                              NO_PROPERTIES, NOT_MIXIN, UNORDERABLE_CHILD_NODES);
 
         JcrNodeType frozenNode = new JcrNodeType(
-                                                 session,
+                                                 context,
+                                                 NO_NODE_TYPE_MANAGER,
                                                  JcrNtLexicon.FROZEN_NODE,
                                                  Arrays.asList(new NodeType[] {base, referenceable}),
                                                  NO_PRIMARY_ITEM_NAME,
                                                  Arrays.asList(new JcrNodeDefinition[] {new JcrNodeDefinition(
-                                                                                                              session,
+                                                                                                              context,
                                                                                                               null,
                                                                                                               ALL_NODES,
                                                                                                               OnParentVersionBehavior.ABORT.getJcrValue(),
@@ -233,36 +243,37 @@ class JcrBuiltinNodeTypeSource extends AbstractJcrNodeTypeSource {
                                                                                                               null,
                                                                                                               new NodeType[] {base})}),
                                                  Arrays.asList(new JcrPropertyDefinition[] {
-                                                     new JcrPropertyDefinition(session, null, JcrLexicon.FROZEN_MIXIN_TYPES,
+                                                     new JcrPropertyDefinition(context, null, JcrLexicon.FROZEN_MIXIN_TYPES,
                                                                                OnParentVersionBehavior.ABORT.getJcrValue(),
                                                                                false, false, true, NO_DEFAULT_VALUES,
                                                                                PropertyType.NAME, NO_CONSTRAINTS, true),
-                                                     new JcrPropertyDefinition(session, null, JcrLexicon.FROZEN_PRIMARY_TYPE,
+                                                     new JcrPropertyDefinition(context, null, JcrLexicon.FROZEN_PRIMARY_TYPE,
                                                                                OnParentVersionBehavior.ABORT.getJcrValue(), true,
                                                                                true, true, NO_DEFAULT_VALUES, PropertyType.NAME,
                                                                                NO_CONSTRAINTS, false),
-                                                     new JcrPropertyDefinition(session, null, JcrLexicon.FROZEN_UUID,
+                                                     new JcrPropertyDefinition(context, null, JcrLexicon.FROZEN_UUID,
                                                                                OnParentVersionBehavior.ABORT.getJcrValue(), true,
                                                                                true, true, NO_DEFAULT_VALUES,
                                                                                PropertyType.STRING, NO_CONSTRAINTS, false),
-                                                     new JcrPropertyDefinition(session, null, ALL_NODES,
+                                                     new JcrPropertyDefinition(context, null, ALL_NODES,
                                                                                OnParentVersionBehavior.ABORT.getJcrValue(),
                                                                                false, false, true, NO_DEFAULT_VALUES,
                                                                                PropertyType.UNDEFINED, NO_CONSTRAINTS, false),
-                                                     new JcrPropertyDefinition(session, null, ALL_NODES,
+                                                     new JcrPropertyDefinition(context, null, ALL_NODES,
                                                                                OnParentVersionBehavior.ABORT.getJcrValue(),
                                                                                false, false, true, NO_DEFAULT_VALUES,
                                                                                PropertyType.UNDEFINED, NO_CONSTRAINTS, true),}),
                                                  NOT_MIXIN, ORDERABLE_CHILD_NODES);
 
         JcrNodeType linkedFile = new JcrNodeType(
-                                                 session,
+                                                 context,
+                                                 NO_NODE_TYPE_MANAGER,
                                                  JcrNtLexicon.LINKED_FILE,
                                                  Arrays.asList(new NodeType[] {hierarchyNode}),
                                                  JcrLexicon.CONTENT,
                                                  NO_CHILD_NODES,
                                                  Arrays.asList(new JcrPropertyDefinition[] {new JcrPropertyDefinition(
-                                                                                                                      session,
+                                                                                                                      context,
                                                                                                                       null,
                                                                                                                       JcrLexicon.CONTENT,
                                                                                                                       OnParentVersionBehavior.COPY.getJcrValue(),
@@ -277,14 +288,15 @@ class JcrBuiltinNodeTypeSource extends AbstractJcrNodeTypeSource {
 
         // Had to be moved above nodeType due to dependency
         JcrNodeType propertyDefinition = new JcrNodeType(
-                                                         session,
+                                                         context,
+                                                         NO_NODE_TYPE_MANAGER,
                                                          JcrNtLexicon.PROPERTY_DEFINITION,
                                                          Arrays.asList(new NodeType[] {base}),
                                                          NO_PRIMARY_ITEM_NAME,
                                                          NO_CHILD_NODES,
                                                          Arrays.asList(new JcrPropertyDefinition[] {
                                                              new JcrPropertyDefinition(
-                                                                                       session,
+                                                                                       context,
                                                                                        null,
                                                                                        JcrLexicon.AUTO_CREATED,
                                                                                        OnParentVersionBehavior.COPY.getJcrValue(),
@@ -292,7 +304,7 @@ class JcrBuiltinNodeTypeSource extends AbstractJcrNodeTypeSource {
                                                                                        PropertyType.BOOLEAN, NO_CONSTRAINTS,
                                                                                        false),
                                                              new JcrPropertyDefinition(
-                                                                                       session,
+                                                                                       context,
                                                                                        null,
                                                                                        JcrLexicon.DEFAULT_VALUES,
                                                                                        OnParentVersionBehavior.COPY.getJcrValue(),
@@ -300,7 +312,7 @@ class JcrBuiltinNodeTypeSource extends AbstractJcrNodeTypeSource {
                                                                                        PropertyType.UNDEFINED, NO_CONSTRAINTS,
                                                                                        true),
                                                              new JcrPropertyDefinition(
-                                                                                       session,
+                                                                                       context,
                                                                                        null,
                                                                                        JcrLexicon.MANDATORY,
                                                                                        OnParentVersionBehavior.COPY.getJcrValue(),
@@ -308,7 +320,7 @@ class JcrBuiltinNodeTypeSource extends AbstractJcrNodeTypeSource {
                                                                                        PropertyType.BOOLEAN, NO_CONSTRAINTS,
                                                                                        false),
                                                              new JcrPropertyDefinition(
-                                                                                       session,
+                                                                                       context,
                                                                                        null,
                                                                                        JcrLexicon.MULTIPLE,
                                                                                        OnParentVersionBehavior.COPY.getJcrValue(),
@@ -316,21 +328,21 @@ class JcrBuiltinNodeTypeSource extends AbstractJcrNodeTypeSource {
                                                                                        PropertyType.BOOLEAN, NO_CONSTRAINTS,
                                                                                        false),
                                                              new JcrPropertyDefinition(
-                                                                                       session,
+                                                                                       context,
                                                                                        null,
                                                                                        JcrLexicon.NAME,
                                                                                        OnParentVersionBehavior.COPY.getJcrValue(),
                                                                                        false, false, false, NO_DEFAULT_VALUES,
                                                                                        PropertyType.NAME, NO_CONSTRAINTS, false),
                                                              new JcrPropertyDefinition(
-                                                                                       session,
+                                                                                       context,
                                                                                        null,
                                                                                        JcrLexicon.ON_PARENT_VERSION,
                                                                                        OnParentVersionBehavior.COPY.getJcrValue(),
                                                                                        false, true, false, NO_DEFAULT_VALUES,
                                                                                        PropertyType.STRING, NO_CONSTRAINTS, false),
                                                              new JcrPropertyDefinition(
-                                                                                       session,
+                                                                                       context,
                                                                                        null,
                                                                                        JcrLexicon.PROTECTED,
                                                                                        OnParentVersionBehavior.COPY.getJcrValue(),
@@ -338,14 +350,14 @@ class JcrBuiltinNodeTypeSource extends AbstractJcrNodeTypeSource {
                                                                                        PropertyType.BOOLEAN, NO_CONSTRAINTS,
                                                                                        false),
                                                              new JcrPropertyDefinition(
-                                                                                       session,
+                                                                                       context,
                                                                                        null,
                                                                                        JcrLexicon.REQUIRED_TYPE,
                                                                                        OnParentVersionBehavior.COPY.getJcrValue(),
                                                                                        false, true, false, NO_DEFAULT_VALUES,
                                                                                        PropertyType.STRING, NO_CONSTRAINTS, false),
                                                              new JcrPropertyDefinition(
-                                                                                       session,
+                                                                                       context,
                                                                                        null,
                                                                                        JcrLexicon.VALUE_CONSTRAINTS,
                                                                                        OnParentVersionBehavior.COPY.getJcrValue(),
@@ -353,79 +365,82 @@ class JcrBuiltinNodeTypeSource extends AbstractJcrNodeTypeSource {
                                                                                        PropertyType.STRING, NO_CONSTRAINTS, true)}),
                                                          NOT_MIXIN, UNORDERABLE_CHILD_NODES);
 
-        JcrNodeType nodeType = new JcrNodeType(session, JcrNtLexicon.NODE_TYPE, Arrays.asList(new NodeType[] {base}),
-                                               NO_PRIMARY_ITEM_NAME, Arrays.asList(new JcrNodeDefinition[] {
-                                                   new JcrNodeDefinition(session, null, JcrLexicon.CHILD_NODE_DEFINITION,
+        JcrNodeType nodeType = new JcrNodeType(context, NO_NODE_TYPE_MANAGER, JcrNtLexicon.NODE_TYPE,
+                                               Arrays.asList(new NodeType[] {base}), NO_PRIMARY_ITEM_NAME,
+                                               Arrays.asList(new JcrNodeDefinition[] {
+                                                   new JcrNodeDefinition(context, null, JcrLexicon.CHILD_NODE_DEFINITION,
                                                                          OnParentVersionBehavior.VERSION.getJcrValue(), false,
                                                                          false, false, true, JcrNtLexicon.CHILD_NODE_DEFINITION,
                                                                          new NodeType[] {childNodeDefinition}),
-                                                   new JcrNodeDefinition(session, null, JcrLexicon.PROPERTY_DEFINITION,
+                                                   new JcrNodeDefinition(context, null, JcrLexicon.PROPERTY_DEFINITION,
                                                                          OnParentVersionBehavior.VERSION.getJcrValue(), false,
                                                                          false, false, true, JcrNtLexicon.PROPERTY_DEFINITION,
                                                                          new NodeType[] {propertyDefinition})}),
                                                Arrays.asList(new JcrPropertyDefinition[] {
-                                                   new JcrPropertyDefinition(session, null, JcrLexicon.HAS_ORDERABLE_CHILD_NODES,
+                                                   new JcrPropertyDefinition(context, null, JcrLexicon.HAS_ORDERABLE_CHILD_NODES,
                                                                              OnParentVersionBehavior.COPY.getJcrValue(), false,
                                                                              true, false, NO_DEFAULT_VALUES,
                                                                              PropertyType.BOOLEAN, NO_CONSTRAINTS, false),
-                                                   new JcrPropertyDefinition(session, null, JcrLexicon.IS_MIXIN,
+                                                   new JcrPropertyDefinition(context, null, JcrLexicon.IS_MIXIN,
                                                                              OnParentVersionBehavior.COPY.getJcrValue(), false,
                                                                              true, false, NO_DEFAULT_VALUES,
                                                                              PropertyType.BOOLEAN, NO_CONSTRAINTS, false),
-                                                   new JcrPropertyDefinition(session, null, JcrLexicon.NODE_TYPE_NAME,
+                                                   new JcrPropertyDefinition(context, null, JcrLexicon.NODE_TYPE_NAME,
                                                                              OnParentVersionBehavior.COPY.getJcrValue(), false,
                                                                              true, false, NO_DEFAULT_VALUES, PropertyType.NAME,
                                                                              NO_CONSTRAINTS, false),
-                                                   new JcrPropertyDefinition(session, null, JcrLexicon.PRIMARY_ITEM_NAME,
+                                                   new JcrPropertyDefinition(context, null, JcrLexicon.PRIMARY_ITEM_NAME,
                                                                              OnParentVersionBehavior.COPY.getJcrValue(), false,
                                                                              false, false, NO_DEFAULT_VALUES, PropertyType.NAME,
                                                                              NO_CONSTRAINTS, false),
-                                                   new JcrPropertyDefinition(session, null, JcrLexicon.SUPERTYPES,
+                                                   new JcrPropertyDefinition(context, null, JcrLexicon.SUPERTYPES,
                                                                              OnParentVersionBehavior.COPY.getJcrValue(), false,
                                                                              false, false, NO_DEFAULT_VALUES, PropertyType.NAME,
                                                                              NO_CONSTRAINTS, true),}), NOT_MIXIN,
                                                UNORDERABLE_CHILD_NODES);
 
-        JcrNodeType query = new JcrNodeType(session, JcrNtLexicon.QUERY, Arrays.asList(new NodeType[] {base}),
-                                            NO_PRIMARY_ITEM_NAME, NO_CHILD_NODES, Arrays.asList(new JcrPropertyDefinition[] {
-                                                new JcrPropertyDefinition(session, null, JcrLexicon.LANGUAGE,
+        JcrNodeType query = new JcrNodeType(context, NO_NODE_TYPE_MANAGER, JcrNtLexicon.QUERY,
+                                            Arrays.asList(new NodeType[] {base}), NO_PRIMARY_ITEM_NAME, NO_CHILD_NODES,
+                                            Arrays.asList(new JcrPropertyDefinition[] {
+                                                new JcrPropertyDefinition(context, null, JcrLexicon.LANGUAGE,
                                                                           OnParentVersionBehavior.COPY.getJcrValue(), false,
                                                                           false, false, NO_DEFAULT_VALUES, PropertyType.STRING,
                                                                           NO_CONSTRAINTS, false),
-                                                new JcrPropertyDefinition(session, null, JcrLexicon.STATEMENT,
+                                                new JcrPropertyDefinition(context, null, JcrLexicon.STATEMENT,
                                                                           OnParentVersionBehavior.COPY.getJcrValue(), false,
                                                                           false, false, NO_DEFAULT_VALUES, PropertyType.STRING,
                                                                           NO_CONSTRAINTS, false),}), NOT_MIXIN,
                                             UNORDERABLE_CHILD_NODES);
 
-        JcrNodeType resource = new JcrNodeType(session, JcrNtLexicon.RESOURCE,
+        JcrNodeType resource = new JcrNodeType(context, NO_NODE_TYPE_MANAGER, JcrNtLexicon.RESOURCE,
                                                Arrays.asList(new NodeType[] {base, referenceable}), JcrLexicon.DATA,
                                                NO_CHILD_NODES, Arrays.asList(new JcrPropertyDefinition[] {
-                                                   new JcrPropertyDefinition(session, null, JcrLexicon.DATA,
+                                                   new JcrPropertyDefinition(context, null, JcrLexicon.DATA,
                                                                              OnParentVersionBehavior.COPY.getJcrValue(), false,
                                                                              true, false, NO_DEFAULT_VALUES, PropertyType.BINARY,
                                                                              NO_CONSTRAINTS, false),
-                                                   new JcrPropertyDefinition(session, null, JcrLexicon.ENCODING,
+                                                   new JcrPropertyDefinition(context, null, JcrLexicon.ENCODING,
                                                                              OnParentVersionBehavior.COPY.getJcrValue(), false,
                                                                              false, false, NO_DEFAULT_VALUES,
                                                                              PropertyType.STRING, NO_CONSTRAINTS, false),
-                                                   new JcrPropertyDefinition(session, null, JcrLexicon.LAST_MODIFIED,
+                                                   new JcrPropertyDefinition(context, null, JcrLexicon.LAST_MODIFIED,
                                                                              OnParentVersionBehavior.IGNORE.getJcrValue(), false,
                                                                              true, false, NO_DEFAULT_VALUES, PropertyType.DATE,
                                                                              NO_CONSTRAINTS, false),
-                                                   new JcrPropertyDefinition(session, null, JcrLexicon.MIMETYPE,
+                                                   new JcrPropertyDefinition(context, null, JcrLexicon.MIMETYPE,
                                                                              OnParentVersionBehavior.COPY.getJcrValue(), false,
                                                                              true, false, NO_DEFAULT_VALUES, PropertyType.STRING,
                                                                              NO_CONSTRAINTS, false),}), NOT_MIXIN,
                                                UNORDERABLE_CHILD_NODES);
 
         JcrNodeType unstructured = new JcrNodeType(
-                                                   session,
+                                                   context,
+                                                   NO_NODE_TYPE_MANAGER,
                                                    JcrNtLexicon.UNSTRUCTURED,
                                                    Arrays.asList(new NodeType[] {base}),
                                                    NO_PRIMARY_ITEM_NAME,
                                                    Arrays.asList(new JcrNodeDefinition[] {new JcrNodeDefinition(
-                                                                                                                session,
+                                                                                                                context,
                                                                                                                 null,
                                                                                                                 ALL_NODES,
                                                                                                                 OnParentVersionBehavior.VERSION.getJcrValue(),
@@ -436,23 +451,24 @@ class JcrBuiltinNodeTypeSource extends AbstractJcrNodeTypeSource {
                                                                                                                 JcrNtLexicon.UNSTRUCTURED,
                                                                                                                 new NodeType[] {base}),}),
                                                    Arrays.asList(new JcrPropertyDefinition[] {
-                                                       new JcrPropertyDefinition(session, null, ALL_NODES,
+                                                       new JcrPropertyDefinition(context, null, ALL_NODES,
                                                                                  OnParentVersionBehavior.COPY.getJcrValue(),
                                                                                  false, false, false, NO_DEFAULT_VALUES,
                                                                                  PropertyType.UNDEFINED, NO_CONSTRAINTS, false),
-                                                       new JcrPropertyDefinition(session, null, ALL_NODES,
+                                                       new JcrPropertyDefinition(context, null, ALL_NODES,
                                                                                  OnParentVersionBehavior.COPY.getJcrValue(),
                                                                                  false, false, false, NO_DEFAULT_VALUES,
                                                                                  PropertyType.UNDEFINED, NO_CONSTRAINTS, true),}),
                                                    NOT_MIXIN, ORDERABLE_CHILD_NODES);
 
         JcrNodeType version = new JcrNodeType(
-                                              session,
+                                              context,
+                                              NO_NODE_TYPE_MANAGER,
                                               JcrNtLexicon.VERSION,
                                               Arrays.asList(new NodeType[] {base, referenceable}),
                                               NO_PRIMARY_ITEM_NAME,
                                               Arrays.asList(new JcrNodeDefinition[] {new JcrNodeDefinition(
-                                                                                                           session,
+                                                                                                           context,
                                                                                                            null,
                                                                                                            JcrLexicon.FROZEN_NODE,
                                                                                                            OnParentVersionBehavior.ABORT.getJcrValue(),
@@ -463,28 +479,29 @@ class JcrBuiltinNodeTypeSource extends AbstractJcrNodeTypeSource {
                                                                                                            null,
                                                                                                            new NodeType[] {frozenNode}),}),
                                               Arrays.asList(new JcrPropertyDefinition[] {
-                                                  new JcrPropertyDefinition(session, null, JcrLexicon.CREATED,
+                                                  new JcrPropertyDefinition(context, null, JcrLexicon.CREATED,
                                                                             OnParentVersionBehavior.ABORT.getJcrValue(), true,
                                                                             true, true, NO_DEFAULT_VALUES, PropertyType.DATE,
                                                                             NO_CONSTRAINTS, false),
-                                                  new JcrPropertyDefinition(session, null, JcrLexicon.PREDECESSORS,
+                                                  new JcrPropertyDefinition(context, null, JcrLexicon.PREDECESSORS,
                                                                             OnParentVersionBehavior.ABORT.getJcrValue(), false,
                                                                             false, true, NO_DEFAULT_VALUES,
                                                                             PropertyType.REFERENCE, NO_CONSTRAINTS, true),
-                                                  new JcrPropertyDefinition(session, null, JcrLexicon.SUCCESSORS,
+                                                  new JcrPropertyDefinition(context, null, JcrLexicon.SUCCESSORS,
                                                                             OnParentVersionBehavior.ABORT.getJcrValue(), false,
                                                                             false, true, NO_DEFAULT_VALUES,
                                                                             PropertyType.REFERENCE, NO_CONSTRAINTS, true),}),
                                               NOT_MIXIN, UNORDERABLE_CHILD_NODES);
 
         JcrNodeType versionLabels = new JcrNodeType(
-                                                    session,
+                                                    context,
+                                                    NO_NODE_TYPE_MANAGER,
                                                     JcrNtLexicon.VERSION_LABELS,
                                                     Arrays.asList(new NodeType[] {base}),
                                                     NO_PRIMARY_ITEM_NAME,
                                                     NO_CHILD_NODES,
                                                     Arrays.asList(new JcrPropertyDefinition[] {new JcrPropertyDefinition(
-                                                                                                                         session,
+                                                                                                                         context,
                                                                                                                          null,
                                                                                                                          ALL_NODES,
                                                                                                                          OnParentVersionBehavior.ABORT.getJcrValue(),
@@ -498,25 +515,26 @@ class JcrBuiltinNodeTypeSource extends AbstractJcrNodeTypeSource {
                                                     NOT_MIXIN, UNORDERABLE_CHILD_NODES);
 
         JcrNodeType versionHistory = new JcrNodeType(
-                                                     session,
+                                                     context,
+                                                     NO_NODE_TYPE_MANAGER,
                                                      JcrNtLexicon.VERSION_HISTORY,
                                                      Arrays.asList(new NodeType[] {base, referenceable}),
                                                      NO_PRIMARY_ITEM_NAME,
                                                      Arrays.asList(new JcrNodeDefinition[] {
-                                                         new JcrNodeDefinition(session, null, JcrLexicon.ROOT_VERSION,
+                                                         new JcrNodeDefinition(context, null, JcrLexicon.ROOT_VERSION,
                                                                                OnParentVersionBehavior.ABORT.getJcrValue(), true,
                                                                                true, true, false, JcrNtLexicon.VERSION,
                                                                                new NodeType[] {version}),
-                                                         new JcrNodeDefinition(session, null, JcrLexicon.VERSION_LABELS,
+                                                         new JcrNodeDefinition(context, null, JcrLexicon.VERSION_LABELS,
                                                                                OnParentVersionBehavior.ABORT.getJcrValue(), true,
                                                                                true, true, false, JcrNtLexicon.VERSION_LABELS,
                                                                                new NodeType[] {versionLabels}),
-                                                         new JcrNodeDefinition(session, null, ALL_NODES,
+                                                         new JcrNodeDefinition(context, null, ALL_NODES,
                                                                                OnParentVersionBehavior.ABORT.getJcrValue(),
                                                                                false, false, true, false, JcrNtLexicon.VERSION,
                                                                                new NodeType[] {version}),}),
                                                      Arrays.asList(new JcrPropertyDefinition[] {new JcrPropertyDefinition(
-                                                                                                                          session,
+                                                                                                                          context,
                                                                                                                           null,
                                                                                                                           JcrLexicon.VERSIONABLE_UUID,
                                                                                                                           OnParentVersionBehavior.ABORT.getJcrValue(),
@@ -531,13 +549,14 @@ class JcrBuiltinNodeTypeSource extends AbstractJcrNodeTypeSource {
 
         Name CHILD_VERSION_HISTORY = new BasicName(JcrLexicon.Namespace.URI, "childVersionHistory");
         JcrNodeType versionedChild = new JcrNodeType(
-                                                     session,
+                                                     context,
+                                                     NO_NODE_TYPE_MANAGER,
                                                      JcrNtLexicon.VERSIONED_CHILD,
                                                      Arrays.asList(new NodeType[] {base}),
                                                      NO_PRIMARY_ITEM_NAME,
                                                      NO_CHILD_NODES,
                                                      Arrays.asList(new JcrPropertyDefinition[] {new JcrPropertyDefinition(
-                                                                                                                          session,
+                                                                                                                          context,
                                                                                                                           null,
                                                                                                                           CHILD_VERSION_HISTORY,
                                                                                                                           OnParentVersionBehavior.ABORT.getJcrValue(),
@@ -556,42 +575,43 @@ class JcrBuiltinNodeTypeSource extends AbstractJcrNodeTypeSource {
 
         mixinNodeTypes = new ArrayList<JcrNodeType>();
 
-        JcrNodeType lockable = new JcrNodeType(session, JcrMixLexicon.LOCKABLE, NO_SUPERTYPES, NO_PRIMARY_ITEM_NAME,
-                                               NO_CHILD_NODES, Arrays.asList(new JcrPropertyDefinition[] {
-                                                   new JcrPropertyDefinition(session, null, JcrLexicon.LOCK_IS_DEEP,
+        JcrNodeType lockable = new JcrNodeType(context, NO_NODE_TYPE_MANAGER, JcrMixLexicon.LOCKABLE, NO_SUPERTYPES,
+                                               NO_PRIMARY_ITEM_NAME, NO_CHILD_NODES, Arrays.asList(new JcrPropertyDefinition[] {
+                                                   new JcrPropertyDefinition(context, null, JcrLexicon.LOCK_IS_DEEP,
                                                                              OnParentVersionBehavior.IGNORE.getJcrValue(), false,
                                                                              false, true, NO_DEFAULT_VALUES,
                                                                              PropertyType.BOOLEAN, NO_CONSTRAINTS, false),
-                                                   new JcrPropertyDefinition(session, null, JcrLexicon.LOCK_OWNER,
+                                                   new JcrPropertyDefinition(context, null, JcrLexicon.LOCK_OWNER,
                                                                              OnParentVersionBehavior.IGNORE.getJcrValue(), false,
                                                                              false, true, NO_DEFAULT_VALUES, PropertyType.STRING,
                                                                              NO_CONSTRAINTS, false)}), IS_A_MIXIN,
                                                UNORDERABLE_CHILD_NODES);
 
         JcrNodeType versionable = new JcrNodeType(
-                                                  session,
+                                                  context,
+                                                  NO_NODE_TYPE_MANAGER,
                                                   JcrMixLexicon.VERSIONABLE,
                                                   Arrays.asList(new NodeType[] {referenceable}),
                                                   NO_PRIMARY_ITEM_NAME,
                                                   NO_CHILD_NODES,
                                                   Arrays.asList(new JcrPropertyDefinition[] {
-                                                      new JcrPropertyDefinition(session, null, JcrLexicon.BASE_VERSION,
+                                                      new JcrPropertyDefinition(context, null, JcrLexicon.BASE_VERSION,
                                                                                 OnParentVersionBehavior.IGNORE.getJcrValue(),
                                                                                 false, true, true, NO_DEFAULT_VALUES,
                                                                                 PropertyType.REFERENCE, NO_CONSTRAINTS, false),
-                                                      new JcrPropertyDefinition(session, null, JcrLexicon.IS_CHECKED_OUT,
+                                                      new JcrPropertyDefinition(context, null, JcrLexicon.IS_CHECKED_OUT,
                                                                                 OnParentVersionBehavior.IGNORE.getJcrValue(),
                                                                                 true, true, true, new Value[] {trueValue},
                                                                                 PropertyType.BOOLEAN, NO_CONSTRAINTS, false),
-                                                      new JcrPropertyDefinition(session, null, JcrLexicon.MERGE_FAILED,
+                                                      new JcrPropertyDefinition(context, null, JcrLexicon.MERGE_FAILED,
                                                                                 OnParentVersionBehavior.ABORT.getJcrValue(),
                                                                                 false, false, true, NO_DEFAULT_VALUES,
                                                                                 PropertyType.REFERENCE, NO_CONSTRAINTS, true),
-                                                      new JcrPropertyDefinition(session, null, JcrLexicon.PREDECESSORS,
+                                                      new JcrPropertyDefinition(context, null, JcrLexicon.PREDECESSORS,
                                                                                 OnParentVersionBehavior.COPY.getJcrValue(),
                                                                                 false, true, true, NO_DEFAULT_VALUES,
                                                                                 PropertyType.REFERENCE, NO_CONSTRAINTS, true),
-                                                      new JcrPropertyDefinition(session, null, JcrLexicon.VERSION_HISTORY,
+                                                      new JcrPropertyDefinition(context, null, JcrLexicon.VERSION_HISTORY,
                                                                                 OnParentVersionBehavior.COPY.getJcrValue(),
                                                                                 false, true, true, NO_DEFAULT_VALUES,
                                                                                 PropertyType.REFERENCE, NO_CONSTRAINTS, false),}),

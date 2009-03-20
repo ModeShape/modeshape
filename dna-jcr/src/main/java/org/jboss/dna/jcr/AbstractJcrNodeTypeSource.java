@@ -57,6 +57,9 @@ abstract class AbstractJcrNodeTypeSource implements JcrNodeTypeSource {
     protected static final boolean ORDERABLE_CHILD_NODES = true;
     protected static final boolean UNORDERABLE_CHILD_NODES = false;
 
+    /** Link to the repository node type manager to which the nodes defined in this source belong. */
+    protected static final RepositoryNodeTypeManager NO_NODE_TYPE_MANAGER = null;
+
     /** The predecessor node type source. */
     private final JcrNodeTypeSource predecessor;
 

@@ -100,14 +100,11 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
      */
     public final String getUUID() throws RepositoryException {
         // Return "jcr:uuid" only if node is referenceable
-        Property mixinsProp = getProperty(JcrLexicon.MIXIN_TYPES);
-        if (mixinsProp != null) {
-            String referenceableMixinName = JcrMixLexicon.REFERENCEABLE.getString(namespaces());
-            for (Value value : mixinsProp.getValues()) {
-                if (referenceableMixinName.equals(value.getString())) return nodeUuid.toString();
-            }
+        String referenceableTypeName = JcrMixLexicon.REFERENCEABLE.getString(namespaces());
+        if (!isNodeType(referenceableTypeName)) {
+            throw new UnsupportedRepositoryOperationException();
         }
-        throw new UnsupportedRepositoryOperationException();
+        return nodeUuid.toString();
     }
 
     /**
@@ -171,7 +168,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
      * @see javax.jcr.Node#getMixinNodeTypes()
      */
     public NodeType[] getMixinNodeTypes() throws RepositoryException {
-        NodeTypeManager nodeTypeManager = session().getWorkspace().getNodeTypeManager();
+        NodeTypeManager nodeTypeManager = session().nodeTypeManager();
         Property mixinTypesProperty = getProperty(JcrLexicon.MIXIN_TYPES);
         if (mixinTypesProperty == null) return EMPTY_NODE_TYPES;
         List<NodeType> mixinNodeTypes = new LinkedList<NodeType>();

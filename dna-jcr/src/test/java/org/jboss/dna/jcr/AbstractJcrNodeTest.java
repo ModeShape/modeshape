@@ -151,7 +151,7 @@ public class AbstractJcrNodeTest {
     }
 
     protected Value stringValueFor( Object value ) {
-        return new JcrValue(context.getValueFactories(), PropertyType.STRING, value);
+        return new JcrValue(context.getValueFactories(), cache, PropertyType.STRING, value);
     }
 
     protected void addChild( Name childName,
@@ -461,36 +461,6 @@ public class AbstractJcrNodeTest {
     @Test
     public void shouldProvideSession() throws Exception {
         assertThat((JcrSession)node.getSession(), is(session));
-    }
-
-    @Test
-    public void shouldProvideUuidIfReferenceable() throws Exception {
-        // Create the property ...
-        PropertyId propertyId = new PropertyId(uuid, name("jcr:mixinTypes"));
-        AbstractJcrProperty property = mock(AbstractJcrProperty.class);
-        stub(cache.findJcrProperty(propertyId)).toReturn(property);
-        stub(property.getValues()).toReturn(new Value[] {stringValueFor("acme:someMixin"), stringValueFor("mix:referenceable")});
-        // Call the method ...
-        assertThat(node.getUUID(), is(uuid.toString()));
-    }
-
-    @Test( expected = UnsupportedRepositoryOperationException.class )
-    public void shouldNotProvideUuidIfNotReferenceable() throws Exception {
-        // Create the property ...
-        PropertyId propertyId = new PropertyId(uuid, name("jcr:mixinTypes"));
-        AbstractJcrProperty property = mock(AbstractJcrProperty.class);
-        stub(cache.findJcrProperty(propertyId)).toReturn(property);
-        stub(property.getValues()).toReturn(new Value[] {stringValueFor("acme:someMixin"), stringValueFor("mix:notReferenceable")});
-        // Call the method ...
-        node.getUUID();
-    }
-
-    @Test( expected = UnsupportedRepositoryOperationException.class )
-    public void shouldNotProvideUuidIfNoMixinTypes() throws Exception {
-        PropertyId propertyId = new PropertyId(uuid, name("jcr:mixinTypes"));
-        stub(cache.findJcrProperty(propertyId)).toReturn(null);
-        // Call the method ...
-        node.getUUID();
     }
 
     @Test( expected = UnsupportedRepositoryOperationException.class )

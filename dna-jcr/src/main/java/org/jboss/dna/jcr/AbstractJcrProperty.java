@@ -78,7 +78,7 @@ abstract class AbstractJcrProperty extends AbstractJcrItem implements Property {
     }
 
     JcrValue createValue( Object value ) throws RepositoryException {
-        return new JcrValue(context().getValueFactories(), propertyInfo().getPropertyType(), value);
+        return new JcrValue(context().getValueFactories(), this.cache, propertyInfo().getPropertyType(), value);
     }
 
     @Override

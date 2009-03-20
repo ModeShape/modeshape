@@ -23,10 +23,10 @@
  */
 package org.jboss.dna.jcr;
 
-import javax.jcr.RepositoryException;
 import javax.jcr.nodetype.NodeDefinition;
 import javax.jcr.nodetype.NodeType;
 import net.jcip.annotations.Immutable;
+import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.property.Name;
 
 /**
@@ -50,7 +50,10 @@ class JcrNodeDefinition extends JcrItemDefinition implements NodeDefinition {
     /** A durable identifier for this node definition. */
     private NodeDefinitionId id;
 
-    JcrNodeDefinition( JcrSession session,
+    /** Link to the repository node type manager */
+    private final RepositoryNodeTypeManager nodeTypeManager;
+
+    JcrNodeDefinition( ExecutionContext context,
                        JcrNodeType declaringNodeType,
                        Name name,
                        int onParentVersion,
@@ -60,7 +63,26 @@ class JcrNodeDefinition extends JcrItemDefinition implements NodeDefinition {
                        boolean allowsSameNameSiblings,
                        Name defaultPrimaryTypeName,
                        NodeType[] requiredPrimaryTypes ) {
-        super(session, declaringNodeType, name, onParentVersion, autoCreated, mandatory, protectedItem);
+        super(context, declaringNodeType, name, onParentVersion, autoCreated, mandatory, protectedItem);
+        this.nodeTypeManager = null;
+        this.allowsSameNameSiblings = allowsSameNameSiblings;
+        this.defaultPrimaryTypeName = defaultPrimaryTypeName;
+        this.requiredPrimaryTypes = requiredPrimaryTypes;
+    }
+
+    JcrNodeDefinition( ExecutionContext context,
+                       RepositoryNodeTypeManager nodeTypeManager,
+                       JcrNodeType declaringNodeType,
+                       Name name,
+                       int onParentVersion,
+                       boolean autoCreated,
+                       boolean mandatory,
+                       boolean protectedItem,
+                       boolean allowsSameNameSiblings,
+                       Name defaultPrimaryTypeName,
+                       NodeType[] requiredPrimaryTypes ) {
+        super(context, declaringNodeType, name, onParentVersion, autoCreated, mandatory, protectedItem);
+        this.nodeTypeManager = nodeTypeManager;
         this.allowsSameNameSiblings = allowsSameNameSiblings;
         this.defaultPrimaryTypeName = defaultPrimaryTypeName;
         this.requiredPrimaryTypes = requiredPrimaryTypes;
@@ -98,21 +120,7 @@ class JcrNodeDefinition extends JcrItemDefinition implements NodeDefinition {
             return null;
         }
 
-        /*
-         * Translate the name to a prefixed type based on the current transient (session) and persistent (workspace) 
-         * prefix to URI mappings.
-         */
-        String mappedTypeName = defaultPrimaryTypeName.getString(session.getExecutionContext().getNamespaceRegistry());
-
-        try {
-            return session.getWorkspace().getNodeTypeManager().getNodeType(mappedTypeName);
-        } catch (RepositoryException re) {
-            /*
-             * The spec doesn't allow us to throw a checked exception at this point, but a corrupted namespace mapping
-             * would be pretty severe. 
-             */
-            throw new IllegalStateException(JcrI18n.typeNotFound.text(mappedTypeName));
-        }
+        return nodeTypeManager.getNodeType(defaultPrimaryTypeName);
     }
 
     /**
@@ -133,7 +141,15 @@ class JcrNodeDefinition extends JcrItemDefinition implements NodeDefinition {
      *         <code>declaringNodeType</code>.
      */
     JcrNodeDefinition with( JcrNodeType declaringNodeType ) {
-        return new JcrNodeDefinition(session, declaringNodeType, name, getOnParentVersion(), isAutoCreated(), isMandatory(),
-                                     isProtected(), allowsSameNameSiblings(), defaultPrimaryTypeName, requiredPrimaryTypes);
+        return new JcrNodeDefinition(this.context, declaringNodeType.nodeTypeManager(), declaringNodeType, name,
+                                     getOnParentVersion(), isAutoCreated(), isMandatory(), isProtected(),
+                                     allowsSameNameSiblings(), defaultPrimaryTypeName, requiredPrimaryTypes);
     }
+
+    JcrNodeDefinition with( ExecutionContext context ) {
+        return new JcrNodeDefinition(context, this.nodeTypeManager, this.declaringNodeType, name, getOnParentVersion(),
+                                     isAutoCreated(), isMandatory(), isProtected(), allowsSameNameSiblings(),
+                                     defaultPrimaryTypeName, requiredPrimaryTypes);
+    }
+
 }

@@ -23,6 +23,7 @@
  */
 package org.jboss.dna.jcr;
 
+import java.util.UUID;
 import java.util.regex.Pattern;
 import javax.jcr.Node;
 import javax.jcr.PropertyType;
@@ -41,6 +42,7 @@ import org.jboss.dna.graph.property.ValueFactories;
 import org.jboss.dna.graph.property.ValueFactory;
 import org.jboss.dna.graph.property.ValueFormatException;
 import org.jboss.dna.graph.property.basic.JodaDateTime;
+
 /**
  * DNA implementation of the {@link PropertyDefinition} interface. This implementation is immutable and has all fields initialized
  * through its constructor.
@@ -55,7 +57,7 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
     private PropertyDefinitionId id;
     private ConstraintChecker checker = null;
 
-    JcrPropertyDefinition( JcrSession session,
+    JcrPropertyDefinition( ExecutionContext context,
                            JcrNodeType declaringNodeType,
                            Name name,
                            int onParentVersion,
@@ -66,7 +68,7 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
                            int requiredType,
                            String[] valueConstraints,
                            boolean multiple ) {
-        super(session, declaringNodeType, name, onParentVersion, autoCreated, mandatory, protectedItem);
+        super(context, declaringNodeType, name, onParentVersion, autoCreated, mandatory, protectedItem);
         this.defaultValues = defaultValues;
         this.requiredType = requiredType;
         this.valueConstraints = valueConstraints;
@@ -130,7 +132,7 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
      *         <code>declaringNodeType</code>.
      */
     JcrPropertyDefinition with( JcrNodeType declaringNodeType ) {
-        return new JcrPropertyDefinition(this.session, declaringNodeType, this.name, this.getOnParentVersion(),
+        return new JcrPropertyDefinition(this.context, declaringNodeType, this.name, this.getOnParentVersion(),
                                          this.isAutoCreated(), this.isMandatory(), this.isProtected(), this.getDefaultValues(),
                                          this.getRequiredType(), this.getValueConstraints(), this.isMultiple());
     }
@@ -152,7 +154,7 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
         ConstraintChecker checker = this.checker;
 
         if (checker == null || checker.getType() != type) {
-            checker = createChecker(session, type, valueConstraints);
+            checker = createChecker(context, type, valueConstraints);
             this.checker = checker;
         }
 
@@ -167,21 +169,18 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
     /**
      * Returns a {@link ConstraintChecker} that will interpret the constraints described by <code>valueConstraints</code> using
      * the semantics defined in section 6.7.16 of the JCR 1.0 specification for the type indicated by <code>type</code> (where
-     * <code>type</code> is a value from {@link PropertyType}) for the given <code>session</code>. The session is required to
-     * handle the UUID lookups for reference constraints and provides the {@link ExecutionContext} that is used to provide
-     * namespace mappings and value factories for the other constraint checkers.
+     * <code>type</code> is a value from {@link PropertyType}) for the given <code>context</code>. The {@link ExecutionContext} is
+     * used to provide namespace mappings and value factories for the other constraint checkers.
      * 
-     * @param session the current session
+     * @param context the execution context
      * @param type the type of constraint checker that should be created (based on values from {@link PropertyType}).
      *        Type-specific semantics are defined in section 6.7.16 of the JCR 1.0 specification.
      * @param valueConstraints the constraints for the node as provided by {@link PropertyDefinition#getValueConstraints()}.
      * @return a constraint checker that matches the given parameters
      */
-    private ConstraintChecker createChecker( JcrSession session,
-                                                   int type,
-                                                   String[] valueConstraints ) {
-        ExecutionContext context = session.getExecutionContext();
-
+    private ConstraintChecker createChecker( ExecutionContext context,
+                                             int type,
+                                             String[] valueConstraints ) {
         switch (type) {
             case PropertyType.BINARY:
                 return new BinaryConstraintChecker(valueConstraints, context);
@@ -196,7 +195,7 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
             case PropertyType.PATH:
                 return new PathConstraintChecker(valueConstraints, context);
             case PropertyType.REFERENCE:
-                return new ReferenceConstraintChecker(valueConstraints, session);
+                return new ReferenceConstraintChecker(valueConstraints, context);
             case PropertyType.STRING:
                 return new StringConstraintChecker(valueConstraints, context);
             default:
@@ -333,7 +332,8 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
         @Override
         public boolean matches( Value value ) {
             Binary binary = valueFactories.getBinaryFactory().create(((JcrValue)value).value());
-            return super.matches(new JcrValue(valueFactories, PropertyType.LONG, binary.getSize()));
+            Value sizeValue = ((JcrValue)value).sessionCache().session().getValueFactory().createValue(binary.getSize());
+            return super.matches(sizeValue);
         }
     }
 
@@ -408,15 +408,15 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
 
     @Immutable
     private static class ReferenceConstraintChecker implements ConstraintChecker {
-        private final JcrSession session;
+        // private final ExecutionContext context;
 
         private final Name[] constraints;
 
         protected ReferenceConstraintChecker( String[] valueConstraints,
-                                              JcrSession session ) {
-            this.session = session;
+                                              ExecutionContext context ) {
+            // this.context = context;
 
-            NameFactory factory = session.getExecutionContext().getValueFactories().getNameFactory();
+            NameFactory factory = context.getValueFactories().getNameFactory();
 
             constraints = new Name[valueConstraints.length];
 
@@ -430,18 +430,21 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
         }
 
         public boolean matches( Value value ) {
-            assert value != null;
+            assert value instanceof JcrValue;
+
+            JcrValue jcrValue = (JcrValue)value;
+            SessionCache cache = jcrValue.sessionCache();
 
             Node node = null;
             try {
-                node = session.getNodeByUUID(((JcrValue)value).value().toString());
+                node = cache.findJcrNode((UUID)jcrValue.value());
             } catch (RepositoryException re) {
                 return false;
             }
 
             for (int i = 0; i < constraints.length; i++) {
                 try {
-                    if (node.isNodeType(constraints[i].getString(session.getExecutionContext().getNamespaceRegistry()))) {
+                    if (node.isNodeType(constraints[i].getString(cache.session().namespaces()))) {
                         return true;
                     }
                 } catch (RepositoryException re) {
@@ -474,9 +477,11 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
         }
 
         public boolean matches( Value value ) {
-            assert value != null;
+            assert value instanceof JcrValue;
 
-            Name name = valueFactory.create(((JcrValue)value).value());
+            JcrValue jcrValue = (JcrValue)value;
+            // Need to use the session execution context to handle the remaps
+            Name name = jcrValue.sessionCache().session().getExecutionContext().getValueFactories().getNameFactory().create(jcrValue.value());
 
             for (int i = 0; i < constraints.length; i++) {
                 if (constraints[i].equals(name)) {
@@ -561,5 +566,4 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
             return false;
         }
     }
-
 }
