@@ -72,6 +72,18 @@ public class AbstractJcrItemTest {
             public boolean isNode() {
                 return false;
             }
+
+            public void refresh( boolean keepChanges ) {
+                throw new UnsupportedOperationException();
+            }
+
+            public void remove() {
+                throw new UnsupportedOperationException();
+            }
+
+            public void save() {
+                throw new UnsupportedOperationException();
+            }
         };
     }
 

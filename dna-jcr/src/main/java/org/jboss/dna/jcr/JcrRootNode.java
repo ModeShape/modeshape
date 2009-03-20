@@ -28,6 +28,7 @@ import javax.jcr.Item;
 import javax.jcr.ItemNotFoundException;
 import javax.jcr.Node;
 import javax.jcr.RepositoryException;
+import javax.jcr.nodetype.ConstraintViolationException;
 import net.jcip.annotations.NotThreadSafe;
 
 /**
@@ -115,4 +116,15 @@ final class JcrRootNode extends AbstractJcrNode {
         }
         throw new ItemNotFoundException(JcrI18n.tooDeep.text(depth));
     }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see javax.jcr.Item#remove()
+     */
+    public void remove() throws ConstraintViolationException {
+        String msg = JcrI18n.unableToRemoveRootNode.text(cache.workspaceName());
+        throw new ConstraintViolationException(msg);
+    }
+
 }

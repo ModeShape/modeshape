@@ -166,33 +166,4 @@ abstract class AbstractJcrItem implements Item {
         return path().size();
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @throws UnsupportedOperationException always
-     * @see javax.jcr.Item#refresh(boolean)
-     */
-    public void refresh( boolean keepChanges ) {
-        throw new UnsupportedOperationException();
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @throws UnsupportedOperationException always
-     * @see javax.jcr.Item#remove()
-     */
-    public void remove() {
-        throw new UnsupportedOperationException();
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @throws UnsupportedOperationException always
-     * @see javax.jcr.Item#save()
-     */
-    public void save() {
-        throw new UnsupportedOperationException();
-    }
 }

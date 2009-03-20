@@ -73,4 +73,12 @@ public interface Children extends Iterable<ChildNode> {
      */
     Iterator<ChildNode> getChildren( Name name );
 
+    /**
+     * Get the number of same-name-siblings that all share the supplied name.
+     * 
+     * @param name the name for the children; may not be null
+     * @return the number of same-name-siblings with the supplied name
+     */
+    int getCountOfSameNameSiblingsWithName( Name name );
+
 }

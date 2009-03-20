@@ -25,8 +25,11 @@ package org.jboss.dna.jcr;
 
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
+import static org.hamcrest.core.IsNull.nullValue;
 import static org.hamcrest.core.IsSame.sameInstance;
+import static org.jboss.dna.graph.IsNodeWithChildren.hasChildren;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
 import static org.junit.matchers.JUnitMatchers.hasItems;
 import static org.mockito.Mockito.stub;
 import java.io.File;
@@ -39,16 +42,20 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import javax.jcr.InvalidItemStateException;
 import javax.jcr.nodetype.NodeType;
 import org.jboss.dna.common.statistic.Stopwatch;
 import org.jboss.dna.common.util.StringUtil;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.Graph;
+import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.Node;
 import org.jboss.dna.graph.connector.inmemory.InMemoryRepositorySource;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.Path;
+import org.jboss.dna.graph.property.PathNotFoundException;
 import org.jboss.dna.graph.property.Property;
+import org.jboss.dna.jcr.SessionCache.NodeEditor;
 import org.jboss.dna.jcr.cache.Children;
 import org.jboss.dna.jcr.cache.NodeInfo;
 import org.jboss.dna.jcr.cache.PropertyInfo;
@@ -63,7 +70,6 @@ import org.xml.sax.SAXException;
  */
 public class SessionCacheTest {
 
-    private String workspaceName;
     private ExecutionContext context;
     private JcrNodeTypeManager nodeTypes;
     private Stopwatch sw;
@@ -85,8 +91,6 @@ public class SessionCacheTest {
         context = new ExecutionContext();
         context.getNamespaceRegistry().register("vehix", "http://example.com/vehicles");
 
-        workspaceName = "theWorkspace";
-
         stub(session.getExecutionContext()).toReturn(context);
         stub(session.namespaces()).toReturn(context.getNamespaceRegistry());
 
@@ -97,15 +101,9 @@ public class SessionCacheTest {
         nodeTypes = new JcrNodeTypeManager(session, nodeTypeSource);
         stub(session.nodeTypeManager()).toReturn(nodeTypes);
 
-        InMemoryRepositorySource source = new InMemoryRepositorySource();
-        source.setName("store");
-        source.setDefaultWorkspaceName(workspaceName);
-        store = Graph.create(source, context);
-
-        // Import the "cars.xml" file into the repository
-        store.importXmlFrom(new File("src/test/resources/vehicles.xml")).into("/");
-
-        cache = new SessionCache(session, workspaceName, context, nodeTypes, store);
+        // Now set up the graph and session cache ...
+        store = getGraph("vehicles"); // imports the "/src/test/resources/vehicles.xml" file
+        cache = getCache("vehicles");
     }
 
     /**
@@ -164,8 +162,8 @@ public class SessionCacheTest {
                                 File file ) throws IOException, SAXException {
         InMemoryRepositorySource source = new InMemoryRepositorySource();
         source.setName(repositoryName);
-        source.setDefaultWorkspaceName(workspaceName);
         Graph graph = Graph.create(source, context);
+        graph.createWorkspace().named(workspaceName);
 
         if (file != null) {
             graph.importXmlFrom(file).into("/");
@@ -227,6 +225,71 @@ public class SessionCacheTest {
                 assertThat(propertyName, is(JcrLexicon.PRIMARY_TYPE));
             }
         }
+    }
+
+    protected void assertDoesExist( Graph graph,
+                                    Location location ) {
+        Node node = store.getNodeAt(location);
+        assertThat(node, is(notNullValue()));
+        assertThat(node.getLocation(), is(location));
+    }
+
+    protected void assertDoesNotExist( Graph graph,
+                                       Location location ) {
+        try {
+            store.getNodeAt(location);
+            fail("Shouldn't have found the node " + location);
+        } catch (PathNotFoundException e) {
+            // expected
+        }
+    }
+
+    protected void assertDoesNotExist( Graph graph,
+                                       Path path ) {
+        try {
+            store.getNodeAt(path);
+            fail("Shouldn't have found the node " + path);
+        } catch (PathNotFoundException e) {
+            // expected
+        }
+    }
+
+    protected void assertDoesNotExist( Graph graph,
+                                       UUID uuid ) {
+        try {
+            store.getNodeAt(uuid);
+            fail("Shouldn't have found the node " + uuid);
+        } catch (PathNotFoundException e) {
+            // expected
+        }
+    }
+
+    protected void assertDoNotExist( Graph graph,
+                                     List<Location> locations ) {
+        for (Location location : locations)
+            assertDoesNotExist(graph, location);
+    }
+
+    protected void assertDoesNotExist( SessionCache cache,
+                                       UUID uuid ) throws InvalidItemStateException {
+        assertThat(cache.findNodeInfoInCache(uuid), is(nullValue()));
+    }
+
+    protected void assertIsDeleted( SessionCache cache,
+                                    UUID uuid ) {
+        try {
+            cache.findNodeInfoInCache(uuid);
+            fail("Shouldn't have found the node " + uuid);
+        } catch (InvalidItemStateException err) {
+            // expected
+        }
+    }
+
+    protected void assertDoesExist( SessionCache cache,
+                                    UUID uuid ) throws InvalidItemStateException {
+        NodeInfo info = cache.findNodeInfoInCache(uuid);
+        assertThat(info, is(notNullValue()));
+        assertThat(info.getUuid(), is(uuid));
     }
 
     @Test
@@ -386,10 +449,6 @@ public class SessionCacheTest {
 
     @Test
     public void shouldFindInfoForNodeUsingRelativePathFromNonRoot() throws Exception {
-        String sourceName = "vehicles";
-        Graph store = getGraph(sourceName);
-        SessionCache cache = getCache(sourceName);
-
         // Verify that the node does exist in the source ...
         Path carsAbsolutePath = path("/vehix:Vehicles/vehix:Cars");
         Node carsNode = store.getNodeAt(carsAbsolutePath);
@@ -430,10 +489,6 @@ public class SessionCacheTest {
 
     @Test
     public void shouldFindJcrNodeUsingAbsolutePaths() throws Exception {
-        String sourceName = "vehicles";
-        Graph store = getGraph(sourceName);
-        SessionCache cache = getCache(sourceName);
-
         // Verify that the node does exist in the source ...
         Path carsAbsolutePath = path("/vehix:Vehicles/vehix:Cars");
         Node carsNode = store.getNodeAt(carsAbsolutePath);
@@ -477,4 +532,99 @@ public class SessionCacheTest {
         assertThat(cache.getPathFor(lr3), is(lr3AbsolutePath));
         assertThat(cache.getPathFor(b787), is(b787AbsolutePath));
     }
+
+    @Test
+    public void shouldDeleteLeafNode() throws Exception {
+        // Find the state of some Graph nodes we'll be using in the test ...
+        Node utility = store.getNodeAt("/vehix:Vehicles/vehix:Cars/vehix:Utility");
+        Node lr2Node = store.getNodeAt("/vehix:Vehicles/vehix:Cars/vehix:Utility/vehix:Land Rover LR2");
+        Node lr3Node = store.getNodeAt("/vehix:Vehicles/vehix:Cars/vehix:Utility/vehix:Land Rover LR3");
+        int numChildrenOfUtility = utility.getChildren().size();
+        assertThat(numChildrenOfUtility, is(4));
+        assertThat(utility.getChildren(), hasChildren(segment("vehix:Land Rover LR2"),
+                                                      segment("vehix:Land Rover LR3"),
+                                                      segment("vehix:Hummer H3"),
+                                                      segment("vehix:Ford F-150")));
+
+        // Now get the editor for the 'vehix:Utility' node ...
+        NodeEditor editor = cache.getEditorFor(utility.getLocation().getUuid());
+        assertThat(editor, is(notNullValue()));
+
+        // Destroy the LR3 node, which is a leaf ...
+        editor.destroyChild(lr3Node.getLocation().getUuid());
+
+        // Verify that the store has not yet been changed ...
+        assertDoesExist(store, lr3Node.getLocation());
+
+        // Save the session and verify that the node was deleted ...
+        cache.save();
+        Node utilityNode2 = store.getNodeAt(utility.getLocation());
+        assertThat(utilityNode2.getChildren().size(), is(numChildrenOfUtility - 1));
+        assertThat(utilityNode2.getChildren(), hasChildren(segment("vehix:Land Rover LR2"), // no LR3!
+                                                           segment("vehix:Hummer H3"),
+                                                           segment("vehix:Ford F-150")));
+        // Should no longer find the LR3 node in the graph ...
+        assertDoesNotExist(store, lr3Node.getLocation().getUuid());
+        assertDoesExist(store, lr2Node.getLocation());
+    }
+
+    @Test
+    public void shouldDeleteNonLeafNode() throws Exception {
+        // Find the state of some Graph nodes we'll be using in the test ...
+        Node carsNode = store.getNodeAt("/vehix:Vehicles/vehix:Cars");
+        Node utility = store.getNodeAt("/vehix:Vehicles/vehix:Cars/vehix:Utility");
+        Node hybrid = store.getNodeAt("/vehix:Vehicles/vehix:Cars/vehix:Hybrid");
+        Node luxury = store.getNodeAt("/vehix:Vehicles/vehix:Cars/vehix:Luxury");
+        Node sports = store.getNodeAt("/vehix:Vehicles/vehix:Cars/vehix:Sports");
+        Node lr3 = store.getNodeAt("/vehix:Vehicles/vehix:Cars/vehix:Utility/vehix:Land Rover LR3");
+        Node lr2 = store.getNodeAt("/vehix:Vehicles/vehix:Cars/vehix:Utility/vehix:Land Rover LR2");
+        Node f150 = store.getNodeAt("/vehix:Vehicles/vehix:Cars/vehix:Utility/vehix:Ford F-150");
+        int numChildrenOfCars = carsNode.getChildren().size();
+        assertThat(numChildrenOfCars, is(4));
+        assertThat(carsNode.getChildren(), hasChildren(segment("vehix:Hybrid"),
+                                                       segment("vehix:Sports"),
+                                                       segment("vehix:Luxury"),
+                                                       segment("vehix:Utility")));
+
+        // Load the LR2 and Hummer nodes ...
+        NodeInfo h3i = cache.findNodeInfo(utility.getLocation().getUuid(), path("vehix:Hummer H3"));
+        NodeInfo lr2i = cache.findNodeInfo(utility.getLocation().getUuid(), path("vehix:Land Rover LR2"));
+        assertThat(h3i, is(notNullValue()));
+        assertThat(lr2i, is(notNullValue()));
+        assertThat(lr2i.getUuid(), is(lr2.getLocation().getUuid()));
+
+        // Now get the editor for the 'vehix:Cars' node ...
+        NodeEditor editor = cache.getEditorFor(carsNode.getLocation().getUuid());
+        assertThat(editor, is(notNullValue()));
+
+        // Destroy the Utility node, which is NOT a leaf ...
+        editor.destroyChild(utility.getLocation().getUuid());
+
+        // Verify that the store has not yet been changed ...
+        assertDoesExist(store, utility.getLocation());
+
+        // ... but the utility node and its two loaded children have been marked for deletion ...
+        assertIsDeleted(cache, utility.getLocation().getUuid());
+        assertIsDeleted(cache, h3i.getUuid());
+        assertIsDeleted(cache, lr2i.getUuid());
+
+        // Save the session and verify that the Utility node and its children were deleted ...
+        cache.save();
+        Node carsNode2 = store.getNodeAt(carsNode.getLocation());
+        assertThat(carsNode2.getChildren().size(), is(numChildrenOfCars - 1));
+        assertThat(carsNode2.getChildren(),
+                   hasChildren(segment("vehix:Hybrid"), segment("vehix:Sports"), segment("vehix:Luxury")));
+        // Should no longer find the Utility node in the graph ...
+        assertDoesNotExist(store, utility.getLocation());
+        assertDoesNotExist(cache, utility.getLocation().getUuid());
+        assertDoesNotExist(cache, h3i.getUuid());
+        assertDoesNotExist(cache, lr2i.getUuid());
+        assertDoesNotExist(cache, lr3.getLocation().getUuid());
+        assertDoesNotExist(cache, f150.getLocation().getUuid());
+        assertDoNotExist(store, utility.getChildren());
+        assertDoesExist(store, hybrid.getLocation());
+        assertDoesExist(store, luxury.getLocation());
+        assertDoesExist(store, sports.getLocation());
+    }
+
 }

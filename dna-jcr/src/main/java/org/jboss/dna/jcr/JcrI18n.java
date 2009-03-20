@@ -76,6 +76,10 @@ public final class JcrI18n {
     public static I18n nodeDefinitionCouldNotBeDeterminedForNode;
     public static I18n missingNodeTypeForExistingNode;
 
+    public static I18n unableToRemoveRootNode;
+    public static I18n unableToMoveNodeToBeChildOfDecendent;
+    public static I18n nodeHasAlreadyBeenRemovedFromThisSession;
+
     public static I18n typeNotFound;
     public static I18n supertypeNotFound;
 

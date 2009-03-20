@@ -55,6 +55,13 @@ public interface NodeInfo {
     public Name getPrimaryTypeName();
 
     /**
+     * Get the names of the mixin types for this node.
+     * 
+     * @return the unmodifiable set of mixin type names; never null but possibly empty
+     */
+    public Set<Name> getMixinTypeNames();
+
+    /**
      * @return definition
      */
     public NodeDefinitionId getDefinitionId();

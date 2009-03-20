@@ -23,6 +23,7 @@
  */
 package org.jboss.dna.jcr.cache;
 
+import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -43,19 +44,22 @@ public class ImmutableNodeInfo implements NodeInfo {
     private final NodeDefinitionId definition;
     private final Children children;
     private final Map<Name, PropertyInfo> properties;
+    private final Set<Name> mixinTypeNames;
 
     /**
      * Create an immutable NodeInfo instance.
      * 
      * @param originalLocation the original location
      * @param primaryTypeName the name of the node's primary type
+     * @param mixinTypeNames the names of the mixin types for this node, or null if there are none
      * @param definition the definition used when creating the node
      * @param parent the parent
-     * @param children the immutable children
-     * @param properties the unmodifiable map of properties
+     * @param children the immutable children; may be null if there are no children
+     * @param properties the unmodifiable map of properties; may be null if there are no properties
      */
     public ImmutableNodeInfo( Location originalLocation,
                               Name primaryTypeName,
+                              Set<Name> mixinTypeNames,
                               NodeDefinitionId definition,
                               UUID parent,
                               Children children,
@@ -65,11 +69,17 @@ public class ImmutableNodeInfo implements NodeInfo {
         this.definition = definition;
         this.parent = parent;
         this.uuid = this.originalLocation.getUuid();
-        this.children = children;
+        this.children = children != null ? children : new EmptyChildren(this.uuid);
+        if (properties == null) properties = Collections.emptyMap();
         this.properties = properties;
+        if (mixinTypeNames == null) mixinTypeNames = Collections.emptySet();
+        this.mixinTypeNames = mixinTypeNames;
         assert this.uuid != null;
         assert this.definition != null;
         assert this.primaryTypeName != null;
+        assert this.children != null;
+        assert this.mixinTypeNames != null;
+        assert this.properties != null;
     }
 
     /**
@@ -106,6 +116,15 @@ public class ImmutableNodeInfo implements NodeInfo {
      */
     public Name getPrimaryTypeName() {
         return primaryTypeName;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.jcr.cache.NodeInfo#getMixinTypeNames()
+     */
+    public Set<Name> getMixinTypeNames() {
+        return mixinTypeNames;
     }
 
     /**

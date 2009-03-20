@@ -633,10 +633,9 @@ class JcrSession implements Session {
     /**
      * {@inheritDoc}
      * 
-     * @throws UnsupportedOperationException always
      * @see javax.jcr.Session#save()
      */
-    public void save() {
-        throw new UnsupportedOperationException();
+    public void save() throws RepositoryException {
+        cache.save();
     }
 }

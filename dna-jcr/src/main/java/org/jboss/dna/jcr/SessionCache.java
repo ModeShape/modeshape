@@ -27,12 +27,15 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
 import java.util.Set;
 import java.util.UUID;
+import javax.jcr.InvalidItemStateException;
 import javax.jcr.Item;
 import javax.jcr.ItemNotFoundException;
 import javax.jcr.Node;
@@ -40,6 +43,7 @@ import javax.jcr.PathNotFoundException;
 import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
+import javax.jcr.nodetype.ConstraintViolationException;
 import javax.jcr.nodetype.NodeDefinition;
 import javax.jcr.nodetype.NodeType;
 import javax.jcr.nodetype.NodeTypeManager;
@@ -60,6 +64,7 @@ import org.jboss.dna.graph.property.PropertyFactory;
 import org.jboss.dna.graph.property.ValueFactories;
 import org.jboss.dna.graph.property.ValueFactory;
 import org.jboss.dna.graph.property.ValueFormatException;
+import org.jboss.dna.jcr.cache.ChangedNodeInfo;
 import org.jboss.dna.jcr.cache.ChildNode;
 import org.jboss.dna.jcr.cache.Children;
 import org.jboss.dna.jcr.cache.EmptyChildren;
@@ -119,21 +124,25 @@ public class SessionCache {
     private final String workspaceName;
     protected final ExecutionContext context;
     protected final PathFactory pathFactory;
-    private final NameFactory nameFactory;
-    private final ValueFactory<String> stringFactory;
-    private final NamespaceRegistry namespaces;
-    private final PropertyFactory propertyFactory;
+    protected final NameFactory nameFactory;
+    protected final ValueFactory<String> stringFactory;
+    protected final NamespaceRegistry namespaces;
+    protected final PropertyFactory propertyFactory;
     private final Graph store;
     private final Name defaultPrimaryTypeName;
     private final Property defaultPrimaryTypeProperty;
-    private final Path rootPath;
+    protected final Path rootPath;
+    protected final Name residualName;
 
     private UUID root;
     private final ReferenceMap<UUID, AbstractJcrNode> jcrNodes;
     private final ReferenceMap<PropertyId, AbstractJcrProperty> jcrProperties;
 
-    private final HashMap<UUID, ImmutableNodeInfo> cachedNodes;
-    private final HashMap<UUID, NodeInfo> changedNodes;
+    protected final HashMap<UUID, ImmutableNodeInfo> cachedNodes;
+    protected final HashMap<UUID, ChangedNodeInfo> changedNodes;
+    protected final HashMap<UUID, NodeInfo> deletedNodes;
+
+    private Graph.Batch operations;
 
     public SessionCache( JcrSession session,
                          String workspaceName,
@@ -156,12 +165,17 @@ public class SessionCache {
         this.defaultPrimaryTypeName = JcrNtLexicon.UNSTRUCTURED;
         this.defaultPrimaryTypeProperty = propertyFactory.create(JcrLexicon.PRIMARY_TYPE, this.defaultPrimaryTypeName);
         this.rootPath = pathFactory.createRootPath();
+        this.residualName = nameFactory.create(JcrNodeType.RESIDUAL_ITEM_NAME);
 
         this.jcrNodes = new ReferenceMap<UUID, AbstractJcrNode>(ReferenceType.STRONG, ReferenceType.SOFT);
         this.jcrProperties = new ReferenceMap<PropertyId, AbstractJcrProperty>(ReferenceType.STRONG, ReferenceType.SOFT);
 
         this.cachedNodes = new HashMap<UUID, ImmutableNodeInfo>();
-        this.changedNodes = new HashMap<UUID, NodeInfo>();
+        this.changedNodes = new HashMap<UUID, ChangedNodeInfo>();
+        this.deletedNodes = new HashMap<UUID, NodeInfo>();
+
+        // Create the batch operations ...
+        this.operations = this.store.batch();
     }
 
     JcrSession session() {
@@ -178,6 +192,39 @@ public class SessionCache {
 
     JcrNodeTypeManager nodeTypes() {
         return session.nodeTypeManager();
+    }
+
+    final Graph.Batch operations() {
+        return operations;
+    }
+
+    /**
+     * Save any changes that have been accumulated by this session.
+     * 
+     * @throws RepositoryException if any error resulting while saving the changes to the repository
+     */
+    public void save() throws RepositoryException {
+        if (operations.isExecuteRequired()) {
+            // Execute the batched operations ...
+            try {
+                operations.execute();
+            } catch (RuntimeException e) {
+                throw new RepositoryException(e);
+            }
+
+            // Create a new batch for future operations ...
+            operations = store.batch();
+            // Remove all the cached items that have been changed or deleted ...
+            for (UUID changedUuid : changedNodes.keySet()) {
+                cachedNodes.remove(changedUuid);
+            }
+            for (UUID changedUuid : deletedNodes.keySet()) {
+                cachedNodes.remove(changedUuid);
+            }
+            // Remove all the changed and deleted infos ...
+            changedNodes.clear();
+            deletedNodes.clear();
+        }
     }
 
     public JcrRootNode findJcrRootNode() throws RepositoryException {
@@ -215,11 +262,13 @@ public class SessionCache {
      * @return the information for the referenced node; never null
      * @throws ItemNotFoundException if the reference node with the supplied UUID does not exist
      * @throws PathNotFoundException if the node given by the relative path does not exist
+     * @throws InvalidItemStateException if the node with the UUID has been deleted in this session
      * @throws RepositoryException if any other error occurs while reading information from the repository
      * @see #findNodeInfoForRoot()
      */
     public AbstractJcrNode findJcrNode( UUID uuidOfReferenceNode,
-                                        Path relativePath ) throws PathNotFoundException, RepositoryException {
+                                        Path relativePath )
+        throws PathNotFoundException, InvalidItemStateException, RepositoryException {
         // An existing JCR Node object was not found, so we'll have to create it by finding the underlying
         // NodeInfo for the node (from the changed state or the cache) ...
         NodeInfo info = findNodeInfo(uuidOfReferenceNode, relativePath);
@@ -268,11 +317,13 @@ public class SessionCache {
      * @return the information for the referenced item; never null
      * @throws ItemNotFoundException if the reference node with the supplied UUID does not exist, or if an item given by the
      *         supplied relative path does not exist
+     * @throws InvalidItemStateException if the node with the UUID has been deleted in this session
      * @throws RepositoryException if any other error occurs while reading information from the repository
      * @see #findNodeInfoForRoot()
      */
     public AbstractJcrItem findJcrItem( UUID uuidOfReferenceNode,
-                                        Path relativePath ) throws ItemNotFoundException, RepositoryException {
+                                        Path relativePath )
+        throws ItemNotFoundException, InvalidItemStateException, RepositoryException {
         // A pathological case is an empty relative path ...
         if (relativePath.size() == 0) {
             return findJcrNode(uuidOfReferenceNode);
@@ -332,6 +383,412 @@ public class SessionCache {
     }
 
     /**
+     * Obtain an {@link NodeEditor editor} that can be used to manipulate the properties or children on the node identified by the
+     * supplied UUID. The node must exist prior to this call, either as a node that exists in the workspace or as a node that was
+     * created within this session but not yet persited to the workspace.
+     * 
+     * @param uuid the UUID of the node that is to be changed; may not be null and must represent an <i>existing</i> node
+     * @return the editor; never null
+     * @throws ItemNotFoundException if no such node could be found in the session or workspace
+     * @throws InvalidItemStateException if the item has been marked for deletion within this session
+     * @throws RepositoryException if any other error occurs while reading information from the repository
+     */
+    public NodeEditor getEditorFor( UUID uuid ) throws ItemNotFoundException, InvalidItemStateException, RepositoryException {
+        // See if we already have something in the changed nodes ...
+        ChangedNodeInfo info = changedNodes.get(uuid);
+        Location currentLocation = null;
+        if (info == null) {
+            // Or in the cache ...
+            NodeInfo cached = cachedNodes.get(uuid);
+            if (cached == null) {
+                cached = loadFromGraph(uuid, null);
+            }
+            // Now put into the changed nodes ...
+            info = new ChangedNodeInfo(cached);
+            changedNodes.put(uuid, info);
+            currentLocation = info.getOriginalLocation();
+        } else {
+            // compute the current location ...
+            currentLocation = Location.create(getPathFor(info), uuid);
+        }
+        return new NodeEditor(info, currentLocation);
+    }
+
+    /**
+     * An interface used to manipulate a node's properties and children.
+     */
+    public final class NodeEditor {
+        private final ChangedNodeInfo node;
+        private final Location currentLocation;
+
+        protected NodeEditor( ChangedNodeInfo node,
+                              Location currentLocation ) {
+            this.node = node;
+            this.currentLocation = currentLocation;
+        }
+
+        /**
+         * Set the value for the property. If the property does not exist, it will be added. If the property does exist, the
+         * existing values will be replaced with the supplied value.
+         * 
+         * @param name the property name; may not be null
+         * @param value the new property values, which may be converted to the appropriate {@link PropertyType type}
+         * @throws ConstraintViolationException if the property could not be set because of a node type constraint or property
+         *         definition constraint
+         */
+        public void setProperty( Name name,
+                                 Object value ) throws ConstraintViolationException {
+            Property dnaProp = propertyFactory.create(name, value);
+            setProperty(name, dnaProp);
+        }
+
+        /**
+         * Set the values for the property. If the property does not exist, it will be added. If the property does exist, the
+         * existing values will be replaced with those that are supplied.
+         * 
+         * @param name the property name; may not be null
+         * @param value the new property values, which may be converted to the appropriate {@link PropertyType type}
+         * @throws ConstraintViolationException if the property could not be set because of a node type constraint or property
+         *         definition constraint
+         */
+        public void setProperty( Name name,
+                                 Object[] value ) throws ConstraintViolationException {
+            Property dnaProp = propertyFactory.create(name, value);
+            setProperty(name, dnaProp);
+        }
+
+        protected final void setProperty( Name name,
+                                          Property dnaProp ) throws ConstraintViolationException {
+            PropertyInfo existing = node.getProperty(name);
+            PropertyInfo newProperty = null;
+            if (existing != null) {
+                // We're replacing an existing property, but we still need to check that the property definition
+                // defines a type. So, find the property definition for the existing property ...
+                JcrPropertyDefinition definition = nodeTypes().getPropertyDefinition(existing.getDefinitionId(),
+                                                                                     existing.isMultiValued());
+
+                // Look at the required property type ...
+                int propertyType = definition.getRequiredType();
+                if (propertyType == PropertyType.UNDEFINED) {
+                    // We need set the new type to that defined by the values ...
+                    propertyType = JcrSession.jcrPropertyTypeFor(dnaProp);
+                }
+
+                // Csreate the property info ...
+                newProperty = new PropertyInfo(existing.getPropertyId(), existing.getDefinitionId(), propertyType, dnaProp,
+                                               existing.isMultiValued());
+            } else {
+                // It's a new property ...
+                PropertyId id = new PropertyId(node.getUuid(), name);
+                // Look find the property definition to use ...
+                JcrPropertyDefinition definition = findBestPropertyDefintion(dnaProp);
+
+                // Figure out the property type ...
+                int propertyType = definition.getRequiredType();
+                if (propertyType == PropertyType.UNDEFINED) {
+                    propertyType = JcrSession.jcrPropertyTypeFor(dnaProp);
+                }
+                // Create the property info ...
+                newProperty = new PropertyInfo(id, definition.getId(), propertyType, dnaProp, definition.isMultiple());
+            }
+            node.setProperty(newProperty, context().getValueFactories());
+            operations().set(dnaProp).on(currentLocation);
+        }
+
+        /**
+         * Remove the existing property with the supplied name.
+         * 
+         * @param name the property name; may not be null
+         * @return true if there was a property with the supplied name, or false if no such property existed
+         */
+        public boolean removeProperty( Name name ) {
+            if (node.removeProperty(name) != null) {
+                operations().remove(name).on(currentLocation);
+                return true;
+            }
+            return false;
+        }
+
+        /**
+         * Move the child specified by the supplied UUID to be a child of this node, appending the child to the end of the current
+         * list of children. This method automatically disconnects the node from its current parent.
+         * 
+         * @param nodeUuid the UUID of the existing node; may not be null
+         * @return the representation of the newly-added child, which includes the {@link ChildNode#getSnsIndex()
+         *         same-name-sibling index}
+         * @throws ItemNotFoundException if the specified child node could be found in the session or workspace
+         * @throws InvalidItemStateException if the specified child has been marked for deletion within this session
+         * @throws ConstraintViolationException if moving the node into this node violates this node's definition
+         * @throws RepositoryException if any other error occurs while reading information from the repository
+         */
+        public ChildNode moveToBeChild( UUID nodeUuid )
+            throws ItemNotFoundException, InvalidItemStateException, ConstraintViolationException, RepositoryException {
+
+            if (nodeUuid.equals(node.getUuid()) || isAncestor(nodeUuid)) {
+                Path pathOfNode = getPathFor(nodeUuid);
+                Path thisPath = currentLocation.getPath();
+                String msg = JcrI18n.unableToMoveNodeToBeChildOfDecendent.text(pathOfNode, thisPath, workspaceName());
+                throw new RepositoryException(msg);
+            }
+
+            // Is the node already a child?
+            ChildNode child = node.getChildren().getChild(nodeUuid);
+            if (child != null) return child;
+
+            // Get an editor for the child (in its current location) and one for its parent ...
+            NodeEditor existingNodeEditor = getEditorFor(nodeUuid);
+            ChangedNodeInfo existingNodeInfo = existingNodeEditor.node;
+            UUID existingParent = existingNodeInfo.getParent();
+            NodeEditor existingParentEditor = getEditorFor(existingParent);
+            ChangedNodeInfo existingParentInfo = existingParentEditor.node;
+
+            // Verify that this node's definition allows the specified child ...
+            Name childName = existingParentInfo.getChildren().getChild(nodeUuid).getName();
+            int numSns = node.getChildren().getCountOfSameNameSiblingsWithName(childName);
+            JcrNodeDefinition definition = findBestChildNodeDefinition(childName, numSns);
+            if (!definition.getId().equals(node.getDefinitionId())) {
+                // The node definition changed, so try to set the property ...
+                try {
+                    setProperty(DnaLexicon.NODE_DEFINITON, definition.getId().getString());
+                } catch (ConstraintViolationException e) {
+                    // We can't set this property on the node (according to the node definition).
+                    // But we still want the node info to have the correct node definition.
+                    // When it is reloaded into a cache (after being persisted), the correct node definition
+                    // will be computed again ...
+                    node.setDefinitionId(definition.getId());
+
+                    // And remove the property from the info ...
+                    existingNodeEditor.removeProperty(DnaLexicon.NODE_DEFINITON);
+                }
+            }
+
+            // Remove the node from the current parent and add it to this ...
+            child = existingParentInfo.removeChild(nodeUuid, pathFactory);
+            ChildNode newChild = node.addChild(child.getName(), child.getUuid(), pathFactory);
+
+            // Set the child's changed representation to point to this node as its parent ...
+            existingNodeInfo.setParent(node.getUuid());
+
+            // Now, record the operation to do this ...
+            operations().move(existingNodeEditor.currentLocation).into(currentLocation);
+
+            return newChild;
+        }
+
+        /**
+         * Create a new node as a child of this node, using the supplied name and (optionally) the supplied UUID.
+         * 
+         * @param name the name for the new child; may not be null
+         * @param desiredUuid the desired UUID, or null if the UUID for the child should be generated automatically
+         * @param primaryTypeName the name of the primary type for the new node
+         * @param nodeDefinitionId
+         * @return the representation of the newly-created child, which includes the {@link ChildNode#getSnsIndex()
+         *         same-name-sibling index}
+         * @throws InvalidItemStateException if the specified child has been marked for deletion within this session
+         * @throws ConstraintViolationException if moving the node into this node violates this node's definition
+         * @throws RepositoryException if any other error occurs while reading information from the repository
+         */
+        public ChildNode createChild( Name name,
+                                      UUID desiredUuid,
+                                      Name primaryTypeName,
+                                      NodeDefinitionId nodeDefinitionId )
+            throws InvalidItemStateException, ConstraintViolationException, RepositoryException {
+            if (desiredUuid == null) desiredUuid = UUID.randomUUID();
+
+            // Verify that this node accepts a child of the supplied name (given any existing SNS nodes) ...
+            int numSns = node.getChildren().getCountOfSameNameSiblingsWithName(name);
+            JcrNodeDefinition definition = findBestChildNodeDefinition(name, numSns);
+
+            ChildNode result = node.addChild(name, desiredUuid, pathFactory);
+
+            // ---------------------------------------------------------
+            // Now create the child node representation in the cache ...
+            // ---------------------------------------------------------
+            Path newPath = pathFactory.create(currentLocation.getPath(), result.getSegment());
+            Location location = Location.create(newPath, desiredUuid);
+
+            // Create the properties ...
+            Map<Name, PropertyInfo> properties = new HashMap<Name, PropertyInfo>();
+            Property primaryTypeProp = propertyFactory.create(JcrLexicon.PRIMARY_TYPE, primaryTypeName);
+            Property nodeDefinitionProp = propertyFactory.create(DnaLexicon.NODE_DEFINITON, nodeDefinitionId.getString());
+
+            // Create the property info for the "jcr:primaryType" child property ...
+            JcrPropertyDefinition primaryTypeDefn = findBestPropertyDefintion(primaryTypeProp, primaryTypeName);
+            PropertyDefinitionId primaryTypeDefinitionId = primaryTypeDefn.getId();
+            PropertyInfo primaryTypeInfo = new PropertyInfo(new PropertyId(desiredUuid, primaryTypeProp.getName()),
+                                                            primaryTypeDefinitionId, PropertyType.NAME, primaryTypeProp, false);
+            properties.put(primaryTypeProp.getName(), primaryTypeInfo);
+
+            // Create the property info for the "dna:nodeDefinition" child property ...
+            JcrPropertyDefinition nodeDefnDefn = findBestPropertyDefintion(nodeDefinitionProp, primaryTypeName);
+            if (nodeDefnDefn != null) {
+                PropertyDefinitionId nodeDefnDefinitionId = nodeDefnDefn.getId();
+                PropertyInfo nodeDefinitionInfo = new PropertyInfo(new PropertyId(desiredUuid, nodeDefinitionProp.getName()),
+                                                                   nodeDefnDefinitionId, PropertyType.STRING, nodeDefinitionProp,
+                                                                   true);
+                properties.put(nodeDefinitionProp.getName(), nodeDefinitionInfo);
+            }
+
+            // Now create the child node info, putting it in the changed map (and not the cache map!) ...
+            NodeInfo info = new ImmutableNodeInfo(location, primaryTypeName, null, definition.getId(), node.getUuid(), null,
+                                                  properties);
+            ChangedNodeInfo changedInfo = new ChangedNodeInfo(info);
+            changedNodes.put(desiredUuid, changedInfo);
+
+            // ---------------------------------------
+            // Now record the changes to the store ...
+            // ---------------------------------------
+            Graph.Create<Graph.Batch> create = operations().createUnder(currentLocation)
+                                                           .nodeNamed(name)
+                                                           .with(desiredUuid)
+                                                           .with(primaryTypeProp);
+            if (nodeDefnDefn != null) {
+                create = create.with(nodeDefinitionProp);
+            }
+            create.and();
+            return result;
+        }
+
+        /**
+         * Destroy the child node with the supplied UUID and all nodes that exist below it, including any nodes that were created
+         * and haven't been persisted.
+         * 
+         * @param nodeUuid the UUID of the child node; may not be null
+         * @return true if the child was successfully removed, or false if the node did not exist as a child
+         */
+        public boolean destroyChild( UUID nodeUuid ) {
+            ChildNode deleted = node.removeChild(nodeUuid, pathFactory);
+
+            if (deleted != null) {
+                // Recursively mark the cached/changed information as deleted ...
+                deleteNodeInfos(nodeUuid);
+
+                // Now make the request to the source ...
+                Path childPath = pathFactory.create(currentLocation.getPath(), deleted.getSegment());
+                Location locationOfChild = Location.create(childPath, nodeUuid);
+                operations().delete(locationOfChild);
+                return true;
+            }
+            return false;
+        }
+
+        /**
+         * Find the best property definition in this node's
+         * 
+         * @param dnaProperty the new property that is to be set on this node
+         * @return the property definition that allows setting this property; never null
+         * @throws ConstraintViolationException if setting the property would violates this node's definition or the property's
+         *         definition
+         */
+        protected JcrPropertyDefinition findBestPropertyDefintion( Property dnaProperty ) throws ConstraintViolationException {
+            // First check the primary type ...
+            JcrPropertyDefinition definition = findBestPropertyDefintion(dnaProperty, node.getPrimaryTypeName());
+            if (definition != null) {
+                // TODO: Does this definition allow this value? ...
+                return definition;
+            }
+            // Check the mixin types ...
+            for (Name mixinTypeName : node.getMixinTypeNames()) {
+                definition = findBestPropertyDefintion(dnaProperty, mixinTypeName);
+                if (definition != null) {
+                    // TODO: Does this definition allow this value? ...
+                    return definition;
+                }
+            }
+
+            // Nothing was found yet, so check the residual property definitions, starting with the primary type ...
+            definition = findBestPropertyDefintion(dnaProperty, residualName);
+            if (definition != null) {
+                // TODO: Does this definition allow this value? ...
+                return definition;
+            }
+            // Check the mixin types ...
+            for (Name mixinTypeName : node.getMixinTypeNames()) {
+                definition = findBestPropertyDefintion(dnaProperty, mixinTypeName);
+                if (definition != null) {
+                    // TODO: Does this definition allow this value? ...
+                    return definition;
+                }
+            }
+
+            // No definition that allowed the values ...
+            throw new ConstraintViolationException();
+        }
+
+        /**
+         * Find the best property definition in the named node type.
+         * 
+         * @param dnaProperty the new property that is to be set on this node
+         * @param nodeTypeName the name of the node type that should be checked; may not be null
+         * @return the property definition that allows setting this property; or null if no valid property definition could be
+         *         found in the given node type
+         * @see #findBestPropertyDefintion(Property)
+         */
+        protected JcrPropertyDefinition findBestPropertyDefintion( Property dnaProperty,
+                                                                   Name nodeTypeName ) {
+            JcrNodeType nodeType = nodeTypes().getNodeType(nodeTypeName);
+            Name name = dnaProperty.getName();
+            JcrPropertyDefinition definition = null;
+            if (dnaProperty.isSingle()) {
+                // First look for a single-valued property definition with a matching name ...
+                definition = nodeType.getPropertyDefinition(name, false);
+                if (definition != null) return definition;
+
+                // Then look for a residual definition ...
+                definition = nodeType.getPropertyDefinition(JcrNodeType.RESIDUAL_ITEM_NAME, false);
+                if (definition != null) return definition;
+            }
+
+            // Either the DNA property has 0 or 2+ values (and we couldn't use a single-valued definition)
+            // OR there was 1 value and we couldn't find a single-valued definition.
+            // So, we need to look for a multi-valued property definition ...
+
+            // First look for a definition that matches by name ...
+            definition = nodeType.getPropertyDefinition(name, true);
+            if (definition != null) return definition;
+
+            // Then look for a residual definition ...
+            definition = nodeType.getPropertyDefinition(JcrNodeType.RESIDUAL_ITEM_NAME, true);
+            if (definition != null) return definition;
+
+            // Nothing found yet ...
+            if (INCLUDE_PROPERTIES_NOT_ALLOWED_BY_NODE_TYPE_OR_MIXINS) {
+                // We can use the "nt:unstructured" property definitions for any property ...
+                JcrNodeType unstructured = nodeTypes().getNodeType(JcrNtLexicon.UNSTRUCTURED);
+                definition = unstructured.getPropertyDefinition(JcrNodeType.RESIDUAL_ITEM_NAME, true);
+                if (definition != null) return definition;
+            }
+
+            // No property definition could be found ...
+            return null;
+        }
+
+        /**
+         * @param childName
+         * @param numberOfExistingChildrenWithName
+         * @return the most specific node definition for the child; never null
+         * @throws ConstraintViolationException if the new child would violates this node's definition
+         */
+        protected JcrNodeDefinition findBestChildNodeDefinition( Name childName,
+                                                                 int numberOfExistingChildrenWithName )
+            throws ConstraintViolationException {
+
+            // No definition that allowed the values ...
+            throw new ConstraintViolationException();
+        }
+
+        protected boolean isAncestor( UUID uuid ) throws ItemNotFoundException, InvalidItemStateException, RepositoryException {
+            UUID ancestor = node.getParent();
+            while (ancestor != null) {
+                if (ancestor.equals(uuid)) return true;
+                NodeInfo info = findNodeInfo(ancestor);
+                ancestor = info.getParent();
+            }
+            return false;
+        }
+    }
+
+    /**
      * Utility method that creates and caches the appropriate kind of AbstractJcrNode implementation for node given by the
      * supplied information.
      * 
@@ -387,20 +844,18 @@ public class SessionCache {
      * @param uuid the UUID for the node; may not be null
      * @return the information for the node with the supplied UUID, or null if the information is not in the cache
      * @throws ItemNotFoundException if there is no node with the supplied UUID
+     * @throws InvalidItemStateException if the node with the UUID has been deleted in this session
      * @throws RepositoryException if any other error occurs while reading information from the repository
      * @see #findNodeInfoInCache(UUID)
      * @see #findNodeInfo(UUID, Path)
      * @see #findNodeInfoForRoot()
      */
-    NodeInfo findNodeInfo( UUID uuid ) throws ItemNotFoundException, RepositoryException {
-        // See if we already have something in the changed nodes ...
-        NodeInfo info = changedNodes.get(uuid);
+    NodeInfo findNodeInfo( UUID uuid ) throws ItemNotFoundException, InvalidItemStateException, RepositoryException {
+        // See if we already have something in the cache ...
+        NodeInfo info = findNodeInfoInCache(uuid);
         if (info == null) {
-            // Or in the cache ...
-            info = cachedNodes.get(uuid);
-            if (info == null) {
-                info = loadFromGraph(uuid, null);
-            }
+            // Nope, so go ahead and load it ...
+            info = loadFromGraph(uuid, null);
         }
         return info;
     }
@@ -414,13 +869,20 @@ public class SessionCache {
      * @see #findNodeInfo(UUID)
      * @see #findNodeInfo(UUID, Path)
      * @see #findNodeInfoForRoot()
+     * @throws InvalidItemStateException if the node with the UUID has been deleted in this session
      */
-    NodeInfo findNodeInfoInCache( UUID uuid ) {
+    NodeInfo findNodeInfoInCache( UUID uuid ) throws InvalidItemStateException {
         // See if we already have something in the changed nodes ...
         NodeInfo info = changedNodes.get(uuid);
         if (info == null) {
             // Or in the cache ...
             info = cachedNodes.get(uuid);
+            if (info == null) {
+                // Finally check if the node was deleted ...
+                if (deletedNodes.containsKey(uuid)) {
+                    throw new InvalidItemStateException();
+                }
+            }
         }
         return info;
     }
@@ -452,11 +914,13 @@ public class SessionCache {
      * @return the information for the referenced node; never null
      * @throws ItemNotFoundException if the reference node with the supplied UUID does not exist
      * @throws PathNotFoundException if the node given by the relative path does not exist
+     * @throws InvalidItemStateException if the node with the UUID has been deleted in this session
      * @throws RepositoryException if any other error occurs while reading information from the repository
      * @see #findNodeInfoForRoot()
      */
     NodeInfo findNodeInfo( UUID node,
-                           Path relativePath ) throws ItemNotFoundException, PathNotFoundException, RepositoryException {
+                           Path relativePath )
+        throws ItemNotFoundException, InvalidItemStateException, PathNotFoundException, RepositoryException {
         // The relative path must be normalized ...
         assert relativePath.isNormalized();
 
@@ -583,19 +1047,21 @@ public class SessionCache {
      * @param propertyId the identifier for the property; may not be null
      * @return the property information, or null if the node does not contain the specified property
      * @throws PathNotFoundException if the node containing this property does not exist
+     * @throws InvalidItemStateException if the node with the UUID has been deleted in this session
      * @throws RepositoryException if there is an error while obtaining the information
      */
-    PropertyInfo findPropertyInfo( PropertyId propertyId ) throws PathNotFoundException, RepositoryException {
+    PropertyInfo findPropertyInfo( PropertyId propertyId )
+        throws PathNotFoundException, InvalidItemStateException, RepositoryException {
         NodeInfo info = findNodeInfo(propertyId.getNodeId());
         return info.getProperty(propertyId.getPropertyName());
     }
 
-    Path getPathFor( UUID uuid ) throws ItemNotFoundException, RepositoryException {
+    Path getPathFor( UUID uuid ) throws ItemNotFoundException, InvalidItemStateException, RepositoryException {
         if (uuid == root) return rootPath;
         return getPathFor(findNodeInfo(uuid));
     }
 
-    Path getPathFor( NodeInfo info ) throws ItemNotFoundException, RepositoryException {
+    Path getPathFor( NodeInfo info ) throws ItemNotFoundException, InvalidItemStateException, RepositoryException {
         if (info != null && info.getUuid() == root) return rootPath;
         LinkedList<Path.Segment> segments = new LinkedList<Path.Segment>();
         while (info != null) {
@@ -619,7 +1085,7 @@ public class SessionCache {
         return getPathFor(findPropertyInfo(propertyId));
     }
 
-    protected Name getNameOf( UUID nodeUuid ) throws ItemNotFoundException, RepositoryException {
+    protected Name getNameOf( UUID nodeUuid ) throws ItemNotFoundException, InvalidItemStateException, RepositoryException {
         findNodeInfoForRoot();
         if (nodeUuid == root) return nameFactory.create("");
         // Get the parent ...
@@ -629,7 +1095,7 @@ public class SessionCache {
         return child.getName();
     }
 
-    protected int getSnsIndexOf( UUID nodeUuid ) throws ItemNotFoundException, RepositoryException {
+    protected int getSnsIndexOf( UUID nodeUuid ) throws ItemNotFoundException, InvalidItemStateException, RepositoryException {
         findNodeInfoForRoot();
         if (nodeUuid == root) return 1;
         // Get the parent ...
@@ -718,7 +1184,9 @@ public class SessionCache {
         if (uuid != null) {
             // Check for an identification property ...
             uuidProperty = location.getIdProperty(JcrLexicon.UUID);
-            if (uuidProperty == null) uuidProperty = location.getIdProperty(DnaLexicon.UUID);
+            if (uuidProperty == null) {
+                uuidProperty = propertyFactory.create(JcrLexicon.UUID, uuid);
+            }
         }
         if (uuidProperty == null) {
             uuidProperty = graphNode.getProperty(JcrLexicon.UUID);
@@ -843,9 +1311,12 @@ public class SessionCache {
         }
         // The process the mixin types ...
         org.jboss.dna.graph.property.Property mixinTypesProperty = graphProperties.get(JcrLexicon.MIXIN_TYPES);
+        Set<Name> mixinTypeNames = null;
         if (mixinTypesProperty != null && !mixinTypesProperty.isEmpty()) {
             for (Object mixinTypeValue : mixinTypesProperty) {
                 Name mixinTypeName = nameFactory.create(mixinTypeValue);
+                if (mixinTypeNames == null) mixinTypeNames = new HashSet<Name>();
+                mixinTypeNames.add(mixinTypeName);
                 if (!referenceable && JcrMixLexicon.REFERENCEABLE.equals(mixinTypeName)) referenceable = true;
                 String mixinTypeNameString = mixinTypeName.getString(namespaces);
                 NodeType mixinType = nodeTypes().getNodeType(mixinTypeNameString);
@@ -958,7 +1429,7 @@ public class SessionCache {
         List<Location> locations = graphNode.getChildren();
         Children children = locations.isEmpty() ? new EmptyChildren(parentUuid) : new ImmutableChildren(parentUuid, locations);
         props = Collections.unmodifiableMap(props);
-        return new ImmutableNodeInfo(location, primaryTypeName, definition.getId(), parentUuid, children, props);
+        return new ImmutableNodeInfo(location, primaryTypeName, mixinTypeNames, definition.getId(), parentUuid, children, props);
     }
 
     /**
@@ -984,5 +1455,74 @@ public class SessionCache {
         }
         // TODO: should this also check the mixins?
         return primaryType.findBestNodeDefinitionForChild(childName, primaryTypeOfChild);
+    }
+
+    /**
+     * This method finds the {@link NodeInfo} for the node with the supplied UUID and marks it as being deleted, and does the same
+     * for all decendants (e.g., children, grandchildren, great-grandchildren, etc.) that have been cached or changed.
+     * <p>
+     * Note that this method only processes those nodes that are actually represented in this cache. Any branches that are not
+     * loaded are not processed. This is an acceptable assumption, since all ancestors of a cached node should also be cached.
+     * </p>
+     * <p>
+     * Also be aware that the returned count of deleted node info representations will only reflect the total number of nodes in
+     * the branch if and only if all branch nodes were cached. In all other cases, the count returned will be fewer than the
+     * number of actual nodes in the branch.
+     * </p>
+     * 
+     * @param uuid the UUID of the node that should be marked as deleted; may not be null
+     * @return the number of node info representations that were marked as deleted
+     */
+    protected int deleteNodeInfos( UUID uuid ) {
+        Queue<UUID> nodesToDelete = new LinkedList<UUID>();
+        int numDeleted = 0;
+        nodesToDelete.add(uuid);
+        while (!nodesToDelete.isEmpty()) {
+            UUID toDelete = nodesToDelete.remove();
+            // Remove the node info from the changed map ...
+            NodeInfo info = changedNodes.remove(toDelete);
+            if (info == null) {
+                // Wasn't changed, so remove it from the cache map ...
+                info = cachedNodes.remove(toDelete);
+            }
+            // Whether or not we found an info, add it to the deleted map ...
+            this.deletedNodes.put(toDelete, info);
+
+            if (info != null) {
+                // Get all the children and add them to the queue ...
+                for (ChildNode child : info.getChildren()) {
+                    nodesToDelete.add(child.getUuid());
+                }
+            }
+            ++numDeleted;
+        }
+        return numDeleted;
+    }
+
+    /**
+     * Find the best {@link JcrNodeDefinition child definition} for a child with the specified name given the named primary type
+     * and mixin types.
+     * 
+     * @param childName the name of the child that is to be added
+     * @param childPrimaryTypeName the name of the child's primary type, or null if the child's primary type is not known
+     * @param requiresMultipleSns true if there is at least one existing child with the same name, requiring the child node type
+     *        to allow same-name-siblings, or false if the child will be the first child with the supplied name
+     * @param primaryTypeName the name of the primary type for the parent; may not be null
+     * @param mixinTypeNames the names of the mixin types for the parent; may be null or empty if the parent has no mixins
+     * @return the child node definition that can be used (which may be a residual definition), or null if there is no such node
+     *         type
+     */
+    protected JcrNodeDefinition findBestChildDefinition( Name childName,
+                                                         Name childPrimaryTypeName,
+                                                         boolean requiresMultipleSns,
+                                                         Name primaryTypeName,
+                                                         Collection<Name> mixinTypeNames ) {
+        // First check the primary type for a child definition with the supplied name ...
+        JcrNodeType primaryType = nodeTypes().getNodeType(primaryTypeName);
+        JcrNodeDefinition definition = primaryType.findBestNodeDefinitionForChild(childName, childPrimaryTypeName);
+        if (definition != null) {
+            // definition.
+        }
+        return null;
     }
 }

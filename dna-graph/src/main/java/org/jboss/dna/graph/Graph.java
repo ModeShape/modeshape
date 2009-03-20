@@ -54,6 +54,7 @@ import org.jboss.dna.graph.property.DateTime;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.NameFactory;
 import org.jboss.dna.graph.property.Path;
+import org.jboss.dna.graph.property.PathNotFoundException;
 import org.jboss.dna.graph.property.Property;
 import org.jboss.dna.graph.property.PropertyFactory;
 import org.jboss.dna.graph.property.Reference;
@@ -66,6 +67,7 @@ import org.jboss.dna.graph.request.CreateNodeRequest;
 import org.jboss.dna.graph.request.CreateWorkspaceRequest;
 import org.jboss.dna.graph.request.DeleteBranchRequest;
 import org.jboss.dna.graph.request.GetWorkspacesRequest;
+import org.jboss.dna.graph.request.InvalidRequestException;
 import org.jboss.dna.graph.request.InvalidWorkspaceException;
 import org.jboss.dna.graph.request.MoveBranchRequest;
 import org.jboss.dna.graph.request.ReadAllChildrenRequest;
@@ -77,6 +79,7 @@ import org.jboss.dna.graph.request.ReadNodeRequest;
 import org.jboss.dna.graph.request.ReadPropertyRequest;
 import org.jboss.dna.graph.request.RemovePropertiesRequest;
 import org.jboss.dna.graph.request.Request;
+import org.jboss.dna.graph.request.UnsupportedRequestException;
 import org.jboss.dna.graph.request.UpdatePropertiesRequest;
 import org.jboss.dna.graph.request.VerifyWorkspaceRequest;
 import org.jboss.dna.graph.request.CloneWorkspaceRequest.CloneConflictBehavior;
@@ -217,6 +220,12 @@ public class Graph {
      * </p>
      * 
      * @param request the request to be executed (may be a {@link CompositeRequest}.
+     * @throws PathNotFoundException if the request used a node that did not exist
+     * @throws InvalidRequestException if the request was not valid
+     * @throws InvalidWorkspaceException if the workspace used in the request was not valid
+     * @throws UnsupportedRequestException if the request was not supported by the source
+     * @throws RepositorySourceException if an error occurs during execution
+     * @throws RuntimeException if a runtime error occurs during execution
      */
     protected void execute( Request request ) {
         RepositoryConnection connection = Graph.this.getConnectionFactory().createConnection(getSourceName());
@@ -1948,6 +1957,24 @@ public class Graph {
         }
 
         /**
+         * Return whether this batch has been {@link #execute() executed}.
+         * 
+         * @return true if this batch has already been executed, or false otherwise
+         */
+        public boolean hasExecuted() {
+            return executed;
+        }
+
+        /**
+         * Determine whether this batch needs to be executed (there are requests and the batch has not been executed yet).
+         * 
+         * @return true if there are some requests in this batch that need to be executed, or false execution is not required
+         */
+        public boolean isExecuteRequired() {
+            return !executed || requestQueue.size() != 0;
+        }
+
+        /**
          * Obtain the graph that this batch uses.
          * 
          * @return the graph; never null
@@ -3318,6 +3345,11 @@ public class Graph {
             };
         }
 
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.jboss.dna.graph.Graph.Executable#execute()
+         */
         public Results execute() {
             return this.requestQueue.execute();
         }
@@ -3406,6 +3438,12 @@ public class Graph {
          * Stop accumulating the requests, submit them to the repository source, and return the results.
          * 
          * @return the results containing the requested information from the repository.
+         * @throws PathNotFoundException if a request used a node that did not exist
+         * @throws InvalidRequestException if a request was not valid
+         * @throws InvalidWorkspaceException if the workspace used in a request was not valid
+         * @throws UnsupportedRequestException if a request was not supported by the source
+         * @throws RepositorySourceException if an error occurs during execution
+         * @throws RuntimeException if a runtime error occurs during execution
          */
         Results execute();
     }
@@ -4539,7 +4577,15 @@ public class Graph {
          * @param nodeName the name of the new node
          * @return the interface used to complete the request
          */
-        CreateAction<Next> nodeNamed( String nodeName );
+        Create<Next> nodeNamed( String nodeName );
+
+        /**
+         * Specify the name of the node that is to be created.
+         * 
+         * @param nodeName the name of the new node
+         * @return the interface used to complete the request
+         */
+        Create<Next> nodeNamed( Name nodeName );
     }
 
     /**
@@ -4653,6 +4699,7 @@ public class Graph {
         void submit( Request request );
 
         void submit( List<Request> requests );
+
     }
 
     /**
@@ -4698,6 +4745,15 @@ public class Graph {
 
         public List<Request> getRequests() {
             return this.requests;
+        }
+
+        /**
+         * Determine the number of requests that are currently in the queue.
+         * 
+         * @return the number of currently-enqueued requests
+         */
+        public int size() {
+            return requests.size();
         }
 
         public void submit( Request request ) {
@@ -5592,6 +5648,10 @@ public class Graph {
             NameFactory factory = context.getValueFactories().getNameFactory();
             Name nameObj = factory.create(name);
             return new CreateAction<T>(afterConjunction(), queue(), parent, workspaceName, nameObj);
+        }
+
+        public CreateAction<T> nodeNamed( Name name ) {
+            return new CreateAction<T>(afterConjunction(), queue(), parent, workspaceName, name);
         }
     }
 

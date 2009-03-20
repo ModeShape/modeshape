@@ -990,4 +990,24 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         }
         return patterns;
     }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @throws UnsupportedOperationException always
+     * @see javax.jcr.Item#refresh(boolean)
+     */
+    public void refresh( boolean keepChanges ) {
+        throw new UnsupportedOperationException();
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @throws UnsupportedOperationException always
+     * @see javax.jcr.Item#save()
+     */
+    public void save() {
+        throw new UnsupportedOperationException();
+    }
 }

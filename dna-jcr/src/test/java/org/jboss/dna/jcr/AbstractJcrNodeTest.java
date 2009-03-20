@@ -100,6 +100,10 @@ public class AbstractJcrNodeTest {
         public String getPath() throws RepositoryException {
             return cache.getPathFor(nodeInfo()).getString(namespaces());
         }
+
+        public void remove() {
+            throw new UnsupportedOperationException();
+        }
     }
 
     private ExecutionContext context;

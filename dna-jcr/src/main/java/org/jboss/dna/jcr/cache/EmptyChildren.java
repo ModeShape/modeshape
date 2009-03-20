@@ -102,6 +102,15 @@ public final class EmptyChildren implements Children, InternalChildren {
     /**
      * {@inheritDoc}
      * 
+     * @see org.jboss.dna.jcr.cache.Children#getCountOfSameNameSiblingsWithName(org.jboss.dna.graph.property.Name)
+     */
+    public int getCountOfSameNameSiblingsWithName( Name name ) {
+        return 0;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
      * @see org.jboss.dna.jcr.cache.InternalChildren#with(org.jboss.dna.graph.property.Name, java.util.UUID,
      *      org.jboss.dna.graph.property.PathFactory)
      */

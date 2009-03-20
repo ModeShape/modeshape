@@ -28,11 +28,15 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-import net.jcip.annotations.Immutable;
+import org.jboss.dna.graph.JcrLexicon;
 import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.property.Name;
+import org.jboss.dna.graph.property.NameFactory;
 import org.jboss.dna.graph.property.PathFactory;
+import org.jboss.dna.graph.property.ValueFactories;
+import org.jboss.dna.graph.property.ValueFactory;
 import org.jboss.dna.graph.property.Path.Segment;
+import org.jboss.dna.jcr.DnaLexicon;
 import org.jboss.dna.jcr.NodeDefinitionId;
 
 /**
@@ -41,7 +45,6 @@ import org.jboss.dna.jcr.NodeDefinitionId;
  * Each instance maintains a reference to the original (usually immutable) NodeInfo representation that was probably read from the
  * repository.
  */
-@Immutable
 public class ChangedNodeInfo implements NodeInfo {
 
     protected static final PropertyInfo DELETED_PROPERTY = null;
@@ -66,6 +69,18 @@ public class ChangedNodeInfo implements NodeInfo {
      * removed from the original, an entry is added to this map with the name of the removed property and a null PropertyInfo.
      */
     private Map<Name, PropertyInfo> changedProperties;
+
+    /**
+     * The updated list of mixin node type names. This is merely a cached version of what's already in the
+     * {@link JcrLexicon#MIXIN_TYPES "jcr:mixinTypes"} property.
+     */
+    private Set<Name> changedMixinTypeNames;
+
+    /**
+     * The updated node definition, which may be changed when this node is moved to a different parent (with a different node
+     * type)
+     */
+    private NodeDefinitionId changedDefinitionId;
 
     /**
      * Create an immutable NodeInfo instance.
@@ -135,10 +150,36 @@ public class ChangedNodeInfo implements NodeInfo {
     /**
      * {@inheritDoc}
      * 
+     * @see org.jboss.dna.jcr.cache.NodeInfo#getMixinTypeNames()
+     */
+    public Set<Name> getMixinTypeNames() {
+        if (changedMixinTypeNames != null) return changedMixinTypeNames;
+        return original.getMixinTypeNames();
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
      * @see org.jboss.dna.jcr.cache.NodeInfo#getDefinitionId()
      */
     public NodeDefinitionId getDefinitionId() {
+        if (changedDefinitionId != null) return changedDefinitionId;
         return original.getDefinitionId();
+    }
+
+    /**
+     * Set the identifier of the node definition for this node. This should normally be changed by
+     * {@link #setProperty(PropertyInfo, ValueFactories) setting} the {@link DnaLexicon#NODE_DEFINITON} property. However, since
+     * that property is not always allowed, this method provides a way to set it locally (without requiring a property).
+     * 
+     * @param definitionId the new property definition identifier; may not be null
+     * @see #setProperty(PropertyInfo, ValueFactories)
+     */
+    public void setDefinitionId( NodeDefinitionId definitionId ) {
+        if (!getDefinitionId().equals(definitionId)) {
+            assert definitionId != null;
+            changedDefinitionId = definitionId;
+        }
     }
 
     /**
@@ -172,43 +213,42 @@ public class ChangedNodeInfo implements NodeInfo {
     /**
      * Remove a child from the children. This method only uses the child's UUID to identify the contained ChildNode instance that
      * should be removed.
-     * <p>
-     * Note that this method returns the new {@link Children} container, which is the same as would be returned by
-     * {@link #getChildren()} called immediately after this method.
-     * </p>
      * 
      * @param childUUID the UUID of the child that is to be removed; may not be null
      * @param factory the path factory that should be used to create a {@link Segment} for replacement {@link ChildNode} objects
      *        for nodes with the same name that and higher same-name-sibiling indexes.
-     * @return the Children object that has the modified children
+     * @return the child node that was removed, or null if no such child could be removed
      */
-    public Children removeChild( UUID childUUID,
-                                 PathFactory factory ) {
+    public ChildNode removeChild( UUID childUUID,
+                                  PathFactory factory ) {
+        ChildNode deleted = null;
         if (changedChildren == null) {
             // Create the changed children. First check whether there are 0 or 1 child ...
             Children existing = original.getChildren();
             int numExisting = existing.size();
             if (numExisting == 0) {
                 // nothing to do, so return the original's children
-                return existing;
+                return null;
             }
-            if (existing.getChild(childUUID) == null) {
-                // The requested child doesn't exist in the children, so return silently ...
-                return existing;
+            deleted = existing.getChild(childUUID);
+            if (deleted == null) {
+                // The requested child doesn't exist in the children, so return ...
+                return null;
             }
             if (numExisting == 1) {
                 // We're removing the only child in the original ...
                 changedChildren = new ChangedChildren(existing.getParentUuid());
-                return changedChildren;
+                return existing.getChild(childUUID);
             }
             // There is at least one child, so create the new children container ...
             assert existing instanceof InternalChildren;
             InternalChildren internal = (InternalChildren)existing;
             changedChildren = internal.without(childUUID, factory);
         } else {
+            deleted = changedChildren.getChild(childUUID);
             changedChildren = changedChildren.without(childUUID, factory);
         }
-        return changedChildren;
+        return deleted;
     }
 
     /**
@@ -271,8 +311,10 @@ public class ChangedNodeInfo implements NodeInfo {
         return original.getProperty(name);
     }
 
-    public PropertyInfo setProperty( PropertyInfo newProperty ) {
+    public PropertyInfo setProperty( PropertyInfo newProperty,
+                                     ValueFactories factories ) {
         Name name = newProperty.getPropertyName();
+        PropertyInfo previous = null;
         if (changedProperties == null) {
             // There were no changes made yet ...
 
@@ -281,18 +323,33 @@ public class ChangedNodeInfo implements NodeInfo {
             changedProperties.put(name, newProperty);
 
             // And return the original property (or null if there was none) ...
-            return original.getProperty(name);
+            previous = original.getProperty(name);
+        } else if (changedProperties.containsKey(name)) {
+            // The property was already changed, in which case we need to return the changed one ...
+            previous = changedProperties.put(name, newProperty);
+        } else {
+            // Otherwise, the property was not yet changed or deleted ...
+            previous = original.getProperty(name);
+            changedProperties.put(name, newProperty);
         }
-        // The property may already have been changed, in which case we need to return the changed one ...
-        if (changedProperties.containsKey(name)) {
-            PropertyInfo changed = changedProperties.put(name, null);
-            // The named property was indeed deleted ...
-            return changed;
+        // If this property was the "jcr:mixinTypes" property, update the cached values ...
+        if (name.equals(JcrLexicon.MIXIN_TYPES)) {
+            if (changedMixinTypeNames == null) {
+                changedMixinTypeNames = new HashSet<Name>();
+            } else {
+                changedMixinTypeNames.clear();
+            }
+            NameFactory nameFactory = factories.getNameFactory();
+            for (Object value : newProperty.getProperty()) {
+                changedMixinTypeNames.add(nameFactory.create(value));
+            }
+        } else if (name.equals(DnaLexicon.NODE_DEFINITON)) {
+            ValueFactory<String> stringFactory = factories.getStringFactory();
+            String value = stringFactory.create(newProperty.getProperty().getFirstValue());
+            changedDefinitionId = NodeDefinitionId.fromString(value, factories.getNameFactory());
         }
-        // Otherwise, the property was not yet changed or deleted ...
-        PropertyInfo changed = original.getProperty(name);
-        changedProperties.put(name, newProperty);
-        return changed;
+
+        return previous;
     }
 
     public PropertyInfo removeProperty( Name name ) {

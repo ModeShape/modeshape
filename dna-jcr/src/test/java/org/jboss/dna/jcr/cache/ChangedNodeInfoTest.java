@@ -37,13 +37,16 @@ import static org.junit.matchers.JUnitMatchers.hasItems;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.stub;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import org.jboss.dna.graph.ExecutionContext;
+import org.jboss.dna.graph.JcrLexicon;
 import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.PathFactory;
+import org.jboss.dna.graph.property.Property;
 import org.jboss.dna.graph.property.Path.Segment;
 import org.jboss.dna.jcr.NodeDefinitionId;
 import org.junit.Before;
@@ -63,6 +66,7 @@ public class ChangedNodeInfoTest {
     private NodeDefinitionId definitionId;
     private ChangedChildren children;
     private Map<Name, PropertyInfo> properties;
+    private Set<Name> mixinTypeNames;
     private ChangedNodeInfo changes;
 
     @Before
@@ -78,7 +82,8 @@ public class ChangedNodeInfoTest {
         definitionId = new NodeDefinitionId(name("acme:geniusContainerType"), name("acme:geniuses"));
         children = new ChangedChildren(uuid);
         properties = new HashMap<Name, PropertyInfo>();
-        original = new ImmutableNodeInfo(location, primaryTypeName, definitionId, uuid, children, properties);
+        mixinTypeNames = new HashSet<Name>();
+        original = new ImmutableNodeInfo(location, primaryTypeName, mixinTypeNames, definitionId, uuid, children, properties);
 
         // Create the changed node representation ...
         changes = new ChangedNodeInfo(original);
@@ -116,7 +121,7 @@ public class ChangedNodeInfoTest {
         Name propName = name(name);
         PropertyInfo propertyInfo = mock(PropertyInfo.class);
         stub(propertyInfo.getPropertyName()).toReturn(propName);
-        changes.setProperty(propertyInfo);
+        changes.setProperty(propertyInfo, context.getValueFactories());
         return propertyInfo;
     }
 
@@ -137,7 +142,7 @@ public class ChangedNodeInfoTest {
         // Note that it may not be the same ChildNode instance if another SNS node with smaller index was removed
         assertThat(changes.getChildren().getChild(child.getUuid()), is(notNullValue()));
         // Now remove the child, making sure the result is the same as the next 'getChildren()' call ...
-        assertThat(changes.removeChild(child.getUuid(), pathFactory), is(sameInstance(changes.getChildren())));
+        assertThat(changes.removeChild(child.getUuid(), pathFactory), is(notNullValue()));
         // Verify it no longer exists ...
         assertThat(changes.getChildren().getChild(child.getUuid()), is(nullValue()));
     }
@@ -155,6 +160,28 @@ public class ChangedNodeInfoTest {
     @Test
     public void shouldHavePrimaryTypeNameFromOriginal() {
         assertThat(changes.getPrimaryTypeName(), is(sameInstance(primaryTypeName)));
+    }
+
+    @Test
+    public void shouldHaveMixinTypeNamesFromOriginal() {
+        assertThat(changes.getMixinTypeNames(), is(sameInstance(mixinTypeNames)));
+    }
+
+    @Test
+    public void shouldUpdateMixinTypeNamesWhenSettingJcrMixinTypeProperty() {
+        // Create the DNA property ...
+        Property mixinTypes = context.getPropertyFactory().create(JcrLexicon.MIXIN_TYPES, "dna:type1", "dna:type2");
+
+        // Modify the property ...
+        PropertyInfo newPropertyInfo = mock(PropertyInfo.class);
+        stub(newPropertyInfo.getPropertyName()).toReturn(mixinTypes.getName());
+        stub(newPropertyInfo.getProperty()).toReturn(mixinTypes);
+        PropertyInfo previous = changes.setProperty(newPropertyInfo, context.getValueFactories());
+        assertThat(previous, is(nullValue()));
+
+        // Verify that the mixin types were updated ...
+        assertThat(changes.getProperty(name("jcr:mixinTypes")), is(sameInstance(newPropertyInfo)));
+        assertThat(changes.getMixinTypeNames(), hasItems(name("dna:type2"), name("dna:type1")));
     }
 
     @Test
@@ -428,7 +455,8 @@ public class ChangedNodeInfoTest {
         // Create a bogus node that has a new UUID but with the same segment as 'childA3' ...
         Children before = changes.getChildren();
         int beforeSize = before.size();
-        Children after = changes.removeChild(UUID.randomUUID(), pathFactory);
+        assertThat(changes.removeChild(UUID.randomUUID(), pathFactory), is(nullValue()));
+        Children after = changes.getChildren();
         assertThat(after.size(), is(beforeSize));
         assertThat(after, is(sameInstance(before)));
         assertThat(after, is(sameInstance(changes.getChildren())));
@@ -451,7 +479,8 @@ public class ChangedNodeInfoTest {
         // Create a bogus node that has a new UUID but with the same segment as 'childA3' ...
         Children before = changes.getChildren();
         int beforeSize = before.size();
-        Children after = changes.removeChild(UUID.randomUUID(), pathFactory);
+        assertThat(changes.removeChild(UUID.randomUUID(), pathFactory), is(nullValue()));
+        Children after = changes.getChildren();
         assertThat(after.size(), is(beforeSize));
         assertThat(after, is(sameInstance(before)));
         assertThat(after, is(sameInstance(changes.getChildren())));
@@ -471,7 +500,7 @@ public class ChangedNodeInfoTest {
         // Modify the property ...
         PropertyInfo newPropertyInfo = mock(PropertyInfo.class);
         stub(newPropertyInfo.getPropertyName()).toReturn(name("test"));
-        PropertyInfo previous = changes.setProperty(newPropertyInfo);
+        PropertyInfo previous = changes.setProperty(newPropertyInfo, context.getValueFactories());
         assertThat(previous, is(sameInstance(propertyInfo)));
 
         // Verify we can find the new property ...
