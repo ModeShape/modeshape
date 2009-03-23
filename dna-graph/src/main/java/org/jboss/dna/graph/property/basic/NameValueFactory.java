@@ -62,8 +62,8 @@ public class NameValueFactory extends AbstractValueFactory<Name> implements Name
     protected static final String FULLY_QUALFIED_NAME_PATTERN_STRING = "\\{([^}]*)\\}(.*)";
     protected static final Pattern FULLY_QUALIFIED_NAME_PATTERN = Pattern.compile(FULLY_QUALFIED_NAME_PATTERN_STRING);
 
-    // Original pattern: (([^:/]*):)?(.*)
-    private static final String PREFIXED_NAME_PATTERN_STRING = "(([^:/]*):)?(.*)";
+    // Original pattern: (([^:/]*):)?([^:]*)
+    private static final String PREFIXED_NAME_PATTERN_STRING = "(([^:/]*):)?([^:]*)";
     private static final Pattern PREFIXED_NAME_PATTERN = Pattern.compile(PREFIXED_NAME_PATTERN_STRING);
 
     private static Name BLANK_NAME;

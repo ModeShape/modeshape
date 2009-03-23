@@ -34,6 +34,7 @@ import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.NamespaceRegistry;
 import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.ValueFactory;
+import org.jboss.dna.graph.property.ValueFormatException;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -124,6 +125,12 @@ public class NameValueFactoryTest {
     @Test( expected = IllegalArgumentException.class )
     public void shouldNotAllowEmptyLocalNameWithEncoder() {
         factory.create("a", "", decoder);
+    }
+
+    @Test( expected = ValueFormatException.class )
+    public void shouldNotCreateNameFromStringWithMultipleNonEscapedColons() {
+        // This is a requirement of JCR, per the JCR TCK
+        factory.create("a:b:c");
     }
 
     @Test
