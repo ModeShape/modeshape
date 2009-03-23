@@ -24,6 +24,7 @@
 package org.jboss.dna.graph.property.basic;
 
 import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsNot.not;
 import static org.junit.Assert.assertThat;
 import static org.junit.matchers.JUnitMatchers.containsString;
 import org.jboss.dna.common.text.Jsr283Encoder;
@@ -180,7 +181,7 @@ public class BasicNameTest {
         validLocalName = "some:name:with:colons";
         name = new BasicName(validNamespaceUri, validLocalName);
         result = name.getString(namespaceRegistry, encoder);
-        assertThat(result, is("some:name:with:colons"));
+        assertThat(result, is(encoder.encode(validLocalName)));
     }
 
     @Test
@@ -191,4 +192,21 @@ public class BasicNameTest {
         assertThat(name.getString(null, encoder, delimiterEncoder), is("\\{" + encoder.encode(DnaLexicon.Namespace.URI)
                                                                        + "\\}some\uf03aname\uf03awith\uf03acolons"));
     }
+
+    @Test
+    public void shouldEncodeWhenNoNamespace() {
+        String nameForEncoding = "test name";
+        String encodedNameForEncoding = encoder.encode(nameForEncoding);
+        // Make sure that we're not testing a trivial encoding
+        assertThat(encodedNameForEncoding, not(nameForEncoding));
+        
+        name = new BasicName(null, nameForEncoding);
+
+        String result = name.getString(namespaceRegistry, encoder);
+        assertThat(result, is(encodedNameForEncoding));
+
+        result = name.getString(encoder); 
+        assertThat(result, is(encodedNameForEncoding));
+    }
+
 }

@@ -91,7 +91,11 @@ public class BasicName implements Name {
             if (this.getLocalName().equals(Path.PARENT)) return Path.PARENT;
         }
         if (encoder == null) encoder = Path.DEFAULT_ENCODER;
-        return "{" + encoder.encode(this.namespaceUri) + "}" + encoder.encode(this.localName);
+        
+        if (namespaceUri.length() > 0) {
+            return "{" + encoder.encode(this.namespaceUri) + "}" + encoder.encode(this.localName);
+        }
+        return encoder.encode(this.localName);
     }
 
     /**
@@ -117,7 +121,7 @@ public class BasicName implements Name {
         if (prefix != null && prefix.length() != 0) {
             return encoder.encode(prefix) + ":" + encoder.encode(this.localName);
         }
-        return this.localName;
+        return encoder.encode(this.localName);
     }
 
     /**
@@ -148,7 +152,7 @@ public class BasicName implements Name {
             String delim = delimiterEncoder != null ? delimiterEncoder.encode(":") : ":";
             return encoder.encode(prefix) + delim + encoder.encode(this.localName);
         }
-        return this.localName;
+        return encoder.encode(this.localName);
     }
 
     /**
