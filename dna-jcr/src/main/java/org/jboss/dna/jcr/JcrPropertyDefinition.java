@@ -642,15 +642,22 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
         }
 
         public boolean matches( Value valueToMatch ) {
-            assert valueToMatch != null;
+            assert valueToMatch instanceof JcrValue;
+            
+            JcrValue jcrValue = (JcrValue) valueToMatch;
 
-            PathFactory pathFactory = context.getValueFactories().getPathFactory();
-            Path value = pathFactory.create(((JcrValue)valueToMatch).value());
+            /*
+             * Need two path factories here.  One uses the permanent namespace mappings to parse the constraints.
+             * The other also looks at the transient mappings to parse the checked value
+             */
+            PathFactory repoPathFactory = context.getValueFactories().getPathFactory();
+            PathFactory sessionPathFactory = jcrValue.sessionCache().context().getValueFactories().getPathFactory();
+            Path value = sessionPathFactory.create(((JcrValue)valueToMatch).value());
             value = value.getNormalizedPath();
 
             for (int i = 0; i < constraints.length; i++) {
                 boolean matchesDescendants = constraints[i].endsWith("*");
-                Path constraintPath = pathFactory.create(matchesDescendants ? constraints[i].substring(0,
+                Path constraintPath = repoPathFactory.create(matchesDescendants ? constraints[i].substring(0,
                                                                                                        constraints[i].length() - 2) : constraints[i]);
 
                 if (matchesDescendants && value.isDecendantOf(constraintPath)) {
