@@ -265,7 +265,9 @@ public class NameValueFactory extends AbstractValueFactory<Name> implements Name
         if (value == null) return null;
         if (!value.isAbsolute() && value.size() == 1) {
             // A relative name of length 1 is converted to a name
-            return value.getSegment(0).getName();
+            Path.Segment segment = value.getLastSegment();
+            // Can only convert if the path has no SNS index ...
+            if (!segment.hasIndex()) return segment.getName();
         }
         throw new ValueFormatException(value, getPropertyType(), GraphI18n.errorConvertingType.text(Path.class.getSimpleName(),
                                                                                                     Name.class.getSimpleName(),

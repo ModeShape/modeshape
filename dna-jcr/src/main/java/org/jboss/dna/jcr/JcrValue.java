@@ -35,7 +35,6 @@ import org.jboss.dna.graph.property.Binary;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.ValueFactories;
-import org.jboss.dna.graph.property.Path.Segment;
 
 /**
  * @author jverhaeg
@@ -56,7 +55,7 @@ final class JcrValue implements Value {
         assert type == PropertyType.BINARY || type == PropertyType.BOOLEAN || type == PropertyType.DATE
                || type == PropertyType.DOUBLE || type == PropertyType.LONG || type == PropertyType.NAME
                || type == PropertyType.PATH || type == PropertyType.REFERENCE || type == PropertyType.STRING;
-        
+
         // Leaving this assertion out for now so that values can be created in node type sources, which are created outside
         // the context of any particular session.
         // assert sessionCache != null;
@@ -90,12 +89,13 @@ final class JcrValue implements Value {
 
     /**
      * Returns the session cache for the session that created this value.
+     * 
      * @return the session cache for the session that created this value.
      */
     final SessionCache sessionCache() {
         return sessionCache;
     }
-    
+
     /**
      * {@inheritDoc}
      * 
@@ -226,91 +226,136 @@ final class JcrValue implements Value {
      * @see PropertyType
      */
     JcrValue asType( int type ) throws ValueFormatException {
-
         if (type == this.type) {
             return this.withTypeAndValue(this.type, this.value);
         }
 
+        Object value = this.value;
         switch (type) {
             case PropertyType.BOOLEAN:
+                // Make sure the existing value is valid per the current type.
+                // This is required if we rely upon the value factories to cast correctly.
+                if (this.type == PropertyType.STRING) {
+                    value = valueFactories.getStringFactory().create(this.value);
+                } else if (this.type == PropertyType.BINARY) {
+                    value = valueFactories.getBinaryFactory().create(this.value);
+                } else {
+                    throw createValueFormatException(boolean.class);
+                }
                 try {
-                    if (this.type == PropertyType.STRING || this.type == PropertyType.BINARY) {
-                        return this.withTypeAndValue(type, valueFactories.getBooleanFactory().create(value));
-                    }
+                    return this.withTypeAndValue(type, valueFactories.getBooleanFactory().create(value));
                 } catch (org.jboss.dna.graph.property.ValueFormatException vfe) {
                     throw createValueFormatException(vfe);
                 }
-                throw createValueFormatException(boolean.class);
 
             case PropertyType.DATE:
+                if (this.type == PropertyType.STRING) {
+                    value = valueFactories.getStringFactory().create(this.value);
+                } else if (this.type == PropertyType.BINARY) {
+                    value = valueFactories.getBinaryFactory().create(this.value);
+                } else if (this.type == PropertyType.DOUBLE) {
+                    value = valueFactories.getDoubleFactory().create(this.value);
+                } else if (this.type == PropertyType.LONG) {
+                    value = valueFactories.getLongFactory().create(this.value);
+                } else {
+                    throw createValueFormatException(Calendar.class);
+                }
                 try {
-                    if (this.type == PropertyType.DOUBLE || this.type == PropertyType.LONG || this.type == PropertyType.STRING
-                        || this.type == PropertyType.BINARY) {
-                        return this.withTypeAndValue(type, valueFactories.getDateFactory().create(value));
-                    }
+                    return this.withTypeAndValue(type, valueFactories.getDateFactory().create(value));
                 } catch (org.jboss.dna.graph.property.ValueFormatException vfe) {
                     throw createValueFormatException(vfe);
                 }
-
-                throw createValueFormatException(Calendar.class);
 
             case PropertyType.NAME:
+                if (this.type == PropertyType.STRING) {
+                    value = valueFactories.getStringFactory().create(this.value);
+                } else if (this.type == PropertyType.BINARY) {
+                    value = valueFactories.getBinaryFactory().create(this.value);
+                } else if (this.type == PropertyType.PATH) {
+                    value = valueFactories.getPathFactory().create(this.value);
+                } else {
+                    throw createValueFormatException(Name.class);
+                }
                 try {
-                    if (this.type == PropertyType.STRING) {
-                        return this.withTypeAndValue(type, valueFactories.getNameFactory().create(value));
-                    }
-
-                    String valueAsString = this.valueFactories.getStringFactory().create(value);
-                    if (this.type == PropertyType.BINARY) {
-                        return this.withTypeAndValue(type, valueFactories.getNameFactory().create(valueAsString));
-
-                    }
-
-                    if (this.type == PropertyType.PATH) {
-                        Path path = valueFactories.getPathFactory().create(valueAsString);
-
-                        Segment[] segments = path.getSegmentsArray();
-                        if (!path.isAbsolute() && segments.length == 1 && !segments[0].hasIndex()) {
-                            return this.withTypeAndValue(type, valueFactories.getNameFactory().create(valueAsString));
-                        }
-                    }
+                    return this.withTypeAndValue(type, valueFactories.getNameFactory().create(value));
                 } catch (org.jboss.dna.graph.property.ValueFormatException vfe) {
                     throw createValueFormatException(vfe);
                 }
-
-                throw createValueFormatException(Name.class);
 
             case PropertyType.PATH:
+                if (this.type == PropertyType.STRING) {
+                    value = valueFactories.getStringFactory().create(this.value);
+                } else if (this.type == PropertyType.BINARY) {
+                    value = valueFactories.getBinaryFactory().create(this.value);
+                } else if (this.type == PropertyType.NAME) {
+                    value = valueFactories.getNameFactory().create(this.value);
+                } else {
+                    throw createValueFormatException(Path.class);
+                }
                 try {
-                    if (this.type == PropertyType.STRING) {
-                        return this.withTypeAndValue(type, valueFactories.getPathFactory().create(value));
-
-                    }
+                    return this.withTypeAndValue(type, valueFactories.getPathFactory().create(value));
                 } catch (org.jboss.dna.graph.property.ValueFormatException vfe) {
                     throw createValueFormatException(vfe);
                 }
-                throw createValueFormatException(Path.class);
 
-                // Nothing can be converted to these types (except themselves)
             case PropertyType.REFERENCE:
-                throw createValueFormatException(Node.class);
+                if (this.type == PropertyType.STRING) {
+                    value = valueFactories.getStringFactory().create(this.value);
+                } else if (this.type == PropertyType.BINARY) {
+                    value = valueFactories.getBinaryFactory().create(this.value);
+                } else {
+                    throw createValueFormatException(Node.class);
+                }
+                try {
+                    return this.withTypeAndValue(type, valueFactories.getReferenceFactory().create(value));
+                } catch (org.jboss.dna.graph.property.ValueFormatException vfe) {
+                    throw createValueFormatException(vfe);
+                }
             case PropertyType.DOUBLE:
-                throw createValueFormatException(double.class);
+                if (this.type == PropertyType.STRING) {
+                    value = valueFactories.getStringFactory().create(this.value);
+                } else if (this.type == PropertyType.BINARY) {
+                    value = valueFactories.getBinaryFactory().create(this.value);
+                } else if (this.type == PropertyType.LONG) {
+                    value = valueFactories.getLongFactory().create(this.value);
+                } else if (this.type == PropertyType.DATE) {
+                    value = valueFactories.getDateFactory().create(this.value);
+                } else {
+                    throw createValueFormatException(double.class);
+                }
+                try {
+                    return this.withTypeAndValue(type, valueFactories.getDoubleFactory().create(value));
+                } catch (org.jboss.dna.graph.property.ValueFormatException vfe) {
+                    throw createValueFormatException(vfe);
+                }
             case PropertyType.LONG:
-                throw createValueFormatException(long.class);
+                if (this.type == PropertyType.STRING) {
+                    value = valueFactories.getStringFactory().create(this.value);
+                } else if (this.type == PropertyType.BINARY) {
+                    value = valueFactories.getBinaryFactory().create(this.value);
+                } else if (this.type == PropertyType.DOUBLE) {
+                    value = valueFactories.getDoubleFactory().create(this.value);
+                } else if (this.type == PropertyType.DATE) {
+                    value = valueFactories.getDateFactory().create(this.value);
+                } else {
+                    throw createValueFormatException(long.class);
+                }
+                try {
+                    return this.withTypeAndValue(type, valueFactories.getLongFactory().create(value));
+                } catch (org.jboss.dna.graph.property.ValueFormatException vfe) {
+                    throw createValueFormatException(vfe);
+                }
 
                 // Anything can be converted to these types
             case PropertyType.BINARY:
                 try {
                     return this.withTypeAndValue(type, valueFactories.getBinaryFactory().create(value));
-
                 } catch (org.jboss.dna.graph.property.ValueFormatException vfe) {
                     throw createValueFormatException(vfe);
                 }
             case PropertyType.STRING:
                 try {
                     return this.withTypeAndValue(type, valueFactories.getStringFactory().create(value));
-
                 } catch (org.jboss.dna.graph.property.ValueFormatException vfe) {
                     throw createValueFormatException(vfe);
                 }
