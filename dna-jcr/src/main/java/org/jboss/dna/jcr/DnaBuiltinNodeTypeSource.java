@@ -38,17 +38,14 @@ import org.jboss.dna.graph.JcrMixLexicon;
 @Immutable
 class DnaBuiltinNodeTypeSource extends AbstractJcrNodeTypeSource {
 
-    /** The list of primary node types. */
-    private final List<JcrNodeType> primaryNodeTypes;
-    /** The list of mixin node types. */
-    private final List<JcrNodeType> mixinNodeTypes;
+    /** The list of node types. */
+    private final List<JcrNodeType> nodeTypes;
 
     DnaBuiltinNodeTypeSource( ExecutionContext context,
                               JcrNodeTypeSource predecessor ) {
         super(predecessor);
 
-        primaryNodeTypes = new ArrayList<JcrNodeType>();
-        mixinNodeTypes = new ArrayList<JcrNodeType>();
+        nodeTypes = new ArrayList<JcrNodeType>();
 
         JcrNodeType base = findType(JcrNtLexicon.BASE);
 
@@ -140,29 +137,19 @@ class DnaBuiltinNodeTypeSource extends AbstractJcrNodeTypeSource {
                                       NO_DEFAULT_VALUES, PropertyType.UNDEFINED, NO_CONSTRAINTS, true),}), NOT_MIXIN,
                                            ORDERABLE_CHILD_NODES);
 
-        primaryNodeTypes.addAll(Arrays.asList(new JcrNodeType[] {root, system, namespaces, namespace,}));
-        mixinNodeTypes.addAll(Arrays.asList(new JcrNodeType[] {}));
+        nodeTypes.addAll(Arrays.asList(new JcrNodeType[] {root, system, namespaces, namespace,}));
+        nodeTypes.addAll(Arrays.asList(new JcrNodeType[] {}));
 
     }
 
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.jcr.JcrNodeTypeSource#getMixinNodeTypes()
+     * @see org.jboss.dna.jcr.JcrNodeTypeSource#getNodeTypes()
      */
     @Override
-    public Collection<JcrNodeType> getDeclaredMixinNodeTypes() {
-        return mixinNodeTypes;
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.jboss.dna.jcr.JcrNodeTypeSource#getPrimaryNodeTypes()
-     */
-    @Override
-    public Collection<JcrNodeType> getDeclaredPrimaryNodeTypes() {
-        return primaryNodeTypes;
+    public Collection<JcrNodeType> getDeclaredNodeTypes() {
+        return nodeTypes;
     }
 
 }

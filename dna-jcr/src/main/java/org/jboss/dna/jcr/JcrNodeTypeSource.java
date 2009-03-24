@@ -13,18 +13,11 @@ import org.jboss.dna.graph.property.Name;
 public interface JcrNodeTypeSource {
 
     /**
-     * Returns the list of primary node types provided by this source
+     * Returns the list of node types provided by this source
      * 
-     * @return the list of primary node types provided by this source
+     * @return the list of node types provided by this source
      */
-    public Collection<JcrNodeType> getPrimaryNodeTypes();
-
-    /**
-     * Returns the list of mixin node types provided by this source
-     * 
-     * @return the list of mixin node types provided by this source
-     */
-    public Collection<JcrNodeType> getMixinNodeTypes();
+    public Collection<JcrNodeType> getNodeTypes();
 
     /**
      * Finds the type with the given name and returns its definition.

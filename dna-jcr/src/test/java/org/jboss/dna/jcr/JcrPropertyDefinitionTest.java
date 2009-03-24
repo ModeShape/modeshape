@@ -149,7 +149,7 @@ public class JcrPropertyDefinitionTest {
             session.logout();
         }
     }
-
+    
     private JcrPropertyDefinition propertyDefinitionFor( NodeType nodeType,
                                                          Name propertyName ) {
         PropertyDefinition propertyDefs[] = nodeType.getPropertyDefinitions();
@@ -637,16 +637,13 @@ public class JcrPropertyDefinitionTest {
     class TestNodeTypeSource extends AbstractJcrNodeTypeSource {
 
         /** The list of primary node types. */
-        private final List<JcrNodeType> primaryNodeTypes;
-        /** The list of mixin node types. */
-        private final List<JcrNodeType> mixinNodeTypes;
+        private final List<JcrNodeType> nodeTypes;
 
         TestNodeTypeSource( ExecutionContext context,
                             JcrNodeTypeSource predecessor ) {
             super(predecessor);
 
-            primaryNodeTypes = new ArrayList<JcrNodeType>();
-            mixinNodeTypes = new ArrayList<JcrNodeType>();
+            nodeTypes = new ArrayList<JcrNodeType>();
 
             JcrNodeType base = findType(JcrNtLexicon.BASE);
 
@@ -736,28 +733,17 @@ public class JcrPropertyDefinitionTest {
 
                                                           }), NOT_MIXIN, UNORDERABLE_CHILD_NODES);
 
-            primaryNodeTypes.addAll(Arrays.asList(new JcrNodeType[] {constrainedType}));
-            mixinNodeTypes.addAll(Arrays.asList(new JcrNodeType[] {}));
+            nodeTypes.addAll(Arrays.asList(new JcrNodeType[] {constrainedType}));
         }
 
         /**
          * {@inheritDoc}
          * 
-         * @see org.jboss.dna.jcr.AbstractJcrNodeTypeSource#getDeclaredMixinNodeTypes()
+         * @see org.jboss.dna.jcr.AbstractJcrNodeTypeSource#getDeclaredNodeTypes()
          */
         @Override
-        public Collection<JcrNodeType> getDeclaredMixinNodeTypes() {
-            return primaryNodeTypes;
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.jboss.dna.jcr.AbstractJcrNodeTypeSource#getDeclaredPrimaryNodeTypes()
-         */
-        @Override
-        public Collection<JcrNodeType> getDeclaredPrimaryNodeTypes() {
-            return mixinNodeTypes;
+        public Collection<JcrNodeType> getDeclaredNodeTypes() {
+            return nodeTypes;
         }
 
     }

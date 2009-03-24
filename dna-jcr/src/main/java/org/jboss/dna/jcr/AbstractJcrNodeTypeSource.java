@@ -71,59 +71,30 @@ abstract class AbstractJcrNodeTypeSource implements JcrNodeTypeSource {
     }
 
     /**
-     * Returns the list of mixin node types declared in this type source.
+     * Returns the list of node types declared in this type source.
      * 
-     * @return the list of mixin node types declared in this type source.
-     * @see org.jboss.dna.jcr.JcrNodeTypeSource#getMixinNodeTypes()
+     * @return the list of node types declared in this type source.
+     * @see org.jboss.dna.jcr.JcrNodeTypeSource#getNodeTypes()
      */
-    public abstract Collection<JcrNodeType> getDeclaredMixinNodeTypes();
+    public abstract Collection<JcrNodeType> getDeclaredNodeTypes();
 
     /**
-     * Returns the list of primary node types declared in this type source.
+     * Returns the list of node types returned by this and any predecessor source.
      * 
-     * @return the list of primary node types declared in this type source.
-     * @see org.jboss.dna.jcr.JcrNodeTypeSource#getMixinNodeTypes()
+     * @return the list of node types returned by this and any predecessor source.
+     * @see org.jboss.dna.jcr.JcrNodeTypeSource#getNodeTypes()
      */
-    public abstract Collection<JcrNodeType> getDeclaredPrimaryNodeTypes();
-
-    /**
-     * Returns the list of mixin node types returned by this and any predecessor source.
-     * 
-     * @return the list of mixin node types returned by this and any predecessor source.
-     * @see org.jboss.dna.jcr.JcrNodeTypeSource#getMixinNodeTypes()
-     */
-    public Collection<JcrNodeType> getMixinNodeTypes() {
+    public Collection<JcrNodeType> getNodeTypes() {
         if (predecessor == null) {
-            return getDeclaredMixinNodeTypes();
+            return getDeclaredNodeTypes();
         }
 
-        Collection<JcrNodeType> declaredMixins = getDeclaredMixinNodeTypes();
-        Collection<JcrNodeType> predecessorMixins = predecessor.getMixinNodeTypes();
+        Collection<JcrNodeType> declaredTypes = getDeclaredNodeTypes();
+        Collection<JcrNodeType> predecessorTypes = predecessor.getNodeTypes();
 
-        List<JcrNodeType> mixins = new ArrayList<JcrNodeType>(declaredMixins.size() + predecessorMixins.size());
-        mixins.addAll(predecessorMixins);
-        mixins.addAll(declaredMixins);
-
-        return mixins;
-    }
-
-    /**
-     * Returns the list of primary node types returned by this and any predecessor source.
-     * 
-     * @return the list of primary node types returned by this and any predecessor source.
-     * @see org.jboss.dna.jcr.JcrNodeTypeSource#getPrimaryNodeTypes()
-     */
-    public Collection<JcrNodeType> getPrimaryNodeTypes() {
-        if (predecessor == null) {
-            return getDeclaredPrimaryNodeTypes();
-        }
-
-        Collection<JcrNodeType> declaredPrimaries = getDeclaredPrimaryNodeTypes();
-        Collection<JcrNodeType> predecessorPrimaries = predecessor.getPrimaryNodeTypes();
-
-        List<JcrNodeType> primaries = new ArrayList<JcrNodeType>(declaredPrimaries.size() + predecessorPrimaries.size());
-        primaries.addAll(predecessorPrimaries);
-        primaries.addAll(declaredPrimaries);
+        List<JcrNodeType> primaries = new ArrayList<JcrNodeType>(declaredTypes.size() + predecessorTypes.size());
+        primaries.addAll(predecessorTypes);
+        primaries.addAll(declaredTypes);
 
         return primaries;
     }
@@ -131,7 +102,7 @@ abstract class AbstractJcrNodeTypeSource implements JcrNodeTypeSource {
     /**
      * Finds the type with the given name and returns its definition.
      * <p>
-     * This implementation delegates to the <code>predecessor</code> (if it exists) if the type is not found within the declareded
+     * This implementation delegates to the <code>predecessor</code> (if it exists) if the type is not found within the declared
      * primary and mixin types.
      * </p>
      * 
@@ -142,13 +113,7 @@ abstract class AbstractJcrNodeTypeSource implements JcrNodeTypeSource {
      */
     public JcrNodeType findType( Name typeName ) {
         CheckArg.isNotNull(typeName, "typeName");
-        for (JcrNodeType type : getDeclaredPrimaryNodeTypes()) {
-            if (typeName.equals(type.getInternalName())) {
-                return type;
-            }
-        }
-
-        for (JcrNodeType type : getDeclaredMixinNodeTypes()) {
+        for (JcrNodeType type : getDeclaredNodeTypes()) {
             if (typeName.equals(type.getInternalName())) {
                 return type;
             }

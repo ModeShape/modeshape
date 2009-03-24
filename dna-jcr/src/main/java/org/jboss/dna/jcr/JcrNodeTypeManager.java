@@ -65,31 +65,7 @@ class JcrNodeTypeManager implements NodeTypeManager {
      * @see javax.jcr.nodetype.NodeTypeManager#getAllNodeTypes()
      */
     public NodeTypeIterator getAllNodeTypes() {
-
-        Collection<JcrNodeType> mixinNodeTypes = repositoryTypeManager.getMixinNodeTypes();
-        Collection<JcrNodeType> primaryNodeTypes = repositoryTypeManager.getPrimaryNodeTypes();
-
-        // TODO: Can revisit this approach later if it becomes a performance issue
-        /*
-         * Note also that this creates a subtle difference in behavior for concurrent modification
-         * between this method and the specific get*NodeTypes methods.  That is, if a type is added
-         * while an iterator from the corresponding specific get*NodeType method is being traversed,
-         * a ConcurrentModificationException will be thrown.  Because this iterator is based on a copy
-         * of the underlying maps, no exception would be thrown in the same case.
-         */
-
-        List<NodeType> allTypes = new ArrayList<NodeType>(primaryNodeTypes.size() + mixinNodeTypes.size());
-
-        // Need to return a version of the node type with the current context
-        for (JcrNodeType type : primaryNodeTypes) {
-            allTypes.add(type.with(context));
-        }
-
-        for (JcrNodeType type : mixinNodeTypes) {
-            allTypes.add(type.with(context));
-        }
-
-        return new JcrNodeTypeIterator(allTypes);
+        return new JcrNodeTypeIterator(repositoryTypeManager.getAllNodeTypes());
     }
 
     /**

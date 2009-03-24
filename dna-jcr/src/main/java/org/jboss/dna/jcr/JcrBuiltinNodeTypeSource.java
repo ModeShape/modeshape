@@ -41,9 +41,7 @@ import org.jboss.dna.graph.property.basic.BasicName;
 class JcrBuiltinNodeTypeSource extends AbstractJcrNodeTypeSource {
 
     /** The list of primary node types. */
-    private final List<JcrNodeType> primaryNodeTypes;
-    /** The list of mixin node types. */
-    private final List<JcrNodeType> mixinNodeTypes;
+    private final List<JcrNodeType> nodeTypes;
 
     JcrBuiltinNodeTypeSource( ExecutionContext context ) {
         this(context, null);
@@ -53,7 +51,7 @@ class JcrBuiltinNodeTypeSource extends AbstractJcrNodeTypeSource {
                               JcrNodeTypeSource predecessor ) {
         super(predecessor);
 
-        primaryNodeTypes = new ArrayList<JcrNodeType>();
+        nodeTypes = new ArrayList<JcrNodeType>();
 
         /*
          * These values get created without a session cache, as they aren't tied to any particular session.
@@ -568,11 +566,9 @@ class JcrBuiltinNodeTypeSource extends AbstractJcrNodeTypeSource {
                                                                                                                           false),}),
                                                      NOT_MIXIN, UNORDERABLE_CHILD_NODES);
 
-        primaryNodeTypes.addAll(Arrays.asList(new JcrNodeType[] {base, unstructured, childNodeDefinition, file, folder,
+        nodeTypes.addAll(Arrays.asList(new JcrNodeType[] {base, unstructured, childNodeDefinition, file, folder,
             frozenNode, hierarchyNode, linkedFile, nodeType, propertyDefinition, query, resource, nodeType, version,
             versionHistory, versionLabels, versionedChild}));
-
-        mixinNodeTypes = new ArrayList<JcrNodeType>();
 
         JcrNodeType lockable = new JcrNodeType(context, NO_NODE_TYPE_MANAGER, JcrMixLexicon.LOCKABLE, NO_SUPERTYPES,
                                                NO_PRIMARY_ITEM_NAME, NO_CHILD_NODES, Arrays.asList(new JcrPropertyDefinition[] {
@@ -616,28 +612,17 @@ class JcrBuiltinNodeTypeSource extends AbstractJcrNodeTypeSource {
                                                                                 PropertyType.REFERENCE, NO_CONSTRAINTS, false),}),
                                                   IS_A_MIXIN, UNORDERABLE_CHILD_NODES);
 
-        mixinNodeTypes.addAll(Arrays.asList(new JcrNodeType[] {lockable, referenceable, versionable}));
+        nodeTypes.addAll(Arrays.asList(new JcrNodeType[] {lockable, referenceable, versionable}));
 
     }
 
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.jcr.JcrNodeTypeSource#getMixinNodeTypes()
+     * @see org.jboss.dna.jcr.JcrNodeTypeSource#getNodeTypes()
      */
     @Override
-    public Collection<JcrNodeType> getDeclaredMixinNodeTypes() {
-        return mixinNodeTypes;
+    public Collection<JcrNodeType> getDeclaredNodeTypes() {
+        return nodeTypes;
     }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.jboss.dna.jcr.JcrNodeTypeSource#getPrimaryNodeTypes()
-     */
-    @Override
-    public Collection<JcrNodeType> getDeclaredPrimaryNodeTypes() {
-        return primaryNodeTypes;
-    }
-
 }

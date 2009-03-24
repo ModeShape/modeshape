@@ -23,6 +23,7 @@
  */
 package org.jboss.dna.jcr;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -49,21 +50,19 @@ import org.jboss.dna.graph.property.Name;
 @Immutable
 class RepositoryNodeTypeManager {
 
-    private final Map<Name, JcrNodeType> primaryNodeTypes;
-    private final Map<Name, JcrNodeType> mixinNodeTypes;
+    private final Map<Name, JcrNodeType> nodeTypes;
     private final Map<PropertyDefinitionId, JcrPropertyDefinition> propertyDefinitions;
     private final Map<NodeDefinitionId, JcrNodeDefinition> childNodeDefinitions;
 
     RepositoryNodeTypeManager( ExecutionContext context,
                                JcrNodeTypeSource source ) {
-        Collection<JcrNodeType> primary = source.getPrimaryNodeTypes();
-        Collection<JcrNodeType> mixins = source.getMixinNodeTypes();
+        Collection<JcrNodeType> types = source.getNodeTypes();
         propertyDefinitions = new HashMap<PropertyDefinitionId, JcrPropertyDefinition>();
         childNodeDefinitions = new HashMap<NodeDefinitionId, JcrNodeDefinition>();
 
-        primaryNodeTypes = new HashMap<Name, JcrNodeType>(primary.size());
-        for (JcrNodeType nodeType : primary) {
-            primaryNodeTypes.put(nodeType.getInternalName(), nodeType.with(this));
+        nodeTypes = new HashMap<Name, JcrNodeType>(types.size());
+        for (JcrNodeType nodeType : types) {
+            nodeTypes.put(nodeType.getInternalName(), nodeType.with(this));
             for (JcrNodeDefinition childDefinition : nodeType.childNodeDefinitions()) {
                 childNodeDefinitions.put(childDefinition.getId(), childDefinition);
             }
@@ -71,25 +70,30 @@ class RepositoryNodeTypeManager {
                 propertyDefinitions.put(propertyDefinition.getId(), propertyDefinition);
             }
         }
+    }
 
-        mixinNodeTypes = new HashMap<Name, JcrNodeType>(mixins.size());
-        for (JcrNodeType nodeType : mixins) {
-            mixinNodeTypes.put(nodeType.getInternalName(), nodeType.with(this));
-            for (JcrNodeDefinition childDefinition : nodeType.childNodeDefinitions()) {
-                childNodeDefinitions.put(childDefinition.getId(), childDefinition);
-            }
-            for (JcrPropertyDefinition propertyDefinition : nodeType.propertyDefinitions()) {
-                propertyDefinitions.put(propertyDefinition.getId(), propertyDefinition);
-            }
-        }
+    public Collection<JcrNodeType> getAllNodeTypes() {
+        return nodeTypes.values();
     }
 
     public Collection<JcrNodeType> getMixinNodeTypes() {
-        return mixinNodeTypes.values();
+        List<JcrNodeType> types = new ArrayList<JcrNodeType>(nodeTypes.size());
+        
+        for (JcrNodeType nodeType : nodeTypes.values()) {
+            if (nodeType.isMixin()) types.add(nodeType);
+        }
+        
+        return types;
     }
 
     public Collection<JcrNodeType> getPrimaryNodeTypes() {
-        return primaryNodeTypes.values();
+        List<JcrNodeType> types = new ArrayList<JcrNodeType>(nodeTypes.size());
+        
+        for (JcrNodeType nodeType : nodeTypes.values()) {
+            if (!nodeType.isMixin()) types.add(nodeType);
+        }
+        
+        return types;
     }
 
     public JcrPropertyDefinition getPropertyDefinition( PropertyDefinitionId id ) {
@@ -101,12 +105,7 @@ class RepositoryNodeTypeManager {
     }
 
     JcrNodeType getNodeType( Name nodeTypeName ) {
-
-        JcrNodeType nodeType = primaryNodeTypes.get(nodeTypeName);
-        if (nodeType == null) {
-            nodeType = mixinNodeTypes.get(nodeTypeName);
-        }
-        return nodeType;
+        return nodeTypes.get(nodeTypeName);
     }
 
     /**

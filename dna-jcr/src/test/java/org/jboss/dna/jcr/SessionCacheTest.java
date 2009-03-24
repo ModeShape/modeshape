@@ -112,14 +112,13 @@ public class SessionCacheTest {
      * Define the node types for the "vehix" namespace.
      */
     public static class VehixNodeTypeSource extends AbstractJcrNodeTypeSource {
-        private final List<JcrNodeType> primaryNodeTypes;
-        private final List<JcrNodeType> mixinNodeTypes;
+        private final List<JcrNodeType> nodeTypes;
 
         public VehixNodeTypeSource( ExecutionContext context,
                                     JcrNodeTypeSource predecessor ) {
             super(predecessor);
-            this.primaryNodeTypes = new ArrayList<JcrNodeType>();
-            this.mixinNodeTypes = new ArrayList<JcrNodeType>();
+            this.nodeTypes = new ArrayList<JcrNodeType>();
+
             Name carName = context.getValueFactories().getNameFactory().create("vehix:car");
             Name aircraftName = context.getValueFactories().getNameFactory().create("vehix:aircraft");
             JcrNodeType unstructured = findType(JcrNtLexicon.UNSTRUCTURED);
@@ -134,27 +133,17 @@ public class SessionCacheTest {
                                                    Arrays.asList(new JcrNodeType[] {unstructured}), NO_PRIMARY_ITEM_NAME,
                                                    NO_CHILD_NODES, NO_PROPERTIES, NOT_MIXIN, ORDERABLE_CHILD_NODES);
 
-            primaryNodeTypes.addAll(Arrays.asList(new JcrNodeType[] {car, aircraft,}));
+            nodeTypes.addAll(Arrays.asList(new JcrNodeType[] {car, aircraft,}));
         }
 
         /**
          * {@inheritDoc}
          * 
-         * @see org.jboss.dna.jcr.AbstractJcrNodeTypeSource#getDeclaredMixinNodeTypes()
+         * @see org.jboss.dna.jcr.AbstractJcrNodeTypeSource#getDeclaredNodeTypes()
          */
         @Override
-        public Collection<JcrNodeType> getDeclaredMixinNodeTypes() {
-            return mixinNodeTypes;
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.jboss.dna.jcr.AbstractJcrNodeTypeSource#getDeclaredPrimaryNodeTypes()
-         */
-        @Override
-        public Collection<JcrNodeType> getDeclaredPrimaryNodeTypes() {
-            return primaryNodeTypes;
+        public Collection<JcrNodeType> getDeclaredNodeTypes() {
+            return nodeTypes;
         }
 
     }
