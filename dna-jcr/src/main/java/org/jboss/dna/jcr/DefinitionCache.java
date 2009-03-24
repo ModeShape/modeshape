@@ -24,6 +24,8 @@
 package org.jboss.dna.jcr;
 
 import java.util.Collection;
+import java.util.HashSet;
+import java.util.Set;
 import javax.jcr.nodetype.NodeType;
 import net.jcip.annotations.Immutable;
 import org.jboss.dna.graph.property.Name;
@@ -102,6 +104,7 @@ final class DefinitionCache {
     DefinitionCache( JcrNodeType primaryType,
                      Iterable<JcrNodeType> mixinTypes ) {
         addDefinitionsForTypeAndAllSupertypes(primaryType);
+        // Assumption is that addMixin won't allow mixin types that conflict with primary types
         if (mixinTypes != null) {
             for (JcrNodeType mixinType : mixinTypes) {
                 addDefinitionsForTypeAndAllSupertypes(mixinType);
@@ -117,22 +120,47 @@ final class DefinitionCache {
     }
 
     private final void addDefinitions( JcrNodeType nodeType ) {
+        Set<Name> namesFromThisType = new HashSet<Name>();
+
         for (JcrNodeDefinition definition : nodeType.childNodeDefinitions()) {
             Name name = definition.getInternalName();
+
+            /*
+             * If the child node was already defined in the type hierarchy at some other level, ignore the definition 
+             * - it was overridden by the previous definition.  This relies on the fact that TypeA.getTypeAndSupertypes()
+             * always returns TypeX before TypeY if TypeX is closer to TypeA on the inheritance graph than TypeY is.
+             */
+            if (allChildNodeDefinitions.containsKey(name) && !namesFromThisType.contains(name)) {
+                continue;
+            }
+
             if (definition.allowsSameNameSiblings()) {
                 childNodeDefinitionsThatAllowSns.put(name, definition);
             } else {
                 childNodeDefinitionsThatAllowNoSns.put(name, definition);
             }
+            namesFromThisType.add(name);
             allChildNodeDefinitions.put(name, definition);
         }
+
+        namesFromThisType.clear();
         for (JcrPropertyDefinition definition : nodeType.propertyDefinitions()) {
             Name name = definition.getInternalName();
+
+            /*
+             * If the property was already defined in the type hierarchy at some other level, ignore the definition 
+             * - it was overridden by the previous definition.  This relies on the fact that TypeA.getTypeAndSupertypes()
+             * always returns TypeX before TypeY if TypeX is closer to TypeA on the inheritance graph than TypeY is.
+             */
+            if (allPropertyDefinitions.containsKey(name) && !namesFromThisType.contains(name)) {
+                continue;
+            }
             if (definition.isMultiple()) {
                 multiValuedPropertyDefinitions.put(name, definition);
             } else {
                 singleValuedPropertyDefinitions.put(name, definition);
             }
+            namesFromThisType.add(name);
             allPropertyDefinitions.put(name, definition);
         }
     }
