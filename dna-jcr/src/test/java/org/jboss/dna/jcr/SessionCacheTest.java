@@ -23,6 +23,10 @@
  */
 package org.jboss.dna.jcr;
 
+import static javax.jcr.PropertyType.DOUBLE;
+import static javax.jcr.PropertyType.LONG;
+import static javax.jcr.PropertyType.STRING;
+import static javax.jcr.PropertyType.UNDEFINED;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsNull.nullValue;
@@ -34,15 +38,13 @@ import static org.junit.matchers.JUnitMatchers.hasItems;
 import static org.mockito.Mockito.stub;
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import javax.jcr.InvalidItemStateException;
+import javax.jcr.nodetype.ConstraintViolationException;
 import org.jboss.dna.common.statistic.Stopwatch;
 import org.jboss.dna.common.util.StringUtil;
 import org.jboss.dna.graph.ExecutionContext;
@@ -54,7 +56,9 @@ import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.PathNotFoundException;
 import org.jboss.dna.graph.property.Property;
+import org.jboss.dna.graph.property.ValueFactory;
 import org.jboss.dna.jcr.SessionCache.NodeEditor;
+import org.jboss.dna.jcr.Vehicles.Lexicon;
 import org.jboss.dna.jcr.cache.Children;
 import org.jboss.dna.jcr.cache.NodeInfo;
 import org.jboss.dna.jcr.cache.PropertyInfo;
@@ -89,7 +93,7 @@ public class SessionCacheTest {
         cachesByName = new HashMap<String, SessionCache>();
 
         context = new ExecutionContext();
-        context.getNamespaceRegistry().register("vehix", "http://example.com/vehicles");
+        context.getNamespaceRegistry().register(Vehicles.Lexicon.Namespace.PREFIX, Vehicles.Lexicon.Namespace.URI);
 
         stub(session.getExecutionContext()).toReturn(context);
         stub(session.namespaces()).toReturn(context.getNamespaceRegistry());
@@ -98,7 +102,7 @@ public class SessionCacheTest {
         JcrNodeTypeSource nodeTypeSource = null;
         nodeTypeSource = new JcrBuiltinNodeTypeSource(this.context, nodeTypeSource);
         nodeTypeSource = new DnaBuiltinNodeTypeSource(this.context, nodeTypeSource);
-        nodeTypeSource = new VehixNodeTypeSource(context, nodeTypeSource);
+        nodeTypeSource = new Vehicles.NodeTypeSource(context, nodeTypeSource);
         repoTypes = new RepositoryNodeTypeManager(context, nodeTypeSource);
         nodeTypes = new JcrNodeTypeManager(this.context, repoTypes);
         stub(session.nodeTypeManager()).toReturn(nodeTypes);
@@ -106,46 +110,6 @@ public class SessionCacheTest {
         // Now set up the graph and session cache ...
         store = getGraph("vehicles"); // imports the "/src/test/resources/vehicles.xml" file
         cache = getCache("vehicles");
-    }
-
-    /**
-     * Define the node types for the "vehix" namespace.
-     */
-    public static class VehixNodeTypeSource extends AbstractJcrNodeTypeSource {
-        private final List<JcrNodeType> nodeTypes;
-
-        public VehixNodeTypeSource( ExecutionContext context,
-                                    JcrNodeTypeSource predecessor ) {
-            super(predecessor);
-            this.nodeTypes = new ArrayList<JcrNodeType>();
-
-            Name carName = context.getValueFactories().getNameFactory().create("vehix:car");
-            Name aircraftName = context.getValueFactories().getNameFactory().create("vehix:aircraft");
-            JcrNodeType unstructured = findType(JcrNtLexicon.UNSTRUCTURED);
-
-            // Add in the "vehix:car" node type (which extends "nt:unstructured") ...
-            JcrNodeType car = new JcrNodeType(context, (RepositoryNodeTypeManager)null, carName,
-                                              Arrays.asList(new JcrNodeType[] {unstructured}), NO_PRIMARY_ITEM_NAME,
-                                              NO_CHILD_NODES, NO_PROPERTIES, NOT_MIXIN, ORDERABLE_CHILD_NODES);
-
-            // Add in the "vehix:aircraft" node type (which extends "nt:unstructured") ...
-            JcrNodeType aircraft = new JcrNodeType(context, (RepositoryNodeTypeManager)null, aircraftName,
-                                                   Arrays.asList(new JcrNodeType[] {unstructured}), NO_PRIMARY_ITEM_NAME,
-                                                   NO_CHILD_NODES, NO_PROPERTIES, NOT_MIXIN, ORDERABLE_CHILD_NODES);
-
-            nodeTypes.addAll(Arrays.asList(new JcrNodeType[] {car, aircraft,}));
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.jboss.dna.jcr.AbstractJcrNodeTypeSource#getDeclaredNodeTypes()
-         */
-        @Override
-        public Collection<JcrNodeType> getDeclaredNodeTypes() {
-            return nodeTypes;
-        }
-
     }
 
     protected Graph createFrom( String repositoryName,
@@ -231,6 +195,11 @@ public class SessionCacheTest {
         }
     }
 
+    protected JcrValue value( int propertyType,
+                              Object value ) {
+        return new JcrValue(context.getValueFactories(), cache, propertyType, value);
+    }
+
     protected void assertDoesExist( Graph graph,
                                     Location location ) {
         Node node = store.getNodeAt(location);
@@ -294,6 +263,52 @@ public class SessionCacheTest {
         NodeInfo info = cache.findNodeInfoInCache(uuid);
         assertThat(info, is(notNullValue()));
         assertThat(info.getUuid(), is(uuid));
+    }
+
+    protected void assertProperty( NodeInfo info,
+                                   Name propertyName,
+                                   int type,
+                                   Name nodeTypeName,
+                                   Name propertyDefinitionName,
+                                   int definitionType,
+                                   Object value ) {
+        PropertyDefinitionId defnId = new PropertyDefinitionId(nodeTypeName, propertyDefinitionName, definitionType, false);
+        PropertyInfo propertyInfo = info.getProperty(propertyName);
+        assertThat(propertyInfo, is(notNullValue()));
+        assertThat(propertyInfo.getPropertyType(), is(type));
+        assertThat(propertyInfo.getDefinitionId(), is(defnId));
+        org.jboss.dna.graph.property.PropertyType dnaPropertyType = PropertyTypeUtil.dnaPropertyTypeFor(type);
+        // Check the value ...
+        ValueFactory<?> factory = context.getValueFactories().getValueFactory(dnaPropertyType);
+        Object actual = factory.create(propertyInfo.getProperty().getFirstValue());
+        assertThat(actual, is(value));
+    }
+
+    protected void assertProperty( NodeInfo info,
+                                   Name propertyName,
+                                   int type,
+                                   Name nodeTypeName,
+                                   Name propertyDefinitionName,
+                                   int definitionType,
+                                   Object... values ) {
+        PropertyDefinitionId defnId = new PropertyDefinitionId(nodeTypeName, propertyDefinitionName, definitionType, true);
+        PropertyInfo propertyInfo = info.getProperty(propertyName);
+        assertThat(propertyInfo, is(notNullValue()));
+        assertThat(propertyInfo.getPropertyType(), is(type));
+        assertThat(propertyInfo.getDefinitionId(), is(defnId));
+        org.jboss.dna.graph.property.PropertyType dnaPropertyType = PropertyTypeUtil.dnaPropertyTypeFor(type);
+        // Check the values ...
+        ValueFactory<?> factory = context.getValueFactories().getValueFactory(dnaPropertyType);
+        int i = 0;
+        for (Object value : propertyInfo.getProperty()) {
+            assertThat(factory.create(value), is(values[i++]));
+        }
+    }
+
+    protected void assertNoProperty( NodeInfo info,
+                                     Name propertyName ) {
+        PropertyInfo propertyInfo = info.getProperty(propertyName);
+        assertThat(propertyInfo, is(nullValue()));
     }
 
     @Test
@@ -631,4 +646,91 @@ public class SessionCacheTest {
         assertDoesExist(store, sports.getLocation());
     }
 
+    @Test
+    public void shouldGetExistingPropertyOnExistingNode() throws Exception {
+        NodeInfo root = cache.findNodeInfoForRoot();
+        NodeInfo lr3 = cache.findNodeInfo(root.getUuid(), path("/vehix:Vehicles/vehix:Cars/vehix:Utility/vehix:Land Rover LR3"));
+        assertProperty(lr3, Lexicon.MODEL, STRING, Lexicon.CAR, Lexicon.MODEL, STRING, "LR3");
+        assertProperty(lr3, Lexicon.MAKER, STRING, Lexicon.CAR, Lexicon.MAKER, STRING, "Land Rover");
+        assertProperty(lr3, Lexicon.YEAR, LONG, Lexicon.CAR, Lexicon.YEAR, LONG, 2008L);
+        assertProperty(lr3, Lexicon.MSRP, STRING, Lexicon.CAR, Lexicon.MSRP, STRING, "$48,525");
+
+        NodeInfo db9 = cache.findNodeInfo(root.getUuid(), path("/vehix:Vehicles/vehix:Cars/vehix:Sports/vehix:Aston Martin DB9"));
+        assertProperty(db9, Lexicon.MODEL, STRING, Lexicon.CAR, Lexicon.MODEL, STRING, "DB9");
+        assertProperty(db9, Lexicon.MAKER, STRING, Lexicon.CAR, Lexicon.MAKER, STRING, "Aston Martin");
+        assertProperty(db9, Lexicon.LENGTH_IN_INCHES, DOUBLE, Lexicon.CAR, Lexicon.LENGTH_IN_INCHES, DOUBLE, 185.5D);
+
+        NodeInfo b878 = cache.findNodeInfo(root.getUuid(),
+                                           path("/vehix:Vehicles/vehix:Aircraft/vehix:Commercial/vehix:Boeing 787"));
+        assertProperty(b878, Lexicon.MODEL, STRING, Lexicon.AIRCRAFT, Lexicon.MODEL, STRING, "787-3");
+        assertProperty(b878, Lexicon.MAKER, STRING, Lexicon.AIRCRAFT, Lexicon.MAKER, STRING, "Boeing");
+        assertProperty(b878, Lexicon.INTRODUCED, LONG, Lexicon.AIRCRAFT, Lexicon.INTRODUCED, LONG, 2009L);
+        assertProperty(b878, Lexicon.EMPTY_WEIGHT, STRING, JcrNtLexicon.UNSTRUCTURED, name("*"), UNDEFINED, "223000lb");
+
+    }
+
+    @Test
+    public void shouldNotFindNonExistantPropertyOnExistingNode() throws Exception {
+        NodeInfo root = cache.findNodeInfoForRoot();
+        NodeInfo lr3 = cache.findNodeInfo(root.getUuid(), path("/vehix:Vehicles/vehix:Cars/vehix:Utility/vehix:Land Rover LR3"));
+        assertProperty(lr3, Lexicon.MODEL, STRING, Lexicon.CAR, Lexicon.MODEL, STRING, "LR3");
+        assertProperty(lr3, Lexicon.MAKER, STRING, Lexicon.CAR, Lexicon.MAKER, STRING, "Land Rover");
+        assertNoProperty(lr3, Lexicon.LENGTH_IN_INCHES);
+        assertNoProperty(lr3, Lexicon.INTRODUCED);
+    }
+
+    @Test
+    public void shouldSetNewValueOnExistingPropertyOnExistingNode() throws Exception {
+        NodeInfo root = cache.findNodeInfoForRoot();
+        NodeInfo lr3 = cache.findNodeInfo(root.getUuid(), path("/vehix:Vehicles/vehix:Cars/vehix:Utility/vehix:Land Rover LR3"));
+        assertProperty(lr3, Lexicon.MODEL, STRING, Lexicon.CAR, Lexicon.MODEL, STRING, "LR3");
+        assertProperty(lr3, Lexicon.MAKER, STRING, Lexicon.CAR, Lexicon.MAKER, STRING, "Land Rover");
+        assertNoProperty(lr3, Lexicon.LENGTH_IN_INCHES);
+
+        SessionCache.NodeEditor editor = cache.getEditorFor(lr3.getUuid());
+        editor.setProperty(Lexicon.LENGTH_IN_INCHES, value(DOUBLE, 100.0D));
+    }
+
+    @Test
+    public void shouldSetNewPropertyOnExistingNode() throws Exception {
+        NodeInfo root = cache.findNodeInfoForRoot();
+        NodeInfo db9 = cache.findNodeInfo(root.getUuid(), path("/vehix:Vehicles/vehix:Cars/vehix:Sports/vehix:Aston Martin DB9"));
+        assertProperty(db9, Lexicon.MODEL, STRING, Lexicon.CAR, Lexicon.MODEL, STRING, "DB9");
+        assertProperty(db9, Lexicon.MAKER, STRING, Lexicon.CAR, Lexicon.MAKER, STRING, "Aston Martin");
+        assertProperty(db9, Lexicon.LENGTH_IN_INCHES, DOUBLE, Lexicon.CAR, Lexicon.LENGTH_IN_INCHES, DOUBLE, 185.5D);
+
+        SessionCache.NodeEditor editor = cache.getEditorFor(db9.getUuid());
+        editor.setProperty(Lexicon.LENGTH_IN_INCHES, value(DOUBLE, 100.0D));
+    }
+
+    @Test( expected = ConstraintViolationException.class )
+    public void shouldFailToSetPropertyToInvalidValuesOnExistingNode() throws Exception {
+        NodeInfo root = cache.findNodeInfoForRoot();
+        NodeInfo db9 = cache.findNodeInfo(root.getUuid(), path("/vehix:Vehicles/vehix:Cars/vehix:Sports/vehix:Aston Martin DB9"));
+        assertProperty(db9, Lexicon.MODEL, STRING, Lexicon.CAR, Lexicon.MODEL, STRING, "DB9");
+        assertProperty(db9, Lexicon.MAKER, STRING, Lexicon.CAR, Lexicon.MAKER, STRING, "Aston Martin");
+        assertProperty(db9, Lexicon.LENGTH_IN_INCHES, DOUBLE, Lexicon.CAR, Lexicon.LENGTH_IN_INCHES, DOUBLE, 185.5D);
+
+        SessionCache.NodeEditor editor = cache.getEditorFor(db9.getUuid());
+        editor.setProperty(Lexicon.LENGTH_IN_INCHES, value(STRING, "This is not a valid double"));
+    }
+
+    @Test
+    public void shouldRemoveExistingPropertyOnExistingNode() throws Exception {
+        NodeInfo root = cache.findNodeInfoForRoot();
+        NodeInfo db9 = cache.findNodeInfo(root.getUuid(), path("/vehix:Vehicles/vehix:Cars/vehix:Sports/vehix:Aston Martin DB9"));
+        assertProperty(db9, Lexicon.MODEL, STRING, Lexicon.CAR, Lexicon.MODEL, STRING, "DB9");
+        assertProperty(db9, Lexicon.MAKER, STRING, Lexicon.CAR, Lexicon.MAKER, STRING, "Aston Martin");
+        assertProperty(db9, Lexicon.LENGTH_IN_INCHES, DOUBLE, Lexicon.CAR, Lexicon.LENGTH_IN_INCHES, DOUBLE, 185.5D);
+
+        UUID db9uuid = db9.getUuid();
+        SessionCache.NodeEditor editor = cache.getEditorFor(db9uuid);
+        editor.removeProperty(Lexicon.LENGTH_IN_INCHES);
+
+        db9 = cache.findNodeInfo(db9uuid);
+        assertNoProperty(db9, Lexicon.LENGTH_IN_INCHES);
+
+        db9 = cache.findNodeInfo(root.getUuid(), path("/vehix:Vehicles/vehix:Cars/vehix:Sports/vehix:Aston Martin DB9"));
+        assertNoProperty(db9, Lexicon.LENGTH_IN_INCHES);
+    }
 }

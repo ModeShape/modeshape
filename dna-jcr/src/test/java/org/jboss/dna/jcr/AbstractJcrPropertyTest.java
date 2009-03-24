@@ -39,7 +39,6 @@ import javax.jcr.Repository;
 import javax.jcr.Session;
 import javax.jcr.Value;
 import javax.jcr.Workspace;
-import org.jboss.dna.common.util.StringUtil;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.Path;
@@ -277,56 +276,6 @@ public class AbstractJcrPropertyTest {
         assertThat(prop.isSame(otherProp), is(false));
     }
 
-    @Test( expected = UnsupportedOperationException.class )
-    public void shouldNotAllowSetBooleanValue() {
-        prop.setValue(false);
-    }
-
-    @Test( expected = UnsupportedOperationException.class )
-    public void shouldNotAllowSetCalendarValue() {
-        prop.setValue(Calendar.getInstance());
-    }
-
-    @Test( expected = UnsupportedOperationException.class )
-    public void shouldNotAllowSetDoubleValue() {
-        prop.setValue(0.0);
-    }
-
-    @Test( expected = UnsupportedOperationException.class )
-    public void shouldNotAllowSetInputStreamValue() {
-        prop.setValue(Mockito.mock(InputStream.class));
-    }
-
-    @Test( expected = UnsupportedOperationException.class )
-    public void shouldNotAllowSetLongValue() {
-        prop.setValue(0L);
-    }
-
-    @Test( expected = UnsupportedOperationException.class )
-    public void shouldNotAllowSetNodeValue() {
-        prop.setValue(Mockito.mock(Node.class));
-    }
-
-    @Test( expected = UnsupportedOperationException.class )
-    public void shouldNotAllowSetStringValue() {
-        prop.setValue("");
-    }
-
-    @Test( expected = UnsupportedOperationException.class )
-    public void shouldNotAllowSetStringArrayValue() {
-        prop.setValue(StringUtil.EMPTY_STRING_ARRAY);
-    }
-
-    @Test( expected = UnsupportedOperationException.class )
-    public void shouldNotAllowSetValueValue() {
-        prop.setValue(Mockito.mock(Value.class));
-    }
-
-    @Test( expected = UnsupportedOperationException.class )
-    public void shouldNotAllowSetValueArrayValue() {
-        prop.setValue(new Value[0]);
-    }
-
     private class MockAbstractJcrProperty extends AbstractJcrProperty {
 
         MockAbstractJcrProperty( SessionCache cache,
@@ -432,6 +381,96 @@ public class AbstractJcrPropertyTest {
          */
         public Value[] getValues() {
             return null;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see javax.jcr.Property#setValue(javax.jcr.Value)
+         */
+        public void setValue( Value value ) {
+            throw new UnsupportedOperationException();
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see javax.jcr.Property#setValue(javax.jcr.Value[])
+         */
+        public void setValue( Value[] values ) {
+            throw new UnsupportedOperationException();
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see javax.jcr.Property#setValue(java.lang.String)
+         */
+        public void setValue( String value ) {
+            throw new UnsupportedOperationException();
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see javax.jcr.Property#setValue(java.lang.String[])
+         */
+        public void setValue( String[] values ) {
+            throw new UnsupportedOperationException();
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see javax.jcr.Property#setValue(java.io.InputStream)
+         */
+        public void setValue( InputStream value ) {
+            throw new UnsupportedOperationException();
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see javax.jcr.Property#setValue(long)
+         */
+        public void setValue( long value ) {
+            throw new UnsupportedOperationException();
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see javax.jcr.Property#setValue(double)
+         */
+        public void setValue( double value ) {
+            throw new UnsupportedOperationException();
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see javax.jcr.Property#setValue(java.util.Calendar)
+         */
+        public void setValue( Calendar value ) {
+            throw new UnsupportedOperationException();
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see javax.jcr.Property#setValue(boolean)
+         */
+        public void setValue( boolean value ) {
+            throw new UnsupportedOperationException();
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see javax.jcr.Property#setValue(javax.jcr.Node)
+         */
+        public void setValue( Node value ) {
+            throw new UnsupportedOperationException();
         }
     }
 }

@@ -27,11 +27,16 @@ import java.io.InputStream;
 import java.util.Calendar;
 import java.util.Iterator;
 import javax.jcr.Node;
+import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
 import javax.jcr.Value;
 import javax.jcr.ValueFormatException;
+import javax.jcr.lock.LockException;
+import javax.jcr.nodetype.ConstraintViolationException;
+import javax.jcr.version.VersionException;
 import net.jcip.annotations.NotThreadSafe;
 import org.jboss.dna.graph.property.Property;
+import org.jboss.dna.graph.property.ValueFactory;
 
 /**
  * @author jverhaeg
@@ -140,16 +145,6 @@ final class JcrMultiValueProperty extends AbstractJcrProperty {
 
     /**
      * {@inheritDoc}
-     * 
-     * @throws ValueFormatException always
-     * @see javax.jcr.Property#getValue()
-     */
-    public Value getValue() throws ValueFormatException {
-        throw new ValueFormatException();
-    }
-
-    /**
-     * {@inheritDoc}
      * <p>
      * Per the JCR specification, these values need to be created each time this method is called, since the Value cannot be used
      * after {@link Value#getStream()} is called/processed. The spec says that the client simply needs to obtain a new Value (or
@@ -167,4 +162,176 @@ final class JcrMultiValueProperty extends AbstractJcrProperty {
         }
         return values;
     }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see javax.jcr.Property#setValue(javax.jcr.Value[])
+     */
+    public final void setValue( Value[] values )
+        throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
+        JcrValue[] jcrValues = null;
+        if (values != null && values.length != 0) {
+            int numValues = values.length;
+            jcrValues = new JcrValue[numValues];
+            ValueFactory<?> factory = null;
+            for (int i = 0; i != numValues; ++i) {
+                Value value = values[i];
+                if (value instanceof JcrValue) {
+                    // just use the value ...
+                    jcrValues[i] = (JcrValue)value;
+                } else {
+                    // This isn't our implementation, so create one for use
+                    if (factory == null) {
+                        int currentType = this.getType();
+                        factory = context().getValueFactories().getValueFactory(PropertyTypeUtil.dnaPropertyTypeFor(currentType));
+                    }
+                    int type = value.getType();
+                    Object data = null;
+                    switch (value.getType()) {
+                        case PropertyType.STRING:
+                            data = value.getString();
+                            break;
+                        case PropertyType.BINARY:
+                            data = value.getStream();
+                            break;
+                        case PropertyType.BOOLEAN:
+                            data = value.getBoolean();
+                            break;
+                        case PropertyType.DATE:
+                            data = value.getDate();
+                            break;
+                        case PropertyType.DOUBLE:
+                            data = value.getDouble();
+                            break;
+                        case PropertyType.LONG:
+                            data = value.getLong();
+                            break;
+                        case PropertyType.NAME:
+                            data = value.getString();
+                            break;
+                        case PropertyType.PATH:
+                            data = value.getString();
+                            break;
+                        case PropertyType.REFERENCE:
+                            data = value.getString();
+                            break;
+                        default:
+                            throw new RepositoryException();
+                    }
+                    jcrValues[i] = createValue(factory.create(data), type);
+                }
+            }
+        }
+        cache.getEditorFor(propertyId.getNodeId()).setProperty(propertyId.getPropertyName(), jcrValues);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see javax.jcr.Property#setValue(java.lang.String[])
+     */
+    public final void setValue( String[] values )
+        throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
+        JcrValue[] jcrValues = null;
+        if (values != null && values.length != 0) {
+            int numValues = values.length;
+            jcrValues = new JcrValue[numValues];
+            for (int i = 0; i != numValues; ++i) {
+                jcrValues[i] = createValue(values[i], PropertyType.STRING);
+            }
+        }
+        cache.getEditorFor(propertyId.getNodeId()).setProperty(propertyId.getPropertyName(), jcrValues);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @throws ValueFormatException always
+     * @see javax.jcr.Property#getValue()
+     */
+    public Value getValue() throws ValueFormatException {
+        throw new ValueFormatException();
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @throws ValueFormatException always
+     * @see javax.jcr.Property#setValue(javax.jcr.Value)
+     */
+    public final void setValue( Value value ) throws ValueFormatException {
+        throw new ValueFormatException();
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @throws ValueFormatException always
+     * @see javax.jcr.Property#setValue(java.lang.String)
+     */
+    public final void setValue( String value ) throws ValueFormatException {
+        throw new ValueFormatException();
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @throws ValueFormatException always
+     * @see javax.jcr.Property#setValue(java.io.InputStream)
+     */
+    public final void setValue( InputStream value ) throws ValueFormatException {
+        throw new ValueFormatException();
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @throws ValueFormatException always
+     * @see javax.jcr.Property#setValue(long)
+     */
+    public final void setValue( long value ) throws ValueFormatException {
+        throw new ValueFormatException();
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @throws ValueFormatException always
+     * @see javax.jcr.Property#setValue(double)
+     */
+    public final void setValue( double value ) throws ValueFormatException {
+        throw new ValueFormatException();
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @throws ValueFormatException always
+     * @see javax.jcr.Property#setValue(java.util.Calendar)
+     */
+    public final void setValue( Calendar value ) throws ValueFormatException {
+        throw new ValueFormatException();
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @throws ValueFormatException always
+     * @see javax.jcr.Property#setValue(boolean)
+     */
+    public final void setValue( boolean value ) throws ValueFormatException {
+        throw new ValueFormatException();
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @throws ValueFormatException always
+     * @see javax.jcr.Property#setValue(javax.jcr.Node)
+     */
+    public final void setValue( Node value ) throws ValueFormatException {
+        throw new ValueFormatException();
+    }
+
 }

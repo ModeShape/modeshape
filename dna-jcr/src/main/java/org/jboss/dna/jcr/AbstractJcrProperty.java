@@ -23,15 +23,12 @@
  */
 package org.jboss.dna.jcr;
 
-import java.io.InputStream;
-import java.util.Calendar;
 import javax.jcr.Item;
 import javax.jcr.ItemVisitor;
 import javax.jcr.Node;
 import javax.jcr.PathNotFoundException;
 import javax.jcr.Property;
 import javax.jcr.RepositoryException;
-import javax.jcr.Value;
 import javax.jcr.nodetype.PropertyDefinition;
 import net.jcip.annotations.NotThreadSafe;
 import org.jboss.dna.common.util.CheckArg;
@@ -45,7 +42,7 @@ import org.jboss.dna.jcr.cache.PropertyInfo;
 @NotThreadSafe
 abstract class AbstractJcrProperty extends AbstractJcrItem implements Property {
 
-    private final PropertyId propertyId;
+    protected final PropertyId propertyId;
 
     AbstractJcrProperty( SessionCache cache,
                          PropertyId propertyId ) {
@@ -79,6 +76,11 @@ abstract class AbstractJcrProperty extends AbstractJcrItem implements Property {
 
     JcrValue createValue( Object value ) throws RepositoryException {
         return new JcrValue(context().getValueFactories(), this.cache, propertyInfo().getPropertyType(), value);
+    }
+
+    final JcrValue createValue( Object value,
+                                int propertyType ) {
+        return new JcrValue(context().getValueFactories(), this.cache, propertyType, value);
     }
 
     @Override
@@ -162,106 +164,6 @@ abstract class AbstractJcrProperty extends AbstractJcrItem implements Property {
             return getName().equals(otherProperty.getName());
         }
         return false;
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @throws UnsupportedOperationException always
-     * @see javax.jcr.Property#setValue(javax.jcr.Value)
-     */
-    public final void setValue( Value value ) {
-        throw new UnsupportedOperationException();
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @throws UnsupportedOperationException always
-     * @see javax.jcr.Property#setValue(javax.jcr.Value[])
-     */
-    public final void setValue( Value[] values ) {
-        throw new UnsupportedOperationException();
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @throws UnsupportedOperationException always
-     * @see javax.jcr.Property#setValue(java.lang.String)
-     */
-    public final void setValue( String value ) {
-        throw new UnsupportedOperationException();
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @throws UnsupportedOperationException always
-     * @see javax.jcr.Property#setValue(java.lang.String[])
-     */
-    public final void setValue( String[] values ) {
-        throw new UnsupportedOperationException();
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @throws UnsupportedOperationException always
-     * @see javax.jcr.Property#setValue(java.io.InputStream)
-     */
-    public final void setValue( InputStream value ) {
-        throw new UnsupportedOperationException();
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @throws UnsupportedOperationException always
-     * @see javax.jcr.Property#setValue(long)
-     */
-    public final void setValue( long value ) {
-        throw new UnsupportedOperationException();
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @throws UnsupportedOperationException always
-     * @see javax.jcr.Property#setValue(double)
-     */
-    public final void setValue( double value ) {
-        throw new UnsupportedOperationException();
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @throws UnsupportedOperationException always
-     * @see javax.jcr.Property#setValue(java.util.Calendar)
-     */
-    public final void setValue( Calendar value ) {
-        throw new UnsupportedOperationException();
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @throws UnsupportedOperationException always
-     * @see javax.jcr.Property#setValue(boolean)
-     */
-    public final void setValue( boolean value ) {
-        throw new UnsupportedOperationException();
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @throws UnsupportedOperationException always
-     * @see javax.jcr.Property#setValue(javax.jcr.Node)
-     */
-    public final void setValue( Node value ) {
-        throw new UnsupportedOperationException();
     }
 
     /**

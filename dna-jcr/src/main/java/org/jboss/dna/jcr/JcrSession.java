@@ -573,53 +573,6 @@ class JcrSession implements Session {
     }
 
     /**
-     * Compute the JCR {@link PropertyType} for the given DNA {@link org.jboss.dna.graph.property.PropertyType}.
-     * <p>
-     * See DNA-293 for complete discussion on why this method works the way it does. The best option appears to be basing the
-     * PropertyType on the first value, since that should be compatible with the PropertyType that was used when the values were
-     * set on the property in the first place.
-     * </p>
-     * 
-     * @param property the DNA property for which the {@link PropertyType} is to be determined; never null
-     * @return the JCR property type; always a valid value and never {@link PropertyType#UNDEFINED}.
-     */
-    static final int jcrPropertyTypeFor( org.jboss.dna.graph.property.Property property ) {
-        Object value = property.getFirstValue();
-
-        // Get the DNA property type for this ...
-        switch (org.jboss.dna.graph.property.PropertyType.discoverType(value)) {
-            case STRING:
-                return PropertyType.STRING;
-            case NAME:
-                return PropertyType.NAME;
-            case LONG:
-                return PropertyType.LONG;
-            case UUID:
-                return PropertyType.STRING; // JCR treats UUID properties as strings
-            case URI:
-                return PropertyType.STRING;
-            case PATH:
-                return PropertyType.PATH;
-            case BOOLEAN:
-                return PropertyType.BOOLEAN;
-            case DATE:
-                return PropertyType.DATE;
-            case DECIMAL:
-                return PropertyType.STRING; // better than losing information
-            case DOUBLE:
-                return PropertyType.DOUBLE;
-            case BINARY:
-                return PropertyType.BINARY;
-            case OBJECT:
-                return PropertyType.UNDEFINED;
-            case REFERENCE:
-                return PropertyType.REFERENCE;
-        }
-        assert false;
-        return PropertyType.UNDEFINED;
-    }
-
-    /**
      * {@inheritDoc}
      * 
      * @see javax.jcr.Session#refresh(boolean)

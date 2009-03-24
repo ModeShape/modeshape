@@ -431,16 +431,74 @@ public class SessionCache {
          * existing values will be replaced with the supplied value.
          * 
          * @param name the property name; may not be null
-         * @param propertyType the property type; must be a valid {@link PropertyType} value
-         * @param value the new property values, which may be converted to the appropriate {@link PropertyType type}
+         * @param value the new property values; may not be null
          * @throws ConstraintViolationException if the property could not be set because of a node type constraint or property
          *         definition constraint
          */
         public void setProperty( Name name,
-                                 int propertyType,
-                                 Object value ) throws ConstraintViolationException {
-            Property dnaProp = propertyFactory.create(name, value);
-            setProperty(name, dnaProp, propertyType);
+                                 JcrValue value ) throws ConstraintViolationException {
+            assert name != null;
+            assert value != null;
+            JcrPropertyDefinition definition = null;
+            PropertyId id = null;
+
+            // Look for an existing property ...
+            PropertyInfo existing = node.getProperty(name);
+            if (existing != null) {
+                // Reuse the existing ID ...
+                id = existing.getPropertyId();
+
+                // We're replacing an existing property, but we still need to check that the property definition
+                // (still) defines a type. So, find the property definition for the existing property ...
+                definition = nodeTypes().getPropertyDefinition(existing.getDefinitionId());
+
+                if (definition != null) {
+                    // The definition's require type must match the value's ...
+                    if (definition.getRequiredType() != PropertyType.UNDEFINED && definition.getRequiredType() != value.getType()) {
+                        // The property type is not right, so we have to check if we can cast.
+                        // It's easier and could save more work if we just find a new property definition that works ...
+                        definition = null;
+                    } else {
+                        // The types match, so see if the value satisfies the constraints ...
+                        if (!definition.satisfiesConstraints(value)) definition = null;
+                    }
+                }
+            } else {
+                // This is a new property, so create a new ID ...
+                id = new PropertyId(node.getUuid(), name);
+            }
+            if (definition == null) {
+                // Look for a definition ...
+                definition = nodeTypes().findPropertyDefinition(node.getPrimaryTypeName(),
+                                                                node.getMixinTypeNames(),
+                                                                name,
+                                                                value,
+                                                                true,
+                                                                true);
+                if (definition == null) {
+                    throw new ConstraintViolationException();
+                }
+            }
+            // Create the DNA property ...
+            Object objValue = value.value();
+            int propertyType = definition.getRequiredType();
+            if (propertyType == PropertyType.UNDEFINED || propertyType == value.getType()) {
+                // Can use the values as is ...
+                propertyType = value.getType();
+            } else {
+                // A cast is required ...
+                org.jboss.dna.graph.property.PropertyType dnaPropertyType = PropertyTypeUtil.dnaPropertyTypeFor(propertyType);
+                ValueFactory<?> factory = context.getValueFactories().getValueFactory(dnaPropertyType);
+                objValue = factory.create(value);
+            }
+            Property dnaProp = propertyFactory.create(name, objValue);
+
+            // Create the property info ...
+            PropertyInfo newProperty = new PropertyInfo(id, definition.getId(), propertyType, dnaProp, definition.isMultiple());
+
+            // Finally update the cached information and record the change ...
+            node.setProperty(newProperty, context().getValueFactories());
+            operations().set(dnaProp).on(currentLocation);
         }
 
         /**
@@ -448,63 +506,86 @@ public class SessionCache {
          * existing values will be replaced with those that are supplied.
          * 
          * @param name the property name; may not be null
-         * @param propertyType the property type; must be a valid {@link PropertyType} value
-         * @param value the new property values, which may be converted to the appropriate {@link PropertyType type}
+         * @param values new property values, all of which must have the same {@link Value#getType() property type}; may not be
+         *        null or empty
          * @throws ConstraintViolationException if the property could not be set because of a node type constraint or property
          *         definition constraint
          */
         public void setProperty( Name name,
-                                 int propertyType,
-                                 Object[] value ) throws ConstraintViolationException {
-            Property dnaProp = propertyFactory.create(name, value);
-            setProperty(name, dnaProp, propertyType);
-        }
+                                 JcrValue[] values ) throws ConstraintViolationException {
+            assert name != null;
+            assert values != null;
+            int numValues = values.length;
+            assert numValues != 0;
+            JcrPropertyDefinition definition = null;
+            PropertyId id = null;
 
-        protected final void setProperty( Name name,
-                                          Property dnaProp,
-                                          int propertyType ) throws ConstraintViolationException {
-            assert propertyType != PropertyType.UNDEFINED;
+            // Look for an existing property ...
             PropertyInfo existing = node.getProperty(name);
-            PropertyInfo newProperty = null;
             if (existing != null) {
-                // We're replacing an existing property, but we still need to check that the property definition
-                // defines a type. So, find the property definition for the existing property ...
-                JcrPropertyDefinition definition = nodeTypes().getPropertyDefinition(existing.getDefinitionId());
-                if (definition == null && existing.getDefinitionId().allowsMultiple() && dnaProp.isSingle()) {
-                    // Look for a single-valued definition ...
-                    PropertyDefinitionId id = existing.getDefinitionId().asSingleValued();
-                    definition = nodeTypes().getPropertyDefinition(id);
-                }
-                if (definition == null) {
-                    // Try to find a different (but existing) property definition ...
-                    definition = findBestPropertyDefintion(node.getPrimaryTypeName(),
-                                                           node.getMixinTypeNames(),
-                                                           dnaProp,
-                                                           propertyType,
-                                                           true);
-                }
-                if (definition == null) {
-                    throw new ConstraintViolationException();
-                }
+                // Reuse the existing ID ...
+                id = existing.getPropertyId();
 
-                // Create the property info ...
-                newProperty = new PropertyInfo(existing.getPropertyId(), existing.getDefinitionId(), propertyType, dnaProp,
-                                               existing.isMultiValued());
+                // We're replacing an existing property, but we still need to check that the property definition
+                // (still) defines a type. So, find the property definition for the existing property ...
+                definition = nodeTypes().getPropertyDefinition(existing.getDefinitionId());
+
+                if (definition != null) {
+                    // The definition's require type must match the value's ...
+                    if (numValues == 0) {
+                        // Just use the definition as is ...
+                    } else {
+                        int type = values[0].getType();
+                        if (definition.getRequiredType() != PropertyType.UNDEFINED && definition.getRequiredType() != type) {
+                            // The property type is not right, so we have to check if we can cast.
+                            // It's easier and could save more work if we just find a new property definition that works ...
+                            definition = null;
+                        } else {
+                            // The types match, so see if the value satisfies the constraints ...
+                            if (!definition.satisfiesConstraints(values)) definition = null;
+                        }
+                    }
+                }
             } else {
-                // It's a new property ...
-                PropertyId id = new PropertyId(node.getUuid(), name);
-                // Look find the property definition to use ...
-                JcrPropertyDefinition definition = findBestPropertyDefintion(node.getPrimaryTypeName(),
-                                                                             node.getMixinTypeNames(),
-                                                                             dnaProp,
-                                                                             propertyType,
-                                                                             true);
+                // This is a new property, so create a new ID ...
+                id = new PropertyId(node.getUuid(), name);
+            }
+            if (definition == null) {
+                // Look for a definition ...
+                definition = nodeTypes().findPropertyDefinition(node.getPrimaryTypeName(),
+                                                                node.getMixinTypeNames(),
+                                                                name,
+                                                                values,
+                                                                true);
                 if (definition == null) {
                     throw new ConstraintViolationException();
                 }
-                // Create the property info ...
-                newProperty = new PropertyInfo(id, definition.getId(), propertyType, dnaProp, definition.isMultiple());
             }
+            // Create the DNA property ...
+            int type = values.length != 0 ? values[0].getType() : definition.getRequiredType();
+            Object[] objValues = new Object[values.length];
+            int propertyType = definition.getRequiredType();
+            if (propertyType == PropertyType.UNDEFINED || propertyType == type) {
+                // Can use the values as is ...
+                propertyType = type;
+                for (int i = 0; i != numValues; ++i) {
+                    objValues[i] = values[i].value();
+                }
+            } else {
+                // A cast is required ...
+                assert propertyType != type;
+                org.jboss.dna.graph.property.PropertyType dnaPropertyType = PropertyTypeUtil.dnaPropertyTypeFor(propertyType);
+                ValueFactory<?> factory = context.getValueFactories().getValueFactory(dnaPropertyType);
+                for (int i = 0; i != numValues; ++i) {
+                    objValues[i] = factory.create(values[i].value());
+                }
+            }
+            Property dnaProp = propertyFactory.create(name, objValues);
+
+            // Create the property info ...
+            PropertyInfo newProperty = new PropertyInfo(id, definition.getId(), propertyType, dnaProp, definition.isMultiple());
+
+            // Finally update the cached information and record the change ...
             node.setProperty(newProperty, context().getValueFactories());
             operations().set(dnaProp).on(currentLocation);
         }
@@ -571,7 +652,9 @@ public class SessionCache {
             if (!definition.getId().equals(node.getDefinitionId())) {
                 // The node definition changed, so try to set the property ...
                 try {
-                    setProperty(DnaLexicon.NODE_DEFINITON, PropertyType.STRING, definition.getId().getString());
+                    JcrValue value = new JcrValue(context().getValueFactories(), SessionCache.this, PropertyType.STRING,
+                                                  definition.getId().getString());
+                    setProperty(DnaLexicon.NODE_DEFINITON, value);
                 } catch (ConstraintViolationException e) {
                     // We can't set this property on the node (according to the node definition).
                     // But we still want the node info to have the correct node definition.
@@ -1297,7 +1380,7 @@ public class SessionCache {
             Name name = dnaProp.getName();
 
             // Figure out the JCR property type for this property ...
-            int propertyType = JcrSession.jcrPropertyTypeFor(dnaProp);
+            int propertyType = PropertyTypeUtil.jcrPropertyTypeFor(dnaProp);
             PropertyDefinition propertyDefinition = findBestPropertyDefintion(primaryTypeName,
                                                                               mixinTypeNames,
                                                                               dnaProp,

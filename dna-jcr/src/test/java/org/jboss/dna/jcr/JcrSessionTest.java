@@ -32,6 +32,7 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.stub;
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -325,12 +326,13 @@ public class JcrSessionTest {
 
     @Test
     public void shouldProvideValueFactory() throws Exception {
+        InputStream stream = new ByteArrayInputStream("something".getBytes());
         ValueFactory factory = session.getValueFactory();
         assertThat(factory, notNullValue());
         assertThat(factory.createValue(false), notNullValue());
         assertThat(factory.createValue(Calendar.getInstance()), notNullValue());
         assertThat(factory.createValue(0.0), notNullValue());
-        assertThat(factory.createValue(Mockito.mock(InputStream.class)), notNullValue());
+        assertThat(factory.createValue(stream), notNullValue());
         assertThat(factory.createValue(0L), notNullValue());
         Node node = Mockito.mock(Node.class);
         stub(node.getUUID()).toReturn(UUID.randomUUID().toString());

@@ -27,9 +27,13 @@ import java.io.InputStream;
 import java.util.Calendar;
 import java.util.UUID;
 import javax.jcr.Node;
+import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
 import javax.jcr.Value;
 import javax.jcr.ValueFormatException;
+import javax.jcr.lock.LockException;
+import javax.jcr.nodetype.ConstraintViolationException;
+import javax.jcr.version.VersionException;
 import org.jboss.dna.graph.property.Binary;
 import org.jboss.dna.graph.property.Reference;
 import org.jboss.dna.graph.property.ValueFactories;
@@ -170,6 +174,129 @@ final class JcrSingleValueProperty extends AbstractJcrProperty {
     /**
      * {@inheritDoc}
      * 
+     * @see javax.jcr.Property#setValue(javax.jcr.Value)
+     */
+    public void setValue( Value value )
+        throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
+        JcrValue jcrValue = null;
+        if (value instanceof JcrValue) {
+            jcrValue = (JcrValue)value;
+            cache.getEditorFor(propertyId.getNodeId()).setProperty(propertyId.getPropertyName(), jcrValue);
+            return;
+        }
+        // We have to convert from one Value implementation to ours ...
+        switch (value.getType()) {
+            case PropertyType.STRING:
+                setValue(value.getString());
+                break;
+            case PropertyType.BINARY:
+                setValue(value.getStream());
+                break;
+            case PropertyType.BOOLEAN:
+                setValue(value.getBoolean());
+                break;
+            case PropertyType.DATE:
+                setValue(value.getDate());
+                break;
+            case PropertyType.DOUBLE:
+                setValue(value.getDouble());
+                break;
+            case PropertyType.LONG:
+                setValue(value.getLong());
+                break;
+            case PropertyType.NAME:
+                setValue(value.getString());
+                break;
+            case PropertyType.PATH:
+                setValue(value.getString());
+                break;
+            case PropertyType.REFERENCE:
+                setValue(value.getString());
+                break;
+            default:
+                throw new RepositoryException();
+        }
+    }
+
+    protected void setValue( JcrValue jcrValue )
+        throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
+        cache.getEditorFor(propertyId.getNodeId()).setProperty(propertyId.getPropertyName(), jcrValue);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see javax.jcr.Property#setValue(java.lang.String)
+     */
+    public void setValue( String value )
+        throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
+        setValue(createValue(value, PropertyType.STRING));
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see javax.jcr.Property#setValue(java.io.InputStream)
+     */
+    public void setValue( InputStream value )
+        throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
+        setValue(createValue(context().getValueFactories().getBinaryFactory().create(value), PropertyType.DATE));
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see javax.jcr.Property#setValue(long)
+     */
+    public void setValue( long value )
+        throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
+        setValue(createValue(new Long(value), PropertyType.LONG));
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see javax.jcr.Property#setValue(double)
+     */
+    public void setValue( double value )
+        throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
+        setValue(createValue(new Double(value), PropertyType.DOUBLE));
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see javax.jcr.Property#setValue(java.util.Calendar)
+     */
+    public void setValue( Calendar value )
+        throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
+        setValue(createValue(context().getValueFactories().getDateFactory().create(value), PropertyType.DATE));
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see javax.jcr.Property#setValue(boolean)
+     */
+    public void setValue( boolean value )
+        throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
+        setValue(createValue(new Boolean(value), PropertyType.BOOLEAN));
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see javax.jcr.Property#setValue(javax.jcr.Node)
+     */
+    public void setValue( Node value )
+        throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
+        String uuid = value.getUUID();
+        setValue(createValue(uuid, PropertyType.REFERENCE));
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
      * @throws ValueFormatException always
      * @see javax.jcr.Property#getValues()
      */
@@ -177,60 +304,21 @@ final class JcrSingleValueProperty extends AbstractJcrProperty {
         throw new ValueFormatException();
     }
 
-    /*
+    /**
      * {@inheritDoc}
      * 
-     * @throws IllegalArgumentException if <code>value</code> is <code>null</code>.
-     * @see javax.jcr.Property#setValue(javax.jcr.Value)
-     *
-    @SuppressWarnings( "fallthrough" )
-    public void setValue( Value value ) throws RepositoryException {
-        CheckArg.isNotNull(value, "value");
-        // TODOx: Check node type constraint
-        try {
-            jcrValue = JcrValue.class.cast(value);
-        } catch (ClassCastException error) {
-            // TODOx: not sure if this is even possible
-            ValueFactories valueFactories = getExecutionContext().getValueFactories();
-            int type = value.getType();
-            switch (type) {
-                case PropertyType.BINARY: {
-                    jcrValue = new JcrValue<InputStream>(valueFactories, type, value.getStream());
-                    break;
-                }
-                case PropertyType.BOOLEAN: {
-                    jcrValue = new JcrValue<Boolean>(valueFactories, type, value.getBoolean());
-                    break;
-                }
-                case PropertyType.DATE: {
-                    jcrValue = new JcrValue<Calendar>(valueFactories, type, value.getDate());
-                    break;
-                }
-                case PropertyType.DOUBLE: {
-                    jcrValue = new JcrValue<Double>(valueFactories, type, value.getDouble());
-                    break;
-                }
-                case PropertyType.LONG: {
-                    jcrValue = new JcrValue<Long>(valueFactories, type, value.getLong());
-                    break;
-                }
-                case PropertyType.REFERENCE: {
-                    try {
-                        jcrValue = new JcrValue<UUID>(valueFactories, type, UUID.fromString(value.getString()));
-                    } catch (IllegalArgumentException fallsThroughToString) {
-                    }
-                }
-                case PropertyType.NAME:
-                case PropertyType.PATH:
-                case PropertyType.STRING: {
-                    jcrValue = new JcrValue<String>(valueFactories, type, value.getString());
-                    break;
-                }
-                default: {
-                    throw new AssertionError("Unsupported PropertyType: " + value.getType());
-                }
-            }
-        }
+     * @see javax.jcr.Property#setValue(javax.jcr.Value[])
+     */
+    public void setValue( Value[] values ) throws ValueFormatException {
+        throw new ValueFormatException();
     }
-    */
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see javax.jcr.Property#setValue(java.lang.String[])
+     */
+    public void setValue( String[] values ) throws ValueFormatException {
+        throw new ValueFormatException();
+    }
 }
