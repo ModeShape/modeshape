@@ -131,13 +131,13 @@ public class JcrSessionTest {
         nodeTypes = new JcrBuiltinNodeTypeSource(context, nodeTypes);
         nodeTypes = new DnaBuiltinNodeTypeSource(context, nodeTypes);
         repoTypeManager = new RepositoryNodeTypeManager(context, nodeTypes);
-        
+
         // Stub out the repository, since we only need a few methods ...
         MockitoAnnotations.initMocks(this);
         stub(repository.getRepositorySourceName()).toReturn(repositorySourceName);
         stub(repository.getConnectionFactory()).toReturn(connectionFactory);
         stub(repository.getRepositoryTypeManager()).toReturn(repoTypeManager);
-        
+
         // Set up the session attributes ...
         sessionAttributes = new HashMap<String, Object>();
         sessionAttributes.put("attribute1", "value1");
@@ -308,12 +308,18 @@ public class JcrSessionTest {
     }
 
     @Test
-    public void shouldProvideItemsByPath() throws Exception {
+    public void shouldProvideChildrenByPath() throws Exception {
         Item item = session.getItem("/a");
         assertThat(item, instanceOf(Node.class));
         item = session.getItem("/a/b");
         assertThat(item, instanceOf(Node.class));
         item = session.getItem("/a/b/booleanProperty");
+        assertThat(item, instanceOf(Property.class));
+    }
+
+    @Test
+    public void shouldProvidePropertiesByPath() throws Exception {
+        Item item = session.getItem("/a/b/booleanProperty");
         assertThat(item, instanceOf(Property.class));
     }
 
@@ -417,7 +423,7 @@ public class JcrSessionTest {
 
         NodeType rootNodePrimaryType = rootNode.getPrimaryNodeType();
         NodeType dnaRootType = session.nodeTypeManager().getNodeType(DnaLexicon.ROOT);
-        
+
         assertThat(rootNodePrimaryType.getName(), is(dnaRootType.getName()));
 
     }
@@ -431,7 +437,8 @@ public class JcrSessionTest {
     public void rootNodeShouldBeReferenceable() throws RepositoryException {
         Node rootNode = session.getRootNode();
 
-        assertTrue(rootNode.getPrimaryNodeType().isNodeType(JcrMixLexicon.REFERENCEABLE.getString(context.getNamespaceRegistry())));
+        assertTrue(rootNode.getPrimaryNodeType()
+                           .isNodeType(JcrMixLexicon.REFERENCEABLE.getString(context.getNamespaceRegistry())));
     }
 
     @Test

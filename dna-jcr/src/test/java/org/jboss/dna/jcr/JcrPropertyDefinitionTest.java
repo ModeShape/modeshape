@@ -232,11 +232,10 @@ public class JcrPropertyDefinitionTest {
         return true;
     }
 
-    @Test( expected = AssertionError.class )
-    public void shouldNotAllowNullValue() throws Exception {
+    @Test
+    public void shouldAllowNullValue() throws Exception {
         NodeType constrainedType = validateTypeDefinition();
         JcrPropertyDefinition prop = propertyDefinitionFor(constrainedType, TestLexicon.CONSTRAINED_BINARY);
-
         assertThat(prop.satisfiesConstraints((Value)null), is(false));
     }
 

@@ -103,8 +103,7 @@ abstract class AbstractJcrProperty extends AbstractJcrItem implements Property {
     public final PropertyDefinition getDefinition() throws RepositoryException {
         PropertyInfo info = propertyInfo();
         PropertyDefinitionId definitionId = info.getDefinitionId();
-        boolean multiValued = info.isMultiValued();
-        return cache.session().nodeTypeManager().getPropertyDefinition(definitionId, multiValued);
+        return cache.session().nodeTypeManager().getPropertyDefinition(definitionId);
     }
 
     /**

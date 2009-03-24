@@ -77,8 +77,9 @@ public class JcrSingleValuePropertyTest {
         dnaProperty = executionContext.getPropertyFactory().create(JcrLexicon.MIMETYPE, "text/plain");
         stub(definition.getRequiredType()).toReturn(PropertyType.STRING);
         stub(definition.isMultiple()).toReturn(false);
-        PropertyDefinitionId definitionId = new PropertyDefinitionId(name("nodeTypeName"), name("propDefnName"));
-        stub(nodeTypes.getPropertyDefinition(definitionId, false)).toReturn(definition);
+        PropertyDefinitionId definitionId = new PropertyDefinitionId(name("nodeTypeName"), name("propDefnName"),
+                                                                     PropertyType.STRING, false);
+        stub(nodeTypes.getPropertyDefinition(definitionId)).toReturn(definition);
 
         UUID uuid = UUID.randomUUID();
         propertyId = new PropertyId(uuid, JcrLexicon.MIMETYPE);

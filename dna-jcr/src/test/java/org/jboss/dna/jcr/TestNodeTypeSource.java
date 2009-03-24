@@ -28,7 +28,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import javax.jcr.PropertyType;
-import javax.jcr.nodetype.NodeType;
 import org.jboss.dna.graph.ExecutionContext;
 
 /**
@@ -56,17 +55,10 @@ public class TestNodeTypeSource extends AbstractJcrNodeTypeSource {
             throw new IllegalStateException(JcrI18n.supertypeNotFound.text(baseTypeName, namespaceTypeName));
         }
 
-        
-        
         // Stubbing in child node and property definitions for now
-        JcrNodeType constrainedType = new JcrNodeType(
-                                                      context,
-                                                      NO_NODE_TYPE_MANAGER,
-                                                      TestLexicon.CONSTRAINED_TYPE,
-                                                      Arrays.asList(new NodeType[] {base}),
-                                                      NO_PRIMARY_ITEM_NAME,
-                                                      NO_CHILD_NODES,
-                                                      Arrays.asList(new JcrPropertyDefinition[] {
+        JcrNodeType constrainedType = new JcrNodeType(context, NO_NODE_TYPE_MANAGER, TestLexicon.CONSTRAINED_TYPE,
+                                                      Arrays.asList(new JcrNodeType[] {base}), NO_PRIMARY_ITEM_NAME,
+                                                      NO_CHILD_NODES, Arrays.asList(new JcrPropertyDefinition[] {
                                                           new JcrPropertyDefinition(context, null,
                                                                                     TestLexicon.CONSTRAINED_BINARY,
                                                                                     OnParentVersionBehavior.IGNORE.getJcrValue(),
@@ -104,8 +96,9 @@ public class TestNodeTypeSource extends AbstractJcrNodeTypeSource {
                                                                                     OnParentVersionBehavior.IGNORE.getJcrValue(),
                                                                                     false, false, false, NO_DEFAULT_VALUES,
                                                                                     PropertyType.PATH, new String[] {
-                                                              // "/" + JcrLexicon.Namespace.URI + ":system/*", "b", "/a/b/c"}, false),
-                                                              "/jcr:system/*", "b", "/a/b/c"}, false),
+                                                                                    // "/" + JcrLexicon.Namespace.URI +
+                                                                                    // ":system/*", "b", "/a/b/c"}, false),
+                                                                                        "/jcr:system/*", "b", "/a/b/c"}, false),
                                                           new JcrPropertyDefinition(context, null,
                                                                                     TestLexicon.CONSTRAINED_REFERENCE,
                                                                                     OnParentVersionBehavior.IGNORE.getJcrValue(),

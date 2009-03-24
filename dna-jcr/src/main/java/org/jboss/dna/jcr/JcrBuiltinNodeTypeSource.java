@@ -29,7 +29,6 @@ import java.util.Collection;
 import java.util.List;
 import javax.jcr.PropertyType;
 import javax.jcr.Value;
-import javax.jcr.nodetype.NodeType;
 import net.jcip.annotations.Immutable;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.property.Name;
@@ -101,7 +100,7 @@ class JcrBuiltinNodeTypeSource extends AbstractJcrNodeTypeSource {
                                                           context,
                                                           NO_NODE_TYPE_MANAGER,
                                                           JcrNtLexicon.CHILD_NODE_DEFINITION,
-                                                          Arrays.asList(new NodeType[] {base}),
+                                                          Arrays.asList(new JcrNodeType[] {base}),
                                                           NO_PRIMARY_ITEM_NAME,
                                                           NO_CHILD_NODES,
                                                           Arrays.asList(new JcrPropertyDefinition[] {
@@ -173,7 +172,7 @@ class JcrBuiltinNodeTypeSource extends AbstractJcrNodeTypeSource {
                                                     context,
                                                     NO_NODE_TYPE_MANAGER,
                                                     JcrNtLexicon.HIERARCHY_NODE,
-                                                    Arrays.asList(new NodeType[] {base}),
+                                                    Arrays.asList(new JcrNodeType[] {base}),
                                                     NO_PRIMARY_ITEM_NAME,
                                                     NO_CHILD_NODES,
                                                     Arrays.asList(new JcrPropertyDefinition[] {new JcrPropertyDefinition(
@@ -194,7 +193,7 @@ class JcrBuiltinNodeTypeSource extends AbstractJcrNodeTypeSource {
                                            context,
                                            NO_NODE_TYPE_MANAGER,
                                            JcrNtLexicon.FILE,
-                                           Arrays.asList(new NodeType[] {hierarchyNode}),
+                                           Arrays.asList(new JcrNodeType[] {hierarchyNode}),
                                            JcrLexicon.CONTENT,
                                            Arrays.asList(new JcrNodeDefinition[] {new JcrNodeDefinition(
                                                                                                         context,
@@ -203,14 +202,14 @@ class JcrBuiltinNodeTypeSource extends AbstractJcrNodeTypeSource {
                                                                                                         OnParentVersionBehavior.COPY.getJcrValue(),
                                                                                                         false, true, false,
                                                                                                         false, null,
-                                                                                                        new NodeType[] {base})}),
+                                                                                                        new JcrNodeType[] {base})}),
                                            NO_PROPERTIES, NOT_MIXIN, UNORDERABLE_CHILD_NODES);
 
         JcrNodeType folder = new JcrNodeType(
                                              context,
                                              NO_NODE_TYPE_MANAGER,
                                              JcrNtLexicon.FOLDER,
-                                             Arrays.asList(new NodeType[] {hierarchyNode}),
+                                             Arrays.asList(new JcrNodeType[] {hierarchyNode}),
                                              NO_PRIMARY_ITEM_NAME,
                                              Arrays.asList(new JcrNodeDefinition[] {new JcrNodeDefinition(
                                                                                                           context,
@@ -222,14 +221,14 @@ class JcrBuiltinNodeTypeSource extends AbstractJcrNodeTypeSource {
                                                                                                           false,
                                                                                                           false,
                                                                                                           null,
-                                                                                                          new NodeType[] {hierarchyNode})}),
+                                                                                                          new JcrNodeType[] {hierarchyNode})}),
                                              NO_PROPERTIES, NOT_MIXIN, UNORDERABLE_CHILD_NODES);
 
         JcrNodeType frozenNode = new JcrNodeType(
                                                  context,
                                                  NO_NODE_TYPE_MANAGER,
                                                  JcrNtLexicon.FROZEN_NODE,
-                                                 Arrays.asList(new NodeType[] {base, referenceable}),
+                                                 Arrays.asList(new JcrNodeType[] {base, referenceable}),
                                                  NO_PRIMARY_ITEM_NAME,
                                                  Arrays.asList(new JcrNodeDefinition[] {new JcrNodeDefinition(
                                                                                                               context,
@@ -241,7 +240,7 @@ class JcrBuiltinNodeTypeSource extends AbstractJcrNodeTypeSource {
                                                                                                               true,
                                                                                                               true,
                                                                                                               null,
-                                                                                                              new NodeType[] {base})}),
+                                                                                                              new JcrNodeType[] {base})}),
                                                  Arrays.asList(new JcrPropertyDefinition[] {
                                                      new JcrPropertyDefinition(context, null, JcrLexicon.FROZEN_MIXIN_TYPES,
                                                                                OnParentVersionBehavior.ABORT.getJcrValue(),
@@ -269,7 +268,7 @@ class JcrBuiltinNodeTypeSource extends AbstractJcrNodeTypeSource {
                                                  context,
                                                  NO_NODE_TYPE_MANAGER,
                                                  JcrNtLexicon.LINKED_FILE,
-                                                 Arrays.asList(new NodeType[] {hierarchyNode}),
+                                                 Arrays.asList(new JcrNodeType[] {hierarchyNode}),
                                                  JcrLexicon.CONTENT,
                                                  NO_CHILD_NODES,
                                                  Arrays.asList(new JcrPropertyDefinition[] {new JcrPropertyDefinition(
@@ -291,7 +290,7 @@ class JcrBuiltinNodeTypeSource extends AbstractJcrNodeTypeSource {
                                                          context,
                                                          NO_NODE_TYPE_MANAGER,
                                                          JcrNtLexicon.PROPERTY_DEFINITION,
-                                                         Arrays.asList(new NodeType[] {base}),
+                                                         Arrays.asList(new JcrNodeType[] {base}),
                                                          NO_PRIMARY_ITEM_NAME,
                                                          NO_CHILD_NODES,
                                                          Arrays.asList(new JcrPropertyDefinition[] {
@@ -366,16 +365,16 @@ class JcrBuiltinNodeTypeSource extends AbstractJcrNodeTypeSource {
                                                          NOT_MIXIN, UNORDERABLE_CHILD_NODES);
 
         JcrNodeType nodeType = new JcrNodeType(context, NO_NODE_TYPE_MANAGER, JcrNtLexicon.NODE_TYPE,
-                                               Arrays.asList(new NodeType[] {base}), NO_PRIMARY_ITEM_NAME,
+                                               Arrays.asList(new JcrNodeType[] {base}), NO_PRIMARY_ITEM_NAME,
                                                Arrays.asList(new JcrNodeDefinition[] {
                                                    new JcrNodeDefinition(context, null, JcrLexicon.CHILD_NODE_DEFINITION,
                                                                          OnParentVersionBehavior.VERSION.getJcrValue(), false,
                                                                          false, false, true, JcrNtLexicon.CHILD_NODE_DEFINITION,
-                                                                         new NodeType[] {childNodeDefinition}),
+                                                                         new JcrNodeType[] {childNodeDefinition}),
                                                    new JcrNodeDefinition(context, null, JcrLexicon.PROPERTY_DEFINITION,
                                                                          OnParentVersionBehavior.VERSION.getJcrValue(), false,
                                                                          false, false, true, JcrNtLexicon.PROPERTY_DEFINITION,
-                                                                         new NodeType[] {propertyDefinition})}),
+                                                                         new JcrNodeType[] {propertyDefinition})}),
                                                Arrays.asList(new JcrPropertyDefinition[] {
                                                    new JcrPropertyDefinition(context, null, JcrLexicon.HAS_ORDERABLE_CHILD_NODES,
                                                                              OnParentVersionBehavior.COPY.getJcrValue(), false,
@@ -400,7 +399,7 @@ class JcrBuiltinNodeTypeSource extends AbstractJcrNodeTypeSource {
                                                UNORDERABLE_CHILD_NODES);
 
         JcrNodeType query = new JcrNodeType(context, NO_NODE_TYPE_MANAGER, JcrNtLexicon.QUERY,
-                                            Arrays.asList(new NodeType[] {base}), NO_PRIMARY_ITEM_NAME, NO_CHILD_NODES,
+                                            Arrays.asList(new JcrNodeType[] {base}), NO_PRIMARY_ITEM_NAME, NO_CHILD_NODES,
                                             Arrays.asList(new JcrPropertyDefinition[] {
                                                 new JcrPropertyDefinition(context, null, JcrLexicon.LANGUAGE,
                                                                           OnParentVersionBehavior.COPY.getJcrValue(), false,
@@ -413,7 +412,7 @@ class JcrBuiltinNodeTypeSource extends AbstractJcrNodeTypeSource {
                                             UNORDERABLE_CHILD_NODES);
 
         JcrNodeType resource = new JcrNodeType(context, NO_NODE_TYPE_MANAGER, JcrNtLexicon.RESOURCE,
-                                               Arrays.asList(new NodeType[] {base, referenceable}), JcrLexicon.DATA,
+                                               Arrays.asList(new JcrNodeType[] {base, referenceable}), JcrLexicon.DATA,
                                                NO_CHILD_NODES, Arrays.asList(new JcrPropertyDefinition[] {
                                                    new JcrPropertyDefinition(context, null, JcrLexicon.DATA,
                                                                              OnParentVersionBehavior.COPY.getJcrValue(), false,
@@ -437,7 +436,7 @@ class JcrBuiltinNodeTypeSource extends AbstractJcrNodeTypeSource {
                                                    context,
                                                    NO_NODE_TYPE_MANAGER,
                                                    JcrNtLexicon.UNSTRUCTURED,
-                                                   Arrays.asList(new NodeType[] {base}),
+                                                   Arrays.asList(new JcrNodeType[] {base}),
                                                    NO_PRIMARY_ITEM_NAME,
                                                    Arrays.asList(new JcrNodeDefinition[] {new JcrNodeDefinition(
                                                                                                                 context,
@@ -449,7 +448,7 @@ class JcrBuiltinNodeTypeSource extends AbstractJcrNodeTypeSource {
                                                                                                                 false,
                                                                                                                 true,
                                                                                                                 JcrNtLexicon.UNSTRUCTURED,
-                                                                                                                new NodeType[] {base}),}),
+                                                                                                                new JcrNodeType[] {base}),}),
                                                    Arrays.asList(new JcrPropertyDefinition[] {
                                                        new JcrPropertyDefinition(context, null, ALL_NODES,
                                                                                  OnParentVersionBehavior.COPY.getJcrValue(),
@@ -465,7 +464,7 @@ class JcrBuiltinNodeTypeSource extends AbstractJcrNodeTypeSource {
                                               context,
                                               NO_NODE_TYPE_MANAGER,
                                               JcrNtLexicon.VERSION,
-                                              Arrays.asList(new NodeType[] {base, referenceable}),
+                                              Arrays.asList(new JcrNodeType[] {base, referenceable}),
                                               NO_PRIMARY_ITEM_NAME,
                                               Arrays.asList(new JcrNodeDefinition[] {new JcrNodeDefinition(
                                                                                                            context,
@@ -477,7 +476,7 @@ class JcrBuiltinNodeTypeSource extends AbstractJcrNodeTypeSource {
                                                                                                            true,
                                                                                                            false,
                                                                                                            null,
-                                                                                                           new NodeType[] {frozenNode}),}),
+                                                                                                           new JcrNodeType[] {frozenNode}),}),
                                               Arrays.asList(new JcrPropertyDefinition[] {
                                                   new JcrPropertyDefinition(context, null, JcrLexicon.CREATED,
                                                                             OnParentVersionBehavior.ABORT.getJcrValue(), true,
@@ -497,7 +496,7 @@ class JcrBuiltinNodeTypeSource extends AbstractJcrNodeTypeSource {
                                                     context,
                                                     NO_NODE_TYPE_MANAGER,
                                                     JcrNtLexicon.VERSION_LABELS,
-                                                    Arrays.asList(new NodeType[] {base}),
+                                                    Arrays.asList(new JcrNodeType[] {base}),
                                                     NO_PRIMARY_ITEM_NAME,
                                                     NO_CHILD_NODES,
                                                     Arrays.asList(new JcrPropertyDefinition[] {new JcrPropertyDefinition(
@@ -518,21 +517,21 @@ class JcrBuiltinNodeTypeSource extends AbstractJcrNodeTypeSource {
                                                      context,
                                                      NO_NODE_TYPE_MANAGER,
                                                      JcrNtLexicon.VERSION_HISTORY,
-                                                     Arrays.asList(new NodeType[] {base, referenceable}),
+                                                     Arrays.asList(new JcrNodeType[] {base, referenceable}),
                                                      NO_PRIMARY_ITEM_NAME,
                                                      Arrays.asList(new JcrNodeDefinition[] {
                                                          new JcrNodeDefinition(context, null, JcrLexicon.ROOT_VERSION,
                                                                                OnParentVersionBehavior.ABORT.getJcrValue(), true,
                                                                                true, true, false, JcrNtLexicon.VERSION,
-                                                                               new NodeType[] {version}),
+                                                                               new JcrNodeType[] {version}),
                                                          new JcrNodeDefinition(context, null, JcrLexicon.VERSION_LABELS,
                                                                                OnParentVersionBehavior.ABORT.getJcrValue(), true,
                                                                                true, true, false, JcrNtLexicon.VERSION_LABELS,
-                                                                               new NodeType[] {versionLabels}),
+                                                                               new JcrNodeType[] {versionLabels}),
                                                          new JcrNodeDefinition(context, null, ALL_NODES,
                                                                                OnParentVersionBehavior.ABORT.getJcrValue(),
                                                                                false, false, true, false, JcrNtLexicon.VERSION,
-                                                                               new NodeType[] {version}),}),
+                                                                               new JcrNodeType[] {version}),}),
                                                      Arrays.asList(new JcrPropertyDefinition[] {new JcrPropertyDefinition(
                                                                                                                           context,
                                                                                                                           null,
@@ -552,7 +551,7 @@ class JcrBuiltinNodeTypeSource extends AbstractJcrNodeTypeSource {
                                                      context,
                                                      NO_NODE_TYPE_MANAGER,
                                                      JcrNtLexicon.VERSIONED_CHILD,
-                                                     Arrays.asList(new NodeType[] {base}),
+                                                     Arrays.asList(new JcrNodeType[] {base}),
                                                      NO_PRIMARY_ITEM_NAME,
                                                      NO_CHILD_NODES,
                                                      Arrays.asList(new JcrPropertyDefinition[] {new JcrPropertyDefinition(
@@ -591,7 +590,7 @@ class JcrBuiltinNodeTypeSource extends AbstractJcrNodeTypeSource {
                                                   context,
                                                   NO_NODE_TYPE_MANAGER,
                                                   JcrMixLexicon.VERSIONABLE,
-                                                  Arrays.asList(new NodeType[] {referenceable}),
+                                                  Arrays.asList(new JcrNodeType[] {referenceable}),
                                                   NO_PRIMARY_ITEM_NAME,
                                                   NO_CHILD_NODES,
                                                   Arrays.asList(new JcrPropertyDefinition[] {

@@ -25,6 +25,8 @@ package org.jboss.dna.jcr.cache;
 
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -74,7 +76,7 @@ public class ChangedNodeInfo implements NodeInfo {
      * The updated list of mixin node type names. This is merely a cached version of what's already in the
      * {@link JcrLexicon#MIXIN_TYPES "jcr:mixinTypes"} property.
      */
-    private Set<Name> changedMixinTypeNames;
+    private List<Name> changedMixinTypeNames;
 
     /**
      * The updated node definition, which may be changed when this node is moved to a different parent (with a different node
@@ -152,7 +154,7 @@ public class ChangedNodeInfo implements NodeInfo {
      * 
      * @see org.jboss.dna.jcr.cache.NodeInfo#getMixinTypeNames()
      */
-    public Set<Name> getMixinTypeNames() {
+    public List<Name> getMixinTypeNames() {
         if (changedMixinTypeNames != null) return changedMixinTypeNames;
         return original.getMixinTypeNames();
     }
@@ -335,7 +337,7 @@ public class ChangedNodeInfo implements NodeInfo {
         // If this property was the "jcr:mixinTypes" property, update the cached values ...
         if (name.equals(JcrLexicon.MIXIN_TYPES)) {
             if (changedMixinTypeNames == null) {
-                changedMixinTypeNames = new HashSet<Name>();
+                changedMixinTypeNames = new LinkedList<Name>();
             } else {
                 changedMixinTypeNames.clear();
             }

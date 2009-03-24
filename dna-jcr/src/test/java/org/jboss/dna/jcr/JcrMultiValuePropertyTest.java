@@ -71,8 +71,9 @@ public class JcrMultiValuePropertyTest {
         dnaProperty = executionContext.getPropertyFactory().create(JcrLexicon.MIMETYPE, true);
         stub(definition.getRequiredType()).toReturn(PropertyType.BOOLEAN);
         stub(definition.isMultiple()).toReturn(true);
-        PropertyDefinitionId definitionId = new PropertyDefinitionId(name("nodeTypeName"), name("propDefnName"));
-        stub(nodeTypes.getPropertyDefinition(definitionId, true)).toReturn(definition);
+        PropertyDefinitionId definitionId = new PropertyDefinitionId(name("nodeTypeName"), name("propDefnName"),
+                                                                     PropertyType.BOOLEAN, true);
+        stub(nodeTypes.getPropertyDefinition(definitionId)).toReturn(definition);
 
         UUID uuid = UUID.randomUUID();
         propertyId = new PropertyId(uuid, JcrLexicon.MIMETYPE);

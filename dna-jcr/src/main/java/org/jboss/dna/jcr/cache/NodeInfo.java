@@ -23,6 +23,7 @@
  */
 package org.jboss.dna.jcr.cache;
 
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import org.jboss.dna.graph.Location;
@@ -57,9 +58,9 @@ public interface NodeInfo {
     /**
      * Get the names of the mixin types for this node.
      * 
-     * @return the unmodifiable set of mixin type names; never null but possibly empty
+     * @return the unmodifiable list of mixin type names; never null but possibly empty
      */
-    public Set<Name> getMixinTypeNames();
+    public List<Name> getMixinTypeNames();
 
     /**
      * @return definition

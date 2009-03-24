@@ -28,7 +28,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import javax.jcr.Value;
-import javax.jcr.nodetype.NodeType;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.graph.property.Name;
 
@@ -40,7 +39,7 @@ abstract class AbstractJcrNodeTypeSource implements JcrNodeTypeSource {
     // Convenience constants to help improve readability
     protected static final Value[] NO_DEFAULT_VALUES = new Value[0];
     protected static final String[] NO_CONSTRAINTS = new String[0];
-    protected static final List<NodeType> NO_SUPERTYPES = Collections.<NodeType>emptyList();
+    protected static final List<JcrNodeType> NO_SUPERTYPES = Collections.<JcrNodeType>emptyList();
     protected static final List<JcrNodeDefinition> NO_CHILD_NODES = Collections.<JcrNodeDefinition>emptyList();
     protected static final List<JcrPropertyDefinition> NO_PROPERTIES = Collections.<JcrPropertyDefinition>emptyList();
 

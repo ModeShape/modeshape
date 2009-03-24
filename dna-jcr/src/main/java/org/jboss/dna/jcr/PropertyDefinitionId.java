@@ -24,8 +24,8 @@
 package org.jboss.dna.jcr;
 
 import java.io.Serializable;
+import javax.jcr.PropertyType;
 import net.jcip.annotations.Immutable;
-import org.jboss.dna.common.util.HashCode;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.NameFactory;
 import org.jboss.dna.graph.property.ValueFormatException;
@@ -51,7 +51,9 @@ public final class PropertyDefinitionId implements Serializable {
 
     private final Name nodeTypeName;
     private final Name propertyDefinitionName;
-    private final int hc;
+    private final int propertyType;
+    private final boolean allowsMultiple;
+    private final String stringVersion;
 
     /**
      * Create a new identifier for a propety definition.
@@ -59,12 +61,20 @@ public final class PropertyDefinitionId implements Serializable {
      * @param nodeTypeName the name of the node type; may not be null
      * @param propertyDefinitionName the name of the property definition, which may be a {@link #ANY_NAME residual property}; may
      *        not be null
+     * @param propertyType the required property type for the definition; must be a valid {@link PropertyType} value
+     * @param allowsMultiple true if the property definition should allow multiple values, or false if it is a single-value
+     *        property definition
      */
     public PropertyDefinitionId( Name nodeTypeName,
-                                 Name propertyDefinitionName ) {
+                                 Name propertyDefinitionName,
+                                 int propertyType,
+                                 boolean allowsMultiple ) {
         this.nodeTypeName = nodeTypeName;
         this.propertyDefinitionName = propertyDefinitionName;
-        this.hc = HashCode.compute(this.nodeTypeName, this.propertyDefinitionName);
+        this.propertyType = propertyType;
+        this.allowsMultiple = allowsMultiple;
+        this.stringVersion = this.nodeTypeName.getString() + '/' + this.propertyDefinitionName.getString() + '/'
+                             + PropertyType.nameFromValue(propertyType) + '/' + (allowsMultiple ? '*' : '1');
     }
 
     /**
@@ -86,6 +96,24 @@ public final class PropertyDefinitionId implements Serializable {
     }
 
     /**
+     * Get the required property type
+     * 
+     * @return the property type; always a valid {@link PropertyType} value
+     */
+    public int getPropertyType() {
+        return propertyType;
+    }
+
+    /**
+     * Return whether the property definition allows multiple values.
+     * 
+     * @return true if the property definition allows multiple values, or false if it is a single-value property definition
+     */
+    public boolean allowsMultiple() {
+        return allowsMultiple;
+    }
+
+    /**
      * Determine whether this property definition allows properties with any name.
      * 
      * @return true if this node definition allows properties with any name, or false if this definition requires a particular
@@ -101,7 +129,7 @@ public final class PropertyDefinitionId implements Serializable {
      * @return the string form
      */
     public String getString() {
-        return this.nodeTypeName.getString() + '/' + this.propertyDefinitionName.getString();
+        return this.stringVersion;
     }
 
     /**
@@ -114,12 +142,22 @@ public final class PropertyDefinitionId implements Serializable {
      */
     public static PropertyDefinitionId fromString( String definition,
                                                    NameFactory factory ) {
-        int index = definition.indexOf('/');
-        String nodeTypeNameString = definition.substring(0, index);
-        String propertyDefinitionNameString = definition.substring(index + 1);
+        String[] parts = definition.split("/");
+        String nodeTypeNameString = parts[0];
+        String propertyDefinitionNameString = parts[1];
         Name nodeTypeName = factory.create(nodeTypeNameString);
         Name propertyDefinitionName = factory.create(propertyDefinitionNameString);
-        return new PropertyDefinitionId(nodeTypeName, propertyDefinitionName);
+        int propertyType = PropertyType.valueFromName(parts[2]);
+        boolean allowsMultiple = parts[3].charAt(0) == '*';
+        return new PropertyDefinitionId(nodeTypeName, propertyDefinitionName, propertyType, allowsMultiple);
+    }
+
+    public PropertyDefinitionId asSingleValued() {
+        return new PropertyDefinitionId(nodeTypeName, propertyDefinitionName, propertyType, false);
+    }
+
+    public PropertyDefinitionId asMultiValued() {
+        return new PropertyDefinitionId(nodeTypeName, propertyDefinitionName, propertyType, true);
     }
 
     /**
@@ -129,7 +167,7 @@ public final class PropertyDefinitionId implements Serializable {
      */
     @Override
     public int hashCode() {
-        return hc;
+        return this.stringVersion.hashCode();
     }
 
     /**
@@ -142,9 +180,7 @@ public final class PropertyDefinitionId implements Serializable {
         if (obj == this) return true;
         if (obj instanceof PropertyDefinitionId) {
             PropertyDefinitionId that = (PropertyDefinitionId)obj;
-            if (this.hc != that.hc) return false;
-            if (!this.nodeTypeName.equals(that.nodeTypeName)) return false;
-            return this.propertyDefinitionName.equals(that.propertyDefinitionName);
+            return this.stringVersion.equals(that.stringVersion);
         }
         return false;
     }
@@ -156,7 +192,7 @@ public final class PropertyDefinitionId implements Serializable {
      */
     @Override
     public String toString() {
-        return this.nodeTypeName.toString() + '/' + this.propertyDefinitionName.toString();
+        return this.stringVersion;
     }
 
 }

@@ -82,7 +82,8 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
      */
     public PropertyDefinitionId getId() {
         if (id == null) {
-            id = new PropertyDefinitionId(declaringNodeType.getInternalName(), name);
+            // This is idempotent, so no need to lock
+            id = new PropertyDefinitionId(this.declaringNodeType.getInternalName(), this.name, this.requiredType, this.multiple);
         }
         return id;
     }
@@ -137,9 +138,18 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
                                          this.getRequiredType(), this.getValueConstraints(), this.isMultiple());
     }
 
-    boolean satisfiesConstraints( Value value ) {
-        assert value instanceof JcrValue;
+    /**
+     * {@inheritDoc}
+     * 
+     * @see java.lang.Object#toString()
+     */
+    @Override
+    public String toString() {
+        return getId().toString();
+    }
 
+    boolean satisfiesConstraints( Value value ) {
+        if (value == null) return false;
         if (valueConstraints == null || valueConstraints.length == 0) {
             return true;
         }
@@ -164,6 +174,90 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
             // The value was so wonky that we couldn't even convert it to an appropriate type
             return false;
         }
+    }
+
+    boolean satisfiesConstraints( Value[] values ) {
+        if (valueConstraints == null || valueConstraints.length == 0) {
+            if (requiredType != PropertyType.UNDEFINED) {
+                for (Value value : values) {
+                    if (value.getType() != requiredType) return false;
+                }
+            }
+            return true;
+        }
+        if (values == null || values.length == 0) {
+            // There are no values, so see if the definition allows multiple values ...
+            return isMultiple();
+        }
+
+        // Neither the 1.0 or 2.0 specification formally prohibit constraints on properties with no required type.
+        int type = requiredType == PropertyType.UNDEFINED ? values[0].getType() : requiredType;
+
+        /*
+         * Keep a method-local reference to the constraint checker in case another thread attempts to concurrently
+         * check the constraints with a different required type.
+         */
+        ConstraintChecker checker = this.checker;
+
+        if (checker == null || checker.getType() != type) {
+            checker = createChecker(context, type, valueConstraints);
+            this.checker = checker;
+        }
+
+        try {
+            for (Value value : values) {
+                if (requiredType != PropertyType.UNDEFINED && value.getType() != requiredType) return false;
+                if (!checker.matches(value)) return false;
+            }
+            return true;
+        } catch (ValueFormatException vfe) {
+            // The value was so wonky that we couldn't even convert it to an appropriate type
+            return false;
+        }
+    }
+
+    /**
+     * Returns <code>true</code> if <code>value</code> can be cast to <code>property.getRequiredType()</code> per the type
+     * conversion rules in section 6.2.6 of the JCR 1.0 specification AND <code>value</code> satisfies the constraints (if any)
+     * for the property definition. If the property definition has a required type of {@link PropertyType#UNDEFINED}, the cast
+     * will be considered to have succeeded and the value constraints (if any) will be interpreted using the semantics for the
+     * type specified in <code>value.getType()</code>.
+     * 
+     * @param value the value to be validated
+     * @return <code>true</code> if the value can be cast to the required type for the property definition (if it exists) and
+     *         satisfies the constraints for the property (if any exist).
+     * @see PropertyDefinition#getValueConstraints()
+     * @see #satisfiesConstraints(Value)
+     */
+    boolean canCastToTypeAndSatisfyConstraints( Value value ) {
+        try {
+            assert value instanceof JcrValue : "Illegal implementation of Value interface";
+            ((JcrValue)value).asType(getRequiredType()); // throws ValueFormatException if there's a problem
+            return satisfiesConstraints(value);
+        } catch (javax.jcr.ValueFormatException vfe) {
+            // Cast failed
+            return false;
+        }
+    }
+
+    /**
+     * Returns <code>true</code> if <code>value</code> can be cast to <code>property.getRequiredType()</code> per the type
+     * conversion rules in section 6.2.6 of the JCR 1.0 specification AND <code>value</code> satisfies the constraints (if any)
+     * for the property definition. If the property definition has a required type of {@link PropertyType#UNDEFINED}, the cast
+     * will be considered to have succeeded and the value constraints (if any) will be interpreted using the semantics for the
+     * type specified in <code>value.getType()</code>.
+     * 
+     * @param values the values to be validated
+     * @return <code>true</code> if the value can be cast to the required type for the property definition (if it exists) and
+     *         satisfies the constraints for the property (if any exist).
+     * @see PropertyDefinition#getValueConstraints()
+     * @see #satisfiesConstraints(Value)
+     */
+    boolean canCastToTypeAndSatisfyConstraints( Value[] values ) {
+        for (Value value : values) {
+            if (!canCastToTypeAndSatisfyConstraints(value)) return false;
+        }
+        return true;
     }
 
     /**
@@ -481,7 +575,12 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
 
             JcrValue jcrValue = (JcrValue)value;
             // Need to use the session execution context to handle the remaps
-            Name name = jcrValue.sessionCache().session().getExecutionContext().getValueFactories().getNameFactory().create(jcrValue.value());
+            Name name = jcrValue.sessionCache()
+                                .session()
+                                .getExecutionContext()
+                                .getValueFactories()
+                                .getNameFactory()
+                                .create(jcrValue.value());
 
             for (int i = 0; i < constraints.length; i++) {
                 if (constraints[i].equals(name)) {

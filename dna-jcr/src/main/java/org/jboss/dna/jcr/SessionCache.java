@@ -27,7 +27,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -43,10 +42,10 @@ import javax.jcr.PathNotFoundException;
 import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
+import javax.jcr.Value;
 import javax.jcr.nodetype.ConstraintViolationException;
 import javax.jcr.nodetype.NodeDefinition;
 import javax.jcr.nodetype.NodeType;
-import javax.jcr.nodetype.NodeTypeManager;
 import javax.jcr.nodetype.PropertyDefinition;
 import net.jcip.annotations.ThreadSafe;
 import org.jboss.dna.graph.ExecutionContext;
@@ -432,14 +431,16 @@ public class SessionCache {
          * existing values will be replaced with the supplied value.
          * 
          * @param name the property name; may not be null
+         * @param propertyType the property type; must be a valid {@link PropertyType} value
          * @param value the new property values, which may be converted to the appropriate {@link PropertyType type}
          * @throws ConstraintViolationException if the property could not be set because of a node type constraint or property
          *         definition constraint
          */
         public void setProperty( Name name,
+                                 int propertyType,
                                  Object value ) throws ConstraintViolationException {
             Property dnaProp = propertyFactory.create(name, value);
-            setProperty(name, dnaProp);
+            setProperty(name, dnaProp, propertyType);
         }
 
         /**
@@ -447,46 +448,59 @@ public class SessionCache {
          * existing values will be replaced with those that are supplied.
          * 
          * @param name the property name; may not be null
+         * @param propertyType the property type; must be a valid {@link PropertyType} value
          * @param value the new property values, which may be converted to the appropriate {@link PropertyType type}
          * @throws ConstraintViolationException if the property could not be set because of a node type constraint or property
          *         definition constraint
          */
         public void setProperty( Name name,
+                                 int propertyType,
                                  Object[] value ) throws ConstraintViolationException {
             Property dnaProp = propertyFactory.create(name, value);
-            setProperty(name, dnaProp);
+            setProperty(name, dnaProp, propertyType);
         }
 
         protected final void setProperty( Name name,
-                                          Property dnaProp ) throws ConstraintViolationException {
+                                          Property dnaProp,
+                                          int propertyType ) throws ConstraintViolationException {
+            assert propertyType != PropertyType.UNDEFINED;
             PropertyInfo existing = node.getProperty(name);
             PropertyInfo newProperty = null;
             if (existing != null) {
                 // We're replacing an existing property, but we still need to check that the property definition
                 // defines a type. So, find the property definition for the existing property ...
-                JcrPropertyDefinition definition = nodeTypes().getPropertyDefinition(existing.getDefinitionId(),
-                                                                                     existing.isMultiValued());
-
-                // Look at the required property type ...
-                int propertyType = definition.getRequiredType();
-                if (propertyType == PropertyType.UNDEFINED) {
-                    // We need set the new type to that defined by the values ...
-                    propertyType = JcrSession.jcrPropertyTypeFor(dnaProp);
+                JcrPropertyDefinition definition = nodeTypes().getPropertyDefinition(existing.getDefinitionId());
+                if (definition == null && existing.getDefinitionId().allowsMultiple() && dnaProp.isSingle()) {
+                    // Look for a single-valued definition ...
+                    PropertyDefinitionId id = existing.getDefinitionId().asSingleValued();
+                    definition = nodeTypes().getPropertyDefinition(id);
+                }
+                if (definition == null) {
+                    // Try to find a different (but existing) property definition ...
+                    definition = findBestPropertyDefintion(node.getPrimaryTypeName(),
+                                                           node.getMixinTypeNames(),
+                                                           dnaProp,
+                                                           propertyType,
+                                                           true);
+                }
+                if (definition == null) {
+                    throw new ConstraintViolationException();
                 }
 
-                // Csreate the property info ...
+                // Create the property info ...
                 newProperty = new PropertyInfo(existing.getPropertyId(), existing.getDefinitionId(), propertyType, dnaProp,
                                                existing.isMultiValued());
             } else {
                 // It's a new property ...
                 PropertyId id = new PropertyId(node.getUuid(), name);
                 // Look find the property definition to use ...
-                JcrPropertyDefinition definition = findBestPropertyDefintion(dnaProp);
-
-                // Figure out the property type ...
-                int propertyType = definition.getRequiredType();
-                if (propertyType == PropertyType.UNDEFINED) {
-                    propertyType = JcrSession.jcrPropertyTypeFor(dnaProp);
+                JcrPropertyDefinition definition = findBestPropertyDefintion(node.getPrimaryTypeName(),
+                                                                             node.getMixinTypeNames(),
+                                                                             dnaProp,
+                                                                             propertyType,
+                                                                             true);
+                if (definition == null) {
+                    throw new ConstraintViolationException();
                 }
                 // Create the property info ...
                 newProperty = new PropertyInfo(id, definition.getId(), propertyType, dnaProp, definition.isMultiple());
@@ -545,11 +559,19 @@ public class SessionCache {
             // Verify that this node's definition allows the specified child ...
             Name childName = existingParentInfo.getChildren().getChild(nodeUuid).getName();
             int numSns = node.getChildren().getCountOfSameNameSiblingsWithName(childName);
-            JcrNodeDefinition definition = findBestChildNodeDefinition(childName, numSns);
+            JcrNodeDefinition definition = nodeTypes().findChildNodeDefinition(node.getPrimaryTypeName(),
+                                                                               node.getMixinTypeNames(),
+                                                                               childName,
+                                                                               childName,
+                                                                               numSns,
+                                                                               true);
+            if (definition == null) {
+                throw new ConstraintViolationException();
+            }
             if (!definition.getId().equals(node.getDefinitionId())) {
                 // The node definition changed, so try to set the property ...
                 try {
-                    setProperty(DnaLexicon.NODE_DEFINITON, definition.getId().getString());
+                    setProperty(DnaLexicon.NODE_DEFINITON, PropertyType.STRING, definition.getId().getString());
                 } catch (ConstraintViolationException e) {
                     // We can't set this property on the node (according to the node definition).
                     // But we still want the node info to have the correct node definition.
@@ -597,7 +619,15 @@ public class SessionCache {
 
             // Verify that this node accepts a child of the supplied name (given any existing SNS nodes) ...
             int numSns = node.getChildren().getCountOfSameNameSiblingsWithName(name);
-            JcrNodeDefinition definition = findBestChildNodeDefinition(name, numSns);
+            JcrNodeDefinition definition = nodeTypes().findChildNodeDefinition(node.getPrimaryTypeName(),
+                                                                               node.getMixinTypeNames(),
+                                                                               name,
+                                                                               primaryTypeName,
+                                                                               numSns,
+                                                                               true);
+            if (definition == null) {
+                throw new ConstraintViolationException();
+            }
 
             ChildNode result = node.addChild(name, desiredUuid, pathFactory);
 
@@ -613,14 +643,22 @@ public class SessionCache {
             Property nodeDefinitionProp = propertyFactory.create(DnaLexicon.NODE_DEFINITON, nodeDefinitionId.getString());
 
             // Create the property info for the "jcr:primaryType" child property ...
-            JcrPropertyDefinition primaryTypeDefn = findBestPropertyDefintion(primaryTypeProp, primaryTypeName);
+            JcrPropertyDefinition primaryTypeDefn = findBestPropertyDefintion(node.getPrimaryTypeName(),
+                                                                              node.getMixinTypeNames(),
+                                                                              primaryTypeProp,
+                                                                              PropertyType.NAME,
+                                                                              false);
             PropertyDefinitionId primaryTypeDefinitionId = primaryTypeDefn.getId();
             PropertyInfo primaryTypeInfo = new PropertyInfo(new PropertyId(desiredUuid, primaryTypeProp.getName()),
                                                             primaryTypeDefinitionId, PropertyType.NAME, primaryTypeProp, false);
             properties.put(primaryTypeProp.getName(), primaryTypeInfo);
 
             // Create the property info for the "dna:nodeDefinition" child property ...
-            JcrPropertyDefinition nodeDefnDefn = findBestPropertyDefintion(nodeDefinitionProp, primaryTypeName);
+            JcrPropertyDefinition nodeDefnDefn = findBestPropertyDefintion(node.getPrimaryTypeName(),
+                                                                           node.getMixinTypeNames(),
+                                                                           nodeDefinitionProp,
+                                                                           PropertyType.STRING,
+                                                                           false);
             if (nodeDefnDefn != null) {
                 PropertyDefinitionId nodeDefnDefinitionId = nodeDefnDefn.getId();
                 PropertyInfo nodeDefinitionInfo = new PropertyInfo(new PropertyId(desiredUuid, nodeDefinitionProp.getName()),
@@ -672,111 +710,6 @@ public class SessionCache {
             return false;
         }
 
-        /**
-         * Find the best property definition in this node's
-         * 
-         * @param dnaProperty the new property that is to be set on this node
-         * @return the property definition that allows setting this property; never null
-         * @throws ConstraintViolationException if setting the property would violates this node's definition or the property's
-         *         definition
-         */
-        protected JcrPropertyDefinition findBestPropertyDefintion( Property dnaProperty ) throws ConstraintViolationException {
-            // First check the primary type ...
-            JcrPropertyDefinition definition = findBestPropertyDefintion(dnaProperty, node.getPrimaryTypeName());
-            if (definition != null) {
-                // TODO: Does this definition allow this value? ...
-                return definition;
-            }
-            // Check the mixin types ...
-            for (Name mixinTypeName : node.getMixinTypeNames()) {
-                definition = findBestPropertyDefintion(dnaProperty, mixinTypeName);
-                if (definition != null) {
-                    // TODO: Does this definition allow this value? ...
-                    return definition;
-                }
-            }
-
-            // Nothing was found yet, so check the residual property definitions, starting with the primary type ...
-            definition = findBestPropertyDefintion(dnaProperty, residualName);
-            if (definition != null) {
-                // TODO: Does this definition allow this value? ...
-                return definition;
-            }
-            // Check the mixin types ...
-            for (Name mixinTypeName : node.getMixinTypeNames()) {
-                definition = findBestPropertyDefintion(dnaProperty, mixinTypeName);
-                if (definition != null) {
-                    // TODO: Does this definition allow this value? ...
-                    return definition;
-                }
-            }
-
-            // No definition that allowed the values ...
-            throw new ConstraintViolationException();
-        }
-
-        /**
-         * Find the best property definition in the named node type.
-         * 
-         * @param dnaProperty the new property that is to be set on this node
-         * @param nodeTypeName the name of the node type that should be checked; may not be null
-         * @return the property definition that allows setting this property; or null if no valid property definition could be
-         *         found in the given node type
-         * @see #findBestPropertyDefintion(Property)
-         */
-        protected JcrPropertyDefinition findBestPropertyDefintion( Property dnaProperty,
-                                                                   Name nodeTypeName ) {
-            JcrNodeType nodeType = nodeTypes().getNodeType(nodeTypeName);
-            Name name = dnaProperty.getName();
-            JcrPropertyDefinition definition = null;
-            if (dnaProperty.isSingle()) {
-                // First look for a single-valued property definition with a matching name ...
-                definition = nodeType.getPropertyDefinition(name, false);
-                if (definition != null) return definition;
-
-                // Then look for a residual definition ...
-                definition = nodeType.getPropertyDefinition(JcrNodeType.RESIDUAL_ITEM_NAME, false);
-                if (definition != null) return definition;
-            }
-
-            // Either the DNA property has 0 or 2+ values (and we couldn't use a single-valued definition)
-            // OR there was 1 value and we couldn't find a single-valued definition.
-            // So, we need to look for a multi-valued property definition ...
-
-            // First look for a definition that matches by name ...
-            definition = nodeType.getPropertyDefinition(name, true);
-            if (definition != null) return definition;
-
-            // Then look for a residual definition ...
-            definition = nodeType.getPropertyDefinition(JcrNodeType.RESIDUAL_ITEM_NAME, true);
-            if (definition != null) return definition;
-
-            // Nothing found yet ...
-            if (INCLUDE_PROPERTIES_NOT_ALLOWED_BY_NODE_TYPE_OR_MIXINS) {
-                // We can use the "nt:unstructured" property definitions for any property ...
-                JcrNodeType unstructured = nodeTypes().getNodeType(JcrNtLexicon.UNSTRUCTURED);
-                definition = unstructured.getPropertyDefinition(JcrNodeType.RESIDUAL_ITEM_NAME, true);
-                if (definition != null) return definition;
-            }
-
-            // No property definition could be found ...
-            return null;
-        }
-
-        /**
-         * @param childName
-         * @param numberOfExistingChildrenWithName
-         * @return the most specific node definition for the child; never null
-         * @throws ConstraintViolationException if the new child would violates this node's definition
-         */
-        protected JcrNodeDefinition findBestChildNodeDefinition( Name childName,
-                                                                 int numberOfExistingChildrenWithName )
-            throws ConstraintViolationException {
-
-            // No definition that allowed the values ...
-            throw new ConstraintViolationException();
-        }
-
         protected boolean isAncestor( UUID uuid ) throws ItemNotFoundException, InvalidItemStateException, RepositoryException {
             UUID ancestor = node.getParent();
             while (ancestor != null) {
@@ -786,6 +719,56 @@ public class SessionCache {
             }
             return false;
         }
+    }
+
+    /**
+     * Find the best property definition in this node's
+     * 
+     * @param primaryTypeNameOfParent the name of the primary type for the parent node; may not be null
+     * @param mixinTypeNamesOfParent the names of the mixin types for the parent node; may be null or empty if there are no mixins
+     *        to include in the search
+     * @param dnaProperty the new property that is to be set on this node
+     * @param propertyType the property type; must be a valid {@link PropertyType} value
+     * @param skipProtected true if this operation is being done from within the public JCR node and property API, or false if
+     *        this operation is being done from within internal implementations
+     * @return the property definition that allows setting this property, or null if there is no such definition
+     */
+    protected JcrPropertyDefinition findBestPropertyDefintion( Name primaryTypeNameOfParent,
+                                                               List<Name> mixinTypeNamesOfParent,
+                                                               Property dnaProperty,
+                                                               int propertyType,
+                                                               boolean skipProtected ) {
+        JcrPropertyDefinition definition = null;
+
+        // If single-valued ...
+        if (dnaProperty.isSingle()) {
+            // Create a value for the DNA property value ...
+            Object value = dnaProperty.getFirstValue();
+            Value jcrValue = new JcrValue(context().getValueFactories(), SessionCache.this, propertyType, value);
+            definition = nodeTypes().findPropertyDefinition(primaryTypeNameOfParent,
+                                                            mixinTypeNamesOfParent,
+                                                            dnaProperty.getName(),
+                                                            jcrValue,
+                                                            true,
+                                                            skipProtected);
+        } else {
+            // Create values for the DNA property value ...
+            Value[] jcrValues = new Value[dnaProperty.size()];
+            int index = 0;
+            for (Object value : dnaProperty) {
+                jcrValues[index++] = new JcrValue(context().getValueFactories(), SessionCache.this, propertyType, value);
+            }
+            definition = nodeTypes().findPropertyDefinition(primaryTypeNameOfParent,
+                                                            mixinTypeNamesOfParent,
+                                                            dnaProperty.getName(),
+                                                            jcrValues,
+                                                            skipProtected);
+        }
+
+        if (definition != null) return definition;
+
+        // No definition that allowed the values ...
+        return null;
     }
 
     /**
@@ -828,7 +811,7 @@ public class SessionCache {
      */
     private AbstractJcrProperty createAndCacheJcrPropertyFor( PropertyInfo info ) {
         boolean multiValued = info.isMultiValued();
-        JcrPropertyDefinition definition = nodeTypes().getPropertyDefinition(info.getDefinitionId(), multiValued);
+        JcrPropertyDefinition definition = nodeTypes().getPropertyDefinition(info.getDefinitionId());
         assert definition != null;
         if (multiValued) {
             return new JcrMultiValueProperty(this, info.getPropertyId());
@@ -1271,7 +1254,13 @@ public class SessionCache {
                     parentInfo = findNodeInfo(null, parentPath.getNormalizedPath());
                 }
                 Name childName = path.getLastSegment().getName();
-                definition = findNodeDefinitionForChild(parentInfo, childName, primaryTypeName);
+                int numExistingChildrenWithSameName = parentInfo.getChildren().getCountOfSameNameSiblingsWithName(childName);
+                definition = nodeTypes().findChildNodeDefinition(parentInfo.getPrimaryTypeName(),
+                                                                 parentInfo.getMixinTypeNames(),
+                                                                 childName,
+                                                                 primaryTypeName,
+                                                                 numExistingChildrenWithSameName,
+                                                                 false);
                 if (definition == null) {
                     String msg = JcrI18n.nodeDefinitionCouldNotBeDeterminedForNode.text(path, workspaceName);
                     throw new RepositorySourceException(msg);
@@ -1282,59 +1271,23 @@ public class SessionCache {
         // ------------------------------------------------------
         // Set the node's properties ...
         // ------------------------------------------------------
-        // First get the property type for each property, based upon the primary type and mixins ...
-        // The map with single-valued properties...
-        Map<Name, PropertyDefinition> svPropertyDefinitionsByPropertyName = new HashMap<Name, PropertyDefinition>();
-        // ... and the map with multi-valued properties
-        Map<Name, PropertyDefinition> mvPropertyDefinitionsByPropertyName = new HashMap<Name, PropertyDefinition>();
-
         boolean referenceable = false;
 
-        List<PropertyDefinition> anyPropertyDefinitions = new LinkedList<PropertyDefinition>();
         // Start with the primary type ...
-        NodeType primaryType = nodeTypes().getNodeType(primaryTypeName);
-        for (PropertyDefinition propertyDefn : primaryType.getPropertyDefinitions()) {
-            String nameString = propertyDefn.getName();
-            if ("*".equals(nameString)) {
-                anyPropertyDefinitions.add(propertyDefn);
-                continue;
-            }
-            Name name = nameFactory.create(nameString);
+        JcrNodeType primaryType = nodeTypes().getNodeType(primaryTypeName);
+        if (primaryType.isNodeType(JcrMixLexicon.REFERENCEABLE)) referenceable = true;
 
-            if (propertyDefn.isMultiple()) {
-                PropertyDefinition prev = mvPropertyDefinitionsByPropertyName.put(name, propertyDefn);
-                if (prev != null) mvPropertyDefinitionsByPropertyName.put(name, prev); // put the first one back ...
-            } else {
-                PropertyDefinition prev = svPropertyDefinitionsByPropertyName.put(name, propertyDefn);
-                if (prev != null) svPropertyDefinitionsByPropertyName.put(name, prev); // put the first one back ...
-            }
-        }
         // The process the mixin types ...
         org.jboss.dna.graph.property.Property mixinTypesProperty = graphProperties.get(JcrLexicon.MIXIN_TYPES);
-        Set<Name> mixinTypeNames = null;
+        List<Name> mixinTypeNames = null;
         if (mixinTypesProperty != null && !mixinTypesProperty.isEmpty()) {
             for (Object mixinTypeValue : mixinTypesProperty) {
                 Name mixinTypeName = nameFactory.create(mixinTypeValue);
-                if (mixinTypeNames == null) mixinTypeNames = new HashSet<Name>();
+                if (mixinTypeNames == null) mixinTypeNames = new LinkedList<Name>();
                 mixinTypeNames.add(mixinTypeName);
-                if (!referenceable && JcrMixLexicon.REFERENCEABLE.equals(mixinTypeName)) referenceable = true;
-                String mixinTypeNameString = mixinTypeName.getString(namespaces);
-                NodeType mixinType = nodeTypes().getNodeType(mixinTypeNameString);
-                for (PropertyDefinition propertyDefn : mixinType.getPropertyDefinitions()) {
-                    String nameString = propertyDefn.getName();
-                    if ("*".equals(nameString)) {
-                        anyPropertyDefinitions.add(propertyDefn);
-                        continue;
-                    }
-                    Name name = nameFactory.create(nameString);
-                    if (propertyDefn.isMultiple()) {
-                        PropertyDefinition prev = mvPropertyDefinitionsByPropertyName.put(name, propertyDefn);
-                        if (prev != null) mvPropertyDefinitionsByPropertyName.put(name, prev); // put the first one back ...
-                    } else {
-                        PropertyDefinition prev = svPropertyDefinitionsByPropertyName.put(name, propertyDefn);
-                        if (prev != null) svPropertyDefinitionsByPropertyName.put(name, prev); // put the first one back ...
-                    }
-                }
+                JcrNodeType mixinType = nodeTypes().getNodeType(mixinTypeName);
+                if (mixinType == null) continue;
+                if (!referenceable && mixinType.isNodeType(JcrMixLexicon.REFERENCEABLE)) referenceable = true;
             }
         }
 
@@ -1344,43 +1297,21 @@ public class SessionCache {
             Name name = dnaProp.getName();
 
             // Figure out the JCR property type for this property ...
-            PropertyDefinition propertyDefinition;
-            if (dnaProp.isMultiple()) {
-                propertyDefinition = mvPropertyDefinitionsByPropertyName.get(name);
-            } else {
-                propertyDefinition = svPropertyDefinitionsByPropertyName.get(name);
-
-                // If the property has only one value, dnaProp.isMultiple() will return false, but the
-                // property may actually be a multi-valued property that happens to have one property set.
-                if (propertyDefinition == null) {
-                    propertyDefinition = mvPropertyDefinitionsByPropertyName.get(name);
-                }
-            }
-
-            // If no property type was found for this property, see if there is a wildcard property ...
-            if (propertyDefinition == null) {
-                for (Iterator<PropertyDefinition> iter = anyPropertyDefinitions.iterator(); iter.hasNext();) {
-                    PropertyDefinition nextDef = iter.next();
-
-                    // Grab the first residual definition that matches on cardinality (single-valued vs. multi-valued)
-                    if ((nextDef.isMultiple() && dnaProp.isMultiple()) || (!nextDef.isMultiple() && !dnaProp.isMultiple())) {
-                        propertyDefinition = nextDef;
-                        break;
-                    }
-                }
-            }
+            int propertyType = JcrSession.jcrPropertyTypeFor(dnaProp);
+            PropertyDefinition propertyDefinition = findBestPropertyDefintion(primaryTypeName,
+                                                                              mixinTypeNames,
+                                                                              dnaProp,
+                                                                              propertyType,
+                                                                              false);
 
             // If there still is no property type defined ...
-            if (propertyDefinition == null) {
-                assert anyPropertyDefinitions.isEmpty();
-                if (INCLUDE_PROPERTIES_NOT_ALLOWED_BY_NODE_TYPE_OR_MIXINS) {
-                    // We can use the "nt:unstructured" property definitions for any property ...
-                    NodeType unstructured = nodeTypes().getNodeType(JcrNtLexicon.UNSTRUCTURED);
-                    for (PropertyDefinition anyDefinition : unstructured.getDeclaredPropertyDefinitions()) {
-                        if (anyDefinition.isMultiple()) {
-                            propertyDefinition = anyDefinition;
-                            break;
-                        }
+            if (propertyDefinition == null && INCLUDE_PROPERTIES_NOT_ALLOWED_BY_NODE_TYPE_OR_MIXINS) {
+                // We can use the "nt:unstructured" property definitions for any property ...
+                NodeType unstructured = nodeTypes().getNodeType(JcrNtLexicon.UNSTRUCTURED);
+                for (PropertyDefinition anyDefinition : unstructured.getDeclaredPropertyDefinitions()) {
+                    if (anyDefinition.isMultiple()) {
+                        propertyDefinition = anyDefinition;
+                        break;
                     }
                 }
             }
@@ -1397,9 +1328,9 @@ public class SessionCache {
             }
 
             // Figure out the property type ...
-            int propertyType = propertyDefinition.getRequiredType();
-            if (propertyType == PropertyType.UNDEFINED) {
-                propertyType = JcrSession.jcrPropertyTypeFor(dnaProp);
+            int definitionType = propertyDefinition.getRequiredType();
+            if (definitionType != PropertyType.UNDEFINED) {
+                propertyType = definitionType;
             }
 
             // Record the property in the node information ...
@@ -1412,7 +1343,13 @@ public class SessionCache {
         // Now add the "jcr:uuid" property if and only if referenceable ...
         if (referenceable) {
             // We know that this property is single-valued
-            PropertyDefinition propertyDefinition = svPropertyDefinitionsByPropertyName.get(JcrLexicon.UUID);
+            JcrValue value = new JcrValue(context.getValueFactories(), this, PropertyType.STRING, uuid);
+            PropertyDefinition propertyDefinition = nodeTypes().findPropertyDefinition(primaryTypeName,
+                                                                                       mixinTypeNames,
+                                                                                       JcrLexicon.UUID,
+                                                                                       value,
+                                                                                       false,
+                                                                                       false);
             PropertyId propId = new PropertyId(uuid, JcrLexicon.UUID);
             JcrPropertyDefinition defn = (JcrPropertyDefinition)propertyDefinition;
             PropertyInfo propInfo = new PropertyInfo(propId, defn.getId(), PropertyType.STRING, uuidProperty, defn.isMultiple());
@@ -1430,31 +1367,6 @@ public class SessionCache {
         Children children = locations.isEmpty() ? new EmptyChildren(parentUuid) : new ImmutableChildren(parentUuid, locations);
         props = Collections.unmodifiableMap(props);
         return new ImmutableNodeInfo(location, primaryTypeName, mixinTypeNames, definition.getId(), parentUuid, children, props);
-    }
-
-    /**
-     * Utility method to find the {@link NodeDefinition} for a child node with the supplied {@link Name name}, parent information,
-     * and the primary node type of the child.
-     * 
-     * @param parentInfo the parent information; may not be null
-     * @param childName the name of the child node (without any same-name-sibling index); may not be null
-     * @param primaryTypeOfChild the name of the child's primary type
-     * @return the node definition for this child, as best as can be determined, or null if the node definition could not be
-     *         determined
-     * @throws RepositoryException if the parent's primary node type cannot be found in the {@link NodeTypeManager}
-     */
-    protected JcrNodeDefinition findNodeDefinitionForChild( NodeInfo parentInfo,
-                                                            Name childName,
-                                                            Name primaryTypeOfChild ) throws RepositoryException {
-        // Get the primary type of the parent, and look at it's child definitions ...
-        Name primaryTypeName = parentInfo.getPrimaryTypeName();
-        JcrNodeType primaryType = nodeTypes().getNodeType(primaryTypeName);
-        if (primaryType == null) {
-            String msg = JcrI18n.missingNodeTypeForExistingNode.text(primaryTypeName, parentInfo.getUuid(), workspaceName);
-            throw new RepositoryException(msg);
-        }
-        // TODO: should this also check the mixins?
-        return primaryType.findBestNodeDefinitionForChild(childName, primaryTypeOfChild);
     }
 
     /**
@@ -1497,32 +1409,5 @@ public class SessionCache {
             ++numDeleted;
         }
         return numDeleted;
-    }
-
-    /**
-     * Find the best {@link JcrNodeDefinition child definition} for a child with the specified name given the named primary type
-     * and mixin types.
-     * 
-     * @param childName the name of the child that is to be added
-     * @param childPrimaryTypeName the name of the child's primary type, or null if the child's primary type is not known
-     * @param requiresMultipleSns true if there is at least one existing child with the same name, requiring the child node type
-     *        to allow same-name-siblings, or false if the child will be the first child with the supplied name
-     * @param primaryTypeName the name of the primary type for the parent; may not be null
-     * @param mixinTypeNames the names of the mixin types for the parent; may be null or empty if the parent has no mixins
-     * @return the child node definition that can be used (which may be a residual definition), or null if there is no such node
-     *         type
-     */
-    protected JcrNodeDefinition findBestChildDefinition( Name childName,
-                                                         Name childPrimaryTypeName,
-                                                         boolean requiresMultipleSns,
-                                                         Name primaryTypeName,
-                                                         Collection<Name> mixinTypeNames ) {
-        // First check the primary type for a child definition with the supplied name ...
-        JcrNodeType primaryType = nodeTypes().getNodeType(primaryTypeName);
-        JcrNodeDefinition definition = primaryType.findBestNodeDefinitionForChild(childName, childPrimaryTypeName);
-        if (definition != null) {
-            // definition.
-        }
-        return null;
     }
 }

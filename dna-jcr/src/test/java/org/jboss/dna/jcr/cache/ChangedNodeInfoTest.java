@@ -37,7 +37,8 @@ import static org.junit.matchers.JUnitMatchers.hasItems;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.stub;
 import java.util.HashMap;
-import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -62,11 +63,12 @@ public class ChangedNodeInfoTest {
     private NodeInfo original;
     private UUID uuid;
     private Name primaryTypeName;
+    private Name[] requiredPrimaryTypes;
     private Location location;
     private NodeDefinitionId definitionId;
     private ChangedChildren children;
     private Map<Name, PropertyInfo> properties;
-    private Set<Name> mixinTypeNames;
+    private List<Name> mixinTypeNames;
     private ChangedNodeInfo changes;
 
     @Before
@@ -79,10 +81,11 @@ public class ChangedNodeInfoTest {
         uuid = UUID.randomUUID();
         location = Location.create(uuid);
         primaryTypeName = name("acme:geniusType");
-        definitionId = new NodeDefinitionId(name("acme:geniusContainerType"), name("acme:geniuses"));
+        requiredPrimaryTypes = new Name[] {name("acme:requiredTypeA"), name("acme:requiredTypeB")};
+        definitionId = new NodeDefinitionId(name("acme:geniusContainerType"), name("acme:geniuses"), requiredPrimaryTypes);
         children = new ChangedChildren(uuid);
         properties = new HashMap<Name, PropertyInfo>();
-        mixinTypeNames = new HashSet<Name>();
+        mixinTypeNames = new LinkedList<Name>();
         original = new ImmutableNodeInfo(location, primaryTypeName, mixinTypeNames, definitionId, uuid, children, properties);
 
         // Create the changed node representation ...

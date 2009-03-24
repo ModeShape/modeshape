@@ -25,7 +25,6 @@ package org.jboss.dna.jcr;
 
 import java.io.Serializable;
 import net.jcip.annotations.Immutable;
-import org.jboss.dna.common.util.HashCode;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.NameFactory;
 import org.jboss.dna.graph.property.ValueFormatException;
@@ -51,7 +50,8 @@ public final class NodeDefinitionId implements Serializable {
 
     private final Name nodeTypeName;
     private final Name childDefinitionName;
-    private final int hc;
+    private final Name[] requiredPrimaryTypes;
+    private final String stringVersion;
 
     /**
      * Create an identifier for a node definition.
@@ -59,14 +59,23 @@ public final class NodeDefinitionId implements Serializable {
      * @param nodeTypeName the name of the node type on which this child node definition is defined; may not be null
      * @param childDefinitionName the name of the child node definition, which may be a {@link #ANY_NAME residual child
      *        definition}; may not be null
+     * @param requiredPrimaryTypes the names of the required primary types for the child node definition
      */
     public NodeDefinitionId( Name nodeTypeName,
-                             Name childDefinitionName ) {
+                             Name childDefinitionName,
+                             Name[] requiredPrimaryTypes ) {
         assert nodeTypeName != null;
         assert childDefinitionName != null;
         this.nodeTypeName = nodeTypeName;
         this.childDefinitionName = childDefinitionName;
-        this.hc = HashCode.compute(this.nodeTypeName, this.childDefinitionName);
+        this.requiredPrimaryTypes = requiredPrimaryTypes;
+        StringBuilder sb = new StringBuilder(this.nodeTypeName.getString());
+        sb.append('/').append(this.childDefinitionName.getString());
+        for (Name requiredPrimaryType : requiredPrimaryTypes) {
+            sb.append('/');
+            sb.append(requiredPrimaryType.getString());
+        }
+        this.stringVersion = sb.toString();
     }
 
     /**
@@ -88,6 +97,15 @@ public final class NodeDefinitionId implements Serializable {
     }
 
     /**
+     * @return requiredPrimaryTypes
+     */
+    public Name[] getRequiredPrimaryTypes() {
+        Name[] copy = new Name[requiredPrimaryTypes.length];
+        System.arraycopy(requiredPrimaryTypes, 0, copy, 0, requiredPrimaryTypes.length);
+        return copy;
+    }
+
+    /**
      * Determine whether this node definition defines any named child.
      * 
      * @return true if this node definition allows children with any name, or false if this definition requires a particular child
@@ -103,7 +121,7 @@ public final class NodeDefinitionId implements Serializable {
      * @return the string form
      */
     public String getString() {
-        return this.nodeTypeName.getString() + '/' + this.childDefinitionName.getString();
+        return this.stringVersion;
     }
 
     /**
@@ -116,12 +134,16 @@ public final class NodeDefinitionId implements Serializable {
      */
     public static NodeDefinitionId fromString( String definition,
                                                NameFactory factory ) {
-        int index = definition.indexOf('/');
-        String nodeTypeNameString = definition.substring(0, index);
-        String childDefinitionNameString = definition.substring(index + 1);
+        String[] parts = definition.split("/");
+        String nodeTypeNameString = parts[0];
+        String childDefinitionNameString = parts[1];
+        Name[] requiredPrimaryTypes = new Name[parts.length - 2];
+        for (int i = 2, j = 0; i != parts.length; ++i, ++j) {
+            requiredPrimaryTypes[j] = factory.create(parts[i]);
+        }
         Name nodeTypeName = factory.create(nodeTypeNameString);
         Name childDefinitionName = factory.create(childDefinitionNameString);
-        return new NodeDefinitionId(nodeTypeName, childDefinitionName);
+        return new NodeDefinitionId(nodeTypeName, childDefinitionName, requiredPrimaryTypes);
     }
 
     /**
@@ -131,7 +153,7 @@ public final class NodeDefinitionId implements Serializable {
      */
     @Override
     public int hashCode() {
-        return hc;
+        return stringVersion.hashCode();
     }
 
     /**
@@ -144,9 +166,7 @@ public final class NodeDefinitionId implements Serializable {
         if (obj == this) return true;
         if (obj instanceof NodeDefinitionId) {
             NodeDefinitionId that = (NodeDefinitionId)obj;
-            if (this.hc != that.hc) return false;
-            if (!this.nodeTypeName.equals(that.nodeTypeName)) return false;
-            return this.childDefinitionName.equals(that.childDefinitionName);
+            return this.stringVersion.equals(that.stringVersion);
         }
         return false;
     }
@@ -158,7 +178,7 @@ public final class NodeDefinitionId implements Serializable {
      */
     @Override
     public String toString() {
-        return this.nodeTypeName.toString() + '/' + this.childDefinitionName.toString();
+        return this.stringVersion;
     }
 
 }

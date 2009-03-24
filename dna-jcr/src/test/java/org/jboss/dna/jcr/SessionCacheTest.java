@@ -43,7 +43,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import javax.jcr.InvalidItemStateException;
-import javax.jcr.nodetype.NodeType;
 import org.jboss.dna.common.statistic.Stopwatch;
 import org.jboss.dna.common.util.StringUtil;
 import org.jboss.dna.graph.ExecutionContext;
@@ -127,12 +126,12 @@ public class SessionCacheTest {
 
             // Add in the "vehix:car" node type (which extends "nt:unstructured") ...
             JcrNodeType car = new JcrNodeType(context, (RepositoryNodeTypeManager)null, carName,
-                                              Arrays.asList(new NodeType[] {unstructured}), NO_PRIMARY_ITEM_NAME, NO_CHILD_NODES,
-                                              NO_PROPERTIES, NOT_MIXIN, ORDERABLE_CHILD_NODES);
+                                              Arrays.asList(new JcrNodeType[] {unstructured}), NO_PRIMARY_ITEM_NAME,
+                                              NO_CHILD_NODES, NO_PROPERTIES, NOT_MIXIN, ORDERABLE_CHILD_NODES);
 
             // Add in the "vehix:aircraft" node type (which extends "nt:unstructured") ...
             JcrNodeType aircraft = new JcrNodeType(context, (RepositoryNodeTypeManager)null, aircraftName,
-                                                   Arrays.asList(new NodeType[] {unstructured}), NO_PRIMARY_ITEM_NAME,
+                                                   Arrays.asList(new JcrNodeType[] {unstructured}), NO_PRIMARY_ITEM_NAME,
                                                    NO_CHILD_NODES, NO_PROPERTIES, NOT_MIXIN, ORDERABLE_CHILD_NODES);
 
             primaryNodeTypes.addAll(Arrays.asList(new JcrNodeType[] {car, aircraft,}));
@@ -225,7 +224,20 @@ public class SessionCacheTest {
                 assertThat(info.getProperty().size(), is(actual.size()));
                 assertThat(info.getProperty().getValuesAsArray(), is(actual.getValuesAsArray()));
             } else {
-                assertThat(propertyName, is(JcrLexicon.PRIMARY_TYPE));
+                if (propertyName.equals(JcrLexicon.UUID)) {
+                    // check for a DNA UUID property ...
+                    actual = dnaNode.getProperty(DnaLexicon.UUID);
+                    if (actual != null) {
+                        assertThat(info.getProperty().size(), is(actual.size()));
+                        assertThat(info.getProperty().getValuesAsArray(), is(actual.getValuesAsArray()));
+                    } else {
+                        fail("missing property \"" + propertyName + "\" on " + dnaNode);
+                    }
+                } else if (propertyName.equals(JcrLexicon.PRIMARY_TYPE)) {
+                    // This is okay
+                } else {
+                    fail("missing property \"" + propertyName + "\" on " + dnaNode);
+                }
             }
         }
     }

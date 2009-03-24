@@ -23,12 +23,13 @@
  */
 package org.jboss.dna.jcr;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
-import java.util.Stack;
 import javax.jcr.PropertyType;
 import javax.jcr.Value;
 import javax.jcr.nodetype.NodeDefinition;
@@ -38,6 +39,7 @@ import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.property.Name;
+import org.jboss.dna.graph.property.basic.BasicName;
 
 /**
  * DNA implementation of JCR {@link NodeType}s.
@@ -46,23 +48,50 @@ import org.jboss.dna.graph.property.Name;
 class JcrNodeType implements NodeType {
 
     public static final String RESIDUAL_ITEM_NAME = "*";
+    public static final Name RESIDUAL_NAME = new BasicName("", RESIDUAL_ITEM_NAME);
 
     /** The name of the node type (e.g., <code>{http://www.jcp.org/jcr/nt/1.0}base</code>) */
     private final Name name;
     /** The name of the node's primary item */
     private final Name primaryItemName;
 
-    /** The set of child node definitions for nodes of this type (possibly empty). */
-    private final Set<JcrNodeDefinition> childNodeDefinitions;
-    /** The set of property definitions for nodes of this type (possibly empty). */
-    private final Set<JcrPropertyDefinition> propertyDefinitions;
     /** The supertypes for this node. */
-    private final List<NodeType> declaredSupertypes;
+    private final List<JcrNodeType> declaredSupertypes;
+
+    /**
+     * The list of all supertypes for this node, beginning with the immediate supertypes, followed by the supertypes of those
+     * supertypes, etc.
+     */
+    private final List<JcrNodeType> allSupertypes;
+
+    /**
+     * The list of this type and all supertypes for this node, beginning with this type, continuing with the immediate supertypes,
+     * followed by the supertypes of those supertypes, etc.
+     */
+    private final List<JcrNodeType> thisAndAllSupertypes;
+    private final Set<Name> thisAndAllSupertypesNames;
 
     /** Indicates whether this node type is a mixin type (as opposed to a primary type). */
     private boolean mixin;
     /** Indicates whether the child nodes of nodes of this type can be ordered. */
     private boolean orderableChildNodes;
+
+    /**
+     * The child node definitions that are defined on this node type.
+     */
+    private final List<JcrNodeDefinition> childNodeDefinitions;
+
+    /**
+     * The property definitions that are defined on this node type.
+     */
+    private final List<JcrPropertyDefinition> propertyDefinitions;
+
+    /**
+     * A local cache of all defined and inherited child node definitions and property definitions. Residual definitions are
+     * included. This class's methods to find a property definition and find child node definitions, and since they're frequently
+     * used by SessionCache this cache provides very quick access.
+     */
+    private final DefinitionCache allDefinitions;
 
     /**
      * A reference to the execution context in which this node type exists, used to remap the internal names to their appropriate
@@ -76,7 +105,7 @@ class JcrNodeType implements NodeType {
     JcrNodeType( ExecutionContext context,
                  RepositoryNodeTypeManager nodeTypeManager,
                  Name name,
-                 List<NodeType> declaredSupertypes,
+                 List<JcrNodeType> declaredSupertypes,
                  Name primaryItemName,
                  Collection<JcrNodeDefinition> childNodeDefinitions,
                  Collection<JcrPropertyDefinition> propertyDefinitions,
@@ -86,178 +115,84 @@ class JcrNodeType implements NodeType {
         this.nodeTypeManager = nodeTypeManager;
         this.name = name;
         this.primaryItemName = primaryItemName;
-        this.declaredSupertypes = declaredSupertypes != null ? declaredSupertypes : Collections.<NodeType>emptyList();
+        this.declaredSupertypes = declaredSupertypes != null ? declaredSupertypes : Collections.<JcrNodeType>emptyList();
         this.mixin = mixin;
         this.orderableChildNodes = orderableChildNodes;
-        this.propertyDefinitions = new HashSet<JcrPropertyDefinition>(propertyDefinitions.size());
+        this.propertyDefinitions = new ArrayList<JcrPropertyDefinition>(propertyDefinitions.size());
         for (JcrPropertyDefinition property : propertyDefinitions) {
             this.propertyDefinitions.add(property.with(this));
         }
 
-        this.childNodeDefinitions = new HashSet<JcrNodeDefinition>(childNodeDefinitions.size());
+        this.childNodeDefinitions = new ArrayList<JcrNodeDefinition>(childNodeDefinitions.size());
         for (JcrNodeDefinition childNode : childNodeDefinitions) {
             this.childNodeDefinitions.add(childNode.with(this));
         }
-    }
 
-    /**
-     * Returns the property definition with the given name. This method first checks the property definitions declared within this
-     * type to see if any property definitions have the given name. If no matches are found, this method initiates a recursive
-     * depth first search up the type hierarchy to attempt to find a definition in one of the supertypes (or one the supertypes of
-     * the supertypes).
-     * 
-     * @param propertyName the name of the property for which the definition should be retrieved. Use
-     *        {@link JcrNodeType#RESIDUAL_ITEM_NAME} to retrieve the residual property definition (if any).
-     * @param preferMultiValued true if the property definition would prefer multiple values, or false if single-valued definition
-     *        is preferred
-     * @return the property definition for the given name or <code>null</code> if no such definition exists.
-     * @see JcrNodeType#RESIDUAL_ITEM_NAME
-     */
-    JcrPropertyDefinition getPropertyDefinition( String propertyName,
-                                                 boolean preferMultiValued ) {
-        JcrPropertyDefinition result = null;
-        for (JcrPropertyDefinition property : propertyDefinitions) {
-            if (propertyName.equals(property.getName())) {
-                result = property;
-                if (property.isMultiple() == preferMultiValued) return result;
-                // Otherwise, keep looking for a better match ...
-            }
-        }
-
-        for (NodeType nodeType : declaredSupertypes) {
-            JcrPropertyDefinition definition = ((JcrNodeType)nodeType).getPropertyDefinition(propertyName, preferMultiValued);
-            if (definition != null) {
-                if (definition.isMultiple() == preferMultiValued) return definition;
-                if (result == null) result = definition;
-            }
-        }
-        return result; // may be null
-    }
-
-    /**
-     * Returns the property definition with the given name. This method first checks the property definitions declared within this
-     * type to see if any property definitions have the given name. If no matches are found, this method initiates a recursive
-     * depth first search up the type hierarchy to attempt to find a definition in one of the supertypes (or one the supertypes of
-     * the supertypes).
-     * 
-     * @param propertyName the name of the property for which the definition should be retrieved. Use
-     *        {@link JcrNodeType#RESIDUAL_ITEM_NAME} to retrieve the residual property definition (if any).
-     * @param preferMultiValued true if the property definition would prefer multiple values, or false if single-valued definition
-     *        is preferred
-     * @return the property definition for the given name or <code>null</code> if no such definition exists.
-     * @see JcrNodeType#RESIDUAL_ITEM_NAME
-     */
-    JcrPropertyDefinition getPropertyDefinition( Name propertyName,
-                                                 boolean preferMultiValued ) {
-        JcrPropertyDefinition result = null;
-        for (JcrPropertyDefinition property : propertyDefinitions) {
-            if (propertyName.equals(property.getInternalName())) {
-                result = property;
-                if (property.isMultiple() == preferMultiValued) return result;
-                // Otherwise, keep looking for a better match ...
-            }
-        }
-
-        for (NodeType nodeType : declaredSupertypes) {
-            JcrPropertyDefinition definition = ((JcrNodeType)nodeType).getPropertyDefinition(propertyName, preferMultiValued);
-            if (definition != null) {
-                if (definition.isMultiple() == preferMultiValued) return definition;
-                if (result == null) result = definition;
-            }
-        }
-        return result; // may be null
-    }
-
-    /**
-     * Returns the child node definition with the given name. This method first checks the child node definitions declared within
-     * this type to see if any child node definitions have the given name. If no matches are found, this method initiates a
-     * recursive depth first search up the type hierarchy to attempt to find a definition in one of the supertypes (or one the
-     * supertypes of the supertypes).
-     * 
-     * @param childDefinitionName the name of the child node definition to be retrieved, or a name containing
-     *        {@link JcrNodeType#RESIDUAL_ITEM_NAME '*'} to retrieve the residual child node definition (if any).
-     * @return the child node definition with the given name or <code>null</code> if no such definition exists.
-     * @see JcrNodeType#RESIDUAL_ITEM_NAME
-     * @see #getChildNodeDefinition(Name)
-     */
-    JcrNodeDefinition getChildNodeDefinition( String childDefinitionName ) {
-        for (JcrNodeDefinition childNode : childNodeDefinitions) {
-            if (childDefinitionName.equals(childNode.getName())) {
-                return childNode;
-            }
-        }
-
-        for (NodeType nodeType : declaredSupertypes) {
-            JcrNodeDefinition definition = ((JcrNodeType)nodeType).getChildNodeDefinition(childDefinitionName);
-            if (definition != null) return definition;
-        }
-        return null;
-    }
-
-    /**
-     * Returns the child node definition with the given name. This method first checks the child node definitions declared within
-     * this type to see if any child node definitions have the given name. If no matches are found, this method initiates a
-     * recursive depth first search up the type hierarchy to attempt to find a definition in one of the supertypes (or one the
-     * supertypes of the supertypes).
-     * 
-     * @param childDefinitionName the name of the child node definition to be retrieved, or a name containing
-     *        {@link JcrNodeType#RESIDUAL_ITEM_NAME '*'} to retrieve the residual child node definition (if any).
-     * @return the child node definition with the given name or <code>null</code> if no such definition exists.
-     * @see JcrNodeType#RESIDUAL_ITEM_NAME
-     * @see #getChildNodeDefinition(String)
-     */
-    JcrNodeDefinition getChildNodeDefinition( Name childDefinitionName ) {
-        for (JcrNodeDefinition childNode : childNodeDefinitions) {
-            if (childDefinitionName.equals(childNode.name)) {
-                return childNode;
-            }
-        }
-
-        for (NodeType nodeType : declaredSupertypes) {
-            JcrNodeDefinition definition = ((JcrNodeType)nodeType).getChildNodeDefinition(childDefinitionName);
-            if (definition != null) return definition;
-        }
-        return null;
-    }
-
-    /**
-     * Determine the best (most specific) {@link NodeDefinition} for a child with the supplied name and primary type. If the
-     * primary type is not supplied, then only the name is considered when finding a best match.
-     * 
-     * @param childName the name of the child
-     * @param primaryNodeTypeName the name of the primary node type for the child
-     * @return the {@link NodeDefinition} that best matches the child, or null if a child with the supplied name and primary type
-     *         are not allowed given this node type
-     */
-    JcrNodeDefinition findBestNodeDefinitionForChild( Name childName,
-                                                      Name primaryNodeTypeName ) {
-        // First, try to find a child node definition with the given name
-        JcrNodeDefinition childNode = getChildNodeDefinition(childName);
-
-        // If there are no named definitions in the type hierarchy, try to find a residual node definition
-        boolean checkResidual = true;
-        if (childNode == null) {
-            childNode = getChildNodeDefinition(RESIDUAL_ITEM_NAME);
-            checkResidual = false;
-        }
-
-        // Check if the node can be added with the named child node definition
-        if (childNode != null && primaryNodeTypeName != null) {
-            NodeType primaryNodeType = getPrimaryNodeType(primaryNodeTypeName);
-            if (primaryNodeType == null) return null;
-            if (!checkTypeAgainstDefinition(primaryNodeType, childNode)) {
-                if (checkResidual) {
-                    // Find a residual child definition ...
-                    childNode = getChildNodeDefinition(RESIDUAL_ITEM_NAME);
-                    if (childNode != null) {
-                        // Check the residual child definition ...
-                        if (checkTypeAgainstDefinition(primaryNodeType, childNode)) return childNode;
-                    }
+        // Build the list of all types, including supertypes ...
+        List<JcrNodeType> thisAndAllSupertypes = new LinkedList<JcrNodeType>();
+        Set<Name> typeNames = new HashSet<Name>();
+        thisAndAllSupertypes.add(this);
+        typeNames.add(this.name);
+        for (int i = 0; i != thisAndAllSupertypes.size(); ++i) {
+            JcrNodeType superType = thisAndAllSupertypes.get(i);
+            for (NodeType superSuperType : superType.getDeclaredSupertypes()) {
+                JcrNodeType jcrSuperSuperType = (JcrNodeType)superSuperType;
+                if (typeNames.add(jcrSuperSuperType.getInternalName())) {
+                    thisAndAllSupertypes.add(jcrSuperSuperType);
                 }
-                return null;
             }
         }
-        return childNode;
+        this.thisAndAllSupertypes = Collections.unmodifiableList(thisAndAllSupertypes);
+        // Make the list of all supertypes to be a sublist of the first ...
+        this.allSupertypes = thisAndAllSupertypes.size() > 1 ? thisAndAllSupertypes.subList(1, thisAndAllSupertypes.size()) : Collections.<JcrNodeType>emptyList();
+
+        // Set up the set of all supertype names ...
+        this.thisAndAllSupertypesNames = Collections.unmodifiableSet(typeNames);
+
+        this.allDefinitions = new DefinitionCache(this);
+    }
+
+    List<JcrNodeType> getTypeAndSupertypes() {
+        return thisAndAllSupertypes;
+    }
+
+    /**
+     * Get the child definitions defined on this node type (excluding inherited definitions).
+     * 
+     * @return this node's child node definitions; never null
+     */
+    List<JcrNodeDefinition> childNodeDefinitions() {
+        return childNodeDefinitions;
+    }
+
+    /**
+     * Get the property definitions defined on this node type (excluding inherited definitions).
+     * 
+     * @return this node's property definitions; never null
+     */
+    List<JcrPropertyDefinition> propertyDefinitions() {
+        return propertyDefinitions;
+    }
+
+    Collection<JcrPropertyDefinition> allSingleValuePropertyDefinitions( Name propertyName ) {
+        return allDefinitions.allSingleValuePropertyDefinitions(propertyName);
+    }
+
+    Collection<JcrPropertyDefinition> allMultiValuePropertyDefinitions( Name propertyName ) {
+        return allDefinitions.allMultiValuePropertyDefinitions(propertyName);
+    }
+
+    Collection<JcrPropertyDefinition> allPropertyDefinitions( Name propertyName ) {
+        return allDefinitions.allPropertyDefinitions(propertyName);
+    }
+
+    Collection<JcrNodeDefinition> allChildNodeDefinitions( Name propertyName,
+                                                           boolean requireSns ) {
+        return allDefinitions.allChildNodeDefinitions(propertyName, requireSns);
+    }
+
+    Collection<JcrNodeDefinition> allChildNodeDefinitions( Name propertyName ) {
+        return allDefinitions.allChildNodeDefinitions(propertyName);
     }
 
     /**
@@ -266,32 +201,9 @@ class JcrNodeType implements NodeType {
      * @see javax.jcr.nodetype.NodeType#canAddChildNode(java.lang.String)
      */
     public boolean canAddChildNode( String childNodeName ) {
-
         CheckArg.isNotNull(childNodeName, "childNodeName");
-
-        // First, try to find a child node definition with the given name
-        JcrNodeDefinition childNode = getChildNodeDefinition(childNodeName);
-
-        // If there are no named definitions in the type hierarchy, try to find a residual node definition
-        if (childNode == null) {
-            childNode = getChildNodeDefinition(RESIDUAL_ITEM_NAME);
-        }
-
-        if (childNode != null) {
-            NodeType defaultType = childNode.getDefaultPrimaryType();
-            // If there's no default type, the child node can't be created
-            if (defaultType == null) {
-                return false;
-            }
-
-            // Check if the node can be added with the named child node definition
-            return checkTypeAgainstDefinition(defaultType, childNode);
-        }
-        return false;
-    }
-
-    protected final NodeType getPrimaryNodeType( Name primaryNodeTypeName ) {
-        return nodeTypeManager.getNodeType(primaryNodeTypeName);
+        Name childName = context.getValueFactories().getNameFactory().create(childNodeName);
+        return nodeTypeManager().findChildNodeDefinition(this.name, null, childName, null, 0, true) != null;
     }
 
     /**
@@ -304,81 +216,28 @@ class JcrNodeType implements NodeType {
 
         CheckArg.isNotNull(childNodeName, "childNodeName");
         CheckArg.isNotNull(primaryNodeTypeName, "primaryNodeTypeName");
-
-        Name nodeTypeName = context.getValueFactories().getNameFactory().create(primaryNodeTypeName);
-        NodeType primaryNodeType = getPrimaryNodeType(nodeTypeName);
-        if (primaryNodeType == null) {
-            // The node type doesn't exist, so you can't add a child node with that type
-            return false;
-        }
-
-        // First, try to find a child node definition with the given name
-        JcrNodeDefinition childNode = getChildNodeDefinition(childNodeName);
-
-        // If there are no named definitions in the type hierarchy, try to find a residual node definition
-        if (childNode == null) {
-            childNode = getChildNodeDefinition(RESIDUAL_ITEM_NAME);
-        }
-
-        // Check if the node can be added with the named child node definition
-        if (childNode != null) {
-            return checkTypeAgainstDefinition(primaryNodeType, childNode);
-        }
-
-        return false;
+        Name childName = context.getValueFactories().getNameFactory().create(childNodeName);
+        Name childPrimaryTypeName = context.getValueFactories().getNameFactory().create(primaryNodeTypeName);
+        return nodeTypeManager().findChildNodeDefinition(this.name, null, childName, childPrimaryTypeName, 0, true) != null;
     }
 
-    /**
-     * Checks whether the given type is the same type or a subtype of each of the required primary types for the given node
-     * definition.
-     * 
-     * @param typeToCheck the type to check
-     * @param definition the node definition to check against
-     * @return <code>true</code> if and only if the given type is the same type or extends each of the required primary types in
-     *         the given definition
-     */
-    private boolean checkTypeAgainstDefinition( NodeType typeToCheck,
-                                                NodeDefinition definition ) {
-        NodeType[] requiredPrimaryTypes = definition.getRequiredPrimaryTypes();
-        for (int i = 0; i < requiredPrimaryTypes.length; i++) {
-            // See if the given type for the node matches all of the required primary types
-            if (!typeToCheck.isNodeType(requiredPrimaryTypes[i].getName())) {
-                return false;
-            }
-        }
-        // The node can be added with the given type based on the given child node definition
-        return true;
+    public boolean canRemoveNode( String itemName ) {
+        CheckArg.isNotNull(itemName, "itemName");
+        Name childName = context.getValueFactories().getNameFactory().create(itemName);
+        return nodeTypeManager().canRemoveAllChildren(this.name, null, childName, true);
     }
 
     /**
      * {@inheritDoc}
+     * <p>
+     * According to the JCR 1.0 JavaDoc, this method applies to all children. However, this appears to be changed in the JSR-283
+     * draft to apply only to nodes, and it is also deprecated.
+     * </p>
      * 
      * @see javax.jcr.nodetype.NodeType#canRemoveItem(java.lang.String)
      */
     public boolean canRemoveItem( String itemName ) {
-        CheckArg.isNotNull(itemName, "itemName");
-
-        // Don't know if item is a property or a node, so check both locally before moving up the type hierarchy
-        for (PropertyDefinition item : propertyDefinitions) {
-            if (itemName.equals(item.getName())) {
-                return !item.isMandatory() && !item.isProtected();
-            }
-        }
-
-        for (NodeDefinition item : childNodeDefinitions) {
-            if (itemName.equals(item.getName())) {
-                return !item.isMandatory() && !item.isProtected();
-            }
-        }
-
-        // Check if any supertypes prevent the removal of this item
-        for (NodeType type : declaredSupertypes) {
-            if (!type.canRemoveItem(itemName)) {
-                return false;
-            }
-        }
-
-        return true;
+        return canRemoveNode(itemName) || canRemoveProperty(itemName);
     }
 
     /**
@@ -395,19 +254,38 @@ class JcrNodeType implements NodeType {
      * @see PropertyDefinition#getValueConstraints()
      * @see JcrPropertyDefinition#satisfiesConstraints(Value)
      */
-    private boolean canCastToTypeAndMatchesConstraints( JcrPropertyDefinition propertyDefinition,
-                                                        Value value ) {
+    boolean canCastToTypeAndMatchesConstraints( JcrPropertyDefinition propertyDefinition,
+                                                Value value ) {
         try {
             assert value instanceof JcrValue : "Illegal implementation of Value interface";
-            ((JcrValue)value).asType(propertyDefinition.getRequiredType());
-
+            ((JcrValue)value).asType(propertyDefinition.getRequiredType()); // throws ValueFormatException if there's a problem
             return propertyDefinition.satisfiesConstraints(value);
-
         } catch (javax.jcr.ValueFormatException vfe) {
             // Cast failed
             return false;
         }
+    }
 
+    /**
+     * Returns <code>true</code> if <code>value</code> can be cast to <code>property.getRequiredType()</code> per the type
+     * conversion rules in section 6.2.6 of the JCR 1.0 specification AND <code>value</code> satisfies the constraints (if any)
+     * for the property definition. If the property definition has a required type of {@link PropertyType#UNDEFINED}, the cast
+     * will be considered to have succeeded and the value constraints (if any) will be interpreted using the semantics for the
+     * type specified in <code>value.getType()</code>.
+     * 
+     * @param propertyDefinition the property definition to validate against
+     * @param values the values to be validated
+     * @return <code>true</code> if the value can be cast to the required type for the property definition (if it exists) and
+     *         satisfies the constraints for the property (if any exist).
+     * @see PropertyDefinition#getValueConstraints()
+     * @see JcrPropertyDefinition#satisfiesConstraints(Value)
+     */
+    boolean canCastToTypeAndMatchesConstraints( JcrPropertyDefinition propertyDefinition,
+                                                Value[] values ) {
+        for (Value value : values) {
+            if (!canCastToTypeAndMatchesConstraints(propertyDefinition, value)) return false;
+        }
+        return true;
     }
 
     /**
@@ -418,27 +296,10 @@ class JcrNodeType implements NodeType {
     public boolean canSetProperty( String propertyName,
                                    Value value ) {
         CheckArg.isNotNull(propertyName, "propertyName");
+        Name name = context.getValueFactories().getNameFactory().create(propertyName);
 
-        JcrPropertyDefinition property = getPropertyDefinition(propertyName, false);
-        if (property == null) {
-            property = getPropertyDefinition(RESIDUAL_ITEM_NAME, false);
-        }
-
-        if (property == null) {
-            return false;
-        }
-
-        // Can't modify a multi-property with a single value. Can't modify a protected property at all.
-        if (property.isMultiple() || property.isProtected()) {
-            return false;
-        }
-
-        // Null values indicates an attempt to unset property
-        if (value == null) {
-            return !property.isMandatory();
-        }
-
-        return canCastToTypeAndMatchesConstraints(property, value);
+        // Reuse the logic in RepositoryNodeTypeManager ...
+        return nodeTypeManager().findPropertyDefinition(this.name, null, name, value, false, true) != null;
     }
 
     /**
@@ -449,34 +310,21 @@ class JcrNodeType implements NodeType {
     public boolean canSetProperty( String propertyName,
                                    Value[] values ) {
         CheckArg.isNotNull(propertyName, "propertyName");
-
-        JcrPropertyDefinition property = getPropertyDefinition(propertyName, true);
-        if (property == null) {
-            property = getPropertyDefinition(RESIDUAL_ITEM_NAME, true);
+        if (values == null || values.length == 0) {
+            return canRemoveProperty(propertyName);
         }
 
-        if (property == null) {
-            return false;
-        }
+        Name name = context.getValueFactories().getNameFactory().create(propertyName);
+        // Reuse the logic in RepositoryNodeTypeManager ...
+        return nodeTypeManager().findPropertyDefinition(this.name, null, name, values, true) != null;
+    }
 
-        // Can't modify a single valued property with a multiple values. Can't modify a protected property at all.
-        if (!property.isMultiple() || property.isProtected()) {
-            return false;
-        }
+    public boolean canRemoveProperty( String propertyName ) {
+        CheckArg.isNotNull(propertyName, "propertyName");
+        Name name = context.getValueFactories().getNameFactory().create(propertyName);
 
-        // Null values indicates an attempt to unset property
-        if (values == null) {
-            return !property.isMandatory();
-        }
-
-        for (int i = 0; i < values.length; i++) {
-            if (values[i] != null) {
-                if (!canCastToTypeAndMatchesConstraints(property, values[i])) {
-                    return false;
-                }
-            }
-        }
-        return true;
+        // Reuse the logic in RepositoryNodeTypeManager ...
+        return nodeTypeManager().canRemoveProperty(this.name, null, name, true);
     }
 
     /**
@@ -485,6 +333,7 @@ class JcrNodeType implements NodeType {
      * @see javax.jcr.nodetype.NodeType#getDeclaredChildNodeDefinitions()
      */
     public NodeDefinition[] getDeclaredChildNodeDefinitions() {
+        // Always have to make a copy to prevent changes ...
         return childNodeDefinitions.toArray(new JcrNodeDefinition[childNodeDefinitions.size()]);
     }
 
@@ -494,23 +343,9 @@ class JcrNodeType implements NodeType {
      * @see javax.jcr.nodetype.NodeType#getChildNodeDefinitions()
      */
     public NodeDefinition[] getChildNodeDefinitions() {
-        Set<NodeDefinition> nodeDefs = new HashSet<NodeDefinition>();
-        NodeType[] supertypes = getSupertypes();
-
-        // TODO: This could be cached after being calculated once
-        for (int i = 0; i < supertypes.length; i++) {
-            NodeDefinition[] childNodeDefinitions = supertypes[i].getChildNodeDefinitions();
-            for (int j = 0; j < childNodeDefinitions.length; i++) {
-
-                // TODO: Could add sanity check here (assertion?) that definitions of the same child node in multiple supertypes
-                // are consistent
-                nodeDefs.add(childNodeDefinitions[j]);
-            }
-        }
-
-        nodeDefs.addAll(childNodeDefinitions);
-
-        return nodeDefs.toArray(new JcrNodeDefinition[nodeDefs.size()]);
+        // Always have to make a copy to prevent changes ...
+        Collection<JcrNodeDefinition> definitions = this.allDefinitions.allChildNodeDefinitions();
+        return definitions.toArray(new NodeDefinition[definitions.size()]);
     }
 
     /**
@@ -519,22 +354,9 @@ class JcrNodeType implements NodeType {
      * @see javax.jcr.nodetype.NodeType#getPropertyDefinitions()
      */
     public PropertyDefinition[] getPropertyDefinitions() {
-        Set<PropertyDefinition> propDefs = new HashSet<PropertyDefinition>();
-        NodeType[] supertypes = getSupertypes();
-
-        // TODO: This could be cached after being calculated once
-        for (int i = 0; i < supertypes.length; i++) {
-            PropertyDefinition[] childPropertyDefinitions = supertypes[i].getPropertyDefinitions();
-            for (int j = 0; j < childPropertyDefinitions.length; j++) {
-
-                // TODO: Could add sanity check here (assertion?) that definitions of the same child node in multiple supertypes
-                // are consistent
-                propDefs.add(childPropertyDefinitions[j]);
-            }
-        }
-        propDefs.addAll(propertyDefinitions);
-
-        return propDefs.toArray(new JcrPropertyDefinition[propDefs.size()]);
+        // Always have to make a copy to prevent changes ...
+        Collection<JcrPropertyDefinition> definitions = this.allDefinitions.allPropertyDefinitions();
+        return definitions.toArray(new PropertyDefinition[definitions.size()]);
     }
 
     /**
@@ -543,6 +365,7 @@ class JcrNodeType implements NodeType {
      * @see javax.jcr.nodetype.NodeType#getDeclaredSupertypes()
      */
     public NodeType[] getDeclaredSupertypes() {
+        // Always have to make a copy to prevent changes ...
         return declaredSupertypes.toArray(new NodeType[declaredSupertypes.size()]);
     }
 
@@ -595,31 +418,7 @@ class JcrNodeType implements NodeType {
      * @see javax.jcr.nodetype.NodeType#getSupertypes()
      */
     public NodeType[] getSupertypes() {
-        Set<NodeType> supertypes = new HashSet<NodeType>();
-        Stack<NodeType> unvisitedSupertypes = new Stack<NodeType>();
-
-        assert declaredSupertypes != null;
-        unvisitedSupertypes.addAll(declaredSupertypes);
-
-        // TODO: If this ends up getting called frequently, it should probably be executed once in the constructor and have the
-        // results cached.
-        while (!unvisitedSupertypes.isEmpty()) {
-            NodeType nodeType = unvisitedSupertypes.pop();
-
-            /*
-             * If we haven't already visited this nodeType (which we can
-             * infer by whether or not it was already added to the return set),
-             * then add the supertypes of this new node to the unvisited set for 
-             * further inspection.
-             */
-            if (!supertypes.contains(nodeType)) {
-                supertypes.add(nodeType);
-                // Violating encapsulation to avoid going from List to array back to List
-                unvisitedSupertypes.addAll(((JcrNodeType)nodeType).declaredSupertypes);
-            }
-        }
-
-        return supertypes.toArray(new NodeType[0]);
+        return allSupertypes.toArray(new NodeType[allSupertypes.size()]);
     }
 
     /**
@@ -646,17 +445,14 @@ class JcrNodeType implements NodeType {
      * @see javax.jcr.nodetype.NodeType#isNodeType(java.lang.String)
      */
     public boolean isNodeType( String nodeTypeName ) {
-        if (this.getName().equals(nodeTypeName)) return true;
+        if (nodeTypeName == null) return false;
+        Name name = context.getValueFactories().getNameFactory().create(nodeTypeName);
+        return this.thisAndAllSupertypesNames.contains(name);
+    }
 
-        // TODO: This could be optimized
-        NodeType[] supertypes = getSupertypes();
-        for (int i = 0; i < supertypes.length; i++) {
-            if (supertypes[i].isNodeType(nodeTypeName)) {
-                return true;
-            }
-        }
-
-        return false;
+    boolean isNodeType( Name nodeTypeName ) {
+        if (nodeTypeName == null) return false;
+        return this.thisAndAllSupertypesNames.contains(nodeTypeName);
     }
 
     @Override

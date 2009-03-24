@@ -24,6 +24,7 @@
 package org.jboss.dna.jcr.cache;
 
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -44,7 +45,7 @@ public class ImmutableNodeInfo implements NodeInfo {
     private final NodeDefinitionId definition;
     private final Children children;
     private final Map<Name, PropertyInfo> properties;
-    private final Set<Name> mixinTypeNames;
+    private final List<Name> mixinTypeNames;
 
     /**
      * Create an immutable NodeInfo instance.
@@ -59,7 +60,7 @@ public class ImmutableNodeInfo implements NodeInfo {
      */
     public ImmutableNodeInfo( Location originalLocation,
                               Name primaryTypeName,
-                              Set<Name> mixinTypeNames,
+                              List<Name> mixinTypeNames,
                               NodeDefinitionId definition,
                               UUID parent,
                               Children children,
@@ -70,10 +71,8 @@ public class ImmutableNodeInfo implements NodeInfo {
         this.parent = parent;
         this.uuid = this.originalLocation.getUuid();
         this.children = children != null ? children : new EmptyChildren(this.uuid);
-        if (properties == null) properties = Collections.emptyMap();
-        this.properties = properties;
-        if (mixinTypeNames == null) mixinTypeNames = Collections.emptySet();
-        this.mixinTypeNames = mixinTypeNames;
+        this.properties = properties != null ? properties : Collections.<Name, PropertyInfo>emptyMap();
+        this.mixinTypeNames = mixinTypeNames != null ? mixinTypeNames : Collections.<Name>emptyList();
         assert this.uuid != null;
         assert this.definition != null;
         assert this.primaryTypeName != null;
@@ -123,7 +122,7 @@ public class ImmutableNodeInfo implements NodeInfo {
      * 
      * @see org.jboss.dna.jcr.cache.NodeInfo#getMixinTypeNames()
      */
-    public Set<Name> getMixinTypeNames() {
+    public List<Name> getMixinTypeNames() {
         return mixinTypeNames;
     }
 
