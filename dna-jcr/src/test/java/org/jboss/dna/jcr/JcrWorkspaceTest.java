@@ -160,9 +160,9 @@ public class JcrWorkspaceTest {
         workspace.getObservationManager();
     }
 
-    @Test( expected = UnsupportedOperationException.class )
-    public void shouldNotAllowGetQueryManager() throws Exception {
-        workspace.getQueryManager();
+    @Test
+    public void shouldProvideQueryManager() throws Exception {
+        assertThat(workspace.getQueryManager(), notNullValue());
     }
 
     @Test

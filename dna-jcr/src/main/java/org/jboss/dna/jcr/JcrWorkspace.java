@@ -107,6 +107,11 @@ final class JcrWorkspace implements Workspace {
     private final JcrNodeTypeManager nodeTypeManager;
 
     /**
+     * Reference to the JCR query manager for this workspace.
+     */
+    private final JcrQueryManager queryManager;
+    
+    /**
      * The {@link Session} instance that this corresponds with this workspace.
      */
     private final JcrSession session;
@@ -149,6 +154,7 @@ final class JcrWorkspace implements Workspace {
 
         // This must be initialized after the session
         this.nodeTypeManager = new JcrNodeTypeManager(session.getExecutionContext(), repository.getRepositoryTypeManager());
+        this.queryManager = new JcrQueryManager(this.session);
     }
 
     final String getSourceName() {
@@ -212,7 +218,7 @@ final class JcrWorkspace implements Workspace {
      * {@inheritDoc}
      */
     public final QueryManager getQueryManager() {
-        throw new UnsupportedOperationException();
+        return queryManager;
     }
 
     /**

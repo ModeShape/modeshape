@@ -107,7 +107,7 @@ public class JcrTckTest {
             addTestSuite(org.apache.jackrabbit.test.api.PropertyReadMethodsTest.class);
             addTestSuite(org.apache.jackrabbit.test.api.RepositoryDescriptorTest.class);
             addTestSuite(org.apache.jackrabbit.test.api.SessionReadMethodsTest.class);
-            // addTestSuite(org.apache.jackrabbit.test.api.WorkspaceReadMethodsTest.class);
+            addTestSuite(org.apache.jackrabbit.test.api.WorkspaceReadMethodsTest.class);
             addTestSuite(org.apache.jackrabbit.test.api.ReferenceableRootNodesTest.class);
             addTestSuite(org.apache.jackrabbit.test.api.ExportSysViewTest.class);
             addTestSuite(org.apache.jackrabbit.test.api.ExportDocViewTest.class);
@@ -118,13 +118,13 @@ public class JcrTckTest {
             // addTestSuite(org.apache.jackrabbit.test.api.query.XPathDocOrderTest.class);
             // addTestSuite(org.apache.jackrabbit.test.api.query.XPathOrderByTest.class);
             // addTestSuite(org.apache.jackrabbit.test.api.query.XPathJcrPathTest.class);
-            // addTestSuite(org.apache.jackrabbit.test.api.query.DerefQueryLevel1Test.class);
-            // addTestSuite(org.apache.jackrabbit.test.api.query.GetLanguageTest.class);
-            // addTestSuite(org.apache.jackrabbit.test.api.query.GetPersistentQueryPathLevel1Test.class);
-            // addTestSuite(org.apache.jackrabbit.test.api.query.GetStatementTest.class);
-            // addTestSuite(org.apache.jackrabbit.test.api.query.GetSupportedQueryLanguagesTest.class);
+            addTestSuite(org.apache.jackrabbit.test.api.query.DerefQueryLevel1Test.class);
+            addTestSuite(org.apache.jackrabbit.test.api.query.GetLanguageTest.class);
+            addTestSuite(org.apache.jackrabbit.test.api.query.GetPersistentQueryPathLevel1Test.class);
+            addTestSuite(org.apache.jackrabbit.test.api.query.GetStatementTest.class);
+            addTestSuite(org.apache.jackrabbit.test.api.query.GetSupportedQueryLanguagesTest.class);
             // addTestSuite(org.apache.jackrabbit.test.api.query.GetPropertyNamesTest.class);
-            // addTestSuite(org.apache.jackrabbit.test.api.query.PredicatesTest.class);
+            addTestSuite(org.apache.jackrabbit.test.api.query.PredicatesTest.class);
             // addTestSuite(org.apache.jackrabbit.test.api.query.SimpleSelectionTest.class);
 
             // The tests in this suite are level one

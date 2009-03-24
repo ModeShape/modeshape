@@ -97,6 +97,10 @@ public final class JcrI18n {
     public static I18n workspaceNameIsInvalid;
     public static I18n errorVerifyingWorkspaceName;
 
+    // Query-related messages
+    public static I18n notStoredQuery;
+    public static I18n invalidQueryLanguage;
+    
     static {
         try {
             I18n.initialize(JcrI18n.class);
