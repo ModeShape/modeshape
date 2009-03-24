@@ -142,7 +142,13 @@
 			<id>release</id>
 			<modules>
 				<module>docs</module>
-		        <module>docs/examples/gettingstarted</module>
+        <module>docs/examples/gettingstarted</module>
+			</modules>
+		</profile>
+		<profile>
+			<id>jcr-tck</id>
+			<modules>
+				<module>dna-jcr-tck</module>
 			</modules>
 		</profile>
 		<profile>
