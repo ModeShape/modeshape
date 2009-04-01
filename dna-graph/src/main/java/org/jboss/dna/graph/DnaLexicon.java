@@ -40,6 +40,7 @@ public class DnaLexicon {
     public static final Name MERGE_PLAN = new BasicName(Namespace.URI, "mergePlan");
     public static final Name CLASSNAME = new BasicName(Namespace.URI, "classname");
     public static final Name CLASSPATH = new BasicName(Namespace.URI, "classpath");
+    public static final Name NAMESPACES = new BasicName(Namespace.URI, "namespaces");
     public static final Name PROJECTION_RULES = new BasicName(Namespace.URI, "projectionRules");
     public static final Name TIME_TO_EXPIRE = new BasicName(Namespace.URI, "timeToExpire");
     public static final Name NAMESPACE_URI = new BasicName(Namespace.URI, "uri");

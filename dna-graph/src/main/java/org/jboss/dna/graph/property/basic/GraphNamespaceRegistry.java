@@ -32,6 +32,7 @@ import net.jcip.annotations.NotThreadSafe;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.graph.DnaLexicon;
 import org.jboss.dna.graph.Graph;
+import org.jboss.dna.graph.JcrLexicon;
 import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.Node;
 import org.jboss.dna.graph.Subgraph;
@@ -78,11 +79,22 @@ public class GraphNamespaceRegistry implements NamespaceRegistry {
             }
         }
         this.namespaceProperties = Collections.unmodifiableList(properties);
+        createNamespaceParentIfNeeded();
         initializeCacheFromStore(cache);
 
         // Load in the namespaces from the execution context used by the store ...
         for (Namespace namespace : store.getContext().getNamespaceRegistry().getNamespaces()) {
             register(namespace.getPrefix(), namespace.getNamespaceUri());
+        }
+    }
+
+    private void createNamespaceParentIfNeeded() {
+        try {
+            this.store.getNodeAt(this.parentOfNamespaceNodes);
+        } catch (PathNotFoundException pnfe) {
+            // The node did not already exist - create it!
+            this.store.create(parentOfNamespaceNodes);
+            this.store.set(JcrLexicon.PRIMARY_TYPE).on(parentOfNamespaceNodes).to(DnaLexicon.NAMESPACES);
         }
     }
 
@@ -221,6 +233,9 @@ public class GraphNamespaceRegistry implements NamespaceRegistry {
                     cache.register(prefix, uri);
                 }
             }
+
+            // Empty prefix to namespace mapping is built-in
+            cache.register("", "");
         } catch (PathNotFoundException e) {
             // Nothing to read
         }
@@ -296,6 +311,11 @@ public class GraphNamespaceRegistry implements NamespaceRegistry {
         assert uri != null;
         prefix = prefix.trim();
         uri = uri.trim();
+
+        // Empty prefix to namespace mapping is built in
+        if (prefix.length() == 0) {
+            return null;
+        }
 
         // Read the store ...
         String previousUri = null;
