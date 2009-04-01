@@ -236,16 +236,6 @@ public class AbstractJcrNodeTest {
         node.addMixin(null);
     }
 
-    @Test( expected = UnsupportedOperationException.class )
-    public void shoudNotAllowAddNode() throws Exception {
-        node.addNode(null);
-    }
-
-    @Test( expected = UnsupportedOperationException.class )
-    public void shoudNotAllowAddNodeWithType() throws Exception {
-        node.addNode(null, null);
-    }
-
     @Test
     public void shoudNotAllowCanAddMixin() throws Exception {
         assertThat(node.canAddMixin(null), is(false));
