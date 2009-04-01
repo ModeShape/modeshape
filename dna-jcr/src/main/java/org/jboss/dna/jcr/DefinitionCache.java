@@ -139,8 +139,8 @@ final class DefinitionCache {
             } else {
                 childNodeDefinitionsThatAllowNoSns.put(name, definition);
             }
-            namesFromThisType.add(name);
             allChildNodeDefinitions.put(name, definition);
+            namesFromThisType.add(name);
         }
 
         namesFromThisType.clear();
@@ -193,9 +193,10 @@ final class DefinitionCache {
         return this.allChildNodeDefinitions.get(childName);
     }
 
-    Collection<JcrNodeDefinition> allChildNodeDefinitions( Name childName,
-                                                           boolean requireSns ) {
+    public Collection<JcrNodeDefinition> allChildNodeDefinitions( Name childName,
+                                                                  boolean requireSns ) {
         if (requireSns) {
+            // Only return definitions that allow SNS since we require SNS support
             return childNodeDefinitionsThatAllowSns.get(childName);
         }
         return allChildNodeDefinitions.get(childName);

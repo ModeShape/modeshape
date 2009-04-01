@@ -186,13 +186,13 @@ class JcrNodeType implements NodeType {
         return allDefinitions.allPropertyDefinitions(propertyName);
     }
 
-    Collection<JcrNodeDefinition> allChildNodeDefinitions( Name propertyName,
+    Collection<JcrNodeDefinition> allChildNodeDefinitions( Name childName,
                                                            boolean requireSns ) {
-        return allDefinitions.allChildNodeDefinitions(propertyName, requireSns);
+        return allDefinitions.allChildNodeDefinitions(childName, requireSns);
     }
 
-    Collection<JcrNodeDefinition> allChildNodeDefinitions( Name propertyName ) {
-        return allDefinitions.allChildNodeDefinitions(propertyName);
+    Collection<JcrNodeDefinition> allChildNodeDefinitions( Name childName ) {
+        return allDefinitions.allChildNodeDefinitions(childName);
     }
 
     /**
