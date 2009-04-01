@@ -508,7 +508,7 @@ class RepositoryNodeTypeManager {
                                                int numberOfExistingChildrenWithSameName,
                                                boolean skipProtected ) {
         JcrNodeType childType = childPrimaryNodeType != null ? getNodeType(childPrimaryNodeType) : null;
-        boolean requireSns = numberOfExistingChildrenWithSameName != 0;
+        boolean requireSns = numberOfExistingChildrenWithSameName > 1;
 
         // First look in the primary type ...
         JcrNodeType primaryType = getNodeType(primaryTypeNameOfParent);
