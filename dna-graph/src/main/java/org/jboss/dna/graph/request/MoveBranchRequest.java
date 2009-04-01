@@ -34,7 +34,7 @@ import org.jboss.dna.graph.property.Path;
  * 
  * @author Randall Hauch
  */
-public class MoveBranchRequest extends Request {
+public class MoveBranchRequest extends Request implements ChangeRequest {
 
     private static final long serialVersionUID = 1L;
 
@@ -202,6 +202,25 @@ public class MoveBranchRequest extends Request {
      */
     public Location getActualLocationAfter() {
         return actualNewLocation;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.request.ChangeRequest#changes(java.lang.String, org.jboss.dna.graph.property.Path)
+     */
+    public boolean changes( String workspace,
+                            Path path ) {
+        return this.workspaceName.equals(workspace) && into.hasPath() && into.getPath().isAtOrBelow(path);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.request.ChangeRequest#changedLocation()
+     */
+    public Location changedLocation() {
+        return into;
     }
 
     /**

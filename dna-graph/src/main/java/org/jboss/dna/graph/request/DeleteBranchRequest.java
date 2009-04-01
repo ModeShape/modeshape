@@ -26,13 +26,14 @@ package org.jboss.dna.graph.request;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.graph.GraphI18n;
 import org.jboss.dna.graph.Location;
+import org.jboss.dna.graph.property.Path;
 
 /**
  * Instruction that a branch be deleted.
  * 
  * @author Randall Hauch
  */
-public class DeleteBranchRequest extends Request {
+public class DeleteBranchRequest extends Request implements ChangeRequest {
 
     private static final long serialVersionUID = 1L;
 
@@ -109,6 +110,25 @@ public class DeleteBranchRequest extends Request {
      */
     public Location getActualLocationOfNode() {
         return actualLocation;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.request.ChangeRequest#changes(java.lang.String, org.jboss.dna.graph.property.Path)
+     */
+    public boolean changes( String workspace,
+                            Path path ) {
+        return this.workspaceName.equals(workspace) && at.hasPath() && at.getPath().isAtOrBelow(path);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.request.ChangeRequest#changedLocation()
+     */
+    public Location changedLocation() {
+        return at;
     }
 
     /**

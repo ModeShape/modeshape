@@ -27,6 +27,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -44,10 +45,12 @@ import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.Value;
 import javax.jcr.nodetype.ConstraintViolationException;
+import javax.jcr.nodetype.NoSuchNodeTypeException;
 import javax.jcr.nodetype.NodeDefinition;
 import javax.jcr.nodetype.NodeType;
 import javax.jcr.nodetype.PropertyDefinition;
 import net.jcip.annotations.ThreadSafe;
+import org.jboss.dna.common.i18n.I18n;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.Graph;
 import org.jboss.dna.graph.Location;
@@ -63,6 +66,8 @@ import org.jboss.dna.graph.property.PropertyFactory;
 import org.jboss.dna.graph.property.ValueFactories;
 import org.jboss.dna.graph.property.ValueFactory;
 import org.jboss.dna.graph.property.ValueFormatException;
+import org.jboss.dna.graph.request.ChangeRequest;
+import org.jboss.dna.graph.request.Request;
 import org.jboss.dna.jcr.cache.ChangedNodeInfo;
 import org.jboss.dna.jcr.cache.ChildNode;
 import org.jboss.dna.jcr.cache.Children;
@@ -141,7 +146,8 @@ public class SessionCache {
     protected final HashMap<UUID, ChangedNodeInfo> changedNodes;
     protected final HashMap<UUID, NodeInfo> deletedNodes;
 
-    private Graph.Batch operations;
+    private LinkedList<Request> requests;
+    protected Graph.Batch operations;
 
     public SessionCache( JcrSession session,
                          String workspaceName,
@@ -174,6 +180,7 @@ public class SessionCache {
         this.deletedNodes = new HashMap<UUID, NodeInfo>();
 
         // Create the batch operations ...
+        this.requests = new LinkedList<Request>();
         this.operations = this.store.batch();
     }
 
@@ -181,20 +188,24 @@ public class SessionCache {
         return session;
     }
 
-    ExecutionContext context() {
-        return context;
-    }
-
     String workspaceName() {
         return workspaceName;
     }
 
-    JcrNodeTypeManager nodeTypes() {
-        return session.nodeTypeManager();
+    ExecutionContext context() {
+        return context;
     }
 
-    final Graph.Batch operations() {
-        return operations;
+    PathFactory pathFactory() {
+        return pathFactory;
+    }
+
+    NameFactory nameFactory() {
+        return nameFactory;
+    }
+
+    JcrNodeTypeManager nodeTypes() {
+        return session.nodeTypeManager();
     }
 
     /**
@@ -207,12 +218,17 @@ public class SessionCache {
             // Execute the batched operations ...
             try {
                 operations.execute();
+            } catch (org.jboss.dna.graph.property.PathNotFoundException e) {
+                throw new PathNotFoundException(e.getLocalizedMessage(), e);
             } catch (RuntimeException e) {
-                throw new RepositoryException(e);
+                throw new RepositoryException(e.getLocalizedMessage(), e);
             }
 
             // Create a new batch for future operations ...
-            operations = store.batch();
+            // LinkedList<Request> oldRequests = this.requests;
+            this.requests = new LinkedList<Request>();
+            operations = store.batch(this.requests);
+
             // Remove all the cached items that have been changed or deleted ...
             for (UUID changedUuid : changedNodes.keySet()) {
                 cachedNodes.remove(changedUuid);
@@ -223,6 +239,77 @@ public class SessionCache {
             // Remove all the changed and deleted infos ...
             changedNodes.clear();
             deletedNodes.clear();
+        }
+    }
+
+    /**
+     * Save any changes to the identified node or its decendants. The supplied node may not have been deleted or created in this
+     * session since the last save operation.
+     * 
+     * @param nodeUuid the UUID of the node that is to be saved; may not be null
+     * @throws RepositoryException if any error resulting while saving the changes to the repository
+     */
+    public void save( UUID nodeUuid ) throws RepositoryException {
+        assert nodeUuid != null;
+        if (deletedNodes.containsKey(nodeUuid)) {
+            // This node was deleted in this session ...
+            throw new InvalidItemStateException(JcrI18n.nodeHasAlreadyBeenRemovedFromThisSession.text(nodeUuid, workspaceName()));
+        }
+
+        // The node must not have been created since the last save ...
+        if (!cachedNodes.containsKey(nodeUuid)) {
+            // It is not cached, which means it WAS created ...
+            Path path = getPathFor(nodeUuid);
+            throw new RepositoryException(JcrI18n.unableToSaveNodeThatWasCreatedSincePreviousSave.text(path, workspaceName()));
+        }
+
+        if (operations.isExecuteRequired()) {
+            // Find the path of the given node ...
+            Path path = getPathFor(nodeUuid);
+
+            // Remove all of the enqueued requests for this branch ...
+            LinkedList<Request> branchRequests = new LinkedList<Request>();
+            LinkedList<Request> nonBranchRequests = new LinkedList<Request>();
+            Set<UUID> branchUuids = new HashSet<UUID>();
+            for (Request request : this.requests) {
+                assert request instanceof ChangeRequest;
+                ChangeRequest change = (ChangeRequest)request;
+                if (change.changes(workspaceName, path)) {
+                    branchRequests.add(request);
+                    // Record the UUID of the node being saved now ...
+                    UUID changedUuid = change.changedLocation().getUuid();
+                    assert changedUuid != null;
+                    branchUuids.add(changedUuid);
+                } else {
+                    nonBranchRequests.add(request);
+                }
+            }
+
+            if (branchRequests.isEmpty()) {
+                // None of the changes affected the branch given by the node ...
+                return;
+            }
+
+            // Now execute the branch ...
+            Graph.Batch branchBatch = store.batch(branchRequests);
+            try {
+                branchBatch.execute();
+
+                // Still have non-branch related requests that we haven't executed ...
+                this.requests = nonBranchRequests;
+                this.operations = store.batch(nonBranchRequests);
+
+                // Remove all the cached, changed or deleted items that were just saved ...
+                for (UUID changedUuid : branchUuids) {
+                    cachedNodes.remove(changedUuid);
+                    changedNodes.remove(changedUuid);
+                    deletedNodes.remove(changedUuid);
+                }
+            } catch (org.jboss.dna.graph.property.PathNotFoundException e) {
+                throw new PathNotFoundException(e.getLocalizedMessage(), e);
+            } catch (RuntimeException e) {
+                throw new RepositoryException(e.getLocalizedMessage(), e);
+            }
         }
     }
 
@@ -498,7 +585,7 @@ public class SessionCache {
 
             // Finally update the cached information and record the change ...
             node.setProperty(newProperty, context().getValueFactories());
-            operations().set(dnaProp).on(currentLocation);
+            operations.set(dnaProp).on(currentLocation);
         }
 
         /**
@@ -587,7 +674,7 @@ public class SessionCache {
 
             // Finally update the cached information and record the change ...
             node.setProperty(newProperty, context().getValueFactories());
-            operations().set(dnaProp).on(currentLocation);
+            operations.set(dnaProp).on(currentLocation);
         }
 
         /**
@@ -598,7 +685,7 @@ public class SessionCache {
          */
         public boolean removeProperty( Name name ) {
             if (node.removeProperty(name) != null) {
-                operations().remove(name).on(currentLocation);
+                operations.remove(name).on(currentLocation);
                 return true;
             }
             return false;
@@ -675,7 +762,7 @@ public class SessionCache {
             existingNodeInfo.setParent(node.getUuid());
 
             // Now, record the operation to do this ...
-            operations().move(existingNodeEditor.currentLocation).into(currentLocation);
+            operations.move(existingNodeEditor.currentLocation).into(currentLocation);
 
             return newChild;
         }
@@ -686,17 +773,16 @@ public class SessionCache {
          * @param name the name for the new child; may not be null
          * @param desiredUuid the desired UUID, or null if the UUID for the child should be generated automatically
          * @param primaryTypeName the name of the primary type for the new node
-         * @param nodeDefinitionId
          * @return the representation of the newly-created child, which includes the {@link ChildNode#getSnsIndex()
          *         same-name-sibling index}
          * @throws InvalidItemStateException if the specified child has been marked for deletion within this session
          * @throws ConstraintViolationException if moving the node into this node violates this node's definition
+         * @throws NoSuchNodeTypeException if the node type for the primary type could not be found
          * @throws RepositoryException if any other error occurs while reading information from the repository
          */
         public ChildNode createChild( Name name,
                                       UUID desiredUuid,
-                                      Name primaryTypeName,
-                                      NodeDefinitionId nodeDefinitionId )
+                                      Name primaryTypeName )
             throws InvalidItemStateException, ConstraintViolationException, RepositoryException {
             if (desiredUuid == null) desiredUuid = UUID.randomUUID();
 
@@ -708,9 +794,33 @@ public class SessionCache {
                                                                                primaryTypeName,
                                                                                numSns,
                                                                                true);
+            // Make sure there was a valid child node definition ...
             if (definition == null) {
-                throw new ConstraintViolationException();
+                Path pathForChild = pathFactory.create(getPathFor(node), name, numSns + 1);
+                String msg = JcrI18n.nodeDefinitionCouldNotBeDeterminedForNode.text(pathForChild, workspaceName());
+                throw new ConstraintViolationException(msg);
             }
+
+            // Find the primary type ...
+            JcrNodeType primaryType = null;
+            if (primaryTypeName != null) {
+                primaryType = nodeTypes().getNodeType(primaryTypeName);
+                if (primaryType == null) {
+                    Path pathForChild = pathFactory.create(getPathFor(node), name, numSns + 1);
+                    I18n msg = JcrI18n.unableToCreateNodeWithPrimaryTypeThatDoesNotExist;
+                    throw new NoSuchNodeTypeException(msg.text(primaryTypeName, pathForChild, workspaceName()));
+                }
+            } else {
+                primaryType = (JcrNodeType)definition.getDefaultPrimaryType();
+                if (primaryType == null) {
+                    // There is no default primary type ...
+                    Path pathForChild = pathFactory.create(getPathFor(node), name, numSns + 1);
+                    I18n msg = JcrI18n.unableToCreateNodeWithNoDefaultPrimaryTypeOnChildNodeDefinition;
+                    String nodeTypeName = definition.getDeclaringNodeType().getName();
+                    throw new NoSuchNodeTypeException(msg.text(definition.getName(), nodeTypeName, pathForChild, workspaceName()));
+                }
+            }
+            primaryTypeName = primaryType.getInternalName();
 
             ChildNode result = node.addChild(name, desiredUuid, pathFactory);
 
@@ -723,7 +833,7 @@ public class SessionCache {
             // Create the properties ...
             Map<Name, PropertyInfo> properties = new HashMap<Name, PropertyInfo>();
             Property primaryTypeProp = propertyFactory.create(JcrLexicon.PRIMARY_TYPE, primaryTypeName);
-            Property nodeDefinitionProp = propertyFactory.create(DnaLexicon.NODE_DEFINITON, nodeDefinitionId.getString());
+            Property nodeDefinitionProp = propertyFactory.create(DnaLexicon.NODE_DEFINITON, definition.getId().getString());
 
             // Create the property info for the "jcr:primaryType" child property ...
             JcrPropertyDefinition primaryTypeDefn = findBestPropertyDefintion(node.getPrimaryTypeName(),
@@ -759,10 +869,10 @@ public class SessionCache {
             // ---------------------------------------
             // Now record the changes to the store ...
             // ---------------------------------------
-            Graph.Create<Graph.Batch> create = operations().createUnder(currentLocation)
-                                                           .nodeNamed(name)
-                                                           .with(desiredUuid)
-                                                           .with(primaryTypeProp);
+            Graph.Create<Graph.Batch> create = operations.createUnder(currentLocation)
+                                                         .nodeNamed(name)
+                                                         .with(desiredUuid)
+                                                         .with(primaryTypeProp);
             if (nodeDefnDefn != null) {
                 create = create.with(nodeDefinitionProp);
             }
@@ -787,7 +897,7 @@ public class SessionCache {
                 // Now make the request to the source ...
                 Path childPath = pathFactory.create(currentLocation.getPath(), deleted.getSegment());
                 Location locationOfChild = Location.create(childPath, nodeUuid);
-                operations().delete(locationOfChild);
+                operations.delete(locationOfChild);
                 return true;
             }
             return false;
@@ -917,6 +1027,7 @@ public class SessionCache {
      * @see #findNodeInfoForRoot()
      */
     NodeInfo findNodeInfo( UUID uuid ) throws ItemNotFoundException, InvalidItemStateException, RepositoryException {
+        assert uuid != null;
         // See if we already have something in the cache ...
         NodeInfo info = findNodeInfoInCache(uuid);
         if (info == null) {
@@ -1326,16 +1437,16 @@ public class SessionCache {
             definition = nodeTypes().getNodeDefinition(id);
         }
         // Figure out the node definition for this node ...
-        if (definition == null) {
-            if (isRoot) {
-                definition = nodeTypes().getRootNodeDefinition();
-            } else {
-                // We need the parent ...
-                Path path = location.getPath();
-                if (parentInfo == null) {
-                    Path parentPath = path.getParent();
-                    parentInfo = findNodeInfo(null, parentPath.getNormalizedPath());
-                }
+        if (isRoot) {
+            if (definition == null) definition = nodeTypes().getRootNodeDefinition();
+        } else {
+            // We need the parent ...
+            Path path = location.getPath();
+            if (parentInfo == null) {
+                Path parentPath = path.getParent();
+                parentInfo = findNodeInfo(null, parentPath.getNormalizedPath());
+            }
+            if (definition == null) {
                 Name childName = path.getLastSegment().getName();
                 int numExistingChildrenWithSameName = parentInfo.getChildren().getCountOfSameNameSiblingsWithName(childName);
                 definition = nodeTypes().findChildNodeDefinition(parentInfo.getPrimaryTypeName(),
@@ -1344,10 +1455,10 @@ public class SessionCache {
                                                                  primaryTypeName,
                                                                  numExistingChildrenWithSameName,
                                                                  false);
-                if (definition == null) {
-                    String msg = JcrI18n.nodeDefinitionCouldNotBeDeterminedForNode.text(path, workspaceName);
-                    throw new RepositorySourceException(msg);
-                }
+            }
+            if (definition == null) {
+                String msg = JcrI18n.nodeDefinitionCouldNotBeDeterminedForNode.text(path, workspaceName);
+                throw new RepositorySourceException(msg);
             }
         }
 

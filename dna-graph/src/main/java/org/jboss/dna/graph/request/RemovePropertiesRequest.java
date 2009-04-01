@@ -32,13 +32,14 @@ import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.graph.GraphI18n;
 import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.property.Name;
+import org.jboss.dna.graph.property.Path;
 
 /**
  * Instruction to remove properties from the node at the specified location.
  * 
  * @author Randall Hauch
  */
-public class RemovePropertiesRequest extends Request implements Iterable<Name> {
+public class RemovePropertiesRequest extends Request implements Iterable<Name>, ChangeRequest {
 
     private static final long serialVersionUID = 1L;
 
@@ -191,6 +192,25 @@ public class RemovePropertiesRequest extends Request implements Iterable<Name> {
      */
     public Location getActualLocationOfNode() {
         return actualLocation;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.request.ChangeRequest#changes(java.lang.String, org.jboss.dna.graph.property.Path)
+     */
+    public boolean changes( String workspace,
+                            Path path ) {
+        return this.workspaceName.equals(workspace) && from.hasPath() && from.getPath().isAtOrBelow(path);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.request.ChangeRequest#changedLocation()
+     */
+    public Location changedLocation() {
+        return from;
     }
 
     /**

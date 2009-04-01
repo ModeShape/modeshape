@@ -35,7 +35,7 @@ import org.jboss.dna.graph.property.Path;
  * 
  * @author Randall Hauch
  */
-public class RenameNodeRequest extends Request {
+public class RenameNodeRequest extends Request implements ChangeRequest {
 
     private static final long serialVersionUID = 1L;
 
@@ -156,6 +156,25 @@ public class RenameNodeRequest extends Request {
      */
     public Location getActualLocationAfter() {
         return actualNewLocation;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.request.ChangeRequest#changes(java.lang.String, org.jboss.dna.graph.property.Path)
+     */
+    public boolean changes( String workspace,
+                            Path path ) {
+        return this.workspaceName.equals(workspace) && at.hasPath() && at.getPath().getParent().isAtOrBelow(path);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.request.ChangeRequest#changedLocation()
+     */
+    public Location changedLocation() {
+        return at;
     }
 
     /**

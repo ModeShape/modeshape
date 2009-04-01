@@ -31,7 +31,9 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.UUID;
 import java.util.regex.Pattern;
+import javax.jcr.InvalidItemStateException;
 import javax.jcr.Item;
+import javax.jcr.ItemExistsException;
 import javax.jcr.ItemNotFoundException;
 import javax.jcr.ItemVisitor;
 import javax.jcr.Node;
@@ -44,10 +46,13 @@ import javax.jcr.RepositoryException;
 import javax.jcr.UnsupportedRepositoryOperationException;
 import javax.jcr.Value;
 import javax.jcr.lock.Lock;
+import javax.jcr.lock.LockException;
+import javax.jcr.nodetype.ConstraintViolationException;
 import javax.jcr.nodetype.NodeDefinition;
 import javax.jcr.nodetype.NodeType;
 import javax.jcr.nodetype.NodeTypeManager;
 import javax.jcr.version.Version;
+import javax.jcr.version.VersionException;
 import javax.jcr.version.VersionHistory;
 import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.i18n.I18n;
@@ -56,6 +61,7 @@ import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.NamespaceRegistry;
 import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.ValueFormatException;
+import org.jboss.dna.jcr.SessionCache.NodeEditor;
 import org.jboss.dna.jcr.cache.ChildNode;
 import org.jboss.dna.jcr.cache.Children;
 import org.jboss.dna.jcr.cache.NodeInfo;
@@ -86,6 +92,30 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
 
     final NodeInfo nodeInfo() throws ItemNotFoundException, RepositoryException {
         return cache.findNodeInfo(nodeUuid);
+    }
+
+    final NodeEditor editorForParent() throws RepositoryException {
+        try {
+            return cache.getEditorFor(nodeInfo().getParent());
+        } catch (ItemNotFoundException err) {
+            String msg = JcrI18n.nodeHasAlreadyBeenRemovedFromThisSession.text(nodeUuid, cache.workspaceName());
+            throw new RepositoryException(msg);
+        } catch (InvalidItemStateException err) {
+            String msg = JcrI18n.nodeHasAlreadyBeenRemovedFromThisSession.text(nodeUuid, cache.workspaceName());
+            throw new RepositoryException(msg);
+        }
+    }
+
+    final NodeEditor editor() throws RepositoryException {
+        try {
+            return cache.getEditorFor(nodeUuid);
+        } catch (ItemNotFoundException err) {
+            String msg = JcrI18n.nodeHasAlreadyBeenRemovedFromThisSession.text(nodeUuid, cache.workspaceName());
+            throw new RepositoryException(msg);
+        } catch (InvalidItemStateException err) {
+            String msg = JcrI18n.nodeHasAlreadyBeenRemovedFromThisSession.text(nodeUuid, cache.workspaceName());
+            throw new RepositoryException(msg);
+        }
     }
 
     @Override
@@ -380,7 +410,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         int indexOfFirstSlash = relativePath.indexOf('/');
         if (indexOfFirstSlash == 0) {
             // Not a relative path ...
-            throw new IllegalArgumentException(JcrI18n.invalidPathParameter.text(relativePath));
+            throw new IllegalArgumentException(JcrI18n.invalidPathParameter.text(relativePath, "relativePath"));
         }
         if (indexOfFirstSlash != -1) {
             // We know it's a relative path with more than one segment ...
@@ -411,7 +441,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         int indexOfFirstSlash = relativePath.indexOf('/');
         if (indexOfFirstSlash == 0) {
             // Not a relative path ...
-            throw new IllegalArgumentException(JcrI18n.invalidPathParameter.text(relativePath));
+            throw new IllegalArgumentException(JcrI18n.invalidPathParameter.text(relativePath, "relativePath"));
         }
         if (indexOfFirstSlash != -1) {
             Path path = pathFrom(relativePath).getNormalizedPath();
@@ -450,7 +480,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         int indexOfFirstSlash = relativePath.indexOf('/');
         if (indexOfFirstSlash == 0) {
             // Not a relative path ...
-            throw new IllegalArgumentException(JcrI18n.invalidPathParameter.text(relativePath));
+            throw new IllegalArgumentException(JcrI18n.invalidPathParameter.text(relativePath, "relativePath"));
         }
         if (indexOfFirstSlash != -1) {
             // We know it's a relative path with more than one segment ...
@@ -547,22 +577,86 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
     /**
      * {@inheritDoc}
      * 
-     * @throws UnsupportedOperationException always
      * @see javax.jcr.Node#addNode(java.lang.String)
      */
-    public final Node addNode( String relPath ) {
-        throw new UnsupportedOperationException();
+    public final Node addNode( String relPath )
+        throws ItemExistsException, PathNotFoundException, VersionException, ConstraintViolationException, LockException,
+        RepositoryException {
+        return addNode(relPath, null);
     }
 
     /**
      * {@inheritDoc}
      * 
-     * @throws UnsupportedOperationException always
      * @see javax.jcr.Node#addNode(java.lang.String, java.lang.String)
      */
     public final Node addNode( String relPath,
-                               String primaryNodeTypeName ) {
-        throw new UnsupportedOperationException();
+                               String primaryNodeTypeName )
+        throws ItemExistsException, PathNotFoundException, VersionException, ConstraintViolationException, LockException,
+        RepositoryException {
+        // Determine the path ...
+        NodeEditor editor = null;
+        Path path = null;
+        try {
+            path = cache.pathFactory().create(relPath);
+        } catch (ValueFormatException e) {
+            throw new RepositoryException(JcrI18n.invalidPathParameter.text(relPath, "relPath"));
+        }
+        if (path.size() == 0) {
+            throw new RepositoryException(JcrI18n.invalidPathParameter.text(relPath, "relPath"));
+        }
+        if (path.getLastSegment().getIndex() > 1 || relPath.endsWith("]")) {
+            throw new RepositoryException(JcrI18n.invalidPathParameter.text(relPath, "relPath"));
+        }
+        if (path.size() != 1) {
+            // The only segment in the path is the child name ...
+            NodeInfo parentInfo = null;
+            Path parentPath = path.getParent();
+            try {
+                parentInfo = cache.findNodeInfo(nodeUuid, parentPath); // throws PathNotFoundException
+                editor = cache.getEditorFor(parentInfo.getUuid());
+            } catch (PathNotFoundException e) {
+                // We're going to throw an exception ... the question is which one ...
+                if (parentPath.size() > 1) {
+                    // Per the TCK, if relPath references a property, then we have to throw a ConstraintViolationException
+                    // So, if we can't find the parent, try for the parent's parent and see if the last segment of the parent's
+                    // path contains a property ...
+                    Path grandparentPath = parentPath.getParent();
+                    assert grandparentPath != null;
+                    try {
+                        NodeInfo grandparentInfo = cache.findNodeInfo(nodeUuid, grandparentPath); // throws PathNotFoundException
+                        if (grandparentInfo.getProperty(parentPath.getLastSegment().getName()) != null) {
+                            // Need to throw a ConstraintViolationException since the request was to add a child to
+                            // a property ...
+                            throw new ConstraintViolationException(JcrI18n.invalidPathParameter.text(relPath, "relPath"));
+                        }
+                    } catch (PathNotFoundException e2) {
+                        // eat, since the original exception is what we want ...
+                    }
+                }
+                // Otherwise, just throw the PathNotFoundException ...
+                throw e;
+            }
+        } else {
+            assert path.size() == 1;
+            editor = editor();
+        }
+        Name childName = path.getLastSegment().getName();
+
+        // Determine the name for the primary node type
+        Name childPrimaryTypeName = null;
+        if (primaryNodeTypeName != null) {
+            try {
+                childPrimaryTypeName = cache.nameFactory().create(primaryNodeTypeName);
+            } catch (ValueFormatException e) {
+                throw new RepositoryException(JcrI18n.invalidNodeTypeNameParameter.text(primaryNodeTypeName,
+                                                                                        "primaryNodeTypeName"));
+            }
+        }
+
+        // Create the child ...
+        ChildNode child = editor.createChild(childName, null, childPrimaryTypeName);
+        return cache.findJcrNode(child.getUuid());
     }
 
     /**
@@ -1001,10 +1095,9 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
     /**
      * {@inheritDoc}
      * 
-     * @throws UnsupportedOperationException always
      * @see javax.jcr.Item#save()
      */
-    public void save() {
-        throw new UnsupportedOperationException();
+    public void save() throws RepositoryException {
+        cache.save(nodeUuid);
     }
 }

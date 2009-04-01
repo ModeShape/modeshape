@@ -28,6 +28,7 @@ import org.jboss.dna.graph.GraphI18n;
 import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.NodeConflictBehavior;
 import org.jboss.dna.graph.property.Name;
+import org.jboss.dna.graph.property.Path;
 
 /**
  * Instruction that a branch be copied from one location into another. This request can copy a branch in one workspace into
@@ -35,7 +36,7 @@ import org.jboss.dna.graph.property.Name;
  * 
  * @author Randall Hauch
  */
-public class CopyBranchRequest extends Request {
+public class CopyBranchRequest extends Request implements ChangeRequest {
 
     private static final long serialVersionUID = 1L;
 
@@ -241,6 +242,25 @@ public class CopyBranchRequest extends Request {
      */
     public Location getActualLocationAfter() {
         return actualIntoLocation;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.request.ChangeRequest#changes(java.lang.String, org.jboss.dna.graph.property.Path)
+     */
+    public boolean changes( String workspace,
+                            Path path ) {
+        return this.intoWorkspace.equals(workspace) && into.hasPath() && into.getPath().isAtOrBelow(path);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.request.ChangeRequest#changedLocation()
+     */
+    public Location changedLocation() {
+        return into;
     }
 
     /**

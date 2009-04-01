@@ -35,6 +35,7 @@ import junit.framework.Test;
 import junit.framework.TestSuite;
 import org.apache.jackrabbit.test.JCRTestSuite;
 import org.apache.jackrabbit.test.RepositoryStub;
+import org.apache.jackrabbit.test.api.AddNodeTest;
 import org.apache.jackrabbit.test.api.RepositoryLoginTest;
 import org.jboss.dna.graph.DnaLexicon;
 import org.jboss.dna.graph.ExecutionContext;
@@ -142,7 +143,7 @@ public class JcrTckTest {
             // See https://jira.jboss.org/jira/browse/DNA-285
 
             // level 2 tests
-            // addTestSuite(AddNodeTest.class);
+            addTestSuite(AddNodeTest.class);
             // addTestSuite(NamespaceRegistryTest.class);
             // addTestSuite(ReferencesTest.class);
             // addTestSuite(SessionTest.class);

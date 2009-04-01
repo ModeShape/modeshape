@@ -1925,7 +1925,23 @@ public class Graph {
      * @see Results
      */
     public Batch batch() {
-        return new Batch();
+        return new Batch(new LinkedList<Request>());
+    }
+
+    /**
+     * Begin a batch of requests to perform various operations, but specify the queue where all accumulated requests should be
+     * placed. Use this approach when multiple operations are to be built and then executed with one submission to the underlying
+     * {@link #getSourceName() repository source}. The {@link Results results} are not available until the {@link Batch#execute()}
+     * method is invoked.
+     * 
+     * @param queue the queue where all batched requests should be placed
+     * @return the batch object used to build and accumulate multiple requests and to submit them all for processing at once.
+     * @see Batch#execute()
+     * @see Results
+     */
+    public Batch batch( LinkedList<Request> queue ) {
+        CheckArg.isNotNull(queue, "queue");
+        return new Batch(queue);
     }
 
     /**
@@ -1937,12 +1953,13 @@ public class Graph {
      */
     @Immutable
     public final class Batch implements Executable<Node> {
-        protected final CompositingRequestQueue requestQueue = new CompositingRequestQueue();
+        protected final CompositingRequestQueue requestQueue;
         protected final BatchConjunction nextRequests;
         protected final String workspaceName;
         protected boolean executed = false;
 
-        /*package*/Batch() {
+        /*package*/Batch( LinkedList<Request> queue ) {
+            this.requestQueue = new CompositingRequestQueue(queue);
             this.workspaceName = Graph.this.getCurrentWorkspaceName();
             this.nextRequests = new BatchConjunction() {
                 public Batch and() {
@@ -4737,7 +4754,12 @@ public class Graph {
      */
     @NotThreadSafe
     /*package*/class CompositingRequestQueue implements RequestQueue {
-        private final LinkedList<Request> requests = new LinkedList<Request>();
+        private final LinkedList<Request> requests;
+
+        CompositingRequestQueue( LinkedList<Request> queue ) {
+            assert queue != null;
+            this.requests = queue;
+        }
 
         public Graph getGraph() {
             return Graph.this;

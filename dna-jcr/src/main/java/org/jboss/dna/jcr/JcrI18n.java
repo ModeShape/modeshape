@@ -62,6 +62,7 @@ public final class JcrI18n {
     public static I18n invalidRelativePath;
     public static I18n invalidPathParameter;
     public static I18n invalidNamePattern;
+    public static I18n invalidNodeTypeNameParameter;
     public static I18n noPrimaryItemNameDefinedOnPrimaryType;
     public static I18n primaryItemNameForPrimaryTypeIsNotValid;
     public static I18n primaryItemDoesNotExist;
@@ -75,6 +76,9 @@ public final class JcrI18n {
     public static I18n errorWhileFindingNodeWithPath;
     public static I18n nodeDefinitionCouldNotBeDeterminedForNode;
     public static I18n missingNodeTypeForExistingNode;
+    public static I18n unableToCreateNodeWithPrimaryTypeThatDoesNotExist;
+    public static I18n unableToCreateNodeWithNoDefaultPrimaryTypeOnChildNodeDefinition;
+    public static I18n unableToSaveNodeThatWasCreatedSincePreviousSave;
 
     public static I18n unableToRemoveRootNode;
     public static I18n unableToMoveNodeToBeChildOfDecendent;
@@ -100,7 +104,7 @@ public final class JcrI18n {
     // Query-related messages
     public static I18n notStoredQuery;
     public static I18n invalidQueryLanguage;
-    
+
     static {
         try {
             I18n.initialize(JcrI18n.class);

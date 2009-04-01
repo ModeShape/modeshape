@@ -34,6 +34,7 @@ import org.jboss.dna.graph.GraphI18n;
 import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.NodeConflictBehavior;
 import org.jboss.dna.graph.property.Name;
+import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.Property;
 
 /**
@@ -41,7 +42,7 @@ import org.jboss.dna.graph.property.Property;
  * 
  * @author Randall Hauch
  */
-public class CreateNodeRequest extends Request implements Iterable<Property> {
+public class CreateNodeRequest extends Request implements Iterable<Property>, ChangeRequest {
 
     private static final long serialVersionUID = 1L;
 
@@ -312,6 +313,25 @@ public class CreateNodeRequest extends Request implements Iterable<Property> {
      */
     public Location getActualLocationOfNode() {
         return actualLocation;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.request.ChangeRequest#changes(java.lang.String, org.jboss.dna.graph.property.Path)
+     */
+    public boolean changes( String workspace,
+                            Path path ) {
+        return this.workspaceName.equals(workspace) && under.hasPath() && under.getPath().isAtOrBelow(path);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.request.ChangeRequest#changedLocation()
+     */
+    public Location changedLocation() {
+        return under;
     }
 
     /**

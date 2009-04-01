@@ -35,6 +35,7 @@ import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.graph.GraphI18n;
 import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.property.Name;
+import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.Property;
 
 /**
@@ -42,7 +43,7 @@ import org.jboss.dna.graph.property.Property;
  * 
  * @author Randall Hauch
  */
-public class UpdatePropertiesRequest extends Request implements Iterable<Property> {
+public class UpdatePropertiesRequest extends Request implements Iterable<Property>, ChangeRequest {
 
     private static final long serialVersionUID = 1L;
 
@@ -216,6 +217,16 @@ public class UpdatePropertiesRequest extends Request implements Iterable<Propert
     /**
      * {@inheritDoc}
      * 
+     * @see org.jboss.dna.graph.request.ChangeRequest#changes(java.lang.String, org.jboss.dna.graph.property.Path)
+     */
+    public boolean changes( String workspace,
+                            Path path ) {
+        return this.workspaceName.equals(workspace) && on.hasPath() && on.getPath().isAtOrBelow(path);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
      * @see java.lang.Object#equals(java.lang.Object)
      */
     @Override
@@ -229,6 +240,15 @@ public class UpdatePropertiesRequest extends Request implements Iterable<Propert
             return true;
         }
         return false;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.request.ChangeRequest#changedLocation()
+     */
+    public Location changedLocation() {
+        return on;
     }
 
     /**

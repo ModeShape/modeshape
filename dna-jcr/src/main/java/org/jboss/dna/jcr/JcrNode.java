@@ -24,7 +24,6 @@
 package org.jboss.dna.jcr;
 
 import java.util.UUID;
-import javax.jcr.InvalidItemStateException;
 import javax.jcr.ItemNotFoundException;
 import javax.jcr.Node;
 import javax.jcr.RepositoryException;
@@ -93,16 +92,7 @@ final class JcrNode extends AbstractJcrNode {
      * @see javax.jcr.Item#remove()
      */
     public void remove() throws RepositoryException {
-        try {
-            SessionCache.NodeEditor editor = cache.getEditorFor(nodeInfo().getParent());
-            editor.destroyChild(nodeUuid);
-        } catch (ItemNotFoundException err) {
-            String msg = JcrI18n.nodeHasAlreadyBeenRemovedFromThisSession.text(nodeUuid, cache.workspaceName());
-            throw new RepositoryException(msg);
-        } catch (InvalidItemStateException err) {
-            String msg = JcrI18n.nodeHasAlreadyBeenRemovedFromThisSession.text(nodeUuid, cache.workspaceName());
-            throw new RepositoryException(msg);
-        }
+        editorForParent().destroyChild(nodeUuid);
     }
 
 }
