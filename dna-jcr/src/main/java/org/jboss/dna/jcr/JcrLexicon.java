@@ -55,6 +55,7 @@ class JcrLexicon extends org.jboss.dna.graph.JcrLexicon {
     public static final Name MERGE_FAILED = new BasicName(Namespace.URI, "mergeFailed");
     public static final Name MULTIPLE = new BasicName(Namespace.URI, "multiple");
     public static final Name NAME = new BasicName(Namespace.URI, "name");
+    public static final Name NODE_TYPES = new BasicName(Namespace.URI, "nodeTypes");
     public static final Name NODE_TYPE_NAME = new BasicName(Namespace.URI, "nodeTypeName");
     public static final Name ON_PARENT_VERSION = new BasicName(Namespace.URI, "onParentVersion");
     public static final Name PREDECESSORS = new BasicName(Namespace.URI, "predecessors");

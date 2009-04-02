@@ -30,12 +30,22 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import javax.jcr.PropertyType;
+import javax.jcr.RepositoryException;
 import javax.jcr.Value;
 import javax.jcr.nodetype.NodeDefinition;
+import javax.jcr.nodetype.NodeType;
 import javax.jcr.nodetype.PropertyDefinition;
+import javax.jcr.version.OnParentVersionAction;
 import net.jcip.annotations.Immutable;
+import org.jboss.dna.common.text.XmlNameEncoder;
 import org.jboss.dna.graph.ExecutionContext;
+import org.jboss.dna.graph.Graph;
 import org.jboss.dna.graph.property.Name;
+import org.jboss.dna.graph.property.Path;
+import org.jboss.dna.graph.property.PathFactory;
+import org.jboss.dna.graph.property.PathNotFoundException;
+import org.jboss.dna.graph.property.Property;
+import org.jboss.dna.graph.property.PropertyFactory;
 
 /**
  * The {@link RepositoryNodeTypeManager} is the maintainer of node type information for the entire repository at run-time. The
@@ -50,12 +60,19 @@ import org.jboss.dna.graph.property.Name;
 @Immutable
 class RepositoryNodeTypeManager {
 
+    private final ExecutionContext context;
     private final Map<Name, JcrNodeType> nodeTypes;
     private final Map<PropertyDefinitionId, JcrPropertyDefinition> propertyDefinitions;
     private final Map<NodeDefinitionId, JcrNodeDefinition> childNodeDefinitions;
+    private final PropertyFactory propertyFactory;
+    private final PathFactory pathFactory;
 
     RepositoryNodeTypeManager( ExecutionContext context,
                                JcrNodeTypeSource source ) {
+        this.context = context;
+        this.propertyFactory = context.getPropertyFactory();
+        this.pathFactory = context.getValueFactories().getPathFactory();
+
         Collection<JcrNodeType> types = source.getNodeTypes();
         propertyDefinitions = new HashMap<PropertyDefinitionId, JcrPropertyDefinition>();
         childNodeDefinitions = new HashMap<NodeDefinitionId, JcrNodeDefinition>();
@@ -78,21 +95,21 @@ class RepositoryNodeTypeManager {
 
     public Collection<JcrNodeType> getMixinNodeTypes() {
         List<JcrNodeType> types = new ArrayList<JcrNodeType>(nodeTypes.size());
-        
+
         for (JcrNodeType nodeType : nodeTypes.values()) {
             if (nodeType.isMixin()) types.add(nodeType);
         }
-        
+
         return types;
     }
 
     public Collection<JcrNodeType> getPrimaryNodeTypes() {
         List<JcrNodeType> types = new ArrayList<JcrNodeType>(nodeTypes.size());
-        
+
         for (JcrNodeType nodeType : nodeTypes.values()) {
             if (!nodeType.isMixin()) types.add(nodeType);
         }
-        
+
         return types;
     }
 
@@ -594,4 +611,211 @@ class RepositoryNodeTypeManager {
                                                                                       skipProtected);
         return false;
     }
+
+    /**
+     * Projects the node types onto the provided graph under the location of <code>parentOfTypeNodes</code>. If no node currently
+     * exists at that path, one will be created and assigned a primary type of {@code DnaLexicon.NODE_TYPES}.
+     * <p>
+     * All node creation is performed through the graph layer. If the primary type of the node at <code>parentOfPathNodes</code>
+     * does not contain a residual definition that allows child nodes of type <code>nt:nodeType</code>, this method will create
+     * nodes for which the JCR layer cannot determine the corresponding node definition. This WILL corrupt the graph from a JCR
+     * standpoint and make it unusable through the DNA JCR layer.
+     * </p>
+     * <p>
+     * For each node type, a node is created as a child node of <code>parentOfPathNodes</code>. The created node has a name that
+     * corresponds to the node types name and a primary type of <code>nt:nodeType</code>. All other properties and child nodes for
+     * the newly created node are added in a manner consistent with the guidance provide in section 6.7.22 of the JCR 1.0
+     * specification and section 4.7.24 of the (draft) JCR 2.0 specification where possible.
+     * </p>
+     * 
+     * @param graph the graph onto which the type information should be projected
+     * @param parentOfTypeNodes the path under which the type information should be projected
+     */
+    void projectOnto( Graph graph,
+                      Path parentOfTypeNodes ) {
+        assert graph != null;
+        assert parentOfTypeNodes != null;
+
+        // Make sure that the parent of the type nodes exists in the graph.
+        try {
+            graph.getNodeAt(parentOfTypeNodes);
+        } catch (PathNotFoundException pnfe) {
+            PropertyFactory propertyFactory = context.getPropertyFactory();
+            graph.create(parentOfTypeNodes,
+                         propertyFactory.create(JcrLexicon.PRIMARY_TYPE,
+                                                DnaLexicon.NODE_TYPES.getString(context.getNamespaceRegistry())));
+        }
+
+        Graph.Batch batch = graph.batch();
+
+        for (JcrNodeType nodeType : nodeTypes.values()) {
+            projectNodeTypeOnto(nodeType, parentOfTypeNodes, batch);
+        }
+
+        // TODO: Add back in; see DNA-340 ...
+        // batch.execute();
+    }
+
+    /**
+     * Projects the node types onto the provided graph under the location of <code>parentOfTypeNodes</code>. The operations needed
+     * to create the node (and any child nodes or properties) will be added to the batch specified in <code>batch</code>.
+     * 
+     * @param nodeType the node type to be projected
+     * @param parentOfTypeNodes the path under which the type information should be projected
+     * @param batch the batch to which any required graph modification operations should be added
+     * @see #projectOnto(Graph, Path)
+     */
+    private void projectNodeTypeOnto( JcrNodeType nodeType,
+                                      Path parentOfTypeNodes,
+                                      Graph.Batch batch ) {
+        assert nodeType != null;
+        assert parentOfTypeNodes != null;
+        assert batch != null;
+
+        Path nodeTypePath = pathFactory.create(parentOfTypeNodes, nodeType.getInternalName());
+
+        NodeType[] supertypes = nodeType.getDeclaredSupertypes();
+        List<Name> supertypeNames = new ArrayList<Name>(supertypes.length);
+        for (int i = 0; i < supertypes.length; i++) {
+            supertypeNames.add(((JcrNodeType)supertypes[i]).getInternalName());
+        }
+
+        List<Property> propsList = new ArrayList<Property>();
+        propsList.add(propertyFactory.create(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.NODE_TYPE));
+        propsList.add(propertyFactory.create(JcrLexicon.IS_MIXIN, nodeType.isMixin()));
+
+        if (nodeType.getPrimaryItemName() != null) {
+            propsList.add(propertyFactory.create(JcrLexicon.PRIMARY_ITEM_NAME, nodeType.getPrimaryItemName()));
+        }
+
+        propsList.add(propertyFactory.create(JcrLexicon.NODE_TYPE_NAME, nodeType.getName()));
+        propsList.add(propertyFactory.create(JcrLexicon.HAS_ORDERABLE_CHILD_NODES, nodeType.hasOrderableChildNodes()));
+        propsList.add(propertyFactory.create(JcrLexicon.SUPERTYPES, supertypeNames));
+
+        batch.create(nodeTypePath).with(propsList).and();
+
+        PropertyDefinition[] propertyDefs = nodeType.getDeclaredPropertyDefinitions();
+        for (int i = 0; i < propertyDefs.length; i++) {
+            projectPropertyDefinitionOnto(propertyDefs[i], nodeTypePath, batch);
+        }
+
+        NodeDefinition[] childNodeDefs = nodeType.getDeclaredChildNodeDefinitions();
+        for (int i = 0; i < childNodeDefs.length; i++) {
+            projectChildNodeDefinitionOnto(childNodeDefs[i], nodeTypePath, batch);
+        }
+
+    }
+
+    /**
+     * Projects a single property definition onto the provided graph under the location of <code>nodeTypePath</code>. The
+     * operations needed to create the property definition and any of its properties will be added to the batch specified in
+     * <code>batch</code>.
+     * <p>
+     * All node creation is performed through the graph layer. If the primary type of the node at <code>nodeTypePath</code> does
+     * not contain a residual definition that allows child nodes of type <code>nt:propertyDefinition</code>, this method creates
+     * nodes for which the JCR layer cannot determine the corresponding node definition. This WILL corrupt the graph from a JCR
+     * standpoint and make it unusable through the DNA JCR layer.
+     * </p>
+     * 
+     * @param propertyDef the property definition to be projected
+     * @param nodeTypePath the path under which the property definition should be projected
+     * @param batch the batch to which any required graph modification operations should be added
+     * @see #projectOnto(Graph, Path)
+     */
+    private void projectPropertyDefinitionOnto( PropertyDefinition propertyDef,
+                                                Path nodeTypePath,
+                                                Graph.Batch batch ) {
+        assert propertyDef != null;
+        assert nodeTypePath != null;
+        assert batch != null;
+
+        JcrPropertyDefinition jcrPropDef = (JcrPropertyDefinition)propertyDef;
+        String propName = jcrPropDef.getInternalName().getString(context.getNamespaceRegistry(), new XmlNameEncoder());
+        Path propDefPath = pathFactory.create(nodeTypePath, JcrLexicon.PROPERTY_DEFINITION);
+
+        List<Property> propsList = new ArrayList<Property>();
+        propsList.add(propertyFactory.create(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.PROPERTY_DEFINITION));
+
+        if (!JcrNodeType.RESIDUAL_ITEM_NAME.equals(jcrPropDef.getName())) {
+            propsList.add(propertyFactory.create(JcrLexicon.NAME, propName));
+        }
+        propsList.add(propertyFactory.create(JcrLexicon.AUTO_CREATED, jcrPropDef.isAutoCreated()));
+        propsList.add(propertyFactory.create(JcrLexicon.MANDATORY, jcrPropDef.isMandatory()));
+        propsList.add(propertyFactory.create(JcrLexicon.MULTIPLE, jcrPropDef.isMultiple()));
+        propsList.add(propertyFactory.create(JcrLexicon.PROTECTED, jcrPropDef.isProtected()));
+        propsList.add(propertyFactory.create(JcrLexicon.ON_PARENT_VERSION,
+                                             OnParentVersionAction.nameFromValue(jcrPropDef.getOnParentVersion())));
+        propsList.add(propertyFactory.create(JcrLexicon.REQUIRED_TYPE, PropertyType.nameFromValue(jcrPropDef.getRequiredType())));
+
+        Value[] defaultValues = jcrPropDef.getDefaultValues();
+        if (defaultValues.length > 0) {
+            String[] defaultsAsString = new String[defaultValues.length];
+
+            for (int i = 0; i < defaultValues.length; i++) {
+                try {
+                    defaultsAsString[i] = defaultValues[i].getString();
+                } catch (RepositoryException re) {
+                    // Really shouldn't get here as all values are convertible to string
+                    throw new IllegalStateException(re);
+                }
+            }
+            propsList.add(propertyFactory.create(JcrLexicon.DEFAULT_VALUES, (Object[])defaultsAsString));
+        }
+
+        String[] valueConstraints = jcrPropDef.getValueConstraints();
+        if (valueConstraints.length > 0) {
+            propsList.add(propertyFactory.create(JcrLexicon.DEFAULT_VALUES, (Object[])valueConstraints));
+        }
+        batch.create(propDefPath).with(propsList).and();
+    }
+
+    /**
+     * Projects a single child node definition onto the provided graph under the location of <code>nodeTypePath</code>. The
+     * operations needed to create the child node definition and any of its properties will be added to the batch specified in
+     * <code>batch</code>.
+     * <p>
+     * All node creation is performed through the graph layer. If the primary type of the node at <code>nodeTypePath</code> does
+     * not contain a residual definition that allows child nodes of type <code>nt:childNodeDefinition</code>, this method creates
+     * nodes for which the JCR layer cannot determine the corresponding node definition. This WILL corrupt the graph from a JCR
+     * standpoint and make it unusable through the DNA JCR layer.
+     * </p>
+     * 
+     * @param childNodeDef the child node definition to be projected
+     * @param nodeTypePath the path under which the child node definition should be projected
+     * @param batch the batch to which any required graph modification operations should be added
+     * @see #projectOnto(Graph, Path)
+     */
+    private void projectChildNodeDefinitionOnto( NodeDefinition childNodeDef,
+                                                 Path nodeTypePath,
+                                                 Graph.Batch batch ) {
+        assert childNodeDef != null;
+        assert nodeTypePath != null;
+        assert batch != null;
+
+        JcrNodeDefinition jcrNodeDef = (JcrNodeDefinition)childNodeDef;
+        String nodeName = jcrNodeDef.getInternalName().getString(context.getNamespaceRegistry(), new XmlNameEncoder());
+        Path nodeDefPath = pathFactory.create(nodeTypePath, JcrLexicon.CHILD_NODE_DEFINITION);
+
+        List<Property> propsList = new ArrayList<Property>();
+        propsList.add(propertyFactory.create(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.CHILD_NODE_DEFINITION));
+
+        if (!JcrNodeType.RESIDUAL_ITEM_NAME.equals(jcrNodeDef.getName())) {
+            propsList.add(propertyFactory.create(JcrLexicon.NAME, nodeName));
+        }
+
+        if (jcrNodeDef.getDefaultPrimaryType() != null) {
+            propsList.add(propertyFactory.create(JcrLexicon.DEFAULT_PRIMARY_TYPE, jcrNodeDef.getDefaultPrimaryType().getName()));
+        }
+
+        propsList.add(propertyFactory.create(JcrLexicon.REQUIRED_PRIMARY_TYPES, jcrNodeDef.getRequiredPrimaryTypeNames()));
+        propsList.add(propertyFactory.create(JcrLexicon.SAME_NAME_SIBLINGS, jcrNodeDef.allowsSameNameSiblings()));
+        propsList.add(propertyFactory.create(JcrLexicon.ON_PARENT_VERSION,
+                                             OnParentVersionAction.nameFromValue(jcrNodeDef.getOnParentVersion())));
+        propsList.add(propertyFactory.create(JcrLexicon.AUTO_CREATED, jcrNodeDef.isAutoCreated()));
+        propsList.add(propertyFactory.create(JcrLexicon.MANDATORY, jcrNodeDef.isMandatory()));
+        propsList.add(propertyFactory.create(JcrLexicon.PROTECTED, jcrNodeDef.isProtected()));
+
+        batch.create(nodeDefPath).with(propsList).and();
+    }
+
 }

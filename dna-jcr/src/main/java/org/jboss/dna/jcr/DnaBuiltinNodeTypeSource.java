@@ -63,6 +63,14 @@ class DnaBuiltinNodeTypeSource extends AbstractJcrNodeTypeSource {
             throw new IllegalStateException(JcrI18n.supertypeNotFound.text(baseTypeName, namespaceTypeName));
         }
 
+        JcrNodeType nodeType = findType(JcrNtLexicon.NODE_TYPE);
+
+        if (nodeType == null) {
+            String baseTypeName = JcrNtLexicon.NODE_TYPE.getString(context.getNamespaceRegistry());
+            String namespaceTypeName = DnaLexicon.NODE_TYPES.getString(context.getNamespaceRegistry());
+            throw new IllegalStateException(JcrI18n.supertypeNotFound.text(baseTypeName, namespaceTypeName));
+        }
+
         // Stubbing in child node and property definitions for now
         JcrNodeType namespace = new JcrNodeType(
                                                 context,
@@ -104,24 +112,38 @@ class DnaBuiltinNodeTypeSource extends AbstractJcrNodeTypeSource {
                                                                                                               new JcrNodeType[] {namespace})}),
                                                  NO_PROPERTIES, NOT_MIXIN, UNORDERABLE_CHILD_NODES);
 
-        JcrNodeType system = new JcrNodeType(
-                                             context,
-                                             NO_NODE_TYPE_MANAGER,
-                                             DnaLexicon.SYSTEM,
-                                             Arrays.asList(new JcrNodeType[] {base}),
-                                             NO_PRIMARY_ITEM_NAME,
-                                             Arrays.asList(new JcrNodeDefinition[] {new JcrNodeDefinition(
-                                                                                                          context,
-                                                                                                          null,
-                                                                                                          DnaLexicon.NAMESPACES,
-                                                                                                          OnParentVersionBehavior.VERSION.getJcrValue(),
-                                                                                                          true,
-                                                                                                          true,
-                                                                                                          true,
-                                                                                                          false,
-                                                                                                          DnaLexicon.NAMESPACES,
-                                                                                                          new JcrNodeType[] {namespaces})}),
-                                             NO_PROPERTIES, NOT_MIXIN, UNORDERABLE_CHILD_NODES);
+        JcrNodeType dnaNodeTypes = new JcrNodeType(
+                                                   context,
+                                                   NO_NODE_TYPE_MANAGER,
+                                                   DnaLexicon.NODE_TYPES,
+                                                   Arrays.asList(new JcrNodeType[] {base}),
+                                                   NO_PRIMARY_ITEM_NAME,
+                                                   Arrays.asList(new JcrNodeDefinition[] {new JcrNodeDefinition(
+                                                                                                                context,
+                                                                                                                null,
+                                                                                                                null,
+                                                                                                                OnParentVersionBehavior.VERSION.getJcrValue(),
+                                                                                                                false,
+                                                                                                                false,
+                                                                                                                true,
+                                                                                                                true,
+                                                                                                                JcrNtLexicon.NODE_TYPE,
+                                                                                                                new JcrNodeType[] {nodeType})}),
+                                                   NO_PROPERTIES, NOT_MIXIN, UNORDERABLE_CHILD_NODES);
+
+        JcrNodeType system = new JcrNodeType(context, NO_NODE_TYPE_MANAGER, DnaLexicon.SYSTEM,
+                                             Arrays.asList(new JcrNodeType[] {base}), NO_PRIMARY_ITEM_NAME,
+                                             Arrays.asList(new JcrNodeDefinition[] {
+                                                 new JcrNodeDefinition(context, null, DnaLexicon.NAMESPACES,
+                                                                       OnParentVersionBehavior.VERSION.getJcrValue(), true, true,
+                                                                       true, false, DnaLexicon.NAMESPACES,
+                                                                       new JcrNodeType[] {namespaces}),
+
+                                                 new JcrNodeDefinition(context, null, JcrLexicon.NODE_TYPES,
+                                                                       OnParentVersionBehavior.VERSION.getJcrValue(), true, true,
+                                                                       true, false, DnaLexicon.NODE_TYPES,
+                                                                       new JcrNodeType[] {dnaNodeTypes})}), NO_PROPERTIES,
+                                             NOT_MIXIN, UNORDERABLE_CHILD_NODES);
 
         JcrNodeType root = new JcrNodeType(context, NO_NODE_TYPE_MANAGER, DnaLexicon.ROOT, Arrays.asList(new JcrNodeType[] {base,
             referenceable}), NO_PRIMARY_ITEM_NAME, Arrays.asList(new JcrNodeDefinition[] {
@@ -137,8 +159,7 @@ class DnaBuiltinNodeTypeSource extends AbstractJcrNodeTypeSource {
                                       NO_DEFAULT_VALUES, PropertyType.UNDEFINED, NO_CONSTRAINTS, true),}), NOT_MIXIN,
                                            ORDERABLE_CHILD_NODES);
 
-        nodeTypes.addAll(Arrays.asList(new JcrNodeType[] {root, system, namespaces, namespace,}));
-        nodeTypes.addAll(Arrays.asList(new JcrNodeType[] {}));
+        nodeTypes.addAll(Arrays.asList(new JcrNodeType[] {root, system, dnaNodeTypes, namespaces, namespace,}));
 
     }
 

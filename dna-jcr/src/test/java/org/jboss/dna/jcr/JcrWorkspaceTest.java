@@ -55,7 +55,8 @@ public class JcrWorkspaceTest {
     private Map<String, Object> sessionAttributes;
     @Mock
     private JcrRepository repository;
-
+    private RepositoryNodeTypeManager repoManager;
+    
     @Before
     public void beforeEach() throws Exception {
         final String repositorySourceName = "repository";
@@ -93,7 +94,14 @@ public class JcrWorkspaceTest {
 
         // Stub out the repository, since we only need a few methods ...
         MockitoAnnotations.initMocks(this);
+        
+        JcrNodeTypeSource source = null;
+        source = new JcrBuiltinNodeTypeSource(context, source);
+        source = new DnaBuiltinNodeTypeSource(context, source);
+        repoManager = new RepositoryNodeTypeManager(context, source);
+        
         stub(repository.getRepositorySourceName()).toReturn(repositorySourceName);
+        stub(repository.getRepositoryTypeManager()).toReturn(repoManager);
         stub(repository.getConnectionFactory()).toReturn(connectionFactory);
 
         // Now create the workspace ...

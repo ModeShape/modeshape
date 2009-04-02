@@ -110,7 +110,7 @@ final class JcrWorkspace implements Workspace {
      * Reference to the JCR query manager for this workspace.
      */
     private final JcrQueryManager queryManager;
-    
+
     /**
      * The {@link Session} instance that this corresponds with this workspace.
      */
@@ -153,8 +153,14 @@ final class JcrWorkspace implements Workspace {
         this.session = new JcrSession(this.repository, this, this.context, sessionAttributes);
 
         // This must be initialized after the session
-        this.nodeTypeManager = new JcrNodeTypeManager(session.getExecutionContext(), repository.getRepositoryTypeManager());
+        RepositoryNodeTypeManager repoTypeManager = repository.getRepositoryTypeManager();
+        this.nodeTypeManager = new JcrNodeTypeManager(session.getExecutionContext(), repoTypeManager);
         this.queryManager = new JcrQueryManager(this.session);
+
+        Path parentOfTypeNodes = context.getValueFactories().getPathFactory().create(root,
+                                                                                     JcrLexicon.SYSTEM,
+                                                                                     JcrLexicon.NODE_TYPES);
+        repoTypeManager.projectOnto(this.graph, parentOfTypeNodes);
     }
 
     final String getSourceName() {
