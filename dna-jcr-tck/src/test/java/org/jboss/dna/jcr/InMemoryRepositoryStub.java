@@ -28,6 +28,7 @@ import java.net.URI;
 import java.security.AccessControlContext;
 import java.security.AccessController;
 import java.util.Collections;
+import java.util.Map;
 import java.util.Properties;
 import javax.jcr.Credentials;
 import javax.jcr.Repository;
@@ -42,6 +43,7 @@ import org.jboss.dna.graph.connector.RepositoryConnection;
 import org.jboss.dna.graph.connector.RepositoryConnectionFactory;
 import org.jboss.dna.graph.connector.inmemory.InMemoryRepositorySource;
 import org.jboss.dna.graph.property.Path;
+import org.jboss.dna.jcr.JcrRepository.Settings;
 
 /**
  * Class with TCK repository stub. This class does not contain any tests.
@@ -84,9 +86,10 @@ public class InMemoryRepositoryStub extends RepositoryStub {
         source.setName("TestRepositorySource");
 
         // Wrap a connection to the in-memory (DNA) repository in a (JCR) repository
+        Map<Settings, String> settings = Collections.singletonMap(Settings.PROJECT_NODE_TYPES, "true");
         connection = source.getConnection();
-        repository = new JcrRepository(Collections.<String, String>emptyMap(), executionContext.create(accessControlContext),
-                                       connectionFactory, source.getName());
+        repository = new JcrRepository(executionContext.create(accessControlContext), connectionFactory, source.getName(), null,
+                                       settings);
 
         // Make sure the path to the namespaces exists ...
         Graph graph = Graph.create(source.getName(), connectionFactory, executionContext);
@@ -99,7 +102,7 @@ public class InMemoryRepositoryStub extends RepositoryStub {
             executionContext.getNamespaceRegistry().register(DnaLexicon.Namespace.PREFIX, DnaLexicon.Namespace.URI);
             executionContext.getNamespaceRegistry().register(JcrLexicon.Namespace.PREFIX, JcrLexicon.Namespace.URI);
             executionContext.getNamespaceRegistry().register(JcrNtLexicon.Namespace.PREFIX, JcrNtLexicon.Namespace.URI);
-            executionContext.getNamespaceRegistry().register("sv", "http://www.jcp.org/jcr/sv/1.0");
+            executionContext.getNamespaceRegistry().register(JcrSvLexicon.Namespace.PREFIX, JcrSvLexicon.Namespace.URI);
 
             Path destinationPath = executionContext.getValueFactories().getPathFactory().create("/");
             GraphImporter importer = new GraphImporter(graph);

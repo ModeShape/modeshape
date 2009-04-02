@@ -37,6 +37,7 @@ import javax.jcr.nodetype.NodeType;
 import javax.jcr.nodetype.PropertyDefinition;
 import javax.jcr.version.OnParentVersionAction;
 import net.jcip.annotations.Immutable;
+import org.jboss.dna.common.text.TextEncoder;
 import org.jboss.dna.common.text.XmlNameEncoder;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.Graph;
@@ -59,6 +60,8 @@ import org.jboss.dna.graph.property.PropertyFactory;
  */
 @Immutable
 class RepositoryNodeTypeManager {
+
+    private static final TextEncoder NAME_ENCODER = new XmlNameEncoder();
 
     private final ExecutionContext context;
     private final Map<Name, JcrNodeType> nodeTypes;
@@ -652,8 +655,7 @@ class RepositoryNodeTypeManager {
             projectNodeTypeOnto(nodeType, parentOfTypeNodes, batch);
         }
 
-        // TODO: Add back in; see DNA-340 ...
-        // batch.execute();
+        batch.execute();
     }
 
     /**
@@ -730,7 +732,7 @@ class RepositoryNodeTypeManager {
         assert batch != null;
 
         JcrPropertyDefinition jcrPropDef = (JcrPropertyDefinition)propertyDef;
-        String propName = jcrPropDef.getInternalName().getString(context.getNamespaceRegistry(), new XmlNameEncoder());
+        String propName = jcrPropDef.getInternalName().getString(context.getNamespaceRegistry(), NAME_ENCODER);
         Path propDefPath = pathFactory.create(nodeTypePath, JcrLexicon.PROPERTY_DEFINITION);
 
         List<Property> propsList = new ArrayList<Property>();
@@ -793,7 +795,7 @@ class RepositoryNodeTypeManager {
         assert batch != null;
 
         JcrNodeDefinition jcrNodeDef = (JcrNodeDefinition)childNodeDef;
-        String nodeName = jcrNodeDef.getInternalName().getString(context.getNamespaceRegistry(), new XmlNameEncoder());
+        String nodeName = jcrNodeDef.getInternalName().getString(context.getNamespaceRegistry(), NAME_ENCODER);
         Path nodeDefPath = pathFactory.create(nodeTypePath, JcrLexicon.CHILD_NODE_DEFINITION);
 
         List<Property> propsList = new ArrayList<Property>();
@@ -817,5 +819,4 @@ class RepositoryNodeTypeManager {
 
         batch.create(nodeDefPath).with(propsList).and();
     }
-
 }

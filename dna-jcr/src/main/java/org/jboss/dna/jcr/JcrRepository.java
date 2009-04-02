@@ -26,6 +26,7 @@ package org.jboss.dna.jcr;
 import java.lang.reflect.Method;
 import java.security.AccessControlContext;
 import java.util.Collections;
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -71,11 +72,31 @@ import org.jboss.dna.graph.request.InvalidWorkspaceException;
 @ThreadSafe
 public class JcrRepository implements Repository {
 
+    /**
+     * List of settings for the {@code JcrRepository}.
+     * <p>
+     * The attributes that may be set are:
+     * <ul>
+     * <li>{@code PROJECT_NODE_TYPES} (boolean) - if {@code true}, project the registered node types onto the system view at the
+     * path {@code /jcr:system/jcr:nodeTypes}.</li>
+     * </ul>
+     * </p>
+     */
+    public enum Settings {
+        /**
+         * Flag that defines whether or not the node types should be exposed as content under the "
+         * <code>/jcr:system/dna:nodeTypes</code>" node. By default, the flag is false.
+         */
+        PROJECT_NODE_TYPES,
+
+    }
+
     private final String sourceName;
     private final Map<String, String> descriptors;
     private final ExecutionContext executionContext;
     private final RepositoryConnectionFactory connectionFactory;
     private final RepositoryNodeTypeManager repositoryTypeManager;
+    private final Map<Settings, String> settings;
 
     /**
      * Creates a JCR repository that uses the supplied {@link RepositoryConnectionFactory repository connection factory} to
@@ -90,24 +111,26 @@ public class JcrRepository implements Repository {
     public JcrRepository( ExecutionContext executionContext,
                           RepositoryConnectionFactory connectionFactory,
                           String repositorySourceName ) {
-        this(null, executionContext, connectionFactory, repositorySourceName);
+        this(executionContext, connectionFactory, repositorySourceName, null, null);
     }
 
     /**
      * Creates a JCR repository that uses the supplied {@link RepositoryConnectionFactory repository connection factory} to
      * establish {@link Session sessions} to the underlying repository source upon {@link #login() login}.
      * 
-     * @param descriptors The {@link #getDescriptorKeys() descriptors} for this repository; may be <code>null</code>.
      * @param executionContext the execution context in which this repository is to operate
      * @param connectionFactory the factory for repository connections
      * @param repositorySourceName the name of the repository source (in the connection factory) that should be used
+     * @param descriptors the {@link #getDescriptorKeys() descriptors} for this repository; may be <code>null</code>.
+     * @param settings the optional {@link Settings settings} for this repository; may be null
      * @throws IllegalArgumentException If <code>executionContextFactory</code> or <code>connectionFactory</code> is
      *         <code>null</code>.
      */
-    public JcrRepository( Map<String, String> descriptors,
-                          ExecutionContext executionContext,
+    public JcrRepository( ExecutionContext executionContext,
                           RepositoryConnectionFactory connectionFactory,
-                          String repositorySourceName ) {
+                          String repositorySourceName,
+                          Map<String, String> descriptors,
+                          Map<Settings, String> settings ) {
         CheckArg.isNotNull(executionContext, "executionContext");
         CheckArg.isNotNull(connectionFactory, "connectionFactory");
         CheckArg.isNotNull(repositorySourceName, "repositorySourceName");
@@ -146,21 +169,28 @@ public class JcrRepository implements Repository {
         modifiableDescriptors.put(Repository.SPEC_NAME_DESC, JcrI18n.SPEC_NAME_DESC.text());
         modifiableDescriptors.put(Repository.SPEC_VERSION_DESC, "1.0");
         this.descriptors = Collections.unmodifiableMap(modifiableDescriptors);
-        
+
         JcrNodeTypeSource source = null;
         source = new JcrBuiltinNodeTypeSource(this.executionContext);
         source = new DnaBuiltinNodeTypeSource(this.executionContext, source);
         this.repositoryTypeManager = new RepositoryNodeTypeManager(this.executionContext, source);
+
+        if (settings == null) {
+            this.settings = Collections.<Settings, String>emptyMap();
+        } else {
+            this.settings = Collections.unmodifiableMap(new EnumMap<Settings, String>(settings));
+        }
     }
 
     /**
      * Returns the repository-level node type manager
+     * 
      * @return the repository-level node type manager
      */
     RepositoryNodeTypeManager getRepositoryTypeManager() {
         return repositoryTypeManager;
     }
-    
+
     /**
      * Get the name of the repository source that this repository is using.
      * 
@@ -322,8 +352,10 @@ public class JcrRepository implements Repository {
         }
 
         // Create the workspace, which will create its own session ...
+        boolean shouldProjectNodeTypes = Boolean.valueOf(settings.get(Settings.PROJECT_NODE_TYPES));
+
         sessionAttributes = Collections.unmodifiableMap(sessionAttributes);
-        JcrWorkspace workspace = new JcrWorkspace(this, workspaceName, execContext, sessionAttributes);
+        JcrWorkspace workspace = new JcrWorkspace(this, workspaceName, execContext, sessionAttributes, shouldProjectNodeTypes);
         return workspace.getSession();
     }
 }

@@ -103,27 +103,27 @@ public class JcrRepositoryTest {
 
         // Set up the repository ...
         descriptors = new HashMap<String, String>();
-        repository = new JcrRepository(descriptors, context, connectionFactory, sourceName);
+        repository = new JcrRepository(context, connectionFactory, sourceName, descriptors, null);
     }
 
     @Test
     public void shouldAllowNullDescriptors() {
-        new JcrRepository(null, context, connectionFactory, sourceName);
+        new JcrRepository(context, connectionFactory, sourceName, null, null);
     }
 
     @Test( expected = IllegalArgumentException.class )
     public void shouldNotAllowNullExecutionContext() throws Exception {
-        new JcrRepository(descriptors, null, connectionFactory, sourceName);
+        new JcrRepository(null, connectionFactory, sourceName, descriptors, null);
     }
 
     @Test( expected = IllegalArgumentException.class )
     public void shouldNotAllowNullConnectionFactories() throws Exception {
-        new JcrRepository(descriptors, context, null, sourceName);
+        new JcrRepository(context, null, sourceName, descriptors, null);
     }
 
     @Test( expected = IllegalArgumentException.class )
     public void shouldNotAllowNullSourceName() throws Exception {
-        new JcrRepository(descriptors, context, connectionFactory, null);
+        new JcrRepository(context, connectionFactory, null, descriptors, null);
     }
 
     @Test( expected = IllegalArgumentException.class )
@@ -148,7 +148,7 @@ public class JcrRepositoryTest {
 
     @Test
     public void shouldProvideBuiltInDescriptorsWhenNotSuppliedDescriptors() {
-        Repository repository = new JcrRepository(descriptors, context, connectionFactory, sourceName);
+        Repository repository = new JcrRepository(context, connectionFactory, sourceName, descriptors, null);
         testDescriptorKeys(repository);
         testDescriptorValues(repository);
     }
@@ -157,7 +157,7 @@ public class JcrRepositoryTest {
     public void shouldProvideUserSuppliedDescriptors() {
         Map<String, String> descriptors = new HashMap<String, String>();
         descriptors.put("property", "value");
-        Repository repository = new JcrRepository(descriptors, context, connectionFactory, sourceName);
+        Repository repository = new JcrRepository(context, connectionFactory, sourceName, descriptors, null);
         testDescriptorKeys(repository);
         testDescriptorValues(repository);
         assertThat(repository.getDescriptor("property"), is("value"));
