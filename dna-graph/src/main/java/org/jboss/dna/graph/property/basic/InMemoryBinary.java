@@ -44,10 +44,26 @@ public class InMemoryBinary extends AbstractBinary {
 
     private final byte[] bytes;
     private byte[] sha1hash;
+    private int hc;
 
     public InMemoryBinary( byte[] bytes ) {
         CheckArg.isNotNull(bytes, "bytes");
         this.bytes = bytes;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see java.lang.Object#hashCode()
+     */
+    @Override
+    public int hashCode() {
+        if (sha1hash == null) {
+            // Idempotent, so doesn't matter if we recompute in concurrent threads ...
+            sha1hash = computeHash(bytes);
+            hc = sha1hash.hashCode();
+        }
+        return hc;
     }
 
     /**
@@ -66,6 +82,7 @@ public class InMemoryBinary extends AbstractBinary {
         if (sha1hash == null) {
             // Idempotent, so doesn't matter if we recompute in concurrent threads ...
             sha1hash = computeHash(bytes);
+            hc = sha1hash.hashCode();
         }
         return sha1hash;
     }

@@ -52,6 +52,8 @@ import net.jcip.annotations.NotThreadSafe;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.Graph;
+import org.jboss.dna.graph.property.Binary;
+import org.jboss.dna.graph.property.DateTime;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.NamespaceRegistry;
 import org.jboss.dna.graph.property.Path;
@@ -454,15 +456,18 @@ class JcrSession implements Session {
             }
 
             public Value createValue( Node value ) throws RepositoryException {
-                return new JcrValue(valueFactories, sessionCache, PropertyType.REFERENCE, UUID.fromString(value.getUUID()));
+                String uuid = valueFactories.getStringFactory().create(value.getUUID());
+                return new JcrValue(valueFactories, sessionCache, PropertyType.REFERENCE, uuid);
             }
 
             public Value createValue( InputStream value ) {
-                return new JcrValue(valueFactories, sessionCache, PropertyType.BINARY, value);
+                Binary binary = valueFactories.getBinaryFactory().create(value);
+                return new JcrValue(valueFactories, sessionCache, PropertyType.BINARY, binary);
             }
 
             public Value createValue( Calendar value ) {
-                return new JcrValue(valueFactories, sessionCache, PropertyType.DATE, value);
+                DateTime dateTime = valueFactories.getDateFactory().create(value);
+                return new JcrValue(valueFactories, sessionCache, PropertyType.DATE, dateTime);
             }
 
             public Value createValue( boolean value ) {

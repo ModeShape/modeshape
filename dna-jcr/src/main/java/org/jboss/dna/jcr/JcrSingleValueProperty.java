@@ -51,6 +51,16 @@ final class JcrSingleValueProperty extends AbstractJcrProperty {
     /**
      * {@inheritDoc}
      * 
+     * @see org.jboss.dna.jcr.AbstractJcrProperty#isMultiple()
+     */
+    @Override
+    boolean isMultiple() {
+        return false;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
      * @see javax.jcr.Property#getBoolean()
      */
     public boolean getBoolean() throws RepositoryException {
@@ -184,6 +194,11 @@ final class JcrSingleValueProperty extends AbstractJcrProperty {
             cache.getEditorFor(propertyId.getNodeId()).setProperty(propertyId.getPropertyName(), jcrValue);
             return;
         }
+        if (value == null) {
+            // Then we're to delete the property ...
+            cache.getEditorFor(propertyId.getNodeId()).removeProperty(propertyId.getPropertyName());
+            return;
+        }
         // We have to convert from one Value implementation to ours ...
         switch (value.getType()) {
             case PropertyType.STRING:
@@ -220,6 +235,7 @@ final class JcrSingleValueProperty extends AbstractJcrProperty {
 
     protected void setValue( JcrValue jcrValue )
         throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
+        assert jcrValue != null;
         cache.getEditorFor(propertyId.getNodeId()).setProperty(propertyId.getPropertyName(), jcrValue);
     }
 
@@ -230,6 +246,10 @@ final class JcrSingleValueProperty extends AbstractJcrProperty {
      */
     public void setValue( String value )
         throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
+        if (value == null) {
+            this.remove();
+            return;
+        }
         setValue(createValue(value, PropertyType.STRING));
     }
 
@@ -240,6 +260,10 @@ final class JcrSingleValueProperty extends AbstractJcrProperty {
      */
     public void setValue( InputStream value )
         throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
+        if (value == null) {
+            this.remove();
+            return;
+        }
         setValue(createValue(context().getValueFactories().getBinaryFactory().create(value), PropertyType.DATE));
     }
 
@@ -270,6 +294,10 @@ final class JcrSingleValueProperty extends AbstractJcrProperty {
      */
     public void setValue( Calendar value )
         throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
+        if (value == null) {
+            this.remove();
+            return;
+        }
         setValue(createValue(context().getValueFactories().getDateFactory().create(value), PropertyType.DATE));
     }
 
@@ -290,6 +318,10 @@ final class JcrSingleValueProperty extends AbstractJcrProperty {
      */
     public void setValue( Node value )
         throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
+        if (value == null) {
+            this.remove();
+            return;
+        }
         String uuid = value.getUUID();
         setValue(createValue(uuid, PropertyType.REFERENCE));
     }

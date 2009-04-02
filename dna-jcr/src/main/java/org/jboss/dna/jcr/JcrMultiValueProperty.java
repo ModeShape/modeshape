@@ -24,8 +24,10 @@
 package org.jboss.dna.jcr;
 
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Iterator;
+import java.util.List;
 import javax.jcr.Node;
 import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
@@ -44,9 +46,21 @@ import org.jboss.dna.graph.property.ValueFactory;
 @NotThreadSafe
 final class JcrMultiValueProperty extends AbstractJcrProperty {
 
+    static final JcrValue[] EMPTY_VALUES = new JcrValue[] {};
+
     JcrMultiValueProperty( SessionCache cache,
                            PropertyId propertyId ) {
         super(cache, propertyId);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.jcr.AbstractJcrProperty#isMultiple()
+     */
+    @Override
+    boolean isMultiple() {
+        return true;
     }
 
     /**
@@ -170,16 +184,19 @@ final class JcrMultiValueProperty extends AbstractJcrProperty {
      */
     public final void setValue( Value[] values )
         throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
-        JcrValue[] jcrValues = null;
+        Value[] newValues = null;
         if (values != null && values.length != 0) {
             int numValues = values.length;
-            jcrValues = new JcrValue[numValues];
+            List<Value> valuesList = new ArrayList<Value>(numValues);
             ValueFactory<?> factory = null;
             for (int i = 0; i != numValues; ++i) {
                 Value value = values[i];
-                if (value instanceof JcrValue) {
+                if (value == null) {
+                    // skip null values ...
+                    continue;
+                } else if (value instanceof JcrValue) {
                     // just use the value ...
-                    jcrValues[i] = (JcrValue)value;
+                    valuesList.add(value);
                 } else {
                     // This isn't our implementation, so create one for use
                     if (factory == null) {
@@ -219,11 +236,18 @@ final class JcrMultiValueProperty extends AbstractJcrProperty {
                         default:
                             throw new RepositoryException();
                     }
-                    jcrValues[i] = createValue(factory.create(data), type);
+                    valuesList.add(createValue(factory.create(data), type));
                 }
             }
+            if (valuesList.isEmpty()) {
+                newValues = EMPTY_VALUES;
+            } else {
+                newValues = valuesList.toArray(new Value[valuesList.size()]);
+            }
+        } else {
+            newValues = EMPTY_VALUES;
         }
-        cache.getEditorFor(propertyId.getNodeId()).setProperty(propertyId.getPropertyName(), jcrValues);
+        cache.getEditorFor(propertyId.getNodeId()).setProperty(propertyId.getPropertyName(), newValues);
     }
 
     /**
@@ -233,13 +257,23 @@ final class JcrMultiValueProperty extends AbstractJcrProperty {
      */
     public final void setValue( String[] values )
         throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
-        JcrValue[] jcrValues = null;
+        Value[] jcrValues = null;
         if (values != null && values.length != 0) {
             int numValues = values.length;
+            List<Value> valuesList = new ArrayList<Value>(numValues);
             jcrValues = new JcrValue[numValues];
             for (int i = 0; i != numValues; ++i) {
-                jcrValues[i] = createValue(values[i], PropertyType.STRING);
+                String value = values[i];
+                if (value == null) continue; // skip null values
+                valuesList.add(createValue(values[i], PropertyType.STRING));
             }
+            if (valuesList.isEmpty()) {
+                jcrValues = EMPTY_VALUES;
+            } else {
+                jcrValues = valuesList.toArray(new Value[valuesList.size()]);
+            }
+        } else {
+            jcrValues = EMPTY_VALUES;
         }
         cache.getEditorFor(propertyId.getNodeId()).setProperty(propertyId.getPropertyName(), jcrValues);
     }

@@ -23,6 +23,7 @@
  */
 package org.jboss.dna.jcr;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.Calendar;
 import javax.jcr.Node;
@@ -31,9 +32,16 @@ import javax.jcr.RepositoryException;
 import javax.jcr.Value;
 import javax.jcr.ValueFormatException;
 import net.jcip.annotations.NotThreadSafe;
+import org.jboss.dna.common.SystemFailureException;
+import org.jboss.dna.common.util.IoUtil;
 import org.jboss.dna.graph.property.Binary;
+import org.jboss.dna.graph.property.BinaryFactory;
+import org.jboss.dna.graph.property.DateTime;
+import org.jboss.dna.graph.property.DateTimeFactory;
 import org.jboss.dna.graph.property.Name;
+import org.jboss.dna.graph.property.NameFactory;
 import org.jboss.dna.graph.property.Path;
+import org.jboss.dna.graph.property.PathFactory;
 import org.jboss.dna.graph.property.ValueFactories;
 
 /**
@@ -209,6 +217,104 @@ final class JcrValue implements Value {
      */
     public int getType() {
         return type;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see java.lang.Object#hashCode()
+     */
+    @Override
+    public int hashCode() {
+        // Use the value's hash code
+        return value.hashCode();
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see java.lang.Object#equals(java.lang.Object)
+     */
+    @Override
+    public boolean equals( Object obj ) {
+        if (obj == this) return true;
+        if (obj instanceof JcrValue) {
+            JcrValue that = (JcrValue)obj;
+            if (this.type != that.type) return false;
+            try {
+                switch (this.type) {
+                    case PropertyType.STRING:
+                        return this.getString().equals(that.getString());
+                    case PropertyType.BINARY:
+                        BinaryFactory binaryFactory = valueFactories.getBinaryFactory();
+                        Binary thisValue = binaryFactory.create(this.value);
+                        Binary thatValue = binaryFactory.create(that.value);
+                        return thisValue.equals(thatValue);
+                    case PropertyType.BOOLEAN:
+                        return this.getBoolean() == that.getBoolean();
+                    case PropertyType.DOUBLE:
+                        return this.getDouble() == that.getDouble();
+                    case PropertyType.LONG:
+                        return this.getLong() == that.getLong();
+                    case PropertyType.DATE:
+                        DateTimeFactory dateFactory = valueFactories.getDateFactory();
+                        DateTime thisDateValue = dateFactory.create(this.value);
+                        DateTime thatDateValue = dateFactory.create(that.value);
+                        return thisDateValue.equals(thatDateValue);
+                    case PropertyType.PATH:
+                        PathFactory pathFactory = valueFactories.getPathFactory();
+                        Path thisPathValue = pathFactory.create(this.value);
+                        Path thatPathValue = pathFactory.create(that.value);
+                        return thisPathValue.equals(thatPathValue);
+                    case PropertyType.NAME:
+                        NameFactory nameFactory = valueFactories.getNameFactory();
+                        Name thisNameValue = nameFactory.create(this.value);
+                        Name thatNameValue = nameFactory.create(that.value);
+                        return thisNameValue.equals(thatNameValue);
+                    case PropertyType.REFERENCE:
+                        return this.getString().equals(that.getString());
+                    default:
+                        throw new SystemFailureException();
+                }
+            } catch (RepositoryException e) {
+                return false;
+            }
+            // will not get here
+        }
+        if (obj instanceof Value) {
+            Value that = (Value)obj;
+            if (this.type != that.getType()) return false;
+            try {
+                switch (this.type) {
+                    case PropertyType.STRING:
+                        return this.getString().equals(that.getString());
+                    case PropertyType.BINARY:
+                        return IoUtil.isSame(this.getStream(), that.getStream());
+                    case PropertyType.BOOLEAN:
+                        return this.getBoolean() == that.getBoolean();
+                    case PropertyType.DOUBLE:
+                        return this.getDouble() == that.getDouble();
+                    case PropertyType.LONG:
+                        return this.getLong() == that.getLong();
+                    case PropertyType.DATE:
+                        return this.getDate().equals(that.getDate());
+                    case PropertyType.PATH:
+                        return this.getString().equals(that.getString());
+                    case PropertyType.NAME:
+                        return this.getString().equals(that.getString());
+                    case PropertyType.REFERENCE:
+                        return this.getString().equals(that.getString());
+                    default:
+                        throw new SystemFailureException();
+                }
+            } catch (IOException e) {
+                return false;
+            } catch (RepositoryException e) {
+                return false;
+            }
+            // will not get here
+        }
+        return false;
     }
 
     private JcrValue withTypeAndValue( int type,

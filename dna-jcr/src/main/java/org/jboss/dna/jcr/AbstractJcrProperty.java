@@ -23,17 +23,23 @@
  */
 package org.jboss.dna.jcr;
 
+import javax.jcr.InvalidItemStateException;
 import javax.jcr.Item;
+import javax.jcr.ItemNotFoundException;
 import javax.jcr.ItemVisitor;
 import javax.jcr.Node;
 import javax.jcr.PathNotFoundException;
 import javax.jcr.Property;
 import javax.jcr.RepositoryException;
+import javax.jcr.lock.LockException;
+import javax.jcr.nodetype.ConstraintViolationException;
 import javax.jcr.nodetype.PropertyDefinition;
+import javax.jcr.version.VersionException;
 import net.jcip.annotations.NotThreadSafe;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.Path;
+import org.jboss.dna.jcr.SessionCache.NodeEditor;
 import org.jboss.dna.jcr.cache.PropertyInfo;
 
 /**
@@ -50,6 +56,12 @@ abstract class AbstractJcrProperty extends AbstractJcrItem implements Property {
         assert propertyId != null;
         this.propertyId = propertyId;
     }
+
+    final NodeEditor editor() throws ItemNotFoundException, InvalidItemStateException, RepositoryException {
+        return cache.getEditorFor(propertyId.getNodeId());
+    }
+
+    abstract boolean isMultiple();
 
     /**
      * {@inheritDoc}
@@ -179,11 +191,10 @@ abstract class AbstractJcrProperty extends AbstractJcrItem implements Property {
     /**
      * {@inheritDoc}
      * 
-     * @throws UnsupportedOperationException always
      * @see javax.jcr.Item#remove()
      */
-    public void remove() {
-        throw new UnsupportedOperationException();
+    public void remove() throws VersionException, LockException, ConstraintViolationException, RepositoryException {
+        editor().removeProperty(propertyId.getPropertyName());
     }
 
     /**

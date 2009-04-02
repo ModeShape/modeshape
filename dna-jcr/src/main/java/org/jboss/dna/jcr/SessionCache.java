@@ -127,6 +127,7 @@ public class SessionCache {
     private final JcrSession session;
     private final String workspaceName;
     protected final ExecutionContext context;
+    protected final ValueFactories factories;
     protected final PathFactory pathFactory;
     protected final NameFactory nameFactory;
     protected final ValueFactory<String> stringFactory;
@@ -162,8 +163,9 @@ public class SessionCache {
         this.workspaceName = workspaceName;
         this.store = store;
         this.context = context;
-        this.pathFactory = context.getValueFactories().getPathFactory();
-        this.nameFactory = context.getValueFactories().getNameFactory();
+        this.factories = context.getValueFactories();
+        this.pathFactory = this.factories.getPathFactory();
+        this.nameFactory = this.factories.getNameFactory();
         this.stringFactory = context.getValueFactories().getStringFactory();
         this.namespaces = context.getNamespaceRegistry();
         this.propertyFactory = context.getPropertyFactory();
@@ -194,6 +196,10 @@ public class SessionCache {
 
     ExecutionContext context() {
         return context;
+    }
+
+    ValueFactories factories() {
+        return factories;
     }
 
     PathFactory pathFactory() {
@@ -519,11 +525,12 @@ public class SessionCache {
          * 
          * @param name the property name; may not be null
          * @param value the new property values; may not be null
+         * @return the identifier for the property; never null
          * @throws ConstraintViolationException if the property could not be set because of a node type constraint or property
          *         definition constraint
          */
-        public void setProperty( Name name,
-                                 JcrValue value ) throws ConstraintViolationException {
+        public PropertyId setProperty( Name name,
+                                       JcrValue value ) throws ConstraintViolationException {
             assert name != null;
             assert value != null;
             JcrPropertyDefinition definition = null;
@@ -575,7 +582,7 @@ public class SessionCache {
             } else {
                 // A cast is required ...
                 org.jboss.dna.graph.property.PropertyType dnaPropertyType = PropertyTypeUtil.dnaPropertyTypeFor(propertyType);
-                ValueFactory<?> factory = context.getValueFactories().getValueFactory(dnaPropertyType);
+                ValueFactory<?> factory = factories().getValueFactory(dnaPropertyType);
                 objValue = factory.create(value);
             }
             Property dnaProp = propertyFactory.create(name, objValue);
@@ -584,8 +591,9 @@ public class SessionCache {
             PropertyInfo newProperty = new PropertyInfo(id, definition.getId(), propertyType, dnaProp, definition.isMultiple());
 
             // Finally update the cached information and record the change ...
-            node.setProperty(newProperty, context().getValueFactories());
+            node.setProperty(newProperty, factories());
             operations.set(dnaProp).on(currentLocation);
+            return newProperty.getPropertyId();
         }
 
         /**
@@ -594,16 +602,16 @@ public class SessionCache {
          * 
          * @param name the property name; may not be null
          * @param values new property values, all of which must have the same {@link Value#getType() property type}; may not be
-         *        null or empty
+         *        null but may be empty
+         * @return the identifier for the property; never null
          * @throws ConstraintViolationException if the property could not be set because of a node type constraint or property
          *         definition constraint
          */
-        public void setProperty( Name name,
-                                 JcrValue[] values ) throws ConstraintViolationException {
+        public PropertyId setProperty( Name name,
+                                       Value[] values ) throws ConstraintViolationException {
             assert name != null;
             assert values != null;
             int numValues = values.length;
-            assert numValues != 0;
             JcrPropertyDefinition definition = null;
             PropertyId id = null;
 
@@ -622,6 +630,7 @@ public class SessionCache {
                     if (numValues == 0) {
                         // Just use the definition as is ...
                     } else {
+                        // Use the property type for the first non-null value ...
                         int type = values[0].getType();
                         if (definition.getRequiredType() != PropertyType.UNDEFINED && definition.getRequiredType() != type) {
                             // The property type is not right, so we have to check if we can cast.
@@ -656,15 +665,15 @@ public class SessionCache {
                 // Can use the values as is ...
                 propertyType = type;
                 for (int i = 0; i != numValues; ++i) {
-                    objValues[i] = values[i].value();
+                    objValues[i] = ((JcrValue)values[i]).value();
                 }
             } else {
                 // A cast is required ...
                 assert propertyType != type;
                 org.jboss.dna.graph.property.PropertyType dnaPropertyType = PropertyTypeUtil.dnaPropertyTypeFor(propertyType);
-                ValueFactory<?> factory = context.getValueFactories().getValueFactory(dnaPropertyType);
+                ValueFactory<?> factory = factories().getValueFactory(dnaPropertyType);
                 for (int i = 0; i != numValues; ++i) {
-                    objValues[i] = factory.create(values[i].value());
+                    objValues[i] = factory.create(((JcrValue)values[i]).value());
                 }
             }
             Property dnaProp = propertyFactory.create(name, objValues);
@@ -673,8 +682,9 @@ public class SessionCache {
             PropertyInfo newProperty = new PropertyInfo(id, definition.getId(), propertyType, dnaProp, definition.isMultiple());
 
             // Finally update the cached information and record the change ...
-            node.setProperty(newProperty, context().getValueFactories());
+            node.setProperty(newProperty, factories());
             operations.set(dnaProp).on(currentLocation);
+            return newProperty.getPropertyId();
         }
 
         /**
@@ -739,8 +749,8 @@ public class SessionCache {
             if (!definition.getId().equals(node.getDefinitionId())) {
                 // The node definition changed, so try to set the property ...
                 try {
-                    JcrValue value = new JcrValue(context().getValueFactories(), SessionCache.this, PropertyType.STRING,
-                                                  definition.getId().getString());
+                    JcrValue value = new JcrValue(factories(), SessionCache.this, PropertyType.STRING, definition.getId()
+                                                                                                                 .getString());
                     setProperty(DnaLexicon.NODE_DEFINITON, value);
                 } catch (ConstraintViolationException e) {
                     // We can't set this property on the node (according to the node definition).
@@ -932,12 +942,15 @@ public class SessionCache {
                                                                int propertyType,
                                                                boolean skipProtected ) {
         JcrPropertyDefinition definition = null;
+        if (propertyType == PropertyType.UNDEFINED) {
+            propertyType = PropertyTypeUtil.jcrPropertyTypeFor(dnaProperty);
+        }
 
         // If single-valued ...
         if (dnaProperty.isSingle()) {
             // Create a value for the DNA property value ...
             Object value = dnaProperty.getFirstValue();
-            Value jcrValue = new JcrValue(context().getValueFactories(), SessionCache.this, propertyType, value);
+            Value jcrValue = new JcrValue(factories(), SessionCache.this, propertyType, value);
             definition = nodeTypes().findPropertyDefinition(primaryTypeNameOfParent,
                                                             mixinTypeNamesOfParent,
                                                             dnaProperty.getName(),
@@ -949,7 +962,7 @@ public class SessionCache {
             Value[] jcrValues = new Value[dnaProperty.size()];
             int index = 0;
             for (Object value : dnaProperty) {
-                jcrValues[index++] = new JcrValue(context().getValueFactories(), SessionCache.this, propertyType, value);
+                jcrValues[index++] = new JcrValue(factories(), SessionCache.this, propertyType, value);
             }
             definition = nodeTypes().findPropertyDefinition(primaryTypeNameOfParent,
                                                             mixinTypeNamesOfParent,
@@ -1355,7 +1368,6 @@ public class SessionCache {
                                                   NodeInfo parentInfo ) throws RepositoryException {
         // Now get the DNA node's UUID and find the DNA property containing the UUID ...
         Location location = graphNode.getLocation();
-        ValueFactories factories = context.getValueFactories();
         UUID uuid = location.getUuid();
         org.jboss.dna.graph.property.Property uuidProperty = null;
         if (uuid != null) {
@@ -1537,7 +1549,7 @@ public class SessionCache {
         // Now add the "jcr:uuid" property if and only if referenceable ...
         if (referenceable) {
             // We know that this property is single-valued
-            JcrValue value = new JcrValue(context.getValueFactories(), this, PropertyType.STRING, uuid);
+            JcrValue value = new JcrValue(factories(), this, PropertyType.STRING, uuid);
             PropertyDefinition propertyDefinition = nodeTypes().findPropertyDefinition(primaryTypeName,
                                                                                        mixinTypeNames,
                                                                                        JcrLexicon.UUID,

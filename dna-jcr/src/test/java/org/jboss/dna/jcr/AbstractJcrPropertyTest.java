@@ -286,6 +286,16 @@ public class AbstractJcrPropertyTest {
         /**
          * {@inheritDoc}
          * 
+         * @see org.jboss.dna.jcr.AbstractJcrProperty#isMultiple()
+         */
+        @Override
+        boolean isMultiple() {
+            return false;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
          * @see javax.jcr.Property#getNode()
          */
         @SuppressWarnings( "synthetic-access" )

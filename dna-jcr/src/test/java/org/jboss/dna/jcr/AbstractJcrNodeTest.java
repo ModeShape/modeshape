@@ -29,9 +29,7 @@ import static org.hamcrest.core.IsSame.sameInstance;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.stub;
-import java.io.InputStream;
 import java.util.Arrays;
-import java.util.Calendar;
 import java.util.List;
 import java.util.UUID;
 import javax.jcr.Item;
@@ -727,76 +725,6 @@ public class AbstractJcrNodeTest {
     @Test( expected = UnsupportedRepositoryOperationException.class )
     public void shouldNotAllowRestoreByLabel() throws Exception {
         node.restoreByLabel(null, false);
-    }
-
-    @Test( expected = UnsupportedOperationException.class )
-    public void shouldNotAllowSetBooleanProperty() throws Exception {
-        node.setProperty(null, false);
-    }
-
-    @Test( expected = UnsupportedOperationException.class )
-    public void shouldNotAllowSetCalendarProperty() throws Exception {
-        node.setProperty(null, (Calendar)null);
-    }
-
-    @Test( expected = UnsupportedOperationException.class )
-    public void shouldNotAllowSetDoubleProperty() throws Exception {
-        node.setProperty(null, 0.0);
-    }
-
-    @Test( expected = UnsupportedOperationException.class )
-    public void shouldNotAllowSetInputStreamProperty() throws Exception {
-        node.setProperty(null, (InputStream)null);
-    }
-
-    @Test( expected = UnsupportedOperationException.class )
-    public void shouldNotAllowSetLongProperty() throws Exception {
-        node.setProperty(null, 0L);
-    }
-
-    @Test( expected = UnsupportedOperationException.class )
-    public void shouldNotAllowSetNodeProperty() throws Exception {
-        node.setProperty(null, (Node)null);
-    }
-
-    @Test( expected = UnsupportedOperationException.class )
-    public void shouldNotAllowSetStringProperty() throws Exception {
-        node.setProperty(null, (String)null);
-    }
-
-    @Test( expected = UnsupportedOperationException.class )
-    public void shouldNotAllowSetStringsProperty() throws Exception {
-        node.setProperty(null, (String[])null);
-    }
-
-    @Test( expected = UnsupportedOperationException.class )
-    public void shouldNotAllowSetValueProperty() throws Exception {
-        node.setProperty(null, (Value)null);
-    }
-
-    @Test( expected = UnsupportedOperationException.class )
-    public void shouldNotAllowSetValuesProperty() throws Exception {
-        node.setProperty(null, (Value[])null);
-    }
-
-    @Test( expected = UnsupportedOperationException.class )
-    public void shouldNotAllowSetStringPropertyWithType() throws Exception {
-        node.setProperty(null, (String)null, 0);
-    }
-
-    @Test( expected = UnsupportedOperationException.class )
-    public void shouldNotAllowSetStringsPropertyWithType() throws Exception {
-        node.setProperty(null, (String[])null, 0);
-    }
-
-    @Test( expected = UnsupportedOperationException.class )
-    public void shouldNotAllowSetValuePropertyWithType() throws Exception {
-        node.setProperty(null, (Value)null, 0);
-    }
-
-    @Test( expected = UnsupportedOperationException.class )
-    public void shouldNotAllowSetValuesPropertyWithType() throws Exception {
-        node.setProperty(null, (Value[])null, 0);
     }
 
     @Test( expected = UnsupportedRepositoryOperationException.class )

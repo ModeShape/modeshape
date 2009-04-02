@@ -531,7 +531,8 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
 
             Node node = null;
             try {
-                node = cache.findJcrNode((UUID)jcrValue.value());
+                UUID uuid = cache.factories().getUuidFactory().create(jcrValue.value());
+                node = cache.findJcrNode(uuid);
             } catch (RepositoryException re) {
                 return false;
             }
@@ -643,8 +644,8 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
 
         public boolean matches( Value valueToMatch ) {
             assert valueToMatch instanceof JcrValue;
-            
-            JcrValue jcrValue = (JcrValue) valueToMatch;
+
+            JcrValue jcrValue = (JcrValue)valueToMatch;
 
             /*
              * Need two path factories here.  One uses the permanent namespace mappings to parse the constraints.
@@ -658,7 +659,7 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
             for (int i = 0; i < constraints.length; i++) {
                 boolean matchesDescendants = constraints[i].endsWith("*");
                 Path constraintPath = repoPathFactory.create(matchesDescendants ? constraints[i].substring(0,
-                                                                                                       constraints[i].length() - 2) : constraints[i]);
+                                                                                                           constraints[i].length() - 2) : constraints[i]);
 
                 if (matchesDescendants && value.isDecendantOf(constraintPath)) {
                     return true;

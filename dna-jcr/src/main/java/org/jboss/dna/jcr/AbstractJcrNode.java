@@ -24,6 +24,7 @@
 package org.jboss.dna.jcr;
 
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Iterator;
@@ -57,9 +58,12 @@ import javax.jcr.version.VersionHistory;
 import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.i18n.I18n;
 import org.jboss.dna.common.util.CheckArg;
+import org.jboss.dna.graph.property.Binary;
+import org.jboss.dna.graph.property.DateTime;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.NamespaceRegistry;
 import org.jboss.dna.graph.property.Path;
+import org.jboss.dna.graph.property.ValueFactories;
 import org.jboss.dna.graph.property.ValueFormatException;
 import org.jboss.dna.jcr.SessionCache.NodeEditor;
 import org.jboss.dna.jcr.cache.ChildNode;
@@ -116,6 +120,40 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
             String msg = JcrI18n.nodeHasAlreadyBeenRemovedFromThisSession.text(nodeUuid, cache.workspaceName());
             throw new RepositoryException(msg);
         }
+    }
+
+    final JcrValue valueFrom( int propertyType,
+                              Object value ) {
+        return new JcrValue(cache.factories(), cache, propertyType, value);
+    }
+
+    final JcrValue valueFrom( Calendar value ) {
+        ValueFactories factories = cache.factories();
+        DateTime dateTime = factories.getDateFactory().create(value);
+        return new JcrValue(factories, cache, PropertyType.DATE, dateTime);
+    }
+
+    final JcrValue valueFrom( InputStream value ) {
+        ValueFactories factories = cache.factories();
+        Binary binary = factories.getBinaryFactory().create(value);
+        return new JcrValue(factories, cache, PropertyType.DATE, binary);
+    }
+
+    final JcrValue valueFrom( Node value ) throws UnsupportedRepositoryOperationException, RepositoryException {
+        ValueFactories factories = cache.factories();
+        String uuid = factories.getStringFactory().create(value.getUUID());
+        return new JcrValue(factories, cache, PropertyType.REFERENCE, uuid);
+    }
+
+    final JcrValue[] valuesFrom( int propertyType,
+                                 Object[] values ) {
+        int len = values.length;
+        ValueFactories factories = cache.factories();
+        JcrValue[] results = new JcrValue[values.length];
+        for (int i = 0; i != len; ++i) {
+            results[i] = new JcrValue(factories, cache, propertyType, values[i]);
+        }
+        return results;
     }
 
     @Override
@@ -672,159 +710,184 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
     /**
      * {@inheritDoc}
      * 
-     * @throws UnsupportedOperationException always
      * @see javax.jcr.Node#setProperty(java.lang.String, boolean)
      */
     public final Property setProperty( String name,
-                                       boolean value ) {
-        throw new UnsupportedOperationException();
+                                       boolean value )
+        throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
+        return cache.findJcrProperty(editor().setProperty(nameFrom(name), valueFrom(PropertyType.BOOLEAN, value)));
+
     }
 
     /**
      * {@inheritDoc}
      * 
-     * @throws UnsupportedOperationException always
      * @see javax.jcr.Node#setProperty(java.lang.String, java.util.Calendar)
      */
     public final Property setProperty( String name,
-                                       Calendar value ) {
-        throw new UnsupportedOperationException();
+                                       Calendar value )
+        throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
+        return cache.findJcrProperty(editor().setProperty(nameFrom(name), valueFrom(value)));
+
     }
 
     /**
      * {@inheritDoc}
      * 
-     * @throws UnsupportedOperationException always
      * @see javax.jcr.Node#setProperty(java.lang.String, double)
      */
     public final Property setProperty( String name,
-                                       double value ) {
-        throw new UnsupportedOperationException();
+                                       double value )
+        throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
+        return cache.findJcrProperty(editor().setProperty(nameFrom(name), valueFrom(PropertyType.DOUBLE, value)));
+
     }
 
     /**
      * {@inheritDoc}
      * 
-     * @throws UnsupportedOperationException always
      * @see javax.jcr.Node#setProperty(java.lang.String, java.io.InputStream)
      */
     public final Property setProperty( String name,
-                                       InputStream value ) {
-        throw new UnsupportedOperationException();
+                                       InputStream value )
+        throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
+        return cache.findJcrProperty(editor().setProperty(nameFrom(name), valueFrom(value)));
     }
 
     /**
      * {@inheritDoc}
      * 
-     * @throws UnsupportedOperationException always
      * @see javax.jcr.Node#setProperty(java.lang.String, long)
      */
     public final Property setProperty( String name,
-                                       long value ) {
-        throw new UnsupportedOperationException();
+                                       long value )
+        throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
+        return cache.findJcrProperty(editor().setProperty(nameFrom(name), valueFrom(PropertyType.LONG, value)));
+
     }
 
     /**
      * {@inheritDoc}
      * 
-     * @throws UnsupportedOperationException always
      * @see javax.jcr.Node#setProperty(java.lang.String, javax.jcr.Node)
      */
     public final Property setProperty( String name,
-                                       Node value ) {
-        throw new UnsupportedOperationException();
+                                       Node value )
+        throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
+        return cache.findJcrProperty(editor().setProperty(nameFrom(name), valueFrom(value)));
     }
 
     /**
      * {@inheritDoc}
      * 
-     * @throws UnsupportedOperationException always
      * @see javax.jcr.Node#setProperty(java.lang.String, java.lang.String)
      */
     public final Property setProperty( String name,
-                                       String value ) {
-        throw new UnsupportedOperationException();
+                                       String value )
+        throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
+        return cache.findJcrProperty(editor().setProperty(nameFrom(name), valueFrom(PropertyType.STRING, value)));
     }
 
     /**
      * {@inheritDoc}
      * 
-     * @throws UnsupportedOperationException always
      * @see javax.jcr.Node#setProperty(java.lang.String, java.lang.String, int)
      */
     public final Property setProperty( String name,
                                        String value,
-                                       int type ) {
-        throw new UnsupportedOperationException();
+                                       int type )
+        throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
+        return cache.findJcrProperty(editor().setProperty(nameFrom(name), valueFrom(type, value)));
     }
 
     /**
      * {@inheritDoc}
      * 
-     * @throws UnsupportedOperationException always
      * @see javax.jcr.Node#setProperty(java.lang.String, java.lang.String[])
      */
     public final Property setProperty( String name,
-                                       String[] values ) {
-        throw new UnsupportedOperationException();
+                                       String[] values )
+        throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
+        return cache.findJcrProperty(editor().setProperty(nameFrom(name), valuesFrom(PropertyType.STRING, values)));
     }
 
     /**
      * {@inheritDoc}
      * 
-     * @throws UnsupportedOperationException always
      * @see javax.jcr.Node#setProperty(java.lang.String, java.lang.String[], int)
      */
     public final Property setProperty( String name,
                                        String[] values,
-                                       int type ) {
-        throw new UnsupportedOperationException();
+                                       int type )
+        throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
+        return cache.findJcrProperty(editor().setProperty(nameFrom(name), valuesFrom(type, values)));
     }
 
     /**
      * {@inheritDoc}
      * 
-     * @throws UnsupportedOperationException always
      * @see javax.jcr.Node#setProperty(java.lang.String, javax.jcr.Value)
      */
     public final Property setProperty( String name,
-                                       Value value ) {
-        throw new UnsupportedOperationException();
+                                       Value value )
+        throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
+        return cache.findJcrProperty(editor().setProperty(nameFrom(name), (JcrValue)value));
     }
 
     /**
      * {@inheritDoc}
      * 
-     * @throws UnsupportedOperationException always
      * @see javax.jcr.Node#setProperty(java.lang.String, javax.jcr.Value, int)
      */
     public final Property setProperty( String name,
                                        Value value,
-                                       int type ) {
-        throw new UnsupportedOperationException();
+                                       int type )
+        throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
+        return cache.findJcrProperty(editor().setProperty(nameFrom(name), ((JcrValue)value).asType(type)));
     }
 
     /**
      * {@inheritDoc}
      * 
-     * @throws UnsupportedOperationException always
      * @see javax.jcr.Node#setProperty(java.lang.String, javax.jcr.Value[])
      */
     public final Property setProperty( String name,
-                                       Value[] values ) {
-        throw new UnsupportedOperationException();
+                                       Value[] values )
+        throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
+        return cache.findJcrProperty(editor().setProperty(nameFrom(name), values));
     }
 
     /**
      * {@inheritDoc}
      * 
-     * @throws UnsupportedOperationException always
      * @see javax.jcr.Node#setProperty(java.lang.String, javax.jcr.Value[], int)
      */
     public final Property setProperty( String name,
                                        Value[] values,
-                                       int type ) {
-        throw new UnsupportedOperationException();
+                                       int type )
+        throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
+        int len = values.length;
+        Value[] newValues = null;
+        if (len == 0) {
+            newValues = JcrMultiValueProperty.EMPTY_VALUES;
+        } else {
+            List<Value> valuesWithDesiredType = new ArrayList<Value>(len);
+            for (int i = 0; i != len; ++i) {
+                Value value = values[i];
+                if (value == null) continue;
+                if (value.getType() != type) {
+                    value = ((JcrValue)value).asType(type);
+                }
+                valuesWithDesiredType.add(value);
+            }
+            if (valuesWithDesiredType.isEmpty()) {
+                newValues = JcrMultiValueProperty.EMPTY_VALUES;
+            } else {
+                newValues = valuesWithDesiredType.toArray(new Value[valuesWithDesiredType.size()]);
+            }
+        }
+        // Set the value, perhaps to an empty array ...
+        return cache.findJcrProperty(editor().setProperty(nameFrom(name), newValues));
     }
 
     /**
