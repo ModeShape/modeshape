@@ -73,22 +73,39 @@ import org.jboss.dna.graph.request.InvalidWorkspaceException;
 public class JcrRepository implements Repository {
 
     /**
-     * List of settings for the {@code JcrRepository}.
-     * <p>
-     * The attributes that may be set are:
-     * <ul>
-     * <li>{@code PROJECT_NODE_TYPES} (boolean) - if {@code true}, project the registered node types onto the system view at the
-     * path {@code /jcr:system/jcr:nodeTypes}.</li>
-     * </ul>
-     * </p>
+     * The available options for the {@code JcrRepository}.
      */
-    public enum Settings {
+    public enum Options {
+
         /**
-         * Flag that defines whether or not the node types should be exposed as content under the "
-         * <code>/jcr:system/dna:nodeTypes</code>" node. By default, the flag is false.
+         * Flag that defines whether or not the node types should be exposed as content under the "{@code
+         * /jcr:system/jcr:nodeTypes}" node. Value is either "<code>true</code>" or "<code>false</code>" (default).
+         * 
+         * @see DefaultOptions#PROJECT_NODE_TYPES
          */
         PROJECT_NODE_TYPES,
+    }
 
+    /**
+     * The default values for each of the {@link Options}.
+     */
+    public static class DefaultOptions {
+        /**
+         * The default value for the {@link Options#PROJECT_NODE_TYPES} option is {@value} .
+         */
+        public static final String PROJECT_NODE_TYPES = Boolean.FALSE.toString();
+    }
+
+    /**
+     * The static unmodifiable map of default options, which are initialized in the static initializer.
+     */
+    protected static final Map<Options, String> DEFAULT_OPTIONS;
+
+    static {
+        // Initialize the unmodifiable map of default options ...
+        EnumMap<Options, String> defaults = new EnumMap<Options, String>(Options.class);
+        defaults.put(Options.PROJECT_NODE_TYPES, DefaultOptions.PROJECT_NODE_TYPES);
+        DEFAULT_OPTIONS = Collections.<Options, String>unmodifiableMap(defaults);
     }
 
     private final String sourceName;
@@ -96,7 +113,7 @@ public class JcrRepository implements Repository {
     private final ExecutionContext executionContext;
     private final RepositoryConnectionFactory connectionFactory;
     private final RepositoryNodeTypeManager repositoryTypeManager;
-    private final Map<Settings, String> settings;
+    private final Map<Options, String> options;
 
     /**
      * Creates a JCR repository that uses the supplied {@link RepositoryConnectionFactory repository connection factory} to
@@ -122,7 +139,7 @@ public class JcrRepository implements Repository {
      * @param connectionFactory the factory for repository connections
      * @param repositorySourceName the name of the repository source (in the connection factory) that should be used
      * @param descriptors the {@link #getDescriptorKeys() descriptors} for this repository; may be <code>null</code>.
-     * @param settings the optional {@link Settings settings} for this repository; may be null
+     * @param options the optional {@link Options settings} for this repository; may be null
      * @throws IllegalArgumentException If <code>executionContextFactory</code> or <code>connectionFactory</code> is
      *         <code>null</code>.
      */
@@ -130,7 +147,7 @@ public class JcrRepository implements Repository {
                           RepositoryConnectionFactory connectionFactory,
                           String repositorySourceName,
                           Map<String, String> descriptors,
-                          Map<Settings, String> settings ) {
+                          Map<Options, String> options ) {
         CheckArg.isNotNull(executionContext, "executionContext");
         CheckArg.isNotNull(connectionFactory, "connectionFactory");
         CheckArg.isNotNull(repositorySourceName, "repositorySourceName");
@@ -175,10 +192,13 @@ public class JcrRepository implements Repository {
         source = new DnaBuiltinNodeTypeSource(this.executionContext, source);
         this.repositoryTypeManager = new RepositoryNodeTypeManager(this.executionContext, source);
 
-        if (settings == null) {
-            this.settings = Collections.<Settings, String>emptyMap();
+        if (options == null) {
+            this.options = DEFAULT_OPTIONS;
         } else {
-            this.settings = Collections.unmodifiableMap(new EnumMap<Settings, String>(settings));
+            // Initialize with defaults, then add supplied options ...
+            EnumMap<Options, String> localOptions = new EnumMap<Options, String>(DEFAULT_OPTIONS);
+            localOptions.putAll(options);
+            this.options = Collections.unmodifiableMap(localOptions);
         }
     }
 
@@ -189,6 +209,15 @@ public class JcrRepository implements Repository {
      */
     RepositoryNodeTypeManager getRepositoryTypeManager() {
         return repositoryTypeManager;
+    }
+
+    /**
+     * Get the options as configured for this repository.
+     * 
+     * @return the unmodifiable options; never null
+     */
+    public Map<Options, String> getOptions() {
+        return options;
     }
 
     /**
@@ -352,10 +381,8 @@ public class JcrRepository implements Repository {
         }
 
         // Create the workspace, which will create its own session ...
-        boolean shouldProjectNodeTypes = Boolean.valueOf(settings.get(Settings.PROJECT_NODE_TYPES));
-
         sessionAttributes = Collections.unmodifiableMap(sessionAttributes);
-        JcrWorkspace workspace = new JcrWorkspace(this, workspaceName, execContext, sessionAttributes, shouldProjectNodeTypes);
+        JcrWorkspace workspace = new JcrWorkspace(this, workspaceName, execContext, sessionAttributes);
         return workspace.getSession();
     }
 }

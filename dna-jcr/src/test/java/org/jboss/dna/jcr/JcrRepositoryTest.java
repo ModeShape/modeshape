@@ -154,6 +154,13 @@ public class JcrRepositoryTest {
     }
 
     @Test
+    public void shouldHaveDefaultOptionsWhenNotOverridden() {
+        JcrRepository repository = new JcrRepository(context, connectionFactory, sourceName, descriptors, null);
+        assertThat(repository.getOptions().get(JcrRepository.Options.PROJECT_NODE_TYPES),
+                   is(JcrRepository.DefaultOptions.PROJECT_NODE_TYPES));
+    }
+
+    @Test
     public void shouldProvideUserSuppliedDescriptors() {
         Map<String, String> descriptors = new HashMap<String, String>();
         descriptors.put("property", "value");

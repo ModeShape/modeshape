@@ -58,6 +58,7 @@ import org.jboss.dna.graph.property.Property;
 import org.jboss.dna.graph.property.PropertyFactory;
 import org.jboss.dna.graph.property.ValueFormatException;
 import org.jboss.dna.graph.property.basic.GraphNamespaceRegistry;
+import org.jboss.dna.jcr.JcrRepository.Options;
 import org.xml.sax.ContentHandler;
 
 /**
@@ -120,14 +121,6 @@ final class JcrWorkspace implements Workspace {
                   String workspaceName,
                   ExecutionContext context,
                   Map<String, Object> sessionAttributes ) {
-        this(repository, workspaceName, context, sessionAttributes, true);
-    }
-
-    JcrWorkspace( JcrRepository repository,
-                  String workspaceName,
-                  ExecutionContext context,
-                  Map<String, Object> sessionAttributes,
-                  boolean projectTypesOntoSystemView ) {
 
         assert workspaceName != null;
         assert context != null;
@@ -166,7 +159,7 @@ final class JcrWorkspace implements Workspace {
         this.nodeTypeManager = new JcrNodeTypeManager(session.getExecutionContext(), repoTypeManager);
         this.queryManager = new JcrQueryManager(this.session);
 
-        if (projectTypesOntoSystemView) {
+        if (Boolean.valueOf(repository.getOptions().get(Options.PROJECT_NODE_TYPES))) {
             Path parentOfTypeNodes = context.getValueFactories().getPathFactory().create(root,
                                                                                          JcrLexicon.SYSTEM,
                                                                                          JcrLexicon.NODE_TYPES);

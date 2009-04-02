@@ -32,6 +32,7 @@ import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.stub;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -70,6 +71,7 @@ public class RepositoryNodeTypeManagerTest {
     private RepositoryConnectionFactory connectionFactory;
     private RepositoryNodeTypeManager repoTypeManager;
     private Map<String, Object> sessionAttributes;
+    private Map<JcrRepository.Options, String> options;
     @Mock
     private JcrRepository repository;
 
@@ -121,6 +123,11 @@ public class RepositoryNodeTypeManagerTest {
         stub(repository.getRepositoryTypeManager()).toReturn(repoTypeManager);
         stub(repository.getRepositorySourceName()).toReturn(repositorySourceName);
         stub(repository.getConnectionFactory()).toReturn(connectionFactory);
+
+        // Stub out the repository options ...
+        options = new EnumMap<JcrRepository.Options, String>(JcrRepository.Options.class);
+        options.put(JcrRepository.Options.PROJECT_NODE_TYPES, Boolean.TRUE.toString());
+        stub(repository.getOptions()).toReturn(options);
 
         // Set up the session attributes ...
         sessionAttributes = new HashMap<String, Object>();

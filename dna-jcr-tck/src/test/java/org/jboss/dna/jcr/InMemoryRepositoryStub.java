@@ -43,7 +43,7 @@ import org.jboss.dna.graph.connector.RepositoryConnection;
 import org.jboss.dna.graph.connector.RepositoryConnectionFactory;
 import org.jboss.dna.graph.connector.inmemory.InMemoryRepositorySource;
 import org.jboss.dna.graph.property.Path;
-import org.jboss.dna.jcr.JcrRepository.Settings;
+import org.jboss.dna.jcr.JcrRepository.Options;
 
 /**
  * Class with TCK repository stub. This class does not contain any tests.
@@ -86,10 +86,10 @@ public class InMemoryRepositoryStub extends RepositoryStub {
         source.setName("TestRepositorySource");
 
         // Wrap a connection to the in-memory (DNA) repository in a (JCR) repository
-        Map<Settings, String> settings = Collections.singletonMap(Settings.PROJECT_NODE_TYPES, "true");
+        Map<Options, String> options = Collections.singletonMap(Options.PROJECT_NODE_TYPES, "true");
         connection = source.getConnection();
         repository = new JcrRepository(executionContext.create(accessControlContext), connectionFactory, source.getName(), null,
-                                       settings);
+                                       options);
 
         // Make sure the path to the namespaces exists ...
         Graph graph = Graph.create(source.getName(), connectionFactory, executionContext);
