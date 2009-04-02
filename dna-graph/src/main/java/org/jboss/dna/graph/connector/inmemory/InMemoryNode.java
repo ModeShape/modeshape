@@ -24,9 +24,10 @@
 package org.jboss.dna.graph.connector.inmemory;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import net.jcip.annotations.NotThreadSafe;
 import org.jboss.dna.graph.ExecutionContext;
@@ -45,7 +46,8 @@ public class InMemoryNode {
     private InMemoryNode parent;
     private Path.Segment name;
     private final Map<Name, Property> properties = new HashMap<Name, Property>();
-    private final List<InMemoryNode> children = new LinkedList<InMemoryNode>();
+    private final LinkedList<InMemoryNode> children = new LinkedList<InMemoryNode>();
+    final Set<Name> existingNames = new HashSet<Name>();
 
     public InMemoryNode( UUID uuid ) {
         assert uuid != null;
@@ -90,7 +92,7 @@ public class InMemoryNode {
     /**
      * @return children
      */
-    protected List<InMemoryNode> getChildren() {
+    LinkedList<InMemoryNode> getChildren() {
         return children;
     }
 
@@ -109,8 +111,8 @@ public class InMemoryNode {
     }
 
     public InMemoryNode setProperty( ExecutionContext context,
-                             String name,
-                             Object... values ) {
+                                     String name,
+                                     Object... values ) {
         PropertyFactory propertyFactory = context.getPropertyFactory();
         Name propertyName = context.getValueFactories().getNameFactory().create(name);
         return setProperty(propertyFactory.create(propertyName, values));

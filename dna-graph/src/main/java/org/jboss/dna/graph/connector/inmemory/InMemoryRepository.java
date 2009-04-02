@@ -28,6 +28,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -316,10 +317,22 @@ public class InMemoryRepository {
             InMemoryNode node = new InMemoryNode(uuid);
             nodesByUuid.put(node.getUuid(), node);
             node.setParent(parentNode);
-            Path.Segment newName = context.getValueFactories().getPathFactory().createSegment(name);
+            // Find the last node with this same name ...
+            int nextIndex = 1;
+            if (parentNode.existingNames.contains(name)) {
+                ListIterator<InMemoryNode> iter = parentNode.getChildren().listIterator(parentNode.getChildren().size());
+                while (iter.hasPrevious()) {
+                    InMemoryNode prev = iter.previous();
+                    if (prev.getName().getName().equals(name)) {
+                        nextIndex = prev.getName().getIndex() + 1;
+                        break;
+                    }
+                }
+            }
+            Path.Segment newName = context.getValueFactories().getPathFactory().createSegment(name, nextIndex);
             node.setName(newName);
             parentNode.getChildren().add(node);
-            correctSameNameSiblingIndexes(context, parentNode, name);
+            parentNode.existingNames.add(name);
             return node;
         }
 
