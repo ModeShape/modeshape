@@ -40,11 +40,13 @@ import org.apache.jackrabbit.test.api.AddNodeTest;
 import org.apache.jackrabbit.test.api.NamespaceRegistryTest;
 import org.apache.jackrabbit.test.api.PropertyTest;
 import org.apache.jackrabbit.test.api.RepositoryLoginTest;
+import org.apache.jackrabbit.test.api.SessionUUIDTest;
 import org.apache.jackrabbit.test.api.SetValueBooleanTest;
 import org.apache.jackrabbit.test.api.SetValueDateTest;
 import org.apache.jackrabbit.test.api.SetValueDoubleTest;
 import org.apache.jackrabbit.test.api.SetValueLongTest;
 import org.apache.jackrabbit.test.api.SetValueReferenceTest;
+import org.apache.jackrabbit.test.api.ValueFactoryTest;
 import org.jboss.dna.graph.DnaLexicon;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.Graph;
@@ -156,7 +158,7 @@ public class JcrTckTest {
             addTestSuite(NamespaceRegistryTest.class);
             // addTestSuite(ReferencesTest.class);
             // addTestSuite(SessionTest.class);
-            // addTestSuite(SessionUUIDTest.class);
+            addTestSuite(SessionUUIDTest.class);
             // addTestSuite(NodeTest.class);
             // addTestSuite(NodeUUIDTest.class);
             // addTestSuite(NodeOrderableChildNodesTest.class);
@@ -216,8 +218,8 @@ public class JcrTckTest {
             //
             // addTestSuite(DocumentViewImportTest.class);
             // addTestSuite(SerializationTest.class);
-            //
-            // addTestSuite(ValueFactoryTest.class);
+
+            addTestSuite(ValueFactoryTest.class);
         }
     }
 
@@ -329,6 +331,18 @@ public class JcrTckTest {
          */
         @Override
         public Credentials getReadOnlyCredentials() {
+            // TODO: Why must we override this method? The default TCK implementation just returns a particular instance of
+            // SimpleCredentials.
+            return credentials;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.apache.jackrabbit.test.RepositoryStub#getReadOnlyCredentials()
+         */
+        @Override
+        public Credentials getReadWriteCredentials() {
             // TODO: Why must we override this method? The default TCK implementation just returns a particular instance of
             // SimpleCredentials.
             return credentials;

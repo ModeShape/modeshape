@@ -44,6 +44,7 @@ import javax.jcr.Session;
 import javax.jcr.SimpleCredentials;
 import javax.jcr.Value;
 import javax.jcr.ValueFactory;
+import javax.jcr.ValueFormatException;
 import javax.jcr.Workspace;
 import javax.security.auth.Subject;
 import javax.security.auth.login.LoginContext;
@@ -451,8 +452,10 @@ class JcrSession implements Session {
         return new ValueFactory() {
 
             public Value createValue( String value,
-                                      int propertyType ) {
-                return new JcrValue(valueFactories, sessionCache, propertyType, value);
+                                      int propertyType ) 
+                throws ValueFormatException
+            {
+                return new JcrValue(valueFactories, sessionCache, propertyType, convertValueToType(value, propertyType));
             }
 
             public Value createValue( Node value ) throws RepositoryException {
@@ -485,6 +488,79 @@ class JcrSession implements Session {
             public Value createValue( String value ) {
                 return new JcrValue(valueFactories, sessionCache, PropertyType.STRING, value);
             }
+            
+            Object convertValueToType(Object value, int toType) throws ValueFormatException { 
+                switch (toType) {
+                    case PropertyType.BOOLEAN:
+                        try {
+                            return valueFactories.getBooleanFactory().create(value);
+                        } catch (org.jboss.dna.graph.property.ValueFormatException vfe) {
+                            throw new ValueFormatException(vfe);
+                        }
+
+                    case PropertyType.DATE:
+                        try {
+                            return valueFactories.getDateFactory().create(value);
+                        } catch (org.jboss.dna.graph.property.ValueFormatException vfe) {
+                            throw new ValueFormatException(vfe);
+                        }
+
+                    case PropertyType.NAME:
+                        try {
+                            return valueFactories.getNameFactory().create(value);
+                        } catch (org.jboss.dna.graph.property.ValueFormatException vfe) {
+                            throw new ValueFormatException(vfe);
+                        }
+
+                    case PropertyType.PATH:
+                        try {
+                            return valueFactories.getPathFactory().create(value);
+                        } catch (org.jboss.dna.graph.property.ValueFormatException vfe) {
+                            throw new ValueFormatException(vfe);
+                        }
+
+                    case PropertyType.REFERENCE:
+                        try {
+                            return valueFactories.getReferenceFactory().create(value);
+                        } catch (org.jboss.dna.graph.property.ValueFormatException vfe) {
+                            throw new ValueFormatException(vfe);
+                        }
+                    case PropertyType.DOUBLE:
+                        try {
+                            return valueFactories.getDoubleFactory().create(value);
+                        } catch (org.jboss.dna.graph.property.ValueFormatException vfe) {
+                            throw new ValueFormatException(vfe);
+                        }
+                    case PropertyType.LONG:
+                        try {
+                            return valueFactories.getLongFactory().create(value);
+                        } catch (org.jboss.dna.graph.property.ValueFormatException vfe) {
+                            throw new ValueFormatException(vfe);
+                        }
+
+                        // Anything can be converted to these types
+                    case PropertyType.BINARY:
+                        try {
+                            return valueFactories.getBinaryFactory().create(value);
+                        } catch (org.jboss.dna.graph.property.ValueFormatException vfe) {
+                            throw new ValueFormatException(vfe);
+                        }
+                    case PropertyType.STRING:
+                        try {
+                            return valueFactories.getStringFactory().create(value);
+                        } catch (org.jboss.dna.graph.property.ValueFormatException vfe) {
+                            throw new ValueFormatException(vfe);
+                        }
+                    case PropertyType.UNDEFINED:
+                        return value;
+
+                    default:
+                        assert false : "Unexpected JCR property type " + toType;
+                        // This should still throw an exception even if assertions are turned off
+                        throw new IllegalStateException("Invalid property type " + toType);
+                }
+            }
+
         };
     }
 
