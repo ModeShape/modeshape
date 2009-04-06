@@ -583,7 +583,7 @@ public class SessionCache {
                 // A cast is required ...
                 org.jboss.dna.graph.property.PropertyType dnaPropertyType = PropertyTypeUtil.dnaPropertyTypeFor(propertyType);
                 ValueFactory<?> factory = factories().getValueFactory(dnaPropertyType);
-                objValue = factory.create(value);
+                objValue = factory.create(objValue);
             }
             Property dnaProp = propertyFactory.create(name, objValue);
 
