@@ -26,9 +26,11 @@ package org.jboss.dna.jcr;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import javax.jcr.PropertyType;
 import javax.jcr.Value;
@@ -487,5 +489,129 @@ class JcrNodeType implements NodeType {
 
     final RepositoryNodeTypeManager nodeTypeManager() {
         return nodeTypeManager;
+    }
+
+    /**
+     * Returns whether this node type is in conflict with the provided primary node type or mixin types.
+     * <p>
+     * A node type is in conflict with another set of node types if either of the following is true:
+     * <ol>
+     * <li>This node type has the same name as any of the other node types</li>
+     * <li>This node type defines a property (or inherits the definition of a property) with the same name as a property defined
+     * in any of the other node types <i>unless</i> this node type and the other node type both inherited the property definition
+     * from the same ancestor node type</li>
+     * <li>This node type defines a child node (or inherits the definition of a child node) with the same name as a child node
+     * defined in any of the other node types <i>unless</i> this node type and the other node type both inherited the child node
+     * definition from the same ancestor node type</li>
+     * </ol>
+     * </p>
+     * 
+     * @param primaryNodeType the primary node type to check
+     * @param mixinNodeTypes the mixin node types to check
+     * @return true if this node type conflicts with the provided primary or mixin node types as defined below
+     */
+    final boolean conflictsWith( NodeType primaryNodeType,
+                                 NodeType[] mixinNodeTypes ) {
+        Map<PropertyDefinitionId, JcrPropertyDefinition> props = new HashMap<PropertyDefinitionId, JcrPropertyDefinition>();
+        /*
+         * Need to have the same parent name for all PropertyDefinitionIds and NodeDefinitionIds as we're checking for conflicts on the definition name
+         */
+        final Name DEFAULT_NAME = this.name;
+
+        for (JcrPropertyDefinition property : propertyDefinitions()) {
+            /*
+             * I'm trying really hard to reuse existing code, but it's a stretch in this case.  I don't care about the property
+             * types or where they were declared... if more than one definition with the given name exists (not counting definitions
+             * inherited from the same root definition), then there is a conflict.
+             */
+            PropertyDefinitionId pid = new PropertyDefinitionId(DEFAULT_NAME, property.name, PropertyType.UNDEFINED,
+                                                                property.isMultiple());
+            props.put(pid, property);
+        }
+
+        /*
+         * The specification does not mandate whether this should or should not be consider a conflict.  However, the Apache
+         * TCK canRemoveMixin test cases assume that this will generate a conflict.
+         */
+        if (primaryNodeType.getName().equals(getName())) {
+            // This node type has already been applied to the node
+            return true;
+        }
+
+        for (JcrPropertyDefinition property : ((JcrNodeType)primaryNodeType).propertyDefinitions()) {
+            PropertyDefinitionId pid = new PropertyDefinitionId(DEFAULT_NAME, property.name, PropertyType.UNDEFINED,
+                                                                property.isMultiple());
+            JcrPropertyDefinition oldProp = props.put(pid, property);
+            if (oldProp != null) {
+                String oldPropTypeName = oldProp.getDeclaringNodeType().getName();
+                String propTypeName = property.getDeclaringNodeType().getName();
+                if (!oldPropTypeName.equals(propTypeName)) {
+                    // The two types conflict as both separately declare a property with the same name
+                    return true;
+                }
+            }
+        }
+
+        for (NodeType mixinNodeType : mixinNodeTypes) {
+            /*
+             * The specification does not mandate whether this should or should not be consider a conflict.  However, the Apache
+             * TCK canRemoveMixin test cases assume that this will generate a conflict.
+             */
+            if (mixinNodeType.getName().equals(getName())) {
+                // This node type has already been applied to the node
+                return true;
+            }
+
+            for (JcrPropertyDefinition property : ((JcrNodeType)mixinNodeType).propertyDefinitions()) {
+                PropertyDefinitionId pid = new PropertyDefinitionId(DEFAULT_NAME, property.name, PropertyType.UNDEFINED,
+                                                                    property.isMultiple());
+                JcrPropertyDefinition oldProp = props.put(pid, property);
+                if (oldProp != null) {
+                    String oldPropTypeName = oldProp.getDeclaringNodeType().getName();
+                    String propTypeName = property.getDeclaringNodeType().getName();
+                    if (!oldPropTypeName.equals(propTypeName)) {
+                        // The two types conflict as both separately declare a property with the same name
+                        return true;
+                    }
+                }
+            }
+        }
+
+        Map<NodeDefinitionId, JcrNodeDefinition> childNodes = new HashMap<NodeDefinitionId, JcrNodeDefinition>();
+
+        for (JcrNodeDefinition childNode : childNodeDefinitions()) {
+            NodeDefinitionId nid = new NodeDefinitionId(DEFAULT_NAME, childNode.name, new Name[0]);
+            childNodes.put(nid, childNode);
+        }
+
+        for (JcrNodeDefinition childNode : ((JcrNodeType)primaryNodeType).childNodeDefinitions()) {
+            NodeDefinitionId nid = new NodeDefinitionId(DEFAULT_NAME, childNode.name, new Name[0]);
+            JcrNodeDefinition oldNode = childNodes.put(nid, childNode);
+            if (oldNode != null) {
+                String oldNodeTypeName = oldNode.getDeclaringNodeType().getName();
+                String childNodeTypeName = childNode.getDeclaringNodeType().getName();
+                if (!oldNodeTypeName.equals(childNodeTypeName)) {
+                    // The two types conflict as both separately declare a child node with the same name
+                    return true;
+                }
+            }
+        }
+
+        for (NodeType mixinNodeType : mixinNodeTypes) {
+            for (JcrNodeDefinition childNode : ((JcrNodeType)mixinNodeType).childNodeDefinitions()) {
+                NodeDefinitionId nid = new NodeDefinitionId(DEFAULT_NAME, childNode.name, new Name[0]);
+                JcrNodeDefinition oldNode = childNodes.put(nid, childNode);
+                if (oldNode != null) {
+                    String oldNodeTypeName = oldNode.getDeclaringNodeType().getName();
+                    String childNodeTypeName = childNode.getDeclaringNodeType().getName();
+                    if (!oldNodeTypeName.equals(childNodeTypeName)) {
+                        // The two types conflict as both separately declare a child node with the same name
+                        return true;
+                    }
+                }
+            }
+        }
+
+        return false;
     }
 }

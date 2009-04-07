@@ -90,7 +90,7 @@ class JcrNodeTypeManager implements NodeTypeManager {
      * 
      * @see javax.jcr.nodetype.NodeTypeManager#getNodeType(java.lang.String)
      */
-    public NodeType getNodeType( String nodeTypeName ) throws NoSuchNodeTypeException, RepositoryException {
+    public JcrNodeType getNodeType( String nodeTypeName ) throws NoSuchNodeTypeException, RepositoryException {
         Name ntName = context.getValueFactories().getNameFactory().create(nodeTypeName);
         JcrNodeType type = repositoryTypeManager.getNodeType(ntName);
         if (type != null) {

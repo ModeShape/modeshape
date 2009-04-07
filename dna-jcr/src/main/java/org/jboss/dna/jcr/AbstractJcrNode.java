@@ -27,9 +27,12 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import java.util.regex.Pattern;
 import javax.jcr.InvalidItemStateException;
@@ -49,6 +52,7 @@ import javax.jcr.Value;
 import javax.jcr.lock.Lock;
 import javax.jcr.lock.LockException;
 import javax.jcr.nodetype.ConstraintViolationException;
+import javax.jcr.nodetype.NoSuchNodeTypeException;
 import javax.jcr.nodetype.NodeDefinition;
 import javax.jcr.nodetype.NodeType;
 import javax.jcr.nodetype.NodeTypeManager;
@@ -224,7 +228,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
      * @throws UnsupportedOperationException always
      * @see javax.jcr.Node#getPrimaryNodeType()
      */
-    public NodeType getPrimaryNodeType() throws RepositoryException {
+    public JcrNodeType getPrimaryNodeType() throws RepositoryException {
         Name primaryTypeName = nodeInfo().getPrimaryTypeName();
         return session().nodeTypeManager().getNodeType(primaryTypeName);
     }
@@ -246,26 +250,6 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
             if (nodeType != null) mixinNodeTypes.add(nodeType);
         }
         return mixinNodeTypes.toArray(new NodeType[mixinNodeTypes.size()]);
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @return <code>false</code>
-     * @see javax.jcr.Node#canAddMixin(java.lang.String)
-     */
-    public final boolean canAddMixin( String mixinName ) {
-        return false;
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @throws UnsupportedOperationException always
-     * @see javax.jcr.Node#removeMixin(java.lang.String)
-     */
-    public final void removeMixin( String mixinName ) {
-        throw new UnsupportedOperationException();
     }
 
     /**
@@ -604,12 +588,295 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
 
     /**
      * {@inheritDoc}
+     * <p>
+     * <b>DNA Implementation Notes</b>
+     * </p>
+     * <p>
+     * DNA imposes the following additional restrictions on the addition of mixin types in addition to the restrictions provided
+     * by the JCR 1.0 specification:
+     * <ol>
+     * <li>No properties defined by the mixin type can have the same name as any property defined by the node's primary type or
+     * any of its existing mixin types.</li>
+     * <li>No child nodes defined by the mixin type can have the same name as any child node defined by the node's primary type or
+     * any of its existing mixin types.</li>
+     * <li>If the node has a current residual definition for child nodes and/or properties, all nodes and properties that share a
+     * name with a child node definition or property definition from the new mixin type must be compatible with the definition
+     * provided by the new mixin type.</li>
+     * </ol>
+     * </p>
      * 
-     * @throws UnsupportedOperationException always
+     * @see javax.jcr.Node#canAddMixin(java.lang.String)
+     */
+    public final boolean canAddMixin( String mixinName ) throws NoSuchNodeTypeException, RepositoryException {
+        CheckArg.isNotNull(mixinName, "mixinName");
+        CheckArg.isNotZeroLength(mixinName, "mixinName");
+
+        JcrNodeType mixinCandidateType = cache.nodeTypes().getNodeType(mixinName);
+
+        if (this.isLocked()) {
+            return false;
+        }
+
+        if (this.getDefinition().isProtected()) {
+            return false;
+        }
+
+        // TODO: Check access control when that support is added
+        // TODO: Throw VersionException if this node is versionable and checked in or unversionable and the nearest versionable
+        // ancestor is checked in
+
+        NodeType primaryType = this.getPrimaryNodeType();
+        NodeType[] mixinTypes = this.getMixinNodeTypes();
+
+        if (!mixinCandidateType.isMixin()) {
+            return false;
+        }
+
+        if (mixinCandidateType.conflictsWith(primaryType, mixinTypes)) {
+            return false;
+        }
+
+        // ------------------------------------------------------------------------------
+        // Check for any existing properties based on residual definitions that conflict
+        // ------------------------------------------------------------------------------
+        for (JcrPropertyDefinition propertyDefinition : mixinCandidateType.propertyDefinitions()) {
+            AbstractJcrProperty existingProp = cache.findJcrProperty(new PropertyId(nodeUuid,
+                                                                                    propertyDefinition.getInternalName()));
+            if (existingProp != null) {
+                if (propertyDefinition.isMultiple()) {
+                    if (!propertyDefinition.canCastToTypeAndSatisfyConstraints(existingProp.getValues())) {
+                        return false;
+                    }
+                } else {
+                    if (!propertyDefinition.canCastToTypeAndSatisfyConstraints(existingProp.getValue())) {
+                        return false;
+                    }
+                }
+            }
+        }
+
+        // ------------------------------------------------------------------------------
+        // Check for any existing child nodes based on residual definitions that conflict
+        // ------------------------------------------------------------------------------
+        Set<Name> mixinChildNodeNames = new HashSet<Name>();
+        for (JcrNodeDefinition nodeDefinition : mixinCandidateType.childNodeDefinitions()) {
+            mixinChildNodeNames.add(nodeDefinition.getInternalName());
+        }
+
+        for (Name nodeName : mixinChildNodeNames) {
+            // Need to figure out if the child node requires an SNS definition
+            int snsCount = nodeInfo().getChildren().getCountOfSameNameSiblingsWithName(nodeName);
+
+            for (Iterator<ChildNode> iter = nodeInfo().getChildren().getChildren(nodeName); iter.hasNext();) {
+                AbstractJcrNode childNode = cache.findJcrNode(iter.next().getUuid());
+                JcrNodeDefinition match = this.cache.nodeTypes().findChildNodeDefinition(mixinCandidateType.getInternalName(),
+                                                                                         Collections.<Name>emptyList(),
+                                                                                         nodeName,
+                                                                                         childNode.getPrimaryNodeType().getInternalName(),
+                                                                                         snsCount,
+                                                                                         false);
+
+                if (match == null) {
+                    return false;
+                }
+            }
+
+        }
+
+        return true;
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * <b>DNA Implementation Notes</b>
+     * </p>
+     * <p>
+     * The criteria noted in {@link #canAddMixin(String)} must be satisifed in addition to the criteria defined in the JCR 1.0
+     * specification.
+     * </p>
+     * 
      * @see javax.jcr.Node#addMixin(java.lang.String)
      */
-    public final void addMixin( String mixinName ) {
-        throw new UnsupportedOperationException();
+    public final void addMixin( String mixinName ) throws RepositoryException {
+        CheckArg.isNotNull(mixinName, "mixinName");
+        CheckArg.isNotZeroLength(mixinName, "mixinName");
+
+        JcrNodeType mixinCandidateType = cache.nodeTypes().getNodeType(mixinName);
+
+        // Check this separately since it throws a different type of exception
+        if (this.isLocked()) {
+            throw new LockException();
+        }
+
+        if (!canAddMixin(mixinName)) {
+            throw new ConstraintViolationException();
+        }
+
+        Property existingMixinProperty = getProperty(JcrLexicon.MIXIN_TYPES);
+        Value[] existingMixinValues;
+        if (existingMixinProperty != null) {
+            existingMixinValues = existingMixinProperty.getValues();
+        } else {
+            existingMixinValues = new Value[0];
+        }
+
+        Value[] newMixinValues = new Value[existingMixinValues.length + 1];
+        System.arraycopy(existingMixinValues, 0, newMixinValues, 0, existingMixinValues.length);
+        newMixinValues[newMixinValues.length - 1] = valueFrom(PropertyType.NAME, mixinCandidateType.getInternalName());
+
+        cache.findJcrProperty(editor().setProperty(JcrLexicon.MIXIN_TYPES, newMixinValues, false));
+
+        // ------------------------------------------------------------------------------
+        // Create any auto-created properties/nodes from new type
+        // ------------------------------------------------------------------------------
+
+        for (JcrPropertyDefinition propertyDefinition : mixinCandidateType.propertyDefinitions()) {
+            if (propertyDefinition.isAutoCreated() && !propertyDefinition.isProtected()) {
+                if (null == cache.findJcrProperty(new PropertyId(nodeUuid, propertyDefinition.getInternalName()))) {
+                    assert propertyDefinition.getDefaultValues() != null;
+                    if (propertyDefinition.isMultiple()) {
+                        setProperty(propertyDefinition.getName(), propertyDefinition.getDefaultValues());
+                    } else {
+                        assert propertyDefinition.getDefaultValues().length == 1;
+                        setProperty(propertyDefinition.getName(), propertyDefinition.getDefaultValues()[0]);
+                    }
+                }
+            }
+        }
+
+        for (JcrNodeDefinition nodeDefinition : mixinCandidateType.childNodeDefinitions()) {
+            if (nodeDefinition.isAutoCreated() && !nodeDefinition.isProtected()) {
+                Name nodeName = nodeDefinition.getInternalName();
+                if (!nodeInfo().getChildren().getChildren(nodeName).hasNext()) {
+                    assert nodeDefinition.getDefaultPrimaryType() != null;
+                    editor().createChild(nodeName,
+                                         (UUID)null,
+                                         ((JcrNodeType)nodeDefinition.getDefaultPrimaryType()).getInternalName());
+                }
+            }
+        }
+
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * <b>DNA Implementation Notes</b>
+     * </p>
+     * <p>
+     * DNA allows the removal of a mixin type if and only if all of the node's existing child nodes and properties would still
+     * have a valid definition from the node's primary type or other mixin types. In practice, this means that either the node
+     * must have a residual definition compatible with any of the remaining child nodes or properties that currently use a
+     * definition from the to-be-removed mixin type or all of the child nodes and properties that use a definition from the
+     * to-be-removed mixin type must be removed prior to calling this method.
+     * </p>
+     * *
+     * 
+     * @see javax.jcr.Node#removeMixin(java.lang.String)
+     */
+    public final void removeMixin( String mixinName ) throws RepositoryException {
+
+        if (this.isLocked()) {
+            throw new LockException();
+        }
+
+        // TODO: Check access control when that support is added
+        // TODO: Throw VersionException if this node is versionable and checked in or unversionable and the nearest versionable
+        // ancestor is checked in
+
+        Property existingMixinProperty = getProperty(JcrLexicon.MIXIN_TYPES);
+
+        if (existingMixinProperty == null) {
+            throw new NoSuchNodeTypeException();
+        }
+
+        Value[] existingMixinValues = existingMixinProperty.getValues();
+
+        if (existingMixinValues.length == 0) {
+            throw new NoSuchNodeTypeException();
+        }
+
+        // ------------------------------------------------------------------------------
+        // Build the new list of mixin types
+        // ------------------------------------------------------------------------------
+
+        int newMixinValuesCount = existingMixinValues.length - 1;
+        Value[] newMixinValues = new Value[newMixinValuesCount];
+        List<Name> newMixinNames = new ArrayList<Name>(newMixinValuesCount);
+        Name primaryTypeName = getPrimaryNodeType().getInternalName();
+
+        int j = 0;
+        for (int i = 0; i < existingMixinValues.length; i++) {
+            if (!existingMixinValues[i].getString().equals(mixinName)) {
+                if (j < newMixinValuesCount) {
+                    newMixinValues[j++] = existingMixinValues[i];
+                    newMixinNames.add(cache.nameFactory.create(existingMixinValues[i].getString()));
+                } else {
+                    throw new NoSuchNodeTypeException();
+                }
+            }
+        }
+
+        // ------------------------------------------------------------------------------
+        // Check that any remaining properties that use the mixin type to be removed
+        // match the residual definition for the node.
+        // ------------------------------------------------------------------------------
+
+        for (PropertyIterator iter = getProperties(); iter.hasNext();) {
+            Property property = iter.nextProperty();
+            if (mixinName.equals(property.getDefinition().getDeclaringNodeType().getName())) {
+                JcrPropertyDefinition match;
+
+                // Only the residual definition would work - if there were any other definition for this name,
+                // the mixin type would not have been added due to the conflict
+                if (property.getDefinition().isMultiple()) {
+                    match = cache.nodeTypes().findPropertyDefinition(primaryTypeName,
+                                                                     newMixinNames,
+                                                                     JcrNodeType.RESIDUAL_NAME,
+                                                                     property.getValues(),
+                                                                     true);
+                } else {
+                    match = cache.nodeTypes().findPropertyDefinition(primaryTypeName,
+                                                                     newMixinNames,
+                                                                     JcrNodeType.RESIDUAL_NAME,
+                                                                     property.getValue(),
+                                                                     true,
+                                                                     true);
+                }
+
+                if (match == null) {
+                    throw new ConstraintViolationException();
+                }
+            }
+        }
+
+        // ------------------------------------------------------------------------------
+        // Check that any remaining child nodes that use the mixin type to be removed
+        // match the residual definition for the node.
+        // ------------------------------------------------------------------------------
+        for (NodeIterator iter = getNodes(); iter.hasNext();) {
+            AbstractJcrNode node = (AbstractJcrNode)iter.nextNode();
+            Name childNodeName = cache.nameFactory.create(node.getName());
+            int snsCount = node.nodeInfo().getChildren().getCountOfSameNameSiblingsWithName(childNodeName);
+            if (mixinName.equals(node.getDefinition().getDeclaringNodeType().getName())) {
+                // Only the residual definition would work - if there were any other definition for this name,
+                // the mixin type would not have been added due to the conflict
+                JcrNodeDefinition match = cache.nodeTypes().findChildNodeDefinition(primaryTypeName,
+                                                                                    newMixinNames,
+                                                                                    JcrNodeType.RESIDUAL_NAME,
+                                                                                    node.getPrimaryNodeType().getInternalName(),
+                                                                                    snsCount,
+                                                                                    true);
+
+                if (match == null) {
+                    throw new ConstraintViolationException();
+                }
+            }
+        }
+
+        cache.findJcrProperty(editor().setProperty(JcrLexicon.MIXIN_TYPES, newMixinValues, false));
+
     }
 
     /**

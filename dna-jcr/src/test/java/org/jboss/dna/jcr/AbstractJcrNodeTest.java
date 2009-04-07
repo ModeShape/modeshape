@@ -229,15 +229,10 @@ public class AbstractJcrNodeTest {
         node.getProperty("../good/path");
     }
 
-    @Test( expected = UnsupportedOperationException.class )
-    public void shoudNotAllowAddMixin() throws Exception {
-        node.addMixin(null);
-    }
-
-    @Test
-    public void shoudNotAllowCanAddMixin() throws Exception {
-        assertThat(node.canAddMixin(null), is(false));
-    }
+    /*
+     * More comprehensive tests of addMixin, removeMixin, and canAddMixin require additional setup 
+     * and are in MixinTest
+     */
 
     @Test( expected = UnsupportedOperationException.class )
     public void shoudNotAllowCancelMerge() throws Exception {
@@ -700,11 +695,6 @@ public class AbstractJcrNodeTest {
     @Test( expected = UnsupportedRepositoryOperationException.class )
     public void shouldNotAllowOrderBefore() throws Exception {
         node.orderBefore(null, null);
-    }
-
-    @Test( expected = UnsupportedOperationException.class )
-    public void shouldNotAllowRemoveMixin() throws Exception {
-        node.removeMixin(null);
     }
 
     @Test( expected = UnsupportedRepositoryOperationException.class )

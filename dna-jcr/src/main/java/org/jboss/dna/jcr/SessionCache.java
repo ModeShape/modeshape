@@ -539,6 +539,12 @@ public class SessionCache {
          */
         public PropertyId setProperty( Name name,
                                        JcrValue value ) throws ConstraintViolationException {
+            return setProperty(name, value, true);
+        }
+
+        public PropertyId setProperty( Name name,
+                                       JcrValue value,
+                                       boolean skipProtected ) throws ConstraintViolationException {
             assert name != null;
             assert value != null;
             JcrPropertyDefinition definition = null;
@@ -576,7 +582,7 @@ public class SessionCache {
                                                                 name,
                                                                 value,
                                                                 true,
-                                                                true);
+                                                                skipProtected);
                 if (definition == null) {
                     throw new ConstraintViolationException();
                 }
@@ -607,6 +613,9 @@ public class SessionCache {
         /**
          * Set the values for the property. If the property does not exist, it will be added. If the property does exist, the
          * existing values will be replaced with those that are supplied.
+         * <p>
+         * This method will not set protected property definitions and should be used in almost all cases.
+         * </p>
          * 
          * @param name the property name; may not be null
          * @param values new property values, all of which must have the same {@link Value#getType() property type}; may not be
@@ -617,6 +626,25 @@ public class SessionCache {
          */
         public PropertyId setProperty( Name name,
                                        Value[] values ) throws ConstraintViolationException {
+            return setProperty(name, values, true);
+        }
+
+        /**
+         * Set the values for the property. If the property does not exist, it will be added. If the property does exist, the
+         * existing values will be replaced with those that are supplied.
+         * 
+         * @param name the property name; may not be null
+         * @param values new property values, all of which must have the same {@link Value#getType() property type}; may not be
+         *        null but may be empty
+         * @param skipProtected if true, attempts to set protected properties will fail. If false, attempts to set protected
+         *        properties will be allowed.
+         * @return the identifier for the property; never null
+         * @throws ConstraintViolationException if the property could not be set because of a node type constraint or property
+         *         definition constraint
+         */
+        public PropertyId setProperty( Name name,
+                                       Value[] values,
+                                       boolean skipProtected ) throws ConstraintViolationException {
             assert name != null;
             assert values != null;
             int numValues = values.length;
@@ -660,7 +688,7 @@ public class SessionCache {
                                                                 node.getMixinTypeNames(),
                                                                 name,
                                                                 values,
-                                                                true);
+                                                                skipProtected);
                 if (definition == null) {
                     throw new ConstraintViolationException();
                 }
@@ -757,8 +785,8 @@ public class SessionCache {
             if (!definition.getId().equals(node.getDefinitionId())) {
                 // The node definition changed, so try to set the property ...
                 try {
-                    JcrValue value = new JcrValue(factories(), SessionCache.this, PropertyType.STRING, definition.getId()
-                                                                                                                 .getString());
+                    JcrValue value = new JcrValue(factories(), SessionCache.this, PropertyType.STRING,
+                                                  definition.getId().getString());
                     setProperty(DnaLexicon.NODE_DEFINITON, value);
                 } catch (ConstraintViolationException e) {
                     // We can't set this property on the node (according to the node definition).
@@ -887,10 +915,7 @@ public class SessionCache {
             // ---------------------------------------
             // Now record the changes to the store ...
             // ---------------------------------------
-            Graph.Create<Graph.Batch> create = operations.createUnder(currentLocation)
-                                                         .nodeNamed(name)
-                                                         .with(desiredUuid)
-                                                         .with(primaryTypeProp);
+            Graph.Create<Graph.Batch> create = operations.createUnder(currentLocation).nodeNamed(name).with(desiredUuid).with(primaryTypeProp);
             if (nodeDefnDefn != null) {
                 create = create.with(nodeDefinitionProp);
             }

@@ -38,6 +38,9 @@ import org.apache.jackrabbit.test.JCRTestSuite;
 import org.apache.jackrabbit.test.RepositoryStub;
 import org.apache.jackrabbit.test.api.AddNodeTest;
 import org.apache.jackrabbit.test.api.NamespaceRegistryTest;
+import org.apache.jackrabbit.test.api.NodeAddMixinTest;
+import org.apache.jackrabbit.test.api.NodeCanAddMixinTest;
+import org.apache.jackrabbit.test.api.NodeRemoveMixinTest;
 import org.apache.jackrabbit.test.api.PropertyTest;
 import org.apache.jackrabbit.test.api.RepositoryLoginTest;
 import org.apache.jackrabbit.test.api.SessionUUIDTest;
@@ -200,9 +203,9 @@ public class JcrTckTest {
             // addTestSuite(PropertyItemIsModifiedTest.class);
             // addTestSuite(PropertyItemIsNewTest.class);
             //
-            // addTestSuite(NodeAddMixinTest.class);
-            // addTestSuite(NodeCanAddMixinTest.class);
-            // addTestSuite(NodeRemoveMixinTest.class);
+            addTestSuite(NodeAddMixinTest.class);
+            addTestSuite(NodeCanAddMixinTest.class);
+            addTestSuite(NodeRemoveMixinTest.class);
             //
             // addTestSuite(WorkspaceCloneReferenceableTest.class);
             // addTestSuite(WorkspaceCloneSameNameSibsTest.class);

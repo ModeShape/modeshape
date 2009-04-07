@@ -43,6 +43,7 @@ class PropertyTypeUtil {
      */
     static final int jcrPropertyTypeFor( org.jboss.dna.graph.property.Property property ) {
         Object value = property.getFirstValue();
+        if (value == null) return PropertyType.UNDEFINED;
 
         // Get the DNA property type for this ...
         switch (org.jboss.dna.graph.property.PropertyType.discoverType(value)) {
