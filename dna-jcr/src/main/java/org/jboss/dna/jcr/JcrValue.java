@@ -343,11 +343,7 @@ final class JcrValue implements Value {
             case PropertyType.BOOLEAN:
                 // Make sure the existing value is valid per the current type.
                 // This is required if we rely upon the value factories to cast correctly.
-                if (this.type == PropertyType.STRING) {
-                    value = valueFactories.getStringFactory().create(this.value);
-                } else if (this.type == PropertyType.BINARY) {
-                    value = valueFactories.getBinaryFactory().create(this.value);
-                } else {
+                if (this.type != PropertyType.STRING && this.type != PropertyType.BINARY) {
                     throw createValueFormatException(boolean.class);
                 }
                 try {
@@ -357,15 +353,8 @@ final class JcrValue implements Value {
                 }
 
             case PropertyType.DATE:
-                if (this.type == PropertyType.STRING) {
-                    value = valueFactories.getStringFactory().create(this.value);
-                } else if (this.type == PropertyType.BINARY) {
-                    value = valueFactories.getBinaryFactory().create(this.value);
-                } else if (this.type == PropertyType.DOUBLE) {
-                    value = valueFactories.getDoubleFactory().create(this.value);
-                } else if (this.type == PropertyType.LONG) {
-                    value = valueFactories.getLongFactory().create(this.value);
-                } else {
+                if (this.type != PropertyType.STRING && this.type != PropertyType.BINARY && this.type != PropertyType.DOUBLE
+                    && this.type != PropertyType.LONG) {
                     throw createValueFormatException(Calendar.class);
                 }
                 try {
@@ -375,13 +364,7 @@ final class JcrValue implements Value {
                 }
 
             case PropertyType.NAME:
-                if (this.type == PropertyType.STRING) {
-                    value = valueFactories.getStringFactory().create(this.value);
-                } else if (this.type == PropertyType.BINARY) {
-                    value = valueFactories.getBinaryFactory().create(this.value);
-                } else if (this.type == PropertyType.PATH) {
-                    value = valueFactories.getPathFactory().create(this.value);
-                } else {
+                if (this.type != PropertyType.STRING && this.type != PropertyType.BINARY && this.type != PropertyType.PATH) {
                     throw createValueFormatException(Name.class);
                 }
                 try {
@@ -391,13 +374,7 @@ final class JcrValue implements Value {
                 }
 
             case PropertyType.PATH:
-                if (this.type == PropertyType.STRING) {
-                    value = valueFactories.getStringFactory().create(this.value);
-                } else if (this.type == PropertyType.BINARY) {
-                    value = valueFactories.getBinaryFactory().create(this.value);
-                } else if (this.type == PropertyType.NAME) {
-                    value = valueFactories.getNameFactory().create(this.value);
-                } else {
+                if (this.type != PropertyType.STRING && this.type != PropertyType.BINARY && this.type != PropertyType.NAME) {
                     throw createValueFormatException(Path.class);
                 }
                 try {
@@ -407,11 +384,7 @@ final class JcrValue implements Value {
                 }
 
             case PropertyType.REFERENCE:
-                if (this.type == PropertyType.STRING) {
-                    value = valueFactories.getStringFactory().create(this.value);
-                } else if (this.type == PropertyType.BINARY) {
-                    value = valueFactories.getBinaryFactory().create(this.value);
-                } else {
+                if (this.type != PropertyType.STRING && this.type != PropertyType.BINARY) {
                     throw createValueFormatException(Node.class);
                 }
                 try {
@@ -420,15 +393,8 @@ final class JcrValue implements Value {
                     throw createValueFormatException(vfe);
                 }
             case PropertyType.DOUBLE:
-                if (this.type == PropertyType.STRING) {
-                    value = valueFactories.getStringFactory().create(this.value);
-                } else if (this.type == PropertyType.BINARY) {
-                    value = valueFactories.getBinaryFactory().create(this.value);
-                } else if (this.type == PropertyType.LONG) {
-                    value = valueFactories.getLongFactory().create(this.value);
-                } else if (this.type == PropertyType.DATE) {
-                    value = valueFactories.getDateFactory().create(this.value);
-                } else {
+                if (this.type != PropertyType.STRING && this.type != PropertyType.BINARY && this.type != PropertyType.LONG
+                    && this.type != PropertyType.DATE) {
                     throw createValueFormatException(double.class);
                 }
                 try {
@@ -437,15 +403,8 @@ final class JcrValue implements Value {
                     throw createValueFormatException(vfe);
                 }
             case PropertyType.LONG:
-                if (this.type == PropertyType.STRING) {
-                    value = valueFactories.getStringFactory().create(this.value);
-                } else if (this.type == PropertyType.BINARY) {
-                    value = valueFactories.getBinaryFactory().create(this.value);
-                } else if (this.type == PropertyType.DOUBLE) {
-                    value = valueFactories.getDoubleFactory().create(this.value);
-                } else if (this.type == PropertyType.DATE) {
-                    value = valueFactories.getDateFactory().create(this.value);
-                } else {
+                if (this.type != PropertyType.STRING && this.type != PropertyType.BINARY && this.type != PropertyType.DOUBLE
+                    && this.type != PropertyType.DATE) {
                     throw createValueFormatException(long.class);
                 }
                 try {
