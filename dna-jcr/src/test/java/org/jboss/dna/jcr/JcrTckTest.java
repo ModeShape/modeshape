@@ -41,11 +41,20 @@ import org.apache.jackrabbit.test.api.NamespaceRegistryTest;
 import org.apache.jackrabbit.test.api.PropertyTest;
 import org.apache.jackrabbit.test.api.RepositoryLoginTest;
 import org.apache.jackrabbit.test.api.SessionUUIDTest;
+import org.apache.jackrabbit.test.api.SetPropertyBooleanTest;
+import org.apache.jackrabbit.test.api.SetPropertyCalendarTest;
+import org.apache.jackrabbit.test.api.SetPropertyConstraintViolationExceptionTest;
+import org.apache.jackrabbit.test.api.SetPropertyDoubleTest;
+import org.apache.jackrabbit.test.api.SetPropertyInputStreamTest;
+import org.apache.jackrabbit.test.api.SetPropertyLongTest;
+import org.apache.jackrabbit.test.api.SetValueBinaryTest;
 import org.apache.jackrabbit.test.api.SetValueBooleanTest;
+import org.apache.jackrabbit.test.api.SetValueConstraintViolationExceptionTest;
 import org.apache.jackrabbit.test.api.SetValueDateTest;
 import org.apache.jackrabbit.test.api.SetValueDoubleTest;
 import org.apache.jackrabbit.test.api.SetValueLongTest;
 import org.apache.jackrabbit.test.api.SetValueReferenceTest;
+import org.apache.jackrabbit.test.api.SetValueVersionExceptionTest;
 import org.apache.jackrabbit.test.api.ValueFactoryTest;
 import org.jboss.dna.graph.DnaLexicon;
 import org.jboss.dna.graph.ExecutionContext;
@@ -164,26 +173,26 @@ public class JcrTckTest {
             // addTestSuite(NodeOrderableChildNodesTest.class);
             addTestSuite(PropertyTest.class);
             //
-            // addTestSuite(SetValueBinaryTest.class);
+            addTestSuite(SetValueBinaryTest.class);
             addTestSuite(SetValueBooleanTest.class);
             addTestSuite(SetValueDateTest.class);
             addTestSuite(SetValueDoubleTest.class);
             addTestSuite(SetValueLongTest.class);
             addTestSuite(SetValueReferenceTest.class);
             // addTestSuite(SetValueStringTest.class);
-            // addTestSuite(SetValueConstraintViolationExceptionTest.class);
+            addTestSuite(SetValueConstraintViolationExceptionTest.class);
             // addTestSuite(SetValueValueFormatExceptionTest.class);
-            // addTestSuite(SetValueVersionExceptionTest.class);
-            //
-            // addTestSuite(SetPropertyBooleanTest.class);
-            // addTestSuite(SetPropertyCalendarTest.class);
-            // addTestSuite(SetPropertyDoubleTest.class);
-            // addTestSuite(SetPropertyInputStreamTest.class);
-            // addTestSuite(SetPropertyLongTest.class);
+            addTestSuite(SetValueVersionExceptionTest.class);
+
+            addTestSuite(SetPropertyBooleanTest.class);
+            addTestSuite(SetPropertyCalendarTest.class);
+            addTestSuite(SetPropertyDoubleTest.class);
+            addTestSuite(SetPropertyInputStreamTest.class);
+            addTestSuite(SetPropertyLongTest.class);
             // addTestSuite(SetPropertyNodeTest.class);
             // addTestSuite(SetPropertyStringTest.class);
             // addTestSuite(SetPropertyValueTest.class);
-            // addTestSuite(SetPropertyConstraintViolationExceptionTest.class);
+            addTestSuite(SetPropertyConstraintViolationExceptionTest.class);
             // addTestSuite(SetPropertyAssumeTypeTest.class);
             //
             // addTestSuite(NodeItemIsModifiedTest.class);

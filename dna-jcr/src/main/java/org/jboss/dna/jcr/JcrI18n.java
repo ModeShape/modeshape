@@ -69,6 +69,7 @@ public final class JcrI18n {
     public static I18n itemNotFoundWithUuid;
     public static I18n itemNotFoundAtPath;
     public static I18n itemNotFoundAtPathRelativeToReferenceNode;
+    public static I18n propertyNotFoundOnNode;
     public static I18n propertyNotFoundAtPathRelativeToReferenceNode;
     public static I18n nodeNotFoundAtPathRelativeToReferenceNode;
     public static I18n childNotFoundUnderNode;

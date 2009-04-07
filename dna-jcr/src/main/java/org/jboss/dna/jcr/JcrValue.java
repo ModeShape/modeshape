@@ -50,6 +50,8 @@ import org.jboss.dna.graph.property.ValueFactories;
 @NotThreadSafe
 final class JcrValue implements Value {
 
+    static final JcrValue[] EMPTY_ARRAY = new JcrValue[] {};
+
     private final SessionCache sessionCache;
     private final ValueFactories valueFactories;
     private final int type;

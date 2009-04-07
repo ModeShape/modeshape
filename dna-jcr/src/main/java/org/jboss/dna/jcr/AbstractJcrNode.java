@@ -727,6 +727,10 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
     public final Property setProperty( String name,
                                        Calendar value )
         throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
+        if (value == null) {
+            // If there is an existing property, then remove it ...
+            return removeExistingSingleValuedProperty(name);
+        }
         return cache.findJcrProperty(editor().setProperty(nameFrom(name), valueFrom(value)));
 
     }
@@ -751,6 +755,10 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
     public final Property setProperty( String name,
                                        InputStream value )
         throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
+        if (value == null) {
+            // If there is an existing property, then remove it ...
+            return removeExistingSingleValuedProperty(name);
+        }
         return cache.findJcrProperty(editor().setProperty(nameFrom(name), valueFrom(value)));
     }
 
@@ -774,6 +782,10 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
     public final Property setProperty( String name,
                                        Node value )
         throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
+        if (value == null) {
+            // If there is an existing property, then remove it ...
+            return removeExistingSingleValuedProperty(name);
+        }
         return cache.findJcrProperty(editor().setProperty(nameFrom(name), valueFrom(value)));
     }
 
@@ -785,6 +797,10 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
     public final Property setProperty( String name,
                                        String value )
         throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
+        if (value == null) {
+            // If there is an existing property, then remove it ...
+            return removeExistingSingleValuedProperty(name);
+        }
         return cache.findJcrProperty(editor().setProperty(nameFrom(name), valueFrom(PropertyType.STRING, value)));
     }
 
@@ -797,6 +813,10 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
                                        String value,
                                        int type )
         throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
+        if (value == null) {
+            // If there is an existing property, then remove it ...
+            return removeExistingSingleValuedProperty(name);
+        }
         return cache.findJcrProperty(editor().setProperty(nameFrom(name), valueFrom(type, value)));
     }
 
@@ -831,7 +851,24 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
     public final Property setProperty( String name,
                                        Value value )
         throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
+        if (value == null) {
+            // If there is an existing property, then remove it ...
+            return removeExistingSingleValuedProperty(name);
+        }
         return cache.findJcrProperty(editor().setProperty(nameFrom(name), (JcrValue)value));
+    }
+
+    protected final Property removeExistingSingleValuedProperty( String name )
+        throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
+        PropertyId id = new PropertyId(nodeUuid, nameFrom(name));
+        AbstractJcrProperty property = cache.findJcrProperty(id);
+        if (property != null) {
+            assert !property.isMultiple();
+            property.remove();
+            return property;
+        }
+        // else the property doesn't exist ...
+        throw new RepositoryException(JcrI18n.propertyNotFoundOnNode.text(name, getPath(), cache.workspaceName()));
     }
 
     /**
