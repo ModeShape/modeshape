@@ -66,6 +66,7 @@ import org.jboss.dna.graph.property.PropertyFactory;
 import org.jboss.dna.graph.property.ValueFactories;
 import org.jboss.dna.graph.property.ValueFactory;
 import org.jboss.dna.graph.property.ValueFormatException;
+import org.jboss.dna.graph.request.BatchRequestBuilder;
 import org.jboss.dna.graph.request.ChangeRequest;
 import org.jboss.dna.graph.request.Request;
 import org.jboss.dna.jcr.cache.ChangedNodeInfo;
@@ -148,6 +149,7 @@ public class SessionCache {
     protected final HashMap<UUID, NodeInfo> deletedNodes;
 
     private LinkedList<Request> requests;
+    private BatchRequestBuilder requestBuilder;
     protected Graph.Batch operations;
 
     public SessionCache( JcrSession session,
@@ -183,6 +185,7 @@ public class SessionCache {
 
         // Create the batch operations ...
         this.requests = new LinkedList<Request>();
+        this.requestBuilder = new BatchRequestBuilder(this.requests);
         this.operations = this.store.batch();
     }
 
@@ -233,7 +236,8 @@ public class SessionCache {
             // Create a new batch for future operations ...
             // LinkedList<Request> oldRequests = this.requests;
             this.requests = new LinkedList<Request>();
-            operations = store.batch(this.requests);
+            this.requestBuilder = new BatchRequestBuilder(this.requests);
+            operations = store.batch(this.requestBuilder);
 
             // Remove all the cached items that have been changed or deleted ...
             for (UUID changedUuid : changedNodes.keySet()) {
@@ -273,6 +277,9 @@ public class SessionCache {
             // Find the path of the given node ...
             Path path = getPathFor(nodeUuid);
 
+            // Make sure the builder has finished all the requests ...
+            this.requestBuilder.finishPendingRequest();
+
             // Remove all of the enqueued requests for this branch ...
             LinkedList<Request> branchRequests = new LinkedList<Request>();
             LinkedList<Request> nonBranchRequests = new LinkedList<Request>();
@@ -297,13 +304,14 @@ public class SessionCache {
             }
 
             // Now execute the branch ...
-            Graph.Batch branchBatch = store.batch(branchRequests);
+            Graph.Batch branchBatch = store.batch(new BatchRequestBuilder(branchRequests));
             try {
                 branchBatch.execute();
 
                 // Still have non-branch related requests that we haven't executed ...
                 this.requests = nonBranchRequests;
-                this.operations = store.batch(nonBranchRequests);
+                this.requestBuilder = new BatchRequestBuilder(this.requests);
+                this.operations = store.batch(this.requestBuilder);
 
                 // Remove all the cached, changed or deleted items that were just saved ...
                 for (UUID changedUuid : branchUuids) {

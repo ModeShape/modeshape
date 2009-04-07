@@ -23,10 +23,10 @@
  */
 package org.jboss.dna.graph.request.processor;
 
-import java.util.ArrayList;
-import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Queue;
 import net.jcip.annotations.Immutable;
 import org.jboss.dna.common.util.CheckArg;
@@ -40,7 +40,6 @@ import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.Property;
 import org.jboss.dna.graph.property.ReferentialIntegrityException;
-import org.jboss.dna.graph.property.basic.BasicEmptyProperty;
 import org.jboss.dna.graph.request.CacheableRequest;
 import org.jboss.dna.graph.request.CloneWorkspaceRequest;
 import org.jboss.dna.graph.request.CompositeRequest;
@@ -59,9 +58,10 @@ import org.jboss.dna.graph.request.ReadBranchRequest;
 import org.jboss.dna.graph.request.ReadNextBlockOfChildrenRequest;
 import org.jboss.dna.graph.request.ReadNodeRequest;
 import org.jboss.dna.graph.request.ReadPropertyRequest;
-import org.jboss.dna.graph.request.RemovePropertiesRequest;
+import org.jboss.dna.graph.request.RemovePropertyRequest;
 import org.jboss.dna.graph.request.RenameNodeRequest;
 import org.jboss.dna.graph.request.Request;
+import org.jboss.dna.graph.request.SetPropertyRequest;
 import org.jboss.dna.graph.request.UnsupportedRequestException;
 import org.jboss.dna.graph.request.UpdatePropertiesRequest;
 import org.jboss.dna.graph.request.VerifyNodeExistsRequest;
@@ -190,8 +190,10 @@ public abstract class RequestProcessor {
             process((ReadAllPropertiesRequest)request);
         } else if (request instanceof ReadPropertyRequest) {
             process((ReadPropertyRequest)request);
-        } else if (request instanceof RemovePropertiesRequest) {
-            process((RemovePropertiesRequest)request);
+        } else if (request instanceof RemovePropertyRequest) {
+            process((RemovePropertyRequest)request);
+        } else if (request instanceof SetPropertyRequest) {
+            process((SetPropertyRequest)request);
         } else if (request instanceof RenameNodeRequest) {
             process((RenameNodeRequest)request);
         } else if (request instanceof UpdatePropertiesRequest) {
@@ -608,29 +610,47 @@ public abstract class RequestProcessor {
     }
 
     /**
-     * Process a request to remove the specified properties from a node.
+     * Process a request to remove the specified property from a node.
      * <p>
      * This method does nothing if the request is null. Unless overridden, this method converts this request into a
      * {@link UpdatePropertiesRequest}.
      * </p>
      * 
-     * @param request the request to remove the properties with certain names
+     * @param request the request to remove the property
      */
-    public void process( RemovePropertiesRequest request ) {
+    public void process( RemovePropertyRequest request ) {
         if (request == null) return;
-        Collection<Name> names = request.propertyNames();
-        if (names.isEmpty()) return;
-        List<Property> emptyProperties = new ArrayList<Property>(names.size());
-        for (Name propertyName : names) {
-            emptyProperties.add(new BasicEmptyProperty(propertyName));
-        }
-        UpdatePropertiesRequest update = new UpdatePropertiesRequest(request.from(), request.inWorkspace(), emptyProperties);
+        Map<Name, Property> properties = Collections.singletonMap(request.propertyName(), null);
+        UpdatePropertiesRequest update = new UpdatePropertiesRequest(request.from(), request.inWorkspace(), properties);
         process(update);
         if (update.hasError()) {
             request.setError(update.getError());
         }
         // Set the actual location ...
         request.setActualLocationOfNode(update.getActualLocationOfNode());
+    }
+
+    /**
+     * Process a request to set the specified property on a node.
+     * <p>
+     * This method does nothing if the request is null. Unless overridden, this method converts this request into a
+     * {@link UpdatePropertiesRequest}.
+     * </p>
+     * 
+     * @param request the request to set the property
+     */
+    public void process( SetPropertyRequest request ) {
+        if (request == null) return;
+        Property property = request.property();
+        Map<Name, Property> properties = Collections.singletonMap(property.getName(), property);
+        UpdatePropertiesRequest update = new UpdatePropertiesRequest(request.on(), request.inWorkspace(), properties);
+        process(update);
+        if (update.hasError()) {
+            request.setError(update.getError());
+        } else {
+            // Set the actual location ...
+            request.setActualLocationOfNode(update.getActualLocationOfNode());
+        }
     }
 
     /**

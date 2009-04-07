@@ -61,7 +61,6 @@ import org.jboss.dna.graph.request.InvalidRequestException;
 import org.jboss.dna.graph.request.MoveBranchRequest;
 import org.jboss.dna.graph.request.ReadAllChildrenRequest;
 import org.jboss.dna.graph.request.ReadAllPropertiesRequest;
-import org.jboss.dna.graph.request.RemovePropertiesRequest;
 import org.jboss.dna.graph.request.RenameNodeRequest;
 import org.jboss.dna.graph.request.Request;
 import org.jboss.dna.graph.request.UpdatePropertiesRequest;
@@ -342,18 +341,6 @@ public class SVNRepositoryRequestProcessor extends RequestProcessor implements S
         } catch (SVNException e) {
             request.setError(e);
         }
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.jboss.dna.graph.request.processor.RequestProcessor#process(org.jboss.dna.graph.request.RemovePropertiesRequest)
-     */
-    @Override
-    public void process( RemovePropertiesRequest request ) {
-        logger.trace(request.toString());
-        verifyUpdatesAllowed();
-        super.process(request);
     }
 
     /**
@@ -727,6 +714,7 @@ public class SVNRepositoryRequestProcessor extends RequestProcessor implements S
 
     /**
      * Create a file.
+     * 
      * @param path
      * @param file
      * @param content
@@ -735,14 +723,17 @@ public class SVNRepositoryRequestProcessor extends RequestProcessor implements S
      */
     private void newFile( String path,
                           String file,
-                          byte[] content, String message ) throws SVNException {
+                          byte[] content,
+                          String message ) throws SVNException {
         SVNNodeKind childKind = repository.checkPath(file, -1);
         if (childKind == SVNNodeKind.NONE) {
             ScmAction addFileNodeAction = addFile(path, file, content);
             SVNActionExecutor executor = new SVNActionExecutor(repository);
-            executor.execute(addFileNodeAction,message);
+            executor.execute(addFileNodeAction, message);
         } else {
-            SVNErrorMessage err = SVNErrorMessage.create(SVNErrorCode.UNKNOWN, "Item with name '{0}' can't be created (already exist)", file);
+            SVNErrorMessage err = SVNErrorMessage.create(SVNErrorCode.UNKNOWN,
+                                                         "Item with name '{0}' can't be created (already exist)",
+                                                         file);
             throw new SVNException(err);
         }
     }
@@ -764,7 +755,7 @@ public class SVNRepositoryRequestProcessor extends RequestProcessor implements S
      */
     public ScmAction addFile( String path,
                               String file,
-                              byte[] content) {
+                              byte[] content ) {
         return new AddFile(path, file, content);
     }
 
@@ -858,16 +849,16 @@ public class SVNRepositoryRequestProcessor extends RequestProcessor implements S
 
     }
 
-//    private Date getCreatedOn( Object[] objs ) {
-//        Date createdOn = null;
-//        for (Object object : objs) {
-//            if (object instanceof Date) {
-//                createdOn = (Date)object;
-//
-//            }
-//        }
-//        return createdOn;
-//    }
+    // private Date getCreatedOn( Object[] objs ) {
+    // Date createdOn = null;
+    // for (Object object : objs) {
+    // if (object instanceof Date) {
+    // createdOn = (Date)object;
+    //
+    // }
+    // }
+    // return createdOn;
+    // }
 
     private byte[] getContent( Object[] objs ) {
         byte[] content = null;

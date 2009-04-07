@@ -254,7 +254,7 @@ public class GraphImporter {
             if (firstProperty == null) {
                 batch.create(path).and();
             } else {
-                batch.create(path, firstProperty, additionalProperties);
+                batch.create(path, firstProperty, additionalProperties).and();
             }
         }
 

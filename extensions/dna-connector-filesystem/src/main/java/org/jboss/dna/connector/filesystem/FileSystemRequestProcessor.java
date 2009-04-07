@@ -59,7 +59,6 @@ import org.jboss.dna.graph.request.InvalidWorkspaceException;
 import org.jboss.dna.graph.request.MoveBranchRequest;
 import org.jboss.dna.graph.request.ReadAllChildrenRequest;
 import org.jboss.dna.graph.request.ReadAllPropertiesRequest;
-import org.jboss.dna.graph.request.RemovePropertiesRequest;
 import org.jboss.dna.graph.request.RenameNodeRequest;
 import org.jboss.dna.graph.request.Request;
 import org.jboss.dna.graph.request.UpdatePropertiesRequest;
@@ -299,16 +298,6 @@ public class FileSystemRequestProcessor extends RequestProcessor {
     @Override
     public void process( MoveBranchRequest request ) {
         updatesAllowed(request);
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.jboss.dna.graph.request.processor.RequestProcessor#process(org.jboss.dna.graph.request.RemovePropertiesRequest)
-     */
-    @Override
-    public void process( RemovePropertiesRequest request ) {
-        if (updatesAllowed(request)) super.process(request);
     }
 
     /**

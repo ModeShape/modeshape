@@ -70,6 +70,7 @@ import org.jboss.dna.graph.request.ReadNextBlockOfChildrenRequest;
 import org.jboss.dna.graph.request.ReadNodeRequest;
 import org.jboss.dna.graph.request.ReadPropertyRequest;
 import org.jboss.dna.graph.request.Request;
+import org.jboss.dna.graph.request.SetPropertyRequest;
 import org.jboss.dna.graph.request.UpdatePropertiesRequest;
 import org.jboss.dna.graph.request.VerifyNodeExistsRequest;
 import org.jboss.dna.graph.request.VerifyWorkspaceRequest;
@@ -319,7 +320,16 @@ public class GraphTest {
         assertThat(request, is(instanceOf(UpdatePropertiesRequest.class)));
         UpdatePropertiesRequest read = (UpdatePropertiesRequest)request;
         assertThat(read.on(), is(on));
-        assertThat(read.properties(), hasItems(properties));
+        assertThat(read.properties().values(), hasItems(properties));
+    }
+
+    protected void assertNextRequestSetProperty( Location on,
+                                                 Property property ) {
+        Request request = executedRequests.poll();
+        assertThat(request, is(instanceOf(SetPropertyRequest.class)));
+        SetPropertyRequest read = (SetPropertyRequest)request;
+        assertThat(read.on(), is(on));
+        assertThat(read.property(), is(property));
     }
 
     // ----------------------------------------------------------------------------------------------------------------
@@ -623,50 +633,77 @@ public class GraphTest {
     }
 
     @Test
-    public void shouldSetPropertiesWithEitherOnOrToMethodsCalledFirst() {
+    public void shouldSetPropertyWithEitherOnOrToMethodsCalledFirst() {
         graph.set("propName").on(validPath).to(3.0f);
-        assertNextRequestUpdateProperties(Location.create(validPath), createProperty("propName", 3.0f));
+        assertNextRequestSetProperty(Location.create(validPath), createProperty("propName", 3.0f));
 
         graph.set("propName").to(3.0f).on(validPath);
-        assertNextRequestUpdateProperties(Location.create(validPath), createProperty("propName", 3.0f));
+        assertNextRequestSetProperty(Location.create(validPath), createProperty("propName", 3.0f));
     }
 
     @Test
     public void shouldSetPropertyValueToPrimitiveTypes() {
         graph.set("propName").on(validPath).to(3.0F);
-        assertNextRequestUpdateProperties(Location.create(validPath), createProperty("propName", new Float(3.0f)));
+        assertNextRequestSetProperty(Location.create(validPath), createProperty("propName", new Float(3.0f)));
 
         graph.set("propName").on(validPath).to(1.0D);
-        assertNextRequestUpdateProperties(Location.create(validPath), createProperty("propName", new Double(1.0)));
+        assertNextRequestSetProperty(Location.create(validPath), createProperty("propName", new Double(1.0)));
 
         graph.set("propName").on(validPath).to(false);
-        assertNextRequestUpdateProperties(Location.create(validPath), createProperty("propName", Boolean.FALSE));
+        assertNextRequestSetProperty(Location.create(validPath), createProperty("propName", Boolean.FALSE));
 
         graph.set("propName").on(validPath).to(3);
-        assertNextRequestUpdateProperties(Location.create(validPath), createProperty("propName", new Integer(3)));
+        assertNextRequestSetProperty(Location.create(validPath), createProperty("propName", new Integer(3)));
 
         graph.set("propName").on(validPath).to(5L);
-        assertNextRequestUpdateProperties(Location.create(validPath), createProperty("propName", new Long(5)));
+        assertNextRequestSetProperty(Location.create(validPath), createProperty("propName", new Long(5)));
 
         graph.set("propName").on(validPath).to(validPath);
-        assertNextRequestUpdateProperties(Location.create(validPath), createProperty("propName", validPath));
+        assertNextRequestSetProperty(Location.create(validPath), createProperty("propName", validPath));
 
         graph.set("propName").on(validPath).to(validPath.getLastSegment().getName());
-        assertNextRequestUpdateProperties(Location.create(validPath), createProperty("propName", validPath.getLastSegment()
-                                                                                                          .getName()));
+        assertNextRequestSetProperty(Location.create(validPath), createProperty("propName", validPath.getLastSegment().getName()));
         Date now = new Date();
         graph.set("propName").on(validPath).to(now);
-        assertNextRequestUpdateProperties(Location.create(validPath), createProperty("propName", now));
+        assertNextRequestSetProperty(Location.create(validPath), createProperty("propName", now));
 
         DateTime dtNow = context.getValueFactories().getDateFactory().create(now);
         graph.set("propName").on(validPath).to(dtNow);
-        assertNextRequestUpdateProperties(Location.create(validPath), createProperty("propName", dtNow));
+        assertNextRequestSetProperty(Location.create(validPath), createProperty("propName", dtNow));
 
         Calendar calNow = Calendar.getInstance();
         calNow.setTime(now);
         graph.set("propName").on(validPath).to(calNow);
-        assertNextRequestUpdateProperties(Location.create(validPath), createProperty("propName", dtNow));
+        assertNextRequestSetProperty(Location.create(validPath), createProperty("propName", dtNow));
+    }
 
+    @Test
+    public void shouldSetMultiplePropertiesAtOnce() {
+        Property p1 = createProperty("propName1", new Float(3.0f));
+        Property p2 = createProperty("propName2", new Double(1.0));
+        Property p3 = createProperty("propName3", "String value");
+        graph.batch().set(p1, p2, p3).on(validPath).execute();
+        assertNextRequestUpdateProperties(Location.create(validPath), p1, p2, p3);
+    }
+
+    @Test
+    public void shouldCombineAdjacentSetPropertyCalls() {
+        Property p1 = createProperty("propName1", new Float(3.0f));
+        Property p2 = createProperty("propName2", new Double(1.0));
+        Property p3 = createProperty("propName3", "String value");
+        graph.batch().set(p1).on(validPath).and().set(p2).on(validPath).and().set(p3).on(validPath).execute();
+        assertNextRequestUpdateProperties(Location.create(validPath), p1, p2, p3);
+    }
+
+    @Test
+    public void shouldNotCombineNonAdjacentSetPropertyCalls() {
+        Property p1 = createProperty("propName1", new Float(3.0f));
+        Property p2 = createProperty("propName2", new Double(1.0));
+        Property p3 = createProperty("propName3", "String value");
+        graph.batch().set(p1).on(validPath).and().set(p2).on(validPath).and().set(p3).on(validUuid).execute();
+        extractRequestsFromComposite();
+        assertNextRequestUpdateProperties(Location.create(validPath), p1, p2);
+        assertNextRequestSetProperty(Location.create(validUuid), p3);
     }
 
     @Test

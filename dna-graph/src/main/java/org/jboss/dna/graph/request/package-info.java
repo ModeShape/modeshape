@@ -148,8 +148,10 @@
  *   <li>{@link UpdatePropertiesRequest} - A request to update one or more properties on a node.  Any property
  *   with no values will be removed, while properties with one or more values will be set (replace any existing property
  *   with the same name, if they exist). </li>
- *   <li>{@link RemovePropertiesRequest} - A request to remove one or more properties on a node.  No error is reported
+ *   <li>{@link RemovePropertyRequest} - A request to remove one property from a node.  No error is reported
  *   if the node does not contain a property that is to be removed.</li>
+ *   <li>{@link SetPropertyRequest} - A request to set one property on a node.  No error is reported
+ *   if the node does not already have the property, since the property is just created.</li>
  *   <li>{@link DeleteBranchRequest} - A request to delete a node and all nodes located below it.</li>
  *   <li>{@link CompositeRequest} - A request that acts as a container for multiple other requests (of various kinds),
  *   allowing you to batch together multiple for processing.  Use the one of the {@link CompositeRequest#with(Request...) CompositeRequest.with(...)}

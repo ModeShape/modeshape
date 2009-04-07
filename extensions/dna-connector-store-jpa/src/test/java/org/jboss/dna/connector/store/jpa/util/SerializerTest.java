@@ -268,8 +268,9 @@ public class SerializerTest {
 
         Property[] initial = new Property[] {prop1, prop2, prop3, prop4, prop5, prop6, prop7, prop8};
         Property[] updated = new Property[] {prop2b, prop3b, prop6b};
+        Name[] deleted = new Name[] {};
         SkippedLargeValues removedLargeValues = new SkippedLargeValues();
-        assertReserializable(serializer, removedLargeValues, initial, updated);
+        assertReserializable(serializer, removedLargeValues, initial, updated, deleted);
 
         assertThat(largeValues.getCount(), is(3));
         assertThat(removedLargeValues.getCount(), is(2)); // p2's value and p6's original value
@@ -411,26 +412,29 @@ public class SerializerTest {
     protected void assertReserializable( Serializer serializer,
                                          Serializer.LargeValues removedLargeValues,
                                          Property[] originalProperties,
-                                         Property... updatedProperties ) throws IOException, ClassNotFoundException {
+                                         Property[] updatedProperties,
+                                         Name[] removedProperties ) throws IOException, ClassNotFoundException {
         Collection<Name> propertiesThatStay = new HashSet<Name>();
         Collection<Name> propertiesThatAreDeleted = new HashSet<Name>();
         for (Property prop : originalProperties) {
             propertiesThatStay.add(prop.getName());
         }
         for (Property prop : updatedProperties) {
-            if (prop.isEmpty()) {
-                propertiesThatAreDeleted.add(prop.getName());
-                propertiesThatStay.remove(prop.getName());
-            } else {
-                propertiesThatStay.add(prop.getName());
-            }
+            propertiesThatStay.add(prop.getName());
+        }
+        for (Name removedPropertyName : removedProperties) {
+            propertiesThatAreDeleted.add(removedPropertyName);
+            propertiesThatStay.remove(removedPropertyName);
         }
 
         // Serialize the properties one at a time ...
         byte[] bytes = serialize(serializer, originalProperties);
 
         // Now reserialize, updating the properties ...
-        Collection<Property> updatedProps = Arrays.asList(updatedProperties);
+        Map<Name, Property> updatedProps = new HashMap<Name, Property>();
+        for (Property property : updatedProperties) {
+            updatedProps.put(property.getName(), property);
+        }
         ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
         ObjectInputStream ois = new ObjectInputStream(bais);
         ByteArrayOutputStream baos = new ByteArrayOutputStream();

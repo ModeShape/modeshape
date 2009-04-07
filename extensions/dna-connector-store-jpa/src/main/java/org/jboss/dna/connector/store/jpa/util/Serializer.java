@@ -361,7 +361,7 @@ public class Serializer {
      */
     public int reserializeProperties( ObjectInputStream input,
                                       ObjectOutputStream output,
-                                      Collection<Property> updatedProperties,
+                                      Map<Name, Property> updatedProperties,
                                       LargeValues largeValues,
                                       LargeValues removedLargeValues,
                                       ReferenceValues references ) throws IOException, ClassNotFoundException {
@@ -371,10 +371,6 @@ public class Serializer {
         assert largeValues != null;
         assert references != null;
         // Assemble a set of property names to skip deserializing
-        Set<Name> skipNames = new HashSet<Name>();
-        for (Property property : updatedProperties) {
-            skipNames.add(property.getName());
-        }
         Map<Name, Property> allProperties = new HashMap<Name, Property>();
 
         // Read the number of properties ...
@@ -385,7 +381,7 @@ public class Serializer {
             String nameStr = (String)input.readObject();
             Name name = valueFactories.getNameFactory().create(nameStr);
             assert name != null;
-            if (skipNames.contains(name)) {
+            if (updatedProperties.containsKey(name)) {
                 // Deserialized, but don't materialize ...
                 deserializePropertyValues(input, name, true, largeValues, removedLargeValues, references);
             } else {
@@ -399,9 +395,10 @@ public class Serializer {
         }
 
         // Add all the updated properties ...
-        for (Property updated : updatedProperties) {
-            if (updated.isEmpty()) {
-                allProperties.remove(updated.getName());
+        for (Map.Entry<Name, Property> entry : updatedProperties.entrySet()) {
+            Property updated = entry.getValue();
+            if (updated == null) {
+                allProperties.remove(entry.getKey());
             } else {
                 allProperties.put(updated.getName(), updated);
             }

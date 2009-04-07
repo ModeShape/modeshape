@@ -864,12 +864,12 @@ public class BasicRequestProcessor extends RequestProcessor {
                 ObjectOutputStream oos = new ObjectOutputStream(os);
                 int numProps = 0;
                 LargeValueSerializer largeValues = null;
-                Collection<Property> props = request.properties();
+                Map<Name, Property> props = request.properties();
                 References refs = enforceReferentialIntegrity ? new References() : null;
                 if (originalData == null) {
                     largeValues = new LargeValueSerializer(entity);
                     numProps = props.size();
-                    serializer.serializeProperties(oos, numProps, props, largeValues, refs);
+                    serializer.serializeProperties(oos, numProps, props.values(), largeValues, refs);
                 } else {
                     boolean hadLargeValues = !entity.getLargeValues().isEmpty();
                     Set<String> largeValueHashesWritten = hadLargeValues ? new HashSet<String>() : null;
@@ -940,7 +940,7 @@ public class BasicRequestProcessor extends RequestProcessor {
                 }
             } catch (NoResultException e) {
                 // there are no properties yet ...
-                createProperties(workspaceId, actual.uuid, request.properties());
+                createProperties(workspaceId, actual.uuid, request.properties().values());
             }
 
         } catch (Throwable e) { // Includes PathNotFoundException

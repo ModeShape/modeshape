@@ -38,6 +38,7 @@ public final class DestroyWorkspaceRequest extends Request {
      * Create a request to destroy an existing workspace.
      * 
      * @param workspaceName the name of the workspace that is to be destroyed
+     * @throws IllegalArgumentException if the workspace name is null
      */
     public DestroyWorkspaceRequest( String workspaceName ) {
         CheckArg.isNotNull(workspaceName, "workspaceName");

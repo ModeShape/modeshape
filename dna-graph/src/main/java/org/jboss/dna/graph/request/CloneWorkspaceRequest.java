@@ -73,6 +73,7 @@ public final class CloneWorkspaceRequest extends Request {
      * @param desiredNameOfTargetWorkspace the desired name of the target workspace
      * @param createConflictBehavior the behavior if a workspace already exists with the same name
      * @param cloneConflictBehavior the behavior if the workspace to be cloned does not exist
+     * @throws IllegalArgumentException if the either workspace name is null
      */
     public CloneWorkspaceRequest( String nameOfWorkspaceToBeCloned,
                                   String desiredNameOfTargetWorkspace,

@@ -42,10 +42,12 @@ import org.jboss.dna.graph.request.ReadBranchRequest;
 import org.jboss.dna.graph.request.ReadNextBlockOfChildrenRequest;
 import org.jboss.dna.graph.request.ReadNodeRequest;
 import org.jboss.dna.graph.request.ReadPropertyRequest;
-import org.jboss.dna.graph.request.RemovePropertiesRequest;
+import org.jboss.dna.graph.request.RemovePropertyRequest;
 import org.jboss.dna.graph.request.RenameNodeRequest;
 import org.jboss.dna.graph.request.Request;
+import org.jboss.dna.graph.request.SetPropertyRequest;
 import org.jboss.dna.graph.request.UpdatePropertiesRequest;
+import org.jboss.dna.graph.request.VerifyNodeExistsRequest;
 import org.jboss.dna.graph.request.VerifyWorkspaceRequest;
 
 /**
@@ -185,6 +187,18 @@ public class LoggingRequestProcessor extends RequestProcessor {
     /**
      * {@inheritDoc}
      * 
+     * @see org.jboss.dna.graph.request.processor.RequestProcessor#process(org.jboss.dna.graph.request.VerifyNodeExistsRequest)
+     */
+    @Override
+    public void process( VerifyNodeExistsRequest request ) {
+        logger.log(level, GraphI18n.executingRequest, request);
+        delegate.process(request);
+        logger.log(level, GraphI18n.executedRequest, request);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
      * @see org.jboss.dna.graph.request.processor.RequestProcessor#process(org.jboss.dna.graph.request.ReadAllChildrenRequest)
      */
     @Override
@@ -293,10 +307,22 @@ public class LoggingRequestProcessor extends RequestProcessor {
     /**
      * {@inheritDoc}
      * 
-     * @see org.jboss.dna.graph.request.processor.RequestProcessor#process(org.jboss.dna.graph.request.RemovePropertiesRequest)
+     * @see org.jboss.dna.graph.request.processor.RequestProcessor#process(org.jboss.dna.graph.request.SetPropertyRequest)
      */
     @Override
-    public void process( RemovePropertiesRequest request ) {
+    public void process( SetPropertyRequest request ) {
+        logger.log(level, GraphI18n.executingRequest, request);
+        delegate.process(request);
+        logger.log(level, GraphI18n.executedRequest, request);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.dna.graph.request.processor.RequestProcessor#process(org.jboss.dna.graph.request.RemovePropertyRequest)
+     */
+    @Override
+    public void process( RemovePropertyRequest request ) {
         logger.log(level, GraphI18n.executingRequest, request);
         delegate.process(request);
         logger.log(level, GraphI18n.executedRequest, request);

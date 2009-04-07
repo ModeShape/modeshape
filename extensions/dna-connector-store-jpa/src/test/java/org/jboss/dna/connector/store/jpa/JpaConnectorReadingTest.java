@@ -24,6 +24,7 @@
 package org.jboss.dna.connector.store.jpa;
 
 import org.jboss.dna.common.statistic.Stopwatch;
+import org.jboss.dna.common.util.Logger;
 import org.jboss.dna.graph.Graph;
 import org.jboss.dna.graph.connector.RepositorySource;
 import org.jboss.dna.graph.connector.test.ReadableConnectorTest;
@@ -54,6 +55,17 @@ public class JpaConnectorReadingTest extends ReadableConnectorTest {
         source.setMaximumSizeOfStatementCache(100);
         source.setMaximumConnectionIdleTimeInSeconds(0);
         source.setLargeValueSizeInBytes(150);
+
+        // Create a graph and look up the root node. We do this to initialize the connection pool and
+        // force the database to be setup at this point. By doing it now, we don't include this overhead
+        // in our test timings.
+        try {
+            Graph graph = Graph.create(source, context);
+            graph.getNodeAt("/");
+        } catch (Throwable t) {
+            Logger.getLogger(getClass()).debug("Unable to read the root node while setting up the \"" + source.getName()
+                                               + "\" JPA source");
+        }
 
         return source;
     }

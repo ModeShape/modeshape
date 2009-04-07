@@ -46,7 +46,7 @@ public class DeleteBranchRequest extends Request implements ChangeRequest {
      * 
      * @param at the location of the top node in the existing branch that is to be deleted
      * @param workspaceName the name of the workspace containing the parent
-     * @throws IllegalArgumentException if the location is null
+     * @throws IllegalArgumentException if the location or workspace name is null
      */
     public DeleteBranchRequest( Location at,
                                 String workspaceName ) {

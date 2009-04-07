@@ -23,61 +23,44 @@
  */
 package org.jboss.dna.graph.request;
 
-import java.util.Collections;
-import java.util.Map;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.graph.GraphI18n;
 import org.jboss.dna.graph.Location;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.Path;
-import org.jboss.dna.graph.property.Property;
 
 /**
- * Instruction to update the properties on the node at the specified location.
- * <p>
- * This request is capable of specifying that certain properties are to have new values and that other properties are to be
- * removed. The request has a single map of properties keyed by their name. If a property is to be set with new values, the map
- * will contain an entry with the property keyed by its name. However, if a property is to be removed, the entry will contain the
- * property name for the key but will have a null entry value.
- * </p>
- * <p>
- * The use of the map also ensures that a single property appears only once in the request (it either has new values or it is to
- * be removed).
- * </p>
- * <p>
- * Note that the number of values in a property (e.g., {@link Property#size()}, {@link Property#isEmpty()},
- * {@link Property#isSingle()}, and {@link Property#isMultiple()}) has no influence on whether the property should be removed. It
- * is possible for a property to have no values.
- * </p>
+ * Instruction to remove the property with the supplied name from the node at the given location. This request has no net effect
+ * if the node does not contain a property with the supplied name.
  * 
  * @author Randall Hauch
  */
-public class UpdatePropertiesRequest extends Request implements ChangeRequest {
+public class RemovePropertyRequest extends Request implements ChangeRequest {
 
     private static final long serialVersionUID = 1L;
 
-    private final Location on;
+    private final Location from;
     private final String workspaceName;
-    private final Map<Name, Property> properties;
+    private final Name propertyName;
     private Location actualLocation;
 
     /**
-     * Create a request to update the properties on the node at the supplied location.
+     * Create a request to remove a named property from the node at the supplied location.
      * 
-     * @param on the location of the node to be read
+     * @param from the location of the node to be read
      * @param workspaceName the name of the workspace containing the node
-     * @param properties the map of properties (keyed by their name), which is reused without copying
-     * @throws IllegalArgumentException if the location or workspace name is null or if there are no properties to update
+     * @param propertyName the name of the property to be removed
+     * @throws IllegalArgumentException if the location, workspace name, or property name is null
      */
-    public UpdatePropertiesRequest( Location on,
-                                    String workspaceName,
-                                    Map<Name, Property> properties ) {
-        CheckArg.isNotNull(on, "on");
-        CheckArg.isNotEmpty(properties, "properties");
+    public RemovePropertyRequest( Location from,
+                                  String workspaceName,
+                                  Name propertyName ) {
+        CheckArg.isNotNull(from, "from");
+        CheckArg.isNotNull(propertyName, "propertyName");
         CheckArg.isNotNull(workspaceName, "workspaceName");
         this.workspaceName = workspaceName;
-        this.on = on;
-        this.properties = Collections.unmodifiableMap(properties);
+        this.from = from;
+        this.propertyName = propertyName;
     }
 
     /**
@@ -91,12 +74,12 @@ public class UpdatePropertiesRequest extends Request implements ChangeRequest {
     }
 
     /**
-     * Get the location defining the node that is to be updated.
+     * Get the location defining the node from which the property is to be removed.
      * 
      * @return the location of the node; never null
      */
-    public Location on() {
-        return on;
+    public Location from() {
+        return from;
     }
 
     /**
@@ -109,26 +92,25 @@ public class UpdatePropertiesRequest extends Request implements ChangeRequest {
     }
 
     /**
-     * Get the map of properties for the node, keyed by property name. Any property to be removed will have a map entry with a
-     * null value.
+     * Get the name of the property that is being removed.
      * 
-     * @return the properties being updated; never null and never empty
+     * @return the property name; never null
      */
-    public Map<Name, Property> properties() {
-        return properties;
+    public Name propertyName() {
+        return propertyName;
     }
 
     /**
      * Sets the actual and complete location of the node being updated. This method must be called when processing the request,
      * and the actual location must have a {@link Location#getPath() path}.
      * 
-     * @param actual the actual location of the node being updated, or null if the {@link #on() current location} should be used
+     * @param actual the actual location of the node being updated, or null if the {@link #from() current location} should be used
      * @throws IllegalArgumentException if the actual location does represent the {@link Location#isSame(Location) same location}
-     *         as the {@link #on() current location}, or if the actual location does not have a path.
+     *         as the {@link #from() current location}, or if the actual location does not have a path.
      */
     public void setActualLocationOfNode( Location actual ) {
-        if (!on.isSame(actual)) { // not same if actual is null
-            throw new IllegalArgumentException(GraphI18n.actualLocationIsNotSameAsInputLocation.text(actual, on));
+        if (!from.isSame(actual)) { // not same if actual is null
+            throw new IllegalArgumentException(GraphI18n.actualLocationIsNotSameAsInputLocation.text(actual, from));
         }
         assert actual != null;
         if (!actual.hasPath()) {
@@ -153,7 +135,7 @@ public class UpdatePropertiesRequest extends Request implements ChangeRequest {
      */
     public boolean changes( String workspace,
                             Path path ) {
-        return this.workspaceName.equals(workspace) && on.hasPath() && on.getPath().isAtOrBelow(path);
+        return this.workspaceName.equals(workspace) && from.hasPath() && from.getPath().isAtOrBelow(path);
     }
 
     /**
@@ -165,9 +147,9 @@ public class UpdatePropertiesRequest extends Request implements ChangeRequest {
     public boolean equals( Object obj ) {
         if (obj == this) return true;
         if (this.getClass().isInstance(obj)) {
-            UpdatePropertiesRequest that = (UpdatePropertiesRequest)obj;
-            if (!this.on().equals(that.on())) return false;
-            if (!this.properties().equals(that.properties())) return false;
+            RemovePropertyRequest that = (RemovePropertyRequest)obj;
+            if (!this.from().equals(that.from())) return false;
+            if (!this.propertyName().equals(that.propertyName())) return false;
             if (!this.inWorkspace().equals(that.inWorkspace())) return false;
             return true;
         }
@@ -180,7 +162,7 @@ public class UpdatePropertiesRequest extends Request implements ChangeRequest {
      * @see org.jboss.dna.graph.request.ChangeRequest#changedLocation()
      */
     public Location changedLocation() {
-        return on;
+        return from;
     }
 
     /**
@@ -190,7 +172,6 @@ public class UpdatePropertiesRequest extends Request implements ChangeRequest {
      */
     @Override
     public String toString() {
-        return "update properties on " + on() + " in the \"" + workspaceName + "\" workspace to " + properties();
+        return "remove property " + propertyName() + " from " + from() + " in the \"" + workspaceName + "\" workspace";
     }
-
 }

@@ -208,12 +208,13 @@ public class InMemoryRequestProcessor extends RequestProcessor {
         InMemoryNode node = getTargetNode(workspace, request, request.on());
         if (node == null) return;
         // Now set (or remove) the properties to the supplied node ...
-        for (Property property : request.properties()) {
-            Name propName = property.getName();
-            if (property.size() == 0) {
-                node.getProperties().remove(propName);
+        for (Map.Entry<Name, Property> propertyEntry : request.properties().entrySet()) {
+            Property property = propertyEntry.getValue();
+            if (property == null) {
+                node.getProperties().remove(propertyEntry.getKey());
                 continue;
             }
+            Name propName = property.getName();
             if (!propName.equals(DnaLexicon.UUID)) {
                 node.getProperties().put(propName, property);
             }

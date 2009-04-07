@@ -190,16 +190,18 @@ public class JBossCacheRequestProcessor extends RequestProcessor {
         if (node == null) return;
 
         // Now set (or remove) the properties to the supplied node ...
-        for (Property property : request.properties()) {
-            Name propName = property.getName();
+        for (Map.Entry<Name, Property> entry : request.properties().entrySet()) {
+            Name propName = entry.getKey();
             // Don't allow the child list property to be removed or changed
             if (propName.equals(JBossCacheLexicon.CHILD_PATH_SEGMENT_LIST)) continue;
-            if (property.size() == 0) {
+
+            Property property = entry.getValue();
+            if (property == null) {
                 node.remove(propName);
                 continue;
             }
             Object value = null;
-            if (property.size() == 1) {
+            if (property.isSingle()) {
                 value = property.iterator().next();
             } else {
                 value = property.getValuesAsArray();
@@ -502,7 +504,8 @@ public class JBossCacheRequestProcessor extends RequestProcessor {
         assert original != null;
         assert newParent != null;
         // Get or create the new node ...
-        Path.Segment name = desiredName != null ? context.getValueFactories().getPathFactory().createSegment(desiredName) : (Path.Segment)original.getFqn().getLastElement();
+        Path.Segment name = desiredName != null ? context.getValueFactories().getPathFactory().createSegment(desiredName) : (Path.Segment)original.getFqn()
+                                                                                                                                                  .getLastElement();
 
         // Update the children to account for same-name siblings.
         // This not only updates the FQN of the child nodes, but it also sets the property that stores the

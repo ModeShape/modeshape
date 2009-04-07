@@ -494,7 +494,7 @@ public abstract class AbstractConnectorTest {
         if (stopwatch != null) {
             stopwatch.stop();
             if (output != null) {
-                output.println("    " + getTotalAndAverageDuration(stopwatch));
+                output.println("    " + getTotalAndAverageDuration(stopwatch, totalNumberCreated));
             }
 
             // Perform second batch ...
@@ -504,20 +504,21 @@ public abstract class AbstractConnectorTest {
             sw.start();
             batch.execute();
             sw.stop();
-            System.out.println("     final " + getTotalAndAverageDuration(stopwatch));
+            System.out.println("     final " + getTotalAndAverageDuration(sw, totalNumberCreated));
             assertThat(totalNumberCreated, is(totalNumber + calculateTotalNumberOfNodesInTree(2, 2, false)));
         }
         return (int)totalNumberCreated;
 
     }
 
-    protected String getTotalAndAverageDuration( Stopwatch stopwatch ) {
-        long totalDurationInMicroseconds = TimeUnit.NANOSECONDS.toMicros(stopwatch.getTotalDuration().longValue());
-        long totalNumber = stopwatch.getCount();
-        long avgDuration = totalDurationInMicroseconds / totalNumber / 1000L;
+    protected String getTotalAndAverageDuration( Stopwatch stopwatch,
+                                                 long numNodes ) {
+        long totalDurationInMilliseconds = TimeUnit.NANOSECONDS.toMillis(stopwatch.getTotalDuration().longValue());
+        long avgDuration = totalDurationInMilliseconds / numNodes;
         String units = " millisecond(s)";
-        if (avgDuration == 0L) {
-            avgDuration = totalDurationInMicroseconds / totalNumber;
+        if (avgDuration < 1L) {
+            long totalDurationInMicroseconds = TimeUnit.NANOSECONDS.toMicros(stopwatch.getTotalDuration().longValue());
+            avgDuration = totalDurationInMicroseconds / numNodes;
             units = " microsecond(s)";
         }
         return "total = " + stopwatch.getTotalDuration() + "; avg = " + avgDuration + units;

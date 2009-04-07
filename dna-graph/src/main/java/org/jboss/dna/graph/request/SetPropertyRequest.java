@@ -23,61 +23,44 @@
  */
 package org.jboss.dna.graph.request;
 
-import java.util.Collections;
-import java.util.Map;
 import org.jboss.dna.common.util.CheckArg;
 import org.jboss.dna.graph.GraphI18n;
 import org.jboss.dna.graph.Location;
-import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.Property;
 
 /**
- * Instruction to update the properties on the node at the specified location.
- * <p>
- * This request is capable of specifying that certain properties are to have new values and that other properties are to be
- * removed. The request has a single map of properties keyed by their name. If a property is to be set with new values, the map
- * will contain an entry with the property keyed by its name. However, if a property is to be removed, the entry will contain the
- * property name for the key but will have a null entry value.
- * </p>
- * <p>
- * The use of the map also ensures that a single property appears only once in the request (it either has new values or it is to
- * be removed).
- * </p>
- * <p>
- * Note that the number of values in a property (e.g., {@link Property#size()}, {@link Property#isEmpty()},
- * {@link Property#isSingle()}, and {@link Property#isMultiple()}) has no influence on whether the property should be removed. It
- * is possible for a property to have no values.
- * </p>
+ * Instruction to set a particular property on the node at the specified location. This request <i>never</i> removes the node,
+ * even if the property is empty.
  * 
  * @author Randall Hauch
  */
-public class UpdatePropertiesRequest extends Request implements ChangeRequest {
+public class SetPropertyRequest extends Request implements ChangeRequest {
 
     private static final long serialVersionUID = 1L;
 
     private final Location on;
     private final String workspaceName;
-    private final Map<Name, Property> properties;
+    private final Property property;
     private Location actualLocation;
 
     /**
-     * Create a request to update the properties on the node at the supplied location.
+     * Create a request to set the property on the node at the supplied location.
      * 
      * @param on the location of the node to be read
      * @param workspaceName the name of the workspace containing the node
-     * @param properties the map of properties (keyed by their name), which is reused without copying
-     * @throws IllegalArgumentException if the location or workspace name is null or if there are no properties to update
+     * @param property the new property on the node
+     * @throws IllegalArgumentException if the location, workspace name, or property is null
      */
-    public UpdatePropertiesRequest( Location on,
-                                    String workspaceName,
-                                    Map<Name, Property> properties ) {
+    public SetPropertyRequest( Location on,
+                               String workspaceName,
+                               Property property ) {
         CheckArg.isNotNull(on, "on");
-        CheckArg.isNotEmpty(properties, "properties");
+        CheckArg.isNotNull(property, "property");
         CheckArg.isNotNull(workspaceName, "workspaceName");
         this.workspaceName = workspaceName;
         this.on = on;
-        this.properties = Collections.unmodifiableMap(properties);
+        this.property = property;
     }
 
     /**
@@ -109,13 +92,12 @@ public class UpdatePropertiesRequest extends Request implements ChangeRequest {
     }
 
     /**
-     * Get the map of properties for the node, keyed by property name. Any property to be removed will have a map entry with a
-     * null value.
+     * Get the property that is being set.
      * 
-     * @return the properties being updated; never null and never empty
+     * @return the new property; never null
      */
-    public Map<Name, Property> properties() {
-        return properties;
+    public Property property() {
+        return property;
     }
 
     /**
@@ -165,9 +147,9 @@ public class UpdatePropertiesRequest extends Request implements ChangeRequest {
     public boolean equals( Object obj ) {
         if (obj == this) return true;
         if (this.getClass().isInstance(obj)) {
-            UpdatePropertiesRequest that = (UpdatePropertiesRequest)obj;
+            SetPropertyRequest that = (SetPropertyRequest)obj;
             if (!this.on().equals(that.on())) return false;
-            if (!this.properties().equals(that.properties())) return false;
+            if (!this.property().equals(that.property())) return false;
             if (!this.inWorkspace().equals(that.inWorkspace())) return false;
             return true;
         }
@@ -190,7 +172,7 @@ public class UpdatePropertiesRequest extends Request implements ChangeRequest {
      */
     @Override
     public String toString() {
-        return "update properties on " + on() + " in the \"" + workspaceName + "\" workspace to " + properties();
+        return "set property " + property().getName() + " on " + on() + " in the \"" + workspaceName + "\" workspace to "
+               + property().getValuesAsArray();
     }
-
 }
