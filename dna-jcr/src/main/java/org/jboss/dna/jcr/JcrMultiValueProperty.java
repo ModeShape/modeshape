@@ -184,8 +184,14 @@ final class JcrMultiValueProperty extends AbstractJcrProperty {
      */
     public final void setValue( Value[] values )
         throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
+
+        if (values == null) {
+            this.remove();
+            return;
+        }
+
         Value[] newValues = null;
-        if (values != null && values.length != 0) {
+        if (values.length != 0) {
             int numValues = values.length;
             List<Value> valuesList = new ArrayList<Value>(numValues);
             ValueFactory<?> factory = null;
@@ -257,8 +263,13 @@ final class JcrMultiValueProperty extends AbstractJcrProperty {
      */
     public final void setValue( String[] values )
         throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
+        if (values == null) {
+            this.remove();
+            return;
+        }
+
         Value[] jcrValues = null;
-        if (values != null && values.length != 0) {
+        if (values.length != 0) {
             int numValues = values.length;
             List<Value> valuesList = new ArrayList<Value>(numValues);
             jcrValues = new JcrValue[numValues];

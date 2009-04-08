@@ -672,7 +672,8 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
                 JcrNodeDefinition match = this.cache.nodeTypes().findChildNodeDefinition(mixinCandidateType.getInternalName(),
                                                                                          Collections.<Name>emptyList(),
                                                                                          nodeName,
-                                                                                         childNode.getPrimaryNodeType().getInternalName(),
+                                                                                         childNode.getPrimaryNodeType()
+                                                                                                  .getInternalName(),
                                                                                          snsCount,
                                                                                          false);
 
@@ -996,7 +997,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
         if (value == null) {
             // If there is an existing property, then remove it ...
-            return removeExistingSingleValuedProperty(name);
+            return removeExistingValuedProperty(name);
         }
         return cache.findJcrProperty(editor().setProperty(nameFrom(name), valueFrom(value)));
 
@@ -1024,7 +1025,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
         if (value == null) {
             // If there is an existing property, then remove it ...
-            return removeExistingSingleValuedProperty(name);
+            return removeExistingValuedProperty(name);
         }
         return cache.findJcrProperty(editor().setProperty(nameFrom(name), valueFrom(value)));
     }
@@ -1051,7 +1052,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
         if (value == null) {
             // If there is an existing property, then remove it ...
-            return removeExistingSingleValuedProperty(name);
+            return removeExistingValuedProperty(name);
         }
         return cache.findJcrProperty(editor().setProperty(nameFrom(name), valueFrom(value)));
     }
@@ -1066,7 +1067,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
         if (value == null) {
             // If there is an existing property, then remove it ...
-            return removeExistingSingleValuedProperty(name);
+            return removeExistingValuedProperty(name);
         }
         return cache.findJcrProperty(editor().setProperty(nameFrom(name), valueFrom(PropertyType.STRING, value)));
     }
@@ -1082,7 +1083,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
         if (value == null) {
             // If there is an existing property, then remove it ...
-            return removeExistingSingleValuedProperty(name);
+            return removeExistingValuedProperty(name);
         }
         return cache.findJcrProperty(editor().setProperty(nameFrom(name), valueFrom(type, value)));
     }
@@ -1095,6 +1096,10 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
     public final Property setProperty( String name,
                                        String[] values )
         throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
+        if (values == null) {
+            // If there is an existing property, then remove it ...
+            return removeExistingValuedProperty(name);
+        }
         return cache.findJcrProperty(editor().setProperty(nameFrom(name), valuesFrom(PropertyType.STRING, values)));
     }
 
@@ -1107,6 +1112,10 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
                                        String[] values,
                                        int type )
         throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
+        if (values == null) {
+            // If there is an existing property, then remove it ...
+            return removeExistingValuedProperty(name);
+        }
         return cache.findJcrProperty(editor().setProperty(nameFrom(name), valuesFrom(type, values)));
     }
 
@@ -1120,17 +1129,16 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
         if (value == null) {
             // If there is an existing property, then remove it ...
-            return removeExistingSingleValuedProperty(name);
+            return removeExistingValuedProperty(name);
         }
         return cache.findJcrProperty(editor().setProperty(nameFrom(name), (JcrValue)value));
     }
 
-    protected final Property removeExistingSingleValuedProperty( String name )
+    protected final Property removeExistingValuedProperty( String name )
         throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
         PropertyId id = new PropertyId(nodeUuid, nameFrom(name));
         AbstractJcrProperty property = cache.findJcrProperty(id);
         if (property != null) {
-            assert !property.isMultiple();
             property.remove();
             return property;
         }
@@ -1147,6 +1155,10 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
                                        Value value,
                                        int type )
         throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
+        if (value == null) {
+            // If there is an existing property, then remove it ...
+            return removeExistingValuedProperty(name);
+        }
         return cache.findJcrProperty(editor().setProperty(nameFrom(name), ((JcrValue)value).asType(type)));
     }
 
@@ -1158,7 +1170,29 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
     public final Property setProperty( String name,
                                        Value[] values )
         throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
-        return cache.findJcrProperty(editor().setProperty(nameFrom(name), values));
+        if (values == null) {
+            // If there is an existing property, then remove it ...
+            return removeExistingValuedProperty(name);
+        }
+        int len = values.length;
+        Value[] newValues = null;
+        if (len == 0) {
+            newValues = JcrMultiValueProperty.EMPTY_VALUES;
+        } else {
+            List<Value> valuesWithDesiredType = new ArrayList<Value>(len);
+            for (int i = 0; i != len; ++i) {
+                Value value = values[i];
+                if (value == null) continue;
+                valuesWithDesiredType.add(value);
+            }
+            if (valuesWithDesiredType.isEmpty()) {
+                newValues = JcrMultiValueProperty.EMPTY_VALUES;
+            } else {
+                newValues = valuesWithDesiredType.toArray(new Value[valuesWithDesiredType.size()]);
+            }
+        }
+        // Set the value, perhaps to an empty array ...
+        return cache.findJcrProperty(editor().setProperty(nameFrom(name), newValues));
     }
 
     /**
@@ -1170,6 +1204,10 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
                                        Value[] values,
                                        int type )
         throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
+        if (values == null) {
+            // If there is an existing property, then remove it ...
+            return removeExistingValuedProperty(name);
+        }
         int len = values.length;
         Value[] newValues = null;
         if (len == 0) {
