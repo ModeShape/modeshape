@@ -131,8 +131,10 @@ public abstract class AbstractBinary implements Binary {
         try {
             acquire();
             StringBuilder sb = new StringBuilder(super.toString());
-            sb.append(" len=").append(getSize()).append("; [");
-            sb.append(Base64.encodeBytes(getBytes()));
+            sb.append("binary[");
+            sb.append(getSize());
+            sb.append("] with hash ");
+            sb.append(Base64.encodeBytes(getHash()));
             return sb.toString();
         } finally {
             release();
