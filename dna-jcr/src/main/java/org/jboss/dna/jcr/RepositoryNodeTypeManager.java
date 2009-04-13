@@ -186,7 +186,7 @@ class RepositoryNodeTypeManager {
         if (primaryType != null) {
             for (JcrPropertyDefinition definition : primaryType.allSingleValuePropertyDefinitions(propertyName)) {
                 // See if the definition allows the value ...
-                if (skipProtected && definition.isProtected()) continue;
+                if (skipProtected && definition.isProtected()) return null;
                 if (setToEmpty) {
                     if (!definition.isMandatory()) return definition;
                     // Otherwise this definition doesn't work, so continue with the next ...
@@ -209,7 +209,7 @@ class RepositoryNodeTypeManager {
                 mixinTypes.add(mixinType);
                 for (JcrPropertyDefinition definition : mixinType.allSingleValuePropertyDefinitions(propertyName)) {
                     // See if the definition allows the value ...
-                    if (skipProtected && definition.isProtected()) continue;
+                    if (skipProtected && definition.isProtected()) return null;
                     if (setToEmpty) {
                         if (!definition.isMandatory()) return definition;
                         // Otherwise this definition doesn't work, so continue with the next ...
@@ -228,7 +228,7 @@ class RepositoryNodeTypeManager {
             if (primaryType != null) {
                 for (JcrPropertyDefinition definition : primaryType.allMultiValuePropertyDefinitions(propertyName)) {
                     // See if the definition allows the value ...
-                    if (skipProtected && definition.isProtected()) continue;
+                    if (skipProtected && definition.isProtected()) return null;
                     if (setToEmpty) {
                         if (!definition.isMandatory()) return definition;
                         // Otherwise this definition doesn't work, so continue with the next ...
@@ -246,7 +246,7 @@ class RepositoryNodeTypeManager {
                 for (JcrNodeType mixinType : mixinTypes) {
                     for (JcrPropertyDefinition definition : mixinType.allMultiValuePropertyDefinitions(propertyName)) {
                         // See if the definition allows the value ...
-                        if (skipProtected && definition.isProtected()) continue;
+                        if (skipProtected && definition.isProtected()) return null;
                         if (setToEmpty) {
                             if (!definition.isMandatory()) return definition;
                             // Otherwise this definition doesn't work, so continue with the next ...
@@ -269,7 +269,7 @@ class RepositoryNodeTypeManager {
             if (primaryType != null) {
                 for (JcrPropertyDefinition definition : primaryType.allSingleValuePropertyDefinitions(propertyName)) {
                     // See if the definition allows the value ...
-                    if (skipProtected && definition.isProtected()) continue;
+                    if (skipProtected && definition.isProtected()) return null;
                     assert definition.getRequiredType() != PropertyType.UNDEFINED;
                     if (definition.canCastToTypeAndSatisfyConstraints(value)) return definition;
                 }
@@ -280,7 +280,7 @@ class RepositoryNodeTypeManager {
                 for (JcrNodeType mixinType : mixinTypes) {
                     for (JcrPropertyDefinition definition : mixinType.allSingleValuePropertyDefinitions(propertyName)) {
                         // See if the definition allows the value ...
-                        if (skipProtected && definition.isProtected()) continue;
+                        if (skipProtected && definition.isProtected()) return null;
                         assert definition.getRequiredType() != PropertyType.UNDEFINED;
                         if (definition.canCastToTypeAndSatisfyConstraints(value)) return definition;
                     }
@@ -292,7 +292,7 @@ class RepositoryNodeTypeManager {
                 if (primaryType != null) {
                     for (JcrPropertyDefinition definition : primaryType.allMultiValuePropertyDefinitions(propertyName)) {
                         // See if the definition allows the value ...
-                        if (skipProtected && definition.isProtected()) continue;
+                        if (skipProtected && definition.isProtected()) return null;
                         assert definition.getRequiredType() != PropertyType.UNDEFINED;
                         if (definition.canCastToTypeAndSatisfyConstraints(value)) return definition;
                     }
@@ -303,7 +303,7 @@ class RepositoryNodeTypeManager {
                     for (JcrNodeType mixinType : mixinTypes) {
                         for (JcrPropertyDefinition definition : mixinType.allMultiValuePropertyDefinitions(propertyName)) {
                             // See if the definition allows the value ...
-                            if (skipProtected && definition.isProtected()) continue;
+                            if (skipProtected && definition.isProtected()) return null;
                             assert definition.getRequiredType() != PropertyType.UNDEFINED;
                             if (definition.canCastToTypeAndSatisfyConstraints(value)) return definition;
                         }
@@ -378,7 +378,7 @@ class RepositoryNodeTypeManager {
         if (primaryType != null) {
             for (JcrPropertyDefinition definition : primaryType.allMultiValuePropertyDefinitions(propertyName)) {
                 // See if the definition allows the value ...
-                if (skipProtected && definition.isProtected()) continue;
+                if (skipProtected && definition.isProtected()) return null;
                 if (setToEmpty) {
                     if (!definition.isMandatory()) return definition;
                     // Otherwise this definition doesn't work, so continue with the next ...
@@ -402,7 +402,7 @@ class RepositoryNodeTypeManager {
                 mixinTypes.add(mixinType);
                 for (JcrPropertyDefinition definition : mixinType.allMultiValuePropertyDefinitions(propertyName)) {
                     // See if the definition allows the value ...
-                    if (skipProtected && definition.isProtected()) continue;
+                    if (skipProtected && definition.isProtected()) return null;
                     if (setToEmpty) {
                         if (!definition.isMandatory()) return definition;
                         // Otherwise this definition doesn't work, so continue with the next ...
@@ -425,7 +425,7 @@ class RepositoryNodeTypeManager {
             if (primaryType != null) {
                 for (JcrPropertyDefinition definition : primaryType.allMultiValuePropertyDefinitions(propertyName)) {
                     // See if the definition allows the value ...
-                    if (skipProtected && definition.isProtected()) continue;
+                    if (skipProtected && definition.isProtected()) return null;
                     assert definition.getRequiredType() != PropertyType.UNDEFINED;
                     if (definition.canCastToTypeAndSatisfyConstraints(values)) return definition;
                 }
@@ -436,7 +436,7 @@ class RepositoryNodeTypeManager {
                 for (JcrNodeType mixinType : mixinTypes) {
                     for (JcrPropertyDefinition definition : mixinType.allMultiValuePropertyDefinitions(propertyName)) {
                         // See if the definition allows the value ...
-                        if (skipProtected && definition.isProtected()) continue;
+                        if (skipProtected && definition.isProtected()) return null;
                         assert definition.getRequiredType() != PropertyType.UNDEFINED;
                         if (definition.canCastToTypeAndSatisfyConstraints(values)) return definition;
                     }
@@ -535,7 +535,7 @@ class RepositoryNodeTypeManager {
         if (primaryType != null) {
             for (JcrNodeDefinition definition : primaryType.allChildNodeDefinitions(childName, requireSns)) {
                 // Skip protected definitions ...
-                if (skipProtected && definition.isProtected()) continue;
+                if (skipProtected && definition.isProtected()) return null;
                 // See if the definition allows a child with the supplied primary type ...
                 if (definition.allowsChildWithType(childType)) return definition;
             }
@@ -548,7 +548,7 @@ class RepositoryNodeTypeManager {
                 if (mixinType == null) continue;
                 for (JcrNodeDefinition definition : mixinType.allChildNodeDefinitions(childName, requireSns)) {
                     // Skip protected definitions ...
-                    if (skipProtected && definition.isProtected()) continue;
+                    if (skipProtected && definition.isProtected()) return null;
                     // See if the definition allows a child with the supplied primary type ...
                     if (definition.allowsChildWithType(childType)) return definition;
                 }
