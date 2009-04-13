@@ -1341,21 +1341,21 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
     /**
      * {@inheritDoc}
      * 
-     * @throws UnsupportedOperationException always
+     * @throws UnsupportedRepositoryOperationException always
      * @see javax.jcr.Node#checkin()
      */
-    public final Version checkin() {
-        throw new UnsupportedOperationException();
+    public final Version checkin() throws UnsupportedRepositoryOperationException {
+        throw new UnsupportedRepositoryOperationException();
     }
 
     /**
      * {@inheritDoc}
      * 
-     * @throws UnsupportedOperationException always
+     * @throws UnsupportedRepositoryOperationException always
      * @see javax.jcr.Node#checkout()
      */
-    public final void checkout() {
-        throw new UnsupportedOperationException();
+    public final void checkout() throws UnsupportedRepositoryOperationException  {
+        throw new UnsupportedRepositoryOperationException();
     }
 
     /**

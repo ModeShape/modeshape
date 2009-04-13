@@ -239,12 +239,12 @@ public class AbstractJcrNodeTest {
         node.cancelMerge(null);
     }
 
-    @Test( expected = UnsupportedOperationException.class )
+    @Test( expected = UnsupportedRepositoryOperationException.class )
     public void shoudNotAllowCheckin() throws Exception {
         node.checkin();
     }
 
-    @Test( expected = UnsupportedOperationException.class )
+    @Test( expected = UnsupportedRepositoryOperationException.class )
     public void shoudNotAllowCheckout() throws Exception {
         node.checkout();
     }
