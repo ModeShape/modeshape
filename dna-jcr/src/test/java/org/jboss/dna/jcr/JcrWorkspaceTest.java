@@ -30,6 +30,9 @@ import static org.mockito.Mockito.stub;
 import java.util.HashMap;
 import java.util.Map;
 import javax.jcr.NamespaceRegistry;
+import javax.jcr.Node;
+import javax.jcr.query.Query;
+import javax.jcr.query.QueryManager;
 import org.jboss.dna.graph.ExecutionContext;
 import org.jboss.dna.graph.Graph;
 import org.jboss.dna.graph.JcrLexicon;
@@ -56,7 +59,7 @@ public class JcrWorkspaceTest {
     @Mock
     private JcrRepository repository;
     private RepositoryNodeTypeManager repoManager;
-    
+
     @Before
     public void beforeEach() throws Exception {
         final String repositorySourceName = "repository";
@@ -94,12 +97,12 @@ public class JcrWorkspaceTest {
 
         // Stub out the repository, since we only need a few methods ...
         MockitoAnnotations.initMocks(this);
-        
+
         JcrNodeTypeSource source = null;
         source = new JcrBuiltinNodeTypeSource(context, source);
         source = new DnaBuiltinNodeTypeSource(context, source);
         repoManager = new RepositoryNodeTypeManager(context, source);
-        
+
         stub(repository.getRepositorySourceName()).toReturn(repositorySourceName);
         stub(repository.getRepositoryTypeManager()).toReturn(repoManager);
         stub(repository.getConnectionFactory()).toReturn(connectionFactory);
@@ -171,6 +174,49 @@ public class JcrWorkspaceTest {
     @Test
     public void shouldProvideQueryManager() throws Exception {
         assertThat(workspace.getQueryManager(), notNullValue());
+    }
+
+    @Test
+    public void shouldCreateQuery() throws Exception {
+        String statement = "Some query syntax";
+
+        QueryManager queryManager = workspace.getQueryManager();
+        Query query = queryManager.createQuery(statement, Query.XPATH);
+
+        assertThat(query, is(notNullValue()));
+        assertThat(query.getLanguage(), is(Query.XPATH));
+        assertThat(query.getStatement(), is(statement));
+    }
+
+    @Test
+    public void shouldStoreQueryAsNode() throws Exception {
+        String statement = "Some query syntax";
+
+        QueryManager queryManager = workspace.getQueryManager();
+        Query query = queryManager.createQuery(statement, Query.XPATH);
+
+        Node node = query.storeAsNode("/storedQuery");
+        assertThat(node, is(notNullValue()));
+        assertThat(node.getPrimaryNodeType().getName(), is("nt:query"));
+        assertThat(node.getProperty("jcr:language").getString(), is(Query.XPATH));
+        assertThat(node.getProperty("jcr:statement").getString(), is(statement));
+    }
+
+    @Test
+    public void shouldLoadStoredQuery() throws Exception {
+        String statement = "Some query syntax";
+
+        QueryManager queryManager = workspace.getQueryManager();
+        Query query = queryManager.createQuery(statement, Query.XPATH);
+
+        Node node = query.storeAsNode("/storedQuery");
+
+        Query loaded = queryManager.getQuery(node);
+
+        assertThat(loaded, is(notNullValue()));
+        assertThat(loaded.getLanguage(), is(Query.XPATH));
+        assertThat(loaded.getStatement(), is(statement));
+        assertThat(loaded.getStoredQueryPath(), is(node.getPath()));
     }
 
     @Test

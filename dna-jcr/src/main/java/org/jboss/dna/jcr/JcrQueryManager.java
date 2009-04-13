@@ -26,8 +26,9 @@ package org.jboss.dna.jcr;
 import java.util.Arrays;
 import javax.jcr.ItemNotFoundException;
 import javax.jcr.Node;
+import javax.jcr.PathNotFoundException;
 import javax.jcr.RepositoryException;
-import javax.jcr.UnsupportedRepositoryOperationException;
+import javax.jcr.nodetype.ConstraintViolationException;
 import javax.jcr.query.InvalidQueryException;
 import javax.jcr.query.Query;
 import javax.jcr.query.QueryManager;
@@ -64,11 +65,11 @@ class JcrQueryManager implements QueryManager {
      * {@code InvalidQueryException} is thrown. The language must be a string from among those returned by {@code
      * QueryManager#getSupportedQueryLanguages()}; if it is not, then an {@code InvalidQueryException} is thrown.
      * 
-     * @param statement 
+     * @param statement
      * @param language
      * @param storedNode
      * @return A {@code Query} object
-     * @throws InvalidQueryException if statement is invalid or language is unsupported. 
+     * @throws InvalidQueryException if statement is invalid or language is unsupported.
      * @see javax.jcr.query.QueryManager#createQuery(java.lang.String, java.lang.String)
      */
     private Query createQuery( String statement,
@@ -179,8 +180,21 @@ class JcrQueryManager implements QueryManager {
          * 
          * @see javax.jcr.query.Query#storeAsNode(java.lang.String)
          */
-        public Node storeAsNode( java.lang.String absPath ) throws UnsupportedRepositoryOperationException {
-            throw new UnsupportedRepositoryOperationException();
+        public Node storeAsNode( java.lang.String absPath )
+            throws PathNotFoundException, ConstraintViolationException, RepositoryException {
+            NamespaceRegistry namespaces = this.session.namespaces();
+            
+            Path path = session.getExecutionContext().getValueFactories().getPathFactory().create(absPath);
+            Path parentPath = path.getParent();
+
+            Node parentNode = session.getNode(parentPath);
+            Node queryNode = parentNode.addNode(path.relativeTo(parentPath).getString(namespaces),
+                               JcrNtLexicon.QUERY.getString(namespaces));
+            
+            queryNode.setProperty(JcrLexicon.LANGUAGE.getString(namespaces), this.language);
+            queryNode.setProperty(JcrLexicon.STATEMENT.getString(namespaces), this.statement);
+            
+            return queryNode;
         }
 
     }

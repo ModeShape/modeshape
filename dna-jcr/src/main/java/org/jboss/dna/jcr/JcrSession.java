@@ -406,6 +406,7 @@ class JcrSession implements Session {
      * @throws RepositoryException if there is a problem
      */
     Node getNode( Path path ) throws RepositoryException, PathNotFoundException {
+        if (path.isRoot()) return cache.findJcrRootNode();
         return cache.findJcrNode(null, path.relativeTo(rootPath));
     }
 
@@ -452,9 +453,7 @@ class JcrSession implements Session {
         return new ValueFactory() {
 
             public Value createValue( String value,
-                                      int propertyType ) 
-                throws ValueFormatException
-            {
+                                      int propertyType ) throws ValueFormatException {
                 return new JcrValue(valueFactories, sessionCache, propertyType, convertValueToType(value, propertyType));
             }
 
@@ -488,8 +487,9 @@ class JcrSession implements Session {
             public Value createValue( String value ) {
                 return new JcrValue(valueFactories, sessionCache, PropertyType.STRING, value);
             }
-            
-            Object convertValueToType(Object value, int toType) throws ValueFormatException { 
+
+            Object convertValueToType( Object value,
+                                       int toType ) throws ValueFormatException {
                 switch (toType) {
                     case PropertyType.BOOLEAN:
                         try {
