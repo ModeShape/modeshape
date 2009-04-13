@@ -37,6 +37,7 @@ import javax.jcr.lock.LockException;
 import javax.jcr.nodetype.ConstraintViolationException;
 import javax.jcr.version.VersionException;
 import net.jcip.annotations.NotThreadSafe;
+import org.jboss.dna.common.i18n.I18n;
 import org.jboss.dna.graph.property.Property;
 import org.jboss.dna.graph.property.ValueFactory;
 
@@ -193,6 +194,7 @@ final class JcrMultiValueProperty extends AbstractJcrProperty {
         Value[] newValues = null;
         if (values.length != 0) {
             int numValues = values.length;
+            int valueType = -1;
             List<Value> valuesList = new ArrayList<Value>(numValues);
             ValueFactory<?> factory = null;
             for (int i = 0; i != numValues; ++i) {
@@ -200,7 +202,24 @@ final class JcrMultiValueProperty extends AbstractJcrProperty {
                 if (value == null) {
                     // skip null values ...
                     continue;
-                } else if (value instanceof JcrValue) {
+                }
+                if (valueType == -1) {
+                    valueType = value.getType();
+                } else if (value.getType() != valueType) {
+                    // Make sure the type of each value is the same, as per Javadoc in section 7.1.5 of the JCR 1.0.1 spec
+                    StringBuilder sb = new StringBuilder();
+                    sb.append('[');
+                    for (int j = 0; j != values.length; ++j) {
+                        if (j != 0) sb.append(",");
+                        sb.append(values[j].toString());
+                    }
+                    sb.append(']');
+                    String propType = PropertyType.nameFromValue(valueType);
+                    I18n msg = JcrI18n.allPropertyValuesMustHaveSameType;
+                    throw new ValueFormatException(msg.text(getName(), values, propType, getPath(), cache.workspaceName()));
+                }
+
+                if (value instanceof JcrValue) {
                     // just use the value ...
                     valuesList.add(value);
                 } else {

@@ -80,6 +80,9 @@ public final class JcrI18n {
     public static I18n unableToCreateNodeWithPrimaryTypeThatDoesNotExist;
     public static I18n unableToCreateNodeWithNoDefaultPrimaryTypeOnChildNodeDefinition;
     public static I18n unableToSaveNodeThatWasCreatedSincePreviousSave;
+    public static I18n unableToSetMultiValuedPropertyUsingSingleValue;
+    public static I18n unableToSetSingleValuedPropertyUsingMultipleValues;
+    public static I18n allPropertyValuesMustHaveSameType;
 
     public static I18n unableToRemoveRootNode;
     public static I18n unableToMoveNodeToBeChildOfDecendent;

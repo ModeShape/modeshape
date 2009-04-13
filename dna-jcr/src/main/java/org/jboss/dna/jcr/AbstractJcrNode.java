@@ -49,6 +49,7 @@ import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
 import javax.jcr.UnsupportedRepositoryOperationException;
 import javax.jcr.Value;
+import javax.jcr.ValueFormatException;
 import javax.jcr.lock.Lock;
 import javax.jcr.lock.LockException;
 import javax.jcr.nodetype.ConstraintViolationException;
@@ -68,11 +69,11 @@ import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.NamespaceRegistry;
 import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.ValueFactories;
-import org.jboss.dna.graph.property.ValueFormatException;
 import org.jboss.dna.jcr.SessionCache.NodeEditor;
 import org.jboss.dna.jcr.cache.ChildNode;
 import org.jboss.dna.jcr.cache.Children;
 import org.jboss.dna.jcr.cache.NodeInfo;
+import org.jboss.dna.jcr.cache.PropertyInfo;
 
 /**
  * An abstract implementation of the JCR {@link Node} interface. Instances of this class are created and managed by the
@@ -151,13 +152,16 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
 
     final JcrValue[] valuesFrom( int propertyType,
                                  Object[] values ) {
+        /*
+         * Null values in the array are "compacted" (read: ignored) as per section 7.1.6 in the JCR 1.0.1 specification. 
+         */
         int len = values.length;
         ValueFactories factories = cache.factories();
-        JcrValue[] results = new JcrValue[values.length];
+        List<JcrValue> results = new ArrayList<JcrValue>(len);
         for (int i = 0; i != len; ++i) {
-            results[i] = new JcrValue(factories, cache, propertyType, values[i]);
+            if (values[i] != null) results.add(new JcrValue(factories, cache, propertyType, values[i]));
         }
-        return results;
+        return results.toArray(new JcrValue[results.size()]);
     }
 
     @Override
@@ -905,7 +909,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         Path path = null;
         try {
             path = cache.pathFactory().create(relPath);
-        } catch (ValueFormatException e) {
+        } catch (org.jboss.dna.graph.property.ValueFormatException e) {
             throw new RepositoryException(JcrI18n.invalidPathParameter.text(relPath, "relPath"));
         }
         if (path.size() == 0) {
@@ -954,7 +958,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         if (primaryNodeTypeName != null) {
             try {
                 childPrimaryTypeName = cache.nameFactory().create(primaryNodeTypeName);
-            } catch (ValueFormatException e) {
+            } catch (org.jboss.dna.graph.property.ValueFormatException e) {
                 throw new RepositoryException(JcrI18n.invalidNodeTypeNameParameter.text(primaryNodeTypeName,
                                                                                         "primaryNodeTypeName"));
             }
@@ -976,6 +980,33 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
     }
 
     /**
+     * Checks whether there is an existing property with this name that does not match the given cardinality. If such a property
+     * exists, a {@code javax.jcr.ValueFormatException} is thrown, as per section 7.1.5 of the JCR 1.0.1 specification.
+     * 
+     * @param propertyName the name of the property
+     * @param isMultiple whether the property must have multiple values
+     * @throws javax.jcr.ValueFormatException if the property exists but has the opposite cardinality
+     * @throws RepositoryException if any other error occurs
+     */
+    private void checkCardinalityOfExistingProperty( Name propertyName,
+                                                     boolean isMultiple )
+        throws javax.jcr.ValueFormatException, RepositoryException {
+        // Check for existing single-valued property - can't set multiple values on single-valued property
+        PropertyInfo propInfo = this.nodeInfo().getProperty(propertyName);
+        if (propInfo != null && propInfo.isMultiValued() != isMultiple) {
+            if (isMultiple) {
+                I18n msg = JcrI18n.unableToSetSingleValuedPropertyUsingMultipleValues;
+                throw new ValueFormatException(msg.text(getPath(),
+                                                        propertyName.getString(cache.namespaces),
+                                                        cache.workspaceName()));
+            }
+            I18n msg = JcrI18n.unableToSetMultiValuedPropertyUsingSingleValue;
+            throw new ValueFormatException(msg.text(getPath(), propertyName, cache.workspaceName()));
+        }
+
+    }
+
+    /**
      * {@inheritDoc}
      * 
      * @see javax.jcr.Node#setProperty(java.lang.String, boolean)
@@ -983,7 +1014,9 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
     public final Property setProperty( String name,
                                        boolean value )
         throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
-        return cache.findJcrProperty(editor().setProperty(nameFrom(name), valueFrom(PropertyType.BOOLEAN, value)));
+        Name propertyName = nameFrom(name);
+        checkCardinalityOfExistingProperty(propertyName, false);
+        return cache.findJcrProperty(editor().setProperty(propertyName, valueFrom(PropertyType.BOOLEAN, value)));
 
     }
 
@@ -999,7 +1032,10 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
             // If there is an existing property, then remove it ...
             return removeExistingValuedProperty(name);
         }
-        return cache.findJcrProperty(editor().setProperty(nameFrom(name), valueFrom(value)));
+
+        Name propertyName = nameFrom(name);
+        checkCardinalityOfExistingProperty(propertyName, false);
+        return cache.findJcrProperty(editor().setProperty(propertyName, valueFrom(value)));
 
     }
 
@@ -1011,7 +1047,9 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
     public final Property setProperty( String name,
                                        double value )
         throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
-        return cache.findJcrProperty(editor().setProperty(nameFrom(name), valueFrom(PropertyType.DOUBLE, value)));
+        Name propertyName = nameFrom(name);
+        checkCardinalityOfExistingProperty(propertyName, false);
+        return cache.findJcrProperty(editor().setProperty(propertyName, valueFrom(PropertyType.DOUBLE, value)));
 
     }
 
@@ -1027,7 +1065,9 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
             // If there is an existing property, then remove it ...
             return removeExistingValuedProperty(name);
         }
-        return cache.findJcrProperty(editor().setProperty(nameFrom(name), valueFrom(value)));
+        Name propertyName = nameFrom(name);
+        checkCardinalityOfExistingProperty(propertyName, false);
+        return cache.findJcrProperty(editor().setProperty(propertyName, valueFrom(value)));
     }
 
     /**
@@ -1038,8 +1078,9 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
     public final Property setProperty( String name,
                                        long value )
         throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
-        return cache.findJcrProperty(editor().setProperty(nameFrom(name), valueFrom(PropertyType.LONG, value)));
-
+        Name propertyName = nameFrom(name);
+        checkCardinalityOfExistingProperty(propertyName, false);
+        return cache.findJcrProperty(editor().setProperty(propertyName, valueFrom(PropertyType.LONG, value)));
     }
 
     /**
@@ -1054,7 +1095,10 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
             // If there is an existing property, then remove it ...
             return removeExistingValuedProperty(name);
         }
-        return cache.findJcrProperty(editor().setProperty(nameFrom(name), valueFrom(value)));
+
+        Name propertyName = nameFrom(name);
+        checkCardinalityOfExistingProperty(propertyName, false);
+        return cache.findJcrProperty(editor().setProperty(propertyName, valueFrom(value)));
     }
 
     /**
@@ -1069,7 +1113,9 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
             // If there is an existing property, then remove it ...
             return removeExistingValuedProperty(name);
         }
-        return cache.findJcrProperty(editor().setProperty(nameFrom(name), valueFrom(PropertyType.STRING, value)));
+        Name propertyName = nameFrom(name);
+        checkCardinalityOfExistingProperty(propertyName, false);
+        return cache.findJcrProperty(editor().setProperty(propertyName, valueFrom(PropertyType.STRING, value)));
     }
 
     /**
@@ -1085,7 +1131,9 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
             // If there is an existing property, then remove it ...
             return removeExistingValuedProperty(name);
         }
-        return cache.findJcrProperty(editor().setProperty(nameFrom(name), valueFrom(type, value)));
+        Name propertyName = nameFrom(name);
+        checkCardinalityOfExistingProperty(propertyName, false);
+        return cache.findJcrProperty(editor().setProperty(propertyName, valueFrom(type, value)));
     }
 
     /**
@@ -1100,7 +1148,9 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
             // If there is an existing property, then remove it ...
             return removeExistingValuedProperty(name);
         }
-        return cache.findJcrProperty(editor().setProperty(nameFrom(name), valuesFrom(PropertyType.STRING, values)));
+        Name propertyName = nameFrom(name);
+        checkCardinalityOfExistingProperty(propertyName, true);
+        return cache.findJcrProperty(editor().setProperty(propertyName, valuesFrom(PropertyType.STRING, values)));
     }
 
     /**
@@ -1116,7 +1166,9 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
             // If there is an existing property, then remove it ...
             return removeExistingValuedProperty(name);
         }
-        return cache.findJcrProperty(editor().setProperty(nameFrom(name), valuesFrom(type, values)));
+        Name propertyName = nameFrom(name);
+        checkCardinalityOfExistingProperty(propertyName, true);
+        return cache.findJcrProperty(editor().setProperty(propertyName, valuesFrom(type, values)));
     }
 
     /**
@@ -1131,7 +1183,9 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
             // If there is an existing property, then remove it ...
             return removeExistingValuedProperty(name);
         }
-        return cache.findJcrProperty(editor().setProperty(nameFrom(name), (JcrValue)value));
+        Name propertyName = nameFrom(name);
+        checkCardinalityOfExistingProperty(propertyName, false);
+        return cache.findJcrProperty(editor().setProperty(propertyName, (JcrValue)value));
     }
 
     protected final Property removeExistingValuedProperty( String name )
@@ -1159,7 +1213,9 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
             // If there is an existing property, then remove it ...
             return removeExistingValuedProperty(name);
         }
-        return cache.findJcrProperty(editor().setProperty(nameFrom(name), ((JcrValue)value).asType(type)));
+        Name propertyName = nameFrom(name);
+        checkCardinalityOfExistingProperty(propertyName, false);
+        return cache.findJcrProperty(editor().setProperty(propertyName, ((JcrValue)value).asType(type)));
     }
 
     /**
@@ -1180,9 +1236,25 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
             newValues = JcrMultiValueProperty.EMPTY_VALUES;
         } else {
             List<Value> valuesWithDesiredType = new ArrayList<Value>(len);
+            int expectedType = -1;
             for (int i = 0; i != len; ++i) {
                 Value value = values[i];
                 if (value == null) continue;
+                if (expectedType == -1) {
+                    expectedType = value.getType();
+                } else if (value.getType() != expectedType) {
+                    // Make sure the type of each value is the same, as per Javadoc in section 7.1.5 of the JCR 1.0.1 spec
+                    StringBuilder sb = new StringBuilder();
+                    sb.append('[');
+                    for (int j = 0; j != values.length; ++j) {
+                        if (j != 0) sb.append(",");
+                        sb.append(values[j].toString());
+                    }
+                    sb.append(']');
+                    String propType = PropertyType.nameFromValue(expectedType);
+                    I18n msg = JcrI18n.allPropertyValuesMustHaveSameType;
+                    throw new ValueFormatException(msg.text(name, values, propType, getPath(), cache.workspaceName()));
+                }
                 valuesWithDesiredType.add(value);
             }
             if (valuesWithDesiredType.isEmpty()) {
@@ -1191,8 +1263,11 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
                 newValues = valuesWithDesiredType.toArray(new Value[valuesWithDesiredType.size()]);
             }
         }
+
+        Name propertyName = nameFrom(name);
+        checkCardinalityOfExistingProperty(propertyName, true);
         // Set the value, perhaps to an empty array ...
-        return cache.findJcrProperty(editor().setProperty(nameFrom(name), newValues));
+        return cache.findJcrProperty(editor().setProperty(propertyName, newValues));
     }
 
     /**
@@ -1208,15 +1283,33 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
             // If there is an existing property, then remove it ...
             return removeExistingValuedProperty(name);
         }
+
         int len = values.length;
         Value[] newValues = null;
         if (len == 0) {
             newValues = JcrMultiValueProperty.EMPTY_VALUES;
         } else {
             List<Value> valuesWithDesiredType = new ArrayList<Value>(len);
+            int expectedType = -1;
             for (int i = 0; i != len; ++i) {
                 Value value = values[i];
+
                 if (value == null) continue;
+                if (expectedType == -1) {
+                    expectedType = value.getType();
+                } else if (value.getType() != expectedType) {
+                    // Make sure the type of each value is the same, as per Javadoc in section 7.1.5 of the JCR 1.0.1 spec
+                    StringBuilder sb = new StringBuilder();
+                    sb.append('[');
+                    for (int j = 0; j != values.length; ++j) {
+                        if (j != 0) sb.append(",");
+                        sb.append(values[j].toString());
+                    }
+                    sb.append(']');
+                    String propType = PropertyType.nameFromValue(expectedType);
+                    I18n msg = JcrI18n.allPropertyValuesMustHaveSameType;
+                    throw new ValueFormatException(msg.text(name, values, propType, getPath(), cache.workspaceName()));
+                }
                 if (value.getType() != type) {
                     value = ((JcrValue)value).asType(type);
                 }
@@ -1228,8 +1321,11 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
                 newValues = valuesWithDesiredType.toArray(new Value[valuesWithDesiredType.size()]);
             }
         }
+
+        Name propertyName = nameFrom(name);
+        checkCardinalityOfExistingProperty(propertyName, true);
         // Set the value, perhaps to an empty array ...
-        return cache.findJcrProperty(editor().setProperty(nameFrom(name), newValues));
+        return cache.findJcrProperty(editor().setProperty(propertyName, newValues));
     }
 
     /**

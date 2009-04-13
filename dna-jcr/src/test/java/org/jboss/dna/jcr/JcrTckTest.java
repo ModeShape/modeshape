@@ -50,6 +50,8 @@ import org.apache.jackrabbit.test.api.SetPropertyConstraintViolationExceptionTes
 import org.apache.jackrabbit.test.api.SetPropertyDoubleTest;
 import org.apache.jackrabbit.test.api.SetPropertyInputStreamTest;
 import org.apache.jackrabbit.test.api.SetPropertyLongTest;
+import org.apache.jackrabbit.test.api.SetPropertyStringTest;
+import org.apache.jackrabbit.test.api.SetPropertyValueTest;
 import org.apache.jackrabbit.test.api.SetValueBinaryTest;
 import org.apache.jackrabbit.test.api.SetValueBooleanTest;
 import org.apache.jackrabbit.test.api.SetValueConstraintViolationExceptionTest;
@@ -183,7 +185,7 @@ public class JcrTckTest {
             // addTestSuite(NodeUUIDTest.class);
             // addTestSuite(NodeOrderableChildNodesTest.class);
             addTestSuite(PropertyTest.class);
-            //
+
             addTestSuite(SetValueBinaryTest.class);
             addTestSuite(SetValueBooleanTest.class);
             addTestSuite(SetValueDateTest.class);
@@ -201,8 +203,8 @@ public class JcrTckTest {
             addTestSuite(SetPropertyInputStreamTest.class);
             addTestSuite(SetPropertyLongTest.class);
             // addTestSuite(SetPropertyNodeTest.class);
-            // addTestSuite(SetPropertyStringTest.class);
-            // addTestSuite(SetPropertyValueTest.class);
+            addTestSuite(SetPropertyStringTest.class);
+            addTestSuite(SetPropertyValueTest.class);
             addTestSuite(SetPropertyConstraintViolationExceptionTest.class);
             // addTestSuite(SetPropertyAssumeTypeTest.class);
             //
@@ -210,11 +212,11 @@ public class JcrTckTest {
             // addTestSuite(NodeItemIsNewTest.class);
             // addTestSuite(PropertyItemIsModifiedTest.class);
             // addTestSuite(PropertyItemIsNewTest.class);
-            //
+
             addTestSuite(NodeAddMixinTest.class);
             addTestSuite(NodeCanAddMixinTest.class);
             addTestSuite(NodeRemoveMixinTest.class);
-            //
+
             addTestSuite(WorkspaceCloneReferenceableTest.class);
             addTestSuite(WorkspaceCloneSameNameSibsTest.class);
             addTestSuite(WorkspaceCloneTest.class);
