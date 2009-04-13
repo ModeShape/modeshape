@@ -881,6 +881,27 @@ public class SessionCache {
             Property primaryTypeProp = propertyFactory.create(JcrLexicon.PRIMARY_TYPE, primaryTypeName);
             Property nodeDefinitionProp = propertyFactory.create(DnaLexicon.NODE_DEFINITON, definition.getId().getString());
 
+            // Now add the "jcr:uuid" property if and only if referenceable ...
+            if (primaryType.isNodeType(JcrMixLexicon.REFERENCEABLE)) {
+                if (desiredUuid == null) {
+                    desiredUuid = UUID.randomUUID();
+                }
+                
+                // We know that this property is single-valued
+                JcrValue value = new JcrValue(factories(), SessionCache.this, PropertyType.STRING, desiredUuid.toString());
+                PropertyDefinition propertyDefinition = nodeTypes().findPropertyDefinition(primaryTypeName,
+                                                                                           Collections.<Name>emptyList(),
+                                                                                           JcrLexicon.UUID,
+                                                                                           value,
+                                                                                           false,
+                                                                                           false);
+                PropertyId propId = new PropertyId(desiredUuid, JcrLexicon.UUID);
+                JcrPropertyDefinition defn = (JcrPropertyDefinition)propertyDefinition;
+                org.jboss.dna.graph.property.Property uuidProperty = propertyFactory.create(JcrLexicon.UUID, desiredUuid);
+                PropertyInfo propInfo = new PropertyInfo(propId, defn.getId(), PropertyType.STRING, uuidProperty, defn.isMultiple());
+                properties.put(JcrLexicon.UUID, propInfo);
+            }
+
             // Create the property info for the "jcr:primaryType" child property ...
             JcrPropertyDefinition primaryTypeDefn = findBestPropertyDefintion(node.getPrimaryTypeName(),
                                                                               node.getMixinTypeNames(),
