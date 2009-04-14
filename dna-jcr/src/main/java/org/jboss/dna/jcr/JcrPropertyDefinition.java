@@ -26,7 +26,6 @@ package org.jboss.dna.jcr;
 import java.util.UUID;
 import java.util.regex.Pattern;
 import javax.jcr.Node;
-import javax.jcr.PathNotFoundException;
 import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
 import javax.jcr.Value;
@@ -37,7 +36,6 @@ import org.jboss.dna.graph.property.Binary;
 import org.jboss.dna.graph.property.DateTime;
 import org.jboss.dna.graph.property.Name;
 import org.jboss.dna.graph.property.NameFactory;
-import org.jboss.dna.graph.property.NamespaceRegistry;
 import org.jboss.dna.graph.property.Path;
 import org.jboss.dna.graph.property.PathFactory;
 import org.jboss.dna.graph.property.ValueFactories;
@@ -148,7 +146,7 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
      * @return a new <code>JcrPropertyDefinition</code> that is identical to the current object, but with the given
      *         <code>context</code>.
      */
-    JcrPropertyDefinition with( ExecutionContext context) {
+    JcrPropertyDefinition with( ExecutionContext context ) {
         return new JcrPropertyDefinition(context, this.declaringNodeType, this.name, this.getOnParentVersion(),
                                          this.isAutoCreated(), this.isMandatory(), this.isProtected(), this.getDefaultValues(),
                                          this.getRequiredType(), this.getValueConstraints(), this.isMultiple());
@@ -592,12 +590,7 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
 
             JcrValue jcrValue = (JcrValue)value;
             // Need to use the session execution context to handle the remaps
-            Name name = jcrValue.sessionCache()
-                                .session()
-                                .getExecutionContext()
-                                .getValueFactories()
-                                .getNameFactory()
-                                .create(jcrValue.value());
+            Name name = jcrValue.sessionCache().session().getExecutionContext().getValueFactories().getNameFactory().create(jcrValue.value());
 
             for (int i = 0; i < constraints.length; i++) {
                 if (constraints[i].equals(name)) {
@@ -689,51 +682,4 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
             return false;
         }
     }
-
-    Key getKey(boolean includeType) {
-        return new Key(this, includeType);
-    }
-
-    /**
-     * Internal class that encapsulates composite unique identifier for property definitions
-     */
-    class Key {
-        String keyString;
-
-        Key( Node node,
-             NamespaceRegistry registry ) throws Exception {
-            String propertyName = JcrNodeType.RESIDUAL_ITEM_NAME;
-
-            try {
-                propertyName = node.getProperty(JcrLexicon.NAME.getString(registry)).getString();
-            } catch (PathNotFoundException pnfe) {
-                // Ignorable, means name is not set.
-            }
-            String requiredType = node.getProperty(JcrLexicon.REQUIRED_TYPE.getString(registry)).getString();
-            boolean allowsMultiple = node.getProperty(JcrLexicon.MULTIPLE.getString(registry)).getBoolean();
-
-            this.keyString = propertyName + "-" + requiredType + "-" + allowsMultiple;
-        }
-
-        Key( PropertyDefinition def, boolean includeType ) {
-            String requiredType = PropertyType.nameFromValue(def.getRequiredType());
-
-            this.keyString = def.getName() + (includeType ? "-" + requiredType : "")  + "-" + def.isMultiple();
-        }
-
-        @Override
-        public boolean equals( Object ob ) {
-            if (!(ob instanceof Key)) {
-                return false;
-            }
-
-            return keyString.equals(((Key)ob).keyString);
-        }
-
-        @Override
-        public int hashCode() {
-            return keyString.hashCode();
-        }
-    }
-
 }

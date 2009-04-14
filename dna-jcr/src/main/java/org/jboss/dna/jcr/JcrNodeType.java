@@ -112,6 +112,8 @@ class JcrNodeType implements NodeType {
                  Collection<JcrPropertyDefinition> propertyDefinitions,
                  boolean mixin,
                  boolean orderableChildNodes ) {
+        assert context != null;
+        
         this.context = context;
         this.nodeTypeManager = nodeTypeManager;
         this.name = name;

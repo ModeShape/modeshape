@@ -92,7 +92,8 @@ class RepositoryNodeTypeManager {
      */
     private enum NodeCardinality {
         NO_SAME_NAME_SIBLINGS,
-        SAME_NAME_SIBLINGS
+        SAME_NAME_SIBLINGS,
+        ANY
     }
 
     RepositoryNodeTypeManager( ExecutionContext context,
@@ -663,10 +664,13 @@ class RepositoryNodeTypeManager {
 
             switch (typesToCheck) {
                 case NO_SAME_NAME_SIBLINGS:
-                    nodeDefs = typeName.allChildNodeDefinitions(childNodeName);
+                    nodeDefs = typeName.allChildNodeDefinitions(childNodeName, false);
                     break;
                 case SAME_NAME_SIBLINGS:
                     nodeDefs = typeName.allChildNodeDefinitions(childNodeName, true);
+                    break;
+                case ANY:
+                    nodeDefs = typeName.allChildNodeDefinitions(childNodeName);
                     break;
             }
 
@@ -1045,12 +1049,13 @@ class RepositoryNodeTypeManager {
                     i++;
                 }
 
-                nodeDefs.add(nodeDef.with(this.context));
+                nodeDefs.add(nodeDef.with(this.context).with(this));
             }
 
             JcrNodeType newNodeType = new JcrNodeType(this.context, this, name, supertypes,
                                                       nodeType.getInternalPrimaryItemName(), nodeDefs, propertyDefs,
                                                       nodeType.isMixin(), nodeType.hasOrderableChildNodes());
+
             typesPendingRegistration.add(newNodeType);
         }
 
@@ -1158,11 +1163,14 @@ class RepositoryNodeTypeManager {
                            String nodeName ) throws RepositoryException {
         assert supertypes.size() > 0; // This is reasonable now that we default to having a supertype of nt:base
 
-        Map<JcrPropertyDefinition.Key, JcrPropertyDefinition> props = new HashMap<JcrPropertyDefinition.Key, JcrPropertyDefinition>();
+        Map<PropertyDefinitionId, JcrPropertyDefinition> props = new HashMap<PropertyDefinitionId, JcrPropertyDefinition>();
 
         for (JcrNodeType supertype : supertypes) {
             for (JcrPropertyDefinition property : supertype.propertyDefinitions()) {
-                JcrPropertyDefinition oldProp = props.put(property.getKey(false), property);
+                JcrPropertyDefinition oldProp = props.put(new PropertyDefinitionId(property.getInternalName(),
+                                                                                   property.getInternalName(),
+                                                                                   PropertyType.UNDEFINED, property.isMultiple()),
+                                                          property);
                 if (oldProp != null) {
                     String oldPropTypeName = oldProp.getDeclaringNodeType().getName();
                     String propTypeName = property.getDeclaringNodeType().getName();
@@ -1176,11 +1184,13 @@ class RepositoryNodeTypeManager {
             }
         }
 
-        Map<JcrNodeDefinition.Key, JcrNodeDefinition> childNodes = new HashMap<JcrNodeDefinition.Key, JcrNodeDefinition>();
+        Map<NodeDefinitionId, JcrNodeDefinition> childNodes = new HashMap<NodeDefinitionId, JcrNodeDefinition>();
 
         for (JcrNodeType supertype : supertypes) {
             for (JcrNodeDefinition childNode : supertype.childNodeDefinitions()) {
-                JcrNodeDefinition oldNode = childNodes.put(childNode.getKey(false), childNode);
+                JcrNodeDefinition oldNode = childNodes.put(new NodeDefinitionId(childNode.getInternalName(),
+                                                                                childNode.getInternalName(), new Name[0]),
+                                                           childNode);
                 if (oldNode != null) {
                     String oldNodeTypeName = oldNode.getDeclaringNodeType().getName();
                     String childNodeTypeName = childNode.getDeclaringNodeType().getName();
@@ -1273,17 +1283,14 @@ class RepositoryNodeTypeManager {
         if (node.isAutoCreated() && node.getDefaultPrimaryType() == null) {
             throw new RepositoryException(JcrI18n.autocreatedNodesNeedDefaults.text());
         }
-        if (node.isMandatory() && node.getName() == null) {
+        if (node.isMandatory() && JcrNodeType.RESIDUAL_ITEM_NAME.equals(node.getName())) {
             throw new RepositoryException(JcrI18n.residualDefinitionsCannotBeMandatory.text("child nodes"));
         }
 
         Name nodeName = context.getValueFactories().getNameFactory().create(node.getName());
         nodeName = nodeName == null ? JcrNodeType.RESIDUAL_NAME : nodeName;
 
-        List<JcrNodeDefinition> ancestors = findChildNodeDefinitions(supertypes,
-                                                                     nodeName,
-                                                                     node.allowsSameNameSiblings() ? NodeCardinality.SAME_NAME_SIBLINGS : NodeCardinality.NO_SAME_NAME_SIBLINGS,
-                                                                     pendingTypes);
+        List<JcrNodeDefinition> ancestors = findChildNodeDefinitions(supertypes, nodeName, NodeCardinality.ANY, pendingTypes);
 
         for (JcrNodeDefinition ancestor : ancestors) {
             if (ancestor.isProtected()) {
@@ -1353,7 +1360,7 @@ class RepositoryNodeTypeManager {
         assert supertypes != null;
         assert pendingTypes != null;
 
-        if (prop.isMandatory() && !prop.isProtected() && prop.getName() == null) {
+        if (prop.isMandatory() && !prop.isProtected() && JcrNodeType.RESIDUAL_ITEM_NAME.equals(prop.getName())) {
             throw new RepositoryException(JcrI18n.residualDefinitionsCannotBeMandatory.text("properties"));
         }
 
